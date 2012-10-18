@@ -1,0 +1,11 @@
+#!/bin/bash
+export JAVA_HOME="C:\Progra~1\Java\jdk1.6.0_29"
+export JAVA_OPTS="-Xmx6G -Xms128M"
+export LIBDIR=./lib
+export BIDMAT_LIBDIR=./target/scala-2.9.1
+export JCUDA_LIBDIR=./lib
+
+export BIDMAT_LIBS="${BIDMAT_LIBDIR}/bidmat_2.9.1-0.1.0.jar;${LIBDIR}/jcommon-1.0.17.jar;${LIBDIR}/jfreechart-1.0.14.jar;${LIBDIR}/jhdf5.jar"
+export JCUDA_LIBS="${JCUDA_LIBDIR}/jcuda-0.4.2.jar;${JCUDA_LIBDIR}/jcublas-0.4.2.jar;${JCUDA_LIBDIR}/jcufft-0.4.2.jar;${JCUDA_LIBDIR}/jcurand-0.4.2.jar;${JCUDA_LIBDIR}/jcusparse-0.4.2.jar"
+
+scala -nobootcp -cp "${BIDMAT_LIBS};${JCUDA_LIBS};${BPARSER_LIBS};${JAVA_HOME}/lib/tools.jar" -Yrepl-sync -i ${LIBDIR}/bidmat_init.scala
