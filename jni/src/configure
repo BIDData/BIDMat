@@ -1,0 +1,157 @@
+#!/bin/bash
+
+OS=`uname`
+PARLIB=$1
+ARCH="x86_64"
+MKL_ROOT="c:/Intel/MKL"
+#MKL_ROOT="/opt/intel/mkl"
+JAVA_HOME="C:/Progra~1/Java/jdk1.6.0_29"
+#JAVA_HOME="/usr/java/jdk1.6.0_32"
+CUDA_HOME="C:/Progra~1/NVIDIA~2/CUDA/v4.2"
+JCUDA_HOME="/code/JCUDA"
+ 
+VERSION="dev"
+
+# standardise the OS and ARCH names
+if [ "$OS" = "Darwin" ] ; then
+	OS="apple"
+elif [ "$OS" = "Linux" ] ; then
+	OS="linux"
+elif [ "$OS" = "SunOS" ] ; then
+	OS="sun"
+elif [[ "$OS" == CYGWIN* ]] ; then
+	OS="windows"
+else
+	echo "OS not supported" $OS
+	exit 1
+fi
+
+if [ "$ARCH" = "x86" ] || [ "$ARCH" = "i686" ] || [ "$ARCH" = "i586" ] \
+	|| [ "$ARCH" = "i486" ] || [ "$ARCH" = "i386" ] ; then
+	ARCH="x86"
+elif [ "$ARCH" = "Power Macintosh" ] ; then
+	ARCH="ppc"
+elif [ "$ARCH" = "amd64" ] || [ "$ARCH" = "x86_64" ] ; then
+	ARCH="x86_64"
+elif [ "$ARCH" = "sun4u" ] ; then
+	ARCH="sparc"
+else
+	echo "ARCH not supported"
+	exit 1
+fi
+
+if [ "$OS" = "apple" ] ; then
+	CC="gcc -Wall"
+	OBJ="o"
+	OUTFLG="-o "
+	CPPFLAGS="$CPPFLAGS -I/System/Library/Frameworks/JavaVM.framework/Home/include"
+	CFLAGS="-fPIC -fno-common $CFLAGS"
+	LB="ar rc"    
+	LD="gcc -dynamiclib"
+	LDFLAGS="$LDFLAGS -framework JavaVM"
+	LIBPREPEND="lib"
+	LIBAPPEND="-apple-"${ARCH}".jnilib"
+	FC="g95"
+	FFLAGS="$CFLAGS"
+	LAPACK_INCLUDES="-I/System/Library/Frameworks/vecLib.framework/Headers"
+	FORTRAN_LIBS="-lg95 -Wl,-single_module"
+	MKL_LIBS="-framework veclib"
+elif [ "$OS" = "linux" ] ; then
+#        CC="gcc -Wall"
+        CC="icc"
+	OBJ="o"
+	OUTFLG="-o "
+	CPPFLAGS="$CPPFLAGS -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$MKL_ROOT/include \
+                 -I$MKL_ROOT/include/intel64/lp64"
+	CFLAGS="-fPIC -c -O2 -DNDEBUG -Qstd=c99 $CFLAGS"
+	LB="ar rc"    
+#	LD="gcc -shared"
+	LD="icc -shared"
+	LDFLAGS="$LDFLAGS -static-intel -L$JAVA_HOME/lib -L/opt/intel/composerxe/lib/intel64"
+	LIBPREPEND="lib"
+	LIBAPPEND=".so"
+	FC="gfortran"
+	FFLAGS="$CFLAGS"
+	LAPACK_INCLUDES=""
+	FORTRAN_LIBS="-lgfortran"
+	if [ "$PARLIB" = "threaded" ] ; then
+	MKL_LIBS="$MKL_ROOT/lib/intel64/libmkl_intel_lp64.a -Wl,--start-group  \
+            $MKL_ROOT/lib/intel64/libmkl_intel_thread.a $MKL_ROOT/lib/intel64/libmkl_core.a \
+            -Wl,--end-group -liomp5 -lpthread -lm"
+        else 
+	MKL_LIBS="$MKL_ROOT/lib/intel64/libmkl_intel_lp64.a -Wl,--start-group  \
+            $MKL_ROOT/lib/intel64/libmkl_sequential.a $MKL_ROOT/lib/intel64/libmkl_core.a \
+            -Wl,--end-group -liomp5 -lpthread -lm"
+        fi
+elif [ "$OS" = "windows" ] ; then
+	CC="icl"
+    NVCC="nvcc"
+	OBJ="obj"
+	OUTFLG="/OUT:"
+	CPPFLAGS=""
+    NVCCFLAGS="-c -arch sm_30 --machine 64  -Xcompiler \"/EHsc /W3 /nologo /O2 /Zi  /MT\""
+	CFLAGS="/c /MT /DNDEBUG /O2 /Qstd=c99 $CFLAGS"    # static linking
+#	CFLAGS="/c /MT /DMKL_ILP64 /DNDEBUG /O2 /Qstd=c99 $CFLAGS" # static link, 64bit ints
+	LB="lib"    
+	LD="link"
+	LDFLAGS="/DLL /MACHINE:AMD64 $LDFLAGS"
+	LIBPREPEND=""
+	LIBAPPEND=".dll"
+	FC="ifort"
+	FFLAGS="-c $FFLAGS"
+	LAPACK_INCLUDES=""
+	FORTRAN_LIBS=""
+	if [ "$PARLIB" = "threaded" ] ; then
+#	MKL_LIBS="mkl_intel_lp64_dll.lib mkl_intel_thread_dll.lib mkl_core_dll.lib"     # threaded, 32bit ints, dll
+	MKL_LIBS="mkl_intel_lp64.lib mkl_intel_thread.lib mkl_core.lib libiomp5md.lib"  # threaded, 32bit integer, static link
+        else
+#	MKL_LIBS="mkl_intel_lp64_dll.lib mkl_sequential_dll.lib mkl_core_dll.lib"       # sequential, 32bit ints, dll
+	MKL_LIBS="mkl_intel_lp64.lib mkl_sequential.lib mkl_core.lib libiomp5md.lib"    # sequential, 32bit int, static link
+        fi
+#	MKL_LIBS="mkl_intel_ilp64.lib mkl_intel_thread.lib mkl_core.lib libiomp5md.lib" # threaded, 64bit integer, static link
+#	MKL_LIBS="mkl_intel_ilp64.lib mkl_sequential.lib mkl_core.lib libiomp5md.lib"   # sequential, 64bit integer, static link
+    CUDA_LIBS="cudart.lib CommonJNI.lib"
+	LIB="$MKL_ROOT/mkl/lib/intel64;$MKL_ROOT/compiler/lib/intel64;$JAVA_HOME/lib;$CUDA_HOME/lib/x64;$JCUDA_HOME/lib/Release;$LIB"
+	INCLUDE="$JAVA_HOME/include;$JAVA_HOME/include/win32;c:/Intel/MKL/mkl/include;c:/codeh/BIDMat/jni/include;$JCUDA_HOME/CommonJNI/src;$CUDA_HOME/include;$INCLUDE"
+else
+	echo "OS not supported"
+	exit 1
+fi
+
+echo "Creating config for $OS $ARCH"
+
+echo "CC=$CC" > Makefile.incl
+echo "NVCC=$NVCC" >> Makefile.incl
+echo "NVCCFLAGS=$NVCCFLAGS" >> Makefile.incl
+echo "OBJ=$OBJ" >> Makefile.incl
+echo "OUTFLG=$OUTFLG" >> Makefile.incl
+echo "CPPFLAGS=$CPPFLAGS" >> Makefile.incl
+echo "CFLAGS=$CFLAGS" >> Makefile.incl
+echo "LB=$LB" >> Makefile.incl
+echo "LD=$LD" >> Makefile.incl
+echo "LDFLAGS=$LDFLAGS" >> Makefile.incl
+echo "LIBPREPEND=$LIBPREPEND" >> Makefile.incl
+echo "LIBAPPEND=$LIBAPPEND" >> Makefile.incl
+echo "LAPACK_INCLUDES=$LAPACK_INCLUDES" >> Makefile.incl
+echo "MKL_LIBS=$MKL_LIBS" >> Makefile.incl
+echo "CUDA_LIBS=$CUDA_LIBS" >> Makefile.incl
+echo "FORTRAN_LIBS=$FORTRAN_LIBS" >> Makefile.incl
+echo "FC=$FC" >> Makefile.incl
+echo "FFLAGS=$FFLAGS" >> Makefile.incl
+echo "LIB=$LIB" >> Makefile.incl
+echo "INCLUDE=$INCLUDE" >> Makefile.incl
+echo "JCUDA_COMMON=$JCUDA_HOME/CommonJNI/src" >> Makefile.incl
+
+echo "If you don't have a machine optimised BLAS/LAPACK, please see the comments in this file to compile your own, or install the atlas-base-dev package"
+
+# check if g95 is installed
+if [ ! -x "`which $FC 2>/dev/null`" ] ; then
+	echo "Fortran compiler required. Please install gfortran (sometimes called g95)."
+fi
+
+# if we are on a dev machine with a bin directory, use it, otherwise point to a jar
+if [ -d "../bin" ] ; then
+	echo "JLAPACK_JNI_CP=../bin" >> Makefile.incl
+else 
+	echo "JLAPACK_JNI_CP=../netlib-java-0.9.3.jar;../lib/f2j/arpack-combo-0.1.jar" >> Makefile.incl
+fi

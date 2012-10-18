@@ -1,0 +1,71 @@
+package edu.berkeley.bid;
+
+public final class CBLAS {
+
+    private CBLAS() {}
+
+    static {
+        System.loadLibrary("bidmatmkl");
+    }
+
+    public final static class ORDER {
+        private ORDER() {}
+        public final static int RowMajor=101;
+        public final static int ColMajor=102;
+    }
+
+    public final static class TRANSPOSE {
+        private TRANSPOSE() {}
+        public final static int NoTrans  =111;
+        public final static int Trans    =112;
+        public final static int ConjTrans=113;
+    }
+
+    public final static class UPLO {
+        private UPLO() {}
+        public final static int Upper=121;
+        public final static int Lower=122;
+    }
+
+    public final static class DIAG {
+        private DIAG() {}
+        public final static int NonUnit=131;
+        public final static int Unit   =132;
+    }
+
+    public final static class SIDE {
+        private SIDE() {}
+        public final static int Left =141;
+        public final static int Right=142;
+    }
+
+  public static native  double ddot( int N,  double []  X,  int incX,  double []  Y,  int incY);
+  public static native  double ddotxx( int N,  double []  X,  int startX,  double []  Y,  int startY);
+  public static native  double daxpy( int N, double a, double []  X,  int incX,  double []  Y,  int incY);
+  public static native  double daxpyxx( int N, double a, double []  X,  int startX,  double []  Y,  int startY);
+  public static native  void dgemv(  int order,   int TransA,  int M,  int N,  double alpha,  double []  A,  int lda,  
+  		                               double []  X,  int incX,  double beta, double []  Y,  int incY);
+  public static native  void dgemm(  int Order,   int TransA,   int TransB,  int M,  int N,  int K,  double alpha,  
+  		                               double []  A,  int lda,  double []  B,  int ldb,  double beta, double []  C,  int ldc);
+  public static native  void domatcopy( String Order, String TransA, int M, int N, double alpha, double [] A, int lda, double [] B, int ldb);
+  public static native  void dmcscm( int m, int n, double [] a, int lda, double [] b, int [] ir, int [] jc, double [] c, int ldc);
+
+  public static native  void smcscm( int m, int n, float [] a, int lda, float [] b, int [] ir, int [] jc, float [] c, int ldc);
+
+  public static native  float sdot( int N,  float []  X,  int incX,  float []  Y,  int incY);
+  public static native  float sdotxx( int N,  float []  X,  int startX,  float []  Y,  int startY);
+  public static native  double saxpy( int N, float a, float []  X,  int incX,  float []  Y,  int incY);
+  public static native  double saxpyxx( int N, float a, float []  X,  int startX,  float []  Y,  int startY);
+  public static native  void sgemv(  int order,   int TransA,  int M,  int N,  float alpha,  float []  A,  int lda,  
+  		                               float []  X,  int incX,  float beta, float []  Y,  int incY);
+  public static native  void sgemm(  int Order,   int TransA,   int TransB,  int M,  int N,  int K,  float alpha,  
+  		                               float []  A,  int lda,  float []  B,  int ldb,  float beta, float []  C,  int ldc);
+  public static native  void somatcopy( String Order, String TransA, int M, int N, float alpha, float [] A, int lda, float [] B, int ldb);
+  
+  public static native  double caxpy( int N, float [] a, float [] X,  int incX,  float []  Y,  int incY);
+  public static native  double caxpyxx( int N, float [] a, float [] X,  int startX,  float []  Y,  int startY);
+  public static native  void cgemv(  int order,   int TransA,  int M,  int N,  float [] alpha,  float [] A,  int lda,  
+  		                               float []  X,  int incX,  float [] beta, float []  Y,  int incY);
+  public static native  void cgemm(  int Order,   int TransA,   int TransB,  int M,  int N,  int K,  float [] alpha,  
+  		                               float []  A,  int lda,  float []  B,  int ldb,  float [] beta, float []  C,  int ldc);
+}
