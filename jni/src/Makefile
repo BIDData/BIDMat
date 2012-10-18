@@ -1,7 +1,7 @@
 include Makefile.incl
 
 MKL_OBJS=BIDMat_CBLAS.$(OBJ) BIDMat_SPBLAS.$(OBJ) BIDMat_LAPACK.$(OBJ) \
-         BIDMat_VML.$(OBJ) com_intel_mkl_VSLStreamStatePtr.$(OBJ)
+         BIDMat_VML.$(OBJ) BIDMat_VSL.$(OBJ)
 
 CUDA_OBJS=BIDMat_CUMAT.$(OBJ) MatKernel.$(OBJ) 
 
