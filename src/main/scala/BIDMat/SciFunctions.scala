@@ -26,8 +26,8 @@
 package BIDMat
 
 import edu.berkeley.bid.VML._
-import com.intel.mkl.VSL._
-import com.intel.mkl.VSLStreamStatePtr
+import edu.berkeley.bid.VSL
+import edu.berkeley.bid.VSL._
 import jcuda._;
 import jcuda.jcublas.JCublas;
 import jcuda.runtime.JCuda;
@@ -44,7 +44,7 @@ object SciFunctions {
   // VSL random number generator initialization
   final val BRNG:Int = BRNG_MCG31
   final val METHOD:Int = 0
-  final val stream = new VSLStreamStatePtr();
+  final val stream = new VSL();
   final val errcode = vslNewStream(stream, BRNG, SEED)
   // VML mode control, controlled with setVMLmode()
   final val VMLdefault = VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_HA   // Default
