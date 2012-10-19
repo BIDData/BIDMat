@@ -1,4 +1,7 @@
 
+NOTE: Documentation for BIDMat is available here: 
+http://bid.berkeley.edu/BIDMat/index.php/Main_Page
+
 BIDMat is a matrix library intended to support large-scale exploratory
 data analysis and to accelerate production deployment on single
 machines or clusters.  While there are many excellent tools exist to
