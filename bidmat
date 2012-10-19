@@ -2,14 +2,12 @@
 # export JAVA_HOME="" # Set here if not set in environment
 export JAVA_OPTS="-Xmx6G -Xms128M" # Set as much memory as possible
 # Fix these if needed
-export SCALA_VERSION="2.9.2"
 export JCUDA_VERSION="0.4.2"
-export BIDMAT_VERSION="0.1.0"
 export LIBDIR=./lib
 export BIDMAT_LIBDIR=./target/scala-${SCALA_VERSION}
 export JCUDA_LIBDIR=./lib
 
-export BIDMAT_LIBS="${BIDMAT_LIBDIR}/bidmat_${SCALA_VERSION}-${BIDMAT_VERSION}.jar;${LIBDIR}/ptplot.jar;${LIBDIR}/ptplotapplication.jar;${LIBDIR}/jhdf5.jar"
+export BIDMAT_LIBS="./BIDMat.jar;${LIBDIR}/ptplot.jar;${LIBDIR}/ptplotapplication.jar;${LIBDIR}/jhdf5.jar"
 export JCUDA_LIBS="${JCUDA_LIBDIR}/jcuda-${JCUDA_VERSION}.jar;${JCUDA_LIBDIR}/jcublas-${JCUDA_VERSION}.jar;${JCUDA_LIBDIR}/jcufft-${JCUDA_VERSION}.jar;${JCUDA_LIBDIR}/jcurand-${JCUDA_VERSION}.jar;${JCUDA_LIBDIR}/jcusparse-${JCUDA_VERSION}.jar"
 
 scala -nobootcp -cp "${BIDMAT_LIBS};${JCUDA_LIBS};${JAVA_HOME}/lib/tools.jar" -Yrepl-sync -i ${LIBDIR}/bidmat_init.scala
