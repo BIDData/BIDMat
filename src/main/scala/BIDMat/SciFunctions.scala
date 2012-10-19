@@ -51,8 +51,8 @@ object SciFunctions {
   final val VMLfast =    VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_LA   // Faster, Low accuracy, default error handling
   final val VMLturbo =   VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_EP   // Fastest, Lower accuracy, default error handling
   // Curand initialization
-  final val cudarng:curandGenerator = if (Mat.hasCUDA) new curandGenerator else null
-  if (Mat.hasCUDA) {
+  final val cudarng:curandGenerator = if (Mat.hasCUDA>0) new curandGenerator else null
+  if (Mat.hasCUDA>0) {
     curandCreateGenerator(cudarng, CURAND_RNG_PSEUDO_DEFAULT) 
     curandSetPseudoRandomGeneratorSeed(cudarng, SEED)
   };

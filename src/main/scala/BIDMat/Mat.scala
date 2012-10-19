@@ -123,7 +123,7 @@ object Mat {
   
   var ioneBased = 1
   
-  var hasCUDA = true;
+  var hasCUDA = 0;
   
   val terminalWidth = TerminalFactory.create.getWidth
 
