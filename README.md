@@ -15,17 +15,19 @@ of a high-end programming language including good general-purpose data
 sructures. And also of Scala's compiler-based REPL (Read-Eval-Print Loop). 
 
 2. To leverage native machine performance through native libraries
-(Intel MKL, HDF5 and string/XML processing). Java/Scala are excellent
-high-level languages, but are one or two orders of magnitude away from
-native performance in some key areas: especially matrix algebra and
-string processing, and below the bar to a lesser degree in File-IO.
+(Intel MKL, HDF5, CUDA and string/XML processing). Java/Scala are
+excellent high-level languages, but are one or two orders of magnitude
+away from native performance in some key areas: especially matrix
+algebra and string processing, and below the bar to a lesser degree in
+File-IO.
 
 3. To leverage GPU hardware and GPU-based data as a first-class
 object.  GPUs now offer large improvements (again one or more orders
 of magnitude) over CPU performance in many areas that are relevant to
 data mining: matrix algebra, transcendental functions, random number
-generation, network and graph algorithms and even natural language
-parsing. Our own work suggests that the list is going to continue to
-grow, and that GPU acceleration will fairly soon be a requirement for
-competitive performance in most algorithms.
+generation. These advantages in low-level operations carry over to
+network and graph algorithms and even natural language parsing. Our
+own work suggests that the list is going to continue to grow, and that
+GPU acceleration will fairly soon be a requirement for competitive
+performance in most algorithms.
  
