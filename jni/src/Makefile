@@ -25,11 +25,11 @@ $(LIBPREPEND)bidmatcuda$(LIBAPPEND): $(CUDA_OBJS)
 	$(NVCC) $(NVCCFLAGS) $*.cu
 
 install: all
-	cp $(LIBPREPEND)bidmatmkl$(LIBAPPEND)  ../../lib
-	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) ../../lib
+	cp $(LIBPREPEND)bidmatmkl$(LIBAPPEND)  ../../lib/win64
+	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) ../../lib/win64
 
 clean:
-	rm -f *.$(OBJ) *$(LIBAPPEND)
+	rm -f *.$(OBJ) *$(LIBAPPEND) *.pdb *.exp *.lib
 
 distclean: clean
 	rm -f *$(LIBAPPEND) *.exp *.lib *.jnilib Makefile.incl
