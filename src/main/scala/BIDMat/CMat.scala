@@ -1,28 +1,3 @@
-/* Copyright (c) 2012, Regents of the University of California                     */
-/* All rights reserved.                                                            */
-
-/* Redistribution and use in source and binary forms, with or without              */
-/* modification, are permitted provided that the following conditions are met:     */
-/*     * Redistributions of source code must retain the above copyright            */
-/*       notice, this list of conditions and the following disclaimer.             */
-/*     * Redistributions in binary form must reproduce the above copyright         */
-/*       notice, this list of conditions and the following disclaimer in the       */
-/*       documentation and/or other materials provided with the distribution.      */
-/*     * Neither the name of the <organization> nor the                            */
-/*       names of its contributors may be used to endorse or promote products      */
-/*       derived from this software without specific prior written permission.     */
-
-/* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND */
-/* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED   */
-/* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE          */
-/* DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY              */
-/* DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES      */
-/* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;    */
-/* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND     */
-/* ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT      */
-/* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS   */
-/* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                    */
-
 package BIDMat
 import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.LAPACK._
@@ -822,15 +797,13 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     out
   }
 
-
-
-  override def *  (b : Mat) = fDMult(b, null)
-  override def +  (b : Mat) = ccMatOpv(b, CMat.vecAdd _, null)
-  override def -  (b : Mat) = ccMatOpv(b, CMat.vecSub _, null)
-  override def *@ (b : Mat) = ccMatOpv(b, CMat.vecMul _, null)
-  override def /@ (b : Mat) = ccMatOpv(b, CMat.vecDiv _, null)
-  override def /  (b : Mat) = solvel(b)
-  override def \\ (b : Mat) = solver(b)
+  def *  (b : CMat) = fDMult(b, null)
+  def +  (b : CMat) = ccMatOpv(b, CMat.vecAdd _, null)
+  def -  (b : CMat) = ccMatOpv(b, CMat.vecSub _, null)
+  def *@ (b : CMat) = ccMatOpv(b, CMat.vecMul _, null)
+  def /@ (b : CMat) = ccMatOpv(b, CMat.vecDiv _, null)
+  def /  (b : CMat) = solvel(b)
+  def \\ (b : CMat) = solver(b)
   
   def *  (b : Float) = ccMatOpScalarv(b, 0, CMat.vecMul _, null)
   def +  (b : Float) = ccMatOpScalarv(b, 0, CMat.vecAdd _, null)
@@ -850,30 +823,39 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def *@ (b : Int) = ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, null)
   def /@ (b : Int) = ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecDiv _, null)
   
-  override def \ (b: Mat) = b match {
-    case fb:CMat => horzcat(fb)
-  }
-  
-  override def on (b: Mat) = b match {
-    case fb:CMat => vertcat(fb)
-  }
+  def \ (b: CMat) = horzcat(b)  
+  def on (b: CMat) = vertcat(b)
   
   override def ~ (b: Mat):Pair = 
     b match {
     case db:CMat => new CPair(this, db)
     case _ => throw new RuntimeException("mismatched types for operator ~")
   }
+  
+   /*
+  * Operators whose second arg is generic. 
+  */ 
+  import Operator._
+  override def +  (b : Mat):Mat = applyMat(this, b, Mop_Plus)
+  override def -  (b : Mat):Mat = applyMat(this, b, Mop_Minus)
+  override def *  (b : Mat):Mat = applyMat(this, b, Mop_Times)
+  override def /  (b : Mat):Mat = applyMat(this, b, Mop_Div)
+  override def \\ (b : Mat):Mat = applyMat(this, b, Mop_RSolve)
+  override def *@ (b : Mat):Mat = applyMat(this, b, Mop_ETimes)
+  override def /@ (b : Mat):Mat = applyMat(this, b, Mop_EDiv)
+  override def \  (b : Mat):Mat = applyMat(this, b, Mop_HCat)
+  override def on (b : Mat):Mat = applyMat(this, b, Mop_VCat)
 }
 
 class CPair (val omat:Mat, val mat:CMat) extends Pair {
   
   override def t:CMat = CMat(mat.gt(CMat.tryForOutCMat(omat)))
   
-  override def * (b : Mat) = mat.fDMult(b, CMat.tryForOutCMat(omat))  
-  override def + (b : Mat) = mat.ccMatOpv(b, CMat.vecAdd _, omat)
-  override def - (b : Mat) = mat.ccMatOpv(b, CMat.vecSub _, omat)
-  override def *@ (b : Mat) = mat.ccMatOpv(b, CMat.vecMul _, CMat.tryForOutCMat(omat))
-  override def /@ (b : Mat) = mat.ccMatOpv(b, CMat.vecDiv _, CMat.tryForOutCMat(omat))  
+  def * (b : CMat) = mat.fDMult(b, CMat.tryForOutCMat(omat))  
+  def + (b : CMat) = mat.ccMatOpv(b, CMat.vecAdd _, omat)
+  def - (b : CMat) = mat.ccMatOpv(b, CMat.vecSub _, omat)
+  def *@ (b : CMat) = mat.ccMatOpv(b, CMat.vecMul _, CMat.tryForOutCMat(omat))
+  def /@ (b : CMat) = mat.ccMatOpv(b, CMat.vecDiv _, CMat.tryForOutCMat(omat))  
 //  override def ^ (b : Mat) = mat.ccMatOp(b, (x:Float, y:Float) => math.pow(x,y).toFloat, null)  
   
   def * (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecMul _, omat)
@@ -893,6 +875,8 @@ class CPair (val omat:Mat, val mat:CMat) extends Pair {
   def -  (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecSub _, omat)
   def *@ (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, omat)
   def /@ (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecDiv _, omat)
+  
+  
 }
 
 object CMat {
