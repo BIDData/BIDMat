@@ -826,6 +826,8 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def \ (b: CMat) = horzcat(b)  
   def on (b: CMat) = vertcat(b)
   
+  def ~ (b : CMat):CPair = new CPair(this, b)
+
   override def ~ (b: Mat):Pair = 
     b match {
     case db:CMat => new CPair(this, db)
