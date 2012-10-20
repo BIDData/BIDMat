@@ -16,4 +16,4 @@ if [ ! $OS == Windows_NT ]; then
     export ALL_LIBS=`echo "${ALL_LIBS}" | sed 's/;/:/g'`
 fi
 
-scala -nobootcp -cp ${ALL_LIBS} -Yrepl-sync -i ${LIBDIR}/bidmat_init.scala
+scala -nobootcp -cp "${ALL_LIBS}" -Yrepl-sync -i ${LIBDIR}/bidmat_init.scala
