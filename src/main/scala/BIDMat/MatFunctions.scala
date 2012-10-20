@@ -1,28 +1,3 @@
-/* Copyright (c) 2012, Regents of the University of California                     */
-/* All rights reserved.                                                            */
-
-/* Redistribution and use in source and binary forms, with or without              */
-/* modification, are permitted provided that the following conditions are met:     */
-/*     * Redistributions of source code must retain the above copyright            */
-/*       notice, this list of conditions and the following disclaimer.             */
-/*     * Redistributions in binary form must reproduce the above copyright         */
-/*       notice, this list of conditions and the following disclaimer in the       */
-/*       documentation and/or other materials provided with the distribution.      */
-/*     * Neither the name of the <organization> nor the                            */
-/*       names of its contributors may be used to endorse or promote products      */
-/*       derived from this software without specific prior written permission.     */
-
-/* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND */
-/* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED   */
-/* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE          */
-/* DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY              */
-/* DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES      */
-/* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;    */
-/* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND     */
-/* ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT      */
-/* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS   */
-/* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                    */
-
 package BIDMat
 
 import scala.compat.Platform._ 
@@ -74,12 +49,14 @@ object MatFunctions {
   def nnz(a:SMat):Int = a.nnz
 
   def nnz(a:SDMat):Int = a.nnz
+  
+  implicit def flt2FMat(x:Float):FMat = row(x)
 
-  implicit def dbl2FMat(x:Double):DMat = row(x) 
+  implicit def dbl2FMat(x:Double):FMat = row(x) 
 
   implicit def int2IMat(x:Int):IMat = irow(x)
-
-  implicit def flt2FMat(x:Float):FMat = row(x)
+  
+//  implicit def dbl2CMat(x:Double):CMat = CMat.celem(x.asInstanceOf[Float],0)
 
   implicit def range2IMat(x:Range):IMat = irow(x)
   
@@ -94,51 +71,6 @@ object MatFunctions {
   implicit def iMat2FMat(x:IMat):FMat = {
     val out = FMat(x.nrows, x.ncols)
     Mat.copyToFloatArray(x.data, 0, out.data, 0, x.length)
-    out
-  }
-
-  def toDMat(x:Mat):DMat = {
-    x match {
-      case dd:DMat => dd
-      case ff:FMat => {val out = DMat(x.nrows, x.ncols); Mat.copyToDoubleArray(ff.data, 0, out.data, 0, ff.length); out}
-      case ii:IMat => {val out = DMat(x.nrows, x.ncols); Mat.copyToDoubleArray(ii.data, 0, out.data, 0, ii.length); out}
-      case ss:SDMat => full(ss)
-      case _ => throw new RuntimeException("Unsupported source type")
-    }
-  }
-
-  def toFMat(x:Mat):FMat = {
-    x match {
-      case ff:FMat => ff
-      case dd:DMat => {val out = FMat(x.nrows, x.ncols); Mat.copyToFloatArray(dd.data, 0, out.data, 0, dd.length); out}
-      case ii:IMat => {val out = FMat(x.nrows, x.ncols); Mat.copyToFloatArray(ii.data, 0, out.data, 0, ii.length); out}
-      case ss:SMat => full(ss)
-      case _ => throw new RuntimeException("Unsupported source type")
-    }
-  }
-
-  def toIMat(x:Mat):IMat = {
-    x match {
-      case xx:IMat => xx
-      case dd:DMat => {val out = IMat(x.nrows, x.ncols); Mat.copyToIntArray(dd.data, 0, out.data, 0, dd.length); out}
-      case ff:FMat => {val out = IMat(x.nrows, x.ncols); Mat.copyToIntArray(ff.data, 0, out.data, 0, ff.length); out}
-      case _ => throw new RuntimeException("Unsupported source type")
-    }
-  }
-
-  def toSMat(x:SDMat):SMat = {
-    val out = SMat(x.nrows, x.ncols, x.nnz)
-    System.arraycopy(x.ir0, 0, out.ir0, 0, x.nnz)
-    System.arraycopy(x.jc0, 0, out.jc0, 0, x.ncols+1)
-    Mat.copyToFloatArray(x.data, 0, out.data, 0, x.nnz)
-    out
-  }
-
-  def toSDMat(x:SMat):SDMat = {
-    val out = SDMat(x.nrows, x.ncols, x.nnz)
-    System.arraycopy(x.ir0, 0, out.ir0, 0, x.nnz)
-    System.arraycopy(x.jc0, 0, out.jc0, 0, x.ncols+1)
-    Mat.copyToDoubleArray(x.data, 0, out.data, 0, x.nnz)
     out
   }
 

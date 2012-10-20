@@ -1,28 +1,3 @@
-/* Copyright (c) 2012, Regents of the University of California                     */
-/* All rights reserved.                                                            */
-
-/* Redistribution and use in source and binary forms, with or without              */
-/* modification, are permitted provided that the following conditions are met:     */
-/*     * Redistributions of source code must retain the above copyright            */
-/*       notice, this list of conditions and the following disclaimer.             */
-/*     * Redistributions in binary form must reproduce the above copyright         */
-/*       notice, this list of conditions and the following disclaimer in the       */
-/*       documentation and/or other materials provided with the distribution.      */
-/*     * Neither the name of the <organization> nor the                            */
-/*       names of its contributors may be used to endorse or promote products      */
-/*       derived from this software without specific prior written permission.     */
-
-/* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND */
-/* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED   */
-/* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE          */
-/* DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY              */
-/* DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES      */
-/* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;    */
-/* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND     */
-/* ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT      */
-/* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS   */
-/* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                    */
-
 package BIDMat
 
 import edu.berkeley.bid.VML._
@@ -51,8 +26,8 @@ object SciFunctions {
   final val VMLfast =    VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_LA   // Faster, Low accuracy, default error handling
   final val VMLturbo =   VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_EP   // Fastest, Lower accuracy, default error handling
   // Curand initialization
-  final val cudarng:curandGenerator = if (Mat.hasCUDA>0) new curandGenerator else null
-  if (Mat.hasCUDA>0) {
+  final val cudarng:curandGenerator = if (Mat.hasCUDA > 0) new curandGenerator else null
+  if (Mat.hasCUDA > 0) {
     curandCreateGenerator(cudarng, CURAND_RNG_PSEUDO_DEFAULT) 
     curandSetPseudoRandomGeneratorSeed(cudarng, SEED)
   };
@@ -64,7 +39,7 @@ object SciFunctions {
     } else {
       vdRngUniform( METHOD, stream, out.length, out.data, minv, maxv )
     }
-    Mat.nflops += 20L*out.nrows*out.ncols
+    Mat.nflops += 10L*out.nrows*out.ncols
     out
   }
   
@@ -81,7 +56,7 @@ object SciFunctions {
     } else {
       vsRngUniform( METHOD, stream, out.length, out.data, minv, maxv )
     }
-    Mat.nflops += 20L*out.nrows*out.ncols
+    Mat.nflops += 10L*out.nrows*out.ncols
     out
   }
   
@@ -106,7 +81,7 @@ object SciFunctions {
   }
 
   def gnormrnd(mu:Float, sig:Float, out:GMat, nr:Int, nc:Int):GMat = {
-    Mat.nflops += 20L*out.length
+    Mat.nflops += 10L*out.length
     curandGenerateNormal(cudarng, out.data, out.length, mu, sig)
     JCuda.cudaDeviceSynchronize()
     out
@@ -126,7 +101,7 @@ object SciFunctions {
     } else {
       vsRngGaussian( METHOD, stream, out.length, out.data, mu, sig )
     }
-    Mat.nflops += 30L*out.length
+    Mat.nflops += 20L*out.length
     out
   }
   
@@ -136,7 +111,7 @@ object SciFunctions {
 
   def gamrnd(shape:Float, scale:Float, out:FMat):FMat = {
     vsRngGamma( METHOD, stream, out.length, out.data, shape, 0, scale )
-    Mat.nflops += 30L*out.length
+    Mat.nflops += 20L*out.length
     out
   }
 
@@ -146,7 +121,7 @@ object SciFunctions {
   
   def laprnd(a:Float, b:Float, out:FMat):FMat = {
     vsRngLaplace( METHOD, stream, out.length, out.data, a, b )
-    Mat.nflops += 30L*out.length
+    Mat.nflops += 20L*out.length
     out
   }
   
@@ -156,7 +131,7 @@ object SciFunctions {
 
   def cauchyrnd(a:Float, b:Float, out:FMat):FMat = {
     vsRngCauchy( METHOD, stream, out.length, out.data, a, b )
-    Mat.nflops += 30L*out.length
+    Mat.nflops += 20L*out.length
     out
   }
   
@@ -166,7 +141,7 @@ object SciFunctions {
 
   def exprnd(a:Float, b:Float, out:FMat):FMat = {
     vsRngExponential( METHOD, stream, out.length, out.data, a, b )
-    Mat.nflops += 30L*out.length
+    Mat.nflops += 20L*out.length
     out
   }
   
@@ -184,7 +159,7 @@ object SciFunctions {
 
   def betarnd(p:Float, q:Float, out:FMat):FMat = {
     vsRngBeta( METHOD, stream, out.length, out.data, p, q, 0, 1 )
-    Mat.nflops += 30L*out.length
+    Mat.nflops += 20L*out.length
     out
   }
   
@@ -195,7 +170,7 @@ object SciFunctions {
   def poissrnd(lambda:FMat, out:IMat):IMat = {
     checkSizes(lambda, out)
     viRngPoissonV( METHOD, stream, out.length, out.data, DMat(lambda).data )
-    Mat.nflops += 30L*out.length
+    Mat.nflops += 20L*out.length
     out
   }
   
@@ -210,7 +185,7 @@ object SciFunctions {
     } else {
       vdRngGaussian( METHOD, stream, out.length, out.data, mu, sig )
     }
-    Mat.nflops += 30L*out.length
+    Mat.nflops += 20L*out.length
     out
   }
   
@@ -220,7 +195,7 @@ object SciFunctions {
   
   def dgamrnd(shape:Double, scale:Double, out:DMat):DMat = {
     vdRngGamma( METHOD, stream, out.length, out.data, shape, 0, scale )
-    Mat.nflops += 30L*out.length
+    Mat.nflops += 20L*out.length
     out
   }
 
@@ -230,7 +205,7 @@ object SciFunctions {
   
   def dlaprnd(a:Double, b:Double, out:DMat):DMat = {
     vdRngLaplace( METHOD, stream, out.length, out.data, a, b )
-    Mat.nflops += 30L*out.length
+    Mat.nflops += 20L*out.length
     out
   }
   
@@ -240,7 +215,7 @@ object SciFunctions {
 
   def dcauchyrnd(a:Double, b:Double, out:DMat):DMat = {
     vdRngCauchy( METHOD, stream, out.length, out.data, a, b )
-    Mat.nflops += 30L*out.length
+    Mat.nflops += 20L*out.length
     out
   }
   
@@ -250,7 +225,7 @@ object SciFunctions {
 
   def dexprnd(a:Double, b:Double, out:DMat):DMat = {
     vdRngExponential( METHOD, stream, out.length, out.data, a, b )
-    Mat.nflops += 30L*out.length
+    Mat.nflops += 20L*out.length
     out
   }
   
@@ -268,7 +243,7 @@ object SciFunctions {
 
   def dbetarnd(p:Double, q:Double, out:DMat):DMat = {
     vdRngBeta( METHOD, stream, out.length, out.data, p, q, 0, 1 )
-    Mat.nflops += 30L*out.length
+    Mat.nflops += 20L*out.length
     out
   }
   
@@ -278,7 +253,7 @@ object SciFunctions {
 
   def binornd(k:Int, p:Double, out:IMat):IMat = {
     viRngBinomial( METHOD, stream, out.length, out.data, k, p )
-    Mat.nflops += 30L*out.length
+    Mat.nflops += 20L*out.length
     out
   }
   
@@ -288,7 +263,7 @@ object SciFunctions {
   
   def bernrnd(p:Double, out:IMat):IMat = {
     viRngBernoulli( METHOD, stream, out.length, out.data, p )
-    Mat.nflops += 30L*out.length
+    Mat.nflops += 20L*out.length
     out
   }
   
@@ -298,7 +273,7 @@ object SciFunctions {
   
   def geornd(p:Double, out:IMat):IMat = {
     viRngGeometric( METHOD, stream, out.length, out.data, p )
-    Mat.nflops += 30L*out.length
+    Mat.nflops += 20L*out.length
     out
   }
 
@@ -308,7 +283,7 @@ object SciFunctions {
   
   def nbinrnd(a:Double, p:Double, out:IMat):IMat = {
     viRngNegbinomial( METHOD, stream, out.length, out.data, a, p )
-    Mat.nflops += 30L*out.length
+    Mat.nflops += 20L*out.length
     out
   }	
   
@@ -318,7 +293,7 @@ object SciFunctions {
   
   def poissrnd(lambda:Double, out:IMat):IMat = {
     viRngPoisson( METHOD, stream, out.length, out.data, lambda )
-    Mat.nflops += 30L*out.length
+    Mat.nflops += 20L*out.length
     out
   }
   
@@ -329,7 +304,7 @@ object SciFunctions {
   def poissrnd(lambda:DMat, out:IMat):IMat = {
     checkSizes(lambda, out)
     viRngPoissonV( METHOD, stream, out.length, out.data, lambda.data )
-    Mat.nflops += 30L*out.length
+    Mat.nflops += 20L*out.length
     out
   }
   
@@ -538,64 +513,64 @@ object SciFunctions {
   def log1p(a:DMat, out:DMat) = applyDFun(a, out, vdLog1p _, math.log1p _, 10L)
   def log1p(a:DMat):DMat = log1p(a, DMat(a.nrows, a.ncols))
   
-  def cos(a:DMat, out:DMat) = applyDFun(a, out, vdCos _, math.cos _, 30L)
+  def cos(a:DMat, out:DMat) = applyDFun(a, out, vdCos _, math.cos _, 10L)
   def cos(a:DMat):DMat = cos(a, DMat(a.nrows, a.ncols))
   
-  def sin(a:DMat, out:DMat) = applyDFun(a, out, vdSin _, math.sin _, 30L)
+  def sin(a:DMat, out:DMat) = applyDFun(a, out, vdSin _, math.sin _, 10L)
   def sin(a:DMat):DMat = sin(a, DMat(a.nrows, a.ncols))
   
-  def tan(a:DMat, out:DMat) = applyDFun(a, out, vdTan _, math.tan _, 30L)
+  def tan(a:DMat, out:DMat) = applyDFun(a, out, vdTan _, math.tan _, 10L)
   def tan(a:DMat):DMat = tan(a, DMat(a.nrows, a.ncols))
   
-  def cosh(a:DMat, out:DMat) = applyDFun(a, out, vdCosh _, math.cosh _, 30L)
+  def cosh(a:DMat, out:DMat) = applyDFun(a, out, vdCosh _, math.cosh _, 10L)
   def cosh(a:DMat):DMat = cosh(a, DMat(a.nrows, a.ncols))
   
-  def sinh(a:DMat, out:DMat) = applyDFun(a, out, vdSinh _, math.sinh _, 30L)
+  def sinh(a:DMat, out:DMat) = applyDFun(a, out, vdSinh _, math.sinh _, 10L)
   def sinh(a:DMat):DMat = sinh(a, DMat(a.nrows, a.ncols))
   
-  def tanh(a:DMat, out:DMat) = applyDFun(a, out, vdTanh _, math.tanh _, 30L)
+  def tanh(a:DMat, out:DMat) = applyDFun(a, out, vdTanh _, math.tanh _, 10L)
   def tanh(a:DMat):DMat = tanh(a, DMat(a.nrows, a.ncols))
   
-  def acos(a:DMat, out:DMat) = applyDFun(a, out, vdAcos _, math.acos _, 30L)
+  def acos(a:DMat, out:DMat) = applyDFun(a, out, vdAcos _, math.acos _, 10L)
   def acos(a:DMat):DMat = acos(a, DMat(a.nrows, a.ncols))
 
-  def asin(a:DMat, out:DMat) = applyDFun(a, out, vdAsin _, math.asin _, 30L)
+  def asin(a:DMat, out:DMat) = applyDFun(a, out, vdAsin _, math.asin _, 10L)
   def asin(a:DMat):DMat = asin(a, DMat(a.nrows, a.ncols))
   
-  def atan(a:DMat, out:DMat) = applyDFun(a, out, vdAtan _, math.atan _, 30L)
+  def atan(a:DMat, out:DMat) = applyDFun(a, out, vdAtan _, math.atan _, 10L)
   def atan(a:DMat):DMat = atan(a, DMat(a.nrows, a.ncols))
 
-  def acosh(a:DMat, out:DMat) = applyDFun(a, out, vdCosh _, null, 30L)
+  def acosh(a:DMat, out:DMat) = applyDFun(a, out, vdCosh _, null, 10L)
   def acosh(a:DMat):DMat = acosh(a, DMat(a.nrows, a.ncols))
   
-  def asinh(a:DMat, out:DMat) = applyDFun(a, out, vdSinh _, null, 30L)
+  def asinh(a:DMat, out:DMat) = applyDFun(a, out, vdSinh _, null, 10L)
   def asinh(a:DMat):DMat = asinh(a, DMat(a.nrows, a.ncols))
   
-  def atanh(a:DMat, out:DMat) = applyDFun(a, out, vdAtanh _, null, 30L)
+  def atanh(a:DMat, out:DMat) = applyDFun(a, out, vdAtanh _, null, 10L)
   def atanh(a:DMat):DMat = atanh(a, DMat(a.nrows, a.ncols))
   
-  def erf(a:DMat, out:DMat) = applyDFun(a, out, vdErf _, null, 30L)
+  def erf(a:DMat, out:DMat) = applyDFun(a, out, vdErf _, null, 10L)
   def erf(a:DMat):DMat = erf(a, DMat(a.nrows, a.ncols))
   
-  def erfinv(a:DMat, out:DMat) = applyDFun(a, out, vdErfInv _, null, 30L)
+  def erfinv(a:DMat, out:DMat) = applyDFun(a, out, vdErfInv _, null, 10L)
   def erfinv(a:DMat):DMat = erfinv(a, DMat(a.nrows, a.ncols))
   
-  def erfc(a:DMat, out:DMat) = applyDFun(a, out, vdErfc _, null, 30L)
+  def erfc(a:DMat, out:DMat) = applyDFun(a, out, vdErfc _, null, 10L)
   def erfc(a:DMat):DMat = erfc(a, DMat(a.nrows, a.ncols))
   
-  def erfcinv(a:DMat, out:DMat) = applyDFun(a, out, vdErfcInv _, null, 30L)
+  def erfcinv(a:DMat, out:DMat) = applyDFun(a, out, vdErfcInv _, null, 10L)
   def erfcinv(a:DMat):DMat = erfcinv(a, DMat(a.nrows, a.ncols))
   
-  def normcdf(a:DMat, out:DMat) = applyDFun(a, out, vdCdfNorm _, null, 30L)
+  def normcdf(a:DMat, out:DMat) = applyDFun(a, out, vdCdfNorm _, null, 10L)
   def normcdf(a:DMat):DMat = normcdf(a, DMat(a.nrows, a.ncols))
   
-  def norminv(a:DMat, out:DMat) = applyDFun(a, out, vdCdfNormInv _, null, 30L)
+  def norminv(a:DMat, out:DMat) = applyDFun(a, out, vdCdfNormInv _, null, 10L)
   def norminv(a:DMat):DMat = norminv(a, DMat(a.nrows, a.ncols))
   
-  def gammaln(a:DMat, out:DMat) = applyDFun(a, out, vdLGamma _, null, 30L)
+  def gammaln(a:DMat, out:DMat) = applyDFun(a, out, vdLGamma _, null, 10L)
   def gammaln(a:DMat):DMat = gammaln(a, DMat(a.nrows, a.ncols))
   
-  def gamma(a:DMat, out:DMat) = applyDFun(a, out, vdTGamma _, null, 30L)
+  def gamma(a:DMat, out:DMat) = applyDFun(a, out, vdTGamma _, null, 10L)
   def gamma(a:DMat):DMat = gamma(a, DMat(a.nrows, a.ncols))
   
   def ceil(a:DMat, out:DMat) = applyDFun(a, out, vdCeil _, math.ceil, 1L)
@@ -610,10 +585,10 @@ object SciFunctions {
   def trunc(a:DMat, out:DMat) = applyDFun(a, out, vdTrunc _, null, 1L)
   def trunc(a:DMat):DMat = trunc(a, DMat(a.nrows, a.ncols))
   
-  def atan2(a:DMat, b:DMat, out:DMat) = applyD2Fun(a, b, out, vdAtan2 _, math.atan2, 30L)
+  def atan2(a:DMat, b:DMat, out:DMat) = applyD2Fun(a, b, out, vdAtan2 _, math.atan2, 10L)
   def atan2(a:DMat, b:DMat):DMat = atan2(a, b, DMat(a.nrows, a.ncols))
   
-  def pow(a:DMat, b:DMat, out:DMat) = applyD2Fun(a, b, out, vdPow _, math.pow, 30L)
+  def pow(a:DMat, b:DMat, out:DMat) = applyD2Fun(a, b, out, vdPow _, math.pow, 10L)
   def pow(a:DMat, b:DMat):DMat = pow(a, b, DMat(a.nrows, a.ncols))
   
   def sdev(a:DMat, dim0:Int):DMat = sqrt(variance(a, dim0))
@@ -643,64 +618,64 @@ object SciFunctions {
   def log1p(a:FMat, out:FMat) = applySFun(a, out, vsLog1p _, (x:Float) => math.log1p(x).asInstanceOf[Float], 10L)
   def log1p(a:FMat):FMat = log1p(a, FMat(a.nrows, a.ncols))
   
-  def cos(a:FMat, out:FMat) = applySFun(a, out, vsCos _, (x:Float) => math.cos(x).asInstanceOf[Float], 30L)
+  def cos(a:FMat, out:FMat) = applySFun(a, out, vsCos _, (x:Float) => math.cos(x).asInstanceOf[Float], 10L)
   def cos(a:FMat):FMat = cos(a, FMat(a.nrows, a.ncols))
   
-  def sin(a:FMat, out:FMat) = applySFun(a, out, vsSin _, (x:Float) => math.sin(x).asInstanceOf[Float], 30L)
+  def sin(a:FMat, out:FMat) = applySFun(a, out, vsSin _, (x:Float) => math.sin(x).asInstanceOf[Float], 10L)
   def sin(a:FMat):FMat = sin(a, FMat(a.nrows, a.ncols))
   
-  def tan(a:FMat, out:FMat) = applySFun(a, out, vsTan _, (x:Float) => math.tan(x).asInstanceOf[Float], 30L)
+  def tan(a:FMat, out:FMat) = applySFun(a, out, vsTan _, (x:Float) => math.tan(x).asInstanceOf[Float], 10L)
   def tan(a:FMat):FMat = tan(a, FMat(a.nrows, a.ncols))
   
-  def cosh(a:FMat, out:FMat) = applySFun(a, out, vsCosh _, (x:Float) => math.cosh(x).asInstanceOf[Float], 30L)
+  def cosh(a:FMat, out:FMat) = applySFun(a, out, vsCosh _, (x:Float) => math.cosh(x).asInstanceOf[Float], 10L)
   def cosh(a:FMat):FMat = cosh(a, FMat(a.nrows, a.ncols))
   
-  def sinh(a:FMat, out:FMat) = applySFun(a, out, vsSinh _, (x:Float) => math.sinh(x).asInstanceOf[Float], 30L)
+  def sinh(a:FMat, out:FMat) = applySFun(a, out, vsSinh _, (x:Float) => math.sinh(x).asInstanceOf[Float], 10L)
   def sinh(a:FMat):FMat = sinh(a, FMat(a.nrows, a.ncols))
   
-  def tanh(a:FMat, out:FMat) = applySFun(a, out, vsTanh _, (x:Float) => math.tanh(x).asInstanceOf[Float], 30L)
+  def tanh(a:FMat, out:FMat) = applySFun(a, out, vsTanh _, (x:Float) => math.tanh(x).asInstanceOf[Float], 10L)
   def tanh(a:FMat):FMat = tanh(a, FMat(a.nrows, a.ncols))
   
-  def acos(a:FMat, out:FMat) = applySFun(a, out, vsAcos _, (x:Float) => math.acos(x).asInstanceOf[Float], 30L)
+  def acos(a:FMat, out:FMat) = applySFun(a, out, vsAcos _, (x:Float) => math.acos(x).asInstanceOf[Float], 10L)
   def acos(a:FMat):FMat = acos(a, FMat(a.nrows, a.ncols))
 
-  def asin(a:FMat, out:FMat) = applySFun(a, out, vsAsin _, (x:Float) => math.asin(x).asInstanceOf[Float], 30L)
+  def asin(a:FMat, out:FMat) = applySFun(a, out, vsAsin _, (x:Float) => math.asin(x).asInstanceOf[Float], 10L)
   def asin(a:FMat):FMat = asin(a, FMat(a.nrows, a.ncols))
   
-  def atan(a:FMat, out:FMat) = applySFun(a, out, vsAtan _, (x:Float) => math.atan(x).asInstanceOf[Float], 30L)
+  def atan(a:FMat, out:FMat) = applySFun(a, out, vsAtan _, (x:Float) => math.atan(x).asInstanceOf[Float], 10L)
   def atan(a:FMat):FMat = atan(a, FMat(a.nrows, a.ncols))
 
-  def acosh(a:FMat, out:FMat) = applySFun(a, out, vsCosh _, null, 30L)
+  def acosh(a:FMat, out:FMat) = applySFun(a, out, vsCosh _, null, 10L)
   def acosh(a:FMat):FMat = acosh(a, FMat(a.nrows, a.ncols))
   
-  def asinh(a:FMat, out:FMat) = applySFun(a, out, vsSinh _, null, 30L)
+  def asinh(a:FMat, out:FMat) = applySFun(a, out, vsSinh _, null, 10L)
   def asinh(a:FMat):FMat = asinh(a, FMat(a.nrows, a.ncols))
   
-  def atanh(a:FMat, out:FMat) = applySFun(a, out, vsAtanh _, null, 30L)
+  def atanh(a:FMat, out:FMat) = applySFun(a, out, vsAtanh _, null, 10L)
   def atanh(a:FMat):FMat = atanh(a, FMat(a.nrows, a.ncols))
   
-  def erf(a:FMat, out:FMat) = applySFun(a, out, vsErf _, null, 30L)
+  def erf(a:FMat, out:FMat) = applySFun(a, out, vsErf _, null, 10L)
   def erf(a:FMat):FMat = erf(a, FMat(a.nrows, a.ncols))
   
-  def erfinv(a:FMat, out:FMat) = applySFun(a, out, vsErfInv _, null, 30L)
+  def erfinv(a:FMat, out:FMat) = applySFun(a, out, vsErfInv _, null, 10L)
   def erfinv(a:FMat):FMat = erfinv(a, FMat(a.nrows, a.ncols))
   
-  def erfc(a:FMat, out:FMat) = applySFun(a, out, vsErfc _, null, 30L)
+  def erfc(a:FMat, out:FMat) = applySFun(a, out, vsErfc _, null, 10L)
   def erfc(a:FMat):FMat = erfc(a, FMat(a.nrows, a.ncols))
   
-  def erfcinv(a:FMat, out:FMat) = applySFun(a, out, vsErfcInv _, null, 30L)
+  def erfcinv(a:FMat, out:FMat) = applySFun(a, out, vsErfcInv _, null, 10L)
   def erfcinv(a:FMat):FMat = erfcinv(a, FMat(a.nrows, a.ncols))
   
-  def normcdf(a:FMat, out:FMat) = applySFun(a, out, vsCdfNorm _, null, 30L)
+  def normcdf(a:FMat, out:FMat) = applySFun(a, out, vsCdfNorm _, null, 10L)
   def normcdf(a:FMat):FMat = normcdf(a, FMat(a.nrows, a.ncols))
   
-  def norminv(a:FMat, out:FMat) = applySFun(a, out, vsCdfNormInv _, null, 30L)
+  def norminv(a:FMat, out:FMat) = applySFun(a, out, vsCdfNormInv _, null, 10L)
   def norminv(a:FMat):FMat = norminv(a, FMat(a.nrows, a.ncols))
   
-  def gammaln(a:FMat, out:FMat) = applySFun(a, out, vsLGamma _, null, 30L)
+  def gammaln(a:FMat, out:FMat) = applySFun(a, out, vsLGamma _, null, 10L)
   def gammaln(a:FMat):FMat = gammaln(a, FMat(a.nrows, a.ncols))
   
-  def gamma(a:FMat, out:FMat) = applySFun(a, out, vsTGamma _, null, 30L)
+  def gamma(a:FMat, out:FMat) = applySFun(a, out, vsTGamma _, null, 10L)
   def gamma(a:FMat):FMat = gamma(a, FMat(a.nrows, a.ncols))
   
   def ceil(a:FMat, out:FMat) = applySFun(a, out, vsCeil _, (x:Float) => math.ceil(x).asInstanceOf[Float], 1L)
@@ -778,9 +753,9 @@ object SciFunctions {
     out
   }
   
-  def roc(score0:FMat, vpos0:FMat, vneg0:FMat, nxvals:Int):FMat = {
+  def roc(score0:DMat, vpos0:DMat, vneg0:DMat, nxvals:Int):DMat = {
     import BIDMat.MatFunctions._
-    var score:FMat = null
+    var score:DMat = null
     if (size(score0,2) > size(score0,1)) {
       score = score0.t
     } else {
@@ -804,10 +779,10 @@ object SciFunctions {
     var fp = cumsum(vneg);
     var npos = tp(n-1);
     var nneg = fp(n-1);
-    var xvals = (1.0*nneg/nxvals)*row(1 to nxvals);
-    var nc:IMat = histc(fp, 0.0 \ xvals);
+    var xvals:FMat = row(1 to nxvals)*(1.0*nneg/nxvals)
+    var nc:IMat = histc(fp, 0.0f \ xvals);
     var loci = max(cumsum(nc(0 until nxvals)), 1);
-    val curve = (1.0f/npos)*(0.0f on tp(loci-1, 0))
+    val curve = (0.0 on tp(loci-1, 0))*(1.0/npos)
     curve
   }
   

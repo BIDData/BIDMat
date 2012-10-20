@@ -1,28 +1,3 @@
-/* Copyright (c) 2012, Regents of the University of California                     */
-/* All rights reserved.                                                            */
-
-/* Redistribution and use in source and binary forms, with or without              */
-/* modification, are permitted provided that the following conditions are met:     */
-/*     * Redistributions of source code must retain the above copyright            */
-/*       notice, this list of conditions and the following disclaimer.             */
-/*     * Redistributions in binary form must reproduce the above copyright         */
-/*       notice, this list of conditions and the following disclaimer in the       */
-/*       documentation and/or other materials provided with the distribution.      */
-/*     * Neither the name of the <organization> nor the                            */
-/*       names of its contributors may be used to endorse or promote products      */
-/*       derived from this software without specific prior written permission.     */
-
-/* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND */
-/* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED   */
-/* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE          */
-/* DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY              */
-/* DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES      */
-/* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;    */
-/* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND     */
-/* ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT      */
-/* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS   */
-/* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                    */
-
 package BIDMat
 
 case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, data0) { 
@@ -162,52 +137,123 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
       case _ => throw new RuntimeException("unsupported arg to dot "+a)
     }
 
-  import MatFunctions.toIMat
-  override def * (b : Mat) = iMult(toIMat(b))	
-  override def + (b : Mat) = iiMatOpv(toIMat(b), DenseMat.vecAdd _, null)
-  override def - (b : Mat) = iiMatOpv(toIMat(b), DenseMat.vecSub _, null)
-  override def *@ (b : Mat) = iiMatOpv(toIMat(b), DenseMat.vecMul _, null)
-  override def /@ (b : Mat) = iiMatOpv(toIMat(b), IMat.iVecDiv _, null)
+  def *  (b : IMat) = iMult(b)	
+  def +  (b : IMat) = iiMatOpv(b, DenseMat.vecAdd _, null)
+  def -  (b : IMat) = iiMatOpv(b, DenseMat.vecSub _, null)
+  def *@ (b : IMat) = iiMatOpv(b, DenseMat.vecMul _, null)
+  def /@ (b : IMat) = iiMatOpv(b, IMat.iVecDiv _, null)
   
-  def + (b : Int) = iiMatOpScalarv(b, DenseMat.vecAdd _, null)
-  def - (b : Int) = iiMatOpScalarv(b, DenseMat.vecSub _, null)
+  def +  (b : Int) = iiMatOpScalarv(b, DenseMat.vecAdd _, null)
+  def -  (b : Int) = iiMatOpScalarv(b, DenseMat.vecSub _, null)
   def *@ (b : Int) = iiMatOpScalarv(b, DenseMat.vecMul _, null)
   def /@ (b : Int) = iiMatOpScalarv(b, IMat.iVecDiv _, null)
 
-  override def > (b : Mat) = iiMatOp(toIMat(b), (x:Int, y:Int) => if (x > y) 1 else 0, null)
-  override def < (b : Mat) = iiMatOp(toIMat(b), (x:Int, y:Int) => if (x < y) 1 else 0, null)
-  override def == (b : Mat) = iiMatOp(toIMat(b), (x:Int, y:Int) => if (x == y) 1 else 0, null)
-  override def === (b : Mat) = iiMatOp(toIMat(b), (x:Int, y:Int) => if (x == y) 1 else 0, null)
-  override def >= (b : Mat) = iiMatOp(toIMat(b), (x:Int, y:Int) => if (x >= y) 1 else 0, null)
-  override def <= (b : Mat) = iiMatOp(toIMat(b), (x:Int, y:Int) => if (x <= y) 1 else 0, null)
-  override def != (b : Mat) = iiMatOp(toIMat(b), (x:Int, y:Int) => if (x != y) 1 else 0, null)
+  def >   (b : IMat) = iiMatOp(b, (x:Int, y:Int) => if (x > y) 1 else 0, null)
+  def <   (b : IMat) = iiMatOp(b, (x:Int, y:Int) => if (x < y) 1 else 0, null)
+  def ==  (b : IMat) = iiMatOp(b, (x:Int, y:Int) => if (x == y) 1 else 0, null)
+  def === (b : IMat) = iiMatOp(b, (x:Int, y:Int) => if (x == y) 1 else 0, null)
+  def >=  (b : IMat) = iiMatOp(b, (x:Int, y:Int) => if (x >= y) 1 else 0, null)
+  def <=  (b : IMat) = iiMatOp(b, (x:Int, y:Int) => if (x <= y) 1 else 0, null)
+  def !=  (b : IMat) = iiMatOp(b, (x:Int, y:Int) => if (x != y) 1 else 0, null)
 
-  def > (b : Int) = iiMatOpScalar(b, (x:Int, y:Int) => if (x > y) 1 else 0, null)
-  def < (b : Int) = iiMatOpScalar(b, (x:Int, y:Int) => if (x < y) 1 else 0, null)
+  def >  (b : Int) = iiMatOpScalar(b, (x:Int, y:Int) => if (x > y) 1 else 0, null)
+  def <  (b : Int) = iiMatOpScalar(b, (x:Int, y:Int) => if (x < y) 1 else 0, null)
   def == (b : Int) = iiMatOpScalar(b, (x:Int, y:Int) => if (x == y) 1 else 0, null)
+  def === (b : Int) = iiMatOpScalar(b, (x:Int, y:Int) => if (x == y) 1 else 0, null)
   def >= (b : Int) = iiMatOpScalar(b, (x:Int, y:Int) => if (x >= y) 1 else 0, null)
   def <= (b : Int) = iiMatOpScalar(b, (x:Int, y:Int) => if (x <= y) 1 else 0, null)
   def != (b : Int) = iiMatOpScalar(b, (x:Int, y:Int) => if (x != y) 1 else 0, null) 
 
   def \ (b: IMat) = horzcat(b)
-  def \ (b: FMat) = MatFunctions.toFMat(this).horzcat(b)
-  def \ (b: DMat) = MatFunctions.toDMat(this).horzcat(b)
   def \ (b: Int) = horzcat(IMat.ielem(b))
   def on (b: IMat) = vertcat(b)
-  def on (b: FMat) = MatFunctions.toFMat(this).vertcat(b)
-  def on (b: DMat) = MatFunctions.toDMat(this).vertcat(b)
   def on (b: Int) = vertcat(IMat.ielem(b))
+  
+ /*
+  * Specialize to FMats to help the type system. 
+  */ 
+  def +  (b : FMat):FMat = FMat(this) + b
+  def -  (b : FMat):FMat = FMat(this) - b
+  def *  (b : FMat):FMat = FMat(this) * b
+  def /  (b : FMat):FMat = FMat(this) / b
+  def \\ (b : FMat):FMat = FMat(this) \\ b
+  def *@ (b : FMat):FMat = FMat(this) *@ b
+  def /@ (b : FMat):FMat = FMat(this) /@ b
+  def \  (b : FMat):FMat = FMat(this) \ b
+  def on (b : FMat):FMat = FMat(this) on b 
+  
+  def >   (b : FMat):FMat = FMat(this) > b
+  def <   (b : FMat):FMat = FMat(this) < b
+  def >=  (b : FMat):FMat = FMat(this) >= b
+  def <=  (b : FMat):FMat = FMat(this) <= b
+  def ==  (b : FMat):FMat = FMat(this) == b
+  def === (b : FMat):FMat = FMat(this) === b 
+  def !=  (b : FMat):FMat = FMat(this) != b
+  
+ /*
+  * Specialize to DMats to help the type system. 
+  */ 
+  def +  (b : DMat):DMat = DMat(this) + b
+  def -  (b : DMat):DMat = DMat(this) - b
+  def *  (b : DMat):DMat = DMat(this) * b
+  def /  (b : DMat):DMat = DMat(this) / b
+  def \\ (b : DMat):DMat = DMat(this) \\ b
+  def *@ (b : DMat):DMat = DMat(this) *@ b
+  def /@ (b : DMat):DMat = DMat(this) /@ b
+  def \  (b : DMat):DMat = DMat(this) \ b
+  def on (b : DMat):DMat = DMat(this) on b 
+  
+  def >   (b : DMat):DMat = DMat(this) > b
+  def <   (b : DMat):DMat = DMat(this) < b
+  def >=  (b : DMat):DMat = DMat(this) >= b
+  def <=  (b : DMat):DMat = DMat(this) <= b
+  def ==  (b : DMat):DMat = DMat(this) == b
+  def === (b : DMat):DMat = DMat(this) === b 
+  def !=  (b : DMat):DMat = DMat(this) != b
+   /*
+  * Specialize to CMats to help the type system. 
+  */ 
+  def +  (b : CMat):CMat = CMat(this) + b
+  def -  (b : CMat):CMat = CMat(this) - b
+  def *  (b : CMat):CMat = CMat(this) * b
+  def /  (b : CMat):CMat = CMat(this) / b
+  def \\ (b : CMat):CMat = CMat(this) \\ b
+  def *@ (b : CMat):CMat = CMat(this) *@ b
+  def /@ (b : CMat):CMat = CMat(this) /@ b
+  def \  (b : CMat):CMat = CMat(this) \ b
+  def on (b : CMat):CMat = CMat(this) on b 
+  /*
+  * Operators whose second arg is generic. 
+  */ 
+  import Operator._
+  override def +  (b : Mat):Mat = applyMat(this, b, Mop_Plus)
+  override def -  (b : Mat):Mat = applyMat(this, b, Mop_Minus)
+  override def *  (b : Mat):Mat = applyMat(this, b, Mop_Times)
+  override def /  (b : Mat):Mat = applyMat(this, b, Mop_Div)
+  override def \\ (b : Mat):Mat = applyMat(this, b, Mop_RSolve)
+  override def *@ (b : Mat):Mat = applyMat(this, b, Mop_ETimes)
+  override def /@ (b : Mat):Mat = applyMat(this, b, Mop_EDiv)
+  override def \  (b : Mat):Mat = applyMat(this, b, Mop_HCat)
+  override def on (b : Mat):Mat = applyMat(this, b, Mop_VCat)
+  
+  override def >   (b : Mat):Mat = applyMat(this, b, Mop_GT)
+  override def <   (b : Mat):Mat = applyMat(this, b, Mop_LT)
+  override def >=  (b : Mat):Mat = applyMat(this, b, Mop_GE)
+  override def <=  (b : Mat):Mat = applyMat(this, b, Mop_LE)
+  override def ==  (b : Mat):Mat = applyMat(this, b, Mop_EQ)
+  override def === (b : Mat):Mat = applyMat(this, b, Mop_EQ) 
+  override def !=  (b : Mat):Mat = applyMat(this, b, Mop_NE)
 }
 
 object IMat {
   
-  	def iVecDiv(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
-      var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
-      while (ci < cend) {
-        c(ci) = a(ai) / b(bi);  ai += ainc; bi += binc;  ci += cinc
-      }
-      0
-  	}
+	def iVecDiv(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
+			var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+			while (ci < cend) {
+				c(ci) = a(ai) / b(bi);  ai += ainc; bi += binc;  ci += cinc
+			}
+			0
+	}
   
   def apply(nr:Int, nc:Int) = new IMat(nr, nc, new Array[Int](nr*nc))
   
