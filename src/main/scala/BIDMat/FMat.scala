@@ -407,6 +407,9 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def on (b: FMat) = vertcat(b)
   def on (b: Float) = vertcat(FMat.felem(b))
   
+  def ~ (b : FMat):FPair = new FPair(this, b)
+  def ~ (b : SMat):SPair = new SPair(this, b)
+  
   override def ~ (b: Mat):Pair = 
     b match {
     case db:FMat => new FPair(this, db)

@@ -400,6 +400,9 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
 
   def on (b: DMat) = DMat(gvertcat(b))
   def on (b: Double) = vertcat(DMat.elem(b))
+  
+  def ~ (b : DMat):DPair = new DPair(this, b)
+  def ~ (b : SDMat):SDPair = new SDPair(this, b)
 
   override def ~ (b: Mat) = b match {
     case db:DMat => new DPair(this, db)
