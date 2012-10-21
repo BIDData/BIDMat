@@ -123,9 +123,11 @@ object Mat {
   
   var ioneBased = 1
   
-  var hasCUDA = 0;
+  var hasCUDA = 0
   
-  val terminalWidth = TerminalFactory.create.getWidth
+  var terminal = TerminalFactory.create
+  
+  def terminalWidth = terminal.getWidth
 
   def copyToIntArray[@specialized(Double, Float) T](data:Array[T], i0:Int, idata:Array[Int], d0:Int, n:Int)
   (implicit numeric : Numeric[T]) = {
