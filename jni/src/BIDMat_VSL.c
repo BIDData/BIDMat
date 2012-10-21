@@ -262,7 +262,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_VSL_viRngUniformBits
     VSLStreamStatePtr stream = getStream(env, calling_obj, j_stream);
     jint * r = (*env)->GetPrimitiveArrayCritical(env, j_r, JNI_FALSE);
 
-    jint retval = viRngUniformBits(method, stream, n, r);
+    jint retval = viRngUniformBits(method, stream, n, (unsigned int *)r);
 
     (*env)->ReleasePrimitiveArrayCritical(env, j_r, r, 0);
     return retval;
