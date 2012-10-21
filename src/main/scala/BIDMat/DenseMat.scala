@@ -427,7 +427,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   def printOne(i:Int):String = " "
   
   override def toString:String = {
-    val nChars = Mat.terminalWidth-1
+    val nChars = Mat.terminalWidth-4
     val maxRows = 640/nChars
     var maxCols = nChars
     var fieldWidth = 4
