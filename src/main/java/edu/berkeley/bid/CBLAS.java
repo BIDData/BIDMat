@@ -74,9 +74,8 @@ public final class CBLAS {
   		                               double []  A,  int lda,  double []  B,  int ldb,  double beta, double []  C,  int ldc);
   public static native  void domatcopy( String Order, String TransA, int M, int N, double alpha, double [] A, int lda, double [] B, int ldb);
   public static native  void dmcscm( int m, int n, double [] a, int lda, double [] b, int [] ir, int [] jc, double [] c, int ldc);
-
-  public static native  void smcscm( int m, int n, float [] a, int lda, float [] b, int [] ir, int [] jc, float [] c, int ldc);
-
+  public static native  void dmcsrm( int m, int n, double [] a, int lda, double [] b, int [] ir, int [] jc, double [] c, int ldc);
+  
   public static native  float sdot( int N,  float []  X,  int incX,  float []  Y,  int incY);
   public static native  float sdotxx( int N,  float []  X,  int startX,  float []  Y,  int startY);
   public static native  double saxpy( int N, float a, float []  X,  int incX,  float []  Y,  int incY);
@@ -93,4 +92,7 @@ public final class CBLAS {
   		                               float []  X,  int incX,  float [] beta, float []  Y,  int incY);
   public static native  void cgemm(  int Order,   int TransA,   int TransB,  int M,  int N,  int K,  float [] alpha,  
   		                               float []  A,  int lda,  float []  B,  int ldb,  float [] beta, float []  C,  int ldc);
+  
+  public static native  void smcscm( int m, int n, float [] a, int lda, float [] b, int [] ir, int [] jc, float [] c, int ldc);
+  public static native  void smcsrm( int m, int n, float [] a, int lda, float [] b, int [] ir, int [] jc, float [] c, int ldc);
 }

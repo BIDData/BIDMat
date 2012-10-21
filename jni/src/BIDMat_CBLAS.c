@@ -148,6 +148,32 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_dmcscm
 	(*env)->ReleasePrimitiveArrayCritical(env, j_A, A, 0);
 }
 
+
+JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_dmcsrm 
+(JNIEnv * env, jobject calling_obj, jint M, jint N, jdoubleArray j_A, jint lda, 
+ jdoubleArray j_B, jintArray j_ir, jintArray j_jc, jdoubleArray j_C, jint ldc){
+	jdouble * A = (*env)->GetPrimitiveArrayCritical(env, j_A, JNI_FALSE);
+	jdouble * B = (*env)->GetPrimitiveArrayCritical(env, j_B, JNI_FALSE);
+	jint * ir = (*env)->GetPrimitiveArrayCritical(env, j_ir, JNI_FALSE);
+	jint * jc = (*env)->GetPrimitiveArrayCritical(env, j_jc, JNI_FALSE);
+	jdouble * C = (*env)->GetPrimitiveArrayCritical(env, j_C, JNI_FALSE);
+
+        int ioff = jc[0];
+        int i, j, k;
+        for (i = 0; i < N; i++) {
+          for (j = jc[i]-ioff; j < jc[i+1]-ioff; j++) {
+            k = ir[j]-ioff;
+            cblas_daxpy(M, B[j], A+(i*lda), 1, C+(k*ldc), 1);
+          }
+        }
+
+	(*env)->ReleasePrimitiveArrayCritical(env, j_C, C, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_jc, jc, 0);	
+    (*env)->ReleasePrimitiveArrayCritical(env, j_ir, ir, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_B, B, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_A, A, 0);
+}
+
 JNIEXPORT jfloat JNICALL Java_edu_berkeley_bid_CBLAS_sdot 
 (JNIEnv * env, jobject calling_obj, jint N, jfloatArray jX, jint incX, jfloatArray jY, jint incY){
 	jfloat * X = (*env)->GetPrimitiveArrayCritical(env, jX, JNI_FALSE);
@@ -257,6 +283,31 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_smcscm
           for (j = jc[i]-ioff; j < jc[i+1]-ioff; j++) {
             ir0 = ir[j]-ioff;
             cblas_saxpy(M, B[j], A+(ir0*lda), 1, C+(i*ldc), 1);
+          }
+        }
+
+	(*env)->ReleasePrimitiveArrayCritical(env, j_C, C, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_jc, jc, 0);	
+        (*env)->ReleasePrimitiveArrayCritical(env, j_ir, ir, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_B, B, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_A, A, 0);
+}
+
+JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_smcsrm 
+(JNIEnv * env, jobject calling_obj, jint M, jint N, jfloatArray j_A, jint lda, 
+ jfloatArray j_B, jintArray j_ir, jintArray j_jc, jfloatArray j_C, jint ldc){
+	jfloat * A = (*env)->GetPrimitiveArrayCritical(env, j_A, JNI_FALSE);
+	jfloat * B = (*env)->GetPrimitiveArrayCritical(env, j_B, JNI_FALSE);
+	jint * ir = (*env)->GetPrimitiveArrayCritical(env, j_ir, JNI_FALSE);
+	jint * jc = (*env)->GetPrimitiveArrayCritical(env, j_jc, JNI_FALSE);
+	jfloat * C = (*env)->GetPrimitiveArrayCritical(env, j_C, JNI_FALSE);
+
+        int ioff = jc[0];
+        int i, j, k;
+        for (i = 0; i < N; i++) {
+          for (j = jc[i]-ioff; j < jc[i+1]-ioff; j++) {
+            k = ir[j]-ioff;
+            cblas_saxpy(M, B[j], A+(i*lda), 1, C+(k*ldc), 1);
           }
         }
 

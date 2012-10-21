@@ -121,6 +121,20 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
     }	
   }
   
+  def Tmult(a:DMat, omat:DMat):DMat = {
+	  val out = DMat.newOrCheckDMat(ncols, a.ncols, omat)
+	  if (omat != null) out.clear
+	  var jc0 = jc
+	  var ir0 = ir
+	  if (Mat.ioneBased == 0) {
+	  	jc0 = SparseMat.incInds(jc)
+	  	ir0 = SparseMat.incInds(ir)
+	  }
+	  dcscmm("T", nrows, a.ncols, ncols, 1.0f, "GLNF", data, ir0, jc0, a.data, a.nrows, 0f, out.data, out.nrows) 
+	  Mat.nflops += 2L * nnz * a.ncols
+	  out
+  }
+  
   def SSMult(a:SDMat):SDMat = 
     if (ncols != a.nrows) {
       throw new RuntimeException("dimensions mismatch")
@@ -162,6 +176,8 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
   
   def + (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => x + y)
   def - (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => x - y)
+  def * (b : DMat):DMat = SMult(b, null)
+  def Tx (b : DMat):DMat = Tmult(b, null)
   override def * (b : Mat):DMat = SMult(b, null)
   def *! (b : SDMat) = SSMult(b)
   def *@ (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => x * y)
@@ -201,6 +217,8 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
 }
 
 class SDPair (val omat:DMat, val mat:SDMat) extends Pair{
+	def * (b : DMat):DMat = mat.SMult(b, omat)
+  def Tx (b : DMat):DMat = mat.Tmult(b, omat)
   override def * (b : Mat):DMat = mat.SMult(b, omat)
 }
 

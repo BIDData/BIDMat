@@ -111,7 +111,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
               // Seg faults in linux and windows			
               //                scscmv("N", nrows, ncols, 1.0f, "GLNF", data, ir, jc, dd.data, 0f, out.data) 
             //	    } else {
-	    scscmm("N", nrows, nc, ncols, 1.0f, "GLNF", data, ir0, jc0, dd.data, ncols, 0f, out.data, nr)
+	    scscmm("N", nrows, nc, ncols, 1.0f, "GLNF", data, ir0, jc0, dd.data, ncols, 0f, out.data, out.nrows)
             //	  }
 	  }
 	  out
@@ -119,6 +119,20 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
 	case _ => throw new RuntimeException("unsupported arg")
       }
     }	
+  }
+  
+  def Tmult(a:FMat, omat:FMat):FMat = {
+	  val out = FMat.newOrCheckFMat(ncols, a.ncols, omat)
+	  if (omat != null) out.clear
+	  var jc0 = jc
+	  var ir0 = ir
+	  if (Mat.ioneBased == 0) {
+	  	jc0 = SparseMat.incInds(jc)
+	  	ir0 = SparseMat.incInds(ir)
+	  }
+	  scscmm("T", nrows, a.ncols, ncols, 1.0f, "GLNF", data, ir0, jc0, a.data, a.nrows, 0f, out.data, out.nrows) 
+	  Mat.nflops += 2L * nnz * a.ncols
+	  out
   }
   
   def SSMult(a:SMat):SMat = 
@@ -162,6 +176,8 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   
   def + (b : SMat) = ssMatOp(b, (x:Float, y:Float) => x + y)
   def - (b : SMat) = ssMatOp(b, (x:Float, y:Float) => x - y)
+  def * (b : FMat):FMat = SMult(b, null)
+  def Tx (b : FMat):FMat = Tmult(b, null)
   override def * (b : Mat):FMat = SMult(b, null)
   def *! (b : SMat) = SSMult(b)
   def *@ (b : SMat) = ssMatOp(b, (x:Float, y:Float) => x * y)
@@ -201,6 +217,8 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
 }
 
 class SPair (val omat:FMat, val mat:SMat) extends Pair{
+  def * (b : FMat):FMat = mat.SMult(b, omat)
+  def Tx (b : FMat):FMat = mat.Tmult(b, omat)
   override def * (b : Mat):FMat = mat.SMult(b, omat)
 }
 
