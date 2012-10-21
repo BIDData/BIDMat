@@ -51,14 +51,17 @@ if [ "$OS" = "apple" ] ; then
 	FORTRAN_LIBS="-lg95 -Wl,-single_module"
 	MKL_LIBS="-framework veclib"
 elif [ "$OS" = "linux" ] ; then
-    MKL_ROOT="/opt/intel/mkl"
-    JAVA_HOME="/usr/java/default"
-    CUDA_HOME="/usr/local/cuda"
-    CC="icc"
+        MKL_ROOT="/opt/intel/mkl"
+        JAVA_HOME="/usr/java/default"
+        CUDA_HOME="/usr/local/cuda"
+        JCUDA_HOME="/home/jfc/code/JCUDA"
+        CC="icc"
+        NVCC=nvcc
+        NVCCFLAGS="-c -arch sm_30 --machine 64  -Xcompiler \"-fPIC -c -O2 -DNDEBUG\""
 	OBJ="o"
 	OUTFLG="-o "
 	CPPFLAGS="$CPPFLAGS -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$MKL_ROOT/include \
-                 -I$MKL_ROOT/include/intel64/lp64"
+                 -I$MKL_ROOT/include/intel64/lp64 -I$JCUDA_HOME/CommonJNI/src -I$CUDA_HOME/include"
 	CFLAGS="-fPIC -c -O2 -DNDEBUG -Qstd=c99 $CFLAGS"
 	LB="ar rc"    
 #	LD="gcc -shared"
@@ -82,14 +85,14 @@ elif [ "$OS" = "linux" ] ; then
 elif [ "$OS" = "windows" ] ; then
     MKL_ROOT="c:/Intel/MKL"
 #    JAVA_HOME=""
-    CUDA_HOME="C:/Progra~1/NVIDIA~2/CUDA/v4.2"
-    JCUDA_HOME="/code/JCUDA"
+        CUDA_HOME="C:/Progra~1/NVIDIA~2/CUDA/v4.2"
+        JCUDA_HOME="/code/JCUDA"
 	CC="icl"
-    NVCC="nvcc"
+        NVCC="nvcc"
 	OBJ="obj"
 	OUTFLG="/OUT:"
 	CPPFLAGS=""
-    NVCCFLAGS="-c -arch sm_30 --machine 64  -Xcompiler \"/EHsc /W3 /nologo /O2 /Zi  /MT\""
+        NVCCFLAGS="-c -arch sm_30 --machine 64  -Xcompiler \"/EHsc /W3 /nologo /O2 /Zi  /MT\""
 	CFLAGS="/c /MT /DNDEBUG /O2 /Qstd=c99 $CFLAGS"    # static linking
 #	CFLAGS="/c /MT /DMKL_ILP64 /DNDEBUG /O2 /Qstd=c99 $CFLAGS" # static link, 64bit ints
 	LB="lib"    
@@ -142,16 +145,4 @@ echo "LIB=$LIB" >> Makefile.incl
 echo "INCLUDE=$INCLUDE" >> Makefile.incl
 echo "JCUDA_COMMON=$JCUDA_HOME/CommonJNI/src" >> Makefile.incl
 
-echo "If you don't have a machine optimised BLAS/LAPACK, please see the comments in this file to compile your own, or install the atlas-base-dev package"
 
-# check if g95 is installed
-if [ ! -x "`which $FC 2>/dev/null`" ] ; then
-	echo "Fortran compiler required. Please install gfortran (sometimes called g95)."
-fi
-
-# if we are on a dev machine with a bin directory, use it, otherwise point to a jar
-if [ -d "../bin" ] ; then
-	echo "JLAPACK_JNI_CP=../bin" >> Makefile.incl
-else 
-	echo "JLAPACK_JNI_CP=../netlib-java-0.9.3.jar;../lib/f2j/arpack-combo-0.1.jar" >> Makefile.incl
-fi
