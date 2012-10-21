@@ -53,6 +53,14 @@ object Plotting {
   def semilogx(mats:Mat*) = plot(mats: _*)(xlog=true)
   
   def semilogy(mats:Mat*) = plot(mats: _*)(ylog=true)
+  
+  def pplot(mats:Mat*) = plot(mats: _*)(isconnected=false)
+  
+  def ploglog(mats:Mat*) = plot(mats: _*)(xlog=true, ylog=true, isconnected=false)
+  
+  def psemilogx(mats:Mat*) = plot(mats: _*)(xlog=true, isconnected=false)
+  
+  def psemilogy(mats:Mat*) = plot(mats: _*)(ylog=true, isconnected=false)
    
 
   

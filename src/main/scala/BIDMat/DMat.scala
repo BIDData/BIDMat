@@ -225,6 +225,20 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
       case _ => throw new RuntimeException("unsupported arg")	
     }
   }
+  
+  def multT(a:SDMat, outmat:DMat):DMat = {
+    import edu.berkeley.bid.CBLAS._
+    if (ncols == a.nrows) {
+    	val out = DMat.newOrCheckDMat(nrows, a.ncols, outmat)
+    	if (outmat != null) out.clear
+    	dmcsrm(nrows, a.ncols, data, nrows, a.data, a.ir, a.jc, out.data, nrows)
+    	Mat.nflops += 2L * a.nnz * nrows
+    	out
+    } else {
+      throw new RuntimeException("xT dimensions mismatch")
+    }
+  }
+  
   /*
    * Very slow, row-and-column multiply
    */
@@ -364,6 +378,8 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
    * Routines to operate on two DMats. These are the compute routines.
    */
   def *  (b : DMat) = fDMult(b, null)
+  def *  (b : SDMat) = fDMult(b, null)
+  def xT (b : SDMat) = multT(b, null)
   def /  (b : DMat) = solvel(b)
   def \\ (b : DMat) = solver(b)
   def ^  (b : DMat) = ddMatOp(b, (x:Double, y:Double) => math.pow(x,y), null)
@@ -404,7 +420,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   def ~ (b : DMat):DPair = new DPair(this, b)
   def ~ (b : SDMat):SDPair = new SDPair(this, b)
 
-  override def ~ (b: Mat) = b match {
+  override def ~ (b: Mat):Pair = b match {
     case db:DMat => new DPair(this, db)
     case sb:SDMat => new SDPair(this, sb)
     case _ => throw new RuntimeException("wrong types for operator ~ ")
@@ -450,7 +466,8 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   def ==  (b : FMat):DMat = this == DMat(b)
   def === (b : FMat):DMat = this === DMat(b) 
   def !=  (b : FMat):DMat = this != DMat(b)
-   /*
+  
+ /*
   * Specialize to CMats to help the type system. 
   */ 
   def +  (b : CMat):CMat = CMat(this) + b
@@ -462,6 +479,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   def /@ (b : CMat):CMat = CMat(this) /@ b
   def \  (b : CMat):CMat = CMat(this) \ b
   def on (b : CMat):CMat = CMat(this) on b 
+  
  /*
   * Operators whose second arg is generic. 
   */ 
@@ -495,21 +513,22 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
     out
   }
 
+  def * (b : DMat) = mat.fDMult(b, omat) 
+  def * (b : SDMat) = mat.fDMult(b, omat)
+  def xT (b : SDMat) = mat.multT(b, mat.tryForOutDMat(omat))
+  def + (b : DMat) = mat.ddMatOpv(b, DenseMat.vecAdd[Double] _, omat)
+  def - (b : DMat) = mat.ddMatOpv(b, DenseMat.vecSub[Double] _, omat)
+  def *@ (b : DMat) = mat.ddMatOpv(b, DenseMat.vecMul[Double] _, omat)
+  def /@ (b : DMat) = mat.ddMatOpv(b, DMat.dVecDiv _, omat)
+  def ^ (b : DMat) = mat.ddMatOp(b, (x:Double, y:Double) => math.pow(x,y), null)
 
-   def * (b : DMat) = mat.fDMult(b, omat)  
-   def + (b : DMat) = mat.ddMatOpv(b, DenseMat.vecAdd[Double] _, omat)
-   def - (b : DMat) = mat.ddMatOpv(b, DenseMat.vecSub[Double] _, omat)
-   def *@ (b : DMat) = mat.ddMatOpv(b, DenseMat.vecMul[Double] _, omat)
-   def /@ (b : DMat) = mat.ddMatOpv(b, DMat.dVecDiv _, omat)
-   def ^ (b : DMat) = mat.ddMatOp(b, (x:Double, y:Double) => math.pow(x,y), null)
-
-   def > (b : DMat) = mat.ddMatOp(b, (x:Double, y:Double) => if (x > y) 1.0 else 0.0, omat)
-   def < (b : DMat) = mat.ddMatOp(b, (x:Double, y:Double) => if (x < y) 1.0 else 0.0, omat)
-   def == (b : DMat) = mat.ddMatOp(b, (x:Double, y:Double) => if (x == y) 1.0 else 0.0, omat)
-   def === (b : DMat) = mat.ddMatOp(b, (x:Double, y:Double) => if (x == y) 1.0 else 0.0, omat)
-   def >= (b : DMat) = mat.ddMatOp(b, (x:Double, y:Double) => if (x >= y) 1.0 else 0.0, omat)
-   def <= (b : DMat) = mat.ddMatOp(b, (x:Double, y:Double) => if (x <= y) 1.0 else 0.0, omat)
-   def != (b : DMat) = mat.ddMatOp(b, (x:Double, y:Double) => if (x != y) 1.0 else 0.0, omat) 
+  def > (b : DMat) = mat.ddMatOp(b, (x:Double, y:Double) => if (x > y) 1.0 else 0.0, omat)
+  def < (b : DMat) = mat.ddMatOp(b, (x:Double, y:Double) => if (x < y) 1.0 else 0.0, omat)
+  def == (b : DMat) = mat.ddMatOp(b, (x:Double, y:Double) => if (x == y) 1.0 else 0.0, omat)
+  def === (b : DMat) = mat.ddMatOp(b, (x:Double, y:Double) => if (x == y) 1.0 else 0.0, omat)
+  def >= (b : DMat) = mat.ddMatOp(b, (x:Double, y:Double) => if (x >= y) 1.0 else 0.0, omat)
+  def <= (b : DMat) = mat.ddMatOp(b, (x:Double, y:Double) => if (x <= y) 1.0 else 0.0, omat)
+  def != (b : DMat) = mat.ddMatOp(b, (x:Double, y:Double) => if (x != y) 1.0 else 0.0, omat) 
 
   def * (b : Double) = mat.fDMult(DMat.elem(b), omat) 
   def + (b : Double) = mat.ddMatOpScalarv(b, DenseMat.vecAdd[Double] _, null)

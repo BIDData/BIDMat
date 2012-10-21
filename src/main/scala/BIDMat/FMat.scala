@@ -217,6 +217,19 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
       case _ => throw new RuntimeException("unsupported arg")	
     }
   }
+  
+  def multT(a:SMat, outmat:FMat):FMat = {
+    import edu.berkeley.bid.CBLAS._
+    if (ncols == a.nrows) {
+    	val out = FMat.newOrCheckFMat(nrows, a.ncols, outmat)
+    	if (outmat != null) out.clear
+    	smcsrm(nrows, a.ncols, data, nrows, a.data, a.ir, a.jc, out.data, nrows)
+    	Mat.nflops += 2L * a.nnz * nrows
+    	out
+    } else {
+      throw new RuntimeException("xT dimensions mismatch")
+    }
+  }
   /*
   * Column-based (Streaming) multiply
   */
@@ -354,6 +367,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def -  (b : FMat) = ffMatOpv(b, DenseMat.vecSub _, null)
   def *  (b : FMat) = fDMult(FMat(b), null)
   def *  (b : SMat) = fDMult(b, null)
+  def xT  (b : SMat) = multT(b, null)
   def /  (b : FMat) = solvel(b)
   def \\ (b : FMat) = solver(b)
   def *@ (b : FMat) = ffMatOpv(b, DenseMat.vecMul _, null)
@@ -499,7 +513,9 @@ class FPair (val omat:Mat, val mat:FMat) extends Pair {
   
   override def t:FMat = FMat(mat.gt(mat.tryForOutFMat(omat)))
   
-  def * (b : FMat) = mat.fDMult(b, mat.tryForOutFMat(omat))  
+  def * (b : FMat) = mat.fDMult(b, mat.tryForOutFMat(omat)) 
+  def * (b : SMat) = mat.fDMult(b, mat.tryForOutFMat(omat)) 
+  def xT  (b : SMat) = mat.multT(b, mat.tryForOutFMat(omat))
   def + (b : FMat) = mat.ffMatOpv(b, DenseMat.vecAdd _, omat)
   def - (b : FMat) = mat.ffMatOpv(b, DenseMat.vecSub _, omat)
   def *@ (b : FMat) = mat.ffMatOpv(b, DenseMat.vecMul _, omat)

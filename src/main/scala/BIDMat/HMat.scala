@@ -34,10 +34,10 @@ case class HMat(nr:Int, nc:Int, fileList:List[String], varname:String, blkinds:A
 
   var fnameCache:String = null
 
-  var fmatCache:FMat = null
+  var fmatCache:Mat = null
   
 // Implement slicing from a hard disk matrix
-  override def apply(a:IMat, b:IMat):FMat = { 
+  override def apply(a:IMat, b:IMat):Mat = { 
     var ilast:Int = 0
     def findindx(ind:Int):Int = {
     	while (ilast >= 0 && ind < blkinds(ilast)) ilast -= 1
@@ -52,12 +52,12 @@ case class HMat(nr:Int, nc:Int, fileList:List[String], varname:String, blkinds:A
     val locs = IMat(1,b.length)
     var i = 0
     var iblk = 0
-    var out:FMat = null
+    var out:Mat = null
     while (i <= b.length) {
     	if (i < b.length) locs(i) = findindx(b(i))
     	if (i == b.length || locs(i) != locs(iblk)) {
     		if (fnameCache == null || fileList(locs(iblk)) != fnameCache) {
-    			fmatCache = MatHDF5.hload(fileList(locs(iblk)), varname).asInstanceOf[FMat] 
+    			fmatCache = MatHDF5.hload(fileList(locs(iblk)), varname).asInstanceOf[Mat] 
     			fnameCache = fileList(locs(iblk))
     		}
       	val newmat = fmatCache(a, b(MatFunctions.irow(iblk->i)))
