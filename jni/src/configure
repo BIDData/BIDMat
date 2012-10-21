@@ -3,12 +3,6 @@
 OS=`uname`
 PARLIB=$1
 ARCH="x86_64"
-MKL_ROOT="c:/Intel/MKL"
-#MKL_ROOT="/opt/intel/mkl"
-JAVA_HOME="C:/Progra~1/Java/jdk1.6.0_29"
-#JAVA_HOME="/usr/java/jdk1.6.0_32"
-CUDA_HOME="C:/Progra~1/NVIDIA~2/CUDA/v4.2"
-JCUDA_HOME="/code/JCUDA"
  
 VERSION="dev"
 
@@ -57,8 +51,10 @@ if [ "$OS" = "apple" ] ; then
 	FORTRAN_LIBS="-lg95 -Wl,-single_module"
 	MKL_LIBS="-framework veclib"
 elif [ "$OS" = "linux" ] ; then
-#        CC="gcc -Wall"
-        CC="icc"
+    MKL_ROOT="/opt/intel/mkl"
+    JAVA_HOME="/usr/java/default"
+    CUDA_HOME="/usr/local/cuda"
+    CC="icc"
 	OBJ="o"
 	OUTFLG="-o "
 	CPPFLAGS="$CPPFLAGS -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$MKL_ROOT/include \
@@ -84,6 +80,10 @@ elif [ "$OS" = "linux" ] ; then
             -Wl,--end-group -liomp5 -lpthread -lm"
         fi
 elif [ "$OS" = "windows" ] ; then
+    MKL_ROOT="c:/Intel/MKL"
+#    JAVA_HOME=""
+    CUDA_HOME="C:/Progra~1/NVIDIA~2/CUDA/v4.2"
+    JCUDA_HOME="/code/JCUDA"
 	CC="icl"
     NVCC="nvcc"
 	OBJ="obj"
