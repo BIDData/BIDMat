@@ -63,7 +63,7 @@ elif [ "$OS" = "linux" ] ; then
 	OUTFLG="-o "
 	CPPFLAGS="$CPPFLAGS -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$MKL_ROOT/include \
                  -I$MKL_ROOT/include/intel64/lp64 -I$JCUDA_HOME/CommonJNI/src -I$CUDA_HOME/include"
-	CFLAGS="-fPIC -c -O2 -DNDEBUG -Qstd=c99 $CFLAGS"
+	CFLAGS="-fPIC -c -O2 -DNDEBUG -std=c99 $CFLAGS"
 	LB="ar rc"    
 #	LD="gcc -shared"
 	LD="icc -shared"
