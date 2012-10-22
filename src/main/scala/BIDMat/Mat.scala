@@ -15,6 +15,7 @@ abstract class Mat(nr:Int, nc:Int) {
   }
   
   def t = notImplemented0("t")  
+  def dv:Double = throw new RuntimeException("operator dv not implemented for "+this)
   
   def copy(a:Mat) = notImplemented0("copy");
   def copy = notImplemented0("copy");
@@ -30,10 +31,11 @@ abstract class Mat(nr:Int, nc:Int) {
   def apply(a:IMat, b:Int):Mat = notImplemented0("block array access");	
   def apply(a:Int, b:IMat):Mat = notImplemented0("block array access");
   
-
   def + (b : Mat):Mat = notImplemented1("+", b)
   def - (b : Mat):Mat = notImplemented1("-", b)
   def * (b : Mat):Mat = notImplemented1("*", b)
+  def xT (b : Mat):Mat = notImplemented1("*", b)
+  def Tx (b : Mat):Mat = notImplemented1("*", b)
   def / (b : Mat):Mat = notImplemented1("/", b)
   def *@ (b : Mat):Mat = notImplemented1("*@", b)
   def /@ (b : Mat):Mat = notImplemented1("/@", b)
@@ -47,6 +49,57 @@ abstract class Mat(nr:Int, nc:Int) {
   def == (b : Mat):Mat = notImplemented1("==", b)
   def === (b : Mat):Mat = notImplemented1("===", b)
   def != (b : Mat):Mat = notImplemented1("!=", b)
+  
+  def + (b : Int):Mat = notImplemented0("+")
+  def - (b : Int):Mat = notImplemented0("-")
+  def * (b : Int):Mat = notImplemented0("*")
+  def / (b : Int):Mat = notImplemented0("/")
+  def *@ (b : Int):Mat = notImplemented0("*@")
+  def /@ (b : Int):Mat = notImplemented0("/@")
+  def \\ (b : Int):Mat = notImplemented0("\\\\")
+  def ^ (b : Int):Mat = notImplemented0("^") 
+  
+  def > (b : Int):Mat = notImplemented0(">")
+  def < (b : Int):Mat = notImplemented0("<")
+  def >= (b : Int):Mat = notImplemented0(">=")
+  def <= (b : Int):Mat = notImplemented0("<=")
+  def == (b : Int):Mat = notImplemented0("==")
+  def === (b : Int):Mat = notImplemented0("===")
+  def != (b : Int):Mat = notImplemented0("!=")
+  
+  def + (b : Float):Mat = notImplemented0("+")
+  def - (b : Float):Mat = notImplemented0("-")
+  def * (b : Float):Mat = notImplemented0("*")
+  def / (b : Float):Mat = notImplemented0("/")
+  def *@ (b : Float):Mat = notImplemented0("*@")
+  def /@ (b : Float):Mat = notImplemented0("/@")
+  def \\ (b : Float):Mat = notImplemented0("\\\\")
+  def ^ (b : Float):Mat = notImplemented0("^") 
+  
+  def > (b : Float):Mat = notImplemented0(">")
+  def < (b : Float):Mat = notImplemented0("<")
+  def >= (b : Float):Mat = notImplemented0(">=")
+  def <= (b : Float):Mat = notImplemented0("<=")
+  def == (b : Float):Mat = notImplemented0("==")
+  def === (b : Float):Mat = notImplemented0("===")
+  def != (b : Float):Mat = notImplemented0("!=")
+  
+  def + (b : Double):Mat = notImplemented0("+")
+  def - (b : Double):Mat = notImplemented0("-")
+  def * (b : Double):Mat = notImplemented0("*")
+  def / (b : Double):Mat = notImplemented0("/")
+  def *@ (b : Double):Mat = notImplemented0("*@")
+  def /@ (b : Double):Mat = notImplemented0("/@")
+  def \\ (b : Double):Mat = notImplemented0("\\\\")
+  def ^ (b : Double):Mat = notImplemented0("^") 
+  
+  def > (b : Double):Mat = notImplemented0(">")
+  def < (b : Double):Mat = notImplemented0("<")
+  def >= (b : Double):Mat = notImplemented0(">=")
+  def <= (b : Double):Mat = notImplemented0("<=")
+  def == (b : Double):Mat = notImplemented0("==")
+  def === (b : Double):Mat = notImplemented0("===")
+  def != (b : Double):Mat = notImplemented0("!=")  
   
   def \ (b : Mat):Mat = notImplemented1("\\", b)
   def on (b : Mat):Mat = notImplemented1("on", b)
@@ -66,6 +119,8 @@ abstract class Pair {
   def + (b : Mat):Mat = notImplemented1("+", b)
   def - (b : Mat):Mat = notImplemented1("-", b)
   def * (b : Mat):Mat = notImplemented1("*", b)
+  def xT (b : Mat):Mat = notImplemented1("xT", b)
+  def Tx (b : Mat):Mat = notImplemented1("Tx", b)
   def / (b : Mat):Mat = notImplemented1("/", b)
   def *@ (b : Mat):Mat = notImplemented1("*@", b)
   def /@ (b : Mat):Mat = notImplemented1("/@", b)

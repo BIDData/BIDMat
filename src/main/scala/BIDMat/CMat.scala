@@ -5,6 +5,13 @@ import edu.berkeley.bid.LAPACK._
 case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, nc, data0) {
 
   def size() = length;
+  
+  override def dv:Double =
+    if (nrows > 1 || ncols > 1) {
+      throw new RuntimeException("Matrix should be 1x1 to extract value")
+    } else {
+      data(0)
+    }
    
   def get(r0:Int, c0:Int):CMat = {
     val off = Mat.oneBased
@@ -511,6 +518,36 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   def ffReduceOpv(n:Int, f:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, out:Mat) = 
     CMat(ggReduceOpv(n, f, CMat.tryForOutCMat(out)))
+    
+  def ccReduceOpv(dim0:Int, opv:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, oldmat:CMat):CMat = {
+    var dim = if (nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
+    if (dim == 1) {
+      val out = CMat.newOrCheckCMat(1, ncols, oldmat)
+      Mat.nflops += length
+      var i = 0
+      while (i < ncols) { 
+        out.data(i) = data(i*nrows)
+        opv(data, i*nrows+1, 1, out.data, i, 0, out.data, i, 0, nrows-1)
+        i += 1
+      }
+      out
+    } else if (dim == 2) { 
+      val out = CMat.newOrCheckCMat(nrows, 1, oldmat)
+      Mat.nflops += length
+      var j = 0
+      while (j < 2*nrows) { 
+        out.data(j) = data(j)
+        j += 1
+      }
+      var i = 1
+      while (i < ncols) { 
+        opv(data, i*nrows, 1, out.data, 0, 1, out.data, 0, 1, nrows)
+        i += 1
+      }
+      out
+    } else
+      throw new RuntimeException("index must 1 or 2");
+  }
   
   def ffReduceAll(n:Int, f1:(Float) => Float, f2:(Float, Float) => Float, out:Mat) = 
     CMat(ggReduceAll(n, f1, f2, CMat.tryForOutCMat(out)))
@@ -805,23 +842,35 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def /  (b : CMat) = solvel(b)
   def \\ (b : CMat) = solver(b)
   
-  def *  (b : Float) = ccMatOpScalarv(b, 0, CMat.vecMul _, null)
-  def +  (b : Float) = ccMatOpScalarv(b, 0, CMat.vecAdd _, null)
-  def -  (b : Float) = ccMatOpScalarv(b, 0, CMat.vecSub _, null)
-  def *@ (b : Float) = ccMatOpScalarv(b, 0, CMat.vecMul _, null)
-  def /@ (b : Float) = ccMatOpScalarv(b, 0, CMat.vecDiv _, null)
+  def == (b : CMat) = ccMatOp(b, (ar:Float, ai:Float, br:Float, bi:Float) => if (ar == br && ai == bi) (1f, 0f) else (0f, 0f), null)
+  def != (b : CMat) = ccMatOp(b, (ar:Float, ai:Float, br:Float, bi:Float) => if (ar != br || ai != bi) (1f, 0f) else (0f, 0f), null)
   
-  def *  (b : Double) = ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, null)
-  def +  (b : Double) = ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecAdd _, null)
-  def -  (b : Double) = ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecSub _, null)
-  def *@ (b : Double) = ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, null)
-  def /@ (b : Double) = ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecDiv _, null)
+  override def *  (b : Float) = ccMatOpScalarv(b, 0, CMat.vecMul _, null)
+  override def +  (b : Float) = ccMatOpScalarv(b, 0, CMat.vecAdd _, null)
+  override def -  (b : Float) = ccMatOpScalarv(b, 0, CMat.vecSub _, null)
+  override def *@ (b : Float) = ccMatOpScalarv(b, 0, CMat.vecMul _, null)
+  override def /@ (b : Float) = ccMatOpScalarv(b, 0, CMat.vecDiv _, null)
   
-  def *  (b : Int) = ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, null)
-  def +  (b : Int) = ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecAdd _, null)
-  def -  (b : Int) = ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecSub _, null)
-  def *@ (b : Int) = ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, null)
-  def /@ (b : Int) = ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecDiv _, null)
+  override def == (b : Float) = ccMatOp(CMat.celem(b, 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar == br && ai == bi) (1f, 0f) else (0f, 0f), null)
+  override def != (b : Float) = ccMatOp(CMat.celem(b, 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar != br || ai != bi) (1f, 0f) else (0f, 0f), null)
+  
+  override def *  (b : Double) = ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, null)
+  override def +  (b : Double) = ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecAdd _, null)
+  override def -  (b : Double) = ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecSub _, null)
+  override def *@ (b : Double) = ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, null)
+  override def /@ (b : Double) = ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecDiv _, null)
+  
+  override def == (b : Double) = ccMatOp(CMat.celem(b.asInstanceOf[Float], 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar == br && ai == bi) (1f, 0f) else (0f, 0f), null)
+  override def != (b : Double) = ccMatOp(CMat.celem(b.asInstanceOf[Float], 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar != br || ai != bi) (1f, 0f) else (0f, 0f), null)
+  
+  override def *  (b : Int) = ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, null)
+  override def +  (b : Int) = ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecAdd _, null)
+  override def -  (b : Int) = ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecSub _, null)
+  override def *@ (b : Int) = ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, null)
+  override def /@ (b : Int) = ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecDiv _, null)
+  
+  override def == (b : Int) = ccMatOp(CMat.celem(b.asInstanceOf[Float], 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar == br && ai == bi) (1f, 0f) else (0f, 0f), null)
+  override def != (b : Int) = ccMatOp(CMat.celem(b.asInstanceOf[Float], 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar != br || ai != bi) (1f, 0f) else (0f, 0f), null)
   
   def \ (b: CMat) = horzcat(b)  
   def on (b: CMat) = vertcat(b)
@@ -838,15 +887,18 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   * Operators whose second arg is generic. 
   */ 
   import Operator._
-  override def +  (b : Mat):Mat = applyMat(this, b, Mop_Plus)
-  override def -  (b : Mat):Mat = applyMat(this, b, Mop_Minus)
-  override def *  (b : Mat):Mat = applyMat(this, b, Mop_Times)
-  override def /  (b : Mat):Mat = applyMat(this, b, Mop_Div)
-  override def \\ (b : Mat):Mat = applyMat(this, b, Mop_RSolve)
-  override def *@ (b : Mat):Mat = applyMat(this, b, Mop_ETimes)
-  override def /@ (b : Mat):Mat = applyMat(this, b, Mop_EDiv)
-  override def \  (b : Mat):Mat = applyMat(this, b, Mop_HCat)
-  override def on (b : Mat):Mat = applyMat(this, b, Mop_VCat)
+  override def +  (b : Mat):Mat = applyMat(this, b, null, Mop_Plus)
+  override def -  (b : Mat):Mat = applyMat(this, b, null, Mop_Minus)
+  override def *  (b : Mat):Mat = applyMat(this, b, null, Mop_Times)
+  override def /  (b : Mat):Mat = applyMat(this, b, null, Mop_Div)
+  override def \\ (b : Mat):Mat = applyMat(this, b, null, Mop_RSolve)
+  override def *@ (b : Mat):Mat = applyMat(this, b, null, Mop_ETimes)
+  override def /@ (b : Mat):Mat = applyMat(this, b, null, Mop_EDiv)
+  override def \  (b : Mat):Mat = applyMat(this, b, null, Mop_HCat)
+  override def on (b : Mat):Mat = applyMat(this, b, null, Mop_VCat)
+  
+  override def == (b : Mat):Mat = applyMat(this, b, null, Mop_EQ)
+  override def != (b : Mat):Mat = applyMat(this, b, null, Mop_NE)
 }
 
 class CPair (val omat:Mat, val mat:CMat) extends Pair {
@@ -877,6 +929,8 @@ class CPair (val omat:Mat, val mat:CMat) extends Pair {
   def -  (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecSub _, omat)
   def *@ (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, omat)
   def /@ (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecDiv _, omat)
+  
+  
   
   
 }

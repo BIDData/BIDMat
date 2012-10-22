@@ -28,7 +28,7 @@ case class GSMat(nr:Int, nc:Int, val nnz:Int, val ir:Pointer, val ic:Pointer, va
   }
 }
 
-class GSPair (val omat:GMat, val mat:GSMat) {
+class GSPair (val omat:GMat, val mat:GSMat) extends Pair {
 
 }
 

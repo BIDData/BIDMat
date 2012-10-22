@@ -153,7 +153,6 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   def - (b : SMat) = ssMatOp(b, (x:Float, y:Float) => x - y)
   def * (b : FMat):FMat = SMult(b, null)
   def Tx (b : FMat):FMat = Tmult(b, null)
-  override def * (b : Mat):FMat = SMult(b, null)
   def *! (b : SMat) = SSMult(b)
   def *@ (b : SMat) = ssMatOp(b, (x:Float, y:Float) => x * y)
   def /@ (b : SMat) = ssMatOp(b, (x:Float, y:Float) => x / y)
@@ -166,17 +165,20 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   def <= (b : SMat) = ssMatOp(b, (x:Float, y:Float) => if (x <= y) 1.0f else 0f)
   def != (b : SMat) = ssMatOp(b, (x:Float, y:Float) => if (x != y) 1.0f else 0f)
   
-  def + (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => x + y)
-  def - (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => x - y)
-  def *@ (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => x * y)
-  def /@ (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => x / y)
+  override def + (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => x + y)
+  override def - (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => x - y)
+  override def *@ (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => x * y)
+  override def /@ (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => x / y)
   
-  def > (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => if (x > y) 1.0f else 0f)
-  def < (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => if (x < y) 1.0f else 0f)
-  def == (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => if (x == y) 1.0f else 0f)
-  def >= (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => if (x >= y) 1.0f else 0f)
-  def <= (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => if (x <= y) 1.0f else 0f)
-  def != (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => if (x != y) 1.0f else 0f)
+  override def > (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => if (x > y) 1.0f else 0f)
+  override def < (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => if (x < y) 1.0f else 0f)
+  override def == (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => if (x == y) 1.0f else 0f)
+  override def >= (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => if (x >= y) 1.0f else 0f)
+  override def <= (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => if (x <= y) 1.0f else 0f)
+  override def != (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => if (x != y) 1.0f else 0f)
+  
+  override def * (b : Mat):FMat = SMult(b, null)
+  override def Tx (b : Mat):Mat = b match {case bb:FMat => Tmult(bb, null)}
   
   def \ (b: SMat) = horzcat(b)
   def on (b: SMat) = vertcat(b)
@@ -195,6 +197,7 @@ class SPair (val omat:FMat, val mat:SMat) extends Pair{
   def * (b : FMat):FMat = mat.SMult(b, omat)
   def Tx (b : FMat):FMat = mat.Tmult(b, omat)
   override def * (b : Mat):FMat = mat.SMult(b, omat)
+  override def Tx (b : Mat):Mat = b match {case bb:FMat => mat.Tmult(bb, omat)}
 }
 
 object SMat {

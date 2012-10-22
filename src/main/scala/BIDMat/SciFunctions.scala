@@ -3,6 +3,7 @@ package BIDMat
 import edu.berkeley.bid.VML._
 import edu.berkeley.bid.VSL
 import edu.berkeley.bid.VSL._
+import edu.berkeley.bid.CBLAS._
 import jcuda._;
 import jcuda.jcublas.JCublas;
 import jcuda.runtime.JCuda;
@@ -11,6 +12,7 @@ import jcuda.jcurand.curandGenerator;
 import jcuda.jcurand.curandRngType._;
 import edu.berkeley.bid.CUMAT;
 import java.util.Random._;
+import MatFunctions._
 
 object SciFunctions {
   final val SEED:Int = 1452462553 
@@ -26,6 +28,10 @@ object SciFunctions {
   final val VMLfast =    VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_LA   // Faster, Low accuracy, default error handling
   final val VMLturbo =   VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_EP   // Fastest, Lower accuracy, default error handling
   // Curand initialization
+  var cudanum = new Array[Int](1)
+  jcuda.runtime.JCuda.cudaGetDeviceCount(cudanum)
+  if (cudanum(0) > 0 && Mat.hasCUDA == 0) jcuda.runtime.JCuda.initialize
+  Mat.hasCUDA = cudanum(0)
   final val cudarng:curandGenerator = if (Mat.hasCUDA > 0) new curandGenerator else null
   if (Mat.hasCUDA > 0) {
     curandCreateGenerator(cudarng, CURAND_RNG_PSEUDO_DEFAULT) 
@@ -33,9 +39,9 @@ object SciFunctions {
   }
   
     
-  def norm(a:FMat) = math.sqrt(a dot a).asInstanceOf[Float]
+  def norm(a:FMat) = math.sqrt(sdot(a.length, a.data, 1, a.data, 1)).asInstanceOf[Float]
   
-  def norm(a:DMat) = math.sqrt(a dot a)
+  def norm(a:DMat) = math.sqrt(ddot(a.length, a.data, 1, a.data, 1))
   
   def drand(minv:Double, maxv:Double, out:DMat):DMat = {
     if (Mat.noMKL) {
@@ -416,6 +422,54 @@ object SciFunctions {
   def maxi(a:SMat) = a.ssReduceOp(0, (x:Float) => x, (x:Float, y:Float) => math.max(x,y))
   def mini(a:SMat) = a.ssReduceOp(0, (x:Float) => x, (x:Float, y:Float) => math.min(x,y))
   
+  def sum(a:CMat, n:Int) = a.ccReduceOpv(n, CMat.vecAdd _, null)
+  
+  def min(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => min(aa, bb)
+      case (aa:IMat, bb:IMat) => min(aa, bb)
+      case (aa:DMat, bb:DMat) => min(aa, bb)
+      case (aa:GMat, bb:GMat) => min(aa, bb)
+    }
+  }
+  
+  def max(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => max(aa, bb)
+      case (aa:IMat, bb:IMat) => max(aa, bb)
+      case (aa:DMat, bb:DMat) => max(aa, bb)
+      case (aa:GMat, bb:GMat) => max(aa, bb)
+    }
+  }
+  
+  def mini(a:Mat, b:Int):Mat = {
+    a match {
+      case aa:FMat => mini(aa, b)
+      case aa:IMat => mini(aa, b)
+      case aa:DMat => mini(aa, b)
+      case aa:GMat => mini(aa, b)
+    }
+  }
+  
+  def maxi(a:Mat, b:Int):Mat = {
+    a match {
+      case aa:FMat => maxi(aa, b)
+      case aa:IMat => maxi(aa, b)
+      case aa:DMat => maxi(aa, b)
+      case aa:GMat => maxi(aa, b)
+    }
+  }
+  
+  def sum(a:Mat, b:Int):Mat = {
+    a match {
+      case aa:FMat => sum(aa, b)
+      case aa:IMat => sum(aa, b)
+      case aa:DMat => sum(aa, b)
+      case aa:CMat => sum(aa, b)
+      case aa:GMat => sum(aa, b)
+    }
+  }
+  
   def mean(a:FMat, dim0:Int):FMat = {
     val dim = if (a.nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
     if (dim == 1) {
@@ -440,6 +494,30 @@ object SciFunctions {
   
   def variance(a:FMat):FMat = variance(a, 0)
   
+  def mean(a:GMat, dim0:Int):GMat = {
+    val dim = if (a.nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
+    if (dim == 1) {
+      sum(a, 1)*GMat(row(1.0f/a.nrows))
+    } else {
+      sum(a, 2)*GMat(1.0f/a.ncols)
+    }
+  }
+  
+  def mean(a:GMat):GMat = mean(a, 0)
+  
+  def variance(a:GMat, dim0:Int):GMat = {
+    val dim = if (a.nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
+    if (dim == 1) {
+      val m = mean(a, 1)
+      sum(a *@ a, 1)*GMat(1.0f/a.nrows) - m *@ m
+    } else {
+      val m = mean(a, 2)
+      sum(a *@ a, 2)*GMat(1.0f/a.ncols) - m *@ m
+    }
+  }
+  
+  def variance(a:GMat):GMat = variance(a, 0)
+  
   def mean(a:DMat, dim0:Int):DMat = {
     val dim = if (a.nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
     if (dim == 1) {
@@ -463,6 +541,18 @@ object SciFunctions {
   }
   
   def variance(a:DMat):DMat = variance(a, 0)
+  
+  def mean(a:Mat, b:Int):Mat = {
+    a match {
+      case aa:FMat => mean(aa, b)
+      case aa:IMat => mean(aa, b)
+      case aa:DMat => mean(aa, b)
+      case aa:CMat => mean(aa, b)
+      case aa:GMat => mean(aa, b)
+    }
+  }
+  
+  def mean(a:Mat):Mat = mean(a, 0)
   
   def applyDFun(a:DMat, out:DMat, vfn:(Int, Array[Double], Array[Double])=>Unit, efn:(Double)=>Double, nflops:Long) ={
 	    checkSizes(a, out)
@@ -791,7 +881,7 @@ object SciFunctions {
     if (size(vneg,2) > 1) {
       vneg = vneg.t;
     };
-    if (nnz(vneg < 0) + nnz(vpos < 0) > 0) {
+    if (nnz(vneg < 0.0) + nnz(vpos < 0.0) > 0) {
       sys.error("ROCcurve assumes vneg & vpos >= 0");
     };
 
