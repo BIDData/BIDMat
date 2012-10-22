@@ -350,7 +350,7 @@ object IMat {
   }
   
   def newOrCheckIMat(nr:Int, nc:Int, outmat:IMat):IMat = {
-    if (outmat == null) {
+    if (outmat.asInstanceOf[AnyRef] == null) {
       IMat(nr, nc)
     } else {
       if (outmat.nrows != nr || outmat.ncols != nc) {
@@ -368,7 +368,7 @@ object IMat {
   }
     
   def tryForOutIMat(out:Mat):IMat = 
-  	if (out == null) {
+  	if (out.asInstanceOf[AnyRef] == null) {
   		null
   	} else {
   		out match {

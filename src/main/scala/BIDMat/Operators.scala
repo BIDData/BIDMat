@@ -42,6 +42,102 @@ object Operator {
       case gb:GMat => op.gop(a, gb, c)
     }
   }
+  
+  def multDim1(a:Mat, b:Mat):Int = {
+    if (a.nrows == 1 && a.ncols == 1) {
+      b.nrows
+    } else {
+      a.nrows
+    }
+  } 
+  
+  def multDim2(a:Mat, b:Mat):Int = {
+    if (b.nrows == 1 && b.ncols == 1) {
+      a.ncols
+    } else {
+      b.ncols
+    }
+  } 
+  
+  def getFPair(c:Mat, a:FMat):FPair = {
+    if (c.asInstanceOf[AnyRef] != null) {
+      new FPair(c, a)
+    } else {
+      new FPair(FMat(a.nrows, a.ncols), a)
+    }
+  }
+  
+  def getFPair(c:Mat, a:FMat, b:FMat):FPair = {
+    if (c.asInstanceOf[AnyRef] != null) {
+      new FPair(c, a)
+    } else {
+      new FPair(FMat(multDim1(a,b), multDim2(a,b)), a)
+    }
+  }
+  
+  def getDPair(c:Mat, a:DMat):DPair = {
+    if (c.asInstanceOf[AnyRef] != null) {
+      new DPair(c, a)
+    } else {
+      new DPair(DMat(a.nrows, a.ncols), a)
+    }
+  }
+  
+  def getDPair(c:Mat, a:DMat, b:DMat):DPair = {
+    if (c.asInstanceOf[AnyRef] != null) {
+      new DPair(c, a)
+    } else {
+      new DPair(DMat(multDim1(a,b), multDim2(a,b)), a)
+    }
+  }
+  
+  def getIPair(c:Mat, a:IMat):IPair = {
+    if (c.asInstanceOf[AnyRef] != null) {
+      new IPair(c, a)
+    } else {
+      new IPair(IMat(a.nrows, a.ncols), a)
+    }
+  }
+  
+  def getIPair(c:Mat, a:IMat, b:IMat):IPair = {
+    if (c.asInstanceOf[AnyRef] != null) {
+      new IPair(c, a)
+    } else {
+      new IPair(IMat(multDim1(a,b), multDim2(a,b)), a)
+    }
+  }
+  
+  def getCPair(c:Mat, a:CMat):CPair = {
+    if (c.asInstanceOf[AnyRef] != null) {
+      new CPair(c, a)
+    } else {
+      new CPair(CMat(a.nrows, a.ncols), a)
+    }
+  }
+  
+  def getCPair(c:Mat, a:CMat, b:CMat):CPair = {
+    if (c.asInstanceOf[AnyRef] != null) {
+      new CPair(c, a)
+    } else {
+      new CPair(CMat(multDim1(a,b), multDim2(a,b)), a)
+    }
+  }
+  
+  def getGPair(c:Mat, a:GMat):GPair = {
+    if (c.asInstanceOf[AnyRef] != null) {
+      new GPair(c, a)
+    } else {
+      new GPair(GMat(a.nrows, a.ncols), a)
+    }
+  }
+  
+  def getGPair(c:Mat, a:GMat, b:GMat):GPair = {
+    if (c.asInstanceOf[AnyRef] != null) {
+      new GPair(c, a)
+    } else {
+      new GPair(CMat(multDim1(a,b), multDim2(a,b)), a)
+    }
+  }
 }
 
 trait Mop {
@@ -56,27 +152,27 @@ trait Mop {
 }
 
 object Mop_Plus extends Mop { 
-  override def fop(a:FMat, b:FMat, c:Mat):FMat = c.asInstanceOf[FMat] ~ a + b
-  override def dop(a:DMat, b:DMat, c:Mat):DMat = c.asInstanceOf[DMat] ~ a + b
-  override def iop(a:IMat, b:IMat, c:Mat):IMat = c.asInstanceOf[IMat] ~ a + b
-  override def cop(a:CMat, b:CMat, c:Mat):CMat = c.asInstanceOf[CMat] ~ a + b
-  override def gop(a:GMat, b:GMat, c:Mat):GMat = c.asInstanceOf[GMat] ~ a + b
+  override def fop(a:FMat, b:FMat, c:Mat):FMat = Operator.getFPair(c, a) + b
+  override def dop(a:DMat, b:DMat, c:Mat):DMat = Operator.getDPair(c, a) + b
+  override def iop(a:IMat, b:IMat, c:Mat):IMat = Operator.getIPair(c, a) + b
+  override def cop(a:CMat, b:CMat, c:Mat):CMat = Operator.getCPair(c, a) + b
+  override def gop(a:GMat, b:GMat, c:Mat):GMat = Operator.getGPair(c, a) + b
 }
 
 object Mop_Minus extends Mop { 
-  override def fop(a:FMat, b:FMat, c:Mat):FMat = c.asInstanceOf[FMat] ~ a - b
-  override def dop(a:DMat, b:DMat, c:Mat):DMat = c.asInstanceOf[DMat] ~ a - b
-  override def iop(a:IMat, b:IMat, c:Mat):IMat = c.asInstanceOf[IMat] ~ a - b
-  override def cop(a:CMat, b:CMat, c:Mat):CMat = a - b
-  override def gop(a:GMat, b:GMat, c:Mat):GMat = c.asInstanceOf[GMat] ~ a - b
+  override def fop(a:FMat, b:FMat, c:Mat):FMat = Operator.getFPair(c, a) - b
+  override def dop(a:DMat, b:DMat, c:Mat):DMat = Operator.getDPair(c, a) - b
+  override def iop(a:IMat, b:IMat, c:Mat):IMat = Operator.getIPair(c, a) - b
+  override def cop(a:CMat, b:CMat, c:Mat):CMat = Operator.getCPair(c, a) - b
+  override def gop(a:GMat, b:GMat, c:Mat):GMat = Operator.getGPair(c, a) - b
 }
 
 object Mop_Times extends Mop { 
-  override def fop(a:FMat, b:FMat, c:Mat):FMat = c.asInstanceOf[FMat] ~ a * b
-  override def dop(a:DMat, b:DMat, c:Mat):DMat = c.asInstanceOf[DMat] ~ a * b
-  override def iop(a:IMat, b:IMat, c:Mat):IMat = c.asInstanceOf[IMat] ~ a * b
-  override def cop(a:CMat, b:CMat, c:Mat):CMat = a * b
-  override def gop(a:GMat, b:GMat, c:Mat):GMat = c.asInstanceOf[GMat] ~ a * b
+  override def fop(a:FMat, b:FMat, c:Mat):FMat = Operator.getFPair(c, a, b) * b
+  override def dop(a:DMat, b:DMat, c:Mat):DMat = Operator.getDPair(c, a, b) * b
+  override def iop(a:IMat, b:IMat, c:Mat):IMat = Operator.getIPair(c, a, b) * b
+  override def cop(a:CMat, b:CMat, c:Mat):CMat = Operator.getCPair(c, a, b) * b
+  override def gop(a:GMat, b:GMat, c:Mat):GMat = Operator.getGPair(c, a, b) * b
 }
 
 object Mop_Div extends Mop { 
@@ -96,19 +192,19 @@ object Mop_RSolve extends Mop {
 }
 
 object Mop_ETimes extends Mop { 
-  override def fop(a:FMat, b:FMat, c:Mat):FMat = c.asInstanceOf[FMat] ~ a *@ b
-  override def dop(a:DMat, b:DMat, c:Mat):DMat = c.asInstanceOf[DMat] ~ a *@ b
-  override def iop(a:IMat, b:IMat, c:Mat):IMat = c.asInstanceOf[IMat] ~ a *@ b
-  override def cop(a:CMat, b:CMat, c:Mat):CMat = a *@ b
-  override def gop(a:GMat, b:GMat, c:Mat):GMat = c.asInstanceOf[GMat] ~ a *@ b
+  override def fop(a:FMat, b:FMat, c:Mat):FMat = Operator.getFPair(c, a) *@ b
+  override def dop(a:DMat, b:DMat, c:Mat):DMat = Operator.getDPair(c, a) *@ b
+  override def iop(a:IMat, b:IMat, c:Mat):IMat = Operator.getIPair(c, a) *@ b
+  override def cop(a:CMat, b:CMat, c:Mat):CMat = Operator.getCPair(c, a) *@ b
+  override def gop(a:GMat, b:GMat, c:Mat):GMat = Operator.getGPair(c, a) *@ b
 }
 
 object Mop_EDiv extends Mop { 
-  override def fop(a:FMat, b:FMat, c:Mat):FMat = c.asInstanceOf[FMat] ~ a /@ b
-  override def dop(a:DMat, b:DMat, c:Mat):DMat = c.asInstanceOf[DMat] ~ a /@ b
+  override def fop(a:FMat, b:FMat, c:Mat):FMat = Operator.getFPair(c, a) /@ b
+  override def dop(a:DMat, b:DMat, c:Mat):DMat = Operator.getDPair(c, a) /@ b
   override def iop(a:IMat, b:IMat, c:Mat):IMat = {notImplemented0("/", a); a}
-  override def cop(a:CMat, b:CMat, c:Mat):CMat = a /@ b
-  override def gop(a:GMat, b:GMat, c:Mat):GMat = c.asInstanceOf[GMat] ~ a /@ b
+  override def cop(a:CMat, b:CMat, c:Mat):CMat = Operator.getCPair(c, a) /@ b
+  override def gop(a:GMat, b:GMat, c:Mat):GMat = Operator.getGPair(c, a) /@ b
 }
 
 object Mop_HCat extends Mop { 
@@ -128,49 +224,49 @@ object Mop_VCat extends Mop {
 }
 
 object Mop_LT extends Mop { 
-  override def fop(a:FMat, b:FMat, c:Mat):FMat = c.asInstanceOf[FMat] ~ a < b
-  override def dop(a:DMat, b:DMat, c:Mat):DMat = c.asInstanceOf[DMat] ~ a < b
-  override def iop(a:IMat, b:IMat, c:Mat):IMat = c.asInstanceOf[IMat] ~ a < b
+  override def fop(a:FMat, b:FMat, c:Mat):FMat = Operator.getFPair(c, a) < b
+  override def dop(a:DMat, b:DMat, c:Mat):DMat = Operator.getDPair(c, a) < b
+  override def iop(a:IMat, b:IMat, c:Mat):IMat = Operator.getIPair(c, a) < b
   override def cop(a:CMat, b:CMat, c:Mat):CMat = {notImplemented0("<", a); a}
-  override def gop(a:GMat, b:GMat, c:Mat):GMat = c.asInstanceOf[GMat] ~ a < b
+  override def gop(a:GMat, b:GMat, c:Mat):GMat = Operator.getGPair(c, a) < b
 }
 
 object Mop_GT extends Mop { 
-  override def fop(a:FMat, b:FMat, c:Mat):FMat = c.asInstanceOf[FMat] ~ a > b
-  override def dop(a:DMat, b:DMat, c:Mat):DMat = c.asInstanceOf[DMat] ~ a > b
-  override def iop(a:IMat, b:IMat, c:Mat):IMat = c.asInstanceOf[IMat] ~ a > b
+  override def fop(a:FMat, b:FMat, c:Mat):FMat = Operator.getFPair(c, a) > b
+  override def dop(a:DMat, b:DMat, c:Mat):DMat = Operator.getDPair(c, a) > b
+  override def iop(a:IMat, b:IMat, c:Mat):IMat = Operator.getIPair(c, a) > b
   override def cop(a:CMat, b:CMat, c:Mat):CMat = {notImplemented0(">", a); a}
-  override def gop(a:GMat, b:GMat, c:Mat):GMat = c.asInstanceOf[GMat] ~ a > b
+  override def gop(a:GMat, b:GMat, c:Mat):GMat = Operator.getGPair(c, a) > b
 }
 
 object Mop_LE extends Mop { 
-  override def fop(a:FMat, b:FMat, c:Mat):FMat = c.asInstanceOf[FMat] ~ a <= b
-  override def dop(a:DMat, b:DMat, c:Mat):DMat = c.asInstanceOf[DMat] ~ a <= b
-  override def iop(a:IMat, b:IMat, c:Mat):IMat = c.asInstanceOf[IMat] ~ a <= b
+  override def fop(a:FMat, b:FMat, c:Mat):FMat = Operator.getFPair(c, a) <= b
+  override def dop(a:DMat, b:DMat, c:Mat):DMat = Operator.getDPair(c, a) <= b
+  override def iop(a:IMat, b:IMat, c:Mat):IMat = Operator.getIPair(c, a) <= b
   override def cop(a:CMat, b:CMat, c:Mat):CMat = {notImplemented0("<=", a); a}
-  override def gop(a:GMat, b:GMat, c:Mat):GMat = c.asInstanceOf[GMat] ~ a <= b
+  override def gop(a:GMat, b:GMat, c:Mat):GMat = Operator.getGPair(c, a) <= b
 }
 
 object Mop_GE extends Mop { 
-  override def fop(a:FMat, b:FMat, c:Mat):FMat = c.asInstanceOf[FMat] ~ a >= b
-  override def dop(a:DMat, b:DMat, c:Mat):DMat = c.asInstanceOf[DMat] ~ a >= b
-  override def iop(a:IMat, b:IMat, c:Mat):IMat = c.asInstanceOf[IMat] ~ a >= b
+  override def fop(a:FMat, b:FMat, c:Mat):FMat = Operator.getFPair(c, a) >= b
+  override def dop(a:DMat, b:DMat, c:Mat):DMat = Operator.getDPair(c, a) >= b
+  override def iop(a:IMat, b:IMat, c:Mat):IMat = Operator.getIPair(c, a) >= b
   override def cop(a:CMat, b:CMat, c:Mat):CMat = {notImplemented0(">=", a); a}
-  override def gop(a:GMat, b:GMat, c:Mat):GMat = c.asInstanceOf[GMat] ~ a >= b
+  override def gop(a:GMat, b:GMat, c:Mat):GMat = Operator.getGPair(c, a) >= b
 }
 
 object Mop_EQ extends Mop { 
-  override def fop(a:FMat, b:FMat, c:Mat):FMat = c.asInstanceOf[FMat] ~ a == b
-  override def dop(a:DMat, b:DMat, c:Mat):DMat = c.asInstanceOf[DMat] ~ a == b
-  override def iop(a:IMat, b:IMat, c:Mat):IMat = c.asInstanceOf[IMat] ~ a == b
-  override def cop(a:CMat, b:CMat, c:Mat):CMat = {notImplemented0("==", a); a}
-  override def gop(a:GMat, b:GMat, c:Mat):GMat = c.asInstanceOf[GMat] ~ a == b
+  override def fop(a:FMat, b:FMat, c:Mat):FMat = Operator.getFPair(c, a) == b
+  override def dop(a:DMat, b:DMat, c:Mat):DMat = Operator.getDPair(c, a) == b
+  override def iop(a:IMat, b:IMat, c:Mat):IMat = Operator.getIPair(c, a) == b
+  override def cop(a:CMat, b:CMat, c:Mat):CMat = Operator.getCPair(c, a) == b
+  override def gop(a:GMat, b:GMat, c:Mat):GMat = Operator.getGPair(c, a) == b
 }
 
 object Mop_NE extends Mop { 
-  override def fop(a:FMat, b:FMat, c:Mat):FMat = c.asInstanceOf[FMat] ~ a != b
-  override def dop(a:DMat, b:DMat, c:Mat):DMat = c.asInstanceOf[DMat] ~ a != b
-  override def iop(a:IMat, b:IMat, c:Mat):IMat = c.asInstanceOf[IMat] ~ a != b
-  override def cop(a:CMat, b:CMat, c:Mat):CMat = {notImplemented0("!=", a); a}
-  override def gop(a:GMat, b:GMat, c:Mat):GMat = c.asInstanceOf[GMat] ~ a != b
+  override def fop(a:FMat, b:FMat, c:Mat):FMat = Operator.getFPair(c, a) != b
+  override def dop(a:DMat, b:DMat, c:Mat):DMat = Operator.getDPair(c, a) != b
+  override def iop(a:IMat, b:IMat, c:Mat):IMat = Operator.getIPair(c, a) != b
+  override def cop(a:CMat, b:CMat, c:Mat):CMat = Operator.getCPair(c, a) != b
+  override def gop(a:GMat, b:GMat, c:Mat):GMat = Operator.getGPair(c, a) != b
 }
