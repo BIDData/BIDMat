@@ -38,7 +38,7 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
       a match {
 	case aa:SDMat => {
 	  val out = DMat.newOrCheckDMat(nrows, a.ncols, omat)
-	  if (omat != null) out.clear
+	  if (omat.asInstanceOf[AnyRef] != null) out.clear
 	  var i = 0
 	  while (i < a.ncols) {
 	    var j =aa.jc(i)-ioff
@@ -57,7 +57,7 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
 	}
 	case dd:DMat => {
 	  val out = DMat.newOrCheckDMat(nrows, a.ncols, omat)
-	  if (omat != null) out.clear
+	  if (omat.asInstanceOf[AnyRef] != null) out.clear
 	  Mat.nflops += 2L * nnz * a.ncols
 	  if (Mat.noMKL) {
 	    var i = 0
@@ -98,7 +98,7 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
   
   def Tmult(a:DMat, omat:DMat):DMat = {
 	  val out = DMat.newOrCheckDMat(ncols, a.ncols, omat)
-	  if (omat != null) out.clear
+	  if (omat.asInstanceOf[AnyRef] != null) out.clear
 	  var jc0 = jc
 	  var ir0 = ir
 	  if (Mat.ioneBased == 0) {

@@ -112,7 +112,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
 	  val out = FMat.newOrCheckFMat(nrows, a.ncols, outmat)
 	  Mat.nflops += 2L * length * a.ncols
 	  if (Mat.noMKL) {
-	  	if (outmat != null) out.clear
+	  	if (outmat.asInstanceOf[AnyRef] != null) out.clear
 	  	var i = 0
 	  	while (i < a.ncols) {
 	  		var j = 0
@@ -181,7 +181,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
 	    scscmv("T", nr, nc, 1.0f, "GLNF", ss.data, ir0, jc0, data, 0f, out.data)
 	    out
 	  } else {
-	    if (outmat != null) out.clear
+	    if (outmat.asInstanceOf[AnyRef] != null) out.clear
 	    if (nrows < 20 || Mat.noMKL) {
 	      var i = 0
 	      while (i < a.ncols) {
@@ -214,7 +214,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     import edu.berkeley.bid.CBLAS._
     if (ncols == a.nrows) {
     	val out = FMat.newOrCheckFMat(nrows, a.ncols, outmat)
-    	if (outmat != null) out.clear
+    	if (outmat.asInstanceOf[AnyRef] != null) out.clear
     	smcsrm(nrows, a.ncols, data, nrows, a.data, a.ir, a.jc, out.data, nrows)
     	Mat.nflops += 2L * a.nnz * nrows
     	out
@@ -606,7 +606,7 @@ object FMat {
   }
   
   def newOrCheckFMat(nr:Int, nc:Int, outmat:FMat):FMat = {
-    if (outmat == null) {
+    if (outmat.asInstanceOf[AnyRef] == null) {
       FMat(nr, nc)
     } else {
       if (outmat.nrows != nr || outmat.ncols != nc) {
@@ -624,7 +624,7 @@ object FMat {
   }
     
   def tryForOutFMat(out:Mat):FMat = 
-  	if (out == null) {
+  	if (out.asInstanceOf[AnyRef] == null) {
   		null
   	} else {
   		out match {

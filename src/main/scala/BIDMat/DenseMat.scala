@@ -892,7 +892,7 @@ object DenseMat {
   
   def newOrCheck[T](nr:Int, nc:Int, oldmat:DenseMat[T])
   (implicit classManifest:ClassManifest[T]):DenseMat[T] = {
-    if (oldmat == null) {
+    if (oldmat.asInstanceOf[AnyRef] == null) {
       new DenseMat[T](nr, nc)
     } else {
       if (oldmat.nrows != nr || oldmat.ncols != nc) {

@@ -31,74 +31,74 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   def vertcat(a:FMat):FMat = FMat(MatFunctions.full(this).gvertcat(a))
 
   def SMult(a:Mat, omat:FMat):FMat = {
-    val ioff = Mat.ioneBased
-    if (ncols != a.nrows) {
-      throw new RuntimeException("dimensions mismatch")
-    } else {
-      a match {
-	case aa:SMat => {
-	  val out = FMat.newOrCheckFMat(nrows, a.ncols, omat)
-	  if (omat != null) out.clear
-	  var i = 0
-	  while (i < a.ncols) {
-	    var j =aa.jc(i)-ioff
-	    while (j < aa.jc(i+1)-ioff) {
-	      val dval = aa.data(j)
-	      var k = jc(aa.ir(j)-ioff)-ioff
-	      while (k < jc(aa.ir(j)+1-ioff)-ioff) {
-		out.data(ir(k)-ioff+nrows*i) +=  data(k) * dval
-		k += 1
-	      }
-	      j += 1
-	    }
-	    i += 1
-	  }
-	  out
-	}
-	case dd:FMat => {
-	  val out = FMat.newOrCheckFMat(nrows, a.ncols, omat)
-	  if (omat != null) out.clear
-	  Mat.nflops += 2L * nnz * a.ncols
-	  if (Mat.noMKL) {
-	    var i = 0
-	    while (i < dd.ncols) {
-	      var j = 0
-	      while (j < ncols) {
-		val dval = dd.data(j + i*dd.nrows)
-		var k = jc(j)-ioff
-		while (k < jc(j+1)-ioff) {
-		  out.data(ir(k)-ioff + i*nrows) += dval * data(k);
-		  k += 1
-		}
-		j += 1
-	      }
-	      i += 1
-	    }
-	  } else {
-	    val nc = dd.ncols
-            var jc0 = jc
-            var ir0 = ir
-	    if (ioff == 0) {
-	      jc0 = SparseMat.incInds(jc)
-              ir0 = SparseMat.incInds(ir)
-            }
-            //	    if (dd.ncols == 1) {
-              // Seg faults in linux and windows			
-              //                scscmv("N", nrows, ncols, 1.0f, "GLNF", data, ir, jc, dd.data, 0f, out.data) 
-            //	    } else {
-	    scscmm("N", nrows, nc, ncols, 1.0f, "GLNF", data, ir0, jc0, dd.data, ncols, 0f, out.data, out.nrows)
-            //	  }
-	  }
-	  out
-	}
-	case _ => throw new RuntimeException("unsupported arg")
-      }
-    }	
+  		val ioff = Mat.ioneBased
+  		if (ncols != a.nrows) {
+  			throw new RuntimeException("dimensions mismatch")
+  		} else {
+  			a match {
+  			case aa:SMat => {
+  				val out = FMat.newOrCheckFMat(nrows, a.ncols, omat)
+  				if (omat.asInstanceOf[AnyRef] != null) out.clear
+  				var i = 0
+  				while (i < a.ncols) {
+  					var j =aa.jc(i)-ioff
+  					while (j < aa.jc(i+1)-ioff) {
+  						val dval = aa.data(j)
+  						var k = jc(aa.ir(j)-ioff)-ioff
+  						while (k < jc(aa.ir(j)+1-ioff)-ioff) {
+  							out.data(ir(k)-ioff+nrows*i) +=  data(k) * dval
+  							k += 1
+  						}
+  						j += 1
+  					}
+  					i += 1
+  				}
+  				out
+  			}
+  			case dd:FMat => {
+  				val out = FMat.newOrCheckFMat(nrows, a.ncols, omat)
+  				if (omat.asInstanceOf[AnyRef] != null) out.clear
+  				Mat.nflops += 2L * nnz * a.ncols
+  				if (Mat.noMKL) {
+  					var i = 0
+  					while (i < dd.ncols) {
+  						var j = 0
+  						while (j < ncols) {
+  							val dval = dd.data(j + i*dd.nrows)
+  							var k = jc(j)-ioff
+  							while (k < jc(j+1)-ioff) {
+  								out.data(ir(k)-ioff + i*nrows) += dval * data(k);
+  								k += 1
+  							}
+  							j += 1
+  						}
+  						i += 1
+  					}
+  				} else {
+  					val nc = dd.ncols
+  					var jc0 = jc
+  					var ir0 = ir
+  					if (ioff == 0) {
+  						jc0 = SparseMat.incInds(jc)
+  						ir0 = SparseMat.incInds(ir)
+  					}
+  					//	    if (dd.ncols == 1) {
+  					// Seg faults in linux and windows			
+  					//                scscmv("N", nrows, ncols, 1.0f, "GLNF", data, ir, jc, dd.data, 0f, out.data) 
+  					//	    } else {
+  					scscmm("N", nrows, nc, ncols, 1.0f, "GLNF", data, ir0, jc0, dd.data, ncols, 0f, out.data, out.nrows)
+  					//	  }
+  				}
+  				out
+  			}
+  			case _ => throw new RuntimeException("unsupported arg")
+  			}
+  		}	
   }
   
   def Tmult(a:FMat, omat:FMat):FMat = {
 	  val out = FMat.newOrCheckFMat(ncols, a.ncols, omat)
-	  if (omat != null) out.clear
+	  if (omat.asInstanceOf[AnyRef] != null) out.clear
 	  var jc0 = jc
 	  var ir0 = ir
 	  if (Mat.ioneBased == 0) {
@@ -111,43 +111,43 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   }
   
   def SSMult(a:SMat):SMat = 
-    if (ncols != a.nrows) {
-      throw new RuntimeException("dimensions mismatch")
-    } else {
-      val ioff = Mat.ioneBased
-      var numnz = 0
-      var i = 0
-      while (i < a.ncols) {
-	var j = a.jc(i)-ioff
-	while (j < a.jc(i+1)-ioff) {
-	  numnz += jc(a.ir(j)-ioff+1) - jc(a.ir(j)-ioff)
-	  j += 1
-	}
-	i += 1
-      }
-      val ii = new Array[Int](numnz)
-      val jj = new Array[Int](numnz)
-      val vv = new Array[Float](numnz)
-      numnz = 0
-      i = 0
-      while (i < a.ncols) {
-	var j = a.jc(i)-ioff
-	while (j < a.jc(i+1)-ioff) {
-	  val dval = a.data(j)
-	  var k = jc(a.ir(j)-ioff)-ioff
-	  while (k < jc(a.ir(j)-ioff+1)-ioff) {
-	    vv(numnz) =  data(k) * dval
-	    ii(numnz) = ir(k)-ioff
-	    jj(numnz) = i
-	    numnz += 1
-	    k += 1
-	  }
-	  j += 1
-	}
-	i += 1
-      }
-      SMat(SparseMat.sparseImpl[Float](ii, jj, vv, nrows, a.ncols)) 
-    }	
+  	if (ncols != a.nrows) {
+  		throw new RuntimeException("dimensions mismatch")
+  	} else {
+  		val ioff = Mat.ioneBased
+  		var numnz = 0
+  		var i = 0
+  		while (i < a.ncols) {
+  			var j = a.jc(i)-ioff
+  			while (j < a.jc(i+1)-ioff) {
+  				numnz += jc(a.ir(j)-ioff+1) - jc(a.ir(j)-ioff)
+  				j += 1
+  			}
+  			i += 1
+  		}
+  		val ii = new Array[Int](numnz)
+  		val jj = new Array[Int](numnz)
+  		val vv = new Array[Float](numnz)
+  		numnz = 0
+  		i = 0
+  		while (i < a.ncols) {
+  			var j = a.jc(i)-ioff
+  			while (j < a.jc(i+1)-ioff) {
+  				val dval = a.data(j)
+  				var k = jc(a.ir(j)-ioff)-ioff
+  				while (k < jc(a.ir(j)-ioff+1)-ioff) {
+  					vv(numnz) =  data(k) * dval
+  					ii(numnz) = ir(k)-ioff
+  					jj(numnz) = i
+  					numnz += 1
+  					k += 1
+  				}
+  				j += 1
+  			}
+  			i += 1
+  		}
+  		SMat(SparseMat.sparseImpl[Float](ii, jj, vv, nrows, a.ncols)) 
+  	}
   
   def + (b : SMat) = ssMatOp(b, (x:Float, y:Float) => x + y)
   def - (b : SMat) = ssMatOp(b, (x:Float, y:Float) => x - y)
@@ -193,11 +193,11 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
 
 }
 
-class SPair (val omat:FMat, val mat:SMat) extends Pair{
-  def * (b : FMat):FMat = mat.SMult(b, omat)
-  def Tx (b : FMat):FMat = mat.Tmult(b, omat)
-  override def * (b : Mat):FMat = mat.SMult(b, omat)
-  override def Tx (b : Mat):Mat = b match {case bb:FMat => mat.Tmult(bb, omat)}
+class SPair (val omat:Mat, val mat:SMat) extends Pair{
+  def * (b : FMat):FMat = mat.SMult(b, FMat.tryForOutFMat(omat))
+  def Tx (b : FMat):FMat = mat.Tmult(b, FMat.tryForOutFMat(omat))
+  override def * (b : Mat):FMat = mat.SMult(b, FMat.tryForOutFMat(omat))
+  override def Tx (b : Mat):Mat = b match {case bb:FMat => mat.Tmult(bb, FMat.tryForOutFMat(omat))}
 }
 
 object SMat {

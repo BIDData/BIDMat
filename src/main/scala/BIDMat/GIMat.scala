@@ -88,7 +88,7 @@ object GIMat {
   }
 
   def newOrCheckGIMat(nr:Int, nc:Int, oldmat:GIMat):GIMat = {
-    if (oldmat == null) {
+    if (oldmat.asInstanceOf[AnyRef] == null) {
       GIMat(nr, nc)
     } else {
       if (oldmat.nrows != nr || oldmat.ncols != nc) {

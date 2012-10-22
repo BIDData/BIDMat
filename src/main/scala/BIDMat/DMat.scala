@@ -117,7 +117,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
 	  val out = DMat.newOrCheckDMat(nrows, a.ncols, outmat)
 	  Mat.nflops += 2 * length.toLong * a.ncols.toLong
 	  if (Mat.noMKL) {
-	  	if (outmat != null) out.clear
+	  	if (outmat.asInstanceOf[AnyRef] != null) out.clear
 	  	var i = 0
 	  	while (i < a.ncols) {
 	  		var j = 0
@@ -188,7 +188,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
 	    dcscmv("T", nr, nc, 1.0, "GLNF", ss.data, ir0, jc0, data, 0.0, out.data)
 	    out
 	  } else {
-	    if (outmat != null) out.clear
+	    if (outmat.asInstanceOf[AnyRef] != null) out.clear
 	    if (nrows < 20 || Mat.noMKL) {
 	      var i = 0
 	      while (i < a.ncols) {
@@ -221,7 +221,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
     import edu.berkeley.bid.CBLAS._
     if (ncols == a.nrows) {
     	val out = DMat.newOrCheckDMat(nrows, a.ncols, outmat)
-    	if (outmat != null) out.clear
+    	if (outmat.asInstanceOf[AnyRef] != null) out.clear
     	dmcsrm(nrows, a.ncols, data, nrows, a.data, a.ir, a.jc, out.data, nrows)
     	Mat.nflops += 2L * a.nnz * nrows
     	out
@@ -567,7 +567,7 @@ object DMat {
   }
   
   def newOrCheckDMat(nr:Int, nc:Int, omat:Mat):DMat = {
-    if (omat == null) {
+    if (omat.asInstanceOf[AnyRef] == null) {
       DMat(nr, nc)
     } else {
       omat match {
@@ -611,7 +611,7 @@ object DMat {
   }
   
   def tryForOutDMat(out:Mat):DMat = 
-  	if (out == null) {
+  	if (out.asInstanceOf[AnyRef] == null) {
   		null
   	} else {
   		out match {

@@ -56,7 +56,7 @@ object GSMat {
 
   def newOrCheckGSMat(mat:GSMat, oldmat:GSMat):GSMat = {
   	import jcuda.runtime._
-  	if (oldmat == null) {
+  	if (oldmat.asInstanceOf[AnyRef] == null) {
   		val newmat = GSMat(mat.nrows, mat.ncols, mat.nnz)
   	  JCuda.cudaMemcpy(newmat.ic, mat.ic, mat.nnz*Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
   	  JCuda.cudaMemcpy(newmat.ir, mat.ir, mat.nnz*Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)

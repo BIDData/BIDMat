@@ -36,7 +36,7 @@ case class HMat(nr:Int, nc:Int, fileList:List[String], varname:String, blkinds:A
     			fnameCache = fileList(locs(iblk))
     		}
       	val newmat = fmatCache(a, b(MatFunctions.irow(iblk->i)))
-      	if (out != null) {
+      	if (out.asInstanceOf[AnyRef] != null) {
     	  	out = out \ newmat
         } else {
           out = newmat

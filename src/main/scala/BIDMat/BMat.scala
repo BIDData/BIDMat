@@ -13,7 +13,7 @@ case class BMat(nr:Int, nc:Int, data0:Array[Byte]) extends DenseMat[Byte](nr, nc
   }
     
   def tryForOutBMat(out:Mat):BMat = 
-  	if (out == null) {
+  	if (out.asInstanceOf[AnyRef] == null) {
   		null
   	} else {
   		out match {
@@ -201,7 +201,7 @@ object BMat {
   }
   
   def newOrCheckBMat(nr:Int, nc:Int, outmat:BMat):BMat = {
-    if (outmat == null) {
+    if (outmat.asInstanceOf[AnyRef] == null) {
       BMat(nr, nc)
     } else {
       if (outmat.nrows != nr || outmat.ncols != nc) {
