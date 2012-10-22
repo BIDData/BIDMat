@@ -282,10 +282,6 @@ object Solvers {
 	  }
   }
   
-  def norm(a:FMat) = math.sqrt(a dot a).asInstanceOf[Float]
-  
-  def norm(a:DMat) = math.sqrt(a dot a)
-  
   def blgmres(A:FMat, b:FMat, nrst:Int, m:Int, s:Int, tol:Float) = {
     val n = A.nrows
     val R = normrnd(0, 1, n, s)
