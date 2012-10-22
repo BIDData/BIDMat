@@ -30,7 +30,12 @@ object SciFunctions {
   if (Mat.hasCUDA > 0) {
     curandCreateGenerator(cudarng, CURAND_RNG_PSEUDO_DEFAULT) 
     curandSetPseudoRandomGeneratorSeed(cudarng, SEED)
-  };
+  }
+  
+    
+  def norm(a:FMat) = math.sqrt(a dot a).asInstanceOf[Float]
+  
+  def norm(a:DMat) = math.sqrt(a dot a)
   
   def drand(minv:Double, maxv:Double, out:DMat):DMat = {
     if (Mat.noMKL) {
@@ -79,7 +84,37 @@ object SciFunctions {
     val out = GMat(nr, nc)
     grand(out)
   }
-
+ 
+  def normrnd(mu:Float, sig:Float, out:FMat):FMat = {
+    if (Mat.noMKL) {
+      var i = 0; val len = out.length; val odata = out.data; 
+      while (i < len) {odata(i) = mu + sig*myrand.nextGaussian.asInstanceOf[Float]; i += 1}  
+    } else {
+      vsRngGaussian(METHOD, stream, out.length, out.data, mu, sig )
+    }
+    Mat.nflops += 20L*out.length
+    out
+  }
+  
+  def normrnd(mu:Float, sig:Float, m:Int, n:Int):FMat = {
+    normrnd(mu, sig, FMat(m, n))
+  }
+  
+  def cnormrnd(mu:Float, sig:Float, out:CMat):CMat = {
+    if (Mat.noMKL) {
+      var i = 0; val len = out.length; val odata = out.data; 
+      while (i < 2*len) {odata(i) = mu + sig*myrand.nextGaussian.asInstanceOf[Float]; i += 1}  
+    } else {
+      vsRngGaussian(METHOD, stream, 2*out.length, out.data, mu, sig )
+    }
+    Mat.nflops += 40L*out.length
+    out  
+  }
+  
+  def cnormrnd(mu:Float, sig:Float, m:Int, n:Int):CMat = {
+    cnormrnd(mu, sig, CMat(m, n))
+  }
+  
   def gnormrnd(mu:Float, sig:Float, out:GMat, nr:Int, nc:Int):GMat = {
     Mat.nflops += 10L*out.length
     curandGenerateNormal(cudarng, out.data, out.length, mu, sig)
@@ -92,21 +127,6 @@ object SciFunctions {
   def gnormrnd(mu:Float, sig:Float, nr:Int, nc:Int):GMat = {
     val out = GMat(nr, nc)
     gnormrnd(mu, sig, out)
-  }
-  
-  def normrnd(mu:Float, sig:Float, out:FMat):FMat = {
-    if (Mat.noMKL) {
-      var i = 0; val len = out.length; val odata = out.data; 
-      while (i < len) {odata(i) = mu + sig*myrand.nextGaussian.asInstanceOf[Float]; i += 1}  
-    } else {
-      vsRngGaussian( METHOD, stream, out.length, out.data, mu, sig )
-    }
-    Mat.nflops += 20L*out.length
-    out
-  }
-  
-  def normrnd(mu:Float, sig:Float, m:Int, n:Int):FMat = {
-    normrnd(mu, sig, FMat(m, n))
   }
 
   def gamrnd(shape:Float, scale:Float, out:FMat):FMat = {

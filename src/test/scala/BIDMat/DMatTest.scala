@@ -2,7 +2,6 @@ package BIDMat
 
 import Mat._
 import MatFunctions._
-import org.scalacheck._
 import org.scalatest._;
 import org.scalatest.junit._;
 import org.scalatest.prop._;
