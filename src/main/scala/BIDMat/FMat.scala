@@ -2,27 +2,19 @@ package BIDMat
 import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.LAPACK._
 
+
 case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, nc, data0) {
 
   def size() = length;
-  
-  def tryForFMat(m:Mat, s:String):FMat = 
-  	m match {
-  	case mm:FMat => mm
-  	case _ => throw new RuntimeException("wrong type for operator "+s+" arg "+m)
-  }
-    
-  def tryForOutFMat(out:Mat):FMat = 
-  	if (out == null) {
-  		null
-  	} else {
-  		out match {
-  		case outmat:FMat => outmat
-  		case _ => throw new RuntimeException("wrong type for LHS matrix "+out)
-  		}
-  	}
-  
+   
   override def t:FMat = FMat(gt(null))
+  
+  override def dv:Double =
+    if (nrows > 1 || ncols > 1) {
+      throw new RuntimeException("Matrix should be 1x1 to extract value")
+    } else {
+      data(0)
+    }
   
   def i:CMat = CMat.imag(this)
   
@@ -42,32 +34,32 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   def ffMatOp(b: Mat, f:(Float, Float) => Float, out:Mat):FMat = 
     b match {
-      case bb:FMat => FMat(ggMatOp(bb, f, tryForOutFMat(out)))
+      case bb:FMat => FMat(ggMatOp(bb, f, FMat.tryForOutFMat(out)))
       case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)	
     }
   
   def ffMatOpv(b: Mat, f:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, out:Mat) = 
     b match {
-      case bb:FMat => FMat(ggMatOpv(bb, f, tryForOutFMat(out)))
+      case bb:FMat => FMat(ggMatOpv(bb, f, FMat.tryForOutFMat(out)))
       case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)	
     }
   
-  def ffMatOpScalar(b: Float, f:(Float, Float) => Float, out:Mat):FMat = FMat(ggMatOpScalar(b, f, tryForOutFMat(out)))
+  def ffMatOpScalar(b: Float, f:(Float, Float) => Float, out:Mat):FMat = FMat(ggMatOpScalar(b, f, FMat.tryForOutFMat(out)))
   
   def ffMatOpScalarv(b: Float, f:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, out:Mat) = 
-    FMat(ggMatOpScalarv(b, f, tryForOutFMat(out)))
+    FMat(ggMatOpScalarv(b, f, FMat.tryForOutFMat(out)))
   
   def ffReduceOp(n:Int, f1:(Float) => Float, f2:(Float, Float) => Float, out:Mat) = 
-    FMat(ggReduceOp(n, f1, f2, tryForOutFMat(out)))
+    FMat(ggReduceOp(n, f1, f2, FMat.tryForOutFMat(out)))
   
   def ffReduceOpv(n:Int, f:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, out:Mat) = 
-    FMat(ggReduceOpv(n, f, tryForOutFMat(out)))
+    FMat(ggReduceOpv(n, f, FMat.tryForOutFMat(out)))
   
   def ffReduceAll(n:Int, f1:(Float) => Float, f2:(Float, Float) => Float, out:Mat) = 
-    FMat(ggReduceAll(n, f1, f2, tryForOutFMat(out)))
+    FMat(ggReduceAll(n, f1, f2, FMat.tryForOutFMat(out)))
   
   def ffReduceAllv(n:Int, f:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, out:Mat) = 
-    FMat(ggReduceAllv(n, f, tryForOutFMat(out)))
+    FMat(ggReduceAllv(n, f, FMat.tryForOutFMat(out)))
   
   override def printOne(i:Int):String = {
     val v = data(i)
@@ -373,23 +365,23 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def *@ (b : FMat) = ffMatOpv(b, DenseMat.vecMul _, null)
   def /@ (b : FMat) = ffMatOpv(b, FMat.fVecDiv _, null)
 
-  def *  (b : Float) = fDMult(FMat.felem(b), null)
-  def +  (b : Float) = ffMatOpScalarv(b, DenseMat.vecAdd _, null)
-  def -  (b : Float) = ffMatOpScalarv(b, DenseMat.vecSub _, null)
-  def *@ (b : Float) = ffMatOpScalarv(b, DenseMat.vecMul _, null)
-  def /@ (b : Float) = ffMatOpScalarv(b, FMat.fVecDiv _, null)
+  override def *  (b : Float) = fDMult(FMat.felem(b), null)
+  override def +  (b : Float) = ffMatOpScalarv(b, DenseMat.vecAdd _, null)
+  override def -  (b : Float) = ffMatOpScalarv(b, DenseMat.vecSub _, null)
+  override def *@ (b : Float) = ffMatOpScalarv(b, DenseMat.vecMul _, null)
+  override def /@ (b : Float) = ffMatOpScalarv(b, FMat.fVecDiv _, null)
 
-  def *  (b : Int) = fDMult(FMat.felem(b), null)
-  def +  (b : Int) = ffMatOpScalarv(b, DenseMat.vecAdd _, null)
-  def -  (b : Int) = ffMatOpScalarv(b, DenseMat.vecSub _, null)
-  def *@ (b : Int) = ffMatOpScalarv(b, DenseMat.vecMul _, null)
-  def /@ (b : Int) = ffMatOpScalarv(b, FMat.fVecDiv _, null)
+  override def *  (b : Int) = fDMult(FMat.felem(b), null)
+  override def +  (b : Int) = ffMatOpScalarv(b, DenseMat.vecAdd _, null)
+  override def -  (b : Int) = ffMatOpScalarv(b, DenseMat.vecSub _, null)
+  override def *@ (b : Int) = ffMatOpScalarv(b, DenseMat.vecMul _, null)
+  override def /@ (b : Int) = ffMatOpScalarv(b, FMat.fVecDiv _, null)
 
-  def *  (b : Double) = fDMult(FMat.felem(b.asInstanceOf[Float]), null)
-  def +  (b : Double) = ffMatOpScalarv(b.asInstanceOf[Float], DenseMat.vecAdd _, null)
-  def -  (b : Double) = ffMatOpScalarv(b.asInstanceOf[Float], DenseMat.vecSub _, null)
-  def *@ (b : Double) = ffMatOpScalarv(b.asInstanceOf[Float], DenseMat.vecMul _, null)
-  def /@ (b : Double) = ffMatOpScalarv(b.asInstanceOf[Float], FMat.fVecDiv _, null)
+  override def *  (b : Double) = fDMult(FMat.felem(b.asInstanceOf[Float]), null)
+  override def +  (b : Double) = ffMatOpScalarv(b.asInstanceOf[Float], DenseMat.vecAdd _, null)
+  override def -  (b : Double) = ffMatOpScalarv(b.asInstanceOf[Float], DenseMat.vecSub _, null)
+  override def *@ (b : Double) = ffMatOpScalarv(b.asInstanceOf[Float], DenseMat.vecMul _, null)
+  override def /@ (b : Double) = ffMatOpScalarv(b.asInstanceOf[Float], FMat.fVecDiv _, null)
 
   def >   (b : FMat) = ffMatOp(b, (x:Float, y:Float) => if (x > y) 1f else 0f, null)
   def <   (b : FMat) = ffMatOp(b, (x:Float, y:Float) => if (x < y) 1f else 0f, null)
@@ -399,21 +391,21 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def <=  (b : FMat) = ffMatOp(b, (x:Float, y:Float) => if (x <= y) 1f else 0f, null)
   def !=  (b : FMat) = ffMatOp(b, (x:Float, y:Float) => if (x != y) 1f else 0f, null)
 
-  def >   (b : Double) = ffMatOpScalar(b.asInstanceOf[Float], (x:Float, y:Float) => if (x > y) 1f else 0f, null)
-  def <   (b : Double) = ffMatOpScalar(b.asInstanceOf[Float], (x:Float, y:Float) => if (x < y) 1f else 0f, null)
-  def ==  (b : Double) = ffMatOpScalar(b.asInstanceOf[Float], (x:Float, y:Float) => if (x == y) 1f else 0f, null)
-  def === (b : Double) = ffMatOpScalar(b.asInstanceOf[Float], (x:Float, y:Float) => if (x == y) 1f else 0f, null)
-  def >=  (b : Double) = ffMatOpScalar(b.asInstanceOf[Float], (x:Float, y:Float) => if (x >= y) 1f else 0f, null)
-  def <=  (b : Double) = ffMatOpScalar(b.asInstanceOf[Float], (x:Float, y:Float) => if (x <= y) 1f else 0f, null)
-  def !=  (b : Double) = ffMatOpScalar(b.asInstanceOf[Float], (x:Float, y:Float) => if (x != y) 1f else 0f, null) 
+  override def >   (b : Double) = ffMatOpScalar(b.asInstanceOf[Float], (x:Float, y:Float) => if (x > y) 1f else 0f, null)
+  override def <   (b : Double) = ffMatOpScalar(b.asInstanceOf[Float], (x:Float, y:Float) => if (x < y) 1f else 0f, null)
+  override def ==  (b : Double) = ffMatOpScalar(b.asInstanceOf[Float], (x:Float, y:Float) => if (x == y) 1f else 0f, null)
+  override def === (b : Double) = ffMatOpScalar(b.asInstanceOf[Float], (x:Float, y:Float) => if (x == y) 1f else 0f, null)
+  override def >=  (b : Double) = ffMatOpScalar(b.asInstanceOf[Float], (x:Float, y:Float) => if (x >= y) 1f else 0f, null)
+  override def <=  (b : Double) = ffMatOpScalar(b.asInstanceOf[Float], (x:Float, y:Float) => if (x <= y) 1f else 0f, null)
+  override def !=  (b : Double) = ffMatOpScalar(b.asInstanceOf[Float], (x:Float, y:Float) => if (x != y) 1f else 0f, null) 
   
-  def >   (b : Int) = ffMatOpScalar(b, (x:Float, y:Float) => if (x > y) 1f else 0f, null)
-  def <   (b : Int) = ffMatOpScalar(b, (x:Float, y:Float) => if (x < y) 1f else 0f, null)
-  def ==  (b : Int) = ffMatOpScalar(b, (x:Float, y:Float) => if (x == y) 1f else 0f, null)
-  def === (b : Int) = ffMatOpScalar(b, (x:Float, y:Float) => if (x == y) 1f else 0f, null)
-  def >=  (b : Int) = ffMatOpScalar(b, (x:Float, y:Float) => if (x >= y) 1f else 0f, null)
-  def <=  (b : Int) = ffMatOpScalar(b, (x:Float, y:Float) => if (x <= y) 1f else 0f, null)
-  def !=  (b : Int) = ffMatOpScalar(b, (x:Float, y:Float) => if (x != y) 1f else 0f, null) 
+  override def >   (b : Int) = ffMatOpScalar(b, (x:Float, y:Float) => if (x > y) 1f else 0f, null)
+  override def <   (b : Int) = ffMatOpScalar(b, (x:Float, y:Float) => if (x < y) 1f else 0f, null)
+  override def ==  (b : Int) = ffMatOpScalar(b, (x:Float, y:Float) => if (x == y) 1f else 0f, null)
+  override def === (b : Int) = ffMatOpScalar(b, (x:Float, y:Float) => if (x == y) 1f else 0f, null)
+  override def >=  (b : Int) = ffMatOpScalar(b, (x:Float, y:Float) => if (x >= y) 1f else 0f, null)
+  override def <=  (b : Int) = ffMatOpScalar(b, (x:Float, y:Float) => if (x <= y) 1f else 0f, null)
+  override def !=  (b : Int) = ffMatOpScalar(b, (x:Float, y:Float) => if (x != y) 1f else 0f, null) 
   
   def \ (b: FMat) = horzcat(b)
   def \ (b: Float) = horzcat(FMat.felem(b))
@@ -490,73 +482,94 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   * Operators whose second arg is generic. 
   */ 
   import Operator._
-  override def +  (b : Mat):Mat = applyMat(this, b, Mop_Plus)
-  override def -  (b : Mat):Mat = applyMat(this, b, Mop_Minus)
-  override def *  (b : Mat):Mat = applyMat(this, b, Mop_Times)
-  override def /  (b : Mat):Mat = applyMat(this, b, Mop_Div)
-  override def \\ (b : Mat):Mat = applyMat(this, b, Mop_RSolve)
-  override def *@ (b : Mat):Mat = applyMat(this, b, Mop_ETimes)
-  override def /@ (b : Mat):Mat = applyMat(this, b, Mop_EDiv)
-  override def \  (b : Mat):Mat = applyMat(this, b, Mop_HCat)
-  override def on (b : Mat):Mat = applyMat(this, b, Mop_VCat)
+  override def +  (b : Mat):Mat = applyMat(this, b, null, Mop_Plus)
+  override def -  (b : Mat):Mat = applyMat(this, b, null, Mop_Minus)
+  override def *  (b : Mat):Mat = applyMat(this, b, null, Mop_Times)
+  override def xT  (b : Mat) = b match {case bb:SMat => multT(bb, null)}
+  override def /  (b : Mat):Mat = applyMat(this, b, null, Mop_Div)
+  override def \\ (b : Mat):Mat = applyMat(this, b, null, Mop_RSolve)
+  override def *@ (b : Mat):Mat = applyMat(this, b, null, Mop_ETimes)
+  override def /@ (b : Mat):Mat = applyMat(this, b, null, Mop_EDiv)
+  override def \  (b : Mat):Mat = applyMat(this, b, null, Mop_HCat)
+  override def on (b : Mat):Mat = applyMat(this, b, null, Mop_VCat)
   
-  override def >   (b : Mat):Mat = applyMat(this, b, Mop_GT)
-  override def <   (b : Mat):Mat = applyMat(this, b, Mop_LT)
-  override def >=  (b : Mat):Mat = applyMat(this, b, Mop_GE)
-  override def <=  (b : Mat):Mat = applyMat(this, b, Mop_LE)
-  override def ==  (b : Mat):Mat = applyMat(this, b, Mop_EQ)
-  override def === (b : Mat):Mat = applyMat(this, b, Mop_EQ) 
-  override def !=  (b : Mat):Mat = applyMat(this, b, Mop_NE)
+  override def >   (b : Mat):Mat = applyMat(this, b, null, Mop_GT)
+  override def <   (b : Mat):Mat = applyMat(this, b, null, Mop_LT)
+  override def >=  (b : Mat):Mat = applyMat(this, b, null, Mop_GE)
+  override def <=  (b : Mat):Mat = applyMat(this, b, null, Mop_LE)
+  override def ==  (b : Mat):Mat = applyMat(this, b, null, Mop_EQ)
+  override def === (b : Mat):Mat = applyMat(this, b, null, Mop_EQ) 
+  override def !=  (b : Mat):Mat = applyMat(this, b, null, Mop_NE)
 }
 
-class FPair (val omat:Mat, val mat:FMat) extends Pair {
+class FPair(val omat:Mat, val mat:FMat) extends Pair {
   
-  override def t:FMat = FMat(mat.gt(mat.tryForOutFMat(omat)))
+  override def t:FMat = FMat(mat.gt(FMat.tryForOutFMat(omat)))
   
-  def * (b : FMat) = mat.fDMult(b, mat.tryForOutFMat(omat)) 
-  def * (b : SMat) = mat.fDMult(b, mat.tryForOutFMat(omat)) 
-  def xT  (b : SMat) = mat.multT(b, mat.tryForOutFMat(omat))
-  def + (b : FMat) = mat.ffMatOpv(b, DenseMat.vecAdd _, omat)
-  def - (b : FMat) = mat.ffMatOpv(b, DenseMat.vecSub _, omat)
-  def *@ (b : FMat) = mat.ffMatOpv(b, DenseMat.vecMul _, omat)
-  def /@ (b : FMat) = mat.ffMatOpv(b, FMat.fVecDiv _, omat)  
-  def ^ (b : FMat) = mat.ffMatOp(b, (x:Float, y:Float) => math.pow(x,y).toFloat, null)  
+  def * (b : FMat) = mat.fDMult(b, FMat.tryForOutFMat(omat)) 
+  def * (b : SMat) = mat.fDMult(b, FMat.tryForOutFMat(omat)) 
+  def xT  (b : SMat) = mat.multT(b, FMat.tryForOutFMat(omat))
+  def + (b : FMat) = mat.ffMatOpv(b, DenseMat.vecAdd _, FMat.tryForOutFMat(omat))
+  def - (b : FMat) = mat.ffMatOpv(b, DenseMat.vecSub _, FMat.tryForOutFMat(omat))
+  def *@ (b : FMat) = mat.ffMatOpv(b, DenseMat.vecMul _, FMat.tryForOutFMat(omat))
+  def /@ (b : FMat) = mat.ffMatOpv(b, FMat.fVecDiv _, FMat.tryForOutFMat(omat))  
+  def ^ (b : FMat) = mat.ffMatOp(b, (x:Float, y:Float) => math.pow(x,y).toFloat, FMat.tryForOutFMat(omat))  
 
-  def > (b : FMat) = mat.ffMatOp(b, (x:Float, y:Float) => if (x > y) 1.0f else 0.0f, omat)
-  def < (b : FMat) = mat.ffMatOp(b, (x:Float, y:Float) => if (x < y) 1.0f else 0.0f, omat)
-  def == (b : FMat) = mat.ffMatOp(b, (x:Float, y:Float) => if (x == y) 1.0f else 0.0f, omat)
-  def === (b : FMat) = mat.ffMatOp(b, (x:Float, y:Float) => if (x == y) 1.0f else 0.0f, omat)
-  def >= (b : FMat) = mat.ffMatOp(b, (x:Float, y:Float) => if (x >= y) 1.0f else 0.0f, omat)
-  def <= (b : FMat) = mat.ffMatOp(b, (x:Float, y:Float) => if (x <= y) 1.0f else 0.0f, omat)
-  def != (b : FMat) = mat.ffMatOp(b, (x:Float, y:Float) => if (x != y) 1.0f else 0.0f, omat) 
+  def > (b : FMat) = mat.ffMatOp(b, (x:Float, y:Float) => if (x > y) 1.0f else 0.0f, FMat.tryForOutFMat(omat))
+  def < (b : FMat) = mat.ffMatOp(b, (x:Float, y:Float) => if (x < y) 1.0f else 0.0f, FMat.tryForOutFMat(omat))
+  def == (b : FMat) = mat.ffMatOp(b, (x:Float, y:Float) => if (x == y) 1.0f else 0.0f, FMat.tryForOutFMat(omat))
+  def === (b : FMat) = mat.ffMatOp(b, (x:Float, y:Float) => if (x == y) 1.0f else 0.0f, FMat.tryForOutFMat(omat))
+  def >= (b : FMat) = mat.ffMatOp(b, (x:Float, y:Float) => if (x >= y) 1.0f else 0.0f, FMat.tryForOutFMat(omat))
+  def <= (b : FMat) = mat.ffMatOp(b, (x:Float, y:Float) => if (x <= y) 1.0f else 0.0f, FMat.tryForOutFMat(omat))
+  def != (b : FMat) = mat.ffMatOp(b, (x:Float, y:Float) => if (x != y) 1.0f else 0.0f, FMat.tryForOutFMat(omat)) 
   
-  def * (b : Float) = mat.fDMult(FMat.felem(b), mat.tryForOutFMat(omat))
-  def + (b : Float) = mat.ffMatOpScalarv(b, DenseMat.vecAdd _, null)
-  def - (b : Float) = mat.ffMatOpScalarv(b, DenseMat.vecSub _, null)
-  def *@ (b : Float) = mat.ffMatOpScalarv(b, DenseMat.vecMul _, null)
-  def /@ (b : Float) = mat.ffMatOpScalarv(b, FMat.fVecDiv _, null)
-  def ^ (b : Float) = mat.ffMatOpScalar(b, (x:Float, y:Float) => math.pow(x,y).toFloat, omat)
+  def * (b : Float) = mat.fDMult(FMat.felem(b), FMat.tryForOutFMat(omat))
+  def + (b : Float) = mat.ffMatOpScalarv(b, DenseMat.vecAdd _, FMat.tryForOutFMat(omat))
+  def - (b : Float) = mat.ffMatOpScalarv(b, DenseMat.vecSub _, FMat.tryForOutFMat(omat))
+  def *@ (b : Float) = mat.ffMatOpScalarv(b, DenseMat.vecMul _, FMat.tryForOutFMat(omat))
+  def /@ (b : Float) = mat.ffMatOpScalarv(b, FMat.fVecDiv _, FMat.tryForOutFMat(omat))
+  def ^ (b : Float) = mat.ffMatOpScalar(b, (x:Float, y:Float) => math.pow(x,y).toFloat, FMat.tryForOutFMat(omat))
 
-  def > (b : Float) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x > y) 1.0f else 0.0f, omat)
-  def < (b : Float) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x < y) 1.0f else 0.0f, omat)
-  def == (b : Float) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x == y) 1.0f else 0.0f, omat)
-  def >= (b : Float) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x >= y) 1.0f else 0.0f, omat)
-  def <= (b : Float) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x <= y) 1.0f else 0.0f, omat)
-  def != (b : Float) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x != y) 1.0f else 0.0f, omat)  
+  def > (b : Float) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x > y) 1.0f else 0.0f, FMat.tryForOutFMat(omat))
+  def < (b : Float) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x < y) 1.0f else 0.0f, FMat.tryForOutFMat(omat))
+  def == (b : Float) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x == y) 1.0f else 0.0f, FMat.tryForOutFMat(omat))
+  def >= (b : Float) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x >= y) 1.0f else 0.0f, FMat.tryForOutFMat(omat))
+  def <= (b : Float) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x <= y) 1.0f else 0.0f, FMat.tryForOutFMat(omat))
+  def != (b : Float) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x != y) 1.0f else 0.0f, FMat.tryForOutFMat(omat))  
     
-  def * (b : Int) = mat.fDMult(FMat.felem(b), mat.tryForOutFMat(omat))
-  def + (b : Int) = mat.ffMatOpScalarv(b, DenseMat.vecAdd _, null)
-  def - (b : Int) = mat.ffMatOpScalarv(b, DenseMat.vecSub _, null)
-  def *@ (b : Int) = mat.ffMatOpScalarv(b, DenseMat.vecMul _, null)
-  def /@ (b : Int) = mat.ffMatOpScalarv(b, FMat.fVecDiv _, null)
-  def ^ (b : Int) = mat.ffMatOpScalar(b, (x:Float, y:Float) => math.pow(x,y).toFloat, omat)
+  def * (b : Int) = mat.fDMult(FMat.felem(b), FMat.tryForOutFMat(omat))
+  def + (b : Int) = mat.ffMatOpScalarv(b, DenseMat.vecAdd _, FMat.tryForOutFMat(omat))
+  def - (b : Int) = mat.ffMatOpScalarv(b, DenseMat.vecSub _, FMat.tryForOutFMat(omat))
+  def *@ (b : Int) = mat.ffMatOpScalarv(b, DenseMat.vecMul _, FMat.tryForOutFMat(omat))
+  def /@ (b : Int) = mat.ffMatOpScalarv(b, FMat.fVecDiv _, FMat.tryForOutFMat(omat))
+  def ^ (b : Int) = mat.ffMatOpScalar(b, (x:Float, y:Float) => math.pow(x,y).toFloat, FMat.tryForOutFMat(omat))
 
-  def > (b : Int) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x > y) 1.0f else 0.0f, omat)
-  def < (b : Int) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x < y) 1.0f else 0.0f, omat)
-  def == (b : Int) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x == y) 1.0f else 0.0f, omat)
-  def >= (b : Int) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x >= y) 1.0f else 0.0f, omat)
-  def <= (b : Int) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x <= y) 1.0f else 0.0f, omat)
-  def != (b : Int) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x != y) 1.0f else 0.0f, omat) 
+  def > (b : Int) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x > y) 1.0f else 0.0f, FMat.tryForOutFMat(omat))
+  def < (b : Int) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x < y) 1.0f else 0.0f, FMat.tryForOutFMat(omat))
+  def == (b : Int) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x == y) 1.0f else 0.0f, FMat.tryForOutFMat(omat))
+  def >= (b : Int) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x >= y) 1.0f else 0.0f, FMat.tryForOutFMat(omat))
+  def <= (b : Int) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x <= y) 1.0f else 0.0f, FMat.tryForOutFMat(omat))
+  def != (b : Int) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x != y) 1.0f else 0.0f, FMat.tryForOutFMat(omat)) 
+  
+  import Operator._
+  override def +  (b : Mat):Mat = applyMat(mat, b, FMat.tryForOutFMat(omat), Mop_Plus)
+  override def -  (b : Mat):Mat = applyMat(mat, b, FMat.tryForOutFMat(omat), Mop_Minus)
+  override def *  (b : Mat):Mat = applyMat(mat, b, FMat.tryForOutFMat(omat), Mop_Times)
+  override def xT  (b : Mat) = b match {case bb:SMat => mat.multT(bb, FMat.tryForOutFMat(omat))}
+  override def /  (b : Mat):Mat = applyMat(mat, b, FMat.tryForOutFMat(omat), Mop_Div)
+  override def \\ (b : Mat):Mat = applyMat(mat, b, FMat.tryForOutFMat(omat), Mop_RSolve)
+  override def *@ (b : Mat):Mat = applyMat(mat, b, FMat.tryForOutFMat(omat), Mop_ETimes)
+  override def /@ (b : Mat):Mat = applyMat(mat, b, FMat.tryForOutFMat(omat), Mop_EDiv)
+  override def \  (b : Mat):Mat = applyMat(mat, b, FMat.tryForOutFMat(omat), Mop_HCat)
+  override def on (b : Mat):Mat = applyMat(mat, b, FMat.tryForOutFMat(omat), Mop_VCat)
+  
+  override def >   (b : Mat):Mat = applyMat(mat, b, FMat.tryForOutFMat(omat), Mop_GT)
+  override def <   (b : Mat):Mat = applyMat(mat, b, FMat.tryForOutFMat(omat), Mop_LT)
+  override def >=  (b : Mat):Mat = applyMat(mat, b, FMat.tryForOutFMat(omat), Mop_GE)
+  override def <=  (b : Mat):Mat = applyMat(mat, b, FMat.tryForOutFMat(omat), Mop_LE)
+  override def ==  (b : Mat):Mat = applyMat(mat, b, FMat.tryForOutFMat(omat), Mop_EQ)
+  override def === (b : Mat):Mat = applyMat(mat, b, FMat.tryForOutFMat(omat), Mop_EQ) 
+  override def !=  (b : Mat):Mat = applyMat(mat, b, FMat.tryForOutFMat(omat), Mop_NE)
 }
 
 object FMat {
@@ -603,6 +616,22 @@ object FMat {
       }
     }
   }
+  
+  def tryForFMat(m:Mat, s:String):FMat = 
+  	m match {
+  	case mm:FMat => mm
+  	case _ => throw new RuntimeException("wrong type for operator "+s+" arg "+m)
+  }
+    
+  def tryForOutFMat(out:Mat):FMat = 
+  	if (out == null) {
+  		null
+  	} else {
+  		out match {
+  		case outmat:FMat => outmat
+  		case _ => throw new RuntimeException("wrong type for LHS matrix "+out)
+  		}
+  	}
 }
 
 

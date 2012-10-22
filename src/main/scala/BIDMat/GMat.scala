@@ -6,12 +6,25 @@ import edu.berkeley.bid.CUMAT;
 
 class GMat(nr:Int, nc:Int, val data:Pointer) extends Mat(nr, nc) {
   
+  override def dv:Double =
+    if (nrows > 1 || ncols > 1) {
+      throw new RuntimeException("Matrix should be 1x1 to extract value")
+    } else {
+      toFMat.data(0)
+    }
+  
   override def toString:String = {
     val nr = scala.math.min(nrows,10)
     val nc = scala.math.min(ncols,50)        
     val tmpMat = FMat(nr, nc)
     JCublas.cublasGetMatrix(nr, nc, Sizeof.FLOAT, data, nrows, Pointer.to(tmpMat.data), nr)
     tmpMat.toString
+  }
+  
+  override def zeros(nr:Int, nc:Int) = {
+    val out = GMat(nr, nc)
+    JCuda.cudaMemset(out.data, 0, Sizeof.FLOAT*out.length)
+    out
   }
 
   def GMult(a:GMat, oldmat:GMat):GMat = {
@@ -22,7 +35,25 @@ class GMat(nr:Int, nc:Int, val data:Pointer) extends Mat(nr, nc) {
           a.data, a.nrows, 0f, out.data, nrows)
       JCuda.cudaDeviceSynchronize()
       out
-    }	else throw new RuntimeException("dimensions mismatch")
+    }	else if (ncols == 1 && nrows == 1) {
+      val out = GMat.newOrCheckGMat(a.nrows, a.ncols, oldmat)
+      Mat.nflops += 1L * a.length
+      if (oldmat != null) JCuda.cudaMemset(out.data, 0, Sizeof.FLOAT*out.length)
+      val aval = new Array[Float](1)
+      JCublas.cublasGetVector(1, Sizeof.FLOAT, data, 0, Pointer.to(aval), 0)
+      JCublas.cublasSaxpy(a.length, aval(0), a.data, 1, out.data, 1)
+      JCuda.cudaDeviceSynchronize()
+      out
+    } else if (a.ncols == 1 && a.nrows == 1) {
+      val out = GMat.newOrCheckGMat(nrows, ncols, oldmat)
+      Mat.nflops += 1L * length
+      if (oldmat != null) JCuda.cudaMemset(out.data, 0, Sizeof.FLOAT*out.length)
+      val aval = new Array[Float](1)
+      JCublas.cublasGetVector(1, Sizeof.FLOAT, a.data, 0, Pointer.to(aval), 0)
+      JCublas.cublasSaxpy(length, aval(0), data, 1, out.data, 1)
+      JCuda.cudaDeviceSynchronize()
+      out
+    } else throw new RuntimeException("dimensions mismatch")
   }
   
   def GSMult(a:GSMat, oldmat:GMat):GMat = {
@@ -111,11 +142,34 @@ class GMat(nr:Int, nc:Int, val data:Pointer) extends Mat(nr, nc) {
   def xT (a : GSMat) = GSMultT(a, null)
 
   def ~ (b: GMat) = new GPair(this, b)
-
-
+  def ~ (b: GSMat) = new GSPair(this, b)
+  override def ~ (b: Mat):Pair = b match {
+    case bb:GMat => new GPair(this, bb)
+    case bb:GSMat => new GSPair(this, bb)
+  }
+  
+  import Operator._
+  override def +  (b : Mat):Mat = applyMat(this, b, null, Mop_Plus)
+  override def -  (b : Mat):Mat = applyMat(this, b, null, Mop_Minus)
+  override def *  (b : Mat):Mat = applyMat(this, b, null, Mop_Times)
+  override def xT  (b : Mat) = b match {case bb:GSMat => GSMultT(bb, null)}
+  override def /  (b : Mat):Mat = applyMat(this, b, null, Mop_Div)
+  override def \\ (b : Mat):Mat = applyMat(this, b, null, Mop_RSolve)
+  override def *@ (b : Mat):Mat = applyMat(this, b, null, Mop_ETimes)
+  override def /@ (b : Mat):Mat = applyMat(this, b, null, Mop_EDiv)
+  override def \  (b : Mat):Mat = applyMat(this, b, null, Mop_HCat)
+  override def on (b : Mat):Mat = applyMat(this, b, null, Mop_VCat)
+  
+  override def >   (b : Mat):Mat = applyMat(this, b, null, Mop_GT)
+  override def <   (b : Mat):Mat = applyMat(this, b, null, Mop_LT)
+  override def >=  (b : Mat):Mat = applyMat(this, b, null, Mop_GE)
+  override def <=  (b : Mat):Mat = applyMat(this, b, null, Mop_LE)
+  override def ==  (b : Mat):Mat = applyMat(this, b, null, Mop_EQ)
+  override def === (b : Mat):Mat = applyMat(this, b, null, Mop_EQ) 
+  override def !=  (b : Mat):Mat = applyMat(this, b, null, Mop_NE)
 }
 
-class GPair (val omat:GMat, val mat:GMat){
+class GPair (val omat:GMat, val mat:GMat) extends Pair{
   	import GMat.BinOp._
 
     def + (a : GMat) = mat.gOp(a, omat, op_add)
@@ -132,7 +186,32 @@ class GPair (val omat:GMat, val mat:GMat){
     
     def * (a : GMat) = mat.GMult(a, omat)
     def * (a : GSMat) = mat.GSMult(a, omat)
+    override def * (b: Mat):Mat = b match {
+      case bb:GMat => mat.GMult(bb, omat)
+      case bb:GSMat => mat.GSMult(bb, omat)
+    }
     def xT (a : GSMat) = mat.GSMultT(a, omat)
+    override def xT (b: Mat):Mat = b match {
+      case bb:GSMat => mat.GSMultT(bb, omat)
+    }
+    
+  import Operator._
+  override def +  (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_Plus)
+  override def -  (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_Minus)
+  override def /  (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_Div)
+  override def \\ (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_RSolve)
+  override def *@ (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_ETimes)
+  override def /@ (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_EDiv)
+  override def \  (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_HCat)
+  override def on (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_VCat)
+  
+  override def >   (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_GT)
+  override def <   (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_LT)
+  override def >=  (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_GE)
+  override def <=  (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_LE)
+  override def ==  (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_EQ)
+  override def === (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_EQ) 
+  override def !=  (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_NE)
 }
 
 
@@ -228,6 +307,22 @@ object GMat {
     Mat.nflops += 2L * C.nnz * A.nrows
     out    
   }
+  
+  def tryForGMat(m:Mat, s:String):GMat = 
+  	m match {
+  	case mm:GMat => mm
+  	case _ => throw new RuntimeException("wrong type for operator "+s+" arg "+m)
+  }
+    
+  def tryForOutGMat(out:Mat):GMat = 
+  	if (out == null) {
+  		null
+  	} else {
+  		out match {
+  		case outmat:GMat => outmat
+  		case _ => throw new RuntimeException("wrong type for LHS matrix "+out)
+  		}
+  	}
 }
 
 

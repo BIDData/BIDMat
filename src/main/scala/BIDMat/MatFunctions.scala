@@ -24,15 +24,15 @@ object MatFunctions {
   
   def size(a:Mat):(Int, Int) = (a.nrows, a.ncols)
     
-    def size(a:Mat, n:Int):Int = {
-      if (n == 1) {
-        a.nrows
-      } else if (n == 2) {
-        a.ncols
-      } else {
-        throw new RuntimeException("size arg must be 1 or 2")
-      }
-    }
+  def size(a:Mat, n:Int):Int = {
+  		if (n == 1) {
+  			a.nrows
+  		} else if (n == 2) {
+  			a.ncols
+  		} else {
+  			throw new RuntimeException("size arg must be 1 or 2")
+  		}
+  }
   
   def length(a:DMat):Int = a.length
 

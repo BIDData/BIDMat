@@ -6,6 +6,13 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   
   override def t:IMat = IMat(gt(null))
   
+  override def dv:Double =
+    if (nrows > 1 || ncols > 1) {
+      throw new RuntimeException("Matrix should be 1x1 to extract value")
+    } else {
+      data(0)
+    }
+  
   def horzcat(b: IMat) = IMat(ghorzcat(b))
   
   def vertcat(b: IMat) = IMat(gvertcat(b))
@@ -83,11 +90,11 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   override def clearLower = setLower(0, 0)
 
   
-  def iMult(a0:Mat):IMat = 
+  def iMult(a0:Mat, omat:IMat):IMat = 
     a0 match {
     case a:IMat =>
 	    if (ncols == a.nrows) {
-	    	val out = IMat(nrows, a.ncols)
+	      val out = IMat.newOrCheckIMat(nrows, a.ncols, omat)
 	    	Mat.nflops += 2L * length * a.ncols
 	    	for (i <- 0 until a.ncols)
 	    		for (j <- 0 until a.nrows) {
@@ -137,16 +144,16 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
       case _ => throw new RuntimeException("unsupported arg to dot "+a)
     }
 
-  def *  (b : IMat) = iMult(b)	
+  def *  (b : IMat) = iMult(b, null)	
   def +  (b : IMat) = iiMatOpv(b, DenseMat.vecAdd _, null)
   def -  (b : IMat) = iiMatOpv(b, DenseMat.vecSub _, null)
   def *@ (b : IMat) = iiMatOpv(b, DenseMat.vecMul _, null)
   def /@ (b : IMat) = iiMatOpv(b, IMat.iVecDiv _, null)
   
-  def +  (b : Int) = iiMatOpScalarv(b, DenseMat.vecAdd _, null)
-  def -  (b : Int) = iiMatOpScalarv(b, DenseMat.vecSub _, null)
-  def *@ (b : Int) = iiMatOpScalarv(b, DenseMat.vecMul _, null)
-  def /@ (b : Int) = iiMatOpScalarv(b, IMat.iVecDiv _, null)
+  override def +  (b : Int) = iiMatOpScalarv(b, DenseMat.vecAdd _, null)
+  override def -  (b : Int) = iiMatOpScalarv(b, DenseMat.vecSub _, null)
+  override def *@ (b : Int) = iiMatOpScalarv(b, DenseMat.vecMul _, null)
+  override def /@ (b : Int) = iiMatOpScalarv(b, IMat.iVecDiv _, null)
 
   def >   (b : IMat) = iiMatOp(b, (x:Int, y:Int) => if (x > y) 1 else 0, null)
   def <   (b : IMat) = iiMatOp(b, (x:Int, y:Int) => if (x < y) 1 else 0, null)
@@ -156,13 +163,13 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   def <=  (b : IMat) = iiMatOp(b, (x:Int, y:Int) => if (x <= y) 1 else 0, null)
   def !=  (b : IMat) = iiMatOp(b, (x:Int, y:Int) => if (x != y) 1 else 0, null)
 
-  def >  (b : Int) = iiMatOpScalar(b, (x:Int, y:Int) => if (x > y) 1 else 0, null)
-  def <  (b : Int) = iiMatOpScalar(b, (x:Int, y:Int) => if (x < y) 1 else 0, null)
-  def == (b : Int) = iiMatOpScalar(b, (x:Int, y:Int) => if (x == y) 1 else 0, null)
-  def === (b : Int) = iiMatOpScalar(b, (x:Int, y:Int) => if (x == y) 1 else 0, null)
-  def >= (b : Int) = iiMatOpScalar(b, (x:Int, y:Int) => if (x >= y) 1 else 0, null)
-  def <= (b : Int) = iiMatOpScalar(b, (x:Int, y:Int) => if (x <= y) 1 else 0, null)
-  def != (b : Int) = iiMatOpScalar(b, (x:Int, y:Int) => if (x != y) 1 else 0, null) 
+  override def >  (b : Int) = iiMatOpScalar(b, (x:Int, y:Int) => if (x > y) 1 else 0, null)
+  override def <  (b : Int) = iiMatOpScalar(b, (x:Int, y:Int) => if (x < y) 1 else 0, null)
+  override def == (b : Int) = iiMatOpScalar(b, (x:Int, y:Int) => if (x == y) 1 else 0, null)
+  override def === (b : Int) = iiMatOpScalar(b, (x:Int, y:Int) => if (x == y) 1 else 0, null)
+  override def >= (b : Int) = iiMatOpScalar(b, (x:Int, y:Int) => if (x >= y) 1 else 0, null)
+  override def <= (b : Int) = iiMatOpScalar(b, (x:Int, y:Int) => if (x <= y) 1 else 0, null)
+  override def != (b : Int) = iiMatOpScalar(b, (x:Int, y:Int) => if (x != y) 1 else 0, null) 
 
   def \ (b: IMat) = horzcat(b)
   def \ (b: Int) = horzcat(IMat.ielem(b))
@@ -226,24 +233,89 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   * Operators whose second arg is generic. 
   */ 
   import Operator._
-  override def +  (b : Mat):Mat = applyMat(this, b, Mop_Plus)
-  override def -  (b : Mat):Mat = applyMat(this, b, Mop_Minus)
-  override def *  (b : Mat):Mat = applyMat(this, b, Mop_Times)
-  override def /  (b : Mat):Mat = applyMat(this, b, Mop_Div)
-  override def \\ (b : Mat):Mat = applyMat(this, b, Mop_RSolve)
-  override def *@ (b : Mat):Mat = applyMat(this, b, Mop_ETimes)
-  override def /@ (b : Mat):Mat = applyMat(this, b, Mop_EDiv)
-  override def \  (b : Mat):Mat = applyMat(this, b, Mop_HCat)
-  override def on (b : Mat):Mat = applyMat(this, b, Mop_VCat)
+  override def +  (b : Mat):Mat = applyMat(this, b, null, Mop_Plus)
+  override def -  (b : Mat):Mat = applyMat(this, b, null, Mop_Minus)
+  override def *  (b : Mat):Mat = applyMat(this, b, null, Mop_Times)
+  override def /  (b : Mat):Mat = applyMat(this, b, null, Mop_Div)
+  override def \\ (b : Mat):Mat = applyMat(this, b, null, Mop_RSolve)
+  override def *@ (b : Mat):Mat = applyMat(this, b, null, Mop_ETimes)
+  override def /@ (b : Mat):Mat = applyMat(this, b, null, Mop_EDiv)
+  override def \  (b : Mat):Mat = applyMat(this, b, null, Mop_HCat)
+  override def on (b : Mat):Mat = applyMat(this, b, null, Mop_VCat)
   
-  override def >   (b : Mat):Mat = applyMat(this, b, Mop_GT)
-  override def <   (b : Mat):Mat = applyMat(this, b, Mop_LT)
-  override def >=  (b : Mat):Mat = applyMat(this, b, Mop_GE)
-  override def <=  (b : Mat):Mat = applyMat(this, b, Mop_LE)
-  override def ==  (b : Mat):Mat = applyMat(this, b, Mop_EQ)
-  override def === (b : Mat):Mat = applyMat(this, b, Mop_EQ) 
-  override def !=  (b : Mat):Mat = applyMat(this, b, Mop_NE)
+  override def >   (b : Mat):Mat = applyMat(this, b, null, Mop_GT)
+  override def <   (b : Mat):Mat = applyMat(this, b, null, Mop_LT)
+  override def >=  (b : Mat):Mat = applyMat(this, b, null, Mop_GE)
+  override def <=  (b : Mat):Mat = applyMat(this, b, null, Mop_LE)
+  override def ==  (b : Mat):Mat = applyMat(this, b, null, Mop_EQ)
+  override def === (b : Mat):Mat = applyMat(this, b, null, Mop_EQ) 
+  override def !=  (b : Mat):Mat = applyMat(this, b, null, Mop_NE)
+  
+  def ~ (b : IMat):IPair = new IPair(this, b)
+  
+  override def ~ (b: Mat):Pair = 
+    b match {
+    case db:IMat => new IPair(this, db)
+    case _ => throw new RuntimeException("mismatched types for operator ~")
+  }
 }
+
+class IPair(val omat:Mat, val mat:IMat) extends Pair {
+  
+  override def t:IMat = IMat(mat.gt(IMat.tryForOutIMat(omat)))
+  
+  def * (b : IMat) = mat.iMult(b, IMat.tryForOutIMat(omat)) 
+  def * (b : SMat) = mat.iMult(b, IMat.tryForOutIMat(omat)) 
+//  def xT  (b : SMat) = mat.multT(b, IMat.tryForOutIMat(omat))
+  def + (b : IMat) = mat.iiMatOpv(b, DenseMat.vecAdd _, IMat.tryForOutIMat(omat))
+  def - (b : IMat) = mat.iiMatOpv(b, DenseMat.vecSub _, IMat.tryForOutIMat(omat))
+  def *@ (b : IMat) = mat.iiMatOpv(b, DenseMat.vecMul _, IMat.tryForOutIMat(omat))
+//  def /@ (b : IMat) = mat.iiMatOpv(b, IMat.fVecDiv _, IMat.tryForOutIMat(omat))  
+//  def ^ (b : IMat) = mat.iiMatOp(b, (x:Float, y:Float) => math.pow(x,y).toFloat, IMat.tryForOutIMat(omat))  
+
+  def > (b : IMat) = mat.iiMatOp(b, (x:Int, y:Int) => if (x > y) 1 else 0, IMat.tryForOutIMat(omat))
+  def < (b : IMat) = mat.iiMatOp(b, (x:Int, y:Int) => if (x < y) 1 else 0, IMat.tryForOutIMat(omat))
+  def == (b : IMat) = mat.iiMatOp(b, (x:Int, y:Int) => if (x == y) 1 else 0, IMat.tryForOutIMat(omat))
+  def === (b : IMat) = mat.iiMatOp(b, (x:Int, y:Int) => if (x == y) 1 else 0, IMat.tryForOutIMat(omat))
+  def >= (b : IMat) = mat.iiMatOp(b, (x:Int, y:Int) => if (x >= y) 1 else 0, IMat.tryForOutIMat(omat))
+  def <= (b : IMat) = mat.iiMatOp(b, (x:Int, y:Int) => if (x <= y) 1 else 0, IMat.tryForOutIMat(omat))
+  def != (b : IMat) = mat.iiMatOp(b, (x:Int, y:Int) => if (x != y) 1 else 0, IMat.tryForOutIMat(omat)) 
+  
+   
+  def * (b : Int) = mat.iMult(IMat.ielem(b), IMat.tryForOutIMat(omat))
+  def + (b : Int) = mat.iiMatOpScalarv(b, DenseMat.vecAdd _, IMat.tryForOutIMat(omat))
+  def - (b : Int) = mat.iiMatOpScalarv(b, DenseMat.vecSub _, IMat.tryForOutIMat(omat))
+  def *@ (b : Int) = mat.iiMatOpScalarv(b, DenseMat.vecMul _, IMat.tryForOutIMat(omat))
+//  def /@ (b : Int) = mat.iiMatOpScalarv(b, IMat.fVecDiv _, IMat.tryForOutIMat(omat))
+//  def ^ (b : Int) = mat.iiMatOpScalar(b, (x:Float, y:Float) => math.pow(x,y).toFloat, IMat.tryForOutIMat(omat))
+
+  def > (b : Int) = mat.iiMatOpScalar(b, (x:Int, y:Int) => if (x > y) 1 else 0, IMat.tryForOutIMat(omat))
+  def < (b : Int) = mat.iiMatOpScalar(b, (x:Int, y:Int) => if (x < y) 1 else 0, IMat.tryForOutIMat(omat))
+  def == (b : Int) = mat.iiMatOpScalar(b, (x:Int, y:Int) => if (x == y) 1 else 0, IMat.tryForOutIMat(omat))
+  def >= (b : Int) = mat.iiMatOpScalar(b, (x:Int, y:Int) => if (x >= y) 1 else 0, IMat.tryForOutIMat(omat))
+  def <= (b : Int) = mat.iiMatOpScalar(b, (x:Int, y:Int) => if (x <= y) 1 else 0, IMat.tryForOutIMat(omat))
+  def != (b : Int) = mat.iiMatOpScalar(b, (x:Int, y:Int) => if (x != y) 1 else 0, IMat.tryForOutIMat(omat)) 
+  
+  import Operator._
+  override def +  (b : Mat):Mat = applyMat(mat, b, IMat.tryForOutIMat(omat), Mop_Plus)
+  override def -  (b : Mat):Mat = applyMat(mat, b, IMat.tryForOutIMat(omat), Mop_Minus)
+  override def *  (b : Mat):Mat = applyMat(mat, b, IMat.tryForOutIMat(omat), Mop_Times)
+  override def /  (b : Mat):Mat = applyMat(mat, b, IMat.tryForOutIMat(omat), Mop_Div)
+  override def \\ (b : Mat):Mat = applyMat(mat, b, IMat.tryForOutIMat(omat), Mop_RSolve)
+  override def *@ (b : Mat):Mat = applyMat(mat, b, IMat.tryForOutIMat(omat), Mop_ETimes)
+  override def /@ (b : Mat):Mat = applyMat(mat, b, IMat.tryForOutIMat(omat), Mop_EDiv)
+  override def \  (b : Mat):Mat = applyMat(mat, b, IMat.tryForOutIMat(omat), Mop_HCat)
+  override def on (b : Mat):Mat = applyMat(mat, b, IMat.tryForOutIMat(omat), Mop_VCat)
+  
+  override def >   (b : Mat):Mat = applyMat(mat, b, IMat.tryForOutIMat(omat), Mop_GT)
+  override def <   (b : Mat):Mat = applyMat(mat, b, IMat.tryForOutIMat(omat), Mop_LT)
+  override def >=  (b : Mat):Mat = applyMat(mat, b, IMat.tryForOutIMat(omat), Mop_GE)
+  override def <=  (b : Mat):Mat = applyMat(mat, b, IMat.tryForOutIMat(omat), Mop_LE)
+  override def ==  (b : Mat):Mat = applyMat(mat, b, IMat.tryForOutIMat(omat), Mop_EQ)
+  override def === (b : Mat):Mat = applyMat(mat, b, IMat.tryForOutIMat(omat), Mop_EQ) 
+  override def !=  (b : Mat):Mat = applyMat(mat, b, IMat.tryForOutIMat(omat), Mop_NE)
+}
+
 
 object IMat {
   
@@ -276,7 +348,34 @@ object IMat {
     out.data(0) = x
     out
   }
-
+  
+  def newOrCheckIMat(nr:Int, nc:Int, outmat:IMat):IMat = {
+    if (outmat == null) {
+      IMat(nr, nc)
+    } else {
+      if (outmat.nrows != nr || outmat.ncols != nc) {
+        throw new RuntimeException("dimensions mismatch")
+      } else {
+      	outmat
+      }
+    }
+  }
+  
+  def tryForIMat(m:Mat, s:String):Mat = 
+  	m match {
+  	case mm:IMat => mm
+  	case _ => throw new RuntimeException("wrong type for operator "+s+" arg "+m)
+  }
+    
+  def tryForOutIMat(out:Mat):IMat = 
+  	if (out == null) {
+  		null
+  	} else {
+  		out match {
+  		case outmat:IMat => outmat
+  		case _ => throw new RuntimeException("wrong type for LHS matrix "+out)
+  		}
+  	}
 }
 
 
