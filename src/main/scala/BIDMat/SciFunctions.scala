@@ -30,7 +30,12 @@ object SciFunctions {
   if (Mat.hasCUDA > 0) {
     curandCreateGenerator(cudarng, CURAND_RNG_PSEUDO_DEFAULT) 
     curandSetPseudoRandomGeneratorSeed(cudarng, SEED)
-  };
+  }
+  
+    
+  def norm(a:FMat) = math.sqrt(a dot a).asInstanceOf[Float]
+  
+  def norm(a:DMat) = math.sqrt(a dot a)
   
   def drand(minv:Double, maxv:Double, out:DMat):DMat = {
     if (Mat.noMKL) {
