@@ -7,6 +7,8 @@ case class CSMat(override val nrows:Int, override val ncols:Int, override val da
 	
 	override def t:CSMat = CSMat(gt(null))
 	
+	override def mytype = "CSMat"
+	
 	def horzcat(b: CSMat) = CSMat(ghorzcat(b))
 	
 	def vertcat(b: CSMat) = CSMat(gvertcat(b))

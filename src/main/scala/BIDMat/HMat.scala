@@ -11,6 +11,8 @@ case class HMat(nr:Int, nc:Int, fileList:List[String], varname:String, blkinds:A
 
   var fmatCache:Mat = null
   
+  override def mytype = "HMat"
+  
 // Implement slicing from a hard disk matrix
   override def apply(a:IMat, b:IMat):Mat = { 
     var ilast:Int = 0

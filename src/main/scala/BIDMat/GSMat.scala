@@ -8,6 +8,8 @@ case class GSMat(nr:Int, nc:Int, val nnz:Int, val ir:Pointer, val ic:Pointer, va
 
   def getdata() = data;	
 
+  override def mytype = "GSMat"
+      
   def toSMat():SMat = { 
     val out = SMat(nrows, ncols, nnz)
     val tmpcols = new Array[Int](nnz)

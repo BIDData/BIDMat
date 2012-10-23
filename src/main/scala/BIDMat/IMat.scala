@@ -13,6 +13,8 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
       data(0)
     }
   
+  override def mytype = "IMat"
+  
   def horzcat(b: IMat) = IMat(ghorzcat(b))
   
   def vertcat(b: IMat) = IMat(gvertcat(b))
@@ -282,7 +284,7 @@ class IPair(val omat:Mat, val mat:IMat) extends Pair {
   def != (b : IMat) = mat.iiMatOp(b, (x:Int, y:Int) => if (x != y) 1 else 0, IMat.tryForOutIMat(omat)) 
   
    
-  def * (b : Int) = mat.iMult(IMat.ielem(b), IMat.tryForOutIMat(omat))
+  override def * (b : Int) = mat.iMult(IMat.ielem(b), IMat.tryForOutIMat(omat))
   def + (b : Int) = mat.iiMatOpScalarv(b, DenseMat.vecAdd _, IMat.tryForOutIMat(omat))
   def - (b : Int) = mat.iiMatOpScalarv(b, DenseMat.vecSub _, IMat.tryForOutIMat(omat))
   def *@ (b : Int) = mat.iiMatOpScalarv(b, DenseMat.vecMul _, IMat.tryForOutIMat(omat))

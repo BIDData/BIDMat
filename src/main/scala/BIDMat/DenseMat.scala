@@ -17,6 +17,8 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
     } else {
       data(0)
     }
+  
+  override def mytype = "DenseMat"
   /*
    * Test if this matrix is a row or column vector
    */

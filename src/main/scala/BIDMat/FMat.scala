@@ -16,6 +16,8 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
       data(0)
     }
   
+  override def mytype = "FMat"
+  
   def i:CMat = CMat.imag(this)
   
   def horzcat(b: FMat) = FMat(ghorzcat(b))
@@ -523,7 +525,8 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   def <= (b : FMat) = mat.ffMatOp(b, (x:Float, y:Float) => if (x <= y) 1.0f else 0.0f, FMat.tryForOutFMat(omat))
   def != (b : FMat) = mat.ffMatOp(b, (x:Float, y:Float) => if (x != y) 1.0f else 0.0f, FMat.tryForOutFMat(omat)) 
   
-  def * (b : Float) = mat.fDMult(FMat.felem(b), FMat.tryForOutFMat(omat))
+  override def * (b : Float) = mat.fDMult(FMat.felem(b), FMat.tryForOutFMat(omat))
+  override def * (b : Double) = mat.fDMult(FMat.felem(b.asInstanceOf[Float]), FMat.tryForOutFMat(omat))
   def + (b : Float) = mat.ffMatOpScalarv(b, DenseMat.vecAdd _, FMat.tryForOutFMat(omat))
   def - (b : Float) = mat.ffMatOpScalarv(b, DenseMat.vecSub _, FMat.tryForOutFMat(omat))
   def *@ (b : Float) = mat.ffMatOpScalarv(b, DenseMat.vecMul _, FMat.tryForOutFMat(omat))
@@ -537,7 +540,7 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   def <= (b : Float) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x <= y) 1.0f else 0.0f, FMat.tryForOutFMat(omat))
   def != (b : Float) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x != y) 1.0f else 0.0f, FMat.tryForOutFMat(omat))  
     
-  def * (b : Int) = mat.fDMult(FMat.felem(b), FMat.tryForOutFMat(omat))
+  override def * (b : Int) = mat.fDMult(FMat.felem(b), FMat.tryForOutFMat(omat))
   def + (b : Int) = mat.ffMatOpScalarv(b, DenseMat.vecAdd _, FMat.tryForOutFMat(omat))
   def - (b : Int) = mat.ffMatOpScalarv(b, DenseMat.vecSub _, FMat.tryForOutFMat(omat))
   def *@ (b : Int) = mat.ffMatOpScalarv(b, DenseMat.vecMul _, FMat.tryForOutFMat(omat))

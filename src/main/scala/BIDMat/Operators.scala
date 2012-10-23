@@ -135,7 +135,7 @@ object Operator {
     if (c.asInstanceOf[AnyRef] != null) {
       new GPair(c, a)
     } else {
-      new GPair(CMat(multDim1(a,b), multDim2(a,b)), a)
+      new GPair(GMat(multDim1(a,b), multDim2(a,b)), a)
     }
   }
 }

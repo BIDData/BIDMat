@@ -22,6 +22,8 @@ case class BMat(nr:Int, nc:Int, data0:Array[Byte]) extends DenseMat[Byte](nr, nc
   		}
   	}
   
+  override def mytype = "BMat"
+      
   override def t:BMat = BMat(gt(null))
   
   def horzcat(b: BMat) = BMat(ghorzcat(b))

@@ -43,6 +43,17 @@ object SciFunctions {
   
   def norm(a:DMat) = math.sqrt(ddot(a.length, a.data, 1, a.data, 1))
   
+  def norm(a:GMat) = math.sqrt(JCublas.cublasSdot(a.length, a.data, 1, a.data, 1))
+  
+  def norm (a:Mat):Double = {
+    a match {
+      case aa:FMat => norm(aa)
+      case aa:DMat => norm(aa)
+      case aa:GMat => norm(aa)
+    }
+  }
+  
+  
   def drand(minv:Double, maxv:Double, out:DMat):DMat = {
     if (Mat.noMKL) {
       var i = 0; val len = out.length; val odata = out.data; 
@@ -1025,6 +1036,246 @@ object SciFunctions {
   def maxi(a:GMat, out:GMat):GMat           = a.reduceOp(out, 0, BinOp.op_max)
   def mini(a:GMat, out:GMat):GMat           = a.reduceOp(out, 0, BinOp.op_min)
   def sum(a:GMat, out:GMat):GMat            = a.reduceOp(out, 0, BinOp.op_add)
+  
+  def abs(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => abs(aa, bb)
+      case (aa:DMat, bb:DMat) => abs(aa, bb)
+      case (aa:GMat, bb:GMat) => abs(aa, bb)
+    }
+  }
+       
+  def sqrt(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => sqrt(aa, bb)
+      case (aa:DMat, bb:DMat) => sqrt(aa, bb)
+      case (aa:GMat, bb:GMat) => sqrt(aa, bb)
+    }
+  }
+  
+  def exp(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => exp(aa, bb)
+      case (aa:DMat, bb:DMat) => exp(aa, bb)
+      case (aa:GMat, bb:GMat) => exp(aa, bb)
+    }
+  }
+  
+  def expm1(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => expm1(aa, bb)
+      case (aa:DMat, bb:DMat) => expm1(aa, bb)
+      case (aa:GMat, bb:GMat) => expm1(aa, bb)
+    }
+  }
+  
+  def ln(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => ln(aa, bb)
+      case (aa:DMat, bb:DMat) => ln(aa, bb)
+      case (aa:GMat, bb:GMat) => ln(aa, bb)
+    }
+  }
+  
+  def log10(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => log10(aa, bb)
+      case (aa:DMat, bb:DMat) => log10(aa, bb)
+      case (aa:GMat, bb:GMat) => log10(aa, bb)
+    }
+  }
+    
+  def log1p(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => log1p(aa, bb)
+      case (aa:DMat, bb:DMat) => log1p(aa, bb)
+      case (aa:GMat, bb:GMat) => log1p(aa, bb)
+    }
+  }
+  
+  def cos(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => cos(aa, bb)
+      case (aa:DMat, bb:DMat) => cos(aa, bb)
+      case (aa:GMat, bb:GMat) => cos(aa, bb)
+    }
+  }
+  
+  def sin(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => sin(aa, bb)
+      case (aa:DMat, bb:DMat) => sin(aa, bb)
+      case (aa:GMat, bb:GMat) => sin(aa, bb)
+    }
+  }
+  
+  def tan(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => tan(aa, bb)
+      case (aa:DMat, bb:DMat) => tan(aa, bb)
+      case (aa:GMat, bb:GMat) => tan(aa, bb)
+    }
+  }
+    
+  def cosh(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => cosh(aa, bb)
+      case (aa:DMat, bb:DMat) => cosh(aa, bb)
+      case (aa:GMat, bb:GMat) => cosh(aa, bb)
+    }
+  }
+     
+  def sinh(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => sinh(aa, bb)
+      case (aa:DMat, bb:DMat) => sinh(aa, bb)
+      case (aa:GMat, bb:GMat) => sinh(aa, bb)
+    }
+  }
+      
+  def tanh(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => tanh(aa, bb)
+      case (aa:DMat, bb:DMat) => tanh(aa, bb)
+      case (aa:GMat, bb:GMat) => tanh(aa, bb)
+    }
+  }
+    
+  def acos(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => acos(aa, bb)
+      case (aa:DMat, bb:DMat) => acos(aa, bb)
+      case (aa:GMat, bb:GMat) => acos(aa, bb)
+    }
+  }
+      
+  def asin(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => asin(aa, bb)
+      case (aa:DMat, bb:DMat) => asin(aa, bb)
+      case (aa:GMat, bb:GMat) => asin(aa, bb)
+    }
+  }
+  
+  def atan(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => atan(aa, bb)
+      case (aa:DMat, bb:DMat) => atan(aa, bb)
+      case (aa:GMat, bb:GMat) => atan(aa, bb)
+    }
+  }
+  
+  def acosh(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => acosh(aa, bb)
+      case (aa:DMat, bb:DMat) => acosh(aa, bb)
+      case (aa:GMat, bb:GMat) => acosh(aa, bb)
+    }
+  }
+  
+  def asinh(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => asinh(aa, bb)
+      case (aa:DMat, bb:DMat) => asinh(aa, bb)
+      case (aa:GMat, bb:GMat) => asinh(aa, bb)
+    }
+  }
+  
+  def erf(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => erf(aa, bb)
+      case (aa:DMat, bb:DMat) => erf(aa, bb)
+      case (aa:GMat, bb:GMat) => erf(aa, bb)
+    }
+  }
+   
+  def erfinv(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => erfinv(aa, bb)
+      case (aa:DMat, bb:DMat) => erfinv(aa, bb)
+      case (aa:GMat, bb:GMat) => erfinv(aa, bb)
+    }
+  }
+    
+  def erfc(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => erfc(aa, bb)
+      case (aa:DMat, bb:DMat) => erfc(aa, bb)
+      case (aa:GMat, bb:GMat) => erfc(aa, bb)
+    }
+  }
+   
+  def erfcinv(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => erfcinv(aa, bb)
+      case (aa:DMat, bb:DMat) => erfcinv(aa, bb)
+      case (aa:GMat, bb:GMat) => erfcinv(aa, bb)
+    }
+  }
+  
+  def gamma(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => gamma(aa, bb)
+      case (aa:DMat, bb:DMat) => gamma(aa, bb)
+      case (aa:GMat, bb:GMat) => gamma(aa, bb)
+    }
+  }
+    
+  def gammaln(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => gammaln(aa, bb)
+      case (aa:DMat, bb:DMat) => gammaln(aa, bb)
+      case (aa:GMat, bb:GMat) => gammaln(aa, bb)
+    }
+  }
+  
+  def floor(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => floor(aa, bb)
+      case (aa:DMat, bb:DMat) => floor(aa, bb)
+      case (aa:GMat, bb:GMat) => floor(aa, bb)
+    }
+  }
+  
+  def ceil(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => ceil(aa, bb)
+      case (aa:DMat, bb:DMat) => ceil(aa, bb)
+      case (aa:GMat, bb:GMat) => ceil(aa, bb)
+    }
+  }
+   
+  def round(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => round(aa, bb)
+      case (aa:DMat, bb:DMat) => round(aa, bb)
+      case (aa:GMat, bb:GMat) => round(aa, bb)
+    }
+  }
+  
+  def trunc(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => trunc(aa, bb)
+      case (aa:DMat, bb:DMat) => trunc(aa, bb)
+      case (aa:GMat, bb:GMat) => trunc(aa, bb)
+    }
+  }
+  
+  def atan2(a:Mat, b:Mat, c:Mat):Mat = {
+    (a, b, c) match {
+      case (aa:FMat, bb:FMat, cc:FMat) => atan2(aa, bb, cc)
+      case (aa:DMat, bb:DMat, cc:FMat) => atan2(aa, bb, cc)
+      case (aa:GMat, bb:GMat, cc:FMat) => atan2(aa, bb, cc)
+    }
+  }
+  
+  def pow(a:Mat, b:Mat, c:Mat):Mat = {
+    (a, b, c) match {
+      case (aa:FMat, bb:FMat, cc:FMat) => pow(aa, bb, cc)
+      case (aa:DMat, bb:DMat, cc:FMat) => pow(aa, bb, cc)
+      case (aa:GMat, bb:GMat, cc:FMat) => pow(aa, bb, cc)
+    }
+  }
 }
 
 

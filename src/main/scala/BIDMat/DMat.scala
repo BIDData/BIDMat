@@ -24,6 +24,8 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
       data(0)
     }
 
+  override def mytype = "DMat"
+      
   def horzcat(b: DMat) = DMat(ghorzcat(b))
 
   def vertcat(b: DMat) = DMat(gvertcat(b))
@@ -521,7 +523,8 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   def <= (b : DMat) = mat.ddMatOp(b, (x:Double, y:Double) => if (x <= y) 1.0 else 0.0, DMat.tryForOutDMat(omat))
   def != (b : DMat) = mat.ddMatOp(b, (x:Double, y:Double) => if (x != y) 1.0 else 0.0, DMat.tryForOutDMat(omat)) 
 
-  def * (b : Double) = mat.fDMult(DMat.elem(b), DMat.tryForOutDMat(omat)) 
+  override def * (b : Double) = mat.fDMult(DMat.elem(b), DMat.tryForOutDMat(omat)) 
+  override def * (b : Float) = mat.fDMult(DMat.elem(b), DMat.tryForOutDMat(omat))
   def + (b : Double) = mat.ddMatOpScalarv(b, DenseMat.vecAdd[Double] _, DMat.tryForOutDMat(omat))
   def - (b : Double) = mat.ddMatOpScalarv(b, DenseMat.vecSub _, DMat.tryForOutDMat(omat))
   def *@ (b : Double) = mat.ddMatOpScalarv(b, DenseMat.vecMul _, DMat.tryForOutDMat(omat))
