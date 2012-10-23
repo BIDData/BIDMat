@@ -12,6 +12,8 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     } else {
       data(0)
     }
+  
+  override def mytype = "CMat"
    
   def get(r0:Int, c0:Int):CMat = {
     val off = Mat.oneBased
@@ -915,7 +917,7 @@ class CPair (val omat:Mat, val mat:CMat) extends Pair {
   def == (b : CMat) = mat.ccMatOp(b, (ar:Float, ai:Float, br:Float, bi:Float) => if (ar == br && ai == bi) (1f, 0f) else (0f, 0f), CMat.tryForOutCMat(omat))
   def != (b : CMat) = mat.ccMatOp(b, (ar:Float, ai:Float, br:Float, bi:Float) => if (ar != br || ai != bi) (1f, 0f) else (0f, 0f), CMat.tryForOutCMat(omat))
   
-  def * (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecMul _, CMat.tryForOutCMat(omat))
+  override def * (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecMul _, CMat.tryForOutCMat(omat))
   def + (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecAdd _, CMat.tryForOutCMat(omat))
   def - (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecSub _, CMat.tryForOutCMat(omat))
   def *@ (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecMul _, CMat.tryForOutCMat(omat))
@@ -925,7 +927,7 @@ class CPair (val omat:Mat, val mat:CMat) extends Pair {
   def == (b : Float) = mat.ccMatOp(CMat.celem(b, 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar == br && ai == bi) (1f, 0f) else (0f, 0f), CMat.tryForOutCMat(omat))
   def != (b : Float) = mat.ccMatOp(CMat.celem(b, 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar != br || ai != bi) (1f, 0f) else (0f, 0f), CMat.tryForOutCMat(omat))
 
-  def *  (b : Double) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, CMat.tryForOutCMat(omat))
+  override def *  (b : Double) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, CMat.tryForOutCMat(omat))
   def +  (b : Double) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecAdd _, CMat.tryForOutCMat(omat))
   def -  (b : Double) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecSub _, CMat.tryForOutCMat(omat))
   def *@ (b : Double) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, CMat.tryForOutCMat(omat))
@@ -934,7 +936,7 @@ class CPair (val omat:Mat, val mat:CMat) extends Pair {
   def == (b : Double) = mat.ccMatOp(CMat.celem(b.asInstanceOf[Float], 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar == br && ai == bi) (1f, 0f) else (0f, 0f), CMat.tryForOutCMat(omat))
   def != (b : Double) = mat.ccMatOp(CMat.celem(b.asInstanceOf[Float], 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar != br || ai != bi) (1f, 0f) else (0f, 0f), CMat.tryForOutCMat(omat))
   
-  def *  (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, CMat.tryForOutCMat(omat))
+  override def *  (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, CMat.tryForOutCMat(omat))
   def +  (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecAdd _, CMat.tryForOutCMat(omat))
   def -  (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecSub _, CMat.tryForOutCMat(omat))
   def *@ (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, CMat.tryForOutCMat(omat))

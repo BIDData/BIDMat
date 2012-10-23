@@ -8,6 +8,8 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
   
   override def t:SDMat = SDMat(gt)
   
+  override def mytype = "SDMat"
+  
   def horzcat(b: SDMat) = SDMat(super.horzcat(b))
   
   def vertcat(b: SDMat) = SDMat(super.vertcat(b))

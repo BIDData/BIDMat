@@ -17,6 +17,7 @@ abstract class Mat(nr:Int, nc:Int) {
   def t = notImplemented0("t")  
   def dv:Double = throw new RuntimeException("operator dv not implemented for "+this)
   
+  def mytype = "Mat"
   def copy(a:Mat) = notImplemented0("copy");
   def copy = notImplemented0("copy");
   def zeros(nr:Int, nc:Int) = notImplemented0("zeros");
@@ -119,6 +120,9 @@ abstract class Pair {
   def + (b : Mat):Mat = notImplemented1("+", b)
   def - (b : Mat):Mat = notImplemented1("-", b)
   def * (b : Mat):Mat = notImplemented1("*", b)
+  def * (b : Float):Mat = notImplemented0("*")
+  def * (b : Int):Mat = notImplemented0("*")
+  def * (b : Double):Mat = notImplemented0("*")
   def xT (b : Mat):Mat = notImplemented1("xT", b)
   def Tx (b : Mat):Mat = notImplemented1("Tx", b)
   def / (b : Mat):Mat = notImplemented1("/", b)

@@ -14,6 +14,8 @@ class GIMat(nr:Int, nc:Int, val data:Pointer) extends Mat(nr, nc) {
     tmpMat.toString
   }
 
+  override def mytype = "GIMat"
+  
   def GIop(a:GIMat, oldmat:GIMat, op:Int):GIMat = {
     if ((nrows == a.nrows && ncols == a.ncols) ||
         (nrows == a.nrows && (a.ncols == 1 || ncols == 1)) ||

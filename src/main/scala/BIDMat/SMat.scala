@@ -8,6 +8,8 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   
   override def t:SMat = SMat(gt)
   
+  override def mytype = "SMat"
+  
   def horzcat(b: SMat) = SMat(super.horzcat(b))
   
   def vertcat(b: SMat) = SMat(super.vertcat(b))

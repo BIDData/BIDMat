@@ -1,8 +1,9 @@
 package BIDMat
-import jcuda._;
-import jcuda.jcublas.JCublas;
-import jcuda.runtime.JCuda;
-import edu.berkeley.bid.CUMAT;
+import jcuda._
+import jcuda.jcublas._
+import jcuda.jcublas.JCublas._
+import jcuda.runtime.JCuda._
+import edu.berkeley.bid.CUMAT
 
 class GMat(nr:Int, nc:Int, val data:Pointer) extends Mat(nr, nc) {
   
@@ -13,19 +14,29 @@ class GMat(nr:Int, nc:Int, val data:Pointer) extends Mat(nr, nc) {
       toFMat.data(0)
     }
   
+  override def mytype = "GMat"
+  
   override def toString:String = {
     val nr = scala.math.min(nrows,10)
     val nc = scala.math.min(ncols,50)        
     val tmpMat = FMat(nr, nc)
-    JCublas.cublasGetMatrix(nr, nc, Sizeof.FLOAT, data, nrows, Pointer.to(tmpMat.data), nr)
-    JCuda.cudaDeviceSynchronize()
+    cublasGetMatrix(nr, nc, Sizeof.FLOAT, data, nrows, Pointer.to(tmpMat.data), nr)
+    cudaDeviceSynchronize()
     tmpMat.toString
   }
   
   override def zeros(nr:Int, nc:Int) = {
     val out = GMat(nr, nc)
-    JCuda.cudaMemset(out.data, 0, Sizeof.FLOAT*out.length)
-    JCuda.cudaDeviceSynchronize()
+    cudaMemset(out.data, 0, Sizeof.FLOAT*out.length)
+    cudaDeviceSynchronize()
+    out
+  }
+    
+  override def ones(nr:Int, nc:Int) = {
+    val out = GMat(nr, nc)
+    val one = GMat(FMat.felem(1))
+    cublasScopy(out.length, one.data, 0, out.data, 1)
+    cudaDeviceSynchronize()
     out
   }
 
@@ -33,23 +44,23 @@ class GMat(nr:Int, nc:Int, val data:Pointer) extends Mat(nr, nc) {
     if (ncols == a.nrows) {
       val out = GMat.newOrCheckGMat(nrows, a.ncols, oldmat)
       Mat.nflops += 2L * length * a.ncols
-      JCublas.cublasSgemm('n', 'n', nrows, a.ncols, ncols, 1.0f, data, nrows, 
+      cublasSgemm('n', 'n', nrows, a.ncols, ncols, 1.0f, data, nrows, 
           a.data, a.nrows, 0f, out.data, nrows)
-      JCuda.cudaDeviceSynchronize()
+      cudaDeviceSynchronize()
       out
     }	else if (ncols == 1 && nrows == 1) {
       val out = GMat.newOrCheckGMat(a.nrows, a.ncols, oldmat)
       Mat.nflops += 1L * a.length
-      if (oldmat.asInstanceOf[AnyRef] != null) JCuda.cudaMemset(out.data, 0, Sizeof.FLOAT*out.length)
-      JCublas.cublasSaxpy(a.length, this.dv.asInstanceOf[Float], a.data, 1, out.data, 1)
-      JCuda.cudaDeviceSynchronize()
+      if (oldmat.asInstanceOf[AnyRef] != null) cudaMemset(out.data, 0, Sizeof.FLOAT*out.length)
+      cublasSaxpy(a.length, this.dv.asInstanceOf[Float], a.data, 1, out.data, 1)
+      cudaDeviceSynchronize()
       out
     } else if (a.ncols == 1 && a.nrows == 1) {
       val out = GMat.newOrCheckGMat(nrows, ncols, oldmat)
       Mat.nflops += 1L * length
-      if (oldmat.asInstanceOf[AnyRef] != null) JCuda.cudaMemset(out.data, 0, Sizeof.FLOAT*out.length)
-      JCublas.cublasSaxpy(length, a.dv.asInstanceOf[Float], data, 1, out.data, 1)
-      JCuda.cudaDeviceSynchronize()
+      if (oldmat.asInstanceOf[AnyRef] != null) cudaMemset(out.data, 0, Sizeof.FLOAT*out.length)
+      cublasSaxpy(length, a.dv.asInstanceOf[Float], data, 1, out.data, 1)
+      cudaDeviceSynchronize()
       out
     } else throw new RuntimeException("dimensions mismatch")
   }
@@ -58,10 +69,10 @@ class GMat(nr:Int, nc:Int, val data:Pointer) extends Mat(nr, nc) {
     if (ncols == a.nrows) {
       val out = GMat.newOrCheckGMat(nrows, a.ncols, oldmat)
       Mat.nflops += 2L * nrows * a.nnz
-      JCuda.cudaMemset(out.data, 0, Sizeof.FLOAT*nrows*a.ncols)
-      JCuda.cudaDeviceSynchronize()
+      cudaMemset(out.data, 0, Sizeof.FLOAT*nrows*a.ncols)
+      cudaDeviceSynchronize()
       CUMAT.dsmult(nrows, ncols, a.nnz, data, a.data, a.ir, a.ic, out.data)
-      JCuda.cudaDeviceSynchronize()
+      cudaDeviceSynchronize()
       out
     }	else throw new RuntimeException("dimensions mismatch")
   }
@@ -70,10 +81,10 @@ class GMat(nr:Int, nc:Int, val data:Pointer) extends Mat(nr, nc) {
     if (ncols == a.ncols) {
       val out = GMat.newOrCheckGMat(nrows, a.nrows, oldmat)
       Mat.nflops += 2L * nrows * a.nnz
-      JCuda.cudaMemset(out.data, 0, Sizeof.FLOAT*nrows*a.nrows)
-      JCuda.cudaDeviceSynchronize()
+      cudaMemset(out.data, 0, Sizeof.FLOAT*nrows*a.nrows)
+      cudaDeviceSynchronize()
       CUMAT.dsmultT(nrows, ncols, a.nnz, data, a.data, a.ir, a.ic, out.data)
-      JCuda.cudaDeviceSynchronize()
+      cudaDeviceSynchronize()
       out
     }	else throw new RuntimeException("dimensions mismatch")
   }
@@ -87,7 +98,7 @@ class GMat(nr:Int, nc:Int, val data:Pointer) extends Mat(nr, nc) {
     	val out = GMat.newOrCheckGMat(nrows, a.ncols, oldmat)
       Mat.nflops += scala.math.max(length, a.length)
       CUMAT.applyop(data, nrows, ncols, a.data, a.nrows, a.ncols, out.data, op)
-      JCuda.cudaDeviceSynchronize()
+      cudaDeviceSynchronize()
       out
     }	else throw new RuntimeException("dimensions mismatch")
   }
@@ -116,8 +127,8 @@ class GMat(nr:Int, nc:Int, val data:Pointer) extends Mat(nr, nc) {
 
   def toFMat():FMat = {
     val out = FMat(nrows, ncols)
-    JCublas.cublasGetVector(nrows*ncols, Sizeof.FLOAT, data, 1, Pointer.to(out.data), 1);
-    JCuda.cudaDeviceSynchronize()
+    cublasGetVector(nrows*ncols, Sizeof.FLOAT, data, 1, Pointer.to(out.data), 1);
+    cudaDeviceSynchronize()
     out
   }
   
@@ -153,6 +164,9 @@ class GMat(nr:Int, nc:Int, val data:Pointer) extends Mat(nr, nc) {
   override def +  (b : Mat):Mat = applyMat(this, b, null, Mop_Plus)
   override def -  (b : Mat):Mat = applyMat(this, b, null, Mop_Minus)
   override def *  (b : Mat):Mat = applyMat(this, b, null, Mop_Times)
+  override def *  (b : Float):Mat = applyMat(this, GMat(FMat.felem(b)), null, Mop_Times)
+  override def *  (b : Int):Mat = applyMat(this, GMat(FMat.felem(b)), null, Mop_Times)
+  override def *  (b : Double):Mat = applyMat(this, GMat(FMat.felem(b.asInstanceOf[Float])), null, Mop_Times)
   override def xT  (b : Mat) = b match {case bb:GSMat => GSMultT(bb, null)}
   override def /  (b : Mat):Mat = applyMat(this, b, null, Mop_Div)
   override def \\ (b : Mat):Mat = applyMat(this, b, null, Mop_RSolve)
@@ -186,11 +200,16 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
 	def != (b : GMat) = mat.gOp(b, GMat.tryForOutGMat(omat), op_ne)
 
 	def * (a : GMat) = mat.GMult(a, GMat.tryForOutGMat(omat))
+	override def * (a : Float) = mat.GMult(GMat(FMat.felem(a)), GMat.tryForOutGMat(omat))
+	override def * (a : Int) = mat.GMult(GMat(FMat.felem(a)), GMat.tryForOutGMat(omat))
+	override def * (a : Double) = mat.GMult(GMat(FMat.felem(a.asInstanceOf[Float])), GMat.tryForOutGMat(omat))
 	def * (a : GSMat) = mat.GSMult(a, GMat.tryForOutGMat(omat))
+
 	override def * (b: Mat):Mat = b match {
 	case bb:GMat => mat.GMult(bb, GMat.tryForOutGMat(omat))
 	case bb:GSMat => mat.GSMult(bb, GMat.tryForOutGMat(omat))
 	}
+
 	def xT (a : GSMat) = mat.GSMultT(a, GMat.tryForOutGMat(omat))
 	override def xT (b: Mat):Mat = b match {
 	case bb:GSMat => mat.GSMultT(bb, GMat.tryForOutGMat(omat))
@@ -272,7 +291,8 @@ object GMat {
   
   def apply(nr:Int, nc:Int):GMat = {
     val retv = new GMat(nr, nc, new Pointer())        
-    JCublas.cublasAlloc(nr*nc, Sizeof.FLOAT, retv.data)
+    val status = cublasAlloc(nr*nc, Sizeof.FLOAT, retv.data)
+    if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed")
     retv        
   }
 
@@ -281,7 +301,8 @@ object GMat {
   def apply(a:FMat):GMat = {
     val retv = new GMat(a.nrows, a.ncols, new Pointer())
     val rsize = a.nrows*a.ncols
-    JCublas.cublasAlloc(rsize, Sizeof.FLOAT, retv.data)
+    val status = cublasAlloc(rsize, Sizeof.FLOAT, retv.data)
+    if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed")
     JCublas.cublasSetVector(rsize, Sizeof.FLOAT, Pointer.to(a.data), 1, retv.data, 1);
     retv
   }
@@ -304,7 +325,7 @@ object GMat {
     }
     val out = GSMat.newOrCheckGSMat(C, oldmat)
     CUMAT.dds(A.nrows, C.nnz, A.data, B.data, C.ir, C.ic, out.data)
-    JCuda.cudaDeviceSynchronize()
+    cudaDeviceSynchronize()
     Mat.nflops += 2L * C.nnz * A.nrows
     out    
   }
@@ -321,7 +342,7 @@ object GMat {
   	} else {
   		out match {
   		case outmat:GMat => outmat
-  		case _ => throw new RuntimeException("wrong type for LHS matrix "+out)
+  		case _ => throw new RuntimeException("wrong type for LHS matrix "+out.mytype)
   		}
   	}
 }

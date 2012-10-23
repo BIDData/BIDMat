@@ -278,7 +278,7 @@ class SparseMat[@specialized(Double,Float) T]
   			while (j < jc(colinds(i)-off+1)-ioff) {
   				val dval = data(j)
   				var k = smat.jc(ir(j)-ioff) - ioff
-  				while (k < smat.jc(ir(i)+1-ioff)-ioff) {
+  				while (k < smat.jc(ir(j)+1-ioff)-ioff) {
   					out.ir(tnnz) = smat.ir(k)
   					out.data(tnnz) = dval
   					tnnz += 1
