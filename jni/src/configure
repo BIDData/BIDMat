@@ -68,7 +68,7 @@ elif [ "$OS" = "linux" ] ; then
 	LB="ar rc"    
 	GLD="gcc -shared"
 	LD="icc -shared -static-intel"
-	LDFLAGS="$LDFLAGS
+	LDFLAGS="$LDFLAGS"
 	LIBPREPEND="lib"
 	LIBAPPEND=".so"
 	FC="gfortran"
@@ -86,7 +86,7 @@ elif [ "$OS" = "linux" ] ; then
         fi
         CUDA_LIBS="-L${CUDA_HOME}/lib64 -L${JCUDA_HOME}/lib -lcudart -lCommonJNI"
 elif [ "$OS" = "windows" ] ; then
-    MKL_ROOT="c:/Intel/MKL"
+        MKL_ROOT="c:/Intel/MKL"
 #    JAVA_HOME=""
         CUDA_HOME="C:/Progra~1/NVIDIA~2/CUDA/v4.2"
         JCUDA_HOME="/code/JCUDA"
