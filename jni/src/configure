@@ -56,18 +56,19 @@ elif [ "$OS" = "linux" ] ; then
         CUDA_HOME="/usr/local/cuda"
         JCUDA_HOME="/home/jfc/code/JCUDA"
         CC="icc"
-        NVCC=nvcc
+        GCC="gcc"
+        NVCC="nvcc"
         NVCCFLAGS="-c -arch sm_30 --machine 64  -Xcompiler \"-fPIC -c -O2 -DNDEBUG\""
-    SUBLIB=linux64
+        SUBLIB=linux64
 	OBJ="o"
 	OUTFLG="-o "
 	CPPFLAGS="$CPPFLAGS -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$MKL_ROOT/include \
                  -I$MKL_ROOT/include/intel64/lp64 -I$JCUDA_HOME/CommonJNI/src -I$CUDA_HOME/include"
 	CFLAGS="-fPIC -c -O2 -DNDEBUG -std=c99 $CFLAGS"
 	LB="ar rc"    
-#	LD="gcc -shared"
-	LD="icc -shared"
-	LDFLAGS="$LDFLAGS -static-intel -L$JAVA_HOME/lib -L/opt/intel/composerxe/lib/intel64"
+	GLD="gcc -shared"
+	LD="icc -shared -static-intel"
+	LDFLAGS="$LDFLAGS
 	LIBPREPEND="lib"
 	LIBAPPEND=".so"
 	FC="gfortran"
@@ -75,22 +76,24 @@ elif [ "$OS" = "linux" ] ; then
 	LAPACK_INCLUDES=""
 	FORTRAN_LIBS="-lgfortran"
 	if [ "$PARLIB" = "threaded" ] ; then
-	MKL_LIBS="$MKL_ROOT/lib/intel64/libmkl_intel_lp64.a -Wl,--start-group  \
+	MKL_LIBS="-L$JAVA_HOME/lib -L/opt/intel/composerxe/lib/intel64 $MKL_ROOT/lib/intel64/libmkl_intel_lp64.a -Wl,--start-group  \
             $MKL_ROOT/lib/intel64/libmkl_intel_thread.a $MKL_ROOT/lib/intel64/libmkl_core.a \
             -Wl,--end-group -liomp5 -lpthread -lm"
         else 
-	MKL_LIBS="$MKL_ROOT/lib/intel64/libmkl_intel_lp64.a -Wl,--start-group  \
+	MKL_LIBS="-L$JAVA_HOME/lib -L/opt/intel/composerxe/lib/intel64 $MKL_ROOT/lib/intel64/libmkl_intel_lp64.a -Wl,--start-group  \
             $MKL_ROOT/lib/intel64/libmkl_sequential.a $MKL_ROOT/lib/intel64/libmkl_core.a \
             -Wl,--end-group -liomp5 -lpthread -lm"
         fi
+        CUDA_LIBS="-L${CUDA_HOME}/lib64 -L${JCUDA_HOME}/lib -lcudart -lCommonJNI"
 elif [ "$OS" = "windows" ] ; then
     MKL_ROOT="c:/Intel/MKL"
 #    JAVA_HOME=""
         CUDA_HOME="C:/Progra~1/NVIDIA~2/CUDA/v4.2"
         JCUDA_HOME="/code/JCUDA"
 	CC="icl"
+        GCC="icl"
         NVCC="nvcc"
-    SUBLIB=win64
+        SUBLIB=win64
 	OBJ="obj"
 	OUTFLG="/OUT:"
 	CPPFLAGS=""
@@ -99,6 +102,7 @@ elif [ "$OS" = "windows" ] ; then
 #	CFLAGS="/c /MT /DMKL_ILP64 /DNDEBUG /O2 /Qstd=c99 $CFLAGS" # static link, 64bit ints
 	LB="lib"    
 	LD="link"
+	GLD="link"
 	LDFLAGS="/DLL /MACHINE:AMD64 $LDFLAGS"
 	LIBPREPEND=""
 	LIBAPPEND=".dll"
@@ -115,7 +119,7 @@ elif [ "$OS" = "windows" ] ; then
         fi
 #	MKL_LIBS="mkl_intel_ilp64.lib mkl_intel_thread.lib mkl_core.lib libiomp5md.lib" # threaded, 64bit integer, static link
 #	MKL_LIBS="mkl_intel_ilp64.lib mkl_sequential.lib mkl_core.lib libiomp5md.lib"   # sequential, 64bit integer, static link
-    CUDA_LIBS="cudart.lib CommonJNI.lib"
+        CUDA_LIBS="cudart.lib CommonJNI.lib"
 	LIB="$MKL_ROOT/mkl/lib/intel64;$MKL_ROOT/compiler/lib/intel64;$JAVA_HOME/lib;$CUDA_HOME/lib/x64;$JCUDA_HOME/lib/Release;$LIB"
 	INCLUDE="$JAVA_HOME/include;$JAVA_HOME/include/win32;c:/Intel/MKL/mkl/include;c:/codeh/BIDMat/jni/include;$JCUDA_HOME/CommonJNI/src;$CUDA_HOME/include;$INCLUDE"
 else
@@ -126,6 +130,7 @@ fi
 echo "Creating config for $OS $ARCH"
 
 echo "CC=$CC" > Makefile.incl
+echo "GCC=$GCC" >> Makefile.incl
 echo "NVCC=$NVCC" >> Makefile.incl
 echo "NVCCFLAGS=$NVCCFLAGS" >> Makefile.incl
 echo "SUBLIB=$SUBLIB" >> Makefile.incl
@@ -135,6 +140,7 @@ echo "CPPFLAGS=$CPPFLAGS" >> Makefile.incl
 echo "CFLAGS=$CFLAGS" >> Makefile.incl
 echo "LB=$LB" >> Makefile.incl
 echo "LD=$LD" >> Makefile.incl
+echo "GLD=$GLD" >> Makefile.incl
 echo "LDFLAGS=$LDFLAGS" >> Makefile.incl
 echo "LIBPREPEND=$LIBPREPEND" >> Makefile.incl
 echo "LIBAPPEND=$LIBAPPEND" >> Makefile.incl

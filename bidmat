@@ -1,5 +1,5 @@
 #!/bin/bash
-export LD_LIBRARY_PATH="`pwd`/lib/linux64:${LD_LIBRARY_PATH}" # Only needed/works on Linux
+export LD_LIBRARY_PATH="`pwd`/lib/linux64:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}" # Only needed/works on Linux
 # export JAVA_HOME="" # Set here if not set in environment
 export JAVA_OPTS="-Xmx6G -Xms128M" # Set as much memory as possible
 # Fix these if needed
