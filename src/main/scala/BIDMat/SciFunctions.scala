@@ -109,7 +109,7 @@ object SciFunctions {
     } else {
       vsRngGaussian(METHOD, stream, out.length, out.data, mu, sig )
     }
-    Mat.nflops += 20L*out.length
+    Mat.nflops += 10L*out.length
     out
   }
   
@@ -124,7 +124,7 @@ object SciFunctions {
     } else {
       vsRngGaussian(METHOD, stream, 2*out.length, out.data, mu, sig )
     }
-    Mat.nflops += 40L*out.length
+    Mat.nflops += 10L*out.length
     out  
   }
   
@@ -222,7 +222,7 @@ object SciFunctions {
     } else {
       vdRngGaussian( METHOD, stream, out.length, out.data, mu, sig )
     }
-    Mat.nflops += 20L*out.length
+    Mat.nflops += 10L*out.length
     out
   }
   
@@ -579,6 +579,21 @@ object SciFunctions {
 	    Mat.nflops += nflops*a.length
 	    out
 	  }
+
+  def applyDFunV(a:DMat, out:DMat, vfn:(Int, Array[Double], Array[Double])=>Unit,
+                efn:(Int, Array[Double], Array[Double])=>Unit, nflops:Long) = {
+	    checkSizes(a, out)
+	    if (Mat.noMKL) {
+	      if (efn == null) {
+	        throw new RuntimeException("no Scala builtin version of this math function, sorry")
+	      } 
+	      efn(a.length, a.data, out.data)
+	    } else {
+	      vfn(a.length, a.data, out.data)
+	    }
+	    Mat.nflops += nflops*a.length
+	    out
+	  }
   
    def applySFun(a:FMat, out:FMat, vfn:(Int, Array[Float], Array[Float])=>Unit, efn:(Float)=>Float, nflops:Long) ={
 	    checkSizes(a, out)
@@ -588,6 +603,21 @@ object SciFunctions {
 	      } 
 	      var i = 0; val len = a.length; val odata = out.data; val adata = a.data
 	      while (i < len) {odata(i) = efn(adata(i)); i += 1}
+	    } else {
+	      vfn(a.length, a.data, out.data)
+	    }	
+	    Mat.nflops += nflops*a.length
+	    out
+  	}
+ 
+  def applySFunV(a:FMat, out:FMat, vfn:(Int, Array[Float], Array[Float])=>Unit, 
+                 efn:(Int, Array[Float], Array[Float])=>Unit, nflops:Long) ={
+	    checkSizes(a, out)
+	    if (Mat.noMKL) {
+	      if (efn == null) {
+	        throw new RuntimeException("no Scala builtin version of this math function, sorry")
+	      } 
+              efn(a.length, a.data, out.data)
 	    } else {
 	      vfn(a.length, a.data, out.data)
 	    }	
@@ -615,8 +645,10 @@ object SciFunctions {
   
   def abs(a:DMat, out:DMat) = applyDFun(a, out, vdAbs _, math.abs _, 1L)
   def abs(a:DMat):DMat = abs(a, DMat(a.nrows, a.ncols))
-  
-  def exp(a:DMat, out:DMat) = applyDFun(a, out, vdExp _, math.exp _, 10L)
+
+  def _vdexp(n:Int, a:Array[Double], b:Array[Double]) = {var i=0 ; while (i<n) {b(i) = math.exp(a(i)); i+=1}}
+  def exp(a:DMat, out:DMat) = applyDFunV(a, out, vdExp _, _vdexp _, 10L)
+
   def exp(a:DMat):DMat = exp(a, DMat(a.nrows, a.ncols))
   
   def expm1(a:DMat, out:DMat) = applyDFun(a, out, vdExpm1 _, math.expm1 _, 10L)
@@ -720,8 +752,9 @@ object SciFunctions {
   
   def abs(a:FMat, out:FMat) = applySFun(a, out, vsAbs _, math.abs _, 1L)
   def abs(a:FMat):FMat = abs(a, FMat(a.nrows, a.ncols))
-  
-  def exp(a:FMat, out:FMat) = applySFun(a, out, vsExp _, (x:Float) => math.exp(x).asInstanceOf[Float], 10L)
+
+  def _vsexp(n:Int, a:Array[Float], b:Array[Float]) = {var i=0 ; while (i<n) {b(i) = math.exp(a(i)).asInstanceOf[Float]; i+=1}}  
+  def exp(a:FMat, out:FMat) = applySFun(a, out, vsExp _, (x:Float) => math.expm1(x).asInstanceOf[Float], 10L)
   def exp(a:FMat):FMat = exp(a, FMat(a.nrows, a.ncols))
   
   def expm1(a:FMat, out:FMat) = applySFun(a, out, vsExpm1 _, (x:Float) => math.expm1(x).asInstanceOf[Float], 10L)
@@ -907,42 +940,42 @@ object SciFunctions {
     curve
   }
   
-  def applyGfun(in:GMat, out:GMat, opn:Int):GMat = {
+  def applyGfun(in:GMat, out:GMat, opn:Int, kflops:Long):GMat = {
     if (in.nrows == out.nrows && in.ncols == out.ncols) {
       CUMAT.applygfun(in.data, out.data, in.nrows*in.ncols, opn)
       JCuda.cudaDeviceSynchronize()
-      Mat.nflops += in.length
+      Mat.nflops += kflops*in.length
       out
     } else {
       throw new RuntimeException("Dimensions mismatch")
     }
   }
 
-  def applyGfun(in:GMat, opn:Int):GMat = {
+  def applyGfun(in:GMat, opn:Int, kflops:Long):GMat = {
     val out = GMat(in.nrows, in.ncols)
     CUMAT.applygfun(in.data, out.data, in.nrows*in.ncols, opn)
     JCuda.cudaDeviceSynchronize()
-    Mat.nflops += in.length
+    Mat.nflops += kflops*in.length
     out
   }
   
-    def applyGfun2(a:GMat, b:GMat, out:GMat, opn:Int):GMat = {
+    def applyGfun2(a:GMat, b:GMat, out:GMat, opn:Int, kflops:Long):GMat = {
     if (a.nrows == out.nrows && a.ncols == out.ncols && a.nrows == b.nrows && a.ncols == b.ncols) {
       CUMAT.applygfun2(a.data, b.data, out.data, a.nrows*a.ncols, opn)
       JCuda.cudaDeviceSynchronize()
-      Mat.nflops += a.length
+      Mat.nflops += kflops*a.length
       out
     } else {
       throw new RuntimeException("Dimensions mismatch")
     }
   }
 
-  def applyGfun2(a:GMat, b:GMat, opn:Int):GMat = {
+  def applyGfun2(a:GMat, b:GMat, opn:Int, kflops:Long):GMat = {
     if  (a.nrows == b.nrows && a.ncols == b.ncols)  {
 	    val out = GMat(a.nrows, a.ncols)
 	    CUMAT.applygfun2(a.data, b.data, out.data, a.nrows*a.ncols, opn)
 	    JCuda.cudaDeviceSynchronize()
-	    Mat.nflops += a.length
+	    Mat.nflops += kflops*a.length
 	    out
     } else {
       throw new RuntimeException("Dimensions mismatch")
@@ -950,73 +983,73 @@ object SciFunctions {
   }
   import GMat.TransF
 
-  def abs(in:GMat, out:GMat):GMat =     applyGfun(in, out, TransF.abs)
-  def exp(in:GMat, out:GMat):GMat =     applyGfun(in, out, TransF.exp)
-  def expm1(in:GMat, out:GMat):GMat =   applyGfun(in, out, TransF.expm1)
-  def sqrt(in:GMat, out:GMat):GMat =    applyGfun(in, out, TransF.sqrt)
-  def ln(in:GMat, out:GMat):GMat =      applyGfun(in, out, TransF.ln)
-  def log10(in:GMat, out:GMat):GMat =   applyGfun(in, out, TransF.log10)
-  def log1p(in:GMat, out:GMat):GMat =   applyGfun(in, out, TransF.log1p)
-  def cos(in:GMat, out:GMat):GMat =     applyGfun(in, out, TransF.cos)
-  def sin(in:GMat, out:GMat):GMat =     applyGfun(in, out, TransF.sin)
-  def tan(in:GMat, out:GMat):GMat =     applyGfun(in, out, TransF.tan)
-  def cosh(in:GMat, out:GMat):GMat =    applyGfun(in, out, TransF.cosh)
-  def sinh(in:GMat, out:GMat):GMat =    applyGfun(in, out, TransF.sinh)
-  def tanh(in:GMat, out:GMat):GMat =    applyGfun(in, out, TransF.tanh)
-  def acos(in:GMat, out:GMat):GMat =    applyGfun(in, out, TransF.acos)
-  def asin(in:GMat, out:GMat):GMat =    applyGfun(in, out, TransF.asin)
-  def atan(in:GMat, out:GMat):GMat =    applyGfun(in, out, TransF.atan)
-  def acosh(in:GMat, out:GMat):GMat =   applyGfun(in, out, TransF.acosh)
-  def asinh(in:GMat, out:GMat):GMat =   applyGfun(in, out, TransF.asinh)
-  def atanh(in:GMat, out:GMat):GMat =   applyGfun(in, out, TransF.atanh)
-  def erf(in:GMat, out:GMat):GMat =     applyGfun(in, out, TransF.erf)
-  def erfinv(in:GMat, out:GMat):GMat =  applyGfun(in, out, TransF.erfinv)
-  def erfc(in:GMat, out:GMat):GMat =    applyGfun(in, out, TransF.erfc)
-  def ercinv(in:GMat, out:GMat):GMat =  applyGfun(in, out, TransF.erfcinv)
-  def gammaln(in:GMat, out:GMat):GMat = applyGfun(in, out, TransF.gammaln)
-  def gamma(in:GMat, out:GMat):GMat =   applyGfun(in, out, TransF.gamma)
-  def ceil(in:GMat, out:GMat):GMat =    applyGfun(in, out, TransF.ceil)
-  def floor(in:GMat, out:GMat):GMat =   applyGfun(in, out, TransF.floor)
-  def round(in:GMat, out:GMat):GMat =   applyGfun(in, out, TransF.round)
-  def trunc(in:GMat, out:GMat):GMat =   applyGfun(in, out, TransF.trunc)
+  def abs(in:GMat, out:GMat):GMat =     applyGfun(in, out, TransF.abs, 1L)
+  def exp(in:GMat, out:GMat):GMat =     applyGfun(in, out, TransF.exp, 10L)
+  def expm1(in:GMat, out:GMat):GMat =   applyGfun(in, out, TransF.expm1, 10L)
+  def sqrt(in:GMat, out:GMat):GMat =    applyGfun(in, out, TransF.sqrt, 10L)
+  def ln(in:GMat, out:GMat):GMat =      applyGfun(in, out, TransF.ln, 10L)
+  def log10(in:GMat, out:GMat):GMat =   applyGfun(in, out, TransF.log10, 10L)
+  def log1p(in:GMat, out:GMat):GMat =   applyGfun(in, out, TransF.log1p, 10L)
+  def cos(in:GMat, out:GMat):GMat =     applyGfun(in, out, TransF.cos, 10L)
+  def sin(in:GMat, out:GMat):GMat =     applyGfun(in, out, TransF.sin, 10L)
+  def tan(in:GMat, out:GMat):GMat =     applyGfun(in, out, TransF.tan, 10L)
+  def cosh(in:GMat, out:GMat):GMat =    applyGfun(in, out, TransF.cosh, 10L)
+  def sinh(in:GMat, out:GMat):GMat =    applyGfun(in, out, TransF.sinh, 10L)
+  def tanh(in:GMat, out:GMat):GMat =    applyGfun(in, out, TransF.tanh, 10L)
+  def acos(in:GMat, out:GMat):GMat =    applyGfun(in, out, TransF.acos, 10L)
+  def asin(in:GMat, out:GMat):GMat =    applyGfun(in, out, TransF.asin, 10L)
+  def atan(in:GMat, out:GMat):GMat =    applyGfun(in, out, TransF.atan, 10L)
+  def acosh(in:GMat, out:GMat):GMat =   applyGfun(in, out, TransF.acosh, 10L)
+  def asinh(in:GMat, out:GMat):GMat =   applyGfun(in, out, TransF.asinh, 10L)
+  def atanh(in:GMat, out:GMat):GMat =   applyGfun(in, out, TransF.atanh, 10L)
+  def erf(in:GMat, out:GMat):GMat =     applyGfun(in, out, TransF.erf, 10L)
+  def erfinv(in:GMat, out:GMat):GMat =  applyGfun(in, out, TransF.erfinv, 10L)
+  def erfc(in:GMat, out:GMat):GMat =    applyGfun(in, out, TransF.erfc, 10L)
+  def ercinv(in:GMat, out:GMat):GMat =  applyGfun(in, out, TransF.erfcinv, 10L)
+  def gammaln(in:GMat, out:GMat):GMat = applyGfun(in, out, TransF.gammaln, 10L)
+  def gamma(in:GMat, out:GMat):GMat =   applyGfun(in, out, TransF.gamma, 10L)
+  def ceil(in:GMat, out:GMat):GMat =    applyGfun(in, out, TransF.ceil, 10L)
+  def floor(in:GMat, out:GMat):GMat =   applyGfun(in, out, TransF.floor, 10L)
+  def round(in:GMat, out:GMat):GMat =   applyGfun(in, out, TransF.round, 10L)
+  def trunc(in:GMat, out:GMat):GMat =   applyGfun(in, out, TransF.trunc, 10L)
   
   import GMat.TransF2
   
-  def atan2(a:GMat, b:GMat, out:GMat):GMat =   applyGfun2(a, b, out, TransF2.atan2)
-  def pow(a:GMat, b:GMat, out:GMat):GMat =     applyGfun2(a, b, out, TransF2.pow)
+  def atan2(a:GMat, b:GMat, out:GMat):GMat =   applyGfun2(a, b, out, TransF2.atan2, 10L)
+  def pow(a:GMat, b:GMat, out:GMat):GMat =     applyGfun2(a, b, out, TransF2.pow, 10L)
 
-  def abs(in:GMat):GMat =     applyGfun(in, TransF.abs)
-  def exp(in:GMat):GMat =     applyGfun(in, TransF.exp)
-  def expm1(in:GMat):GMat =   applyGfun(in, TransF.expm1)
-  def sqrt(in:GMat):GMat =    applyGfun(in, TransF.sqrt)
-  def ln(in:GMat):GMat =      applyGfun(in, TransF.ln)
-  def log10(in:GMat):GMat =   applyGfun(in, TransF.log10)
-  def log1p(in:GMat):GMat =   applyGfun(in, TransF.log1p)
-  def cos(in:GMat):GMat =     applyGfun(in, TransF.cos)
-  def sin(in:GMat):GMat =     applyGfun(in, TransF.sin)
-  def tan(in:GMat):GMat =     applyGfun(in, TransF.tan)
-  def cosh(in:GMat):GMat =    applyGfun(in, TransF.cosh)
-  def sinh(in:GMat):GMat =    applyGfun(in, TransF.sinh)
-  def tanh(in:GMat):GMat =    applyGfun(in, TransF.tanh)
-  def acos(in:GMat):GMat =    applyGfun(in, TransF.acos)
-  def asin(in:GMat):GMat =    applyGfun(in, TransF.asin)
-  def atan(in:GMat):GMat =    applyGfun(in, TransF.atan)
-  def acosh(in:GMat):GMat =   applyGfun(in, TransF.acosh)
-  def asinh(in:GMat):GMat =   applyGfun(in, TransF.asinh)
-  def atanh(in:GMat):GMat =   applyGfun(in, TransF.atanh)
-  def erf(in:GMat):GMat =     applyGfun(in, TransF.erf)
-  def erfinv(in:GMat):GMat =  applyGfun(in, TransF.erfinv)
-  def erfc(in:GMat):GMat =    applyGfun(in, TransF.erfc)
-  def ercinv(in:GMat):GMat =  applyGfun(in, TransF.erfcinv)
-  def gammaln(in:GMat):GMat = applyGfun(in, TransF.gammaln)
-  def gamma(in:GMat):GMat =   applyGfun(in, TransF.gamma)
-  def ceil(in:GMat):GMat =    applyGfun(in, TransF.ceil)
-  def floor(in:GMat):GMat =   applyGfun(in, TransF.floor)
-  def round(in:GMat):GMat =   applyGfun(in, TransF.round)
-  def trunc(in:GMat):GMat =   applyGfun(in, TransF.trunc)
+  def abs(in:GMat):GMat =     applyGfun(in, TransF.abs, 10L)
+  def exp(in:GMat):GMat =     applyGfun(in, TransF.exp, 10L)
+  def expm1(in:GMat):GMat =   applyGfun(in, TransF.expm1, 10L)
+  def sqrt(in:GMat):GMat =    applyGfun(in, TransF.sqrt, 10L)
+  def ln(in:GMat):GMat =      applyGfun(in, TransF.ln, 10L)
+  def log10(in:GMat):GMat =   applyGfun(in, TransF.log10, 10L)
+  def log1p(in:GMat):GMat =   applyGfun(in, TransF.log1p, 10L)
+  def cos(in:GMat):GMat =     applyGfun(in, TransF.cos, 10L)
+  def sin(in:GMat):GMat =     applyGfun(in, TransF.sin, 10L)
+  def tan(in:GMat):GMat =     applyGfun(in, TransF.tan, 10L)
+  def cosh(in:GMat):GMat =    applyGfun(in, TransF.cosh, 10L)
+  def sinh(in:GMat):GMat =    applyGfun(in, TransF.sinh, 10L)
+  def tanh(in:GMat):GMat =    applyGfun(in, TransF.tanh, 10L)
+  def acos(in:GMat):GMat =    applyGfun(in, TransF.acos, 10L)
+  def asin(in:GMat):GMat =    applyGfun(in, TransF.asin, 10L)
+  def atan(in:GMat):GMat =    applyGfun(in, TransF.atan, 10L)
+  def acosh(in:GMat):GMat =   applyGfun(in, TransF.acosh, 10L)
+  def asinh(in:GMat):GMat =   applyGfun(in, TransF.asinh, 10L)
+  def atanh(in:GMat):GMat =   applyGfun(in, TransF.atanh, 10L)
+  def erf(in:GMat):GMat =     applyGfun(in, TransF.erf, 10L)
+  def erfinv(in:GMat):GMat =  applyGfun(in, TransF.erfinv, 10L)
+  def erfc(in:GMat):GMat =    applyGfun(in, TransF.erfc, 10L)
+  def ercinv(in:GMat):GMat =  applyGfun(in, TransF.erfcinv, 10L)
+  def gammaln(in:GMat):GMat = applyGfun(in, TransF.gammaln, 10L)
+  def gamma(in:GMat):GMat =   applyGfun(in, TransF.gamma, 10L)
+  def ceil(in:GMat):GMat =    applyGfun(in, TransF.ceil, 10L)
+  def floor(in:GMat):GMat =   applyGfun(in, TransF.floor, 10L)
+  def round(in:GMat):GMat =   applyGfun(in, TransF.round, 10L)
+  def trunc(in:GMat):GMat =   applyGfun(in, TransF.trunc, 10L)
   
-  def atan2(a:GMat, b:GMat):GMat =   applyGfun2(a, b, TransF2.atan2)
-  def pow(a:GMat, b:GMat):GMat =     applyGfun2(a, b, TransF2.pow)
+  def atan2(a:GMat, b:GMat):GMat =   applyGfun2(a, b, TransF2.atan2, 10L)
+  def pow(a:GMat, b:GMat):GMat =     applyGfun2(a, b, TransF2.pow, 10L)
   
   import GMat.BinOp
   def max(a:GMat, b:GMat):GMat    = a.gOp(b, null, BinOp.op_max)
