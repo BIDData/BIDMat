@@ -33,7 +33,8 @@ object SciFunctions {
   try {
   	jcuda.runtime.JCuda.cudaGetDeviceCount(cudanum)
   } catch {
-    case e:Exception => println("Couldn't initialize CUDA driver "+e)
+    case e:NoClassDefFoundError => println("Couldn't load the CUDA driver "+e)
+    case e:Exception => println("Exception while initializing CUDA driver "+e)
   }
   if (cudanum(0) > 0) {
   	Mat.hasCUDA = cudanum(0)
