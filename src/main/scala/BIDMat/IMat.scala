@@ -334,12 +334,12 @@ object IMat {
   def apply(a:DenseMat[Int]):IMat = new IMat(a.nrows, a.ncols, a.data)
 
   def apply(x:Mat):IMat = {
-    val out = IMat(x.nrows, x.ncols)
+    var out:IMat = null
     x match {
-      case dd:DMat => Mat.copyToIntArray(dd.data, 0, out.data, 0, dd.length)
-      case ff:FMat => Mat.copyToIntArray(ff.data, 0, out.data, 0, ff.length)
-      case ii:IMat => System.arraycopy(ii.data, 0, out.data, 0, ii.length)
-      case gg:GIMat => gg.toIMat
+      case dd:DMat => {out = IMat(x.nrows, x.ncols) ; Mat.copyToIntArray(dd.data, 0, out.data, 0, dd.length)}
+      case ff:FMat => {out = IMat(x.nrows, x.ncols); Mat.copyToIntArray(ff.data, 0, out.data, 0, ff.length)}
+      case ii:IMat => {out = IMat(x.nrows, x.ncols); System.arraycopy(ii.data, 0, out.data, 0, ii.length)}
+      case gg:GIMat => out = gg.toIMat
       case _ => throw new RuntimeException("Unsupported source type")
     }
     out

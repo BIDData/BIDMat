@@ -3,18 +3,22 @@ BIDMat is a set of Scala, Java and native code libraries. To run it, you need:
 * A java runtime, version 1.5 or later.
 
 * An Installation of the Scala language, which you can get from here: http://www.scala-lang.org/
+  You need Scala 2.9.1 or later. We have tested extensively on 2.9.1 and 2.9.2.
 
 * A 64bit Intel machine (Linux, Windows, and *soon* Mac), if you plan to use any native
-  code acceleration. You should set Mat.noMKL=true in scala if you dont have one. A lot of
+  code acceleration. We have tested on Windows 7 and RedHat Enterprise Linux 6. 
+  You should set Mat.noMKL=true in scala if you dont have one. A lot of
   the code will still work, but that's really not the point of the library.
 
-* To use these libraries with a CUDA GPU, you need a CUDA-enabled GPU device and the
-  [http://developer.nvidia.com/cuda/cuda-downloads NVIDIA driver with CUDA support and the
-  CUDA Toolkit] from the NVIDIA website.
+* To use these libraries with a CUDA GPU, you need a CUDA-enabled GPU device. The code has
+  been developed for GTX 600-series, and this is the ideal platform. The code should work
+  with Tesla K10 devices, which share the same GPU chip as the 680/690 which is our
+  main platform. Most operations will work also with 500-series and we are working to add
+  the others. 
 
-Ideally, you should use a Kepler architecture GPU (GTX 670, 680 or 690, or K10). The Jcuda
-code will run on older GPUs, but our custom kernels are developed specifically for >=
-Kepler.
+* You need the [http://developer.nvidia.com/cuda/cuda-downloads NVIDIA CUDA driver and the
+  CUDA Toolkit] from the NVIDIA website. This version is based on CUDA 4.2. CUDA 5.0 supported
+  should appear soon. 
 
 In Linux, you should just be able to run the "bidmat" script from the top-level
 directory. If that doesnt work, its probably because $JAVA_HOME is not set in your

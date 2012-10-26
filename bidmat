@@ -3,7 +3,7 @@ export LD_LIBRARY_PATH="`pwd`/lib/linux64:/usr/local/cuda/lib64:${LD_LIBRARY_PAT
 # export JAVA_HOME="" # Set here if not set in environment
 export JAVA_OPTS="-Xmx6G -Xms128M" # Set as much memory as possible
 # Fix these if needed
-export JCUDA_VERSION="0.4.2"
+export JCUDA_VERSION="0.5.0RC"
 export JCUDA_LIBDIR=./lib
 export LIBDIR=./lib
 

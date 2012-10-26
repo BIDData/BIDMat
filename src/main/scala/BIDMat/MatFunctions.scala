@@ -437,7 +437,7 @@ object MatFunctions {
       throw new RuntimeException("dims of C must match A'*B")
     } else {
       val out = SMat(c.nrows,c.ncols,c.nnz)
-      Mat.nflops += c.nnz * a.nrows
+      Mat.nflops += 2L * c.nnz * a.nrows
       val ioff = Mat.ioneBased
       var i = 0
       out.jc(0) = ioff
