@@ -92,6 +92,7 @@ elif [ "$OS" = "windows" ] ; then
 #        JCUDA_HOME="/code/JCUDA"
         CUDA_HOME="C:/Progra~1/NVIDIA~2/CUDA/v5.0"
         JCUDA_HOME="/code/JCUDA5"
+        JAVA_HOME="C:/Progra~1/Java/jdk1.6.0_29"
 	CC="icl"
     GCC="icl"
     NVCC="nvcc"
