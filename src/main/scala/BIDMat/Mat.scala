@@ -5,6 +5,7 @@ abstract class Mat(nr:Int, nc:Int) {
   val ncols = nc
 
   def length = nr*nc
+  
 
   def notImplemented0(s:String):Mat = { 
     throw new RuntimeException("operator "+s+" not implemented for "+this)
@@ -158,6 +159,18 @@ object Mat {
   var ioneBased = 1
   
   var hasCUDA = 0
+  
+  def checkCUDA:Unit = 
+  	try {
+  		var cudanum = new Array[Int](1)
+  		jcuda.runtime.JCuda.cudaGetDeviceCount(cudanum)
+  		hasCUDA = cudanum(0)
+  		printf("%d CUDA device%s found\n", hasCUDA, if (hasCUDA == 1) "" else "s")
+  	} catch {
+  	case e:NoClassDefFoundError => println("Couldn't load the CUDA driver ")
+  	case e:Exception => println("Exception while initializing CUDA driver ")
+  	case _ => println("Something went wrong while loading CUDA driver")
+  	}
   
   var terminal = TerminalFactory.create
   
