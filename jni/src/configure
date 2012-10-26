@@ -58,7 +58,7 @@ elif [ "$OS" = "linux" ] ; then
         CC="icc"
         GCC="gcc"
         NVCC="nvcc"
-        NVCCFLAGS="-c -arch sm_30 --machine 64  -Xcompiler \"-fPIC -c -O2 -DNDEBUG\""
+        NVCCFLAGS="-c -arch=compute_20 -code=sm_20,sm_30 --machine 64  -Xcompiler \"-fPIC -c -O2 -DNDEBUG\""
         SUBLIB=linux64
 	OBJ="o"
 	OUTFLG="-o "
