@@ -35,6 +35,7 @@ object SciFunctions {
   } catch {
     case e:NoClassDefFoundError => println("Couldn't load the CUDA driver ")
     case e:Exception => println("Exception while initializing CUDA driver ")
+    case _ => println("Something went wrong while loading CUDA driver")
   }
   if (cudanum(0) > 0) {
   	Mat.hasCUDA = cudanum(0)
