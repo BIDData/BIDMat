@@ -29,7 +29,7 @@ object SciFunctions {
   final val VMLturbo =   VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_EP   // Fastest, Lower accuracy, default error handling
   // Curand initialization
   var cudanum = new Array[Int](1)
-  var cudarng:AnyRef = null
+  var cudarng:curandGenerator = null
   try {
   	jcuda.runtime.JCuda.cudaGetDeviceCount(cudanum)
   } catch {
@@ -40,8 +40,8 @@ object SciFunctions {
   	Mat.hasCUDA = cudanum(0)
   	jcuda.runtime.JCuda.initialize
     cudarng = new curandGenerator
-    curandCreateGenerator(cudarng.asInstanceOf[curandGenerator], CURAND_RNG_PSEUDO_DEFAULT) 
-    curandSetPseudoRandomGeneratorSeed(cudarng.asInstanceOf[curandGenerator], SEED)
+    curandCreateGenerator(cudarng, CURAND_RNG_PSEUDO_DEFAULT) 
+    curandSetPseudoRandomGeneratorSeed(cudarng, SEED)
   }
   
     
