@@ -9,6 +9,20 @@ case class GSMat(nr:Int, nc:Int, val nnz:Int, val ir:Pointer, val ic:Pointer, va
   def getdata() = data;	
 
   override def mytype = "GSMat"
+    
+  override def toString:String = {
+    val nnz0 = scala.math.min(nnz,12)       
+    val tmpMat = SMat(nnz0, nnz0, nnz0)
+    val tmpcols = new Array[Int](nnz0)
+    JCublas.cublasGetVector(nnz0, Sizeof.INT, ir, 1, Pointer.to(tmpMat.ir), 1)
+    JCublas.cublasGetVector(nnz0, Sizeof.FLOAT, data, 1, Pointer.to(tmpMat.data), 1)
+    JCublas.cublasGetVector(nnz0, Sizeof.INT, ic, 1, Pointer.to(tmpcols), 1)
+    SparseMat.compressInds(tmpcols, math.min(ncols, tmpcols(nnz0-1)+1), tmpMat.jc, nnz0)
+    if (Mat.ioneBased == 1) {
+      SparseMat.incInds(tmpMat.ir, tmpMat.ir)
+    }
+    tmpMat.toString
+  }
       
   def toSMat():SMat = { 
     val out = SMat(nrows, ncols, nnz)

@@ -127,9 +127,14 @@ class GMat(nr:Int, nc:Int, val data:Pointer) extends Mat(nr, nc) {
 
   def toFMat():FMat = {
     val out = FMat(nrows, ncols)
-    cublasGetVector(nrows*ncols, Sizeof.FLOAT, data, 1, Pointer.to(out.data), 1);
-    cudaDeviceSynchronize()
+    cublasGetVector(nrows*ncols, Sizeof.FLOAT, data, 1, Pointer.to(out.data), 1)
     out
+  }
+  
+  def toFMat(out:FMat):FMat = {
+  		cublasGetVector(nrows*ncols, Sizeof.FLOAT, data, 1, Pointer.to(out.data), 1)
+  		cudaDeviceSynchronize()
+  		out
   }
   
   def free() = {

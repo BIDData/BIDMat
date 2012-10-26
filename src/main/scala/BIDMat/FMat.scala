@@ -590,13 +590,13 @@ object FMat {
   def apply(a:DenseMat[Float]):FMat = new FMat(a.nrows, a.ncols, a.data) 
 
   def apply(x:Mat):FMat = {
-    val out = FMat(x.nrows, x.ncols)
+    var out:FMat = null
     x match {
-      case dd:DMat => Mat.copyToFloatArray(dd.data, 0, out.data, 0, dd.length)
-      case ff:FMat => System.arraycopy(ff.data, 0, out.data, 0, ff.length)
-      case ii:IMat => Mat.copyToFloatArray(ii.data, 0, out.data, 0, ii.length)
-      case ss:SMat => FMat(ss.full)
-      case gg:GMat => gg.toFMat
+      case dd:DMat => {out = FMat(x.nrows, x.ncols); Mat.copyToFloatArray(dd.data, 0, out.data, 0, dd.length)}
+      case ff:FMat => {out = FMat(x.nrows, x.ncols); System.arraycopy(ff.data, 0, out.data, 0, ff.length)}
+      case ii:IMat => {out = FMat(x.nrows, x.ncols); Mat.copyToFloatArray(ii.data, 0, out.data, 0, ii.length)}
+      case ss:SMat => out = FMat(ss.full)
+      case gg:GMat => out = gg.toFMat
       case _ => throw new RuntimeException("Unsupported source type")
     }
     out
