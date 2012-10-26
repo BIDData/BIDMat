@@ -28,17 +28,8 @@ object SciFunctions {
   final val VMLfast =    VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_LA   // Faster, Low accuracy, default error handling
   final val VMLturbo =   VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_EP   // Fastest, Lower accuracy, default error handling
   // Curand initialization
-  var cudanum = new Array[Int](1)
   var cudarng:curandGenerator = null
-  try {
-  	jcuda.runtime.JCuda.cudaGetDeviceCount(cudanum)
-  } catch {
-    case e:NoClassDefFoundError => println("Couldn't load the CUDA driver ")
-    case e:Exception => println("Exception while initializing CUDA driver ")
-    case _ => println("Something went wrong while loading CUDA driver")
-  }
-  if (cudanum(0) > 0) {
-  	Mat.hasCUDA = cudanum(0)
+  if (Mat.hasCUDA > 0) {
   	jcuda.runtime.JCuda.initialize
     cudarng = new curandGenerator
     curandCreateGenerator(cudarng, CURAND_RNG_PSEUDO_DEFAULT) 
@@ -97,7 +88,7 @@ object SciFunctions {
 
   def grand(out:GMat, nr:Int, nc:Int):GMat = {
     Mat.nflops += 10L*out.length
-    curandGenerateUniform(cudarng.asInstanceOf[curandGenerator], out.data, out.length)
+    curandGenerateUniform(cudarng, out.data, out.length)
     JCuda.cudaDeviceSynchronize()
     out
   }
@@ -141,7 +132,7 @@ object SciFunctions {
   
   def gnormrnd(mu:Float, sig:Float, out:GMat, nr:Int, nc:Int):GMat = {
     Mat.nflops += 10L*out.length
-    curandGenerateNormal(cudarng.asInstanceOf[curandGenerator], out.data, out.length, mu, sig)
+    curandGenerateNormal(cudarng, out.data, out.length, mu, sig)
     JCuda.cudaDeviceSynchronize()
     out
   }
