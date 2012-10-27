@@ -165,7 +165,9 @@ object Mat {
   		var cudanum = new Array[Int](1)
   		jcuda.runtime.JCuda.cudaGetDeviceCount(cudanum)
   		hasCUDA = cudanum(0)
-  		printf("%d CUDA device%s found\n", hasCUDA, if (hasCUDA == 1) "" else "s")
+  		jcuda.runtime.JCuda.cudaRuntimeGetVersion(cudanum)
+  		printf("%d CUDA device%s found, ", hasCUDA, if (hasCUDA == 1) "" else "s")
+  		printf("CUDA version %d.%d.%d" format (cudanum(0)/1000, cudanum(0)/100 % 10, cudanum(0) % 100))
   	} catch {
   	case e:NoClassDefFoundError => println("Couldn't load the CUDA driver ")
   	case e:Exception => println("Exception while initializing CUDA driver ")
