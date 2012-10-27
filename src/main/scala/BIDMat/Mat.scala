@@ -167,7 +167,7 @@ object Mat {
   		hasCUDA = cudanum(0)
   		jcuda.runtime.JCuda.cudaRuntimeGetVersion(cudanum)
   		printf("%d CUDA device%s found, ", hasCUDA, if (hasCUDA == 1) "" else "s")
-  		printf("CUDA version %d.%d.%d" format (cudanum(0)/1000, cudanum(0)/100 % 10, cudanum(0) % 100))
+  		printf("CUDA version %d.%d" format (cudanum(0)/1000, (cudanum(0)%100) / 10))
   	} catch {
   	case e:NoClassDefFoundError => println("Couldn't load the CUDA driver ")
   	case e:Exception => println("Exception while initializing CUDA driver ")
