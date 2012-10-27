@@ -155,7 +155,12 @@ object MatHDF5 {
 	val data_id = H5Dopen(fid, varname+"/data", H5P_DEFAULT)
 	val data_type_id = H5Dget_type(data_id)
 	val nnz = getMatDims(data_id)(0).intValue
-	val ir_id = H5Dopen(fid, varname+"/ir", H5P_DEFAULT)
+	var ir_id = -1
+	try {
+	  ir_id = H5Dopen(fid, varname+"/ir", H5P_DEFAULT)
+	} catch {
+	  case _ => {}
+	}
 	val sdata = if (ir_id >= 0) {
 	  BIDMat.SparseMat(nrows, ncols, nnz) 
 	} else {
@@ -200,9 +205,9 @@ object MatHDF5 {
 		}
 	  } else if (attr_class.equals("int8")) {
 		if (H5Aexists_by_name(fid, varname, "MATLAB_sparse", H5P_DEFAULT)) {
-		  throw new RuntimeException("Sparse arrays of bytes unsupported")
+		  BMat(getSparseMat[Byte](fid, varname))
 		} else {
-		  BMat(getDenseMat[Byte](fid, varname, H5T_INTEGER, 1))
+		  throw new RuntimeException("Dense arrays of bytes unsupported")
 		}
 	  } else if (attr_class.equals("char")) {
 		if (H5Aexists_by_name(fid, varname, "MATLAB_sparse", H5P_DEFAULT)) {
@@ -324,7 +329,7 @@ object MatHDF5 {
 	ref
   }
 
-  def putSparseMat[T](fid:Int, varname:String, a:SparseMat[T], nativeClass:Int, className:String):Array[Byte] = {
+  def putSparseMat[T](fid:Int, a:SparseMat[T], varname:String, nativeClass:Int, className:String):Array[Byte] = {
 	val dims = new Array[Long](1)
 	val group_id = H5Gcreate(fid, "/"+varname, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT)
 	putStringAttr(group_id, "MATLAB_class", className)
@@ -400,9 +405,9 @@ object MatHDF5 {
 	  case aa:DMat => putDenseMat[Double](fid, aa, aname, H5T_NATIVE_DOUBLE, "double")
 	  case aa:FMat => putDenseMat[Float](fid, aa, aname, H5T_NATIVE_FLOAT, "single")
 	  case aa:IMat => putDenseMat[Int](fid, aa, aname, H5T_NATIVE_INT, "int32")
-	  case aa:BMat => putDenseMat[Byte](fid, aa, aname, H5T_NATIVE_CHAR, "int8")
-	  case aa:SMat => putSparseMat[Float](fid, aname, aa, H5T_NATIVE_FLOAT, "single")
-	  case aa:SDMat => putSparseMat[Double](fid, aname, aa, H5T_NATIVE_DOUBLE, "double")
+	  case aa:BMat => putSparseMat[Byte](fid, aa, aname, H5T_NATIVE_CHAR, "int8")
+	  case aa:SMat => putSparseMat[Float](fid, aa, aname, H5T_NATIVE_FLOAT, "single")
+	  case aa:SDMat => putSparseMat[Double](fid, aa, aname, H5T_NATIVE_DOUBLE, "double")
 	  case aa:CSMat => putCellMat(fid, aname, aa)
 	  case aa:String => putMatString(fid, aname, aa)
 	  case _ => throw new RuntimeException("unsupported matrix type to save")
