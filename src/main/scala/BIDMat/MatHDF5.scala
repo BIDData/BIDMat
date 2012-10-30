@@ -361,7 +361,7 @@ object MatHDF5 {
 		H5Dwrite(ir_id, convert_ints, H5S_ALL, H5S_ALL, H5P_DEFAULT, a.ir)
 	  } catch  {
 		case e => {
-		  addOne(a.jc)
+		  addOne(a.ir)
 		  throw new RuntimeException("Error writing sparse mat "+e)
 		}
 	  }
