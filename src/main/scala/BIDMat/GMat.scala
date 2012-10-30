@@ -108,11 +108,13 @@ class GMat(nr:Int, nc:Int, val data:Pointer) extends Mat(nr, nc) {
       val out = GMat.newOrCheckGMat(1, ncols, oldmat) 
       CUMAT.reduce1op(nrows, ncols, data, out.data, op)
       Mat.nflops += length
+      cudaDeviceSynchronize()
       out
     } else if (dir == 2) {
       val out = GMat.newOrCheckGMat(nrows, 1, oldmat)  
       CUMAT.reduce2op(nrows, ncols, data, out.data, op)
       Mat.nflops += length
+      cudaDeviceSynchronize()
       out
     } else if (dir == 0) {
       if (nrows == 1) {
@@ -128,6 +130,7 @@ class GMat(nr:Int, nc:Int, val data:Pointer) extends Mat(nr, nc) {
   def toFMat():FMat = {
     val out = FMat(nrows, ncols)
     cublasGetVector(nrows*ncols, Sizeof.FLOAT, data, 1, Pointer.to(out.data), 1)
+    cudaDeviceSynchronize()
     out
   }
   
