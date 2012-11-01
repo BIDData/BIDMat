@@ -1,5 +1,6 @@
 #!/bin/bash
-export BIDMAT_ROOT=`pwd`
+export BIDMAT_ROOT="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+export BIDMAT_ROOT="$( echo ${BIDMAT_ROOT} | sed s+/cygdrive/c+c:+ )" 
 # This is only needed/works on Linux
 export LD_LIBRARY_PATH="${BIDMAT_ROOT}/lib/linux64:${BIDMAT_ROOT}/lib/linux64/JCUDA5.0:/usr/local/cuda-5.0/lib64:${LD_LIBRARY_PATH}" 
 # export JAVA_HOME="" # Set here if not set in environment
