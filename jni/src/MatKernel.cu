@@ -84,6 +84,7 @@ __device__ float fn_ceil(float a) {return ceilf(a);}
 __device__ float fn_floor(float a) {return floorf(a);}
 __device__ float fn_round(float a) {return roundf(a);}
 __device__ float fn_trunc(float a) {return truncf(a);}
+__device__ float fn_sign(float a) {return (a>0) ? 1.0f : ((a<0) ? -1.0f : 0);}
 __device__ float fn_j0(float a) {return j0f(a);}
 __device__ float fn_j1(float a) {return j1f(a);}
 //__device__ float fn_jn(float a) {return jnf(a);}
@@ -96,7 +97,7 @@ __device__ float fn_pow(float a, float b) {return powf(a, b);}
 
 typedef float (*fntype)(float);
 
-__device__ const fntype fctns[33] = {
+__device__ const fntype fctns[34] = {
     fn_abs,
     fn_exp,
     fn_expm1,
@@ -126,6 +127,7 @@ __device__ const fntype fctns[33] = {
     fn_floor,
     fn_round,
     fn_trunc,
+    fn_sign,
     fn_j0,
     fn_j1,
     fn_y0,
