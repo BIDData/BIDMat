@@ -36,6 +36,7 @@ object SciFunctions {
     curandSetPseudoRandomGeneratorSeed(cudarng, SEED)
   }
   
+  def resetCUDA = jcuda.runtime.JCuda.cudaDeviceReset
     
   def norm(a:FMat) = math.sqrt(sdot(a.length, a.data, 1, a.data, 1)).asInstanceOf[Float]
   
@@ -432,6 +433,15 @@ object SciFunctions {
   def mini(a:SMat) = a.ssReduceOp(0, (x:Float) => x, (x:Float, y:Float) => math.min(x,y))
   
   def sum(a:CMat, n:Int) = a.ccReduceOpv(n, CMat.vecAdd _, null)
+     
+  def max(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => max(aa, bb)
+      case (aa:IMat, bb:IMat) => max(aa, bb)
+      case (aa:DMat, bb:DMat) => max(aa, bb)
+      case (aa:GMat, bb:GMat) => max(aa, bb)
+    }
+  }
   
   def min(a:Mat, b:Mat):Mat = {
     (a, b) match {
@@ -442,15 +452,60 @@ object SciFunctions {
     }
   }
   
-  def max(a:Mat, b:Mat):Mat = {
-    (a, b) match {
-      case (aa:FMat, bb:FMat) => max(aa, bb)
-      case (aa:IMat, bb:IMat) => max(aa, bb)
-      case (aa:DMat, bb:DMat) => max(aa, bb)
-      case (aa:GMat, bb:GMat) => max(aa, bb)
+  def max(a:Mat, b:Mat, out:Mat):Mat = {
+    (a, b, out) match {
+      case (aa:FMat, bb:FMat, cc:FMat) => max(aa, bb, cc)
+      case (aa:IMat, bb:IMat, cc:IMat) => max(aa, bb, cc)
+      case (aa:DMat, bb:DMat, cc:IMat) => max(aa, bb, cc)
+      case (aa:GMat, bb:GMat, cc:GMat) => max(aa, bb, cc)
     }
   }
   
+  def min(a:Mat, b:Mat, out:Mat):Mat = {
+    (a, b, out) match {
+      case (aa:FMat, bb:FMat, cc:FMat) => min(aa, bb, cc)
+      case (aa:IMat, bb:IMat, cc:IMat) => min(aa, bb, cc)
+      case (aa:DMat, bb:DMat, cc:IMat) => min(aa, bb, cc)
+      case (aa:GMat, bb:GMat, cc:GMat) => min(aa, bb, cc)
+    }
+  }
+  
+  def max(a:Double, b:Mat, out:Mat):Mat = {
+    (b, out) match {
+      case (bb:FMat, cc:FMat) => max(a.asInstanceOf[Float], bb, cc)
+      case (bb:IMat, cc:IMat) => max(a.asInstanceOf[Int], bb, cc)
+      case (bb:DMat, cc:IMat) => max(a, bb, cc)
+      case (bb:GMat, cc:GMat) => max(a.asInstanceOf[Float], bb, cc)
+    }
+  }
+  
+  def min(a:Double, b:Mat, out:Mat):Mat = {
+    (b, out) match {
+      case (bb:FMat, cc:FMat) => min(a.asInstanceOf[Float], bb, cc)
+      case (bb:IMat, cc:IMat) => min(a.asInstanceOf[Int], bb, cc)
+      case (bb:DMat, cc:IMat) => min(a, bb, cc)
+      case (bb:GMat, cc:GMat) => min(a.asInstanceOf[Float], bb, cc)
+    }
+  }
+  
+  def max(a:Mat, b:Double, out:Mat):Mat = {
+    (a, out) match {
+      case (aa:FMat, cc:FMat) => max(aa, b.asInstanceOf[Float], cc)
+      case (aa:IMat, cc:IMat) => max(aa, b.asInstanceOf[Int], cc)
+      case (aa:DMat, cc:IMat) => max(aa, b, cc)
+      case (aa:GMat, cc:GMat) => max(aa, b.asInstanceOf[Float], cc)
+    }
+  }
+  
+  def min(a:Mat, b:Double, out:Mat):Mat = {
+    (a, out) match {
+      case (aa:FMat, cc:FMat) => min(aa, b.asInstanceOf[Float], cc)
+      case (aa:IMat, cc:IMat) => min(aa, b.asInstanceOf[Int], cc)
+      case (aa:DMat, cc:IMat) => min(aa, b, cc)
+      case (aa:GMat, cc:GMat) => min(aa, b.asInstanceOf[Float], cc)
+    }
+  }
+   
   def mini(a:Mat, b:Int):Mat = {
     a match {
       case aa:FMat => mini(aa, b)
@@ -565,7 +620,7 @@ object SciFunctions {
   
   def applyDFun(a:DMat, out:DMat, vfn:(Int, Array[Double], Array[Double])=>Unit, efn:(Double)=>Double, nflops:Long) ={
 	    checkSizes(a, out)
-	    if (Mat.noMKL) {
+	    if (Mat.noMKL || vfn == null) {
 	      if (efn == null) {
 	        throw new RuntimeException("no Scala builtin version of this math function, sorry")
 	      } 
@@ -595,7 +650,7 @@ object SciFunctions {
   
    def applySFun(a:FMat, out:FMat, vfn:(Int, Array[Float], Array[Float])=>Unit, efn:(Float)=>Float, nflops:Long) ={
 	    checkSizes(a, out)
-	    if (Mat.noMKL) {
+	    if (Mat.noMKL || vfn == null) {
 	      if (efn == null) {
 	        throw new RuntimeException("no Scala builtin version of this math function, sorry")
 	      } 
@@ -640,6 +695,9 @@ object SciFunctions {
       			Mat.nflops += nflops*a.length
       			out
       	}
+  
+  def sign(a:DMat, out:DMat) = applyDFun(a, out, null, math.signum _, 1L)
+  def sign(a:DMat):DMat = sign(a, DMat(a.nrows, a.ncols))
   
   def abs(a:DMat, out:DMat) = applyDFun(a, out, vdAbs _, math.abs _, 1L)
   def abs(a:DMat):DMat = abs(a, DMat(a.nrows, a.ncols))
@@ -747,6 +805,9 @@ object SciFunctions {
 
   def sdev(a:FMat, dim0:Int):FMat = sqrt(variance(a, dim0))
   def sdev(a:FMat):FMat = sdev(a, 0)
+  
+  def sign(a:FMat, out:FMat) = applySFun(a, out, null, math.signum _, 1L)
+  def sign(a:FMat):FMat = sign(a, FMat(a.nrows, a.ncols))
   
   def abs(a:FMat, out:FMat) = applySFun(a, out, vsAbs _, math.abs _, 1L)
   def abs(a:FMat):FMat = abs(a, FMat(a.nrows, a.ncols))
@@ -1010,6 +1071,7 @@ object SciFunctions {
   def floor(in:GMat, out:GMat):GMat =   applyGfun(in, out, TransF.floor, 10L)
   def round(in:GMat, out:GMat):GMat =   applyGfun(in, out, TransF.round, 10L)
   def trunc(in:GMat, out:GMat):GMat =   applyGfun(in, out, TransF.trunc, 10L)
+  def sign(in:GMat, out:GMat):GMat =    applyGfun(in, out, TransF.sign, 1L)
   
   import GMat.TransF2
   
@@ -1045,6 +1107,7 @@ object SciFunctions {
   def floor(in:GMat):GMat =   applyGfun(in, TransF.floor, 10L)
   def round(in:GMat):GMat =   applyGfun(in, TransF.round, 10L)
   def trunc(in:GMat):GMat =   applyGfun(in, TransF.trunc, 10L)
+  def sign(in:GMat):GMat =    applyGfun(in, TransF.sign, 1L)
   
   def atan2(a:GMat, b:GMat):GMat =   applyGfun2(a, b, TransF2.atan2, 10L)
   def pow(a:GMat, b:GMat):GMat =     applyGfun2(a, b, TransF2.pow, 10L)
@@ -1073,6 +1136,14 @@ object SciFunctions {
       case (aa:FMat, bb:FMat) => abs(aa, bb)
       case (aa:DMat, bb:DMat) => abs(aa, bb)
       case (aa:GMat, bb:GMat) => abs(aa, bb)
+    }
+  }
+  
+  def sign(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => sign(aa, bb)
+      case (aa:DMat, bb:DMat) => sign(aa, bb)
+      case (aa:GMat, bb:GMat) => sign(aa, bb)
     }
   }
        

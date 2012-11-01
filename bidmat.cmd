@@ -4,9 +4,11 @@
 :: Set as much memory as possible
 (SET JAVA_OPTS=-Xmx6G -Xms128M)
 :: Fix these if needed
-SET JCUDA_VERSION=0.4.2
+SET JCUDA_VERSION=0.5.0RC
 SET JCUDA_LIBDIR=%CD%\lib
 SET LIBDIR=%CD%\lib
+SET PATH=%LIBDIR%\win64;%LIBDIR%\win64\JCUDA5.0;%PATH%
+
 
 SET BIDMAT_LIBS=%CD%\BIDMat.jar;%LIBDIR%\ptplot.jar;%LIBDIR%\ptplotapplication.jar;%LIBDIR%\jhdf5.jar
 

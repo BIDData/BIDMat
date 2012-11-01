@@ -290,6 +290,7 @@ object GMat {
     val floor=26
     val round=27
     val trunc=28
+    val sign=29
   }
   
   object TransF2 {
