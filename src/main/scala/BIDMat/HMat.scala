@@ -91,7 +91,7 @@ object HMat {
     memcpyib(16, hints, 0, tbuf, 0)
     dout.write(tbuf, 0, 16)
     val buff = new Array[Byte](4*math.max(m.ncols+1, m.nnz))
-    try {
+//    try {
     	MatHDF5.subOne(m.jc)
     	MatHDF5.subOne(m.ir)
     	memcpyib(4(m.ncols+1), m.jc, 0, buff, 0)
@@ -100,7 +100,7 @@ object HMat {
     	dout.write(buff, 0, 4*m.nnz)
     	memcpyfb(4*m.nnz, m.data, 0, buff, 0)
     	dout.write(buff, 0, 4*m.nnz)
-    } catch {
+/*    } catch {
       case e:Exception => {
       	MatHDF5.addOne(m.jc)
       	MatHDF5.addOne(m.ir)
@@ -111,7 +111,7 @@ object HMat {
       	MatHDF5.addOne(m.ir)
       	throw new RuntimeException("Problem in saveSMat")
       }
-    }
+    }*/
     MatHDF5.addOne(m.jc)
     MatHDF5.addOne(m.ir)
     dout.close
