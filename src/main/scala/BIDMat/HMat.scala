@@ -59,7 +59,7 @@ case class HMat(nr:Int, nc:Int, fileList:List[String], varname:String, blkinds:A
 
 object HMat {
   
-  def readSomeInts(din:DataInputStream, a:Array[Int], buf:Array[Byte], n:Int) {
+  def readSomeInts(din:GZIPInputStream, a:Array[Int], buf:Array[Byte], n:Int) {
     var nread = 0
     while (nread < 4*n) {
       val readnow = din.read(buf, 0, math.min(buf.length, 4*n-nread))
@@ -68,7 +68,7 @@ object HMat {
     }
   }
   
-  def readSomeFloats(din:DataInputStream, a:Array[Float], buf:Array[Byte], n:Int) {
+  def readSomeFloats(din:GZIPInputStream, a:Array[Float], buf:Array[Byte], n:Int) {
     var nread = 0
     while (nread < 4*n) {
       val readnow = din.read(buf, 0, math.min(buf.length, 4*n-nread))
@@ -81,24 +81,24 @@ object HMat {
     val fout = new FileOutputStream(fname)
     val bout = new BufferedOutputStream(fout, 1024*1024)
     val gout = new GZIPOutputStream(bout)
-    val dout = new DataOutputStream(gout)
-    dout.writeInt(1)
-    dout.writeInt(m.nrows)
-    dout.writeInt(m.ncols)
-    dout.writeInt(m.nnz)
+    val hints = new Array[Int](4)
+    val tbuf = new Array[Byte](16)
+    hints(0) = 1
+    hints(1) = m.nrows
+    hints(2) = m.ncols
+    hints(3) = m.nnz
+    memcpyib(16, hints, 0, tbuf, 0)
+    gout.write(tbuf, 0, 16)
     val buff = new Array[Byte](4*math.max(m.ncols+1, m.nnz))
     try {
     	MatHDF5.subOne(m.jc)
     	MatHDF5.subOne(m.ir)
     	memcpyib(4(m.ncols+1), m.jc, 0, buff, 0)
-    	dout.write(buff, 0, 4*(m.ncols+1))
-    	dout.flush
+    	gout.write(buff, 0, 4*(m.ncols+1))
     	memcpyib(4*m.nnz, m.ir, 0, buff, 0)
-    	dout.write(buff, 0, 4*m.nnz)
-    	dout.flush
+    	gout.write(buff, 0, 4*m.nnz)
     	memcpyfb(4*m.nnz, m.data, 0, buff, 0)
-    	dout.write(buff, 0, 4*m.nnz)
-    	dout.flush
+    	gout.write(buff, 0, 4*m.nnz)
     } catch {
       case _ => {
       	MatHDF5.addOne(m.jc)
@@ -108,26 +108,27 @@ object HMat {
     }
     MatHDF5.addOne(m.jc)
     MatHDF5.addOne(m.ir)
-    dout.close
+    gout.close
   }
   
   def loadSMat(fname:String):SMat = {
     val fin = new FileInputStream(fname)
     val bin = new BufferedInputStream(fin, 1024*1024)
     val gin = new GZIPInputStream(bin)
-    val din = new DataInputStream(gin)
-    val ftype = din.readInt
-    val nrows = din.readInt
-    val ncols = din.readInt
-    val nnz = din.readInt
-    val out = SMat(nrows, ncols, nnz)
     val buff = new Array[Byte](1024*1024)
-    readSomeInts(din, out.jc, buff, ncols+1)
-    readSomeInts(din, out.ir, buff, nnz)
-    readSomeFloats(din, out.data, buff, nnz)
+    val hints = new Array[Int](4)
+    readSomeInts(gin, hints, buff, 4)
+    val ftype = hints(0)
+    val nrows = hints(1)
+    val ncols = hints(2)
+    val nnz = hints(3)
+    val out = SMat(nrows, ncols, nnz)
+    readSomeInts(gin, out.jc, buff, ncols+1)
+    readSomeInts(gin, out.ir, buff, nnz)
+    readSomeFloats(gin, out.data, buff, nnz)
     MatHDF5.addOne(out.jc)
     MatHDF5.addOne(out.ir)
-    din.close
+    gin.close
     out
   }
   
