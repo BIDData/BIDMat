@@ -6,6 +6,27 @@ import ncsa.hdf.hdf5lib.HDF5Constants._
 object MatHDF5 {
   var refcount:Long = -1
 
+  def setCompressionPlist(dplist_id:Int, dims:Array[Long]) = {
+	if (BIDMat.Mat.compress) {
+	  if (dims.length == 1) {
+		if (dims(0) > 1024) {
+		  val cdims = new Array[Long](1)
+		  cdims(0) = math.max(1, math.min(dims(0), 16*1024*1024))
+		  H5Pset_chunk(dplist_id, 1, cdims)
+		  H5Pset_deflate(dplist_id, 7)
+		}
+	  } else {
+		if (dims(0)*dims(1) > 1024) {
+		  val cdims = new Array[Long](2)
+		  cdims(0) = math.max(1, math.min(dims(0), 16*1024*1024/dims(1)))
+		  cdims(1) = math.max(1, dims(1))
+		  H5Pset_chunk(dplist_id, 2, cdims)
+		  H5Pset_deflate(dplist_id, 6)
+		}
+	  }
+	}
+  }
+  
   def getStringAttr(id:Int, obj_name:String, attr_name:String):String = { 
 	val attr_id = H5Aopen_by_name(id, obj_name, attr_name, H5P_DEFAULT, H5P_DEFAULT)
 	val attr_type_id = H5Aget_type(attr_id)
@@ -244,35 +265,13 @@ object MatHDF5 {
 	ff.close()
   }
 
-  def setCompressionPlist(dims:Array[Long]):Int = {
-	val dplist_id:Int = H5Pcreate(H5P_DATASET_CREATE)
-	if (BIDMat.Mat.compress) {
-	  if (dims.length == 1) {
-		if (dims(0) > 1024) {
-		  val cdims = new Array[Long](1)
-		  cdims(0) = math.max(1, math.min(dims(0), 65536))
-		  H5Pset_chunk(dplist_id, 1, cdims)
-		  H5Pset_deflate(dplist_id, 7)
-		}
-	  } else {
-		if (dims(0)*dims(1) > 1024) {
-		  val cdims = new Array[Long](2)
-		  cdims(0) = math.max(1, math.min(dims(0), math.max(256, 65536/math.max(1,dims(1)))))
-		  cdims(1) = math.max(1, math.min(dims(1), math.max(256, 65536/math.max(1,dims(0)))))
-		  H5Pset_chunk(dplist_id, 2, cdims)
-		  H5Pset_deflate(dplist_id, 6)
-		}
-	  }
-	}
-    dplist_id
-  }
-
   def putDenseMat[T](fid:Int, a:DenseMat[T], aname:String, h5class:Int, matclass:String):Array[Byte] = {
 	val dims = new Array[Long](2)
 	dims(0) = a.ncols
 	dims(1) = a.nrows
 	val filespace_id = H5Screate_simple(2, dims, null)
-	val dplist_id = setCompressionPlist(dims)
+	val dplist_id = H5Pcreate(H5P_DATASET_CREATE)
+	setCompressionPlist(dplist_id, dims)
 	val dataset_id = H5Dcreate(fid, "/"+aname, h5class, filespace_id, H5P_DEFAULT, dplist_id, H5P_DEFAULT)
 	H5Dwrite(dataset_id, h5class, H5S_ALL, H5S_ALL, H5P_DEFAULT, a.data)
 	H5Pclose(dplist_id)
@@ -316,7 +315,8 @@ object MatHDF5 {
 	val dims = new Array[Long](2)
 	dims(0) = a.ncols
 	dims(1) = a.nrows
-	val dplist_id = setCompressionPlist(dims)
+	val dplist_id = H5Pcreate(H5P_DATASET_CREATE)
+	setCompressionPlist(dplist_id, dims)
 	val refspace_id = H5Screate_simple(2, dims, null)
 	val refs_id = H5Dcreate(fid, varname, H5T_STD_REF_OBJ, refspace_id, H5P_DEFAULT, dplist_id, H5P_DEFAULT)
 	H5Dwrite(refs_id, H5T_STD_REF_OBJ, H5S_ALL, H5S_ALL, H5P_DEFAULT, refIds)
@@ -336,7 +336,8 @@ object MatHDF5 {
 	putLongAttr(group_id, "MATLAB_sparse", a.nrows)
 	val convert_ints = H5Tcopy(H5T_NATIVE_INT)
 	dims(0) = a.ncols + 1
-	val dplist_id = setCompressionPlist(dims)
+	val dplist_id = H5Pcreate(H5P_DATASET_CREATE)
+	setCompressionPlist(dplist_id, dims)
 	val jcs_id = H5Screate_simple(1, dims, null)
 	val jc_id = H5Dcreate(group_id, "jc", H5T_NATIVE_LLONG, jcs_id, H5P_DEFAULT, dplist_id, H5P_DEFAULT)
 	subOne(a.jc)
@@ -353,6 +354,7 @@ object MatHDF5 {
 	H5Sclose(jcs_id)
 
 	dims(0) = a.nnz
+	setCompressionPlist(dplist_id, dims)
 	if (a.ir != null) {
 	  val irs_id = H5Screate_simple(1, dims, null)
 	  val ir_id = H5Dcreate(group_id, "ir", H5T_NATIVE_LLONG, irs_id, H5P_DEFAULT, dplist_id, H5P_DEFAULT)
@@ -386,7 +388,8 @@ object MatHDF5 {
 	val dims = new Array[Long](2)
 	dims(0) = str.length
 	dims(1) = 1
-	val dplist_id = setCompressionPlist(dims)
+	val dplist_id = H5Pcreate(H5P_DATASET_CREATE)
+	setCompressionPlist(dplist_id, dims)
 	val sbytes = str.getBytes("UTF_16LE")
 	val strspace_id = H5Screate_simple(2, dims, null) 
 	val str_id = H5Dcreate(id, varname, H5T_NATIVE_USHORT, strspace_id, H5P_DEFAULT, dplist_id, H5P_DEFAULT)
@@ -427,7 +430,7 @@ object MatHDF5 {
 
   def hload(fname:String, vnames:List[String]):List[AnyRef] = {
   val fapl = H5Pcreate(H5P_FILE_ACCESS)
-  H5Pset_fapl_core(fapl, 1024*1024, false);  println("core driver")
+  H5Pset_fapl_core(fapl, 32*1024*1024, false);  println("core driver")
 //  H5Pset_fapl_stdio(fapl); println("stdio driver")
 	val fid = H5Fopen(fname,H5F_ACC_RDONLY,fapl)
 	H5Pclose(fapl)
