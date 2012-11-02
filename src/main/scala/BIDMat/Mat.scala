@@ -152,7 +152,7 @@ object Mat {
   
   var compressionLevel = 3
   
-  var compressedBlock = 1024*1024
+  var compressedBlock = 256*1024
   
   var noMKL:Boolean = false
   
