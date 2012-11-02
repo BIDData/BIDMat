@@ -77,29 +77,43 @@ object HMat {
     }
   }
   
+  def writeSomeInts(dout:GZIPOutputStream, a:Array[Int], buf:Array[Byte], n:Int) {
+    var nwritten = 0
+    while (nwritten < 4*n) {
+      val todo = math.min(4*n-nwritten, buf.length)
+    	memcpyib(todo, a, nwritten, buf, 0)
+      dout.write(buf, 0, todo)
+      nwritten += todo
+    }
+  }
+  
+  def writeSomeFloats(dout:GZIPOutputStream, a:Array[Float], buf:Array[Byte], n:Int) {
+    var nwritten = 0
+    while (nwritten < 4*n) {
+      val todo = math.min(4*n-nwritten, buf.length)
+    	memcpyfb(todo, a, nwritten, buf, 0)
+      dout.write(buf, 0, todo)
+      nwritten += todo
+    }
+  }
+  
   def saveSMat(fname:String, m:SMat):Unit = {
     val fout = new FileOutputStream(fname)
-    val bout = new BufferedOutputStream(fout, 1024*1024)
-    val gout = new GZIPOutputStream(bout)
-//    val dout = new DataOutputStream(gout)
+    val gout = new GZIPOutputStream(fout, 1024*1024)
     val hints = new Array[Int](4)
     val tbuf = new Array[Byte](16)
     hints(0) = 1
     hints(1) = m.nrows
     hints(2) = m.ncols
     hints(3) = m.nnz
-    memcpyib(16, hints, 0, tbuf, 0)
-    gout.write(tbuf, 0, 16)
-    val buff = new Array[Byte](4*math.max(m.ncols+1, m.nnz))
+    writeSomeInts(gout, hints, tbuf, 4)
+    val buff = new Array[Byte](math.min(1024*1024, 4*math.max(m.ncols+1, m.nnz)))
     try {
     	MatHDF5.subOne(m.jc)
     	MatHDF5.subOne(m.ir)
-    	memcpyib(4*(m.ncols+1), m.jc, 0, buff, 0)
-    	gout.write(buff, 0, 4*(m.ncols+1))
-    	memcpyib(4*m.nnz, m.ir, 0, buff, 0)
-    	gout.write(buff, 0, 4*m.nnz)
-    	memcpyfb(4*m.nnz, m.data, 0, buff, 0)
-    	gout.write(buff, 0, 4*m.nnz)
+    	writeSomeInts(gout, m.jc, buff, m.ncols+1)
+    	writeSomeInts(gout, m.ir, buff, m.nnz)
+    	writeSomeFloats(gout, m.data, buff, m.nnz)
     } catch {
       case e:Exception => {
       	MatHDF5.addOne(m.jc)
@@ -119,8 +133,7 @@ object HMat {
   
   def loadSMat(fname:String):SMat = {
     val fin = new FileInputStream(fname)
-    val bin = new BufferedInputStream(fin, 1024*1024)
-    val gin = new GZIPInputStream(bin)
+    val gin = new GZIPInputStream(fin, 1024*1024)
     val buff = new Array[Byte](1024*1024)
     val hints = new Array[Int](4)
     readSomeInts(gin, hints, buff, 4)
