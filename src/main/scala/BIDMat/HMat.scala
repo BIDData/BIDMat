@@ -63,7 +63,7 @@ object HMat {
     var nread = 0
     while (nread < 4*n) {
       val readnow = din.read(buf, 0, math.min(buf.length, 4*n-nread))
-      if (readnow % 4 != 0)
+      if (readnow >= 0 && readnow % 4 != 0)
         throw new RuntimeException("Read fractional word")
       memcpybi(readnow/4, buf, 0, a, nread/4)
       nread += readnow
@@ -74,7 +74,7 @@ object HMat {
     var nread = 0
     while (nread < 4*n) {
       val readnow = din.read(buf, 0, math.min(buf.length, 4*n-nread))
-      if (readnow % 4 != 0)
+      if (readnow >= 0 && readnow % 4 != 0)
         throw new RuntimeException("Read fractional word")
       memcpybf(readnow/4, buf, 0, a, nread/4)
       nread += readnow
@@ -112,13 +112,12 @@ object HMat {
     MatHDF5.addOne(m.jc)
     MatHDF5.addOne(m.ir)
     dout.close
-    gout.close
-    fout.close
   }
   
   def loadSMat(fname:String):SMat = {
     val fin = new FileInputStream(fname)
-    val gin = new GZIPInputStream(fin)
+    val bin = new BufferedInputStream(fin, 1024*1024)
+    val gin = new GZIPInputStream(bin)
     val din = new DataInputStream(gin)
     val ftype = din.readInt
     val nrows = din.readInt
@@ -132,8 +131,6 @@ object HMat {
     MatHDF5.addOne(out.jc)
     MatHDF5.addOne(out.ir)
     din.close
-    gin.close
-    fin.close
     out
   }
   
