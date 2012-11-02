@@ -67,9 +67,25 @@ object HMat {
     dout.writeInt(m.nrows)
     dout.writeInt(m.ncols)
     dout.writeInt(m.nnz)
-    var i = 0; while(i <= m.ncols) { dout.writeInt(m.jc(i)); i+=1 }
-    i = 0; while(i < m.nnz) { dout.writeInt(m.ir(i)); i+=1 }
-    i = 0; while(i < m.nnz) { dout.writeFloat(m.data(i)); i+=1 }
+    val buff = new Array[Byte](4*math.max(m.ncols+1, m.nnz))
+    try {
+    	MatHDF5.subOne(m.jc)
+    	MatHDF5.subOne(m.ir)
+    	memcpyib(m.ncols+1, m.jc, 0, buff, 0)
+    	dout.write(buff, 0, 4*(m.ncols+1))
+    	memcpyib(m.nnz, m.ir, 0, buff, 0)
+    	dout.write(buff, 0, 4*m.nnz)
+    	memcpyfb(m.nnz, m.data, 0, buff, 0)
+    	dout.write(buff, 0, 4*m.nnz)
+    } catch {
+      case _ => {
+      	MatHDF5.addOne(m.jc)
+      	MatHDF5.addOne(m.ir)
+      	throw new RuntimeException("Problem in saveSMat")
+      }
+    }
+    MatHDF5.addOne(m.jc)
+    MatHDF5.addOne(m.ir)
     dout.close
     gout.close
     fout.close
@@ -93,10 +109,6 @@ object HMat {
     memcpybf(nnz, buff, 0, out.data, 0)
     MatHDF5.addOne(out.jc)
     MatHDF5.addOne(out.ir)
-
-/*    var i = 0; while(i <= ncols) { out.jc(i) = din.readInt; i+=1 }
-    i = 0; while(i < nnz) { out.ir(i) = din.readInt; i+=1 }
-    i = 0; while(i < nnz) { out.data(i) = din.readFloat; i+=1 } */
     din.close
     gin.close
     fin.close
