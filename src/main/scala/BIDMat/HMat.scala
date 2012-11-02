@@ -100,6 +100,11 @@ object HMat {
     	memcpyfb(4*m.nnz, m.data, 0, buff, 0)
     	gout.write(buff, 0, 4*m.nnz)
     } catch {
+      case e:Exception => {
+      	MatHDF5.addOne(m.jc)
+      	MatHDF5.addOne(m.ir)
+      	throw new RuntimeException("Exception in saveSMat "+e)
+      }
       case _ => {
       	MatHDF5.addOne(m.jc)
       	MatHDF5.addOne(m.ir)
