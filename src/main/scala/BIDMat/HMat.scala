@@ -63,9 +63,7 @@ object HMat {
     var nread = 0
     while (nread < 4*n) {
       val readnow = din.read(buf, 0, math.min(buf.length, 4*n-nread))
-      if (readnow >= 0 && readnow % 4 != 0)
-        throw new RuntimeException("Read fractional word")
-      memcpybi(readnow/4, buf, 0, a, nread/4)
+      memcpybi(readnow, buf, 0, a, nread)
       nread += readnow
     }
   }
@@ -74,16 +72,15 @@ object HMat {
     var nread = 0
     while (nread < 4*n) {
       val readnow = din.read(buf, 0, math.min(buf.length, 4*n-nread))
-      if (readnow >= 0 && readnow % 4 != 0)
-        throw new RuntimeException("Read fractional word")
-      memcpybf(readnow/4, buf, 0, a, nread/4)
+      memcpybf(readnow, buf, 0, a, nread)
       nread += readnow
     }
   }
   
   def saveSMat(fname:String, m:SMat):Unit = {
     val fout = new FileOutputStream(fname)
-    val gout = new GZIPOutputStream(fout)
+    val bout = new BufferedOutputStream(fout, 1024*1024)
+    val gout = new GZIPOutputStream(bout)
     val dout = new DataOutputStream(gout)
     dout.writeInt(1)
     dout.writeInt(m.nrows)
@@ -93,13 +90,13 @@ object HMat {
     try {
     	MatHDF5.subOne(m.jc)
     	MatHDF5.subOne(m.ir)
-    	memcpyib(m.ncols+1, m.jc, 0, buff, 0)
+    	memcpyib(4(m.ncols+1), m.jc, 0, buff, 0)
     	dout.write(buff, 0, 4*(m.ncols+1))
     	dout.flush
-    	memcpyib(m.nnz, m.ir, 0, buff, 0)
+    	memcpyib(4*m.nnz, m.ir, 0, buff, 0)
     	dout.write(buff, 0, 4*m.nnz)
     	dout.flush
-    	memcpyfb(m.nnz, m.data, 0, buff, 0)
+    	memcpyfb(4*m.nnz, m.data, 0, buff, 0)
     	dout.write(buff, 0, 4*m.nnz)
     	dout.flush
     } catch {
