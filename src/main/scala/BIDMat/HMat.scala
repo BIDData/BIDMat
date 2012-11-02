@@ -59,6 +59,28 @@ case class HMat(nr:Int, nc:Int, fileList:List[String], varname:String, blkinds:A
 
 object HMat {
   
+  def readSomeInts(din:DataInputStream, a:Array[Int], buf:Array[Byte], n:Int) {
+    var nread = 0
+    while (nread < 4*n) {
+      val readnow = din.read(buf, 0, math.min(buf.length, 4*n-nread))
+      if (readnow % 4 != 0)
+        throw new RuntimeException("Read fractional word")
+      memcpybi(readnow/4, buf, 0, a, nread/4)
+      nread += readnow
+    }
+  }
+  
+  def readSomeFloats(din:DataInputStream, a:Array[Float], buf:Array[Byte], n:Int) {
+    var nread = 0
+    while (nread < 4*n) {
+      val readnow = din.read(buf, 0, math.min(buf.length, 4*n-nread))
+      if (readnow % 4 != 0)
+        throw new RuntimeException("Read fractional word")
+      memcpybf(readnow/4, buf, 0, a, nread/4)
+      nread += readnow
+    }
+  }
+  
   def saveSMat(fname:String, m:SMat):Unit = {
     val fout = new FileOutputStream(fname)
     val gout = new GZIPOutputStream(fout)
@@ -103,13 +125,10 @@ object HMat {
     val ncols = din.readInt
     val nnz = din.readInt
     val out = SMat(nrows, ncols, nnz)
-    val buff = new Array[Byte](4*math.max(ncols+1, nnz))
-    din.read(buff, 0, 4*(ncols+1))
-    memcpybi(ncols+1, buff, 0, out.jc, 0)
-    din.read(buff, 0, 4*nnz)
-    memcpybi(nnz, buff, 0, out.ir, 0)
-    din.read(buff, 0, 4*nnz)
-    memcpybf(nnz, buff, 0, out.data, 0)
+    val buff = new Array[Byte](1024*1024)
+    readSomeInts(din, out.jc, buff, ncols+1)
+    readSomeInts(din, out.ir, buff, nnz)
+    readSomeFloats(din, out.data, buff, nnz)
     MatHDF5.addOne(out.jc)
     MatHDF5.addOne(out.ir)
     din.close
