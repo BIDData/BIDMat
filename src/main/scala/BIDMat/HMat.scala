@@ -1,6 +1,7 @@
 package BIDMat
 
 import java.io._
+import java.util.zip._
 import scala.util.matching.Regex
 import Regex._
 import scala.collection.mutable._
@@ -56,9 +57,43 @@ case class HMat(nr:Int, nc:Int, fileList:List[String], varname:String, blkinds:A
 
 object HMat {
   
+  def saveFMat(fname:String, m:SMat):Unit = {
+    val fout = new FileOutputStream(fname)
+    val gout = new GZIPOutputStream(fout)
+    val dout = new DataOutputStream(gout)
+    dout.writeInt(1)
+    dout.writeInt(m.nrows)
+    dout.writeInt(m.ncols)
+    dout.writeInt(m.nnz)
+    var i = 0; while(i <= m.ncols) { dout.writeInt(m.jc(i)); i+=1 }
+    i = 0; while(i < m.nnz) { dout.writeInt(m.ir(i)); i+=1 }
+    i = 0; while(i < m.nnz) { dout.writeFloat(m.data(i)); i+=1 }
+    dout.close
+    gout.close
+    fout.close
+  }
+  
+  def loadFMat(fname:String):SMat = {
+    val fin = new FileInputStream(fname)
+    val gin = new GZIPInputStream(fin)
+    val din = new DataInputStream(gin)
+    val ftype = din.readInt
+    val nrows = din.readInt
+    val ncols = din.readInt
+    val nnz = din.readInt
+    val out = SMat(nrows, ncols, nnz)
+    var i = 0; while(i <= ncols) { out.jc(i) = din.readInt; i+=1 }
+    i = 0; while(i < nnz) { out.ir(i) = din.readInt; i+=1 }
+    i = 0; while(i < nnz) { out.data(i) = din.readFloat; i+=1 }
+    din.close
+    gin.close
+    fin.close
+    out
+  }
+  
   def testLoad(fname:String, varname:String, n:Int) = {
     val a = new Array[SMat](n)
-    var ndone = IMat(n,1)
+    var ndone = izeros(n,1)
     for (i <- 0 until n) {
       actor {
         a(i) = load(("/disk%02d/" format i)+fname, varname)
