@@ -58,12 +58,14 @@ object HMat {
   
   def testLoad(fname:String, varname:String, n:Int) = {
     val a = new Array[SMat](n)
+    var ndone = IMat(n,1)
     for (i <- 0 until n) {
       actor {
         a(i) = load(("/disk%02d/" format i)+fname, varname)
-        println("done %d" format i)
+        ndone(i) = 1
       }
     }
+    while (SciFunctions.sum(ndone).v < n) {Thread.sleep(100)}
     a
   }
   
