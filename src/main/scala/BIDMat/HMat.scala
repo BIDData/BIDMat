@@ -57,7 +57,7 @@ case class HMat(nr:Int, nc:Int, fileList:List[String], varname:String, blkinds:A
 
 object HMat {
   
-  def saveFMat(fname:String, m:SMat):Unit = {
+  def saveSMat(fname:String, m:SMat):Unit = {
     val fout = new FileOutputStream(fname)
     val gout = new GZIPOutputStream(fout)
     val dout = new DataOutputStream(gout)
@@ -73,7 +73,7 @@ object HMat {
     fout.close
   }
   
-  def loadFMat(fname:String):SMat = {
+  def loadSMat(fname:String):SMat = {
     val fin = new FileInputStream(fname)
     val gin = new GZIPInputStream(fin)
     val din = new DataInputStream(gin)
@@ -96,7 +96,7 @@ object HMat {
     var ndone = izeros(n,1)
     for (i <- 0 until n) {
       actor {
-        a(i) = load(("/disk%02d/" format i)+fname, varname)
+        a(i) = loadSMat(("/disk%02d/" format i)+fname)
         ndone(i) = 1
       }
     }
