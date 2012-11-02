@@ -59,7 +59,7 @@ case class HMat(nr:Int, nc:Int, fileList:List[String], varname:String, blkinds:A
 
 object HMat {
   
-  def readSomeInts(din:GZIPInputStream, a:Array[Int], buf:Array[Byte], n:Int) {
+  def readSomeInts(din:InputStream, a:Array[Int], buf:Array[Byte], n:Int) {
     var nread = 0
     while (nread < 4*n) {
       val readnow = din.read(buf, 0, math.min(buf.length, 4*n-nread))
@@ -68,7 +68,7 @@ object HMat {
     }
   }
   
-  def readSomeFloats(din:GZIPInputStream, a:Array[Float], buf:Array[Byte], n:Int) {
+  def readSomeFloats(din:InputStream, a:Array[Float], buf:Array[Byte], n:Int) {
     var nread = 0
     while (nread < 4*n) {
       val readnow = din.read(buf, 0, math.min(buf.length, 4*n-nread))
@@ -77,7 +77,16 @@ object HMat {
     }
   }
   
-  def writeSomeInts(dout:GZIPOutputStream, a:Array[Int], buf:Array[Byte], n:Int) {
+  def readSomeDoubles(din:InputStream, a:Array[Double], buf:Array[Byte], n:Int) {
+    var nread = 0
+    while (nread < 8*n) {
+      val readnow = din.read(buf, 0, math.min(buf.length, 8*n-nread))
+      memcpybd(readnow, buf, 0, a, nread)
+      nread += readnow
+    }
+  }
+  
+  def writeSomeInts(dout:OutputStream, a:Array[Int], buf:Array[Byte], n:Int) {
     var nwritten = 0
     while (nwritten < 4*n) {
       val todo = math.min(4*n-nwritten, buf.length)
@@ -87,7 +96,7 @@ object HMat {
     }
   }
   
-  def writeSomeFloats(dout:GZIPOutputStream, a:Array[Float], buf:Array[Byte], n:Int) {
+  def writeSomeFloats(dout:OutputStream, a:Array[Float], buf:Array[Byte], n:Int) {
     var nwritten = 0
     while (nwritten < 4*n) {
       val todo = math.min(4*n-nwritten, buf.length)
@@ -97,12 +106,142 @@ object HMat {
     }
   }
   
-  def saveSMat(fname:String, m:SMat):Unit = {
-    val fout = new FileOutputStream(fname)
-    val gout = new GZIPOutputStream(fout, 1024*1024)
+  def writeSomeDoubles(dout:OutputStream, a:Array[Double], buf:Array[Byte], n:Int) {
+    var nwritten = 0
+    while (nwritten < 8*n) {
+      val todo = math.min(8*n-nwritten, buf.length)
+    	memcpydb(todo, a, nwritten, buf, 0)
+      dout.write(buf, 0, todo)
+      nwritten += todo
+    }
+  }
+  
+  def getInputStream(fname:String, compressed:Boolean):InputStream = {
+    val fin = new FileInputStream(fname)
+    if (compressed) {
+      new GZIPInputStream(fin, 1024*1024)
+    } else {
+      new BufferedInputStream(fin, 1024*1024)
+    }
+  }
+  
+  def getOutputStream(fname:String, compressed:Boolean):OutputStream = {
+    val fin = new FileOutputStream(fname)
+    if (compressed) {
+      new GZIPOutputStream(fin, 1024*1024)
+    } else {
+      new BufferedOutputStream(fin, 1024*1024)
+    }
+  }
+  
+  def loadFMat(fname:String, compressed:Boolean=true):FMat = {
+    val gin = getInputStream(fname, compressed)
+    val buff = new Array[Byte](1024*1024)
+    val hints = new Array[Int](4)
+    readSomeInts(gin, hints, buff, 4)
+    val ftype = hints(0)
+    val nrows = hints(1)
+    val ncols = hints(2)
+    val out = FMat(nrows, ncols)
+    readSomeFloats(gin, out.data, buff, ncols*nrows)
+    gin.close
+    out
+  }
+   
+  def loadIMat(fname:String, compressed:Boolean=true):IMat = {
+    val gin = getInputStream(fname, compressed)
+    val buff = new Array[Byte](1024*1024)
+    val hints = new Array[Int](4)
+    readSomeInts(gin, hints, buff, 4)
+    val ftype = hints(0)
+    val nrows = hints(1)
+    val ncols = hints(2)
+    val out = IMat(nrows, ncols)
+    readSomeInts(gin, out.data, buff, ncols*nrows)
+    gin.close
+    out
+  }
+   
+  def loadDMat(fname:String, compressed:Boolean=true):DMat = {
+    val gin = getInputStream(fname, compressed)
+    val buff = new Array[Byte](1024*1024)
+    val hints = new Array[Int](4)
+    readSomeInts(gin, hints, buff, 4)
+    val ftype = hints(0)
+    val nrows = hints(1)
+    val ncols = hints(2)
+    val out = DMat(nrows, ncols)
+    readSomeDoubles(gin, out.data, buff, ncols*nrows)
+    gin.close
+    out
+  }
+  
+  def saveFMat(fname:String, m:FMat, compressed:Boolean=true):Unit = {
+    val gout = getOutputStream(fname, compressed)
     val hints = new Array[Int](4)
     val tbuf = new Array[Byte](16)
-    hints(0) = 1
+    hints(0) = 130 // 1=dense, 3=float
+    hints(1) = m.nrows
+    hints(2) = m.ncols
+    hints(3) = 0
+    writeSomeInts(gout, hints, tbuf, 4)
+    val buff = new Array[Byte](math.min(1024*1024, 4*m.ncols*m.nrows))
+    writeSomeFloats(gout, m.data, buff, m.nrows*m.ncols)
+    gout.close
+  }
+  
+  def saveIMat(fname:String, m:IMat, compressed:Boolean=true):Unit = {
+  	val gout = getOutputStream(fname, compressed)
+    val hints = new Array[Int](4)
+    val tbuf = new Array[Byte](16)
+    hints(0) = 110 // 1=dense, 1=int
+    hints(1) = m.nrows
+    hints(2) = m.ncols
+    hints(3) = 0
+    writeSomeInts(gout, hints, tbuf, 4)
+    val buff = new Array[Byte](math.min(1024*1024, 4*m.ncols*m.nrows))
+    writeSomeInts(gout, m.data, buff, m.nrows*m.ncols)
+    gout.close
+  }
+  
+  def saveDMat(fname:String, m:DMat, compressed:Boolean=true):Unit = {
+    val gout = getOutputStream(fname, compressed)
+    val hints = new Array[Int](4)
+    val tbuf = new Array[Byte](16)
+    hints(0) = 140 // 1=dense, 4=double
+    hints(1) = m.nrows
+    hints(2) = m.ncols
+    hints(3) = 0
+    writeSomeInts(gout, hints, tbuf, 4)
+    val buff = new Array[Byte](math.min(1024*1024, 4*m.ncols*m.nrows))
+    writeSomeDoubles(gout, m.data, buff, m.nrows*m.ncols)
+    gout.close
+  }
+  
+  def loadSMat(fname:String, compressed:Boolean=true):SMat = {
+    val gin = getInputStream(fname, compressed)
+    val buff = new Array[Byte](1024*1024)
+    val hints = new Array[Int](4)
+    readSomeInts(gin, hints, buff, 4)
+    val ftype = hints(0)
+    val nrows = hints(1)
+    val ncols = hints(2)
+    val nnz = hints(3)
+    val out = SMat(nrows, ncols, nnz)
+    readSomeInts(gin, out.jc, buff, ncols+1)
+    readSomeInts(gin, out.ir, buff, nnz)
+    readSomeFloats(gin, out.data, buff, nnz)
+    MatHDF5.addOne(out.jc)
+    MatHDF5.addOne(out.ir)
+    gin.close
+    out
+  }
+  
+  def saveSMat(fname:String, m:SMat, compressed:Boolean=true):Unit = {
+    val gout = getOutputStream(fname, compressed)
+    val hints = new Array[Int](4)
+    val tbuf = new Array[Byte](16)
+    hints(0) = 231 // 2=sparse, 3=float, 1=int
     hints(1) = m.nrows
     hints(2) = m.ncols
     hints(3) = m.nnz
@@ -129,27 +268,7 @@ object HMat {
     MatHDF5.addOne(m.jc)
     MatHDF5.addOne(m.ir)
     gout.close
-  }
-  
-  def loadSMat(fname:String):SMat = {
-    val fin = new FileInputStream(fname)
-    val gin = new GZIPInputStream(fin, 1024*1024)
-    val buff = new Array[Byte](1024*1024)
-    val hints = new Array[Int](4)
-    readSomeInts(gin, hints, buff, 4)
-    val ftype = hints(0)
-    val nrows = hints(1)
-    val ncols = hints(2)
-    val nnz = hints(3)
-    val out = SMat(nrows, ncols, nnz)
-    readSomeInts(gin, out.jc, buff, ncols+1)
-    readSomeInts(gin, out.ir, buff, nnz)
-    readSomeFloats(gin, out.data, buff, nnz)
-    MatHDF5.addOne(out.jc)
-    MatHDF5.addOne(out.ir)
-    gin.close
-    out
-  }
+  } 
   
   def testLoad(fname:String, varname:String, n:Int) = {
     val a = new Array[SMat](n)
