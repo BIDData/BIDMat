@@ -4,6 +4,9 @@ import java.io._
 import scala.util.matching.Regex
 import Regex._
 import scala.collection.mutable._
+import scala.actors._
+import scala.actors.Actor._
+import MatFunctions._
 
 case class HMat(nr:Int, nc:Int, fileList:List[String], varname:String, blkinds:Array[Int], catdim:Int) extends Mat(nr, nc) {
 
@@ -52,6 +55,17 @@ case class HMat(nr:Int, nc:Int, fileList:List[String], varname:String, blkinds:A
 }
 
 object HMat {
+  
+  def testLoad(fname:String, varname:String) = {
+    val a = new Array[SMat](16)
+    for (i <- 0 until 16) {
+      actor {
+        a(i) = load(("/disk%02d/" format i)+fname, varname)
+        println("done %d" format i)
+      }
+    }
+    a
+  }
   
   def apply(dirname:String, filepat:String, varname:String, catd:Int) { 
     var files:ListBuffer[String] = new ListBuffer[String]
