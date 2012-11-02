@@ -423,8 +423,8 @@ object MatHDF5 {
 
   def hload(fname:String, vnames:List[String]):List[AnyRef] = {
   val fapl = H5Pcreate(H5P_FILE_ACCESS)
-//  H5Pset_fapl_core(fapl, 1024*1024, false)
-  H5Pset_fapl_stdio(fapl)
+  H5Pset_fapl_core(fapl, 1024*1024, false);  println("core driver")
+//  H5Pset_fapl_stdio(fapl); println("stdio driver")
 	val fid = H5Fopen(fname,H5F_ACC_RDONLY,fapl)
 	H5Pclose(fapl)
 	val mats = vnames.map((vname) => getMat(fid, vname))
