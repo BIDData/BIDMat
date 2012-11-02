@@ -81,10 +81,14 @@ object HMat {
     val nrows = din.readInt
     val ncols = din.readInt
     val nnz = din.readInt
+    val buff = new Array[Byte](4*math.max(ncols+1, nnz))
+    din.read(buff, 0, 4*(ncols+1))
+    din.read(buff, 0, 4*nnz)
+    din.read(buff, 0, 4*nnz)
     val out = SMat(nrows, ncols, nnz)
-    var i = 0; while(i <= ncols) { out.jc(i) = din.readInt; i+=1 }
+/*    var i = 0; while(i <= ncols) { out.jc(i) = din.readInt; i+=1 }
     i = 0; while(i < nnz) { out.ir(i) = din.readInt; i+=1 }
-    i = 0; while(i < nnz) { out.data(i) = din.readFloat; i+=1 }
+    i = 0; while(i < nnz) { out.data(i) = din.readFloat; i+=1 } */
     din.close
     gin.close
     fin.close
