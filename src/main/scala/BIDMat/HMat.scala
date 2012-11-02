@@ -56,9 +56,9 @@ case class HMat(nr:Int, nc:Int, fileList:List[String], varname:String, blkinds:A
 
 object HMat {
   
-  def testLoad(fname:String, varname:String) = {
-    val a = new Array[SMat](16)
-    for (i <- 0 until 16) {
+  def testLoad(fname:String, varname:String, n:Int) = {
+    val a = new Array[SMat](n)
+    for (i <- 0 until n) {
       actor {
         a(i) = load(("/disk%02d/" format i)+fname, varname)
         println("done %d" format i)
