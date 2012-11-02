@@ -336,7 +336,7 @@ object MatHDF5 {
 	putLongAttr(group_id, "MATLAB_sparse", a.nrows)
 	val convert_ints = H5Tcopy(H5T_NATIVE_INT)
 	dims(0) = a.ncols + 1
-	val dplist_id = H5Pcreate(H5P_DATASET_CREATE)
+	var dplist_id = H5Pcreate(H5P_DATASET_CREATE)
 	setCompressionPlist(dplist_id, dims)
 	val jcs_id = H5Screate_simple(1, dims, null)
 	val jc_id = H5Dcreate(group_id, "jc", H5T_NATIVE_LLONG, jcs_id, H5P_DEFAULT, dplist_id, H5P_DEFAULT)
@@ -352,8 +352,10 @@ object MatHDF5 {
 	addOne(a.jc)
 	H5Dclose(jc_id)
 	H5Sclose(jcs_id)
+	H5Pclose(dplist_id)
 
 	dims(0) = a.nnz
+	dplist_id = H5Pcreate(H5P_DATASET_CREATE)
 	setCompressionPlist(dplist_id, dims)
 	if (a.ir != null) {
 	  val irs_id = H5Screate_simple(1, dims, null)
