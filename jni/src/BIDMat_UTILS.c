@@ -8,7 +8,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_memcpybi
 	jbyte * A = (*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE);
 	jint * B = (*env)->GetPrimitiveArrayCritical(env, jB, JNI_FALSE);
 
-    memcpy(&B[startB], &A[startA], N*sizeof(jint));
+    memcpy(((char *)B)+startB, A+startA, N);
 
 	(*env)->ReleasePrimitiveArrayCritical(env, jA, A, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, jB, B, 0);
@@ -19,7 +19,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_memcpybf
 	jbyte * A = (*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE);
 	jfloat * B = (*env)->GetPrimitiveArrayCritical(env, jB, JNI_FALSE);
 
-    memcpy(&B[startB], &A[startA], N*sizeof(jfloat));
+    memcpy(((char *)B)+startB, A+startA, N);
 
 	(*env)->ReleasePrimitiveArrayCritical(env, jA, A, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, jB, B, 0);
@@ -30,7 +30,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_memcpybd
 	jbyte * A = (*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE);
 	jdouble * B = (*env)->GetPrimitiveArrayCritical(env, jB, JNI_FALSE);
 
-    memcpy(&B[startB], &A[startA], N*sizeof(jdouble));
+    memcpy(((char *)B)+startB, A+startA, N);
 
 	(*env)->ReleasePrimitiveArrayCritical(env, jA, A, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, jB, B, 0);
@@ -41,7 +41,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_memcpyib
 	jint * A = (*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE);
 	jbyte * B = (*env)->GetPrimitiveArrayCritical(env, jB, JNI_FALSE);
 
-    memcpy(&B[startB], &A[startA], N*sizeof(jint));
+    memcpy(B+startB, ((char *)A)+startA, N);
 
 	(*env)->ReleasePrimitiveArrayCritical(env, jA, A, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, jB, B, 0);
@@ -53,7 +53,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_memcpyfb
 	jfloat * A = (*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE);
 	jbyte * B = (*env)->GetPrimitiveArrayCritical(env, jB, JNI_FALSE);
 
-    memcpy(&B[startB], &A[startA], N*sizeof(jfloat));
+    memcpy(B+startB, ((char *)A)+startA, N);
 
 	(*env)->ReleasePrimitiveArrayCritical(env, jA, A, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, jB, B, 0);
@@ -65,7 +65,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_memcpydb
 	jdouble * A = (*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE);
 	jbyte * B = (*env)->GetPrimitiveArrayCritical(env, jB, JNI_FALSE);
 
-    memcpy(&B[startB], &A[startA], N*sizeof(jdouble));
+    memcpy(B+startB, ((char *)A)+startA, N);
 
 	(*env)->ReleasePrimitiveArrayCritical(env, jA, A, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, jB, B, 0);
