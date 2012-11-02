@@ -2,7 +2,7 @@
 :: Set JAVA_HOME here if not set in environment
 :: SET JAVA_HOME= 
 :: Set as much memory as possible
-(SET JAVA_OPTS=-Xmx6G -Xms128M)
+(SET JAVA_OPTS=-Xmx12G -Xms128M)
 :: Fix these if needed
 SET JCUDA_VERSION=0.5.0RC
 SET JCUDA_LIBDIR=%CD%\lib
