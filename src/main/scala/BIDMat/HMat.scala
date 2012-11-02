@@ -72,11 +72,14 @@ object HMat {
     	MatHDF5.subOne(m.jc)
     	MatHDF5.subOne(m.ir)
     	memcpyib(m.ncols+1, m.jc, 0, buff, 0)
-    	dout.write(buff, 0, m.ncols+1)
+    	dout.write(buff, 0, 4*(m.ncols+1))
+    	dout.flush
     	memcpyib(m.nnz, m.ir, 0, buff, 0)
-    	dout.write(buff, 0, m.nnz)
+    	dout.write(buff, 0, 4*m.nnz)
+    	dout.flush
     	memcpyfb(m.nnz, m.data, 0, buff, 0)
-    	dout.write(buff, 0, m.nnz)
+    	dout.write(buff, 0, 4*m.nnz)
+    	dout.flush
     } catch {
       case _ => {
       	MatHDF5.addOne(m.jc)
@@ -101,11 +104,11 @@ object HMat {
     val nnz = din.readInt
     val out = SMat(nrows, ncols, nnz)
     val buff = new Array[Byte](4*math.max(ncols+1, nnz))
-    din.read(buff, 0, ncols+1)
+    din.read(buff, 0, 4*(ncols+1))
     memcpybi(ncols+1, buff, 0, out.jc, 0)
-    din.read(buff, 0, nnz)
+    din.read(buff, 0, 4*nnz)
     memcpybi(nnz, buff, 0, out.ir, 0)
-    din.read(buff, 0, nnz)
+    din.read(buff, 0, 4*nnz)
     memcpybf(nnz, buff, 0, out.data, 0)
     MatHDF5.addOne(out.jc)
     MatHDF5.addOne(out.ir)
