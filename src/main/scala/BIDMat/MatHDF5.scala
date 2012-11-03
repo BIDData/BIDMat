@@ -12,18 +12,18 @@ object MatHDF5 {
 		if (dims(0) > 1024) {
 		  val cdims = new Array[Long](1)
 		  cdims(0) = math.max(1, math.min(dims(0), Mat.compressedBlock))
-		  H5Pset_chunk(dplist_id, 1, cdims)
+//		  H5Pset_chunk(dplist_id, 1, cdims)
 //		  H5Pset_deflate(dplist_id, Mat.compressionLevel)
-		  H5Pset_szip(dplist_id, 	H5_SZIP_EC_OPTION_MASK, 32)
+		  H5Pset_szip(dplist_id, 	H5_SZIP_EC_OPTION_MASK, Mat.szipBlock)
 		}
 	  } else {
 		if (dims(0)*dims(1) > 1024) {
 		  val cdims = new Array[Long](2)
 		  cdims(0) = math.max(1, math.min(dims(0), 1+Mat.compressedBlock/dims(1)))
 		  cdims(1) = math.max(1, dims(1))
-		  H5Pset_chunk(dplist_id, 2, cdims)
+//		  H5Pset_chunk(dplist_id, 2, cdims)
 //		  H5Pset_deflate(dplist_id, Mat.compressionLevel)
-		  H5Pset_szip(dplist_id, 	H5_SZIP_EC_OPTION_MASK, 32)
+		  H5Pset_szip(dplist_id, 	H5_SZIP_EC_OPTION_MASK, Mat.szipBlock)
 		}
 	  }
 	}
