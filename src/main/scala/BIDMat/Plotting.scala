@@ -4,7 +4,7 @@ import ptolemy.plot._
 object Plotting { 
   var ifigure:Int = 1
   
-  def plot(mats:Mat*)(xlog:Boolean=false, ylog:Boolean=false, isconnected:Boolean=true) = {
+  def _plot(mats:Mat*)(xlog:Boolean=false, ylog:Boolean=false, isconnected:Boolean=true):Plot = {
     var p:Plot = new Plot
     p.setXLog(xlog)
     p.setYLog(ylog)
@@ -28,7 +28,7 @@ object Plotting {
       }
     } else {
       var i = 0
-    	while (i*2 <= mats.length) {      
+    	while (i*2 < mats.length) {      
     		(mats(2*i), mats(2*i+1)) match { 
     		case (a:FMat, b:FMat) => for (j <- 0 until a.length) p.addPoint(i, a(j), b(j), isconnected)
     		case (a:FMat, b:DMat) => for (j <- 0 until a.length) p.addPoint(i, a(j), b(j), isconnected)
@@ -46,23 +46,25 @@ object Plotting {
     var pframe:PlotFrame = new PlotFrame("Figure "+ifigure, p)
     ifigure += 1
     pframe.setVisible(true)
+    p
   }
   
-  def loglog(mats:Mat*) = plot(mats: _*)(xlog=true, ylog=true)
+  def plot(mats:Mat*) = _plot(mats: _*)()
   
-  def semilogx(mats:Mat*) = plot(mats: _*)(xlog=true)
+  def loglog(mats:Mat*) = _plot(mats: _*)(xlog=true, ylog=true)
   
-  def semilogy(mats:Mat*) = plot(mats: _*)(ylog=true)
+  def semilogx(mats:Mat*) = _plot(mats: _*)(xlog=true)
   
-  def pplot(mats:Mat*) = plot(mats: _*)(isconnected=false)
+  def semilogy(mats:Mat*) = _plot(mats: _*)(ylog=true)
   
-  def ploglog(mats:Mat*) = plot(mats: _*)(xlog=true, ylog=true, isconnected=false)
+  def p_plot(mats:Mat*) = _plot(mats: _*)(isconnected=false)
   
-  def psemilogx(mats:Mat*) = plot(mats: _*)(xlog=true, isconnected=false)
+  def ploglog(mats:Mat*) = _plot(mats: _*)(xlog=true, ylog=true, isconnected=false)
   
-  def psemilogy(mats:Mat*) = plot(mats: _*)(ylog=true, isconnected=false)
+  def psemilogx(mats:Mat*) = _plot(mats: _*)(xlog=true, isconnected=false)
+  
+  def psemilogy(mats:Mat*) = _plot(mats: _*)(ylog=true, isconnected=false)
    
-
   
   def hist(m:Mat, nbars:Int=10) = { 
     import SciFunctions._

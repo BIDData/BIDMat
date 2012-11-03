@@ -192,7 +192,6 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
     Mat.copyToDoubleArray(data, 0, out.data, 0, nnz)
     out
   }
-
 }
 
 class SPair (val omat:Mat, val mat:SMat) extends Pair{
