@@ -154,6 +154,8 @@ object Mat {
   
   var compressedBlock = 256*1024
   
+  var szipBlock = 32
+  
   var noMKL:Boolean = false
   
   var nflops = 0L
