@@ -127,7 +127,7 @@ object HMat {
   
   def getOutputStream(fname:String, compressed:Boolean):OutputStream = {
     import edu.berkeley.bid.UTILS._
-  	_getOutputStream(fname, compressed)
+  	_getOutputStream(fname, compressed, Mat.compressionLevel)
   }
   
   def loadFMat(fname:String, compressed:Boolean=true):FMat = {
