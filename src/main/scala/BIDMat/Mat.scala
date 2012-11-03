@@ -148,13 +148,13 @@ object Mat {
   import Ordered._
   import scala.tools.jline.TerminalFactory
   
-  var compress:Boolean = true
+  var compressType = 1            // 0=none, 1=zlib, 2=szip
   
-  var compressionLevel = 3
+  var compressionLevel = 3        // for zlib
   
-  var compressedBlock = 256*1024
+  var chunkSize = 256*1024        // for either method
   
-  var szipBlock = 32
+  var szipBlock = 32              // szip block size
   
   var noMKL:Boolean = false
   
@@ -171,9 +171,13 @@ object Mat {
   		var cudanum = new Array[Int](1)
   		jcuda.runtime.JCuda.cudaGetDeviceCount(cudanum)
   		hasCUDA = cudanum(0)
-  		jcuda.runtime.JCuda.cudaRuntimeGetVersion(cudanum)
-  		printf("%d CUDA device%s found, ", hasCUDA, if (hasCUDA == 1) "" else "s")
-  		println("CUDA version %d.%d" format (cudanum(0)/1000, (cudanum(0)%100) / 10))
+  		printf("%d CUDA device%s found", hasCUDA, if (hasCUDA == 1) "" else "s")
+  		if (hasCUDA > 0) {
+  			jcuda.runtime.JCuda.cudaRuntimeGetVersion(cudanum)
+  			println(", CUDA version %d.%d" format (cudanum(0)/1000, (cudanum(0)%100) / 10))
+  		} else {
+  		  println("")
+  		}
   	} catch {
   	case e:NoClassDefFoundError => println("Couldn't load the CUDA driver ")
   	case e:Exception => println("Exception while initializing CUDA driver ")
