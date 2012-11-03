@@ -7,23 +7,28 @@ object MatHDF5 {
   var refcount:Long = -1
 
   def setCompressionPlist(dplist_id:Int, dims:Array[Long]) = {
-	if (BIDMat.Mat.compress) {
+	if (Mat.compressType > 0) {
 	  if (dims.length == 1) {
 		if (dims(0) > 1024) {
 		  val cdims = new Array[Long](1)
-		  cdims(0) = math.max(1, math.min(dims(0), Mat.compressedBlock))
+		  cdims(0) = math.max(1, math.min(dims(0), Mat.chunkSize))
 		  H5Pset_chunk(dplist_id, 1, cdims)
-//		  H5Pset_deflate(dplist_id, Mat.compressionLevel)
-		  H5Pset_szip(dplist_id, 	H5_SZIP_EC_OPTION_MASK, Mat.szipBlock)
+		  if (Mat.compressType == 1) {
+		  	H5Pset_deflate(dplist_id, Mat.compressionLevel)
+		  } else {
+		  	H5Pset_szip(dplist_id, H5_SZIP_EC_OPTION_MASK, Mat.szipBlock)
+		  }
 		}
 	  } else {
 		if (dims(0)*dims(1) > 1024) {
 		  val cdims = new Array[Long](2)
-		  cdims(0) = math.max(1, math.min(dims(0), 1+Mat.compressedBlock/dims(1)))
+		  cdims(0) = math.max(1, math.min(dims(0), 1+Mat.chunkSize/dims(1)))
 		  cdims(1) = math.max(1, dims(1))
-		  H5Pset_chunk(dplist_id, 2, cdims)
-//		  H5Pset_deflate(dplist_id, Mat.compressionLevel)
-		  H5Pset_szip(dplist_id, 	H5_SZIP_EC_OPTION_MASK, Mat.szipBlock)
+		  if (Mat.compressType == 1) {
+		  	H5Pset_deflate(dplist_id, Mat.compressionLevel)
+		  } else {
+		  	H5Pset_szip(dplist_id, H5_SZIP_EC_OPTION_MASK, Mat.szipBlock)
+		  }
 		}
 	  }
 	}
@@ -185,9 +190,9 @@ object MatHDF5 {
 	  case _ => {}
 	}
 	val sdata = if (ir_id >= 0) {
-	  BIDMat.SparseMat(nrows, ncols, nnz) 
+	  SparseMat(nrows, ncols, nnz) 
 	} else {
-	  BIDMat.SparseMat.noRows(nrows, ncols, nnz)
+	  SparseMat.noRows(nrows, ncols, nnz)
 	}
 	val convert_ints = H5Tcopy(H5T_NATIVE_INT)
 	H5Dread_int(jc_id, convert_ints, H5S_ALL, H5S_ALL, H5P_DEFAULT, sdata.jc)
