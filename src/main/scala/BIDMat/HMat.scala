@@ -126,12 +126,8 @@ object HMat {
   }
   
   def getOutputStream(fname:String, compressed:Boolean):OutputStream = {
-    val fin = new FileOutputStream(fname)
-    if (compressed) {
-      new GZIPOutputStream(fin, 1024*1024)
-    } else {
-      new BufferedOutputStream(fin, 1024*1024)
-    }
+    import edu.berkeley.bid.UTILS._
+  	_getOutputStream(fname, compressed)
   }
   
   def loadFMat(fname:String, compressed:Boolean=true):FMat = {

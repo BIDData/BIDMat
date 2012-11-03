@@ -152,7 +152,7 @@ object Mat {
   
   var compressionLevel = 3        // for zlib
   
-  var chunkSize = 256*1024        // for either method
+  var chunkSize = 128*128         // for either method
   
   var szipBlock = 32              // szip block size
   
