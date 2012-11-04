@@ -31,7 +31,7 @@ public final class UTILS {
     		case 7: return new GZIPOutputStream(fout, 1024*1024){{def.setLevel(7);}};
     		case 8: return new GZIPOutputStream(fout, 1024*1024){{def.setLevel(8);}};
     		case 9: return new GZIPOutputStream(fout, 1024*1024){{def.setLevel(9);}};
-    		default: return new GZIPOutputStream(fout, 1024*1024){{def.setLevel(3);}};
+    		default: throw new RuntimeException("Unsupported compression level "+compressionLevel);
     		}    		
     	} else {
     		return new BufferedOutputStream(fout, 1024*1024);
