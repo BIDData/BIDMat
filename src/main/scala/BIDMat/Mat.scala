@@ -167,6 +167,7 @@ object Mat {
   var hasCUDA = 0
   
   def checkCUDA:Unit = 
+  if (hasCUDA >= 0) {
   	try {
   		var cudanum = new Array[Int](1)
   		jcuda.runtime.JCuda.cudaGetDeviceCount(cudanum)
@@ -183,6 +184,7 @@ object Mat {
   	case e:Exception => println("Exception while initializing CUDA driver ")
   	case _ => println("Something went wrong while loading CUDA driver")
   	}
+  }
   
   var terminal = TerminalFactory.create
   
