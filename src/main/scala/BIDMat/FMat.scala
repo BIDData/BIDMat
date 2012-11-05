@@ -1,6 +1,7 @@
 package BIDMat
 import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.LAPACK._
+import scala.actors.Actor._
 
 
 case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, nc, data0) {
@@ -106,116 +107,139 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   override def clearLower = setLower(0, 0)
 
   
-  def fDMult(a:Mat, outmat:FMat):FMat = { 
+  def fDMult(a:FMat, outmat:FMat):FMat = { 
+  	if (ncols == a.nrows) {
+  		val out = FMat.newOrCheckFMat(nrows, a.ncols, outmat)
+  		Mat.nflops += 2L * length * a.ncols
+  		if (Mat.noMKL) {
+  			if (outmat.asInstanceOf[AnyRef] != null) out.clear
+  			var i = 0
+  			while (i < a.ncols) {
+  				var j = 0
+  				while (j < a.nrows) {
+  					var k = 0
+  					val dval = a.data(j + i*ncols)
+  					while (k < nrows) {
+  						out.data(k+i*nrows) += data(k+j*nrows)*dval
+  						k += 1
+  					}
+  					j += 1
+  				}
+  				i += 1									
+  			}
+  		} else if (nrows == 1) {
+  			sgemv(ORDER.ColMajor, TRANSPOSE.Trans, a.nrows, a.ncols, 1.0f, a.data, a.nrows, data, 1, 0, out.data, 1)
+  		} else if (a.ncols == 1) {
+  			sgemv(ORDER.ColMajor, TRANSPOSE.NoTrans, nrows, ncols, 1.0f, data, nrows, a.data, 1, 0, out.data, 1)
+  		} else {
+  			sgemm(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.NoTrans,
+  					nrows, a.ncols, ncols, 1.0f, data, nrows, a.data, a.nrows, 0, out.data, nrows)
+  		}
+  		out
+  	} else if (ncols == 1 && nrows == 1){
+  		val out = FMat.newOrCheckFMat(a.nrows, a.ncols, outmat)
+  		Mat.nflops += a.length
+  		var i = 0
+  		val dvar = data(0)
+  		while (i < a.length) {
+  			out.data(i) = dvar * a.data(i)
+  			i += 1
+  		}			    
+  		out			  
+  	} else if (a.ncols == 1 && a.nrows == 1){
+  		val out = FMat.newOrCheckFMat(nrows, ncols, outmat)
+  		Mat.nflops += length
+  		var i = 0
+  		val dvar = a.data(0)
+  		while (i < length) {
+  			out.data(i) = dvar * data(i)
+  			i += 1
+  		}			    
+  		out			  
+  	}	else throw new RuntimeException("dimensions mismatch")
+  }
+  
+  def fSMultHelper(a:SMat, out:FMat, istart:Int, iend:Int, ioff:Int) = {
+  	var i = istart
+  	while (i < iend) {
+  		var j = a.jc(i) - ioff
+  		while (j < a.jc(i+1)-ioff) {
+  			val dval = a.data(j)
+  			val ival = a.ir(j) - ioff
+  			if (Mat.noMKL || nrows < 220) {
+  				var k = 0
+  				while (k < nrows) {
+  					out.data(k+i*nrows) += data(k+ival*nrows)*dval
+  					k += 1
+  				} 			  
+  			} else {
+  				saxpyxx(nrows, dval, data, ival*nrows, out.data, i*nrows)
+  			}
+  			j += 1
+  		}
+  		i += 1
+  	}
+  }
+  
+  def fSMultHelper2(a:SMat, out:FMat, istart:Int, iend:Int, ioff:Int) = {
+  	var i = 0
+  	while (i < a.ncols) {
+  		var j = a.jc(i) - ioff
+  		while (j < a.jc(i+1)-ioff) {
+  			val dval = a.data(j)
+  			val ival = a.ir(j) - ioff
+  			var k = istart
+  			while (k < iend) {
+  				out.data(k+i*nrows) += data(k+ival*nrows)*dval
+  				k += 1
+  			} 			  
+  			j += 1
+  		}
+  		i += 1
+  	}
+  }
+  
+  def fSMult(a:SMat, outmat:FMat):FMat = {
     import edu.berkeley.bid.SPBLAS._
-    a match {
-      case aa:FMat => {
-	if (ncols == a.nrows) {
-	  val out = FMat.newOrCheckFMat(nrows, a.ncols, outmat)
-	  Mat.nflops += 2L * length * a.ncols
-	  if (Mat.noMKL) {
-	  	if (outmat.asInstanceOf[AnyRef] != null) out.clear
-	  	var i = 0
-	  	while (i < a.ncols) {
-	  		var j = 0
-	  		while (j < a.nrows) {
-	  			var k = 0
-	  			val dval = aa.data(j + i*ncols)
-	  			while (k < nrows) {
-	  				out.data(k+i*nrows) += data(k+j*nrows)*dval
-	  				k += 1
-	  			}
-	  			j += 1
-	  		}
-	  		i += 1									
-	  	}
-	  } else if (nrows == 1) {
-	    sgemv(ORDER.ColMajor, TRANSPOSE.Trans, a.nrows, a.ncols, 1.0f, aa.data, a.nrows, data, 1, 0, out.data, 1)
-	  } else if (a.ncols == 1) {
-	    sgemv(ORDER.ColMajor, TRANSPOSE.NoTrans, nrows, ncols, 1.0f, data, nrows, aa.data, 1, 0, out.data, 1)
-	  } else {
-	    sgemm(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.NoTrans,
-		  nrows, a.ncols, ncols, 1.0f, data, nrows, aa.data, a.nrows, 0, out.data, nrows)
-	  }
-	  out
-	} else if (ncols == 1 && nrows == 1){
-	  val out = FMat.newOrCheckFMat(a.nrows, a.ncols, outmat)
-	  Mat.nflops += aa.length
-	  var i = 0
-	  val dvar = data(0)
-	  while (i < aa.length) {
-	    out.data(i) = dvar * aa.data(i)
-	    i += 1
-	  }			    
-	  out			  
-	} else if (a.ncols == 1 && a.nrows == 1){
-	  val out = FMat.newOrCheckFMat(nrows, ncols, outmat)
-	  Mat.nflops += length
-	  var i = 0
-	  val dvar = aa.data(0)
-	  while (i < length) {
-	    out.data(i) = dvar * data(i)
-	    i += 1
-	  }			    
-	  out			  
-	}	else throw new RuntimeException("dimensions mismatch")
-      }
-      case ss:SMat => {
-	if (ncols != a.nrows) {
-	  throw new RuntimeException("dimensions mismatch")
-	} else {
-	  val out = FMat.newOrCheckFMat(nrows, a.ncols, outmat)
-	  Mat.nflops += 2 * nrows.toLong * ss.nnz
-	  val ioff = Mat.ioneBased;
-	  val nr = ss.nrows
-	  val nc = ss.ncols
-	  val kk = ncols
-	  var jc0:Array[Int] = null
-	  var ir0:Array[Int] = null
-	  if (ioff == 0) {
-	    jc0 = SparseMat.incInds(ss.jc)
-	    ir0 = SparseMat.incInds(ss.ir)
-	  } else {
-	    jc0 = ss.jc
-	    ir0 = ss.ir
-	  }	 
-	  if (nrows == 1 && !Mat.noMKL) {
-	    scscmv("T", nr, nc, 1.0f, "GLNF", ss.data, ir0, jc0, data, 0f, out.data)
-	    out
-	  } else {
-	    if (outmat.asInstanceOf[AnyRef] != null) out.clear
-	    if (nrows < 20 || Mat.noMKL) {
-	      var i = 0
-	      while (i < a.ncols) {
-		var j = ss.jc(i) - ioff
-		while (j < ss.jc(i+1)-ioff) {
-		  val dval = ss.data(j)
-		  val ival = ss.ir(j) - ioff
-		  var k = 0
-		  while (k < nrows) {
-		    out.data(k+i*nrows) += data(k+ival*nrows)*dval
-		    k += 1
-		  }
-		  j += 1
-		}
-		i += 1
-	      }
-	    } else {
-	      smcscm(nrows, ss.ncols, data, nrows, ss.data, ss.ir, ss.jc, out.data, nrows)
-//              scsrmm("N", ss.ncols, nrows, ncols, 1.0f, "GLNF", ss.data, ss.ir, ss.jc, data, ncols, 0f, out.data, out.ncols)
-	    }
-	  }
-	  out
-	}
-      }
-      case _ => throw new RuntimeException("unsupported arg")	
+    if (ncols != a.nrows) {
+    	throw new RuntimeException("dimensions mismatch")
+    } else {
+    	val out = FMat.newOrCheckFMat(nrows, a.ncols, outmat)
+    	Mat.nflops += 2L * nrows * a.nnz
+    	val ioff = Mat.ioneBased;
+    	if (Mat.noMKL || Mat.numThreads > 1) {
+    		out.clear
+    		if (1L*nrows*a.nnz > 100000L && Mat.numThreads > 1) {
+    			val done = IMat(1,Mat.numThreads)
+    			for (ithread <- 0 until Mat.numThreads) {
+    				val istart = ithread*a.ncols/Mat.numThreads
+    				val iend = (ithread+1)*a.ncols/Mat.numThreads 
+    				actor {
+    					fSMultHelper(a, out, istart, iend, ioff)
+    					done(ithread) = 1
+    				}
+    			}
+    			while (SciFunctions.sum(done).v < Mat.numThreads) {Thread.`yield`()}
+    		} else {
+    			fSMultHelper(a, out, 0, a.ncols, ioff)
+    		}
+    	} else {
+    		var jc0 = if (ioff == 0) SparseMat.incInds(a.jc) else a.jc
+    		var ir0 = if (ioff == 0) SparseMat.incInds(a.ir) else a.ir 
+    		if (nrows == 1) {
+    			scscmv("T", a.nrows, a.ncols, 1.0f, "GLNF", a.data, ir0, jc0, data, 0f, out.data)
+    		} else {
+    			smcscm(nrows, a.ncols, data, nrows, a.data, ir0, jc0, out.data, nrows)
+    		}
+    	}
+    	out
     }
   }
   
   def multT(a:SMat, outmat:FMat):FMat = {
     import edu.berkeley.bid.CBLAS._
-    if (ncols == a.nrows) {
-    	val out = FMat.newOrCheckFMat(nrows, a.ncols, outmat)
+    if (ncols == a.ncols) {
+    	val out = FMat.newOrCheckFMat(nrows, a.nrows, outmat)
     	if (outmat.asInstanceOf[AnyRef] != null) out.clear
     	smcsrm(nrows, a.ncols, data, nrows, a.data, a.ir, a.jc, out.data, nrows)
     	Mat.nflops += 2L * a.nnz * nrows
@@ -359,8 +383,8 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
 
   def +  (b : FMat) = ffMatOpv(b, DenseMat.vecAdd _, null)
   def -  (b : FMat) = ffMatOpv(b, DenseMat.vecSub _, null)
-  def *  (b : FMat) = fDMult(FMat(b), null)
-  def *  (b : SMat) = fDMult(b, null)
+  def *  (b : FMat) = fDMult(b, null)
+  def *  (b : SMat) = fSMult(b, null)
   def xT  (b : SMat) = multT(b, null)
   def /  (b : FMat) = solvel(b)
   def \\ (b : FMat) = solver(b)
@@ -509,7 +533,7 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   override def t:FMat = FMat(mat.gt(FMat.tryForOutFMat(omat)))
   
   def * (b : FMat) = mat.fDMult(b, FMat.tryForOutFMat(omat)) 
-  def * (b : SMat) = mat.fDMult(b, FMat.tryForOutFMat(omat)) 
+  def * (b : SMat) = mat.fSMult(b, FMat.tryForOutFMat(omat)) 
   def xT  (b : SMat) = mat.multT(b, FMat.tryForOutFMat(omat))
   def + (b : FMat) = mat.ffMatOpv(b, DenseMat.vecAdd _, FMat.tryForOutFMat(omat))
   def - (b : FMat) = mat.ffMatOpv(b, DenseMat.vecSub _, FMat.tryForOutFMat(omat))

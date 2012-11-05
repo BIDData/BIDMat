@@ -156,6 +156,8 @@ object Mat {
   
   var szipBlock = 32              // szip block size
   
+  var numThreads = 8
+  
   var noMKL:Boolean = false
   
   var nflops = 0L
