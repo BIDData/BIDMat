@@ -203,9 +203,9 @@ object Mat {
     			println("")
     		}
     	} catch {
-    	case e:NoClassDefFoundError => println("Couldn't load the CUDA driver ")
-    	case e:Exception => println("Exception while initializing CUDA driver ")
-    	case _ => println("Something went wrong while loading CUDA driver")
+    	case e:NoClassDefFoundError => println("Couldn't load the JCUDA driver")
+    	case e:Exception => println("Exception while initializing JCUDA driver")
+    	case _ => println("Something went wrong while loading JCUDA driver")
     	}
     }
   }
