@@ -2,6 +2,8 @@ package BIDMat
 import scala.math.Numeric._
 import java.util.Arrays
 import java.util.Comparator
+import scala.actors._
+import scala.actors.Actor._
 
 class DenseMat[@specialized(Double,Float,Int,Byte) T]
 (nr: Int, nc: Int, val data:Array[T])(implicit manifest:ClassManifest[T]) extends Mat(nr, nc) {
@@ -635,22 +637,41 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   def ggMatOpStrictv(a:Mat, opv:(Array[T],Int,Int,Array[T],Int,Int,Array[T],Int,Int,Int) => T, oldmat:DenseMat[T]):DenseMat[T] =
     a match {
       case aa:DenseMat[T] => {
-        if (nrows==a.nrows && ncols==a.ncols) {
-          val out = DenseMat.newOrCheck[T](nrows, ncols, oldmat)
-          Mat.nflops += length
-          opv(data, 0, 1, aa.data, 0, 1, out.data, 0, 1, aa.length)
-          out
-        } else if (a.nrows == 1 && a.ncols == 1) {
-          val out = DenseMat.newOrCheck[T](nrows, ncols, oldmat)
-          Mat.nflops += length
-          opv(data, 0, 1, aa.data, 0, 0, out.data, 0, 1, length)
-          out
+        var out:DenseMat[T] = null
+        var mylen = 0
+        if ((nrows==a.nrows && ncols==a.ncols) || (a.nrows == 1 && a.ncols == 1)) {
+        	out = DenseMat.newOrCheck[T](nrows, ncols, oldmat)
+        	mylen = length
         } else if (nrows == 1 && ncols == 1) {
-          val out = DenseMat.newOrCheck[T](a.nrows, a.ncols, oldmat)
-          Mat.nflops += aa.length
-          opv(data, 0, 0, aa.data, 0, 1, out.data, 0, 1, aa.length)
-          out
+        	val out = DenseMat.newOrCheck[T](a.nrows, a.ncols, oldmat)
+        	mylen = a.length
         } else throw new RuntimeException("dims incompatible")
+        if (mylen > 100000 && Mat.numThreads > 1) {
+        	val done = IMat(1, Mat.numThreads)
+        	for (ithread<- 0 until Mat.numThreads) {
+        		val istart = ithread*mylen/Mat.numThreads
+        		val len = (ithread+1)*mylen/Mat.numThreads - istart
+        		actor {
+        			if (nrows==a.nrows && ncols==a.ncols) {
+        				opv(data, istart, 1, aa.data, istart, 1, out.data, istart, 1, len)
+        			} else if (a.nrows == 1 && a.ncols == 1) {
+        				opv(data, istart, 1, aa.data, 0, 0, out.data, istart, 1, len)
+        			} else {
+        				opv(data, 0, 0, aa.data, istart, 1, out.data, istart, 1, len)
+        			}
+        			done(ithread) = 1
+        		}
+        	}
+        	while (SciFunctions.sum(done).v < Mat.numThreads) {Thread.`yield`()}         
+        } else if (nrows==a.nrows && ncols==a.ncols) {
+        	opv(data, 0, 1, aa.data, 0, 1, out.data, 0, 1, aa.length)
+        } else if (a.nrows == 1 && a.ncols == 1) {
+          opv(data, 0, 1, aa.data, 0, 0, out.data, 0, 1, length)
+        } else if (nrows == 1 && ncols == 1) {
+          opv(data, 0, 0, aa.data, 0, 1, out.data, 0, 1, aa.length)
+        } 
+        Mat.nflops += mylen
+        out
       }
       case _ => throw new RuntimeException("arg must be dense")
     }

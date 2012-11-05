@@ -3,6 +3,7 @@ package BIDMat
 import scala.compat.Platform._ 
 import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.LAPACK._
+import scala.actors.Actor._
 
 class IMatWildcard extends IMat(0,0,null) with MatrixWildcard
 
@@ -429,6 +430,32 @@ object MatFunctions {
   def full(sd:SDMat):DMat = DMat(sd.full)
 
   def full(ss:SMat):FMat = FMat(ss.full)
+  
+  def DDShelper(a:FMat, b:FMat, c:SMat, out:SMat, istart:Int, iend:Int, ioff:Int) = {
+    var i = istart
+    while (i < iend) {
+    	var j = c.jc(i)-ioff
+    	while (j < c.jc(i+1)-ioff) {
+    		var dsum = 0.0f
+    		val a0 = (c.ir(j)-ioff)*a.nrows
+    		val b0 = i*a.nrows
+    		if (Mat.noMKL || a.nrows < 256) {
+    			var k = 0
+    			while (k < a.nrows) {
+    				dsum += a.data(k + a0) * b.data(k + b0)
+    				k += 1
+    			} 
+    		} else {
+    			dsum = sdotxx(a.nrows, a.data, a0, b.data, b0)
+    		}
+    		out.data(j) = dsum
+    		out.ir(j) = c.ir(j)
+    		j += 1
+    	}
+    	out.jc(i+1) = c.jc(i+1)
+    	i += 1
+    }
+  }
 
   def DDS(a:FMat,b:FMat,c:SMat):SMat = {
     if (a.nrows != b.nrows) {
@@ -439,29 +466,20 @@ object MatFunctions {
       val out = SMat(c.nrows,c.ncols,c.nnz)
       Mat.nflops += 2L * c.nnz * a.nrows
       val ioff = Mat.ioneBased
-      var i = 0
       out.jc(0) = ioff
-      while (i < c.ncols) {
-    	var j = c.jc(i)-ioff
-    	while (j < c.jc(i+1)-ioff) {
-    	  var dsum = 0.0f
-    	  var k = 0
-    	  val a0 = (c.ir(j)-ioff)*a.nrows
-    	  val b0 = i*a.nrows
-    	  if (Mat.noMKL) {
-    	    while (k < a.nrows) {
-    	      dsum += a.data(k + a0) * b.data(k + b0)
-    	      k += 1
-    	    } 
-    	  } else {
-    	    dsum = sdotxx(a.nrows, a.data, a0, b.data, b0)
-    	  }
-    	  out.data(j) = dsum
-    	  out.ir(j) = c.ir(j)
-    	  j += 1
-    	}
-    	out.jc(i+1) = c.jc(i+1)
-    	i += 1
+      if (c.nnz > 100000 && Mat.numThreads > 1) {
+        val done = IMat(1,Mat.numThreads)
+        for (i <- 0 until Mat.numThreads) {
+          actor {
+          	val istart = i*c.ncols/Mat.numThreads
+          	val iend = (i+1)*c.ncols/Mat.numThreads
+          	DDShelper(a, b, c, out, istart, iend, ioff)
+          	done(i) = 1
+          }
+        }
+        while (SciFunctions.sum(done).v < Mat.numThreads) {Thread.`yield`()}
+      } else {
+      	DDShelper(a, b, c, out, 0, c.ncols, ioff)
       }
       out
     }

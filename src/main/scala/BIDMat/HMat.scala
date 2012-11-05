@@ -275,7 +275,7 @@ object HMat {
         ndone(i) = 1
       }
     }
-    while (SciFunctions.sum(ndone).v < n) {Thread.sleep(100)}
+    while (SciFunctions.sum(ndone).v < n) {Thread.sleep(10)}
     a
   }
   
