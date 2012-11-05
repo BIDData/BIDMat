@@ -1,6 +1,7 @@
 package BIDMat
 import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.LAPACK._
+import edu.berkeley.bid.SPBLAS._
 import scala.actors.Actor._
 
 
@@ -200,7 +201,6 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
   
   def fSMult(a:SMat, outmat:FMat):FMat = {
-    import edu.berkeley.bid.SPBLAS._
     if (ncols != a.nrows) {
     	throw new RuntimeException("dimensions mismatch")
     } else {
