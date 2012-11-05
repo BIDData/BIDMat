@@ -168,7 +168,7 @@ object Mat {
   
   var hasCUDA = 0
   
-  def checkCUDA:Unit = 
+  def checkCUDA:Unit = {
     if (hasCUDA == 0) {
     	try {
     		val os = System.getProperty("os.name")
@@ -178,34 +178,36 @@ object Mat {
     			try {
     				System.loadLibrary("cudart64_50_35")
     			} catch {
-    			case e:Error => {}
-    			System.loadLibrary("cudart64_42_9")
+    			case _ => try {
+    				System.loadLibrary("cudart64_42_9")
+    			} 
     			}
     		}
     	} catch {
-    	case e:Error => {
+    	case _ =>  {
     		println("Cant find CUDA SDK")
-    		hasCUDA = -1
+    		hasCUDA = -1    		
     	}
     	}
     }
-  if (hasCUDA >= 0) {
-  	try {
-  		var cudanum = new Array[Int](1)
-  		jcuda.runtime.JCuda.cudaGetDeviceCount(cudanum)
-  		hasCUDA = cudanum(0)
-  		printf("%d CUDA device%s found", hasCUDA, if (hasCUDA == 1) "" else "s")
-  		if (hasCUDA > 0) {
-  			jcuda.runtime.JCuda.cudaRuntimeGetVersion(cudanum)
-  			println(", CUDA version %d.%d" format (cudanum(0)/1000, (cudanum(0)%100) / 10))
-  		} else {
-  			println("")
-  		}
-  	} catch {
-  	case e:NoClassDefFoundError => println("Couldn't load the CUDA driver ")
-  	case e:Exception => println("Exception while initializing CUDA driver ")
-  	case _ => println("Something went wrong while loading CUDA driver")
-  	}
+    if (hasCUDA >= 0) {
+    	try {
+    		var cudanum = new Array[Int](1)
+    		jcuda.runtime.JCuda.cudaGetDeviceCount(cudanum)
+    		hasCUDA = cudanum(0)
+    		printf("%d CUDA device%s found", hasCUDA, if (hasCUDA == 1) "" else "s")
+    		if (hasCUDA > 0) {
+    			jcuda.runtime.JCuda.cudaRuntimeGetVersion(cudanum)
+    			println(", CUDA version %d.%d" format (cudanum(0)/1000, (cudanum(0)%100) / 10))
+    		} else {
+    			println("")
+    		}
+    	} catch {
+    	case e:NoClassDefFoundError => println("Couldn't load the CUDA driver ")
+    	case e:Exception => println("Exception while initializing CUDA driver ")
+    	case _ => println("Something went wrong while loading CUDA driver")
+    	}
+    }
   }
   
   var terminal = TerminalFactory.create
