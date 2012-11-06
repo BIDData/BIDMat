@@ -5,7 +5,7 @@ import jcuda.jcublas.JCublas._
 import jcuda.runtime.JCuda._
 import edu.berkeley.bid.CUMAT
 
-class GMat(nr:Int, nc:Int, val data:Pointer) extends Mat(nr, nc) {
+class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, nc) {
   
   override def dv:Double =
     if (nrows > 1 || ncols > 1) {
@@ -15,6 +15,8 @@ class GMat(nr:Int, nc:Int, val data:Pointer) extends Mat(nr, nc) {
     }
   
   override def mytype = "GMat"
+    
+  override def nnz = length
   
   override def toString:String = {
     val nr = scala.math.min(nrows,10)
@@ -190,6 +192,17 @@ class GMat(nr:Int, nc:Int, val data:Pointer) extends Mat(nr, nc) {
   override def ==  (b : Mat):Mat = applyMat(this, b, null, Mop_EQ)
   override def === (b : Mat):Mat = applyMat(this, b, null, Mop_EQ) 
   override def !=  (b : Mat):Mat = applyMat(this, b, null, Mop_NE)
+  
+  override def recycle(nr:Int, nc:Int, nnz:Int):GMat = {
+    if (nrows == nr && nc == ncols) {
+      this
+    } else if (realsize >= nr*nc) {
+      new GMat(nr, nc, data, realsize)
+    } else {
+      free
+      GMat(nr, nc)
+    }  
+  }
 }
 
 class GPair(val omat:Mat, val mat:GMat) extends Pair{
@@ -240,6 +253,7 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
   override def ==  (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_EQ)
   override def === (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_EQ) 
   override def !=  (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_NE)
+  
 }
 
 
@@ -299,7 +313,7 @@ object GMat {
   }  
   
   def apply(nr:Int, nc:Int):GMat = {
-    val retv = new GMat(nr, nc, new Pointer())        
+    val retv = new GMat(nr, nc, new Pointer(), nr*nc)        
     val status = cublasAlloc(nr*nc, Sizeof.FLOAT, retv.data)
     if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed")
     retv        
@@ -308,12 +322,16 @@ object GMat {
   def toFMat(a:GMat):FMat = a.toFMat()     
   
   def apply(a:FMat):GMat = {
-    val retv = new GMat(a.nrows, a.ncols, new Pointer())
-    val rsize = a.nrows*a.ncols
-    val status = cublasAlloc(rsize, Sizeof.FLOAT, retv.data)
-    if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed")
+  	val rsize = a.nrows*a.ncols
+    val retv = GMat(a.nrows, a.ncols)
     JCublas.cublasSetVector(rsize, Sizeof.FLOAT, Pointer.to(a.data), 1, retv.data, 1);
     retv
+  }
+  
+  def fromFMat(a:FMat, b:GMat):GMat = {
+    val bb = b.recycle(a.nrows, a.ncols, 0)
+    JCublas.cublasSetVector(a.length, Sizeof.FLOAT, Pointer.to(a.data), 1, bb.data, 1)
+    bb
   }
 
   def newOrCheckGMat(nr:Int, nc:Int, oldmat:GMat):GMat = {

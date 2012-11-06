@@ -6,7 +6,6 @@ abstract class Mat(nr:Int, nc:Int) {
 
   def length = nr*nc
   
-
   def notImplemented0(s:String):Mat = { 
     throw new RuntimeException("operator "+s+" not implemented for "+this)
   }
@@ -27,6 +26,11 @@ abstract class Mat(nr:Int, nc:Int) {
   def clearLower(i:Int) = notImplemented0("clearLower"); 
   def clearUpper = notImplemented0("clearUpper");
   def clearLower = notImplemented0("clearLower");
+    
+  def nnz:Int = {notImplemented0("nnz"); 0}
+  def clear = notImplemented0("clear");
+  def zeros(nr:Int, nc:Int, nnz:Int):Mat = zeros(nr, nc)
+  def recycle(nr:Int, nc:Int, nnz:Int):Mat = notImplemented0("recycle");
   
   def apply(a:IMat):Mat = notImplemented0("linear array access");
   def apply(a:IMat, b:IMat):Mat = notImplemented0("block array access");
@@ -106,6 +110,7 @@ abstract class Mat(nr:Int, nc:Int) {
   def \ (b : Mat):Mat = notImplemented1("\\", b)
   def on (b : Mat):Mat = notImplemented1("on", b)
   def ~ (b : Mat):Pair = throw new RuntimeException("operator ~ not implemented for "+this+" and "+b)
+
 }
 
 abstract class Pair {

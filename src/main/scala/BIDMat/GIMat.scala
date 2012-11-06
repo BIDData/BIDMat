@@ -4,7 +4,7 @@ import jcuda.jcublas.JCublas;
 import jcuda.runtime.JCuda;
 import edu.berkeley.bid.CUMAT;
 
-class GIMat(nr:Int, nc:Int, val data:Pointer) extends Mat(nr, nc) {
+class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, nc) {
   
   override def toString:String = {
     val nr = scala.math.min(nrows,10)
@@ -54,7 +54,16 @@ class GIMat(nr:Int, nc:Int, val data:Pointer) extends Mat(nr, nc) {
   
   def ~ (b: GIMat) = new GIPair(this, b)
 
-
+  override def recycle(nr:Int, nc:Int, nnz:Int):GIMat = {
+    if (nrows == nr && nc == ncols) {
+      this
+    } else if (realsize >= nr*nc) {
+      new GIMat(nr, nc, data, realsize)
+    } else {
+      free
+      GIMat(nr, nc)
+    }  
+  }
 }
 
 class GIPair (val omat:GIMat, val mat:GIMat){
@@ -76,13 +85,13 @@ class GIPair (val omat:GIMat, val mat:GIMat){
 object GIMat {
   
   def apply(nr:Int, nc:Int):GIMat = {
-    val retv = new GIMat(nr, nc, new Pointer())        
+    val retv = new GIMat(nr, nc, new Pointer(), nr*nc)        
     JCublas.cublasAlloc(nr*nc, Sizeof.INT, retv.data)
     retv        
   }    
   
   def apply(a:IMat):GIMat = {
-    val retv = new GIMat(a.nrows, a.ncols, new Pointer())
+    val retv = new GIMat(a.nrows, a.ncols, new Pointer(), a.length)
     val rsize = a.nrows*a.ncols
     JCublas.cublasAlloc(rsize, Sizeof.INT, retv.data)
     JCublas.cublasSetVector(rsize, Sizeof.INT, Pointer.to(a.data), 1, retv.data, 1);

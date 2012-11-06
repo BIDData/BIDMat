@@ -4,7 +4,7 @@ class SparseMat[@specialized(Double,Float) T]
 (nr: Int, nc: Int, var nnz0:Int, var ir:Array[Int], val jc:Array[Int], val data:Array[T])
 (implicit manifest:Manifest[T], numeric:Numeric[T]) extends Mat(nr, nc) {
   
-  def nnz = nnz0
+  override def nnz = nnz0
   
   /*
    * Bounds-checked matrix access

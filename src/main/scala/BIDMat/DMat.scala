@@ -360,12 +360,23 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
       case _ => throw new RuntimeException("unsupported arg to / "+a0)
     }
   
-  def clear = {
+  override def clear = {
     var i = 0
     while (i < length) {
       data(i) = 0
       i += 1
     }
+    this
+  }
+  
+  override def recycle(nr:Int, nc:Int, nnz:Int):DMat = {
+    if (nrows == nr && nc == ncols) {
+      this
+    } else if (data.size >= nr*nc) {
+      new DMat(nr, nc, data)
+    } else {
+      DMat(nr, nc)
+    }  
   }
   /*
    * Routines to operate on two DMats. These are the compute routines.
