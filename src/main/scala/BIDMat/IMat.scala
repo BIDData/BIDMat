@@ -260,6 +260,25 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
     case db:IMat => new IPair(this, db)
     case _ => throw new RuntimeException("mismatched types for operator ~")
   }
+  
+  override def clear = {
+    var i = 0
+    while (i < length) {
+      data(i) = 0
+      i += 1
+    }
+    this
+  }
+  
+  override def recycle(nr:Int, nc:Int, nnz:Int):IMat = {
+    if (nrows == nr && nc == ncols) {
+      this
+    } else if (data.size >= nr*nc) {
+      new IMat(nr, nc, data)
+    } else {
+      IMat(nr, nc)
+    }  
+  }
 }
 
 class IPair(val omat:Mat, val mat:IMat) extends Pair {

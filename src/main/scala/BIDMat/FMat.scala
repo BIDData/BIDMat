@@ -369,12 +369,23 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     }
   }
   
-  def clear = {
+  override def clear = {
     var i = 0
     while (i < length) {
       data(i) = 0
       i += 1
     }
+    this
+  }
+  
+  override def recycle(nr:Int, nc:Int, nnz:Int):FMat = {
+    if (nrows == nr && nc == ncols) {
+      this
+    } else if (data.size >= nr*nc) {
+      new FMat(nr, nc, data)
+    } else {
+      FMat(nr, nc)
+    }  
   }
 
   /*

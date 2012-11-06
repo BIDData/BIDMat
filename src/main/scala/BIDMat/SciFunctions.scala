@@ -470,6 +470,24 @@ object SciFunctions {
     }
   }
   
+  def max(a:Float, b:Mat, out:Mat):Mat = {
+    (b, out) match {
+      case (bb:FMat, cc:FMat) => max(a, bb, cc)
+      case (bb:IMat, cc:IMat) => max(a.asInstanceOf[Int], bb, cc)
+      case (bb:DMat, cc:IMat) => max(a.asInstanceOf[Double], bb, cc)
+      case (bb:GMat, cc:GMat) => max(a, bb, cc)
+    }
+  }
+  
+  def min(a:Float, b:Mat, out:Mat):Mat = {
+    (b, out) match {
+      case (bb:FMat, cc:FMat) => min(a, bb, cc)
+      case (bb:IMat, cc:IMat) => min(a.asInstanceOf[Int], bb, cc)
+      case (bb:DMat, cc:IMat) => min(a.asInstanceOf[Double], bb, cc)
+      case (bb:GMat, cc:GMat) => min(a, bb, cc)
+    }
+  }
+  
   def max(a:Double, b:Mat, out:Mat):Mat = {
     (b, out) match {
       case (bb:FMat, cc:FMat) => max(a.asInstanceOf[Float], bb, cc)

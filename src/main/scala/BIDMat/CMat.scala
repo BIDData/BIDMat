@@ -762,12 +762,13 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     }
   }
   
-  def clear = {
+  override def clear = {
     var i = 0
     while (i < 2*length) {
     	data(i) = 0
     	i += 1
     }
+    this
   }
   
   override def clearUpper(off:Int) = {
@@ -901,6 +902,16 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   override def == (b : Mat):Mat = applyMat(this, b, null, Mop_EQ)
   override def != (b : Mat):Mat = applyMat(this, b, null, Mop_NE)
+  
+  override def recycle(nr:Int, nc:Int, nnz:Int):CMat = {
+    if (nrows == nr && nc == ncols) {
+      this
+    } else if (data.size >= 2*nr*nc) {
+      new CMat(nr, nc, data)
+    } else {
+      CMat(nr, nc)
+    }  
+  }
 }
 
 class CPair (val omat:Mat, val mat:CMat) extends Pair {

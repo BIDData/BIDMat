@@ -74,6 +74,17 @@ object MatFunctions {
     Mat.copyToFloatArray(x.data, 0, out.data, 0, x.length)
     out
   }
+  
+  def recycleTry(a:Mat, nr:Int, nc:Int, b:Mat, nnz:Int = 0):Mat = {
+    var out:Mat = null
+    if (a.asInstanceOf[AnyRef] != null) {
+    	a.recycle(nr, nc, nnz)
+    } else {
+    	b.zeros(nr, nc, nnz)
+    }
+  }
+  
+  def recycleTry(a:Mat, b:Mat):Mat = recycleTry(a, b.nrows, b.ncols, b, b.nnz)
 
   def find(a:DMat) = a.find   
   def find2(a:DMat) = a.find2    

@@ -185,12 +185,21 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   def \ (b: SMat) = horzcat(b)
   def on (b: SMat) = vertcat(b)
   
-    def toSDMat:SDMat = {
+  def toSDMat:SDMat = {
     val out = SDMat(nrows, ncols, nnz)
     System.arraycopy(jc, 0, out.jc, 0, ncols+1)
     System.arraycopy(ir, 0, out.ir, 0, nnz)
     Mat.copyToDoubleArray(data, 0, out.data, 0, nnz)
     out
+  }
+  
+  override def zeros(nr:Int, nc:Int, nnz:Int) = SMat(nr, nc, nnz)
+  
+  override def recycle(nr:Int, nc:Int, nnz:Int):SMat = {
+  	val jc0 = if (jc.size >= nc+1) jc else new Array[Int](nc+1)
+  	val ir0 = if (ir.size >= nnz) ir else new Array[Int](nnz)
+  	val data0 = if (data.size >= nnz) data else new Array[Float](nnz)
+  	new SMat(nr, nc, nnz, jc0, ir0, data0)    
   }
 }
 

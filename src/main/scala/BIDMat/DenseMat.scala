@@ -144,7 +144,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   /*
   * Count number of non-zero entries
   */
-  def nnz:Int = {
+  override def nnz:Int = {
     var count:Int = 0
     var i = 0
     while (i < length) {

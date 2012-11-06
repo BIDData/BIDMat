@@ -4,11 +4,13 @@ import jcuda.jcublas.JCublas;
 import jcuda.runtime.JCuda;
 import edu.berkeley.bid.CUMAT;
 
-case class GSMat(nr:Int, nc:Int, val nnz:Int, val ir:Pointer, val ic:Pointer, val data:Pointer) extends Mat(nr, nc) {
-
+case class GSMat(nr:Int, nc:Int, val nnz0:Int, val ir:Pointer, val ic:Pointer, val data:Pointer, val realnnz:Int) extends Mat(nr, nc) {
+	
   def getdata() = data;	
 
   override def mytype = "GSMat"
+    
+  override def nnz = nnz0
     
   override def toString:String = {
     val nnz0 = scala.math.min(nnz,12)       
@@ -42,6 +44,15 @@ case class GSMat(nr:Int, nc:Int, val nnz:Int, val ir:Pointer, val ic:Pointer, va
     JCublas.cublasFree(ic)
     JCublas.cublasFree(ir)
   }
+  
+  override def recycle(nr:Int, nc:Int, nnz:Int):GSMat = {
+    if (realnnz >= nnz) {  
+      new GSMat(nr, nc, nnz, ir, ic, data, realnnz)
+    } else {
+      free
+      GSMat(nr, nc, nnz)
+    }
+  }
 }
 
 class GSPair (val omat:GMat, val mat:GSMat) extends Pair {
@@ -51,7 +62,7 @@ class GSPair (val omat:GMat, val mat:GSMat) extends Pair {
 object GSMat {
 
   def apply(nr:Int, nc:Int, nnz0:Int):GSMat = { 
-    val out = new GSMat(nr, nc, nnz0, new Pointer(), new Pointer(), new Pointer()) 
+    val out = new GSMat(nr, nc, nnz0, new Pointer(), new Pointer(), new Pointer(), nnz0) 
     JCublas.cublasAlloc(out.nnz, Sizeof.INT, out.ir)
     JCublas.cublasAlloc(out.nnz, Sizeof.INT, out.ic)
     JCublas.cublasAlloc(out.nnz, Sizeof.FLOAT, out.data)
@@ -60,6 +71,18 @@ object GSMat {
   
   def apply(a:SMat):GSMat = { 
     val out = GSMat(a.nrows, a.ncols, a.nnz)
+    JCublas.cublasSetVector(a.nnz, Sizeof.FLOAT, Pointer.to(a.data), 1, out.data, 1)
+    if (Mat.ioneBased == 1) {
+      JCublas.cublasSetVector(a.nnz, Sizeof.INT, Pointer.to(SparseMat.decInds(a.ir)), 1, out.ir, 1)
+    } else {
+      JCublas.cublasSetVector(a.nnz, Sizeof.INT, Pointer.to(a.ir), 1, out.ir, 1)
+    }
+    JCublas.cublasSetVector(a.nnz, Sizeof.INT, Pointer.to(SparseMat.uncompressInds(a.jc, a.ir)), 1, out.ic, 1)
+    out
+  }
+ 
+  def fromSMat(a:SMat, b:GSMat):GSMat = {
+    val out = b.recycle(a.nrows, a.ncols, a.nnz)
     JCublas.cublasSetVector(a.nnz, Sizeof.FLOAT, Pointer.to(a.data), 1, out.data, 1)
     if (Mat.ioneBased == 1) {
       JCublas.cublasSetVector(a.nnz, Sizeof.INT, Pointer.to(SparseMat.decInds(a.ir)), 1, out.ir, 1)
