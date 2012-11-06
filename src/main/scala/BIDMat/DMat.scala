@@ -297,28 +297,26 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
       case _ => throw new RuntimeException("argument must be dense")
     }
 
-  def dot (a : Mat):Double = 
-    a match { 
-      case b:DMat => { 
-        if (math.min(nrows, ncols) != 1 || math.min(b.nrows,b.ncols) != 1 || length != b.length) {
-          throw new RuntimeException("vector dims not compatible")
-        } else {
-          Mat.nflops += 2*length
-          if (length < 200 || Mat.noMKL) {
-	        var sum = 0.0
-	        var i = 0
-	        while (i < length) {
-	          sum += data(i)*b.data(i)
-	          i += 1
-	        }
-	        sum
-          } else {
-	        ddot(length, data, 1, b.data, 1)
-          }
-        }
-      }
-      case _ => throw new RuntimeException("unsupported arg to dot "+a)
-    }
+  def dot (b : DMat):Double = 
+  	if (math.min(nrows, ncols) != 1 || math.min(b.nrows,b.ncols) != 1 || length != b.length) {
+  		throw new RuntimeException("vector dims not compatible")
+  	} else {
+  		Mat.nflops += 2*length
+  		if (length < 200 || Mat.noMKL) {
+  			var sum = 0.0
+  			var i = 0
+  			while (i < length) {
+  				sum += data(i)*b.data(i)
+  				i += 1
+  			}
+  			sum
+  		} else {
+  			ddot(length, data, 1, b.data, 1)
+  		}
+  	}
+  
+  override def dot(a:Mat) = dot(a.asInstanceOf[DMat])
+
   
   def solvel(a0:Mat):DMat = 
     a0 match {

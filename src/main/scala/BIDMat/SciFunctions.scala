@@ -436,123 +436,168 @@ object SciFunctions {
      
   def max(a:Mat, b:Mat):Mat = {
     (a, b) match {
-      case (aa:FMat, bb:FMat) => max(aa, bb)
-      case (aa:IMat, bb:IMat) => max(aa, bb)
-      case (aa:DMat, bb:DMat) => max(aa, bb)
-      case (aa:GMat, bb:GMat) => max(aa, bb)
+      case (aa:FMat, bb:FMat) => max(aa, bb):FMat
+      case (aa:IMat, bb:IMat) => max(aa, bb):IMat
+      case (aa:DMat, bb:DMat) => max(aa, bb):DMat
+      case (aa:GMat, bb:GMat) => max(aa, bb):GMat
     }
   }
   
   def min(a:Mat, b:Mat):Mat = {
     (a, b) match {
-      case (aa:FMat, bb:FMat) => min(aa, bb)
-      case (aa:IMat, bb:IMat) => min(aa, bb)
-      case (aa:DMat, bb:DMat) => min(aa, bb)
-      case (aa:GMat, bb:GMat) => min(aa, bb)
+      case (aa:FMat, bb:FMat) => min(aa, bb):FMat
+      case (aa:IMat, bb:IMat) => min(aa, bb):IMat
+      case (aa:DMat, bb:DMat) => min(aa, bb):DMat
+      case (aa:GMat, bb:GMat) => min(aa, bb):GMat
     }
   }
   
   def max(a:Mat, b:Mat, out:Mat):Mat = {
     (a, b, out) match {
-      case (aa:FMat, bb:FMat, cc:FMat) => max(aa, bb, cc)
-      case (aa:IMat, bb:IMat, cc:IMat) => max(aa, bb, cc)
-      case (aa:DMat, bb:DMat, cc:IMat) => max(aa, bb, cc)
-      case (aa:GMat, bb:GMat, cc:GMat) => max(aa, bb, cc)
+      case (aa:FMat, bb:FMat, cc:FMat) => max(aa, bb, cc):FMat
+      case (aa:IMat, bb:IMat, cc:IMat) => max(aa, bb, cc):IMat
+      case (aa:DMat, bb:DMat, cc:DMat) => max(aa, bb, cc):DMat
+      case (aa:GMat, bb:GMat, cc:GMat) => max(aa, bb, cc):GMat
     }
   }
   
   def min(a:Mat, b:Mat, out:Mat):Mat = {
     (a, b, out) match {
-      case (aa:FMat, bb:FMat, cc:FMat) => min(aa, bb, cc)
-      case (aa:IMat, bb:IMat, cc:IMat) => min(aa, bb, cc)
-      case (aa:DMat, bb:DMat, cc:IMat) => min(aa, bb, cc)
-      case (aa:GMat, bb:GMat, cc:GMat) => min(aa, bb, cc)
+      case (aa:FMat, bb:FMat, cc:FMat) => min(aa, bb, cc):FMat
+      case (aa:IMat, bb:IMat, cc:IMat) => min(aa, bb, cc):IMat
+      case (aa:DMat, bb:DMat, cc:DMat) => min(aa, bb, cc):DMat
+      case (aa:GMat, bb:GMat, cc:GMat) => min(aa, bb, cc):GMat
     }
   }
   
   def max(a:Float, b:Mat, out:Mat):Mat = {
     (b, out) match {
-      case (bb:FMat, cc:FMat) => max(a, bb, cc)
-      case (bb:IMat, cc:IMat) => max(a.asInstanceOf[Int], bb, cc)
-      case (bb:DMat, cc:IMat) => max(a.asInstanceOf[Double], bb, cc)
-      case (bb:GMat, cc:GMat) => max(a, bb, cc)
+      case (bb:FMat, cc:FMat) => max(a, bb, cc):FMat
+      case (bb:IMat, cc:IMat) => max(a.asInstanceOf[Int], bb, cc):IMat
+      case (bb:DMat, cc:DMat) => max(DMat(a), bb, cc):DMat
+      case (bb:GMat, cc:GMat) => max(GMat(a), bb, cc):GMat
     }
   }
   
   def min(a:Float, b:Mat, out:Mat):Mat = {
     (b, out) match {
-      case (bb:FMat, cc:FMat) => min(a, bb, cc)
-      case (bb:IMat, cc:IMat) => min(a.asInstanceOf[Int], bb, cc)
-      case (bb:DMat, cc:IMat) => min(a.asInstanceOf[Double], bb, cc)
-      case (bb:GMat, cc:GMat) => min(a, bb, cc)
+      case (bb:FMat, cc:FMat) => min(a, bb, cc):FMat
+      case (bb:IMat, cc:IMat) => min(a.asInstanceOf[Int], bb, cc):IMat
+      case (bb:DMat, cc:DMat) => min(DMat(a), bb, cc):DMat
+      case (bb:GMat, cc:GMat) => min(GMat(a), bb, cc):GMat
     }
   }
   
   def max(a:Double, b:Mat, out:Mat):Mat = {
     (b, out) match {
-      case (bb:FMat, cc:FMat) => max(a.asInstanceOf[Float], bb, cc)
-      case (bb:IMat, cc:IMat) => max(a.asInstanceOf[Int], bb, cc)
-      case (bb:DMat, cc:IMat) => max(a, bb, cc)
-      case (bb:GMat, cc:GMat) => max(a.asInstanceOf[Float], bb, cc)
+      case (bb:FMat, cc:FMat) => max(a.asInstanceOf[Float], bb, cc):FMat
+      case (bb:IMat, cc:IMat) => max(a.asInstanceOf[Int], bb, cc):IMat
+      case (bb:DMat, cc:DMat) => max(DMat(a), bb, cc):DMat
+      case (bb:GMat, cc:GMat) => max(GMat(a), bb, cc):GMat
     }
   }
   
   def min(a:Double, b:Mat, out:Mat):Mat = {
     (b, out) match {
-      case (bb:FMat, cc:FMat) => min(a.asInstanceOf[Float], bb, cc)
-      case (bb:IMat, cc:IMat) => min(a.asInstanceOf[Int], bb, cc)
-      case (bb:DMat, cc:IMat) => min(a, bb, cc)
-      case (bb:GMat, cc:GMat) => min(a.asInstanceOf[Float], bb, cc)
+      case (bb:FMat, cc:FMat) => min(a.asInstanceOf[Float], bb, cc):FMat
+      case (bb:IMat, cc:IMat) => min(a.asInstanceOf[Int], bb, cc):IMat
+      case (bb:DMat, cc:DMat) => min(DMat(a), bb, cc):DMat
+      case (bb:GMat, cc:GMat) => min(GMat(a), bb, cc):GMat
     }
   }
   
   def max(a:Mat, b:Double, out:Mat):Mat = {
     (a, out) match {
-      case (aa:FMat, cc:FMat) => max(aa, b.asInstanceOf[Float], cc)
-      case (aa:IMat, cc:IMat) => max(aa, b.asInstanceOf[Int], cc)
-      case (aa:DMat, cc:IMat) => max(aa, b, cc)
-      case (aa:GMat, cc:GMat) => max(aa, b.asInstanceOf[Float], cc)
+      case (aa:FMat, cc:FMat) => max(aa, b.asInstanceOf[Float], cc):FMat
+      case (aa:IMat, cc:IMat) => max(aa, b.asInstanceOf[Int], cc):IMat
+      case (aa:DMat, cc:DMat) => max(aa, DMat(b), cc):DMat
+      case (aa:GMat, cc:GMat) => max(aa, GMat(b), cc):GMat
     }
   }
   
   def min(a:Mat, b:Double, out:Mat):Mat = {
     (a, out) match {
-      case (aa:FMat, cc:FMat) => min(aa, b.asInstanceOf[Float], cc)
-      case (aa:IMat, cc:IMat) => min(aa, b.asInstanceOf[Int], cc)
-      case (aa:DMat, cc:IMat) => min(aa, b, cc)
-      case (aa:GMat, cc:GMat) => min(aa, b.asInstanceOf[Float], cc)
+      case (aa:FMat, cc:FMat) => min(aa, b.asInstanceOf[Float], cc):FMat
+      case (aa:IMat, cc:IMat) => min(aa, b.asInstanceOf[Int], cc):IMat
+      case (aa:DMat, cc:DMat) => min(aa, DMat(b), cc):DMat
+      case (aa:GMat, cc:GMat) => min(aa, GMat(b), cc):GMat
     }
   }
    
   def mini(a:Mat, b:Int):Mat = {
     a match {
-      case aa:FMat => mini(aa, b)
-      case aa:IMat => mini(aa, b)
-      case aa:DMat => mini(aa, b)
-      case aa:GMat => mini(aa, b)
+      case aa:FMat => mini(aa, b):FMat
+      case aa:IMat => mini(aa, b):IMat
+      case aa:DMat => mini(aa, b):DMat
+      case aa:GMat => mini(aa, b):GMat
     }
   }
   
   def maxi(a:Mat, b:Int):Mat = {
     a match {
-      case aa:FMat => maxi(aa, b)
-      case aa:IMat => maxi(aa, b)
-      case aa:DMat => maxi(aa, b)
-      case aa:GMat => maxi(aa, b)
+      case aa:FMat => maxi(aa, b):FMat
+      case aa:IMat => maxi(aa, b):IMat
+      case aa:DMat => maxi(aa, b):DMat
+      case aa:GMat => maxi(aa, b):GMat
     }
   }
   
   def sum(a:Mat, b:Int):Mat = {
     a match {
-      case aa:FMat => sum(aa, b)
-      case aa:IMat => sum(aa, b)
-      case aa:DMat => sum(aa, b)
-      case aa:CMat => sum(aa, b)
-      case aa:GMat => sum(aa, b)
+      case aa:FMat => sum(aa, b):FMat
+      case aa:IMat => sum(aa, b):IMat
+      case aa:DMat => sum(aa, b):DMat
+      case aa:CMat => sum(aa, b):CMat
+      case aa:SMat => sum(aa, b):FMat
+      case aa:GMat => sum(aa, b):GMat
     }
   }
   
   def mean(a:FMat, dim0:Int):FMat = {
+    _mean(a, dim0).asInstanceOf[FMat]
+  }
+  
+  def mean(a:FMat):FMat = {
+    _mean(a, 0).asInstanceOf[FMat]
+  } 
+   
+  def mean(a:DMat, dim0:Int):DMat = {
+    _mean(a, dim0).asInstanceOf[DMat]
+  }
+  
+  def mean(a:DMat):DMat = {
+    _mean(a, 0).asInstanceOf[DMat]
+  }
+  
+  def mean(a:IMat, dim0:Int):FMat = {
+    _mean(a, dim0).asInstanceOf[FMat]
+  }
+  
+  def mean(a:IMat):FMat = {
+    _mean(a, 0).asInstanceOf[FMat]
+  }
+  
+  def mean(a:CMat, dim0:Int):CMat = {
+    _mean(a, dim0).asInstanceOf[CMat]
+  }
+  
+  def mean(a:CMat):CMat = {
+    _mean(a, 0).asInstanceOf[CMat]
+  }
+  
+  def mean(a:GMat, dim0:Int):GMat = {
+    _mean(a, dim0).asInstanceOf[GMat]
+  }
+  
+  def mean(a:GMat):GMat = {
+    _mean(a, 0).asInstanceOf[GMat]
+  }
+  
+  def mean(a:Mat, b:Int):Mat = _mean(a, b)
+  
+  def mean(a:Mat):Mat = _mean(a, 0):Mat
+  
+  def _mean(a:Mat, dim0:Int):Mat = {
     val dim = if (a.nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
     if (dim == 1) {
       sum(a, 1)*(1.0f/a.nrows)
@@ -561,9 +606,51 @@ object SciFunctions {
     }
   }
   
-  def mean(a:FMat):FMat = mean(a, 0)
-  
   def variance(a:FMat, dim0:Int):FMat = {
+    _variance(a, dim0).asInstanceOf[FMat]
+  }
+  
+  def variance(a:FMat):FMat = {
+    _variance(a, 0).asInstanceOf[FMat]
+  } 
+   
+  def variance(a:DMat, dim0:Int):DMat = {
+    _variance(a, dim0).asInstanceOf[DMat]
+  }
+  
+  def variance(a:DMat):DMat = {
+    _variance(a, 0).asInstanceOf[DMat]
+  }
+  
+  def variance(a:IMat, dim0:Int):FMat = {
+    _variance(a, dim0).asInstanceOf[FMat]
+  }
+  
+  def variance(a:IMat):FMat = {
+    _variance(a, 0).asInstanceOf[FMat]
+  }
+  
+  def variance(a:CMat, dim0:Int):CMat = {
+    _variance(a, dim0).asInstanceOf[CMat]
+  }
+  
+  def variance(a:CMat):CMat = {
+    _variance(a, 0).asInstanceOf[CMat]
+  }
+  
+  def variance(a:GMat, dim0:Int):GMat = {
+    _variance(a, dim0).asInstanceOf[GMat]
+  }
+  
+  def variance(a:GMat):GMat = {
+    _variance(a, 0).asInstanceOf[GMat]
+  }
+     
+  def variance(a:Mat, dim:Int) = _variance(a, dim)
+  
+  def variance(a:Mat):Mat = _variance(a, 0)
+ 
+  def _variance(a:Mat, dim0:Int):Mat = {
     val dim = if (a.nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
     if (dim == 1) {
       val m = mean(a, 1)
@@ -573,68 +660,7 @@ object SciFunctions {
       sum(a *@ a, 2)*(1.0f/a.ncols) - m *@ m
     }
   }
-  
-  def variance(a:FMat):FMat = variance(a, 0)
-  
-  def mean(a:GMat, dim0:Int):GMat = {
-    val dim = if (a.nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
-    if (dim == 1) {
-      sum(a, 1)*GMat(row(1.0f/a.nrows))
-    } else {
-      sum(a, 2)*GMat(1.0f/a.ncols)
-    }
-  }
-  
-  def mean(a:GMat):GMat = mean(a, 0)
-  
-  def variance(a:GMat, dim0:Int):GMat = {
-    val dim = if (a.nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
-    if (dim == 1) {
-      val m = mean(a, 1)
-      sum(a *@ a, 1)*GMat(1.0f/a.nrows) - m *@ m
-    } else {
-      val m = mean(a, 2)
-      sum(a *@ a, 2)*GMat(1.0f/a.ncols) - m *@ m
-    }
-  }
-  
-  def variance(a:GMat):GMat = variance(a, 0)
-  
-  def mean(a:DMat, dim0:Int):DMat = {
-    val dim = if (a.nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
-    if (dim == 1) {
-      sum(a, 1)*(1.0/a.nrows)
-    } else {
-      sum(a, 2)*(1.0/a.ncols)
-    }
-  }
-  
-  def mean(a:DMat):DMat = mean(a, 0)
-  
-  def variance(a:DMat, dim0:Int):DMat = {
-    val dim = if (a.nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
-    if (dim == 1) {
-      val m = mean(a, 1)
-      sum(a *@ a, 1)*(1.0/a.nrows) - m *@ m
-    } else {
-      val m = mean(a, 2)
-      sum(a *@ a, 2)*(1.0/a.ncols) - m *@ m
-    }
-  }
-  
-  def variance(a:DMat):DMat = variance(a, 0)
-  
-  def mean(a:Mat, b:Int):Mat = {
-    a match {
-      case aa:FMat => mean(aa, b)
-      case aa:IMat => mean(aa, b)
-      case aa:DMat => mean(aa, b)
-      case aa:CMat => mean(aa, b)
-      case aa:GMat => mean(aa, b)
-    }
-  }
-  
-  def mean(a:Mat):Mat = mean(a, 0)
+
   
   def applyDFun(a:DMat, out:DMat, vfn:(Int, Array[Double], Array[Double])=>Unit, efn:(Double)=>Double, nflops:Long) ={
 	    checkSizes(a, out)

@@ -132,19 +132,16 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
     case _ => throw new RuntimeException("unsupported arg to * "+a0)
   }
 
-  def dot (a : Mat):Double = 
-    a match { 
-      case b:IMat => 
-        if (math.min(nrows, ncols) != 1 || math.min(b.nrows,b.ncols) != 1 || length != b.length) {
-          throw new RuntimeException("vector dims not compatible")
-        } else {
-          Mat.nflops += 2 * length
-          var sum = 0.0;
-          for (i <- 0 until length) sum += data(i).doubleValue*b.data(i);
-          sum
-        }
-      case _ => throw new RuntimeException("unsupported arg to dot "+a)
-    }
+  def dot (b : IMat):Double = 
+  	if (math.min(nrows, ncols) != 1 || math.min(b.nrows,b.ncols) != 1 || length != b.length) {
+  		throw new RuntimeException("vector dims not compatible")
+  	} else {
+  		Mat.nflops += 2 * length
+  		var sum = 0.0;
+  		for (i <- 0 until length) sum += data(i).doubleValue*b.data(i);
+  		sum
+  	}
+
 
   def *  (b : IMat) = iMult(b, null)	
   def +  (b : IMat) = iiMatOpv(b, DenseMat.vecAdd _, null)
