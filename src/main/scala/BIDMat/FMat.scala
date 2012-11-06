@@ -248,6 +248,20 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
       throw new RuntimeException("xT dimensions mismatch")
     }
   }
+  
+  def multT(a:FMat, outmat:FMat):FMat = {
+    import edu.berkeley.bid.CBLAS._
+    if (ncols == a.ncols) {
+    	val out = FMat.newOrCheckFMat(nrows, a.nrows, outmat)
+    	if (outmat.asInstanceOf[AnyRef] != null) out.clear
+    	sgemm(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.Trans,
+  					nrows, a.nrows, ncols, 1.0f, data, nrows, a.data, a.nrows, 0, out.data, nrows)
+    	Mat.nflops += 2L * a.nnz * nrows
+    	out
+    } else {
+      throw new RuntimeException("xT dimensions mismatch")
+    }
+  }
   /*
   * Column-based (Streaming) multiply
   */
@@ -297,23 +311,21 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
       case _ => throw new RuntimeException("argument must be dense")
     }
   
-  def dot (a : Mat):Float = 
-    a match { 
-      case b:FMat => 
-        if (math.min(nrows, ncols) != 1 || math.min(b.nrows,b.ncols) != 1 || length != b.length) {
-          throw new RuntimeException("vector dims not compatible")
-        } else {
-          Mat.nflops += 2 * length
-          var v = 0f
-          var i = 0
-          while (i < length){
-	        v += data(i)*b.data(i)
-	        i += 1
-          }
-          v
-        }
-      case _ => throw new RuntimeException("unsupported arg to dot "+a)
-    };
+  def dot (a : FMat):Double = 
+  	if (math.min(nrows, ncols) != 1 || math.min(a.nrows,a.ncols) != 1 || length != a.length) {
+  		throw new RuntimeException("vector dims not compatible")
+  	} else {
+  		Mat.nflops += 2 * length
+  		var v = 0f
+  		var i = 0
+  		while (i < length){
+  			v += data(i)*a.data(i)
+  			i += 1
+  		}
+  		v
+  	}
+  
+  override def dot (a:Mat):Double = dot(a.asInstanceOf[FMat])
 
   def solvel(a0:Mat):FMat = 
     a0 match {
@@ -397,6 +409,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def *  (b : FMat) = fDMult(b, null)
   def *  (b : SMat) = fSMult(b, null)
   def xT  (b : SMat) = multT(b, null)
+  def xT  (b : FMat) = multT(b, null)
   def /  (b : FMat) = solvel(b)
   def \\ (b : FMat) = solver(b)
   def *@ (b : FMat) = ffMatOpv(b, DenseMat.vecMul _, null)
@@ -522,7 +535,10 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   override def +  (b : Mat):Mat = applyMat(this, b, null, Mop_Plus)
   override def -  (b : Mat):Mat = applyMat(this, b, null, Mop_Minus)
   override def *  (b : Mat):Mat = applyMat(this, b, null, Mop_Times)
-  override def xT  (b : Mat) = b match {case bb:SMat => multT(bb, null)}
+  override def xT  (b : Mat) = b match {
+    case bb:SMat => multT(bb, null)
+    case bb:FMat => multT(bb, null)
+  }
   override def /  (b : Mat):Mat = applyMat(this, b, null, Mop_Div)
   override def \\ (b : Mat):Mat = applyMat(this, b, null, Mop_RSolve)
   override def *@ (b : Mat):Mat = applyMat(this, b, null, Mop_ETimes)
@@ -546,6 +562,7 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   def * (b : FMat) = mat.fDMult(b, FMat.tryForOutFMat(omat)) 
   def * (b : SMat) = mat.fSMult(b, FMat.tryForOutFMat(omat)) 
   def xT  (b : SMat) = mat.multT(b, FMat.tryForOutFMat(omat))
+  def xT  (b : FMat) = mat.multT(b, FMat.tryForOutFMat(omat))
   def + (b : FMat) = mat.ffMatOpv(b, DenseMat.vecAdd _, FMat.tryForOutFMat(omat))
   def - (b : FMat) = mat.ffMatOpv(b, DenseMat.vecSub _, FMat.tryForOutFMat(omat))
   def *@ (b : FMat) = mat.ffMatOpv(b, DenseMat.vecMul _, FMat.tryForOutFMat(omat))
@@ -593,7 +610,10 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   override def +  (b : Mat):Mat = applyMat(mat, b, FMat.tryForOutFMat(omat), Mop_Plus)
   override def -  (b : Mat):Mat = applyMat(mat, b, FMat.tryForOutFMat(omat), Mop_Minus)
   override def *  (b : Mat):Mat = applyMat(mat, b, FMat.tryForOutFMat(omat), Mop_Times)
-  override def xT  (b : Mat) = b match {case bb:SMat => mat.multT(bb, FMat.tryForOutFMat(omat))}
+  override def xT  (b : Mat) = b match {
+    case bb:SMat => mat.multT(bb, FMat.tryForOutFMat(omat))
+    case bb:FMat => mat.multT(bb, FMat.tryForOutFMat(omat))
+    }
   override def /  (b : Mat):Mat = applyMat(mat, b, FMat.tryForOutFMat(omat), Mop_Div)
   override def \\ (b : Mat):Mat = applyMat(mat, b, FMat.tryForOutFMat(omat), Mop_RSolve)
   override def *@ (b : Mat):Mat = applyMat(mat, b, FMat.tryForOutFMat(omat), Mop_ETimes)

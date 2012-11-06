@@ -110,6 +110,8 @@ abstract class Mat(nr:Int, nc:Int) {
   def \ (b : Mat):Mat = notImplemented1("\\", b)
   def on (b : Mat):Mat = notImplemented1("on", b)
   def ~ (b : Mat):Pair = throw new RuntimeException("operator ~ not implemented for "+this+" and "+b)
+  
+  def dot (b : Mat):Double = {notImplemented1("dot", b); 0}
 
 }
 

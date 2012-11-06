@@ -684,29 +684,25 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
  
   
-  def dot (a : Mat):CMat = 
-    a match { 
-      case b:CMat => 
-        if (math.min(nrows, ncols) != 1 || math.min(b.nrows,b.ncols) != 1 || length != b.length) {
-          throw new RuntimeException("vector dims not compatible")
-        } else {
-          Mat.nflops += 2 * length
-          var w0 = 0.0
-          var w1 = 0.0
-          var i = 0
-          while (i < length){
-            val u0 = data(2*i)
-            val u1 = data(2*i+1)
-            val v0 = b.data(2*i)
-            val v1 = b.data(2*i+1)
-            w0 += u0*v0-u1*v1
-            w1 += u0*v1+u1*v0
-            i += 1
-          }
-          CMat.celem(w0.asInstanceOf[Float], w1.asInstanceOf[Float])
-        }
-      case _ => throw new RuntimeException("unsupported arg to dot "+a)
-    };
+  def dot (b : CMat):CMat = 
+  	if (math.min(nrows, ncols) != 1 || math.min(b.nrows,b.ncols) != 1 || length != b.length) {
+  		throw new RuntimeException("vector dims not compatible")
+  	} else {
+  		Mat.nflops += 2 * length
+  		var w0 = 0.0
+  		var w1 = 0.0
+  		var i = 0
+  		while (i < length){
+  			val u0 = data(2*i)
+  			val u1 = data(2*i+1)
+  			val v0 = b.data(2*i)
+  			val v1 = b.data(2*i+1)
+  			w0 += u0*v0-u1*v1
+  			w1 += u0*v1+u1*v0
+  			i += 1
+  		}
+  		CMat.celem(w0.asInstanceOf[Float], w1.asInstanceOf[Float])
+  	}
 
   def solvel(a0:Mat):CMat = 
     a0 match {
