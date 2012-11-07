@@ -126,4 +126,13 @@ extern "C" {
     return reduce2op(nrows, ncols, A, B, opn);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_transpose
+  (JNIEnv *env, jobject obj, jobject jA, jint instride, jobject jB, jint outstride, jint nrows, jint ncols)
+  {
+    float *A = (float*)getPointer(env, jA);
+    float *B = (float*)getPointer(env, jB);
+
+    return transpose(A, instride, B, outstride, nrows, ncols);
+  }
+
 }

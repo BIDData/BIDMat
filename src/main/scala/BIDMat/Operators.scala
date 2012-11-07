@@ -150,7 +150,7 @@ trait Mop {
   def cop(a:CMat, b:CMat, c:Mat):CMat
   def gop(a:GMat, b:GMat, c:Mat):GMat
   def notImplemented0(s:String, m:Mat):Mat = { 
-    throw new RuntimeException("operator "+s+" not implemented for "+m)
+    throw new RuntimeException("operator "+s+" not implemented for "+m.mytype)
   }
 }
 

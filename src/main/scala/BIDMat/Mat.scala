@@ -7,15 +7,15 @@ abstract class Mat(nr:Int, nc:Int) {
   def length = nr*nc
   
   def notImplemented0(s:String):Mat = { 
-    throw new RuntimeException("operator "+s+" not implemented for "+this)
+    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
   }
   
   def notImplemented1(s:String,that:Mat):Mat = { 
-    throw new RuntimeException("operator "+s+" not implemented for "+this+" and "+that)
+    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and "+that.mytype)
   }
   
   def t = notImplemented0("t")  
-  def dv:Double = throw new RuntimeException("operator dv not implemented for "+this)
+  def dv:Double = throw new RuntimeException("operator dv not implemented for "+this.mytype)
   
   def mytype = "Mat"
   def copy(a:Mat) = notImplemented0("copy");

@@ -18,6 +18,12 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
     
   override def nnz = length
   
+  override def t = {
+    val out = GMat(ncols, nrows)
+    CUMAT.transpose(this.data, nrows, out.data, ncols, nrows, ncols)
+    out
+  }
+  
   override def toString:String = {
     val nr = scala.math.min(nrows,10)
     val nc = scala.math.min(ncols,50)        
@@ -46,9 +52,11 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
     if (ncols == a.nrows) {
       val out = GMat.newOrCheckGMat(nrows, a.ncols, oldmat)
       Mat.nflops += 2L * length * a.ncols
-      cublasSgemm('n', 'n', nrows, a.ncols, ncols, 1.0f, data, nrows, 
-          a.data, a.nrows, 0f, out.data, nrows)
+      cublasSgemm('n', 'n', nrows, a.ncols, ncols, 1.0f, data, nrows, a.data, a.nrows, 0f, out.data, nrows)
       cudaDeviceSynchronize()
+      if (cublasGetError != 0) {
+        throw new RuntimeException("Cublas error in * "+cublasGetError)
+      }
       out
     }	else if (ncols == 1 && nrows == 1) {
       val out = GMat.newOrCheckGMat(a.nrows, a.ncols, oldmat)
@@ -62,6 +70,20 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
       Mat.nflops += 1L * length
       if (oldmat.asInstanceOf[AnyRef] != null) cudaMemset(out.data, 0, Sizeof.FLOAT*out.length)
       cublasSaxpy(length, a.dv.asInstanceOf[Float], data, 1, out.data, 1)
+      cudaDeviceSynchronize()
+      out
+    } else throw new RuntimeException("dimensions mismatch")
+  }
+  
+  def GMultT(a:GMat, oldmat:GMat):GMat = {
+    if (ncols == a.ncols) {
+      val out = GMat.newOrCheckGMat(nrows, a.nrows, oldmat)
+      Mat.nflops += 2L * length * a.nrows
+      cublasSgemm('n', 't', nrows, a.nrows, ncols, 1.0f, data, nrows, a.data, a.nrows, 0f, out.data, nrows)
+      val ee = cublasGetError
+      if (ee != 0) {
+        throw new RuntimeException("Cublas error in xT "+ee)
+      }
       cudaDeviceSynchronize()
       out
     } else throw new RuntimeException("dimensions mismatch")
@@ -97,7 +119,7 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
         (ncols == a.ncols && (a.nrows == 1 || nrows == 1)) ||
         (a.ncols == 1 && a.nrows == 1) ||
         (ncols == 1 && nrows == 1)) {
-    	val out = GMat.newOrCheckGMat(nrows, a.ncols, oldmat)
+    	val out = GMat.newOrCheckGMat(math.max(nrows, a.nrows), math.max(ncols, a.ncols), oldmat)
       Mat.nflops += scala.math.max(length, a.length)
       CUMAT.applyop(data, nrows, ncols, a.data, a.nrows, a.ncols, out.data, op)
       cudaDeviceSynchronize()
@@ -149,6 +171,7 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
   import GMat.BinOp._
   def * (a : GMat) = GMult(a, null)
   def * (a : GSMat) = GSMult(a, null)
+  def xT (a : GMat) = GMultT(a, null)
   def xT (a : GSMat) = GSMultT(a, null)
   def + (a : GMat) = gOp(a, null, op_add)
   def - (a : GMat) = gOp(a, null, op_sub)
@@ -177,7 +200,10 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
   override def *  (b : Float):Mat = applyMat(this, GMat(FMat.felem(b)), null, Mop_Times)
   override def *  (b : Int):Mat = applyMat(this, GMat(FMat.felem(b)), null, Mop_Times)
   override def *  (b : Double):Mat = applyMat(this, GMat(FMat.felem(b.asInstanceOf[Float])), null, Mop_Times)
-  override def xT  (b : Mat) = b match {case bb:GSMat => GSMultT(bb, null)}
+  override def xT  (b : Mat) = b match {
+    case bb:GSMat => GSMultT(bb, null)
+    case bb:GMat => GMultT(bb, null)
+    }
   override def /  (b : Mat):Mat = applyMat(this, b, null, Mop_Div)
   override def \\ (b : Mat):Mat = applyMat(this, b, null, Mop_RSolve)
   override def *@ (b : Mat):Mat = applyMat(this, b, null, Mop_ETimes)
@@ -207,6 +233,14 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
 
 class GPair(val omat:Mat, val mat:GMat) extends Pair{
 	import GMat.BinOp._
+	
+	override def t = {
+    val out = GMat.tryForOutGMat(omat)
+    if (out.nrows != mat.ncols || out.ncols != mat.nrows)
+      throw new RuntimeException("transpose: dimensions mismatch")
+    CUMAT.transpose(mat.data, mat.nrows, out.data, mat.ncols, mat.nrows, mat.ncols)
+    out
+  }
 
 	def + (a : GMat) = mat.gOp(a, GMat.tryForOutGMat(omat), op_add)
 	def - (a : GMat) = mat.gOp(a, GMat.tryForOutGMat(omat), op_sub)
@@ -232,8 +266,10 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
 	}
 
 	def xT (a : GSMat) = mat.GSMultT(a, GMat.tryForOutGMat(omat))
+	def xT (a : GMat) = mat.GMultT(a, GMat.tryForOutGMat(omat))
 	override def xT (b: Mat):Mat = b match {
 	case bb:GSMat => mat.GSMultT(bb, GMat.tryForOutGMat(omat))
+	case bb:GMat => mat.GMultT(bb, GMat.tryForOutGMat(omat))
 	}
     
   import Operator._
