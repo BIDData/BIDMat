@@ -506,6 +506,48 @@ __global__ void __reduce1op(int nrows, int ncols, float *A, float *B, int opn) {
 #endif
 #endif
 
+#define BLOCKDIM 32
+
+__global__ void __transpose(float *in, int instride, float *out, int outstride, int nrows, int ncols) {
+  int nx = BLOCKDIM * gridDim.x;
+  int ny = BLOCKDIM * gridDim.y;
+  int ix = BLOCKDIM * blockIdx.x;
+  int iy = BLOCKDIM * blockIdx.y;
+  __shared__ float tile[BLOCKDIM][BLOCKDIM+1];
+
+  for (int yb = iy; yb < ncols; yb += ny) {
+    for (int xb = ix; xb < nrows; xb += nx) {
+      if (xb + threadIdx.x < nrows) {
+        int ylim = min(ncols, yb + BLOCKDIM);
+        for (int y = threadIdx.y + yb; y < ylim; y += blockDim.y) {
+          tile[threadIdx.x][y-yb] = in[threadIdx.x+xb + y*instride];
+        }
+      }
+      __syncthreads();
+      if (yb + threadIdx.x < ncols) {
+        int xlim = min(nrows, xb + BLOCKDIM);
+        for (int x = threadIdx.y + xb; x < xlim; x += blockDim.y) {
+          out[threadIdx.x + yb + x*outstride] = tile[x-xb][threadIdx.x];
+        }
+      }
+      __syncthreads();
+    }
+  } 
+}
+
+int transpose(float *in, int instride, float *out, int outstride, int nrows, int ncols) {
+  const dim3 griddims(32,32);
+  const dim3 blockdims(BLOCKDIM,16,1);
+  cudaError_t err;
+  __transpose<<<griddims,blockdims>>>(in, instride, out, outstride, nrows, ncols); 
+  cudaDeviceSynchronize();
+  err = cudaGetLastError();
+  if (err != cudaSuccess) {fprintf(stderr, "cuda error in transpose"); return err;}
+  return 0;
+}
+
+
+
  int dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P) {
   int nthreads = min(32, nrows);
   int nblocks = min(32*1024*1024, max(1,nnz/8));

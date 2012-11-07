@@ -218,6 +218,12 @@ object SMat {
   
   def apply(a:SDMat) = a.toSMat
   
+  def apply(a:Mat) = a match {
+    case aa:SMat => aa
+    case aa:GSMat => aa.toSMat
+    case aa:SDMat => aa.toSMat
+  }
+  
   def SnoRows(nr:Int, nc:Int, nnz0:Int):SMat = new SMat(nr, nc, nnz0, null, new Array[Int](nc+1), new Array[Float](nnz0))
 }
 

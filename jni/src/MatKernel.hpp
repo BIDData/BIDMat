@@ -16,3 +16,5 @@ int dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P);
 int reduce1op(int nrows, int ncols, float *A, float *B, int opn);
 
 int reduce2op(int nrows, int ncols, float *A, float *B, int opn);
+
+int transpose(float *in, int instride, float *out, int outstride, int nrows, int ncols);

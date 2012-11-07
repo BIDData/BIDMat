@@ -256,7 +256,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     	if (outmat.asInstanceOf[AnyRef] != null) out.clear
     	sgemm(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.Trans,
   					nrows, a.nrows, ncols, 1.0f, data, nrows, a.data, a.nrows, 0, out.data, nrows)
-    	Mat.nflops += 2L * a.nnz * nrows
+    	Mat.nflops += 2L * length * a.nrows
     	out
     } else {
       throw new RuntimeException("xT dimensions mismatch")
