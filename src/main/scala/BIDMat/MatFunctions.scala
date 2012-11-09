@@ -394,6 +394,27 @@ object MatFunctions {
     ccol(args.toList)
   }
 
+  def blank = new Mat(0,0)
+  
+  def fblank = new FMat(0,0,null)
+  
+  def dblank = new DMat(0,0,null)
+  
+  def cblank = new CMat(0,0,null)
+  
+  def iblank = new IMat(0,0,null)
+  
+  def sblank = new SMat(0,0,0,null,null,null)
+  
+  def sdblank = new SDMat(0,0,0,null,null,null)
+  
+  def gblank = new GMat(0,0,null,0)
+  
+  def giblank = new GIMat(0,0,null,0)
+  
+  def gsblank = new GSMat(0,0,0,null,null,null,0)
+  
+  
   def sparse(a:DMat):SDMat = {
     val (ii, jj, vv) = a.find3
     val out = SDMat(a.nrows, a.ncols, ii.nrows)

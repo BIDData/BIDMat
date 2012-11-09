@@ -3,6 +3,7 @@ import jcuda._
 import jcuda.jcublas._
 import jcuda.jcublas.JCublas._
 import jcuda.runtime.JCuda._
+import jcuda.runtime._
 import edu.berkeley.bid.CUMAT
 
 class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, nc) {
@@ -61,14 +62,14 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
     }	else if (ncols == 1 && nrows == 1) {
       val out = GMat.newOrCheckGMat(a.nrows, a.ncols, oldmat)
       Mat.nflops += 1L * a.length
-      if (oldmat.asInstanceOf[AnyRef] != null) cudaMemset(out.data, 0, Sizeof.FLOAT*out.length)
+      cudaMemset(out.data, 0, Sizeof.FLOAT*out.length)
       cublasSaxpy(a.length, this.dv.asInstanceOf[Float], a.data, 1, out.data, 1)
       cudaDeviceSynchronize()
       out
     } else if (a.ncols == 1 && a.nrows == 1) {
       val out = GMat.newOrCheckGMat(nrows, ncols, oldmat)
       Mat.nflops += 1L * length
-      if (oldmat.asInstanceOf[AnyRef] != null) cudaMemset(out.data, 0, Sizeof.FLOAT*out.length)
+      cudaMemset(out.data, 0, Sizeof.FLOAT*out.length)
       cublasSaxpy(length, a.dv.asInstanceOf[Float], data, 1, out.data, 1)
       cudaDeviceSynchronize()
       out
@@ -158,10 +159,30 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
     out
   }
   
-  def toFMat(out:FMat):FMat = {
+  def copyTo(out:FMat):FMat = {
   		cublasGetVector(nrows*ncols, Sizeof.FLOAT, data, 1, Pointer.to(out.data), 1)
   		cudaDeviceSynchronize()
   		out
+  }
+  
+  def copyFrom(in:FMat):GMat = {
+  		cublasSetVector(nrows*ncols, Sizeof.FLOAT, Pointer.to(in.data), 1, data, 1)
+  		cudaDeviceSynchronize()
+  		this
+  }
+  
+  def copyTo(out:GMat):GMat = {
+    val a = out.recycle(nrows, ncols, 0)
+    cudaMemcpy(out.data, data, length*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize()
+    a
+  }
+  
+  override def copyTo(out:Mat):Mat = {
+    out match {
+      case a:FMat => copyTo(a.recycle(nrows, ncols, 0))
+      case a:GMat => copyTo(a.recycle(nrows, ncols, 0))
+    }
   }
   
   def free() = {
@@ -185,6 +206,19 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
   def >= (b : GMat) = gOp(b, null, op_ge)
   def <= (b : GMat) = gOp(b, null, op_le)
   def != (b : GMat) = gOp(b, null, op_ne)
+  
+  override def +  (b : Float):Mat = gOp(GMat(b), null, op_add)
+  override def -  (b : Float):Mat = gOp(GMat(b), null, op_sub)
+  override def *@  (b : Float):Mat = gOp(GMat(b), null, op_mul)
+  override def /@  (b : Float):Mat = gOp(GMat(b), null, op_div)
+  
+  override def > (b : Float) = gOp(GMat(b), null, op_gt)
+  override def < (b : Float) = gOp(GMat(b), null, op_lt)
+  override def == (b : Float) = gOp(GMat(b), null, op_eq)
+  override def === (b : Float) = gOp(GMat(b), null, op_eq)
+  override def >= (b : Float) = gOp(GMat(b), null, op_ge)
+  override def <= (b : Float) = gOp(GMat(b), null, op_le)
+  override def != (b : Float) = gOp(GMat(b), null, op_ne)
 
   def ~ (b: GMat) = new GPair(this, b)
   def ~ (b: GSMat) = new GSPair(this, b)
@@ -253,11 +287,22 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
 	def >= (b : GMat) = mat.gOp(b, GMat.tryForOutGMat(omat), op_ge)
 	def <= (b : GMat) = mat.gOp(b, GMat.tryForOutGMat(omat), op_le)
 	def != (b : GMat) = mat.gOp(b, GMat.tryForOutGMat(omat), op_ne)
+	
+	override def +  (b : Float):Mat = mat.gOp(GMat(b), GMat.tryForOutGMat(omat), op_add)
+  override def -  (b : Float):Mat = mat.gOp(GMat(b), GMat.tryForOutGMat(omat), op_sub)
+  override def *@  (b : Float):Mat = mat.gOp(GMat(b), GMat.tryForOutGMat(omat), op_mul)
+  override def *  (b : Float):Mat = mat.gOp(GMat(b), GMat.tryForOutGMat(omat), op_mul)
+  override def /@  (b : Float):Mat = mat.gOp(GMat(b), GMat.tryForOutGMat(omat), op_div)
+  
+  override def > (b : Float) = mat.gOp(GMat(b), GMat.tryForOutGMat(omat), op_gt)
+  override def < (b : Float) = mat.gOp(GMat(b), GMat.tryForOutGMat(omat), op_lt)
+  override def == (b : Float) = mat.gOp(GMat(b), GMat.tryForOutGMat(omat), op_eq)
+  override def === (b : Float) = mat.gOp(GMat(b), GMat.tryForOutGMat(omat), op_eq)
+  override def >= (b : Float) = mat.gOp(GMat(b), GMat.tryForOutGMat(omat), op_ge)
+  override def <= (b : Float) = mat.gOp(GMat(b), GMat.tryForOutGMat(omat), op_le)
+  override def != (b : Float) = mat.gOp(GMat(b), GMat.tryForOutGMat(omat), op_ne)
 
 	def * (a : GMat) = mat.GMult(a, GMat.tryForOutGMat(omat))
-	override def * (a : Float) = mat.GMult(GMat(FMat.felem(a)), GMat.tryForOutGMat(omat))
-	override def * (a : Int) = mat.GMult(GMat(FMat.felem(a)), GMat.tryForOutGMat(omat))
-	override def * (a : Double) = mat.GMult(GMat(FMat.felem(a.asInstanceOf[Float])), GMat.tryForOutGMat(omat))
 	def * (a : GSMat) = mat.GSMult(a, GMat.tryForOutGMat(omat))
 
 	override def * (b: Mat):Mat = b match {
@@ -364,6 +409,10 @@ object GMat {
     retv
   }
   
+  def apply(a:Float):GMat = {
+    GMat(FMat.felem(a))
+  }
+  
   def fromFMat(a:FMat, b:GMat):GMat = {
     val bb = b.recycle(a.nrows, a.ncols, 0)
     JCublas.cublasSetVector(a.length, Sizeof.FLOAT, Pointer.to(a.data), 1, bb.data, 1)
@@ -371,11 +420,11 @@ object GMat {
   }
 
   def newOrCheckGMat(nr:Int, nc:Int, oldmat:GMat):GMat = {
-  	if (oldmat.asInstanceOf[AnyRef] == null) {
+  	if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows == 0 && oldmat.ncols == 0)) {
   		GMat(nr, nc)
   	} else {
   		if (oldmat.nrows != nr || oldmat.ncols != nc) {
-  			throw new RuntimeException("dimensions mismatch")
+  			oldmat.recycle(nr, nc, 0)
   		} else {
   			oldmat
   		}
@@ -400,7 +449,7 @@ object GMat {
   }
     
   def tryForOutGMat(out:Mat):GMat = 
-  	if (out.asInstanceOf[AnyRef] == null) {
+  	if (out.asInstanceOf[AnyRef] == null || (out.ncols == 0 && out.nrows == 0)) {
   		null
   	} else {
   		out match {

@@ -100,7 +100,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   /*
   * Transpose
   */
-  def gt(oldmat:DenseMat[T]):DenseMat[T]  = {
+  def gt(oldmat:Mat):DenseMat[T]  = {
     var out:DenseMat[T] = DenseMat.newOrCheck(ncols, nrows, oldmat)
     var i = 0
     while (i < nrows) {
@@ -337,7 +337,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   /*
   * Implement sliced assignment, a(iv,jv) = b where iv and jv are vectors, using ? as wildcard
   */ 
-  def update(iv:IMat, jv:IMat, b:DenseMat[T]):DenseMat[T] = {
+  def _update(iv:IMat, jv:IMat, b:DenseMat[T]):DenseMat[T] = {
     val rowinds = DenseMat.getInds(iv, nrows)
     val colinds = DenseMat.getInds(jv, ncols) 
     if (rowinds.length != b.nrows || colinds.length != b.ncols) {
@@ -357,17 +357,14 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
     }
     b
   }
-  /*
-  * Implement sliced assignment, a(iv,j) = b where iv a vectors, j integer, using ? as wildcard
-  */ 
-  def update(iv:IMat, j:Int, b:DenseMat[T]):DenseMat[T] = {
-    update(iv, IMat.ielem(j), b)
-  }
-  /*
-  * Implement sliced assignment, a(i,jv) = b where jv a vector, using ? as wildcard
-  */ 
-  def update(i:Int, jv:IMat, b:DenseMat[T]):DenseMat[T] = {
-    update(IMat.ielem(i), jv, b)
+  
+  override def update(iv:IMat, jv:IMat, b:Mat):Mat = {
+    (this, b) match {
+      case (me:FMat, bb:FMat) => me.update(iv, jv, bb):FMat
+      case (me:DMat, bb:DMat) => me.update(iv, jv, bb):DMat
+      case (me:IMat, bb:IMat) => me.update(iv, jv, bb):IMat
+      case (me:CMat, bb:CMat) => me.update(iv, jv, bb):CMat
+    }
   }
   
  /*
@@ -828,6 +825,20 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
     } else
       throw new RuntimeException("index must 1 or 2")  
   }
+    
+  def dot (a : DenseMat[T])(implicit numeric:Numeric[T]):Double = 
+  	if (nrows != a.nrows || ncols != a.ncols) {
+  		throw new RuntimeException("dot dims not compatible")
+  	} else {
+  		Mat.nflops += 2 * length
+  		var v = 0.0
+  		var i = 0
+  		while (i < length){
+  			v += numeric.toDouble(numeric.times(data(i),a.data(i)))
+  			i += 1
+  		}
+  		v
+  	}
  
   def mkdiag = {
     if (math.min(nrows, ncols) > 1) {
@@ -913,15 +924,20 @@ object DenseMat {
   }
 
   
-  def newOrCheck[T](nr:Int, nc:Int, oldmat:DenseMat[T])
+  def newOrCheck[T](nr:Int, nc:Int, oldmat:Mat)
   (implicit classManifest:ClassManifest[T]):DenseMat[T] = {
-    if (oldmat.asInstanceOf[AnyRef] == null) {
+    if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows == 0 && oldmat.ncols == 0)) {
       new DenseMat[T](nr, nc)
     } else {
+      val omat = oldmat.asInstanceOf[DenseMat[T]]
       if (oldmat.nrows != nr || oldmat.ncols != nc) {
-        throw new RuntimeException("dimensions mismatch")
+        if (nr*nc <= omat.data.size) {
+          return new DenseMat[T](nr, nc, omat.data)
+        } else {
+        	new DenseMat[T](nr, nc)
+        }
       } else {
-        oldmat
+        omat
       }
     }
   }

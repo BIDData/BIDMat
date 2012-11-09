@@ -1,6 +1,6 @@
 package BIDMat
 
-abstract class Mat(nr:Int, nc:Int) {
+class Mat(nr:Int, nc:Int) {
   val nrows = nr
   val ncols = nc
 
@@ -18,7 +18,7 @@ abstract class Mat(nr:Int, nc:Int) {
   def dv:Double = throw new RuntimeException("operator dv not implemented for "+this.mytype)
   
   def mytype = "Mat"
-  def copy(a:Mat) = notImplemented0("copy");
+  def copyTo(a:Mat) = notImplemented0("copy");
   def copy = notImplemented0("copy");
   def zeros(nr:Int, nc:Int) = notImplemented0("zeros");
   def ones(nr:Int, nc:Int) = notImplemented0("ones");
@@ -36,6 +36,11 @@ abstract class Mat(nr:Int, nc:Int) {
   def apply(a:IMat, b:IMat):Mat = notImplemented0("block array access");
   def apply(a:IMat, b:Int):Mat = notImplemented0("block array access");	
   def apply(a:Int, b:IMat):Mat = notImplemented0("block array access");
+  
+  def update(a:IMat, b:Mat) = notImplemented0("linear update");
+  def update(a:IMat, b:IMat, m:Mat) = notImplemented0("block update");
+  def update(a:IMat, b:Int, m:Mat) = notImplemented0("block update");	
+  def update(a:Int, b:IMat, m:Mat) = notImplemented0("block update");
   
   def + (b : Mat):Mat = notImplemented1("+", b)
   def - (b : Mat):Mat = notImplemented1("-", b)
@@ -55,6 +60,8 @@ abstract class Mat(nr:Int, nc:Int) {
   def == (b : Mat):Mat = notImplemented1("==", b)
   def === (b : Mat):Mat = notImplemented1("===", b)
   def != (b : Mat):Mat = notImplemented1("!=", b)
+  
+  def <-- (b : Mat):Mat = b.copyTo(this)
   
   def + (b : Int):Mat = notImplemented0("+")
   def - (b : Int):Mat = notImplemented0("-")
@@ -109,13 +116,22 @@ abstract class Mat(nr:Int, nc:Int) {
   
   def \ (b : Mat):Mat = notImplemented1("\\", b)
   def on (b : Mat):Mat = notImplemented1("on", b)
-  def ~ (b : Mat):Pair = throw new RuntimeException("operator ~ not implemented for "+this+" and "+b)
+  def ~ (b : Mat):Pair = b match {
+    case bb:FMat => new FPair(this, bb)
+    case bb:DMat => new DPair(this, bb)
+    case bb:IMat => new IPair(this, bb)
+    case bb:SMat => new SPair(this, bb)
+//    case bb:SDMat => new SDPair(this, bb)
+    case bb:CMat => new CPair(this, bb)
+    case bb:GMat => new GPair(this, bb)
+  }
   
   def dot (b : Mat):Double = {notImplemented1("dot", b); 0}
 
 }
 
 abstract class Pair {
+  
   def notImplemented0(s:String):Mat = { 
     throw new RuntimeException("operator "+s+" not implemented for "+this)
   }
@@ -128,9 +144,6 @@ abstract class Pair {
   def + (b : Mat):Mat = notImplemented1("+", b)
   def - (b : Mat):Mat = notImplemented1("-", b)
   def * (b : Mat):Mat = notImplemented1("*", b)
-  def * (b : Float):Mat = notImplemented0("*")
-  def * (b : Int):Mat = notImplemented0("*")
-  def * (b : Double):Mat = notImplemented0("*")
   def xT (b : Mat):Mat = notImplemented1("xT", b)
   def Tx (b : Mat):Mat = notImplemented1("Tx", b)
   def / (b : Mat):Mat = notImplemented1("/", b)
@@ -149,6 +162,57 @@ abstract class Pair {
   
   def \ (b : Mat):Mat = notImplemented1("\\", b)
   def on (b : Mat):Mat = notImplemented1("on", b)
+  
+    def + (b : Int):Mat = notImplemented0("+")
+  def - (b : Int):Mat = notImplemented0("-")
+  def * (b : Int):Mat = notImplemented0("*")
+  def / (b : Int):Mat = notImplemented0("/")
+  def *@ (b : Int):Mat = notImplemented0("*@")
+  def /@ (b : Int):Mat = notImplemented0("/@")
+  def \\ (b : Int):Mat = notImplemented0("\\\\")
+  def ^ (b : Int):Mat = notImplemented0("^") 
+  
+  def > (b : Int):Mat = notImplemented0(">")
+  def < (b : Int):Mat = notImplemented0("<")
+  def >= (b : Int):Mat = notImplemented0(">=")
+  def <= (b : Int):Mat = notImplemented0("<=")
+  def == (b : Int):Mat = notImplemented0("==")
+  def === (b : Int):Mat = notImplemented0("===")
+  def != (b : Int):Mat = notImplemented0("!=")
+  
+  def + (b : Float):Mat = notImplemented0("+")
+  def - (b : Float):Mat = notImplemented0("-")
+  def * (b : Float):Mat = notImplemented0("*")
+  def / (b : Float):Mat = notImplemented0("/")
+  def *@ (b : Float):Mat = notImplemented0("*@")
+  def /@ (b : Float):Mat = notImplemented0("/@")
+  def \\ (b : Float):Mat = notImplemented0("\\\\")
+  def ^ (b : Float):Mat = notImplemented0("^") 
+  
+  def > (b : Float):Mat = notImplemented0(">")
+  def < (b : Float):Mat = notImplemented0("<")
+  def >= (b : Float):Mat = notImplemented0(">=")
+  def <= (b : Float):Mat = notImplemented0("<=")
+  def == (b : Float):Mat = notImplemented0("==")
+  def === (b : Float):Mat = notImplemented0("===")
+  def != (b : Float):Mat = notImplemented0("!=")
+  
+  def + (b : Double):Mat = notImplemented0("+")
+  def - (b : Double):Mat = notImplemented0("-")
+  def * (b : Double):Mat = notImplemented0("*")
+  def / (b : Double):Mat = notImplemented0("/")
+  def *@ (b : Double):Mat = notImplemented0("*@")
+  def /@ (b : Double):Mat = notImplemented0("/@")
+  def \\ (b : Double):Mat = notImplemented0("\\\\")
+  def ^ (b : Double):Mat = notImplemented0("^") 
+  
+  def > (b : Double):Mat = notImplemented0(">")
+  def < (b : Double):Mat = notImplemented0("<")
+  def >= (b : Double):Mat = notImplemented0(">=")
+  def <= (b : Double):Mat = notImplemented0("<=")
+  def == (b : Double):Mat = notImplemented0("==")
+  def === (b : Double):Mat = notImplemented0("===")
+  def != (b : Double):Mat = notImplemented0("!=")  
 }
 
 object Mat {
