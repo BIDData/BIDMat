@@ -160,9 +160,10 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
   }
   
   def copyTo(out:FMat):FMat = {
-  		cublasGetVector(nrows*ncols, Sizeof.FLOAT, data, 1, Pointer.to(out.data), 1)
+  		val a = out.recycle(nrows, ncols, 0)
+  		cublasGetVector(nrows*ncols, Sizeof.FLOAT, data, 1, Pointer.to(a.data), 1)
   		cudaDeviceSynchronize()
-  		out
+  		a
   }
   
   def copyFrom(in:FMat):GMat = {
@@ -173,15 +174,15 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
   
   def copyTo(out:GMat):GMat = {
     val a = out.recycle(nrows, ncols, 0)
-    cudaMemcpy(out.data, data, length*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaMemcpy(a.data, data, length*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
     cudaDeviceSynchronize()
     a
   }
   
   override def copyTo(out:Mat):Mat = {
     out match {
-      case a:FMat => copyTo(a.recycle(nrows, ncols, 0))
-      case a:GMat => copyTo(a.recycle(nrows, ncols, 0))
+      case a:FMat => copyTo(a)
+      case a:GMat => copyTo(a)
     }
   }
   
