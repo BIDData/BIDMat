@@ -34,12 +34,7 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
     tmpMat.toString
   }
   
-  override def zeros(nr:Int, nc:Int) = {
-    val out = GMat(nr, nc)
-    cudaMemset(out.data, 0, Sizeof.FLOAT*out.length)
-    cudaDeviceSynchronize()
-    out
-  }
+  override def zeros(nr:Int, nc:Int) = GMat.gzeros(nr, nc)
     
   override def ones(nr:Int, nc:Int) = {
     val out = GMat(nr, nc)
@@ -393,6 +388,13 @@ object GMat {
     val atan2=0
     val pow=1 
   }  
+  
+  def gzeros(nr:Int, nc:Int) = {
+    val out = GMat(nr, nc)
+    cudaMemset(out.data, 0, Sizeof.FLOAT*out.length)
+    cudaDeviceSynchronize()
+    out
+  }
   
   def apply(nr:Int, nc:Int):GMat = {
     val retv = new GMat(nr, nc, new Pointer(), nr*nc)        
