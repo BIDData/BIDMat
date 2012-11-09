@@ -47,11 +47,21 @@ object SciFunctions {
   }
   
   def connect(i:Int) = {
-  	JCuda.cudaDeviceEnablePeerAccess(i,0)
+  	val v0 = JCuda.cudaDeviceEnablePeerAccess(i,0)
     val j = device
     device(i)
-    JCuda.cudaDeviceEnablePeerAccess(j,0)
+    val v1 = JCuda.cudaDeviceEnablePeerAccess(j,0)
     device(j)
+    (v0, v1)
+  }
+  
+  def disconnect(i:Int) = {
+  	val v0 = JCuda.cudaDeviceDisablePeerAccess(i)
+    val j = device
+    device(i)
+    val v1 = JCuda.cudaDeviceDisablePeerAccess(j)
+    device(j)
+    (v0, v1)
   }
   
   def canconnect(i:Int) = {

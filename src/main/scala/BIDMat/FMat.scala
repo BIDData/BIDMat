@@ -86,9 +86,15 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   	out
   }
   
+  def copyTo(a:FMat) = {
+    val aa = a.recycle(nrows, ncols, 0)
+    System.arraycopy(data, 0, aa.data, 0, length)
+    aa
+  }
+  
   override def copyTo(a:Mat) = {
   	a match {
-  	  case out:FMat => System.arraycopy(data, 0, out.data, 0, length)
+  	  case out:FMat => copyTo(out):FMat
   	  case aa:GMat => aa.copyFrom(this)
   	}
   	a
