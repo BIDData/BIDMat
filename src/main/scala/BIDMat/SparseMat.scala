@@ -291,11 +291,7 @@ class SparseMat[@specialized(Double,Float) T]
   		}
   		out
   	}
-    }
-
-  def update(a:IMat, b:IMat, c:Mat) = {
-    throw new RuntimeException("Not implemented")
-  }    
+    }  
 
   private def printOne(a:T):String = 
   	a match {

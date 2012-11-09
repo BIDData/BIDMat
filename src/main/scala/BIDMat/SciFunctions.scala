@@ -433,6 +433,7 @@ object SciFunctions {
   def mini(a:SMat) = a.ssReduceOp(0, (x:Float) => x, (x:Float, y:Float) => math.min(x,y))
   
   def sum(a:CMat, n:Int) = a.ccReduceOpv(n, CMat.vecAdd _, null)
+  def sum(a:CMat, n:Int, c:CMat) = a.ccReduceOpv(n, CMat.vecAdd _, CMat.tryForOutCMat(c))
      
   def max(a:Mat, b:Mat):Mat = {
     (a, b) match {
@@ -452,75 +453,75 @@ object SciFunctions {
     }
   }
   
-  def max(a:Mat, b:Mat, out:Mat):Mat = {
-    (a, b, out) match {
-      case (aa:FMat, bb:FMat, cc:FMat) => max(aa, bb, cc):FMat
-      case (aa:IMat, bb:IMat, cc:IMat) => max(aa, bb, cc):IMat
-      case (aa:DMat, bb:DMat, cc:DMat) => max(aa, bb, cc):DMat
-      case (aa:GMat, bb:GMat, cc:GMat) => max(aa, bb, cc):GMat
+  def max(a:Mat, b:Mat, cc:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => max(aa, bb, FMat.tryForOutFMat(cc)):FMat
+      case (aa:IMat, bb:IMat) => max(aa, bb, IMat.tryForOutIMat(cc)):IMat
+      case (aa:DMat, bb:DMat) => max(aa, bb, DMat.tryForOutDMat(cc)):DMat
+      case (aa:GMat, bb:GMat) => max(aa, bb, GMat.tryForOutGMat(cc)):GMat
     }
   }
   
-  def min(a:Mat, b:Mat, out:Mat):Mat = {
-    (a, b, out) match {
-      case (aa:FMat, bb:FMat, cc:FMat) => min(aa, bb, cc):FMat
-      case (aa:IMat, bb:IMat, cc:IMat) => min(aa, bb, cc):IMat
-      case (aa:DMat, bb:DMat, cc:DMat) => min(aa, bb, cc):DMat
-      case (aa:GMat, bb:GMat, cc:GMat) => min(aa, bb, cc):GMat
+  def min(a:Mat, b:Mat, cc:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => min(aa, bb, FMat.tryForOutFMat(cc)):FMat
+      case (aa:IMat, bb:IMat) => min(aa, bb, IMat.tryForOutIMat(cc)):IMat
+      case (aa:DMat, bb:DMat) => min(aa, bb, DMat.tryForOutDMat(cc)):DMat
+      case (aa:GMat, bb:GMat) => min(aa, bb, GMat.tryForOutGMat(cc)):GMat
     }
   }
   
-  def max(a:Float, b:Mat, out:Mat):Mat = {
-    (b, out) match {
-      case (bb:FMat, cc:FMat) => max(a, bb, cc):FMat
-      case (bb:IMat, cc:IMat) => max(a.asInstanceOf[Int], bb, cc):IMat
-      case (bb:DMat, cc:DMat) => max(DMat(a), bb, cc):DMat
-      case (bb:GMat, cc:GMat) => max(GMat(a), bb, cc):GMat
+  def max(a:Float, b:Mat, cc:Mat):Mat = {
+    b match {
+      case bb:FMat => max(a, bb, FMat.tryForOutFMat(cc)):FMat
+      case bb:IMat => max(a.asInstanceOf[Int], bb, IMat.tryForOutIMat(cc)):IMat
+      case bb:DMat => max(DMat(a), bb, DMat.tryForOutDMat(cc)):DMat
+      case bb:GMat => max(GMat(a), bb, GMat.tryForOutGMat(cc)):GMat
     }
   }
   
-  def min(a:Float, b:Mat, out:Mat):Mat = {
-    (b, out) match {
-      case (bb:FMat, cc:FMat) => min(a, bb, cc):FMat
-      case (bb:IMat, cc:IMat) => min(a.asInstanceOf[Int], bb, cc):IMat
-      case (bb:DMat, cc:DMat) => min(DMat(a), bb, cc):DMat
-      case (bb:GMat, cc:GMat) => min(GMat(a), bb, cc):GMat
+  def min(a:Float, b:Mat, cc:Mat):Mat = {
+    b match {
+      case bb:FMat=> min(a, bb, FMat.tryForOutFMat(cc)):FMat
+      case bb:IMat=> min(a.asInstanceOf[Int], bb, IMat.tryForOutIMat(cc)):IMat
+      case bb:DMat => min(DMat(a), bb, DMat.tryForOutDMat(cc)):DMat
+      case bb:GMat => min(GMat(a), bb, GMat.tryForOutGMat(cc)):GMat
     }
   }
   
-  def max(a:Double, b:Mat, out:Mat):Mat = {
-    (b, out) match {
-      case (bb:FMat, cc:FMat) => max(a.asInstanceOf[Float], bb, cc):FMat
-      case (bb:IMat, cc:IMat) => max(a.asInstanceOf[Int], bb, cc):IMat
-      case (bb:DMat, cc:DMat) => max(DMat(a), bb, cc):DMat
-      case (bb:GMat, cc:GMat) => max(GMat(a), bb, cc):GMat
+  def max(a:Double, b:Mat, cc:Mat):Mat = {
+    b match {
+      case bb:FMat => max(a.asInstanceOf[Float], bb, FMat.tryForOutFMat(cc)):FMat
+      case bb:IMat => max(a.asInstanceOf[Int], bb, IMat.tryForOutIMat(cc)):IMat
+      case bb:DMat => max(DMat(a), bb, DMat.tryForOutDMat(cc)):DMat
+      case bb:GMat => max(GMat(a), bb, GMat.tryForOutGMat(cc)):GMat
     }
   }
   
-  def min(a:Double, b:Mat, out:Mat):Mat = {
-    (b, out) match {
-      case (bb:FMat, cc:FMat) => min(a.asInstanceOf[Float], bb, cc):FMat
-      case (bb:IMat, cc:IMat) => min(a.asInstanceOf[Int], bb, cc):IMat
-      case (bb:DMat, cc:DMat) => min(DMat(a), bb, cc):DMat
-      case (bb:GMat, cc:GMat) => min(GMat(a), bb, cc):GMat
+  def min(a:Double, b:Mat, cc:Mat):Mat = {
+    b match {
+      case bb:FMat => min(a.asInstanceOf[Float], bb, FMat.tryForOutFMat(cc)):FMat
+      case bb:IMat => min(a.asInstanceOf[Int], bb, IMat.tryForOutIMat(cc)):IMat
+      case bb:DMat=> min(DMat(a), bb, DMat.tryForOutDMat(cc)):DMat
+      case bb:GMat => min(GMat(a), bb, GMat.tryForOutGMat(cc)):GMat
     }
   }
   
-  def max(a:Mat, b:Double, out:Mat):Mat = {
-    (a, out) match {
-      case (aa:FMat, cc:FMat) => max(aa, b.asInstanceOf[Float], cc):FMat
-      case (aa:IMat, cc:IMat) => max(aa, b.asInstanceOf[Int], cc):IMat
-      case (aa:DMat, cc:DMat) => max(aa, DMat(b), cc):DMat
-      case (aa:GMat, cc:GMat) => max(aa, GMat(b), cc):GMat
+  def max(a:Mat, b:Double, cc:Mat):Mat = {
+    a match {
+      case aa:FMat => max(aa, b.asInstanceOf[Float], FMat.tryForOutFMat(cc)):FMat
+      case aa:IMat => max(aa, b.asInstanceOf[Int], IMat.tryForOutIMat(cc)):IMat
+      case aa:DMat => max(aa, DMat(b), DMat.tryForOutDMat(cc)):DMat
+      case aa:GMat => max(aa, GMat(b), GMat.tryForOutGMat(cc)):GMat
     }
   }
   
-  def min(a:Mat, b:Double, out:Mat):Mat = {
-    (a, out) match {
-      case (aa:FMat, cc:FMat) => min(aa, b.asInstanceOf[Float], cc):FMat
-      case (aa:IMat, cc:IMat) => min(aa, b.asInstanceOf[Int], cc):IMat
-      case (aa:DMat, cc:DMat) => min(aa, DMat(b), cc):DMat
-      case (aa:GMat, cc:GMat) => min(aa, GMat(b), cc):GMat
+  def min(a:Mat, b:Double, cc:Mat):Mat = {
+    a match {
+      case aa:FMat => min(aa, b.asInstanceOf[Float], FMat.tryForOutFMat(cc)):FMat
+      case aa:IMat => min(aa, b.asInstanceOf[Int], IMat.tryForOutIMat(cc)):IMat
+      case aa:DMat => min(aa, DMat(b), DMat.tryForOutDMat(cc)):DMat
+      case aa:GMat => min(aa, GMat(b), GMat.tryForOutGMat(cc)):GMat
     }
   }
    
@@ -550,6 +551,17 @@ object SciFunctions {
       case aa:CMat => sum(aa, b):CMat
       case aa:SMat => sum(aa, b):FMat
       case aa:GMat => sum(aa, b):GMat
+    }
+  }
+  
+  def sum(a:Mat, b:Int, c:Mat):Mat = {
+    (a, c) match {
+      case (aa:FMat, cc:Mat) => sum(aa, b, FMat.tryForOutFMat(cc)):FMat
+      case (aa:IMat, cc:Mat) => sum(aa, b, IMat.tryForOutIMat(cc)):IMat
+      case (aa:DMat, cc:Mat) => sum(aa, b, DMat.tryForOutDMat(cc)):DMat
+//      case (aa:SMat, cc:FMat) => sum(aa, b, Mat.tryForOutMat(cc)):FMat
+      case (aa:CMat, cc:Mat) => sum(aa, b, CMat.tryForOutCMat(cc)):CMat
+      case (aa:GMat, cc:Mat) => sum(aa, b, GMat.tryForOutGMat(cc)):GMat
     }
   }
   

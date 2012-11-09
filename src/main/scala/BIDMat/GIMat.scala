@@ -103,9 +103,9 @@ object GIMat {
       GIMat(nr, nc)
     } else {
       if (oldmat.nrows != nr || oldmat.ncols != nc) {
-	throw new RuntimeException("dimensions mismatch")
+      	oldmat.recycle(nr, nc, 0)
       } else {
-	oldmat
+      	oldmat
       }
     }
   }

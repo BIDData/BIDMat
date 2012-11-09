@@ -38,7 +38,13 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
 
   override def apply(a:IMat, b:Int):DMat = DMat(gapply(a, b))	
 
-  override def apply(a:Int, b:IMat):DMat = DMat(gapply(a, b))	
+  override def apply(a:Int, b:IMat):DMat = DMat(gapply(a, b))
+     
+  def update(iv:IMat, jv:IMat, b:DMat):DMat = DMat(_update(iv, jv, b))
+
+  def update(iv:IMat, j:Int, b:DMat):DMat = DMat(_update(iv, IMat.ielem(j), b))
+
+  def update(i:Int, jv:IMat, b:DMat):DMat = DMat(_update(IMat.ielem(i), jv, b))
   
   def ddMatOp(b: Mat, f:(Double, Double) => Double, out:Mat) = 
     b match {
@@ -77,7 +83,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   	}
   }
   
-  override def copy(a:Mat) = {
+  override def copyTo(a:Mat) = {
   	a match {
   	  case out:DMat => System.arraycopy(data, 0, out.data, 0, length)
   	}
@@ -296,28 +302,11 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
       }
       case _ => throw new RuntimeException("argument must be dense")
     }
-
-  def dot (b : DMat):Double = 
-  	if (math.min(nrows, ncols) != 1 || math.min(b.nrows,b.ncols) != 1 || length != b.length) {
-  		throw new RuntimeException("vector dims not compatible")
-  	} else {
-  		Mat.nflops += 2*length
-  		if (length < 200 || Mat.noMKL) {
-  			var sum = 0.0
-  			var i = 0
-  			while (i < length) {
-  				sum += data(i)*b.data(i)
-  				i += 1
-  			}
-  			sum
-  		} else {
-  			ddot(length, data, 1, b.data, 1)
-  		}
-  	}
   
-  override def dot(a:Mat) = dot(a.asInstanceOf[DMat])
-
+  def dot(a:DMat):Double = super.dot(a)
   
+  override def dot(a:Mat):Double = super.dot(a.asInstanceOf[DMat])
+ 
   def solvel(a0:Mat):DMat = 
     a0 match {
       case a:DMat => { 
@@ -534,19 +523,19 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
 
   override def * (b : Double) = mat.fDMult(DMat.elem(b), DMat.tryForOutDMat(omat)) 
   override def * (b : Float) = mat.fDMult(DMat.elem(b), DMat.tryForOutDMat(omat))
-  def + (b : Double) = mat.ddMatOpScalarv(b, DenseMat.vecAdd[Double] _, DMat.tryForOutDMat(omat))
-  def - (b : Double) = mat.ddMatOpScalarv(b, DenseMat.vecSub _, DMat.tryForOutDMat(omat))
-  def *@ (b : Double) = mat.ddMatOpScalarv(b, DenseMat.vecMul _, DMat.tryForOutDMat(omat))
-  def /@ (b : Double) = mat.ddMatOpScalarv(b, DMat.dVecDiv _, DMat.tryForOutDMat(omat))  
-  def ^ (b : Double) = mat.ddMatOpScalar(b, (x:Double, y:Double) => math.pow(x,y), DMat.tryForOutDMat(omat))
+  override def + (b : Double) = mat.ddMatOpScalarv(b, DenseMat.vecAdd[Double] _, DMat.tryForOutDMat(omat))
+  override def - (b : Double) = mat.ddMatOpScalarv(b, DenseMat.vecSub _, DMat.tryForOutDMat(omat))
+  override def *@ (b : Double) = mat.ddMatOpScalarv(b, DenseMat.vecMul _, DMat.tryForOutDMat(omat))
+  override def /@ (b : Double) = mat.ddMatOpScalarv(b, DMat.dVecDiv _, DMat.tryForOutDMat(omat))  
+  override def ^ (b : Double) = mat.ddMatOpScalar(b, (x:Double, y:Double) => math.pow(x,y), DMat.tryForOutDMat(omat))
 
-  def > (b : Double) = mat.ddMatOpScalar(b, (x:Double, y:Double) => if (x > y) 1.0 else 0.0, DMat.tryForOutDMat(omat))
-  def < (b : Double) = mat.ddMatOpScalar(b, (x:Double, y:Double) => if (x < y) 1.0 else 0.0, DMat.tryForOutDMat(omat))
-  def == (b : Double) = mat.ddMatOpScalar(b, (x:Double, y:Double) => if (x == y) 1.0 else 0.0, DMat.tryForOutDMat(omat))
-  def === (b : Double) = mat.ddMatOpScalar(b, (x:Double, y:Double) => if (x == y) 1.0 else 0.0, DMat.tryForOutDMat(omat))
-  def >= (b : Double) = mat.ddMatOpScalar(b, (x:Double, y:Double) => if (x >= y) 1.0 else 0.0, DMat.tryForOutDMat(omat))
-  def <= (b : Double) = mat.ddMatOpScalar(b, (x:Double, y:Double) => if (x <= y) 1.0 else 0.0, DMat.tryForOutDMat(omat))
-  def != (b : Double) = mat.ddMatOpScalar(b, (x:Double, y:Double) => if (x != y) 1.0 else 0.0, DMat.tryForOutDMat(omat)) 
+  override def > (b : Double) = mat.ddMatOpScalar(b, (x:Double, y:Double) => if (x > y) 1.0 else 0.0, DMat.tryForOutDMat(omat))
+  override def < (b : Double) = mat.ddMatOpScalar(b, (x:Double, y:Double) => if (x < y) 1.0 else 0.0, DMat.tryForOutDMat(omat))
+  override def == (b : Double) = mat.ddMatOpScalar(b, (x:Double, y:Double) => if (x == y) 1.0 else 0.0, DMat.tryForOutDMat(omat))
+  override def === (b : Double) = mat.ddMatOpScalar(b, (x:Double, y:Double) => if (x == y) 1.0 else 0.0, DMat.tryForOutDMat(omat))
+  override def >= (b : Double) = mat.ddMatOpScalar(b, (x:Double, y:Double) => if (x >= y) 1.0 else 0.0, DMat.tryForOutDMat(omat))
+  override def <= (b : Double) = mat.ddMatOpScalar(b, (x:Double, y:Double) => if (x <= y) 1.0 else 0.0, DMat.tryForOutDMat(omat))
+  override def != (b : Double) = mat.ddMatOpScalar(b, (x:Double, y:Double) => if (x != y) 1.0 else 0.0, DMat.tryForOutDMat(omat)) 
   
   import Operator._
   override def +  (b : Mat):Mat = applyMat(mat, b, DMat.tryForOutDMat(omat), Mop_Plus)
@@ -579,13 +568,13 @@ object DMat {
   }
   
   def newOrCheckDMat(nr:Int, nc:Int, omat:Mat):DMat = {
-    if (omat.asInstanceOf[AnyRef] == null) {
+    if (omat.asInstanceOf[AnyRef] == null || (omat.nrows == 0 && omat.ncols == 0)) {
       DMat(nr, nc)
     } else {
       omat match {
         case outmat:DMat =>
           if (outmat.nrows != nr || outmat.ncols != nc) {
-        	 throw new RuntimeException("dimensions mismatch")
+        	 outmat.recycle(nr, nc, 0)
           } else {
           	outmat
           }
@@ -623,7 +612,7 @@ object DMat {
   }
   
   def tryForOutDMat(out:Mat):DMat = 
-  	if (out.asInstanceOf[AnyRef] == null) {
+  	if (out.asInstanceOf[AnyRef] == null || (out.ncols == 0 && out.nrows == 0)) {
   		null
   	} else {
   		out match {

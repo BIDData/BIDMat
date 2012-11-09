@@ -583,7 +583,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   		}
   }
   
-  override def copy(out:Mat) = {
+  override def copyTo(out:Mat) = {
     out match {
       case cout:CMat => System.arraycopy(data, 0, cout.data, 0, 2*length)
     }  	
@@ -925,32 +925,32 @@ class CPair (val omat:Mat, val mat:CMat) extends Pair {
   def != (b : CMat) = mat.ccMatOp(b, (ar:Float, ai:Float, br:Float, bi:Float) => if (ar != br || ai != bi) (1f, 0f) else (0f, 0f), CMat.tryForOutCMat(omat))
   
   override def * (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecMul _, CMat.tryForOutCMat(omat))
-  def + (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecAdd _, CMat.tryForOutCMat(omat))
-  def - (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecSub _, CMat.tryForOutCMat(omat))
-  def *@ (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecMul _, CMat.tryForOutCMat(omat))
-  def /@ (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecDiv _, CMat.tryForOutCMat(omat))
+  override def + (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecAdd _, CMat.tryForOutCMat(omat))
+  override def - (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecSub _, CMat.tryForOutCMat(omat))
+  override def *@ (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecMul _, CMat.tryForOutCMat(omat))
+  override def /@ (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecDiv _, CMat.tryForOutCMat(omat))
   
     
-  def == (b : Float) = mat.ccMatOp(CMat.celem(b, 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar == br && ai == bi) (1f, 0f) else (0f, 0f), CMat.tryForOutCMat(omat))
-  def != (b : Float) = mat.ccMatOp(CMat.celem(b, 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar != br || ai != bi) (1f, 0f) else (0f, 0f), CMat.tryForOutCMat(omat))
+  override def == (b : Float) = mat.ccMatOp(CMat.celem(b, 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar == br && ai == bi) (1f, 0f) else (0f, 0f), CMat.tryForOutCMat(omat))
+  override def != (b : Float) = mat.ccMatOp(CMat.celem(b, 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar != br || ai != bi) (1f, 0f) else (0f, 0f), CMat.tryForOutCMat(omat))
 
   override def *  (b : Double) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, CMat.tryForOutCMat(omat))
-  def +  (b : Double) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecAdd _, CMat.tryForOutCMat(omat))
-  def -  (b : Double) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecSub _, CMat.tryForOutCMat(omat))
-  def *@ (b : Double) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, CMat.tryForOutCMat(omat))
-  def /@ (b : Double) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecDiv _, CMat.tryForOutCMat(omat))
+  override def +  (b : Double) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecAdd _, CMat.tryForOutCMat(omat))
+  override def -  (b : Double) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecSub _, CMat.tryForOutCMat(omat))
+  override def *@ (b : Double) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, CMat.tryForOutCMat(omat))
+  override def /@ (b : Double) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecDiv _, CMat.tryForOutCMat(omat))
   
-  def == (b : Double) = mat.ccMatOp(CMat.celem(b.asInstanceOf[Float], 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar == br && ai == bi) (1f, 0f) else (0f, 0f), CMat.tryForOutCMat(omat))
-  def != (b : Double) = mat.ccMatOp(CMat.celem(b.asInstanceOf[Float], 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar != br || ai != bi) (1f, 0f) else (0f, 0f), CMat.tryForOutCMat(omat))
+  override def == (b : Double) = mat.ccMatOp(CMat.celem(b.asInstanceOf[Float], 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar == br && ai == bi) (1f, 0f) else (0f, 0f), CMat.tryForOutCMat(omat))
+  override def != (b : Double) = mat.ccMatOp(CMat.celem(b.asInstanceOf[Float], 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar != br || ai != bi) (1f, 0f) else (0f, 0f), CMat.tryForOutCMat(omat))
   
   override def *  (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, CMat.tryForOutCMat(omat))
-  def +  (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecAdd _, CMat.tryForOutCMat(omat))
-  def -  (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecSub _, CMat.tryForOutCMat(omat))
-  def *@ (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, CMat.tryForOutCMat(omat))
-  def /@ (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecDiv _, CMat.tryForOutCMat(omat))
+  override def +  (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecAdd _, CMat.tryForOutCMat(omat))
+  override def -  (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecSub _, CMat.tryForOutCMat(omat))
+  override def *@ (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, CMat.tryForOutCMat(omat))
+  override def /@ (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecDiv _, CMat.tryForOutCMat(omat))
      
-  def == (b : Int) = mat.ccMatOp(CMat.celem(b.asInstanceOf[Float], 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar == br && ai == bi) (1f, 0f) else (0f, 0f), CMat.tryForOutCMat(omat))
-  def != (b : Int) = mat.ccMatOp(CMat.celem(b.asInstanceOf[Float], 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar != br || ai != bi) (1f, 0f) else (0f, 0f), CMat.tryForOutCMat(omat))
+  override def == (b : Int) = mat.ccMatOp(CMat.celem(b.asInstanceOf[Float], 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar == br && ai == bi) (1f, 0f) else (0f, 0f), CMat.tryForOutCMat(omat))
+  override def != (b : Int) = mat.ccMatOp(CMat.celem(b.asInstanceOf[Float], 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar != br || ai != bi) (1f, 0f) else (0f, 0f), CMat.tryForOutCMat(omat))
   
   
   
@@ -999,11 +999,11 @@ object CMat {
   }
   
   def newOrCheckCMat(nr:Int, nc:Int, outmat:CMat):CMat = {
-    if (outmat.asInstanceOf[AnyRef] == null) {
+    if (outmat.asInstanceOf[AnyRef] == null || (outmat.nrows == 0 && outmat.ncols == 0)) {
       CMat(nr, nc)
     } else {
       if (outmat.nrows != nr || outmat.ncols != nc) {
-        throw new RuntimeException("dimensions mismatch")
+        outmat.recycle(nr, nc, 0)
       } else {
       	outmat
       }
@@ -1066,7 +1066,7 @@ object CMat {
   }
     
   def tryForOutCMat(out:Mat):CMat = 
-  	if (out.asInstanceOf[AnyRef] == null) {
+  	if (out.asInstanceOf[AnyRef] == null || (out.ncols == 0 && out.nrows == 0)) {
   		null
   	} else {
   		out match {
