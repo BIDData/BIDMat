@@ -36,7 +36,32 @@ object SciFunctions {
     curandSetPseudoRandomGeneratorSeed(cudarng, SEED)
   }
   
-  def resetCUDA = jcuda.runtime.JCuda.cudaDeviceReset
+  def resetCUDA = JCuda.cudaDeviceReset
+  
+  def device(i:Int) = JCuda.cudaSetDevice(i)
+  
+  def device:Int = {
+    val ar = Array[Int](1)
+    JCuda.cudaGetDevice(ar)
+    ar(0)
+  }
+  
+  def connect(i:Int) = {
+  	JCuda.cudaDeviceEnablePeerAccess(i,0)
+    val j = device
+    device(i)
+    JCuda.cudaDeviceEnablePeerAccess(j,0)
+    device(j)
+  }
+  
+  def canconnect(i:Int) = {
+  	val ar = Array[Int](1)
+  	val j = device
+  	JCuda.cudaDeviceCanAccessPeer(ar, i, j)
+  	val v0 = ar(0) 
+  	JCuda.cudaDeviceCanAccessPeer(ar, j, i)
+  	(v0, ar(0))
+  }
     
   def norm(a:FMat) = math.sqrt(sdot(a.length, a.data, 1, a.data, 1)).asInstanceOf[Float]
   
