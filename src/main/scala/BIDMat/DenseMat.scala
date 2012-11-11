@@ -468,7 +468,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   /*
   * General operation between two matrices. Apply op2 to corresponding elements from the input matrices.
   */
-  def ggMatOp(a:Mat, op2:(T,T) => T, oldmat:DenseMat[T]):DenseMat[T] = {
+  def ggMatOp(a:Mat, op2:(T,T) => T, oldmat:Mat):DenseMat[T] = {
     a match {
       case aa:DenseMat[T] => {
         if (nrows==a.nrows && ncols==1) {
@@ -532,7 +532,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
    * This version applies the operator op2 with stricter dimension checking, 
    * either dims must match or one arg must be scalar
    */
-  def ggMatOpStrict(a:Mat, op2:(T,T) => T, oldmat:DenseMat[T]):DenseMat[T] =
+  def ggMatOpStrict(a:Mat, op2:(T,T) => T, oldmat:Mat):DenseMat[T] =
     a match {
       case aa:DenseMat[T] => {
         if (nrows==a.nrows && ncols==a.ncols) {
@@ -571,7 +571,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   /*
    * Apply the binary operation op2 to the matrix and a scalar argument
    */  
-  def ggMatOpScalar(a:T, op2:(T,T) => T, oldmat:DenseMat[T]):DenseMat[T] = {
+  def ggMatOpScalar(a:T, op2:(T,T) => T, oldmat:Mat):DenseMat[T] = {
     val out = DenseMat.newOrCheck[T](nrows, ncols, oldmat)
     Mat.nflops += length
     var i  = 0
@@ -585,7 +585,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   * General operation between two matrices. Apply op2 to corresponding elements from the input matrices.
   * Implemented with vector operation primitives.
   */
-  def ggMatOpv(a:Mat, opv:(Array[T],Int,Int,Array[T],Int,Int,Array[T],Int,Int,Int) => T, oldmat:DenseMat[T])
+  def ggMatOpv(a:Mat, opv:(Array[T],Int,Int,Array[T],Int,Int,Array[T],Int,Int,Int) => T, oldmat:Mat)
   :DenseMat[T] = 
     a match {
       case aa:DenseMat[T] => {
@@ -631,7 +631,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
       case _ => throw new RuntimeException("arg must be dense")
     }
 
-  def ggMatOpStrictv(a:Mat, opv:(Array[T],Int,Int,Array[T],Int,Int,Array[T],Int,Int,Int) => T, oldmat:DenseMat[T]):DenseMat[T] =
+  def ggMatOpStrictv(a:Mat, opv:(Array[T],Int,Int,Array[T],Int,Int,Array[T],Int,Int,Int) => T, oldmat:Mat):DenseMat[T] =
     a match {
       case aa:DenseMat[T] => {
         var out:DenseMat[T] = null
@@ -673,7 +673,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
       case _ => throw new RuntimeException("arg must be dense")
     }
   
-  def ggMatOpScalarv(a:T, opv:(Array[T],Int,Int,Array[T],Int,Int,Array[T],Int,Int,Int) => T, oldmat:DenseMat[T])
+  def ggMatOpScalarv(a:T, opv:(Array[T],Int,Int,Array[T],Int,Int,Array[T],Int,Int,Int) => T, oldmat:Mat)
   (implicit manifest:Manifest[T]):DenseMat[T] = {
     val out = DenseMat.newOrCheck[T](nrows, ncols, oldmat)
     Mat.nflops += length
@@ -683,7 +683,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
     out
   }
 
-  def ggReduceOp(dim0:Int, op1:(T) => T, op2:(T,T) => T, oldmat:DenseMat[T]):DenseMat[T] = {
+  def ggReduceOp(dim0:Int, op1:(T) => T, op2:(T,T) => T, oldmat:Mat):DenseMat[T] = {
     var dim = if (nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
     if (dim == 1) {
       val out = DenseMat.newOrCheck[T](1, ncols, oldmat)
@@ -722,7 +722,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
       throw new RuntimeException("index must 1 or 2");
   }
   
-  def ggReduceOpv(dim0:Int, opv:(Array[T],Int,Int,Array[T],Int,Int,Array[T],Int,Int,Int) => T, oldmat:DenseMat[T]):DenseMat[T] = {
+  def ggReduceOpv(dim0:Int, opv:(Array[T],Int,Int,Array[T],Int,Int,Array[T],Int,Int,Int) => T, oldmat:Mat):DenseMat[T] = {
     var dim = if (nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
     if (dim == 1) {
       val out = DenseMat.newOrCheck[T](1, ncols, oldmat)
@@ -752,7 +752,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
       throw new RuntimeException("index must 1 or 2");
   }
 
-  def ggReduceAll(dim0:Int, op1:(T) => T, op2:(T,T) => T, oldmat:DenseMat[T]):DenseMat[T] = {
+  def ggReduceAll(dim0:Int, op1:(T) => T, op2:(T,T) => T, oldmat:Mat):DenseMat[T] = {
     var dim = if (nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
     if (dim == 1) {
       val out = DenseMat.newOrCheck[T](nrows, ncols, oldmat)
@@ -794,7 +794,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
       throw new RuntimeException("index must 1 or 2")  
   }
   
-    def ggReduceAllv(dim0:Int, opv:(Array[T],Int,Int,Array[T],Int,Int,Array[T],Int,Int,Int) => T, oldmat:DenseMat[T]):DenseMat[T] = {
+    def ggReduceAllv(dim0:Int, opv:(Array[T],Int,Int,Array[T],Int,Int,Array[T],Int,Int,Int) => T, oldmat:Mat):DenseMat[T] = {
     var dim = if (nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
     if (dim == 1) {
       val out = DenseMat.newOrCheck[T](nrows, ncols, oldmat)

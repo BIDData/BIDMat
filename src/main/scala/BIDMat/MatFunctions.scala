@@ -75,16 +75,73 @@ object MatFunctions {
     out
   }
   
-  def recycleTry(a:Mat, nr:Int, nc:Int, b:Mat, nnz:Int = 0):Mat = {
-    var out:Mat = null
-    if (a.asInstanceOf[AnyRef] != null) {
-    	a.recycle(nr, nc, nnz)
+  def recycleTry(a:Mat, nr:Int, nc:Int, b:FMat, nnz:Int):FMat = recycleTry(a, nr, nc, b:Mat, nnz).asInstanceOf[FMat]
+  
+  def recycleTry(a:Mat, nr:Int, nc:Int, b:DMat, nnz:Int):DMat = recycleTry(a, nr, nc, b:Mat, nnz).asInstanceOf[DMat]
+  
+  def recycleTry(a:Mat, nr:Int, nc:Int, b:IMat, nnz:Int):IMat = recycleTry(a, nr, nc, b:Mat, nnz).asInstanceOf[IMat]
+  
+  def recycleTry(a:Mat, nr:Int, nc:Int, b:SMat, nnz:Int):SMat = recycleTry(a, nr, nc, b:Mat, nnz).asInstanceOf[SMat]
+  
+  def recycleTry(a:Mat, nr:Int, nc:Int, b:SDMat, nnz:Int):SDMat = recycleTry(a, nr, nc, b:Mat, nnz).asInstanceOf[SDMat]
+  
+  def recycleTry(a:Mat, nr:Int, nc:Int, b:GMat, nnz:Int):GMat = recycleTry(a, nr, nc, b:Mat, nnz).asInstanceOf[GMat]
+  
+  def recycleTry(a:Mat, nr:Int, nc:Int, b:GIMat, nnz:Int):GIMat = recycleTry(a, nr, nc, b:Mat, nnz).asInstanceOf[GIMat]
+  
+  def recycleTry(a:Mat, nr:Int, nc:Int, b:GSMat, nnz:Int):GSMat = recycleTry(a, nr, nc, b:Mat, nnz).asInstanceOf[GSMat]
+  
+  def recycleTry(a:Mat, nr:Int, nc:Int, b:Mat, nnz:Int):Mat = {
+    if (a.asInstanceOf[AnyRef] == null  || (a.nrows == 0 && a.ncols == 0)) {
+    	b.zeros(nr, nc, nnz)     
     } else {
-    	b.zeros(nr, nc, nnz)
+    	a.recycle(nr, nc, nnz)
     }
   }
   
+  def recycleTry(a:Mat, b:FMat):FMat = recycleTry(a, b.nrows, b.ncols, b:Mat, b.nnz).asInstanceOf[FMat]
+  
+  def recycleTry(a:Mat, b:DMat):DMat = recycleTry(a, b.nrows, b.ncols, b:Mat, b.nnz).asInstanceOf[DMat]
+  
+  def recycleTry(a:Mat, b:IMat):IMat = recycleTry(a, b.nrows, b.ncols, b:Mat, b.nnz).asInstanceOf[IMat]
+  
+  def recycleTry(a:Mat, b:SMat):SMat = recycleTry(a, b.nrows, b.ncols, b:Mat, b.nnz).asInstanceOf[SMat]
+  
+  def recycleTry(a:Mat, b:SDMat):SDMat = recycleTry(a, b.nrows, b.ncols, b:Mat, b.nnz).asInstanceOf[SDMat]
+  
+  def recycleTry(a:Mat, b:GMat):GMat = recycleTry(a, b.nrows, b.ncols, b:Mat, b.nnz).asInstanceOf[GMat]
+  
+  def recycleTry(a:Mat, b:GIMat):GIMat = recycleTry(a, b.nrows, b.ncols, b:Mat, b.nnz).asInstanceOf[GIMat]
+  
+  def recycleTry(a:Mat, b:GSMat):GSMat = recycleTry(a, b.nrows, b.ncols, b:Mat, b.nnz).asInstanceOf[GSMat]
+  
   def recycleTry(a:Mat, b:Mat):Mat = recycleTry(a, b.nrows, b.ncols, b, b.nnz)
+  
+  def recycleTry(a:Mat, b:FMat, c:FMat):FMat = 
+    recycleTry(a, math.max(b.nrows, c.nrows), math.max(b.ncols, c.ncols), b:Mat, b.nnz).asInstanceOf[FMat];
+  
+  def recycleTry(a:Mat, b:DMat, c:DMat):DMat = 
+    recycleTry(a, math.max(b.nrows, c.nrows), math.max(b.ncols, c.ncols), b:Mat, b.nnz).asInstanceOf[DMat];
+    
+  def recycleTry(a:Mat, b:IMat, c:IMat):IMat = 
+    recycleTry(a, math.max(b.nrows, c.nrows), math.max(b.ncols, c.ncols), b:Mat, b.nnz).asInstanceOf[IMat];
+      
+  def recycleTry(a:Mat, b:SMat, c:SMat):SMat = 
+    recycleTry(a, math.max(b.nrows, c.nrows), math.max(b.ncols, c.ncols), b:Mat, b.nnz).asInstanceOf[SMat];
+        
+  def recycleTry(a:Mat, b:SDMat, c:SDMat):SDMat = 
+    recycleTry(a, math.max(b.nrows, c.nrows), math.max(b.ncols, c.ncols), b:Mat, b.nnz).asInstanceOf[SDMat];
+          
+  def recycleTry(a:Mat, b:GMat, c:GMat):GMat = 
+    recycleTry(a, math.max(b.nrows, c.nrows), math.max(b.ncols, c.ncols), b:Mat, b.nnz).asInstanceOf[GMat];
+            
+  def recycleTry(a:Mat, b:GIMat, c:GIMat):GIMat = 
+    recycleTry(a, math.max(b.nrows, c.nrows), math.max(b.ncols, c.ncols), b:Mat, b.nnz).asInstanceOf[GIMat];
+  
+  def recycleTry(a:Mat, b:GSMat, c:GSMat):GSMat = 
+    recycleTry(a, math.max(b.nrows, c.nrows), math.max(b.ncols, c.ncols), b:Mat, b.nnz).asInstanceOf[GSMat];
+  
+  def recycleTry(a:Mat, b:Mat, c:Mat):Mat = recycleTry(a, math.max(b.nrows, c.nrows), math.max(b.ncols, c.ncols), b, b.nnz)
 
   def find(a:DMat) = a.find   
   def find2(a:DMat) = a.find2    
@@ -489,13 +546,17 @@ object MatFunctions {
     }
   }
 
-  def DDS(a:FMat,b:FMat,c:SMat):SMat = {
+  def DDS(a:FMat,b:FMat,c:SMat,omat:SMat):SMat = {
     if (a.nrows != b.nrows) {
       throw new RuntimeException("nrows of dense A and B must match")
     } else if (c.nrows != a.ncols || c.ncols != b.ncols) {
       throw new RuntimeException("dims of C must match A'*B")
     } else {
-      val out = SMat(c.nrows,c.ncols,c.nnz)
+      val out = if (omat.asInstanceOf[SMat] != null) {
+        omat.recycle(c.nrows, c.ncols, c.nnz)
+      } else {
+        SMat(c.nrows, c.ncols, c.nnz)
+      }        
       Mat.nflops += 2L * c.nnz * a.nrows
       val ioff = Mat.ioneBased
       out.jc(0) = ioff
@@ -514,6 +575,15 @@ object MatFunctions {
       	DDShelper(a, b, c, out, 0, c.ncols, ioff)
       }
       out
+    }
+  }
+  
+  def DDS(a:GMat,b:GMat,c:GSMat,omat:GSMat):GSMat = GMat.DDS(a,b,c,omat)
+  
+  def DDS(a:Mat, b:Mat, c:Mat, omat:Mat=null):Mat = {
+    (a, b, c) match {
+      case (a:FMat, b:FMat, c:SMat) => DDS(a, b, c, omat.asInstanceOf[SMat]):SMat
+      case (a:GMat, b:GMat, c:GSMat) => GMat.DDS(a, b, c, omat.asInstanceOf[GSMat]):GSMat
     }
   }
   

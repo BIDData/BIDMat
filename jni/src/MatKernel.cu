@@ -91,13 +91,14 @@ __device__ float fn_j1(float a) {return j1f(a);}
 __device__ float fn_y0(float a) {return y0f(a);}
 __device__ float fn_y1(float a) {return y1f(a);}
 //__device__ float fn_yn(float a) {return ynf(a);}
+__device__ float fn_exppsi(float a) {return (a<1.0f) ? 0.5f*a*a : a-0.5f;}
 
 __device__ float fn_atan2(float a, float b) {return atan2f(a, b);}
 __device__ float fn_pow(float a, float b) {return powf(a, b);}
 
 typedef float (*fntype)(float);
 
-__device__ const fntype fctns[34] = {
+__device__ const fntype fctns[35] = {
     fn_abs,
     fn_exp,
     fn_expm1,
@@ -131,7 +132,8 @@ __device__ const fntype fctns[34] = {
     fn_j0,
     fn_j1,
     fn_y0,
-    fn_y1};
+    fn_y1,
+    fn_exppsi};
 
 __device__ const optype fctns2[2] = {
     fn_atan2,

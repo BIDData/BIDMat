@@ -109,7 +109,7 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
     }	else throw new RuntimeException("dimensions mismatch")
   }
   
-  def gOp(a:GMat, oldmat:GMat, op:Int):GMat = {
+  def gOp(a:GMat, oldmat:Mat, op:Int):GMat = {
     if ((nrows == a.nrows && ncols == a.ncols) ||
         (nrows == a.nrows && (a.ncols == 1 || ncols == 1)) ||
         (ncols == a.ncols && (a.nrows == 1 || nrows == 1)) ||
@@ -123,7 +123,7 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
     }	else throw new RuntimeException("dimensions mismatch")
   }
   
-  def reduceOp(oldmat:GMat, dir:Int, op:Int):GMat = {
+  def reduceOp(oldmat:Mat, dir:Int, op:Int):GMat = {
     if (dir == 1) {
       val out = GMat.newOrCheckGMat(1, ncols, oldmat) 
       CUMAT.reduce1op(nrows, ncols, data, out.data, op)
@@ -382,6 +382,7 @@ object GMat {
     val round=27
     val trunc=28
     val sign=29
+    val exppsi=34
   }
   
   object TransF2 {
@@ -422,15 +423,17 @@ object GMat {
     bb
   }
 
-  def newOrCheckGMat(nr:Int, nc:Int, oldmat:GMat):GMat = {
+  def newOrCheckGMat(nr:Int, nc:Int, oldmat:Mat):GMat = {
   	if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows == 0 && oldmat.ncols == 0)) {
   		GMat(nr, nc)
   	} else {
-  		if (oldmat.nrows != nr || oldmat.ncols != nc) {
-  			oldmat.recycle(nr, nc, 0)
-  		} else {
-  			oldmat
-  		}
+  	  oldmat match {
+  	  case omat:GMat => if (oldmat.nrows != nr || oldmat.ncols != nc) {
+  	  	omat.recycle(nr, nc, 0)
+  	  } else {
+  	  	omat
+  	  }
+  	  }
   	}
   }
   
