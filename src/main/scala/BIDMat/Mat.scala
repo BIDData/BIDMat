@@ -31,6 +31,7 @@ class Mat(nr:Int, nc:Int) {
   def clear = notImplemented0("clear");
   def zeros(nr:Int, nc:Int, nnz:Int):Mat = zeros(nr, nc)
   def recycle(nr:Int, nc:Int, nnz:Int):Mat = notImplemented0("recycle");
+  def contents:Mat = notImplemented0("recycle");
   
   def apply(a:IMat):Mat = notImplemented0("linear array access");
   def apply(a:IMat, b:IMat):Mat = notImplemented0("block array access");
@@ -163,7 +164,7 @@ abstract class Pair {
   def \ (b : Mat):Mat = notImplemented1("\\", b)
   def on (b : Mat):Mat = notImplemented1("on", b)
   
-    def + (b : Int):Mat = notImplemented0("+")
+  def + (b : Int):Mat = notImplemented0("+")
   def - (b : Int):Mat = notImplemented0("-")
   def * (b : Int):Mat = notImplemented0("*")
   def / (b : Int):Mat = notImplemented0("/")

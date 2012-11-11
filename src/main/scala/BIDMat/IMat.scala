@@ -35,29 +35,29 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
 
   def update(i:Int, jv:IMat, b:IMat):IMat = IMat(_update(IMat.ielem(i), jv, b))
   
-  def iiMatOp(b: Mat, f:(Int, Int) => Int, old:IMat):IMat = 
+  def iiMatOp(b: Mat, f:(Int, Int) => Int, old:Mat):IMat = 
     b match {
       case bb:IMat => IMat(ggMatOp(bb, f, old))
       case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)	
     }
   
-  def iiMatOpv(b: Mat, f:(Array[Int],Int,Int,Array[Int],Int,Int,Array[Int],Int,Int,Int) => Int, old:IMat):IMat = 
+  def iiMatOpv(b: Mat, f:(Array[Int],Int,Int,Array[Int],Int,Int,Array[Int],Int,Int,Int) => Int, old:Mat):IMat = 
     b match {
       case bb:IMat => IMat(ggMatOpv(bb, f, old))
       case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)	
     }
   
-  def iiMatOpScalar(b: Int, f:(Int, Int) => Int, old:IMat) = IMat(ggMatOpScalar(b, f, old))
+  def iiMatOpScalar(b: Int, f:(Int, Int) => Int, old:Mat) = IMat(ggMatOpScalar(b, f, old))
   
-  def iiMatOpScalarv(b: Int, f:(Array[Int],Int,Int,Array[Int],Int,Int,Array[Int],Int,Int,Int) => Int, old:IMat) = IMat(ggMatOpScalarv(b, f, old))
+  def iiMatOpScalarv(b: Int, f:(Array[Int],Int,Int,Array[Int],Int,Int,Array[Int],Int,Int,Int) => Int, old:Mat) = IMat(ggMatOpScalarv(b, f, old))
   
-  def iiReduceOp(n:Int, f1:(Int) => Int, f2:(Int, Int) => Int, old:IMat) = IMat(ggReduceOp(n, f1, f2, old))	
+  def iiReduceOp(n:Int, f1:(Int) => Int, f2:(Int, Int) => Int, old:Mat) = IMat(ggReduceOp(n, f1, f2, old))	
   
-  def iiReduceOpv(n:Int, f:(Array[Int],Int,Int,Array[Int],Int,Int,Array[Int],Int,Int,Int) => Int, old:IMat) = IMat(ggReduceOpv(n, f, old))
+  def iiReduceOpv(n:Int, f:(Array[Int],Int,Int,Array[Int],Int,Int,Array[Int],Int,Int,Int) => Int, old:Mat) = IMat(ggReduceOpv(n, f, old))
   
-  def iiReduceAll(n:Int, f1:(Int) => Int, f2:(Int, Int) => Int, old:IMat) = IMat(ggReduceAll(n, f1, f2, old))
+  def iiReduceAll(n:Int, f1:(Int) => Int, f2:(Int, Int) => Int, old:Mat) = IMat(ggReduceAll(n, f1, f2, old))
   
-  def iiReduceAllv(n:Int, f:(Array[Int],Int,Int,Array[Int],Int,Int,Array[Int],Int,Int,Int) => Int, old:IMat) = IMat(ggReduceAllv(n, f, old))
+  def iiReduceAllv(n:Int, f:(Array[Int],Int,Int,Array[Int],Int,Int,Array[Int],Int,Int,Int) => Int, old:Mat) = IMat(ggReduceAllv(n, f, old))
   
   override def printOne(i:Int):String = {
     val v = data(i)

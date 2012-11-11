@@ -11,6 +11,8 @@ case class GSMat(nr:Int, nc:Int, val nnz0:Int, val ir:Pointer, val ic:Pointer, v
   override def mytype = "GSMat"
     
   override def nnz = nnz0
+  
+  override def contents:GMat = new GMat(nnz, 1, data, realnnz)
     
   override def toString:String = {
     val nnz0 = scala.math.min(nnz,12)       

@@ -20,6 +20,8 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   
   def find3:(IMat, IMat, FMat) = { val (ii, jj, vv):(IMat, IMat, DenseMat[Float]) = gfind3 ; (IMat(ii), IMat(jj), FMat(vv)) }	
   
+  override def contents:FMat = FMat(data.length, 1, data)
+  
   override def apply(a:IMat, b:IMat):SMat = SMat(gapply(a, b))	
   
   def ssMatOp(b: SMat, f:(Float, Float) => Float) = SMat(sgMatOp(b, f))

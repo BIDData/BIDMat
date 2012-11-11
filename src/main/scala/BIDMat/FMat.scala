@@ -44,32 +44,32 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   def ffMatOp(b: Mat, f:(Float, Float) => Float, out:Mat):FMat = 
     b match {
-      case bb:FMat => FMat(ggMatOp(bb, f, FMat.tryForOutFMat(out)))
+      case bb:FMat => FMat(ggMatOp(bb, f, out))
       case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)	
     }
   
   def ffMatOpv(b: Mat, f:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, out:Mat) = 
     b match {
-      case bb:FMat => FMat(ggMatOpv(bb, f, FMat.tryForOutFMat(out)))
+      case bb:FMat => FMat(ggMatOpv(bb, f, out))
       case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)	
     }
   
-  def ffMatOpScalar(b: Float, f:(Float, Float) => Float, out:Mat):FMat = FMat(ggMatOpScalar(b, f, FMat.tryForOutFMat(out)))
+  def ffMatOpScalar(b: Float, f:(Float, Float) => Float, out:Mat):FMat = FMat(ggMatOpScalar(b, f, out))
   
   def ffMatOpScalarv(b: Float, f:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, out:Mat) = 
-    FMat(ggMatOpScalarv(b, f, FMat.tryForOutFMat(out)))
+    FMat(ggMatOpScalarv(b, f, out))
   
   def ffReduceOp(n:Int, f1:(Float) => Float, f2:(Float, Float) => Float, out:Mat) = 
-    FMat(ggReduceOp(n, f1, f2, FMat.tryForOutFMat(out)))
+    FMat(ggReduceOp(n, f1, f2, out))
   
   def ffReduceOpv(n:Int, f:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, out:Mat) = 
-    FMat(ggReduceOpv(n, f, FMat.tryForOutFMat(out)))
+    FMat(ggReduceOpv(n, f, out))
   
   def ffReduceAll(n:Int, f1:(Float) => Float, f2:(Float, Float) => Float, out:Mat) = 
-    FMat(ggReduceAll(n, f1, f2, FMat.tryForOutFMat(out)))
+    FMat(ggReduceAll(n, f1, f2, out))
   
   def ffReduceAllv(n:Int, f:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, out:Mat) = 
-    FMat(ggReduceAllv(n, f, FMat.tryForOutFMat(out)))
+    FMat(ggReduceAllv(n, f, out))
   
   override def printOne(i:Int):String = {
     val v = data(i)
