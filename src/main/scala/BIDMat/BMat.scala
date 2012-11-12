@@ -47,7 +47,7 @@ case class BMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   
   def bbMatOpScalar(b: Byte, f:(Byte, Byte) => Byte, out:Mat):BMat = BMat(sgMatOpScalar(b, f))
   
-  def bbReduceOp(n:Int, f1:(Byte) => Byte, f2:(Byte, Byte) => Byte) = IMat(sgReduceOp(n, f1, f2))
+  def bbReduceOp(n:Int, f1:(Byte) => Byte, f2:(Byte, Byte) => Byte) = IMat(sgReduceOp(n, f1, f2, null))
   
   def toCSMat:CSMat = {
     val out = CSMat(ncols, 1)

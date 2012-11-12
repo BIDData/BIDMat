@@ -26,7 +26,7 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
   
   def ssMatOpScalar(b: Double, f:(Double, Double) => Double) = SDMat(sgMatOpScalar(b, f))
   
-  def ssReduceOp(n:Int, f1:(Double) => Double, f2:(Double, Double) => Double) = DMat(sgReduceOp(n, f1, f2))
+  def ssReduceOp(n:Int, f1:(Double) => Double, f2:(Double, Double) => Double, omat:Mat) = DMat(sgReduceOp(n, f1, f2, omat))
   
   def horzcat(a:DMat):DMat = MatFunctions.full(this).horzcat(a)
   
