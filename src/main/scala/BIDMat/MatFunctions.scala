@@ -520,6 +520,14 @@ object MatFunctions {
 
   def full(ss:SMat):FMat = FMat(ss.full)
   
+  def full(a:Mat):Mat = a match {
+    case aa:DMat => a
+    case aa:FMat => a
+    case aa:IMat => a
+    case aa:SMat => full(aa):FMat
+    case aa:SDMat => full(aa):DMat
+  }
+  
   def DDShelper(a:FMat, b:FMat, c:SMat, out:SMat, istart:Int, iend:Int, ioff:Int) = {
     var i = istart
     while (i < iend) {

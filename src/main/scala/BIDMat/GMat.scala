@@ -44,7 +44,7 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
     out
   }
 
-  def GMult(a:GMat, oldmat:GMat):GMat = {
+  def GMult(a:GMat, oldmat:Mat):GMat = {
     if (ncols == a.nrows) {
       val out = GMat.newOrCheckGMat(nrows, a.ncols, oldmat)
       Mat.nflops += 2L * length * a.ncols
@@ -71,7 +71,7 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
     } else throw new RuntimeException("dimensions mismatch")
   }
   
-  def GMultT(a:GMat, oldmat:GMat):GMat = {
+  def GMultT(a:GMat, oldmat:Mat):GMat = {
     if (ncols == a.ncols) {
       val out = GMat.newOrCheckGMat(nrows, a.nrows, oldmat)
       Mat.nflops += 2L * length * a.nrows
@@ -85,7 +85,7 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
     } else throw new RuntimeException("dimensions mismatch")
   }
   
-  def GSMult(a:GSMat, oldmat:GMat):GMat = {
+  def GSMult(a:GSMat, oldmat:Mat):GMat = {
     if (ncols == a.nrows) {
       val out = GMat.newOrCheckGMat(nrows, a.ncols, oldmat)
       Mat.nflops += 2L * nrows * a.nnz
@@ -97,7 +97,7 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
     }	else throw new RuntimeException("dimensions mismatch")
   }
   
-  def GSMultT(a:GSMat, oldmat:GMat):GMat = {
+  def GSMultT(a:GSMat, oldmat:Mat):GMat = {
     if (ncols == a.ncols) {
       val out = GMat.newOrCheckGMat(nrows, a.nrows, oldmat)
       Mat.nflops += 2L * nrows * a.nnz
@@ -265,71 +265,69 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
 	import GMat.BinOp._
 	
 	override def t = {
-    val out = GMat.tryForOutGMat(omat)
-    if (out.nrows != mat.ncols || out.ncols != mat.nrows)
-      throw new RuntimeException("transpose: dimensions mismatch")
+    val out = GMat.newOrCheckGMat(mat.ncols, mat.nrows, omat)
     CUMAT.transpose(mat.data, mat.nrows, out.data, mat.ncols, mat.nrows, mat.ncols)
     out
   }
 
-	def + (a : GMat) = mat.gOp(a, GMat.tryForOutGMat(omat), op_add)
-	def - (a : GMat) = mat.gOp(a, GMat.tryForOutGMat(omat), op_sub)
-	def *@ (a : GMat) = mat.gOp(a, GMat.tryForOutGMat(omat), op_mul)
-	def /@ (a : GMat) = mat.gOp(a, GMat.tryForOutGMat(omat), op_div)
-	def > (b : GMat) = mat.gOp(b, GMat.tryForOutGMat(omat), op_gt)
-	def < (b : GMat) = mat.gOp(b, GMat.tryForOutGMat(omat), op_lt)
-	def == (b : GMat) = mat.gOp(b, GMat.tryForOutGMat(omat), op_eq)
-	def === (b : GMat) = mat.gOp(b, GMat.tryForOutGMat(omat), op_eq)
-	def >= (b : GMat) = mat.gOp(b, GMat.tryForOutGMat(omat), op_ge)
-	def <= (b : GMat) = mat.gOp(b, GMat.tryForOutGMat(omat), op_le)
-	def != (b : GMat) = mat.gOp(b, GMat.tryForOutGMat(omat), op_ne)
+	def + (a : GMat) = mat.gOp(a, omat, op_add)
+	def - (a : GMat) = mat.gOp(a, omat, op_sub)
+	def *@ (a : GMat) = mat.gOp(a, omat, op_mul)
+	def /@ (a : GMat) = mat.gOp(a, omat, op_div)
+	def > (b : GMat) = mat.gOp(b, omat, op_gt)
+	def < (b : GMat) = mat.gOp(b, omat, op_lt)
+	def == (b : GMat) = mat.gOp(b, omat, op_eq)
+	def === (b : GMat) = mat.gOp(b, omat, op_eq)
+	def >= (b : GMat) = mat.gOp(b, omat, op_ge)
+	def <= (b : GMat) = mat.gOp(b, omat, op_le)
+	def != (b : GMat) = mat.gOp(b, omat, op_ne)
 	
-	override def +  (b : Float):Mat = mat.gOp(GMat(b), GMat.tryForOutGMat(omat), op_add)
-  override def -  (b : Float):Mat = mat.gOp(GMat(b), GMat.tryForOutGMat(omat), op_sub)
-  override def *@  (b : Float):Mat = mat.gOp(GMat(b), GMat.tryForOutGMat(omat), op_mul)
-  override def *  (b : Float):Mat = mat.gOp(GMat(b), GMat.tryForOutGMat(omat), op_mul)
-  override def /@  (b : Float):Mat = mat.gOp(GMat(b), GMat.tryForOutGMat(omat), op_div)
+	override def +  (b : Float):Mat = mat.gOp(GMat(b), omat, op_add)
+  override def -  (b : Float):Mat = mat.gOp(GMat(b), omat, op_sub)
+  override def *@  (b : Float):Mat = mat.gOp(GMat(b), omat, op_mul)
+  override def *  (b : Float):Mat = mat.gOp(GMat(b), omat, op_mul)
+  override def /@  (b : Float):Mat = mat.gOp(GMat(b), omat, op_div)
   
-  override def > (b : Float) = mat.gOp(GMat(b), GMat.tryForOutGMat(omat), op_gt)
-  override def < (b : Float) = mat.gOp(GMat(b), GMat.tryForOutGMat(omat), op_lt)
-  override def == (b : Float) = mat.gOp(GMat(b), GMat.tryForOutGMat(omat), op_eq)
-  override def === (b : Float) = mat.gOp(GMat(b), GMat.tryForOutGMat(omat), op_eq)
-  override def >= (b : Float) = mat.gOp(GMat(b), GMat.tryForOutGMat(omat), op_ge)
-  override def <= (b : Float) = mat.gOp(GMat(b), GMat.tryForOutGMat(omat), op_le)
-  override def != (b : Float) = mat.gOp(GMat(b), GMat.tryForOutGMat(omat), op_ne)
+  override def > (b : Float) = mat.gOp(GMat(b), omat, op_gt)
+  override def < (b : Float) = mat.gOp(GMat(b), omat, op_lt)
+  override def == (b : Float) = mat.gOp(GMat(b), omat, op_eq)
+  override def === (b : Float) = mat.gOp(GMat(b), omat, op_eq)
+  override def >= (b : Float) = mat.gOp(GMat(b), omat, op_ge)
+  override def <= (b : Float) = mat.gOp(GMat(b), omat, op_le)
+  override def != (b : Float) = mat.gOp(GMat(b), omat, op_ne)
 
-	def * (a : GMat) = mat.GMult(a, GMat.tryForOutGMat(omat))
-	def * (a : GSMat) = mat.GSMult(a, GMat.tryForOutGMat(omat))
+	def * (a : GMat) = mat.GMult(a, omat)
+	def * (a : GSMat) = mat.GSMult(a, omat)
 
 	override def * (b: Mat):Mat = b match {
-	case bb:GMat => mat.GMult(bb, GMat.tryForOutGMat(omat))
-	case bb:GSMat => mat.GSMult(bb, GMat.tryForOutGMat(omat))
+	case bb:GMat => mat.GMult(bb, omat)
+	case bb:GSMat => mat.GSMult(bb, omat)
 	}
 
-	def xT (a : GSMat) = mat.GSMultT(a, GMat.tryForOutGMat(omat))
-	def xT (a : GMat) = mat.GMultT(a, GMat.tryForOutGMat(omat))
+	def xT (a : GSMat) = mat.GSMultT(a, omat)
+	def xT (a : GMat) = mat.GMultT(a, omat)
 	override def xT (b: Mat):Mat = b match {
-	case bb:GSMat => mat.GSMultT(bb, GMat.tryForOutGMat(omat))
-	case bb:GMat => mat.GMultT(bb, GMat.tryForOutGMat(omat))
+	case bb:GSMat => mat.GSMultT(bb, omat)
+	case bb:GMat => mat.GMultT(bb, omat)
 	}
     
   import Operator._
-  override def +  (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_Plus)
-  override def -  (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_Minus)
-  override def /  (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_Div)
-  override def \\ (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_RSolve)
-  override def *@ (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_ETimes)
-  override def /@ (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_EDiv)
-  override def \  (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_HCat)
-  override def on (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_VCat)
+  override def +  (b : Mat):Mat = applyMat(mat, b, omat, Mop_Plus)
+  override def -  (b : Mat):Mat = applyMat(mat, b, omat, Mop_Minus)
+  override def /  (b : Mat):Mat = applyMat(mat, b, omat, Mop_Div)
+  override def \\ (b : Mat):Mat = applyMat(mat, b, omat, Mop_RSolve)
+  override def *@ (b : Mat):Mat = applyMat(mat, b, omat, Mop_ETimes)
+  override def /@ (b : Mat):Mat = applyMat(mat, b, omat, Mop_EDiv)
+  override def \  (b : Mat):Mat = applyMat(mat, b, omat, Mop_HCat)
+  override def on (b : Mat):Mat = applyMat(mat, b, omat, Mop_VCat)
   
-  override def >   (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_GT)
-  override def <   (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_LT)
-  override def >=  (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_GE)
-  override def <=  (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_LE)
-  override def ==  (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_EQ)
-  override def === (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_EQ) 
-  override def !=  (b : Mat):Mat = applyMat(mat, b, GMat.tryForOutGMat(omat), Mop_NE)
+  override def >   (b : Mat):Mat = applyMat(mat, b, omat, Mop_GT)
+  override def <   (b : Mat):Mat = applyMat(mat, b, omat, Mop_LT)
+  override def >=  (b : Mat):Mat = applyMat(mat, b, omat, Mop_GE)
+  override def <=  (b : Mat):Mat = applyMat(mat, b, omat, Mop_LE)
+  override def ==  (b : Mat):Mat = applyMat(mat, b, omat, Mop_EQ)
+  override def === (b : Mat):Mat = applyMat(mat, b, omat, Mop_EQ) 
+  override def !=  (b : Mat):Mat = applyMat(mat, b, omat, Mop_NE)
   
 }
 
@@ -413,6 +411,12 @@ object GMat {
     retv
   }
   
+  def apply(a:Mat):GMat = a match {
+    case aa:GMat => aa
+    case aa:FMat => GMat(aa)
+    case aa:DMat => GMat(FMat(aa))
+  }
+  
   def apply(a:Float):GMat = {
     GMat(FMat.felem(a))
   }
@@ -423,20 +427,6 @@ object GMat {
     bb
   }
 
-  def newOrCheckGMat(nr:Int, nc:Int, oldmat:Mat):GMat = {
-  	if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows == 0 && oldmat.ncols == 0)) {
-  		GMat(nr, nc)
-  	} else {
-  	  oldmat match {
-  	  case omat:GMat => if (oldmat.nrows != nr || oldmat.ncols != nc) {
-  	  	omat.recycle(nr, nc, 0)
-  	  } else {
-  	  	omat
-  	  }
-  	  }
-  	}
-  }
-  
   def DDS(A:GMat, B:GMat, C:GSMat, oldmat:GSMat):GSMat = {
     if (A.nrows != B.nrows || C.nrows != A.ncols || C.ncols != B.ncols) {
       throw new RuntimeException("dimensions mismatch")
@@ -447,22 +437,20 @@ object GMat {
     Mat.nflops += 2L * C.nnz * A.nrows
     out    
   }
-  
-  def tryForGMat(m:Mat, s:String):GMat = 
-  	m match {
-  	case mm:GMat => mm
-  	case _ => throw new RuntimeException("wrong type for operator "+s+" arg "+m)
+
+  def newOrCheckGMat(nr:Int, nc:Int, outmat:Mat):GMat = {
+    if (outmat.asInstanceOf[AnyRef] == null || (outmat.nrows == 0 && outmat.ncols == 0)) {
+      GMat(nr, nc)
+    } else {
+      outmat match {
+        case omat:GMat => if (omat.nrows != nr || omat.ncols != nc) {
+        omat.recycle(nr, nc, 0)
+      } else {
+      	omat
+      }
+      }
+    }
   }
-    
-  def tryForOutGMat(out:Mat):GMat = 
-  	if (out.asInstanceOf[AnyRef] == null || (out.ncols == 0 && out.nrows == 0)) {
-  		null
-  	} else {
-  		out match {
-  		case outmat:GMat => outmat
-  		case _ => throw new RuntimeException("wrong type for LHS matrix "+out.mytype)
-  		}
-  	}
 }
 
 

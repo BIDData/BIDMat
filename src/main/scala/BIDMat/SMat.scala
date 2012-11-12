@@ -18,7 +18,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   
   def find2:(IMat, IMat) = { val (ii, jj) = gfind2 ; (IMat(ii), IMat(jj)) }
   
-  def find3:(IMat, IMat, FMat) = { val (ii, jj, vv):(IMat, IMat, DenseMat[Float]) = gfind3 ; (IMat(ii), IMat(jj), FMat(vv)) }	
+  def find3:(IMat, IMat, FMat) = { val (ii, jj, vv) = gfind3 ; (IMat(ii), IMat(jj), FMat(vv)) }	
   
   override def contents:FMat = FMat(data.length, 1, data)
   
@@ -28,13 +28,13 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   
   def ssMatOpScalar(b: Float, f:(Float, Float) => Float) = SMat(sgMatOpScalar(b, f))
   
-  def ssReduceOp(n:Int, f1:(Float) => Float, f2:(Float, Float) => Float) = FMat(sgReduceOp(n, f1, f2))
+  def ssReduceOp(n:Int, f1:(Float) => Float, f2:(Float, Float) => Float, omat:Mat) = FMat(sgReduceOp(n, f1, f2, omat))
   
   def horzcat(a:FMat):FMat = FMat(MatFunctions.full(this).ghorzcat(a))
   
   def vertcat(a:FMat):FMat = FMat(MatFunctions.full(this).gvertcat(a))
 
-  def SMult(a:Mat, omat:FMat):FMat = {
+  def SMult(a:Mat, omat:Mat):FMat = {
   		val ioff = Mat.ioneBased
   		if (ncols != a.nrows) {
   			throw new RuntimeException("dimensions mismatch")
@@ -100,7 +100,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   		}	
   }
   
-  def Tmult(a:FMat, omat:FMat):FMat = {
+  def Tmult(a:FMat, omat:Mat):FMat = {
 	  val out = FMat.newOrCheckFMat(ncols, a.ncols, omat)
 	  if (omat.asInstanceOf[AnyRef] != null) out.clear
 	  var jc0 = jc
@@ -206,10 +206,10 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
 }
 
 class SPair (val omat:Mat, val mat:SMat) extends Pair{
-  def * (b : FMat):FMat = mat.SMult(b, FMat.tryForOutFMat(omat))
-  def Tx (b : FMat):FMat = mat.Tmult(b, FMat.tryForOutFMat(omat))
-  override def * (b : Mat):FMat = mat.SMult(b, FMat.tryForOutFMat(omat))
-  override def Tx (b : Mat):Mat = b match {case bb:FMat => mat.Tmult(bb, FMat.tryForOutFMat(omat))}
+  def * (b : FMat):FMat = mat.SMult(b, omat)
+  def Tx (b : FMat):FMat = mat.Tmult(b, omat)
+  override def * (b : Mat):FMat = mat.SMult(b, omat)
+  override def Tx (b : Mat):Mat = b match {case bb:FMat => mat.Tmult(bb, omat)}
 }
 
 object SMat {

@@ -314,11 +314,7 @@ class SparseMat[@specialized(Double,Float) T]
   
   private def printOne(v0:Int):String = {
   		val v = v0 + Mat.oneBased
-  		if (math.abs(v) < 1e5) {	      
-  			"%d" format v
-  		} else {
-  			"%.5g" format v
-  		}
+  		"%d" format v
   }
 
   
@@ -467,13 +463,13 @@ class SparseMat[@specialized(Double,Float) T]
   		out.sparseTrim
   } 
   
-  def sgReduceOp(dim:Int, op1:(T) => T, op2:(T,T) => T):DenseMat[T] = {
+  def sgReduceOp(dim:Int, op1:(T) => T, op2:(T,T) => T, omat:Mat):DenseMat[T] = {
   		val ioff = Mat.ioneBased
   		if (dim == 0) {
   			if (nrows > 1 && ncols > 1) {
   				throw new RuntimeException("must be a vector")
   			} else {
-  				val out = new DenseMat[T](1, 1)
+  				val out = DenseMat.newOrCheck(1, 1, omat)
   				var j = 0
   				var acc = op1(numeric.zero)
   				while (j < nnz) { 
@@ -484,7 +480,7 @@ class SparseMat[@specialized(Double,Float) T]
   				out
   			}
   		} else  if (dim == 1) {
-  			val out = new DenseMat[T](1, ncols)
+  			val out = DenseMat.newOrCheck(1, ncols, omat)
   			var i = 0
   			while (i < ncols) { 
   				var acc = op1(numeric.zero)
@@ -498,7 +494,8 @@ class SparseMat[@specialized(Double,Float) T]
   			}
   			out
   		} else if (dim == 2) { 
-  			val out = new DenseMat[T](nrows, 1)
+  			val out = DenseMat.newOrCheck(nrows, 1, omat)
+  			out.clear
   			if (ir != null) {
   				var j = 0
   				while (j < nnz) { 
@@ -648,6 +645,13 @@ class SparseMat[@specialized(Double,Float) T]
     }
     out
   }
+  
+   override def recycle(nr:Int, nc:Int, nnz:Int):SparseMat[T] = {
+  	val jc0 = if (jc.size >= nc+1) jc else new Array[Int](nc+1)
+  	val ir0 = if (ir.size >= nnz) ir else new Array[Int](nnz)
+  	val data0 = if (data.size >= nnz) data else new Array[T](nnz)
+  	new SparseMat[T](nr, nc, nnz, jc0, ir0, data0)    
+  }
 
 }
 
@@ -742,7 +746,20 @@ object SparseMat {
     }
     out
   }
-  
+ 
+  def newOrCheck[T](nr:Int, nc:Int, nnz:Int, oldmat:Mat)
+  (implicit manifest:Manifest[T], numeric:Numeric[T]):SparseMat[T] = {
+    if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows == 0 && oldmat.ncols == 0)) {
+      SparseMat[T](nr, nc, nnz)
+    } else {
+      val omat = oldmat.asInstanceOf[SparseMat[T]];
+      if (omat.nrows == nr && omat.ncols == nc && omat.nnz == nnz) {
+        omat
+      } else {
+      	omat.recycle(nr, nc, nnz)
+      }
+    }
+  }
 }
 
 

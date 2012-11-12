@@ -1,6 +1,7 @@
 package BIDMat
 import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.LAPACK._
+import java.util.Arrays
 
 case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, nc, data0) {
 
@@ -63,7 +64,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     v
   }
   
-  def t(oldmat:CMat):CMat  = {
+  def t(oldmat:Mat):CMat  = {
     var out = CMat.newOrCheckCMat(ncols, nrows, oldmat)
     var i = 0
     while (i < nrows) {
@@ -80,7 +81,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   override def t:CMat = t(null:CMat)
   
-  def h(oldmat:CMat):CMat  = {
+  def h(oldmat:Mat):CMat  = {
     var out = CMat.newOrCheckCMat(ncols, nrows, oldmat)
     var i = 0
     while (i < nrows) {
@@ -319,7 +320,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   * Implement sliced assignment, a(iv,jv) = b:T where iv and jv are vectors, using ? as wildcard
   */ 
   
-   def ccMatOp(a:Mat, op2:(Float,Float,Float,Float) => (Float,Float), oldmat:CMat):CMat = {
+   def ccMatOp(a:Mat, op2:(Float,Float,Float,Float) => (Float,Float), oldmat:Mat):CMat = {
     a match {
       case aa:CMat => {
         if (nrows==a.nrows && ncols==1) {
@@ -391,7 +392,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
    * This version applies the operator op2 with stricter dimension checking, 
    * either dims must match or one arg must be scalar
    */
-  def ccMatOpStrict(a:Mat, op2:(Float,Float,Float,Float) => (Float,Float), oldmat:CMat):CMat =
+  def ccMatOpStrict(a:Mat, op2:(Float,Float,Float,Float) => (Float,Float), oldmat:Mat):CMat =
     a match {
       case aa:CMat => {
         if (nrows==a.nrows && ncols==a.ncols) {
@@ -436,9 +437,8 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
       case _ => throw new RuntimeException("arg must be dense")
     }
   
-   def ccMatOpv(a:Mat, opv:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, omat:Mat):CMat = {
-    val oldmat = CMat.tryForOutCMat(omat)
-    a match {
+   def ccMatOpv(a:Mat, opv:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, oldmat:Mat):CMat = {
+     a match {
       case aa:CMat => {
         if (nrows==a.nrows && ncols==1) {
           val out = CMat.newOrCheckCMat(nrows, a.ncols, oldmat)
@@ -482,7 +482,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     }
    }
 
-  def ccMatOpStrictv(a:Mat, opv:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, oldmat:CMat):CMat =
+  def ccMatOpStrictv(a:Mat, opv:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, oldmat:Mat):CMat =
     a match {
       case aa:CMat => {
         if (nrows==a.nrows && ncols==a.ncols) {
@@ -506,7 +506,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     }
   
   def ccMatOpScalarv(a0:Float, a1:Float, opv:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, omat:Mat):CMat = {
-    val out = CMat.newOrCheckCMat(nrows, ncols, CMat.tryForOutCMat(omat))
+    val out = CMat.newOrCheckCMat(nrows, ncols, omat)
     Mat.nflops += length
     val aa = new Array[Float](2)
     aa(0) = a0
@@ -516,12 +516,12 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
   
   def ffReduceOp(n:Int, f1:(Float) => Float, f2:(Float, Float) => Float, out:Mat) = 
-    CMat(ggReduceOp(n, f1, f2, CMat.tryForOutCMat(out)))
+    CMat(ggReduceOp(n, f1, f2, out))
   
   def ffReduceOpv(n:Int, f:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, out:Mat) = 
-    CMat(ggReduceOpv(n, f, CMat.tryForOutCMat(out)))
+    CMat(ggReduceOpv(n, f, out))
     
-  def ccReduceOpv(dim0:Int, opv:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, oldmat:CMat):CMat = {
+  def ccReduceOpv(dim0:Int, opv:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, oldmat:Mat):CMat = {
     var dim = if (nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
     if (dim == 1) {
       val out = CMat.newOrCheckCMat(1, ncols, oldmat)
@@ -552,10 +552,10 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
   
   def ffReduceAll(n:Int, f1:(Float) => Float, f2:(Float, Float) => Float, out:Mat) = 
-    CMat(ggReduceAll(n, f1, f2, CMat.tryForOutCMat(out)))
+    CMat(ggReduceAll(n, f1, f2, out))
   
   def ffReduceAllv(n:Int, f:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, out:Mat) = 
-    CMat(ggReduceAllv(n, f, CMat.tryForOutCMat(out)))
+    CMat(ggReduceAllv(n, f, out))
   
   override def printOne(i:Int):String = {
   		val u = data(2*i)
@@ -610,77 +610,72 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   	out
   }
   
-  def fDMult(a:Mat, outmat:CMat):CMat = { 
-  		a match {
-  		case aa:CMat => {
-  			if (ncols == a.nrows) {
-  				val out = CMat.newOrCheckCMat(nrows, a.ncols, outmat)
-  				Mat.nflops += 2L * length * a.ncols
-  				if (Mat.noMKL) {
-  					if (outmat.asInstanceOf[AnyRef] != null) out.clear
-  					var i = 0
-  					while (i < a.ncols) {
-  						var j = 0
-  						while (j < a.nrows) {
-  							var k = 0
-  							val u0 = aa.data(2*(j + i*ncols))
-  							val u1 = aa.data(2*(j + i*ncols)+1)
-  							while (k < nrows) {
-  							  val v0 = data(2*(k+j*nrows))
-  							  val v1 = data(2*(k+j*nrows)+1)
-  								out.data(2*(k+i*nrows)) += u0*v0-u1*v1
-  								out.data(2*(k+i*nrows)+1) += u1*v0+u0*v1
-  								k += 1
-  							}
-  							j += 1
+  def fDMult(aa:CMat, outmat:Mat):CMat = { 
+  		if (ncols == aa.nrows) {
+  			val out = CMat.newOrCheckCMat(nrows, aa.ncols, outmat)
+  			Mat.nflops += 2L * length * aa.ncols
+  			if (Mat.noMKL) {
+  				if (outmat.asInstanceOf[AnyRef] != null) out.clear
+  				var i = 0
+  				while (i < aa.ncols) {
+  					var j = 0
+  					while (j < aa.nrows) {
+  						var k = 0
+  						val u0 = aa.data(2*(j + i*ncols))
+  						val u1 = aa.data(2*(j + i*ncols)+1)
+  						while (k < nrows) {
+  							val v0 = data(2*(k+j*nrows))
+  							val v1 = data(2*(k+j*nrows)+1)
+  							out.data(2*(k+i*nrows)) += u0*v0-u1*v1
+  							out.data(2*(k+i*nrows)+1) += u1*v0+u0*v1
+  							k += 1
   						}
-  						i += 1									
+  						j += 1
   					}
-  				} else {
-  				  val alpha = List(1.0f,0f).toArray
-  				  val beta = List(0f,0f).toArray
-  					if (nrows == 1) {
-  						cgemv(ORDER.ColMajor, TRANSPOSE.Trans, a.nrows, a.ncols, alpha, aa.data, a.nrows, data, 1, beta, out.data, 1)
-  					} else if (a.ncols == 1) {
-  						cgemv(ORDER.ColMajor, TRANSPOSE.NoTrans, nrows, ncols, alpha, data, nrows, aa.data, 1, beta, out.data, 1)
-  					} else {
-  						cgemm(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.NoTrans,
-  								nrows, a.ncols, ncols, alpha, data, nrows, aa.data, a.nrows, beta, out.data, nrows)
-  					}
+  					i += 1									
   				}
-  				out
-  			} else if (ncols == 1 && nrows == 1){
-  				val out = CMat.newOrCheckCMat(a.nrows, a.ncols, outmat)
-  				Mat.nflops += aa.length
-  				var i = 0
-  				val u0 = data(0)
-  				val u1 = data(1)
-  				while (i < aa.length) {
-  				  val v0 = aa.data(2*i)
-  				  val v1 = aa.data(2*i+1)
-  					out.data(2*i) = u0*v0-u1*v1
-  					out.data(2*i+1) = u0*v1+u1*v0
-  					i += 1
-  				}			    
-  				out			  
-  			} else if (a.ncols == 1 && a.nrows == 1){
-  				val out = CMat.newOrCheckCMat(nrows, ncols, outmat)
-  				Mat.nflops += length
-  				var i = 0
-  				val u0 = aa.data(0)
-  				val u1 = aa.data(1)
-  				while (i < length) {
-  				  val v0 = data(2*i)
-  				  val v1 = data(2*i+1)
-  					out.data(2*i) = u0*v0-u1*v1
-  					out.data(2*i+1) = u0*v1+u1*v0
-  					i += 1
-  				}			    
-  				out			  
-  			}	else throw new RuntimeException("dimensions mismatch")
-  		}
-  		case _ => throw new RuntimeException("unsupported arg")	
-  		}
+  			} else {
+  				val alpha = List(1.0f,0f).toArray
+  				val beta = List(0f,0f).toArray
+  				if (nrows == 1) {
+  					cgemv(ORDER.ColMajor, TRANSPOSE.Trans, aa.nrows, aa.ncols, alpha, aa.data, aa.nrows, data, 1, beta, out.data, 1)
+  				} else if (aa.ncols == 1) {
+  					cgemv(ORDER.ColMajor, TRANSPOSE.NoTrans, nrows, ncols, alpha, data, nrows, aa.data, 1, beta, out.data, 1)
+  				} else {
+  					cgemm(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.NoTrans,
+  							nrows, aa.ncols, ncols, alpha, data, nrows, aa.data, aa.nrows, beta, out.data, nrows)
+  				}
+  			}
+  			out
+  		} else if (ncols == 1 && nrows == 1){
+  			val out = CMat.newOrCheckCMat(aa.nrows, aa.ncols, outmat)
+  			Mat.nflops += aa.length
+  			var i = 0
+  			val u0 = data(0)
+  			val u1 = data(1)
+  			while (i < aa.length) {
+  				val v0 = aa.data(2*i)
+  				val v1 = aa.data(2*i+1)
+  				out.data(2*i) = u0*v0-u1*v1
+  				out.data(2*i+1) = u0*v1+u1*v0
+  				i += 1
+  			}			    
+  			out			  
+  		} else if (aa.ncols == 1 && aa.nrows == 1){
+  			val out = CMat.newOrCheckCMat(nrows, ncols, outmat)
+  			Mat.nflops += length
+  			var i = 0
+  			val u0 = aa.data(0)
+  			val u1 = aa.data(1)
+  			while (i < length) {
+  				val v0 = data(2*i)
+  				val v1 = data(2*i+1)
+  				out.data(2*i) = u0*v0-u1*v1
+  				out.data(2*i+1) = u0*v1+u1*v0
+  				i += 1
+  			}			    
+  			out			  
+  		}	else throw new RuntimeException("dimensions mismatch")
   }
  
   
@@ -759,11 +754,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
   
   override def clear = {
-    var i = 0
-    while (i < 2*length) {
-    	data(i) = 0
-    	i += 1
-    }
+    Arrays.fill(this.data,0,2*length,0)
     this
   }
   
@@ -912,48 +903,46 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
 
 class CPair (val omat:Mat, val mat:CMat) extends Pair {
   
-  override def t:CMat = CMat(mat.gt(CMat.tryForOutCMat(omat)))
+  override def t:CMat = CMat(mat.gt(omat))
   
-  def * (b : CMat) = mat.fDMult(b, CMat.tryForOutCMat(omat))  
-  def + (b : CMat) = mat.ccMatOpv(b, CMat.vecAdd _, CMat.tryForOutCMat(omat))
-  def - (b : CMat) = mat.ccMatOpv(b, CMat.vecSub _, CMat.tryForOutCMat(omat))
-  def *@ (b : CMat) = mat.ccMatOpv(b, CMat.vecMul _, CMat.tryForOutCMat(omat))
-  def /@ (b : CMat) = mat.ccMatOpv(b, CMat.vecDiv _, CMat.tryForOutCMat(omat))  
+  def * (b : CMat) = mat.fDMult(b, omat)  
+  def + (b : CMat) = mat.ccMatOpv(b, CMat.vecAdd _, omat)
+  def - (b : CMat) = mat.ccMatOpv(b, CMat.vecSub _, omat)
+  def *@ (b : CMat) = mat.ccMatOpv(b, CMat.vecMul _, omat)
+  def /@ (b : CMat) = mat.ccMatOpv(b, CMat.vecDiv _, omat)  
 //  override def ^ (b : Mat) = mat.ccMatOp(b, (x:Float, y:Float) => math.pow(x,y).toFloat, null)  
   
-  def == (b : CMat) = mat.ccMatOp(b, (ar:Float, ai:Float, br:Float, bi:Float) => if (ar == br && ai == bi) (1f, 0f) else (0f, 0f), CMat.tryForOutCMat(omat))
-  def != (b : CMat) = mat.ccMatOp(b, (ar:Float, ai:Float, br:Float, bi:Float) => if (ar != br || ai != bi) (1f, 0f) else (0f, 0f), CMat.tryForOutCMat(omat))
+  def == (b : CMat) = mat.ccMatOp(b, (ar:Float, ai:Float, br:Float, bi:Float) => if (ar == br && ai == bi) (1f, 0f) else (0f, 0f), omat)
+  def != (b : CMat) = mat.ccMatOp(b, (ar:Float, ai:Float, br:Float, bi:Float) => if (ar != br || ai != bi) (1f, 0f) else (0f, 0f), omat)
   
-  override def * (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecMul _, CMat.tryForOutCMat(omat))
-  override def + (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecAdd _, CMat.tryForOutCMat(omat))
-  override def - (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecSub _, CMat.tryForOutCMat(omat))
-  override def *@ (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecMul _, CMat.tryForOutCMat(omat))
-  override def /@ (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecDiv _, CMat.tryForOutCMat(omat))
+  override def * (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecMul _, omat)
+  override def + (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecAdd _, omat)
+  override def - (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecSub _, omat)
+  override def *@ (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecMul _, omat)
+  override def /@ (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecDiv _, omat)
   
     
-  override def == (b : Float) = mat.ccMatOp(CMat.celem(b, 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar == br && ai == bi) (1f, 0f) else (0f, 0f), CMat.tryForOutCMat(omat))
-  override def != (b : Float) = mat.ccMatOp(CMat.celem(b, 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar != br || ai != bi) (1f, 0f) else (0f, 0f), CMat.tryForOutCMat(omat))
+  override def == (b : Float) = mat.ccMatOp(CMat.celem(b, 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar == br && ai == bi) (1f, 0f) else (0f, 0f), omat)
+  override def != (b : Float) = mat.ccMatOp(CMat.celem(b, 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar != br || ai != bi) (1f, 0f) else (0f, 0f), omat)
 
-  override def *  (b : Double) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, CMat.tryForOutCMat(omat))
-  override def +  (b : Double) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecAdd _, CMat.tryForOutCMat(omat))
-  override def -  (b : Double) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecSub _, CMat.tryForOutCMat(omat))
-  override def *@ (b : Double) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, CMat.tryForOutCMat(omat))
-  override def /@ (b : Double) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecDiv _, CMat.tryForOutCMat(omat))
+  override def *  (b : Double) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, omat)
+  override def +  (b : Double) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecAdd _, omat)
+  override def -  (b : Double) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecSub _, omat)
+  override def *@ (b : Double) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, omat)
+  override def /@ (b : Double) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecDiv _, omat)
   
-  override def == (b : Double) = mat.ccMatOp(CMat.celem(b.asInstanceOf[Float], 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar == br && ai == bi) (1f, 0f) else (0f, 0f), CMat.tryForOutCMat(omat))
-  override def != (b : Double) = mat.ccMatOp(CMat.celem(b.asInstanceOf[Float], 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar != br || ai != bi) (1f, 0f) else (0f, 0f), CMat.tryForOutCMat(omat))
+  override def == (b : Double) = mat.ccMatOp(CMat.celem(b.asInstanceOf[Float], 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar == br && ai == bi) (1f, 0f) else (0f, 0f), omat)
+  override def != (b : Double) = mat.ccMatOp(CMat.celem(b.asInstanceOf[Float], 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar != br || ai != bi) (1f, 0f) else (0f, 0f), omat)
   
-  override def *  (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, CMat.tryForOutCMat(omat))
-  override def +  (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecAdd _, CMat.tryForOutCMat(omat))
-  override def -  (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecSub _, CMat.tryForOutCMat(omat))
-  override def *@ (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, CMat.tryForOutCMat(omat))
-  override def /@ (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecDiv _, CMat.tryForOutCMat(omat))
+  override def *  (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, omat)
+  override def +  (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecAdd _, omat)
+  override def -  (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecSub _, omat)
+  override def *@ (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecMul _, omat)
+  override def /@ (b : Int) = mat.ccMatOpScalarv(b.asInstanceOf[Float], 0, CMat.vecDiv _, omat)
      
-  override def == (b : Int) = mat.ccMatOp(CMat.celem(b.asInstanceOf[Float], 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar == br && ai == bi) (1f, 0f) else (0f, 0f), CMat.tryForOutCMat(omat))
-  override def != (b : Int) = mat.ccMatOp(CMat.celem(b.asInstanceOf[Float], 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar != br || ai != bi) (1f, 0f) else (0f, 0f), CMat.tryForOutCMat(omat))
-  
-  
-  
+  override def == (b : Int) = mat.ccMatOp(CMat.celem(b.asInstanceOf[Float], 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar == br && ai == bi) (1f, 0f) else (0f, 0f), omat)
+  override def != (b : Int) = mat.ccMatOp(CMat.celem(b.asInstanceOf[Float], 0), (ar:Float, ai:Float, br:Float, bi:Float) => if (ar != br || ai != bi) (1f, 0f) else (0f, 0f), omat)
+
 }
 
 object CMat {
@@ -986,7 +975,7 @@ object CMat {
       case cc:CMat => {val out = CMat(x.nrows, x.ncols); System.arraycopy(cc.data, 0, out.data, 0, 2*cc.length); out}
       case ii:IMat => real(FMat(ii))
       case ff:FMat => real(ff)
-      case xx:DenseMat[Float] => new CMat(xx.nrows, xx.ncols, xx.data)
+//      case xx:DenseMat[Float] => new CMat(xx.nrows, xx.ncols, xx.data)
       case _ => throw new RuntimeException("Unsupported source type")
     }
   }
@@ -996,18 +985,6 @@ object CMat {
     out.data(0) = x
     out.data(1) = y
     out
-  }
-  
-  def newOrCheckCMat(nr:Int, nc:Int, outmat:CMat):CMat = {
-    if (outmat.asInstanceOf[AnyRef] == null || (outmat.nrows == 0 && outmat.ncols == 0)) {
-      CMat(nr, nc)
-    } else {
-      if (outmat.nrows != nr || outmat.ncols != nc) {
-        outmat.recycle(nr, nc, 0)
-      } else {
-      	outmat
-      }
-    }
   }
   
   def vecAdd(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
@@ -1058,22 +1035,18 @@ object CMat {
     }
     0
   }
-     
-  def tryForCMat(m:Mat, s:String):CMat = 
-  	m match {
-  	case mm:CMat => mm
-  	case _ => throw new RuntimeException("wrong type for operator "+s+" arg "+m)
+  
+  def newOrCheckCMat(nr:Int, nc:Int, outmat:Mat):CMat = {
+    if (outmat.asInstanceOf[AnyRef] == null || (outmat.nrows == 0 && outmat.ncols == 0)) {
+      CMat(nr, nc)
+    } else {
+      if (outmat.nrows != nr || outmat.ncols != nc) {
+        outmat.recycle(nr, nc, 0).asInstanceOf[CMat]
+      } else {
+      	outmat.asInstanceOf[CMat]
+      }
+    }
   }
-    
-  def tryForOutCMat(out:Mat):CMat = 
-  	if (out.asInstanceOf[AnyRef] == null || (out.ncols == 0 && out.nrows == 0)) {
-  		null
-  	} else {
-  		out match {
-  		case outmat:CMat => outmat
-  		case _ => throw new RuntimeException("wrong type for LHS matrix "+out)
-  		}
-  	}
 }
 
 
