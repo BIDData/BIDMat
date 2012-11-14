@@ -457,7 +457,7 @@ object GMat {
     bb
   }
 
-  def DDS(A:GMat, B:GMat, C:GSMat, oldmat:GSMat):GSMat = {
+  def DDS(A:GMat, B:GMat, C:GSMat, oldmat:Mat):GSMat = {
     if (A.nrows != B.nrows || C.nrows != A.ncols || C.ncols != B.ncols) {
       throw new RuntimeException("dimensions mismatch")
     }

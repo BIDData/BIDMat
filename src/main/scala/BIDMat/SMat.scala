@@ -227,6 +227,20 @@ object SMat {
   }
   
   def SnoRows(nr:Int, nc:Int, nnz0:Int):SMat = new SMat(nr, nc, nnz0, null, new Array[Int](nc+1), new Array[Float](nnz0))
+  
+  def newOrCheckSMat(mat:SMat, oldmat:Mat):SMat = {
+  	if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows == 0 && oldmat.ncols == 0)) {
+  		SMat(mat.nrows, mat.ncols, mat.nnz)
+  	} else {
+  	  oldmat match {
+  	    case omat:SMat =>	if (oldmat.nrows == mat.nrows || oldmat.ncols == mat.ncols || oldmat.nnz == mat.nnz) {
+  	    	omat
+  	    } else {
+  	    	omat.recycle(mat.nrows, mat.ncols, mat.nnz)
+  	    }
+  	  }
+  	}
+  }
 }
 
 
