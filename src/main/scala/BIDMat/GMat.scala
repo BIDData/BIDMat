@@ -22,12 +22,14 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
   override def t = {
     val out = GMat(ncols, nrows)
     CUMAT.transpose(this.data, nrows, out.data, ncols, nrows, ncols)
+    cudaDeviceSynchronize()
     out
   }
   
   override def set(v:Float):GMat = {
     val a = MatFunctions.row(v)
     JCublas.cublasSetVector(length, Sizeof.FLOAT, Pointer.to(a.data), 0, data, 1);
+    cudaDeviceSynchronize()
     this
   }
   
