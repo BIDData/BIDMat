@@ -64,6 +64,7 @@ class GSPair (val omat:GMat, val mat:GSMat) extends Pair {
 object GSMat {
 
   def apply(nr:Int, nc:Int, nnz0:Int):GSMat = { 
+//  		println("nr, nc, nnz = %d,%d,%d" format (nr,nc,nnz0))
     val out = new GSMat(nr, nc, nnz0, new Pointer(), new Pointer(), new Pointer(), nnz0) 
     JCublas.cublasAlloc(out.nnz, Sizeof.INT, out.ir)
     JCublas.cublasAlloc(out.nnz, Sizeof.INT, out.ic)

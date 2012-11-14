@@ -10,6 +10,11 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   def size() = length;
 
   def getdata() = data
+  
+  override def set(v:Float):DMat = {
+    Arrays.fill(data,0,length,v)
+    this
+  }
  
   override def t:DMat = if (Mat.noMKL) { 
     DMat(gt(null))
@@ -394,6 +399,20 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   override def >=  (b : Double) = ddMatOpScalar(b, (x:Double, y:Double) => if (x >= y) 1.0 else 0.0, null)
   override def <=  (b : Double) = ddMatOpScalar(b, (x:Double, y:Double) => if (x <= y) 1.0 else 0.0, null)
   override def !=  (b : Double) = ddMatOpScalar(b, (x:Double, y:Double) => if (x != y) 1.0 else 0.0, null) 
+  
+  override def *  (b : Float) = fDMult(DMat.elem(b), null)
+  override def +  (b : Float) = ddMatOpScalarv(b, DenseMat.vecAdd[Double] _, null)
+  override def -  (b : Float) = ddMatOpScalarv(b, DenseMat.vecSub[Double] _, null)
+  override def *@ (b : Float) = ddMatOpScalarv(b, DenseMat.vecMul[Double] _, null)
+  override def /@ (b : Float) = ddMatOpScalarv(b, DMat.dVecDiv _, null)
+  override def ^  (b : Float) = ddMatOpScalar(b, (x:Double, y:Double) => math.pow(x,y), null)
+
+  override def >   (b : Float) = ddMatOpScalar(b, (x:Double, y:Double) => if (x > y) 1.0 else 0.0, null)
+  override def <   (b : Float) = ddMatOpScalar(b, (x:Double, y:Double) => if (x < y) 1.0 else 0.0, null)
+  override def ==  (b : Float) = ddMatOpScalar(b, (x:Double, y:Double) => if (x == y) 1.0 else 0.0, null)
+  override def >=  (b : Float) = ddMatOpScalar(b, (x:Double, y:Double) => if (x >= y) 1.0 else 0.0, null)
+  override def <=  (b : Float) = ddMatOpScalar(b, (x:Double, y:Double) => if (x <= y) 1.0 else 0.0, null)
+  override def !=  (b : Float) = ddMatOpScalar(b, (x:Double, y:Double) => if (x != y) 1.0 else 0.0, null)
 
   def \ (b: DMat) = DMat(ghorzcat(b))
   def \ (b:Double) = DMat(ghorzcat(DMat.elem(b)))

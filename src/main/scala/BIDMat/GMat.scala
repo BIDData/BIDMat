@@ -25,6 +25,13 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
     out
   }
   
+  override def set(v:Float):GMat = {
+    val a = MatFunctions.row(v)
+    JCublas.cublasSetVector(length, Sizeof.FLOAT, Pointer.to(a.data), 0, data, 1);
+    this
+  }
+  
+  
   override def toString:String = {
     val nr = scala.math.min(nrows,10)
     val nc = scala.math.min(ncols,50)        
@@ -35,14 +42,8 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
   }
   
   override def zeros(nr:Int, nc:Int) = GMat.gzeros(nr, nc)
-    
-  override def ones(nr:Int, nc:Int) = {
-    val out = GMat(nr, nc)
-    val one = GMat(FMat.felem(1))
-    cublasScopy(out.length, one.data, 0, out.data, 1)
-    cudaDeviceSynchronize()
-    out
-  }
+  
+  override def ones(nt:Int, nc:Int) = GMat.gones(nr, nc)
 
   def GMult(a:GMat, oldmat:Mat):GMat = {
     if (ncols == a.nrows) {
@@ -51,6 +52,7 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
       cublasSgemm('n', 'n', nrows, a.ncols, ncols, 1.0f, data, nrows, a.data, a.nrows, 0f, out.data, nrows)
       cudaDeviceSynchronize()
       if (cublasGetError != 0) {
+        println("device is %d" format SciFunctions.device)
         throw new RuntimeException("Cublas error in * "+cublasGetError)
       }
       out
@@ -76,11 +78,12 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
       val out = GMat.newOrCheckGMat(nrows, a.nrows, oldmat)
       Mat.nflops += 2L * length * a.nrows
       cublasSgemm('n', 't', nrows, a.nrows, ncols, 1.0f, data, nrows, a.data, a.nrows, 0f, out.data, nrows)
+      cudaDeviceSynchronize()
       val ee = cublasGetError
       if (ee != 0) {
+        println("device is %d" format SciFunctions.device)
         throw new RuntimeException("Cublas error in xT "+ee)
       }
-      cudaDeviceSynchronize()
       out
     } else throw new RuntimeException("dimensions mismatch")
   }
@@ -122,6 +125,22 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
       out
     }	else throw new RuntimeException("dimensions mismatch")
   }
+  
+  def dot (a : GMat):Double = 
+  	if (nrows != a.nrows || ncols != a.ncols) {
+  		throw new RuntimeException("dot dims not compatible")
+  	} else {
+  	  cublasSdot(length, data, 1, a.data, 1)
+  	}
+  
+  override def dot (a : Mat):Double = 
+  	if (nrows != a.nrows || ncols != a.ncols) {
+  		throw new RuntimeException("dot dims not compatible")
+  	} else {
+  	  a match {
+  	    case aa:GMat => cublasSdot(length, data, 1, aa.data, 1)
+  	  }
+  	}
   
   def reduceOp(oldmat:Mat, dir:Int, op:Int):GMat = {
     if (dir == 1) {
@@ -395,10 +414,19 @@ object GMat {
     out
   }
   
+  def gones(nr:Int, nc:Int) = {
+    val out = GMat(nr, nc)
+    val one = GMat(FMat.felem(1))
+    cublasScopy(out.length, one.data, 0, out.data, 1)
+    cudaDeviceSynchronize()
+    out
+  }
+  
   def apply(nr:Int, nc:Int):GMat = {
+//  	println("nr, nc = %d,%d" format (nr,nc))
     val retv = new GMat(nr, nc, new Pointer(), nr*nc)        
     val status = cublasAlloc(nr*nc, Sizeof.FLOAT, retv.data)
-    if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed")
+    if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
     retv        
   }
 
@@ -408,6 +436,7 @@ object GMat {
   	val rsize = a.nrows*a.ncols
     val retv = GMat(a.nrows, a.ncols)
     JCublas.cublasSetVector(rsize, Sizeof.FLOAT, Pointer.to(a.data), 1, retv.data, 1);
+  	cudaDeviceSynchronize()
     retv
   }
   
@@ -424,6 +453,7 @@ object GMat {
   def fromFMat(a:FMat, b:GMat):GMat = {
     val bb = b.recycle(a.nrows, a.ncols, 0)
     JCublas.cublasSetVector(a.length, Sizeof.FLOAT, Pointer.to(a.data), 1, bb.data, 1)
+    cudaDeviceSynchronize()
     bb
   }
 
