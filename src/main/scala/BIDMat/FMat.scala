@@ -319,7 +319,55 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   			}
   		out
   	} else throw new RuntimeException("dimensions mismatch");
-
+  
+  def GPUmult(b:FMat, omat:Mat):FMat = 
+  	if (ncols != b.nrows) {
+  		throw new RuntimeException("dimensions mismatch in xG")
+  	} else {
+  	  import jcuda.jcublas._
+  	  import jcuda.jcublas.JCublas._
+  	  import jcuda._
+  	  import jcuda.runtime.JCuda._
+  		val out = FMat.newOrCheckFMat(nrows, b.ncols, omat)
+  		for (i <- 1 until 4) {
+  		  SciFunctions.connect(i)
+  		}
+  	  val done = IMat(4,1)
+  		for (i <- 0 until 2) {
+  		  for (j <- 0 until 2) {
+  		    actor {
+  		    	SciFunctions.device(2*i + j)
+  		    	val aa = new Pointer
+  		    	var status = cublasAlloc(nrows*ncols/2, Sizeof.FLOAT, aa)
+  		    	if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
+  		    	val bb = new Pointer
+  		    	status = cublasAlloc(b.nrows*b.ncols/2, Sizeof.FLOAT, bb)
+  		    	if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
+  		    	val cc = new Pointer
+  		    	status = cublasAlloc(nrows*b.ncols/4, Sizeof.FLOAT, cc)
+  		    	if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
+  		    	status = cublasSetMatrix(nrows/2, ncols, Sizeof.FLOAT, Pointer.to(data).withByteOffset(Sizeof.FLOAT*i*nrows/2), nrows, aa, nrows)
+  		    	cudaDeviceSynchronize
+  		    	if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA copy failed "+status)
+  		    	status = cublasSetMatrix(nrows, ncols/2, Sizeof.FLOAT, Pointer.to(b.data).withByteOffset(Sizeof.FLOAT*j*b.nrows*b.ncols/2), b.nrows, bb, b.nrows/2) 
+  		    	cudaDeviceSynchronize
+  		    	if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA copy failed "+status)
+  		    	cublasSgemm('n', 'n', nrows/2, b.ncols/2, ncols, 1.0f, aa, nrows, bb, b.nrows/2, 0f, cc, b.nrows/2)
+  		    	cudaDeviceSynchronize
+  		    	if (cublasGetError != 0) throw new RuntimeException("Cublas error in xG, sgemm "+cublasGetError)
+  		    	status = cublasGetMatrix(nrows/2, b.ncols/2, Sizeof.FLOAT, cc, nrows/2, Pointer.to(out.data).withByteOffset(Sizeof.FLOAT*(i*nrows/2 + j*nrows*b.ncols/2)), nrows) 
+  		    	cudaDeviceSynchronize
+  		    	cublasFree(cc)
+  		    	cublasFree(bb)
+  		    	cublasFree(aa)
+  		    	done(2*i+j) = 1
+  		    }
+  		  }
+  		}
+  	  while (SciFunctions.sum(done,1).dv < 4.0) {Thread.`yield`};
+  	  Mat.nflops += 2L * nrows * ncols * b.ncols
+  		out
+  	}
   
   def dot(a:FMat):Double = super.dot(a)
   
@@ -397,7 +445,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   /*
    * Basic operators on pairs of FMats. These are the compute routines.
    */
-
+  def xG (b :FMat) = GPUmult(b, null)
   def +  (b : FMat) = ffMatOpv(b, DenseMat.vecAdd _, null)
   def -  (b : FMat) = ffMatOpv(b, DenseMat.vecSub _, null)
   def *  (b : FMat) = fDMult(b, null)
