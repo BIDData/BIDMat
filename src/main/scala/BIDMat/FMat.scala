@@ -93,6 +93,11 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     aa
   }
   
+  override def set(v:Float):FMat = {
+    Arrays.fill(data,0,length,v)
+    this
+  }
+  
   override def copyTo(a:Mat) = {
   	a match {
   	  case out:FMat => copyTo(out):FMat

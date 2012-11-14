@@ -20,6 +20,7 @@ class Mat(nr:Int, nc:Int) {
   def mytype = "Mat"
   def copyTo(a:Mat) = notImplemented0("copy");
   def copy = notImplemented0("copy");
+  def set(v:Float) = notImplemented0("set")
   def zeros(nr:Int, nc:Int) = notImplemented0("zeros");
   def ones(nr:Int, nc:Int) = notImplemented0("ones");
   def clearUpper(i:Int) = notImplemented0("clearUpper");
@@ -224,7 +225,7 @@ object Mat {
   
   var compressionLevel = 3        // for zlib
   
-  var chunkSize = 128*128         // for either method
+  var chunkSize = 1024*1024         // for either method
   
   var szipBlock = 32              // szip block size
   

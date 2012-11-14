@@ -278,7 +278,7 @@ object MatHDF5 {
 	dims(1) = a.nrows
 	val filespace_id = H5Screate_simple(2, dims, null)
 	val dplist_id = H5Pcreate(H5P_DATASET_CREATE)
-	setCompressionPlist(dplist_id, dims)
+//	setCompressionPlist(dplist_id, dims)
 	val dataset_id = H5Dcreate(fid, "/"+aname, h5class, filespace_id, H5P_DEFAULT, dplist_id, H5P_DEFAULT)
 	H5Dwrite(dataset_id, h5class, H5S_ALL, H5S_ALL, H5P_DEFAULT, a.data)
 	H5Pclose(dplist_id)
