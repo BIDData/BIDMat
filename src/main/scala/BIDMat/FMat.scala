@@ -605,6 +605,7 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   
   override def t:FMat = FMat(mat.gt(omat))
   
+  def xG (b :FMat) = mat.GPUmult(b, omat)
   def * (b : FMat) = mat.fDMult(b, omat) 
   def * (b : SMat) = mat.fSMult(b, omat) 
   def xT  (b : SMat) = mat.multT(b, omat)
