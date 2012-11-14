@@ -335,7 +335,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   		}
   	  val done = IMat(nthreads,1)
   		for (i <- 0 until nthreads) {
-  			actor {
+ // 			actor {
   				if (SciFunctions.device(i) == 0) {
   				  println("thread %d" format i)
   					val aa = new Pointer
@@ -365,7 +365,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   					cublasFree(aa)
   				}
   				done(i) = 1
-  			}
+//  			}
   		}
   	  while (SciFunctions.sum(done,1).dv < nthreads) {Thread.`yield`};
   	  Mat.nflops += 2L * nrows * ncols * b.ncols
