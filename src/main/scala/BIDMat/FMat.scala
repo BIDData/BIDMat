@@ -337,6 +337,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   		for (i <- 0 until nthreads) {
   			actor {
   				if (SciFunctions.device(i) == 0) {
+  				  println("thread %d" format i)
   					val aa = new Pointer
   					var status = cublasAlloc(nrows*ncols, Sizeof.FLOAT, aa)
   					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
