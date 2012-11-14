@@ -554,17 +554,13 @@ object MatFunctions {
     }
   }
 
-  def DDS(a:FMat,b:FMat,c:SMat,omat:SMat):SMat = {
+  def DDS(a:FMat,b:FMat,c:SMat,omat:Mat):SMat = {
     if (a.nrows != b.nrows) {
       throw new RuntimeException("nrows of dense A and B must match")
     } else if (c.nrows != a.ncols || c.ncols != b.ncols) {
       throw new RuntimeException("dims of C must match A'*B")
     } else {
-      val out = if (omat.asInstanceOf[SMat] != null) {
-        omat.recycle(c.nrows, c.ncols, c.nnz)
-      } else {
-        SMat(c.nrows, c.ncols, c.nnz)
-      }        
+      val out = SMat.newOrCheckSMat(c, omat)     
       Mat.nflops += 2L * c.nnz * a.nrows
       val ioff = Mat.ioneBased
       out.jc(0) = ioff
@@ -586,12 +582,12 @@ object MatFunctions {
     }
   }
   
-  def DDS(a:GMat,b:GMat,c:GSMat,omat:GSMat):GSMat = GMat.DDS(a,b,c,omat)
+  def DDS(a:GMat,b:GMat,c:GSMat,omat:Mat):GSMat = GMat.DDS(a,b,c,omat)
   
   def DDS(a:Mat, b:Mat, c:Mat, omat:Mat=null):Mat = {
     (a, b, c) match {
-      case (a:FMat, b:FMat, c:SMat) => DDS(a, b, c, omat.asInstanceOf[SMat]):SMat
-      case (a:GMat, b:GMat, c:GSMat) => GMat.DDS(a, b, c, omat.asInstanceOf[GSMat]):GSMat
+      case (a:FMat, b:FMat, c:SMat) => DDS(a, b, c, omat):SMat
+      case (a:GMat, b:GMat, c:GSMat) => GMat.DDS(a, b, c, omat):GSMat
     }
   }
   

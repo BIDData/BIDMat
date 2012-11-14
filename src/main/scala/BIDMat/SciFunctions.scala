@@ -473,6 +473,10 @@ object SciFunctions {
   def sum(a:SMat) = a.ssReduceOp(0, (x:Float) => x, (x:Float, y:Float) => x+y, null)
   def maxi(a:SMat) = a.ssReduceOp(0, (x:Float) => x, (x:Float, y:Float) => math.max(x,y), null)
   def mini(a:SMat) = a.ssReduceOp(0, (x:Float) => x, (x:Float, y:Float) => math.min(x,y), null)
+  def min(a:SMat, b:Float) = a.ssMatOpScalar(b, (x:Float, y:Float) => math.min(x,y))
+  def max(a:SMat, b:Float) = a.ssMatOpScalar(b, (x:Float, y:Float) => math.max(x,y))
+  def min(b:Float, a:SMat) = a.ssMatOpScalar(b, (x:Float, y:Float) => math.min(x,y))
+  def max(b:Float, a:SMat) = a.ssMatOpScalar(b, (x:Float, y:Float) => math.max(x,y))
   
   def sum(a:SMat, n:Int, omat:Mat) = a.ssReduceOp(n, (x:Float) => x, (x:Float, y:Float) => x+y, omat)
   def maxi(a:SMat, n:Int, omat:Mat) = a.ssReduceOp(n, (x:Float) => x, (x:Float, y:Float) => math.max(x,y), omat)
@@ -480,6 +484,10 @@ object SciFunctions {
   def sum(a:SMat, omat:Mat) = a.ssReduceOp(0, (x:Float) => x, (x:Float, y:Float) => x+y, omat)
   def maxi(a:SMat, omat:Mat) = a.ssReduceOp(0, (x:Float) => x, (x:Float, y:Float) => math.max(x,y), omat)
   def mini(a:SMat, omat:Mat) = a.ssReduceOp(0, (x:Float) => x, (x:Float, y:Float) => math.min(x,y), omat)
+  def min(a:SDMat, b:Double) = a.ssMatOpScalar(b, (x:Double, y:Double) => math.min(x,y))
+  def max(a:SDMat, b:Double) = a.ssMatOpScalar(b, (x:Double, y:Double) => math.max(x,y))
+  def min(b:Double, a:SDMat) = a.ssMatOpScalar(b, (x:Double, y:Double) => math.min(x,y))
+  def max(b:Double, a:SDMat) = a.ssMatOpScalar(b, (x:Double, y:Double) => math.max(x,y))
   
   def sum(a:CMat, n:Int) = a.ccReduceOpv(n, CMat.vecAdd _, null)
   def sum(a:CMat, n:Int, c:Mat) = a.ccReduceOpv(n, CMat.vecAdd _, c)
@@ -526,6 +534,7 @@ object SciFunctions {
       case bb:IMat => max(a.asInstanceOf[Int], bb, c):IMat
       case bb:DMat => max(DMat(a), bb, c):DMat
       case bb:GMat => max(GMat(a), bb, c):GMat
+//      case bb:SMat => max(a, bb, c):SMat
     }
   }
   

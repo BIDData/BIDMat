@@ -96,24 +96,22 @@ object GSMat {
     out
   }
 
-  def newOrCheckGSMat(mat:GSMat, oldmat:GSMat):GSMat = {
-  	import jcuda.runtime._
-  	if (oldmat.asInstanceOf[AnyRef] == null) {
-  		val newmat = GSMat(mat.nrows, mat.ncols, mat.nnz)
-  	  JCuda.cudaMemcpy(newmat.ic, mat.ic, mat.nnz*Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
-  	  JCuda.cudaMemcpy(newmat.ir, mat.ir, mat.nnz*Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
-  	  newmat
-  	} else {
-  		if (oldmat.nrows != mat.nrows || oldmat.ncols != mat.ncols || oldmat.nnz != mat.nnz) {
-  			throw new RuntimeException("dimensions mismatch")
+  def newOrCheckGSMat(mat:GSMat, oldmat:Mat):GSMat = {
+  		import jcuda.runtime._
+  		if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows ==0 && oldmat.ncols == 0)) {
+  			GSMat(mat.nrows, mat.ncols, mat.nnz)
   		} else {
-  		  JCuda.cudaMemcpy(oldmat.ic, mat.ic, mat.nnz*Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
-  	    JCuda.cudaMemcpy(oldmat.ir, mat.ir, mat.nnz*Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
-  			oldmat
+  			oldmat match {
+  			case omat:GSMat => if (oldmat.nrows == mat.nrows && oldmat.ncols == mat.ncols && oldmat.nnz == mat.nnz) {
+  				omat
+  			} else {
+  				omat.recycle(mat.nrows, mat.ncols, mat.nnz)
+  			}
+  			}
   		}
-  	}
   }
 }
+  
 
 
 
