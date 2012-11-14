@@ -329,42 +329,44 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   	  import jcuda._
   	  import jcuda.runtime.JCuda._
   		val out = FMat.newOrCheckFMat(nrows, b.ncols, omat)
-  		for (i <- 1 until 4) {
-  		  SciFunctions.connect(i)
+  		val nthreads = 4
+  		for (i <- 1 until nthreads) {
+//  		  SciFunctions.connect(i)
   		}
-  	  val done = IMat(4,1)
-  		for (i <- 0 until 2) {
-  		  for (j <- 0 until 2) {
-  		    actor {
-  		    	SciFunctions.device(2*i + j)
-  		    	val aa = new Pointer
-  		    	var status = cublasAlloc(nrows*ncols/2, Sizeof.FLOAT, aa)
-  		    	if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
-  		    	val bb = new Pointer
-  		    	status = cublasAlloc(b.nrows*b.ncols/2, Sizeof.FLOAT, bb)
-  		    	if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
-  		    	val cc = new Pointer
-  		    	status = cublasAlloc(nrows*b.ncols/4, Sizeof.FLOAT, cc)
-  		    	if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
-  		    	status = cublasSetMatrix(nrows/2, ncols, Sizeof.FLOAT, Pointer.to(data).withByteOffset(Sizeof.FLOAT*i*nrows/2), nrows, aa, nrows)
-  		    	cudaDeviceSynchronize
-  		    	if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA copy failed "+status)
-  		    	status = cublasSetMatrix(nrows, ncols/2, Sizeof.FLOAT, Pointer.to(b.data).withByteOffset(Sizeof.FLOAT*j*b.nrows*b.ncols/2), b.nrows, bb, b.nrows/2) 
-  		    	cudaDeviceSynchronize
-  		    	if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA copy failed "+status)
-  		    	cublasSgemm('n', 'n', nrows/2, b.ncols/2, ncols, 1.0f, aa, nrows, bb, b.nrows/2, 0f, cc, b.nrows/2)
-  		    	cudaDeviceSynchronize
-  		    	if (cublasGetError != 0) throw new RuntimeException("Cublas error in xG, sgemm "+cublasGetError)
-  		    	status = cublasGetMatrix(nrows/2, b.ncols/2, Sizeof.FLOAT, cc, nrows/2, Pointer.to(out.data).withByteOffset(Sizeof.FLOAT*(i*nrows/2 + j*nrows*b.ncols/2)), nrows) 
-  		    	cudaDeviceSynchronize
-  		    	cublasFree(cc)
-  		    	cublasFree(bb)
-  		    	cublasFree(aa)
-  		    	done(2*i+j) = 1
-  		    }
-  		  }
+  	  val done = IMat(nthreads,1)
+  		for (i <- 0 until nthreads) {
+  			actor {
+  				if (SciFunctions.device(i) == 0) {
+  					val aa = new Pointer
+  					var status = cublasAlloc(nrows*ncols, Sizeof.FLOAT, aa)
+  					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
+  					val bb = new Pointer
+  					status = cublasAlloc(b.nrows*b.ncols/nthreads, Sizeof.FLOAT, bb)
+  					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
+  					val cc = new Pointer
+  					status = cublasAlloc(nrows*b.ncols/nthreads, Sizeof.FLOAT, cc)
+  					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
+  					status = cublasSetVector(nrows*ncols, Sizeof.FLOAT, Pointer.to(data), 1, aa, 1)
+  					cudaDeviceSynchronize
+  					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA a copy failed "+status)
+  					status = cublasSetVector(b.nrows*b.ncols/nthreads, Sizeof.FLOAT, Pointer.to(b.data).withByteOffset(Sizeof.FLOAT*i*b.nrows*b.ncols/nthreads), 1, bb, 1) 
+  					cudaDeviceSynchronize
+  					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA b copy failed "+status)
+
+  					cublasSgemm('n', 'n', nrows, b.ncols/nthreads, ncols, 1.0f, aa, nrows, bb, b.nrows, 0f, cc, nrows)
+  					cudaDeviceSynchronize
+  					val err = cublasGetError
+  					if (err != 0) throw new RuntimeException("Cublas error in xG, sgemm "+err)
+  					status = cublasGetVector(nrows*b.ncols/nthreads, Sizeof.FLOAT, cc, 1, Pointer.to(out.data).withByteOffset(Sizeof.FLOAT*(i*nrows*b.ncols/nthreads)), 1) 
+  					cudaDeviceSynchronize
+  					cublasFree(cc)
+  					cublasFree(bb)
+  					cublasFree(aa)
+  				}
+  				done(i) = 1
+  			}
   		}
-  	  while (SciFunctions.sum(done,1).dv < 4.0) {Thread.`yield`};
+  	  while (SciFunctions.sum(done,1).dv < nthreads) {Thread.`yield`};
   	  Mat.nflops += 2L * nrows * ncols * b.ncols
   		out
   	}
