@@ -259,7 +259,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     import edu.berkeley.bid.CBLAS._
     if (ncols == a.ncols) {
     	val out = FMat.newOrCheckFMat(nrows, a.nrows, outmat)
-//    	out.clear
+    	out.clear
     	smcsrm(nrows, a.ncols, data, nrows, a.data, a.ir, a.jc, out.data, nrows)
     	Mat.nflops += 2L * a.nnz * nrows
     	out

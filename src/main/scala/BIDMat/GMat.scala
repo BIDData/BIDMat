@@ -21,6 +21,12 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
     
   override def nnz = length
   
+  override def clear = {
+  	cudaMemset(data, 0, Sizeof.FLOAT*length)
+  	cudaDeviceSynchronize
+  	this    
+  }
+  
   override def t = {
     val out = GMat(ncols, nrows)
     CUMAT.transpose(this.data, nrows, out.data, ncols, nrows, ncols)
@@ -63,14 +69,14 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
     }	else if (ncols == 1 && nrows == 1) {
       val out = GMat.newOrCheckGMat(a.nrows, a.ncols, oldmat)
       Mat.nflops += 1L * a.length
-      cudaMemset(out.data, 0, Sizeof.FLOAT*out.length)
+      out.clear
       cublasSaxpy(a.length, this.dv.asInstanceOf[Float], a.data, 1, out.data, 1)
       cudaDeviceSynchronize()
       out
     } else if (a.ncols == 1 && a.nrows == 1) {
       val out = GMat.newOrCheckGMat(nrows, ncols, oldmat)
       Mat.nflops += 1L * length
-      cudaMemset(out.data, 0, Sizeof.FLOAT*out.length)
+      out.clear
       cublasSaxpy(length, a.dv.asInstanceOf[Float], data, 1, out.data, 1)
       cudaDeviceSynchronize()
       out
@@ -96,8 +102,7 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
     if (ncols == a.nrows) {
       val out = GMat.newOrCheckGMat(nrows, a.ncols, oldmat)
       Mat.nflops += 2L * nrows * a.nnz
-      cudaMemset(out.data, 0, Sizeof.FLOAT*nrows*a.ncols)
-      cudaDeviceSynchronize()
+      out.clear
       CUMAT.dsmult(nrows, ncols, a.nnz, data, a.data, a.ir, a.ic, out.data)
       cudaDeviceSynchronize()
       out
@@ -108,8 +113,7 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
     if (ncols == a.ncols) {
       val out = GMat.newOrCheckGMat(nrows, a.nrows, oldmat)
       Mat.nflops += 2L * nrows * a.nnz
-      cudaMemset(out.data, 0, Sizeof.FLOAT*nrows*a.nrows)
-      cudaDeviceSynchronize()
+      out.clear
       CUMAT.dsmultT(nrows, ncols, a.nnz, data, a.data, a.ir, a.ic, out.data)
       cudaDeviceSynchronize()
       out
@@ -147,24 +151,20 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
   	}
   
   def reduceOp(oldmat:Mat, dir:Int, op:Int):GMat = {
-    if (dir == 1) {
+    if (dir == 1 || (dir == 0 && nrows > 1)) {
       val out = GMat.newOrCheckGMat(1, ncols, oldmat) 
+      out.clear
       CUMAT.reduce1op(nrows, ncols, data, out.data, op)
       Mat.nflops += length
       cudaDeviceSynchronize()
       out
-    } else if (dir == 2) {
+    } else if (dir == 2 || dir == 0) {
       val out = GMat.newOrCheckGMat(nrows, 1, oldmat)  
+      out.clear
       CUMAT.reduce2op(nrows, ncols, data, out.data, op)
       Mat.nflops += length
       cudaDeviceSynchronize()
       out
-    } else if (dir == 0) {
-      if (nrows == 1) {
-        reduceOp(oldmat, 2, op)
-      } else {
-        reduceOp(oldmat, 1, op)
-      }
     } else {
       throw new RuntimeException("dimension must be 1 or 2")
     }
@@ -466,6 +466,8 @@ object GMat {
       throw new RuntimeException("dimensions mismatch")
     }
     val out = GSMat.newOrCheckGSMat(C, oldmat)
+    cudaMemcpy(out.ir, C.ir, Sizeof.INT * C.nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaMemcpy(out.ic, C.ic, Sizeof.INT * C.nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
     CUMAT.dds(A.nrows, C.nnz, A.data, B.data, C.ir, C.ic, out.data)
     cudaDeviceSynchronize()
     Mat.nflops += 2L * C.nnz * A.nrows
@@ -477,16 +479,12 @@ object GMat {
   		throw new RuntimeException("dimensions mismatch in xG")
   	} else {
   		val out = FMat.newOrCheckFMat(a.nrows, b.ncols, omat)
-  		val nthreads = 4
-  		for (i <- 1 until nthreads) {
-//  		  SciFunctions.connect(i)
-  		}
+  		val nthreads = Mat.hasCUDA
   	  val done = IMat(nthreads,1)
   	  val nncols = b.ncols/nthreads
   		for (i <- 0 until nthreads) {
   			actor {
   				if (SciFunctions.device(i) == 0) {
-  				  println("thread %d" format i)
   					val aa = new Pointer
   					var status = cublasAlloc(a.nrows*a.ncols, Sizeof.FLOAT, aa)
   					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
@@ -498,20 +496,23 @@ object GMat {
   					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
   					status = cublasSetVector(a.nrows*a.ncols, Sizeof.FLOAT, Pointer.to(a.data), 1, aa, 1)
   					cudaDeviceSynchronize
-  					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA a copy failed "+status)
+  					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA copy a failed "+status)
   					status = cublasSetVector(b.nrows*nncols, Sizeof.FLOAT, Pointer.to(b.data).withByteOffset(Sizeof.FLOAT*i*b.nrows*nncols), 1, bb, 1) 
   					cudaDeviceSynchronize
-  					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA b copy failed "+status)
-
+  					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA copy b failed "+status)
   					cublasSgemm('n', 'n', a.nrows, nncols, a.ncols, 1.0f, aa, a.nrows, bb, b.nrows, 0f, cc, a.nrows)
   					cudaDeviceSynchronize
   					val err = cublasGetError
   					if (err != 0) throw new RuntimeException("Cublas error in xG, sgemm "+err)
   					status = cublasGetVector(a.nrows*nncols, Sizeof.FLOAT, cc, 1, Pointer.to(out.data).withByteOffset(Sizeof.FLOAT*i*a.nrows*nncols), 1) 
   					cudaDeviceSynchronize
+  					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA copy c failed "+status)
   					cublasFree(cc)
   					cublasFree(bb)
   					cublasFree(aa)
+  				} else {
+  				  done(i) = 1
+  				  throw new RuntimeException("Couldnt set device "+i)
   				}
   				done(i) = 1
   			}
