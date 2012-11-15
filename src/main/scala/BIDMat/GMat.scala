@@ -4,7 +4,9 @@ import jcuda.jcublas._
 import jcuda.jcublas.JCublas._
 import jcuda.runtime.JCuda._
 import jcuda.runtime._
+import scala.actors.Actor._
 import edu.berkeley.bid.CUMAT
+
 
 class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, nc) {
   
@@ -469,6 +471,55 @@ object GMat {
     Mat.nflops += 2L * C.nnz * A.nrows
     out    
   }
+  
+  def GPUmult(a:FMat, b:FMat, omat:Mat):FMat = 
+  	if (a.ncols != b.nrows) {
+  		throw new RuntimeException("dimensions mismatch in xG")
+  	} else {
+  		val out = FMat.newOrCheckFMat(a.nrows, b.ncols, omat)
+  		val nthreads = 4
+  		for (i <- 1 until nthreads) {
+//  		  SciFunctions.connect(i)
+  		}
+  	  val done = IMat(nthreads,1)
+  	  val nncols = b.ncols/nthreads
+  		for (i <- 0 until nthreads) {
+  			actor {
+  				if (SciFunctions.device(i) == 0) {
+  				  println("thread %d" format i)
+  					val aa = new Pointer
+  					var status = cublasAlloc(a.nrows*a.ncols, Sizeof.FLOAT, aa)
+  					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
+  					val bb = new Pointer
+  					status = cublasAlloc(b.nrows*nncols, Sizeof.FLOAT, bb)
+  					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
+  					val cc = new Pointer
+  					status = cublasAlloc(a.nrows*nncols, Sizeof.FLOAT, cc)
+  					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
+  					status = cublasSetVector(a.nrows*a.ncols, Sizeof.FLOAT, Pointer.to(a.data), 1, aa, 1)
+  					cudaDeviceSynchronize
+  					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA a copy failed "+status)
+  					status = cublasSetVector(b.nrows*nncols, Sizeof.FLOAT, Pointer.to(b.data).withByteOffset(Sizeof.FLOAT*i*b.nrows*nncols), 1, bb, 1) 
+  					cudaDeviceSynchronize
+  					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA b copy failed "+status)
+
+  					cublasSgemm('n', 'n', a.nrows, nncols, a.ncols, 1.0f, aa, a.nrows, bb, b.nrows, 0f, cc, a.nrows)
+  					cudaDeviceSynchronize
+  					val err = cublasGetError
+  					if (err != 0) throw new RuntimeException("Cublas error in xG, sgemm "+err)
+  					status = cublasGetVector(a.nrows*nncols, Sizeof.FLOAT, cc, 1, Pointer.to(out.data).withByteOffset(Sizeof.FLOAT*i*a.nrows*nncols), 1) 
+  					cudaDeviceSynchronize
+  					cublasFree(cc)
+  					cublasFree(bb)
+  					cublasFree(aa)
+  				}
+  				done(i) = 1
+  			}
+  		}
+  	  while (SciFunctions.sum(done,1).dv < nthreads) {Thread.`yield`};
+  	  Mat.nflops += 2L * a.nrows * a.ncols * b.ncols
+  		out
+  	}
 
   def newOrCheckGMat(nr:Int, nc:Int, outmat:Mat):GMat = {
     if (outmat.asInstanceOf[AnyRef] == null || (outmat.nrows == 0 && outmat.ncols == 0)) {
