@@ -22,9 +22,9 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
   
   override def apply(a:IMat, b:IMat):SDMat = SDMat(gapply(a, b))	
   
-  def ssMatOp(b: SDMat, f:(Double, Double) => Double) = SDMat(sgMatOp(b, f))
+  def ssMatOp(b: SDMat, f:(Double, Double) => Double, omat:Mat) = SDMat(sgMatOp(b, f, omat))
   
-  def ssMatOpScalar(b: Double, f:(Double, Double) => Double) = SDMat(sgMatOpScalar(b, f))
+  def ssMatOpScalar(b: Double, f:(Double, Double) => Double, omat:Mat) = SDMat(sgMatOpScalar(b, f, omat))
   
   def ssReduceOp(n:Int, f1:(Double) => Double, f2:(Double, Double) => Double, omat:Mat) = DMat(sgReduceOp(n, f1, f2, omat))
   
@@ -151,34 +151,34 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
       SDMat(SparseMat.sparseImpl[Double](ii, jj, vv, nrows, a.ncols)) 
     }	
   
-  def + (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => x + y)
-  def - (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => x - y)
+  def + (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => x + y, null)
+  def - (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => x - y, null)
   def * (b : DMat):DMat = SMult(b, null)
   def Tx (b : DMat):DMat = Tmult(b, null)
   override def * (b : Mat):DMat = SMult(b, null)
   def *! (b : SDMat) = SSMult(b)
-  def *@ (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => x * y)
-  def /@ (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => x / y)
+  def *@ (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => x * y, null)
+  def /@ (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => x / y, null)
   
-  def > (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => if (x > y) 1.0 else 0.0)
-  def < (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => if (x < y) 1.0 else 0.0)
-  def == (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => if (x == y) 1.0 else 0.0)
-  def === (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => if (x == y) 1.0 else 0.0)
-  def >= (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => if (x >= y) 1.0 else 0.0)
-  def <= (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => if (x <= y) 1.0 else 0.0)
-  def != (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => if (x != y) 1.0 else 0.0)
+  def > (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => if (x > y) 1.0 else 0.0, null)
+  def < (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => if (x < y) 1.0 else 0.0, null)
+  def == (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => if (x == y) 1.0 else 0.0, null)
+  def === (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => if (x == y) 1.0 else 0.0, null)
+  def >= (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => if (x >= y) 1.0 else 0.0, null)
+  def <= (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => if (x <= y) 1.0 else 0.0, null)
+  def != (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => if (x != y) 1.0 else 0.0, null)
   
-  override def + (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => x + y)
-  override def - (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => x - y)
-  override def *@ (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => x * y)
-  override def /@ (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => x / y)
+  override def + (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => x + y, null)
+  override def - (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => x - y, null)
+  override def *@ (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => x * y, null)
+  override def /@ (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => x / y, null)
   
-  override def > (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => if (x > y) 1.0 else 0.0)
-  override def < (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => if (x < y) 1.0 else 0.0)
-  override def == (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => if (x == y) 1.0 else 0.0)
-  override def >= (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => if (x >= y) 1.0 else 0.0)
-  override def <= (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => if (x <= y) 1.0 else 0.0)
-  override def != (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => if (x != y) 1.0 else 0.0)
+  override def > (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => if (x > y) 1.0 else 0.0, null)
+  override def < (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => if (x < y) 1.0 else 0.0, null)
+  override def == (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => if (x == y) 1.0 else 0.0, null)
+  override def >= (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => if (x >= y) 1.0 else 0.0, null)
+  override def <= (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => if (x <= y) 1.0 else 0.0, null)
+  override def != (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => if (x != y) 1.0 else 0.0, null)
   
   def \ (b: SDMat) = horzcat(b)
   def on (b: SDMat) = vertcat(b)
