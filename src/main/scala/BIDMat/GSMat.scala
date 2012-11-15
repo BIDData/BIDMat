@@ -1,8 +1,9 @@
 package BIDMat
-import jcuda._;
-import jcuda.jcublas.JCublas;
-import jcuda.runtime.JCuda;
-import edu.berkeley.bid.CUMAT;
+import jcuda._
+import jcuda.jcublas.JCublas
+import jcuda.runtime.JCuda
+import jcuda.runtime._
+import edu.berkeley.bid.CUMAT
 
 case class GSMat(nr:Int, nc:Int, val nnz0:Int, val ir:Pointer, val ic:Pointer, val data:Pointer, val realnnz:Int) extends Mat(nr, nc) {
 	
@@ -97,18 +98,17 @@ object GSMat {
   }
 
   def newOrCheckGSMat(mat:GSMat, oldmat:Mat):GSMat = {
-  		import jcuda.runtime._
-  		if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows ==0 && oldmat.ncols == 0)) {
-  			GSMat(mat.nrows, mat.ncols, mat.nnz)
+  	if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows ==0 && oldmat.ncols == 0)) {
+  		GSMat(mat.nrows, mat.ncols, mat.nnz)
+  	} else {
+  		oldmat match {
+  		case omat:GSMat => if (oldmat.nrows == mat.nrows && oldmat.ncols == mat.ncols && oldmat.nnz == mat.nnz) {
+  			omat
   		} else {
-  			oldmat match {
-  			case omat:GSMat => if (oldmat.nrows == mat.nrows && oldmat.ncols == mat.ncols && oldmat.nnz == mat.nnz) {
-  				omat
-  			} else {
-  				omat.recycle(mat.nrows, mat.ncols, mat.nnz)
-  			}
-  			}
+  			omat.recycle(mat.nrows, mat.ncols, mat.nnz)
   		}
+  		}
+  	}
   }
 }
   
