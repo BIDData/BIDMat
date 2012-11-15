@@ -43,9 +43,9 @@ case class BMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   
   override def apply(a:Int, b:IMat):BMat = BMat(gapply(IMat.ielem(a), b))
   
-  def bbMatOp(b: BMat, f:(Byte, Byte) => Byte, out:Mat):BMat = BMat(sgMatOp(b, f))
+  def bbMatOp(b: BMat, f:(Byte, Byte) => Byte, out:Mat):BMat = BMat(sgMatOp(b, f, out))
   
-  def bbMatOpScalar(b: Byte, f:(Byte, Byte) => Byte, out:Mat):BMat = BMat(sgMatOpScalar(b, f))
+  def bbMatOpScalar(b: Byte, f:(Byte, Byte) => Byte, out:Mat):BMat = BMat(sgMatOpScalar(b, f, out))
   
   def bbReduceOp(n:Int, f1:(Byte) => Byte, f2:(Byte, Byte) => Byte) = IMat(sgReduceOp(n, f1, f2, null))
   

@@ -382,18 +382,19 @@ class SparseMat[@specialized(Double,Float) T]
       out
     }
   
-  def sgMatOp(b:SparseMat[T], op2:(T,T) => T):SparseMat[T] =
+  def sgMatOp(b:SparseMat[T], op2:(T,T) => T, omat:Mat):SparseMat[T] =
     if (nrows==b.nrows && ncols==b.ncols) {
       if (ir != null) b.explicitInds
       if (b.ir != null) explicitInds
       if (ir == null) {
-        sgMatOpNR(b,op2)
+        sgMatOpNR(b,op2,omat)
       } else {
-      	val out = SparseMat[T](nrows+b.nrows, ncols, nnz+b.nnz)
+      	val out = SparseMat.newOrCheck(nrows, ncols, nnz+b.nnz, omat)
       	val ioff = Mat.ioneBased
       	var nzc = 0
-      	out.jc(0) = ioff
-      	for (i <- 0 until ncols) {
+      	out.jc(0) = ioff 
+      	var i = 0
+      	while (i < ncols) {
       		var ia = jc(i)-ioff
       		var ib = b.jc(i)-ioff
       		while (ia < jc(i+1)-ioff && ib < b.jc(i+1)-ioff) {
@@ -426,6 +427,7 @@ class SparseMat[@specialized(Double,Float) T]
       			nzc += 1
       		}
       		out.jc(i+1) = nzc+ioff
+      		i += 1
       	}
       	out.sparseTrim
       }
@@ -434,8 +436,8 @@ class SparseMat[@specialized(Double,Float) T]
     }
 
   
-  def sgMatOpNR(b:SparseMat[T], op2:(T,T) => T):SparseMat[T] = {
-  		val out = SparseMat.noRows[T](nrows+b.nrows, ncols, nnz+b.nnz)
+  def sgMatOpNR(b:SparseMat[T], op2:(T,T) => T, omat:Mat):SparseMat[T] = {
+  		val out = SparseMat.newOrCheck(nrows, ncols, nnz+b.nnz, omat, true)
   		val ioff = Mat.ioneBased
   		var nzc = 0
   		out.jc(0) = ioff
@@ -518,17 +520,13 @@ class SparseMat[@specialized(Double,Float) T]
   			throw new RuntimeException("index must 1 or 2")	
   }
   
-  def ssMatOpOne(b:DenseMat[T], op2:(T,T) => T):SparseMat[T] =	
+  def ssMatOpOne(b:DenseMat[T], op2:(T,T) => T, omat:Mat):SparseMat[T] =	
     if (b.nrows == 1 && b.ncols == 1) {
-      sgMatOpScalar(b.data(0), op2)
+      sgMatOpScalar(b.data(0), op2, omat)
     } else throw new RuntimeException("dims incompatible")
   
-  def sgMatOpScalar(b:T, op2:(T,T) => T):SparseMat[T] = {
-    val out = if (ir != null) {
-    	SparseMat[T](nrows, ncols, nnz)
-    } else {
-    	SparseMat.noRows[T](nrows, ncols, nnz)
-    }
+  def sgMatOpScalar(b:T, op2:(T,T) => T, outmat:Mat):SparseMat[T] = {
+    val out = SparseMat.newOrCheck(nrows, ncols, nnz, outmat, (ir == null))
     var i = 0
     out.jc(0) = jc(0)
     while (i < nnz) {
@@ -560,13 +558,6 @@ class SparseMat[@specialized(Double,Float) T]
       this
     } else {
       var out = this
-      if (nzc <= nnz/2) {
-      	if (ir != null) {
-      		out = SparseMat[T](nrows, ncols, nzc)
-      	} else {
-          out = SparseMat.noRows[T](nrows, ncols, nzc)
-      	}
-      }
       nzc = 0
       var lastjc = 0
       var i = 0
@@ -650,7 +641,7 @@ class SparseMat[@specialized(Double,Float) T]
   	val jc0 = if (jc.size >= nc+1) jc else new Array[Int](nc+1)
   	val ir0 = if (ir.size >= nnz) ir else new Array[Int](nnz)
   	val data0 = if (data.size >= nnz) data else new Array[T](nnz)
-  	new SparseMat[T](nr, nc, nnz, jc0, ir0, data0)    
+  	new SparseMat[T](nr, nc, nnz, ir0, jc0, data0)    
   }
 
 }
@@ -666,7 +657,8 @@ object SparseMat {
   (implicit manifest:Manifest[T], numeric:Numeric[T]):SparseMat[T] = 
     new SparseMat[T](nr, nc, nnz0, null, new Array[Int](nc+1), new Array[T](nnz0))
   
-  def sparseImpl[@specialized(Double, Float) T](rows:Array[Int], cols:Array[Int], vals:Array[T], nrows:Int, ncols:Int)(implicit manifest:Manifest[T], numeric:Numeric[T]):SparseMat[T] = {
+  def sparseImpl[@specialized(Double, Float) T](rows:Array[Int], cols:Array[Int], vals:Array[T], nrows:Int, ncols:Int)
+  (implicit manifest:Manifest[T], numeric:Numeric[T]):SparseMat[T] = {
     val ioff = Mat.ioneBased
     val out = SparseMat[T](nrows, ncols, rows.length)
     val orows = out.ir
@@ -747,10 +739,13 @@ object SparseMat {
     out
   }
  
-  def newOrCheck[T](nr:Int, nc:Int, nnz:Int, oldmat:Mat)
+  def newOrCheck[T](nr:Int, nc:Int, nnz:Int, oldmat:Mat, norows:Boolean = false)
   (implicit manifest:Manifest[T], numeric:Numeric[T]):SparseMat[T] = {
     if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows == 0 && oldmat.ncols == 0)) {
-      SparseMat[T](nr, nc, nnz)
+      if (norows)
+        SparseMat.noRows(nr, nc, nnz)
+      else
+        SparseMat(nr, nc, nnz)
     } else {
       val omat = oldmat.asInstanceOf[SparseMat[T]];
       if (omat.nrows == nr && omat.ncols == nc && omat.nnz == nnz) {
