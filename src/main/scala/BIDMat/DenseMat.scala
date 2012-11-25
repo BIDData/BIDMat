@@ -596,8 +596,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
         if (nrows==aa.nrows && ncols==1) {
           val out = DenseMat.newOrCheck[T](nrows, aa.ncols, oldmat)
           Mat.nflops += aa.length
-          var i = 0
-          
+          var i = 0          
           while (i < aa.ncols) {
             opv(data, 0, 1, aa.data, i*aa.nrows, 1, out.data, i*nrows, 1, nrows)
             i += 1
@@ -625,8 +624,8 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
           val out = DenseMat.newOrCheck[T](nrows, ncols, oldmat)
           Mat.nflops += length
           var i = 0
-          while (i <  ncols) {
-            opv(data, i*nrows, 1, aa.data, i, 0, out.data, i*nrows, 1, aa.nrows)
+          while (i < ncols) {
+            opv(data, i*nrows, 1, aa.data, i, 0, out.data, i*nrows, 1, nrows)
             i += 1   
           }
           out
@@ -719,6 +718,58 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
       throw new RuntimeException("index must 1 or 2");
   }
   
+  def ggOpt2(dim0:Int, op2:(T,T) => Boolean):(DenseMat[T],IMat) = {
+    var dim = if (nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
+    if (dim == 1) {
+      val out = new DenseMat[T](1, ncols)
+      val iout = IMat(1, ncols)
+      Mat.nflops += length
+      var i = 0
+      while (i < ncols) { 
+        var j = 1
+        var acc = data(i*nrows)
+        var iacc = 0
+        while (j < nrows) { 
+          val v = data(j+i*nrows)
+          if (op2(v, acc)) {
+            acc = v
+            iacc = j            
+          }
+          j += 1
+        }
+        out.data(i) = acc
+        iout.data(i) = iacc
+        i += 1
+      }
+      (out, iout)
+    } else if (dim == 2) { 
+      val out = new DenseMat[T](nrows, 1)
+      val iout = IMat(nrows, 1)
+      Mat.nflops += length
+      var j = 0
+      while (j < nrows) { 
+        out.data(j) = data(j)
+        iout.data(j) = 0
+        j += 1
+      }
+      var i = 1
+      while (i < ncols) { 
+        var j = 0
+        while (j < nrows) { 
+          val v = data(j+i*nrows)
+          if (op2(v, out.data(j))) {
+          	out.data(j) = v
+          	iout.data(j) = i
+          }
+          j += 1
+        }
+        i += 1
+      }
+      (out, iout)
+    } else
+      throw new RuntimeException("index must 1 or 2");
+  }
+  
   def ggReduceOpv(dim0:Int, opv:(Array[T],Int,Int,Array[T],Int,Int,Array[T],Int,Int,Int) => T, oldmat:Mat):DenseMat[T] = {
     var dim = if (nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
     if (dim == 1) {
@@ -791,7 +842,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
       throw new RuntimeException("index must 1 or 2")  
   }
   
-    def ggReduceAllv(dim0:Int, opv:(Array[T],Int,Int,Array[T],Int,Int,Array[T],Int,Int,Int) => T, oldmat:Mat):DenseMat[T] = {
+  def ggReduceAllv(dim0:Int, opv:(Array[T],Int,Int,Array[T],Int,Int,Array[T],Int,Int,Int) => T, oldmat:Mat):DenseMat[T] = {
     var dim = if (nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
     if (dim == 1) {
       val out = DenseMat.newOrCheck[T](nrows, ncols, oldmat)
@@ -1131,9 +1182,13 @@ object DenseMat {
     }
     if (ik == 1) {
       var i = 0
-      while (i < a.length) {
-        iout.data(i) = i
-        out.data(i) = a.data(i)
+      while (i < a.ncols) {
+        var j = 0
+        while (j < a.nrows) {
+        	iout.data(j+i*a.nrows) = j
+        	out.data(j+i*a.nrows) = a.data(j+i*a.nrows)
+        	j += 1
+        }
         i += 1
       }
       i = 0

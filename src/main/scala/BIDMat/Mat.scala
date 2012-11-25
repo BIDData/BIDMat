@@ -285,7 +285,7 @@ object Mat {
   
   var terminal = TerminalFactory.create
   
-  def terminalWidth = terminal.getWidth
+  def terminalWidth = math.max(terminal.getWidth,80)
 
   def copyToIntArray[@specialized(Double, Float) T](data:Array[T], i0:Int, idata:Array[Int], d0:Int, n:Int)
   (implicit numeric : Numeric[T]) = {
