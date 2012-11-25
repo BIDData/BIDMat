@@ -393,6 +393,10 @@ object SciFunctions {
   def cumsum(a:DMat) = a.ddReduceAll(0, (x:Double) => x, (x:Double, y:Double) => x+y, null)
   def maxi(a:DMat) = a.ddReduceOp(0, (x:Double) => x, (x:Double, y:Double) => math.max(x,y), null)
   def mini(a:DMat):DMat = a.ddReduceOp(0, (x:Double) => x, (x:Double, y:Double) => math.min(x,y), null)
+  def maxi2(a:DMat,d:Int):(DMat,IMat) = {val (m,ii)=a.ggOpt2(d,(x:Double,y:Double)=>(x>y)); (DMat(m), ii)}
+  def mini2(a:DMat,d:Int):(DMat,IMat) = {val (m,ii)=a.ggOpt2(d,(x:Double,y:Double)=>(x<y)); (DMat(m), ii)}
+  def maxi2(a:DMat):(DMat,IMat) = {val (m,ii)=a.ggOpt2(0,(x:Double,y:Double)=>(x>y)); (DMat(m), ii)}
+  def mini2(a:DMat):(DMat,IMat) = {val (m,ii)=a.ggOpt2(0,(x:Double,y:Double)=>(x<y)); (DMat(m), ii)}
   
   def min(a:DMat, b:DMat, out:Mat) = a.ddMatOp(b, (x:Double, y:Double) => math.min(x,y), out)
   def max(a:DMat, b:DMat, out:Mat) = a.ddMatOp(b, (x:Double, y:Double) => math.max(x,y), out)
@@ -415,6 +419,10 @@ object SciFunctions {
   def cumsum(a:FMat) = a.ffReduceAll(0, (x:Float) => x, (x:Float, y:Float) => x+y, null)
   def maxi(a:FMat) = a.ffReduceOp(0, (x:Float) => x, (x:Float, y:Float) => math.max(x,y), null)
   def mini(a:FMat):FMat = a.ffReduceOp(0, (x:Float) => x, (x:Float, y:Float) => math.min(x,y), null)
+  def maxi2(a:FMat,d:Int):(FMat,IMat) = {val (m,ii)=a.ggOpt2(d,(x:Float,y:Float)=>(x>y)); (FMat(m), ii)}
+  def mini2(a:FMat,d:Int):(FMat,IMat) = {val (m,ii)=a.ggOpt2(d,(x:Float,y:Float)=>(x<y)); (FMat(m), ii)}
+  def maxi2(a:FMat):(FMat,IMat) = {val (m,ii)=a.ggOpt2(0,(x:Float,y:Float)=>(x>y)); (FMat(m), ii)}
+  def mini2(a:FMat):(FMat,IMat) = {val (m,ii)=a.ggOpt2(0,(x:Float,y:Float)=>(x<y)); (FMat(m), ii)}
   
   def min(a:FMat, b:FMat, out:Mat) = a.ffMatOp(b, (x:Float, y:Float) => math.min(x,y), out)
   def max(a:FMat, b:FMat, out:Mat) = a.ffMatOp(b, (x:Float, y:Float) => math.max(x,y), out)
@@ -437,6 +445,10 @@ object SciFunctions {
   def cumsum(a:IMat) = a.iiReduceAll(0, (x:Int) => x, (x:Int, y:Int) => x+y, null)
   def maxi(a:IMat) = a.iiReduceOp(0, (x:Int) => x, (x:Int, y:Int) => math.max(x,y), null)
   def mini(a:IMat):IMat = a.iiReduceOp(0, (x:Int) => x, (x:Int, y:Int) => math.min(x,y), null)
+  def maxi2(a:IMat,d:Int):(IMat,IMat) = {val (m,ii)=a.ggOpt2(d,(x:Int,y:Int)=>(x>y)); (IMat(m), ii)}
+  def mini2(a:IMat,d:Int):(IMat,IMat) = {val (m,ii)=a.ggOpt2(d,(x:Int,y:Int)=>(x<y)); (IMat(m), ii)}
+  def maxi2(a:IMat):(IMat,IMat) = {val (m,ii)=a.ggOpt2(0,(x:Int,y:Int)=>(x>y)); (IMat(m), ii)}
+  def mini2(a:IMat):(IMat,IMat) = {val (m,ii)=a.ggOpt2(0,(x:Int,y:Int)=>(x<y)); (IMat(m), ii)}
   
   def min (a:IMat, b:IMat, out:Mat) = a.iiMatOp(b, (x:Int, y:Int) => math.min(x,y), out)
   def max (a:IMat, b:IMat, out:Mat) = a.iiMatOp(b, (x:Int, y:Int) => math.max(x,y), out)

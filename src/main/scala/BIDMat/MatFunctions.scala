@@ -633,10 +633,10 @@ object MatFunctions {
   def mkdiag(a:IMat) = IMat(a.mkdiag)
   def mkdiag(a:CMat) = CMat(a.mkdiag)
 
-  def getdiag(a:DMat) = DMat(a.mkdiag)
-  def getdiag(a:FMat) = FMat(a.mkdiag)
-  def getdiag(a:IMat) = IMat(a.mkdiag)
-  def getdiag(a:CMat) = CMat(a.mkdiag)  
+  def getdiag(a:DMat) = DMat(a.getdiag)
+  def getdiag(a:FMat) = FMat(a.getdiag)
+  def getdiag(a:IMat) = IMat(a.getdiag)
+  def getdiag(a:CMat) = CMat(a.getdiag)  
 
   def load[T](fname:String, vname:String):T = MatHDF5.hload(fname, vname).asInstanceOf[T]
 
