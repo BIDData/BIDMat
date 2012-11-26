@@ -1151,8 +1151,8 @@ object DenseMat {
     }
   }
   
-   def sort2[T](a:DenseMat[T], asc:Boolean)
-  (implicit ordering:Ordering[T], classManifest:ClassManifest[T]): (DenseMat[T], IMat) = 
+   def sort2[@specialized(Double, Float, Int, Byte) T](a:DenseMat[T], asc:Boolean)
+  (implicit classManifest:ClassManifest[T], ord:Ordering[T]): (DenseMat[T], IMat) = 
     if (a.nrows == 1) {
       sort2(a, 2, asc)
     } else {
@@ -1160,26 +1160,10 @@ object DenseMat {
     }
 
   def sort2[@specialized(Double, Float, Int, Byte) T](a:DenseMat[T], ik:Int, asc:Boolean)
-  (implicit classManifest:ClassManifest[T], ordering:Ordering[T]):(DenseMat[T], IMat) = {
+  (implicit classManifest:ClassManifest[T], ord:Ordering[T]):(DenseMat[T], IMat) = {
     import BIDMat.Sorting._
     val out = new DenseMat[T](a.nrows, a.ncols)
     val iout = IMat(a.nrows, a.ncols)
-    def comp(dd:Array[T])(i:Int, j:Int) = {
-      val c0 = ordering.compare(dd(i), dd(j))
-      if (c0 != 0) {
-        c0
-      } else {
-        i compare j
-      }      
-    }
-    def swap(dd:Array[T], ii:Array[Int])(i:Int, j:Int) = {
-      val tmp = dd(i)
-      dd(i) = dd(j)
-      dd(j) = tmp
-      val tmpi = ii(i)
-      ii(i) = ii(j)
-      ii(j) = tmpi
-    }
     if (ik == 1) {
       var i = 0
       while (i < a.ncols) {
@@ -1193,13 +1177,13 @@ object DenseMat {
       }
       i = 0
       while (i < a.ncols) {
-        if (asc) {
-          quickSort(comp(out.data), swap(out.data, iout.data), i*a.nrows, a.nrows)
-        } else {
-          quickSort((p:Int, q:Int) => comp(out.data)(q,p), swap(out.data, iout.data), i*a.nrows, a.nrows)       
-        }
-        i += 1
-      }     
+      	if (asc) {
+      		quickSort2(out.data, iout.data, i*a.nrows, (i+1)*a.nrows, 1)
+      	} else {
+      		quickSort2(out.data, iout.data, (i+1)*a.nrows-1, i*a.nrows-1, -1)       
+      	}
+      	i += 1
+      } 
       (out, iout)
     } else {
       val vcols = new Array[T](a.ncols)
@@ -1213,9 +1197,9 @@ object DenseMat {
           j += 1
         }
         if (asc) {
-          quickSort(comp(vcols), swap(vcols, icols), 0, icols.length)
+          quickSort2(vcols, icols, 0, icols.length, 1)
         } else {
-          quickSort((p:Int, q:Int) => comp(vcols)(q,p), swap(vcols, icols), 0, icols.length)      
+          quickSort2(vcols, icols, icols.length-1, -1, -1)      
         }
         j = 0
         while (j < a.ncols) {
@@ -1269,7 +1253,7 @@ object DenseMat {
   }
   
   def unique2[@specialized(Double, Float, Int) T](a:DenseMat[T])
-  (implicit manifest:Manifest[T], ordering:Ordering[T], numeric:Numeric[T]):(IMat, IMat) = {
+  (implicit manifest:Manifest[T], numeric:Numeric[T],  ord:Ordering[T]):(IMat, IMat) = {
     val (vss, iss) = sort2(a, true)  
     val iptrs = IMat(a.length,1)
     var lastpos = 0

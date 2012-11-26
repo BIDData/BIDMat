@@ -5,6 +5,121 @@ import scala.math.Ordering
 
 object Sorting {
   
+  def quickSort2[@specialized(Double,Float,Int,Byte) T](a:Array[T], ii:Array[Int], lo:Int, hi:Int, stride:Int)
+  (implicit ord:Ordering[T]):Unit = {
+    if ((hi - lo)/stride > 0) {
+    	if ((hi - lo)/stride <= 10) {
+    		isort(a, ii, lo, hi, stride)
+    	} else {
+    		val ip = partition(a, ii, lo, hi, stride)
+//    		println("part %d, %f" format ((hi - lo) , 1.0f * (ip - lo) / (hi - lo)))
+    		quickSort2(a, ii, lo, ip, stride)
+    		quickSort2(a, ii, ip, hi, stride)
+    	}
+    }
+  }
+  
+  def isort[@specialized(Double,Float,Int,Byte) T](a:Array[T], ii:Array[Int], lo:Int, hi:Int, stride:Int)
+  (implicit ord:Ordering[T]):Unit = {
+    var i = lo
+    while (i != hi) {
+      var j = i+stride
+      var imin = i
+      var vmin = a(i)
+      while (j != hi) {
+        if (ord.lteq(a(j), vmin) && (ord.lt(a(j), vmin) || ii(j) < ii(imin))) {
+          vmin = a(j)
+          imin = j
+        }
+        j += stride
+      }
+      a(imin) = a(i)
+      a(i) = vmin
+      val itmp = ii(imin)
+      ii(imin) = ii(i)
+      ii(i) = itmp
+      i += stride
+    }
+  }
+  
+  def med3[@specialized(Double,Float,Int,Byte) T](a:Array[T], ii:Array[Int], lo:Int, hi:Int, stride:Int)
+  (implicit ord:Ordering[T]):Int = {
+    val nv = (hi - lo)/stride
+    val i1 = lo + stride*(math.floor(nv*java.lang.Math.random()).asInstanceOf[Int])
+    val i2 = lo + stride*(math.floor(nv*java.lang.Math.random()).asInstanceOf[Int])
+    val i3 = lo + stride*(math.floor(nv*java.lang.Math.random()).asInstanceOf[Int])
+    val v1 = a(i1)
+    val v2 = a(i2)
+    val v3 = a(i3)
+    val ii1 = ii(i1)
+    val ii2 = ii(i2)
+    val ii3 = ii(i3)
+    if (ord.gteq(v2,v1) && (ord.gt(v2,v1) || ii2 > ii1)) {
+    	if (ord.gteq(v3, v2) && (ord.gt(v3,v2) || ii3 > ii2)) i2 else {
+    		if (ord.gteq(v3, v1) && (ord.gt(v3,v1) || ii3 > ii1)) i3 else i1
+    	}
+    } else {
+    	if (ord.gteq(v3, v1) && (ord.gt(v3,v1) || ii3 > ii1)) i1 else {
+    		if (ord.gteq(v3, v2) && (ord.gt(v3,v2) || ii3 > ii2)) i3 else i2
+    	}
+    }
+  }
+  
+  def med9[@specialized(Double,Float,Int,Byte) T](a:Array[T], ii:Array[Int], lo:Int, hi:Int, stride:Int)
+  (implicit ord:Ordering[T]):Int = {
+    val i1 = med3(a, ii, lo, hi, stride)
+    val i2 = med3(a, ii, lo, hi, stride)
+    val i3 = med3(a, ii, lo, hi, stride)
+    val v1 = a(i1)
+    val v2 = a(i2)
+    val v3 = a(i3)
+    val ii1 = ii(i1)
+    val ii2 = ii(i2)
+    val ii3 = ii(i3)
+    if (ord.gteq(v2,v1) && (ord.gt(v2,v1) || ii2 > ii1)) {
+    	if (ord.gteq(v3, v2) && (ord.gt(v3,v2) || ii3 > ii2)) i2 else {
+    		if (ord.gteq(v3, v1) && (ord.gt(v3,v1) || ii3 > ii1)) i3 else i1
+    	}
+    } else {
+    	if (ord.gteq(v3, v1) && (ord.gt(v3,v1) || ii3 > ii1)) i1 else {
+    		if (ord.gteq(v3, v2) && (ord.gt(v3,v2) || ii3 > ii2)) i3 else i2
+    	}
+    }
+  }
+  
+   def partition[@specialized(Double,Float,Int,Byte) T](a:Array[T], ii:Array[Int], lo:Int, hi:Int, stride:Int)
+   (implicit ord:Ordering[T]):Int = {
+      val sstride = math.signum(stride)
+  		val im = if ((hi - lo)/stride > 100) {
+  			med9(a, ii, lo, hi, stride)	  
+  		} else {
+  		  med3(a, ii, lo, hi, stride)
+  		}
+  		var v = a(im)
+  		var iv = ii(im)
+//  		println("med %d, %d, %d" format (im, lo, hi))
+  		var done = false
+  		var i = lo - stride
+  		var j = hi 
+  		while (! done) { 
+  			i += stride
+  			j -= stride
+  			while ((hi-i)*sstride > sstride*stride && (ord.lteq(a(i), v) && (ord.lt(a(i), v) || ii(i) <= iv))) {i += stride}
+  			while ((j-lo)*sstride > 0              && (ord.gteq(a(j), v) && (ord.gt(a(j), v) || ii(j) > iv))) {j -= stride}
+  			if ((i - j)*sstride >= 0) {
+  				done = true
+  			} else {
+  				val atmp = a(i)
+  				a(i) = a(j)
+  				a(j) = atmp
+  				val itmp = ii(i)
+  				ii(i) = ii(j)
+  				ii(j) = itmp
+  			}
+  		}
+  		j + stride
+   }
+  
   def quickSort[@specialized(Double, Float, Int, Byte) T](a:Array[T])(implicit ord:Ordering[T]) = { 
     def comp(i:Int, j:Int):Int = {
       ord.compare(a(i),a(j))
@@ -119,5 +234,15 @@ object Sorting {
       }
     }
     sort2(off, len)
+  }
+  
+  def main(args:Array[String]) = {
+    import BIDMat.SciFunctions._
+    import BIDMat.MatFunctions._
+    val n = args(0).toInt
+    val a = SciFunctions.rand(n, 1)
+    val ii = MatFunctions.icol(0->n)
+    quickSort2(a.data, ii.data, 0, n, 1)
+    println("check %d" format find(a(1->n,0) < a(0->(n-1),0)).length)
   }
 }
