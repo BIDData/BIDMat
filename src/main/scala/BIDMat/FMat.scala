@@ -399,33 +399,33 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
    * Basic operators on pairs of FMats. These are the compute routines.
    */
   def xG (b :FMat) = GPUmult(b, null)
-  def +  (b : FMat) = ffMatOpv(b, DenseMat.vecAdd _, null)
-  def -  (b : FMat) = ffMatOpv(b, DenseMat.vecSub _, null)
+  def +  (b : FMat) = ffMatOpv(b, FMat.vecAdd _, null)
+  def -  (b : FMat) = ffMatOpv(b, FMat.vecSub _, null)
   def *  (b : FMat) = fDMult(b, null)
   def *  (b : SMat) = fSMult(b, null)
   def xT  (b : SMat) = multT(b, null)
   def xT  (b : FMat) = multT(b, null)
   def /  (b : FMat) = solvel(b)
   def \\ (b : FMat) = solver(b)
-  def *@ (b : FMat) = ffMatOpv(b, DenseMat.vecMul _, null)
+  def *@ (b : FMat) = ffMatOpv(b, FMat.vecMul _, null)
   def /@ (b : FMat) = ffMatOpv(b, FMat.fVecDiv _, null)
 
   override def *  (b : Float) = fDMult(FMat.felem(b), null)
-  override def +  (b : Float) = ffMatOpScalarv(b, DenseMat.vecAdd _, null)
-  override def -  (b : Float) = ffMatOpScalarv(b, DenseMat.vecSub _, null)
-  override def *@ (b : Float) = ffMatOpScalarv(b, DenseMat.vecMul _, null)
+  override def +  (b : Float) = ffMatOpScalarv(b, FMat.vecAdd _, null)
+  override def -  (b : Float) = ffMatOpScalarv(b, FMat.vecSub _, null)
+  override def *@ (b : Float) = ffMatOpScalarv(b, FMat.vecMul _, null)
   override def /@ (b : Float) = ffMatOpScalarv(b, FMat.fVecDiv _, null)
 
   override def *  (b : Int) = fDMult(FMat.felem(b), null)
-  override def +  (b : Int) = ffMatOpScalarv(b, DenseMat.vecAdd _, null)
-  override def -  (b : Int) = ffMatOpScalarv(b, DenseMat.vecSub _, null)
-  override def *@ (b : Int) = ffMatOpScalarv(b, DenseMat.vecMul _, null)
+  override def +  (b : Int) = ffMatOpScalarv(b, FMat.vecAdd _, null)
+  override def -  (b : Int) = ffMatOpScalarv(b, FMat.vecSub _, null)
+  override def *@ (b : Int) = ffMatOpScalarv(b, FMat.vecMul _, null)
   override def /@ (b : Int) = ffMatOpScalarv(b, FMat.fVecDiv _, null)
 
   override def *  (b : Double) = fDMult(FMat.felem(b.asInstanceOf[Float]), null)
-  override def +  (b : Double) = ffMatOpScalarv(b.asInstanceOf[Float], DenseMat.vecAdd _, null)
-  override def -  (b : Double) = ffMatOpScalarv(b.asInstanceOf[Float], DenseMat.vecSub _, null)
-  override def *@ (b : Double) = ffMatOpScalarv(b.asInstanceOf[Float], DenseMat.vecMul _, null)
+  override def +  (b : Double) = ffMatOpScalarv(b.asInstanceOf[Float], FMat.vecAdd _, null)
+  override def -  (b : Double) = ffMatOpScalarv(b.asInstanceOf[Float], FMat.vecSub _, null)
+  override def *@ (b : Double) = ffMatOpScalarv(b.asInstanceOf[Float], FMat.vecMul _, null)
   override def /@ (b : Double) = ffMatOpScalarv(b.asInstanceOf[Float], FMat.fVecDiv _, null)
 
   def >   (b : FMat) = ffMatOp(b, (x:Float, y:Float) => if (x > y) 1f else 0f, null)
@@ -560,9 +560,9 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   def * (b : SMat) = mat.fSMult(b, omat) 
   def xT  (b : SMat) = mat.multT(b, omat)
   def xT  (b : FMat) = mat.multT(b, omat)
-  def + (b : FMat) = mat.ffMatOpv(b, DenseMat.vecAdd _, omat)
-  def - (b : FMat) = mat.ffMatOpv(b, DenseMat.vecSub _, omat)
-  def *@ (b : FMat) = mat.ffMatOpv(b, DenseMat.vecMul _, omat)
+  def + (b : FMat) = mat.ffMatOpv(b, FMat.vecAdd _, omat)
+  def - (b : FMat) = mat.ffMatOpv(b, FMat.vecSub _, omat)
+  def *@ (b : FMat) = mat.ffMatOpv(b, FMat.vecMul _, omat)
   def /@ (b : FMat) = mat.ffMatOpv(b, FMat.fVecDiv _, omat)  
   def ^ (b : FMat) = mat.ffMatOp(b, (x:Float, y:Float) => math.pow(x,y).toFloat, omat)  
 
@@ -576,9 +576,9 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   
   override def * (b : Float) = mat.fDMult(FMat.felem(b), omat)
   override def * (b : Double) = mat.fDMult(FMat.felem(b.asInstanceOf[Float]), omat)
-  override def + (b : Float) = mat.ffMatOpScalarv(b, DenseMat.vecAdd _, omat)
-  override def - (b : Float) = mat.ffMatOpScalarv(b, DenseMat.vecSub _, omat)
-  override def *@ (b : Float) = mat.ffMatOpScalarv(b, DenseMat.vecMul _, omat)
+  override def + (b : Float) = mat.ffMatOpScalarv(b, FMat.vecAdd _, omat)
+  override def - (b : Float) = mat.ffMatOpScalarv(b, FMat.vecSub _, omat)
+  override def *@ (b : Float) = mat.ffMatOpScalarv(b, FMat.vecMul _, omat)
   override def /@ (b : Float) = mat.ffMatOpScalarv(b, FMat.fVecDiv _, omat)
   override def ^ (b : Float) = mat.ffMatOpScalar(b, (x:Float, y:Float) => math.pow(x,y).toFloat, omat)
 
@@ -590,9 +590,9 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   override def != (b : Float) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x != y) 1.0f else 0.0f, omat)  
     
   override def * (b : Int) = mat.fDMult(FMat.felem(b), omat)
-  override def + (b : Int) = mat.ffMatOpScalarv(b, DenseMat.vecAdd _, omat)
-  override def - (b : Int) = mat.ffMatOpScalarv(b, DenseMat.vecSub _, omat)
-  override def *@ (b : Int) = mat.ffMatOpScalarv(b, DenseMat.vecMul _, omat)
+  override def + (b : Int) = mat.ffMatOpScalarv(b, FMat.vecAdd _, omat)
+  override def - (b : Int) = mat.ffMatOpScalarv(b, FMat.vecSub _, omat)
+  override def *@ (b : Int) = mat.ffMatOpScalarv(b, FMat.vecMul _, omat)
   override def /@ (b : Int) = mat.ffMatOpScalarv(b, FMat.fVecDiv _, omat)
   override def ^ (b : Int) = mat.ffMatOpScalar(b, (x:Float, y:Float) => math.pow(x,y).toFloat, omat)
 
@@ -652,6 +652,46 @@ object FMat {
       case _ => throw new RuntimeException("Unsupported source type")
     }
     out
+  }
+  
+  def vecAdd(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = a(ai) + b(bi);  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+  
+  def vecSub(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = a(ai) - b(bi);  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+  
+  def vecMul(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = a(ai) * b(bi);  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+  
+  def vecMax(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = math.max(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+  
+ def vecMin(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = math.min(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
   }
 
   def felem(x:Float) = {

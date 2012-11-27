@@ -917,51 +917,6 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
 
 object DenseMat {
   
-  def vecAdd[@specialized(Double, Float, Int, Byte) T](a:Array[T], a0:Int, ainc:Int, b:Array[T], b0:Int, binc:Int, c:Array[T], c0:Int, cinc:Int, n:Int)
-  (implicit numeric:Numeric[T]):T = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
-    while (ci < cend) {
-      c(ci) = numeric.plus(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc
-    }
-    numeric.zero
-  }
-  
-  def vecSub[@specialized(Double, Float, Int, Byte) T](a:Array[T], a0:Int, ainc:Int, b:Array[T], b0:Int, binc:Int, c:Array[T], c0:Int, cinc:Int, n:Int)
-  (implicit numeric:Numeric[T]):T = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
-    while (ci < cend) {
-      c(ci) = numeric.minus(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc
-    }
-    numeric.zero
-  }
-  
-  def vecMul[@specialized(Double, Float, Int, Byte) T](a:Array[T], a0:Int, ainc:Int, b:Array[T], b0:Int, binc:Int, c:Array[T], c0:Int, cinc:Int, n:Int)
-  (implicit numeric:Numeric[T]):T = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
-    while (ci < cend) {
-      c(ci) = numeric.times(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc
-    }
-    numeric.zero
-  }
-  
-  def vecMax[@specialized(Double, Float, Int, Byte) T](a:Array[T], a0:Int, ainc:Int, b:Array[T], b0:Int, binc:Int, c:Array[T], c0:Int, cinc:Int, n:Int)
-  (implicit numeric:Numeric[T]):T = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
-    while (ci < cend) {
-      c(ci) = numeric.max(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc
-    }
-    numeric.zero
-  }
-  
- def vecMin[@specialized(Double, Float, Int, Byte) T](a:Array[T], a0:Int, ainc:Int, b:Array[T], b0:Int, binc:Int, c:Array[T], c0:Int, cinc:Int, n:Int)
-  (implicit numeric:Numeric[T]):T = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
-    while (ci < cend) {
-      c(ci) = numeric.min(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc
-    }
-    numeric.zero
-  }
-  
   def vecCmp[@specialized(Double, Float, Int, Byte) T](xmap:Array[T])(a:Array[T], a0:Int, ainc:Int, b:Array[T], b0:Int, binc:Int, c:Array[T], c0:Int, cinc:Int, n:Int)
   (implicit numeric:Numeric[T]):T = {
     var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
