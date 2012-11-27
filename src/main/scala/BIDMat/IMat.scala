@@ -151,14 +151,14 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   override def dot(a:Mat):Double = super.dot(a.asInstanceOf[IMat])
 
   def *  (b : IMat) = iMult(b, null)	
-  def +  (b : IMat) = iiMatOpv(b, DenseMat.vecAdd _, null)
-  def -  (b : IMat) = iiMatOpv(b, DenseMat.vecSub _, null)
-  def *@ (b : IMat) = iiMatOpv(b, DenseMat.vecMul _, null)
+  def +  (b : IMat) = iiMatOpv(b, IMat.vecAdd _, null)
+  def -  (b : IMat) = iiMatOpv(b, IMat.vecSub _, null)
+  def *@ (b : IMat) = iiMatOpv(b, IMat.vecMul _, null)
   def /@ (b : IMat) = iiMatOpv(b, IMat.iVecDiv _, null)
   
-  override def +  (b : Int) = iiMatOpScalarv(b, DenseMat.vecAdd _, null)
-  override def -  (b : Int) = iiMatOpScalarv(b, DenseMat.vecSub _, null)
-  override def *@ (b : Int) = iiMatOpScalarv(b, DenseMat.vecMul _, null)
+  override def +  (b : Int) = iiMatOpScalarv(b, IMat.vecAdd _, null)
+  override def -  (b : Int) = iiMatOpScalarv(b, IMat.vecSub _, null)
+  override def *@ (b : Int) = iiMatOpScalarv(b, IMat.vecMul _, null)
   override def /@ (b : Int) = iiMatOpScalarv(b, IMat.iVecDiv _, null)
 
   def >   (b : IMat) = iiMatOp(b, (x:Int, y:Int) => if (x > y) 1 else 0, null)
@@ -288,9 +288,9 @@ class IPair(val omat:Mat, val mat:IMat) extends Pair {
   def * (b : IMat) = mat.iMult(b, omat) 
   def * (b : SMat) = mat.iMult(b, omat) 
 //  def xT  (b : SMat) = mat.multT(b, omat)
-  def + (b : IMat) = mat.iiMatOpv(b, DenseMat.vecAdd _, omat)
-  def - (b : IMat) = mat.iiMatOpv(b, DenseMat.vecSub _, omat)
-  def *@ (b : IMat) = mat.iiMatOpv(b, DenseMat.vecMul _, omat)
+  def + (b : IMat) = mat.iiMatOpv(b, IMat.vecAdd _, omat)
+  def - (b : IMat) = mat.iiMatOpv(b, IMat.vecSub _, omat)
+  def *@ (b : IMat) = mat.iiMatOpv(b, IMat.vecMul _, omat)
 //  def /@ (b : IMat) = mat.iiMatOpv(b, IMat.fVecDiv _, omat)  
 //  def ^ (b : IMat) = mat.iiMatOp(b, (x:Float, y:Float) => math.pow(x,y).toFloat, omat)  
 
@@ -304,9 +304,9 @@ class IPair(val omat:Mat, val mat:IMat) extends Pair {
   
    
   override def * (b : Int) = mat.iMult(IMat.ielem(b), omat)
-  override def + (b : Int) = mat.iiMatOpScalarv(b, DenseMat.vecAdd _, omat)
-  override def - (b : Int) = mat.iiMatOpScalarv(b, DenseMat.vecSub _, omat)
-  override def *@ (b : Int) = mat.iiMatOpScalarv(b, DenseMat.vecMul _, omat)
+  override def + (b : Int) = mat.iiMatOpScalarv(b, IMat.vecAdd _, omat)
+  override def - (b : Int) = mat.iiMatOpScalarv(b, IMat.vecSub _, omat)
+  override def *@ (b : Int) = mat.iiMatOpScalarv(b, IMat.vecMul _, omat)
 //  override def /@ (b : Int) = mat.iiMatOpScalarv(b, IMat.fVecDiv _, omat)
 //  override def ^ (b : Int) = mat.iiMatOpScalar(b, (x:Float, y:Float) => math.pow(x,y).toFloat, omat)
 
@@ -363,6 +363,47 @@ object IMat {
     }
     out
   }
+       
+  def vecAdd(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = a(ai) + b(bi);  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+  
+  def vecSub(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = a(ai) - b(bi);  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+  
+  def vecMul(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = a(ai) * b(bi);  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+  
+  def vecMax(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = math.max(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+  
+ def vecMin(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = math.min(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+
   
   def ielem(x:Int) = {
     val out = IMat(1,1)

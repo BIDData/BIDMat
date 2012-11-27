@@ -373,9 +373,9 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   def \\ (b : DMat) = solver(b)
   def ^  (b : DMat) = ddMatOp(b, (x:Double, y:Double) => math.pow(x,y), null)
 
-  def +  (b : DMat) = ddMatOpv(b, DenseMat.vecAdd[Double] _, null)
-  def -  (b : DMat) = ddMatOpv(b, DenseMat.vecSub[Double] _, null)
-  def *@ (b : DMat) = ddMatOpv(b, DenseMat.vecMul[Double] _, null)
+  def +  (b : DMat) = ddMatOpv(b, DMat.vecAdd _, null)
+  def -  (b : DMat) = ddMatOpv(b, DMat.vecSub _, null)
+  def *@ (b : DMat) = ddMatOpv(b, DMat.vecMul _, null)
   def /@ (b : DMat) = ddMatOpv(b, DMat.dVecDiv _, null)
 
   def >   (b : DMat) = ddMatOp(b, (x:Double, y:Double) => if (x > y) 1.0 else 0.0, null)
@@ -387,9 +387,9 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   def !=  (b : DMat) = ddMatOp(b, (x:Double, y:Double) => if (x != y) 1.0 else 0.0, null)
 
   override def *  (b : Double) = fDMult(DMat.elem(b), null)
-  override def +  (b : Double) = ddMatOpScalarv(b, DenseMat.vecAdd[Double] _, null)
-  override def -  (b : Double) = ddMatOpScalarv(b, DenseMat.vecSub[Double] _, null)
-  override def *@ (b : Double) = ddMatOpScalarv(b, DenseMat.vecMul[Double] _, null)
+  override def +  (b : Double) = ddMatOpScalarv(b, DMat.vecAdd _, null)
+  override def -  (b : Double) = ddMatOpScalarv(b, DMat.vecSub _, null)
+  override def *@ (b : Double) = ddMatOpScalarv(b, DMat.vecMul _, null)
   override def /@ (b : Double) = ddMatOpScalarv(b, DMat.dVecDiv _, null)
   override def ^  (b : Double) = ddMatOpScalar(b, (x:Double, y:Double) => math.pow(x,y), null)
 
@@ -401,9 +401,9 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   override def !=  (b : Double) = ddMatOpScalar(b, (x:Double, y:Double) => if (x != y) 1.0 else 0.0, null) 
   
   override def *  (b : Float) = fDMult(DMat.elem(b), null)
-  override def +  (b : Float) = ddMatOpScalarv(b, DenseMat.vecAdd[Double] _, null)
-  override def -  (b : Float) = ddMatOpScalarv(b, DenseMat.vecSub[Double] _, null)
-  override def *@ (b : Float) = ddMatOpScalarv(b, DenseMat.vecMul[Double] _, null)
+  override def +  (b : Float) = ddMatOpScalarv(b, DMat.vecAdd _, null)
+  override def -  (b : Float) = ddMatOpScalarv(b, DMat.vecSub _, null)
+  override def *@ (b : Float) = ddMatOpScalarv(b, DMat.vecMul _, null)
   override def /@ (b : Float) = ddMatOpScalarv(b, DMat.dVecDiv _, null)
   override def ^  (b : Float) = ddMatOpScalar(b, (x:Double, y:Double) => math.pow(x,y), null)
 
@@ -519,9 +519,9 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   def * (b : DMat) = mat.fDMult(b, omat) 
   def * (b : SDMat) = mat.fSMult(b, omat)
   def xT (b : SDMat) = mat.multT(b, omat)
-  def + (b : DMat) = mat.ddMatOpv(b, DenseMat.vecAdd[Double] _, omat)
-  def - (b : DMat) = mat.ddMatOpv(b, DenseMat.vecSub[Double] _, omat)
-  def *@ (b : DMat) = mat.ddMatOpv(b, DenseMat.vecMul[Double] _, omat)
+  def + (b : DMat) = mat.ddMatOpv(b, DMat.vecAdd _, omat)
+  def - (b : DMat) = mat.ddMatOpv(b, DMat.vecSub _, omat)
+  def *@ (b : DMat) = mat.ddMatOpv(b, DMat.vecMul _, omat)
   def /@ (b : DMat) = mat.ddMatOpv(b, DMat.dVecDiv _, omat)
   def ^ (b : DMat) = mat.ddMatOp(b, (x:Double, y:Double) => math.pow(x,y), null)
 
@@ -535,9 +535,9 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
 
   override def * (b : Double) = mat.fDMult(DMat.elem(b), omat) 
   override def * (b : Float) = mat.fDMult(DMat.elem(b), omat)
-  override def + (b : Double) = mat.ddMatOpScalarv(b, DenseMat.vecAdd[Double] _, omat)
-  override def - (b : Double) = mat.ddMatOpScalarv(b, DenseMat.vecSub _, omat)
-  override def *@ (b : Double) = mat.ddMatOpScalarv(b, DenseMat.vecMul _, omat)
+  override def + (b : Double) = mat.ddMatOpScalarv(b, DMat.vecAdd _, omat)
+  override def - (b : Double) = mat.ddMatOpScalarv(b, DMat.vecSub _, omat)
+  override def *@ (b : Double) = mat.ddMatOpScalarv(b, DMat.vecMul _, omat)
   override def /@ (b : Double) = mat.ddMatOpScalarv(b, DMat.dVecDiv _, omat)  
   override def ^ (b : Double) = mat.ddMatOpScalar(b, (x:Double, y:Double) => math.pow(x,y), omat)
 
@@ -610,6 +610,48 @@ object DMat {
     }
     out
   }
+  
+    
+  def vecAdd(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = a(ai) + b(bi);  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+  
+  def vecSub(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = a(ai) - b(bi);  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+  
+  def vecMul(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = a(ai) * b(bi);  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+  
+  def vecMax(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = math.max(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+  
+ def vecMin(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = math.min(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+
 
   def elem(x:Double) = {
     val out = DMat(1,1)
