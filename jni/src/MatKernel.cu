@@ -607,6 +607,69 @@ int reduce2op(int nrows, int ncols, float *A, float *B, int opn) {
   return err;
 }
 
+#define STBLOCK 32
+
+__global__ void __stratify(float *strata, int n, float *a, float *b, unsigned int *bi, int stride) {
+  __shared__ float ss[STBLOCK];
+  __shared__ unsigned int ibin[STBLOCK];
+  __shared__ unsigned int ebin[STBLOCK];
+  __shared__ unsigned int todo[STBLOCK];
+  __shared__ float bins[STBLOCK][STBLOCK+32];
+
+  int tid = threadIdx.x;
+  ss[tid] = strata[tid];
+  ibin[tid] = 0;
+
+  __syncthreads();
+
+  for (int i = 0; i < n; i += blockDim.x * gridDim.x) {
+    int ii = i + tid + blockDim.x * blockIdx.x;
+    if (ii < n) {
+      float v = a[ii];
+      int j = 1;
+      j = (v > ss[j-1]) ? 2*j+1 : 2*j;
+      j = (v > ss[j-1]) ? 2*j+1 : 2*j;
+      j = (v > ss[j-1]) ? 2*j+1 : 2*j;
+      j = (v > ss[j-1]) ? 2*j+1 : 2*j;
+      j = (v > ss[j-1]) ? 2*j+1 : 2*j;
+      //      j = (v > ss[j-1]) ? 2*j+1 : 2*j;
+      j = j - STBLOCK;
+      int k = atomicInc(&ibin[j], 256);
+      bins[j][k] = v;
+    }
+    __syncthreads();
+
+    todo[tid] = 32*(ibin[tid]/32);
+    if (todo[tid] > 0) {
+      ebin[tid] = atomicAdd(&bi[tid], todo[tid]);
+      ibin[tid] = ibin[tid] - todo[tid];
+    }
+    __syncthreads();
+
+    for (int j = 0; j < STBLOCK; j++) {
+      if (tid < todo[j]) {
+        b[j*stride + ebin[j] + tid] = bins[j][ibin[j] + tid];
+      } 
+    }
+  }
+  __syncthreads();
+
+  ebin[tid] = atomicAdd(&bi[tid], ibin[tid]);
+  __syncthreads();
+
+  for (int j = 0; j < STBLOCK; j++) {
+    if (tid < ibin[j]) {
+      b[j*stride + ebin[j] + tid] = bins[j][tid];
+    }
+  }
+}
+
+int stratify(float *strata, int n, float *a, float *b, unsigned int *bi, int stride) {
+  __stratify<<<40,STBLOCK>>>(strata, n, a, b, bi, stride);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
 
 #ifdef TEST
 int main(int argc, char **argv) {
