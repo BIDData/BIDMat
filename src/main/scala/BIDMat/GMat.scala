@@ -4,6 +4,7 @@ import jcuda.jcublas._
 import jcuda.jcublas.JCublas._
 import jcuda.runtime.JCuda._
 import jcuda.runtime._
+import jcuda.runtime.cudaMemcpyKind._
 import scala.actors.Actor._
 import edu.berkeley.bid.CUMAT
 
@@ -478,48 +479,76 @@ object GMat {
   	if (a.ncols != b.nrows) {
   		throw new RuntimeException("dimensions mismatch in xG")
   	} else {
-  		val out = FMat.newOrCheckFMat(a.nrows, b.ncols, omat)
-  		val nthreads = Mat.hasCUDA
-  	  val done = IMat(nthreads,1)
-  	  val nncols = b.ncols/nthreads
-  		for (i <- 0 until nthreads) {
-  			actor {
-  				if (SciFunctions.device(i) == 0) {
-  					val aa = new Pointer
-  					var status = cublasAlloc(a.nrows*a.ncols, Sizeof.FLOAT, aa)
-  					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
-  					val bb = new Pointer
-  					status = cublasAlloc(b.nrows*nncols, Sizeof.FLOAT, bb)
-  					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
-  					val cc = new Pointer
-  					status = cublasAlloc(a.nrows*nncols, Sizeof.FLOAT, cc)
-  					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
-  					status = cublasSetVector(a.nrows*a.ncols, Sizeof.FLOAT, Pointer.to(a.data), 1, aa, 1)
-  					cudaDeviceSynchronize
-  					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA copy a failed "+status)
-  					status = cublasSetVector(b.nrows*nncols, Sizeof.FLOAT, Pointer.to(b.data).withByteOffset(Sizeof.FLOAT*i*b.nrows*nncols), 1, bb, 1) 
-  					cudaDeviceSynchronize
-  					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA copy b failed "+status)
-  					cublasSgemm('n', 'n', a.nrows, nncols, a.ncols, 1.0f, aa, a.nrows, bb, b.nrows, 0f, cc, a.nrows)
-  					cudaDeviceSynchronize
-  					val err = cublasGetError
-  					if (err != 0) throw new RuntimeException("Cublas error in xG, sgemm "+err)
-  					status = cublasGetVector(a.nrows*nncols, Sizeof.FLOAT, cc, 1, Pointer.to(out.data).withByteOffset(Sizeof.FLOAT*i*a.nrows*nncols), 1) 
-  					cudaDeviceSynchronize
-  					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA copy c failed "+status)
-  					cublasFree(cc)
-  					cublasFree(bb)
-  					cublasFree(aa)
-  				} else {
-  				  done(i) = 1
-  				  throw new RuntimeException("Couldnt set device "+i)
-  				}
-  				done(i) = 1
-  			}
-  		}
-  	  while (SciFunctions.sum(done,1).dv < nthreads) {Thread.`yield`};
+  	  val maxrows = 8192
+  	  val maxcols = 8192
+  		val c = FMat.newOrCheckFMat(a.nrows, b.ncols, omat)
+  	  val rblkk = if (Mat.hasCUDA > 1) 2 else 1
+  	  val cblkk = if (Mat.hasCUDA > 3) 2 else 1
+  	  val rblk = rblkk*(math.max(1, math.ceil(c.nrows/maxrows/rblkk).toInt))
+  	  val cblk = cblkk*(math.max(1, math.ceil(c.ncols/maxcols/cblkk).toInt))
+  	  val kblk = math.max(1, math.ceil(a.ncols/maxcols).toInt)
+  	  val gcrows = 32*(c.nrows/rblk/32)
+  	  val gccols = 32*(c.ncols/cblk/32)
+  	  val garows = gcrows
+  	  val gacols = 32*(a.ncols/kblk/32)
+  	  val gbrows = gacols
+  	  val gbcols = gccols
+  	  
+  	  val done = IMat(rblkk*cblkk,1)
+  	  for (ix <- 0 until rblkk) {
+  	    for (iy <- 0 until cblkk) {
+  	    	actor {
+  	    		SciFunctions.device(ix+iy*2)
+  	    		val aa = new Pointer
+  	    		val bb = new Pointer
+  	    		val cc = new Pointer
+  	    		var status = cublasAlloc(garows*gacols, Sizeof.FLOAT, aa)
+  	    		if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
+  	    		status = cublasAlloc(gbrows*gbcols, Sizeof.FLOAT, bb)
+  	    		if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
+  	    		status = cublasAlloc(gcrows*gccols, Sizeof.FLOAT, cc)
+  	    		if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
+
+  	    		var i = ix*gcrows; while (i < c.nrows) {
+  	    			val ni = math.min(gcrows, c.nrows - i)
+  	    			var j = iy*gccols; while (j < c.ncols) {
+  	    				val nj = math.min(gccols, c.ncols - j)
+  	    				var k = 0; while (k < a.ncols) {
+  	    					val nk = math.min(gacols, a.ncols - k)
+  	    					status = cudaMemcpy2D(aa, garows*Sizeof.FLOAT, Pointer.to(a.data).withByteOffset((i+k*a.nrows)*Sizeof.FLOAT), 
+  	    							a.nrows*Sizeof.FLOAT, ni*Sizeof.FLOAT, nk, cudaMemcpyHostToDevice)
+  	    					cudaDeviceSynchronize  	  
+  	    					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA copy a failed "+status)
+  	    					status = cudaMemcpy2D(bb, gbrows*Sizeof.FLOAT, Pointer.to(b.data).withByteOffset((k+j*b.nrows)*Sizeof.FLOAT), 
+  	    							b.nrows*Sizeof.FLOAT, nk*Sizeof.FLOAT, nj, cudaMemcpyHostToDevice) 
+  	    					cudaDeviceSynchronize
+  	    					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA copy b failed "+status)
+
+  	    					cublasSgemm('n', 'n', ni, nj, nk, 1.0f, aa, garows, bb, gbrows, if (k==0) 0f else 1f, cc, gcrows)
+  	    					cudaDeviceSynchronize
+  	    					val err = cublasGetError
+  	    					if (err != 0) throw new RuntimeException("Cublas error in xG, sgemm "+err)
+  	    					k += gacols
+  	    				}
+  	    				status = cudaMemcpy2D(Pointer.to(c.data).withByteOffset((i+j*a.nrows)*Sizeof.FLOAT), c.nrows*Sizeof.FLOAT, cc, gcrows*Sizeof.FLOAT, gcrows*Sizeof.FLOAT, gccols, cudaMemcpyDeviceToHost) 
+  	    				cudaDeviceSynchronize
+  	    				if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA copy c failed "+status)
+  	    				j += cblkk*gccols
+  	    			}
+  	    			i += rblkk*gcrows
+  	    		}
+
+  	    		cublasFree(cc)
+  	    		cublasFree(bb)
+  	    		cublasFree(aa)
+  	    		done(ix*2*iy,0) = 1
+  	      }
+  	    }
+  	  }
+  	  while (SciFunctions.mini(done).v == 0) {Thread.`yield`}
+
   	  Mat.nflops += 2L * a.nrows * a.ncols * b.ncols
-  		out
+  		c
   	}
 
   def newOrCheckGMat(nr:Int, nc:Int, outmat:Mat):GMat = {
