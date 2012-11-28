@@ -530,7 +530,7 @@ object GMat {
   	    					if (err != 0) throw new RuntimeException("Cublas error in xG, sgemm "+err)
   	    					k += gacols
   	    				}
-  	    				status = cudaMemcpy2D(Pointer.to(c.data).withByteOffset((i+j*a.nrows)*Sizeof.FLOAT), c.nrows*Sizeof.FLOAT, cc, gcrows*Sizeof.FLOAT, gcrows*Sizeof.FLOAT, gccols, cudaMemcpyDeviceToHost) 
+  	    				status = cudaMemcpy2D(Pointer.to(c.data).withByteOffset((i+j*c.nrows)*Sizeof.FLOAT), c.nrows*Sizeof.FLOAT, cc, gcrows*Sizeof.FLOAT, ni*Sizeof.FLOAT, nj, cudaMemcpyDeviceToHost) 
   	    				cudaDeviceSynchronize
   	    				if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA copy c failed "+status)
   	    				j += cblkk*gccols
