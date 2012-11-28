@@ -541,7 +541,7 @@ object GMat {
   	    		cublasFree(cc)
   	    		cublasFree(bb)
   	    		cublasFree(aa)
-  	    		done(ix*2*iy,0) = 1
+  	    		done(ix+2*iy,0) = 1
   	      }
   	    }
   	  }
