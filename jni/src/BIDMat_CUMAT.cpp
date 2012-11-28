@@ -135,4 +135,15 @@ extern "C" {
     return transpose(A, instride, B, outstride, nrows, ncols);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_stratify
+  (JNIEnv *env, jobject obj, jobject jstrata, jint n, jobject ja, jobject jb, jobject jbi, jint stride) 
+  {
+    float *strata = (float*)getPointer(env, jstrata);
+    float *a = (float*)getPointer(env, ja);
+    float *b = (float*)getPointer(env, jb);
+    unsigned int *bi = (unsigned int*)getPointer(env, jbi);
+
+    return stratify(strata, n, a, b, bi, stride);
+  }
+
 }

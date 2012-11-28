@@ -18,3 +18,5 @@ int reduce1op(int nrows, int ncols, float *A, float *B, int opn);
 int reduce2op(int nrows, int ncols, float *A, float *B, int opn);
 
 int transpose(float *in, int instride, float *out, int outstride, int nrows, int ncols);
+
+int stratify(float *strata, int n, float *a, float *b, unsigned int *bi, int stride);

@@ -29,4 +29,7 @@ public final class CUMAT {
     public static native int dds(int nr, int nnz, Pointer A, Pointer B, Pointer Cir, Pointer Cic, Pointer P);
     
     public static native int transpose(Pointer A, int lda, Pointer B, int ldb, int nr, int nc);
+    
+    public static native int stratify(Pointer strata, int n, Pointer a,  Pointer b, Pointer bi, int stride);
+
 }
