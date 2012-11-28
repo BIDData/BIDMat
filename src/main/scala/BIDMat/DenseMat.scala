@@ -645,8 +645,8 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
         if (mylen > 100000 && Mat.numThreads > 1) {
         	val done = IMat(1, Mat.numThreads)
         	for (ithread<- 0 until Mat.numThreads) {
-        		val istart = ithread*mylen/Mat.numThreads
-        		val len = (ithread+1)*mylen/Mat.numThreads - istart
+        		val istart = (1L*ithread*mylen/Mat.numThreads).toInt
+        		val len = (1L*(ithread+1)*mylen/Mat.numThreads).toInt - istart
         		actor {
         			if (nrows==aa.nrows && ncols==aa.ncols) {
         				opv(data, istart, 1, aa.data, istart, 1, out.data, istart, 1, len)
