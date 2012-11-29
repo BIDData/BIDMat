@@ -475,13 +475,15 @@ object GMat {
     out    
   }
   
-  def GPUmult(a:FMat, b:FMat, omat:Mat):FMat = 
-  	if (a.ncols != b.nrows) {
+  def GPUmult(a:FMat, b:FMat, omat:Mat, btrans:Boolean):FMat = {
+    val bnrows = if (btrans) b.ncols else b.nrows
+    val bncols = if (btrans) b.nrows else b.ncols
+  	if (a.ncols != bnrows) {
   		throw new RuntimeException("dimensions mismatch in xG")
   	} else {
   	  val maxrows = 8192
   	  val maxcols = 8192
-  		val c = FMat.newOrCheckFMat(a.nrows, b.ncols, omat)
+  		val c = FMat.newOrCheckFMat(a.nrows, bncols, omat)
   	  val rblkk = if (Mat.hasCUDA > 1) 2 else 1
   	  val cblkk = if (Mat.hasCUDA > 3) 2 else 1
   	  val rblk = rblkk*(math.max(1, math.ceil(c.nrows/maxrows/rblkk).toInt))
@@ -491,8 +493,8 @@ object GMat {
   	  val gccols = 32*(c.ncols/cblk/32)
   	  val garows = gcrows
   	  val gacols = 32*(a.ncols/kblk/32)
-  	  val gbrows = gacols
-  	  val gbcols = gccols
+  	  val gbrows = if (btrans) gccols else gacols
+  	  val gbcols = if (btrans) gacols else gccols
   	  
   	  val done = IMat(rblkk*cblkk,1)
   	  for (ix <- 0 until rblkk) {
@@ -515,22 +517,31 @@ object GMat {
   	    				val nj = math.min(gccols, c.ncols - j)
   	    				var k = 0; while (k < a.ncols) {
   	    					val nk = math.min(gacols, a.ncols - k)
-  	    					status = cudaMemcpy2D(aa, garows*Sizeof.FLOAT, Pointer.to(a.data).withByteOffset((i+k*a.nrows)*Sizeof.FLOAT), 
+  	    					status = cudaMemcpy2D(aa, garows*Sizeof.FLOAT, Pointer.to(a.data).withByteOffset(1L*(i+k*a.nrows)*Sizeof.FLOAT), 
   	    							a.nrows*Sizeof.FLOAT, ni*Sizeof.FLOAT, nk, cudaMemcpyHostToDevice)
   	    					cudaDeviceSynchronize  	  
   	    					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA copy a failed "+status)
-  	    					status = cudaMemcpy2D(bb, gbrows*Sizeof.FLOAT, Pointer.to(b.data).withByteOffset((k+j*b.nrows)*Sizeof.FLOAT), 
-  	    							b.nrows*Sizeof.FLOAT, nk*Sizeof.FLOAT, nj, cudaMemcpyHostToDevice) 
+  	    					if (btrans) {
+  	    						status = cudaMemcpy2D(bb, gbrows*Sizeof.FLOAT, Pointer.to(b.data).withByteOffset(1L*(j+k*b.nrows)*Sizeof.FLOAT), 
+  	    								b.nrows*Sizeof.FLOAT, nj*Sizeof.FLOAT, nk, cudaMemcpyHostToDevice)
+  	    					} else {
+  	    						status = cudaMemcpy2D(bb, gbrows*Sizeof.FLOAT, Pointer.to(b.data).withByteOffset(1L*(k+j*b.nrows)*Sizeof.FLOAT), 
+  	    								b.nrows*Sizeof.FLOAT, nk*Sizeof.FLOAT, nj, cudaMemcpyHostToDevice) 
+  	    					}
   	    					cudaDeviceSynchronize
   	    					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA copy b failed "+status)
 
-  	    					cublasSgemm('n', 'n', ni, nj, nk, 1.0f, aa, garows, bb, gbrows, if (k==0) 0f else 1f, cc, gcrows)
+  	    					if (btrans) {
+  	    						cublasSgemm('n', 't', ni, nj, nk, 1.0f, aa, garows, bb, gbrows, if (k==0) 0f else 1f, cc, gcrows)	    					  
+  	    					} else {
+  	    						cublasSgemm('n', 'n', ni, nj, nk, 1.0f, aa, garows, bb, gbrows, if (k==0) 0f else 1f, cc, gcrows)
+  	    					}
   	    					cudaDeviceSynchronize
   	    					val err = cublasGetError
   	    					if (err != 0) throw new RuntimeException("Cublas error in xG, sgemm "+err)
   	    					k += gacols
   	    				}
-  	    				status = cudaMemcpy2D(Pointer.to(c.data).withByteOffset((i+j*c.nrows)*Sizeof.FLOAT), c.nrows*Sizeof.FLOAT, cc, gcrows*Sizeof.FLOAT, ni*Sizeof.FLOAT, nj, cudaMemcpyDeviceToHost) 
+  	    				status = cudaMemcpy2D(Pointer.to(c.data).withByteOffset(1L*(i+j*c.nrows)*Sizeof.FLOAT), c.nrows*Sizeof.FLOAT, cc, gcrows*Sizeof.FLOAT, ni*Sizeof.FLOAT, nj, cudaMemcpyDeviceToHost) 
   	    				cudaDeviceSynchronize
   	    				if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA copy c failed "+status)
   	    				j += cblkk*gccols
@@ -550,6 +561,7 @@ object GMat {
   	  Mat.nflops += 2L * a.nrows * a.ncols * b.ncols
   		c
   	}
+  }
 
   def newOrCheckGMat(nr:Int, nc:Int, outmat:Mat):GMat = {
     if (outmat.asInstanceOf[AnyRef] == null || (outmat.nrows == 0 && outmat.ncols == 0)) {

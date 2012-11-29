@@ -168,7 +168,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   override def apply(iv:IMat):CMat = 
     iv match {
       case aa:MatrixWildcard => {
-        val out = CMat(length, 1)
+        val out = CMat(length.toInt, 1)
         System.arraycopy(data, 0, out.data, 0, 2*out.length)
         out
       }
@@ -205,7 +205,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
           	}
           } else throw new RuntimeException("dims mismatch")
         } else {
-          System.arraycopy(b.data, 0, data, 0, 2*length)
+          System.arraycopy(b.data, 0, data, 0, (2*length).toInt)
         }
       }
       case _ => {
@@ -585,14 +585,14 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   override def copyTo(out:Mat) = {
     out match {
-      case cout:CMat => System.arraycopy(data, 0, cout.data, 0, 2*length)
+      case cout:CMat => System.arraycopy(data, 0, cout.data, 0, 2*length.toInt)
     }  	
   	out
   }
   
   override def copy = {
   	val out = CMat(nrows, ncols)
-  	System.arraycopy(data, 0, out.data, 0, 2*length)
+  	System.arraycopy(data, 0, out.data, 0, 2*length.toInt)
   	out
   }
   
@@ -707,9 +707,9 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
           throw new RuntimeException("solve needs a square matrix")
         } else {
           val out = CMat(nrows, ncols)
-          val tmp = new Array[Float](2*length)
-          System.arraycopy(a.data, 0, tmp, 0, 2*a.length)
-          System.arraycopy(data, 0, out.data, 0, 2*length)
+          val tmp = new Array[Float](2*length.toInt)
+          System.arraycopy(a.data, 0, tmp, 0, 2*a.length.toInt)
+          System.arraycopy(data, 0, out.data, 0, 2*length.toInt)
           val ipiv = new Array[Int](ncols)
           cgetrf(ORDER.RowMajor, ncols, ncols, tmp, ncols, ipiv)
           cgetrs(ORDER.RowMajor, "N", ncols, nrows, tmp, ncols, ipiv, out.data, nrows)
@@ -728,8 +728,8 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
         } else {
           val out = CMat(a.nrows, a.ncols)
           val tmp = new Array[Float](2*length)
-          System.arraycopy(data, 0, tmp, 0, 2*length)
-          System.arraycopy(a.data, 0, out.data, 0, 2*a.length)
+          System.arraycopy(data, 0, tmp, 0, 2*length.toInt)
+          System.arraycopy(a.data, 0, out.data, 0, 2*a.length.toInt)
           val ipiv = new Array[Int](ncols)
           cgetrf(ORDER.ColMajor, ncols, ncols, tmp, ncols, ipiv)
           cgetrs(ORDER.ColMajor, "N", ncols, a.ncols, tmp, nrows, ipiv, out.data, nrows)
