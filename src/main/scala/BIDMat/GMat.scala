@@ -558,7 +558,7 @@ object GMat {
   	  }
   	  while (SciFunctions.mini(done).v == 0) {Thread.`yield`}
 
-  	  Mat.nflops += 2L * a.nrows * a.ncols * b.ncols
+  	  Mat.nflops += 2L * a.nrows * a.ncols * bncols
   		c
   	}
   }
