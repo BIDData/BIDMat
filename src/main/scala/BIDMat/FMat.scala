@@ -320,7 +320,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   		out
   	} else throw new RuntimeException("dimensions mismatch");
   
-  def GPUmult(b:FMat, out:Mat) = GMat.GPUmult(this, b, out)
+  def GPUmult(b:FMat, out:Mat, btrans:Boolean) = GMat.GPUmult(this, b, out, btrans)
   
   def dot(a:FMat):Double = super.dot(a)
   
@@ -398,7 +398,8 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   /*
    * Basic operators on pairs of FMats. These are the compute routines.
    */
-  def xG (b :FMat) = GPUmult(b, null)
+  def xG (b :FMat) = GPUmult(b, null, false)
+  def xTG (b :FMat) = GPUmult(b, null, true)
   def +  (b : FMat) = ffMatOpv(b, FMat.vecAdd _, null)
   def -  (b : FMat) = ffMatOpv(b, FMat.vecSub _, null)
   def *  (b : FMat) = fDMult(b, null)
@@ -555,7 +556,8 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   
   override def t:FMat = FMat(mat.gt(omat))
   
-  def xG (b :FMat) = mat.GPUmult(b, omat)
+  def xG (b :FMat) = mat.GPUmult(b, omat, false)
+  def xTG (b :FMat) = mat.GPUmult(b, omat, true)
   def * (b : FMat) = mat.fDMult(b, omat) 
   def * (b : SMat) = mat.fSMult(b, omat) 
   def xT  (b : SMat) = mat.multT(b, omat)
