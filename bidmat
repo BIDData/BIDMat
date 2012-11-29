@@ -4,7 +4,7 @@ export BIDMAT_ROOT="$( echo ${BIDMAT_ROOT} | sed s+/cygdrive/c+c:+ )"
 # This is only needed/works on Linux
 export LD_LIBRARY_PATH="${BIDMAT_ROOT}/lib/linux64:${BIDMAT_ROOT}/lib/linux64/JCUDA5.0:/usr/local/cuda-5.0/lib64:${LD_LIBRARY_PATH}" 
 # export JAVA_HOME="" # Set here if not set in environment
-export JAVA_OPTS="-Xmx12G -Xms128M" # Set as much memory as possible
+export JAVA_OPTS="-Xmx48G -Xms128M" # Set as much memory as possible
 # Fix these if needed
 export JCUDA_VERSION="0.5.0RC"
 export JCUDA_LIBDIR=${BIDMAT_ROOT}/lib
