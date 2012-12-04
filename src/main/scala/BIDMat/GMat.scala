@@ -531,11 +531,8 @@ object GMat {
   	    					cudaDeviceSynchronize
   	    					if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA copy b failed "+status)
 
-  	    					if (btrans) {
-  	    						cublasSgemm('n', 't', ni, nj, nk, 1.0f, aa, garows, bb, gbrows, if (k==0) 0f else 1f, cc, gcrows)	    					  
-  	    					} else {
-  	    						cublasSgemm('n', 'n', ni, nj, nk, 1.0f, aa, garows, bb, gbrows, if (k==0) 0f else 1f, cc, gcrows)
-  	    					}
+  	    					cublasSgemm('n', if (btrans) 't' else 'n', ni, nj, nk, 1.0f, aa, garows, bb, gbrows, if (k==0) 0f else 1f, cc, gcrows)
+  	    					
   	    					cudaDeviceSynchronize
   	    					val err = cublasGetError
   	    					if (err != 0) throw new RuntimeException("Cublas error in xG, sgemm "+err)
@@ -561,6 +558,50 @@ object GMat {
   	  Mat.nflops += 2L * a.nrows * a.ncols * bncols
   		c
   	}
+  }
+  
+  def GPUsort(keys:FMat, vals:IMat):Unit = {
+    if (keys.nrows != vals.nrows || keys.ncols != vals.ncols)
+      throw new RuntimeException("Dimensions mismatch in GPUsort")
+  	val aa = new Pointer
+  	val ii = new Pointer
+  	val kk = new Pointer
+  	val nthreads = Mat.hasCUDA
+  	val maxsize = keys.nrows*math.min(64*1024*1024/keys.nrows, math.max(1, keys.ncols/nthreads))
+  	val nsize = keys.nrows*keys.ncols
+  	val done = IMat(nthreads,1)
+
+  	for (ithread <- 0 until nthreads) {
+  	  actor {
+  	  	SciFunctions.device(ithread)
+  	  	var status = cublasAlloc(maxsize, Sizeof.FLOAT, aa)
+  	  	if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
+  	  	status = cublasAlloc(maxsize, Sizeof.LONG, ii)
+  	  	if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
+  	  	status = cublasAlloc(maxsize, Sizeof.INT, kk)
+  	  	if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
+
+  	  	var ioff = ithread * maxsize
+  	  	while (ioff < nsize) {
+  	  		val todo = math.min(maxsize, nsize - ioff)
+  	  		val colstodo = todo / keys.nrows
+  	  		JCublas.cublasSetVector(todo, Sizeof.FLOAT, Pointer.to(keys.data).withByteOffset(ioff*Sizeof.FLOAT), 1, aa, 1)
+  	  		JCublas.cublasSetVector(todo, Sizeof.INT, Pointer.to(vals.data).withByteOffset(ioff*Sizeof.INT), 1, kk, 1)
+  	  		CUMAT.embedmat(aa, ii, keys.nrows, colstodo)
+  	  		CUMAT.rsort(ii, kk, keys.nrows*colstodo)
+  	  		CUMAT.extractmat(aa, ii, keys.nrows, colstodo)
+  	  		JCublas.cublasGetVector(todo, Sizeof.FLOAT, aa, 1, Pointer.to(keys.data).withByteOffset(ioff*Sizeof.FLOAT), 1)
+  	  		JCublas.cublasGetVector(todo, Sizeof.INT, kk, 1, Pointer.to(vals.data).withByteOffset(ioff*Sizeof.INT), 1)
+  	  		ioff += nthreads * maxsize
+  	  	}
+
+  	  	cublasFree(kk)
+  	  	cublasFree(ii)
+  	  	cublasFree(aa)
+  	  	done(ithread,0) = 1
+  	  }
+  	}
+    while (SciFunctions.mini(done).v == 0) Thread.`yield`
   }
 
   def newOrCheckGMat(nr:Int, nc:Int, outmat:Mat):GMat = {

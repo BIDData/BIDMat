@@ -607,117 +607,73 @@ int reduce2op(int nrows, int ncols, float *A, float *B, int opn) {
   return err;
 }
 
-#define STBLOCK 32
-
-__global__ void __stratify(float *strata, int n, float *a, float *b, unsigned int *bi, int stride) {
-  __shared__ float ss[STBLOCK];
-  __shared__ unsigned int ibin[STBLOCK];
-  __shared__ unsigned int ebin[STBLOCK];
-  __shared__ unsigned int todo[STBLOCK];
-  __shared__ float bins[STBLOCK][STBLOCK+32];
-
-  int tid = threadIdx.x;
-  ss[tid] = strata[tid];
-  ibin[tid] = 0;
-
-  __syncthreads();
-
-  for (int i = 0; i < n; i += blockDim.x * gridDim.x) {
-    int ii = i + tid + blockDim.x * blockIdx.x;
-    if (ii < n) {
-      float v = a[ii];
-      int j = 1;
-      j = (v > ss[j-1]) ? 2*j+1 : 2*j;
-      j = (v > ss[j-1]) ? 2*j+1 : 2*j;
-      j = (v > ss[j-1]) ? 2*j+1 : 2*j;
-      j = (v > ss[j-1]) ? 2*j+1 : 2*j;
-      j = (v > ss[j-1]) ? 2*j+1 : 2*j;
-      //      j = (v > ss[j-1]) ? 2*j+1 : 2*j;
-      j = j - STBLOCK;
-      int k = atomicInc(&ibin[j], 256);
-      bins[j][k] = v;
-    }
-    __syncthreads();
-
-    todo[tid] = 32*(ibin[tid]/32);
-    if (todo[tid] > 0) {
-      ebin[tid] = atomicAdd(&bi[tid], todo[tid]);
-      ibin[tid] = ibin[tid] - todo[tid];
-    }
-    __syncthreads();
-
-    for (int j = 0; j < STBLOCK; j++) {
-      if (tid < todo[j]) {
-        b[j*stride + ebin[j] + tid] = bins[j][ibin[j] + tid];
-      } 
-    }
-  }
-  __syncthreads();
-
-  ebin[tid] = atomicAdd(&bi[tid], ibin[tid]);
-  __syncthreads();
-
-  for (int j = 0; j < STBLOCK; j++) {
-    if (tid < ibin[j]) {
-      b[j*stride + ebin[j] + tid] = bins[j][tid];
-    }
+__global__ void __embedmat(float *a, long long *b, int nrows, int ncols) {
+  int tid = threadIdx.x + blockIdx.x * blockDim.x;
+  for (int i = tid; i < nrows*ncols; i += blockDim.x*gridDim.x) {
+    float v = a[i];
+    int vi = *((int *)&v);
+    int mask = (vi >> 31) | 0x80000000;
+    vi = vi ^ mask;
+    b[i] = (long long)vi + (((long long)(i/nrows))<<32);
   }
 }
 
-int stratify(float *strata, int n, float *a, float *b, unsigned int *bi, int stride) {
-  __stratify<<<40,STBLOCK>>>(strata, n, a, b, bi, stride);
+__global__ void __extractmat(float *a, long long *b, int nrows, int ncols) {
+  int tid = threadIdx.x + blockIdx.x * blockDim.x;
+  for (int i = tid; i < nrows*ncols; i += blockDim.x*gridDim.x) {
+    long long v = b[i];
+    int vi = *((int *)&v);
+    int mask = (~(vi >> 31)) | 0x80000000;
+    vi = vi ^ mask;
+    a[i] = *((float *)&vi);
+  }
+}
+
+void setsizes(int N, int *nblocksp, int *nthreadsp) {
+  int nblocks = 32;
+  int nthreads = 1;
+  while (nblocks * nthreads < N) {
+    if (nblocks < 16) {
+      nblocks = 2*nblocks;
+    } else if (nthreads < 1024) {
+      nthreads = 2*nthreads;
+    } else {
+      nblocks = 2*nblocks;
+    }
+  }
+  *nblocksp = nblocks;
+  *nthreadsp = nthreads;
+}
+
+int embedmat(float *a, long long *b, int nrows, int ncols) {
+  int nthreads;
+  int nblocks;
+  setsizes(nrows*ncols, &nblocks, &nthreads);
+  __embedmat<<<nblocks,nthreads>>>(a, b, nrows, ncols);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
 }
 
-#ifdef TEST
-int main(int argc, char **argv) {
-  int m=8, n=8, opn = 0;
-  float *dA, *dB, *dC, *A, *B, *C;
-  if (argc > 1) {
-    sscanf(argv[1], "%d", &opn);
-    if (argc > 2) {
-      sscanf(argv[2], "%d", &m);
-      if (argc > 3) {
-        sscanf(argv[3], "%d", &n);
-      }
-    }
-  }
-  A = (float *)malloc(m*n*sizeof(float));
-  B = (float *)malloc(m*n*sizeof(float));
-  C = (float *)malloc(m*n*sizeof(float));
-  cudaMalloc((void**)&dA, m*n*sizeof(float));
-  cudaMalloc((void**)&dB, m*n*sizeof(float));
-  cudaMalloc((void**)&dC, m*n*sizeof(float));
-
-  for (int i = 0; i < m*n; i++) {
-    A[i] = 1.0f;
-    B[i] = 2.0f;
-  }
-
-  cudaMemcpy(dA, A, m*n*sizeof(float), cudaMemcpyHostToDevice);
-  cudaMemcpy(dB, B, m*n*sizeof(float), cudaMemcpyHostToDevice);
-
-  printf("A %f %f %f %f\n", A[0], A[1], A[2], A[3]);
-  printf("B %f %f %f %f\n", B[0], B[1], B[2], B[3]);
-
-  MatKernel(dA, m, n, dB, m, n, dC, opn);
+int extractmat(float *a, long long *b, int nrows, int ncols) {
+  int nthreads;
+  int nblocks;
+  setsizes(nrows*ncols, &nblocks, &nthreads);
+  __extractmat<<<nblocks,nthreads>>>(a, b, nrows, ncols);
+  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
-  if( cudaSuccess != err) {
-    fprintf(stderr, "CUDA error %d", err);
-    exit(1);
-  }
-
-  cudaMemcpy(C, dC, m*n*sizeof(float), cudaMemcpyDeviceToHost);
-
-  printf("C %f %f %f %f\n", C[0], C[1], C[2], C[3]);
-  printf("A %f %f %f %f\n", A[0], A[1], A[2], A[3]);
-  printf("B %f %f %f %f\n", B[0], B[1], B[2], B[3]);
-
-  if (dA != NULL) cudaFree(dA);
-  if (dB != NULL) cudaFree(dB);
-  if (dC != NULL) cudaFree(dC);
-  if (C != NULL) free(C);
+  return err;
 }
-#endif
+
+#include <thrust/sort.h>
+#include <thrust/device_ptr.h>
+#include <thrust/reverse.h>
+
+int rsort(long long *pkeys, unsigned int *pvals, int N) {
+  thrust::device_ptr<long long> keys(pkeys);
+  thrust::device_ptr<unsigned int> vals(pvals);
+  thrust::sort_by_key(keys, keys + N, vals);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
