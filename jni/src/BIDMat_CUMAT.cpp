@@ -135,7 +135,34 @@ extern "C" {
     return transpose(A, instride, B, outstride, nrows, ncols);
   }
 
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_stratify
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_embedmat
+  (JNIEnv *env, jobject obj, jobject ja, jobject jb, jint nrows, jint ncols) 
+  {
+    float *a = (float*)getPointer(env, ja);
+    long long *b = (long long*)getPointer(env, jb);
+
+    return embedmat(a, b, nrows, ncols);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_extractmat
+  (JNIEnv *env, jobject obj, jobject ja, jobject jb, jint nrows, jint ncols) 
+  {
+    float *a = (float*)getPointer(env, ja);
+    long long *b = (long long*)getPointer(env, jb);
+
+    return extractmat(a, b, nrows, ncols);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_rsort
+  (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jint n) 
+  {
+    long long *pkeys = (long long *)getPointer(env, jpkeys);
+    unsigned int *pvals = (unsigned int *)getPointer(env, jpvals);
+
+    return rsort(pkeys, pvals, n);
+  }
+
+  /*  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_stratify
   (JNIEnv *env, jobject obj, jobject jstrata, jint n, jobject ja, jobject jb, jobject jbi, jint stride) 
   {
     float *strata = (float*)getPointer(env, jstrata);
@@ -145,5 +172,24 @@ extern "C" {
 
     return stratify(strata, n, a, b, bi, stride);
   }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_stratifycount
+  (JNIEnv *env, jobject obj, jobject jstrata, jint n, jobject ja, jobject jbi) 
+  {
+    float *strata = (float*)getPointer(env, jstrata);
+    float *a = (float*)getPointer(env, ja);
+    unsigned int *bi = (unsigned int*)getPointer(env, jbi);
+
+    return stratifycount(strata, n, a, bi);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_radixcounts
+  (JNIEnv *env, jobject obj, jobject ja, jint n, jint digit, jobject jbi) 
+  {
+    float *a = (float*)getPointer(env, ja);
+    unsigned int *bi = (unsigned int*)getPointer(env, jbi);
+
+    return radixcounts(a, n, digit, bi);
+    }*/
 
 }
