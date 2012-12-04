@@ -567,7 +567,7 @@ object GMat {
   	val ii = new Pointer
   	val kk = new Pointer
   	val nthreads = Mat.hasCUDA
-  	val maxsize = keys.nrows*math.min(64*1024*1024/keys.nrows, math.max(1, keys.ncols/nthreads))
+  	val maxsize = keys.nrows*math.min(32*1024*1024/keys.nrows, math.max(1, keys.ncols/nthreads))
   	val nsize = keys.nrows*keys.ncols
   	val done = IMat(nthreads,1)
 
