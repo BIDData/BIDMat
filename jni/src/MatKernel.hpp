@@ -24,3 +24,11 @@ int embedmat(float *a, long long *b, int nrows, int ncols);
 int extractmat(float *a, long long *b, int nrows, int ncols);
 
 int rsort(long long *pkeys, unsigned int *pvals, int n);
+
+int rsort2(float *pkeys, unsigned int *pvals, int nrows, int ncols);
+
+int stratify(float *strata, int n, float *a, float *b, unsigned int *bi, int stride);
+
+int stratifycounts(float *strata, int n, float *a, unsigned int *bi);
+
+int radixcounts(float *a, int n, int digit, unsigned int *bi);
