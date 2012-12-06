@@ -1,10 +1,11 @@
 package BIDMat
 import jcuda._
+import jcuda.runtime._
+import jcuda.runtime.JCuda._
+import jcuda.runtime.cudaError._
+import jcuda.runtime.cudaMemcpyKind._
 import jcuda.jcublas._
 import jcuda.jcublas.JCublas._
-import jcuda.runtime.JCuda._
-import jcuda.runtime._
-import jcuda.runtime.cudaMemcpyKind._
 import scala.actors.Actor._
 import edu.berkeley.bid.CUMAT
 
@@ -41,7 +42,6 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
     cudaDeviceSynchronize()
     this
   }
-  
   
   override def toString:String = {
     val nr = scala.math.min(nrows,10)
@@ -428,7 +428,6 @@ object GMat {
   }
   
   def apply(nr:Int, nc:Int):GMat = {
-//  	println("nr, nc = %d,%d" format (nr,nc))
     val retv = new GMat(nr, nc, new Pointer(), nr*nc)        
     val status = cublasAlloc(nr*nc, Sizeof.FLOAT, retv.data)
     if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
@@ -559,49 +558,84 @@ object GMat {
   		c
   	}
   }
+ 
   
   def GPUsort(keys:FMat, vals:IMat):Unit = {
     if (keys.nrows != vals.nrows || keys.ncols != vals.ncols)
-      throw new RuntimeException("Dimensions mismatch in GPUsort")
+      throw new RuntimeException("Dimensions mismatch in GPUsort ("+keys.nrows+","+keys.ncols+") ("+vals.nrows+","+vals.ncols+")")
   	val aa = new Pointer
-  	val ii = new Pointer
   	val kk = new Pointer
-  	val nthreads = Mat.hasCUDA
-  	val maxsize = keys.nrows*math.min(32*1024*1024/keys.nrows, math.max(1, keys.ncols/nthreads))
-  	val nsize = keys.nrows*keys.ncols
+  	val vv = new Pointer
+  	val nthreads = math.min(1,Mat.hasCUDA) // Multi-GPU threading not working yet with Thrust
+  	val maxsize = keys.nrows * math.min(32*1024*1024/keys.nrows, math.max(1, keys.ncols/nthreads))
+  	val nsize = keys.nrows * keys.ncols
+  	val tall = (keys.nrows > 1024*1024)
   	val done = IMat(nthreads,1)
 
   	for (ithread <- 0 until nthreads) {
   	  actor {
   	  	SciFunctions.device(ithread)
-  	  	var status = cublasAlloc(maxsize, Sizeof.FLOAT, aa)
-  	  	if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
-  	  	status = cublasAlloc(maxsize, Sizeof.LONG, ii)
-  	  	if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
-  	  	status = cublasAlloc(maxsize, Sizeof.INT, kk)
-  	  	if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
+  	  	var status = cudaMalloc(aa, maxsize * Sizeof.FLOAT)
+  	  	if (status != cudaSuccess) throw new RuntimeException("CUDA alloc failed "+status)
+  	  	status = cudaMalloc(vv, maxsize * Sizeof.INT)
+  	  	if (status != cudaSuccess) throw new RuntimeException("CUDA alloc failed "+status)
+  	  	if (!tall) {
+  	  		status = cudaMalloc(kk, maxsize * Sizeof.LONG)
+  	  		if (status != cudaSuccess) throw new RuntimeException("CUDA alloc failed "+status)
+  	  	}
 
   	  	var ioff = ithread * maxsize
   	  	while (ioff < nsize) {
   	  		val todo = math.min(maxsize, nsize - ioff)
   	  		val colstodo = todo / keys.nrows
-  	  		JCublas.cublasSetVector(todo, Sizeof.FLOAT, Pointer.to(keys.data).withByteOffset(ioff*Sizeof.FLOAT), 1, aa, 1)
-  	  		JCublas.cublasSetVector(todo, Sizeof.INT, Pointer.to(vals.data).withByteOffset(ioff*Sizeof.INT), 1, kk, 1)
-  	  		CUMAT.embedmat(aa, ii, keys.nrows, colstodo)
-  	  		CUMAT.rsort(ii, kk, keys.nrows*colstodo)
-  	  		CUMAT.extractmat(aa, ii, keys.nrows, colstodo)
-  	  		JCublas.cublasGetVector(todo, Sizeof.FLOAT, aa, 1, Pointer.to(keys.data).withByteOffset(ioff*Sizeof.FLOAT), 1)
-  	  		JCublas.cublasGetVector(todo, Sizeof.INT, kk, 1, Pointer.to(vals.data).withByteOffset(ioff*Sizeof.INT), 1)
+  	  		cudaMemcpy(aa, Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+  	  		cudaMemcpy(vv, Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+  	  		if (tall) {
+  	  		  CUMAT.rsort2(aa, vv, keys.nrows, colstodo)
+  	  		} else {
+  	  			CUMAT.embedmat(aa, kk, keys.nrows, colstodo)
+  	  			CUMAT.rsort(kk, vv, todo)
+  	  			CUMAT.extractmat(aa, kk, keys.nrows, colstodo)
+  	  		}
+  	  		cudaMemcpy(Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), aa, todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
+  	  		cudaMemcpy(Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), vv, todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
   	  		ioff += nthreads * maxsize
   	  	}
-
-  	  	cublasFree(kk)
-  	  	cublasFree(ii)
-  	  	cublasFree(aa)
+  	  	if (!tall) cudaFree(kk)
+  	  	cudaFree(vv)
+  	  	cudaFree(aa)
   	  	done(ithread,0) = 1
   	  }
   	}
     while (SciFunctions.mini(done).v == 0) Thread.`yield`
+    Mat.nflops += keys.length
+  }
+   
+  def GPUsort(keys:GMat, vals:GIMat):Unit = {
+    if (keys.nrows != vals.nrows || keys.ncols != vals.ncols)
+      throw new RuntimeException("Dimensions mismatch in GPUsort")
+    if (keys.nrows > 1024*1024) {
+    	CUMAT.rsort2(keys.data, vals.data, keys.nrows, keys.ncols)
+    } else {
+    	val kk = new Pointer
+    	val maxsize = keys.nrows * math.min(16*1024*1024/keys.nrows, keys.ncols)
+    	val nsize = keys.nrows*keys.ncols
+
+    	var status = cudaMalloc(kk, maxsize * Sizeof.LONG)
+    	if (status != cudaSuccess) throw new RuntimeException("CUDA alloc failed "+status)
+
+    	var ioff = 0
+    	while (ioff < nsize) {
+    		val todo = math.min(maxsize, nsize - ioff)
+    		val colstodo = todo / keys.nrows
+    		CUMAT.embedmat(keys.data.withByteOffset(ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
+    		CUMAT.rsort(kk, vals.data.withByteOffset(ioff*Sizeof.INT), todo)
+    		CUMAT.extractmat(keys.data.withByteOffset(ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
+    		ioff += maxsize
+    	}
+    	cudaFree(kk)
+    }
+    Mat.nflops += keys.length
   }
 
   def newOrCheckGMat(nr:Int, nc:Int, outmat:Mat):GMat = {

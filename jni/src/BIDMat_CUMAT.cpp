@@ -162,7 +162,17 @@ extern "C" {
     return rsort(pkeys, pvals, n);
   }
 
-  /*  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_stratify
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_rsort2
+  (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jint nrows, jint ncols) 
+  {
+    float *pkeys = (float *)getPointer(env, jpkeys);
+    unsigned int *pvals = (unsigned int *)getPointer(env, jpvals);
+
+    return rsort2(pkeys, pvals, nrows, ncols);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_stratify
   (JNIEnv *env, jobject obj, jobject jstrata, jint n, jobject ja, jobject jb, jobject jbi, jint stride) 
   {
     float *strata = (float*)getPointer(env, jstrata);
@@ -173,14 +183,14 @@ extern "C" {
     return stratify(strata, n, a, b, bi, stride);
   }
 
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_stratifycount
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_stratifycounts
   (JNIEnv *env, jobject obj, jobject jstrata, jint n, jobject ja, jobject jbi) 
   {
     float *strata = (float*)getPointer(env, jstrata);
     float *a = (float*)getPointer(env, ja);
     unsigned int *bi = (unsigned int*)getPointer(env, jbi);
 
-    return stratifycount(strata, n, a, bi);
+    return stratifycounts(strata, n, a, bi);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_radixcounts
@@ -190,6 +200,6 @@ extern "C" {
     unsigned int *bi = (unsigned int*)getPointer(env, jbi);
 
     return radixcounts(a, n, digit, bi);
-    }*/
+    }
 
 }

@@ -36,11 +36,13 @@ public final class CUMAT {
     
     public static native int rsort(Pointer A, Pointer B, int n);
     
-/*    public static native int stratify(Pointer strata, int n, Pointer a,  Pointer b, Pointer bi, int stride);
+    public static native int rsort2(Pointer A, Pointer B, int nrows, int ncols);
     
-    public static native int stratifycount(Pointer strata, int n, Pointer a, Pointer bi);
+    public static native int stratify(Pointer strata, int n, Pointer a,  Pointer b, Pointer bi, int stride);
     
-    public static native int radixcounts(Pointer a, int n, int digit, Pointer bi); */
+    public static native int stratifycounts(Pointer strata, int n, Pointer a, Pointer bi);
+    
+    public static native int radixcounts(Pointer a, int n, int digit, Pointer bi); 
     
     
 
