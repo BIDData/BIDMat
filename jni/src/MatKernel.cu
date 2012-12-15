@@ -750,25 +750,28 @@ int stratify(float *strata, int n, float *a, float *b, unsigned int *bi, int str
 
 
 #define SNDVALS 256
-#define SNTHREADS 256
-#define SNDBITS 8
+#define SNDGRPS 4
+#define SNTHREADS 1024
 #define SBIGBLK (4*1024)
 
 __global__ void __stratifycounts(float *strata, int n,  float *a, unsigned int *bi) {
+  __shared__ unsigned int ic[SNDVALS][SNDGRPS];
   __shared__ float ss[SNDVALS];
-  __shared__ unsigned int ic[SNDVALS];
-
   int istart = (int)(((long long)blockIdx.x) * n / gridDim.x);
   int iend = (int)(((long long)(blockIdx.x+1)) * n / gridDim.x);
-  int tid = threadIdx.x;
   int bibase = SNDVALS * (blockIdx.x + istart / SBIGBLK);
-  ss[tid] = strata[tid];
+  int tid = threadIdx.x + threadIdx.y * blockDim.x;
 
+  if (threadIdx.y == 0) {
+    ss[threadIdx.x] = strata[threadIdx.x];
+  }
   for (int i = istart; i < iend; i += SBIGBLK) {
     __syncthreads();
-    ic[tid] = 0;
+    if (threadIdx.y < SNDGRPS) {
+      ic[threadIdx.x][threadIdx.y] = 0;
+    }
     __syncthreads();
-    for (int k = i + tid; k < min(iend, i+tid+SBIGBLK); k += SNTHREADS) {
+    for (int k = i + tid; k < min(iend, i + tid + SBIGBLK); k += SNTHREADS) {
       float v = a[k];
       int j = 0;
       j = (v > ss[j]) ? 2*j+2 : 2*j+1;
@@ -780,16 +783,20 @@ __global__ void __stratifycounts(float *strata, int n,  float *a, unsigned int *
       j = (v > ss[j]) ? 2*j+2 : 2*j+1;
       j = (v > ss[j]) ? 2*j+2 : 2*j+1;
       j = j - SNDVALS + 1;
-      atomicInc(&ic[j], 65536*32767);
+      atomicInc(&ic[j][threadIdx.y], 65536*32767);
     }
     __syncthreads();
-    bi[bibase + tid] = ic[tid];
+    if (threadIdx.y == 0) {
+      bi[bibase + threadIdx.x] = ic[threadIdx.x][0] + ic[threadIdx.x][1] + ic[threadIdx.x][2] + ic[threadIdx.x][3];
+    }
     bibase += SNDVALS;
   }
 }
 
 int stratifycounts(float *strata, int n, float *a, unsigned int *bi) {
-  __stratifycounts<<<32,SNTHREADS>>>(strata, n, a, bi);
+  const dim3 blockdims(SNDVALS, SNTHREADS/SNDVALS, 1);
+  const dim3 griddims(8,1,1);
+  __stratifycounts<<<griddims,blockdims>>>(strata, n, a, bi);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
