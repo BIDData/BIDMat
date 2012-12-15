@@ -669,7 +669,8 @@ int extractmat(float *a, long long *b, int nrows, int ncols) {
 #include <thrust/device_ptr.h>
 #include <thrust/reverse.h>
 
-int rsort(long long *pkeys, unsigned int *pvals, int N) {
+int rsort(long long *pkeys, unsigned int *pvals, int N, int device) {
+  cudaSetDevice(device);
   thrust::device_ptr<long long> keys(pkeys);
   thrust::device_ptr<unsigned int> vals(pvals);
   thrust::sort_by_key(keys, keys + N, vals);
@@ -678,7 +679,8 @@ int rsort(long long *pkeys, unsigned int *pvals, int N) {
   return err;
 }
 
-int rsort2(float *pkeys, unsigned int *pvals, int nrows, int ncols) {
+int rsort2(float *pkeys, unsigned int *pvals, int nrows, int ncols, int device) {
+  cudaSetDevice(device);
   for (int i = 0; i < ncols; i++) {
     thrust::device_ptr<float> keys(pkeys+i*nrows);
     thrust::device_ptr<unsigned int> vals(pvals+i*nrows);

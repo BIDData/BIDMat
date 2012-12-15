@@ -23,9 +23,9 @@ int embedmat(float *a, long long *b, int nrows, int ncols);
 
 int extractmat(float *a, long long *b, int nrows, int ncols);
 
-int rsort(long long *pkeys, unsigned int *pvals, int n);
+int rsort(long long *pkeys, unsigned int *pvals, int n, int dev);
 
-int rsort2(float *pkeys, unsigned int *pvals, int nrows, int ncols);
+int rsort2(float *pkeys, unsigned int *pvals, int nrows, int ncols, int dev);
 
 int stratify(float *strata, int n, float *a, float *b, unsigned int *bi, int stride);
 
