@@ -1038,7 +1038,7 @@ object DenseMat {
       System.arraycopy(a.data, 0, out.data, 0, a.length)
       genSort(out.data)
       if (!asc) {
-      	reverse(a.data)
+      	reverse(out.data)
       }
       out
     } else if (ik == 1) {
