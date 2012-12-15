@@ -566,7 +566,7 @@ object GMat {
   	val aa = new Pointer
   	val kk = new Pointer
   	val vv = new Pointer
-  	val nthreads = math.min(1,Mat.hasCUDA) // Multi-GPU threading not working yet with Thrust
+  	val nthreads = math.min(1,Mat.hasCUDA) 
   	val maxsize = keys.nrows * math.min(32*1024*1024/keys.nrows, math.max(1, keys.ncols/nthreads))
   	val nsize = keys.nrows * keys.ncols
   	val tall = (keys.nrows > 1024*1024)
@@ -591,10 +591,10 @@ object GMat {
   	  		cudaMemcpy(aa, Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
   	  		cudaMemcpy(vv, Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
   	  		if (tall) {
-  	  		  CUMAT.rsort2(aa, vv, keys.nrows, colstodo)
+  	  		  CUMAT.rsort2(aa, vv, keys.nrows, colstodo, ithread)
   	  		} else {
   	  			CUMAT.embedmat(aa, kk, keys.nrows, colstodo)
-  	  			CUMAT.rsort(kk, vv, todo)
+  	  			CUMAT.rsort(kk, vv, todo, ithread)
   	  			CUMAT.extractmat(aa, kk, keys.nrows, colstodo)
   	  		}
   	  		cudaMemcpy(Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), aa, todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
@@ -615,7 +615,7 @@ object GMat {
     if (keys.nrows != vals.nrows || keys.ncols != vals.ncols)
       throw new RuntimeException("Dimensions mismatch in GPUsort")
     if (keys.nrows > 1024*1024) {
-    	CUMAT.rsort2(keys.data, vals.data, keys.nrows, keys.ncols)
+    	CUMAT.rsort2(keys.data, vals.data, keys.nrows, keys.ncols, 0)
     } else {
     	val kk = new Pointer
     	val maxsize = keys.nrows * math.min(16*1024*1024/keys.nrows, keys.ncols)
@@ -629,7 +629,7 @@ object GMat {
     		val todo = math.min(maxsize, nsize - ioff)
     		val colstodo = todo / keys.nrows
     		CUMAT.embedmat(keys.data.withByteOffset(ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
-    		CUMAT.rsort(kk, vals.data.withByteOffset(ioff*Sizeof.INT), todo)
+    		CUMAT.rsort(kk, vals.data.withByteOffset(ioff*Sizeof.INT), todo, 0)
     		CUMAT.extractmat(keys.data.withByteOffset(ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
     		ioff += maxsize
     	}

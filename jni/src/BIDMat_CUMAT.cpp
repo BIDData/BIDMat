@@ -154,22 +154,22 @@ extern "C" {
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_rsort
-  (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jint n) 
+  (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jint n, jint dev) 
   {
     long long *pkeys = (long long *)getPointer(env, jpkeys);
     unsigned int *pvals = (unsigned int *)getPointer(env, jpvals);
 
-    return rsort(pkeys, pvals, n);
+    return rsort(pkeys, pvals, n, dev);
   }
 
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_rsort2
-  (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jint nrows, jint ncols) 
+  (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jint nrows, jint ncols, jint dev) 
   {
     float *pkeys = (float *)getPointer(env, jpkeys);
     unsigned int *pvals = (unsigned int *)getPointer(env, jpvals);
 
-    return rsort2(pkeys, pvals, nrows, ncols);
+    return rsort2(pkeys, pvals, nrows, ncols, dev);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_stratify
