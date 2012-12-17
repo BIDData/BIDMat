@@ -406,6 +406,8 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def *  (b : SMat) = fSMult(b, null)
   def xT  (b : SMat) = multT(b, null)
   def xT  (b : FMat) = multT(b, null)
+  def *^  (b : SMat) = multT(b, null)
+  def *^  (b : FMat) = multT(b, null)
   def /  (b : FMat) = solvel(b)
   def \\ (b : FMat) = solver(b)
   def *@ (b : FMat) = ffMatOpv(b, FMat.vecMul _, null)
@@ -531,6 +533,10 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   override def +  (b : Mat):Mat = applyMat(this, b, null, Mop_Plus)
   override def -  (b : Mat):Mat = applyMat(this, b, null, Mop_Minus)
   override def *  (b : Mat):Mat = applyMat(this, b, null, Mop_Times)
+  override def *^  (b : Mat) = b match {
+    case bb:SMat => multT(bb, null)
+    case bb:FMat => multT(bb, null)
+  }
   override def xT  (b : Mat) = b match {
     case bb:SMat => multT(bb, null)
     case bb:FMat => multT(bb, null)
@@ -560,6 +566,8 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   def xTG (b :FMat) = mat.GPUmult(b, omat, true)
   def * (b : FMat) = mat.fDMult(b, omat) 
   def * (b : SMat) = mat.fSMult(b, omat) 
+  def *^  (b : SMat) = mat.multT(b, omat)
+  def *^  (b : FMat) = mat.multT(b, omat)
   def xT  (b : SMat) = mat.multT(b, omat)
   def xT  (b : FMat) = mat.multT(b, omat)
   def + (b : FMat) = mat.ffMatOpv(b, FMat.vecAdd _, omat)

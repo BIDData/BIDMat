@@ -292,6 +292,10 @@ class SparseMat[@specialized(Double,Float) T]
   		out
   	}
     }  
+  
+  def gapply(iv:Int, jv:IMat):SparseMat[T] = gapply(IMat.ielem(iv), jv)
+  
+  def gapply(iv:IMat, jv:Int):SparseMat[T] = gapply(iv, IMat.ielem(jv))
 
   private def printOne(a:T):String = 
   	a match {
