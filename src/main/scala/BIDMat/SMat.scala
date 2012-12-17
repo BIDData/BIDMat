@@ -24,6 +24,10 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   
   override def apply(a:IMat, b:IMat):SMat = SMat(gapply(a, b))	
   
+  override def apply(a:Int, b:IMat):SMat = SMat(gapply(a, b))	
+  
+  override def apply(a:IMat, b:Int):SMat = SMat(gapply(a, b))	
+       
   def ssMatOp(b: SMat, f:(Float, Float) => Float, omat:Mat) = SMat(sgMatOp(b, f, omat))
   
   def ssMatOpScalar(b: Float, f:(Float, Float) => Float, omat:Mat) = SMat(sgMatOpScalar(b, f, omat))

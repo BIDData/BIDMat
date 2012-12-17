@@ -47,6 +47,7 @@ class Mat(nr:Int, nc:Int) {
   def + (b : Mat):Mat = notImplemented1("+", b)
   def - (b : Mat):Mat = notImplemented1("-", b)
   def * (b : Mat):Mat = notImplemented1("*", b)
+  def *^ (b : Mat):Mat = notImplemented1("*^", b)
   def xT (b : Mat):Mat = notImplemented1("*", b)
   def Tx (b : Mat):Mat = notImplemented1("*", b)
   def / (b : Mat):Mat = notImplemented1("/", b)

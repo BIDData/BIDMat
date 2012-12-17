@@ -368,6 +368,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
    */
   def *  (b : DMat) = fDMult(b, null)
   def *  (b : SDMat) = fSMult(b, null)
+  def *^ (b : SDMat) = multT(b, null)
   def xT (b : SDMat) = multT(b, null)
   def /  (b : DMat) = solvel(b)
   def \\ (b : DMat) = solver(b)
@@ -518,6 +519,7 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
 
   def * (b : DMat) = mat.fDMult(b, omat) 
   def * (b : SDMat) = mat.fSMult(b, omat)
+  def *^ (b : SDMat) = mat.multT(b, omat)
   def xT (b : SDMat) = mat.multT(b, omat)
   def + (b : DMat) = mat.ddMatOpv(b, DMat.vecAdd _, omat)
   def - (b : DMat) = mat.ddMatOpv(b, DMat.vecSub _, omat)
