@@ -162,6 +162,28 @@ extern "C" {
     return rsort(pkeys, pvals, n, dev);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_rsortsize
+  (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jint n) 
+  {
+    float *pkeys = (float *)getPointer(env, jpkeys);
+    unsigned int *pvals = (unsigned int *)getPointer(env, jpvals);
+
+    return rsortsize(pkeys, pvals, n);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_rsortx
+  (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jobject jtkeys, jobject jtvals, jobject jspine, jobject jflags, jint n, jint dev) 
+  {
+    float *pkeys = (float *)getPointer(env, jpkeys);
+    unsigned int *pvals = (unsigned int *)getPointer(env, jpvals);
+    float *tkeys = (float *)getPointer(env, jtkeys);
+    unsigned int *tvals = (unsigned int *)getPointer(env, jtvals);
+    int *spine = (int *)getPointer(env, jspine);
+    bool *bflags = (bool *)getPointer(env, jflags);
+
+    return rsortx(pkeys, pvals, tkeys, tvals, spine, bflags, n, dev);
+  }
+
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_rsort2
   (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jint nrows, jint ncols, jint dev) 
