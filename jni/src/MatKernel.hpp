@@ -25,6 +25,10 @@ int extractmat(float *a, long long *b, int nrows, int ncols);
 
 int rsort(long long *pkeys, unsigned int *pvals, int n, int dev);
 
+int rsortsize(float *pkeys, unsigned int *pvals, int N);
+
+int rsortx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tvals, int *ispine, bool *bflags, int n, int dev);
+
 int rsort2(float *pkeys, unsigned int *pvals, int nrows, int ncols, int dev);
 
 int stratify(float *strata, int n, float *a, float *b, unsigned int *bi, int stride);
