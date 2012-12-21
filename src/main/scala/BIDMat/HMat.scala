@@ -2,6 +2,7 @@ package BIDMat
 
 import java.io._
 import java.util.zip._
+import java.nio._
 import scala.util.matching.Regex
 import Regex._
 import scala.collection.mutable._
@@ -59,63 +60,90 @@ case class HMat(nr:Int, nc:Int, fileList:List[String], varname:String, blkinds:A
 
 object HMat {
   
-  def readSomeInts(din:InputStream, a:Array[Int], buf:Array[Byte], n:Int) {
-    var nread = 0L
-    while (nread < 4L*n) {
-      val todo = if (4L*n - nread > buf.length) buf.length else (4L*n - nread).toInt
-//      println("%d %d %d" format (nread, todo, 4L*n-nread))
-      val readnow = din.read(buf, 0, todo)
-      memcpybi(readnow, buf, 0, a, nread)
-      nread += readnow
+  val byteOrder = ByteOrder.LITTLE_ENDIAN
+  
+  def readSomeInts(din:InputStream, a:Array[Int], buf:ByteBuffer, n:Int) {
+    var nread = 0
+    val ibuff = buf.asIntBuffer
+    val bbuff = buf.array
+    while (nread < n) {
+      val todo = if (n - nread > ibuff.capacity) ibuff.capacity else (n - nread)
+      var readnow = din.read(bbuff, 0, todo*4)
+      while (readnow % 4 != 0) {
+        readnow += din.read(bbuff, readnow, 4 - (readnow % 4))
+        println("blah")
+      }
+//      println("%d %d %d %d %d" format (nread, readnow, todo, ibuff.capacity, bbuff.length))
+      ibuff.get(a, nread, readnow/4)
+      ibuff.position(0)
+      nread += readnow/4
     }
   }
   
-  def readSomeFloats(din:InputStream, a:Array[Float], buf:Array[Byte], n:Int) {
-    var nread = 0L
-    while (nread < 4L*n) {
-    	val todo = if (4L*n - nread > buf.length) buf.length else (4L*n - nread).toInt
-      val readnow = din.read(buf, 0, todo)
-      memcpybf(readnow, buf, 0, a, nread)
-      nread += readnow
+  def readSomeFloats(din:InputStream, a:Array[Float], buf:ByteBuffer, n:Int) {
+    var nread = 0
+    val fbuff = buf.asFloatBuffer
+    val bbuff = buf.array
+    while (nread < n) {
+      val todo = if (n - nread > fbuff.capacity) fbuff.capacity else (n - nread)
+      var readnow = din.read(bbuff, 0, todo*4)
+      while (readnow % 4 != 0) {
+        readnow += din.read(bbuff, readnow, 4 - (readnow % 4))
+      }
+      fbuff.get(a, nread, readnow/4)
+      fbuff.position(0)
+      nread += readnow/4  
     }
   }
   
-  def readSomeDoubles(din:InputStream, a:Array[Double], buf:Array[Byte], n:Int) {
-    var nread = 0L
-    while (nread < 8L*n) {
-    	val todo = if (48*n - nread > buf.length) buf.length else (8L*n - nread).toInt
-      val readnow = din.read(buf, 0, todo)
-      memcpybd(readnow, buf, 0, a, nread)
-      nread += readnow
+  def readSomeDoubles(din:InputStream, a:Array[Double], buf:ByteBuffer, n:Int) {
+    var nread = 0
+    val dbuff = buf.asDoubleBuffer
+    val bbuff = buf.array
+    while (nread < n) {
+      val todo = if (n - nread > dbuff.capacity) dbuff.capacity else (n - nread)
+      var readnow = din.read(bbuff, 0, todo*8)
+      while (readnow % 8 != 0) {
+        readnow += din.read(bbuff, readnow, 8 - (readnow % 8))
+      }
+      dbuff.get(a, nread, readnow/8)
+      dbuff.position(0)
+      nread += readnow/8 
     }
   }
   
-  def writeSomeInts(dout:OutputStream, a:Array[Int], buf:Array[Byte], n:Int) {
-    var nwritten = 0L
-    while (nwritten < 4L*n) {
-    	val todo = if (4L*n - nwritten > buf.length) buf.length else (4L*n - nwritten).toInt
-    	memcpyib(todo, a, nwritten, buf, 0)
-      dout.write(buf, 0, todo)
+  def writeSomeInts(dout:OutputStream, a:Array[Int], buf:ByteBuffer, n:Int) {
+    var nwritten = 0
+    val ibuff = buf.asIntBuffer
+    val bbuff = buf.array
+    while (nwritten < n) {
+    	val todo = if (n - nwritten > ibuff.capacity) ibuff.capacity else (n - nwritten)
+      ibuff.put(a, nwritten, todo)
+      dout.write(bbuff, 0, todo*4)
       nwritten += todo
     }
   }
   
-  def writeSomeFloats(dout:OutputStream, a:Array[Float], buf:Array[Byte], n:Int) {
-    var nwritten = 0L
-    while (nwritten < 4L*n) {
-      val todo = if (4L*n - nwritten > buf.length) buf.length else (4L*n - nwritten).toInt
-    	memcpyfb(todo, a, nwritten, buf, 0)
-      dout.write(buf, 0, todo)
+  def writeSomeFloats(dout:OutputStream, a:Array[Float], buf:ByteBuffer, n:Int) {
+    var nwritten = 0
+    val fbuff = buf.asFloatBuffer
+    val bbuff = buf.array
+    while (nwritten < n) {
+    	val todo = if (n - nwritten > fbuff.capacity) fbuff.capacity else (n - nwritten)
+      fbuff.put(a, nwritten, todo)
+      dout.write(bbuff, 0, todo*4)
       nwritten += todo
     }
   }
   
-  def writeSomeDoubles(dout:OutputStream, a:Array[Double], buf:Array[Byte], n:Int) {
-    var nwritten = 0L
-    while (nwritten < 8L*n) {
-    	val todo = if (8L*n - nwritten > buf.length) buf.length else (8L*n - nwritten).toInt
-    	memcpydb(todo, a, nwritten, buf, 0)
-      dout.write(buf, 0, todo)
+  def writeSomeDoubles(dout:OutputStream, a:Array[Double], buf:ByteBuffer, n:Int) {
+    var nwritten = 0
+    val dbuff = buf.asDoubleBuffer
+    val bbuff = buf.array
+    while (nwritten < n) {
+    	val todo = if (n - nwritten > dbuff.capacity) dbuff.capacity else (n - nwritten)
+    	dbuff.put(a, nwritten, todo)
+      dout.write(bbuff, 0, todo*8)
       nwritten += todo
     }
   }
@@ -136,7 +164,7 @@ object HMat {
   
   def loadFMat(fname:String, compressed:Boolean=true):FMat = {
     val gin = getInputStream(fname, compressed)
-    val buff = new Array[Byte](1024*1024)
+    val buff = ByteBuffer.allocate(1024*1024).order(byteOrder)
     val hints = new Array[Int](4)
     readSomeInts(gin, hints, buff, 4)
     val ftype = hints(0)
@@ -150,7 +178,7 @@ object HMat {
    
   def loadIMat(fname:String, compressed:Boolean=true):IMat = {
     val gin = getInputStream(fname, compressed)
-    val buff = new Array[Byte](1024*1024)
+    val buff = ByteBuffer.allocate(1024*1024).order(byteOrder)
     val hints = new Array[Int](4)
     readSomeInts(gin, hints, buff, 4)
     val ftype = hints(0)
@@ -165,14 +193,14 @@ object HMat {
    
   def loadDMat(fname:String, compressed:Boolean=true):DMat = {
     val gin = getInputStream(fname, compressed)
-    val buff = new Array[Byte](1024*1024)
+    val bytebuff = ByteBuffer.allocate(1024*1024).order(byteOrder)
     val hints = new Array[Int](4)
-    readSomeInts(gin, hints, buff, 4)
+    readSomeInts(gin, hints, bytebuff, 4)
     val ftype = hints(0)
     val nrows = hints(1)
     val ncols = hints(2)
     val out = DMat(nrows, ncols)
-    readSomeDoubles(gin, out.data, buff, ncols*nrows)
+    readSomeDoubles(gin, out.data, bytebuff, ncols*nrows)
     gin.close
     out
   }
@@ -180,13 +208,13 @@ object HMat {
   def saveFMat(fname:String, m:FMat, compressed:Boolean=true):Unit = {
     val gout = getOutputStream(fname, compressed)
     val hints = new Array[Int](4)
-    val tbuf = new Array[Byte](16)
+    val tbuf = ByteBuffer.allocate(16).order(byteOrder)
     hints(0) = 130 // 1=dense, 3=float
     hints(1) = m.nrows
     hints(2) = m.ncols
     hints(3) = 0
     writeSomeInts(gout, hints, tbuf, 4)
-    val buff = new Array[Byte](math.min(1024*1024, 4*m.ncols*m.nrows))
+    val buff = ByteBuffer.allocate(math.min(1024*1024, 4*m.ncols*m.nrows)).order(byteOrder)
     writeSomeFloats(gout, m.data, buff, m.nrows*m.ncols)
     gout.close
   }
@@ -194,13 +222,13 @@ object HMat {
   def saveIMat(fname:String, m:IMat, compressed:Boolean=true):Unit = {
   	val gout = getOutputStream(fname, compressed)
     val hints = new Array[Int](4)
-    val tbuf = new Array[Byte](16)
+    val tbuf = ByteBuffer.allocate(16).order(byteOrder)
     hints(0) = 110 // 1=dense, 1=int
     hints(1) = m.nrows
     hints(2) = m.ncols
     hints(3) = 0
     writeSomeInts(gout, hints, tbuf, 4)
-    val buff = new Array[Byte](math.min(1024*1024, 4*m.ncols*m.nrows))
+    val buff = ByteBuffer.allocate(math.min(1024*1024, 4*m.ncols*m.nrows)).order(byteOrder)
     writeSomeInts(gout, m.data, buff, m.nrows*m.ncols)
     gout.close
   }
@@ -208,20 +236,20 @@ object HMat {
   def saveDMat(fname:String, m:DMat, compressed:Boolean=true):Unit = {
     val gout = getOutputStream(fname, compressed)
     val hints = new Array[Int](4)
-    val tbuf = new Array[Byte](16)
+    val tbuf = ByteBuffer.allocate(16).order(byteOrder)
     hints(0) = 140 // 1=dense, 4=double
     hints(1) = m.nrows
     hints(2) = m.ncols
     hints(3) = 0
     writeSomeInts(gout, hints, tbuf, 4)
-    val buff = new Array[Byte](math.min(1024*1024, 4*m.ncols*m.nrows))
+    val buff = ByteBuffer.allocate(math.min(1024*1024, 4*m.ncols*m.nrows)).order(byteOrder)
     writeSomeDoubles(gout, m.data, buff, m.nrows*m.ncols)
     gout.close
   }
   
   def loadSMat(fname:String, compressed:Boolean=true):SMat = {
     val gin = getInputStream(fname, compressed)
-    val buff = new Array[Byte](1024*1024)
+    val buff = ByteBuffer.allocate(1024*1024).order(byteOrder)
     val hints = new Array[Int](4)
     readSomeInts(gin, hints, buff, 4)
     val ftype = hints(0)
@@ -241,13 +269,13 @@ object HMat {
   def saveSMat(fname:String, m:SMat, compressed:Boolean=true):Unit = {
     val gout = getOutputStream(fname, compressed)
     val hints = new Array[Int](4)
-    val tbuf = new Array[Byte](16)
+    val tbuf = ByteBuffer.allocate(16).order(byteOrder)
     hints(0) = 231 // 2=sparse, 3=float, 1=int
     hints(1) = m.nrows
     hints(2) = m.ncols
     hints(3) = m.nnz
     writeSomeInts(gout, hints, tbuf, 4)
-    val buff = new Array[Byte](math.min(1024*1024, 4*math.max(m.ncols+1, m.nnz)))
+    val buff = ByteBuffer.allocate(math.min(1024*1024, 4*math.max(m.ncols+1, m.nnz))).order(byteOrder)
     try {
     	MatHDF5.subOne(m.jc)
     	MatHDF5.subOne(m.ir)
