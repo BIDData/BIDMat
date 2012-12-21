@@ -161,7 +161,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   def - (b : SMat) = ssMatOp(b, (x:Float, y:Float) => x - y, null)
   def * (b : FMat):FMat = SMult(b, null)
   def Tx (b : FMat):FMat = Tmult(b, null)
-  def *! (b : SMat) = SSMult(b)
+  def *# (b : SMat) = SSMult(b)
   def *@ (b : SMat) = ssMatOp(b, (x:Float, y:Float) => x * y, null)
   def /@ (b : SMat) = ssMatOp(b, (x:Float, y:Float) => x / y, null)
   

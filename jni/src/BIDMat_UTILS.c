@@ -4,7 +4,7 @@
 #include <string.h>
 
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_memcpybi
-(JNIEnv * env, jobject calling_obj, jint N, jbyteArray jA, jint startA, jintArray jB, jint startB){
+(JNIEnv * env, jobject calling_obj, jint N, jbyteArray jA, jlong startA, jintArray jB, jlong startB){
 	jbyte * A = (*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE);
 	jint * B = (*env)->GetPrimitiveArrayCritical(env, jB, JNI_FALSE);
 
@@ -15,7 +15,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_memcpybi
 }
 
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_memcpybf
-(JNIEnv * env, jobject calling_obj, jint N, jbyteArray jA, jint startA, jfloatArray jB, jint startB){
+(JNIEnv * env, jobject calling_obj, jint N, jbyteArray jA, jlong startA, jfloatArray jB, jlong startB){
 	jbyte * A = (*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE);
 	jfloat * B = (*env)->GetPrimitiveArrayCritical(env, jB, JNI_FALSE);
 
@@ -26,7 +26,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_memcpybf
 }
 
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_memcpybd
-(JNIEnv * env, jobject calling_obj, jint N, jbyteArray jA, jint startA, jdoubleArray jB, jint startB){
+(JNIEnv * env, jobject calling_obj, jint N, jbyteArray jA, jlong startA, jdoubleArray jB, jlong startB){
 	jbyte * A = (*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE);
 	jdouble * B = (*env)->GetPrimitiveArrayCritical(env, jB, JNI_FALSE);
 
@@ -37,7 +37,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_memcpybd
 }
 
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_memcpyib
-(JNIEnv * env, jobject calling_obj, jint N, jintArray jA, jint startA, jbyteArray jB, jint startB){
+(JNIEnv * env, jobject calling_obj, jint N, jintArray jA, jlong startA, jbyteArray jB, jlong startB){
 	jint * A = (*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE);
 	jbyte * B = (*env)->GetPrimitiveArrayCritical(env, jB, JNI_FALSE);
 
@@ -49,7 +49,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_memcpyib
 
 
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_memcpyfb
-(JNIEnv * env, jobject calling_obj, jint N, jfloatArray jA, jint startA, jbyteArray jB, jint startB){
+(JNIEnv * env, jobject calling_obj, jint N, jfloatArray jA, jlong startA, jbyteArray jB, jlong startB){
 	jfloat * A = (*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE);
 	jbyte * B = (*env)->GetPrimitiveArrayCritical(env, jB, JNI_FALSE);
 
@@ -61,7 +61,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_memcpyfb
 
 
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_memcpydb
-(JNIEnv * env, jobject calling_obj, jint N, jdoubleArray jA, jint startA, jbyteArray jB, jint startB){
+(JNIEnv * env, jobject calling_obj, jint N, jdoubleArray jA, jlong startA, jbyteArray jB, jlong startB){
 	jdouble * A = (*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE);
 	jbyte * B = (*env)->GetPrimitiveArrayCritical(env, jB, JNI_FALSE);
 
