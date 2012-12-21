@@ -20,6 +20,7 @@ object AltaVistaCrawl {
 	  val out = SMat(n, n, mnnz)
 	  i = 0
 	  var jc0 = 0
+	  mnnz = 0
 	  while (i < m.nrows) {
 	    if (i == 0 || m(i,0) > m(i-1,0)) {
 	      source = m(i,1)
@@ -29,8 +30,9 @@ object AltaVistaCrawl {
 	      }
 	    } else {
 	      if (m(i,1) > 0) {
-	        out.data(i) = 1
-	        out.ir(i) = m(i,1) + ioff
+	        out.data(mnnz) = 1
+	        out.ir(mnnz) = m(i,1) + ioff
+	        mnnz += 1
 	      }
 	    }
 	    i += 1
