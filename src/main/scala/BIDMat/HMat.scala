@@ -124,6 +124,7 @@ object HMat {
     while (nwritten < n) {
     	val todo = if (n - nwritten > ibuff.capacity) ibuff.capacity else (n - nwritten)
       ibuff.put(a, nwritten, todo)
+      ibuff.position(0)
       dout.write(bbuff, 0, todo*4)
       nwritten += todo
     }
@@ -136,6 +137,7 @@ object HMat {
     while (nwritten < n) {
     	val todo = if (n - nwritten > fbuff.capacity) fbuff.capacity else (n - nwritten)
       fbuff.put(a, nwritten, todo)
+      fbuff.position(0)
       dout.write(bbuff, 0, todo*4)
       nwritten += todo
     }
@@ -148,6 +150,7 @@ object HMat {
     while (nwritten < n) {
     	val todo = if (n - nwritten > dbuff.capacity) dbuff.capacity else (n - nwritten)
     	dbuff.put(a, nwritten, todo)
+    	dbuff.position(0)
       dout.write(bbuff, 0, todo*8)
       nwritten += todo
     }
