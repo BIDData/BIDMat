@@ -41,6 +41,7 @@ object AltaVistaCrawl {
 	  	out.jc(jc0) = i + ioff
 	  	jc0 += 1
 	  }
+	  out
 	}
 
 }
