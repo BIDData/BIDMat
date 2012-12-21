@@ -398,8 +398,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   /*
    * Basic operators on pairs of FMats. These are the compute routines.
    */
-  def xG (b :FMat) = GPUmult(b, null, false)
-  def xTG (b :FMat) = GPUmult(b, null, true)
+
   def +  (b : FMat) = ffMatOpv(b, FMat.vecAdd _, null)
   def -  (b : FMat) = ffMatOpv(b, FMat.vecSub _, null)
   def *  (b : FMat) = fDMult(b, null)
@@ -408,6 +407,10 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def xT  (b : FMat) = multT(b, null)
   def *^  (b : SMat) = multT(b, null)
   def *^  (b : FMat) = multT(b, null)
+  def xG  (b :FMat) = GPUmult(b, null, false)
+  def xTG (b :FMat) = GPUmult(b, null, true)
+  def *!  (b :FMat) = GPUmult(b, null, false)
+  def *^! (b :FMat) = GPUmult(b, null, true)
   def /  (b : FMat) = solvel(b)
   def \\ (b : FMat) = solver(b)
   def *@ (b : FMat) = ffMatOpv(b, FMat.vecMul _, null)
@@ -562,14 +565,16 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   
   override def t:FMat = FMat(mat.gt(omat))
   
-  def xG (b :FMat) = mat.GPUmult(b, omat, false)
-  def xTG (b :FMat) = mat.GPUmult(b, omat, true)
   def * (b : FMat) = mat.fDMult(b, omat) 
   def * (b : SMat) = mat.fSMult(b, omat) 
   def *^  (b : SMat) = mat.multT(b, omat)
   def *^  (b : FMat) = mat.multT(b, omat)
   def xT  (b : SMat) = mat.multT(b, omat)
   def xT  (b : FMat) = mat.multT(b, omat)
+  def *!  (b :FMat) = mat.GPUmult(b, omat, false)
+  def *^! (b :FMat) = mat.GPUmult(b, omat, true)   
+  def xG  (b :FMat) = mat.GPUmult(b, omat, false)
+  def xTG (b :FMat) = mat.GPUmult(b, omat, true)
   def + (b : FMat) = mat.ffMatOpv(b, FMat.vecAdd _, omat)
   def - (b : FMat) = mat.ffMatOpv(b, FMat.vecSub _, omat)
   def *@ (b : FMat) = mat.ffMatOpv(b, FMat.vecMul _, omat)

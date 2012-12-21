@@ -212,6 +212,8 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
   import GMat.BinOp._
   def * (a : GMat) = GMult(a, null)
   def * (a : GSMat) = GSMult(a, null)
+  def *^ (a : GMat) = GMultT(a, null)
+  def *^ (a : GSMat) = GSMultT(a, null)
   def xT (a : GMat) = GMultT(a, null)
   def xT (a : GSMat) = GSMultT(a, null)
   def + (a : GMat) = gOp(a, null, op_add)
@@ -254,6 +256,10 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
   override def *  (b : Float):Mat = applyMat(this, GMat(FMat.felem(b)), null, Mop_Times)
   override def *  (b : Int):Mat = applyMat(this, GMat(FMat.felem(b)), null, Mop_Times)
   override def *  (b : Double):Mat = applyMat(this, GMat(FMat.felem(b.asInstanceOf[Float])), null, Mop_Times)
+  override def *^  (b : Mat) = b match {
+    case bb:GSMat => GSMultT(bb, null)
+    case bb:GMat => GMultT(bb, null)
+    }
   override def xT  (b : Mat) = b match {
     case bb:GSMat => GSMultT(bb, null)
     case bb:GMat => GMultT(bb, null)
@@ -331,6 +337,13 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
 	def xT (a : GSMat) = mat.GSMultT(a, omat)
 	def xT (a : GMat) = mat.GMultT(a, omat)
 	override def xT (b: Mat):Mat = b match {
+	case bb:GSMat => mat.GSMultT(bb, omat)
+	case bb:GMat => mat.GMultT(bb, omat)
+	}
+	
+  def *^ (a : GSMat) = mat.GSMultT(a, omat)
+	def *^ (a : GMat) = mat.GMultT(a, omat)
+	override def *^ (b: Mat):Mat = b match {
 	case bb:GSMat => mat.GSMultT(bb, omat)
 	case bb:GMat => mat.GMultT(bb, omat)
 	}

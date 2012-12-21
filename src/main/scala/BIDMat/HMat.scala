@@ -60,36 +60,40 @@ case class HMat(nr:Int, nc:Int, fileList:List[String], varname:String, blkinds:A
 object HMat {
   
   def readSomeInts(din:InputStream, a:Array[Int], buf:Array[Byte], n:Int) {
-    var nread = 0
-    while (nread < 4*n) {
-      val readnow = din.read(buf, 0, math.min(buf.length, 4*n-nread))
+    var nread = 0L
+    while (nread < 4L*n) {
+      val todo = if (4L*n - nread > buf.length) buf.length else (4L*n - nread).toInt
+//      println("%d %d %d" format (nread, todo, 4L*n-nread))
+      val readnow = din.read(buf, 0, todo)
       memcpybi(readnow, buf, 0, a, nread)
       nread += readnow
     }
   }
   
   def readSomeFloats(din:InputStream, a:Array[Float], buf:Array[Byte], n:Int) {
-    var nread = 0
-    while (nread < 4*n) {
-      val readnow = din.read(buf, 0, math.min(buf.length, 4*n-nread))
+    var nread = 0L
+    while (nread < 4L*n) {
+    	val todo = if (4L*n - nread > buf.length) buf.length else (4L*n - nread).toInt
+      val readnow = din.read(buf, 0, todo)
       memcpybf(readnow, buf, 0, a, nread)
       nread += readnow
     }
   }
   
   def readSomeDoubles(din:InputStream, a:Array[Double], buf:Array[Byte], n:Int) {
-    var nread = 0
-    while (nread < 8*n) {
-      val readnow = din.read(buf, 0, math.min(buf.length, 8*n-nread))
+    var nread = 0L
+    while (nread < 8L*n) {
+    	val todo = if (48*n - nread > buf.length) buf.length else (8L*n - nread).toInt
+      val readnow = din.read(buf, 0, todo)
       memcpybd(readnow, buf, 0, a, nread)
       nread += readnow
     }
   }
   
   def writeSomeInts(dout:OutputStream, a:Array[Int], buf:Array[Byte], n:Int) {
-    var nwritten = 0
-    while (nwritten < 4*n) {
-      val todo = math.min(4*n-nwritten, buf.length)
+    var nwritten = 0L
+    while (nwritten < 4L*n) {
+    	val todo = if (4L*n - nwritten > buf.length) buf.length else (4L*n - nwritten).toInt
     	memcpyib(todo, a, nwritten, buf, 0)
       dout.write(buf, 0, todo)
       nwritten += todo
@@ -97,9 +101,9 @@ object HMat {
   }
   
   def writeSomeFloats(dout:OutputStream, a:Array[Float], buf:Array[Byte], n:Int) {
-    var nwritten = 0
-    while (nwritten < 4*n) {
-      val todo = math.min(4*n-nwritten, buf.length)
+    var nwritten = 0L
+    while (nwritten < 4L*n) {
+      val todo = if (4L*n - nwritten > buf.length) buf.length else (4L*n - nwritten).toInt
     	memcpyfb(todo, a, nwritten, buf, 0)
       dout.write(buf, 0, todo)
       nwritten += todo
@@ -107,9 +111,9 @@ object HMat {
   }
   
   def writeSomeDoubles(dout:OutputStream, a:Array[Double], buf:Array[Byte], n:Int) {
-    var nwritten = 0
-    while (nwritten < 8*n) {
-      val todo = math.min(8*n-nwritten, buf.length)
+    var nwritten = 0L
+    while (nwritten < 8L*n) {
+    	val todo = if (8L*n - nwritten > buf.length) buf.length else (8L*n - nwritten).toInt
     	memcpydb(todo, a, nwritten, buf, 0)
       dout.write(buf, 0, todo)
       nwritten += todo
@@ -152,6 +156,7 @@ object HMat {
     val ftype = hints(0)
     val nrows = hints(1)
     val ncols = hints(2)
+    println("%d %d %d\n" format (ftype, nrows, ncols))
     val out = IMat(nrows, ncols)
     readSomeInts(gin, out.data, buff, ncols*nrows)
     gin.close

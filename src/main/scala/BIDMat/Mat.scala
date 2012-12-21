@@ -148,6 +148,7 @@ abstract class Pair {
   def - (b : Mat):Mat = notImplemented1("-", b)
   def * (b : Mat):Mat = notImplemented1("*", b)
   def xT (b : Mat):Mat = notImplemented1("xT", b)
+  def *^ (b : Mat):Mat = notImplemented1("*^", b)
   def Tx (b : Mat):Mat = notImplemented1("Tx", b)
   def / (b : Mat):Mat = notImplemented1("/", b)
   def *@ (b : Mat):Mat = notImplemented1("*@", b)

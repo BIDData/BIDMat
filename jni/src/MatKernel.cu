@@ -665,6 +665,7 @@ int extractmat(float *a, long long *b, int nrows, int ncols) {
   return err;
 }
 
+//#include "myradix_sort.inl"
 #include <thrust/sort.h>
 #include <thrust/device_ptr.h>
 #include <thrust/reverse.h>
@@ -673,8 +674,8 @@ int rsort(long long *pkeys, unsigned int *pvals, int N, int device) {
   cudaSetDevice(device);
   thrust::device_ptr<long long> keys(pkeys);
   thrust::device_ptr<unsigned int> vals(pvals);
+//  thrust::detail::backend::cuda::detail::stable_radix_sort_by_key(keys, keys + N, vals);
   thrust::sort_by_key(keys, keys + N, vals);
-  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -684,9 +685,9 @@ int rsort2(float *pkeys, unsigned int *pvals, int nrows, int ncols, int device) 
   for (int i = 0; i < ncols; i++) {
     thrust::device_ptr<float> keys(pkeys+i*nrows);
     thrust::device_ptr<unsigned int> vals(pvals+i*nrows);
+//    thrust::detail::backend::cuda::detail::stable_radix_sort_by_key(keys, keys + nrows, vals);
     thrust::sort_by_key(keys, keys + nrows, vals);
   }
-  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
 }
