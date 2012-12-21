@@ -66,17 +66,18 @@ object HMat {
     var nread = 0
     val ibuff = buf.asIntBuffer
     val bbuff = buf.array
+    var readnow = 0
     while (nread < n) {
       val todo = if (n - nread > ibuff.capacity) ibuff.capacity else (n - nread)
-      var readnow = din.read(bbuff, 0, todo*4)
-      while (readnow % 4 != 0) {
-        readnow += din.read(bbuff, readnow, 4 - (readnow % 4))
-        println("blah")
-      }
+      readnow += din.read(bbuff, readnow, todo*4 - readnow)
 //      println("%d %d %d %d %d" format (nread, readnow, todo, ibuff.capacity, bbuff.length))
       ibuff.get(a, nread, readnow/4)
       ibuff.position(0)
       nread += readnow/4
+      if (readnow % 4 != 0) {
+        System.arraycopy(bbuff, 4*(readnow/4), bbuff, 0, readnow % 4)
+      }
+      readnow = readnow % 4
     }
   }
   
@@ -84,15 +85,17 @@ object HMat {
     var nread = 0
     val fbuff = buf.asFloatBuffer
     val bbuff = buf.array
+    var readnow = 0
     while (nread < n) {
       val todo = if (n - nread > fbuff.capacity) fbuff.capacity else (n - nread)
-      var readnow = din.read(bbuff, 0, todo*4)
-      while (readnow % 4 != 0) {
-        readnow += din.read(bbuff, readnow, 4 - (readnow % 4))
-      }
+      readnow += din.read(bbuff, readnow, todo*4 - readnow)
       fbuff.get(a, nread, readnow/4)
       fbuff.position(0)
       nread += readnow/4  
+      if (readnow % 4 != 0) {
+        System.arraycopy(bbuff, 4*(readnow/4), bbuff, 0, readnow % 4)
+      }
+      readnow = readnow % 4
     }
   }
   
@@ -100,15 +103,17 @@ object HMat {
     var nread = 0
     val dbuff = buf.asDoubleBuffer
     val bbuff = buf.array
+    var readnow = 0
     while (nread < n) {
       val todo = if (n - nread > dbuff.capacity) dbuff.capacity else (n - nread)
-      var readnow = din.read(bbuff, 0, todo*8)
-      while (readnow % 8 != 0) {
-        readnow += din.read(bbuff, readnow, 8 - (readnow % 8))
-      }
+      readnow += din.read(bbuff, readnow, todo*8 - readnow)
       dbuff.get(a, nread, readnow/8)
       dbuff.position(0)
       nread += readnow/8 
+      if (readnow % 8 != 0) {
+        System.arraycopy(bbuff, 8*(readnow/8), bbuff, 0, readnow % 8)
+      }
+      readnow = readnow % 8
     }
   }
   
