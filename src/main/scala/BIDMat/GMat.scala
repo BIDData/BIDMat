@@ -604,7 +604,7 @@ object GMat {
   	  		  CUMAT.rsort2(aa, vv, keys.nrows, colstodo)
   	  		} else {
   	  			CUMAT.embedmat(aa, kk, keys.nrows, colstodo)
-  	  			CUMAT.rsort(kk, vv, todo)
+  	  			CUMAT.rsort(kk, vv, todo, ithread)
  // 	  			CUMAT.rsorty(kk, vv, tkeys, tvals, tspine, bflags, todo)
   	  			CUMAT.extractmat(aa, kk, keys.nrows, colstodo)
   	  		}

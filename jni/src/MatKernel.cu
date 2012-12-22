@@ -716,7 +716,8 @@ int rsorty(long long *pkeys, unsigned int *pvals, long long *tkeys, unsigned int
   return err;
 }
  
-int rsort(long long *pkeys, unsigned int *pvals, int N) {
+int rsort(long long *pkeys, unsigned int *pvals, int N, int dev) {
+  cudaSetDevice(dev);
   thrust::device_ptr<long long> keys(pkeys);
   thrust::device_ptr<unsigned int> vals(pvals);
   thrust::sort_by_key(keys, keys + N, vals);

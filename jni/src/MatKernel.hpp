@@ -23,7 +23,7 @@ int embedmat(float *a, long long *b, int nrows, int ncols);
 
 int extractmat(float *a, long long *b, int nrows, int ncols);
 
-int rsort(long long *pkeys, unsigned int *pvals, int n);
+int rsort(long long *pkeys, unsigned int *pvals, int n, int dev);
 
 int rsortsizex(int N);
 
