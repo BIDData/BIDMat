@@ -601,10 +601,10 @@ object GMat {
   	  		cudaMemcpy(aa, Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
   	  		cudaMemcpy(vv, Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
   	  		if (tall) {
-  	  		  CUMAT.rsort2(aa, vv, keys.nrows, colstodo, ithread)
+  	  		  CUMAT.rsort2(aa, vv, keys.nrows, colstodo)
   	  		} else {
   	  			CUMAT.embedmat(aa, kk, keys.nrows, colstodo)
-  	  			CUMAT.rsort(kk, vv, todo)
+ // 	  			CUMAT.rsort(kk, vv, todo)
   	  			CUMAT.rsorty(kk, vv, tkeys, tvals, tspine, bflags, todo)
   	  			CUMAT.extractmat(aa, kk, keys.nrows, colstodo)
   	  		}
