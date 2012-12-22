@@ -40,11 +40,11 @@ public final class CUMAT {
     
     public static native int rsortsizey(int n);
     
-    public static native int rsortx(Pointer A, Pointer B, Pointer C, Pointer D, Pointer E, Pointer F, int n, int dev);
+    public static native int rsortx(Pointer A, Pointer B, Pointer C, Pointer D, Pointer E, Pointer F, int n);
     
-    public static native int rsorty(Pointer A, Pointer B, Pointer C, Pointer D, Pointer E, Pointer F, int n, int dev);
+    public static native int rsorty(Pointer A, Pointer B, Pointer C, Pointer D, Pointer E, Pointer F, int n);
     
-    public static native int rsort2(Pointer A, Pointer B, int nrows, int ncols, int dev);
+    public static native int rsort2(Pointer A, Pointer B, int nrows, int ncols);
     
     public static native int stratify(Pointer strata, int n, Pointer a,  Pointer b, Pointer bi, int stride);
     
