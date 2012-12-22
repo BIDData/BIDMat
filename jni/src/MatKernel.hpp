@@ -29,7 +29,7 @@ int rsortsizex(int N);
 
 int rsortsizey(int N);
 
-int rsortx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tvals, int *ispine, bool *bflags, int n);
+int rsortx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tvals, int *ispine, bool *bflags, int nrows, int ncols);
 
 int rsorty(long long *pkeys, unsigned int *pvals, long long *tkeys, unsigned int *tvals, int *ispine, bool *bflags, int n);
 

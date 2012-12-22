@@ -683,20 +683,23 @@ int rsortsizey(int N) {
 
 
 int rsortx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tvals, 
-    int *ispine, bool * bflags, int N) {
-  thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortingEnactor<float,unsigned int> sorter(N);
+    int *ispine, bool * bflags, int nrows, int ncols) {
+  int i;
+  cudaError_t err;
+  thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortingEnactor<float,unsigned int> sorter(nrows);
   thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortStorage<float,unsigned int>    storage;
-
-  storage.d_keys             = pkeys;
-  storage.d_values           = pvals;
   storage.d_alt_keys         = tkeys;
   storage.d_alt_values       = tvals;
   storage.d_spine            = ispine;
   storage.d_from_alt_storage = bflags;
 
-  sorter.EnactSort(storage);
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
+  for (i = 0; i < ncols; i++) {
+    storage.d_keys             = pkeys+i*nrows;
+    storage.d_values           = pvals+i*nrows;
+    sorter.EnactSort(storage);
+    cudaDeviceSynchronize();
+    err = cudaGetLastError();
+  }
   return err;
 }
 
