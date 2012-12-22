@@ -5,10 +5,10 @@
 	<classpathentry kind="src" path="src/main/java"/>
 	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="C:/Users/jfc.EECS/.ivy2/cache/org.scala-tools.testing/scalacheck_2.9.1/jars/scalacheck_2.9.1-1.9.jar"/>
-	<classpathentry kind="lib" path="C:/Users/jfc.EECS/.ivy2/cache/org.scalatest/scalatest/jars/scalatest-1.4.RC2.jar"/>
-	<classpathentry kind="lib" path="C:/Users/jfc.EECS/.ivy2/cache/org.scala-lang/jline/jars/jline-2.9.1.jar"/>
-	<classpathentry kind="lib" path="C:/Users/jfc.EECS/.ivy2/cache/junit/junit/jars/junit-4.5.jar"/>
+	<classpathentry kind="lib" path="C:/Users/jfc/.ivy2/cache/org.scala-tools.testing/scalacheck_2.9.1/jars/scalacheck_2.9.1-1.9.jar"/>
+	<classpathentry kind="lib" path="C:/Users/jfc/.ivy2/cache/org.scalatest/scalatest/jars/scalatest-1.4.RC2.jar"/>
+	<classpathentry kind="lib" path="C:/Users/jfc/.ivy2/cache/org.scala-lang/jline/jars/jline-2.9.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/jfc/.ivy2/cache/junit/junit/jars/junit-4.5.jar"/>
 	<classpathentry kind="lib" path="C:/code/BIDMat/lib/jhdf5.jar"/>
 	<classpathentry kind="lib" path="C:/code/BIDMat/lib/ptplot.jar"/>
 	<classpathentry kind="lib" path="C:/code/BIDMat/lib/jcublas-0.5.0RC.jar"/>
