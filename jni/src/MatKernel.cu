@@ -683,8 +683,7 @@ int rsortsizey(int N) {
 
 
 int rsortx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tvals, 
-    int *ispine, bool * bflags, int N, int device) {
-  cudaSetDevice(device);
+    int *ispine, bool * bflags, int N) {
   thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortingEnactor<float,unsigned int> sorter(N);
   thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortStorage<float,unsigned int>    storage;
 
@@ -701,9 +700,7 @@ int rsortx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tvals,
 }
 
 
-int rsorty(long long *pkeys, unsigned int *pvals, long long *tkeys, unsigned int *tvals, 
-    int *ispine, bool * bflags, int N, int device) {
-  cudaSetDevice(device);
+int rsorty(long long *pkeys, unsigned int *pvals, long long *tkeys, unsigned int *tvals, int *ispine, bool * bflags, int N) {
   thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortingEnactor<long long,unsigned int> sorter(N);
   thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortStorage<long long,unsigned int>    storage;
 
@@ -719,8 +716,7 @@ int rsorty(long long *pkeys, unsigned int *pvals, long long *tkeys, unsigned int
   return err;
 }
  
-int rsort(long long *pkeys, unsigned int *pvals, int N, int device) {
-  cudaSetDevice(device);
+int rsort(long long *pkeys, unsigned int *pvals, int N) {
   thrust::device_ptr<long long> keys(pkeys);
   thrust::device_ptr<unsigned int> vals(pvals);
   thrust::sort_by_key(keys, keys + N, vals);
@@ -728,12 +724,10 @@ int rsort(long long *pkeys, unsigned int *pvals, int N, int device) {
   return err;
 }
 
-int rsort2(float *pkeys, unsigned int *pvals, int nrows, int ncols, int device) {
-  cudaSetDevice(device);
+int rsort2(float *pkeys, unsigned int *pvals, int nrows, int ncols) {
   for (int i = 0; i < ncols; i++) {
     thrust::device_ptr<float> keys(pkeys+i*nrows);
     thrust::device_ptr<unsigned int> vals(pvals+i*nrows);
-//    thrust::detail::backend::cuda::detail::stable_radix_sort_by_key(keys, keys + nrows, vals);
     thrust::sort_by_key(keys, keys + nrows, vals);
   }
   cudaError_t err = cudaGetLastError();
