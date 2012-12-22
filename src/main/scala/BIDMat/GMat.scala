@@ -571,15 +571,12 @@ object GMat {
   		c
   	}
   }
- 
   
   def GPUsort(keys:FMat, vals:IMat):Unit = {
     if (keys.nrows != vals.nrows || keys.ncols != vals.ncols)
       throw new RuntimeException("Dimensions mismatch in GPUsort ("+keys.nrows+","+keys.ncols+") ("+vals.nrows+","+vals.ncols+")")
-  	val aa = new Pointer
-  	val kk = new Pointer
-  	val vv = new Pointer
-  	val nthreads = math.min(1,Mat.hasCUDA) 
+ 	
+  	val nthreads = math.min(8,Mat.hasCUDA) 
   	val maxsize = keys.nrows * math.min(32*1024*1024/keys.nrows, math.max(1, keys.ncols/nthreads))
   	val nsize = keys.nrows * keys.ncols
   	val tall = (keys.nrows > 1024*1024)
@@ -588,6 +585,10 @@ object GMat {
   	for (ithread <- 0 until nthreads) {
   	  actor {
   	  	SciFunctions.device(ithread)
+  	  	val aa = new Pointer
+  	  	val kk = new Pointer
+  	  	val vv = new Pointer
+ 
   	  	var status = cudaMalloc(aa, maxsize * Sizeof.FLOAT)
   	  	if (status != cudaSuccess) throw new RuntimeException("CUDA alloc failed "+status)
   	  	status = cudaMalloc(vv, maxsize * Sizeof.INT)
@@ -624,30 +625,68 @@ object GMat {
     Mat.nflops += keys.length
   }
    
-  def GPUsort(keys:GMat, vals:GIMat):Unit = {
+  def GPUsortx(keys:GMat, vals:GIMat):Unit = {
     if (keys.nrows != vals.nrows || keys.ncols != vals.ncols)
       throw new RuntimeException("Dimensions mismatch in GPUsort")
-    if (keys.nrows > 1024*1024) {
-    	CUMAT.rsort2(keys.data, vals.data, keys.nrows, keys.ncols, 0)
+    val nspine = CUMAT.rsortsizex(keys.nrows)
+    val tkeys = GMat(keys.nrows, 1)
+    val tvals = GIMat(keys.nrows, 1)
+    val tspine = GIMat(nspine, 1)
+    val bflags = GIMat(32, 1)
+    
+    var i = 0
+    while (i < keys.ncols) {
+      CUMAT.rsortx(keys.data.withByteOffset(1L*i*keys.nrows*Sizeof.FLOAT),
+      		         vals.data.withByteOffset(1L*i*keys.nrows*Sizeof.FLOAT),
+      		         tkeys.data, tvals.data, tspine.data, bflags.data, keys.nrows, 0)
+      i += 1
+    }
+    
+    tkeys.free
+    tvals.free
+    tspine.free
+    bflags.free
+    Mat.nflops += keys.length
+  }
+    
+  def GPUsort(keys:GMat, vals:GIMat):Unit = {
+  	if (keys.nrows > 1024*1024) {
+    	GPUsortx(keys, vals)
     } else {
     	val kk = new Pointer
+    	val tkeys = new Pointer
+    	val tvals = new Pointer
+    	val tspine = new Pointer
+    	val bflags = new Pointer
     	val maxsize = keys.nrows * math.min(16*1024*1024/keys.nrows, keys.ncols)
     	val nsize = keys.nrows*keys.ncols
 
     	var status = cudaMalloc(kk, maxsize * Sizeof.LONG)
     	if (status != cudaSuccess) throw new RuntimeException("CUDA alloc failed "+status)
-
+    	status = cudaMalloc(tkeys, maxsize * Sizeof.LONG)
+    	if (status != cudaSuccess) throw new RuntimeException("CUDA alloc failed "+status)
+    	status = cudaMalloc(tvals, maxsize * Sizeof.INT)
+    	if (status != cudaSuccess) throw new RuntimeException("CUDA alloc failed "+status)
+    	val nspine = CUMAT.rsortsizey(maxsize)
+    	status = cudaMalloc(tspine, nspine * Sizeof.INT)
+    	if (status != cudaSuccess) throw new RuntimeException("CUDA alloc failed "+status)
+    	status = cudaMalloc(bflags, 32 * Sizeof.INT)
+    	if (status != cudaSuccess) throw new RuntimeException("CUDA alloc failed "+status)
     	var ioff = 0
     	while (ioff < nsize) {
     		val todo = math.min(maxsize, nsize - ioff)
     		val colstodo = todo / keys.nrows
     		CUMAT.embedmat(keys.data.withByteOffset(ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
-    		CUMAT.rsort(kk, vals.data.withByteOffset(ioff*Sizeof.INT), todo, 0)
+    		CUMAT.rsorty(kk, vals.data.withByteOffset(1L*ioff*Sizeof.INT), tkeys, tvals, tspine, bflags, todo, 0)
     		CUMAT.extractmat(keys.data.withByteOffset(ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
     		ioff += maxsize
     	}
     	cudaFree(kk)
-    }
+    	cudaFree(tkeys)
+    	cudaFree(tvals)
+    	cudaFree(tspine)
+    	cudaFree(bflags)
+    } 
     Mat.nflops += keys.length
   }
 
