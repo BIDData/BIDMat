@@ -34,7 +34,7 @@ public final class CUMAT {
     
     public static native int extractmat(Pointer A, Pointer B, int nrows, int ncols);
     
-    public static native int rsort(Pointer A, Pointer B, int n, int dev);
+    public static native int rsort(Pointer A, Pointer B, int n);
     
     public static native int rsortsizex(int n);
     

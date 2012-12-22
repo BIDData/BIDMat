@@ -604,14 +604,18 @@ object GMat {
   	  		  CUMAT.rsort2(aa, vv, keys.nrows, colstodo)
   	  		} else {
   	  			CUMAT.embedmat(aa, kk, keys.nrows, colstodo)
- // 	  			CUMAT.rsort(kk, vv, todo)
-  	  			CUMAT.rsorty(kk, vv, tkeys, tvals, tspine, bflags, todo)
+  	  			CUMAT.rsort(kk, vv, todo)
+ // 	  			CUMAT.rsorty(kk, vv, tkeys, tvals, tspine, bflags, todo)
   	  			CUMAT.extractmat(aa, kk, keys.nrows, colstodo)
   	  		}
   	  		cudaMemcpy(Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), aa, todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
   	  		cudaMemcpy(Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), vv, todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
   	  		ioff += nthreads * maxsize
   	  	}
+  	  	cudaFree(bflags)
+  	  	cudaFree(tspine)
+  	  	cudaFree(tvals)
+  	  	cudaFree(tkeys)
   	  	if (!tall) cudaFree(kk)
   	  	cudaFree(vv)
   	  	cudaFree(aa)
