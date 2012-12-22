@@ -580,7 +580,7 @@ object GMat {
   	val maxsize = keys.nrows * math.min(32*1024*1024/keys.nrows, math.max(1, keys.ncols/nthreads))
   	val nsize = keys.nrows * keys.ncols
   	val nspine = CUMAT.rsortsizey(maxsize)
-  	val tall = (keys.nrows > 16*1024)
+  	val tall = (keys.nrows > 32*1024)
   	val done = IMat(nthreads,1)
 
   	for (ithread <- 0 until nthreads) {
@@ -602,10 +602,8 @@ object GMat {
   	  		cudaMemcpy(vv, Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
   	  		if (tall) {
   	  			CUMAT.rsortx(aa, vv, tkeys, tvals, tspine, bflags, keys.nrows, colstodo)
-//  	  		  CUMAT.rsort2(aa, vv, keys.nrows, colstodo)
   	  		} else {
   	  			CUMAT.embedmat(aa, kk, keys.nrows, colstodo)
- // 	  			CUMAT.rsort(kk, vv, todo, ithread)
   	  			CUMAT.rsorty(kk, vv, tkeys, tvals, tspine, bflags, todo)
   	  			CUMAT.extractmat(aa, kk, keys.nrows, colstodo)
   	  		}
@@ -647,7 +645,7 @@ object GMat {
   }
     
   def GPUsort(keys:GMat, vals:GIMat):Unit = {
-  	if (keys.nrows > 1024*1024) {
+  	if (keys.nrows > 32*1024) {
     	GPUsortx(keys, vals)
     } else {
     	val maxsize = keys.nrows * math.min(16*1024*1024/keys.nrows, keys.ncols)
@@ -668,11 +666,12 @@ object GMat {
     		CUMAT.extractmat(keys.data.withByteOffset(ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
     		ioff += maxsize
     	}
-    	cudaFree(kk)
-    	cudaFree(tkeys)
-    	cudaFree(tvals)
-    	cudaFree(tspine)
     	cudaFree(bflags)
+    	cudaFree(tspine)
+    	cudaFree(tvals)
+    	cudaFree(tkeys)
+    	cudaFree(kk)
+
     } 
     Mat.nflops += keys.length
   }
