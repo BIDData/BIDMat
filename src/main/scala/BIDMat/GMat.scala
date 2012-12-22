@@ -619,7 +619,7 @@ object GMat {
   	  	cudaFree(vv)
   	  	cudaFree(aa)
   	  	done(ithread,0) = 1
-  	  	println("done %d" format ithread)
+//  	  	println("done %d" format ithread)
   	  }
   	}
     while (SciFunctions.mini(done).v == 0) Thread.`yield`
@@ -645,7 +645,7 @@ object GMat {
   }
     
   def GPUsort(keys:GMat, vals:GIMat):Unit = {
-  	if (keys.nrows > 32*1024) {
+  	if (keys.nrows > 128*1024) {
     	GPUsortx(keys, vals)
     } else {
     	val maxsize = keys.nrows * math.min(16*1024*1024/keys.nrows, keys.ncols)
@@ -671,9 +671,8 @@ object GMat {
     	cudaFree(tvals)
     	cudaFree(tkeys)
     	cudaFree(kk)
-
+    	Mat.nflops += keys.length
     } 
-    Mat.nflops += keys.length
   }
 
   def newOrCheckGMat(nr:Int, nc:Int, outmat:Mat):GMat = {
