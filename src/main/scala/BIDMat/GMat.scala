@@ -585,7 +585,7 @@ object GMat {
 
   	for (ithread <- 0 until nthreads) {
   	  actor {
- 	  	SciFunctions.device(ithread)
+ 	    	SciFunctions.device(ithread)
   	  	val aa = GMat(maxsize, 1).data
   	  	val vv = GIMat(maxsize, 1).data
   	  	val kk = if (!tall) GMat(maxsize, 2).data else null
@@ -601,7 +601,12 @@ object GMat {
   	  		cudaMemcpy(aa, Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
   	  		cudaMemcpy(vv, Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
   	  		if (tall) {
-  	  		  CUMAT.rsort2(aa, vv, keys.nrows, colstodo)
+  	  		  var i = 0
+  	  		  while (i < colstodo) {
+  	  		    CUMAT.rsortx(aa.withByteOffset(i*keys.nrows), vv.withByteOffset(i*keys.nrows), tkeys, tvals, tspine, bflags, keys.nrows)
+  	  		    i += 1
+  	  		  }
+//  	  		  CUMAT.rsort2(aa, vv, keys.nrows, colstodo)
   	  		} else {
   	  			CUMAT.embedmat(aa, kk, keys.nrows, colstodo)
  // 	  			CUMAT.rsort(kk, vv, todo, ithread)
