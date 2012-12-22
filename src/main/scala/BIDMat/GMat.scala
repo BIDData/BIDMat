@@ -579,13 +579,13 @@ object GMat {
   	val nthreads = math.min(8,Mat.hasCUDA) 
   	val maxsize = keys.nrows * math.min(32*1024*1024/keys.nrows, math.max(1, keys.ncols/nthreads))
   	val nsize = keys.nrows * keys.ncols
+  	val nspine = CUMAT.rsortsizey(maxsize)
   	val tall = (keys.nrows > 1024*1024)
   	val done = IMat(nthreads,1)
 
   	for (ithread <- 0 until nthreads) {
   	  actor {
   	  	SciFunctions.device(ithread)
-  	  	val nspine = CUMAT.rsortsizey(maxsize)
   	  	val aa = GMat(maxsize, 1).data
   	  	val vv = GIMat(maxsize, 1).data
   	  	val kk = if (!tall) GMat(maxsize, 2).data else null
