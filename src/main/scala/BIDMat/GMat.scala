@@ -601,11 +601,7 @@ object GMat {
   	  		cudaMemcpy(aa, Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
   	  		cudaMemcpy(vv, Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
   	  		if (tall) {
-  	  		  var i = 0
-  	  		  while (i < colstodo) {
-  	  		    CUMAT.rsortx(aa.withByteOffset(i*keys.nrows), vv.withByteOffset(i*keys.nrows), tkeys, tvals, tspine, bflags, keys.nrows)
-  	  		    i += 1
-  	  		  }
+  	  			CUMAT.rsortx(aa, vv, tkeys, tvals, tspine, bflags, keys.nrows, colstodo)
 //  	  		  CUMAT.rsort2(aa, vv, keys.nrows, colstodo)
   	  		} else {
   	  			CUMAT.embedmat(aa, kk, keys.nrows, colstodo)
@@ -640,15 +636,9 @@ object GMat {
     val tvals = GIMat(keys.nrows, 1)
     val tspine = GIMat(nspine, 1)
     val bflags = GIMat(32, 1)
-    
-    var i = 0
-    while (i < keys.ncols) {
-      CUMAT.rsortx(keys.data.withByteOffset(1L*i*keys.nrows*Sizeof.FLOAT),
-      		         vals.data.withByteOffset(1L*i*keys.nrows*Sizeof.FLOAT),
-      		         tkeys.data, tvals.data, tspine.data, bflags.data, keys.nrows)
-      i += 1
-    }
-    
+
+    CUMAT.rsortx(keys.data,	vals.data, tkeys.data, tvals.data, tspine.data, bflags.data, keys.nrows, keys.ncols)
+
     tkeys.free
     tvals.free
     tspine.free
