@@ -665,26 +665,32 @@ int extractmat(float *a, long long *b, int nrows, int ncols) {
   return err;
 }
 
-#include "myradix_sort.inl"
+#include <thrust/detail/backend/cuda/detail/b40c/radixsort_api.h>
+//#include "myradix_sort.inl"
 #include <thrust/sort.h>
 #include <thrust/device_ptr.h>
 #include <thrust/reverse.h>
 
-int rsortsize(float *pkeys, unsigned int *pvals, int N) {
-  thrust::device_ptr<float> keys(pkeys);
-  thrust::device_ptr<unsigned int> vals(pvals);
-  return radix_sort_spine(keys, keys+N, vals);
+int rsortsize(int N) {
+  thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortingEnactor<float,int> sorter(N);
+  return sorter.SpineElements();
 }
 
 
 int rsortx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tvals, 
-    int *ispine, bool * bflag, int N, int device) {
+    int *ispine, bool * bflags, int N, int device) {
   cudaSetDevice(device);
-  thrust::device_ptr<float> keys(pkeys);
-  thrust::device_ptr<unsigned int> vals(pvals);
-  thrust::device_ptr<float> keyst(tkeys);
-  thrust::device_ptr<unsigned int> valst(tvals);
-  stable_radix_sort_by_key(keys, keys + N, vals, keyst, valst, ispine, bflag);
+  thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortingEnactor<float,int> sorter(N);
+  thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortStorage<float,int>    storage;
+
+  storage.d_keys             = pkeys;
+  storage.d_values           = pvals;
+  storage.d_alt_keys         = tkeys;
+  storage.d_alt_values       = tvals;
+  storage.d_spine            = ispine;
+  storage.d_from_alt_storage = bflags;
+
+  sorter.EnactSort(storage);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -693,7 +699,6 @@ int rsort(long long *pkeys, unsigned int *pvals, int N, int device) {
   cudaSetDevice(device);
   thrust::device_ptr<long long> keys(pkeys);
   thrust::device_ptr<unsigned int> vals(pvals);
-//  thrust::detail::backend::cuda::detail::stable_radix_sort_by_key(keys, keys + N, vals);
   thrust::sort_by_key(keys, keys + N, vals);
   cudaError_t err = cudaGetLastError();
   return err;
