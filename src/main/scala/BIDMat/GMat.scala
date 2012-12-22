@@ -585,7 +585,7 @@ object GMat {
 
   	for (ithread <- 0 until nthreads) {
 //  	  actor {
-//  	  	SciFunctions.device(ithread)
+ 	  	SciFunctions.device(ithread)
   	  	val aa = GMat(maxsize, 1).data
   	  	val vv = GIMat(maxsize, 1).data
   	  	val kk = if (!tall) GMat(maxsize, 2).data else null
