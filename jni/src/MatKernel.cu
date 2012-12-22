@@ -665,14 +665,19 @@ int extractmat(float *a, long long *b, int nrows, int ncols) {
   return err;
 }
 
-#include <thrust/detail/backend/cuda/detail/b40c/radixsort_api.h>
+//#include <thrust/detail/backend/cuda/detail/b40c/radixsort_api.h>
 //#include "myradix_sort.inl"
 #include <thrust/sort.h>
 #include <thrust/device_ptr.h>
 #include <thrust/reverse.h>
 
-int rsortsize(int N) {
-  thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortingEnactor<float,int> sorter(N);
+int rsortsizex(int N) {
+  thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortingEnactor<float,unsigned int> sorter(N);
+  return sorter.SpineElements();
+}
+
+int rsortsizey(int N) {
+  thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortingEnactor<long long,unsigned int> sorter(N);
   return sorter.SpineElements();
 }
 
@@ -680,8 +685,8 @@ int rsortsize(int N) {
 int rsortx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tvals, 
     int *ispine, bool * bflags, int N, int device) {
   cudaSetDevice(device);
-  thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortingEnactor<float,int> sorter(N);
-  thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortStorage<float,int>    storage;
+  thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortingEnactor<float,unsigned int> sorter(N);
+  thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortStorage<float,unsigned int>    storage;
 
   storage.d_keys             = pkeys;
   storage.d_values           = pvals;
@@ -695,6 +700,25 @@ int rsortx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tvals,
   return err;
 }
 
+
+int rsorty(long long *pkeys, unsigned int *pvals, long long *tkeys, unsigned int *tvals, 
+    int *ispine, bool * bflags, int N, int device) {
+  cudaSetDevice(device);
+  thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortingEnactor<long long,unsigned int> sorter(N);
+  thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortStorage<long long,unsigned int>    storage;
+
+  storage.d_keys             = pkeys;
+  storage.d_values           = pvals;
+  storage.d_alt_keys         = tkeys;
+  storage.d_alt_values       = tvals;
+  storage.d_spine            = ispine;
+  storage.d_from_alt_storage = bflags;
+
+  sorter.EnactSort(storage);
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+ 
 int rsort(long long *pkeys, unsigned int *pvals, int N, int device) {
   cudaSetDevice(device);
   thrust::device_ptr<long long> keys(pkeys);
