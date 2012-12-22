@@ -695,6 +695,7 @@ int rsortx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tvals,
   storage.d_from_alt_storage = bflags;
 
   sorter.EnactSort(storage);
+  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -712,6 +713,7 @@ int rsorty(long long *pkeys, unsigned int *pvals, long long *tkeys, unsigned int
   storage.d_from_alt_storage = bflags;
 
   sorter.EnactSort(storage);
+  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -721,6 +723,7 @@ int rsort(long long *pkeys, unsigned int *pvals, int N, int dev) {
   thrust::device_ptr<long long> keys(pkeys);
   thrust::device_ptr<unsigned int> vals(pvals);
   thrust::sort_by_key(keys, keys + N, vals);
+  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -731,6 +734,7 @@ int rsort2(float *pkeys, unsigned int *pvals, int nrows, int ncols) {
     thrust::device_ptr<unsigned int> vals(pvals+i*nrows);
     thrust::sort_by_key(keys, keys + nrows, vals);
   }
+  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
 }
