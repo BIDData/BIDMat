@@ -580,7 +580,7 @@ object GMat {
   	val maxsize = keys.nrows * math.min(32*1024*1024/keys.nrows, math.max(1, keys.ncols/nthreads))
   	val nsize = keys.nrows * keys.ncols
   	val nspine = CUMAT.rsortsizey(maxsize)
-  	val tall = (keys.nrows > 128*1024)
+  	val tall = (keys.nrows > 16*1024)
   	val done = IMat(nthreads,1)
 
   	for (ithread <- 0 until nthreads) {
