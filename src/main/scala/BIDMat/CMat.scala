@@ -37,6 +37,15 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
       CMat.celem(data(2*i), data(2*i+1))
     }
   } 
+  
+  override def apply(i:Int):Float = {
+  		throw new RuntimeException("can't use a(i) indexing on CMat, use a.get(i) instead");
+  } 
+  
+  override def apply(i:Int, j:Int):Float = {
+  		throw new RuntimeException("can't use a(i,j) indexing on CMat, use a.get(i,j) instead");
+  } 
+
 
   def update(r0:Int, c0:Int, v:CMat):CMat = {
     val off = Mat.oneBased
@@ -51,6 +60,20 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     }
     v
   }
+  
+  override def update(r0:Int, c0:Int, v:Float):Float = {
+    val off = Mat.oneBased
+    val r = r0 - off
+    val c = c0 - off
+    if (r >= nrows || c >= ncols) {
+      throw new IndexOutOfBoundsException("("+(r+off)+","+(c+off)+") >= ("+nrows+","+ncols+")");
+    } else {
+    	val indx = 2*(r+c*nrows)
+    	data(indx) = v
+    	data(indx+1) = 0
+    }
+    v
+  }
 
   def update(i0:Int, v:CMat):CMat = {
   	val off = Mat.oneBased
@@ -62,6 +85,18 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
       data(2*i+1) = v.data(1)
     }
     v
+  }
+  
+  override def update(i0:Int, v:Float):Float = {
+  	val off = Mat.oneBased
+    val i = i0 - off
+    if (i < 0 || i >= length) {
+      throw new IndexOutOfBoundsException(""+(i+off)+" >= ("+nrows+","+ncols+")");
+    } else {
+      data(2*i) = v
+      data(2*i+1) = 0
+    }
+  	v
   }
   
   def t(oldmat:Mat):CMat  = {
@@ -823,6 +858,30 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     }
     out
   }
+  
+  def r:FMat = {
+    val out = FMat(nrows, ncols)
+    var i = 0
+    while (i < length) {
+      out.data(i) = data(2*i) 
+      i += 1
+    }
+    out
+  }
+  
+  def i:FMat = {
+    val out = FMat(nrows, ncols)
+    var i = 0
+    while (i < length) {
+      out.data(i) = data(2*i+1) 
+      i += 1
+    }
+    out
+  }
+  
+  def im:FMat = i
+  
+  def re:FMat = r
 
   def *  (b : CMat) = fDMult(b, null)
   def +  (b : CMat) = ccMatOpv(b, CMat.vecAdd _, null)
