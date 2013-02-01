@@ -288,6 +288,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   	if (ncols == aa.nrows) {
   		val out = FMat.newOrCheckFMat(nrows, aa.ncols, omat) // Needs to be cleared
   		out.clear
+  		Mat.nflops += 2L * length * aa.ncols
   		for (i <- 0 until aa.ncols)
   			for (j <- 0 until aa.nrows) {
   				var k = 0
@@ -307,6 +308,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def sDMult(aa:FMat, omat:Mat):FMat = 
   	if (ncols == aa.nrows) {
   		val out = FMat.newOrCheckFMat(nrows, aa.ncols, omat)
+  		Mat.nflops += 2L * length * aa.ncols
   		for (i <- 0 until aa.ncols)
   			for (j <- 0 until nrows) {
   				var k = 0
