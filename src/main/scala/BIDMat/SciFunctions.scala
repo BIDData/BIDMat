@@ -13,6 +13,8 @@ import jcuda.jcurand.curandRngType._;
 import edu.berkeley.bid.CUMAT;
 import java.util.Random._;
 import MatFunctions._
+import org.apache.commons.math3.special._
+import org.apache.commons.math3.util.FastMath
 
 object SciFunctions {
   final val SEED:Int = 1452462553 
@@ -850,6 +852,8 @@ object SciFunctions {
       			out
       	}
   
+  
+  
   def sign(a:DMat, out:Mat) = applyDFun(a, out, null, math.signum _, 1L)
   def sign(a:DMat):DMat = sign(a, DMat(a.nrows, a.ncols))
   
@@ -903,22 +907,22 @@ object SciFunctions {
   def atan(a:DMat, out:Mat) = applyDFun(a, out, vdAtan _, math.atan _, 10L)
   def atan(a:DMat):DMat = atan(a, DMat(a.nrows, a.ncols))
 
-  def acosh(a:DMat, out:Mat) = applyDFun(a, out, vdCosh _, null, 10L)
+  def acosh(a:DMat, out:Mat) = applyDFun(a, out, vdCosh _, FastMath.acosh _, 10L)
   def acosh(a:DMat):DMat = acosh(a, DMat(a.nrows, a.ncols))
   
-  def asinh(a:DMat, out:Mat) = applyDFun(a, out, vdSinh _, null, 10L)
+  def asinh(a:DMat, out:Mat) = applyDFun(a, out, vdSinh _, FastMath.asinh _, 10L)
   def asinh(a:DMat):DMat = asinh(a, DMat(a.nrows, a.ncols))
   
-  def atanh(a:DMat, out:Mat) = applyDFun(a, out, vdAtanh _, null, 10L)
+  def atanh(a:DMat, out:Mat) = applyDFun(a, out, vdAtanh _, FastMath.atanh _, 10L)
   def atanh(a:DMat):DMat = atanh(a, DMat(a.nrows, a.ncols))
   
-  def erf(a:DMat, out:Mat) = applyDFun(a, out, vdErf _, null, 10L)
+  def erf(a:DMat, out:Mat) = applyDFun(a, out, vdErf _, Erf.erf, 10L)
   def erf(a:DMat):DMat = erf(a, DMat(a.nrows, a.ncols))
   
   def erfinv(a:DMat, out:Mat) = applyDFun(a, out, vdErfInv _, null, 10L)
   def erfinv(a:DMat):DMat = erfinv(a, DMat(a.nrows, a.ncols))
   
-  def erfc(a:DMat, out:Mat) = applyDFun(a, out, vdErfc _, null, 10L)
+  def erfc(a:DMat, out:Mat) = applyDFun(a, out, vdErfc _, Erf.erfc, 10L)
   def erfc(a:DMat):DMat = erfc(a, DMat(a.nrows, a.ncols))
   
   def erfcinv(a:DMat, out:Mat) = applyDFun(a, out, vdErfcInv _, null, 10L)
@@ -930,10 +934,10 @@ object SciFunctions {
   def norminv(a:DMat, out:Mat) = applyDFun(a, out, vdCdfNormInv _, null, 10L)
   def norminv(a:DMat):DMat = norminv(a, DMat(a.nrows, a.ncols))
   
-  def gammaln(a:DMat, out:Mat) = applyDFun(a, out, vdLGamma _, null, 10L)
+  def gammaln(a:DMat, out:Mat) = applyDFun(a, out, vdLGamma _, Gamma.logGamma _, 10L)
   def gammaln(a:DMat):DMat = gammaln(a, DMat(a.nrows, a.ncols))
   
-  def gamma(a:DMat, out:Mat) = applyDFun(a, out, vdTGamma _, null, 10L)
+  def gamma(a:DMat, out:Mat) = applyDFun(a, out, vdTGamma _, Gamma.gamma _, 10L)
   def gamma(a:DMat):DMat = gamma(a, DMat(a.nrows, a.ncols))
   
   def ceil(a:DMat, out:Mat) = applyDFun(a, out, vdCeil _, math.ceil, 1L)
@@ -1016,22 +1020,22 @@ object SciFunctions {
   def atan(a:FMat, out:Mat) = applySFun(a, out, vsAtan _, (x:Float) => math.atan(x).asInstanceOf[Float], 10L)
   def atan(a:FMat):FMat = atan(a, FMat(a.nrows, a.ncols))
 
-  def acosh(a:FMat, out:Mat) = applySFun(a, out, vsCosh _, null, 10L)
+  def acosh(a:FMat, out:Mat) = applySFun(a, out, vsCosh _, (x:Float) => FastMath.acosh(x).toFloat, 10L)
   def acosh(a:FMat):FMat = acosh(a, FMat(a.nrows, a.ncols))
   
-  def asinh(a:FMat, out:Mat) = applySFun(a, out, vsSinh _, null, 10L)
+  def asinh(a:FMat, out:Mat) = applySFun(a, out, vsSinh _, (x:Float) => FastMath.asinh(x).toFloat, 10L)
   def asinh(a:FMat):FMat = asinh(a, FMat(a.nrows, a.ncols))
   
-  def atanh(a:FMat, out:Mat) = applySFun(a, out, vsAtanh _, null, 10L)
+  def atanh(a:FMat, out:Mat) = applySFun(a, out, vsAtanh _, (x:Float) => FastMath.atanh(x).toFloat, 10L)
   def atanh(a:FMat):FMat = atanh(a, FMat(a.nrows, a.ncols))
   
-  def erf(a:FMat, out:Mat) = applySFun(a, out, vsErf _, null, 10L)
+  def erf(a:FMat, out:Mat) = applySFun(a, out, vsErf _, (x:Float) => Erf.erf(x).toFloat, 10L)
   def erf(a:FMat):FMat = erf(a, FMat(a.nrows, a.ncols))
   
   def erfinv(a:FMat, out:Mat) = applySFun(a, out, vsErfInv _, null, 10L)
   def erfinv(a:FMat):FMat = erfinv(a, FMat(a.nrows, a.ncols))
   
-  def erfc(a:FMat, out:Mat) = applySFun(a, out, vsErfc _, null, 10L)
+  def erfc(a:FMat, out:Mat) = applySFun(a, out, vsErfc _, (x:Float) => Erf.erfc(x).toFloat, 10L)
   def erfc(a:FMat):FMat = erfc(a, FMat(a.nrows, a.ncols))
   
   def erfcinv(a:FMat, out:Mat) = applySFun(a, out, vsErfcInv _, null, 10L)
@@ -1043,19 +1047,19 @@ object SciFunctions {
   def norminv(a:FMat, out:Mat) = applySFun(a, out, vsCdfNormInv _, null, 10L)
   def norminv(a:FMat):FMat = norminv(a, FMat(a.nrows, a.ncols))
   
-  def gammaln(a:FMat, out:Mat) = applySFun(a, out, vsLGamma _, null, 10L)
+  def gammaln(a:FMat, out:Mat) = applySFun(a, out, vsLGamma _, (x:Float) => Gamma.logGamma(x).toFloat, 10L)
   def gammaln(a:FMat):FMat = gammaln(a, FMat(a.nrows, a.ncols))
   
-  def gamma(a:FMat, out:Mat) = applySFun(a, out, vsTGamma _, null, 10L)
+  def gamma(a:FMat, out:Mat) = applySFun(a, out, vsTGamma _, (x:Float) => Gamma.gamma(x).toFloat, 10L)
   def gamma(a:FMat):FMat = gamma(a, FMat(a.nrows, a.ncols))
   
-  def ceil(a:FMat, out:Mat) = applySFun(a, out, vsCeil _, (x:Float) => math.ceil(x).asInstanceOf[Float], 1L)
+  def ceil(a:FMat, out:Mat) = applySFun(a, out, vsCeil _, (x:Float) => math.ceil(x).toFloat, 1L)
   def ceil(a:FMat):FMat = ceil(a, FMat(a.nrows, a.ncols))
   
-  def floor(a:FMat, out:Mat) = applySFun(a, out, vsFloor _, (x:Float) => math.floor(x).asInstanceOf[Float], 1L)
+  def floor(a:FMat, out:Mat) = applySFun(a, out, vsFloor _, (x:Float) => math.floor(x).toFloat, 1L)
   def floor(a:FMat):FMat = floor(a, FMat(a.nrows, a.ncols))
 
-  def round(a:FMat, out:Mat) = applySFun(a, out, vsRound _, (x:Float)=>math.floor(x+0.5).asInstanceOf[Float], 1L)
+  def round(a:FMat, out:Mat) = applySFun(a, out, vsRound _, (x:Float)=>math.floor(x+0.5).toFloat, 1L)
   def round(a:FMat):FMat = round(a, FMat(a.nrows, a.ncols))
   
   def trunc(a:FMat, out:Mat) = applySFun(a, out, vsTrunc _, null, 1L)
