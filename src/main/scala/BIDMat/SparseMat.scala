@@ -134,9 +134,9 @@ class SparseMat[@specialized(Double,Float) T]
       if (ir != null) a.explicitInds
       if (a.ir != null) explicitInds
       val out = if (ir != null) {
-      	SparseMat[T](nrows+a.nrows, ncols, nnz+a.nnz)
+      	SparseMat[T](nrows, ncols+a.ncols, nnz+a.nnz)
       } else {
-        SparseMat.noRows[T](nrows+a.nrows, ncols, nnz+a.nnz)
+        SparseMat.noRows[T](nrows, ncols+a.ncols, nnz+a.nnz)
       }
       var ip = 0
       System.arraycopy(data, 0, out.data, 0, nnz)
