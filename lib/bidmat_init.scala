@@ -4,4 +4,5 @@ import BIDMat.SciFunctions._
 import BIDMat.Solvers._
 import BIDMat.Plotting._
 
+Mat.checkMKL
 Mat.checkCUDA
