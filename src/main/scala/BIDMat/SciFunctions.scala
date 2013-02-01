@@ -21,8 +21,8 @@ object SciFunctions {
   // VSL random number generator initialization
   final val BRNG:Int = BRNG_MCG31
   final val METHOD:Int = 0
-  final val stream = new VSL();
-  final val errcode = vslNewStream(stream, BRNG, SEED)
+  final val stream = if (Mat.noMKL) null else new VSL();
+  final val errcode = if (Mat.noMKL) null else vslNewStream(stream, BRNG, SEED)
   // VML mode control, controlled with setVMLmode()
   final val VMLdefault = VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_HA   // Default
   final val VMLfast =    VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_LA   // Faster, Low accuracy, default error handling
