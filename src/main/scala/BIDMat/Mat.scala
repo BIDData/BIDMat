@@ -249,18 +249,21 @@ object Mat {
     		val os = System.getProperty("os.name")
     		if (os.equals("Linux")) {
     			System.loadLibrary("cudart")
+    			System.loadLibrary("JCudaRuntime-linux-x86_64")
     		} else {
     			try {
     				System.loadLibrary("cudart64_50_35")
+    				System.loadLibrary("JCudaRuntime-windows-x86_64")
     			} catch {
     			case _ => try {
     				System.loadLibrary("cudart64_42_9")
+    				System.loadLibrary("JCudaRuntime-windows-x86_64")
     			} 
     			}
     		}
     	} catch {
     	case _ =>  {
-    		println("Cant find CUDA SDK")
+    		println("Cant find CUDA SDK or JCUDA")
     		hasCUDA = -1    		
     	}
     	}
