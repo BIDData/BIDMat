@@ -243,6 +243,19 @@ object Mat {
   
   var hasCUDA = 0
   
+  def checkMKL:Unit = {
+    if (!noMKL) {
+      try {
+      	System.loadLibrary("bidmatmkl")
+      }	catch {
+    			case _ => {
+    				println("Cant find native CPU library")
+    				noMKL = true
+    			}
+      }
+    }
+  }
+  
   def checkCUDA:Unit = {
     if (hasCUDA == 0) {
     	try {
