@@ -75,7 +75,7 @@ object SciFunctions {
   	(v0, ar(0))
   }
     
-  def norm(a:FMat) = math.sqrt(sdot(a.length, a.data, 1, a.data, 1)).asInstanceOf[Float]
+  def norm(a:FMat) = math.sqrt(sdot(a.length, a.data, 1, a.data, 1)).toFloat
   
   def norm(a:DMat) = math.sqrt(ddot(a.length, a.data, 1, a.data, 1))
   
@@ -141,7 +141,7 @@ object SciFunctions {
   def normrnd(mu:Float, sig:Float, out:FMat):FMat = {
     if (Mat.noMKL) {
       var i = 0; val len = out.length; val odata = out.data; 
-      while (i < len) {odata(i) = mu + sig*myrand.nextGaussian.asInstanceOf[Float]; i += 1}  
+      while (i < len) {odata(i) = mu + sig*myrand.nextGaussian.toFloat; i += 1}  
     } else {
       vsRngGaussian(METHOD, stream, out.length, out.data, mu, sig )
     }
@@ -156,7 +156,7 @@ object SciFunctions {
   def cnormrnd(mu:Float, sig:Float, out:CMat):CMat = {
     if (Mat.noMKL) {
       var i = 0; val len = out.length; val odata = out.data; 
-      while (i < 2*len) {odata(i) = mu + sig*myrand.nextGaussian.asInstanceOf[Float]; i += 1}  
+      while (i < 2*len) {odata(i) = mu + sig*myrand.nextGaussian.toFloat; i += 1}  
     } else {
       vsRngGaussian(METHOD, stream, 2*out.length, out.data, mu, sig )
     }
@@ -588,41 +588,41 @@ object SciFunctions {
   
   def max(a:Double, b:Mat, c:Mat):Mat = {
     b match {
-      case bb:FMat => max(a.asInstanceOf[Float], bb, c):FMat
+      case bb:FMat => max(a.toFloat, bb, c):FMat
       case bb:IMat => max(a.asInstanceOf[Int], bb, c):IMat
       case bb:DMat => max(DMat(a), bb, c):DMat
       case bb:GMat => max(GMat(a), bb, c):GMat
-      case bb:SMat => max(a.asInstanceOf[Float], bb, c):SMat
+      case bb:SMat => max(a.toFloat, bb, c):SMat
     }
   }
   
   def min(a:Double, b:Mat, c:Mat):Mat = {
     b match {
-      case bb:FMat => min(a.asInstanceOf[Float], bb, c):FMat
+      case bb:FMat => min(a.toFloat, bb, c):FMat
       case bb:IMat => min(a.asInstanceOf[Int], bb, c):IMat
       case bb:DMat=> min(DMat(a), bb, c):DMat
       case bb:GMat => min(GMat(a), bb, c):GMat
-      case bb:SMat => min(a.asInstanceOf[Float], bb, c):SMat
+      case bb:SMat => min(a.toFloat, bb, c):SMat
     }
   }
   
   def max(a:Mat, b:Double, c:Mat):Mat = {
     a match {
-      case aa:FMat => max(aa, b.asInstanceOf[Float], c):FMat
+      case aa:FMat => max(aa, b.toFloat, c):FMat
       case aa:IMat => max(aa, b.asInstanceOf[Int], c):IMat
       case aa:DMat => max(aa, DMat(b), c):DMat
       case aa:GMat => max(aa, GMat(b), c):GMat
-      case aa:SMat => max(b.asInstanceOf[Float], aa, c):SMat
+      case aa:SMat => max(b.toFloat, aa, c):SMat
     }
   }
   
   def min(a:Mat, b:Double, c:Mat):Mat = {
     a match {
-      case aa:FMat => min(aa, b.asInstanceOf[Float], c):FMat
+      case aa:FMat => min(aa, b.toFloat, c):FMat
       case aa:IMat => min(aa, b.asInstanceOf[Int], c):IMat
       case aa:DMat => min(aa, DMat(b), c):DMat
       case aa:GMat => min(aa, GMat(b), c):GMat
-      case aa:SMat => min(b.asInstanceOf[Float], aa, c):SMat
+      case aa:SMat => min(b.toFloat, aa, c):SMat
     }
   }
    
@@ -974,50 +974,50 @@ object SciFunctions {
   def abs(a:FMat, out:Mat) = applySFun(a, out, vsAbs _, math.abs _, 1L)
   def abs(a:FMat):FMat = abs(a, FMat(a.nrows, a.ncols))
 
-  def _vsexp(n:Int, a:Array[Float], b:Array[Float]) = {var i=0 ; while (i<n) {b(i) = math.exp(a(i)).asInstanceOf[Float]; i+=1}}  
-  def exp(a:FMat, out:Mat) = applySFun(a, out, vsExp _, (x:Float) => math.expm1(x).asInstanceOf[Float], 10L)
+  def _vsexp(n:Int, a:Array[Float], b:Array[Float]) = {var i=0 ; while (i<n) {b(i) = math.exp(a(i)).toFloat; i+=1}}  
+  def exp(a:FMat, out:Mat) = applySFun(a, out, vsExp _, (x:Float) => math.expm1(x).toFloat, 10L)
   def exp(a:FMat):FMat = exp(a, FMat(a.nrows, a.ncols))
   
-  def expm1(a:FMat, out:Mat) = applySFun(a, out, vsExpm1 _, (x:Float) => math.expm1(x).asInstanceOf[Float], 10L)
+  def expm1(a:FMat, out:Mat) = applySFun(a, out, vsExpm1 _, (x:Float) => math.expm1(x).toFloat, 10L)
   def expm1(a:FMat):FMat = expm1(a, FMat(a.nrows, a.ncols))
   
-  def sqrt(a:FMat, out:Mat) = applySFun(a, out, vsSqrt _, (x:Float) => math.sqrt(x).asInstanceOf[Float], 10L)
+  def sqrt(a:FMat, out:Mat) = applySFun(a, out, vsSqrt _, (x:Float) => math.sqrt(x).toFloat, 10L)
   def sqrt(a:FMat):FMat = sqrt(a, FMat(a.nrows, a.ncols))
   
-  def ln(a:FMat, out:Mat) = applySFun(a, out, vsLn _, (x:Float) => math.log(x).asInstanceOf[Float], 10L)
+  def ln(a:FMat, out:Mat) = applySFun(a, out, vsLn _, (x:Float) => math.log(x).toFloat, 10L)
   def ln(a:FMat):FMat = ln(a, FMat(a.nrows, a.ncols))
   
-  def log10(a:FMat, out:Mat) = applySFun(a, out, vsLog10 _, (x:Float) => math.log10(x).asInstanceOf[Float], 10L)
+  def log10(a:FMat, out:Mat) = applySFun(a, out, vsLog10 _, (x:Float) => math.log10(x).toFloat, 10L)
   def log10(a:FMat):FMat = log10(a, FMat(a.nrows, a.ncols))
   
-  def log1p(a:FMat, out:Mat) = applySFun(a, out, vsLog1p _, (x:Float) => math.log1p(x).asInstanceOf[Float], 10L)
+  def log1p(a:FMat, out:Mat) = applySFun(a, out, vsLog1p _, (x:Float) => math.log1p(x).toFloat, 10L)
   def log1p(a:FMat):FMat = log1p(a, FMat(a.nrows, a.ncols))
   
-  def cos(a:FMat, out:Mat) = applySFun(a, out, vsCos _, (x:Float) => math.cos(x).asInstanceOf[Float], 10L)
+  def cos(a:FMat, out:Mat) = applySFun(a, out, vsCos _, (x:Float) => math.cos(x).toFloat, 10L)
   def cos(a:FMat):FMat = cos(a, FMat(a.nrows, a.ncols))
   
-  def sin(a:FMat, out:Mat) = applySFun(a, out, vsSin _, (x:Float) => math.sin(x).asInstanceOf[Float], 10L)
+  def sin(a:FMat, out:Mat) = applySFun(a, out, vsSin _, (x:Float) => math.sin(x).toFloat, 10L)
   def sin(a:FMat):FMat = sin(a, FMat(a.nrows, a.ncols))
   
-  def tan(a:FMat, out:Mat) = applySFun(a, out, vsTan _, (x:Float) => math.tan(x).asInstanceOf[Float], 10L)
+  def tan(a:FMat, out:Mat) = applySFun(a, out, vsTan _, (x:Float) => math.tan(x).toFloat, 10L)
   def tan(a:FMat):FMat = tan(a, FMat(a.nrows, a.ncols))
   
-  def cosh(a:FMat, out:Mat) = applySFun(a, out, vsCosh _, (x:Float) => math.cosh(x).asInstanceOf[Float], 10L)
+  def cosh(a:FMat, out:Mat) = applySFun(a, out, vsCosh _, (x:Float) => math.cosh(x).toFloat, 10L)
   def cosh(a:FMat):FMat = cosh(a, FMat(a.nrows, a.ncols))
   
-  def sinh(a:FMat, out:Mat) = applySFun(a, out, vsSinh _, (x:Float) => math.sinh(x).asInstanceOf[Float], 10L)
+  def sinh(a:FMat, out:Mat) = applySFun(a, out, vsSinh _, (x:Float) => math.sinh(x).toFloat, 10L)
   def sinh(a:FMat):FMat = sinh(a, FMat(a.nrows, a.ncols))
   
-  def tanh(a:FMat, out:Mat) = applySFun(a, out, vsTanh _, (x:Float) => math.tanh(x).asInstanceOf[Float], 10L)
+  def tanh(a:FMat, out:Mat) = applySFun(a, out, vsTanh _, (x:Float) => math.tanh(x).toFloat, 10L)
   def tanh(a:FMat):FMat = tanh(a, FMat(a.nrows, a.ncols))
   
-  def acos(a:FMat, out:Mat) = applySFun(a, out, vsAcos _, (x:Float) => math.acos(x).asInstanceOf[Float], 10L)
+  def acos(a:FMat, out:Mat) = applySFun(a, out, vsAcos _, (x:Float) => math.acos(x).toFloat, 10L)
   def acos(a:FMat):FMat = acos(a, FMat(a.nrows, a.ncols))
 
-  def asin(a:FMat, out:Mat) = applySFun(a, out, vsAsin _, (x:Float) => math.asin(x).asInstanceOf[Float], 10L)
+  def asin(a:FMat, out:Mat) = applySFun(a, out, vsAsin _, (x:Float) => math.asin(x).toFloat, 10L)
   def asin(a:FMat):FMat = asin(a, FMat(a.nrows, a.ncols))
   
-  def atan(a:FMat, out:Mat) = applySFun(a, out, vsAtan _, (x:Float) => math.atan(x).asInstanceOf[Float], 10L)
+  def atan(a:FMat, out:Mat) = applySFun(a, out, vsAtan _, (x:Float) => math.atan(x).toFloat, 10L)
   def atan(a:FMat):FMat = atan(a, FMat(a.nrows, a.ncols))
 
   def acosh(a:FMat, out:Mat) = applySFun(a, out, vsCosh _, (x:Float) => FastMath.acosh(x).toFloat, 10L)
