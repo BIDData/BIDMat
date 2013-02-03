@@ -21,14 +21,14 @@ object SciFunctions {
   // Java initialization
   final val myrand = new java.util.Random(SEED)
   // VSL random number generator initialization
-  final val BRNG:Int = BRNG_MCG31
+  final val BRNG:Int = if (Mat.noMKL) 0 else BRNG_MCG31
   final val METHOD:Int = 0
   final val stream = if (Mat.noMKL) null else new VSL();
   final val errcode = if (Mat.noMKL) null else vslNewStream(stream, BRNG, SEED)
   // VML mode control, controlled with setVMLmode()
-  final val VMLdefault = VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_HA   // Default
-  final val VMLfast =    VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_LA   // Faster, Low accuracy, default error handling
-  final val VMLturbo =   VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_EP   // Fastest, Lower accuracy, default error handling
+  final val VMLdefault = if (Mat.noMKL) 0 else VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_HA   // Default
+  final val VMLfast =    if (Mat.noMKL) 0 else VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_LA   // Faster, Low accuracy, default error handling
+  final val VMLturbo =   if (Mat.noMKL) 0 else VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_EP   // Fastest, Lower accuracy, default error handling
   // Curand initialization
   var cudarng:curandGenerator = null
   if (Mat.hasCUDA > 0) {
