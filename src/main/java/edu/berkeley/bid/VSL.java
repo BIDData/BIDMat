@@ -5,7 +5,7 @@ public final class VSL {
     static { 
     	try {
     		System.loadLibrary( "bidmatmkl" ); 
-    	} catch (Exception e) {
+    	} catch (Throwable e) {
     		System.out.println("Couldnt load bidmatmkl");
     	}
     }
