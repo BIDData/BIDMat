@@ -34,16 +34,16 @@ initialCommands := scala.io.Source.fromFile("lib/bidmat_init.scala").getLines.mk
 
 javaOptions += "-Xmx12g"
 
-seq(ProguardPlugin.proguardSettings :_*)
+//seq(ProguardPlugin.proguardSettings :_*)
 
-proguardOptions ++= Seq (
-  "-keep class scala.** { *; }",
-  "-keep class org.jfree.** { *; }",
-  keepMain("scala.tools.nsc.MainGenericRunner"),
-  keepLimitedSerializability,
-  keepAllScala,
-  "-keep class ch.epfl.** { *; }",
-  "-keep interface scala.ScalaObject"
-)
+//proguardOptions ++= Seq (
+//  "-keep class scala.** { *; }",
+//  "-keep class org.jfree.** { *; }",
+//  keepMain("scala.tools.nsc.MainGenericRunner"),
+//  keepLimitedSerializability,
+//  keepAllScala,
+//  "-keep class ch.epfl.** { *; }",
+//  "-keep interface scala.ScalaObject"
+//)
 
 
