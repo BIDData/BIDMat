@@ -975,7 +975,7 @@ object SciFunctions {
   def abs(a:FMat):FMat = abs(a, FMat(a.nrows, a.ncols))
 
   def _vsexp(n:Int, a:Array[Float], b:Array[Float]) = {var i=0 ; while (i<n) {b(i) = math.exp(a(i)).toFloat; i+=1}}  
-  def exp(a:FMat, out:Mat) = applySFun(a, out, vsExp _, (x:Float) => math.expm1(x).toFloat, 10L)
+  def exp(a:FMat, out:Mat) = applySFunV(a, out, vsExp _, _vsexp _, 10L)
   def exp(a:FMat):FMat = exp(a, FMat(a.nrows, a.ncols))
   
   def expm1(a:FMat, out:Mat) = applySFun(a, out, vsExpm1 _, (x:Float) => math.expm1(x).toFloat, 10L)
