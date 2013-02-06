@@ -11,8 +11,6 @@ if [ "$OS" = "Darwin" ] ; then
 	OS="apple"
 elif [ "$OS" = "Linux" ] ; then
 	OS="linux"
-elif [ "$OS" = "SunOS" ] ; then
-	OS="sun"
 elif [[ "$OS" == CYGWIN* ]] ; then
 	OS="windows"
 else
@@ -23,38 +21,59 @@ fi
 if [ "$ARCH" = "x86" ] || [ "$ARCH" = "i686" ] || [ "$ARCH" = "i586" ] \
 	|| [ "$ARCH" = "i486" ] || [ "$ARCH" = "i386" ] ; then
 	ARCH="x86"
-elif [ "$ARCH" = "Power Macintosh" ] ; then
-	ARCH="ppc"
 elif [ "$ARCH" = "amd64" ] || [ "$ARCH" = "x86_64" ] ; then
 	ARCH="x86_64"
-elif [ "$ARCH" = "sun4u" ] ; then
-	ARCH="sparc"
 else
 	echo "ARCH not supported"
 	exit 1
 fi
 
 if [ "$OS" = "apple" ] ; then
-	CC="gcc -Wall"
+        MKL_ROOT="/opt/intel/mkl"
+        JAVA_HOME="/System/Library/Frameworks/JavaVM.framework"
+        CUDA_HOME="/usr/local/cuda"
+        JCUDA_HOME="$HOME/code/JCUDA5"
+        CC="icc"
+        GCC="gcc"
+        NVCC="nvcc"
+        NVCCFLAGS="-c  -arch=compute_20 -code=sm_20,sm_30 --machine 64  -Xcompiler \"-fPIC -c -O2 -g -DDEBUG\""
+        SUBLIB=osx64
 	OBJ="o"
 	OUTFLG="-o "
-	CPPFLAGS="$CPPFLAGS -I/System/Library/Frameworks/JavaVM.framework/Home/include"
-	CFLAGS="-fPIC -fno-common $CFLAGS"
+	CPPFLAGS="$CPPFLAGS -I$JAVA_HOME/Headers -I$MKL_ROOT/include -I$MKL_ROOT/include/intel64 \
+                 -I$JCUDA_HOME/CommonJNI/src -I$CUDA_HOME/include"
+	CFLAGS="-fPIC -c -O2 -DNDEBUG -std=c99 $CFLAGS"
 	LB="ar rc"    
-	LD="gcc -dynamiclib"
-	LDFLAGS="$LDFLAGS -framework JavaVM"
+	GLD="gcc -shared"
+	LD="icc -bundle -static-intel"
+	LDFLAGS="$LDFLAGS"
 	LIBPREPEND="lib"
-	LIBAPPEND="-apple-"${ARCH}".jnilib"
-	FC="g95"
+	LIBAPPEND=".jnilib"
+	FC="gfortran"
 	FFLAGS="$CFLAGS"
-	LAPACK_INCLUDES="-I/System/Library/Frameworks/vecLib.framework/Headers"
-	FORTRAN_LIBS="-lg95 -Wl,-single_module"
-	MKL_LIBS="-framework veclib"
+	LAPACK_INCLUDES=""
+	FORTRAN_LIBS="-lgfortran"
+	if [ "$PARLIB" = "sequential" ] ; then
+	MKL_LIBS="-L$JAVA_HOME/Libraries -L/opt/intel/composerxe/lib/intel64 \
+            $MKL_ROOT/lib/libmkl_intel_lp64.a $MKL_ROOT/lib/libmkl_sequential.a \
+            $MKL_ROOT/lib/libmkl_core.a \
+            $MKL_ROOT/lib/libmkl_intel_lp64.a $MKL_ROOT/lib/libmkl_sequential.a \
+            $MKL_ROOT/lib/libmkl_core.a \
+            -lpthread -lm  -framework JavaVM"
+        else 
+	MKL_LIBS="-L$JAVA_HOME/Libraries -L/opt/intel/composerxe/lib/intel64 \
+            $MKL_ROOT/lib/libmkl_intel_lp64.a $MKL_ROOT/lib/libmkl_intel_thread.a \
+            $MKL_ROOT/lib/libmkl_core.a \
+            $MKL_ROOT/lib/libmkl_intel_lp64.a $MKL_ROOT/lib/libmkl_intel_thread.a \
+            $MKL_ROOT/lib/libmkl_core.a \
+            -liomp5 -lpthread -lm  -framework JavaVM"
+        fi
+        CUDA_LIBS="-L${CUDA_HOME}/lib64 -L${JCUDA_HOME}/lib -lcudart -lCommonJNI"
 elif [ "$OS" = "linux" ] ; then
         MKL_ROOT="/opt/intel/mkl"
         JAVA_HOME="/usr/java/default"
         CUDA_HOME="/usr/local/cuda"
-        JCUDA_HOME="/home/jfc/code/JCUDA5"
+        JCUDA_HOME="$HOME/code/JCUDA5"
         CC="icc"
         GCC="gcc"
         NVCC="nvcc"
@@ -75,35 +94,32 @@ elif [ "$OS" = "linux" ] ; then
 	FFLAGS="$CFLAGS"
 	LAPACK_INCLUDES=""
 	FORTRAN_LIBS="-lgfortran"
-	if [ "$PARLIB" = "threaded" ] ; then
-	MKL_LIBS="-L$JAVA_HOME/lib -L/opt/intel/composerxe/lib/intel64 $MKL_ROOT/lib/intel64/libmkl_intel_lp64.a -Wl,--start-group  \
-            $MKL_ROOT/lib/intel64/libmkl_intel_thread.a $MKL_ROOT/lib/intel64/libmkl_core.a \
+	if [ "$PARLIB" = "sequential" ] ; then
+	MKL_LIBS="-L$JAVA_HOME/lib -L/opt/intel/composerxe/lib/intel64 \
+            $MKL_ROOT/lib/intel64/libmkl_intel_lp64.a -Wl,--start-group  \
+            $MKL_ROOT/lib/intel64/libmkl_sequential.a $MKL_ROOT/lib/intel64/libmkl_core.a \
             -Wl,--end-group -liomp5 -lpthread -lm"
         else 
-	MKL_LIBS="-L$JAVA_HOME/lib -L/opt/intel/composerxe/lib/intel64 $MKL_ROOT/lib/intel64/libmkl_intel_lp64.a -Wl,--start-group  \
-            $MKL_ROOT/lib/intel64/libmkl_sequential.a $MKL_ROOT/lib/intel64/libmkl_core.a \
+	MKL_LIBS="-L$JAVA_HOME/lib -L/opt/intel/composerxe/lib/intel64 \
+            $MKL_ROOT/lib/intel64/libmkl_intel_lp64.a -Wl,--start-group  \
+            $MKL_ROOT/lib/intel64/libmkl_intel_thread.a $MKL_ROOT/lib/intel64/libmkl_core.a \
             -Wl,--end-group -liomp5 -lpthread -lm"
         fi
         CUDA_LIBS="-L${CUDA_HOME}/lib64 -L${JCUDA_HOME}/lib -lcudart -lCommonJNI"
 elif [ "$OS" = "windows" ] ; then
         MKL_ROOT="c:/Intel/MKL"
-#    JAVA_HOME=""
-#        CUDA_HOME="C:/Progra~1/NVIDIA~2/CUDA/v4.2"
-#        JCUDA_HOME="/code/JCUDA"
         CUDA_HOME="C:/Progra~1/NVIDIA~2/CUDA/v5.0"
         JCUDA_HOME="/code/JCUDA5"
         JAVA_HOME="C:/Progra~1/Java/jdk1.6.0_29"
 	CC="icl"
-    GCC="icl"
-    NVCC="nvcc"
-    SUBLIB=win64
+	GCC="icl"
+	NVCC="nvcc"
+	SUBLIB=win64
 	OBJ="obj"
 	OUTFLG="/OUT:"
 	CPPFLAGS=""
-    NVCCFLAGS="-c -arch=compute_20 -code=sm_20,sm_30 --machine 64  -Xcompiler \"/EHsc /W3 /nologo /O2 /Zi  /MT\""
-#    NVCCFLAGS="-c -arch=compute_30 -code=sm_30 --machine 64  -Xcompiler \"/EHsc /W3 /nologo /O2 /Zi  /MT\""
+	NVCCFLAGS="-c -arch=compute_20 -code=sm_20,sm_30 --machine 64  -Xcompiler \"/EHsc /W3 /nologo /O2 /Zi  /MT\""
 	CFLAGS="/c /MT /DNDEBUG /O2 /Qstd=c99 $CFLAGS"    # static linking
-#	CFLAGS="/c /MT /DMKL_ILP64 /DNDEBUG /O2 /Qstd=c99 $CFLAGS" # static link, 64bit ints
 	LB="lib"    
 	LD="link"
 	GLD="link"
@@ -114,15 +130,11 @@ elif [ "$OS" = "windows" ] ; then
 	FFLAGS="-c $FFLAGS"
 	LAPACK_INCLUDES=""
 	FORTRAN_LIBS=""
-	if [ "$PARLIB" = "threaded" ] ; then
-#	MKL_LIBS="mkl_intel_lp64_dll.lib mkl_intel_thread_dll.lib mkl_core_dll.lib"     # threaded, 32bit ints, dll
-	MKL_LIBS="mkl_intel_lp64.lib mkl_intel_thread.lib mkl_core.lib libiomp5md.lib"  # threaded, 32bit integer, static link
+	if [ "$PARLIB" = "sequential" ] ; then
+	MKL_LIBS="mkl_intel_lp64.lib mkl_sequential.lib mkl_core.lib libiomp5md.lib"   
         else
-#	MKL_LIBS="mkl_intel_lp64_dll.lib mkl_sequential_dll.lib mkl_core_dll.lib"       # sequential, 32bit ints, dll
-	MKL_LIBS="mkl_intel_lp64.lib mkl_sequential.lib mkl_core.lib libiomp5md.lib"    # sequential, 32bit int, static link
+	MKL_LIBS="mkl_intel_lp64.lib mkl_intel_thread.lib mkl_core.lib libiomp5md.lib" 
         fi
-#	MKL_LIBS="mkl_intel_ilp64.lib mkl_intel_thread.lib mkl_core.lib libiomp5md.lib" # threaded, 64bit integer, static link
-#	MKL_LIBS="mkl_intel_ilp64.lib mkl_sequential.lib mkl_core.lib libiomp5md.lib"   # sequential, 64bit integer, static link
         CUDA_LIBS="cudart.lib CommonJNI.lib"
 	LIB="$MKL_ROOT/mkl/lib/intel64;$MKL_ROOT/compiler/lib/intel64;$JAVA_HOME/lib;$CUDA_HOME/lib/x64;$JCUDA_HOME/lib;$LIB"
 	INCLUDE="$JAVA_HOME/include;$JAVA_HOME/include/win32;c:/Intel/MKL/mkl/include;c:/codeh/BIDMat/jni/include;$JCUDA_HOME/CommonJNI/src;$CUDA_HOME/include;$INCLUDE"
