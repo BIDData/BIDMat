@@ -265,7 +265,7 @@ object Mat {
     			System.loadLibrary("JCudaRuntime-linux-x86_64")
 		} else if (os.equals("Mac OS X")) {
     			System.loadLibrary("cudart")
-    			System.loadLibrary("JCudaRuntime")
+    			System.loadLibrary("JCudaRuntime-apple-x86_64")
     		} else {
     			try {
     				System.loadLibrary("cudart64_50_35")
