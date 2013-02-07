@@ -105,6 +105,8 @@ object MatFunctions {
   
   def recycleTry(a:Mat, b:IMat):IMat = recycleTry(a, b.nrows, b.ncols, b:Mat, b.nnz).asInstanceOf[IMat]
   
+  def recycleTry(a:Mat, b:CMat):CMat = recycleTry(a, b.nrows, b.ncols, b:Mat, b.nnz).asInstanceOf[CMat]
+  
   def recycleTry(a:Mat, b:SMat):SMat = recycleTry(a, b.nrows, b.ncols, b:Mat, b.nnz).asInstanceOf[SMat]
   
   def recycleTry(a:Mat, b:SDMat):SDMat = recycleTry(a, b.nrows, b.ncols, b:Mat, b.nnz).asInstanceOf[SDMat]
