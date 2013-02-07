@@ -44,7 +44,7 @@ if [ "$OS" = "apple" ] ; then
                  -I$JCUDA_HOME/CommonJNI/src -I$CUDA_HOME/include"
 	CFLAGS="-fPIC -c -O2 -DNDEBUG -std=c99 $CFLAGS"
 	LB="ar rc"    
-	GLD="gcc -shared"
+	GLD="icc -bundle -static-intel"
 	LD="icc -bundle -static-intel"
 	LDFLAGS="$LDFLAGS"
 	LIBPREPEND="lib"
@@ -68,7 +68,7 @@ if [ "$OS" = "apple" ] ; then
             $MKL_ROOT/lib/libmkl_core.a \
             -liomp5 -lpthread -lm  -framework JavaVM"
         fi
-        CUDA_LIBS="-L${CUDA_HOME}/lib64 -L${JCUDA_HOME}/lib -lcudart -lCommonJNI"
+        CUDA_LIBS="-L${CUDA_HOME}/lib -L${JCUDA_HOME}/lib -lcudart -lCommonJNI"
 elif [ "$OS" = "linux" ] ; then
         MKL_ROOT="/opt/intel/mkl"
         JAVA_HOME="/usr/java/default"
