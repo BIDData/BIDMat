@@ -819,6 +819,40 @@ object SciFunctions {
 	    Mat.nflops += nflops*a.length
 	    out
   	}
+   
+   def applyCFun(a:CMat, omat:Mat, vfn:(Int, Array[Float], Array[Float])=>Unit, efn:(Float,Float)=>(Float,Float), nflops:Long) ={
+	    val out = recycleTry(omat, a)
+	    if (Mat.noMKL || vfn == null) {
+	      if (efn == null) {
+	        throw new RuntimeException("no Scala builtin version of this math function, sorry")
+	      } 
+	      var i = 0; val len = a.length; val odata = out.data; val adata = a.data
+	      while (i < 2*len) {val (x,y) = efn(adata(i),adata(i+1)); odata(i) = x; odata(i+1) = y; i += 2}
+	    } else {
+	      vfn(a.length, a.data, out.data)
+	    }	
+	    Mat.nflops += nflops*a.length
+	    out
+  	}
+   
+    def applyCSFun(a:CMat, omat:Mat, vfn:(Int, Array[Float], Array[Float])=>Unit, efn:(Float,Float)=>Float, nflops:Long) ={
+	    val out = if (omat.asInstanceOf[AnyRef] == null  || (omat.nrows == 0 && omat.ncols == 0)) {
+	    	zeros(a.nrows, a.ncols)     
+	    } else {
+	    	omat.asInstanceOf[FMat].recycle(a.nrows, a.ncols, 0)
+	    }
+	    if (Mat.noMKL || vfn == null) {
+	      if (efn == null) {
+	        throw new RuntimeException("no Scala builtin version of this math function, sorry")
+	      } 
+	      var i = 0; val len = a.length; val odata = out.data; val adata = a.data
+	      while (i < len) {odata(i)= efn(adata(2*i),adata(2*i+1)); i += 1}
+	    } else {
+	      vfn(a.length, a.data, out.data)
+	    }	
+	    Mat.nflops += nflops*a.length
+	    out
+  	}
  
   def applySFunV(a:FMat, omat:Mat, vfn:(Int, Array[Float], Array[Float])=>Unit, 
                  efn:(Int, Array[Float], Array[Float])=>Unit, nflops:Long) ={
@@ -907,10 +941,10 @@ object SciFunctions {
   def atan(a:DMat, out:Mat) = applyDFun(a, out, vdAtan _, math.atan _, 10L)
   def atan(a:DMat):DMat = atan(a, DMat(a.nrows, a.ncols))
 
-  def acosh(a:DMat, out:Mat) = applyDFun(a, out, vdCosh _, FastMath.acosh _, 10L)
+  def acosh(a:DMat, out:Mat) = applyDFun(a, out, vdAcosh _, FastMath.acosh _, 10L)
   def acosh(a:DMat):DMat = acosh(a, DMat(a.nrows, a.ncols))
   
-  def asinh(a:DMat, out:Mat) = applyDFun(a, out, vdSinh _, FastMath.asinh _, 10L)
+  def asinh(a:DMat, out:Mat) = applyDFun(a, out, vdAsinh _, FastMath.asinh _, 10L)
   def asinh(a:DMat):DMat = asinh(a, DMat(a.nrows, a.ncols))
   
   def atanh(a:DMat, out:Mat) = applyDFun(a, out, vdAtanh _, FastMath.atanh _, 10L)
@@ -961,17 +995,9 @@ object SciFunctions {
   def exppsi(a:DMat, out:Mat) = applyDFun(a, out, null, (x:Double)=>if (x<1.0) 0.5*x*x else x-0.5, 1L)
   def exppsi(a:DMat):DMat = exppsi(a, DMat(a.nrows, a.ncols))
   
+ 
   
-  def sdev(a:DMat, dim0:Int):DMat = sqrt(variance(a, dim0))
-  def sdev(a:DMat):DMat = sdev(a, 0)
-
-  def sdev(a:FMat, dim0:Int):FMat = sqrt(variance(a, dim0))
-  def sdev(a:FMat):FMat = sdev(a, 0)
-  
-  def sign(a:FMat, out:Mat) = applySFun(a, out, null, math.signum _, 1L)
-  def sign(a:FMat):FMat = sign(a, FMat(a.nrows, a.ncols))
-  
-  def abs(a:FMat, out:Mat) = applySFun(a, out, vsAbs _, math.abs _, 1L)
+  def abs(a:FMat, out:Mat) = applySFun(a, out, vsAbs _, math.abs, 1L)
   def abs(a:FMat):FMat = abs(a, FMat(a.nrows, a.ncols))
 
   def _vsexp(n:Int, a:Array[Float], b:Array[Float]) = {var i=0 ; while (i<n) {b(i) = math.exp(a(i)).toFloat; i+=1}}  
@@ -1020,10 +1046,10 @@ object SciFunctions {
   def atan(a:FMat, out:Mat) = applySFun(a, out, vsAtan _, (x:Float) => math.atan(x).toFloat, 10L)
   def atan(a:FMat):FMat = atan(a, FMat(a.nrows, a.ncols))
 
-  def acosh(a:FMat, out:Mat) = applySFun(a, out, vsCosh _, (x:Float) => FastMath.acosh(x).toFloat, 10L)
+  def acosh(a:FMat, out:Mat) = applySFun(a, out, vsAcosh _, (x:Float) => FastMath.acosh(x).toFloat, 10L)
   def acosh(a:FMat):FMat = acosh(a, FMat(a.nrows, a.ncols))
   
-  def asinh(a:FMat, out:Mat) = applySFun(a, out, vsSinh _, (x:Float) => FastMath.asinh(x).toFloat, 10L)
+  def asinh(a:FMat, out:Mat) = applySFun(a, out, vsAsinh _, (x:Float) => FastMath.asinh(x).toFloat, 10L)
   def asinh(a:FMat):FMat = asinh(a, FMat(a.nrows, a.ncols))
   
   def atanh(a:FMat, out:Mat) = applySFun(a, out, vsAtanh _, (x:Float) => FastMath.atanh(x).toFloat, 10L)
@@ -1064,6 +1090,58 @@ object SciFunctions {
   
   def trunc(a:FMat, out:Mat) = applySFun(a, out, vsTrunc _, null, 1L)
   def trunc(a:FMat):FMat = trunc(a, FMat(a.nrows, a.ncols))
+  
+  
+  def abs(a:CMat, out:Mat) = applyCSFun(a, out, vcAbs _, null, 1L)
+  def abs(a:CMat):FMat = abs(a, FMat(a.nrows, a.ncols))
+
+  def exp(a:CMat, out:Mat) = applyCFun(a, out, vcExp _, null, 10L)
+  def exp(a:CMat):CMat = exp(a, CMat(a.nrows, a.ncols))
+  
+  def sqrt(a:CMat, out:Mat) = applyCFun(a, out, vcSqrt _, null, 10L)
+  def sqrt(a:CMat):CMat = sqrt(a, CMat(a.nrows, a.ncols))
+  
+  def ln(a:CMat, out:Mat) = applyCFun(a, out, vcLn _, null, 10L)
+  def ln(a:CMat):CMat = ln(a, CMat(a.nrows, a.ncols))
+  
+  def log10(a:CMat, out:Mat) = applyCFun(a, out, vcLog10 _, null, 10L)
+  def log10(a:CMat):CMat = log10(a, CMat(a.nrows, a.ncols))
+  
+  def cos(a:CMat, out:Mat) = applyCFun(a, out, vcCos _, null, 10L)
+  def cos(a:CMat):CMat = cos(a, CMat(a.nrows, a.ncols))
+  
+  def sin(a:CMat, out:Mat) = applyCFun(a, out, vcSin _, null, 10L)
+  def sin(a:CMat):CMat = sin(a, CMat(a.nrows, a.ncols))
+  
+  def tan(a:CMat, out:Mat) = applyCFun(a, out, vcTan _, null, 10L)
+  def tan(a:CMat):CMat = tan(a, CMat(a.nrows, a.ncols))
+  
+  def cosh(a:CMat, out:Mat) = applyCFun(a, out, vcCosh _, null, 10L)
+  def cosh(a:CMat):CMat = cosh(a, CMat(a.nrows, a.ncols))
+  
+  def sinh(a:CMat, out:Mat) = applyCFun(a, out, vcSinh _, null, 10L)
+  def sinh(a:CMat):CMat = sinh(a, CMat(a.nrows, a.ncols))
+  
+  def tanh(a:CMat, out:Mat) = applyCFun(a, out, vcTanh _, null, 10L)
+  def tanh(a:CMat):CMat = tanh(a, CMat(a.nrows, a.ncols))
+  
+  def acos(a:CMat, out:Mat) = applyCFun(a, out, vcAcos _, null, 10L)
+  def acos(a:CMat):CMat = acos(a, CMat(a.nrows, a.ncols))
+
+  def asin(a:CMat, out:Mat) = applyCFun(a, out, vcAsin _, null, 10L)
+  def asin(a:CMat):CMat = asin(a, CMat(a.nrows, a.ncols))
+  
+  def atan(a:CMat, out:Mat) = applyCFun(a, out, vcAtan _, null, 10L)
+  def atan(a:CMat):CMat = atan(a, CMat(a.nrows, a.ncols))
+
+  def acosh(a:CMat, out:Mat) = applyCFun(a, out, vcAcosh _, null, 10L)
+  def acosh(a:CMat):CMat = acosh(a, CMat(a.nrows, a.ncols))
+  
+  def asinh(a:CMat, out:Mat) = applyCFun(a, out, vcAsinh _, null, 10L)
+  def asinh(a:CMat):CMat = asinh(a, CMat(a.nrows, a.ncols))
+  
+  def atanh(a:CMat, out:Mat) = applyCFun(a, out, vcAtanh _, null, 10L)
+  def atanh(a:CMat):CMat = atanh(a, CMat(a.nrows, a.ncols))
   
   def exppsi(a:FMat, out:Mat) = applySFun(a, out, null, (x:Float)=>if (x<1.0f) 0.5f*x*x else x-0.5f, 1L)
   def exppsi(a:FMat):FMat = exppsi(a, FMat(a.nrows, a.ncols))
@@ -1299,6 +1377,7 @@ object SciFunctions {
   def abs(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => abs(aa, b):FMat
+      case aa:CMat => abs(aa, b):FMat
       case aa:DMat => abs(aa, b):DMat
       case aa:GMat => abs(aa, b):GMat
     }
@@ -1315,6 +1394,7 @@ object SciFunctions {
   def sqrt(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => sqrt(aa, b)
+      case aa:CMat => sqrt(aa, b)
       case aa:DMat => sqrt(aa, b)
       case aa:GMat => sqrt(aa, b)
     }
@@ -1323,6 +1403,7 @@ object SciFunctions {
   def exp(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => exp(aa, b)
+      case aa:CMat => exp(aa, b)
       case aa:DMat => exp(aa, b)
       case aa:GMat => exp(aa, b)
     }
@@ -1339,6 +1420,7 @@ object SciFunctions {
   def ln(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => ln(aa, b)
+      case aa:CMat => ln(aa, b)
       case aa:DMat => ln(aa, b)
       case aa:GMat => ln(aa, b)
     }
@@ -1347,6 +1429,7 @@ object SciFunctions {
   def log10(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => log10(aa, b)
+      case aa:CMat => log10(aa, b)
       case aa:DMat => log10(aa, b)
       case aa:GMat => log10(aa, b)
     }
@@ -1363,6 +1446,7 @@ object SciFunctions {
   def cos(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => cos(aa, b)
+      case aa:CMat => cos(aa, b)
       case aa:DMat => cos(aa, b)
       case aa:GMat => cos(aa, b)
     }
@@ -1371,6 +1455,7 @@ object SciFunctions {
   def sin(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => sin(aa, b)
+      case aa:CMat => sin(aa, b)
       case aa:DMat => sin(aa, b)
       case aa:GMat => sin(aa, b)
     }
@@ -1379,6 +1464,7 @@ object SciFunctions {
   def tan(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => tan(aa, b)
+      case aa:CMat => tan(aa, b)
       case aa:DMat => tan(aa, b)
       case aa:GMat => tan(aa, b)
     }
@@ -1387,6 +1473,7 @@ object SciFunctions {
   def cosh(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => cosh(aa, b)
+      case aa:CMat => cosh(aa, b)
       case aa:DMat => cosh(aa, b)
       case aa:GMat => cosh(aa, b)
     }
@@ -1395,6 +1482,7 @@ object SciFunctions {
   def sinh(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => sinh(aa, b)
+      case aa:CMat => sinh(aa, b)
       case aa:DMat => sinh(aa, b)
       case aa:GMat => sinh(aa, b)
     }
@@ -1403,6 +1491,7 @@ object SciFunctions {
   def tanh(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => tanh(aa, b)
+      case aa:CMat => tanh(aa, b)
       case aa:DMat => tanh(aa, b)
       case aa:GMat => tanh(aa, b)
     }
@@ -1411,6 +1500,7 @@ object SciFunctions {
   def acos(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => acos(aa, b)
+      case aa:CMat => acos(aa, b)
       case aa:DMat => acos(aa, b)
       case aa:GMat => acos(aa, b)
     }
@@ -1419,6 +1509,7 @@ object SciFunctions {
   def asin(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => asin(aa, b)
+      case aa:CMat => asin(aa, b)
       case aa:DMat => asin(aa, b)
       case aa:GMat => asin(aa, b)
     }
@@ -1427,6 +1518,7 @@ object SciFunctions {
   def atan(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => atan(aa, b)
+      case aa:CMat => atan(aa, b)
       case aa:DMat => atan(aa, b)
       case aa:GMat => atan(aa, b)
     }
@@ -1435,6 +1527,7 @@ object SciFunctions {
   def acosh(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => acosh(aa, b)
+      case aa:CMat => acosh(aa, b)
       case aa:DMat => acosh(aa, b)
       case aa:GMat => acosh(aa, b)
     }
@@ -1443,6 +1536,7 @@ object SciFunctions {
   def asinh(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => asinh(aa, b)
+      case aa:CMat => asinh(aa, b)
       case aa:DMat => asinh(aa, b)
       case aa:GMat => asinh(aa, b)
     }
