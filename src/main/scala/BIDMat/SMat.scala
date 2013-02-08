@@ -90,12 +90,12 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   						jc0 = SparseMat.incInds(jc)
   						ir0 = SparseMat.incInds(ir)
   					}
-  						    if (dd.ncols == 1) {
+  					//	    if (dd.ncols == 1) {
   					// Seg faults in linux and windows			
-  					                scscmv("N", nrows, ncols, 1.0f, "GLNF", data, ir, jc, dd.data, 0f, out.data) 
-  						    } else {
+  					//                scscmv("N", nrows, ncols, 1.0f, "GLNF", data, ir, jc, dd.data, 0f, out.data) 
+  					//	    } else {
   					scscmm("N", nrows, nc, ncols, 1.0f, "GLNF", data, ir0, jc0, dd.data, ncols, 0f, out.data, out.nrows)
-  						  }
+  					//	  }
   				}
   				out
   			}
