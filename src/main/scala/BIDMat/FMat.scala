@@ -227,7 +227,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     	out.clear
     	Mat.nflops += 2L * nrows * a.nnz
     	val ioff = Mat.ioneBased;
-    	if (Mat.noMKL || Mat.numThreads > 1) {
+    	if (Mat.noMKL) {
     		if (1L*nrows*a.nnz > 100000L && Mat.numThreads > 1) {
     			val done = IMat(1,Mat.numThreads)
     			for (ithread <- 0 until Mat.numThreads) {
