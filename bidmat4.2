@@ -11,7 +11,7 @@ fi
 BIDMAT_ROOT=`dirname "$BIDMAT_ROOT"`
 BIDMAT_ROOT="$( echo ${BIDMAT_ROOT} | sed s+/cygdrive/c+c:+ )" 
 # Fix these if needed
-JCUDA_VERSION="4.2"
+JCUDA_VERSION="0.4.2"
 JCUDA_LIBDIR=${BIDMAT_ROOT}/lib
 LIBDIR=${BIDMAT_ROOT}/lib
 if [ `uname` = "Darwin" ]; then
