@@ -469,23 +469,20 @@ class SparseMat[@specialized(Double,Float) T]
   		out.sparseTrim
   } 
   
-  def sgReduceOp(dim:Int, op1:(T) => T, op2:(T,T) => T, omat:Mat):DenseMat[T] = {
+  def sgReduceOp(dim0:Int, op1:(T) => T, op2:(T,T) => T, omat:Mat):DenseMat[T] = {
+      var dim = if (nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
   		val ioff = Mat.ioneBased
-  		if (dim == 0) {
-  			if (nrows > 1 && ncols > 1) {
-  				throw new RuntimeException("must be a vector")
-  			} else {
-  				val out = DenseMat.newOrCheck(1, 1, omat)
-  				var j = 0
-  				var acc = op1(numeric.zero)
-  				while (j < nnz) { 
-  					acc = op2(acc, data(j))
-  					j += 1
-  				}
-  				out.data(0) = acc
-  				out
+  		if ((dim0 == 0) && (nrows == 1 || ncols == 1)) { // Sparse vector case
+  			val out = DenseMat.newOrCheck(1, 1, omat)
+  			var j = 0
+  			var acc = op1(numeric.zero)
+  			while (j < nnz) { 
+  				acc = op2(acc, data(j))
+  				j += 1
   			}
-  		} else  if (dim == 1) {
+  			out.data(0) = acc
+  			out
+  		} else if (dim == 1) {
   			val out = DenseMat.newOrCheck(1, ncols, omat)
   			var i = 0
   			while (i < ncols) { 
