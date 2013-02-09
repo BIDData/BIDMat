@@ -1,7 +1,7 @@
 package BIDMat
 import jcuda._
 import jcuda.jcublas.JCublas
-import jcuda.runtime.JCuda
+import jcuda.runtime.JCuda._
 import jcuda.runtime._
 import edu.berkeley.bid.CUMAT
 
@@ -40,6 +40,12 @@ case class GSMat(nr:Int, nc:Int, val nnz0:Int, val ir:Pointer, val ic:Pointer, v
       SparseMat.incInds(out.ir, out.ir)
     }
     out
+  }
+  
+  override def clear = {
+  	cudaMemset(data, 0, Sizeof.FLOAT*nnz)
+  	cudaDeviceSynchronize
+    this
   }
   
   def free() = {
