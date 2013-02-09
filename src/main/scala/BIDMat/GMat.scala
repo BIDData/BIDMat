@@ -479,12 +479,12 @@ object GMat {
       throw new RuntimeException("dimensions mismatch")
     }
     val out = GSMat.newOrCheckGSMat(C, oldmat)
-    cudaMemcpy(out.ir, C.ir, Sizeof.INT * C.nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
-    cudaMemcpy(out.ic, C.ic, Sizeof.INT * C.nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
-    val err = CUMAT.dds(A.nrows, C.nnz, A.data, B.data, C.ir, C.ic, out.data)
-    if (err != 0) {
-      throw new RuntimeException("CUDA error "+err)
-    }
+    var err = cudaMemcpy(out.ir, C.ir, Sizeof.INT * C.nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    if (err != 0) throw new RuntimeException("CUDA DDS row copy error "+cudaGetErrorString(err))
+    err = cudaMemcpy(out.ic, C.ic, Sizeof.INT * C.nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    if (err != 0) throw new RuntimeException("CUDA DDS column copy error "+cudaGetErrorString(err))
+    err = CUMAT.dds(A.nrows, C.nnz, A.data, B.data, C.ir, C.ic, out.data)
+    if (err != 0) throw new RuntimeException("CUDA DDS kernel error "+cudaGetErrorString(err))
     cudaDeviceSynchronize()
     Mat.nflops += 2L * C.nnz * A.nrows
     out    
