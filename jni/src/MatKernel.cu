@@ -427,6 +427,7 @@ __global__ void __dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic
 __global__ void __reduce1op(int nrows, int ncols, float *A, float *B, int opn);
 
 #define DDS_BLKY 4
+
 int dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P) {
   dim3 blockDims(min(32,nrows), min(DDS_BLKY, 1+(nrows-1)/32), 1);
   int nblocks = min(65536, max(1,nnz/8));
@@ -447,7 +448,7 @@ int reduce1op(int nrows, int ncols, float *A, float *B, int opn) {
 }
 
 #ifdef __CUDA_ARCH__
-#if __CUDA_ARCH__ > 200
+#if __CUDA_ARCH__ > 300
 
 __global__ void __dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P) {
   __shared__ float parts[DDS_BLKY];
@@ -458,25 +459,23 @@ __global__ void __dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic
     float sum = 0;
     int aoff = nrows * Cir[j];
     int boff = nrows * Cic[j];
-    for (int i = threadIdx.x + threadIdx.y * blockDim.x; i < nrows; i += blockDim.x * blockDim.y) {
+    for (int i = tid; i < nrows; i += blockDim.x * blockDim.y) {
       sum += A[i + aoff] * B[i + boff];
     }
     for (int i = 1; i < blockDim.x; i *= 2) {
-      if (threadIdx.x + i < blockDim.x) {
-        sum += __shfl_down(sum, i);
-      }
-    }
+      sum = sum + __shfl_down(sum, i);
+    } 
     if (threadIdx.x == 0) {
-        parts[threadIdx.y] = sum;
-        for (int i = 1; i < blockDim.y; i *= 2) {
-          __syncthreads();
-          if (i + threadIdx.y < blockDim.y) {
-            parts[threadIdx.y] += parts[i + threadIdx.y];
-          }
+      parts[threadIdx.y] = sum;
+      for (int i = 1; i < blockDim.y; i *= 2) {
+        __syncthreads();
+        if (i + threadIdx.y < blockDim.y) {
+          parts[threadIdx.y] = parts[threadIdx.y] + parts[i + threadIdx.y];
         }
-        if (threadIdx.y == 0) {
-          atomicAdd(&P[j], parts[0]);
-        }
+      } 
+      if (threadIdx.y == 0) {
+        P[j] = parts[0];
+      } 
     }
   }
 }
@@ -519,8 +518,9 @@ __global__ void __dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic
       }
     }
     if (tid == 0) {
-      atomicAdd(&P[j], parts[0]);
+      P[j] = parts[0];
     }
+    __syncthreads();
   }
 }
 
