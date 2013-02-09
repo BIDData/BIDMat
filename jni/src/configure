@@ -86,7 +86,7 @@ elif [ "$OS" = "linux" ] ; then
 	CFLAGS="-fPIC -c -O2 -DNDEBUG -std=c99 $CFLAGS"
 	LB="ar rc"    
 	GLD="gcc -shared"
-	LD="icc -shared -static-intel"
+	LD="g++ -shared -static-intel"
 	LDFLAGS="$LDFLAGS"
 	LIBPREPEND="lib"
 	LIBAPPEND=".so"
