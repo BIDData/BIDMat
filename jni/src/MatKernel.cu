@@ -448,7 +448,7 @@ int reduce1op(int nrows, int ncols, float *A, float *B, int opn) {
 }
 
 #ifdef __CUDA_ARCH__
-#if __CUDA_ARCH__ > 300
+#if __CUDA_ARCH__ > 200
 
 __global__ void __dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P) {
   __shared__ float parts[DDS_BLKY];
