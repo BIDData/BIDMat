@@ -75,7 +75,7 @@ elif [ "$OS" = "linux" ] ; then
         CUDA_HOME="/usr/local/cuda"
         JCUDA_HOME="$HOME/code/JCUDA5"
         CC="icc"
-        GCC="gcc"
+        GCC="g++"
         NVCC="nvcc"
         NVCCFLAGS="-c  -arch=compute_20 -code=sm_20,sm_30 --machine 64  -Xcompiler \"-fPIC -c -O2 -g -DDEBUG\""
         SUBLIB=linux64
@@ -83,10 +83,10 @@ elif [ "$OS" = "linux" ] ; then
 	OUTFLG="-o "
 	CPPFLAGS="$CPPFLAGS -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$MKL_ROOT/include \
                  -I$MKL_ROOT/include/intel64/lp64 -I$JCUDA_HOME/CommonJNI/src -I$CUDA_HOME/include"
-	CFLAGS="-fPIC -c -O2 -DNDEBUG -std=c99 $CFLAGS"
+	CFLAGS="-fPIC -c -O2 -DNDEBUG $CFLAGS"
 	LB="ar rc"    
-	GLD="gcc -shared"
-	LD="g++ -shared -static-intel"
+	GLD="g++ -shared"
+	LD="icc -shared -static-intel"
 	LDFLAGS="$LDFLAGS"
 	LIBPREPEND="lib"
 	LIBAPPEND=".so"
