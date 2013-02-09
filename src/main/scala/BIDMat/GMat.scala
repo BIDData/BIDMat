@@ -483,6 +483,7 @@ object GMat {
     if (err != 0) throw new RuntimeException("CUDA DDS row copy error "+cudaGetErrorString(err))
     err = cudaMemcpy(out.ic, C.ic, Sizeof.INT * C.nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
     if (err != 0) throw new RuntimeException("CUDA DDS column copy error "+cudaGetErrorString(err))
+    out.clear;
     err = CUMAT.dds(A.nrows, C.nnz, A.data, B.data, C.ir, C.ic, out.data)
     if (err != 0) throw new RuntimeException("CUDA DDS kernel error "+cudaGetErrorString(err))
     cudaDeviceSynchronize()
