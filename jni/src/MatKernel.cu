@@ -142,8 +142,8 @@ __device__ const optype fctns2[2] = {
 
 __global__ void __apply_gfun(float *A, float *B, int N, int opn) {
   fntype fn = fctns[opn];
-  int ip = threadIdx.x + blockDim.x * blockIdx.x;
-  for (int i = ip; i < N; i += blockDim.x * gridDim.x) {
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {
     B[i] = fn(A[i]);
   }
 }
@@ -160,15 +160,16 @@ int apply_gfun(float *A, float *B, int N, int opn) {
       nblocks = 2*nblocks;
     }
   }
-  __apply_gfun<<<nblocks,nthreads>>>(A, B, N, opn);
+  dim3 griddims(min(nblocks, 65536), max(1, nblocks / 65536), 1);
+  __apply_gfun<<<griddims,nthreads>>>(A, B, N, opn);
   cudaError_t err = cudaGetLastError();
   return err;
 }
 
 __global__ void __apply_gfun2(float *A, float *B, float *C, int N, int opn) {
   optype fn = fctns2[opn];
-  int ip = threadIdx.x + blockDim.x * blockIdx.x;
-  for (int i = ip; i < N; i += blockDim.x * gridDim.x) {
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {
     C[i] = fn(A[i], B[i]);
   }
 }
@@ -185,65 +186,66 @@ int apply_gfun2(float *A, float *B, float *C, int N, int opn) {
       nblocks = 2*nblocks;
     }
   }
-  __apply_gfun2<<<nblocks,nthreads>>>(A, B, C, N, opn);
+  dim3 griddims(min(nblocks, 65536), max(1, nblocks / 65536), 1);
+  __apply_gfun2<<<griddims,nthreads>>>(A, B, C, N, opn);
   cudaError_t err = cudaGetLastError();
   return err;
 }
 
 __global__ void __apply_full(float *A, float *B, float *C, int N, int opn) {
   optype op = operators[opn];
-  int ip = threadIdx.x + blockDim.x * blockIdx.x;
-  for (int i = ip; i < N; i += blockDim.x * gridDim.x) {
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {
     C[i] = op(A[i],B[i]);
   }
 }
 
 __global__ void __apply_right_col(float *A, float *B, float *C, int nrows, int ncols, int opn) {
   optype op = operators[opn];
-  int ip = threadIdx.x + blockDim.x * blockIdx.x;
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x) {
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
     C[i] = op(A[i],B[i % nrows]);
   }
 }
 
 __global__ void __apply_right_row(float *A, float *B, float *C, int nrows, int ncols, int opn) {
   optype op = operators[opn];
-  int ip = threadIdx.x + blockDim.x * blockIdx.x;
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x) {
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
     C[i] = op(A[i],B[i / nrows]);
   }
 }
 
 __global__ void __apply_left_col(float *A, float *B, float *C, int nrows, int ncols, int opn) {
   optype op = operators[opn];
-  int ip = threadIdx.x + blockDim.x * blockIdx.x;
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x) {
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
     C[i] = op(A[i % nrows],B[i]);
   }
 }
 
 __global__ void __apply_left_row(float *A, float *B, float *C, int nrows, int ncols, int opn) {
   optype op = operators[opn];
-  int ip = threadIdx.x + blockDim.x * blockIdx.x;
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x) {
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
     C[i] = op(A[i / nrows],B[i]);
   }
 }
 
 __global__ void __apply_right_val(float *A, float *B, float *C, int nrows, int ncols, int opn) {
   optype op = operators[opn];
-  int ip = threadIdx.x + blockDim.x * blockIdx.x;
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
   float val = B[0];
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x) {
+  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
     C[i] = op(A[i],val);
   }
 }
 
 __global__ void __apply_left_val(float *A, float *B, float *C, int nrows, int ncols, int opn) {
   optype op = operators[opn];
-  int ip = threadIdx.x + blockDim.x * blockIdx.x;
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
   float val = A[0];
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x) {
+  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
     C[i] = op(val,B[i]);
   }
 }
@@ -262,20 +264,21 @@ int apply_binop(float *A, int Anrows, int Ancols,
       nblocks = 2*nblocks;
     }
   }
+  dim3 griddims(min(nblocks, 65536), max(1, nblocks / 65536), 1);
   if (Anrows == Bnrows && Ancols == Bncols) {
-    __apply_full<<<nblocks,nthreads>>>(A, B, C, N, opn);
+    __apply_full<<<griddims,nthreads>>>(A, B, C, N, opn);
   } else if (Anrows == Bnrows && Bncols == 1) {
-    __apply_right_col<<<nblocks,nthreads>>>(A, B, C, Anrows, Ancols, opn);
+    __apply_right_col<<<griddims,nthreads>>>(A, B, C, Anrows, Ancols, opn);
   } else if (Ancols == Bncols && Bnrows == 1) {
-    __apply_right_row<<<nblocks,nthreads>>>(A, B, C, Anrows, Ancols, opn);
+    __apply_right_row<<<griddims,nthreads>>>(A, B, C, Anrows, Ancols, opn);
   } else if (Anrows == Bnrows && Ancols == 1) {
-    __apply_left_col<<<nblocks,nthreads>>>(A, B, C, Bnrows, Bncols, opn);
+    __apply_left_col<<<griddims,nthreads>>>(A, B, C, Bnrows, Bncols, opn);
   } else if (Ancols == Bncols && Anrows == 1) {
-    __apply_left_row<<<nblocks,nthreads>>>(A, B, C, Bnrows, Bncols, opn);
+    __apply_left_row<<<griddims,nthreads>>>(A, B, C, Bnrows, Bncols, opn);
   } else if (Bnrows == 1 && Bncols == 1) {
-    __apply_right_val<<<nblocks,nthreads>>>(A, B, C, Anrows, Ancols, opn);
+    __apply_right_val<<<griddims,nthreads>>>(A, B, C, Anrows, Ancols, opn);
   } else if (Anrows == 1 && Ancols == 1) {
-    __apply_left_val<<<nblocks,nthreads>>>(A, B, C, Bnrows, Bncols, opn);
+    __apply_left_val<<<griddims,nthreads>>>(A, B, C, Bnrows, Bncols, opn);
   }
   cudaError_t err = cudaGetLastError();
   return err;
@@ -283,58 +286,58 @@ int apply_binop(float *A, int Anrows, int Ancols,
 
 __global__ void __apply_full_int(int *A, int *B, int *C, int N, int opn) {
   ioptype op = ioperators[opn];
-  int ip = threadIdx.x + blockDim.x * blockIdx.x;
-  for (int i = ip; i < N; i += blockDim.x * gridDim.x) {
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {
     C[i] = op(A[i],B[i]);
   }
 }
 
 __global__ void __apply_right_col_int(int *A, int *B, int *C, int nrows, int ncols, int opn) {
   ioptype op = ioperators[opn];
-  int ip = threadIdx.x + blockDim.x * blockIdx.x;
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x) {
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
     C[i] = op(A[i],B[i % nrows]);
   }
 }
 
 __global__ void __apply_right_row_int(int *A, int *B, int *C, int nrows, int ncols, int opn) {
   ioptype op = ioperators[opn];
-  int ip = threadIdx.x + blockDim.x * blockIdx.x;
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x) {
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
     C[i] = op(A[i],B[i / nrows]);
   }
 }
 
 __global__ void __apply_left_col_int(int *A, int *B, int *C, int nrows, int ncols, int opn) {
   ioptype op = ioperators[opn];
-  int ip = threadIdx.x + blockDim.x * blockIdx.x;
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x) {
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
     C[i] = op(A[i % nrows],B[i]);
   }
 }
 
 __global__ void __apply_left_row_int(int *A, int *B, int *C, int nrows, int ncols, int opn) {
   ioptype op = ioperators[opn];
-  int ip = threadIdx.x + blockDim.x * blockIdx.x;
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x) {
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
     C[i] = op(A[i / nrows],B[i]);
   }
 }
 
 __global__ void __apply_right_val_int(int *A, int *B, int *C, int nrows, int ncols, int opn) {
   ioptype op = ioperators[opn];
-  int ip = threadIdx.x + blockDim.x * blockIdx.x;
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
   int val = B[0];
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x) {
+  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
     C[i] = op(A[i],val);
   }
 }
 
 __global__ void __apply_left_val_int(int *A, int *B, int *C, int nrows, int ncols, int opn) {
   ioptype op = ioperators[opn];
-  int ip = threadIdx.x + blockDim.x * blockIdx.x;
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
   int val = A[0];
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x) {
+  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
     C[i] = op(val,B[i]);
   }
 }
@@ -354,20 +357,21 @@ int apply_biniop(int *A, int Anrows, int Ancols,
       nblocks = 2*nblocks;
     }
   }
+  dim3 griddims(min(nblocks, 65536), max(1, nblocks / 65536), 1);
   if (Anrows == Bnrows && Ancols == Bncols) {
-    __apply_full_int<<<nblocks,nthreads>>>(A, B, C, N, opn);
+    __apply_full_int<<<griddims,nthreads>>>(A, B, C, N, opn);
   } else if (Anrows == Bnrows && Bncols == 1) {
-    __apply_right_col_int<<<nblocks,nthreads>>>(A, B, C, Anrows, Ancols, opn);
+    __apply_right_col_int<<<griddims,nthreads>>>(A, B, C, Anrows, Ancols, opn);
   } else if (Ancols == Bncols && Bnrows == 1) {
-    __apply_right_row_int<<<nblocks,nthreads>>>(A, B, C, Anrows, Ancols, opn);
+    __apply_right_row_int<<<griddims,nthreads>>>(A, B, C, Anrows, Ancols, opn);
   } else if (Anrows == Bnrows && Ancols == 1) {
-    __apply_left_col_int<<<nblocks,nthreads>>>(A, B, C, Bnrows, Bncols, opn);
+    __apply_left_col_int<<<griddims,nthreads>>>(A, B, C, Bnrows, Bncols, opn);
   } else if (Ancols == Bncols && Anrows == 1) {
-    __apply_left_row_int<<<nblocks,nthreads>>>(A, B, C, Bnrows, Bncols, opn);
+    __apply_left_row_int<<<griddims,nthreads>>>(A, B, C, Bnrows, Bncols, opn);
   } else if (Bnrows == 1 && Bncols == 1) {
-    __apply_right_val_int<<<nblocks,nthreads>>>(A, B, C, Anrows, Ancols, opn);
+    __apply_right_val_int<<<griddims,nthreads>>>(A, B, C, Anrows, Ancols, opn);
   } else if (Anrows == 1 && Ancols == 1) {
-    __apply_left_val_int<<<nblocks,nthreads>>>(A, B, C, Bnrows, Bncols, opn);
+    __apply_left_val_int<<<griddims,nthreads>>>(A, B, C, Bnrows, Bncols, opn);
   }
   cudaError_t err = cudaGetLastError();
   return err;
@@ -390,7 +394,7 @@ __global__ void __dsmult(int nrows, int nnz, float *A, float *Bdata, int *Bir, i
 
 int dsmult(int nrows, int ncols, int nnz, float *A, float *Bdata, int *Bir, int *Bic, float *C) {
   int nthreads = min(1024, nrows);
-  int nblocks = min(1024*1024, ncols);
+  int nblocks = min(65536, ncols);
   __dsmult<<<nblocks,nthreads>>>(nrows, nnz, A, Bdata, Bir, Bic, C);
   cudaError_t err = cudaGetLastError();
   return err;
@@ -412,7 +416,7 @@ __global__ void __dsmultT(int nrows, int nnz, float *A, float *Bdata, int *Bir, 
 
 int dsmultT(int nrows, int ncols, int nnz, float *A, float *Bdata, int *Bir, int *Bic, float *C) {
   int nthreads = min(1024, nrows);
-  int nblocks = min(1024*1024, ncols);
+  int nblocks = min(65536, ncols);
   __dsmultT<<<nblocks,nthreads>>>(nrows, nnz, A, Bdata, Bir, Bic, C);
   cudaError_t err = cudaGetLastError();
   return err;
@@ -488,7 +492,7 @@ __global__ void __dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic
 __global__ void __reduce1op(int nrows, int ncols, float *A, float *B, int opn) {
   __shared__ float parts[32][33];
   optype op = operators[opn];
-  for (int icol = threadIdx.y + blockIdx.y * blockDim.y; icol < ncols; icol += blockDim.y * gridDim.y) {
+  for (int icol = threadIdx.y + blockIdx.y * blockDim.y; icol < ncols; icol += blockDim.y * gridDim.x) {
     float v = A[threadIdx.x + icol * nrows];
     for (int irow = threadIdx.x + blockDim.x; irow < nrows; irow += blockDim.x) {
       v = op(v, A[irow + icol * nrows]);
@@ -552,7 +556,7 @@ int transpose(float *in, int instride, float *out, int outstride, int nrows, int
 
  int dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P) {
   int nthreads = min(32, nrows);
-  int nblocks = min(32*1024*1024, max(1,nnz/8));
+  int nblocks = min(65536, max(1,nnz/8));
   __dds<<<nblocks,nthreads>>>(nrows, nnz, A, B, Cir, Cic, P);
   cudaError_t err = cudaGetLastError();
   return err;
@@ -561,10 +565,9 @@ int transpose(float *in, int instride, float *out, int outstride, int nrows, int
 int reduce1op(int nrows, int ncols, float *A, float *B, int opn) {
   int blkx = min(32, nrows);
   int blky = min(32, ncols);
-  int nblks = max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16)));
+  int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));
   const dim3 blkdims(blkx,blky,1);
-  const dim3 griddims(1,nblks,1);
-  __reduce1op<<<griddims,blkdims>>>(nrows, ncols, A, B, opn);
+  __reduce1op<<<nblks,blkdims>>>(nrows, ncols, A, B, opn);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
@@ -598,10 +601,9 @@ __global__ void __reduce2op(int nrows, int ncols, float *A, float *B, int opn) {
 int reduce2op(int nrows, int ncols, float *A, float *B, int opn) {
   int blkx = min(32, nrows);
   int blky = min(32, ncols);
-  int nblks = max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16)));
+  int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));
   const dim3 blkdims(blkx,blky,1);
-  const dim3 griddims(nblks,1,1);
-  __reduce2op<<<griddims,blkdims>>>(nrows, ncols, A, B, opn);
+  __reduce2op<<<nblks,blkdims>>>(nrows, ncols, A, B, opn);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
@@ -649,7 +651,8 @@ int embedmat(float *a, long long *b, int nrows, int ncols) {
   int nthreads;
   int nblocks;
   setsizes(nrows*ncols, &nblocks, &nthreads);
-  __embedmat<<<nblocks,nthreads>>>(a, b, nrows, ncols);
+  dim3 griddims(min(nblocks, 65536), max(1, nblocks / 65536), 1);
+  __embedmat<<<griddims,nthreads>>>(a, b, nrows, ncols);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
@@ -659,7 +662,8 @@ int extractmat(float *a, long long *b, int nrows, int ncols) {
   int nthreads;
   int nblocks;
   setsizes(nrows*ncols, &nblocks, &nthreads);
-  __extractmat<<<nblocks,nthreads>>>(a, b, nrows, ncols);
+  dim3 griddims(min(nblocks, 65536), max(1, nblocks / 65536), 1);
+  __extractmat<<<griddims,nthreads>>>(a, b, nrows, ncols);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
