@@ -426,24 +426,57 @@ __global__ void __dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic
 
 __global__ void __reduce1op(int nrows, int ncols, float *A, float *B, int opn);
 
+#define DDS_BLKY 4
+int dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P) {
+  dim3 blockDims(min(32,nrows), min(DDS_BLKY, 1+(nrows-1)/32), 1);
+  int nblocks = min(65536, max(1,nnz/8));
+  __dds<<<nblocks,blockDims>>>(nrows, nnz, A, B, Cir, Cic, P);
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int reduce1op(int nrows, int ncols, float *A, float *B, int opn) {
+  int blkx = min(32, nrows);
+  int blky = min(32, ncols);
+  int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));
+  const dim3 blkdims(blkx,blky,1);
+  __reduce1op<<<nblks,blkdims>>>(nrows, ncols, A, B, opn);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
 #ifdef __CUDA_ARCH__
 #if __CUDA_ARCH__ > 200
 
 __global__ void __dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P) {
+  __shared__ float parts[DDS_BLKY];
   int jstart = ((long long)blockIdx.x) * nnz / gridDim.x;
   int jend = ((long long)(blockIdx.x + 1)) * nnz / gridDim.x;
+  int tid = threadIdx.x + blockDim.x * threadIdx.y;
   for (int j = jstart; j < jend ; j++) {
     float sum = 0;
     int aoff = nrows * Cir[j];
     int boff = nrows * Cic[j];
-    for (int i = threadIdx.x; i < nrows; i += blockDim.x) {
+    for (int i = threadIdx.x + threadIdx.y * blockDim.x; i < nrows; i += blockDim.x * blockDim.y) {
       sum += A[i + aoff] * B[i + boff];
     }
     for (int i = 1; i < blockDim.x; i *= 2) {
-      sum = sum + __shfl_down(sum, i);
+      if (threadIdx.x + i < blockDim.x) {
+        sum += __shfl_down(sum, i);
+      }
     }
     if (threadIdx.x == 0) {
-      P[j] = sum;
+        parts[threadIdx.y] = sum;
+        for (int i = 1; i < blockDim.y; i *= 2) {
+          __syncthreads();
+          if (i + threadIdx.y < blockDim.y) {
+            parts[threadIdx.y] += parts[i + threadIdx.y];
+          }
+        }
+        if (threadIdx.y == 0) {
+          atomicAdd(&P[j], parts[0]);
+        }
     }
   }
 }
@@ -467,24 +500,26 @@ __global__ void __reduce1op(int nrows, int ncols, float *A, float *B, int opn) {
 #else
 
 __global__ void __dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P) {
-  __shared__ float parts[1][33];
+  __shared__ float parts[32*DDS_BLKY];
   int jstart = ((long long)blockIdx.x) * nnz / gridDim.x;
   int jend = ((long long)(blockIdx.x + 1)) * nnz / gridDim.x;
+  int tid = threadIdx.x + blockDim.x * threadIdx.y;
   for (int j = jstart; j < jend ; j++) {
     float sum = 0;
     int aoff = nrows * Cir[j];
     int boff = nrows * Cic[j];
-    for (int i = threadIdx.x; i < nrows; i += blockDim.x) {
+    for (int i = tid; i < nrows; i += blockDim.x * blockDim.y) {
       sum += A[i + aoff] * B[i + boff];
     }
-    parts[0][threadIdx.x] = sum;
-    for (int i = 1; i < blockDim.x; i *= 2) {
-      if (i + threadIdx.x < blockDim.x) {
-        parts[0][threadIdx.x] = parts[0][threadIdx.x] + parts[0][i + threadIdx.x];
+    parts[tid] = sum;
+    for (int i = 1; i < blockDim.x * blockDim.y; i *= 2) {
+      __syncthreads();
+      if (i + tid < blockDim.x * blockDim.y) {
+        parts[tid] = parts[tid] + parts[i + tid];
       }
     }
-    if (threadIdx.x == 0) {
-      P[j] = parts[0][0];
+    if (tid == 0) {
+      atomicAdd(&P[j], parts[0]);
     }
   }
 }
@@ -550,27 +585,6 @@ int transpose(float *in, int instride, float *out, int outstride, int nrows, int
   err = cudaGetLastError();
   if (err != cudaSuccess) {fprintf(stderr, "cuda error in transpose"); return err;}
   return 0;
-}
-
-
-
- int dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P) {
-  int nthreads = min(32, nrows);
-  int nblocks = min(65536, max(1,nnz/8));
-  __dds<<<nblocks,nthreads>>>(nrows, nnz, A, B, Cir, Cic, P);
-  cudaError_t err = cudaGetLastError();
-  return err;
-}
-
-int reduce1op(int nrows, int ncols, float *A, float *B, int opn) {
-  int blkx = min(32, nrows);
-  int blky = min(32, ncols);
-  int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));
-  const dim3 blkdims(blkx,blky,1);
-  __reduce1op<<<nblks,blkdims>>>(nrows, ncols, A, B, opn);
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  return err;
 }
 
 __global__ void __reduce2op(int nrows, int ncols, float *A, float *B, int opn) {
