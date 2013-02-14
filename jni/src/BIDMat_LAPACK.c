@@ -2,6 +2,7 @@
 #include <jni.h>
 #include <mkl.h>
 #include <mkl_lapacke.h>
+#include <mkl_lapack.h>
 
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_dgetrf
@@ -1072,3 +1073,160 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_zungqr
     (*env)->ReleasePrimitiveArrayCritical(env, j_tau, tau, 0);
     return retval;
 }
+
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_slaed7
+(JNIEnv * env, jobject calling_obj, jint icompq, jint n, jint qsiz, jint tlvls, jint curlvl, jint curpbm, jfloatArray j_d,
+ jfloatArray j_q, jint ldq, jintArray j_indxq, jfloat rho, jint cutpnt, jfloatArray j_qstore, jintArray j_qptr, jintArray j_prmptr,
+ jintArray j_perm, jintArray j_givptr, jintArray j_givcol, jfloatArray j_givnum, jfloatArray j_work, jintArray j_iwork)
+{
+  jfloat *d = (*env)->GetPrimitiveArrayCritical(env, j_d, JNI_FALSE);
+  jfloat *q = (*env)->GetPrimitiveArrayCritical(env, j_q, JNI_FALSE);
+  jint *indxq = (*env)->GetPrimitiveArrayCritical(env, j_indxq, JNI_FALSE);
+  jfloat *qstore = (*env)->GetPrimitiveArrayCritical(env, j_qstore, JNI_FALSE);
+  jint *qptr = (*env)->GetPrimitiveArrayCritical(env, j_qptr, JNI_FALSE);
+  jint *prmptr = (*env)->GetPrimitiveArrayCritical(env, j_prmptr, JNI_FALSE);
+  jint *perm = (*env)->GetPrimitiveArrayCritical(env, j_perm, JNI_FALSE);
+  jint *givptr = (*env)->GetPrimitiveArrayCritical(env, j_givptr, JNI_FALSE);
+  jint *givcol = (*env)->GetPrimitiveArrayCritical(env, j_givcol, JNI_FALSE);
+  jfloat *givnum = (*env)->GetPrimitiveArrayCritical(env, j_givnum, JNI_FALSE);
+  jfloat *work = (*env)->GetPrimitiveArrayCritical(env, j_work, JNI_FALSE);
+  jint *iwork = (*env)->GetPrimitiveArrayCritical(env, j_iwork, JNI_FALSE);
+  jint info;
+
+  slaed7(&icompq, &n, &qsiz, &tlvls, &curlvl, &curpbm, d, q, &ldq, indxq, &rho, &cutpnt,
+         qstore, qptr, prmptr, perm, givptr, givcol, givnum, work, iwork, &info );
+
+  (*env)->ReleasePrimitiveArrayCritical(env, j_iwork, iwork, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_work, work, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_givnum, givnum, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_givcol, givcol, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_givptr, givptr, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_perm, perm, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_prmptr, prmptr, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_qptr, qptr, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_qstore, qstore, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_indxq, indxq, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_q, q, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_d, d, 0);
+  return info;
+}
+
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_dlaed7
+(JNIEnv * env, jobject calling_obj, jint icompq, jint n, jint qsiz, jint tlvls, jint curlvl, jint curpbm, jdoubleArray j_d,
+ jdoubleArray j_q, jint ldq, jintArray j_indxq, jdouble rho, jint cutpnt, jdoubleArray j_qstore, jintArray j_qptr, jintArray j_prmptr,
+ jintArray j_perm, jintArray j_givptr, jintArray j_givcol, jdoubleArray j_givnum, jdoubleArray j_work, jintArray j_iwork)
+{
+  jdouble *d = (*env)->GetPrimitiveArrayCritical(env, j_d, JNI_FALSE);
+  jdouble *q = (*env)->GetPrimitiveArrayCritical(env, j_q, JNI_FALSE);
+  jint *indxq = (*env)->GetPrimitiveArrayCritical(env, j_indxq, JNI_FALSE);
+  jdouble *qstore = (*env)->GetPrimitiveArrayCritical(env, j_qstore, JNI_FALSE);
+  jint *qptr = (*env)->GetPrimitiveArrayCritical(env, j_qptr, JNI_FALSE);
+  jint *prmptr = (*env)->GetPrimitiveArrayCritical(env, j_prmptr, JNI_FALSE);
+  jint *perm = (*env)->GetPrimitiveArrayCritical(env, j_perm, JNI_FALSE);
+  jint *givptr = (*env)->GetPrimitiveArrayCritical(env, j_givptr, JNI_FALSE);
+  jint *givcol = (*env)->GetPrimitiveArrayCritical(env, j_givcol, JNI_FALSE);
+  jdouble *givnum = (*env)->GetPrimitiveArrayCritical(env, j_givnum, JNI_FALSE);
+  jdouble *work = (*env)->GetPrimitiveArrayCritical(env, j_work, JNI_FALSE);
+  jint *iwork = (*env)->GetPrimitiveArrayCritical(env, j_iwork, JNI_FALSE);
+  jint info;
+
+  dlaed7(&icompq, &n, &qsiz, &tlvls, &curlvl, &curpbm, d, q, &ldq, indxq, &rho, &cutpnt,
+         qstore, qptr, prmptr, perm, givptr, givcol, givnum, work, iwork, &info );
+
+  (*env)->ReleasePrimitiveArrayCritical(env, j_iwork, iwork, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_work, work, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_givnum, givnum, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_givcol, givcol, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_givptr, givptr, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_perm, perm, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_prmptr, prmptr, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_qptr, qptr, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_qstore, qstore, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_indxq, indxq, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_q, q, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_d, d, 0);
+  return info;
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_claed7
+(JNIEnv * env, jobject calling_obj, jint icompq, jint n, jint qsiz, jint tlvls, jint curlvl, jint curpbm, jfloatArray j_d,
+ jfloatArray j_q, jint ldq, jintArray j_indxq, jfloat rho, jint cutpnt, jfloatArray j_qstore, jintArray j_qptr, jintArray j_prmptr,
+ jintArray j_perm, jintArray j_givptr, jintArray j_givcol, jfloatArray j_givnum, jfloatArray j_work, jintArray j_iwork, jfloatArray j_rwork)
+{
+  jfloat *d = (*env)->GetPrimitiveArrayCritical(env, j_d, JNI_FALSE);
+  jfloat *q = (*env)->GetPrimitiveArrayCritical(env, j_q, JNI_FALSE);
+  jint *indxq = (*env)->GetPrimitiveArrayCritical(env, j_indxq, JNI_FALSE);
+  jfloat *qstore = (*env)->GetPrimitiveArrayCritical(env, j_qstore, JNI_FALSE);
+  jint *qptr = (*env)->GetPrimitiveArrayCritical(env, j_qptr, JNI_FALSE);
+  jint *prmptr = (*env)->GetPrimitiveArrayCritical(env, j_prmptr, JNI_FALSE);
+  jint *perm = (*env)->GetPrimitiveArrayCritical(env, j_perm, JNI_FALSE);
+  jint *givptr = (*env)->GetPrimitiveArrayCritical(env, j_givptr, JNI_FALSE);
+  jint *givcol = (*env)->GetPrimitiveArrayCritical(env, j_givcol, JNI_FALSE);
+  jfloat *givnum = (*env)->GetPrimitiveArrayCritical(env, j_givnum, JNI_FALSE);
+  jfloat *work = (*env)->GetPrimitiveArrayCritical(env, j_work, JNI_FALSE);
+  jint *iwork = (*env)->GetPrimitiveArrayCritical(env, j_iwork, JNI_FALSE);
+  jfloat *rwork = (*env)->GetPrimitiveArrayCritical(env, j_rwork, JNI_FALSE);
+  jint info;
+
+  claed7(&n, &cutpnt, &qsiz, &tlvls, &curlvl, &curpbm, d, (MKL_Complex8 *)q, &ldq, &rho, indxq,
+         qstore, qptr, prmptr, perm, givptr, givcol, givnum, (MKL_Complex8 *)work, rwork, iwork, &info );
+
+  (*env)->ReleasePrimitiveArrayCritical(env, j_rwork, rwork, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_iwork, iwork, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_work, work, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_givnum, givnum, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_givcol, givcol, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_givptr, givptr, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_perm, perm, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_prmptr, prmptr, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_qptr, qptr, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_qstore, qstore, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_indxq, indxq, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_q, q, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_d, d, 0);
+  return info;
+}
+
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_zlaed7
+(JNIEnv * env, jobject calling_obj, jint icompq, jint n, jint qsiz, jint tlvls, jint curlvl, jint curpbm, jdoubleArray j_d,
+ jdoubleArray j_q, jint ldq, jintArray j_indxq, jdouble rho, jint cutpnt, jdoubleArray j_qstore, jintArray j_qptr, jintArray j_prmptr,
+ jintArray j_perm, jintArray j_givptr, jintArray j_givcol, jdoubleArray j_givnum, jdoubleArray j_work, jintArray j_iwork, jdoubleArray j_rwork)
+{
+  jdouble *d = (*env)->GetPrimitiveArrayCritical(env, j_d, JNI_FALSE);
+  jdouble *q = (*env)->GetPrimitiveArrayCritical(env, j_q, JNI_FALSE);
+  jint *indxq = (*env)->GetPrimitiveArrayCritical(env, j_indxq, JNI_FALSE);
+  jdouble *qstore = (*env)->GetPrimitiveArrayCritical(env, j_qstore, JNI_FALSE);
+  jint *qptr = (*env)->GetPrimitiveArrayCritical(env, j_qptr, JNI_FALSE);
+  jint *prmptr = (*env)->GetPrimitiveArrayCritical(env, j_prmptr, JNI_FALSE);
+  jint *perm = (*env)->GetPrimitiveArrayCritical(env, j_perm, JNI_FALSE);
+  jint *givptr = (*env)->GetPrimitiveArrayCritical(env, j_givptr, JNI_FALSE);
+  jint *givcol = (*env)->GetPrimitiveArrayCritical(env, j_givcol, JNI_FALSE);
+  jdouble *givnum = (*env)->GetPrimitiveArrayCritical(env, j_givnum, JNI_FALSE);
+  jdouble *work = (*env)->GetPrimitiveArrayCritical(env, j_work, JNI_FALSE);
+  jint *iwork = (*env)->GetPrimitiveArrayCritical(env, j_iwork, JNI_FALSE);
+  jdouble *rwork = (*env)->GetPrimitiveArrayCritical(env, j_rwork, JNI_FALSE);
+  jint info;
+
+  zlaed7(&n, &cutpnt, &qsiz, &tlvls, &curlvl, &curpbm, d, (MKL_Complex16 *)q, &ldq, &rho, indxq,
+         qstore, qptr, prmptr, perm, givptr, givcol, givnum, (MKL_Complex16 *)work, rwork, iwork, &info );
+
+  (*env)->ReleasePrimitiveArrayCritical(env, j_rwork, rwork, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_iwork, iwork, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_work, work, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_givnum, givnum, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_givcol, givcol, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_givptr, givptr, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_perm, perm, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_prmptr, prmptr, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_qptr, qptr, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_qstore, qstore, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_indxq, indxq, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_q, q, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_d, d, 0);
+  return info;
+}
+
+
