@@ -141,7 +141,7 @@ elif [ "$OS" = "windows" ] ; then
         fi
         CUDA_LIBS="cudart.lib CommonJNI.lib"
 	LIB="$MKL_ROOT/mkl/lib/intel64;$MKL_ROOT/compiler/lib/intel64;$JAVA_HOME/lib;$CUDA_HOME/lib/x64;$JCUDA_HOME/lib;$LIB"
-	INCLUDE="$JAVA_HOME/include;$JAVA_HOME/include/win32;c:/Intel/MKL/mkl/include;c:/codeh/BIDMat/jni/include;$JCUDA_HOME/CommonJNI/src;$CUDA_HOME/include;$INCLUDE"
+	INCLUDE="$JAVA_HOME/include;$JAVA_HOME/include/win32;c:/Intel/MKL/mkl/include;$JCUDA_HOME/CommonJNI/src;$CUDA_HOME/include;$INCLUDE"
 else
 	echo "OS not supported"
 	exit 1
