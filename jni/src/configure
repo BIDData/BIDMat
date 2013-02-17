@@ -38,13 +38,12 @@ if [ "$OS" = "apple" ] ; then
         NVCC="nvcc"
         NVCCFLAGS="-c -gencode arch=compute_20,code=sm_20 \
           -gencode arch=compute_30,code=sm_30 \
-          --machine 64  -Xcompiler \"-fPIC -c -O2 -g -DDEBUG\""
+          --machine 64  -Xcompiler \"-fPIC -c -O2 -g -DNDEBUG\""
         SUBLIB=osx64
 	OBJ="o"
 	OUTFLG="-o "
-	CPPFLAGS="$CPPFLAGS -I$JAVA_HOME/Headers -I$MKL_ROOT/include -I$MKL_ROOT/include/intel64 \
-                 -I$JCUDA_HOME/CommonJNI/src -I$CUDA_HOME/include"
-	CFLAGS="-fPIC -c -O2 -DNDEBUG -std=c99 $CFLAGS"
+	CPPFLAGS="-fPIC -c -O2 -DNDEBUG -I$JAVA_HOME/Headers -I$JCUDA_HOME/CommonJNI/src -I$CUDA_HOME/include"
+	CFLAGS="-fPIC -c -O2 -DNDEBUG -std=c99 -I$JAVA_HOME/Headers -I$MKL_ROOT/include -I$MKL_ROOT/include/intel64"
 	LB="ar rc"    
 	GLD="icc -bundle -static-intel"
 	LD="icc -bundle -static-intel"
@@ -85,9 +84,8 @@ elif [ "$OS" = "linux" ] ; then
         SUBLIB=linux64
 	OBJ="o"
 	OUTFLG="-o "
-	CPPFLAGS="$CPPFLAGS -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$MKL_ROOT/include \
-                 -I$MKL_ROOT/include/intel64/lp64 -I$JCUDA_HOME/CommonJNI/src -I$CUDA_HOME/include"
-	CFLAGS="-fPIC -c -O2 -DNDEBUG $CFLAGS"
+	CPPFLAGS="-fPIC -c -O2 -DNDEBUG  -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$JCUDA_HOME/CommonJNI/src -I$CUDA_HOME/include" 
+	CFLAGS="-fPIC -c -O2 -std c99 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$MKL_ROOT/include -I$MKL_ROOT/include/intel64/lp64"
 	LB="ar rc"    
 	GLD="g++ -shared"
 	LD="icc -shared -static-intel"
@@ -121,7 +119,7 @@ elif [ "$OS" = "windows" ] ; then
 	SUBLIB=win64
 	OBJ="obj"
 	OUTFLG="/OUT:"
-	CPPFLAGS=""
+	CPPFLAGS="/c /MT /DNDEBUG /O2 /Qstd=c99 $CFLAGS"    # static linking
         NVCCFLAGS="-c -gencode arch=compute_20,code=sm_20 \
           -gencode arch=compute_30,code=sm_30 \
           --machine 64  -Xcompiler \"/EHsc /W3 /nologo /O2 /Zi  /MT\""

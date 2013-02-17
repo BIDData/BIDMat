@@ -35,8 +35,9 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_ddotm
 	jdouble * X = (*env)->GetPrimitiveArrayCritical(env, jX, JNI_FALSE);
 	jdouble * Y = (*env)->GetPrimitiveArrayCritical(env, jY, JNI_FALSE);
 	jdouble * Z = (*env)->GetPrimitiveArrayCritical(env, jZ, JNI_FALSE);
+        int i;
     
-    for (int i = 0; i < ncols; i++) {
+    for (i = 0; i < ncols; i++) {
       Z[i] = cblas_ddot(nrows, X+i*ldx, 1, Y+i*ldy, 1);
     }
 
@@ -196,8 +197,9 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_sdotm
 	jfloat * X = (*env)->GetPrimitiveArrayCritical(env, jX, JNI_FALSE);
 	jfloat * Y = (*env)->GetPrimitiveArrayCritical(env, jY, JNI_FALSE);
 	jfloat * Z = (*env)->GetPrimitiveArrayCritical(env, jZ, JNI_FALSE);
+        int i;
     
-    for (int i = 0; i < ncols; i++) {
+    for (i = 0; i < ncols; i++) {
       Z[i] = cblas_sdot(nrows, X+i*ldx, 1, Y+i*ldy, 1);
     }
 
@@ -354,8 +356,9 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_cdotm
 	jfloat * X = (*env)->GetPrimitiveArrayCritical(env, jX, JNI_FALSE);
 	jfloat * Y = (*env)->GetPrimitiveArrayCritical(env, jY, JNI_FALSE);
 	jfloat * Z = (*env)->GetPrimitiveArrayCritical(env, jZ, JNI_FALSE);
+        int i;
 
-    for (int i=0; i<2*ncols; i+=2) {
+    for (i=0; i<2*ncols; i+=2) {
       cblas_cdotu_sub(nrows, X+i*ldx, 1, Y+i*ldy, 1, Z+i);
     }
 

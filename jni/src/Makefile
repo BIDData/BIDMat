@@ -16,10 +16,10 @@ $(LIBPREPEND)bidmatcuda$(LIBAPPEND): $(CUDA_OBJS)
 	$(GLD) $(LDFLAGS) $(CUDA_OBJS) $(CUDA_LIBS) $(OUTFLG)$@
 
 %.$(OBJ) : %.c
-	$(CC) $(CPPFLAGS) $(LAPACK_INCLUDES) $(CFLAGS) $*.c
+	$(CC) $(LAPACK_INCLUDES) $(CFLAGS) $*.c
 
 %.$(OBJ) : %.cpp
-	$(GCC) $(CPPFLAGS) $(LAPACK_INCLUDES) $(CFLAGS) $*.cpp
+	$(GCC) $(CPPFLAGS) $(LAPACK_INCLUDES) $*.cpp
 
 %.$(OBJ) : %.cu
 	$(NVCC) $(NVCCFLAGS) $*.cu
