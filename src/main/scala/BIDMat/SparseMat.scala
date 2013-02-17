@@ -680,7 +680,7 @@ object SparseMat {
       	out.data(igood) = vals(isort(i))	
       	igood += 1
       } else {
-    	  out.data(igood) = numeric.plus(out.data(igood), vals(isort(i)))
+    	  out.data(igood-1) = numeric.plus(out.data(igood-1), vals(isort(i)))
       }
       i += 1
     }
