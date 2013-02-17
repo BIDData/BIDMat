@@ -565,7 +565,7 @@ __global__ void __reduce1op(int nrows, int ncols, float *A, float *B, int opn) {
   }
 }
 
-__global__ void __reducebin1op(int nrows, int ncols, float *A, float *B, int opb, int opr) {
+__global__ void __reducebin1op(int nrows, int ncols, float *A, float *B, float *C, int opb, int opr) {
   __shared__ float parts[32][33];
   optype opbf = operators[opb];
   optype oprf = operators[opr];
@@ -581,7 +581,7 @@ __global__ void __reducebin1op(int nrows, int ncols, float *A, float *B, int opb
       }
     }
     if (threadIdx.x == 0) {
-      B[icol] = parts[0][threadIdx.y];
+      C[icol] = parts[0][threadIdx.y];
     }
     __syncthreads();
   }
