@@ -305,9 +305,28 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   	case _ => throw new RuntimeException("argument must be dense")
   }
   
-  def dot(a:DMat):Double = super.dot(a)
+  def ddot(a:DMat):Double = super.ddot(a)
   
-  override def dot(a:Mat):Double = super.dot(a.asInstanceOf[DMat])
+  override def ddot(a:Mat):Double = super.ddot(a.asInstanceOf[DMat])
+  
+  def dot(a:DMat, omat:Mat):DMat = {
+   	if (nrows != a.nrows || ncols != a.ncols) {
+  		throw new RuntimeException("dot dims not compatible")
+   	}	else {
+   		val out = DMat.newOrCheckDMat(1, ncols, omat)
+   		if (Mat.noMKL || length < 512) {
+   			gdot(a, out)
+   		} else {
+   			Mat.nflops += 2L * length
+   			ddotm(nrows, ncols, data, nrows, a.data, nrows, out.data)
+   		}
+   		out
+   	}
+  }
+  
+  def dot(a:DMat):DMat = dot(a, null)
+  
+  override def dot(a:Mat):Mat = dot(a.asInstanceOf[DMat])
  
   def solvel(a0:Mat):DMat = 
     a0 match {
@@ -534,6 +553,8 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   def >= (b : DMat) = mat.ddMatOp(b, (x:Double, y:Double) => if (x >= y) 1.0 else 0.0, omat)
   def <= (b : DMat) = mat.ddMatOp(b, (x:Double, y:Double) => if (x <= y) 1.0 else 0.0, omat)
   def != (b : DMat) = mat.ddMatOp(b, (x:Double, y:Double) => if (x != y) 1.0 else 0.0, omat) 
+  
+  def dot (b :DMat) = mat.dot(b, omat)
 
   override def * (b : Double) = mat.fDMult(DMat.elem(b), omat) 
   override def * (b : Float) = mat.fDMult(DMat.elem(b), omat)

@@ -41,8 +41,9 @@ public final class CBLAS {
 
   public static native  double ddot( int N,  double []  X,  int incX,  double []  Y,  int incY);
   public static native  double ddotxx( int N,  double []  X,  int startX,  double []  Y,  int startY);
-  public static native  double daxpy( int N, double a, double []  X,  int incX,  double []  Y,  int incY);
-  public static native  double daxpyxx( int N, double a, double []  X,  int startX,  double []  Y,  int startY);
+  public static native  void ddotm( int nrows, int ncols, double []  X,  int ldx,  double []  Y,  int ldy, double [] Z);
+  public static native  void daxpy( int N, double a, double []  X,  int incX,  double []  Y,  int incY);
+  public static native  void daxpyxx( int N, double a, double []  X,  int startX,  double []  Y,  int startY);
   public static native  void dgemv(  int order,   int TransA,  int M,  int N,  double alpha,  double []  A,  int lda,  
   		                               double []  X,  int incX,  double beta, double []  Y,  int incY);
   public static native  void dgemm(  int Order,   int TransA,   int TransB,  int M,  int N,  int K,  double alpha,  
@@ -53,16 +54,20 @@ public final class CBLAS {
   
   public static native  float sdot( int N,  float []  X,  int incX,  float []  Y,  int incY);
   public static native  float sdotxx( int N,  float []  X,  int startX,  float []  Y,  int startY);
-  public static native  double saxpy( int N, float a, float []  X,  int incX,  float []  Y,  int incY);
-  public static native  double saxpyxx( int N, float a, float []  X,  int startX,  float []  Y,  int startY);
+  public static native  void sdotm( int nrows, int ncols, float []  X,  int ldx,  float []  Y,  int ldy, float [] Z);
+  public static native  void saxpy( int N, float a, float []  X,  int incX,  float []  Y,  int incY);
+  public static native  void saxpyxx( int N, float a, float []  X,  int startX,  float []  Y,  int startY);
   public static native  void sgemv(  int order,   int TransA,  int M,  int N,  float alpha,  float []  A,  int lda,  
   		                               float []  X,  int incX,  float beta, float []  Y,  int incY);
   public static native  void sgemm(  int Order,   int TransA,   int TransB,  int M,  int N,  int K,  float alpha,  
   		                               float []  A,  int lda,  float []  B,  int ldb,  float beta, float []  C,  int ldc);
   public static native  void somatcopy( String Order, String TransA, int M, int N, float alpha, float [] A, int lda, float [] B, int ldb);
   
-  public static native  double caxpy( int N, float [] a, float [] X,  int incX,  float []  Y,  int incY);
-  public static native  double caxpyxx( int N, float [] a, float [] X,  int startX,  float []  Y,  int startY);
+  public static native  void cdot( int N,  float []  X,  int incX,  float []  Y,  int incY, float [] Z);
+  public static native  void cdotxx( int N,  float []  X,  int startX,  float []  Y,  int startY, float [] Z);
+  public static native  void cdotm( int nrows, int ncols, float []  X,  int ldx,  float []  Y,  int ldy, float [] Z);
+  public static native  void caxpy( int N, float [] a, float [] X,  int incX,  float []  Y,  int incY);
+  public static native  void caxpyxx( int N, float [] a, float [] X,  int startX,  float []  Y,  int startY);
   public static native  void cgemv(  int order,   int TransA,  int M,  int N,  float [] alpha,  float [] A,  int lda,  
   		                               float []  X,  int incX,  float [] beta, float []  Y,  int incY);
   public static native  void cgemm(  int Order,   int TransA,   int TransB,  int M,  int N,  int K,  float [] alpha,  

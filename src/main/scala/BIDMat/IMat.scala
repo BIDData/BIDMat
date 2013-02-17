@@ -146,9 +146,9 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
     case _ => throw new RuntimeException("unsupported arg to * "+a0)
   }
   
-  def dot(a:IMat):Double = super.dot(a)
+  def ddot(a:IMat):Double = super.ddot(a)
   
-  override def dot(a:Mat):Double = super.dot(a.asInstanceOf[IMat])
+  override def ddot(a:Mat):Double = super.ddot(a.asInstanceOf[IMat])
 
   def *  (b : IMat) = iMult(b, null)	
   def +  (b : IMat) = iiMatOpv(b, IMat.vecAdd _, null)

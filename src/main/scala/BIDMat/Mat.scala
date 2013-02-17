@@ -129,7 +129,9 @@ class Mat(nr:Int, nc:Int) {
     case bb:GMat => new GPair(this, bb)
   }
   
-  def dot (b : Mat):Double = {notImplemented1("dot", b); 0}
+  def ddot (b : Mat):Double = {notImplemented1("ddot", b); 0}
+  
+  def dot (b : Mat):Mat = {notImplemented1("dot", b); this}
 
 }
 

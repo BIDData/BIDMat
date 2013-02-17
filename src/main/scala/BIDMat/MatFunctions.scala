@@ -452,6 +452,10 @@ object MatFunctions {
   def ccol(args:String*):CSMat = {
     ccol(args.toList)
   }
+  
+  def szeros(nr:Int, nc:Int):SMat = SMat(nr, nc, 0)
+  
+  def sdzeros(nr:Int, nc:Int):SDMat = SDMat(nr, nc, 0)
 
   def blank = new Mat(0,0)
   

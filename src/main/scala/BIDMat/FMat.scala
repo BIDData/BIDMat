@@ -324,9 +324,28 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   def GPUmult(b:FMat, out:Mat, btrans:Boolean) = GMat.GPUmult(this, b, out, btrans)
   
-  def dot(a:FMat):Double = super.dot(a)
+  def ddot(a:FMat):Double = super.ddot(a)
   
-  override def dot(a:Mat):Double = super.dot(a.asInstanceOf[FMat])
+  override def ddot(a:Mat):Double = super.ddot(a.asInstanceOf[FMat])
+  
+  def dot(a:FMat, omat:Mat):FMat = {
+   	if (nrows != a.nrows || ncols != a.ncols) {
+  		throw new RuntimeException("dot dims not compatible")
+   	}	else {
+   		val out = FMat.newOrCheckFMat(1, ncols, omat)
+   		if (Mat.noMKL || length < 512) {
+   			gdot(a, out)
+   		} else {
+   			Mat.nflops += 2L * length
+   			sdotm(nrows, ncols, data, nrows, a.data, nrows, out.data)
+   		}
+   		out
+   	}
+  }
+  
+  def dot(a:FMat):FMat = dot(a, null)
+  
+  override def dot(a:Mat):Mat = dot(a.asInstanceOf[FMat])
   
   def solvel(a0:Mat):FMat = 
     a0 match {
@@ -590,6 +609,8 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   def >= (b : FMat) = mat.ffMatOp(b, (x:Float, y:Float) => if (x >= y) 1.0f else 0.0f, omat)
   def <= (b : FMat) = mat.ffMatOp(b, (x:Float, y:Float) => if (x <= y) 1.0f else 0.0f, omat)
   def != (b : FMat) = mat.ffMatOp(b, (x:Float, y:Float) => if (x != y) 1.0f else 0.0f, omat) 
+  
+  def dot (b :FMat) = mat.dot(b, omat)
   
   override def * (b : Float) = mat.fDMult(FMat.felem(b), omat)
   override def * (b : Double) = mat.fDMult(FMat.felem(b.asInstanceOf[Float]), omat)

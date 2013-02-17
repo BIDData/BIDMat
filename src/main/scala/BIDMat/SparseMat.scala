@@ -438,6 +438,45 @@ class SparseMat[@specialized(Double,Float) T]
     } else {
     	throw new RuntimeException("dimensions mismatch")
     }
+  
+    def sgMatOpD(b:DenseMat[T], op2:(T,T) => T, omat:Mat):SparseMat[T] =
+    	if (b.nrows > 1 && b.ncols > 1) {
+    		throw new RuntimeException("Sorry only edge operators supported for sparsemat op densemat")
+    	} else if ((b.nrows > 1 && b.nrows != nrows) || (b.ncols > 1 && b.ncols != ncols)) {
+    		throw new RuntimeException("Dimensions mismatch")
+    	} else {
+    		if (ir == null) explicitInds
+    		val out = SparseMat.newOrCheck[T](nrows, ncols, nnz, omat)
+    		val ioff = Mat.ioneBased
+    		var i = 0
+    		while (i < ncols) {
+    			out.jc(i) = jc(i)
+    			var ia = jc(i)-ioff
+    			if (b.nrows == 1 && b.ncols == 1) {
+    				while (ia < jc(i+1)-ioff) {
+    				  out.ir(ia) = ir(ia)
+    					out.data(ia) = op2(data(ia), b.data(0))
+    					ia += 1
+    				}
+    			} else if (b.nrows == 1) {    				
+    				while (ia < jc(i+1)-ioff) {
+    					out.ir(ia) = ir(ia)
+    					out.data(ia) = op2(data(ia), b.data(i))
+    					ia += 1
+    				}
+    			} else if (b.ncols == 1) {
+    				while (ia < jc(i+1)-ioff) {
+    					out.ir(ia) = ir(ia)
+    					out.data(ia) = op2(data(ia), b.data(ir(ia)-ioff))
+    					ia += 1
+    				}
+    			}
+    			i += 1
+    		}
+    		out.jc(i) = jc(i)
+    		out.sparseTrim
+    	} 
+
 
   
   def sgMatOpNR(b:SparseMat[T], op2:(T,T) => T, omat:Mat):SparseMat[T] = {

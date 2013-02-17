@@ -30,6 +30,21 @@ JNIEXPORT jdouble JNICALL Java_edu_berkeley_bid_CBLAS_ddotxx
 	return returnValue;
 }
 
+JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_ddotm
+(JNIEnv * env, jobject calling_obj, jint nrows, jint ncols, jdoubleArray jX, jint ldx, jdoubleArray jY, jint ldy, jdoubleArray jZ){
+	jdouble * X = (*env)->GetPrimitiveArrayCritical(env, jX, JNI_FALSE);
+	jdouble * Y = (*env)->GetPrimitiveArrayCritical(env, jY, JNI_FALSE);
+	jdouble * Z = (*env)->GetPrimitiveArrayCritical(env, jZ, JNI_FALSE);
+    
+    for (int i = 0; i < ncols; i++) {
+      Z[i] = cblas_ddot(nrows, X+i*ldx, 1, Y+i*ldy, 1);
+    }
+
+	(*env)->ReleasePrimitiveArrayCritical(env, jZ, Z, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, jY, Y, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, jX, X, 0);
+}
+
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_daxpy
 (JNIEnv * env, jobject calling_obj, jint N, jdouble a, jdoubleArray jX, jint incX, jdoubleArray jY, jint incY){
 	jdouble * X = (*env)->GetPrimitiveArrayCritical(env, jX, JNI_FALSE);
@@ -176,6 +191,21 @@ JNIEXPORT jfloat JNICALL Java_edu_berkeley_bid_CBLAS_sdotxx
 	return returnValue;
 }
 
+JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_sdotm
+(JNIEnv * env, jobject calling_obj, jint nrows, jint ncols, jfloatArray jX, jint ldx, jfloatArray jY, jint ldy, jfloatArray jZ){
+	jfloat * X = (*env)->GetPrimitiveArrayCritical(env, jX, JNI_FALSE);
+	jfloat * Y = (*env)->GetPrimitiveArrayCritical(env, jY, JNI_FALSE);
+	jfloat * Z = (*env)->GetPrimitiveArrayCritical(env, jZ, JNI_FALSE);
+    
+    for (int i = 0; i < ncols; i++) {
+      Z[i] = cblas_sdot(nrows, X+i*ldx, 1, Y+i*ldy, 1);
+    }
+
+	(*env)->ReleasePrimitiveArrayCritical(env, jZ, Z, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, jY, Y, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, jX, X, 0);
+}
+
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_sgemv 
 (JNIEnv * env, jobject calling_obj, jint order, jint transA, jint M, jint N, jfloat alpha, 
 jfloatArray jA, jint lda, jfloatArray jX, jint incX, jfloat beta, jfloatArray jY, jint incY){
@@ -293,6 +323,46 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_smcsrm
 	(*env)->ReleasePrimitiveArrayCritical(env, j_A, A, 0);
 }
 
+JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_cdot 
+(JNIEnv * env, jobject calling_obj, jint N, jfloatArray jX, jint incX, jfloatArray jY, jint incY, jfloatArray jZ){
+	jfloat * X = (*env)->GetPrimitiveArrayCritical(env, jX, JNI_FALSE);
+	jfloat * Y = (*env)->GetPrimitiveArrayCritical(env, jY, JNI_FALSE);
+	jfloat * Z = (*env)->GetPrimitiveArrayCritical(env, jZ, JNI_FALSE);
+
+    cblas_cdotu_sub(N, X, incX, Y, incY, Z);
+
+	(*env)->ReleasePrimitiveArrayCritical(env, jY, Y, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, jZ, Z, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, jX, X, 0);
+}
+
+JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_cdotxx
+(JNIEnv * env, jobject calling_obj, jint N, jfloatArray jX, jint startX, jfloatArray jY, jint startY, jfloatArray jZ){
+	jfloat * X = (*env)->GetPrimitiveArrayCritical(env, jX, JNI_FALSE);
+	jfloat * Y = (*env)->GetPrimitiveArrayCritical(env, jY, JNI_FALSE);
+	jfloat * Z = (*env)->GetPrimitiveArrayCritical(env, jZ, JNI_FALSE);
+
+    cblas_cdotu_sub(N, X+startX, 1, Y+startY, 1, Z);
+
+	(*env)->ReleasePrimitiveArrayCritical(env, jY, Y, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, jZ, Z, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, jX, X, 0);
+}
+
+JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_cdotm
+(JNIEnv * env, jobject calling_obj, jint nrows, jint ncols, jfloatArray jX, jint ldx, jfloatArray jY, jint ldy, jfloatArray jZ){
+	jfloat * X = (*env)->GetPrimitiveArrayCritical(env, jX, JNI_FALSE);
+	jfloat * Y = (*env)->GetPrimitiveArrayCritical(env, jY, JNI_FALSE);
+	jfloat * Z = (*env)->GetPrimitiveArrayCritical(env, jZ, JNI_FALSE);
+
+    for (int i=0; i<2*ncols; i+=2) {
+      cblas_cdotu_sub(nrows, X+i*ldx, 1, Y+i*ldy, 1, Z+i);
+    }
+
+	(*env)->ReleasePrimitiveArrayCritical(env, jY, Y, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, jZ, Z, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, jX, X, 0);
+}
 
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_cgemv 
 (JNIEnv * env, jobject calling_obj, jint order, jint transA, jint M, jint N, jfloatArray jAlpha, 

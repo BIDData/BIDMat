@@ -9,9 +9,9 @@ import jcuda.jcublas.JCublas._
 import scala.actors.Actor._
 import edu.berkeley.bid.CUMAT
 
-
 class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, nc) {
-  
+  import GMat.BinOp._
+
   override def dv:Double =
     if (nrows > 1 || ncols > 1) {
       throw new RuntimeException("Matrix should be 1x1 to extract value")
@@ -135,14 +135,21 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
     }	else throw new RuntimeException("dimensions mismatch")
   }
   
-  def dot (a : GMat):Double = 
+  def dot (a : GMat, oldmat:Mat):GMat = 
   	if (nrows != a.nrows || ncols != a.ncols) {
   		throw new RuntimeException("dot dims not compatible")
   	} else {
-  	  cublasSdot(length, data, 1, a.data, 1)
+  		val out = GMat.newOrCheckGMat(1, ncols, oldmat) 
+  		Mat.nflops += 2L * length
+  	  CUMAT.reducebin1op(nrows, ncols, data, a.data, out.data, op_mul, op_add)
+  	  out
   	}
   
-  override def dot (a : Mat):Double = 
+  def dot (a:GMat):GMat = dot(a, null)
+  
+  override def dot (a:Mat):Mat = dot(a.asInstanceOf[GMat], null)
+  
+  override def ddot (a : Mat):Double = 
   	if (nrows != a.nrows || ncols != a.ncols) {
   		throw new RuntimeException("dot dims not compatible")
   	} else {
@@ -209,7 +216,6 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
     JCublas.cublasFree(data)
   }
 
-  import GMat.BinOp._
   def * (a : GMat) = GMult(a, null)
   def * (a : GSMat) = GSMult(a, null)
   def *^ (a : GMat) = GMultT(a, null)
@@ -311,6 +317,8 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
 	def >= (b : GMat) = mat.gOp(b, omat, op_ge)
 	def <= (b : GMat) = mat.gOp(b, omat, op_le)
 	def != (b : GMat) = mat.gOp(b, omat, op_ne)
+	
+	def dot (b :GMat) = mat.dot(b, omat)
 	
 	override def +  (b : Float):Mat = mat.gOp(GMat(b), omat, op_add)
   override def -  (b : Float):Mat = mat.gOp(GMat(b), omat, op_sub)

@@ -28,6 +28,8 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
   
   def ssMatOp(b: SDMat, f:(Double, Double) => Double, omat:Mat) = SDMat(sgMatOp(b, f, omat))
   
+  def ssMatOpD(b: DMat, f:(Double, Double) => Double, omat:Mat) = SDMat(sgMatOpD(b, f, omat))
+  
   def ssMatOpScalar(b: Double, f:(Double, Double) => Double, omat:Mat) = SDMat(sgMatOpScalar(b, f, omat))
   
   def ssReduceOp(n:Int, f1:(Double) => Double, f2:(Double, Double) => Double, omat:Mat) = DMat(sgReduceOp(n, f1, f2, omat))
@@ -164,6 +166,11 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
   def *@ (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => x * y, null)
   def /@ (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => x / y, null)
   
+  def + (b : DMat) = ssMatOpD(b, (x:Double, y:Double) => x + y, null)
+  def - (b : DMat) = ssMatOpD(b, (x:Double, y:Double) => x - y, null)
+  def *@ (b : DMat) = ssMatOpD(b, (x:Double, y:Double) => x * y, null)
+  def /@ (b : DMat) = ssMatOpD(b, (x:Double, y:Double) => x / y, null)
+  
   def > (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => if (x > y) 1.0 else 0.0, null)
   def < (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => if (x < y) 1.0 else 0.0, null)
   def == (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => if (x == y) 1.0 else 0.0, null)
@@ -209,6 +216,16 @@ class SDPair (val omat:DMat, val mat:SDMat) extends Pair{
 	def * (b : DMat):DMat = mat.SMult(b, omat)
   def Tx (b : DMat):DMat = mat.Tmult(b, omat)
   override def * (b : Mat):DMat = mat.SMult(b, omat)
+  
+  def + (b : SDMat) = mat.ssMatOp(b, (x:Double, y:Double) => x + y, omat)
+  def - (b : SDMat) = mat.ssMatOp(b, (x:Double, y:Double) => x - y, omat)
+  def *@ (b : SDMat) = mat.ssMatOp(b, (x:Double, y:Double) => x * y, omat)
+  def /@ (b : SDMat) = mat.ssMatOp(b, (x:Double, y:Double) => x / y, omat)
+  
+  def + (b : DMat) = mat.ssMatOpD(b, (x:Double, y:Double) => x + y, omat)
+  def - (b : DMat) = mat.ssMatOpD(b, (x:Double, y:Double) => x - y, omat)
+  def *@ (b : DMat) = mat.ssMatOpD(b, (x:Double, y:Double) => x * y, omat)
+  def /@ (b : DMat) = mat.ssMatOpD(b, (x:Double, y:Double) => x / y, omat)
 }
 
 object SDMat {
