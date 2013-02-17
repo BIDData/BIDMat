@@ -714,25 +714,41 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
  
   
-  def dot (b : CMat):CMat = 
-  	if (math.min(nrows, ncols) != 1 || math.min(b.nrows,b.ncols) != 1 || length != b.length) {
-  		throw new RuntimeException("vector dims not compatible")
+  def dot (b : CMat, omat:Mat):CMat = 
+  	if (nrows != b.nrows || ncols != b.ncols) {
+  		throw new RuntimeException("dot dims not compatible")
   	} else {
-  		Mat.nflops += 2 * length
-  		var w0 = 0.0
-  		var w1 = 0.0
-  		var i = 0
-  		while (i < length){
-  			val u0 = data(2*i)
-  			val u1 = data(2*i+1)
-  			val v0 = b.data(2*i)
-  			val v1 = b.data(2*i+1)
-  			w0 += u0*v0-u1*v1
-  			w1 += u0*v1+u1*v0
-  			i += 1
+  	  val out = CMat.newOrCheckCMat(1, ncols, omat)
+  		Mat.nflops += 6L * length
+  		if (Mat.noMKL || length < 512) {
+  			var i = 0
+  			while (i < ncols) {
+  				var w0 = 0.0
+  				var w1 = 0.0
+  				var j = 0
+  				while (j < nrows){
+  					val ix = 2*(j+i*nrows)
+  					val u0 = data(ix)
+  					val u1 = data(ix+1)
+  					val v0 = b.data(ix)
+  					val v1 = b.data(ix+1)
+  					w0 += u0*v0-u1*v1
+  					w1 += u0*v1+u1*v0
+  					j += 1
+  				}
+  				out.data(2*i) = w0.toFloat
+  				out.data(2*i+1) = w1.toFloat
+  				i += 1
+  			}
+  		} else {
+  		  cdotm(nrows, ncols, data, nrows, b.data, nrows, out.data)
   		}
-  		CMat.celem(w0.asInstanceOf[Float], w1.asInstanceOf[Float])
+  		out
   	}
+  
+  def dot(a:CMat):CMat = dot(a, null)
+  
+  override def dot(a:Mat):Mat = dot(a.asInstanceOf[CMat])
 
   def solvel(a0:Mat):CMat = 
     a0 match {
@@ -974,6 +990,8 @@ class CPair (val omat:Mat, val mat:CMat) extends Pair {
   def == (b : CMat) = mat.ccMatOp(b, (ar:Float, ai:Float, br:Float, bi:Float) => if (ar == br && ai == bi) (1f, 0f) else (0f, 0f), omat)
   def != (b : CMat) = mat.ccMatOp(b, (ar:Float, ai:Float, br:Float, bi:Float) => if (ar != br || ai != bi) (1f, 0f) else (0f, 0f), omat)
   
+  def dot (b :CMat) = mat.dot(b, omat)
+    
   override def * (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecMul _, omat)
   override def + (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecAdd _, omat)
   override def - (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecSub _, omat)

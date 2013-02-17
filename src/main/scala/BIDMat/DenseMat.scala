@@ -874,7 +874,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
       throw new RuntimeException("index must 1 or 2")  
   }
     
-  def dot (a : DenseMat[T])(implicit numeric:Numeric[T]):Double = 
+  def ddot (a : DenseMat[T])(implicit numeric:Numeric[T]):Double = 
   	if (nrows != a.nrows || ncols != a.ncols) {
   		throw new RuntimeException("dot dims not compatible")
   	} else {
@@ -886,6 +886,26 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   			i += 1
   		}
   		v
+  	}
+  
+  def gdot (a : DenseMat[T], oldmat:Mat)(implicit numeric:Numeric[T]):DenseMat[T] = 
+  	if (nrows != a.nrows || ncols != a.ncols) {
+  		throw new RuntimeException("dot dims not compatible")
+  	} else {
+  		val out = DenseMat.newOrCheck[T](1, ncols, oldmat)
+  		Mat.nflops += 2 * length
+  		var i = 0
+  		while (i < ncols){
+  		  var j = 0
+  		  var sum = numeric.zero
+  		  while (j < nrows) {
+  		  	sum = numeric.plus(sum, numeric.times(data(i),a.data(i)))
+  		  	j += 1
+  		  }
+  		  out.data(i) = sum
+  			i += 1
+  		}
+  		out
   	}
  
   def mkdiag = {

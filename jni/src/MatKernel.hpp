@@ -17,6 +17,8 @@ int reduce1op(int nrows, int ncols, float *A, float *B, int opn);
 
 int reduce2op(int nrows, int ncols, float *A, float *B, int opn);
 
+int reducebin1op(int nrows, int ncols, float *A, float *B, float *C, int opb, int opr);
+
 int transpose(float *in, int instride, float *out, int outstride, int nrows, int ncols);
 
 int embedmat(float *a, long long *b, int nrows, int ncols);

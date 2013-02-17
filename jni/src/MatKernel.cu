@@ -426,6 +426,8 @@ __global__ void __dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic
 
 __global__ void __reduce1op(int nrows, int ncols, float *A, float *B, int opn);
 
+__global__ void __reducebin1op(int nrows, int ncols, float *A, float *B, float *C, int opb, int opr);
+
 #define DDS_BLKY 4
 
 int dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P) {
@@ -496,6 +498,24 @@ __global__ void __reduce1op(int nrows, int ncols, float *A, float *B, int opn) {
     }
   }
 }
+
+__global__ void __reducebin1op(int nrows, int ncols, float *A, float *B, float *C, int opb, int opr) {
+  optype opbf = operators[opb];
+  optype oprf = operators[opr];
+  int basecol = threadIdx.y + blockDim.y * blockIdx.x;
+  for (int icol = basecol; icol < ncols; icol += blockDim.y * gridDim.x) {
+    float v = 0;
+    for (int i = threadIdx.x; i < nrows; i += blockDim.x) {
+      v = oprf(v, opbf(A[i + icol * nrows], B[i + icol * nrows]));
+    }
+    for (int i = 1; i < blockDim.x; i *= 2) {
+      v = oprf(v, __shfl_down(v, i));
+    }
+    if (threadIdx.x == 0) {
+      C[icol] = v;
+    }
+  }
+}
 #else
 
 __global__ void __dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P) {
@@ -536,6 +556,28 @@ __global__ void __reduce1op(int nrows, int ncols, float *A, float *B, int opn) {
     for (int i = 1; i < blockDim.x; i *= 2) {
       if (i + threadIdx.x < blockDim.x) {
         parts[threadIdx.x][threadIdx.y] = op(parts[threadIdx.x][threadIdx.y], parts[i + threadIdx.x][threadIdx.y]);
+      }
+    }
+    if (threadIdx.x == 0) {
+      B[icol] = parts[0][threadIdx.y];
+    }
+    __syncthreads();
+  }
+}
+
+__global__ void __reducebin1op(int nrows, int ncols, float *A, float *B, int opb, int opr) {
+  __shared__ float parts[32][33];
+  optype opbf = operators[opb];
+  optype oprf = operators[opr];
+  for (int icol = threadIdx.y + blockIdx.y * blockDim.y; icol < ncols; icol += blockDim.y * gridDim.x) {
+    float v = 0;
+    for (int irow = threadIdx.x; irow < nrows; irow += blockDim.x) {
+      v = oprf(v, opbf(A[irow + icol * nrows], B[irow + icol * nrows]));
+    }
+    parts[threadIdx.x][threadIdx.y] = v;
+    for (int i = 1; i < blockDim.x; i *= 2) {
+      if (i + threadIdx.x < blockDim.x) {
+        parts[threadIdx.x][threadIdx.y] = oprf(parts[threadIdx.x][threadIdx.y], parts[i + threadIdx.x][threadIdx.y]);
       }
     }
     if (threadIdx.x == 0) {
@@ -618,6 +660,17 @@ int reduce2op(int nrows, int ncols, float *A, float *B, int opn) {
   int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));
   const dim3 blkdims(blkx,blky,1);
   __reduce2op<<<nblks,blkdims>>>(nrows, ncols, A, B, opn);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int reducebin1op(int nrows, int ncols, float *A, float *B, float *C, int opb, int opr) {
+  int blkx = min(32, nrows);
+  int blky = min(32, ncols);
+  int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));
+  const dim3 blkdims(blkx,blky,1);
+  __reducebin1op<<<nblks,blkdims>>>(nrows, ncols, A, B, C, opb, opr);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
