@@ -243,7 +243,7 @@ object SMat {
   
   def apply(a:SDMat) = a.toSMat
   
-  def apply(arows:Array[Int], acols:Array[Int], avals:Array[Float], nrows:Int, ncols:Int) = {
+  def apply(nrows:Int, ncols:Int, arows:Array[Int], acols:Array[Int], avals:Array[Float]) = {
     val a = SparseMat.sparseImpl(arows, acols, avals, nrows, ncols)
     new SMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a.data)
   }
