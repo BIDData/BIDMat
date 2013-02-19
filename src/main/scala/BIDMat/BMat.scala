@@ -60,6 +60,11 @@ case class BMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
     out
   }
   
+  def col(i:Int):String = {
+  	val ioff = Mat.ioneBased
+  	new String(data, jc(i)-ioff, jc(i+1)-jc(i), BMat.encoding)
+  }
+  
   override def toString:String = { 
   	val somespaces = "                                                               "
   	val ioff = Mat.ioneBased
@@ -118,7 +123,6 @@ case class BMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
 
 class BPair (val omat:Mat, val mat:BMat) extends Pair {
   
- 
   def > (b : Byte) = mat.bbMatOpScalar(b, (x:Byte, y:Byte) => if (x > y) 1 else 0, omat)
   def < (b : Byte) = mat.bbMatOpScalar(b, (x:Byte, y:Byte) => if (x < y) 1 else 0, omat)
   def == (b : Byte) = mat.bbMatOpScalar(b, (x:Byte, y:Byte) => if (x == y) 1 else 0, omat)
