@@ -53,11 +53,12 @@ PUNCT	   [;:,.?!]
 
 [\n]	  {
 	  numlines++;
-	  if (numlines % 1000 == 0) {
+	  if (numlines % 10000 == 0) {
 	  fprintf(stderr, "\r%05d lines", numlines);
 	  }	  
 	  }
 
+.         {}
 
 %%
 

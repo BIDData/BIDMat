@@ -163,7 +163,7 @@ int writeBVec(unhash & unh, string fname, int buffsize) {
   ivector cols;
   cols.push_back(0);
   for (i=0, nrows=0, nnz=0; i<ncols; i++) {
-    s = strlen(unh[i]) + 1;
+    s = strlen(unh[i]);
     nrows = max(nrows, s);
     nnz = nnz + s;
     cols.push_back(nnz);
