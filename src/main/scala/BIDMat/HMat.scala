@@ -62,6 +62,13 @@ object HMat {
   
   val byteOrder = ByteOrder.LITTLE_ENDIAN
   
+  def readSomeBytes(din:InputStream, a:Array[Byte], n:Int) {
+    var nread = 0
+    while (nread < n) {
+      nread += din.read(a, nread, n - nread)
+    }
+  }
+  
   def readSomeInts(din:InputStream, a:Array[Int], buf:ByteBuffer, n:Int) {
     var nread = 0
     val ibuff = buf.asIntBuffer
@@ -264,12 +271,45 @@ object HMat {
     val nrows = hints(1)
     val ncols = hints(2)
     val nnz = hints(3)
-    val out = SMat(nrows, ncols, nnz)
+    val norows:Boolean = (ftype/100 == 3)
+    val out = if (norows) {
+    	SMat.SnoRows(nrows, ncols, nnz)
+    } else {
+      SMat(nrows, ncols, nnz)
+    }
     readSomeInts(gin, out.jc, buff, ncols+1)
-    readSomeInts(gin, out.ir, buff, nnz)
+    if (!norows) readSomeInts(gin, out.ir, buff, nnz)
     readSomeFloats(gin, out.data, buff, nnz)
-    MatHDF5.addOne(out.jc)
-    MatHDF5.addOne(out.ir)
+    if (Mat.ioneBased == 1) {
+      MatHDF5.addOne(out.jc)
+      if (!norows) MatHDF5.addOne(out.ir)
+    }
+    gin.close
+    out
+  }
+  
+  def loadBMat(fname:String, compressed:Boolean=true):BMat = {
+    val gin = getInputStream(fname, compressed)
+    val buff = ByteBuffer.allocate(1024*1024).order(byteOrder)
+    val hints = new Array[Int](4)
+    readSomeInts(gin, hints, buff, 4)
+    val ftype = hints(0)
+    val nrows = hints(1)
+    val ncols = hints(2)
+    val nnz = hints(3)
+    val norows:Boolean = (ftype/100 == 3)
+    val out = if (norows) {
+    	BMat.SnoRows(nrows, ncols, nnz)
+    } else {
+    	BMat(nrows, ncols, nnz)
+    }
+    readSomeInts(gin, out.jc, buff, ncols+1)
+    if (!norows) readSomeInts(gin, out.ir, buff, nnz)
+    readSomeBytes(gin, out.data, nnz)
+    if (Mat.ioneBased == 1) {
+      MatHDF5.addOne(out.jc)
+      if (!norows) MatHDF5.addOne(out.ir)
+    }
     gin.close
     out
   }
@@ -278,7 +318,11 @@ object HMat {
     val gout = getOutputStream(fname, compressed)
     val hints = new Array[Int](4)
     val tbuf = ByteBuffer.allocate(16).order(byteOrder)
-    hints(0) = 231 // 2=sparse, 3=float, 1=int
+    if (m.ir != null) {
+    	hints(0) = 231 // 2=sparse, 3=float, 1=int
+    } else {
+      hints(0) = 331 // 3=sparse:norows, 3=float, 1=int
+    }
     hints(1) = m.nrows
     hints(2) = m.ncols
     hints(3) = m.nnz
@@ -286,27 +330,68 @@ object HMat {
     val buff = ByteBuffer.allocate(math.min(1024*1024, 4*math.max(m.ncols+1, m.nnz))).order(byteOrder)
     try {
     	MatHDF5.subOne(m.jc)
-    	MatHDF5.subOne(m.ir)
     	writeSomeInts(gout, m.jc, buff, m.ncols+1)
-    	writeSomeInts(gout, m.ir, buff, m.nnz)
+    	if (m.ir != null) {
+    	  MatHDF5.subOne(m.ir)
+    	  writeSomeInts(gout, m.ir, buff, m.nnz)
+    	}
     	writeSomeFloats(gout, m.data, buff, m.nnz)
     } catch {
       case e:Exception => {
       	MatHDF5.addOne(m.jc)
-      	MatHDF5.addOne(m.ir)
+      	if (m.ir != null) MatHDF5.addOne(m.ir)
       	throw new RuntimeException("Exception in saveSMat "+e)
       }
       case _ => {
       	MatHDF5.addOne(m.jc)
-      	MatHDF5.addOne(m.ir)
+      	if (m.ir != null) MatHDF5.addOne(m.ir)
       	throw new RuntimeException("Problem in saveSMat")
       }
     }
     MatHDF5.addOne(m.jc)
-    MatHDF5.addOne(m.ir)
+    if (m.ir != null) MatHDF5.addOne(m.ir)
     gout.close
   } 
   
+   def saveBMat(fname:String, m:BMat, compressed:Boolean=true):Unit = {
+    val gout = getOutputStream(fname, compressed)
+    val hints = new Array[Int](4)
+    val tbuf = ByteBuffer.allocate(16).order(byteOrder)
+    if (m.ir != null) {
+    	hints(0) = 201 // 2=sparse, 0=byte, 1=int
+    } else {
+      hints(0) = 301 // 3=sparse:norows, 0=byte, 1=int
+    }
+    hints(1) = m.nrows
+    hints(2) = m.ncols
+    hints(3) = m.nnz
+    writeSomeInts(gout, hints, tbuf, 4)
+    val buff = ByteBuffer.allocate(math.min(1024*1024, 4*math.max(m.ncols+1, m.nnz))).order(byteOrder)
+    try {
+    	MatHDF5.subOne(m.jc)
+    	writeSomeInts(gout, m.jc, buff, m.ncols+1)
+    	if (m.ir != null) {
+    	  MatHDF5.subOne(m.ir)
+    	  writeSomeInts(gout, m.ir, buff, m.nnz)
+    	}
+    	gout.write(m.data, 0, m.nnz)
+    } catch {
+      case e:Exception => {
+      	MatHDF5.addOne(m.jc)
+      	if (m.ir != null) MatHDF5.addOne(m.ir)
+      	throw new RuntimeException("Exception in saveSMat "+e)
+      }
+      case _ => {
+      	MatHDF5.addOne(m.jc)
+      	if (m.ir != null) MatHDF5.addOne(m.ir)
+      	throw new RuntimeException("Problem in saveSMat")
+      }
+    }
+    MatHDF5.addOne(m.jc)
+    if (m.ir != null) MatHDF5.addOne(m.ir)
+    gout.close
+  } 
+   
   def testLoad(fname:String, varname:String, n:Int) = {
     val a = new Array[SMat](n)
     var ndone = izeros(n,1)
