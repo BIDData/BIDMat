@@ -10,7 +10,13 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
 
   def size() = length;
    
-  override def t:FMat = FMat(gt(null))
+  override def t:FMat = if (Mat.noMKL) { 
+    FMat(gt(null))
+  } else { 
+    val out = FMat(ncols, nrows)
+    somatcopy("C", "T", nrows, ncols, 1.0f, data, nrows, out.data, ncols)
+    out
+  }
   
   override def dv:Double =
     if (nrows > 1 || ncols > 1) {
