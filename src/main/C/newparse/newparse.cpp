@@ -74,11 +74,11 @@ istream * open_in(string ifname) {
   return ifstr;
 }
 
-ostream * open_out(string ofname) {
+ostream * open_out(string ofname, int level) {
   ostream * ofstr = NULL;
   int opened = 0;
   if (ofname.rfind(".gz") == ofname.length() - 3) {
-    ofstr = new ogzstream(ofname.c_str(), ios_base::out);
+    ofstr = new ogzstream(ofname.c_str(), ios_base::out, level);
     opened = ((ogzstream *)ofstr)->rdbuf()->is_open(); 
   } else {
     ofstr = new ofstream(ofname.c_str(), ios_base::out);
@@ -111,12 +111,12 @@ istream * open_in_buf(string ifname, char * buffer, int buffsize) {
   return ifstr;
 }
 
-ostream * open_out_buf(string ofname, int buffsize) {
+ostream * open_out_buf(string ofname, int buffsize, int level) {
   char *buffer = new char[buffsize];
   ostream * ofstr = NULL;
   int opened = 0;
   if (ofname.rfind(".gz") == ofname.length() - 3) {
-    ofstr = new ogzstream(ofname.c_str(), ios_base::out);
+    ofstr = new ogzstream(ofname.c_str(), ios_base::out, level);
     opened = ((ogzstream *)ofstr)->rdbuf()->is_open(); 
     ((ogzstream *)ofstr)->rdbuf()->pubsetbuf(buffer, buffsize);
   } else {
@@ -139,9 +139,9 @@ void closeos(ostream *ofs) {
   if (of2) of2->close();
 }
 
-int writeIntVec(ivector & im, string fname, int buffsize) {
+int writeIntVec(ivector & im, string fname, int buffsize, int level) {
   int fmt, nrows, ncols, nnz;
-  ostream *ofstr = open_out_buf(fname.c_str(), buffsize);
+  ostream *ofstr = open_out_buf(fname.c_str(), buffsize, level);
   fmt = 110;
   nrows = im.size();
   ncols = 1;
@@ -155,9 +155,9 @@ int writeIntVec(ivector & im, string fname, int buffsize) {
   return 0;
 }
 
-int writeBVec(unhash & unh, string fname, int buffsize) {
+int writeBVec(unhash & unh, string fname, int buffsize, int level) {
   int i, s, fmt, nrows, ncols, nnz;
-  ostream *ofstr = open_out_buf(fname.c_str(), buffsize);
+  ostream *ofstr = open_out_buf(fname.c_str(), buffsize, level);
   fmt = 301; // 3=sparse(no rows), 0=byte, 1=int
   ncols = unh.size();
   ivector cols;
@@ -182,7 +182,7 @@ int writeBVec(unhash & unh, string fname, int buffsize) {
 
 
 int main(int argc, char ** argv) {
-  int iarg=1, membuf=1048576;
+  int iarg=1, membuf=1048576, complevel=3;
   char *here;
   char *ifname = NULL;
   string odname="", dictname = "";
@@ -193,6 +193,8 @@ int main(int argc, char ** argv) {
       odname = argv[++iarg];
     } else if (strncmp(argv[iarg], "-d", 2) == 0) {
       dictname = argv[++iarg];
+    } else if (strncmp(argv[iarg], "-c", 2) == 0) {
+      complevel = strtol(argv[++iarg],NULL,10);
     } else if (strncmp(argv[iarg], "-s", 2) == 0) {
       membuf = strtol(argv[++iarg],NULL,10);
     } else {
@@ -217,12 +219,12 @@ int main(int argc, char ** argv) {
       fclose(yyin);
     }
     fprintf(stderr, "\r%05d lines", numlines);
-    writeIntVec(tokens, odname+here, membuf);
+    writeIntVec(tokens, odname+here, membuf, complevel);
     tokens.clear();
     numlines = 0;
     here = strtok(NULL, " ,");
   }
   fprintf(stderr, "\nWriting Dictionary\n");
-  writeIntVec(wcount, dictname+"wcount.gz", membuf);
-  writeBVec(unh, dictname+"dict.gz", membuf);
+  writeIntVec(wcount, dictname+"wcount.gz", membuf, complevel);
+  writeBVec(unh, dictname+"dict.gz", membuf, complevel);
 }
