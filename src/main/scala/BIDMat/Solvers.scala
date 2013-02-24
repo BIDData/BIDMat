@@ -5,69 +5,104 @@ import MatFunctions._
 import SciFunctions._
 
 object Solvers { 
-
-  def inv(a:FMat):FMat = _inv(a).asInstanceOf[FMat]
-  def inv(a:DMat):DMat = _inv(a).asInstanceOf[DMat]
-  def inv(a:CMat):CMat = _inv(a).asInstanceOf[CMat]
-  def inv(a:Mat):Mat = _inv(a)
-   
-  def _inv(a:Mat):Mat = {
+ 
+  def inv(a:FMat, omat:Mat):FMat = {
     Mat.nflops += 4L*a.nrows*a.nrows*a.nrows/3
     if (a.nrows != a.ncols) {
       throw new RuntimeException("inv needs a square matrix")
     } else {
-      val out = a.copy
+      val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat)
+      out <-- a
       val ipiv = new Array[Int](a.nrows)
-      out match {
-        case dout:DMat => {
-        	dgetrf(ORDER.ColMajor, a.nrows, a.ncols, dout.data, a.nrows, ipiv)
-        	dgetri(ORDER.ColMajor, a.nrows, dout.data, a.nrows, ipiv)
-        }
-        case fout:FMat => {
-        	sgetrf(ORDER.ColMajor, a.nrows, a.ncols, fout.data, a.nrows, ipiv)
-        	sgetri(ORDER.ColMajor, a.nrows, fout.data, a.nrows, ipiv)
-        }
-        case dout:CMat => {
-        	cgetrf(ORDER.ColMajor, a.nrows, a.ncols, dout.data, a.nrows, ipiv)
-        	cgetri(ORDER.ColMajor, a.nrows, dout.data, a.nrows, ipiv)
-        }
-      }
+      sgetrf(ORDER.ColMajor, a.nrows, a.ncols, out.data, a.nrows, ipiv)
+      sgetri(ORDER.ColMajor, a.nrows, out.data, a.nrows, ipiv)
       out
     }
   }
-
-  def seig(a:FMat, getVecs:Boolean):(FMat, FMat) = {val (d,out) = _seig(a, getVecs); (d.asInstanceOf[FMat], out.asInstanceOf[FMat])}
-  def seig(a:DMat, getVecs:Boolean):(DMat, DMat) = {val (d,out) = _seig(a, getVecs); (d.asInstanceOf[DMat], out.asInstanceOf[DMat])}
-  def seig(a:Mat, getVecs:Boolean):(Mat, Mat) = _seig(a, getVecs)
   
-  def seig(a:FMat):(FMat, FMat) = {val (d,out) = _seig(a, true); (d.asInstanceOf[FMat], out.asInstanceOf[FMat])} 
-  def seig(a:DMat):(DMat, DMat) = {val (d,out) = _seig(a, true); (d.asInstanceOf[DMat], out.asInstanceOf[DMat])}
-  def seig(a:Mat):(Mat, Mat) = _seig(a, true)
+  def inv(a:DMat, omat:Mat):DMat = {
+    Mat.nflops += 4L*a.nrows*a.nrows*a.nrows/3
+    if (a.nrows != a.ncols) {
+      throw new RuntimeException("inv needs a square matrix")
+    } else {
+      val out = DMat.newOrCheckDMat(a.nrows, a.ncols, omat)
+      out <-- a
+      val ipiv = new Array[Int](a.nrows)
+      dgetrf(ORDER.ColMajor, a.nrows, a.ncols, out.data, a.nrows, ipiv)
+      dgetri(ORDER.ColMajor, a.nrows, out.data, a.nrows, ipiv)
+      out
+    }
+  }
   
-  def _seig(a:Mat, getVecs:Boolean):(Mat, Mat) = {
+  def inv(a:CMat, omat:Mat):CMat = {
+    Mat.nflops += 32L*a.nrows*a.nrows*a.nrows/3
+    if (a.nrows != a.ncols) {
+      throw new RuntimeException("inv needs a square matrix")
+    } else {
+      val out = CMat.newOrCheckCMat(a.nrows, a.ncols, omat)
+      out <-- a
+      val ipiv = new Array[Int](a.nrows)
+      cgetrf(ORDER.ColMajor, a.nrows, a.ncols, out.data, a.nrows, ipiv)
+      cgetri(ORDER.ColMajor, a.nrows, out.data, a.nrows, ipiv)
+      out
+    }
+  }
+  
+  def inv(a:FMat):FMat = inv(a, null)
+  def inv(a:DMat):DMat = inv(a, null)
+  def inv(a:CMat):CMat = inv(a, null)
+  def inv(a:Mat, b:Mat):Mat = a match {
+    case af:FMat => inv(af, b):FMat
+    case df:DMat => inv(df, b):DMat
+    case cf:CMat => inv(cf, b):CMat
+  }
+  def inv(a:Mat):Mat = inv(a, null)
+     
+  def seig(a:FMat, getVecs:Boolean, omat:Mat):(FMat, FMat) = {
     Mat.nflops += 6L*a.nrows*a.nrows*a.nrows 
     if (a.nrows != a.ncols) {
       throw new RuntimeException("eig needs a square matrix")
     } else {
-      val out = a.copy
+      val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat)
+      out <-- a
       val d = a.zeros(a.nrows,1)
       val e = a.zeros(a.nrows,1)
       val tau = a.zeros(a.nrows,1)
-      (out, d, e, tau) match {
-        case (dout:DMat, dd:DMat, de:DMat, dtau:DMat) => {
-        	dsytrd(ORDER.ColMajor, "U", a.nrows, dout.data, a.nrows, dd.data, de.data, dtau.data)
-        	dorgtr(ORDER.ColMajor, "U", a.nrows, dout.data, a.nrows, dtau.data)
-        	dsteqr(ORDER.ColMajor, if (getVecs) "V" else "N", a.nrows, dd.data, de.data, dout.data, a.nrows)
-        }
-        case (fout:FMat, fd:FMat, fe:FMat, ftau:FMat) => {
-        	ssytrd(ORDER.ColMajor, "U", a.nrows, fout.data, a.nrows, fd.data, fe.data, ftau.data)
-        	sorgtr(ORDER.ColMajor, "U", a.nrows, fout.data, a.nrows, ftau.data)
-        	ssteqr(ORDER.ColMajor, if (getVecs) "V" else "N", a.nrows, fd.data, fe.data, fout.data, a.nrows)
-        }
-      }
+      ssytrd(ORDER.ColMajor, "U", a.nrows, out.data, a.nrows, d.data, e.data, tau.data)
+      sorgtr(ORDER.ColMajor, "U", a.nrows, out.data, a.nrows, tau.data)
+      ssteqr(ORDER.ColMajor, if (getVecs) "V" else "N", a.nrows, d.data, e.data, out.data, a.nrows)
       (d, out)
     }
   }
+  
+  def seig(a:DMat, getVecs:Boolean, omat:Mat):(DMat, DMat) = {
+    Mat.nflops += 6L*a.nrows*a.nrows*a.nrows 
+    if (a.nrows != a.ncols) {
+      throw new RuntimeException("eig needs a square matrix")
+    } else {
+      val out = DMat.newOrCheckDMat(a.nrows, a.ncols, omat)
+      out <-- a
+      val d = a.zeros(a.nrows,1)
+      val e = a.zeros(a.nrows,1)
+      val tau = a.zeros(a.nrows,1)
+      dsytrd(ORDER.ColMajor, "U", a.nrows, out.data, a.nrows, d.data, e.data, tau.data)
+      dorgtr(ORDER.ColMajor, "U", a.nrows, out.data, a.nrows, tau.data)
+      dsteqr(ORDER.ColMajor, if (getVecs) "V" else "N", a.nrows, d.data, e.data, out.data, a.nrows)
+      (d, out)
+    }
+  }
+  
+  def seig(a:FMat, getVecs:Boolean):(FMat, FMat) = seig(a, getVecs, null)
+  def seig(a:DMat, getVecs:Boolean):(DMat, DMat) = seig(a, getVecs, null)
+  def seig(a:FMat):(FMat, FMat) = seig(a, true, null)
+  def seig(a:DMat):(DMat, DMat) = seig(a, true, null)
+  
+  def seig(a:Mat, getVecs:Boolean, omat:Mat):(Mat, Mat) = a match {
+    case af:FMat => seig(af, getVecs, omat):(FMat, FMat)
+    case ad:DMat => seig(ad, getVecs, omat):(DMat, DMat)
+  }
+  def seig(a:Mat, getVecs:Boolean):(Mat, Mat) = seig(a, getVecs, null)
+  def seig(a:Mat):(Mat, Mat) = seig(a, true, null)
 
   def geig(a:Mat):(CMat, CMat) = geig(a, true)
   
@@ -103,110 +138,229 @@ object Solvers {
       (w, z)
     }
   }
-  
-  def feig(a:FMat):(FMat, FMat) = {val (w,out) = _feig(a) ; (w.asInstanceOf[FMat], out.asInstanceOf[FMat])}
-  def feig(a:DMat):(DMat, DMat) = {val (w,out) = _feig(a) ; (w.asInstanceOf[DMat], out.asInstanceOf[DMat])}
-  def feig(a:Mat):(Mat, Mat) = _feig(a)
-  
-  def _feig(a:Mat):(Mat, Mat) = {  // Faster, divide and conquer algorithm for pos definite matrices
+    
+  def feig(a:FMat, omat:Mat):(FMat, FMat) = {  // Faster, divide and conquer algorithm for pos definite matrices
     Mat.nflops += 3L*a.nrows*a.nrows*a.nrows
     if (a.nrows != a.ncols) {
       throw new RuntimeException("feig needs a square matrix")
     } else {
-      val out = a.copy
+      val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat)
+      out <-- a
       val w = a.zeros(a.nrows,1)
-      (out, w) match {
-        case (dout:DMat, dw:DMat) => dsyevd(ORDER.ColMajor, "V", "U", a.nrows, dout.data, a.nrows, dw.data)
-        case (sout:FMat, sw:FMat) => ssyevd(ORDER.ColMajor, "V", "U", a.nrows, sout.data, a.nrows, sw.data)
-      }
+      ssyevd(ORDER.ColMajor, "V", "U", a.nrows, out.data, a.nrows, w.data)
       (w, out)
     }
   }
-  /*
-   * Standard QR decomposition. Given m x n input A, return m x m orthonormal Q and m x n upper-triangular R. 
-   */
   
-  def QRdecomp(a:FMat):(FMat, FMat) = {val (q,r) = _QRdecomp(a); (q.asInstanceOf[FMat], r.asInstanceOf[FMat])}
-  def QRdecomp(a:DMat):(DMat, DMat) = {val (q,r) = _QRdecomp(a); (q.asInstanceOf[DMat], r.asInstanceOf[DMat])}
-  def QRdecomp(a:CMat):(CMat, CMat) = {val (q,r) = _QRdecomp(a); (q.asInstanceOf[CMat], r.asInstanceOf[CMat])}
-  def QRdecomp(a:Mat):(Mat, Mat) = _QRdecomp(a)
-  
-  def _QRdecomp(a:Mat):(Mat, Mat) = {
-    Mat.nflops += 4L*a.nrows*a.ncols*math.min(a.nrows, a.ncols)
-    val m = a.nrows
-    val n = a.ncols
-    val r = a.copy
-    val q = a.zeros(m,m)
-    val tau = a.zeros(math.max(a.nrows, a.ncols), 1)
-    (r, q, tau) match {
-    case (fr:FMat, fq:FMat, ftau:FMat) => {
-    	sgeqrf(ORDER.ColMajor, m, n, fr.data, m, ftau.data)
-    	fq(?,0->n) = fr
-    	sorgqr(ORDER.ColMajor, m, m, n, fq.data, m, ftau.data)
+  def feig(a:DMat, omat:Mat):(DMat, DMat) = {  // Faster, divide and conquer algorithm for pos definite matrices
+    Mat.nflops += 3L*a.nrows*a.nrows*a.nrows
+    if (a.nrows != a.ncols) {
+      throw new RuntimeException("feig needs a square matrix")
+    } else {
+      val out = DMat.newOrCheckDMat(a.nrows, a.ncols, omat)
+      out <-- a
+      val w = a.zeros(a.nrows,1)
+      dsyevd(ORDER.ColMajor, "V", "U", a.nrows, out.data, a.nrows, w.data)
+      (w, out)
     }
-    case (dr:DMat, dq:DMat, dtau:DMat) => {
-    	dgeqrf(ORDER.ColMajor, m, n, dr.data, m, dtau.data)
-    	dq(?,0->n) = dr
-    	dorgqr(ORDER.ColMajor, m, m, n, dq.data, m, dtau.data)
-    }
-    case (cr:CMat, cq:CMat, ctau:CMat) => {
-    	cgeqrf(ORDER.ColMajor, m, n, cr.data, m, ctau.data)
-    	cq(?,0->n) = cr
-    	cungqr(ORDER.ColMajor, m, m, n, cq.data, m, ctau.data)
-    }
-    }
-    r.clearLower    
-    (q, r)
   }
   
-  /*
-   * Thin QR decomposition. Given m x n input A, return m x n orthonormal Q and n x n upper triangular R. 
-   */
-  
-  def QRdecompt(a:FMat):(FMat, FMat) = {val (q,r) = _QRdecompt(a); (q.asInstanceOf[FMat], r.asInstanceOf[FMat])}
-  def QRdecompt(a:DMat):(DMat, DMat) = {val (q,r) = _QRdecompt(a); (q.asInstanceOf[DMat], r.asInstanceOf[DMat])}
-  def QRdecompt(a:CMat):(CMat, CMat) = {val (q,r) = _QRdecompt(a); (q.asInstanceOf[CMat], r.asInstanceOf[CMat])}
-  def QRdecompt(a:Mat):(Mat, Mat) = _QRdecompt(a)
-  
-  def _QRdecompt(a:Mat):(Mat, Mat) = {
-    val m = a.nrows
-    val n = a.ncols
-    val a2 = a.zeros(a.ncols, a.ncols)
-    (a, a2) match {
-      case (fa:FMat, fa2:FMat) => sgemm(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans, n, n, m, 1f, fa.data, m, fa.data, m, 0f, fa2.data, n)
-      case (da:DMat, da2:DMat) => dgemm(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans, n, n, m, 1f, da.data, m, da.data, m, 0f, da2.data, n)
-      case (ca:CMat, ca2:CMat) => {
-        val cone = CMat.celem(1,0)
-        val czero = CMat.celem(0,0)
-        cgemm(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans, n, n, m, cone.data, ca.data, m, ca.data, m, czero.data, ca2.data, n)
-      }
-    }
-    Mat.nflops += 2L*a.ncols*a.ncols*a.nrows
-    val r = chol(a2).t
-    val q = a * inv(r)
-    (q, r)    
+  def feig(a:FMat):(FMat,FMat) = feig(a, null)
+  def feig(a:DMat):(DMat,DMat) = feig(a, null)
+  def feig(a:Mat, omat:Mat):(Mat, Mat) = a match {
+    case af:FMat => feig(af, omat)
+    case ad:DMat => feig(ad, omat)
   }
-  
-  def chol(a:FMat):FMat = _chol(a).asInstanceOf[FMat]
-  def chol(a:DMat):DMat = _chol(a).asInstanceOf[DMat]
-  def chol(a:CMat):CMat = _chol(a).asInstanceOf[CMat]
-  def chol(a:Mat):Mat = _chol(a) 
-  
-  def _chol(a:Mat):Mat = {  // Cholesky factorization
+  def feig(a:Mat):(Mat, Mat) = feig(a, null)
+   
+  /*
+   * Cholesky factorization. Can be lower or upper, specified by mode string = "L" or "U"
+   * The other half of the matrix is cleared.
+   */
+  def chol(a:FMat, omat:Mat, mode:String):FMat = { 
     Mat.nflops += 1L*a.nrows*a.nrows*a.nrows/3
     if (a.nrows != a.ncols) {
       throw new RuntimeException("chol needs a square matrix")
     } else {
-      val out = a.copy
-      out match {
-        case dout:DMat => dpotrf(ORDER.ColMajor, "L", a.nrows, dout.data, a.nrows)
-        case fout:FMat => spotrf(ORDER.ColMajor, "L", a.nrows, fout.data, a.nrows)
-        case cout:CMat => cpotrf(ORDER.ColMajor, "L", a.nrows, cout.data, a.nrows)
+      val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat)
+      out <-- a
+      spotrf(ORDER.ColMajor, mode, a.nrows, out.data, a.nrows)
+      if (mode.startsWith("L")) {
+        out.clearUpper
+      } else {
+      	out.clearLower
       }
-      out.clearUpper
       out
     }
   }
+  
+  def chol(a:DMat, omat:Mat, mode:String):DMat = { 
+    Mat.nflops += 1L*a.nrows*a.nrows*a.nrows/3
+    if (a.nrows != a.ncols) {
+      throw new RuntimeException("chol needs a square matrix")
+    } else {
+      val out = DMat.newOrCheckDMat(a.nrows, a.ncols, omat)
+      out <-- a
+      dpotrf(ORDER.ColMajor, mode, a.nrows, out.data, a.nrows)
+      if (mode.startsWith("L")) {
+        out.clearUpper
+      } else {
+      	out.clearLower
+      }
+      out
+    }
+  }
+  
+  def chol(a:CMat, omat:Mat, mode:String):CMat = { 
+    Mat.nflops += 1L*a.nrows*a.nrows*a.nrows/3
+    if (a.nrows != a.ncols) {
+      throw new RuntimeException("chol needs a square matrix")
+    } else {
+      val out = CMat.newOrCheckCMat(a.nrows, a.ncols, omat)
+      out <-- a
+      cpotrf(ORDER.ColMajor, mode, a.nrows, out.data, a.nrows)
+      if (mode.startsWith("L")) {
+        out.clearUpper
+      } else {
+      	out.clearLower
+      }
+      out
+    }
+  }
+   
+  def chol(a:FMat):FMat = chol(a, null, "L")
+  def chol(a:DMat):DMat = chol(a, null, "L")
+  def chol(a:CMat):CMat = chol(a, null, "L")
+  def chol(a:FMat, omat:Mat):FMat = chol(a, omat, "L")
+  def chol(a:DMat, omat:Mat):DMat = chol(a, omat, "L")
+  def chol(a:CMat, omat:Mat):CMat = chol(a, omat, "L")
+  def chol(a:Mat, omat:Mat, mode:String):Mat = a match {
+    case af:FMat => chol(af, omat, mode)
+    case ad:DMat => chol(ad, omat, mode)
+    case ac:CMat => chol(ac, omat, mode)
+  }
+  def chol(a:Mat):Mat = chol(a, null, "L")
+  def chol(a:Mat, omat:Mat):Mat = chol(a, omat, "L")
+  
+  /*
+   * Standard QR decomposition. Given m x n input A, return m x m orthonormal Q and m x n upper-triangular R. 
+   */
+  
+  def QRdecomp(a:FMat, qin:Mat, rin:Mat):(FMat, FMat) = {
+    Mat.nflops += 4L*a.nrows*a.ncols*math.min(a.nrows, a.ncols)
+    val m = a.nrows
+    val n = a.ncols
+    val r = FMat.newOrCheckFMat(a.nrows, a.ncols, rin)
+    val q = FMat.newOrCheckFMat(a.nrows, a.ncols, qin)
+    r <-- a
+    q.clear
+    val tau = a.zeros(math.max(a.nrows, a.ncols), 1)
+    sgeqrf(ORDER.ColMajor, m, n, r.data, m, tau.data)
+    q(?,0->n) = r
+    sorgqr(ORDER.ColMajor, m, m, n, q.data, m, tau.data)
+    r.clearLower    
+    (q, r)
+  }
+  
+  def QRdecomp(a:DMat, qin:Mat, rin:Mat):(DMat, DMat) = {
+    Mat.nflops += 4L*a.nrows*a.ncols*math.min(a.nrows, a.ncols)
+    val m = a.nrows
+    val n = a.ncols
+    val r = DMat.newOrCheckDMat(a.nrows, a.ncols, rin)
+    val q = DMat.newOrCheckDMat(a.nrows, a.ncols, qin)
+    r <-- a
+    q.clear
+    val tau = a.zeros(math.max(a.nrows, a.ncols), 1)
+    dgeqrf(ORDER.ColMajor, m, n, r.data, m, tau.data)
+    q(?,0->n) = r
+    dorgqr(ORDER.ColMajor, m, m, n, q.data, m, tau.data)
+    r.clearLower    
+    (q, r)
+  }
+  
+  def QRdecomp(a:CMat, qin:Mat, rin:Mat):(CMat, CMat) = {
+    Mat.nflops += 4L*a.nrows*a.ncols*math.min(a.nrows, a.ncols)
+    val m = a.nrows
+    val n = a.ncols
+    val r = CMat.newOrCheckCMat(a.nrows, a.ncols, rin)
+    val q = CMat.newOrCheckCMat(a.nrows, a.ncols, qin)
+    r <-- a
+    q.clear
+    val tau = a.zeros(math.max(a.nrows, a.ncols), 1)
+    cgeqrf(ORDER.ColMajor, m, n, r.data, m, tau.data)
+    q(?,0->n) = r
+    cungqr(ORDER.ColMajor, m, m, n, q.data, m, tau.data)
+    r.clearLower    
+    (q, r)
+  }
+  
+  def QRdecomp(a:FMat):(FMat, FMat) = QRdecomp(a, null, null)
+  def QRdecomp(a:DMat):(DMat, DMat) = QRdecomp(a, null, null)
+  def QRdecomp(a:CMat):(CMat, CMat) = QRdecomp(a, null, null)
+  def QRdecomp(a:Mat, q:Mat, r:Mat):(Mat, Mat) = a match {
+    case af:FMat => QRdecomp(af, q, r):(FMat, FMat)
+    case ad:DMat => QRdecomp(ad, q, r):(DMat, DMat)
+    case ac:CMat => QRdecomp(ac, q, r):(CMat, CMat)
+  }
+  def QRdecomp(a:Mat):(Mat, Mat) = QRdecomp(a, null, null)
+  
+  
+  /*
+   * Thin QR decomposition. Given m x n input A with m >= n, return m x n orthonormal Q and n x n upper triangular R
+   * such that A = Q*R 
+   */
+   
+  def QRdecompt(a:FMat, qin:Mat, rin:Mat):(FMat, FMat) = {
+    val m = a.nrows
+    val n = a.ncols
+    val q = FMat.newOrCheckFMat(a.nrows, a.ncols, qin)
+    val r = FMat.newOrCheckFMat(a.ncols, a.ncols, rin)
+    Mat.nflops += 2L*a.ncols*a.ncols*a.nrows
+    sgemm(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans, n, n, m, 1f, a.data, m, a.data, m, 0f, r.data, n)
+    chol(r, r, "U")
+    q <-- a
+    strtrs(ORDER.RowMajor, "LNN", r.nrows, q.nrows, r.data, r.nrows, q.data, q.nrows)
+    (q, r)    
+  }
+  
+  def QRdecompt(a:DMat, qin:Mat, rin:Mat):(DMat, DMat) = {
+    val m = a.nrows
+    val n = a.ncols
+    val q = DMat.newOrCheckDMat(a.nrows, a.ncols, qin)
+    val r = DMat.newOrCheckDMat(a.ncols, a.ncols, rin)
+    Mat.nflops += 2L*a.ncols*a.ncols*a.nrows
+    dgemm(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans, n, n, m, 1f, a.data, m, a.data, m, 0f, r.data, n)
+    chol(r, r, "U")
+    q <-- a
+    dtrtrs(ORDER.RowMajor, "LNN", r.nrows, q.nrows, r.data, r.nrows, q.data, q.nrows)
+    (q, r)    
+  }
+  
+  def QRdecompt(a:CMat, qin:Mat, rin:Mat):(CMat, CMat) = {
+    val m = a.nrows
+    val n = a.ncols
+    val q = CMat.newOrCheckCMat(a.nrows, a.ncols, qin)
+    val r = CMat.newOrCheckCMat(a.ncols, a.ncols, rin)
+    Mat.nflops += 16L*a.ncols*a.ncols*a.nrows
+    val cone = CMat.celem(1,0)
+    val czero = CMat.celem(0,0)
+    cgemm(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans, n, n, m, cone.data, a.data, m, a.data, m, czero.data, r.data, n)
+    chol(r, r, "U")
+    q <-- a
+    ctrtrs(ORDER.RowMajor, "LNN", r.nrows, q.nrows, r.data, r.nrows, q.data, q.nrows)
+    (q, r)    
+  }
+  
+  def QRdecompt(a:FMat):(FMat, FMat) = QRdecompt(a, null, null)
+  def QRdecompt(a:DMat):(DMat, DMat) = QRdecompt(a, null, null)
+  def QRdecompt(a:CMat):(CMat, CMat) = QRdecompt(a, null, null)
+  def QRdecompt(a:Mat, q:Mat, r:Mat):(Mat, Mat) = a match {
+    case af:FMat => QRdecompt(af, q, r):(FMat, FMat)
+    case ad:DMat => QRdecompt(ad, q, r):(DMat, DMat)
+    case ac:CMat => QRdecompt(ac, q, r):(CMat, CMat)
+  }
+  def QRdecompt(a:Mat):(Mat, Mat) = QRdecompt(a, null, null)
+
   
   /*
    * Trisolve solves A x = r, for triangular A. Mode string argument is 3 characters. 
@@ -214,32 +368,62 @@ object Solvers {
    * Char2 = "N", "T" or "C" for A not-transposed, transposed or conjugate respectively. 
    * Char3 = "N" or "U" whether the leading diagonal is non-unit "N" or unit "U" respectively. 
    */
-  def trisolve(a:DMat, r:DMat, mode:String):DMat = _trisolve(a, r, mode).asInstanceOf[DMat]
-  def trisolve(a:FMat, r:FMat, mode:String):FMat = _trisolve(a, r, mode).asInstanceOf[FMat]
-  def trisolve(a:CMat, r:CMat, mode:String):CMat = _trisolve(a, r, mode).asInstanceOf[CMat]
-  def trisolve(a:Mat, r:Mat, mode:String):Mat = _trisolve(a, r, mode)
   
-  def _trisolve(a:Mat, r:Mat, mode:String):Mat = {
+  def trisolve(a:FMat, r:FMat, omat:Mat, mode:String):FMat = {
     if (a.nrows != a.ncols) {
       throw new RuntimeException("tsolve a must be square")
     }
-    if (a.ncols != r.nrows) {
-      throw new RuntimeException("tsolve matrix and rhs must have same ncols")
+    if (a.nrows != r.nrows) {
+      throw new RuntimeException("tsolve matrix and rhs must have same nrows")
     }
-    val out = r.copy
+    val out = FMat.newOrCheckFMat(a.ncols, r.ncols, omat)
+    out <-- a
     Mat.nflops += 1L*a.nrows*a.nrows*r.ncols
-    (a, out) match {
-      case (da:DMat, dout:DMat) => dtrtrs(ORDER.ColMajor, mode, a.nrows, r.ncols, da.data, a.nrows, dout.data, out.nrows)
-      case (fa:FMat, fout:FMat) => strtrs(ORDER.ColMajor, mode, a.nrows, r.ncols, fa.data, a.nrows, fout.data, out.nrows)
-      case (ca:CMat, cout:CMat) => ctrtrs(ORDER.ColMajor, mode, a.nrows, r.ncols, ca.data, a.nrows, cout.data, out.nrows)
-    }  
+    strtrs(ORDER.ColMajor, mode, a.nrows, r.ncols, a.data, a.nrows, out.data, out.nrows) 
+    out
+  }
+  
+  def trisolve(a:DMat, r:DMat, omat:Mat, mode:String):DMat = {
+    if (a.nrows != a.ncols) {
+      throw new RuntimeException("tsolve a must be square")
+    }
+    if (a.nrows != r.nrows) {
+      throw new RuntimeException("tsolve matrix and rhs must have same nrows")
+    }
+    val out = DMat.newOrCheckDMat(a.ncols, r.ncols, omat)
+    out <-- a
+    Mat.nflops += 1L*a.nrows*a.nrows*r.ncols
+    dtrtrs(ORDER.ColMajor, mode, a.nrows, r.ncols, a.data, a.nrows, out.data, out.nrows) 
+    out
+  }
+    
+  def trisolve(a:CMat, r:CMat, omat:Mat, mode:String):CMat = {
+    if (a.nrows != a.ncols) {
+      throw new RuntimeException("tsolve a must be square")
+    }
+    if (a.nrows != r.nrows) {
+      throw new RuntimeException("tsolve matrix and rhs must have same nrows")
+    }
+    val out = CMat.newOrCheckCMat(a.ncols, r.ncols, omat)
+    out <-- a
+    Mat.nflops += 8L*a.nrows*a.nrows*r.ncols
+    ctrtrs(ORDER.ColMajor, mode, a.nrows, r.ncols, a.data, a.nrows, out.data, out.nrows) 
     out
   }
 
-  def trisolve(a:DMat, r:DMat):DMat = _trisolve(a, r, "UNN").asInstanceOf[DMat]
-  def trisolve(a:FMat, r:FMat):FMat = _trisolve(a, r, "UNN").asInstanceOf[FMat]
-  def trisolve(a:CMat, r:CMat):CMat = _trisolve(a, r, "UNN").asInstanceOf[CMat]
-  def trisolve(a:Mat, r:Mat):Mat = _trisolve(a, r, "UNN")
+  def trisolve(a:DMat, r:DMat):DMat = trisolve(a, r, null, "UNN")
+  def trisolve(a:FMat, r:FMat):FMat = trisolve(a, r, null, "UNN")
+  def trisolve(a:CMat, r:CMat):CMat = trisolve(a, r, null, "UNN")
+  def trisolve(a:DMat, r:DMat, omat:Mat):DMat = trisolve(a, r, omat, "UNN")
+  def trisolve(a:FMat, r:FMat, omat:Mat):FMat = trisolve(a, r, omat, "UNN")
+  def trisolve(a:CMat, r:CMat, omat:Mat):CMat = trisolve(a, r, omat, "UNN")
+  def trisolve(a:Mat, r:Mat, omat:Mat, mode:String):Mat = (a, r) match {
+    case (af:FMat, rf:FMat) => trisolve(af, rf, omat, mode)
+    case (ad:DMat, rd:DMat) => trisolve(ad, rd, omat, mode)
+    case (ac:CMat, rc:CMat) => trisolve(ac, rc, omat, mode)
+  }
+  def trisolve(a:Mat, r:Mat):Mat = trisolve(a, r, null, "UNN")
+  def trisolve(a:Mat, r:Mat, omat:Mat):Mat = trisolve(a, r, omat, "UNN")
   
   def shiftLeft(mat:FMat, step:Int) = {
     var i = step
