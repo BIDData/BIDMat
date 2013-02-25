@@ -1,3 +1,4 @@
+//-*-coding:utf-8-*-
 package BIDMat
 import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.LAPACK._
@@ -441,6 +442,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def /  (b : FMat) = solvel(b)
   def \\ (b : FMat) = solver(b)
   def *@ (b : FMat) = ffMatOpv(b, FMat.vecMul _, null)
+//  def ∘ (b : FMat) = ffMatOpv(b, FMat.vecMul _, null)
   def /@ (b : FMat) = ffMatOpv(b, FMat.fVecDiv _, null)
 
   override def *  (b : Float) = fDMult(FMat.felem(b), null)
