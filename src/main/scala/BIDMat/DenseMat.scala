@@ -896,10 +896,11 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   		Mat.nflops += 2 * length
   		var i = 0
   		while (i < ncols){
+  		  val ix = i*nrows
   		  var j = 0
   		  var sum = numeric.zero
   		  while (j < nrows) {
-  		  	sum = numeric.plus(sum, numeric.times(data(i),a.data(i)))
+  		  	sum = numeric.plus(sum, numeric.times(data(j+ix),a.data(j+ix)))
   		  	j += 1
   		  }
   		  out.data(i) = sum
