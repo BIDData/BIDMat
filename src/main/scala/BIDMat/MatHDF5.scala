@@ -429,7 +429,7 @@ object MatHDF5 {
   def hload(fname:String, vname:String):AnyRef = {
   val fapl = H5Pcreate(H5P_FILE_ACCESS)
 //  H5Pset_fapl_core(fapl, 16*1024*1024, false);  println("core driver")
-  H5Pset_fapl_stdio(fapl); //println("stdio driver")
+//  H5Pset_fapl_stdio(fapl); //println("stdio driver")
 	val fid = H5Fopen(fname,H5F_ACC_RDONLY,fapl)
 	H5Pclose(fapl)
 	val mat = getMat(fid, vname)
@@ -440,7 +440,7 @@ object MatHDF5 {
   def hload(fname:String, vnames:List[String]):List[AnyRef] = {
   val fapl = H5Pcreate(H5P_FILE_ACCESS)
 //  H5Pset_fapl_core(fapl, 32*1024*1024, false);  println("core driver")
-  H5Pset_fapl_stdio(fapl); //println("stdio driver")
+//  H5Pset_fapl_stdio(fapl); //println("stdio driver")
 	val fid = H5Fopen(fname,H5F_ACC_RDONLY,fapl)
 	H5Pclose(fapl)
 	val mats = vnames.map((vname) => getMat(fid, vname))
@@ -451,7 +451,7 @@ object MatHDF5 {
   def hsaveAsHDF5(fname:String, args:List[AnyRef]) = {
 	refcount = -1
 	val fapl_id = H5Pcreate (H5P_FILE_ACCESS)
-	H5Pset_fapl_stdio(fapl_id)
+//	H5Pset_fapl_stdio(fapl_id)
 	val fid = H5Fcreate(fname, H5F_ACC_TRUNC, H5P_DEFAULT, fapl_id)
 	H5Pclose(fapl_id)
 	saveAsImpl(fid, args)
@@ -461,7 +461,7 @@ object MatHDF5 {
   def hsaveAs(fname:String, args:List[AnyRef]) = {
 	refcount = -1
 	val fapl_id = H5Pcreate (H5P_FILE_ACCESS)
-	H5Pset_fapl_stdio(fapl_id)
+//	H5Pset_fapl_stdio(fapl_id)
 	val fcplist_id = H5Pcreate(H5P_FILE_CREATE)
 	H5Pset_userblock(fcplist_id, 512)
 	val fid = H5Fcreate(fname, H5F_ACC_TRUNC, fcplist_id, fapl_id)
