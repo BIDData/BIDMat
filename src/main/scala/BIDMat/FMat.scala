@@ -441,29 +441,33 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def xTG (b :FMat) = GPUmult(b, null, true)
   def *!  (b :FMat) = GPUmult(b, null, false)
   def *^! (b :FMat) = GPUmult(b, null, true)
-  def /  (b : FMat) = solvel(b)
+  def /<  (b : FMat) = solvel(b)
   def \\ (b : FMat) = solver(b)
   def *@ (b : FMat) = ffMatOpv(b, FMat.vecMul _, null)
-//  def ∘ (b : FMat) = ffMatOpv(b, FMat.vecMul _, null)
-  def /@ (b : FMat) = ffMatOpv(b, FMat.fVecDiv _, null)
+  def / (b : FMat) = ffMatOpv(b, FMat.fVecDiv _, null)
+  def ∘ (b : FMat) = ffMatOpv(b, FMat.vecMul _, null)
+  def ∙ (b:FMat):FMat = dot(b)
 
   override def *  (b : Float) = fDMult(FMat.felem(b), null)
   override def +  (b : Float) = ffMatOpScalarv(b, FMat.vecAdd _, null)
   override def -  (b : Float) = ffMatOpScalarv(b, FMat.vecSub _, null)
   override def *@ (b : Float) = ffMatOpScalarv(b, FMat.vecMul _, null)
-  override def /@ (b : Float) = ffMatOpScalarv(b, FMat.fVecDiv _, null)
+  override def ∘  (b : Float) = ffMatOpScalarv(b, FMat.vecMul _, null)
+  override def /  (b : Float) = ffMatOpScalarv(b, FMat.fVecDiv _, null)
 
   override def *  (b : Int) = fDMult(FMat.felem(b), null)
   override def +  (b : Int) = ffMatOpScalarv(b, FMat.vecAdd _, null)
   override def -  (b : Int) = ffMatOpScalarv(b, FMat.vecSub _, null)
   override def *@ (b : Int) = ffMatOpScalarv(b, FMat.vecMul _, null)
-  override def /@ (b : Int) = ffMatOpScalarv(b, FMat.fVecDiv _, null)
+  override def ∘  (b : Int) = ffMatOpScalarv(b, FMat.vecMul _, null)
+  override def /  (b : Int) = ffMatOpScalarv(b, FMat.fVecDiv _, null)
 
   override def *  (b : Double) = fDMult(FMat.felem(b.asInstanceOf[Float]), null)
   override def +  (b : Double) = ffMatOpScalarv(b.asInstanceOf[Float], FMat.vecAdd _, null)
   override def -  (b : Double) = ffMatOpScalarv(b.asInstanceOf[Float], FMat.vecSub _, null)
   override def *@ (b : Double) = ffMatOpScalarv(b.asInstanceOf[Float], FMat.vecMul _, null)
-  override def /@ (b : Double) = ffMatOpScalarv(b.asInstanceOf[Float], FMat.fVecDiv _, null)
+  override def ∘  (b : Double) = ffMatOpScalarv(b.asInstanceOf[Float], FMat.vecMul _, null)
+  override def /  (b : Double) = ffMatOpScalarv(b.asInstanceOf[Float], FMat.fVecDiv _, null)
 
   def >   (b : FMat) = ffMatOp(b, (x:Float, y:Float) => if (x > y) 1f else 0f, null)
   def <   (b : FMat) = ffMatOp(b, (x:Float, y:Float) => if (x < y) 1f else 0f, null)
@@ -511,10 +515,11 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def +  (b : IMat):FMat = this + FMat(b)
   def -  (b : IMat):FMat = this - FMat(b)
   def *  (b : IMat):FMat = this * FMat(b)
-  def /  (b : IMat):FMat = this / FMat(b)
+  def /<  (b : IMat):FMat = this /< FMat(b)
   def \\ (b : IMat):FMat = this \\ FMat(b)
   def *@ (b : IMat):FMat = this *@ FMat(b)
-  def /@ (b : IMat):FMat = this /@ FMat(b)
+  def ∘  (b : IMat):FMat = this *@ FMat(b)
+  def / (b : IMat):FMat = this / FMat(b)
   def \  (b : IMat):FMat = this \ FMat(b)
   def on (b : IMat):FMat = this on FMat(b) 
   
@@ -532,10 +537,11 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def +  (b : DMat):DMat = DMat(this) + b
   def -  (b : DMat):DMat = DMat(this) - b
   def *  (b : DMat):DMat = DMat(this) * b
-  def /  (b : DMat):DMat = DMat(this) / b
+  def /<  (b : DMat):DMat = DMat(this) /< b
   def \\ (b : DMat):DMat = DMat(this) \\ b
   def *@ (b : DMat):DMat = DMat(this) *@ b
-  def /@ (b : DMat):DMat = DMat(this) /@ b
+  def ∘  (b : DMat):DMat = DMat(this) *@ b
+  def / (b : DMat):DMat = DMat(this) / b
   def \  (b : DMat):DMat = DMat(this) \ b
   def on (b : DMat):DMat = DMat(this) on b 
   
@@ -553,10 +559,11 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def +  (b : CMat):CMat = CMat(this) + b
   def -  (b : CMat):CMat = CMat(this) - b
   def *  (b : CMat):CMat = CMat(this) * b
-  def /  (b : CMat):CMat = CMat(this) / b
+  def /<  (b : CMat):CMat = CMat(this) /< b
   def \\ (b : CMat):CMat = CMat(this) \\ b
   def *@ (b : CMat):CMat = CMat(this) *@ b
-  def /@ (b : CMat):CMat = CMat(this) /@ b
+  def ∘  (b : CMat):CMat = CMat(this) *@ b
+  def / (b : CMat):CMat = CMat(this) / b
   def \  (b : CMat):CMat = CMat(this) \ b
   def on (b : CMat):CMat = CMat(this) on b 
   
@@ -575,10 +582,11 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     case bb:SMat => multT(bb, null)
     case bb:FMat => multT(bb, null)
   }
-  override def /  (b : Mat):Mat = applyMat(this, b, null, Mop_Div)
+  override def /< (b : Mat):Mat = applyMat(this, b, null, Mop_Div)
   override def \\ (b : Mat):Mat = applyMat(this, b, null, Mop_RSolve)
   override def *@ (b : Mat):Mat = applyMat(this, b, null, Mop_ETimes)
-  override def /@ (b : Mat):Mat = applyMat(this, b, null, Mop_EDiv)
+  override def ∘  (b : Mat):Mat = applyMat(this, b, null, Mop_ETimes)
+  override def /  (b : Mat):Mat = applyMat(this, b, null, Mop_EDiv)
   override def \  (b : Mat):Mat = applyMat(this, b, null, Mop_HCat)
   override def on (b : Mat):Mat = applyMat(this, b, null, Mop_VCat)
   
@@ -609,7 +617,8 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   def + (b : FMat) = mat.ffMatOpv(b, FMat.vecAdd _, omat)
   def - (b : FMat) = mat.ffMatOpv(b, FMat.vecSub _, omat)
   def *@ (b : FMat) = mat.ffMatOpv(b, FMat.vecMul _, omat)
-  def /@ (b : FMat) = mat.ffMatOpv(b, FMat.fVecDiv _, omat)  
+  def ∘  (b : FMat) = mat.ffMatOpv(b, FMat.vecMul _, omat)
+  def /  (b : FMat) = mat.ffMatOpv(b, FMat.fVecDiv _, omat)  
   def ^ (b : FMat) = mat.ffMatOp(b, (x:Float, y:Float) => math.pow(x,y).toFloat, omat)  
 
   def > (b : FMat) = mat.ffMatOp(b, (x:Float, y:Float) => if (x > y) 1.0f else 0.0f, omat)
@@ -627,7 +636,8 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   override def + (b : Float) = mat.ffMatOpScalarv(b, FMat.vecAdd _, omat)
   override def - (b : Float) = mat.ffMatOpScalarv(b, FMat.vecSub _, omat)
   override def *@ (b : Float) = mat.ffMatOpScalarv(b, FMat.vecMul _, omat)
-  override def /@ (b : Float) = mat.ffMatOpScalarv(b, FMat.fVecDiv _, omat)
+  override def ∘  (b : Float) = mat.ffMatOpScalarv(b, FMat.vecMul _, omat)
+  override def /  (b : Float) = mat.ffMatOpScalarv(b, FMat.fVecDiv _, omat)
   override def ^ (b : Float) = mat.ffMatOpScalar(b, (x:Float, y:Float) => math.pow(x,y).toFloat, omat)
 
   override def > (b : Float) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x > y) 1.0f else 0.0f, omat)
@@ -641,7 +651,8 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   override def + (b : Int) = mat.ffMatOpScalarv(b, FMat.vecAdd _, omat)
   override def - (b : Int) = mat.ffMatOpScalarv(b, FMat.vecSub _, omat)
   override def *@ (b : Int) = mat.ffMatOpScalarv(b, FMat.vecMul _, omat)
-  override def /@ (b : Int) = mat.ffMatOpScalarv(b, FMat.fVecDiv _, omat)
+  override def ∘  (b : Int) = mat.ffMatOpScalarv(b, FMat.vecMul _, omat)
+  override def /  (b : Int) = mat.ffMatOpScalarv(b, FMat.fVecDiv _, omat)
   override def ^ (b : Int) = mat.ffMatOpScalar(b, (x:Float, y:Float) => math.pow(x,y).toFloat, omat)
 
   override def > (b : Int) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x > y) 1.0f else 0.0f, omat)
@@ -659,10 +670,11 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
     case bb:SMat => mat.multT(bb, omat)
     case bb:FMat => mat.multT(bb, omat)
     }
-  override def /  (b : Mat):Mat = applyMat(mat, b, omat, Mop_Div)
+  override def /< (b : Mat):Mat = applyMat(mat, b, omat, Mop_Div)
   override def \\ (b : Mat):Mat = applyMat(mat, b, omat, Mop_RSolve)
   override def *@ (b : Mat):Mat = applyMat(mat, b, omat, Mop_ETimes)
-  override def /@ (b : Mat):Mat = applyMat(mat, b, omat, Mop_EDiv)
+  override def ∘  (b : Mat):Mat = applyMat(mat, b, omat, Mop_ETimes)
+  override def /  (b : Mat):Mat = applyMat(mat, b, omat, Mop_EDiv)
   override def \  (b : Mat):Mat = applyMat(mat, b, omat, Mop_HCat)
   override def on (b : Mat):Mat = applyMat(mat, b, omat, Mop_VCat)
   
