@@ -94,9 +94,9 @@ class SparseMat[@specialized(Double,Float) T]
       if (ir != null) a.explicitInds
       if (a.ir != null) explicitInds
       val out = if (ir != null) {
-      	SparseMat[T](nrows+a.nrows, ncols, nnz+a.nnz)
+      	SparseMat.newOrCheck(nrows+a.nrows, ncols, nnz+a.nnz, null, false, GUID, a.GUID, "on".hashCode)
       } else {
-        SparseMat.noRows[T](nrows+a.nrows, ncols, nnz+a.nnz)
+        SparseMat.newOrCheck(nrows+a.nrows, ncols, nnz+a.nnz, null, true, GUID, a.GUID, "on".hashCode)
       }
       val ioff = Mat.ioneBased
       var ip = 0
@@ -134,9 +134,9 @@ class SparseMat[@specialized(Double,Float) T]
       if (ir != null) a.explicitInds
       if (a.ir != null) explicitInds
       val out = if (ir != null) {
-      	SparseMat[T](nrows, ncols+a.ncols, nnz+a.nnz)
+      	SparseMat.newOrCheck(nrows, ncols+a.ncols, nnz+a.nnz, null, false, GUID, a.GUID, "on".hashCode)
       } else {
-        SparseMat.noRows[T](nrows, ncols+a.ncols, nnz+a.nnz)
+        SparseMat.newOrCheck(nrows, ncols+a.ncols, nnz+a.nnz, null, true, GUID, a.GUID, "on".hashCode)
       }
       var ip = 0
       System.arraycopy(data, 0, out.data, 0, nnz)
@@ -156,7 +156,7 @@ class SparseMat[@specialized(Double,Float) T]
    * Find indices (single) for all non-zeros elements
    */
   def gfind:IMat = {
-    var out = IMat(nnz, 1)
+    var out = IMat.newOrCheckIMat(nnz, 1, null, GUID, "gfind".hashCode)
     val ioff = Mat.ioneBased
     val off = Mat.oneBased
     var i = 0
@@ -181,8 +181,8 @@ class SparseMat[@specialized(Double,Float) T]
    * Find indices (i,j) for non-zero elements
    */	
   def gfind2:(IMat, IMat) = {
-    var iout = IMat(nnz, 1)
-    var jout = IMat(nnz, 1)
+    var iout = IMat.newOrCheckIMat(nnz, 1, null, GUID, "gfind2_1".hashCode)
+    var jout = IMat.newOrCheckIMat(nnz, 1, null, GUID, "gfind2_2".hashCode)
     val ioff = Mat.ioneBased
     val off = Mat.oneBased
     var i = 0
@@ -212,7 +212,7 @@ class SparseMat[@specialized(Double,Float) T]
    * Find indices and values (i,j,v) for non-zero elements
    */	
   def gfind3:(IMat, IMat, DenseMat[T]) = {
-    val vout = new DenseMat[T](nnz,1)
+    val vout = DenseMat.newOrCheck(nnz, 1, null, GUID, "gfind3_3".hashCode)
     val (iout, jout) = gfind2
     System.arraycopy(data, 0, vout.data, 0, nnz)
     (iout, jout, vout)
@@ -235,9 +235,9 @@ class SparseMat[@specialized(Double,Float) T]
   		var tnnz = 0
   		for (i <- 0 until colinds.length) tnnz += jc(colinds(i)-off+1) - jc(colinds(i)-off)
   		val out = if (ir != null) {
-      	SparseMat[T](nrows, colinds.length, tnnz)
+      	SparseMat.newOrCheck(nrows, colinds.length, tnnz, null, false, GUID, iv.GUID, jv.GUID, "gapply3".hashCode)
       } else {
-        SparseMat.noRows[T](nrows, colinds.length, tnnz)
+        SparseMat.newOrCheck(nrows, colinds.length, tnnz, null, true, GUID, iv.GUID, jv.GUID, "gapply3".hashCode)
       }
   		var inext = 0
   		var i = 0
@@ -364,7 +364,7 @@ class SparseMat[@specialized(Double,Float) T]
     else {
       explicitInds
       a.explicitInds
-      val out = new DenseMat[T](nrows, a.ncols)
+      val out = DenseMat.newOrCheck(nrows, a.ncols, null, GUID, a.GUID, "gsMult".hashCode)
       val ioff = Mat.ioneBased
       var i = 0
       while (i < a.ncols) {
@@ -393,7 +393,7 @@ class SparseMat[@specialized(Double,Float) T]
       if (ir == null) {
         sgMatOpNR(b,op2,omat)
       } else {
-      	val out = SparseMat.newOrCheck(nrows, ncols, nnz+b.nnz, omat)
+      	val out = SparseMat.newOrCheck(nrows, ncols, nnz+b.nnz, omat, false, GUID, b.GUID, op2.hashCode)
       	val ioff = Mat.ioneBased
       	var nzc = 0
       	out.jc(0) = ioff 
@@ -446,7 +446,7 @@ class SparseMat[@specialized(Double,Float) T]
     		throw new RuntimeException("Dimensions mismatch")
     	} else {
     		if (ir == null) explicitInds
-    		val out = SparseMat.newOrCheck[T](nrows, ncols, nnz, omat)
+    		val out = SparseMat.newOrCheck[T](nrows, ncols, nnz, omat, false, GUID, b.GUID, op2.hashCode)
     		val ioff = Mat.ioneBased
     		var i = 0
     		while (i < ncols) {
@@ -480,7 +480,7 @@ class SparseMat[@specialized(Double,Float) T]
 
   
   def sgMatOpNR(b:SparseMat[T], op2:(T,T) => T, omat:Mat):SparseMat[T] = {
-  		val out = SparseMat.newOrCheck(nrows, ncols, nnz+b.nnz, omat, true)
+  		val out = SparseMat.newOrCheck(nrows, ncols, nnz+b.nnz, omat, true, GUID, b.GUID, op2.hashCode)
   		val ioff = Mat.ioneBased
   		var nzc = 0
   		out.jc(0) = ioff
@@ -522,7 +522,7 @@ class SparseMat[@specialized(Double,Float) T]
   			out.data(0) = acc
   			out
   		} else if (dim == 1) {
-  			val out = DenseMat.newOrCheck(1, ncols, omat)
+  			val out = DenseMat.newOrCheck(1, ncols, omat, GUID, 1, op2.hashCode)
   			var i = 0
   			while (i < ncols) { 
   				var acc = op1(numeric.zero)
@@ -536,7 +536,7 @@ class SparseMat[@specialized(Double,Float) T]
   			}
   			out
   		} else if (dim == 2) { 
-  			val out = DenseMat.newOrCheck(nrows, 1, omat)
+  			val out = DenseMat.newOrCheck(nrows, 1, omat, GUID, 2, op2.hashCode)
   			out.clear
   			if (ir != null) {
   				var j = 0
@@ -566,7 +566,7 @@ class SparseMat[@specialized(Double,Float) T]
     } else throw new RuntimeException("dims incompatible")
   
   def sgMatOpScalar(b:T, op2:(T,T) => T, outmat:Mat):SparseMat[T] = {
-    val out = SparseMat.newOrCheck(nrows, ncols, nnz, outmat, (ir == null))
+    val out = SparseMat.newOrCheck(nrows, ncols, nnz, outmat, (ir == null), GUID, op2.hashCode)
     var i = 0
     out.jc(0) = jc(0)
     while (i < nnz) {
@@ -654,7 +654,7 @@ class SparseMat[@specialized(Double,Float) T]
   }
 
   def full:DenseMat[T] = { 
-    val out = new DenseMat[T](nrows, ncols)
+    val out = DenseMat.newOrCheck(nrows, ncols, null, GUID, "full".hashCode)
     val ioff = Mat.ioneBased
     if (ir != null) {
     	val cols = SparseMat.uncompressInds(jc, ir)
@@ -795,6 +795,57 @@ object SparseMat {
       }
     }
   }
+  
+   
+  def newOrCheck[T](nr:Int, nc:Int, nnz0:Int, outmat:Mat, norows:Boolean, matGuid:Long, opHash:Int)
+    (implicit manifest:Manifest[T], numeric:Numeric[T]):SparseMat[T] = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheck(nr, nc, nnz0, outmat, norows)
+    } else {
+      val key = (matGuid, opHash)
+      if (Mat.cache2.contains(key)) {
+      	newOrCheck(nr, nc, nnz0, Mat.cache2(key), norows)
+      } else {
+        val omat = newOrCheck(nr, nc, nnz0, null, norows)
+        Mat.cache2(key) = omat
+        omat
+      }
+    }
+  }
+  
+  def newOrCheck[T](nr:Int, nc:Int, nnz0:Int, outmat:Mat, norows:Boolean, guid1:Long, guid2:Long, opHash:Int)
+    (implicit manifest:Manifest[T], numeric:Numeric[T]):SparseMat[T] = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheck(nr, nc, nnz0, outmat, norows)
+    } else {
+      val key = (guid1, guid2, opHash)
+      if (Mat.cache3.contains(key)) {
+      	newOrCheck(nr, nc, nnz0, Mat.cache3(key), norows)
+      } else {
+        val omat = newOrCheck(nr, nc, nnz0, null, norows)
+        Mat.cache3(key) = omat
+        omat
+      }
+    }
+  }
+  
+    
+  def newOrCheck[T](nr:Int, nc:Int, nnz0:Int, outmat:Mat, norows:Boolean, guid1:Long, guid2:Long, guid3:Long, opHash:Int)
+    (implicit manifest:Manifest[T], numeric:Numeric[T]):SparseMat[T] = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheck(nr, nc, nnz0, outmat, norows)
+    } else {
+      val key = (guid1, guid2, guid3, opHash)
+      if (Mat.cache4.contains(key)) {
+      	newOrCheck(nr, nc, nnz0, Mat.cache4(key), norows)
+      } else {
+        val omat = newOrCheck(nr, nc, nnz0, null, norows)
+        Mat.cache4(key) = omat
+        omat
+      }
+    }
+  }
+ 
 }
 
 

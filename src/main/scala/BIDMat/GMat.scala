@@ -8,6 +8,7 @@ import jcuda.jcublas._
 import jcuda.jcublas.JCublas._
 import scala.actors.Actor._
 import edu.berkeley.bid.CUMAT
+import GSMat._
 
 class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, nc) {
   import GMat.BinOp._
@@ -30,7 +31,7 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
   }
   
   override def t = {
-    val out = GMat(ncols, nrows)
+    val out = GMat.newOrCheckGMat(ncols, nrows, null, GUID, "t".hashCode)
     CUMAT.transpose(this.data, nrows, out.data, ncols, nrows, ncols)
     cudaDeviceSynchronize()
     out
@@ -58,7 +59,7 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
 
   def GMult(a:GMat, oldmat:Mat):GMat = {
     if (ncols == a.nrows) {
-      val out = GMat.newOrCheckGMat(nrows, a.ncols, oldmat)
+      val out = GMat.newOrCheckGMat(nrows, a.ncols, oldmat, GUID, a.GUID, "GMult".hashCode)
       Mat.nflops += 2L * length * a.ncols
       cublasSgemm('n', 'n', nrows, a.ncols, ncols, 1.0f, data, nrows, a.data, a.nrows, 0f, out.data, nrows)
       cudaDeviceSynchronize()
@@ -68,14 +69,14 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
       }
       out
     }	else if (ncols == 1 && nrows == 1) {
-      val out = GMat.newOrCheckGMat(a.nrows, a.ncols, oldmat)
+      val out = GMat.newOrCheckGMat(a.nrows, a.ncols, oldmat, a.GUID, "GMult1".hashCode)
       Mat.nflops += 1L * a.length
       out.clear
       cublasSaxpy(a.length, this.dv.asInstanceOf[Float], a.data, 1, out.data, 1)
       cudaDeviceSynchronize()
       out
     } else if (a.ncols == 1 && a.nrows == 1) {
-      val out = GMat.newOrCheckGMat(nrows, ncols, oldmat)
+      val out = GMat.newOrCheckGMat(nrows, ncols, oldmat, GUID, "GMult2".hashCode)
       Mat.nflops += 1L * length
       out.clear
       cublasSaxpy(length, a.dv.asInstanceOf[Float], data, 1, out.data, 1)
@@ -86,7 +87,7 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
   
   def GMultT(a:GMat, oldmat:Mat):GMat = {
     if (ncols == a.ncols) {
-      val out = GMat.newOrCheckGMat(nrows, a.nrows, oldmat)
+      val out = GMat.newOrCheckGMat(nrows, a.nrows, oldmat, GUID, a.GUID, "GMultT".hashCode)
       Mat.nflops += 2L * length * a.nrows
       cublasSgemm('n', 't', nrows, a.nrows, ncols, 1.0f, data, nrows, a.data, a.nrows, 0f, out.data, nrows)
       cudaDeviceSynchronize()
@@ -101,7 +102,7 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
   
   def GSMult(a:GSMat, oldmat:Mat):GMat = {
     if (ncols == a.nrows) {
-      val out = GMat.newOrCheckGMat(nrows, a.ncols, oldmat)
+      val out = GMat.newOrCheckGMat(nrows, a.ncols, oldmat, GUID, a.GUID, "GSMult".hashCode)
       Mat.nflops += 2L * nrows * a.nnz
       out.clear
       CUMAT.dsmult(nrows, ncols, a.nnz, data, a.data, a.ir, a.ic, out.data)
@@ -112,7 +113,7 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
   
   def GSMultT(a:GSMat, oldmat:Mat):GMat = {
     if (ncols == a.ncols) {
-      val out = GMat.newOrCheckGMat(nrows, a.nrows, oldmat)
+      val out = GMat.newOrCheckGMat(nrows, a.nrows, oldmat, GUID, a.GUID, "GSMultT".hashCode)
       Mat.nflops += 2L * nrows * a.nnz
       out.clear
       CUMAT.dsmultT(nrows, ncols, a.nnz, data, a.data, a.ir, a.ic, out.data)
@@ -127,7 +128,7 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
         (ncols == a.ncols && (a.nrows == 1 || nrows == 1)) ||
         (a.ncols == 1 && a.nrows == 1) ||
         (ncols == 1 && nrows == 1)) {
-    	val out = GMat.newOrCheckGMat(math.max(nrows, a.nrows), math.max(ncols, a.ncols), oldmat)
+    	val out = GMat.newOrCheckGMat(math.max(nrows, a.nrows), math.max(ncols, a.ncols), oldmat, GUID, a.GUID, op)
       Mat.nflops += scala.math.max(length, a.length)
       CUMAT.applyop(data, nrows, ncols, a.data, a.nrows, a.ncols, out.data, op)
       cudaDeviceSynchronize()
@@ -139,7 +140,7 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
   	if (nrows != a.nrows || ncols != a.ncols) {
   		throw new RuntimeException("dot dims not compatible")
   	} else {
-  		val out = GMat.newOrCheckGMat(1, ncols, oldmat) 
+  		val out = GMat.newOrCheckGMat(1, ncols, oldmat, GUID, a.GUID, "dot".hashCode) 
   		Mat.nflops += 2L * length
   	  CUMAT.reducebin1op(nrows, ncols, data, a.data, out.data, op_mul, op_add)
   	  out
@@ -160,14 +161,14 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
   
   def reduceOp(oldmat:Mat, dir:Int, op:Int):GMat = {
     if (dir == 1 || (dir == 0 && nrows > 1)) {
-      val out = GMat.newOrCheckGMat(1, ncols, oldmat) 
+      val out = GMat.newOrCheckGMat(1, ncols, oldmat, GUID, op) 
       out.clear
       CUMAT.reduce1op(nrows, ncols, data, out.data, op)
       Mat.nflops += length
       cudaDeviceSynchronize()
       out
     } else if (dir == 2 || dir == 0) {
-      val out = GMat.newOrCheckGMat(nrows, 1, oldmat)  
+      val out = GMat.newOrCheckGMat(nrows, 1, oldmat, GUID, op)  
       out.clear
       CUMAT.reduce2op(nrows, ncols, data, out.data, op)
       Mat.nflops += length
@@ -179,7 +180,7 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
   }
 
   def toFMat():FMat = {
-    val out = FMat(nrows, ncols)
+    val out = FMat.newOrCheckFMat(nrows, ncols, null, GUID, "toFMat".hashCode)
     cublasGetVector(nrows*ncols, Sizeof.FLOAT, data, 1, Pointer.to(out.data), 1)
     cudaDeviceSynchronize()
     out
@@ -301,7 +302,7 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
 	import GMat.BinOp._
 	
 	override def t = {
-    val out = GMat.newOrCheckGMat(mat.ncols, mat.nrows, omat)
+    val out = GMat.newOrCheckGMat(mat.ncols, mat.nrows, omat, mat.GUID, "pt".hashCode)
     CUMAT.transpose(mat.data, mat.nrows, out.data, mat.ncols, mat.nrows, mat.ncols)
     out
   }
@@ -481,23 +482,6 @@ object GMat {
     cudaDeviceSynchronize()
     bb
   }
-
-  def DDS(A:GMat, B:GMat, C:GSMat, oldmat:Mat):GSMat = {
-    if (A.nrows != B.nrows || C.nrows != A.ncols || C.ncols != B.ncols) {
-      throw new RuntimeException("dimensions mismatch")
-    }
-    val out = GSMat.newOrCheckGSMat(C, oldmat)
-    var err = cudaMemcpy(out.ir, C.ir, Sizeof.INT * C.nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
-    if (err != 0) throw new RuntimeException("CUDA DDS row copy error "+cudaGetErrorString(err))
-    err = cudaMemcpy(out.ic, C.ic, Sizeof.INT * C.nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
-    if (err != 0) throw new RuntimeException("CUDA DDS column copy error "+cudaGetErrorString(err))
-    out.clear;
-    err = CUMAT.dds(A.nrows, C.nnz, A.data, B.data, C.ir, C.ic, out.data)
-    if (err != 0) throw new RuntimeException("CUDA DDS kernel error "+cudaGetErrorString(err))
-    cudaDeviceSynchronize()
-    Mat.nflops += 2L * C.nnz * A.nrows
-    out    
-  }
   
   def GPUmult(a:FMat, b:FMat, omat:Mat, btrans:Boolean):FMat = {
     val bnrows = if (btrans) b.ncols else b.nrows
@@ -507,7 +491,7 @@ object GMat {
   	} else {
   	  val maxrows = 8192
   	  val maxcols = 8192
-  		val c = FMat.newOrCheckFMat(a.nrows, bncols, omat)
+  		val c = FMat.newOrCheckFMat(a.nrows, bncols, omat, a.GUID, b.GUID, "GPUmult".hashCode)
   	  val rblkk = if (Mat.hasCUDA > 1) 2 else 1
   	  val cblkk = if (Mat.hasCUDA > 3) 2 else 1
   	  val rblk = rblkk*(math.max(1, math.ceil(c.nrows/maxrows/rblkk).toInt))
@@ -697,6 +681,51 @@ object GMat {
       } else {
       	omat
       }
+      }
+    }
+  }  
+    
+  def newOrCheckGMat(nr:Int, nc:Int, outmat:Mat, matGuid:Long, opHash:Int):GMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheckGMat(nr, nc, outmat)
+    } else {
+      val key = (matGuid, opHash)
+      if (Mat.cache2.contains(key)) {
+      	newOrCheckGMat(nr, nc, Mat.cache2(key))
+      } else {
+        val omat = newOrCheckGMat(nr, nc, null)
+        Mat.cache2(key) = omat
+        omat
+      }
+    }
+  }
+  
+  def newOrCheckGMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, opHash:Int):GMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheckGMat(nr, nc, outmat)
+    } else {
+      val key = (guid1, guid2, opHash)
+      if (Mat.cache3.contains(key)) {
+      	newOrCheckGMat(nr, nc, Mat.cache3(key))
+      } else {
+        val omat = newOrCheckGMat(nr, nc, null)
+        Mat.cache3(key) = omat
+        omat
+      }
+    }
+  }
+    
+  def newOrCheckGMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):GMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheckGMat(nr, nc, outmat)
+    } else {
+      val key = (guid1, guid2, guid3, opHash)
+      if (Mat.cache4.contains(key)) {
+      	newOrCheckGMat(nr, nc, Mat.cache4(key))
+      } else {
+        val omat = newOrCheckGMat(nr, nc, null)
+        Mat.cache4(key) = omat
+        omat
       }
     }
   }

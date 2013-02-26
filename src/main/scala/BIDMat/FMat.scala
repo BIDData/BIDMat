@@ -11,11 +11,13 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
 
   def size() = length;
    
-  override def t:FMat = if (Mat.noMKL) { 
-    FMat(gt(null))
-  } else { 
-    val out = FMat(ncols, nrows)
-    somatcopy("C", "T", nrows, ncols, 1.0f, data, nrows, out.data, ncols)
+  override def t:FMat = {
+  	val out = FMat.newOrCheckFMat(ncols, nrows, null, GUID, "t".hashCode)      
+  	if (Mat.noMKL) { 
+  		gt(out)
+  	} else {
+  		somatcopy("C", "T", nrows, ncols, 1.0f, data, nrows, out.data, ncols)
+  	}
     out
   }
   
@@ -136,7 +138,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   def fDMult(a:FMat, outmat:Mat):FMat = { 
   	if (ncols == a.nrows) {
-  		val out = FMat.newOrCheckFMat(nrows, a.ncols, outmat)
+  		val out = FMat.newOrCheckFMat(nrows, a.ncols, outmat, GUID, a.GUID, "fDMult".hashCode)
   		Mat.nflops += 2L * length * a.ncols
   		if (Mat.noMKL) {
   			out.clear
@@ -164,7 +166,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   		}
   		out
   	} else if (ncols == 1 && nrows == 1){
-  		val out = FMat.newOrCheckFMat(a.nrows, a.ncols, outmat)
+  		val out = FMat.newOrCheckFMat(a.nrows, a.ncols, outmat, a.GUID, "fDMult1".hashCode)
   		Mat.nflops += a.length
   		var i = 0
   		val dvar = data(0)
@@ -174,7 +176,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   		}			    
   		out			  
   	} else if (a.ncols == 1 && a.nrows == 1){
-  		val out = FMat.newOrCheckFMat(nrows, ncols, outmat)
+  		val out = FMat.newOrCheckFMat(nrows, ncols, outmat, GUID, "fDMult2".hashCode)
   		Mat.nflops += length
   		var i = 0
   		val dvar = a.data(0)
@@ -230,7 +232,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     if (ncols != a.nrows) {
     	throw new RuntimeException("dimensions mismatch")
     } else {
-    	val out = FMat.newOrCheckFMat(nrows, a.ncols, outmat)
+    	val out = FMat.newOrCheckFMat(nrows, a.ncols, outmat, GUID, a.GUID, "fSMult".hashCode)
     	out.clear
     	Mat.nflops += 2L * nrows * a.nnz
     	val ioff = Mat.ioneBased;
@@ -265,7 +267,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def multT(a:SMat, outmat:Mat):FMat = {
     import edu.berkeley.bid.CBLAS._
     if (ncols == a.ncols) {
-    	val out = FMat.newOrCheckFMat(nrows, a.nrows, outmat)
+    	val out = FMat.newOrCheckFMat(nrows, a.nrows, outmat, GUID, a.GUID, "multT".hashCode)
     	out.clear
     	smcsrm(nrows, a.ncols, data, nrows, a.data, a.ir, a.jc, out.data, nrows)
     	Mat.nflops += 2L * a.nnz * nrows
@@ -278,7 +280,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def multT(a:FMat, outmat:Mat):FMat = {
     import edu.berkeley.bid.CBLAS._
     if (ncols == a.ncols) {
-    	val out = FMat.newOrCheckFMat(nrows, a.nrows, outmat)
+    	val out = FMat.newOrCheckFMat(nrows, a.nrows, outmat, GUID, a.GUID, "multT".hashCode)
     	sgemm(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.Trans,
   					nrows, a.nrows, ncols, 1.0f, data, nrows, a.data, a.nrows, 0, out.data, nrows)
     	Mat.nflops += 2L * length * a.nrows
@@ -293,7 +295,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   def DMult(aa:FMat, omat:Mat):FMat = 
   	if (ncols == aa.nrows) {
-  		val out = FMat.newOrCheckFMat(nrows, aa.ncols, omat) // Needs to be cleared
+  		val out = FMat.newOrCheckFMat(nrows, aa.ncols, omat, GUID, aa.GUID, "DMult".hashCode) // Needs to be cleared
   		out.clear
   		Mat.nflops += 2L * length * aa.ncols
   		for (i <- 0 until aa.ncols)
@@ -314,7 +316,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   def sDMult(aa:FMat, omat:Mat):FMat = 
   	if (ncols == aa.nrows) {
-  		val out = FMat.newOrCheckFMat(nrows, aa.ncols, omat)
+  		val out = FMat.newOrCheckFMat(nrows, aa.ncols, omat, GUID, aa.GUID, "sDmult".hashCode)
   		Mat.nflops += 2L * length * aa.ncols
   		for (i <- 0 until aa.ncols)
   			for (j <- 0 until nrows) {
@@ -339,7 +341,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
    	if (nrows != a.nrows || ncols != a.ncols) {
   		throw new RuntimeException("dot dims not compatible")
    	}	else {
-   		val out = FMat.newOrCheckFMat(1, ncols, omat)
+   		val out = FMat.newOrCheckFMat(1, ncols, omat, GUID, a.GUID, "dot".hashCode)
    		if (Mat.noMKL || length < 512) {
    			gdot(a, out)
    		} else {
@@ -361,13 +363,13 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
         if (a.nrows != a.ncols || ncols != a.nrows) {
           throw new RuntimeException("solve needs a square matrix")
         } else {
-          val out = FMat(nrows, ncols)
-          val tmp = new Array[Float](ncols*ncols)
+          val out = FMat.newOrCheckFMat(nrows, ncols, null, GUID, a.GUID, "solvel".hashCode)
+          val tmp = FMat.newOrCheckFMat(nrows, ncols, null, GUID, a.GUID, "solvel1".hashCode)
           System.arraycopy(a.data, 0, tmp, 0, a.length)
           System.arraycopy(data, 0, out.data, 0, length)
-          val ipiv = new Array[Int](ncols)
-          sgetrf(ORDER.RowMajor, ncols, ncols, tmp, ncols, ipiv)
-          sgetrs(ORDER.RowMajor, "N", ncols, nrows, tmp, ncols, ipiv, out.data, nrows)
+          val ipiv = IMat.newOrCheckIMat(1, ncols, null, GUID, a.GUID, "solvel2".hashCode).data
+          sgetrf(ORDER.RowMajor, ncols, ncols, tmp.data, ncols, ipiv)
+          sgetrs(ORDER.RowMajor, "N", ncols, nrows, tmp.data, ncols, ipiv, out.data, nrows)
           out
         }
       }
@@ -381,13 +383,13 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
         if (nrows != ncols || ncols != a.nrows) {
           throw new RuntimeException("solve needs a square matrix")
         } else {
-          val out = FMat(a.nrows, a.ncols)
-          val tmp = new Array[Float](ncols*ncols)
+          val out = FMat.newOrCheckFMat(nrows, ncols, null, GUID, a.GUID, "solver".hashCode)
+          val tmp = FMat.newOrCheckFMat(nrows, ncols, null, GUID, a.GUID, "solver1".hashCode)
           System.arraycopy(data, 0, tmp, 0, length)
           System.arraycopy(a.data, 0, out.data, 0, a.length)
-          val ipiv = new Array[Int](ncols)
-          sgetrf(ORDER.ColMajor, ncols, ncols, tmp, ncols, ipiv)
-          sgetrs(ORDER.ColMajor, "N", ncols, a.ncols, tmp, nrows, ipiv, out.data, nrows)
+          val ipiv = IMat.newOrCheckIMat(1, ncols, null, GUID, a.GUID, "solve2".hashCode).data
+          sgetrf(ORDER.ColMajor, ncols, ncols, tmp.data, ncols, ipiv)
+          sgetrs(ORDER.ColMajor, "N", ncols, a.ncols, tmp.data, nrows, ipiv, out.data, nrows)
           out
         }
       }
@@ -399,9 +401,9 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     if (nrows != ncols) {
       throw new RuntimeException("inv method needs a square matrix")
     } else {
-      val out = FMat(nrows, ncols)
+      val out = FMat.newOrCheckFMat(nrows, ncols, null, GUID, "inv".hashCode)
       System.arraycopy(data, 0, out.data, 0, length)
-      val ipiv = new Array[Int](nrows)
+      val ipiv = IMat.newOrCheckIMat(1, ncols, null, GUID, "inv2".hashCode).data
       sgetrf(ORDER.ColMajor, nrows, ncols, out.data, nrows, ipiv)
       sgetri(ORDER.ColMajor, nrows, out.data, nrows, ipiv)
       out
@@ -754,6 +756,51 @@ object FMat {
         outmat.recycle(nr, nc, 0).asInstanceOf[FMat]
       } else {
       	outmat.asInstanceOf[FMat]
+      }
+    }
+  }
+  
+  def newOrCheckFMat(nr:Int, nc:Int, outmat:Mat, matGuid:Long, opHash:Int):FMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheckFMat(nr, nc, outmat)
+    } else {
+      val key = (matGuid, opHash)
+      if (Mat.cache2.contains(key)) {
+      	newOrCheckFMat(nr, nc, Mat.cache2(key))
+      } else {
+        val omat = newOrCheckFMat(nr, nc, null)
+        Mat.cache2(key) = omat
+        omat
+      }
+    }
+  }
+  
+  def newOrCheckFMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, opHash:Int):FMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheckFMat(nr, nc, outmat)
+    } else {
+      val key = (guid1, guid2, opHash)
+      if (Mat.cache3.contains(key)) {
+      	newOrCheckFMat(nr, nc, Mat.cache3(key))
+      } else {
+        val omat = newOrCheckFMat(nr, nc, null)
+        Mat.cache3(key) = omat
+        omat
+      }
+    }
+  }
+    
+  def newOrCheckFMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):FMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheckFMat(nr, nc, outmat)
+    } else {
+      val key = (guid1, guid2, guid3, opHash)
+      if (Mat.cache4.contains(key)) {
+      	newOrCheckFMat(nr, nc, Mat.cache4(key))
+      } else {
+        val omat = newOrCheckFMat(nr, nc, null)
+        Mat.cache4(key) = omat
+        omat
       }
     }
   }

@@ -1,4 +1,5 @@
 package BIDMat
+import scala.collection.mutable.HashMap
 
 class Mat(nr:Int, nc:Int) {
   val nrows = nr
@@ -248,6 +249,14 @@ object Mat {
   final val MSEED:Int = 1452462553 
 
   final val myrand = new java.util.Random(MSEED)
+  
+  var useCache = false
+  
+  val cache2 = HashMap.empty[Tuple2[Long,Int],Mat]
+  
+  val cache3 = HashMap.empty[Tuple3[Long,Long,Int],Mat]
+  
+  val cache4 = HashMap.empty[Tuple4[Long,Long,Long,Int],Mat]
   
   var hasCUDA = 0
   
