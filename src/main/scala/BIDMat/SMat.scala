@@ -47,7 +47,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   		} else {
   			a match {
   			case aa:SMat => {
-  				val out = FMat.newOrCheckFMat(nrows, a.ncols, omat)
+  				val out = FMat.newOrCheckFMat(nrows, a.ncols, omat, GUID, a.GUID, "SMult".hashCode)
   				if (omat.asInstanceOf[AnyRef] != null) out.clear
   				var i = 0
   				while (i < a.ncols) {
@@ -66,7 +66,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   				out
   			}
   			case dd:FMat => {
-  				val out = FMat.newOrCheckFMat(nrows, a.ncols, omat)
+  				val out = FMat.newOrCheckFMat(nrows, a.ncols, omat, GUID, a.GUID, "SMult".hashCode)
   				if (omat.asInstanceOf[AnyRef] != null) out.clear
   				Mat.nflops += 2L * nnz * a.ncols
   				if (Mat.noMKL) {
@@ -107,7 +107,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   }
   
   def Tmult(a:FMat, omat:Mat):FMat = {
-	  val out = FMat.newOrCheckFMat(ncols, a.ncols, omat)
+	  val out = FMat.newOrCheckFMat(ncols, a.ncols, omat, GUID, a.GUID, "TMult".hashCode)
 	  if (omat.asInstanceOf[AnyRef] != null) out.clear
 	  var jc0 = jc
 	  var ir0 = ir
@@ -262,7 +262,7 @@ object SMat {
   
   def apply(a:Mat) = a match {
     case aa:SMat => aa
-    case aa:GSMat => aa.toSMat
+//    case aa:GSMat => aa.toSMat
     case aa:SDMat => aa.toSMat
   }
   
@@ -280,6 +280,52 @@ object SMat {
   	    }
   	  }
   	}
+  }
+  
+   
+  def newOrCheckSMat(mat:SMat, outmat:Mat, matGuid:Long, opHash:Int):SMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheckSMat(mat, outmat)
+    } else {
+      val key = (matGuid, opHash)
+      if (Mat.cache2.contains(key)) {
+      	newOrCheckSMat(mat, Mat.cache2(key))
+      } else {
+        val omat = newOrCheckSMat(mat, null)
+        Mat.cache2(key) = omat
+        omat
+      }
+    }
+  }
+  
+  def newOrCheckSMat(mat:SMat, outmat:Mat, guid1:Long, guid2:Long, opHash:Int):SMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheckSMat(mat, outmat)
+    } else {
+      val key = (guid1, guid2, opHash)
+      if (Mat.cache3.contains(key)) {
+      	newOrCheckSMat(mat, Mat.cache3(key))
+      } else {
+        val omat = newOrCheckSMat(mat, null)
+        Mat.cache3(key) = omat
+        omat
+      }
+    }
+  }
+    
+  def newOrCheckSMat(mat:SMat, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):SMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheckSMat(mat, outmat)
+    } else {
+      val key = (guid1, guid2, guid3, opHash)
+      if (Mat.cache4.contains(key)) {
+      	newOrCheckSMat(mat, Mat.cache4(key))
+      } else {
+        val omat = newOrCheckSMat(mat, null)
+        Mat.cache4(key) = omat
+        omat
+      }
+    }
   }
 }
 

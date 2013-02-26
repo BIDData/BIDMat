@@ -588,12 +588,12 @@ object MatFunctions {
     }
   }
   
-  def DDS(a:GMat,b:GMat,c:GSMat,omat:Mat):GSMat = GMat.DDS(a,b,c,omat)
+  def DDS(a:GMat,b:GMat,c:GSMat,omat:Mat):GSMat = GSMat.DDS(a,b,c,omat)
   
   def DDS(a:Mat, b:Mat, c:Mat, omat:Mat=null):Mat = {
     (a, b, c) match {
       case (a:FMat, b:FMat, c:SMat) => DDS(a, b, c, omat):SMat
-      case (a:GMat, b:GMat, c:GSMat) => GMat.DDS(a, b, c, omat):GSMat
+      case (a:GMat, b:GMat, c:GSMat) => GSMat.DDS(a, b, c, omat):GSMat
     }
   }
   

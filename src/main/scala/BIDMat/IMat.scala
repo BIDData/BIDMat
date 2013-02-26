@@ -109,7 +109,7 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
     a0 match {
     case a:IMat =>
 	    if (ncols == a.nrows) {
-	      val out = IMat.newOrCheckIMat(nrows, a.ncols, omat)
+	      val out = IMat.newOrCheckIMat(nrows, a.ncols, omat, GUID, a0.GUID, "iMult".hashCode)
 	      out.clear
 	    	Mat.nflops += 2L * length * a.ncols
 	    	for (i <- 0 until a.ncols)
@@ -424,6 +424,51 @@ object IMat {
       }
     }
 	}
+  
+  def newOrCheckIMat(nr:Int, nc:Int, outmat:Mat, matGuid:Long, opHash:Int):IMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheckIMat(nr, nc, outmat)
+    } else {
+      val key = (matGuid, opHash)
+      if (Mat.cache2.contains(key)) {
+      	newOrCheckIMat(nr, nc, Mat.cache2(key))
+      } else {
+        val omat = newOrCheckIMat(nr, nc, null)
+        Mat.cache2(key) = omat
+        omat
+      }
+    }
+  }
+  
+  def newOrCheckIMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, opHash:Int):IMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheckIMat(nr, nc, outmat)
+    } else {
+      val key = (guid1, guid2, opHash)
+      if (Mat.cache3.contains(key)) {
+      	newOrCheckIMat(nr, nc, Mat.cache3(key))
+      } else {
+        val omat = newOrCheckIMat(nr, nc, null)
+        Mat.cache3(key) = omat
+        omat
+      }
+    }
+  }
+    
+  def newOrCheckIMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):IMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheckIMat(nr, nc, outmat)
+    } else {
+      val key = (guid1, guid2, guid3, opHash)
+      if (Mat.cache4.contains(key)) {
+      	newOrCheckIMat(nr, nc, Mat.cache4(key))
+      } else {
+        val omat = newOrCheckIMat(nr, nc, null)
+        Mat.cache4(key) = omat
+        omat
+      }
+    }
+  }
 }
 
 
