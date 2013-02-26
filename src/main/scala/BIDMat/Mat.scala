@@ -340,7 +340,8 @@ object Mat {
   def copyListToFloatArray[T](a:List[T], b:Array[Float])(implicit numeric : Numeric[T]) = {
     var i = 0; 
     var todo = a.iterator
-    while (i < a.length) {
+    val alen = a.length
+    while (i < alen) {
       val h = todo.next
       b(i) = numeric.toFloat(h)
       i += 1
