@@ -6,6 +6,8 @@ class Mat(nr:Int, nc:Int) {
 
   def length = nr*nc
   
+  val GUID = Mat.myrand.nextLong
+  
   def notImplemented0(s:String):Mat = { 
     throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
   }
@@ -242,6 +244,10 @@ object Mat {
   var oneBased = 0
   
   var ioneBased = 1
+  
+  final val MSEED:Int = 1452462553 
+
+  final val myrand = new java.util.Random(MSEED)
   
   var hasCUDA = 0
   
