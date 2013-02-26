@@ -200,13 +200,13 @@ object Mop_Times extends Mop {
 }
 
 object Mop_Div extends Mop { 
-  override def fop(a:FMat, b:FMat, c:Mat):FMat = a / b
-  override def fop(a:FMat, b:SMat, c:Mat):FMat = {notImplemented0("/", a); a}
-  override def dop(a:DMat, b:DMat, c:Mat):DMat = a / b
-  override def cop(a:CMat, b:CMat, c:Mat):CMat = a / b
-  override def iop(a:IMat, b:IMat, c:Mat):IMat = {notImplemented0("/", a); a}
-  override def gop(a:GMat, b:GMat, c:Mat):GMat = {notImplemented0("/", a); a}
-  override def sop(a:SMat, b:SMat, c:Mat):SMat = {notImplemented0("/", a); a}
+  override def fop(a:FMat, b:FMat, c:Mat):FMat = a /< b
+  override def fop(a:FMat, b:SMat, c:Mat):FMat = {notImplemented0("/<", a); a}
+  override def dop(a:DMat, b:DMat, c:Mat):DMat = a /< b
+  override def cop(a:CMat, b:CMat, c:Mat):CMat = a /< b
+  override def iop(a:IMat, b:IMat, c:Mat):IMat = {notImplemented0("/<", a); a}
+  override def gop(a:GMat, b:GMat, c:Mat):GMat = {notImplemented0("/<", a); a}
+  override def sop(a:SMat, b:SMat, c:Mat):SMat = {notImplemented0("/<", a); a}
 }
 
 object Mop_RSolve extends Mop { 
@@ -230,13 +230,13 @@ object Mop_ETimes extends Mop {
 }
 
 object Mop_EDiv extends Mop { 
-  override def fop(a:FMat, b:FMat, c:Mat):FMat = Operator.getFPair(c, a) /@ b
-  override def fop(a:FMat, b:SMat, c:Mat):FMat = Operator.getFPair(c, a) /@ full(b)
-  override def dop(a:DMat, b:DMat, c:Mat):DMat = Operator.getDPair(c, a) /@ b
-  override def iop(a:IMat, b:IMat, c:Mat):IMat = {notImplemented0("/@", a); a}
-  override def cop(a:CMat, b:CMat, c:Mat):CMat = Operator.getCPair(c, a) /@ b
-  override def gop(a:GMat, b:GMat, c:Mat):GMat = Operator.getGPair(c, a) /@ b
-  override def sop(a:SMat, b:SMat, c:Mat):SMat = Operator.getSPair(c, a) /@ b
+  override def fop(a:FMat, b:FMat, c:Mat):FMat = Operator.getFPair(c, a) / b
+  override def fop(a:FMat, b:SMat, c:Mat):FMat = Operator.getFPair(c, a) / full(b)
+  override def dop(a:DMat, b:DMat, c:Mat):DMat = Operator.getDPair(c, a) / b
+  override def iop(a:IMat, b:IMat, c:Mat):IMat = {notImplemented0("/", a); a}
+  override def cop(a:CMat, b:CMat, c:Mat):CMat = Operator.getCPair(c, a) / b
+  override def gop(a:GMat, b:GMat, c:Mat):GMat = Operator.getGPair(c, a) / b
+  override def sop(a:SMat, b:SMat, c:Mat):SMat = Operator.getSPair(c, a) / b
 }
 
 object Mop_HCat extends Mop { 
