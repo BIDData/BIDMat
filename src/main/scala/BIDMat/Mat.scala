@@ -251,6 +251,8 @@ object Mat {
   
   var hasCUDA = 0
   
+  var useStdio = (! System.getProperty("os.name").startsWith("windows"))
+  
   def checkMKL:Unit = {
     if (!noMKL) {
       try {

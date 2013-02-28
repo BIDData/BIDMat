@@ -148,17 +148,21 @@ object AltaVista {
 	def pagerank_setup(fpath:String, size:Int, nfiles:Int, scalepath:String, iterpath:String) = {
 	  printf("setting up")
 	  val scale = zeros(size,1)
+	  val iter = zeros(1, size)
+	  val tmp1 = zeros(size, 1)
+	  val tmp2 = new FMat(1, size, tmp1.data)
 	  for (i <- 0 until nfiles) {
 	    val ss = HMat.loadSMat(fpath format i, false)
-	    scale ~ scale + sum(ss,2)
+	    scale ~ scale + sum(ss, 2, tmp1)  // add up outdegree
+	    iter ~ iter + sum(ss, 1, tmp2)   // add up indegree
 	    printf(".")
 	  }
 	  println("")
 	  max(scale, 1.0f, scale)
 	  scale ~ 1.0f /@ scale
 	  val scalet = new FMat(1, size, scale.data)
+	  iter ~ iter * (1.0f / sum(iter).v)
 	  HMat.saveFMat(scalepath, scalet, false)
-	  val iter = zeros(1, size)
 	  HMat.saveFMat(iterpath format 0, iter, false)
 	}
 	
@@ -178,12 +182,12 @@ object AltaVista {
 	  newiter ~ newiter + (alpha/size)
 	  tmp ~ newiter - iter
 	  val v = tmp ddot tmp
-	  println("resid = %f" format math.sqrt(v/size))
+	  println("resid = %g, time = %f, gf = %f" format (math.sqrt(v/size), gflop._2, gflop._1))
 	  HMat.saveFMat(iterpath format (iiter+1), newiter, false)
 	}
   
   def pagerank_run(dirname:String, fname:String, nparts:Int, niter:Int) = {
-    val alpha = 0.01f
+    val alpha = 0.1f
     val scalename = dirname + "pagerank/scale.fmat"
     val itername = dirname + "pagerank/iter%03d.fmat"
     flip
