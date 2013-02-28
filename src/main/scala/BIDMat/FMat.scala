@@ -238,8 +238,8 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     		if (1L*nrows*a.nnz > 100000L && Mat.numThreads > 1) {
     			val done = IMat(1,Mat.numThreads)
     			for (ithread <- 0 until Mat.numThreads) {
-    				val istart = ithread*a.ncols/Mat.numThreads
-    				val iend = (ithread+1)*a.ncols/Mat.numThreads 
+    				val istart = (1L*ithread*a.ncols/Mat.numThreads).toInt
+    				val iend = (1L*(ithread+1)*a.ncols/Mat.numThreads).toInt
     				actor {
     					fSMultHelper(a, out, istart, iend, ioff)
     					done(ithread) = 1
