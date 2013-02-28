@@ -231,11 +231,11 @@ object Mat {
   
   var compressionLevel = 3        // for zlib
   
-  var chunkSize = 1024*1024         // for either method
+  var chunkSize = 1024*1024       // for either method
   
   var szipBlock = 32              // szip block size
   
-  var numThreads = 8
+  var numThreads = 1
   
   var noMKL:Boolean = false
   
