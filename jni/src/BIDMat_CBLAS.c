@@ -310,11 +310,22 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_smcsrm
 	jfloat * C = (*env)->GetPrimitiveArrayCritical(env, j_C, JNI_FALSE);
 
         int ioff = jc[0];
-        int i, j, k;
+        int i, j, jj, k;
         for (i = 0; i < N; i++) {
           for (j = jc[i]-ioff; j < jc[i+1]-ioff; j++) {
-            k = ir[j]-ioff;
-            cblas_saxpy(M, B[j], A+(i*lda), 1, C+(k*ldc), 1);
+            jj = ir[j]-ioff;
+            if (M == 1) {
+              C[jj*ldc] += B[j] * A[i*lda];
+            } else if (M > 10) {
+              cblas_saxpy(M, B[j], A+(i*lda), 1, C+(jj*ldc), 1);
+            } else {
+              int iia = i*lda;
+              int jjc = jj*ldc;
+              float Bj = B[j];
+              for (k = 0; k < M; k++) {
+                C[jjc+k] += Bj * A[iia+k];
+              }
+            }            
           }
         }
 

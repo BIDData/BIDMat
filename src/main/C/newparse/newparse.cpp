@@ -4,6 +4,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 #include "newparse.h"
 #include "gzstream.h"
 
@@ -55,6 +56,54 @@ int checkword(char * str) {
   tokens.push_back(userno);
   return userno;
 }
+
+void addtok(int tok) {
+  tokens.push_back(tok | 0x80000000);
+}
+
+// For dates of form YYYY/MM/DD HH:MM:SS
+int parsedate(char * str) {
+  struct tm tnow;
+  int i, fields[6];
+  float secs;
+  char * next;
+  time_t tt;
+  const char * delims = "T-+/: ";
+  fields[0]=1900;
+  fields[1]=1;
+  fields[2]=0;
+  fields[3]=0;
+  fields[4]=0;
+  fields[5]=0;
+  next = strpbrk(str, delims);
+  for (i = 0; i < 5 && next && *next; i++) {
+    *next++ = 0;
+    next += strspn(next, delims);
+    sscanf(str, "%d", &fields[i]);
+    str = next;
+    next = strpbrk(str, delims);
+  }
+  if (str)
+    sscanf(str, "%f", &secs);
+  tnow.tm_year = fields[0]-1900;
+  tnow.tm_mon = fields[1]-1;
+  tnow.tm_mday = fields[2];
+  tnow.tm_hour = fields[3];
+  tnow.tm_min = fields[4];
+  tnow.tm_sec = (int)secs;
+  tnow.tm_isdst = 0;
+  tt = mktime(&tnow);
+  tnow.tm_year = 100;   // 
+  tnow.tm_mon = 0;
+  tnow.tm_mday = 1;
+  tnow.tm_hour = 0;
+  tnow.tm_min = 0;
+  tnow.tm_sec = 0;
+  tnow.tm_isdst = 0;
+  tt = tt - mktime(&tnow) + 24*3600;
+  return tt;
+}
+
 
 istream * open_in(string ifname) {
   istream * ifstr = NULL;
