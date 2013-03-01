@@ -364,6 +364,7 @@ class SparseMat[@specialized(Double,Float) T]
     else {
       explicitInds
       a.explicitInds
+      var myflops = 0L
       val out = new DenseMat[T](nrows, a.ncols)
       val ioff = Mat.ioneBased
       var i = 0
@@ -374,6 +375,7 @@ class SparseMat[@specialized(Double,Float) T]
       	  val ind = a.ir(j)-ioff
       	  val tval = a.data(j)
       	  var k = jc(ind)-ioff
+      	  myflops += 2*(jc(ind+1)-ioff - k)
       	  while (k < jc(ind+1)-ioff) {
       	    val indx = ir(k)-ioff + i0
       	    data(indx) = numeric.plus(data(indx), numeric.times(tval, data(k)))
@@ -383,6 +385,7 @@ class SparseMat[@specialized(Double,Float) T]
       	}
       	i += 1
       }
+      Mat.nflops += myflops
       out
     }
   

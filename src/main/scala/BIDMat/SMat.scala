@@ -50,12 +50,15 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   				val out = FMat.newOrCheckFMat(nrows, a.ncols, omat)
   				if (omat.asInstanceOf[AnyRef] != null) out.clear
   				var i = 0
+  				var myflops = 0L
   				while (i < a.ncols) {
   					var j =aa.jc(i)-ioff
   					while (j < aa.jc(i+1)-ioff) {
   						val dval = aa.data(j)
   						var k = jc(aa.ir(j)-ioff)-ioff
-  						while (k < jc(aa.ir(j)+1-ioff)-ioff) {
+  						var k1 = jc(aa.ir(j)+1-ioff)-ioff
+  						myflops += 2*(k1-k)
+  						while (k < k1) {
   							out.data(ir(k)-ioff+nrows*i) +=  data(k) * dval
   							k += 1
   						}
@@ -63,6 +66,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   					}
   					i += 1
   				}
+  				Mat.nflops += myflops
   				out
   			}
   			case dd:FMat => {
