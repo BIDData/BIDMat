@@ -896,10 +896,11 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   		Mat.nflops += 2 * length
   		var i = 0
   		while (i < ncols){
+  		  val ix = i*nrows
   		  var j = 0
   		  var sum = numeric.zero
   		  while (j < nrows) {
-  		  	sum = numeric.plus(sum, numeric.times(data(i),a.data(i)))
+  		  	sum = numeric.plus(sum, numeric.times(data(j+ix),a.data(j+ix)))
   		  	j += 1
   		  }
   		  out.data(i) = sum
@@ -1129,16 +1130,19 @@ object DenseMat {
    def sort2[@specialized(Double, Float, Int, Byte) T](a:DenseMat[T], asc:Boolean)
   (implicit classManifest:ClassManifest[T], ord:Ordering[T]): (DenseMat[T], IMat) = 
     if (a.nrows == 1) {
-      sort2(a, 2, asc)
+      sort2(a, 2, asc, null, null)
     } else {
-      sort2(a, 1, asc)
+      sort2(a, 1, asc, null, null)
     }
-
+   
   def sort2[@specialized(Double, Float, Int, Byte) T](a:DenseMat[T], ik:Int, asc:Boolean)
+  (implicit classManifest:ClassManifest[T], ord:Ordering[T]):(DenseMat[T], IMat) = sort2(a, ik, asc, null, null)
+
+  def sort2[@specialized(Double, Float, Int, Byte) T](a:DenseMat[T], ik:Int, asc:Boolean, odmat:Mat, oimat:Mat)
   (implicit classManifest:ClassManifest[T], ord:Ordering[T]):(DenseMat[T], IMat) = {
     import BIDMat.Sorting._
-    val out = new DenseMat[T](a.nrows, a.ncols)
-    val iout = IMat(a.nrows, a.ncols)
+    val out = DenseMat.newOrCheck[T](a.nrows, a.ncols, odmat)
+    val iout = IMat.newOrCheckIMat(a.nrows, a.ncols, oimat)
     if (ik == 1) {
       var i = 0
       while (i < a.ncols) {

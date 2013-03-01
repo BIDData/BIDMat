@@ -1,3 +1,4 @@
+//-*-coding:utf-8-*-
 package BIDMat
 import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.LAPACK._
@@ -237,8 +238,8 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     		if (1L*nrows*a.nnz > 100000L && Mat.numThreads > 1) {
     			val done = IMat(1,Mat.numThreads)
     			for (ithread <- 0 until Mat.numThreads) {
-    				val istart = ithread*a.ncols/Mat.numThreads
-    				val iend = (ithread+1)*a.ncols/Mat.numThreads 
+    				val istart = (1L*ithread*a.ncols/Mat.numThreads).toInt
+    				val iend = (1L*(ithread+1)*a.ncols/Mat.numThreads).toInt
     				actor {
     					fSMultHelper(a, out, istart, iend, ioff)
     					done(ithread) = 1
@@ -265,9 +266,13 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     import edu.berkeley.bid.CBLAS._
     if (ncols == a.ncols) {
     	val out = FMat.newOrCheckFMat(nrows, a.nrows, outmat)
-    	out.clear
-    	smcsrm(nrows, a.ncols, data, nrows, a.data, a.ir, a.jc, out.data, nrows)
     	Mat.nflops += 2L * a.nnz * nrows
+    	if (nrows == 1) {
+    		scscmv("N", a.nrows, a.ncols, 1.0f, "GLNF", a.data, a.ir, a.jc, data, 0f, out.data) 
+    	} else {
+    		out.clear
+    		smcsrm(nrows, a.ncols, data, nrows, a.data, a.ir, a.jc, out.data, nrows)
+    	}
     	out
     } else {
       throw new RuntimeException("xT dimensions mismatch")
@@ -441,6 +446,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def /  (b : FMat) = solvel(b)
   def \\ (b : FMat) = solver(b)
   def *@ (b : FMat) = ffMatOpv(b, FMat.vecMul _, null)
+//  def ∘ (b : FMat) = ffMatOpv(b, FMat.vecMul _, null)
   def /@ (b : FMat) = ffMatOpv(b, FMat.fVecDiv _, null)
 
   override def *  (b : Float) = fDMult(FMat.felem(b), null)
