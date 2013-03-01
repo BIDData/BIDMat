@@ -167,7 +167,7 @@ object AltaVista {
 	}
 	
   def pagerank_iter(fpath:String, size:Int, nfiles:Int, iiter:Int, scalepath:String, iterpath:String, alpha:Float) = {
-		printf("iteration %d" format iiter)
+		printf("iteration %d" format (iiter+1))
 	  val iter = HMat.loadFMat(iterpath format iiter, false)
 	  val scale = HMat.loadFMat(scalepath, false)
 	  iter ~ iter *@ scale
@@ -196,7 +196,7 @@ object AltaVista {
       pagerank_iter(dirname + fname, 1413511394, nparts, i, scalename, itername, alpha)      
     }
     val gf = gflop
-    println("gflops=%f, time=%f" format gf)
+    println("time=%f, gflops=%f" format (gf._2, gf._1))
   }
 	
 	def main(args:Array[String]):Unit = {

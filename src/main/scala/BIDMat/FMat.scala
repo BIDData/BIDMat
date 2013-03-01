@@ -266,9 +266,13 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     import edu.berkeley.bid.CBLAS._
     if (ncols == a.ncols) {
     	val out = FMat.newOrCheckFMat(nrows, a.nrows, outmat)
-    	out.clear
-    	smcsrm(nrows, a.ncols, data, nrows, a.data, a.ir, a.jc, out.data, nrows)
     	Mat.nflops += 2L * a.nnz * nrows
+    	if (nrows == 1) {
+    		scscmv("N", a.nrows, a.ncols, 1.0f, "GLNF", a.data, a.ir, a.jc, data, 0f, out.data) 
+    	} else {
+    		out.clear
+    		smcsrm(nrows, a.ncols, data, nrows, a.data, a.ir, a.jc, out.data, nrows)
+    	}
     	out
     } else {
       throw new RuntimeException("xT dimensions mismatch")

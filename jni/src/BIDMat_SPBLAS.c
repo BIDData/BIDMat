@@ -2,6 +2,8 @@
 #include <jni.h>
 #include <mkl.h>
 #include <mkl_spblas.h>
+#include <string.h>
+#include <omp.h>
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_SPBLAS_scsrmm 
 (JNIEnv * env, jobject calling_obj, jstring j_transa, jint m, jint n, jint k, jfloat alpha, jstring j_matdescra,
@@ -70,13 +72,20 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_SPBLAS_scscmv
 	jint * jc = (*env)->GetPrimitiveArrayCritical(env, j_jc, 0);
 	jfloat * x = (*env)->GetPrimitiveArrayCritical(env, j_x, 0);
 	jfloat * y = (*env)->GetPrimitiveArrayCritical(env, j_y, 0);
-	jint returnValue;
+	jint returnValue = 0;
+    int numthreads = 0;
 
-	if (transa != NULL && matdescra != NULL && vals != NULL && ir != NULL && jc != NULL && x != NULL && y != NULL) {
-	  MKL_SCSCMV(transa, &m, &k, &alpha, matdescra, vals, ir, jc, jc+1, x, &beta, y);
-	} else {
-	  returnValue = 1;
-	}
+	if (transa != NULL && matdescra != NULL && vals != NULL && ir != NULL && jc != NULL && x != NULL && y != NULL) {   
+      int cmp = (strcmp(transa, "n")==0 || strcmp(transa, "N")==0);
+      if (cmp) {
+        numthreads = omp_get_num_threads();
+        omp_set_num_threads(1);
+      }
+      MKL_SCSCMV(transa, &m, &k, &alpha, matdescra, vals, ir, jc, jc+1, x, &beta, y);
+      if (cmp) omp_set_num_threads(numthreads);
+    } else {
+      returnValue = 1;
+    }
 
 	(*env)->ReleasePrimitiveArrayCritical(env, j_y, y, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, j_x, x, 0);
@@ -186,9 +195,16 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_SPBLAS_dcscmv
 	jdouble * x = (*env)->GetPrimitiveArrayCritical(env, j_x, 0);
 	jdouble * y = (*env)->GetPrimitiveArrayCritical(env, j_y, 0);
 	jint returnValue = 0;
+    int numthreads = 0;
 
-	if (transa != NULL && matdescra != NULL && vals != NULL && ir != NULL && jc != NULL && x != NULL && y != NULL) {
+	if (transa != NULL && matdescra != NULL && vals != NULL && ir != NULL && jc != NULL && x != NULL && y != NULL) {   
+      int cmp = (strcmp(transa, "n")==0 || strcmp(transa, "N")==0);
+      if (cmp) {
+        numthreads = omp_get_num_threads();
+        omp_set_num_threads(1);
+      }
 	  MKL_DCSCMV(transa, &m, &k, &alpha, matdescra, vals, ir, jc, jc+1, x, &beta, y);
+      if (cmp) omp_set_num_threads(numthreads);
 	} else {
 	  returnValue = 1;
 	}
