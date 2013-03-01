@@ -235,7 +235,7 @@ object Mat {
   
   var szipBlock = 32              // szip block size
   
-  var numThreads = 1
+  var numThreads = Runtime.getRuntime().availableProcessors();
   
   var noMKL:Boolean = false
   
