@@ -15,20 +15,21 @@ object Sorting {
 	}
 
 	def quickSort2(a:Array[Float], ii:Array[Int], lo:Int, hi:Int, stride:Int, nthreads:Int):Unit = {
+			val	nth = 1
 			if ((hi - lo)/stride > 0) {
 				if ((hi - lo)/stride <= 16) {
 					isort(a, ii, lo, hi, stride)
 				} else {
 					val ip = partition(a, ii, lo, hi, stride)
-					if (nthreads > 1 && (hi-lo)/stride > 400) {
+					if (nth > 1 && (hi-lo)/stride > 400) {
 						var done0 = false
 						var done1 = false
-						actor { quickSort2(a, ii, lo, ip, stride, nthreads/2); done0 = true }
-						actor { quickSort2(a, ii, ip, hi, stride, nthreads/2); done1 = true }
+						actor { quickSort2(a, ii, lo, ip, stride, nth/2); done0 = true }
+						actor { quickSort2(a, ii, ip, hi, stride, nth/2); done1 = true }
 						while (!done0 || !done1) {Thread.`yield`}
 					} else {
-						quickSort2(a, ii, lo, ip, stride, nthreads/2)
-						quickSort2(a, ii, ip, hi, stride, nthreads/2)
+						quickSort2(a, ii, lo, ip, stride, nth/2)
+						quickSort2(a, ii, ip, hi, stride, nth/2)
 					}
 				}
 			}

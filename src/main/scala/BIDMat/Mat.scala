@@ -6,6 +6,8 @@ class Mat(nr:Int, nc:Int) {
 
   def length = nr*nc
   
+  val GUID = Mat.myrand.nextLong
+  
   def notImplemented0(s:String):Mat = { 
     throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
   }
@@ -229,11 +231,11 @@ object Mat {
   
   var compressionLevel = 3        // for zlib
   
-  var chunkSize = 1024*1024         // for either method
+  var chunkSize = 1024*1024       // for either method
   
   var szipBlock = 32              // szip block size
   
-  var numThreads = 8
+  var numThreads = 1
   
   var noMKL:Boolean = false
   
@@ -243,7 +245,13 @@ object Mat {
   
   var ioneBased = 1
   
+  final val MSEED:Int = 1452462553 
+
+  final val myrand = new java.util.Random(MSEED)
+  
   var hasCUDA = 0
+  
+  var useStdio = (! System.getProperty("os.name").startsWith("Windows"))
   
   def checkMKL:Unit = {
     if (!noMKL) {
@@ -340,7 +348,8 @@ object Mat {
   def copyListToFloatArray[T](a:List[T], b:Array[Float])(implicit numeric : Numeric[T]) = {
     var i = 0; 
     var todo = a.iterator
-    while (i < a.length) {
+    val alen = a.length
+    while (i < alen) {
       val h = todo.next
       b(i) = numeric.toFloat(h)
       i += 1

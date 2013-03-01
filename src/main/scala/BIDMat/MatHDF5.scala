@@ -23,7 +23,8 @@ object MatHDF5 {
 		if (dims(0)*dims(1) > 1024) {
 		  val cdims = new Array[Long](2)
 		  cdims(0) = math.max(1, math.min(dims(0), 1+Mat.chunkSize/dims(1)))
-		  cdims(1) = math.max(1, dims(1))
+		  cdims(1) = math.max(1, math.min(Mat.chunkSize, dims(1)))
+		  H5Pset_chunk(dplist_id, 2, cdims)
 		  if (Mat.compressType == 1) {
 		  	H5Pset_deflate(dplist_id, Mat.compressionLevel)
 		  } else {
@@ -429,7 +430,7 @@ object MatHDF5 {
   def hload(fname:String, vname:String):AnyRef = {
   val fapl = H5Pcreate(H5P_FILE_ACCESS)
 //  H5Pset_fapl_core(fapl, 16*1024*1024, false);  println("core driver")
-  H5Pset_fapl_stdio(fapl); //println("stdio driver")
+  if (Mat.useStdio) H5Pset_fapl_stdio(fapl); //println("stdio driver")                     // Not working on windows
 	val fid = H5Fopen(fname,H5F_ACC_RDONLY,fapl)
 	H5Pclose(fapl)
 	val mat = getMat(fid, vname)
@@ -440,7 +441,7 @@ object MatHDF5 {
   def hload(fname:String, vnames:List[String]):List[AnyRef] = {
   val fapl = H5Pcreate(H5P_FILE_ACCESS)
 //  H5Pset_fapl_core(fapl, 32*1024*1024, false);  println("core driver")
-  H5Pset_fapl_stdio(fapl); //println("stdio driver")
+  if (Mat.useStdio)  H5Pset_fapl_stdio(fapl); //println("stdio driver")
 	val fid = H5Fopen(fname,H5F_ACC_RDONLY,fapl)
 	H5Pclose(fapl)
 	val mats = vnames.map((vname) => getMat(fid, vname))
@@ -451,7 +452,7 @@ object MatHDF5 {
   def hsaveAsHDF5(fname:String, args:List[AnyRef]) = {
 	refcount = -1
 	val fapl_id = H5Pcreate (H5P_FILE_ACCESS)
-	H5Pset_fapl_stdio(fapl_id)
+	if (Mat.useStdio) H5Pset_fapl_stdio(fapl_id)
 	val fid = H5Fcreate(fname, H5F_ACC_TRUNC, H5P_DEFAULT, fapl_id)
 	H5Pclose(fapl_id)
 	saveAsImpl(fid, args)
@@ -461,7 +462,7 @@ object MatHDF5 {
   def hsaveAs(fname:String, args:List[AnyRef]) = {
 	refcount = -1
 	val fapl_id = H5Pcreate (H5P_FILE_ACCESS)
-	H5Pset_fapl_stdio(fapl_id)
+	if (Mat.useStdio) H5Pset_fapl_stdio(fapl_id)
 	val fcplist_id = H5Pcreate(H5P_FILE_CREATE)
 	H5Pset_userblock(fcplist_id, 512)
 	val fid = H5Fcreate(fname, H5F_ACC_TRUNC, fcplist_id, fapl_id)

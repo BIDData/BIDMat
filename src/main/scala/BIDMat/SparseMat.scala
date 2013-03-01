@@ -696,6 +696,24 @@ object SparseMat {
   def noRows[T](nr:Int, nc:Int, nnz0:Int)
   (implicit manifest:Manifest[T], numeric:Numeric[T]):SparseMat[T] = 
     new SparseMat[T](nr, nc, nnz0, null, new Array[Int](nc+1), new Array[T](nnz0))
+    
+  def remdups[@specialized(Double, Float) T](rows:Array[Int], cols:Array[Int], avals:Array[T]) 
+  (implicit manifest:Manifest[T], numeric:Numeric[T]):Int = {
+    var i = 0
+    var j = 0
+    while (i < cols.length) {
+      if (i == 0 || rows(i) != rows(i-1) || cols(i) != cols(i-1)) {
+      	cols(j) = cols(i)
+      	rows(j) = rows(i)
+      	avals(j) = avals(i)	
+      	j += 1
+      } else {
+    	  avals(j-1) = numeric.plus(avals(j-1), avals(i))
+      }
+      i += 1
+    }
+    j
+  }
   
   def sparseImpl[@specialized(Double, Float) T](rows:Array[Int], cols:Array[Int], vals:Array[T], nrows:Int, ncols:Int)
   (implicit manifest:Manifest[T], numeric:Numeric[T]):SparseMat[T] = {
@@ -710,19 +728,8 @@ object SparseMat {
       i += 1
     }
     val isort = BIDMat.Mat.ilexsort2(ocols, orows)
-    i = 0
-    var igood = 0
-    while (i < cols.length) {
-      if (i == 0 || orows(i) != orows(i-1) || ocols(i) != ocols(i-1)) {
-      	ocols(igood) = ocols(i)
-      	orows(igood) = orows(i)
-      	out.data(igood) = vals(isort(i))	
-      	igood += 1
-      } else {
-    	  out.data(igood-1) = numeric.plus(out.data(igood-1), vals(isort(i)))
-      }
-      i += 1
-    }
+    i = 0; while (i < orows.length) {out.data(i) = vals(isort(i)); i+=1}
+    val igood = remdups(orows, ocols, out.data)
     SparseMat.compressInds(ocols, ncols, out.jc, igood)
     out.sparseTrim
   }

@@ -185,6 +185,9 @@ object HMat {
     val ftype = hints(0)
     val nrows = hints(1)
     val ncols = hints(2)
+    if (ftype != 130) {
+      throw new RuntimeException("loadFMat expected type field 130 but was %d" format ftype)
+    }
     val out = FMat(nrows, ncols)
     readSomeFloats(gin, out.data, buff, ncols*nrows)
     gin.close
@@ -199,7 +202,10 @@ object HMat {
     val ftype = hints(0)
     val nrows = hints(1)
     val ncols = hints(2)
-    println("%d %d %d\n" format (ftype, nrows, ncols))
+    if (ftype != 110) {
+      throw new RuntimeException("loadIMat expected type field 110 but was %d" format ftype)
+    }
+//    println("%d %d %d\n" format (ftype, nrows, ncols))
     val out = IMat(nrows, ncols)
     readSomeInts(gin, out.data, buff, ncols*nrows)
     gin.close
@@ -214,6 +220,9 @@ object HMat {
     val ftype = hints(0)
     val nrows = hints(1)
     val ncols = hints(2)
+    if (ftype != 140) {
+      throw new RuntimeException("loadDMat expected type field 140 but was %d" format ftype)
+    }
     val out = DMat(nrows, ncols)
     readSomeDoubles(gin, out.data, bytebuff, ncols*nrows)
     gin.close
@@ -271,6 +280,9 @@ object HMat {
     val nrows = hints(1)
     val ncols = hints(2)
     val nnz = hints(3)
+    if (ftype != 231 && ftype != 331) {
+      throw new RuntimeException("loadSMat expected type field 231 or 331 but was %d" format ftype)
+    }
     val norows:Boolean = (ftype/100 == 3)
     val out = if (norows) {
     	SMat.SnoRows(nrows, ncols, nnz)
@@ -297,6 +309,9 @@ object HMat {
     val nrows = hints(1)
     val ncols = hints(2)
     val nnz = hints(3)
+    if (ftype != 201 && ftype != 301) {
+      throw new RuntimeException("loadBMat expected type field 201 or 301 but was %d" format ftype)
+    }
     val norows:Boolean = (ftype/100 == 3)
     val out = if (norows) {
     	BMat.SnoRows(nrows, ncols, nnz)
