@@ -39,11 +39,15 @@ if [ "$OS" = "apple" ] ; then
         NVCCFLAGS="-c -gencode arch=compute_20,code=sm_20 \
           -gencode arch=compute_30,code=sm_30 \
           --machine 64  -Xcompiler \"-fPIC -c -O2 -g -DNDEBUG\""
-        SUBLIB=osx32
+        SUBLIB=osx64
+#        SUBLIB=osx32
+	ARCHD=intel64
+	SUBARCH=/lp64
+#	ARCHD=ia32
 	OBJ="o"
 	OUTFLG="-o "
 	CPPFLAGS="-fPIC -c -O2 -DNDEBUG -I$JAVA_HOME/Headers -I$JCUDA_HOME/CommonJNI/src -I$CUDA_HOME/include"
-	CFLAGS="-fPIC -c -O2 -DNDEBUG -std=c99 -I$JAVA_HOME/Headers -I$MKL_ROOT/include -I$MKL_ROOT/include/ia32"
+	CFLAGS="-fPIC -c -O2 -DNDEBUG -std=c99 -I$JAVA_HOME/Headers -I$MKL_ROOT/include -I$MKL_ROOT/include/${ARCHD}${SUBARCH}"
 	LB="ar rc"    
 	GLD="icc -bundle -static-intel"
 	LD="icc -bundle -static-intel"
@@ -55,14 +59,14 @@ if [ "$OS" = "apple" ] ; then
 	LAPACK_INCLUDES=""
 	FORTRAN_LIBS="-lgfortran"
 	if [ "$PARLIB" = "sequential" ] ; then
-	MKL_LIBS="-L$JAVA_HOME/Libraries -L/opt/intel/composerxe/lib/ia32 \ 
+	MKL_LIBS="-L$JAVA_HOME/Libraries -L/opt/intel/composerxe/lib/${ARCHD} \ 
             $MKL_ROOT/lib/libmkl_intel_lp64.a $MKL_ROOT/lib/libmkl_sequential.a \
             $MKL_ROOT/lib/libmkl_core.a \
             $MKL_ROOT/lib/libmkl_intel_lp64.a $MKL_ROOT/lib/libmkl_sequential.a \
             $MKL_ROOT/lib/libmkl_core.a \
             -lpthread -lm  -framework JavaVM"
         else 
-	MKL_LIBS="-L$JAVA_HOME/Libraries -L/opt/intel/composerxe/lib/ia32 \
+	MKL_LIBS="-L$JAVA_HOME/Libraries -L/opt/intel/composerxe/lib/${ARCHD} \
             $MKL_ROOT/lib/libmkl_intel_lp64.a $MKL_ROOT/lib/libmkl_intel_thread.a \
             $MKL_ROOT/lib/libmkl_core.a \
             $MKL_ROOT/lib/libmkl_intel_lp64.a $MKL_ROOT/lib/libmkl_intel_thread.a \
