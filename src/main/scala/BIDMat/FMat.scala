@@ -91,7 +91,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
   
   override def copy = {
-  	val out = FMat(nrows, ncols)
+  	val out = FMat.newOrCheckFMat(nrows, ncols, null, GUID, "copy".hashCode)
   	System.arraycopy(data, 0, out.data, 0, length)
   	out
   }
@@ -116,18 +116,14 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
    
   override def zeros(nr:Int, nc:Int) = {
-    val out = FMat.newOrCheckFMat(nr, nc, null, nr, nc, "FMat.zeros".hashCode)
+    val out = FMat(nr, nc)
   	out.clear
   	out
   }
   
   override def ones(nr:Int, nc:Int) = {
-  	val out = FMat.newOrCheckFMat(nr, nc, null, nr, nc, "FMat.ones".hashCode)
-  	var i = 0
-  	while (i < out.length) {
-  	  out(i) = 1
-  	  i += 1
-  	}
+  	val out = FMat(nr, nc)
+  	Arrays.fill(out.data, 1.0f)
   	out
   }
    
@@ -168,7 +164,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   		}
   		out
   	} else if (ncols == 1 && nrows == 1){
-  		val out = FMat.newOrCheckFMat(a.nrows, a.ncols, outmat, a.GUID, "dMult1".hashCode)
+  		val out = FMat.newOrCheckFMat(a.nrows, a.ncols, outmat, GUID, a.GUID, "dMult".hashCode)
   		Mat.nflops += a.length
   		var i = 0
   		val dvar = data(0)
@@ -178,7 +174,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   		}			    
   		out			  
   	} else if (a.ncols == 1 && a.nrows == 1){
-  		val out = FMat.newOrCheckFMat(nrows, ncols, outmat, GUID, "dMult2".hashCode)
+  		val out = FMat.newOrCheckFMat(nrows, ncols, outmat, GUID, a.GUID, "dMult".hashCode)
   		Mat.nflops += length
   		var i = 0
   		val dvar = a.data(0)
@@ -372,7 +368,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
         } else {
           val out = FMat.newOrCheckFMat(nrows, ncols, null, GUID, a.GUID, "solvel".hashCode)
           val tmp = FMat.newOrCheckFMat(nrows, ncols, null, GUID, a.GUID, "solvel1".hashCode)
-          System.arraycopy(a.data, 0, tmp, 0, a.length)
+          System.arraycopy(a.data, 0, tmp.data, 0, a.length)
           System.arraycopy(data, 0, out.data, 0, length)
           val ipiv = IMat.newOrCheckIMat(1, ncols, null, GUID, a.GUID, "solvel2".hashCode).data
           sgetrf(ORDER.RowMajor, ncols, ncols, tmp.data, ncols, ipiv)
@@ -392,7 +388,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
         } else {
           val out = FMat.newOrCheckFMat(nrows, ncols, null, GUID, a.GUID, "solver".hashCode)
           val tmp = FMat.newOrCheckFMat(nrows, ncols, null, GUID, a.GUID, "solver1".hashCode)
-          System.arraycopy(data, 0, tmp, 0, length)
+          System.arraycopy(data, 0, tmp.data, 0, length)
           System.arraycopy(a.data, 0, out.data, 0, a.length)
           val ipiv = IMat.newOrCheckIMat(1, ncols, null, GUID, a.GUID, "solve2".hashCode).data
           sgetrf(ORDER.ColMajor, ncols, ncols, tmp.data, ncols, ipiv)
@@ -762,7 +758,7 @@ object FMat {
   }
 
   def felem(x:Float) = {
-    val out = FMat(1,1)
+    val out = FMat.newOrCheckFMat(1,1,null,x.hashCode,"felem".hashCode)
     out.data(0) = x
     out
   }
