@@ -69,14 +69,14 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
       }
       out
     }	else if (ncols == 1 && nrows == 1) {
-      val out = GMat.newOrCheckGMat(a.nrows, a.ncols, oldmat, a.GUID, "GMult1".hashCode)
+      val out = GMat.newOrCheckGMat(a.nrows, a.ncols, oldmat, GUID, a.GUID, "GMult1".hashCode)
       Mat.nflops += 1L * a.length
       out.clear
       cublasSaxpy(a.length, this.dv.asInstanceOf[Float], a.data, 1, out.data, 1)
       cudaDeviceSynchronize()
       out
     } else if (a.ncols == 1 && a.nrows == 1) {
-      val out = GMat.newOrCheckGMat(nrows, ncols, oldmat, GUID, "GMult2".hashCode)
+      val out = GMat.newOrCheckGMat(nrows, ncols, oldmat, GUID, a.GUID, "GMult2".hashCode)
       Mat.nflops += 1L * length
       out.clear
       cublasSaxpy(length, a.dv.asInstanceOf[Float], data, 1, out.data, 1)
@@ -263,9 +263,9 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
   override def +  (b : Mat):Mat = applyMat(this, b, null, Mop_Plus)
   override def -  (b : Mat):Mat = applyMat(this, b, null, Mop_Minus)
   override def *  (b : Mat):Mat = applyMat(this, b, null, Mop_Times)
-  override def *  (b : Float):Mat = applyMat(this, GMat(FMat.felem(b)), null, Mop_Times)
-  override def *  (b : Int):Mat = applyMat(this, GMat(FMat.felem(b)), null, Mop_Times)
-  override def *  (b : Double):Mat = applyMat(this, GMat(FMat.felem(b.asInstanceOf[Float])), null, Mop_Times)
+  override def *  (b : Float):Mat = applyMat(this, GMat(FMat.elem(b)), null, Mop_Times)
+  override def *  (b : Int):Mat = applyMat(this, GMat(FMat.elem(b)), null, Mop_Times)
+  override def *  (b : Double):Mat = applyMat(this, GMat(FMat.elem(b.asInstanceOf[Float])), null, Mop_Times)
   override def *^  (b : Mat) = b match {
     case bb:GSMat => GSMultT(bb, null)
     case bb:GMat => GMultT(bb, null)
@@ -450,7 +450,7 @@ object GMat {
   
   def gones(nr:Int, nc:Int) = {
     val out = GMat(nr, nc)
-    val one = GMat(FMat.felem(1))
+    val one = GMat(FMat.elem(1))
     cublasScopy(out.length, one.data, 0, out.data, 1)
     cudaDeviceSynchronize()
     out
@@ -480,7 +480,7 @@ object GMat {
   }
   
   def apply(a:Float):GMat = {
-    GMat(FMat.felem(a))
+    GMat(FMat.elem(a))
   }
   
   def fromFMat(a:FMat, b:GMat):GMat = {

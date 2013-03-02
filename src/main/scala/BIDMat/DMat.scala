@@ -419,7 +419,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   def <=  (b : DMat) = ddMatOp(b, (x:Double, y:Double) => if (x <= y) 1.0 else 0.0, null)
   def !=  (b : DMat) = ddMatOp(b, (x:Double, y:Double) => if (x != y) 1.0 else 0.0, null)
 
-  override def *  (b : Double) = fDMult(DMat.elem(b), null)
+  override def *  (b : Double) = fDMult(DMat.delem(b), null)
   override def +  (b : Double) = ddMatOpScalarv(b, DMat.vecAdd _, null)
   override def -  (b : Double) = ddMatOpScalarv(b, DMat.vecSub _, null)
   override def *@ (b : Double) = ddMatOpScalarv(b, DMat.vecMul _, null)
@@ -434,7 +434,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   override def <=  (b : Double) = ddMatOpScalar(b, (x:Double, y:Double) => if (x <= y) 1.0 else 0.0, null)
   override def !=  (b : Double) = ddMatOpScalar(b, (x:Double, y:Double) => if (x != y) 1.0 else 0.0, null) 
   
-  override def *  (b : Float) = fDMult(DMat.elem(b), null)
+  override def *  (b : Float) = fDMult(DMat.delem(b), null)
   override def +  (b : Float) = ddMatOpScalarv(b, DMat.vecAdd _, null)
   override def -  (b : Float) = ddMatOpScalarv(b, DMat.vecSub _, null)
   override def *@ (b : Float) = ddMatOpScalarv(b, DMat.vecMul _, null)
@@ -450,10 +450,10 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   override def !=  (b : Float) = ddMatOpScalar(b, (x:Double, y:Double) => if (x != y) 1.0 else 0.0, null)
 
   def \ (b: DMat) = DMat(ghorzcat(b))
-  def \ (b:Double) = DMat(ghorzcat(DMat.elem(b)))
+  def \ (b:Double) = DMat(ghorzcat(DMat.delem(b)))
 
   def on (b: DMat) = DMat(gvertcat(b))
-  def on (b: Double) = vertcat(DMat.elem(b))
+  def on (b: Double) = vertcat(DMat.delem(b))
   
   def ~ (b : DMat):DPair = new DPair(this, b)
   def ~ (b : SDMat):SDPair = new SDPair(this, b)
@@ -576,8 +576,8 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   
   def dot (b :DMat) = mat.dot(b, omat)
 
-  override def * (b : Double) = mat.fDMult(DMat.elem(b), omat) 
-  override def * (b : Float) = mat.fDMult(DMat.elem(b), omat)
+  override def * (b : Double) = mat.fDMult(DMat.delem(b), omat) 
+  override def * (b : Float) = mat.fDMult(DMat.delem(b), omat)
   override def + (b : Double) = mat.ddMatOpScalarv(b, DMat.vecAdd _, omat)
   override def - (b : Double) = mat.ddMatOpScalarv(b, DMat.vecSub _, omat)
   override def *@ (b : Double) = mat.ddMatOpScalarv(b, DMat.vecMul _, omat)
@@ -681,7 +681,7 @@ object DMat {
   }
 
 
-  def elem(x:Double) = {
+  def delem(x:Double) = {
     val out = DMat.newOrCheckDMat(1,1,null,x.hashCode,"delem".hashCode)
     out.data(0) = x
     out
