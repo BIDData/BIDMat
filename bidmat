@@ -1,5 +1,5 @@
 #!/bin/bash
-export JAVA_OPTS="-Xmx32G -Xms128M -Dfile.encoding=UTF-8" # Set as much memory as possible
+export JAVA_OPTS="-Xmx4G -Xms128M -Dfile.encoding=UTF-8" # Set as much memory as possible
 # export JAVA_HOME="" # Set here if not set in environment
 BIDMAT_ROOT="${BASH_SOURCE[0]}"
 if [ ! `uname` = "Darwin" ]; then

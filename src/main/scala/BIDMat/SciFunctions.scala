@@ -74,6 +74,17 @@ object SciFunctions {
   	JCuda.cudaDeviceCanAccessPeer(ar, j, i)
   	(v0, ar(0))
   }
+  
+  def setseed(seed:Int):Unit = {
+    myrand.setSeed(seed)
+    if (stream != null) {
+      vslDeleteStream(stream)
+      vslNewStream(stream, BRNG, seed)
+    }
+    if (Mat.hasCUDA > 0) {
+    	curandSetPseudoRandomGeneratorSeed(cudarng, seed)
+    }
+  }
     
   def norm(a:FMat) = math.sqrt(sdot(a.length, a.data, 1, a.data, 1)).toFloat
   
