@@ -451,21 +451,21 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def ∘ (b : FMat) = ffMatOpv(b, FMat.vecMul _, null)
   def ∙ (b:FMat):FMat = dot(b)
 
-  override def *  (b : Float) = fDMult(FMat.felem(b), null)
+  override def *  (b : Float) = fDMult(FMat.elem(b), null)
   override def +  (b : Float) = ffMatOpScalarv(b, FMat.vecAdd _, null)
   override def -  (b : Float) = ffMatOpScalarv(b, FMat.vecSub _, null)
   override def *@ (b : Float) = ffMatOpScalarv(b, FMat.vecMul _, null)
   override def ∘  (b : Float) = ffMatOpScalarv(b, FMat.vecMul _, null)
   override def /  (b : Float) = ffMatOpScalarv(b, FMat.fVecDiv _, null)
 
-  override def *  (b : Int) = fDMult(FMat.felem(b), null)
+  override def *  (b : Int) = fDMult(FMat.elem(b), null)
   override def +  (b : Int) = ffMatOpScalarv(b, FMat.vecAdd _, null)
   override def -  (b : Int) = ffMatOpScalarv(b, FMat.vecSub _, null)
   override def *@ (b : Int) = ffMatOpScalarv(b, FMat.vecMul _, null)
   override def ∘  (b : Int) = ffMatOpScalarv(b, FMat.vecMul _, null)
   override def /  (b : Int) = ffMatOpScalarv(b, FMat.fVecDiv _, null)
 
-  override def *  (b : Double) = fDMult(FMat.felem(b.asInstanceOf[Float]), null)
+  override def *  (b : Double) = fDMult(FMat.elem(b.asInstanceOf[Float]), null)
   override def +  (b : Double) = ffMatOpScalarv(b.asInstanceOf[Float], FMat.vecAdd _, null)
   override def -  (b : Double) = ffMatOpScalarv(b.asInstanceOf[Float], FMat.vecSub _, null)
   override def *@ (b : Double) = ffMatOpScalarv(b.asInstanceOf[Float], FMat.vecMul _, null)
@@ -497,10 +497,10 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   override def !=  (b : Int) = ffMatOpScalar(b, (x:Float, y:Float) => if (x != y) 1f else 0f, null) 
   
   def \ (b: FMat) = horzcat(b)
-  def \ (b: Float) = horzcat(FMat.felem(b))
+  def \ (b: Float) = horzcat(FMat.elem(b))
   
   def on (b: FMat) = vertcat(b)
-  def on (b: Float) = vertcat(FMat.felem(b))
+  def on (b: Float) = vertcat(FMat.elem(b))
   
   def ~ (b : FMat):FPair = new FPair(this, b)
   def ~ (b : SMat):SPair = new SPair(this, b)
@@ -634,8 +634,8 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   
   def dot (b :FMat) = mat.dot(b, omat)
   
-  override def * (b : Float) = mat.fDMult(FMat.felem(b), omat)
-  override def * (b : Double) = mat.fDMult(FMat.felem(b.asInstanceOf[Float]), omat)
+  override def * (b : Float) = mat.fDMult(FMat.elem(b), omat)
+  override def * (b : Double) = mat.fDMult(FMat.elem(b.asInstanceOf[Float]), omat)
   override def + (b : Float) = mat.ffMatOpScalarv(b, FMat.vecAdd _, omat)
   override def - (b : Float) = mat.ffMatOpScalarv(b, FMat.vecSub _, omat)
   override def *@ (b : Float) = mat.ffMatOpScalarv(b, FMat.vecMul _, omat)
@@ -650,7 +650,7 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   override def <= (b : Float) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x <= y) 1.0f else 0.0f, omat)
   override def != (b : Float) = mat.ffMatOpScalar(b, (x:Float, y:Float) => if (x != y) 1.0f else 0.0f, omat)  
     
-  override def * (b : Int) = mat.fDMult(FMat.felem(b), omat)
+  override def * (b : Int) = mat.fDMult(FMat.elem(b), omat)
   override def + (b : Int) = mat.ffMatOpScalarv(b, FMat.vecAdd _, omat)
   override def - (b : Int) = mat.ffMatOpScalarv(b, FMat.vecSub _, omat)
   override def *@ (b : Int) = mat.ffMatOpScalarv(b, FMat.vecMul _, omat)
@@ -757,7 +757,7 @@ object FMat {
     0
   }
 
-  def felem(x:Float) = {
+  def elem(x:Float) = {
     val out = FMat.newOrCheckFMat(1,1,null,x.hashCode,"felem".hashCode)
     out.data(0) = x
     out
