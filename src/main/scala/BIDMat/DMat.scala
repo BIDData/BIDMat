@@ -98,24 +98,19 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   }
   
   override def copy = {
-  	val out = DMat(nrows, ncols)
+  	val out = DMat.newOrCheckDMat(nrows, ncols, null, GUID, "copy".hashCode)
   	System.arraycopy(data, 0, out.data, 0, length)
   	out
   }
   
   override def zeros(nr:Int, nc:Int) = {
-    val out = DMat.newOrCheckDMat(nr, nc, null, nr, nc, "DMat.zeros".hashCode)
-  	out.clear
+    val out = DMat(nr, nc)
   	out
   }
   
   override def ones(nr:Int, nc:Int) = {
-  	val out = DMat.newOrCheckDMat(nr, nc, null, nr, nc, "DMat.ones".hashCode)
-  	var i = 0
-  	while (i < out.length) {
-  	  out(i) = 1
-  	  i += 1
-  	}
+  	val out = DMat(nr, nc)
+  	Arrays.fill(out.data, 1)
   	out
   }
   
@@ -158,7 +153,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
 	  }
 	  out
 	} else if (ncols == 1 && nrows == 1) {
-	  val out = DMat.newOrCheckDMat(aa.nrows, aa.ncols, outmat, aa.GUID, "dMult".hashCode)
+	  val out = DMat.newOrCheckDMat(aa.nrows, aa.ncols, outmat, GUID, aa.GUID, "dMult".hashCode)
 	  Mat.nflops += aa.length
 	  var i = 0
 	  val dvar = data(0)
@@ -168,7 +163,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
 	  }			    
 	  out			  
 	} else if (aa.ncols == 1 && aa.nrows == 1) {
-	  val out = DMat.newOrCheckDMat(nrows, ncols, outmat, GUID, "dMult".hashCode)
+	  val out = DMat.newOrCheckDMat(nrows, ncols, outmat, GUID, aa.GUID, "dMult".hashCode)
 	  Mat.nflops += length
 	  var i = 0
 	  val dvar = aa.data(0)

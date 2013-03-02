@@ -226,18 +226,20 @@ class SparseMat[@specialized(Double,Float) T]
   /*
    * Implement slicing, a(iv,jv) where iv and jv are vectors, using ? as wildcard
    */
-  def gapply(iv:IMat, jv:IMat):SparseMat[T] = 
+  def gapply(iv:IMat, jv:IMat):SparseMat[T] = {
+    val colinds = DenseMat.getInds(jv, ncols) 
+    val colsize = jv match {case dmy:MatrixWildcard => ncols; case _ => jv.length}
   	iv match {
-  	case aa:MatrixWildcard => {
-  		val colinds = DenseMat.getInds(jv, ncols) 
+  	case dummy:MatrixWildcard => {
+
   		val ioff = Mat.ioneBased
   		val off = Mat.oneBased
   		var tnnz = 0
-  		for (i <- 0 until colinds.length) tnnz += jc(colinds(i)-off+1) - jc(colinds(i)-off)
+  		for (i <- 0 until colsize) tnnz += jc(colinds(i)-off+1) - jc(colinds(i)-off)
   		val out = if (ir != null) {
-      	SparseMat.newOrCheck(nrows, colinds.length, tnnz, null, false, GUID, iv.GUID, jv.GUID, "gapply3".hashCode)
+      	SparseMat.newOrCheck(nrows, colsize, tnnz, null, false, GUID, iv.GUID, jv.GUID, "gapply3".hashCode)
       } else {
-        SparseMat.newOrCheck(nrows, colinds.length, tnnz, null, true, GUID, iv.GUID, jv.GUID, "gapply3".hashCode)
+        SparseMat.newOrCheck(nrows, colsize, tnnz, null, true, GUID, iv.GUID, jv.GUID, "gapply3".hashCode)
       }
   		var inext = 0
   		var i = 0
@@ -255,13 +257,21 @@ class SparseMat[@specialized(Double,Float) T]
   	case _ => {
   	  explicitInds
   	  val off = Mat.oneBased
-  	  val rowinds = if (off == 0) DenseMat.getInds(iv, nrows) else SparseMat.decInds(DenseMat.getInds(iv, nrows));
-  		val smat = SparseMat.sparseImpl[Int]((0 until iv.length).toArray, rowinds, Array.fill[Int](iv.length)(1), iv.length, nrows)
+  	  val ioff = Mat.ioneBased 
+  	  val smat = SparseMat.newOrCheck(iv.length, nrows, iv.length, null, false, GUID, iv.GUID, jv.GUID, "gapply_x".hashCode)
+  	  val im = IMat.newOrCheckIMat(iv.length, 1, null, GUID, iv.GUID, jv.GUID, "gapply_i".hashCode)
+  	  var i = 0; 
+  	  while (i < iv.length) {
+  	    smat.ir(i) = i+ioff
+  	    im.data(i) = iv.data(i)
+  	    i+=1
+  	  }
+  	  Mat.ilexsort2(im.data, smat.ir)
+  	  SparseMat.compressInds(im.data, nrows, smat.jc, iv.length)
   		val colinds = DenseMat.getInds(jv, ncols) 
-  		val ioff = Mat.ioneBased
   		var tnnz = 0
-  		var i = 0
-  		while (i < colinds.length) {
+  		i = 0
+  		while (i < colsize) {
   			var j = jc(colinds(i)-off)-ioff
   			while (j < jc(colinds(i)-off+1)-ioff) {
   				tnnz += smat.jc(ir(j)+1-ioff) - smat.jc(ir(j)-ioff)
@@ -269,11 +279,11 @@ class SparseMat[@specialized(Double,Float) T]
   			}
   			i += 1
   		}
-  		val out = SparseMat[T](iv.length, colinds.length, tnnz)
+  		val out = SparseMat.newOrCheck(iv.length, colsize, tnnz, null, false, GUID, iv.GUID, jv.GUID, "gapply_y".hashCode)
   		tnnz = 0
   		i = 0
   		out.jc(0) = ioff
-  		while (i < colinds.length) {
+  		while (i < colsize) {
   			var j = jc(colinds(i)-off)-ioff
   			while (j < jc(colinds(i)-off+1)-ioff) {
   				val dval = data(j)
@@ -292,6 +302,7 @@ class SparseMat[@specialized(Double,Float) T]
   		out
   	}
     }  
+  }
   
   def gapply(iv:Int, jv:IMat):SparseMat[T] = gapply(IMat.ielem(iv), jv)
   
@@ -365,7 +376,7 @@ class SparseMat[@specialized(Double,Float) T]
       explicitInds
       a.explicitInds
       var myflops = 0L
-      val out = new DenseMat[T](nrows, a.ncols)
+      val out = DenseMat.newOrCheck(nrows, a.ncols, null, GUID, a.GUID, "sMult".hashCode)
       val ioff = Mat.ioneBased
       var i = 0
       while (i < a.ncols) {

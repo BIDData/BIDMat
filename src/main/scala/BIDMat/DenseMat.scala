@@ -219,7 +219,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   def gapply(im:IMat):DenseMat[T] = 
     im match {
       case aa:MatrixWildcard => {
-        val out = DenseMat.newOrCheck(length, 1, null, GUID, "gapply1dx".hashCode)
+        val out = DenseMat.newOrCheck(length, 1, null, GUID, im.GUID, "gapply1dx".hashCode)
         System.arraycopy(data, 0, out.data, 0, out.length)
         out
       }
@@ -306,7 +306,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   	val off = Mat.oneBased
   	var i = 0
   	while (i < inds.length) {
-  		val r = inds(i)-off
+  		val r = inds.data(i)-off
   		if (r >= limit) throw new RuntimeException(typ+ " index out of range %d %d" format (r, limit))
   		i += 1
   	}
@@ -315,63 +315,62 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   * Implement slicing, a(iv,jv) where iv and jv are vectors, using ? as wildcard
   */
   def gapply(rowinds:IMat, colinds:IMat):DenseMat[T] = {
-    var out:DenseMat[T] = null
-    val off = Mat.oneBased
-    rowinds match {
-    case dummy:MatrixWildcard => {
-    	colinds match {
-    	case dummy2:MatrixWildcard => {
-    		out = DenseMat.newOrCheck(nrows, ncols, null, GUID, rowinds.GUID, colinds.GUID, "gapply2d".hashCode)
-    		System.arraycopy(data, 0, out.data, 0, length)
-    	}
-    	case _ => {
-    		out = DenseMat.newOrCheck(nrows, colinds.length, null, GUID, rowinds.GUID, colinds.GUID, "gapply2d".hashCode)
-    		var i = 0 
-    		while (i < colinds.length) {
-    			val c = colinds(i) - off
-    		  if (c >= ncols) throw new RuntimeException("col index out of range %d %d" format (c, ncols))
-    			System.arraycopy(data, c*nrows, out.data, i*nrows, nrows)
-    			i += 1
-    		}
-    	}
-    	}
-    }
-    case _ => {
-      checkInds(rowinds, nrows, "row") 
-    	colinds match {
-    	case dummy2:MatrixWildcard => {
-    		out = DenseMat.newOrCheck(rowinds.length, ncols, null, GUID, rowinds.GUID, colinds.GUID, "gapply2d".hashCode)
-    		var i = 0
-    		while (i < ncols) {
-    		  var j = 0
-    		  while (j < out.nrows) {
-    		  	val r = rowinds(j)-off
-    		  	out.data(j+i*out.nrows) = data(r+i*nrows)
-    		    j += 1
-    		  }
-    		  i += 1
-    		}
-    	}
-    	case _ => {
-    		out = DenseMat.newOrCheck(rowinds.length, colinds.length, null, GUID, rowinds.GUID, colinds.GUID, "gapply2d".hashCode)
-    		var i = 0
-    		while (i < out.ncols) {
-    			var j = 0
-    			val c = colinds(i) - off
-    			if (c >= ncols) throw new RuntimeException("col index out of range %d %d" format (c, ncols))
-    			while (j < out.nrows) {
-    			  val r = rowinds(j)-off
-    				out.data(j+i*out.nrows) = data(r+nrows*c)
-    				j += 1
-    			}
-    			i += 1
-    		}
-    	}
-    	}
-    }
+  	var out:DenseMat[T] = null
+  	val off = Mat.oneBased
+  	rowinds match {
+  	case dummy:MatrixWildcard => {
+  		colinds match {
+  		case dummy2:MatrixWildcard => {
+  			out = DenseMat.newOrCheck(nrows, ncols, null, GUID, rowinds.GUID, colinds.GUID, "gapply2d".hashCode)
+  			System.arraycopy(data, 0, out.data, 0, length)
+  		}
+  		case _ => {
+  			out = DenseMat.newOrCheck(nrows, colinds.length, null, GUID, rowinds.GUID, colinds.GUID, "gapply2d".hashCode)
+  			var i = 0 
+  			while (i < colinds.length) {
+  				val c = colinds.data(i) - off
+  				if (c >= ncols) throw new RuntimeException("col index out of range %d %d" format (c, ncols))
+  				System.arraycopy(data, c*nrows, out.data, i*nrows, nrows)
+  				i += 1
+  			}
+  		}
+  		}
+  	}
+  	case _ => {
+  		checkInds(rowinds, nrows, "row") 
+  		colinds match {
+  		case dummy2:MatrixWildcard => {
+  			out = DenseMat.newOrCheck(rowinds.length, ncols, null, GUID, rowinds.GUID, colinds.GUID, "gapply2d".hashCode)
+  			var i = 0
+  			while (i < ncols) {
+  				var j = 0
+  				while (j < out.nrows) {
+  					val r = rowinds.data(j)-off
+  					out.data(j+i*out.nrows) = data(r+i*nrows)
+  					j += 1
+  				}
+  				i += 1
+  			}
+  		}
+  		case _ => {
+  			out = DenseMat.newOrCheck(rowinds.length, colinds.length, null, GUID, rowinds.GUID, colinds.GUID, "gapply2d".hashCode)
+  			var i = 0
+  			while (i < out.ncols) {
+  				var j = 0
+  				val c = colinds.data(i) - off
+  				if (c >= ncols) throw new RuntimeException("col index out of range %d %d" format (c, ncols))
+  				while (j < out.nrows) {
+  					val r = rowinds.data(j)-off
+  					out.data(j+i*out.nrows) = data(r+nrows*c)
+  					j += 1
+  				}
+  				i += 1
+  			}
+  		}
+  		}
+  	}
   }
-
-    out
+  out
   }
   /*
   * Implement slicing, a(iv,j) where iv a vector, j an integer, using ? as wildcard
@@ -406,7 +405,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   			}
   			var i = 0 
     		while (i < colinds.length) {
-    			val c = colinds(i) - off
+    			val c = colinds.data(i) - off
     		  if (c >= ncols) throw new RuntimeException("col index out of range %d %d" format (c, ncols))
     			System.arraycopy(b.data, i*nrows, data, c*nrows, nrows)
     			i += 1
@@ -425,7 +424,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
     		while (i < ncols) {
     		  var j = 0
     		  while (j < b.nrows) {
-    		  	val r = rowinds(j)-off
+    		  	val r = rowinds.data(j)-off
     		  	data(r+i*nrows) = b.data(j+i*b.nrows) 
     		    j += 1
     		  }
@@ -438,11 +437,11 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   			}
     		var i = 0
     		while (i < b.ncols) {
-    			val c = colinds(i) - off
+    			val c = colinds.data(i) - off
     			if (c >= ncols) throw new RuntimeException("col index out of range %d %d" format (c, ncols))
     			var j = 0
     			while (j < b.nrows) {
-    			  val r = rowinds(j)-off
+    			  val r = rowinds.data(j)-off
     				data(r+nrows*c) = b.data(j+i*b.nrows)
     				j += 1
     			}
@@ -482,7 +481,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   		case _ => {
   			var i = 0 
     		while (i < colinds.length) {
-    			val c = colinds(i) - off
+    			val c = colinds.data(i) - off
     		  if (c >= ncols) throw new RuntimeException("col index out of range %d %d" format (c, ncols))
     			var j = 0
     			while (j < nrows) {
@@ -502,7 +501,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
     		while (i < ncols) {
     		  var j = 0
     		  while (j < rowinds.length) {
-    		  	val r = rowinds(j)-off
+    		  	val r = rowinds.data(j)-off
     		  	data(r+i*nrows) = b 
     		    j += 1
     		  }
@@ -512,11 +511,11 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
     	case _ => {
     		var i = 0
     		while (i < colinds.length) {
-    			val c = colinds(i) - off
+    			val c = colinds.data(i) - off
     			if (c >= ncols) throw new RuntimeException("col index out of range %d %d" format (c, ncols))
     			var j = 0
     			while (j < rowinds.length) {
-    			  val r = rowinds(j)-off
+    			  val r = rowinds.data(j)-off
     				data(r+nrows*c) = b
     				j += 1
     			}
@@ -720,7 +719,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
    * Apply the binary operation op2 to the matrix and a scalar argument
    */  
   def ggMatOpScalar(a:T, op2:(T,T) => T, oldmat:Mat):DenseMat[T] = {
-    val out = DenseMat.newOrCheck[T](nrows, ncols, oldmat, GUID, op2.hashCode)
+    val out = DenseMat.newOrCheck[T](nrows, ncols, oldmat, GUID, a.hashCode, op2.hashCode)
     Mat.nflops += length
     var i  = 0
     while (i < length) {
@@ -780,7 +779,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
         	out = DenseMat.newOrCheck[T](nrows, ncols, oldmat, GUID, aa.GUID, opv.hashCode)
         	mylen = length
         } else if (nrows == 1 && ncols == 1) {
-        	val out = DenseMat.newOrCheck[T](aa.nrows, aa.ncols, oldmat, GUID, aa.GUID, opv.hashCode)
+        	out = DenseMat.newOrCheck[T](aa.nrows, aa.ncols, oldmat, GUID, aa.GUID, opv.hashCode)
         	mylen = aa.length
         } else throw new RuntimeException("dims incompatible")
         if (mylen > 100000 && Mat.numThreads > 1) {
@@ -812,7 +811,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
       }
   
   def ggMatOpScalarv(a:T, opv:(Array[T],Int,Int,Array[T],Int,Int,Array[T],Int,Int,Int) => T, oldmat:Mat):DenseMat[T] = {
-    val out = DenseMat.newOrCheck[T](nrows, ncols, oldmat, GUID, opv.hashCode)
+    val out = DenseMat.newOrCheck[T](nrows, ncols, oldmat, GUID, a.hashCode, opv.hashCode)
     Mat.nflops += length
     val aa = new Array[T](1)
     aa(0) = a
@@ -1088,96 +1087,21 @@ object DenseMat {
     numeric.zero
   }
 
-  
-  def newOrCheck[T](nr:Int, nc:Int, oldmat:Mat)
-  (implicit classManifest:ClassManifest[T]):DenseMat[T] = {
-    if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows == 0 && oldmat.ncols == 0)) {
-      new DenseMat[T](nr, nc)
-    } else {
-      val omat = oldmat.asInstanceOf[DenseMat[T]]
-      if (oldmat.nrows != nr || oldmat.ncols != nc) {
-        if (nr*nc <= omat.data.size) {
-          new DenseMat[T](nr, nc, omat.data)
-        } else {
-        	new DenseMat[T](nr, nc)
-        }
-      } else {
-        omat
-      }
-    }
-  }
-  
-  def newOrCheck[T](nr:Int, nc:Int, outmat:Mat, matGuid:Long, opHash:Int)
-    (implicit classManifest:ClassManifest[T]):DenseMat[T] = {
-    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
-      newOrCheck(nr, nc, outmat)
-    } else {
-      val key = (matGuid, opHash)
-      if (Mat.cache2.contains(key)) {
-      	newOrCheck(nr, nc, Mat.cache2(key))
-      } else {
-        val omat = newOrCheck(nr, nc, null)
-        Mat.cache2(key) = omat
-        omat
-      }
-    }
-  }
-  
-  def newOrCheck[T](nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, opHash:Int)
-  (implicit classManifest:ClassManifest[T]):DenseMat[T] = {
-    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
-      newOrCheck(nr, nc, outmat)
-    } else {
-      val key = (guid1, guid2, opHash)
-      if (Mat.cache3.contains(key)) {
-      	newOrCheck(nr, nc, Mat.cache3(key))
-      } else {
-        val omat = newOrCheck(nr, nc, null)
-        Mat.cache3(key) = omat
-        omat
-      }
-    }
-  }
-    
-  def newOrCheck[T](nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int)
-  (implicit classManifest:ClassManifest[T]):DenseMat[T] = {
-    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
-      newOrCheck(nr, nc, outmat)
-    } else {
-      val key = (guid1, guid2, guid3, opHash)
-      if (Mat.cache4.contains(key)) {
-      	newOrCheck(nr, nc, Mat.cache4(key))
-      } else {
-        val omat = newOrCheck(nr, nc, null)
-        Mat.cache4(key) = omat
-        omat
-      }
-    }
-  }
-  
-  def getInds(ii:IMat, n:Int):Array[Int] = {
+  def getInds(ii:IMat, n:Int):(Int)=>Int = {
     var inds:Array[Int] = null
     val off = Mat.oneBased
     ii match {
       case aaa:MatrixWildcard => {
-        inds = new Array[Int](n)
-        var i = 0
-        while (i < n) {
-          inds(i) = i + off
-          i += 1
-        }
-        inds
+        (x:Int)=>x
       }
       case _ => {
-        var i = 0
-        while (i < ii.length) {
-          val ind = ii.data(i) - off
+      	(i:Int)	=> {
+      		val ind = ii.data(i) - off
           if (ind < 0 || ind >= n) {
             throw new RuntimeException("index out of range "+(ind+off)+" vs "+n)
           } 
-          i += 1
-        }
-        ii.data
+      		ind
+      	}
       }
     }
   }
@@ -1235,7 +1159,7 @@ object DenseMat {
   def sort[@specialized(Double, Float, Int, Byte) T](a:DenseMat[T], ik0:Int, asc:Boolean)
   (implicit classManifest:ClassManifest[T], ordering:Ordering[T]):DenseMat[T] = {
     import BIDMat.Sorting._
-    val out = new DenseMat[T](a.nrows, a.ncols)
+    val out = DenseMat.newOrCheck(a.nrows, a.ncols, null, a.GUID, ik0, "DenseMat.sort".hashCode)
     var ik = ik0
     if (ik0 == 0) {
       if (a.nrows == 1) {
@@ -1330,8 +1254,8 @@ object DenseMat {
   def sort2[@specialized(Double, Float, Int, Byte) T](a:DenseMat[T], ik:Int, asc:Boolean, odmat:Mat, oimat:Mat)
   (implicit classManifest:ClassManifest[T], ord:Ordering[T]):(DenseMat[T], IMat) = {
     import BIDMat.Sorting._
-    val out = DenseMat.newOrCheck[T](a.nrows, a.ncols, odmat)
-    val iout = IMat.newOrCheckIMat(a.nrows, a.ncols, oimat)
+    val out = DenseMat.newOrCheck[T](a.nrows, a.ncols, odmat, a.GUID, ik, "sort2_1".hashCode)
+    val iout = IMat.newOrCheckIMat(a.nrows, a.ncols, oimat, a.GUID, ik, "sort2_2".hashCode)
     if (ik == 1) {
       var i = 0
       while (i < a.ncols) {
@@ -1383,7 +1307,7 @@ object DenseMat {
   
   def sortlex[@specialized(Double, Float, Int, Byte) T](a:DenseMat[T], asc:Boolean)(implicit ordering:Ordering[T]):IMat = {
     import BIDMat.Sorting._
-    val out = IMat(a.nrows,1)
+    val out = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "sortlex".hashCode)
     val ii = out.data
     val aa = a.data
     val nr = a.nrows
@@ -1423,7 +1347,7 @@ object DenseMat {
   def unique2[@specialized(Double, Float, Int) T](a:DenseMat[T])
   (implicit manifest:Manifest[T], numeric:Numeric[T],  ord:Ordering[T]):(IMat, IMat) = {
     val (vss, iss) = sort2(a, true)  
-    val iptrs = IMat(a.length,1)
+    val iptrs = IMat.newOrCheckIMat(a.length, 1, null, a.GUID, "unique2".hashCode)
     var lastpos = 0
     iptrs.data(iss.data(0)) = lastpos
     var i = 1
@@ -1434,7 +1358,7 @@ object DenseMat {
       iptrs.data(iss.data(i)) = lastpos
       i += 1
     }
-    val bptrs = IMat(lastpos+1,1)
+    val bptrs = IMat.newOrCheckIMat(lastpos+1, 1, null, a.GUID, "unique2_2".hashCode)
     i = iss.length
     while (i > 0) {
       bptrs.data(iptrs.data(i-1)) = i-1
@@ -1453,7 +1377,7 @@ object DenseMat {
       if (k == a.ncols) true
       else false
     }
-    val iptrs = IMat(a.nrows, 1)
+    val iptrs = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "uniquerows2".hashCode)
     var lastpos = 0
     iptrs.data(iss.data(0)) = lastpos
     var i = 1
@@ -1464,7 +1388,7 @@ object DenseMat {
       iptrs.data(iss.data(i)) = lastpos
       i += 1
     }
-    val bptrs = IMat(lastpos+1,1)
+    val bptrs = IMat.newOrCheckIMat(lastpos+1, 1, null, a.GUID, "uniquerows2_2".hashCode)
     i = iss.length
     while (i > 0) {
       bptrs.data(iptrs.data(i-1)) = i-1
@@ -1478,8 +1402,8 @@ object DenseMat {
     if (inds.ncols > 2 || (vals.length > 1 && (inds.nrows != vals.nrows)))
       throw new RuntimeException("mismatch in array dimensions")
     else { 
+    	val out = DenseMat.newOrCheck(nr, nc, null, inds.GUID, vals.GUID, "accum".hashCode)
       if (inds.ncols == 1) {
-        val out = new DenseMat[T](nr, nc)
         Mat.nflops += inds.nrows
         var i = 0
         if (vals.length > 1) {
@@ -1495,7 +1419,6 @@ object DenseMat {
         }
         out
       } else { 
-        val out = new DenseMat[T](nr, nc)
         Mat.nflops += inds.nrows
         var i = 0
         if (vals.length > 1) {
@@ -1516,6 +1439,72 @@ object DenseMat {
           }
         }
         out
+      }
+    }
+  }
+  
+  def newOrCheck[T](nr:Int, nc:Int, oldmat:Mat)
+  (implicit classManifest:ClassManifest[T]):DenseMat[T] = {
+    if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows == 0 && oldmat.ncols == 0)) {
+      new DenseMat[T](nr, nc)
+    } else {
+      val omat = oldmat.asInstanceOf[DenseMat[T]]
+      if (oldmat.nrows != nr || oldmat.ncols != nc) {
+        if (nr*nc <= omat.data.size) {
+          new DenseMat[T](nr, nc, omat.data)
+        } else {
+        	new DenseMat[T](nr, nc)
+        }
+      } else {
+        omat
+      }
+    }
+  }
+  
+  def newOrCheck[T](nr:Int, nc:Int, outmat:Mat, matGuid:Long, opHash:Int)
+    (implicit classManifest:ClassManifest[T]):DenseMat[T] = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheck(nr, nc, outmat)
+    } else {
+      val key = (matGuid, opHash)
+      if (Mat.cache2.contains(key)) {
+      	newOrCheck(nr, nc, Mat.cache2(key))
+      } else {
+        val omat = newOrCheck(nr, nc, null)
+        Mat.cache2(key) = omat
+        omat
+      }
+    }
+  }
+  
+  def newOrCheck[T](nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, opHash:Int)
+  (implicit classManifest:ClassManifest[T]):DenseMat[T] = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheck(nr, nc, outmat)
+    } else {
+      val key = (guid1, guid2, opHash)
+      if (Mat.cache3.contains(key)) {
+      	newOrCheck(nr, nc, Mat.cache3(key))
+      } else {
+        val omat = newOrCheck(nr, nc, null)
+        Mat.cache3(key) = omat
+        omat
+      }
+    }
+  }
+    
+  def newOrCheck[T](nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int)
+  (implicit classManifest:ClassManifest[T]):DenseMat[T] = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheck(nr, nc, outmat)
+    } else {
+      val key = (guid1, guid2, guid3, opHash)
+      if (Mat.cache4.contains(key)) {
+      	newOrCheck(nr, nc, Mat.cache4(key))
+      } else {
+        val omat = newOrCheck(nr, nc, null)
+        Mat.cache4(key) = omat
+        omat
       }
     }
   }

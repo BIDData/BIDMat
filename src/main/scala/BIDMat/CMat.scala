@@ -203,13 +203,13 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   override def apply(iv:IMat):CMat = 
     iv match {
       case aa:MatrixWildcard => {
-        val out = CMat.newOrCheckCMat(length, 1, null, GUID, "apply1dx".hashCode)
+        val out = CMat.newOrCheckCMat(length, 1, null, GUID, iv.GUID, "apply1dx".hashCode)
         System.arraycopy(data, 0, out.data, 0, 2*out.length)
         out
       }
       case _ => {
       	val off = Mat.oneBased
-      	val out = CMat.newOrCheckCMat(iv.nrows, iv.ncols, null, GUID, "apply1d".hashCode)
+      	val out = CMat.newOrCheckCMat(iv.nrows, iv.ncols, null, GUID, iv.GUID, "apply1d".hashCode)
         var i = 0
         while (i < out.length) {
           val ind = iv.data(i) - off
@@ -277,25 +277,66 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
       }
     } 
   
-  override def apply(iv:IMat, jv:IMat):CMat = {
-    val off = Mat.oneBased
-    val rowinds = DenseMat.getInds(iv, nrows)
-    val colinds = DenseMat.getInds(jv, ncols) 
-    val out = CMat(rowinds.length, colinds.length)
-    var i = 0
-    while (i < out.ncols) {
-      var j = 0
-      val c = colinds(i) - off
-      while (j < out.nrows) {
-        val r = rowinds(j) - off
-        out.data(2*(j+i*out.nrows)) = data(2*(r+nrows*c))
-        out.data(2*(j+i*out.nrows)+1) = data(2*(r+nrows*c)+1)
-        j += 1
-      }
-      i += 1
-    }
-    out
-  }	
+  override def apply(rowinds:IMat, colinds:IMat):CMat = {
+  	var out:CMat = null
+  	val off = Mat.oneBased
+  	rowinds match {
+  	case dummy:MatrixWildcard => {
+  		colinds match {
+  		case dummy2:MatrixWildcard => {
+  			out = CMat.newOrCheckCMat(nrows, ncols, null, GUID, rowinds.GUID, colinds.GUID, "apply2d".hashCode)
+  			System.arraycopy(data, 0, out.data, 0, 2*length)
+  		}
+  		case _ => {
+  			out = CMat.newOrCheckCMat(nrows, colinds.length, null, GUID, rowinds.GUID, colinds.GUID, "apply2d".hashCode)
+  			var i = 0 
+  			while (i < colinds.length) {
+  				val c = colinds.data(i) - off
+  				if (c >= ncols) throw new RuntimeException("col index out of range %d %d" format (c, ncols))
+  				System.arraycopy(data, 2*c*nrows, out.data, 2*i*nrows, 2*nrows)
+  				i += 1
+  			}
+  		}
+  		}
+  	}
+  	case _ => {
+  		checkInds(rowinds, nrows, "row") 
+  		colinds match {
+  		case dummy2:MatrixWildcard => {
+  			out = CMat.newOrCheckCMat(rowinds.length, ncols, null, GUID, rowinds.GUID, colinds.GUID, "apply2d".hashCode)
+  			var i = 0
+  			while (i < ncols) {
+  				var j = 0
+  				while (j < out.nrows) {
+  					val r = rowinds.data(j)-off
+  					out.data(2*(j+i*out.nrows)) = data(2*(r+i*nrows))
+  					out.data(2*(j+i*out.nrows)+1) = data(2*(r+i*nrows)+1)
+  					j += 1
+  				}
+  				i += 1
+  			}
+  		}
+  		case _ => {
+  			out = CMat.newOrCheckCMat(rowinds.length, colinds.length, null, GUID, rowinds.GUID, colinds.GUID, "apply2d".hashCode)
+  			var i = 0
+  			while (i < out.ncols) {
+  				var j = 0
+  				val c = colinds.data(i) - off
+  				if (c >= ncols) throw new RuntimeException("col index out of range %d %d" format (c, ncols))
+  				while (j < out.nrows) {
+  					val r = rowinds.data(j)-off
+  					out.data(2*(j+i*out.nrows)) = data(2*(r+nrows*c))
+  					out.data(2*(j+i*out.nrows)+1) = data(2*(r+nrows*c)+1)
+  					j += 1
+  				}
+  				i += 1
+  			}
+  		}
+  		}
+  	}
+  }
+  out
+  }
   
   override def apply(iv:IMat, j:Int):CMat = {
   	apply(iv, IMat.ielem(j))
@@ -304,42 +345,147 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   override def apply(i:Int, jv:IMat):CMat = {
   	apply(IMat.ielem(i), jv)
   }
-  
-  def update(iv:IMat, jv:IMat, b:CMat):CMat = {
-  	val off = Mat.oneBased
-    val rowinds = DenseMat.getInds(iv, nrows)
-    val colinds = DenseMat.getInds(jv, ncols) 
-    if (rowinds.length != b.nrows || colinds.length != b.ncols) {
-      if (b.length == 1) {
-      	val b0 = b.data(0)
-    	  val b1 = b.data(1)
-      	var i = 0
-      	while (i < b.ncols) {
-      	  val c = colinds(i) - off
-      		var j = 0
-      		while (j < b.nrows) {
-      			val r = rowinds(j) - off
-      			data(2*(r+nrows*c)) = b0
-      			data(2*(r+nrows*c)+1) = b1
-      			j += 1
-      		}
-      		i += 1
-      	}      
-      } else throw new RuntimeException("dims mismatch in assignment")
+ 
+  /*
+  * Implement sliced assignment, a(iv,jv) = b where iv and jv are vectors, using ? as wildcard
+  */ 
+  def update(rowinds:IMat, colinds:IMat, b:CMat):CMat = {
+    if (b.nrows == 1 && b.ncols == 1) {
+      update_scalar(rowinds, colinds, b)
     } else {
-      var i = 0
-      while (i < b.ncols) {
-      	val c = colinds(i) - off
-        var j = 0
-        while (j < b.nrows) {
-        	val r = rowinds(j) - off
-          data(2*(r+nrows*c)) = b.data(2*(j+i*b.nrows))
-          data(2*(r+nrows*c)+1) = b.data(2*(j+i*b.nrows)+1)
-          j += 1
-        }
-        i += 1
+    	val off = Mat.oneBased
+    	rowinds match {
+    	case dummy:MatrixWildcard => {
+    		colinds match {
+    		case dummy2:MatrixWildcard => {
+    			if (nrows != b.nrows || ncols != b.ncols) {
+    				throw new RuntimeException("dims mismatch in assignment")
+    			}
+    			System.arraycopy(b.data, 0, data, 0, 2*length) 
+    		}
+    		case _ => {
+    			if (nrows != b.nrows || colinds.length != b.ncols) {
+    				throw new RuntimeException("dims mismatch in assignment")
+    			}
+    			var i = 0 
+    			while (i < colinds.length) {
+    				val c = colinds.data(i) - off
+    				if (c >= ncols) throw new RuntimeException("col index out of range %d %d" format (c, ncols))
+    				System.arraycopy(b.data, 2*i*nrows, data, 2*c*nrows, 2*nrows)
+    				i += 1
+    			}
+    		}
+    		}
+    	}
+    	case _ => {
+    		checkInds(rowinds, nrows, "row") 
+    		colinds match {
+    		case dummy2:MatrixWildcard => {
+    			if (rowinds.length != b.nrows || ncols != b.ncols) {
+    				throw new RuntimeException("dims mismatch in assignment")
+    			}
+    			var i = 0
+    			while (i < ncols) {
+    				var j = 0
+    				while (j < b.nrows) {
+    					val r = rowinds.data(j)-off
+    					data(2*(r+i*nrows)) = b.data(2*(j+i*b.nrows))
+    					data(2*(r+i*nrows)+1) = b.data(2*(j+i*b.nrows)+1)
+    					j += 1
+    				}
+    				i += 1
+    			}
+    		}
+    		case _ => {
+    			if (rowinds.length != b.nrows || colinds.length != b.ncols) {
+    				throw new RuntimeException("dims mismatch in assignment")
+    			}
+    			var i = 0
+    			while (i < b.ncols) {
+    				val c = colinds.data(i) - off
+    				if (c >= ncols) throw new RuntimeException("col index out of range %d %d" format (c, ncols))
+    				var j = 0
+    				while (j < b.nrows) {
+    					val r = rowinds.data(j)-off
+    					data(2*(r+nrows*c)) = b.data(2*(j+i*b.nrows))
+    					data(2*(r+nrows*c)+1) = b.data(2*(j+i*b.nrows)+1)
+    					j += 1
+    				}
+    				i += 1
+    			}
+    		}    		  
+    		}
+    	}
+    	}
+    	b
+    }
+  }
+  
+  def update_scalar(rowinds:IMat, colinds:IMat, b:CMat):CMat = {
+  	val off = Mat.oneBased
+  	val b0 = b.data(0)
+  	val b1 = b.data(1)
+  	rowinds match {
+  	case dummy:MatrixWildcard => {
+  		colinds match {
+  		case dummy2:MatrixWildcard => {
+  			var i = 0 
+  			while (i < length) {
+  			  data(2*i) = b0
+  			  data(2*i+1) = b1
+  			  i += 1
+  			}
+  		}
+  		case _ => {
+  			var i = 0 
+    		while (i < colinds.length) {
+    			val c = colinds.data(i) - off
+    		  if (c >= ncols) throw new RuntimeException("col index out of range %d %d" format (c, ncols))
+    			var j = 0
+    			while (j < nrows) {
+    			  data(2*(j+c*nrows)) = b0
+    			  data(2*(j+c*nrows)+1) = b1
+    			  j += 1
+    			}
+    			i += 1
+    		}
+  		}
+  		}
+  	}
+    case _ => {
+      checkInds(rowinds, nrows, "row") 
+    	colinds match {
+    	case dummy2:MatrixWildcard => {
+    		var i = 0
+    		while (i < ncols) {
+    		  var j = 0
+    		  while (j < rowinds.length) {
+    		  	val r = rowinds.data(j)-off
+    		  	data(2*(r+i*nrows)) = b0 
+    		  	data(2*(r+i*nrows)+1) = b1
+    		    j += 1
+    		  }
+    		  i += 1
+    		}
+    	}
+    	case _ => {
+    		var i = 0
+    		while (i < colinds.length) {
+    			val c = colinds.data(i) - off
+    			if (c >= ncols) throw new RuntimeException("col index out of range %d %d" format (c, ncols))
+    			var j = 0
+    			while (j < rowinds.length) {
+    			  val r = rowinds.data(j)-off
+    				data(2*(r+nrows*c)) = b0
+    				data(2*(r+nrows*c)+1) = b1
+    				j += 1
+    			}
+    			i += 1
+    		}
+    	}    		  
       }
     }
+  	}
     b
   }
 
@@ -351,15 +497,11 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   	update(IMat.ielem(i), jv, b)
   }
   
-   /*
-  * Implement sliced assignment, a(iv,jv) = b:T where iv and jv are vectors, using ? as wildcard
-  */ 
-  
    def ccMatOp(a:Mat, op2:(Float,Float,Float,Float) => (Float,Float), oldmat:Mat):CMat = {
     a match {
       case aa:CMat => {
         if (nrows==a.nrows && ncols==1) {
-          val out = CMat.newOrCheckCMat(nrows, a.ncols, oldmat)
+          val out = CMat.newOrCheckCMat(nrows, a.ncols, oldmat, GUID, a.GUID, op2.hashCode)
           Mat.nflops += aa.length
           var i = 0
           while (i < a.ncols) {
@@ -374,7 +516,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
           }
           out
         } else if (ncols==a.ncols && nrows==1) {
-          val out = CMat.newOrCheckCMat(a.nrows, ncols, oldmat)
+          val out = CMat.newOrCheckCMat(a.nrows, ncols, oldmat, GUID, a.GUID, op2.hashCode)
           Mat.nflops += aa.length
           var i = 0
           while (i < ncols) {
@@ -389,7 +531,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
           }
           out
         } else if (nrows==a.nrows && a.ncols==1) {
-          val out = CMat.newOrCheckCMat(nrows, ncols, oldmat)
+          val out = CMat.newOrCheckCMat(nrows, ncols, oldmat, GUID, a.GUID, op2.hashCode)
           Mat.nflops += length
           var i = 0
           while (i < ncols) {
@@ -404,7 +546,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
           }
           out
         } else if (ncols==a.ncols && a.nrows==1) {
-          val out = CMat.newOrCheckCMat(nrows, ncols, oldmat)
+          val out = CMat.newOrCheckCMat(nrows, ncols, oldmat, GUID, a.GUID, op2.hashCode)
           Mat.nflops += length
           var i = 0
           while (i <  ncols) {
@@ -431,7 +573,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     a match {
       case aa:CMat => {
         if (nrows==a.nrows && ncols==a.ncols) {
-          val out = CMat.newOrCheckCMat(nrows, ncols, oldmat)
+          val out = CMat.newOrCheckCMat(nrows, ncols, oldmat, GUID, a.GUID, op2.hashCode)
           Mat.nflops += length
           var i = 0
           while (i < aa.length) {
@@ -442,7 +584,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
           }
           out
         } else if (a.nrows == 1 && a.ncols == 1) {
-          val out = CMat.newOrCheckCMat(nrows, ncols, oldmat)
+          val out = CMat.newOrCheckCMat(nrows, ncols, oldmat, GUID, a.GUID, op2.hashCode)
           Mat.nflops += length
           val a0 = aa.data(0)
           val a1 = aa.data(1)
@@ -455,7 +597,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
           }
           out
         } else if (nrows == 1 && ncols == 1) {
-          val out = CMat.newOrCheckCMat(a.nrows, a.ncols, oldmat)
+          val out = CMat.newOrCheckCMat(a.nrows, a.ncols, oldmat, GUID, a.GUID, op2.hashCode)
           Mat.nflops += aa.length
           val a0 = aa.data(0)
           val a1 = aa.data(1)
@@ -476,7 +618,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
      a match {
       case aa:CMat => {
         if (nrows==a.nrows && ncols==1) {
-          val out = CMat.newOrCheckCMat(nrows, a.ncols, oldmat)
+          val out = CMat.newOrCheckCMat(nrows, a.ncols, oldmat, GUID, a.GUID, opv.hashCode)
           Mat.nflops += aa.length
           var i = 0         
           while (i < a.ncols) {
@@ -485,7 +627,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
           }
           out
         } else if (ncols==a.ncols && nrows==1) {
-          val out = CMat.newOrCheckCMat(a.nrows, ncols, oldmat)
+          val out = CMat.newOrCheckCMat(a.nrows, ncols, oldmat, GUID, a.GUID, opv.hashCode)
           Mat.nflops += aa.length
           var i = 0
           while (i < ncols) {
@@ -494,7 +636,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
           }
           out
         } else if (nrows==a.nrows && a.ncols==1) {
-          val out = CMat.newOrCheckCMat(nrows, ncols, oldmat)
+          val out = CMat.newOrCheckCMat(nrows, ncols, oldmat, GUID, a.GUID, opv.hashCode)
           Mat.nflops += length
           var i = 0
           while (i < ncols) {
@@ -503,7 +645,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
           }
           out
         } else if (ncols==a.ncols && a.nrows==1) {
-          val out = CMat.newOrCheckCMat(nrows, ncols, oldmat)
+          val out = CMat.newOrCheckCMat(nrows, ncols, oldmat, GUID, a.GUID, opv.hashCode)
           Mat.nflops += length
           var i = 0
           while (i <  ncols) {
@@ -521,17 +663,17 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     a match {
       case aa:CMat => {
         if (nrows==a.nrows && ncols==a.ncols) {
-          val out = CMat.newOrCheckCMat(nrows, ncols, oldmat)
+          val out = CMat.newOrCheckCMat(nrows, ncols, oldmat, GUID, a.GUID, opv.hashCode)
           Mat.nflops += length
           opv(data, 0, 1, aa.data, 0, 1, out.data, 0, 1, aa.length)
           out
         } else if (a.nrows == 1 && a.ncols == 1) {
-          val out = CMat.newOrCheckCMat(nrows, ncols, oldmat)
+          val out = CMat.newOrCheckCMat(nrows, ncols, oldmat, GUID, a.GUID, opv.hashCode)
           Mat.nflops += length
           opv(data, 0, 1, aa.data, 0, 0, out.data, 0, 1, length)
           out
         } else if (nrows == 1 && ncols == 1) {
-          val out = CMat.newOrCheckCMat(a.nrows, a.ncols, oldmat)
+          val out = CMat.newOrCheckCMat(a.nrows, a.ncols, oldmat, GUID, a.GUID, opv.hashCode)
           Mat.nflops += aa.length
           opv(data, 0, 0, aa.data, 0, 1, out.data, 0, 1, aa.length)
           out
@@ -541,7 +683,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     }
   
   def ccMatOpScalarv(a0:Float, a1:Float, opv:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, omat:Mat):CMat = {
-    val out = CMat.newOrCheckCMat(nrows, ncols, omat)
+    val out = CMat.newOrCheckCMat(nrows, ncols, omat, GUID, a0.hashCode, a1.hashCode, opv.hashCode)
     Mat.nflops += length
     val aa = new Array[Float](2)
     aa(0) = a0
@@ -559,7 +701,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def ccReduceOpv(dim0:Int, opv:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, oldmat:Mat):CMat = {
     var dim = if (nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
     if (dim == 1) {
-      val out = CMat.newOrCheckCMat(1, ncols, oldmat)
+      val out = CMat.newOrCheckCMat(1, ncols, oldmat, GUID, 1, opv.hashCode)
       Mat.nflops += length
       var i = 0
       while (i < ncols) { 
@@ -569,7 +711,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
       }
       out
     } else if (dim == 2) { 
-      val out = CMat.newOrCheckCMat(nrows, 1, oldmat)
+      val out = CMat.newOrCheckCMat(nrows, 1, oldmat, GUID, 2, opv.hashCode)
       Mat.nflops += length
       var j = 0
       while (j < 2*nrows) { 
@@ -582,8 +724,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
         i += 1
       }
       out
-    } else
-      throw new RuntimeException("index must 1 or 2");
+    } else throw new RuntimeException("index must 1 or 2");
   }
   
   def ffReduceAll(n:Int, f1:(Float) => Float, f2:(Float, Float) => Float, out:Mat) = 
@@ -626,20 +767,23 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
   
   override def copy = {
-  	val out = CMat(nrows, ncols)
+  	val out = CMat.newOrCheckCMat(nrows, ncols, null, GUID, "copy".hashCode)
   	System.arraycopy(data, 0, out.data, 0, 2*length.toInt)
   	out
   }
   
   override def zeros(nr:Int, nc:Int) = {
-  	CMat(nr, nc)
+  	val out = CMat.newOrCheckCMat(nr, nc, null, nr, nc, "czeros".hashCode)
+  	out.clear
+  	out
   }
   
   override def ones(nr:Int, nc:Int) = {
-  	val out = CMat(nr, nc)
+  	val out = CMat.newOrCheckCMat(nr, nc, null, nr, nc, "cones".hashCode)
   	var i = 0
   	while (i < out.length) {
   	  out(2*i) = 1
+  	  out(2*i+1) = 0
   	  i += 1
   	}
   	out
@@ -647,7 +791,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   def fDMult(aa:CMat, outmat:Mat):CMat = { 
   		if (ncols == aa.nrows) {
-  			val out = CMat.newOrCheckCMat(nrows, aa.ncols, outmat)
+  			val out = CMat.newOrCheckCMat(nrows, aa.ncols, outmat, GUID, aa.GUID, "dMult".hashCode)
   			Mat.nflops += 2L * length * aa.ncols
   			if (Mat.noMKL) {
   				if (outmat.asInstanceOf[AnyRef] != null) out.clear
@@ -683,7 +827,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   			}
   			out
   		} else if (ncols == 1 && nrows == 1){
-  			val out = CMat.newOrCheckCMat(aa.nrows, aa.ncols, outmat)
+  			val out = CMat.newOrCheckCMat(aa.nrows, aa.ncols, outmat, GUID, aa.GUID, "dMult".hashCode)
   			Mat.nflops += aa.length
   			var i = 0
   			val u0 = data(0)
@@ -697,7 +841,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   			}			    
   			out			  
   		} else if (aa.ncols == 1 && aa.nrows == 1){
-  			val out = CMat.newOrCheckCMat(nrows, ncols, outmat)
+  			val out = CMat.newOrCheckCMat(nrows, ncols, outmat, GUID, aa.GUID, "dMult".hashCode)
   			Mat.nflops += length
   			var i = 0
   			val u0 = aa.data(0)
@@ -718,7 +862,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   	if (nrows != b.nrows || ncols != b.ncols) {
   		throw new RuntimeException("dot dims not compatible")
   	} else {
-  	  val out = CMat.newOrCheckCMat(1, ncols, omat)
+  	  val out = CMat.newOrCheckCMat(1, ncols, omat, GUID, b.GUID, "dot".hashCode)
   		Mat.nflops += 6L * length
   		if (Mat.noMKL || length < 512) {
   			var i = 0
@@ -749,21 +893,21 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def dot(a:CMat):CMat = dot(a, null)
   
   override def dot(a:Mat):Mat = dot(a.asInstanceOf[CMat])
-
+  
   def solvel(a0:Mat):CMat = 
     a0 match {
       case a:CMat => { 
-        Mat.nflops += 2L*a.nrows*a.nrows*a.nrows/3 + 2L*nrows*a.nrows*a.nrows
+        Mat.nflops += 16L*a.nrows*a.nrows*a.nrows/3 + 16L*nrows*a.nrows*a.nrows
         if (a.nrows != a.ncols || ncols != a.nrows) {
           throw new RuntimeException("solve needs a square matrix")
         } else {
-          val out = CMat(nrows, ncols)
-          val tmp = new Array[Float](2*length.toInt)
-          System.arraycopy(a.data, 0, tmp, 0, 2*a.length.toInt)
-          System.arraycopy(data, 0, out.data, 0, 2*length.toInt)
-          val ipiv = new Array[Int](ncols)
-          cgetrf(ORDER.RowMajor, ncols, ncols, tmp, ncols, ipiv)
-          cgetrs(ORDER.RowMajor, "N", ncols, nrows, tmp, ncols, ipiv, out.data, nrows)
+          val out = CMat.newOrCheckCMat(nrows, ncols, null, GUID, a.GUID, "solvel".hashCode)
+          val tmp = CMat.newOrCheckCMat(nrows, ncols, null, GUID, a.GUID, "solvel1".hashCode)
+          System.arraycopy(a.data, 0, tmp.data, 0, 2*a.length)
+          System.arraycopy(data, 0, out.data, 0, 2*length)
+          val ipiv = IMat.newOrCheckIMat(1, ncols, null, GUID, a.GUID, "solvel2".hashCode).data
+          cgetrf(ORDER.RowMajor, ncols, ncols, tmp.data, ncols, ipiv)
+          cgetrs(ORDER.RowMajor, "N", ncols, nrows, tmp.data, ncols, ipiv, out.data, nrows)
           out
         }
       }
@@ -772,32 +916,32 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   def solver(a0:Mat):CMat = 
     a0 match {
-      case a:CMat => { 
-        Mat.nflops += 2L*nrows*nrows*nrows/3 + 2L*nrows*nrows*a.ncols
+      case a:FMat => { 
+        Mat.nflops += 16L*nrows*nrows*nrows/3 + 16L*nrows*nrows*a.ncols
         if (nrows != ncols || ncols != a.nrows) {
           throw new RuntimeException("solve needs a square matrix")
         } else {
-          val out = CMat(a.nrows, a.ncols)
-          val tmp = new Array[Float](2*length)
-          System.arraycopy(data, 0, tmp, 0, 2*length.toInt)
-          System.arraycopy(a.data, 0, out.data, 0, 2*a.length.toInt)
-          val ipiv = new Array[Int](ncols)
-          cgetrf(ORDER.ColMajor, ncols, ncols, tmp, ncols, ipiv)
-          cgetrs(ORDER.ColMajor, "N", ncols, a.ncols, tmp, nrows, ipiv, out.data, nrows)
+          val out = CMat.newOrCheckCMat(nrows, ncols, null, GUID, a.GUID, "solver".hashCode)
+          val tmp = CMat.newOrCheckCMat(nrows, ncols, null, GUID, a.GUID, "solver1".hashCode)
+          System.arraycopy(data, 0, tmp.data, 0, 2*length)
+          System.arraycopy(a.data, 0, out.data, 0, 2*a.length)
+          val ipiv = IMat.newOrCheckIMat(1, ncols, null, GUID, a.GUID, "solve2".hashCode).data
+          cgetrf(ORDER.ColMajor, ncols, ncols, tmp.data, ncols, ipiv)
+          cgetrs(ORDER.ColMajor, "N", ncols, a.ncols, tmp.data, nrows, ipiv, out.data, nrows)
           out
         }
       }
       case _ => throw new RuntimeException("unsupported arg to \\ "+a0)
     }
-  
+ 
   def inv:CMat = {
     import edu.berkeley.bid.LAPACK._
     if (nrows != ncols) {
       throw new RuntimeException("inv method needs a square matrix")
     } else {
-      val out = CMat(nrows, ncols)
-      System.arraycopy(data, 0, out.data, 0, length)
-      val ipiv = new Array[Int](nrows)
+      val out = CMat.newOrCheckCMat(nrows, ncols, null, GUID, "inv".hashCode)
+      System.arraycopy(data, 0, out.data, 0, 2*length)
+      val ipiv = IMat.newOrCheckIMat(1, ncols, null, GUID, "inv2".hashCode).data
       cgetrf(ORDER.ColMajor, nrows, ncols, out.data, nrows, ipiv)
       cgetri(ORDER.ColMajor, nrows, out.data, nrows, ipiv)
       out
@@ -853,7 +997,8 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
       throw new RuntimeException("mkdiag needs a vector input")
     }
     val n = math.max(nrows, ncols)
-    val out = CMat(n,n)
+    val out = CMat.newOrCheckCMat(n, n, null, GUID, "mkdiag".hashCode)
+    out.clear
     var i = 0
     while (i < n) {
       out.data(2*i*(n+1)) = data(2*i)
@@ -865,7 +1010,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   override def getdiag = {
     val n = math.min(nrows, ncols)
-    val out = CMat(n,1)
+    val out = CMat.newOrCheckCMat(n, 1, null, GUID, "getkdiag".hashCode)
     var i = 0
     while (i < n) {
       out.data(2*i) = data(2*i*(nrows+1))
@@ -876,7 +1021,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
   
   def r:FMat = {
-    val out = FMat(nrows, ncols)
+    val out = FMat.newOrCheckFMat(nrows, ncols, null, GUID, "re".hashCode)
     var i = 0
     while (i < length) {
       out.data(i) = data(2*i) 
@@ -886,7 +1031,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
   
   def i:FMat = {
-    val out = FMat(nrows, ncols)
+    val out = FMat.newOrCheckFMat(nrows, ncols, null, GUID, "im".hashCode)
     var i = 0
     while (i < length) {
       out.data(i) = data(2*i+1) 
@@ -1038,7 +1183,7 @@ object CMat {
   def apply(nr:Int, nc:Int) = new CMat(nr, nc, new Array[Float](2*nr*nc))
   
   def real(a:FMat):CMat = {
-    val out = CMat(a.nrows, a.ncols)
+    val out = CMat.newOrCheckCMat(a.nrows, a.ncols, null, a.GUID, "real".hashCode)
     var i = 0
     while (i < a.length) {
       out.data(2*i) = a.data(i) 
@@ -1048,7 +1193,7 @@ object CMat {
   }
   
   def imag(a:FMat):CMat = {
-    val out = CMat(a.nrows, a.ncols)
+    val out = CMat.newOrCheckCMat(a.nrows, a.ncols, null, a.GUID, "imag".hashCode)
     var i = 0
     while (i < a.length) {
       out.data(2*i+1) = a.data(i) 
@@ -1069,7 +1214,7 @@ object CMat {
   }
 
   def celem(x:Float, y:Float) = {
-    val out = CMat(1,1)
+  	val out = CMat.newOrCheckCMat(1,1,null,x.hashCode,y.hashCode,"celem".hashCode)
     out.data(0) = x
     out.data(1) = y
     out

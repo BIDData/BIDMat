@@ -218,6 +218,8 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
     out
   }
   
+  def copyTo(g:GSMat) = GSMat.fromSMat(this, g)
+  
   override def zeros(nr:Int, nc:Int, nnz:Int) = SMat(nr, nc, nnz)
   
   override def recycle(nr:Int, nc:Int, nnz:Int):SMat = {
