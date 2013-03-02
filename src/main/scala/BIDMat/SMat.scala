@@ -211,7 +211,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   }
   
   def toSDMat:SDMat = {
-    val out = SDMat(nrows, ncols, nnz)
+    val out = SDMat.newOrCheckSDMat(this, null, GUID, "toSDMat".hashCode)
     System.arraycopy(jc, 0, out.jc, 0, ncols+1)
     System.arraycopy(ir, 0, out.ir, 0, nnz)
     Mat.copyToDoubleArray(data, 0, out.data, 0, nnz)

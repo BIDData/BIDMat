@@ -17,7 +17,7 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
     if (nrows > 1 || ncols > 1) {
       throw new RuntimeException("Matrix should be 1x1 to extract value")
     } else {
-      toFMat.data(0)
+      toFMat(null).data(0)
     }
   
   override def mytype = "GMat"
@@ -179,8 +179,8 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
     }
   }
 
-  def toFMat():FMat = {
-    val out = FMat.newOrCheckFMat(nrows, ncols, null, GUID, "toFMat".hashCode)
+  def toFMat(a:Mat):FMat = {
+    val out = FMat.newOrCheckFMat(nrows, ncols, a, GUID, "toFMat".hashCode)
     cublasGetVector(nrows*ncols, Sizeof.FLOAT, data, 1, Pointer.to(out.data), 1)
     cudaDeviceSynchronize()
     out
@@ -463,7 +463,7 @@ object GMat {
     retv        
   }
 
-  def toFMat(a:GMat):FMat = a.toFMat()     
+  def toFMat(a:GMat):FMat = a.toFMat(null)     
   
   def apply(a:FMat):GMat = {
   	val rsize = a.nrows*a.ncols
