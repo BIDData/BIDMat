@@ -241,6 +241,67 @@ object SDMat {
   def apply(a:SMat) = a.toSDMat
   
   def SDnoRows(nr:Int, nc:Int, nnz0:Int):SDMat = new SDMat(nr, nc, nnz0, null, new Array[Int](nc+1), new Array[Double](nnz0))
+
+   
+  def newOrCheckSDMat(mat:Mat, oldmat:Mat):SDMat = {
+  	if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows == 0 && oldmat.ncols == 0)) {
+  		SDMat(mat.nrows, mat.ncols, mat.nnz)
+  	} else {
+  	  oldmat match {
+  	    case omat:SDMat =>	if (oldmat.nrows == mat.nrows && oldmat.ncols == mat.ncols && oldmat.nnz == mat.nnz) {
+  	    	omat
+  	    } else {
+  	    	omat.recycle(mat.nrows, mat.ncols, mat.nnz)
+  	    }
+  	  }
+  	}
+  }
+  
+   
+  def newOrCheckSDMat(mat:Mat, outmat:Mat, matGuid:Long, opHash:Int):SDMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheckSDMat(mat, outmat)
+    } else {
+      val key = (matGuid, opHash)
+      if (Mat.cache2.contains(key)) {
+      	newOrCheckSDMat(mat, Mat.cache2(key))
+      } else {
+        val omat = newOrCheckSDMat(mat, null)
+        Mat.cache2(key) = omat
+        omat
+      }
+    }
+  }
+  
+  def newOrCheckSDMat(mat:Mat, outmat:Mat, guid1:Long, guid2:Long, opHash:Int):SDMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheckSDMat(mat, outmat)
+    } else {
+      val key = (guid1, guid2, opHash)
+      if (Mat.cache3.contains(key)) {
+      	newOrCheckSDMat(mat, Mat.cache3(key))
+      } else {
+        val omat = newOrCheckSDMat(mat, null)
+        Mat.cache3(key) = omat
+        omat
+      }
+    }
+  }
+    
+  def newOrCheckSDMat(mat:Mat, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):SDMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheckSDMat(mat, outmat)
+    } else {
+      val key = (guid1, guid2, guid3, opHash)
+      if (Mat.cache4.contains(key)) {
+      	newOrCheckSDMat(mat, Mat.cache4(key))
+      } else {
+        val omat = newOrCheckSDMat(mat, null)
+        Mat.cache4(key) = omat
+        omat
+      }
+    }
+  }
 }
 
 

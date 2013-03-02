@@ -655,9 +655,11 @@ class SparseMat[@specialized(Double,Float) T]
       throw new RuntimeException("jc(ncols) should be "+nnz)
     }
   }
+  
+  def full():DenseMat[T] = full(null)
 
-  def full:DenseMat[T] = { 
-    val out = DenseMat.newOrCheck(nrows, ncols, null, GUID, "full".hashCode)
+  def full(mat:Mat):DenseMat[T] = { 
+    val out = DenseMat.newOrCheck(nrows, ncols, mat, GUID, "full".hashCode)
     val ioff = Mat.ioneBased
     if (ir != null) {
     	val cols = SparseMat.uncompressInds(jc, ir)

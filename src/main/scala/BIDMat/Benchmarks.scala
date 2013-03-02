@@ -159,7 +159,7 @@ object AltaVista {
 	  }
 	  println("")
 	  max(scale, 1.0f, scale)
-	  scale ~ 1.0f /@ scale
+	  scale ~ 1.0f / scale
 	  val scalet = new FMat(1, size, scale.data)
 	  iter ~ iter * (1.0f / sum(iter).v)
 	  HMat.saveFMat(scalepath, scalet, false)

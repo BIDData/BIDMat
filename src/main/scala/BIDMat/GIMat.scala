@@ -22,7 +22,7 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
         (ncols == a.ncols && (a.nrows == 1 || nrows == 1)) ||
         (a.ncols == 1 && a.nrows == 1) ||
         (ncols == 1 && nrows == 1)) {
-    	val out = GIMat.newOrCheckGIMat(nrows, a.ncols, oldmat)
+    	val out = GIMat.newOrCheckGIMat(nrows, a.ncols, oldmat, GUID, a.GUID, op)
       Mat.nflops += scala.math.max(length, a.length)
       CUMAT.applyiop(data, nrows, ncols, a.data, a.nrows, a.ncols, out.data, op)
       JCuda.cudaDeviceSynchronize()
@@ -31,7 +31,7 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   }
 
   def toIMat():IMat = {
-    val out = IMat(nrows, ncols)
+    val out = IMat.newOrCheckIMat(nrows, ncols, null, GUID, "toIMat".hashCode)
     JCublas.cublasGetVector(nrows*ncols, Sizeof.INT, data, 1, Pointer.to(out.data), 1);
     out
   }
@@ -98,14 +98,60 @@ object GIMat {
     retv
   }
 
-  def newOrCheckGIMat(nr:Int, nc:Int, oldmat:GIMat):GIMat = {
-    if (oldmat.asInstanceOf[AnyRef] == null) {
+  def newOrCheckGIMat(nr:Int, nc:Int, oldmat:Mat):GIMat = {
+ 		if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows == 0 && oldmat.ncols == 0)) {
       GIMat(nr, nc)
     } else {
       if (oldmat.nrows != nr || oldmat.ncols != nc) {
-      	oldmat.recycle(nr, nc, 0)
+      	oldmat.recycle(nr, nc, 0).asInstanceOf[GIMat]
       } else {
-      	oldmat
+      	oldmat.asInstanceOf[GIMat]
+      }
+    }
+  }
+  
+    
+  def newOrCheckGIMat(nr:Int, nc:Int, outmat:Mat, matGuid:Long, opHash:Int):GIMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheckGIMat(nr, nc, outmat)
+    } else {
+      val key = (matGuid, opHash)
+      if (Mat.cache2.contains(key)) {
+      	newOrCheckGIMat(nr, nc, Mat.cache2(key))
+      } else {
+        val omat = newOrCheckGIMat(nr, nc, null)
+        Mat.cache2(key) = omat
+        omat
+      }
+    }
+  }
+  
+  def newOrCheckGIMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, opHash:Int):GIMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheckGIMat(nr, nc, outmat)
+    } else {
+      val key = (guid1, guid2, opHash)
+      if (Mat.cache3.contains(key)) {
+      	newOrCheckGIMat(nr, nc, Mat.cache3(key))
+      } else {
+        val omat = newOrCheckGIMat(nr, nc, null)
+        Mat.cache3(key) = omat
+        omat
+      }
+    }
+  }
+   
+  def newOrCheckGIMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):GIMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheckGIMat(nr, nc, outmat)
+    } else {
+      val key = (guid1, guid2, guid3, opHash)
+      if (Mat.cache4.contains(key)) {
+      	newOrCheckGIMat(nr, nc, Mat.cache4(key))
+      } else {
+        val omat = newOrCheckGIMat(nr, nc, null)
+        Mat.cache4(key) = omat
+        omat
       }
     }
   }

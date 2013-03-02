@@ -114,13 +114,15 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   	}
   	a
   }
-  
+   
   override def zeros(nr:Int, nc:Int) = {
-  	FMat(nr, nc)
+    val out = FMat.newOrCheckFMat(nr, nc, null, nr, nc, "FMat.zeros".hashCode)
+  	out.clear
+  	out
   }
   
   override def ones(nr:Int, nc:Int) = {
-  	val out = FMat(nr, nc)
+  	val out = FMat.newOrCheckFMat(nr, nc, null, nr, nc, "FMat.ones".hashCode)
   	var i = 0
   	while (i < out.length) {
   	  out(i) = 1
@@ -138,7 +140,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   def fDMult(a:FMat, outmat:Mat):FMat = { 
   	if (ncols == a.nrows) {
-  		val out = FMat.newOrCheckFMat(nrows, a.ncols, outmat, GUID, a.GUID, "fDMult".hashCode)
+  		val out = FMat.newOrCheckFMat(nrows, a.ncols, outmat, GUID, a.GUID, "dMult".hashCode)
   		Mat.nflops += 2L * length * a.ncols
   		if (Mat.noMKL) {
   			out.clear
@@ -166,7 +168,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   		}
   		out
   	} else if (ncols == 1 && nrows == 1){
-  		val out = FMat.newOrCheckFMat(a.nrows, a.ncols, outmat, a.GUID, "fDMult1".hashCode)
+  		val out = FMat.newOrCheckFMat(a.nrows, a.ncols, outmat, a.GUID, "dMult1".hashCode)
   		Mat.nflops += a.length
   		var i = 0
   		val dvar = data(0)
@@ -176,7 +178,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   		}			    
   		out			  
   	} else if (a.ncols == 1 && a.nrows == 1){
-  		val out = FMat.newOrCheckFMat(nrows, ncols, outmat, GUID, "fDMult2".hashCode)
+  		val out = FMat.newOrCheckFMat(nrows, ncols, outmat, GUID, "dMult2".hashCode)
   		Mat.nflops += length
   		var i = 0
   		val dvar = a.data(0)
@@ -232,7 +234,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     if (ncols != a.nrows) {
     	throw new RuntimeException("dimensions mismatch")
     } else {
-    	val out = FMat.newOrCheckFMat(nrows, a.ncols, outmat, GUID, a.GUID, "fSMult".hashCode)
+    	val out = FMat.newOrCheckFMat(nrows, a.ncols, outmat, GUID, a.GUID, "dMult".hashCode)
     	out.clear
     	Mat.nflops += 2L * nrows * a.nnz
     	val ioff = Mat.ioneBased;
@@ -300,7 +302,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   def DMult(aa:FMat, omat:Mat):FMat = 
   	if (ncols == aa.nrows) {
-  		val out = FMat.newOrCheckFMat(nrows, aa.ncols, omat, GUID, aa.GUID, "DMult".hashCode) // Needs to be cleared
+  		val out = FMat.newOrCheckFMat(nrows, aa.ncols, omat, GUID, aa.GUID, "dMult".hashCode) // Needs to be cleared
   		out.clear
   		Mat.nflops += 2L * length * aa.ncols
   		for (i <- 0 until aa.ncols)
@@ -321,7 +323,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   def sDMult(aa:FMat, omat:Mat):FMat = 
   	if (ncols == aa.nrows) {
-  		val out = FMat.newOrCheckFMat(nrows, aa.ncols, omat, GUID, aa.GUID, "sDmult".hashCode)
+  		val out = FMat.newOrCheckFMat(nrows, aa.ncols, omat, GUID, aa.GUID, "dMult".hashCode)
   		Mat.nflops += 2L * length * aa.ncols
   		for (i <- 0 until aa.ncols)
   			for (j <- 0 until nrows) {
@@ -707,13 +709,13 @@ object FMat {
   def apply(a:DenseMat[Float]):FMat = new FMat(a.nrows, a.ncols, a.data) 
 
   def apply(x:Mat):FMat = {
-    var out:FMat = null
+    val out = FMat.newOrCheckFMat(x.nrows, x.ncols, null, x.GUID, "FMat".hashCode)
     x match {
-      case dd:DMat => {out = FMat(x.nrows, x.ncols); Mat.copyToFloatArray(dd.data, 0, out.data, 0, dd.length)}
-      case ff:FMat => {out = FMat(x.nrows, x.ncols); System.arraycopy(ff.data, 0, out.data, 0, ff.length)}
-      case ii:IMat => {out = FMat(x.nrows, x.ncols); Mat.copyToFloatArray(ii.data, 0, out.data, 0, ii.length)}
-      case ss:SMat => out = FMat(ss.full)
-      case gg:GMat => out = gg.toFMat
+      case dd:DMat => {Mat.copyToFloatArray(dd.data, 0, out.data, 0, dd.length)}
+      case ff:FMat => {System.arraycopy(ff.data, 0, out.data, 0, ff.length)}
+      case ii:IMat => {Mat.copyToFloatArray(ii.data, 0, out.data, 0, ii.length)}
+      case ss:SMat => ss.full(out)
+      case gg:GMat => gg.toFMat(out)
       case _ => throw new RuntimeException("Unsupported source type")
     }
     out
@@ -806,7 +808,7 @@ object FMat {
       }
     }
   }
-    
+   
   def newOrCheckFMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):FMat = {
     if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
       newOrCheckFMat(nr, nc, outmat)
