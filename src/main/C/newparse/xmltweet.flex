@@ -35,9 +35,7 @@ PUNCT	   [;:,.?!]
 }
 
 {DIGF}"-"{DIGT}"-"{DIGT}"T"{DIGT}":"{DIGT}":"{DIGT}("-"|"+"){DIGT}":"{DIGT}       {
-  printf("%s", yytext);
   int tt = parsedate(yytext);
-  printf(" %d\n", tt);
   addtok(tt);
 }
 

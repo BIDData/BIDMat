@@ -240,11 +240,11 @@ object Mat {
   
   var compressionLevel = 3        // for zlib
   
-  var chunkSize = 1024*1024         // for either method
+  var chunkSize = 1024*1024       // for either method
   
   var szipBlock = 32              // szip block size
   
-  var numThreads = 8
+  var numThreads = Runtime.getRuntime().availableProcessors();
   
   var noMKL:Boolean = false
   
@@ -267,6 +267,8 @@ object Mat {
   val cache4 = HashMap.empty[Tuple4[Long,Long,Long,Int],Mat]
   
   var hasCUDA = 0
+  
+  var useStdio = (! System.getProperty("os.name").startsWith("Windows"))
   
   def checkMKL:Unit = {
     if (!noMKL) {

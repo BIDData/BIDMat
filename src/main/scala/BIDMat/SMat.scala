@@ -50,12 +50,15 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   				val out = FMat.newOrCheckFMat(nrows, a.ncols, omat, GUID, a.GUID, "SMult".hashCode)
   				if (omat.asInstanceOf[AnyRef] != null) out.clear
   				var i = 0
+  				var myflops = 0L
   				while (i < a.ncols) {
   					var j =aa.jc(i)-ioff
   					while (j < aa.jc(i+1)-ioff) {
   						val dval = aa.data(j)
   						var k = jc(aa.ir(j)-ioff)-ioff
-  						while (k < jc(aa.ir(j)+1-ioff)-ioff) {
+  						var k1 = jc(aa.ir(j)+1-ioff)-ioff
+  						myflops += 2*(k1-k)
+  						while (k < k1) {
   							out.data(ir(k)-ioff+nrows*i) +=  data(k) * dval
   							k += 1
   						}
@@ -63,6 +66,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   					}
   					i += 1
   				}
+  				Mat.nflops += myflops
   				out
   			}
   			case dd:FMat => {
@@ -92,12 +96,12 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   						jc0 = SparseMat.incInds(jc)
   						ir0 = SparseMat.incInds(ir)
   					}
-  					//	    if (dd.ncols == 1) {
-  					// Seg faults in linux and windows			
-  					//                scscmv("N", nrows, ncols, 1.0f, "GLNF", data, ir, jc, dd.data, 0f, out.data) 
-  					//	    } else {
-  					scscmm("N", nrows, nc, ncols, 1.0f, "GLNF", data, ir0, jc0, dd.data, ncols, 0f, out.data, out.nrows)
-  					//	  }
+  	  	    if (dd.ncols == 1) {
+  					// Seg faults in linux and windows - fixed to use one thread			
+  	  	    	scscmv("N", nrows, ncols, 1.0f, "GLNF", data, ir, jc, dd.data, 0f, out.data) 
+  	  	    } else {
+  	  	    	scscmm("N", nrows, nc, ncols, 1.0f, "GLNF", data, ir0, jc0, dd.data, ncols, 0f, out.data, out.nrows)
+  	  	    }
   				}
   				out
   			}

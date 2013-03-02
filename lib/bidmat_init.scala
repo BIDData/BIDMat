@@ -6,3 +6,4 @@ import BIDMat.Plotting._
 
 Mat.checkMKL
 Mat.checkCUDA
+
