@@ -624,17 +624,16 @@ object DMat {
     0
   }
    
-  def apply(nr:Int, nc:Int) = new DMat(nr, nc, new Array[Double](nr*nc))
-
-  def apply(a:DenseMat[Double]):DMat = new DMat(a.nrows, a.ncols, a.data) 
+  def apply(nr:Int, nc:Int) = new DMat(nr, nc, new Array[Double](nr*nc)) 
 
   def apply(x:Mat):DMat = {
-    var out:DMat = null
+    val out = DMat.newOrCheckDMat(x.nrows, x.ncols, null, x.GUID, "DMat".hashCode)
     x match {
-      case dd:DMat => {out = DMat(x.nrows, x.ncols); System.arraycopy(dd.data, 0, out.data, 0, dd.length)}
-      case ff:FMat => {out = DMat(x.nrows, x.ncols); Mat.copyToDoubleArray(ff.data, 0, out.data, 0, ff.length)}
-      case ii:IMat => {out = DMat(x.nrows, x.ncols); Mat.copyToDoubleArray(ii.data, 0, out.data, 0, ii.length)}
-      case ss:SDMat => out = DMat(ss.full)
+      case dd:DMat => {System.arraycopy(dd.data, 0, out.data, 0, dd.length)}
+      case ff:FMat => {Mat.copyToDoubleArray(ff.data, 0, out.data, 0, ff.length)}
+      case ii:IMat => {Mat.copyToDoubleArray(ii.data, 0, out.data, 0, ii.length)}
+      case ss:SDMat => ss.full(out)
+      case gg:GMat => gg.toFMat(out)
       case _ => throw new RuntimeException("Unsupported source type")
     }
     out
@@ -683,7 +682,7 @@ object DMat {
 
 
   def elem(x:Double) = {
-    val out = DMat(1,1)
+    val out = DMat.newOrCheckDMat(1,1,null,x.hashCode,"delem".hashCode)
     out.data(0) = x
     out
   }
