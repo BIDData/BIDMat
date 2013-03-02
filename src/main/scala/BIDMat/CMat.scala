@@ -100,7 +100,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
   
   def t(oldmat:Mat):CMat  = {
-    var out = CMat.newOrCheckCMat(ncols, nrows, oldmat)
+    var out = CMat.newOrCheckCMat(ncols, nrows, oldmat, GUID, "t".hashCode)
     var i = 0
     while (i < nrows) {
       var j = 0
@@ -117,7 +117,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   override def t:CMat = t(null:CMat)
   
   def h(oldmat:Mat):CMat  = {
-    var out = CMat.newOrCheckCMat(ncols, nrows, oldmat)
+    var out = CMat.newOrCheckCMat(ncols, nrows, oldmat, GUID, "h".hashCode)
     var i = 0
     while (i < nrows) {
       var j = 0
@@ -137,7 +137,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     if (ncols != a.ncols) {
       throw new RuntimeException("ncols must match")
     } else {
-      var out = CMat(nrows+a.nrows, ncols)
+      var out = CMat.newOrCheckCMat(nrows+a.nrows, ncols, null, GUID, a.GUID, "vertcat".hashCode)
       var i = 0
       while (i < ncols) {
         System.arraycopy(data, 2*i*nrows, out.data, 2*i*(nrows+a.nrows), 2*nrows)
@@ -151,7 +151,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     if (nrows != a.nrows) {
       throw new RuntimeException("nrows must match")
     } else {
-      var out = CMat(nrows, ncols+a.ncols)
+      var out = CMat.newOrCheckCMat(nrows, ncols+a.ncols, null, GUID, a.GUID, "horzcat".hashCode)
       System.arraycopy(data, 0, out.data, 0, 2*nrows*ncols)
       System.arraycopy(a.data, 0, out.data, 2*nrows*ncols, 2*nrows*a.ncols)
       out
@@ -184,9 +184,9 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   def find3:(IMat, IMat, CMat) = {
     val off = Mat.oneBased
-    val iout = IMat(nnz, 1)
-    val jout = IMat(nnz, 1)
-    val vout = CMat(nnz, 1)
+    val iout = IMat.newOrCheckIMat(nnz, 1, null, GUID, "find3_1".hashCode)
+    val jout = IMat.newOrCheckIMat(nnz, 1, null, GUID, "find3_2".hashCode)
+    val vout = CMat.newOrCheckCMat(nnz, 1, null, GUID, "find3_3".hashCode)
     findInds(iout, 0)
     var i = 0
     while (i < iout.length) {
@@ -203,13 +203,13 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   override def apply(iv:IMat):CMat = 
     iv match {
       case aa:MatrixWildcard => {
-        val out = CMat(length.toInt, 1)
+        val out = CMat.newOrCheckCMat(length, 1, null, GUID, "apply1dx".hashCode)
         System.arraycopy(data, 0, out.data, 0, 2*out.length)
         out
       }
       case _ => {
       	val off = Mat.oneBased
-        val out = CMat(iv.nrows, iv.ncols)
+      	val out = CMat.newOrCheckCMat(iv.nrows, iv.ncols, null, GUID, "apply1d".hashCode)
         var i = 0
         while (i < out.length) {
           val ind = iv.data(i) - off
@@ -1132,6 +1132,51 @@ object CMat {
         outmat.recycle(nr, nc, 0).asInstanceOf[CMat]
       } else {
       	outmat.asInstanceOf[CMat]
+      }
+    }
+  }  
+   
+  def newOrCheckCMat(nr:Int, nc:Int, outmat:Mat, matGuid:Long, opHash:Int):CMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheckCMat(nr, nc, outmat)
+    } else {
+      val key = (matGuid, opHash)
+      if (Mat.cache2.contains(key)) {
+      	newOrCheckCMat(nr, nc, Mat.cache2(key))
+      } else {
+        val omat = newOrCheckCMat(nr, nc, null)
+        Mat.cache2(key) = omat
+        omat
+      }
+    }
+  }
+  
+  def newOrCheckCMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, opHash:Int):CMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheckCMat(nr, nc, outmat)
+    } else {
+      val key = (guid1, guid2, opHash)
+      if (Mat.cache3.contains(key)) {
+      	newOrCheckCMat(nr, nc, Mat.cache3(key))
+      } else {
+        val omat = newOrCheckCMat(nr, nc, null)
+        Mat.cache3(key) = omat
+        omat
+      }
+    }
+  }
+   
+  def newOrCheckCMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):CMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheckCMat(nr, nc, outmat)
+    } else {
+      val key = (guid1, guid2, guid3, opHash)
+      if (Mat.cache4.contains(key)) {
+      	newOrCheckCMat(nr, nc, Mat.cache4(key))
+      } else {
+        val omat = newOrCheckCMat(nr, nc, null)
+        Mat.cache4(key) = omat
+        omat
       }
     }
   }

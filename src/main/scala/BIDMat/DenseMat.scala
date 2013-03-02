@@ -200,7 +200,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   def gfind3:(IMat, IMat, DenseMat[T]) = {
     val iout = IMat.newOrCheckIMat(nnz, 1, null, GUID, "gfind3_1".hashCode)
     val jout = IMat.newOrCheckIMat(nnz, 1, null, GUID, "gfind3_2".hashCode)
-    val vout = DenseMat.newOrCheck(nnz, 1, null, GUID, "gfind3_2".hashCode)
+    val vout = DenseMat.newOrCheck(nnz, 1, null, GUID, "gfind3_3".hashCode)
     findInds(iout, 0)
     val off = Mat.oneBased
     var i = 0
@@ -276,8 +276,8 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
  /*
   * Implement a(im) = b where im is a matrix of indices to a, and b is a constant
   */
-  def update(a:IMat, b:T):T = {
-    a match {
+  def update(inds:IMat, b:T):T = {
+    inds match {
   		case aaa:MatrixWildcard => {
   			var i = 0
   			while (i < length) {
@@ -288,8 +288,8 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   		case _ => {
   			var i = 0
   			val off = Mat.oneBased
-  			while (i < a.length) {
-  				val ind = a.data(i) - off
+  			while (i < inds.length) {
+  				val ind = inds.data(i) - off
   				if (ind < 0 || ind >= length) {
   					throw new RuntimeException("bad linear index "+(ind+off)+" vs "+length)
   				} else {
@@ -301,24 +301,76 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
     }  
     b
   }
+  
+  def checkInds(inds:IMat, limit:Int, typ:String) = {
+  	val off = Mat.oneBased
+  	var i = 0
+  	while (i < inds.length) {
+  		val r = inds(i)-off
+  		if (r >= limit) throw new RuntimeException(typ+ " index out of range %d %d" format (r, limit))
+  		i += 1
+  	}
+  }
   /*
   * Implement slicing, a(iv,jv) where iv and jv are vectors, using ? as wildcard
   */
-  def gapply(iv:IMat, jv:IMat):DenseMat[T] = {
-    val rowinds = DenseMat.getInds(iv, nrows)
-    val colinds = DenseMat.getInds(jv, ncols)
-    val out = DenseMat.newOrCheck(rowinds.length, colinds.length, null, GUID, iv.GUID, jv.GUID, "gapply2d".hashCode)
+  def gapply(rowinds:IMat, colinds:IMat):DenseMat[T] = {
+    var out:DenseMat[T] = null
     val off = Mat.oneBased
-    var i = 0
-    while (i < out.ncols) {
-      var j = 0
-      val c = colinds(i) - off
-      while (j < out.nrows) {
-        out.data(j+i*out.nrows) = data(rowinds(j)-off+nrows*c)
-        j += 1
-      }
-      i += 1
+    rowinds match {
+    case dummy:MatrixWildcard => {
+    	colinds match {
+    	case dummy2:MatrixWildcard => {
+    		out = DenseMat.newOrCheck(nrows, ncols, null, GUID, rowinds.GUID, colinds.GUID, "gapply2d".hashCode)
+    		System.arraycopy(data, 0, out.data, 0, length)
+    	}
+    	case _ => {
+    		out = DenseMat.newOrCheck(nrows, colinds.length, null, GUID, rowinds.GUID, colinds.GUID, "gapply2d".hashCode)
+    		var i = 0 
+    		while (i < colinds.length) {
+    			val c = colinds(i) - off
+    		  if (c >= ncols) throw new RuntimeException("col index out of range %d %d" format (c, ncols))
+    			System.arraycopy(data, c*nrows, out.data, i*nrows, nrows)
+    			i += 1
+    		}
+    	}
+    	}
     }
+    case _ => {
+      checkInds(rowinds, nrows, "row") 
+    	colinds match {
+    	case dummy2:MatrixWildcard => {
+    		out = DenseMat.newOrCheck(rowinds.length, ncols, null, GUID, rowinds.GUID, colinds.GUID, "gapply2d".hashCode)
+    		var i = 0
+    		while (i < ncols) {
+    		  var j = 0
+    		  while (j < out.nrows) {
+    		  	val r = rowinds(j)-off
+    		  	out.data(j+i*out.nrows) = data(r+i*nrows)
+    		    j += 1
+    		  }
+    		  i += 1
+    		}
+    	}
+    	case _ => {
+    		out = DenseMat.newOrCheck(rowinds.length, colinds.length, null, GUID, rowinds.GUID, colinds.GUID, "gapply2d".hashCode)
+    		var i = 0
+    		while (i < out.ncols) {
+    			var j = 0
+    			val c = colinds(i) - off
+    			if (c >= ncols) throw new RuntimeException("col index out of range %d %d" format (c, ncols))
+    			while (j < out.nrows) {
+    			  val r = rowinds(j)-off
+    				out.data(j+i*out.nrows) = data(r+nrows*c)
+    				j += 1
+    			}
+    			i += 1
+    		}
+    	}
+    	}
+    }
+  }
+
     out
   }
   /*
@@ -337,24 +389,69 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   /*
   * Implement sliced assignment, a(iv,jv) = b where iv and jv are vectors, using ? as wildcard
   */ 
-  def _update(iv:IMat, jv:IMat, b:DenseMat[T]):DenseMat[T] = {
-    val rowinds = DenseMat.getInds(iv, nrows)
-    val colinds = DenseMat.getInds(jv, ncols) 
-    if (rowinds.length != b.nrows || colinds.length != b.ncols) {
-      throw new RuntimeException("dims mismatch in assignment")
-    } else {
-    	val off = Mat.oneBased
-      var i = 0
-      while (i < b.ncols) {
-      	val c = colinds(i) - off 
-        var j = 0
-        while (j < b.nrows) {
-          data(rowinds(j)-off+nrows*c) = b.data(j+i*b.nrows)
-          j += 1
-        }
-        i += 1
+  def _update(rowinds:IMat, colinds:IMat, b:DenseMat[T]):DenseMat[T] = {
+  	val off = Mat.oneBased
+  	rowinds match {
+  	case dummy:MatrixWildcard => {
+  		colinds match {
+  		case dummy2:MatrixWildcard => {
+  			if (nrows != b.nrows || ncols != b.ncols) {
+  				throw new RuntimeException("dims mismatch in assignment")
+  			}
+  			System.arraycopy(b.data, 0, data, 0, length) 
+  		}
+  		case _ => {
+  			if (nrows != b.nrows || colinds.length != b.ncols) {
+  				throw new RuntimeException("dims mismatch in assignment")
+  			}
+  			var i = 0 
+    		while (i < colinds.length) {
+    			val c = colinds(i) - off
+    		  if (c >= ncols) throw new RuntimeException("col index out of range %d %d" format (c, ncols))
+    			System.arraycopy(b.data, i*nrows, data, c*nrows, nrows)
+    			i += 1
+    		}
+  		}
+  		}
+  	}
+    case _ => {
+      checkInds(rowinds, nrows, "row") 
+    	colinds match {
+    	case dummy2:MatrixWildcard => {
+    		if (rowinds.length != b.nrows || ncols != b.ncols) {
+  				throw new RuntimeException("dims mismatch in assignment")
+  			}
+    		var i = 0
+    		while (i < ncols) {
+    		  var j = 0
+    		  while (j < b.nrows) {
+    		  	val r = rowinds(j)-off
+    		  	data(r+i*nrows) = b.data(j+i*b.nrows) 
+    		    j += 1
+    		  }
+    		  i += 1
+    		}
+    	}
+    	case _ => {
+    		if (rowinds.length != b.nrows || colinds.length != b.ncols) {
+  				throw new RuntimeException("dims mismatch in assignment")
+  			}
+    		var i = 0
+    		while (i < b.ncols) {
+    			val c = colinds(i) - off
+    			if (c >= ncols) throw new RuntimeException("col index out of range %d %d" format (c, ncols))
+    			var j = 0
+    			while (j < b.nrows) {
+    			  val r = rowinds(j)-off
+    				data(r+nrows*c) = b.data(j+i*b.nrows)
+    				j += 1
+    			}
+    			i += 1
+    		}
+    	}    		  
       }
     }
+  	}
     b
   }
   
@@ -370,21 +467,65 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
  /*
   * Implement sliced assignment, a(iv,jv) = b:T where iv and jv are vectors, using ? as wildcard
   */ 
-  def update(iv:IMat, jv:IMat, b:T):T = {
-    val rowinds = DenseMat.getInds(iv, nrows)
-    val colinds = DenseMat.getInds(jv, ncols) 
-    val off = Mat.oneBased
-    var i = 0
-    while (i < colinds.length) {
-    	val c = colinds(i) - off
-    	var j = 0
-    	while (j < rowinds.length) {
-    		val r = rowinds(j) - off
-    		data(r+nrows*c) = b
-    		j += 1
+  def update(rowinds:IMat, colinds:IMat, b:T):T = {
+  	val off = Mat.oneBased
+  	rowinds match {
+  	case dummy:MatrixWildcard => {
+  		colinds match {
+  		case dummy2:MatrixWildcard => {
+  			var i = 0 
+  			while (i < length) {
+  			  data(i) = b
+  			  i += 1
+  			}
+  		}
+  		case _ => {
+  			var i = 0 
+    		while (i < colinds.length) {
+    			val c = colinds(i) - off
+    		  if (c >= ncols) throw new RuntimeException("col index out of range %d %d" format (c, ncols))
+    			var j = 0
+    			while (j < nrows) {
+    			  data(j + c*nrows) = b
+    			  j += 1
+    			}
+    			i += 1
+    		}
+  		}
+  		}
+  	}
+    case _ => {
+      checkInds(rowinds, nrows, "row") 
+    	colinds match {
+    	case dummy2:MatrixWildcard => {
+    		var i = 0
+    		while (i < ncols) {
+    		  var j = 0
+    		  while (j < rowinds.length) {
+    		  	val r = rowinds(j)-off
+    		  	data(r+i*nrows) = b 
+    		    j += 1
+    		  }
+    		  i += 1
+    		}
     	}
-    	i += 1
+    	case _ => {
+    		var i = 0
+    		while (i < colinds.length) {
+    			val c = colinds(i) - off
+    			if (c >= ncols) throw new RuntimeException("col index out of range %d %d" format (c, ncols))
+    			var j = 0
+    			while (j < rowinds.length) {
+    			  val r = rowinds(j)-off
+    				data(r+nrows*c) = b
+    				j += 1
+    			}
+    			i += 1
+    		}
+    	}    		  
+      }
     }
+  	}
     b
   }
   /*
