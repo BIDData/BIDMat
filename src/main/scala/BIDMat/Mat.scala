@@ -236,6 +236,8 @@ object Mat {
   import Ordered._
   import scala.tools.jline.TerminalFactory
   
+  var useCache = false						// Use expression caching
+  
   var compressType = 1            // 0=none, 1=zlib, 2=szip
   
   var compressionLevel = 3        // for zlib
@@ -245,6 +247,8 @@ object Mat {
   var szipBlock = 32              // szip block size
   
   var numThreads = Runtime.getRuntime().availableProcessors();
+  
+  var numOMPthreads = numThreads;
   
   var noMKL:Boolean = false
   
@@ -257,8 +261,6 @@ object Mat {
   final val MSEED:Int = 1452462553 
 
   final val myrand = new java.util.Random(MSEED)
-  
-  var useCache = false
   
   val cache2 = HashMap.empty[Tuple2[Long,Int],Mat]
   

@@ -3,7 +3,6 @@
 #include <mkl.h>
 #include <mkl_spblas.h>
 #include <string.h>
-#include <omp.h>
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_SPBLAS_scsrmm 
 (JNIEnv * env, jobject calling_obj, jstring j_transa, jint m, jint n, jint k, jfloat alpha, jstring j_matdescra,
@@ -73,16 +72,9 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_SPBLAS_scscmv
 	jfloat * x = (*env)->GetPrimitiveArrayCritical(env, j_x, 0);
 	jfloat * y = (*env)->GetPrimitiveArrayCritical(env, j_y, 0);
 	jint returnValue = 0;
-    int numthreads = 0;
 
 	if (transa != NULL && matdescra != NULL && vals != NULL && ir != NULL && jc != NULL && x != NULL && y != NULL) {   
-      int cmp = (strcmp(transa, "n")==0 || strcmp(transa, "N")==0);
-      if (cmp) {
-        numthreads = omp_get_num_threads();
-        omp_set_num_threads(1);
-      }
       MKL_SCSCMV(transa, &m, &k, &alpha, matdescra, vals, ir, jc, jc+1, x, &beta, y);
-      if (cmp) omp_set_num_threads(numthreads);
     } else {
       returnValue = 1;
     }
@@ -183,7 +175,6 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_SPBLAS_dcscmm
 	return returnValue;
 };
 
-
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_SPBLAS_dcscmv 
 (JNIEnv * env, jobject calling_obj, jstring j_transa, jint m, jint k, jdouble alpha, jstring j_matdescra,
  jdoubleArray j_vals, jintArray j_ir, jintArray j_jc, jdoubleArray j_x, jdouble beta, jdoubleArray j_y){
@@ -195,17 +186,10 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_SPBLAS_dcscmv
 	jdouble * x = (*env)->GetPrimitiveArrayCritical(env, j_x, 0);
 	jdouble * y = (*env)->GetPrimitiveArrayCritical(env, j_y, 0);
 	jint returnValue = 0;
-    int numthreads = 0;
 
 	if (transa != NULL && matdescra != NULL && vals != NULL && ir != NULL && jc != NULL && x != NULL && y != NULL) {   
-      int cmp = (strcmp(transa, "n")==0 || strcmp(transa, "N")==0);
-      if (cmp) {
-        numthreads = omp_get_num_threads();
-        omp_set_num_threads(1);
-      }
-	  MKL_DCSCMV(transa, &m, &k, &alpha, matdescra, vals, ir, jc, jc+1, x, &beta, y);
-      if (cmp) omp_set_num_threads(numthreads);
-	} else {
+  	  MKL_DCSCMV(transa, &m, &k, &alpha, matdescra, vals, ir, jc, jc+1, x, &beta, y);
+  	} else {
 	  returnValue = 1;
 	}
 

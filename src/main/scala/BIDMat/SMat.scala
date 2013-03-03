@@ -1,6 +1,7 @@
 package BIDMat
 
 import edu.berkeley.bid.SPBLAS._
+import edu.berkeley.bid.UTILS._
 
 case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:Array[Float]) extends SparseMat[Float](nr, nc, nnz1, ir0, jc0, data0) {
 
@@ -97,8 +98,10 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   						ir0 = SparseMat.incInds(ir)
   					}
   	  	    if (dd.ncols == 1) {
-  					// Seg faults in linux and windows - fixed to use one thread			
-  	  	    	scscmv("N", nrows, ncols, 1.0f, "GLNF", data, ir, jc, dd.data, 0f, out.data) 
+  					// Seg faults in linux and windows - fixed to use one thread	
+  	  	      setnumthreads(1)
+  	  	    	scscmv("N", nrows, ncols, 1.0f, "GLNF", data, ir, jc, dd.data, 0f, out.data)
+  	  	    	setnumthreads(Mat.numOMPthreads)
   	  	    } else {
   	  	    	scscmm("N", nrows, nc, ncols, 1.0f, "GLNF", data, ir0, jc0, dd.data, ncols, 0f, out.data, out.nrows)
   	  	    }

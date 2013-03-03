@@ -2,6 +2,17 @@
 #include <mkl.h>
 #include <mkl_trans.h>
 #include <string.h>
+#include <omp.h>
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_UTILS_getnumthreads
+(JNIEnv * env, jobject calling_obj) {
+  return omp_get_num_threads();
+}
+
+JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_setnumthreads
+(JNIEnv * env, jobject calling_obj, jint n) {
+  omp_set_num_threads(n);
+}
 
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_memcpybi
 (JNIEnv * env, jobject calling_obj, jint N, jbyteArray jA, jlong startA, jintArray jB, jlong startB){
