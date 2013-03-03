@@ -9,6 +9,9 @@ public final class UTILS {
     static {
         System.loadLibrary("bidmatmkl");
     }
+    
+    public static native  int  getnumthreads( );
+    public static native  void setnumthreads( int n );
 
     public static native  void memcpybi( int n, byte [] a, long startA, int [] b, long startB );
     public static native  void memcpybf( int n, byte [] a, long startA, float [] b, long startB );

@@ -3,6 +3,7 @@ package BIDMat
 import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.LAPACK._
 import edu.berkeley.bid.SPBLAS._
+import edu.berkeley.bid.UTILS._
 import scala.actors.Actor._
 import java.util.Arrays
 
@@ -263,13 +264,14 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
   
   def multT(a:SMat, outmat:Mat):FMat = {
-    import edu.berkeley.bid.CBLAS._
     if (ncols == a.ncols) {
     	val out = FMat.newOrCheckFMat(nrows, a.nrows, outmat, GUID, a.GUID, "multT".hashCode)
     	out.clear
     	Mat.nflops += 2L * a.nnz * nrows
     	if (nrows == 1) {
+    	  setnumthreads(1)  // Otherwise crashes 
     		scscmv("N", a.nrows, a.ncols, 1.0f, "GLNF", a.data, a.ir, a.jc, data, 0f, out.data) 
+    		setnumthreads(Mat.numOMPthreads)
     	} else {
     		out.clear
     		smcsrm(nrows, a.ncols, data, nrows, a.data, a.ir, a.jc, out.data, nrows)
