@@ -31,7 +31,7 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   }
 
   def toIMat():IMat = {
-    val out = IMat.newOrCheckIMat(nrows, ncols, null, GUID, "toIMat".hashCode)
+    val out = IMat.newOrCheckIMat(nrows, ncols, null, GUID, "toIMat".##)
     JCublas.cublasGetVector(nrows*ncols, Sizeof.INT, data, 1, Pointer.to(out.data), 1);
     out
   }
@@ -91,9 +91,8 @@ object GIMat {
   }    
   
   def apply(a:IMat):GIMat = {
-    val retv = new GIMat(a.nrows, a.ncols, new Pointer(), a.length)
+    val retv = GIMat.newOrCheckGIMat(a.nrows, a.ncols, null, a.GUID, "GIMat".##)
     val rsize = a.nrows*a.ncols
-    JCublas.cublasAlloc(rsize, Sizeof.INT, retv.data)
     JCublas.cublasSetVector(rsize, Sizeof.INT, Pointer.to(a.data), 1, retv.data, 1);
     retv
   }

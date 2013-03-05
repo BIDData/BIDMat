@@ -7,7 +7,11 @@ class Mat(nr:Int, nc:Int) {
 
   def length = nr*nc
   
-  val GUID = Mat.myrand.nextLong
+  private var _GUID = Mat.myrand.nextLong
+  
+  def setGUID(v:Long):Unit = {_GUID = v}
+  
+  def GUID:Long = _GUID
   
   def notImplemented0(s:String):Mat = { 
     throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
@@ -267,6 +271,10 @@ object Mat {
   val cache3 = HashMap.empty[Tuple3[Long,Long,Int],Mat]
   
   val cache4 = HashMap.empty[Tuple4[Long,Long,Long,Int],Mat]
+  
+  val opcodes = HashMap.empty[String, Int]
+  
+  val _opcode = 1
   
   var hasCUDA = 0
   
