@@ -31,8 +31,8 @@ case class GSMat(nr:Int, nc:Int, val nnz0:Int, val ir:Pointer, val ic:Pointer, v
   }
       
   def toSMat():SMat = { 
-    val out = SMat(nrows, ncols, nnz)
-    val tmpcols = new Array[Int](nnz)
+    val out = SMat.newOrCheckSMat(nrows, ncols, nnz, null, GUID, "toSMat".##)
+    val tmpcols = IMat.newOrCheckIMat(nnz, 1, null, GUID, "toSMat_tmp".##).data
     JCublas.cublasGetVector(nnz, Sizeof.INT, ir, 1, Pointer.to(out.ir), 1)
     JCublas.cublasGetVector(nnz, Sizeof.FLOAT, data, 1, Pointer.to(out.data), 1)
     JCublas.cublasGetVector(nnz, Sizeof.INT, ic, 1, Pointer.to(tmpcols), 1)
@@ -80,50 +80,27 @@ object GSMat {
     out
   }
   
-  def apply(a:SMat):GSMat = { 
-    val out = GSMat(a.nrows, a.ncols, a.nnz)
-    JCublas.cublasSetVector(a.nnz, Sizeof.FLOAT, Pointer.to(a.data), 1, out.data, 1)
-    if (Mat.ioneBased == 1) {
-      JCublas.cublasSetVector(a.nnz, Sizeof.INT, Pointer.to(SparseMat.decInds(a.ir)), 1, out.ir, 1)
-    } else {
-      JCublas.cublasSetVector(a.nnz, Sizeof.INT, Pointer.to(a.ir), 1, out.ir, 1)
-    }
-    JCublas.cublasSetVector(a.nnz, Sizeof.INT, Pointer.to(SparseMat.uncompressInds(a.jc, a.ir)), 1, out.ic, 1)
-    out
-  }
+  def apply(a:SMat):GSMat = fromSMat(a, null) 
  
   def fromSMat(a:SMat, b:GSMat):GSMat = {
-    val out = b.recycle(a.nrows, a.ncols, a.nnz)
+    val out = GSMat.newOrCheckGSMat(a.nrows, a.ncols, a.nnz, b, a.GUID, "fromSMat".##)
     JCublas.cublasSetVector(a.nnz, Sizeof.FLOAT, Pointer.to(a.data), 1, out.data, 1)
     if (Mat.ioneBased == 1) {
       JCublas.cublasSetVector(a.nnz, Sizeof.INT, Pointer.to(SparseMat.decInds(a.ir)), 1, out.ir, 1)
     } else {
       JCublas.cublasSetVector(a.nnz, Sizeof.INT, Pointer.to(a.ir), 1, out.ir, 1)
     }
-    JCublas.cublasSetVector(a.nnz, Sizeof.INT, Pointer.to(SparseMat.uncompressInds(a.jc, a.ir)), 1, out.ic, 1)
+    val tmpcols = IMat.newOrCheckIMat(a.nnz, 1, null, a.GUID, "fromSMat_tmp".##).data
+    SparseMat.uncompressInds(a.jc, a.ir, tmpcols)
+    JCublas.cublasSetVector(a.nnz, Sizeof.INT, Pointer.to(tmpcols), 1, out.ic, 1)
     out
   }
-
-  def newOrCheckGSMat(mat:GSMat, oldmat:Mat):GSMat = {
-  	if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows ==0 && oldmat.ncols == 0)) {
-  		GSMat(mat.nrows, mat.ncols, mat.nnz)
-  	} else {
-  		oldmat match {
-  		case omat:GSMat => if (oldmat.nrows == mat.nrows && oldmat.ncols == mat.ncols && oldmat.nnz == mat.nnz) {
-  			omat
-  		} else {
-  			omat.recycle(mat.nrows, mat.ncols, mat.nnz)
-  		}
-  		}
-  	}
-  }
-  
   
   def DDS(A:GMat, B:GMat, C:GSMat, oldmat:Mat):GSMat = {
     if (A.nrows != B.nrows || C.nrows != A.ncols || C.ncols != B.ncols) {
       throw new RuntimeException("dimensions mismatch")
     }
-    val out = newOrCheckGSMat(C, oldmat)
+    val out = GSMat.newOrCheckGSMat(C.nrows, C.ncols, C.nnz, oldmat, A.GUID, B.GUID, C.GUID, "DDS".##)
     var err = cudaMemcpy(out.ir, C.ir, Sizeof.INT * C.nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
     if (err != 0) throw new RuntimeException("CUDA DDS row copy error "+cudaGetErrorString(err))
     err = cudaMemcpy(out.ic, C.ic, Sizeof.INT * C.nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
@@ -135,46 +112,61 @@ object GSMat {
     Mat.nflops += 2L * C.nnz * A.nrows
     out    
   }
-   
-  def newOrCheckGSMat(mat:GSMat, outmat:Mat, matGuid:Long, opHash:Int):GSMat = {
+  
+  def newOrCheckGSMat(nrows:Int, ncols:Int, nnz:Int, oldmat:Mat):GSMat = {
+  	if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows ==0 && oldmat.ncols == 0)) {
+  		GSMat(nrows, ncols, nnz)
+  	} else {
+  		oldmat match {
+  		case omat:GSMat => if (oldmat.nrows == nrows && oldmat.ncols == ncols && oldmat.nnz == nnz) {
+  			omat
+  		} else {
+  			omat.recycle(nrows, ncols, nnz)
+  		}
+  		}
+  	}
+  }
+  
+   def newOrCheckGSMat(nrows:Int, ncols:Int, nnz:Int, outmat:Mat, guid1:Long, opHash:Int):GSMat = {
     if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
-      newOrCheckGSMat(mat, outmat)
+      newOrCheckGSMat(nrows, ncols, nnz, outmat)
     } else {
-      val key = (matGuid, opHash)
+      val key = (guid1, opHash)
       if (Mat.cache2.contains(key)) {
-      	newOrCheckGSMat(mat, Mat.cache2(key))
+      	newOrCheckGSMat(nrows, ncols, nnz, Mat.cache2(key))
       } else {
-        val omat = newOrCheckGSMat(mat, null)
+        val omat = newOrCheckGSMat(nrows, ncols, nnz, null)
         Mat.cache2(key) = omat
         omat
       }
     }
-  }
-  
-  def newOrCheckGSMat(mat:GSMat, outmat:Mat, guid1:Long, guid2:Long, opHash:Int):GSMat = {
+  }   
+
+  def newOrCheckGSMat(nrows:Int, ncols:Int, nnz:Int, outmat:Mat, guid1:Long, guid2:Long, opHash:Int):GSMat = {
     if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
-      newOrCheckGSMat(mat, outmat)
+      newOrCheckGSMat(nrows, ncols, nnz, outmat)
     } else {
       val key = (guid1, guid2, opHash)
       if (Mat.cache3.contains(key)) {
-      	newOrCheckGSMat(mat, Mat.cache3(key))
+      	newOrCheckGSMat(nrows, ncols, nnz, Mat.cache3(key))
       } else {
-        val omat = newOrCheckGSMat(mat, null)
+        val omat = newOrCheckGSMat(nrows, ncols, nnz, null)
         Mat.cache3(key) = omat
         omat
       }
     }
-  }
+  } 
+
     
-  def newOrCheckGSMat(mat:GSMat, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):GSMat = {
+  def newOrCheckGSMat(nrows:Int, ncols:Int, nnz:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):GSMat = {
     if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
-      newOrCheckGSMat(mat, outmat)
+      newOrCheckGSMat(nrows, ncols, nnz, outmat)
     } else {
       val key = (guid1, guid2, guid3, opHash)
       if (Mat.cache4.contains(key)) {
-      	newOrCheckGSMat(mat, Mat.cache4(key))
+      	newOrCheckGSMat(nrows, ncols, nnz, Mat.cache4(key))
       } else {
-        val omat = newOrCheckGSMat(mat, null)
+        val omat = newOrCheckGSMat(nrows, ncols, nnz, null)
         Mat.cache4(key) = omat
         omat
       }

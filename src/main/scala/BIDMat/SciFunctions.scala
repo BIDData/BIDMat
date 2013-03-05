@@ -396,130 +396,130 @@ object SciFunctions {
     poissrnd(lambda, IMat(lambda.nrows, lambda.ncols))
   }
   
-  def min(a:DMat, b:DMat) = a.ddMatOp(b, (x:Double, y:Double) => math.min(x,y), null)
-  def max(a:DMat, b:DMat) = a.ddMatOp(b, (x:Double, y:Double) => math.max(x,y), null)
-  def sum(a:DMat, n:Int) = a.ddReduceOp(n, (x:Double) => x, (x:Double, y:Double) => x+y, null)
-  def cumsum(a:DMat, n:Int) = a.ddReduceAll(n, (x:Double) => x, (x:Double, y:Double) => x+y, null)
-  def maxi(a:DMat, n:Int) = a.ddReduceOp(n, (x:Double) => x, (x:Double, y:Double) => math.max(x,y), null)
-  def mini(a:DMat, n:Int):DMat = a.ddReduceOp(n, (x:Double) => x, (x:Double, y:Double) => math.min(x,y), null)
-  def sum(a:DMat) = a.ddReduceOp(0, (x:Double) => x, (x:Double, y:Double) => x+y, null)
-  def cumsum(a:DMat) = a.ddReduceAll(0, (x:Double) => x, (x:Double, y:Double) => x+y, null)
-  def maxi(a:DMat) = a.ddReduceOp(0, (x:Double) => x, (x:Double, y:Double) => math.max(x,y), null)
-  def mini(a:DMat):DMat = a.ddReduceOp(0, (x:Double) => x, (x:Double, y:Double) => math.min(x,y), null)
-  def maxi2(a:DMat,d:Int):(DMat,IMat) = {val (m,ii)=a.ggOpt2(d,(x:Double,y:Double)=>(x>y)); (DMat(m), ii)}
-  def mini2(a:DMat,d:Int):(DMat,IMat) = {val (m,ii)=a.ggOpt2(d,(x:Double,y:Double)=>(x<y)); (DMat(m), ii)}
-  def maxi2(a:DMat):(DMat,IMat) = {val (m,ii)=a.ggOpt2(0,(x:Double,y:Double)=>(x>y)); (DMat(m), ii)}
-  def mini2(a:DMat):(DMat,IMat) = {val (m,ii)=a.ggOpt2(0,(x:Double,y:Double)=>(x<y)); (DMat(m), ii)}
+  def min(a:DMat, b:DMat) = a.ddMatOp(b, DMat.minFun, null)
+  def max(a:DMat, b:DMat) = a.ddMatOp(b, DMat.maxFun, null)
+  def sum(a:DMat, n:Int) = a.ddReduceOp(n, DMat.idFun, DMat.sumFun, null)
+  def cumsum(a:DMat, n:Int) = a.ddReduceAll(n, DMat.idFun, DMat.sumFun, null)
+  def maxi(a:DMat, n:Int) = a.ddReduceOp(n, DMat.idFun, DMat.maxFun, null)
+  def mini(a:DMat, n:Int):DMat = a.ddReduceOp(n, DMat.idFun, DMat.minFun, null)
+  def sum(a:DMat) = a.ddReduceOp(0, DMat.idFun, DMat.sumFun, null)
+  def cumsum(a:DMat) = a.ddReduceAll(0, DMat.idFun, DMat.sumFun, null)
+  def maxi(a:DMat) = a.ddReduceOp(0, DMat.idFun, DMat.maxFun, null)
+  def mini(a:DMat):DMat = a.ddReduceOp(0, DMat.idFun, DMat.minFun, null)
+  def maxi2(a:DMat,d:Int):(DMat,IMat) = {val (m,ii)=a.ggOpt2(d,DMat.gtPred); (DMat(m), ii)}
+  def mini2(a:DMat,d:Int):(DMat,IMat) = {val (m,ii)=a.ggOpt2(d,DMat.ltPred); (DMat(m), ii)}
+  def maxi2(a:DMat):(DMat,IMat) = {val (m,ii)=a.ggOpt2(0,DMat.gtPred); (DMat(m), ii)}
+  def mini2(a:DMat):(DMat,IMat) = {val (m,ii)=a.ggOpt2(0,DMat.ltPred); (DMat(m), ii)}
   
-  def min(a:DMat, b:DMat, out:Mat) = a.ddMatOp(b, (x:Double, y:Double) => math.min(x,y), out)
-  def max(a:DMat, b:DMat, out:Mat) = a.ddMatOp(b, (x:Double, y:Double) => math.max(x,y), out)
-  def sum(a:DMat, n:Int, out:Mat) = a.ddReduceOp(n, (x:Double) => x, (x:Double, y:Double) => x+y, out)
-  def cumsum(a:DMat, n:Int, out:Mat) = a.ddReduceAll(n, (x:Double) => x, (x:Double, y:Double) => x+y, out)
-  def maxi(a:DMat, n:Int, out:Mat) = a.ddReduceOp(n, (x:Double) => x, (x:Double, y:Double) => math.max(x,y), out)
-  def mini(a:DMat, n:Int, out:Mat):DMat = a.ddReduceOp(n, (x:Double) => x, (x:Double, y:Double) => math.min(x,y), out)
-  def sum(a:DMat, out:Mat) = a.ddReduceOp(0, (x:Double) => x, (x:Double, y:Double) => x+y, out)
-  def cumsum(a:DMat, out:Mat) = a.ddReduceAll(0, (x:Double) => x, (x:Double, y:Double) => x+y, out)
-  def maxi(a:DMat, out:Mat) = a.ddReduceOp(0, (x:Double) => x, (x:Double, y:Double) => math.max(x,y), out)
-  def mini(a:DMat, out:Mat):DMat = a.ddReduceOp(0, (x:Double) => x, (x:Double, y:Double) => math.min(x,y), out)
+  def min(a:DMat, b:DMat, out:Mat) = a.ddMatOp(b, DMat.minFun, out)
+  def max(a:DMat, b:DMat, out:Mat) = a.ddMatOp(b, DMat.maxFun, out)
+  def sum(a:DMat, n:Int, out:Mat) = a.ddReduceOp(n, DMat.idFun, DMat.sumFun, out)
+  def cumsum(a:DMat, n:Int, out:Mat) = a.ddReduceAll(n, DMat.idFun, DMat.sumFun, out)
+  def maxi(a:DMat, n:Int, out:Mat) = a.ddReduceOp(n, DMat.idFun, DMat.maxFun, out)
+  def mini(a:DMat, n:Int, out:Mat):DMat = a.ddReduceOp(n, DMat.idFun, DMat.minFun, out)
+  def sum(a:DMat, out:Mat) = a.ddReduceOp(0, DMat.idFun, DMat.sumFun, out)
+  def cumsum(a:DMat, out:Mat) = a.ddReduceAll(0, DMat.idFun, DMat.sumFun, out)
+  def maxi(a:DMat, out:Mat) = a.ddReduceOp(0, DMat.idFun, DMat.maxFun, out)
+  def mini(a:DMat, out:Mat):DMat = a.ddReduceOp(0, DMat.idFun, DMat.minFun, out)
   
-  def min(a:FMat, b:FMat) = a.ffMatOp(b, (x:Float, y:Float) => math.min(x,y), null)
-  def max(a:FMat, b:FMat) = a.ffMatOp(b, (x:Float, y:Float) => math.max(x,y), null)
-  def sum(a:FMat, n:Int) = a.ffReduceOp(n, (x:Float) => x, (x:Float, y:Float) => x+y, null)
-  def cumsum(a:FMat, n:Int) = a.ffReduceAll(n, (x:Float) => x, (x:Float, y:Float) => x+y, null)
-  def maxi(a:FMat, n:Int) = a.ffReduceOp(n, (x:Float) => x, (x:Float, y:Float) => math.max(x,y), null)
-  def mini(a:FMat, n:Int):FMat = a.ffReduceOp(n, (x:Float) => x, (x:Float, y:Float) => math.min(x,y), null)
-  def sum(a:FMat) = a.ffReduceOp(0, (x:Float) => x, (x:Float, y:Float) => x+y, null)
-  def cumsum(a:FMat) = a.ffReduceAll(0, (x:Float) => x, (x:Float, y:Float) => x+y, null)
-  def maxi(a:FMat) = a.ffReduceOp(0, (x:Float) => x, (x:Float, y:Float) => math.max(x,y), null)
-  def mini(a:FMat):FMat = a.ffReduceOp(0, (x:Float) => x, (x:Float, y:Float) => math.min(x,y), null)
-  def maxi2(a:FMat,d:Int):(FMat,IMat) = {val (m,ii)=a.ggOpt2(d,(x:Float,y:Float)=>(x>y)); (FMat(m), ii)}
-  def mini2(a:FMat,d:Int):(FMat,IMat) = {val (m,ii)=a.ggOpt2(d,(x:Float,y:Float)=>(x<y)); (FMat(m), ii)}
-  def maxi2(a:FMat):(FMat,IMat) = {val (m,ii)=a.ggOpt2(0,(x:Float,y:Float)=>(x>y)); (FMat(m), ii)}
-  def mini2(a:FMat):(FMat,IMat) = {val (m,ii)=a.ggOpt2(0,(x:Float,y:Float)=>(x<y)); (FMat(m), ii)}
+  def min(a:FMat, b:FMat) = a.ffMatOp(b, FMat.minFun, null)
+  def max(a:FMat, b:FMat) = a.ffMatOp(b, FMat.maxFun, null)
+  def sum(a:FMat, n:Int) = a.ffReduceOp(n, FMat.idFun, FMat.sumFun, null)
+  def cumsum(a:FMat, n:Int) = a.ffReduceAll(n, FMat.idFun, FMat.sumFun, null)
+  def maxi(a:FMat, n:Int) = a.ffReduceOp(n, FMat.idFun, FMat.maxFun, null)
+  def mini(a:FMat, n:Int):FMat = a.ffReduceOp(n, FMat.idFun, FMat.minFun, null)
+  def sum(a:FMat) = a.ffReduceOp(0, FMat.idFun, FMat.sumFun, null)
+  def cumsum(a:FMat) = a.ffReduceAll(0, FMat.idFun, FMat.sumFun, null)
+  def maxi(a:FMat) = a.ffReduceOp(0, FMat.idFun, FMat.maxFun, null)
+  def mini(a:FMat):FMat = a.ffReduceOp(0, FMat.idFun, FMat.minFun, null)
+  def maxi2(a:FMat,d:Int):(FMat,IMat) = {val (m,ii)=a.ggOpt2(d,FMat.gtPred); (FMat(m), ii)}
+  def mini2(a:FMat,d:Int):(FMat,IMat) = {val (m,ii)=a.ggOpt2(d,FMat.ltPred); (FMat(m), ii)}
+  def maxi2(a:FMat):(FMat,IMat) = {val (m,ii)=a.ggOpt2(0,FMat.gtPred); (FMat(m), ii)}
+  def mini2(a:FMat):(FMat,IMat) = {val (m,ii)=a.ggOpt2(0,FMat.ltPred); (FMat(m), ii)}
   
-  def min(a:FMat, b:FMat, out:Mat) = a.ffMatOp(b, (x:Float, y:Float) => math.min(x,y), out)
-  def max(a:FMat, b:FMat, out:Mat) = a.ffMatOp(b, (x:Float, y:Float) => math.max(x,y), out)
-  def sum(a:FMat, n:Int, out:Mat) = a.ffReduceOp(n, (x:Float) => x, (x:Float, y:Float) => x+y, out)
-  def cumsum(a:FMat, n:Int, out:Mat) = a.ffReduceAll(n, (x:Float) => x, (x:Float, y:Float) => x+y, out)
-  def maxi(a:FMat, n:Int, out:Mat) = a.ffReduceOp(n, (x:Float) => x, (x:Float, y:Float) => math.max(x,y), out)
-  def mini(a:FMat, n:Int, out:Mat):FMat = a.ffReduceOp(n, (x:Float) => x, (x:Float, y:Float) => math.min(x,y), out)
-  def sum(a:FMat, out:Mat) = a.ffReduceOp(0, (x:Float) => x, (x:Float, y:Float) => x+y, out)
-  def cumsum(a:FMat, out:Mat) = a.ffReduceAll(0, (x:Float) => x, (x:Float, y:Float) => x+y, out)
-  def maxi(a:FMat, out:Mat) = a.ffReduceOp(0, (x:Float) => x, (x:Float, y:Float) => math.max(x,y), out)
-  def mini(a:FMat, out:Mat):FMat = a.ffReduceOp(0, (x:Float) => x, (x:Float, y:Float) => math.min(x,y), out)
+  def min(a:FMat, b:FMat, out:Mat) = a.ffMatOp(b, FMat.minFun, out)
+  def max(a:FMat, b:FMat, out:Mat) = a.ffMatOp(b, FMat.maxFun, out)
+  def sum(a:FMat, n:Int, out:Mat) = a.ffReduceOp(n, FMat.idFun, FMat.sumFun, out)
+  def cumsum(a:FMat, n:Int, out:Mat) = a.ffReduceAll(n, FMat.idFun, FMat.sumFun, out)
+  def maxi(a:FMat, n:Int, out:Mat) = a.ffReduceOp(n, FMat.idFun, FMat.maxFun, out)
+  def mini(a:FMat, n:Int, out:Mat):FMat = a.ffReduceOp(n, FMat.idFun, FMat.minFun, out)
+  def sum(a:FMat, out:Mat) = a.ffReduceOp(0, FMat.idFun, FMat.sumFun, out)
+  def cumsum(a:FMat, out:Mat) = a.ffReduceAll(0, FMat.idFun, FMat.sumFun, out)
+  def maxi(a:FMat, out:Mat) = a.ffReduceOp(0, FMat.idFun, FMat.maxFun, out)
+  def mini(a:FMat, out:Mat):FMat = a.ffReduceOp(0, FMat.idFun, FMat.minFun, out)
   
-  def min (a:IMat, b:IMat) = a.iiMatOp(b, (x:Int, y:Int) => math.min(x,y), null)
-  def max (a:IMat, b:IMat) = a.iiMatOp(b, (x:Int, y:Int) => math.max(x,y), null)
-  def sum(a:IMat, n:Int) = a.iiReduceOp(n, (x:Int) => x, (x:Int, y:Int) => x+y, null)
-  def cumsum(a:IMat, n:Int) = a.iiReduceAll(n, (x:Int) => x, (x:Int, y:Int) => x+y, null)
-  def maxi(a:IMat, n:Int) = a.iiReduceOp(n, (x:Int) => x, (x:Int, y:Int) => math.max(x,y), null)
-  def mini(a:IMat, n:Int):IMat = a.iiReduceOp(n, (x:Int) => x, (x:Int, y:Int) => math.min(x,y), null)
-  def sum(a:IMat) = a.iiReduceOp(0, (x:Int) => x, (x:Int, y:Int) => x+y, null)
-  def cumsum(a:IMat) = a.iiReduceAll(0, (x:Int) => x, (x:Int, y:Int) => x+y, null)
-  def maxi(a:IMat) = a.iiReduceOp(0, (x:Int) => x, (x:Int, y:Int) => math.max(x,y), null)
-  def mini(a:IMat):IMat = a.iiReduceOp(0, (x:Int) => x, (x:Int, y:Int) => math.min(x,y), null)
-  def maxi2(a:IMat,d:Int):(IMat,IMat) = {val (m,ii)=a.ggOpt2(d,(x:Int,y:Int)=>(x>y)); (IMat(m), ii)}
-  def mini2(a:IMat,d:Int):(IMat,IMat) = {val (m,ii)=a.ggOpt2(d,(x:Int,y:Int)=>(x<y)); (IMat(m), ii)}
-  def maxi2(a:IMat):(IMat,IMat) = {val (m,ii)=a.ggOpt2(0,(x:Int,y:Int)=>(x>y)); (IMat(m), ii)}
-  def mini2(a:IMat):(IMat,IMat) = {val (m,ii)=a.ggOpt2(0,(x:Int,y:Int)=>(x<y)); (IMat(m), ii)}
+  def min (a:IMat, b:IMat) = a.iiMatOp(b, IMat.minFun, null)
+  def max (a:IMat, b:IMat) = a.iiMatOp(b, IMat.maxFun, null)
+  def sum(a:IMat, n:Int) = a.iiReduceOp(n, IMat.idFun, IMat.sumFun, null)
+  def cumsum(a:IMat, n:Int) = a.iiReduceAll(n, IMat.idFun, IMat.sumFun, null)
+  def maxi(a:IMat, n:Int) = a.iiReduceOp(n, IMat.idFun, IMat.maxFun, null)
+  def mini(a:IMat, n:Int):IMat = a.iiReduceOp(n, IMat.idFun, IMat.minFun, null)
+  def sum(a:IMat) = a.iiReduceOp(0, IMat.idFun, IMat.sumFun, null)
+  def cumsum(a:IMat) = a.iiReduceAll(0, IMat.idFun, IMat.sumFun, null)
+  def maxi(a:IMat) = a.iiReduceOp(0, IMat.idFun, IMat.maxFun, null)
+  def mini(a:IMat):IMat = a.iiReduceOp(0, IMat.idFun, IMat.minFun, null)
+  def maxi2(a:IMat,d:Int):(IMat,IMat) = {val (m,ii)=a.ggOpt2(d,IMat.gtPred); (IMat(m), ii)}
+  def mini2(a:IMat,d:Int):(IMat,IMat) = {val (m,ii)=a.ggOpt2(d,IMat.ltPred); (IMat(m), ii)}
+  def maxi2(a:IMat):(IMat,IMat) = {val (m,ii)=a.ggOpt2(0,IMat.gtPred); (IMat(m), ii)}
+  def mini2(a:IMat):(IMat,IMat) = {val (m,ii)=a.ggOpt2(0,IMat.ltPred); (IMat(m), ii)}
   
-  def min (a:IMat, b:IMat, out:Mat) = a.iiMatOp(b, (x:Int, y:Int) => math.min(x,y), out)
-  def max (a:IMat, b:IMat, out:Mat) = a.iiMatOp(b, (x:Int, y:Int) => math.max(x,y), out)
-  def sum(a:IMat, n:Int, out:Mat) = a.iiReduceOp(n, (x:Int) => x, (x:Int, y:Int) => x+y, out)
-  def cumsum(a:IMat, n:Int, out:Mat) = a.iiReduceAll(n, (x:Int) => x, (x:Int, y:Int) => x+y, out)
-  def maxi(a:IMat, n:Int, out:Mat) = a.iiReduceOp(n, (x:Int) => x, (x:Int, y:Int) => math.max(x,y), out)
-  def mini(a:IMat, n:Int, out:Mat):IMat = a.iiReduceOp(n, (x:Int) => x, (x:Int, y:Int) => math.min(x,y), out)
-  def sum(a:IMat, out:Mat) = a.iiReduceOp(0, (x:Int) => x, (x:Int, y:Int) => x+y, out)
-  def cumsum(a:IMat, out:Mat) = a.iiReduceAll(0, (x:Int) => x, (x:Int, y:Int) => x+y, out)
-  def maxi(a:IMat, out:Mat) = a.iiReduceOp(0, (x:Int) => x, (x:Int, y:Int) => math.max(x,y), out)
-  def mini(a:IMat, out:Mat):IMat = a.iiReduceOp(0, (x:Int) => x, (x:Int, y:Int) => math.min(x,y), out)
+  def min (a:IMat, b:IMat, out:Mat) = a.iiMatOp(b, IMat.minFun, out)
+  def max (a:IMat, b:IMat, out:Mat) = a.iiMatOp(b, IMat.maxFun, out)
+  def sum(a:IMat, n:Int, out:Mat) = a.iiReduceOp(n, IMat.idFun, IMat.sumFun, out)
+  def cumsum(a:IMat, n:Int, out:Mat) = a.iiReduceAll(n, IMat.idFun, IMat.sumFun, out)
+  def maxi(a:IMat, n:Int, out:Mat) = a.iiReduceOp(n, IMat.idFun, IMat.maxFun, out)
+  def mini(a:IMat, n:Int, out:Mat):IMat = a.iiReduceOp(n, IMat.idFun, IMat.minFun, out)
+  def sum(a:IMat, out:Mat) = a.iiReduceOp(0, IMat.idFun, IMat.sumFun, out)
+  def cumsum(a:IMat, out:Mat) = a.iiReduceAll(0, IMat.idFun, IMat.sumFun, out)
+  def maxi(a:IMat, out:Mat) = a.iiReduceOp(0, IMat.idFun, IMat.maxFun, out)
+  def mini(a:IMat, out:Mat):IMat = a.iiReduceOp(0, IMat.idFun, IMat.minFun, out)
   
-  def min(a:SDMat, b:SDMat) = a.ssMatOp(b, (x:Double, y:Double) => math.min(x,y), null)
-  def max(a:SDMat, b:SDMat) = a.ssMatOp(b, (x:Double, y:Double) => math.max(x,y), null)
-  def sum(a:SDMat, n:Int) = a.ssReduceOp(n, (x:Double) => x, (x:Double, y:Double) => x+y, null)
-  def maxi(a:SDMat, n:Int) = a.ssReduceOp(n, (x:Double) => x, (x:Double, y:Double) => math.max(x,y), null)
-  def mini(a:SDMat, n:Int) = a.ssReduceOp(n, (x:Double) => x, (x:Double, y:Double) => math.min(x,y), null)
-  def sum(a:SDMat) = a.ssReduceOp(0, (x:Double) => x, (x:Double, y:Double) => x+y, null)
-  def maxi(a:SDMat) = a.ssReduceOp(0, (x:Double) => x, (x:Double, y:Double) => math.max(x,y), null)
-  def mini(a:SDMat) = a.ssReduceOp(0, (x:Double) => x, (x:Double, y:Double) => math.min(x,y), null)
+  def min(a:SDMat, b:SDMat) = a.ssMatOp(b, DMat.minFun, null)
+  def max(a:SDMat, b:SDMat) = a.ssMatOp(b, DMat.maxFun, null)
+  def sum(a:SDMat, n:Int) = a.ssReduceOp(n, DMat.idFun, DMat.sumFun, null)
+  def maxi(a:SDMat, n:Int) = a.ssReduceOp(n, DMat.idFun, DMat.maxFun, null)
+  def mini(a:SDMat, n:Int) = a.ssReduceOp(n, DMat.idFun, DMat.minFun, null)
+  def sum(a:SDMat) = a.ssReduceOp(0, DMat.idFun, DMat.sumFun, null)
+  def maxi(a:SDMat) = a.ssReduceOp(0, DMat.idFun, DMat.maxFun, null)
+  def mini(a:SDMat) = a.ssReduceOp(0, DMat.idFun, DMat.minFun, null)
   
-  def sum(a:SDMat, n:Int, omat:Mat) = a.ssReduceOp(n, (x:Double) => x, (x:Double, y:Double) => x+y, omat)
-  def maxi(a:SDMat, n:Int, omat:Mat) = a.ssReduceOp(n, (x:Double) => x, (x:Double, y:Double) => math.max(x,y), omat)
-  def mini(a:SDMat, n:Int, omat:Mat) = a.ssReduceOp(n, (x:Double) => x, (x:Double, y:Double) => math.min(x,y), omat)
-  def sum(a:SDMat, omat:Mat) = a.ssReduceOp(0, (x:Double) => x, (x:Double, y:Double) => x+y, omat)
-  def maxi(a:SDMat, omat:Mat) = a.ssReduceOp(0, (x:Double) => x, (x:Double, y:Double) => math.max(x,y), omat)
-  def mini(a:SDMat, omat:Mat) = a.ssReduceOp(0, (x:Double) => x, (x:Double, y:Double) => math.min(x,y), omat)
+  def sum(a:SDMat, n:Int, omat:Mat) = a.ssReduceOp(n, DMat.idFun, DMat.sumFun, omat)
+  def maxi(a:SDMat, n:Int, omat:Mat) = a.ssReduceOp(n, DMat.idFun, DMat.maxFun, omat)
+  def mini(a:SDMat, n:Int, omat:Mat) = a.ssReduceOp(n, DMat.idFun, DMat.minFun, omat)
+  def sum(a:SDMat, omat:Mat) = a.ssReduceOp(0, DMat.idFun, DMat.sumFun, omat)
+  def maxi(a:SDMat, omat:Mat) = a.ssReduceOp(0, DMat.idFun, DMat.maxFun, omat)
+  def mini(a:SDMat, omat:Mat) = a.ssReduceOp(0, DMat.idFun, DMat.minFun, omat)
   
-  def min(a:SMat, b:SMat) = a.ssMatOp(b, (x:Float, y:Float) => math.min(x,y), null)
-  def max(a:SMat, b:SMat) = a.ssMatOp(b, (x:Float, y:Float) => math.max(x,y), null)
-  def sum(a:SMat, n:Int) = a.ssReduceOp(n, (x:Float) => x, (x:Float, y:Float) => x+y, null)
-  def maxi(a:SMat, n:Int) = a.ssReduceOp(n, (x:Float) => x, (x:Float, y:Float) => math.max(x,y), null)
-  def mini(a:SMat, n:Int) = a.ssReduceOp(n, (x:Float) => x, (x:Float, y:Float) => math.min(x,y), null)
-  def sum(a:SMat) = a.ssReduceOp(0, (x:Float) => x, (x:Float, y:Float) => x+y, null)
-  def maxi(a:SMat) = a.ssReduceOp(0, (x:Float) => x, (x:Float, y:Float) => math.max(x,y), null)
-  def mini(a:SMat) = a.ssReduceOp(0, (x:Float) => x, (x:Float, y:Float) => math.min(x,y), null)
-  def min(a:SMat, b:Float) = a.ssMatOpScalar(b, (x:Float, y:Float) => math.min(x,y), null)
-  def max(a:SMat, b:Float) = a.ssMatOpScalar(b, (x:Float, y:Float) => math.max(x,y), null)
-  def min(b:Float, a:SMat) = a.ssMatOpScalar(b, (x:Float, y:Float) => math.min(x,y), null)
-  def max(b:Float, a:SMat) = a.ssMatOpScalar(b, (x:Float, y:Float) => math.max(x,y), null)
-  def min(a:SMat, b:Float, omat:Mat) = a.ssMatOpScalar(b, (x:Float, y:Float) => math.min(x,y), omat)
-  def max(a:SMat, b:Float, omat:Mat) = a.ssMatOpScalar(b, (x:Float, y:Float) => math.max(x,y), omat)
-  def min(b:Float, a:SMat, omat:Mat) = a.ssMatOpScalar(b, (x:Float, y:Float) => math.min(x,y), omat)
-  def max(b:Float, a:SMat, omat:Mat) = a.ssMatOpScalar(b, (x:Float, y:Float) => math.max(x,y), omat)
+  def min(a:SMat, b:SMat) = a.ssMatOp(b, FMat.minFun, null)
+  def max(a:SMat, b:SMat) = a.ssMatOp(b, FMat.maxFun, null)
+  def sum(a:SMat, n:Int) = a.ssReduceOp(n, FMat.idFun, FMat.sumFun, null)
+  def maxi(a:SMat, n:Int) = a.ssReduceOp(n, FMat.idFun, FMat.maxFun, null)
+  def mini(a:SMat, n:Int) = a.ssReduceOp(n, FMat.idFun, FMat.minFun, null)
+  def sum(a:SMat) = a.ssReduceOp(0, FMat.idFun, FMat.sumFun, null)
+  def maxi(a:SMat) = a.ssReduceOp(0, FMat.idFun, FMat.maxFun, null)
+  def mini(a:SMat) = a.ssReduceOp(0, FMat.idFun, FMat.minFun, null)
+  def min(a:SMat, b:Float) = a.ssMatOpScalar(b, FMat.minFun, null)
+  def max(a:SMat, b:Float) = a.ssMatOpScalar(b, FMat.maxFun, null)
+  def min(b:Float, a:SMat) = a.ssMatOpScalar(b, FMat.minFun, null)
+  def max(b:Float, a:SMat) = a.ssMatOpScalar(b, FMat.maxFun, null)
+  def min(a:SMat, b:Float, omat:Mat) = a.ssMatOpScalar(b, FMat.minFun, omat)
+  def max(a:SMat, b:Float, omat:Mat) = a.ssMatOpScalar(b, FMat.maxFun, omat)
+  def min(b:Float, a:SMat, omat:Mat) = a.ssMatOpScalar(b, FMat.minFun, omat)
+  def max(b:Float, a:SMat, omat:Mat) = a.ssMatOpScalar(b, FMat.maxFun, omat)
 
-  def sum(a:SMat, n:Int, omat:Mat) = a.ssReduceOp(n, (x:Float) => x, (x:Float, y:Float) => x+y, omat)
-  def maxi(a:SMat, n:Int, omat:Mat) = a.ssReduceOp(n, (x:Float) => x, (x:Float, y:Float) => math.max(x,y), omat)
-  def mini(a:SMat, n:Int, omat:Mat) = a.ssReduceOp(n, (x:Float) => x, (x:Float, y:Float) => math.min(x,y), omat)
-  def sum(a:SMat, omat:Mat) = a.ssReduceOp(0, (x:Float) => x, (x:Float, y:Float) => x+y, omat)
-  def maxi(a:SMat, omat:Mat) = a.ssReduceOp(0, (x:Float) => x, (x:Float, y:Float) => math.max(x,y), omat)
-  def mini(a:SMat, omat:Mat) = a.ssReduceOp(0, (x:Float) => x, (x:Float, y:Float) => math.min(x,y), omat)
-  def min(a:SDMat, b:Double) = a.ssMatOpScalar(b, (x:Double, y:Double) => math.min(x,y), null)
-  def max(a:SDMat, b:Double) = a.ssMatOpScalar(b, (x:Double, y:Double) => math.max(x,y), null)
-  def min(b:Double, a:SDMat) = a.ssMatOpScalar(b, (x:Double, y:Double) => math.min(x,y), null)
-  def max(b:Double, a:SDMat) = a.ssMatOpScalar(b, (x:Double, y:Double) => math.max(x,y), null)
+  def sum(a:SMat, n:Int, omat:Mat) = a.ssReduceOp(n, FMat.idFun, FMat.sumFun, omat)
+  def maxi(a:SMat, n:Int, omat:Mat) = a.ssReduceOp(n, FMat.idFun, FMat.maxFun, omat)
+  def mini(a:SMat, n:Int, omat:Mat) = a.ssReduceOp(n, FMat.idFun, FMat.minFun, omat)
+  def sum(a:SMat, omat:Mat) = a.ssReduceOp(0, FMat.idFun, FMat.sumFun, omat)
+  def maxi(a:SMat, omat:Mat) = a.ssReduceOp(0, FMat.idFun, FMat.maxFun, omat)
+  def mini(a:SMat, omat:Mat) = a.ssReduceOp(0, FMat.idFun, FMat.minFun, omat)
+  def min(a:SDMat, b:Double) = a.ssMatOpScalar(b, DMat.minFun, null)
+  def max(a:SDMat, b:Double) = a.ssMatOpScalar(b, DMat.maxFun, null)
+  def min(b:Double, a:SDMat) = a.ssMatOpScalar(b, DMat.minFun, null)
+  def max(b:Double, a:SDMat) = a.ssMatOpScalar(b, DMat.maxFun, null)
   
-  def sum(a:CMat, n:Int) = a.ccReduceOpv(n, CMat.vecAdd _, null)
-  def sum(a:CMat, n:Int, c:Mat) = a.ccReduceOpv(n, CMat.vecAdd _, c)
+  def sum(a:CMat, n:Int) = a.ccReduceOpv(n, CMat.vecAddFun, null)
+  def sum(a:CMat, n:Int, c:Mat) = a.ccReduceOpv(n, CMat.vecAddFun, c)
      
   def max(a:Mat, b:Mat):Mat = {
     (a, b) match {
@@ -560,7 +560,7 @@ object SciFunctions {
   def max(a:Float, b:Mat, c:Mat):Mat = {
     b match {
       case bb:FMat => max(a, bb, c):FMat
-      case bb:IMat => max(a.asInstanceOf[Int], bb, c):IMat
+      case bb:IMat => max(a.toInt, bb, c):IMat
       case bb:DMat => max(DMat(a), bb, c):DMat
       case bb:GMat => max(GMat(a), bb, c):GMat
       case bb:SMat => max(a, bb, c):SMat
@@ -570,7 +570,7 @@ object SciFunctions {
   def min(a:Float, b:Mat, c:Mat):Mat = {
     b match {
       case bb:FMat=> min(a, bb, c):FMat
-      case bb:IMat=> min(a.asInstanceOf[Int], bb, c):IMat
+      case bb:IMat=> min(a.toInt, bb, c):IMat
       case bb:DMat => min(DMat(a), bb, c):DMat
       case bb:GMat => min(GMat(a), bb, c):GMat
       case bb:SMat => min(a, bb, c):SMat
@@ -580,7 +580,7 @@ object SciFunctions {
   def max(b:Mat, a:Float, c:Mat):Mat = {
     b match {
       case bb:FMat => max(a, bb, c):FMat
-      case bb:IMat => max(a.asInstanceOf[Int], bb, c):IMat
+      case bb:IMat => max(a.toInt, bb, c):IMat
       case bb:DMat => max(DMat(a), bb, c):DMat
       case bb:GMat => max(GMat(a), bb, c):GMat
       case bb:SMat => max(a, bb, c):SMat
@@ -590,7 +590,7 @@ object SciFunctions {
   def min(b:Mat, a:Float, c:Mat):Mat = {
     b match {
       case bb:FMat=> min(a, bb, c):FMat
-      case bb:IMat=> min(a.asInstanceOf[Int], bb, c):IMat
+      case bb:IMat=> min(a.toInt, bb, c):IMat
       case bb:DMat => min(DMat(a), bb, c):DMat
       case bb:GMat => min(GMat(a), bb, c):GMat
       case bb:SMat => min(a, bb, c):SMat
@@ -600,7 +600,7 @@ object SciFunctions {
   def max(a:Double, b:Mat, c:Mat):Mat = {
     b match {
       case bb:FMat => max(a.toFloat, bb, c):FMat
-      case bb:IMat => max(a.asInstanceOf[Int], bb, c):IMat
+      case bb:IMat => max(a.toInt, bb, c):IMat
       case bb:DMat => max(DMat(a), bb, c):DMat
       case bb:GMat => max(GMat(a), bb, c):GMat
       case bb:SMat => max(a.toFloat, bb, c):SMat
@@ -610,7 +610,7 @@ object SciFunctions {
   def min(a:Double, b:Mat, c:Mat):Mat = {
     b match {
       case bb:FMat => min(a.toFloat, bb, c):FMat
-      case bb:IMat => min(a.asInstanceOf[Int], bb, c):IMat
+      case bb:IMat => min(a.toInt, bb, c):IMat
       case bb:DMat=> min(DMat(a), bb, c):DMat
       case bb:GMat => min(GMat(a), bb, c):GMat
       case bb:SMat => min(a.toFloat, bb, c):SMat
@@ -620,7 +620,7 @@ object SciFunctions {
   def max(a:Mat, b:Double, c:Mat):Mat = {
     a match {
       case aa:FMat => max(aa, b.toFloat, c):FMat
-      case aa:IMat => max(aa, b.asInstanceOf[Int], c):IMat
+      case aa:IMat => max(aa, b.toInt, c):IMat
       case aa:DMat => max(aa, DMat(b), c):DMat
       case aa:GMat => max(aa, GMat(b), c):GMat
       case aa:SMat => max(b.toFloat, aa, c):SMat
@@ -630,7 +630,7 @@ object SciFunctions {
   def min(a:Mat, b:Double, c:Mat):Mat = {
     a match {
       case aa:FMat => min(aa, b.toFloat, c):FMat
-      case aa:IMat => min(aa, b.asInstanceOf[Int], c):IMat
+      case aa:IMat => min(aa, b.toInt, c):IMat
       case aa:DMat => min(aa, DMat(b), c):DMat
       case aa:GMat => min(aa, GMat(b), c):GMat
       case aa:SMat => min(b.toFloat, aa, c):SMat

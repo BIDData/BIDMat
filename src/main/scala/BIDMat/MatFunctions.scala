@@ -51,11 +51,11 @@ object MatFunctions {
 
   def nnz(a:SDMat):Int = a.nnz
   
-  implicit def flt2FMat(x:Float):FMat = row(x)
+  implicit def flt2FMat(x:Float):FMat = FMat.elem(x)
 
-  implicit def dbl2FMat(x:Double):FMat = row(x) 
+  implicit def dbl2FMat(x:Double):FMat = FMat.elem(x.toFloat) 
 
-  implicit def int2IMat(x:Int):IMat = irow(x)
+  implicit def int2IMat(x:Int):IMat = IMat.ielem(x)
   
 //  implicit def dbl2CMat(x:Double):CMat = CMat.celem(x.asInstanceOf[Float],0)
 
@@ -64,13 +64,13 @@ object MatFunctions {
   implicit def tuple2IMat(x:Tuple2[Int,Int]):IMat = irow(x._1 until x._2)
 
   implicit def fMat2DMat(x:FMat):DMat = {
-    val out = DMat(x.nrows, x.ncols)
+    val out = DMat.newOrCheckDMat(x.nrows, x.ncols, null, x.GUID, "fMat2DMat".##)
     Mat.copyToDoubleArray(x.data, 0, out.data, 0, x.length)
     out
   }
 
   implicit def iMat2FMat(x:IMat):FMat = {
-    val out = FMat(x.nrows, x.ncols)
+    val out = FMat.newOrCheckFMat(x.nrows, x.ncols, null, x.GUID, "iMat2FMat".##)
     Mat.copyToFloatArray(x.data, 0, out.data, 0, x.length)
     out
   }
@@ -229,7 +229,7 @@ object MatFunctions {
   def find3(a:SMat) = a.find3
   
   def invperm(a:IMat):IMat = {
-    val out = IMat(a.nrows, a.ncols) 
+    val out = IMat.newOrCheckIMat(a.nrows, a.ncols, null, a.GUID, "invperm".##) 
     var nrows = a.nrows
     var ncols = a.ncols
     if (a.nrows == 1) {
@@ -246,13 +246,13 @@ object MatFunctions {
   }
 
   def drow(x:Array[Double]):DMat = {
-    val mat = DMat(1,x.length)
+    val mat = DMat.newOrCheckDMat(1,x.length, null, x.##, "drow".##)
     System.arraycopy(x, 0, mat.data, 0, x.length)
     mat
   }
 
   def drow(x:List[Double]):DMat = {
-    val mat = DMat(1,x.length)
+    val mat = DMat.newOrCheckDMat(1,x.length, null, x.##, "drow_list".##)
     x.copyToArray(mat.data)
     mat
   }
@@ -260,21 +260,21 @@ object MatFunctions {
   def drow(args:Double*):DMat = drow(args.toArray) 
   
   def drow(x:Range):DMat = {
-    val mat = DMat(1,x.length)
+    val mat = DMat.newOrCheckDMat(1,x.length, null, x.##, "drow_range".##)
     for (i <- 0 until x.length)
       mat.data(i) = x(i)
     mat
   }
 
   def dcol(x:Range):DMat = {
-    val mat = DMat(x.length,1)
+    val mat = DMat.newOrCheckDMat(x.length, 1, null, x.##, "dcol_range".##)
     for (i <- 0 until x.length)
       mat.data(i) = x(i)
     mat
   }
 
   def dcol(x:List[Double]):DMat = {
-    val mat = DMat(x.length,1)
+    val mat = DMat.newOrCheckDMat(x.length, 1, null, x.##, "dcol_list".##)
     x.copyToArray(mat.data)
     mat
   }
@@ -284,7 +284,7 @@ object MatFunctions {
   }
 
   def dzeros(nr:Int, nc:Int):DMat = {
-    DMat(nr,nc)
+    DMat.newOrCheckDMat(nr, nc, null)
   }
 
   def dones(nr:Int, nc:Int):DMat = {
@@ -298,25 +298,25 @@ object MatFunctions {
   }
 
   def row(x:Array[Float]):FMat = {
-    val mat = FMat(1,x.length)
+    val mat = FMat.newOrCheckFMat(1, x.length, null, x.##, "row_array".##)
     System.arraycopy(x, 0, mat.data, 0, x.length)
     mat
   }
 
   def row(x:Array[Double]):FMat = {
-    val mat = FMat(1,x.length)
+    val mat = FMat.newOrCheckFMat(1, x.length, null, x.##, "row_array_double".##)
     Mat.copyToFloatArray(x, 0, mat.data, 0, x.length)
     mat
   }
   
   def row(x:Array[Int]):FMat = {
-    val mat = FMat(1,x.length)
+    val mat = FMat.newOrCheckFMat(1,x.length, null, x.##, "row_array_int".##)
     Mat.copyToFloatArray(x, 0, mat.data, 0, x.length)
     mat
   }
 
   def row[T](x:List[T])(implicit numeric : Numeric[T]):FMat = {
-  		val mat = FMat(1, x.length)
+  		val mat = FMat.newOrCheckFMat(1, x.length, null, x.##, "row_list_gen".##)
   		Mat.copyListToFloatArray(x, mat.data)
   		mat	
   }
@@ -324,32 +324,32 @@ object MatFunctions {
   def row[T](x:T*)(implicit numeric : Numeric[T]):FMat = row(x.toList)
   
   def row(x:Range):FMat = {
-    val mat = FMat(1,x.length)
+    val mat = FMat.newOrCheckFMat(1, x.length, null, x.##, "row_range".##)
     for (i <- 0 until x.length)
       mat.data(i) = x(i)
     mat
   }
   
   def col(x:Array[Float]):FMat = {
-    val mat = FMat(x.length, 1)
+    val mat = FMat.newOrCheckFMat(x.length, 1, null, x.##, "col_array".##)
     System.arraycopy(x, 0, mat.data, 0, x.length)
     mat
   }
   
   def col(x:Array[Double]):FMat = {
-    val mat = FMat(x.length, 1)
+    val mat = FMat.newOrCheckFMat(x.length, 1, null, x.##, "col_array_double".##)
     Mat.copyToFloatArray(x, 0, mat.data, 0, x.length)
     mat
   }
   
   def col(x:Array[Int]):FMat = {
-    val mat = FMat(x.length, 1)
+    val mat = FMat.newOrCheckFMat(x.length, 1, null, x.##, "col_array_int".##)
     Mat.copyToFloatArray(x, 0, mat.data, 0, x.length)
     mat
   }
   
   def col[T](x:List[T])(implicit numeric : Numeric[T]):FMat = {
-  		val mat = FMat(x.length, 1)
+  		val mat = FMat.newOrCheckFMat(x.length, 1, null, x.##, "col_array_list_gen".##)
   		Mat.copyListToFloatArray(x, mat.data)
   		mat	
   }
@@ -357,7 +357,7 @@ object MatFunctions {
   def col[T](x:T*)(implicit numeric : Numeric[T]):FMat = col(x.toList)
 
   def col(x:Range):FMat = {
-    val mat = FMat(x.length,1)
+    val mat = FMat.newOrCheckFMat(x.length, 1, null, x.##, "col_range".##)
     for (i <- 0 until x.length)
       mat.data(i) = x(i)
     mat
@@ -376,7 +376,7 @@ object MatFunctions {
   }  
 
   def irow(x:Range):IMat = {
-    val mat = IMat(1,x.length)
+    val mat = IMat.newOrCheckIMat(1,x.length, null, x.##, "irow_range".##)
     for (i <- 0 until x.length)
       mat.data(i) = x(i)
     mat
@@ -385,13 +385,13 @@ object MatFunctions {
   def irow(x:Tuple2[Int,Int]):IMat = irow(x._1 until x._2)
 
   def irow(x:Array[Int]):IMat = {
-    val mat = IMat(1,x.length)
+    val mat = IMat.newOrCheckIMat(1,x.length, null, x.##, "irow_array".##)
     System.arraycopy(x, 0, mat.data, 0, x.length)
     mat
   }
 
   def irow(x:List[Int]):IMat = {
-    val mat = IMat(1,x.length)
+    val mat = IMat.newOrCheckIMat(1,x.length, null, x.##, "irow_list".##)
     x.copyToArray(mat.data)
     mat
   }
@@ -401,7 +401,7 @@ object MatFunctions {
   }
 
   def icol(x:Range):IMat = {
-    val mat = IMat(x.length,1)
+    val mat = IMat.newOrCheckIMat(x.length,1, null, x.##, "icol_range".##)
     for (i <- 0 until x.length)
       mat.data(i) = x(i)
     mat
@@ -410,7 +410,7 @@ object MatFunctions {
   def icol(x:Tuple2[Int,Int]):IMat = icol(x._1 until x._2)
 
   def icol(x:List[Int]):IMat = {
-    val mat = IMat(x.length,1)
+    val mat = IMat.newOrCheckIMat(x.length,1, null, x.##, "icol_list".##)
     x.copyToArray(mat.data)
     mat
   }
@@ -433,24 +433,24 @@ object MatFunctions {
     out
   }
   
-  def crow(x:List[String]):CSMat = {
+  def csrow(x:List[String]):CSMat = {
     val mat = CSMat(1, x.length)
     x.copyToArray(mat.data)
     mat
   }
 
-  def crow(args:String*):CSMat = {
-    crow(args.toList)
+  def csrow(args:String*):CSMat = {
+    csrow(args.toList)
   }
   
-  def ccol(x:List[String]):CSMat = {
+  def cscol(x:List[String]):CSMat = {
     val mat = CSMat(x.length,1)
     x.copyToArray(mat.data)
     mat
   }
 
-  def ccol(args:String*):CSMat = {
-    ccol(args.toList)
+  def cscol(args:String*):CSMat = {
+    cscol(args.toList)
   }
   
   def szeros(nr:Int, nc:Int):SMat = SMat(nr, nc, 0)
@@ -504,7 +504,7 @@ object MatFunctions {
     SDMat(SparseMat.sparseImpl[Double](ii.data, jj.data, vv.data, nr, nc))
   } 
   
-  def _maxi(a:IMat) = a.iiReduceOp(0, (x:Int) => x, (x:Int, y:Int) => math.max(x,y), null)
+  def _maxi(a:IMat) = a.iiReduceOp(0, IMat.idFun, IMat.maxFun, null)
 
   def sparse(ii:IMat, jj:IMat, vv:DMat):SDMat = {
     SDMat(SparseMat.sparseImpl[Double](ii.data, jj.data, vv.data, _maxi(ii).v+1, _maxi(jj).v+1))
@@ -566,7 +566,7 @@ object MatFunctions {
     } else if (c.nrows != a.ncols || c.ncols != b.ncols) {
       throw new RuntimeException("dims of C must match A'*B")
     } else {
-      val out = SMat.newOrCheckSMat(c, omat)     
+      val out = SMat.newOrCheckSMat(c.nrows, c.ncols, c.nnz, omat, a.GUID, b.GUID, c.GUID, "DDS".##)     
       Mat.nflops += 2L * c.nnz * a.nrows
       val ioff = Mat.ioneBased
       out.jc(0) = ioff
