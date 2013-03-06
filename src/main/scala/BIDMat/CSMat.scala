@@ -150,6 +150,8 @@ object CSMat {
 
     def apply(a:DenseMat[String]):CSMat = new CSMat(a.nrows, a.ncols, a.data) 
     
+    def apply(a:BMat) = a.toCSMat
+    
     def cselem(x:String) = {
     	val out = CSMat(1,1)
     	out.data(0) = x
