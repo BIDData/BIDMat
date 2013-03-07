@@ -787,7 +787,7 @@ object SciFunctions {
 
   
   def applyDFun(a:DMat, omat:Mat, vfn:(Int, Array[Double], Array[Double])=>Unit, efn:(Double)=>Double, nflops:Long) ={
-      val out = recycleTry(omat, a)
+      val out = DMat.newOrCheckDMat(a.nrows, a.ncols, omat, a.GUID, vfn.##, efn.##)
 	    if (Mat.noMKL || vfn == null) {
 	      if (efn == null) {
 	        throw new RuntimeException("no Scala builtin version of this math function, sorry")
@@ -803,7 +803,7 @@ object SciFunctions {
 
   def applyDFunV(a:DMat, omat:Mat, vfn:(Int, Array[Double], Array[Double])=>Unit,
                 efn:(Int, Array[Double], Array[Double])=>Unit, nflops:Long) = {
-	    val out = recycleTry(omat, a)
+	    val out = DMat.newOrCheckDMat(a.nrows, a.ncols, omat, a.GUID, vfn.##, efn.##)
 	    if (Mat.noMKL) {
 	      if (efn == null) {
 	        throw new RuntimeException("no Scala builtin version of this math function, sorry")
@@ -817,7 +817,7 @@ object SciFunctions {
 	  }
   
    def applySFun(a:FMat, omat:Mat, vfn:(Int, Array[Float], Array[Float])=>Unit, efn:(Float)=>Float, nflops:Long) ={
-	    val out = recycleTry(omat, a)
+	    val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat, a.GUID, vfn.##, efn.##)
 	    if (Mat.noMKL || vfn == null) {
 	      if (efn == null) {
 	        throw new RuntimeException("no Scala builtin version of this math function, sorry")
@@ -832,7 +832,7 @@ object SciFunctions {
   	}
    
    def applyCFun(a:CMat, omat:Mat, vfn:(Int, Array[Float], Array[Float])=>Unit, efn:(Float,Float)=>(Float,Float), nflops:Long) ={
-	    val out = recycleTry(omat, a)
+	    val out = CMat.newOrCheckCMat(a.nrows, a.ncols, omat, a.GUID, vfn.##, efn.##)
 	    if (Mat.noMKL || vfn == null) {
 	      if (efn == null) {
 	        throw new RuntimeException("no Scala builtin version of this math function, sorry")
@@ -847,11 +847,7 @@ object SciFunctions {
   	}
    
     def applyCSFun(a:CMat, omat:Mat, vfn:(Int, Array[Float], Array[Float])=>Unit, efn:(Float,Float)=>Float, nflops:Long) ={
-	    val out = if (omat.asInstanceOf[AnyRef] == null  || (omat.nrows == 0 && omat.ncols == 0)) {
-	    	zeros(a.nrows, a.ncols)     
-	    } else {
-	    	omat.asInstanceOf[FMat].recycle(a.nrows, a.ncols, 0)
-	    }
+	    val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat, a.GUID, vfn.##, efn.##)
 	    if (Mat.noMKL || vfn == null) {
 	      if (efn == null) {
 	        throw new RuntimeException("no Scala builtin version of this math function, sorry")
@@ -867,12 +863,12 @@ object SciFunctions {
  
   def applySFunV(a:FMat, omat:Mat, vfn:(Int, Array[Float], Array[Float])=>Unit, 
                  efn:(Int, Array[Float], Array[Float])=>Unit, nflops:Long) ={
-	    val out = recycleTry(omat, a)
+	    val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat, a.GUID, vfn.##, efn.##)
 	    if (Mat.noMKL) {
 	      if (efn == null) {
 	        throw new RuntimeException("no Scala builtin version of this math function, sorry")
 	      } 
-              efn(a.length, a.data, out.data)
+        efn(a.length, a.data, out.data)
 	    } else {
 	      vfn(a.length, a.data, out.data)
 	    }	
@@ -883,7 +879,7 @@ object SciFunctions {
   def applyD2Fun(a:DMat, b:DMat, omat:Mat, 
       	vfn:(Int, Array[Double], Array[Double], Array[Double]) => Unit, 
       	efn:(Double, Double)=>Double, nflops:Long):DMat = {
-      			val out = recycleTry(omat, a, b)
+      			val out = DMat.newOrCheckDMat(math.max(a.nrows, b.nrows), math.max(a.ncols, b.ncols), omat, a.GUID, b.GUID, vfn.##, efn.##)
       			if (Mat.noMKL) {
       				if (efn == null) {
       					throw new RuntimeException("no Scala builtin version of this math function, sorry")
@@ -898,61 +894,93 @@ object SciFunctions {
       	}
   
   
+  val signumFun = (x:Double) => math.signum(x)
+  def sign(a:DMat, out:Mat) = applyDFun(a, out, null, signumFun, 1L)
+  def sign(a:DMat):DMat = sign(a, null)
   
-  def sign(a:DMat, out:Mat) = applyDFun(a, out, null, math.signum _, 1L)
-  def sign(a:DMat):DMat = sign(a, DMat(a.nrows, a.ncols))
-  
-  def abs(a:DMat, out:Mat) = applyDFun(a, out, vdAbs _, math.abs _, 1L)
-  def abs(a:DMat):DMat = abs(a, DMat(a.nrows, a.ncols))
+  val absFun = (x:Double) => math.abs(x)
+  val vdAbsFun = (n:Int, x:Array[Double], y:Array[Double]) => vdAbs(n,x,y)
+  def abs(a:DMat, out:Mat) = applyDFun(a, out, vdAbsFun, absFun, 1L)
+  def abs(a:DMat):DMat = abs(a, null)
 
-  def _vdexp(n:Int, a:Array[Double], b:Array[Double]) = {var i=0 ; while (i<n) {b(i) = math.exp(a(i)); i+=1}}
-  def exp(a:DMat, out:DMat) = applyDFunV(a, out, vdExp _, _vdexp _, 10L)
-
-  def exp(a:DMat):DMat = exp(a, DMat(a.nrows, a.ncols))
+  val vdExpFunMKL = (n:Int, a:Array[Double], b:Array[Double]) => vdExp(n, a, b)
+  val vdExpFun = (n:Int, a:Array[Double], b:Array[Double]) => {var i=0 ; while (i<n) {b(i) = math.exp(a(i)); i+=1}}
+  def exp(a:DMat, out:DMat) = applyDFunV(a, out, vdExpFunMKL, vdExpFun, 10L)
+  def exp(a:DMat):DMat = exp(a, null)
   
-  def expm1(a:DMat, out:Mat) = applyDFun(a, out, vdExpm1 _, math.expm1 _, 10L)
+  val expm1Fun = (x:Double) => math.expm1(x)
+  val vdExpm1Fun = (n:Int, x:Array[Double], y:Array[Double]) => vdExpm1(n,x,y)
+  def expm1(a:DMat, out:Mat) = applyDFun(a, out, vdExpm1Fun, expm1Fun, 10L)
   def expm1(a:DMat):DMat = expm1(a, DMat(a.nrows, a.ncols))
   
-  def sqrt(a:DMat, out:Mat) = applyDFun(a, out, vdSqrt _, math.sqrt _, 10L)
+  val sqrtFun = (x:Double) => math.sqrt(x)
+  val vdSqrtFun = (n:Int, x:Array[Double], y:Array[Double]) => vdSqrt(n,x,y)
+  def sqrt(a:DMat, out:Mat) = applyDFun(a, out, vdSqrtFun, sqrtFun, 10L)
   def sqrt(a:DMat):DMat = sqrt(a, DMat(a.nrows, a.ncols))
 
-  def ln(a:DMat, out:Mat) = applyDFun(a, out, vdLn _, math.log _, 10L)
+  val lnFun = (x:Double) => math.log(x)
+  val vdLnFun = (n:Int, x:Array[Double], y:Array[Double]) => vdLn(n,x,y)
+  def ln(a:DMat, out:Mat) = applyDFun(a, out, vdLnFun, lnFun, 10L)
   def ln(a:DMat):DMat = ln(a, DMat(a.nrows, a.ncols))
   
-  def log10(a:DMat, out:Mat) = applyDFun(a, out, vdLog10 _, math.log10 _, 10L)
+  val log10Fun = (x:Double) => math.log10(x)
+  val vdLog10Fun = (n:Int, x:Array[Double], y:Array[Double]) => vdLog10(n,x,y)
+  def log10(a:DMat, out:Mat) = applyDFun(a, out, vdLog10Fun, log10Fun, 10L)
   def log10(a:DMat):DMat = log10(a, DMat(a.nrows, a.ncols))
   
-  def log1p(a:DMat, out:Mat) = applyDFun(a, out, vdLog1p _, math.log1p _, 10L)
+  val log1pFun = (x:Double) => math.log1p(x)
+  val vdLog1pFun = (n:Int, x:Array[Double], y:Array[Double]) => vdLog1p(n,x,y)
+  def log1p(a:DMat, out:Mat) = applyDFun(a, out, vdLog1pFun, log1pFun, 10L)
   def log1p(a:DMat):DMat = log1p(a, DMat(a.nrows, a.ncols))
   
-  def cos(a:DMat, out:Mat) = applyDFun(a, out, vdCos _, math.cos _, 10L)
+  val cosFun = (x:Double) => math.cos(x)
+  val vdCosFun = (n:Int, x:Array[Double], y:Array[Double]) => vdCos(n,x,y)
+  def cos(a:DMat, out:Mat) = applyDFun(a, out, vdCosFun, cosFun, 10L)
   def cos(a:DMat):DMat = cos(a, DMat(a.nrows, a.ncols))
   
-  def sin(a:DMat, out:Mat) = applyDFun(a, out, vdSin _, math.sin _, 10L)
+  val sinFun = (x:Double) => math.sin(x)
+  val vdSinFun = (n:Int, x:Array[Double], y:Array[Double]) => vdSin(n,x,y)
+  def sin(a:DMat, out:Mat) = applyDFun(a, out, vdSinFun, sinFun, 10L)
   def sin(a:DMat):DMat = sin(a, DMat(a.nrows, a.ncols))
   
-  def tan(a:DMat, out:Mat) = applyDFun(a, out, vdTan _, math.tan _, 10L)
+  val tanFun = (x:Double) => math.tan(x)
+  val vdTanFun = (n:Int, x:Array[Double], y:Array[Double]) => vdTan(n,x,y)
+  def tan(a:DMat, out:Mat) = applyDFun(a, out, vdTanFun, tanFun, 10L)
   def tan(a:DMat):DMat = tan(a, DMat(a.nrows, a.ncols))
   
-  def cosh(a:DMat, out:Mat) = applyDFun(a, out, vdCosh _, math.cosh _, 10L)
+  val coshFun = (x:Double) => math.cosh(x)
+  val vdCoshFun = (n:Int, x:Array[Double], y:Array[Double]) => vdCosh(n,x,y)
+  def cosh(a:DMat, out:Mat) = applyDFun(a, out, vdCoshFun, coshFun, 10L)
   def cosh(a:DMat):DMat = cosh(a, DMat(a.nrows, a.ncols))
   
-  def sinh(a:DMat, out:Mat) = applyDFun(a, out, vdSinh _, math.sinh _, 10L)
+  val sinhFun = (x:Double) => math.sinh(x)
+  val vdSinhFun = (n:Int, x:Array[Double], y:Array[Double]) => vdSinh(n,x,y)
+  def sinh(a:DMat, out:Mat) = applyDFun(a, out, vdSinhFun, sinhFun, 10L)
   def sinh(a:DMat):DMat = sinh(a, DMat(a.nrows, a.ncols))
   
-  def tanh(a:DMat, out:Mat) = applyDFun(a, out, vdTanh _, math.tanh _, 10L)
+  val tanhFun = (x:Double) => math.tanh(x)
+  val vdTanhFun = (n:Int, x:Array[Double], y:Array[Double]) => vdTanh(n,x,y)
+  def tanh(a:DMat, out:Mat) = applyDFun(a, out, vdTanhFun, tanhFun, 10L)
   def tanh(a:DMat):DMat = tanh(a, DMat(a.nrows, a.ncols))
   
-  def acos(a:DMat, out:Mat) = applyDFun(a, out, vdAcos _, math.acos _, 10L)
+  val acosFun = (x:Double) => math.acos(x)
+  val vdAcosFun = (n:Int, x:Array[Double], y:Array[Double]) => vdAcos(n,x,y)
+  def acos(a:DMat, out:Mat) = applyDFun(a, out, vdAcosFun, acosFun, 10L)
   def acos(a:DMat):DMat = acos(a, DMat(a.nrows, a.ncols))
 
-  def asin(a:DMat, out:Mat) = applyDFun(a, out, vdAsin _, math.asin _, 10L)
+  val asinFun = (x:Double) => math.asin(x)
+  val vdAsinFun = (n:Int, x:Array[Double], y:Array[Double]) => vdAsin(n,x,y)
+  def asin(a:DMat, out:Mat) = applyDFun(a, out, vdAsinFun, asinFun, 10L)
   def asin(a:DMat):DMat = asin(a, DMat(a.nrows, a.ncols))
-  
-  def atan(a:DMat, out:Mat) = applyDFun(a, out, vdAtan _, math.atan _, 10L)
+
+  val atanFun = (x:Double) => math.atan(x)
+  val vdAtanFun = (n:Int, x:Array[Double], y:Array[Double]) => vdAtan(n,x,y)
+  def atan(a:DMat, out:Mat) = applyDFun(a, out, vdAtanFun, atanFun, 10L)
   def atan(a:DMat):DMat = atan(a, DMat(a.nrows, a.ncols))
 
-  def acosh(a:DMat, out:Mat) = applyDFun(a, out, vdAcosh _, FastMath.acosh _, 10L)
+  val acoshFun = (x:Double) => FastMath.acosh(x)
+  val vdAcoshFun = (n:Int, x:Array[Double], y:Array[Double]) => vdAcosh(n,x,y)
+  def acosh(a:DMat, out:Mat) = applyDFun(a, out, vdAcoshFun, acoshFun, 10L)
   def acosh(a:DMat):DMat = acosh(a, DMat(a.nrows, a.ncols))
   
   def asinh(a:DMat, out:Mat) = applyDFun(a, out, vdAsinh _, FastMath.asinh _, 10L)
