@@ -227,7 +227,7 @@ object Twitter {
   	val md = new Array[Dict](6)
 	  for (yy <- year1 to year2) {
 	  	for (mm <- 1 to 12) {
-	  		print("%d/%02d" format (yy, mm))
+	  		print("\n%d/%02d" format (yy, mm))
 	  		val ff = new File(outfname + "%04d/%02d/wcount.gz" format (yy, mm))
 	  		if (! ff.exists) {
 	  			var here = 0
@@ -243,18 +243,19 @@ object Twitter {
 	  						val cc = HMat.loadIMat(fname + "wcount.gz")
 	  						dd(ndone % 6) = Dict(bb, cc, threshold)
 	  						ndone = ndone + 1
+	  						print(".")
 	  						if (ndone % 6 == 0) {
+	  							print("+")
 	  							md(ndone / 6 - 1) = Dict.union(dd:_*)
 	  						}
 	  						foundit = true
 	  						here = there
-	  						print(".")
 	  					}
 	  					there = (there + 1) % 16
 	  				}
 	  			}
-	  			println("")
 	  			if (ndone % 6 != 0) {
+	  				print("+")
 	  				md(ndone / 6) = Dict.union(dd.slice(0, ndone % 6):_*)
 	  			}
 	  			if (ndone > 0) {
@@ -264,6 +265,7 @@ object Twitter {
 	  				HMat.saveBMat(outfname + "%04d/%02d/dict.gz" format (yy, mm), BMat(dxx.cstr))
 	  				HMat.saveIMat(outfname + "%04d/%02d/wcount.gz" format (yy, mm), dxx.counts)
 	  			}
+//	  			println("")
 	  		}
 	  	}
 	  }
