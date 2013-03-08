@@ -207,23 +207,29 @@ object AltaVista {
 	  val nparts =  if (args != null && args.length > 4) args(4).toInt else 8
 
 	  // partition(dirname, fname, outname, nfiles, nparts, true, false, true, true, false)
-	 // pagerank_run(dirname, outname, nparts, 10)
-	  Twitter.mergedicts(2011, 2013, "/disk%02d/twitter/tokenized/", "/big/twitter/tokenized/", 10)
+	  pagerank_run(dirname, outname, nparts, 10)
 	}
 
 }
 
 object Twitter { 
   
+  	def main(args:Array[String]):Unit = {
+	  val infname =  if (args != null && args.length > 0) args(0) else "/disk%02d/twitter/tokenized/"
+	  val outfname = if (args != null && args.length > 1) args(1) else "/big/twitter/tokenized/"
+	  val threshold = if (args != null && args.length > 2) args(2).toInt else 10
+
+	  mergedicts(2011, 2013, infname, outfname, threshold)
+	}
+  
 	def mergedicts(year1:Int, year2:Int, infname:String, outfname:String, threshold:Int) = {
+  	val dd = new Array[Dict](6)
+  	val md = new Array[Dict](6)
 	  for (yy <- year1 to year2) {
 	  	for (mm <- 1 to 12) {
 	  		print("%d/%02d" format (yy, mm))
-	  		val fname = (outfname + "%04d/%02d/" format (yy, mm))
-	  		val ff = new File(fname + "wcount.gz")
+	  		val ff = new File(outfname + "%04d/%02d/wcount.gz" format (yy, mm))
 	  		if (! ff.exists) {
-	  			val dd = new Array[Dict](6)
-	  			val md = new Array[Dict](6)
 	  			var here = 0
 	  			var ndone = 0
 	  			for (id <- 1 to 31) {
@@ -231,7 +237,7 @@ object Twitter {
 	  				var foundit = false
 	  				while (!foundit && here != there) {
 	  					val fname = (infname + "%04d/%02d/%02d/" format (there, yy, mm, id))
-	  					val ff = new File(fname + "dict.gz")
+	  					val ff = new File(fname + "wcount.gz")
 	  					if (ff.exists) {
 	  						val bb = HMat.loadBMat(fname + "dict.gz")
 	  						val cc = HMat.loadIMat(fname + "wcount.gz")
