@@ -297,11 +297,12 @@ object SMat {
       newOrCheckSMat(nrows, ncols, nnz, outmat)
     } else {
       val key = (guid1, opHash)
-      if (Mat.cache2.contains(key)) {
-      	newOrCheckSMat(nrows, ncols, nnz, Mat.cache2(key))
+      val res = Mat.cache2(key)
+      if (res != null) {
+      	newOrCheckSMat(nrows, ncols, nnz, res)
       } else {
         val omat = newOrCheckSMat(nrows, ncols, nnz, null)
-        Mat.cache2(key) = omat
+        Mat.cache2put(key, omat)
         omat
       }
     }
@@ -313,11 +314,12 @@ object SMat {
       newOrCheckSMat(nrows, ncols, nnz, outmat)
     } else {
       val key = (guid1, guid2, opHash)
-      if (Mat.cache3.contains(key)) {
-      	newOrCheckSMat(nrows, ncols, nnz, Mat.cache3(key))
+      val res = Mat.cache3(key)
+      if (res != null) {
+      	newOrCheckSMat(nrows, ncols, nnz, res)
       } else {
         val omat = newOrCheckSMat(nrows, ncols, nnz, null)
-        Mat.cache3(key) = omat
+        Mat.cache3put(key, omat)
         omat
       }
     }
@@ -328,11 +330,12 @@ object SMat {
       newOrCheckSMat(nrows, ncols, nnz, outmat)
     } else {
       val key = (guid1, guid2, guid3, opHash)
-      if (Mat.cache4.contains(key)) {
-      	newOrCheckSMat(nrows, ncols, nnz, Mat.cache4(key))
+      val res = Mat.cache4(key)
+      if (res != null) {
+      	newOrCheckSMat(nrows, ncols, nnz, res)
       } else {
         val omat = newOrCheckSMat(nrows, ncols, nnz, null)
-        Mat.cache4(key) = omat
+        Mat.cache4put(key, omat)
         omat
       }
     }

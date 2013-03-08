@@ -239,20 +239,22 @@ object MatFunctions {
     for (i <- 0 until ncols) {
       val ioff = i*nrows
       for (i<-0 until nrows) {
-	out.data(a.data(i + ioff) + ioff) = i
+      	out.data(a.data(i + ioff) + ioff) = i
       }
     }
     out
   }
 
   def drow(x:Array[Double]):DMat = {
-    val mat = DMat.newOrCheckDMat(1,x.length, null, x.##, "drow".##)
+  	val ahash = if (Mat.useCache) x.## else 0
+    val mat = DMat.newOrCheckDMat(1,x.length, null, ahash, "drow".##)
     System.arraycopy(x, 0, mat.data, 0, x.length)
     mat
   }
 
   def drow(x:List[Double]):DMat = {
-    val mat = DMat.newOrCheckDMat(1,x.length, null, x.##, "drow_list".##)
+  	val ahash = if (Mat.useCache) x.## else 0
+    val mat = DMat.newOrCheckDMat(1,x.length, null, ahash, "drow_list".##)
     x.copyToArray(mat.data)
     mat
   }
@@ -274,7 +276,8 @@ object MatFunctions {
   }
 
   def dcol(x:List[Double]):DMat = {
-    val mat = DMat.newOrCheckDMat(x.length, 1, null, x.##, "dcol_list".##)
+  	val ahash = if (Mat.useCache) x.## else 0
+    val mat = DMat.newOrCheckDMat(x.length, 1, null, ahash, "dcol_list".##)
     x.copyToArray(mat.data)
     mat
   }
@@ -298,25 +301,29 @@ object MatFunctions {
   }
 
   def row(x:Array[Float]):FMat = {
-    val mat = FMat.newOrCheckFMat(1, x.length, null, x.##, "row_array".##)
+    val ahash = if (Mat.useCache) x.## else 0
+    val mat = FMat.newOrCheckFMat(1, x.length, null, ahash, "row_array".##)
     System.arraycopy(x, 0, mat.data, 0, x.length)
     mat
   }
 
   def row(x:Array[Double]):FMat = {
-    val mat = FMat.newOrCheckFMat(1, x.length, null, x.##, "row_array_double".##)
+  	val ahash = if (Mat.useCache) x.## else 0
+    val mat = FMat.newOrCheckFMat(1, x.length, null, ahash, "row_array_double".##)
     Mat.copyToFloatArray(x, 0, mat.data, 0, x.length)
     mat
   }
   
   def row(x:Array[Int]):FMat = {
-    val mat = FMat.newOrCheckFMat(1,x.length, null, x.##, "row_array_int".##)
+  	val ahash = if (Mat.useCache) x.## else 0
+    val mat = FMat.newOrCheckFMat(1,x.length, null, ahash, "row_array_int".##)
     Mat.copyToFloatArray(x, 0, mat.data, 0, x.length)
     mat
   }
 
   def row[T](x:List[T])(implicit numeric : Numeric[T]):FMat = {
-  		val mat = FMat.newOrCheckFMat(1, x.length, null, x.##, "row_list_gen".##)
+  	val ahash = if (Mat.useCache) x.## else 0
+  		val mat = FMat.newOrCheckFMat(1, x.length, null, ahash, "row_list_gen".##)
   		Mat.copyListToFloatArray(x, mat.data)
   		mat	
   }
@@ -331,27 +338,31 @@ object MatFunctions {
   }
   
   def col(x:Array[Float]):FMat = {
-    val mat = FMat.newOrCheckFMat(x.length, 1, null, x.##, "col_array".##)
+  	val ahash = if (Mat.useCache) x.## else 0
+    val mat = FMat.newOrCheckFMat(x.length, 1, null, ahash, "col_array".##)
     System.arraycopy(x, 0, mat.data, 0, x.length)
     mat
   }
   
   def col(x:Array[Double]):FMat = {
-    val mat = FMat.newOrCheckFMat(x.length, 1, null, x.##, "col_array_double".##)
+  	val ahash = if (Mat.useCache) x.## else 0
+    val mat = FMat.newOrCheckFMat(x.length, 1, null, ahash, "col_array_double".##)
     Mat.copyToFloatArray(x, 0, mat.data, 0, x.length)
     mat
   }
   
   def col(x:Array[Int]):FMat = {
-    val mat = FMat.newOrCheckFMat(x.length, 1, null, x.##, "col_array_int".##)
+  	val ahash = if (Mat.useCache) x.## else 0
+    val mat = FMat.newOrCheckFMat(x.length, 1, null, ahash, "col_array_int".##)
     Mat.copyToFloatArray(x, 0, mat.data, 0, x.length)
     mat
   }
   
   def col[T](x:List[T])(implicit numeric : Numeric[T]):FMat = {
-  		val mat = FMat.newOrCheckFMat(x.length, 1, null, x.##, "col_array_list_gen".##)
-  		Mat.copyListToFloatArray(x, mat.data)
-  		mat	
+  	val ahash = if (Mat.useCache) x.## else 0
+  	val mat = FMat.newOrCheckFMat(x.length, 1, null, ahash, "col_array_list_gen".##)
+  	Mat.copyListToFloatArray(x, mat.data)
+  	mat	
   }
 
   def col[T](x:T*)(implicit numeric : Numeric[T]):FMat = col(x.toList)
@@ -385,13 +396,15 @@ object MatFunctions {
   def irow(x:Tuple2[Int,Int]):IMat = irow(x._1 until x._2)
 
   def irow(x:Array[Int]):IMat = {
-    val mat = IMat.newOrCheckIMat(1,x.length, null, x.##, "irow_array".##)
+  	val ahash = if (Mat.useCache) x.## else 0
+    val mat = IMat.newOrCheckIMat(1,x.length, null, ahash, "irow_array".##)
     System.arraycopy(x, 0, mat.data, 0, x.length)
     mat
   }
 
   def irow(x:List[Int]):IMat = {
-    val mat = IMat.newOrCheckIMat(1,x.length, null, x.##, "irow_list".##)
+  	val ahash = if (Mat.useCache) x.## else 0
+    val mat = IMat.newOrCheckIMat(1,x.length, null, ahash, "irow_list".##)
     x.copyToArray(mat.data)
     mat
   }
@@ -410,7 +423,8 @@ object MatFunctions {
   def icol(x:Tuple2[Int,Int]):IMat = icol(x._1 until x._2)
 
   def icol(x:List[Int]):IMat = {
-    val mat = IMat.newOrCheckIMat(x.length,1, null, x.##, "icol_list".##)
+  	val ahash = if (Mat.useCache) x.## else 0
+    val mat = IMat.newOrCheckIMat(x.length,1, null, ahash, "icol_list".##)
     x.copyToArray(mat.data)
     mat
   }

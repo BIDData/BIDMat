@@ -263,11 +263,12 @@ object SDMat {
       newOrCheckSDMat(mat, outmat)
     } else {
       val key = (matGuid, opHash)
-      if (Mat.cache2.contains(key)) {
-      	newOrCheckSDMat(mat, Mat.cache2(key))
+      val res = Mat.cache2(key)
+      if (res != null) {
+      	newOrCheckSDMat(mat, res)
       } else {
         val omat = newOrCheckSDMat(mat, null)
-        Mat.cache2(key) = omat
+        Mat.cache2put(key, omat)
         omat
       }
     }
@@ -278,11 +279,12 @@ object SDMat {
       newOrCheckSDMat(mat, outmat)
     } else {
       val key = (guid1, guid2, opHash)
-      if (Mat.cache3.contains(key)) {
-      	newOrCheckSDMat(mat, Mat.cache3(key))
+      val res = Mat.cache3(key)
+      if (res != null) {
+      	newOrCheckSDMat(mat, res)
       } else {
         val omat = newOrCheckSDMat(mat, null)
-        Mat.cache3(key) = omat
+        Mat.cache3put(key, omat)
         omat
       }
     }
@@ -293,11 +295,12 @@ object SDMat {
       newOrCheckSDMat(mat, outmat)
     } else {
       val key = (guid1, guid2, guid3, opHash)
-      if (Mat.cache4.contains(key)) {
-      	newOrCheckSDMat(mat, Mat.cache4(key))
+      val res = Mat.cache4(key)
+      if (res != null) {
+      	newOrCheckSDMat(mat, res)
       } else {
         val omat = newOrCheckSDMat(mat, null)
-        Mat.cache4(key) = omat
+        Mat.cache4put(key, omat)
         omat
       }
     }
