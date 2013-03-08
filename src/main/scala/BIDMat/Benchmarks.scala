@@ -243,7 +243,7 @@ object Twitter {
 	  						val cc = HMat.loadIMat(fname + "wcount.gz")
 	  						dd(ndone % 6) = Dict(bb, cc, threshold)
 	  						ndone = ndone + 1
-	  						print(".")
+	  						print("-")
 	  						if (ndone % 6 == 0) {
 	  							md(ndone / 6 - 1) = Dict.union(dd:_*)
 	  							print("+")
