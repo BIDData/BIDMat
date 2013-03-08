@@ -32,7 +32,7 @@ object SciFunctions {
   // Curand initialization
   var cudarng:curandGenerator = null
   if (Mat.hasCUDA > 0) {
-  	jcuda.runtime.JCuda.initialize
+  	JCuda.initialize
     cudarng = new curandGenerator
     curandCreateGenerator(cudarng, CURAND_RNG_PSEUDO_DEFAULT) 
     curandSetPseudoRandomGeneratorSeed(cudarng, SEED)
@@ -73,6 +73,14 @@ object SciFunctions {
   	val v0 = ar(0) 
   	JCuda.cudaDeviceCanAccessPeer(ar, j, i)
   	(v0, ar(0))
+  }
+  
+  val freeMemArray = new Array[Long](1)
+  val totalMemArray = new Array[Long](1)
+  
+  def GPUmem:(Float, Long, Long) = {
+    JCuda.cudaMemGetInfo(freeMemArray, totalMemArray)
+    (freeMemArray(0).toFloat/ totalMemArray(0), freeMemArray(0), totalMemArray(0))
   }
   
   def setseed(seed:Int):Unit = {

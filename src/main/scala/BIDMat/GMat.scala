@@ -10,7 +10,7 @@ import scala.actors.Actor._
 import edu.berkeley.bid.CUMAT
 import GSMat._
 
-class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, nc) {
+class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, nc) {
   import GMat.BinOp._
 
   override def dv:Double =
@@ -215,6 +215,11 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
   
   def free() = {
     JCublas.cublasFree(data)
+    data = null
+  }
+  
+  override def finalize = {
+    if (data != null) free
   }
 
   def * (a : GMat) = GMult(a, null)
@@ -238,11 +243,14 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
   def <= (b : GMat) = gOp(b, null, op_le)
   def != (b : GMat) = gOp(b, null, op_ne)
   
-  override def +  (b : Float):Mat = gOp(GMat(b), null, op_add)
-  override def -  (b : Float):Mat = gOp(GMat(b), null, op_sub)
-  override def *@  (b : Float):Mat = gOp(GMat(b), null, op_mul)
-  override def ∘   (b : Float):Mat = gOp(GMat(b), null, op_mul)
-  override def /   (b : Float):Mat = gOp(GMat(b), null, op_div)
+  override def +  (b : Float) = gOp(GMat(b), null, op_add)
+  override def -  (b : Float) = gOp(GMat(b), null, op_sub)
+  override def *@  (b : Float) = gOp(GMat(b), null, op_mul)
+  override def ∘   (b : Float) = gOp(GMat(b), null, op_mul)
+  override def /   (b : Float) = gOp(GMat(b), null, op_div)
+  override def *  (b : Float) = GMult(GMat(b), null)
+  override def *  (b : Int) = GMult(GMat(b), null)
+  override def *  (b : Double) = GMult(GMat(b.toFloat), null)
   
   override def > (b : Float) = gOp(GMat(b), null, op_gt)
   override def < (b : Float) = gOp(GMat(b), null, op_lt)
@@ -263,9 +271,6 @@ class GMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, n
   override def +  (b : Mat):Mat = applyMat(this, b, null, Mop_Plus)
   override def -  (b : Mat):Mat = applyMat(this, b, null, Mop_Minus)
   override def *  (b : Mat):Mat = applyMat(this, b, null, Mop_Times)
-  override def *  (b : Float):Mat = applyMat(this, GMat(FMat.elem(b)), null, Mop_Times)
-  override def *  (b : Int):Mat = applyMat(this, GMat(FMat.elem(b)), null, Mop_Times)
-  override def *  (b : Double):Mat = applyMat(this, GMat(FMat.elem(b.toFloat)), null, Mop_Times)
   override def *^  (b : Mat) = b match {
     case bb:GSMat => GSMultT(bb, null)
     case bb:GMat => GMultT(bb, null)
@@ -467,7 +472,7 @@ object GMat {
   
   def apply(a:FMat):GMat = {
   	val rsize = a.nrows*a.ncols
-    val retv = GMat.newOrCheckGMat(a.nrows, a.ncols, null, a.GUID, "GMat".##)
+    val retv = GMat.newOrCheckGMat(a.nrows, a.ncols, null, a.GUID, "GMat_FMat".##)
     JCublas.cublasSetVector(rsize, Sizeof.FLOAT, Pointer.to(a.data), 1, retv.data, 1);
   	cudaDeviceSynchronize()
     retv
@@ -480,11 +485,13 @@ object GMat {
   }
   
   def apply(a:Float):GMat = {
-    GMat(FMat.elem(a))
+    val out = GMat.newOrCheckGMat(1, 1, null, a.##, "GMat_Float".##)
+    out.set(a)
+    out
   }
   
   def fromFMat(a:FMat, b:GMat):GMat = {
-    val bb = b.recycle(a.nrows, a.ncols, 0)
+    val bb = GMat.newOrCheckGMat(a.nrows, a.ncols, b, a.GUID, "GMat_fromFMat".##)
     JCublas.cublasSetVector(a.length, Sizeof.FLOAT, Pointer.to(a.data), 1, bb.data, 1)
     cudaDeviceSynchronize()
     bb
@@ -697,11 +704,12 @@ object GMat {
       newOrCheckGMat(nr, nc, outmat)
     } else {
       val key = (matGuid, opHash)
-      if (Mat.cache2.contains(key)) {
-      	newOrCheckGMat(nr, nc, Mat.cache2(key))
+      val res = Mat.cache2(key)
+      if (res != null) {
+      	newOrCheckGMat(nr, nc, res)
       } else {
         val omat = newOrCheckGMat(nr, nc, null)
-        Mat.cache2(key) = omat
+        Mat.cache2put(key, omat)
         omat
       }
     }
@@ -712,11 +720,12 @@ object GMat {
       newOrCheckGMat(nr, nc, outmat)
     } else {
       val key = (guid1, guid2, opHash)
-      if (Mat.cache3.contains(key)) {
-      	newOrCheckGMat(nr, nc, Mat.cache3(key))
+      val res = Mat.cache3(key)
+      if (res != null) {
+      	newOrCheckGMat(nr, nc, res)
       } else {
         val omat = newOrCheckGMat(nr, nc, null)
-        Mat.cache3(key) = omat
+        Mat.cache3put(key, omat)
         omat
       }
     }
@@ -727,11 +736,12 @@ object GMat {
       newOrCheckGMat(nr, nc, outmat)
     } else {
       val key = (guid1, guid2, guid3, opHash)
-      if (Mat.cache4.contains(key)) {
-      	newOrCheckGMat(nr, nc, Mat.cache4(key))
+      val res = Mat.cache4(key)
+      if (res != null) {
+      	newOrCheckGMat(nr, nc, res)
       } else {
         val omat = newOrCheckGMat(nr, nc, null)
-        Mat.cache4(key) = omat
+        Mat.cache4put(key, omat)
         omat
       }
     }

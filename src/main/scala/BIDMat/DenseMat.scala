@@ -1467,11 +1467,12 @@ object DenseMat {
       newOrCheck(nr, nc, outmat)
     } else {
       val key = (matGuid, opHash)
-      if (Mat.cache2.contains(key)) {
-      	newOrCheck(nr, nc, Mat.cache2(key))
+      val res = Mat.cache2(key)
+      if (res != null) {
+      	newOrCheck(nr, nc, res)
       } else {
         val omat = newOrCheck(nr, nc, null)
-        Mat.cache2(key) = omat
+        Mat.cache2put(key, omat)
         omat
       }
     }
@@ -1483,11 +1484,12 @@ object DenseMat {
       newOrCheck(nr, nc, outmat)
     } else {
       val key = (guid1, guid2, opHash)
-      if (Mat.cache3.contains(key)) {
-      	newOrCheck(nr, nc, Mat.cache3(key))
+      val res = Mat.cache3(key)
+      if (res != null) {
+      	newOrCheck(nr, nc, res)
       } else {
         val omat = newOrCheck(nr, nc, null)
-        Mat.cache3(key) = omat
+        Mat.cache3put(key, omat)
         omat
       }
     }
@@ -1499,11 +1501,12 @@ object DenseMat {
       newOrCheck(nr, nc, outmat)
     } else {
       val key = (guid1, guid2, guid3, opHash)
-      if (Mat.cache4.contains(key)) {
-      	newOrCheck(nr, nc, Mat.cache4(key))
+      val res = Mat.cache4(key)
+      if (res != null) {
+      	newOrCheck(nr, nc, res)
       } else {
         val omat = newOrCheck(nr, nc, null)
-        Mat.cache4(key) = omat
+        Mat.cache4put(key, omat)
         omat
       }
     }
