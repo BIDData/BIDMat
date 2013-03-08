@@ -261,8 +261,8 @@ object Twitter {
 	  				val dx = Dict.union(md.slice(0, (ndone-1)/6+1):_*)
 	  				val (sv, iv) = sortdown2(dx.counts)
 	  				val dxx = Dict(dx.cstr(iv), sv)
-	  				HMat.saveBMat(outfname + "%04f/%02d/dict.gz" format (yy, mm), BMat(dxx.cstr))
-	  				HMat.saveIMat(outfname + "%04f/%02d/wcount.gz" format (yy, mm), dxx.counts)
+	  				HMat.saveBMat(outfname + "%04d/%02d/dict.gz" format (yy, mm), BMat(dxx.cstr))
+	  				HMat.saveIMat(outfname + "%04d/%02d/wcount.gz" format (yy, mm), dxx.counts)
 	  			}
 	  		}
 	  	}
