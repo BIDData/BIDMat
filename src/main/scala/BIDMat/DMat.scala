@@ -83,8 +83,8 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
 
   override def printOne(i:Int):String = {
     val v = data(i)
-  	if (v % 1 == 0 && math.abs(v) < 1e10) {	      
-  		"%d" format v.intValue
+  	if (v % 1 == 0 && math.abs(v) < 1e12) {	      
+  		"%d" format v.longValue
   	} else {
   		"%.5g" format v
   	}
