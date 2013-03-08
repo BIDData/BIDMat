@@ -112,7 +112,7 @@ object Dict {
   def union(dd:Dict*):Dict = {
   	val h = _union(dd:_*)
   	val d = Dict(getCSMat(h), null, h) 	
-  	for (i <- 0 to dd.length) {
+  	for (i <- 0 until dd.length) {
   		val d1d = dd(i) --> d  
   		if (i == 0) {
   			d.counts = accum(d1d, dd(i).counts, d.length, 1)
