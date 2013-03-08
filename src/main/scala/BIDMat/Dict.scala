@@ -6,7 +6,7 @@ class Dict(val cstr:CSMat) {
 
   val length = cstr.length
   
-  var counts:IMat = null
+  var counts:DMat = null
   
   var hash:HashMap[String,Int] = null
 
@@ -38,41 +38,45 @@ class Dict(val cstr:CSMat) {
   }
   
   def trim(thresh:Int):Dict = {
-    val ii = find(counts >= thresh)
-    Dict(cstr(ii), counts(ii))
+    val ii = find(counts >= thresh.toDouble)
+    Dict(cstr(ii), DMat(counts(ii)))
   }
 
 }
 
 object Dict {
   
-  def apply(cstr:CSMat, counts:IMat):Dict = {
+  def apply(cstr:CSMat, counts:DMat):Dict = {
     val out = new Dict(cstr)
     out.counts = counts
     out
   }
+  def apply(cstr:CSMat, counts:IMat):Dict = Dict(cstr, DMat(counts))
   
-  def apply(cstr:CSMat, counts:IMat, thresh:Int):Dict = {
-    val ii = find(counts >= thresh)
+  def apply(cstr:CSMat, counts:DMat, thresh:Int):Dict = {
+    val ii = find(counts >= thresh.toDouble)
     val out = new Dict(cstr(ii))
     out.counts = counts(ii)
     out
   }
+  def apply(cstr:CSMat, counts:IMat, thresh:Int):Dict = Dict(cstr, DMat(counts), thresh)
   
-  def apply(b:BMat, counts:IMat):Dict = {
+  def apply(b:BMat, counts:DMat):Dict = {
     val out = new Dict(CSMat(b))
     out.counts = counts
     out
   }
+  def apply(b:BMat, counts:IMat):Dict = Dict(b, DMat(counts))
   
-  def apply(b:BMat, counts:IMat, thresh:Int):Dict = {
-    val ii = find(counts >= thresh)
+  def apply(b:BMat, counts:DMat, thresh:Int):Dict = {
+    val ii = find(counts >= thresh.toDouble)
     val out = new Dict(CSMat(b(?,ii)))
     out.counts = counts(ii)
     out
   }
+  def apply(b:BMat, counts:IMat, thresh:Int):Dict = Dict(b, DMat(counts), thresh)
   
-  def apply(cstr:CSMat, counts:IMat, h:HashMap[String,Int]):Dict = {
+  def apply(cstr:CSMat, counts:DMat, h:HashMap[String,Int]):Dict = {
     val out = new Dict(cstr)
     out.counts = counts
     out.hash = h
