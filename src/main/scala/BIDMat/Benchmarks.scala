@@ -245,8 +245,8 @@ object Twitter {
 	  						ndone = ndone + 1
 	  						print(".")
 	  						if (ndone % 6 == 0) {
-	  							print("+")
 	  							md(ndone / 6 - 1) = Dict.union(dd:_*)
+	  							print("+")
 	  						}
 	  						foundit = true
 	  						here = there
@@ -255,15 +255,15 @@ object Twitter {
 	  				}
 	  			}
 	  			if (ndone % 6 != 0) {
-	  				print("+")
 	  				md(ndone / 6) = Dict.union(dd.slice(0, ndone % 6):_*)
+	  				print("+")
 	  			}
 	  			if (ndone > 0) {
 	  				val dx = Dict.union(md.slice(0, (ndone-1)/6+1):_*)
 	  				val (sv, iv) = sortdown2(dx.counts)
 	  				val dxx = Dict(dx.cstr(iv), sv)
 	  				HMat.saveBMat(outfname + "%04d/%02d/dict.gz" format (yy, mm), BMat(dxx.cstr))
-	  				HMat.saveIMat(outfname + "%04d/%02d/wcount.gz" format (yy, mm), dxx.counts)
+	  				HMat.saveDMat(outfname + "%04d/%02d/wcount.gz" format (yy, mm), dxx.counts)
 	  			}
 //	  			println("")
 	  		}
