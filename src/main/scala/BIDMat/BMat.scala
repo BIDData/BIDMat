@@ -164,7 +164,7 @@ object BMat {
       nnzx += bytes.length
       i += 1
     } 
-    out.jc(i) = nnzx
+    out.jc(i) = nnzx + ioff
     out
   }
 }

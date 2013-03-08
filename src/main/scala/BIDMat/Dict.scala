@@ -110,19 +110,20 @@ object Dict {
   }
   
   def union(dd:Dict*):Dict = {
-  	val h = _union(dd(0))
-    val d = Dict(getCSMat(h), null, h)
-    val d1d = dd(0) --> d
-    d.counts = accum(d1d, dd(0).counts, d.length, 1)
-    for (i <- 1 until dd.length) {
-      val did = dd(i)
-      
-    }
-    
+  	val h = _union(dd:_*)
+  	val d = Dict(getCSMat(h), null, h) 	
+  	for (i <- 0 to dd.length) {
+  		val d1d = dd(i) --> d  
+  		if (i == 0) {
+  			d.counts = accum(d1d, dd(i).counts, d.length, 1)
+  		}	else {
+  			d.counts += accum(d1d, dd(i).counts, d.length, 1)
+  		}
+    }    
     d
   }
   
-  def union(d1:Dict, d2:Dict):(Dict, IMat, IMat) = {
+  def union3(d1:Dict, d2:Dict):(Dict, IMat, IMat) = {
   	val h = _union(d1, d2)
     val d = Dict(getCSMat(h), null, h)
     val d1d = d1 --> d
@@ -132,7 +133,7 @@ object Dict {
     (d, d1d, d2d)
   }
 
-  def union(d1:Dict, d2:Dict, d3:Dict):(Dict, IMat, IMat, IMat) = {
+  def union4(d1:Dict, d2:Dict, d3:Dict):(Dict, IMat, IMat, IMat) = {
   	val h = _union(d1, d2, d3)
     val d = Dict(getCSMat(h), null, h)
     val d1d = d1 --> d
@@ -144,7 +145,7 @@ object Dict {
     (d, d1d, d2d, d3d)
   }
   
-  def union(d1:Dict, d2:Dict, d3:Dict, d4:Dict):(Dict, IMat, IMat, IMat, IMat) = {
+  def union5(d1:Dict, d2:Dict, d3:Dict, d4:Dict):(Dict, IMat, IMat, IMat, IMat) = {
     val h = _union(d1, d2, d3, d4)
     val d = Dict(getCSMat(h), null, h)
     val d1d = d1 --> d
@@ -158,7 +159,7 @@ object Dict {
     (d, d1d, d2d, d3d, d4d)
   }
   
-  def union(d1:Dict, d2:Dict, d3:Dict, d4:Dict, d5:Dict):(Dict, IMat, IMat, IMat, IMat, IMat) = {
+  def union6(d1:Dict, d2:Dict, d3:Dict, d4:Dict, d5:Dict):(Dict, IMat, IMat, IMat, IMat, IMat) = {
     val h = _union(d1, d2, d3, d4, d5)
     val d = Dict(getCSMat(h), null, h)
     val d1d = d1 --> d
@@ -174,7 +175,7 @@ object Dict {
     (d, d1d, d2d, d3d, d4d, d5d)
   }
   
-    def union(d1:Dict, d2:Dict, d3:Dict, d4:Dict, d5:Dict, d6:Dict):(Dict, IMat, IMat, IMat, IMat, IMat, IMat) = {
+  def union7(d1:Dict, d2:Dict, d3:Dict, d4:Dict, d5:Dict, d6:Dict):(Dict, IMat, IMat, IMat, IMat, IMat, IMat) = {
     val h = _union(d1, d2, d3, d4, d5, d6)
     val d = Dict(getCSMat(h), null, h)
     val d1d = d1 --> d

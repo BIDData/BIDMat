@@ -207,34 +207,55 @@ object AltaVista {
 	  val nparts =  if (args != null && args.length > 4) args(4).toInt else 8
 
 	  // partition(dirname, fname, outname, nfiles, nparts, true, false, true, true, false)
-	  pagerank_run(dirname, outname, nparts, 10)
-
+	 // pagerank_run(dirname, outname, nparts, 10)
+	  Twitter.mergedicts(2011, 2013, "/disk%02d/twitter/tokenized/", "/big/twitter/tokenized/", 10)
 	}
 
 }
 
 object Twitter { 
   
-	def mergedicts(year1:Int, year2:Int, dirname:String, threshold:Int) = {
+	def mergedicts(year1:Int, year2:Int, infname:String, outfname:String, threshold:Int) = {
 	  for (yy <- year1 to year2) {
-	    for (mm <- 1 to 12) {
-	      
-	      for (dd <- 1 to 31) {
-	        for (disk <- 0 until 16) {
-	          val fname = (dirname + "%04d/%02d/%02d/" format (disk, yy, mm, dd))
-	          val ff = new File(fname + "dict.gz")
-	          if (ff.exists) {
-	            val bb = HMat.loadBMat(fname + "dict.gz")
-	            val cc = HMat.loadIMat(fname + "wcount.gz")
-	            val cs = bb.toCSMat
-	            val iikeep = find(cc >= threshold)
-	            val cred = cs(iikeep)
-	            val cnts = cc(iikeep)
-	            val dd = Dict(cred, cnts)
-	          }
-	        }
-	      }
-	    }
+	  	for (mm <- 1 to 12) {
+	  		print("%d/%02d" format (yy, mm))
+	  		val fname = (outfname + "%04d/%02d/" format (yy, mm))
+	  		val ff = new File(fname + "wcount.gz")
+	  		if (! ff.exists) {
+	  			val dd = new Array[Dict](6)
+	  			val md = new Array[Dict](6)
+	  			var here = 0
+	  			var ndone = 0
+	  			for (id <- 1 to 31) {
+	  				var there = (here + 1) % 16
+	  				var foundit = false
+	  				while (!foundit && here != there) {
+	  					val fname = (infname + "%04d/%02d/%02d/" format (there, yy, mm, id))
+	  					val ff = new File(fname + "dict.gz")
+	  					if (ff.exists) {
+	  						val bb = HMat.loadBMat(fname + "dict.gz")
+	  						val cc = HMat.loadIMat(fname + "wcount.gz")
+	  						dd(ndone % 6) = Dict(bb, cc, threshold)
+	  						ndone = ndone + 1
+	  						if (ndone % 6 == 0) {
+	  							md(ndone / 6 - 1) = Dict.union(dd:_*)
+	  						}
+	  						foundit = true
+	  						here = there
+	  						print(".")
+	  					}
+	  					there = (there + 1) % 16
+	  				}
+	  			}
+	  			println("")
+	  			if (ndone % 6 != 0) {
+	  				md(ndone / 6) = Dict.union(dd.slice(0, ndone % 6):_*)
+	  			}
+	  			val dx = Dict.union(md.slice(0, (ndone-1)/6+1):_*)
+	  			HMat.saveBMat(outfname + "%04f/%02d/dict.gz" format (yy, mm), BMat(dx.cstr))
+	  			HMat.saveIMat(outfname + "%04f/%02d/wcount.gz" format (yy, mm), dx.counts)
+	  		}
+	  	}
 	  }
 	}
 }
