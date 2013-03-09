@@ -582,7 +582,7 @@ object GMat {
   	}
   }
    
-  def GPUsort_old(keys:FMat, vals:IMat):Unit = {
+  def GPUsort(keys:FMat, vals:IMat):Unit = {
     if (keys.nrows != vals.nrows || keys.ncols != vals.ncols)
       throw new RuntimeException("Dimensions mismatch in GPUsort ("+keys.nrows+","+keys.ncols+") ("+vals.nrows+","+vals.ncols+")")
  	
@@ -700,7 +700,7 @@ object GMat {
   }
    
      
-  def GPUsort(keys:FMat, vals:IMat):Unit = {
+  def GPUsort_threaded(keys:FMat, vals:IMat):Unit = {
     if (keys.nrows != vals.nrows || keys.ncols != vals.ncols)
       throw new RuntimeException("Dimensions mismatch in GPUsort ("+keys.nrows+","+keys.ncols+") ("+vals.nrows+","+vals.ncols+")")
  	
