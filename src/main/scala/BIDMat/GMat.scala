@@ -586,7 +586,7 @@ object GMat {
     if (keys.nrows != vals.nrows || keys.ncols != vals.ncols)
       throw new RuntimeException("Dimensions mismatch in GPUsort ("+keys.nrows+","+keys.ncols+") ("+vals.nrows+","+vals.ncols+")")
  	
-  	val nthreads = math.min(8,Mat.hasCUDA) 
+  	val nthreads = math.min(8,math.max(0, Mat.hasCUDA))
   	val maxsize = keys.nrows * math.min(32*1024*1024/keys.nrows, math.max(1, keys.ncols/nthreads))
   	val nsize = keys.nrows * keys.ncols
   	val tall = (keys.nrows > 32*1024)
@@ -704,7 +704,7 @@ object GMat {
     if (keys.nrows != vals.nrows || keys.ncols != vals.ncols)
       throw new RuntimeException("Dimensions mismatch in GPUsort ("+keys.nrows+","+keys.ncols+") ("+vals.nrows+","+vals.ncols+")")
  	
-  	val nthreads = math.min(8,Mat.hasCUDA) 
+  	val nthreads = math.min(8,math.max(0, Mat.hasCUDA))
   	val maxsize = keys.nrows * math.min(32*1024*1024/keys.nrows, math.max(1, keys.ncols/nthreads))
   	val nsize = keys.nrows * keys.ncols
   	val nspine = CUMAT.rsortsizey(maxsize)
