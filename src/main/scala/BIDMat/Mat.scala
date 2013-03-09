@@ -1,6 +1,7 @@
 package BIDMat
 import scala.collection.mutable.HashMap
 import java.lang.ref._
+import jcuda.NativePointerObject
 
 class Mat(nr:Int, nc:Int) {
   val nrows = nr

@@ -587,14 +587,14 @@ object GMat {
       throw new RuntimeException("Dimensions mismatch in GPUsort ("+keys.nrows+","+keys.ncols+") ("+vals.nrows+","+vals.ncols+")")
  	
   	val nthreads = math.min(8,Mat.hasCUDA) 
-  	val maxsize = keys.nrows * math.min(128*1024*1024/keys.nrows, math.max(1, keys.ncols/nthreads))
+  	val maxsize = keys.nrows * math.min(32*1024*1024/keys.nrows, math.max(1, keys.ncols/nthreads))
   	val nsize = keys.nrows * keys.ncols
   	val tall = (keys.nrows > 32*1024)
   	val done = IMat(nthreads,1)
 
   	for (ithread <- 0 until nthreads) {
-  	  actor {
- 	    	SciFunctions.device(ithread)
+//  	  actor {
+// 	    	SciFunctions.device(ithread)
   	  	val aa = GMat(maxsize, 1).data
   	  	val vv = GIMat(maxsize, 1).data
   	  	val kk = if (!tall) GMat(maxsize, 2).data else null
@@ -621,7 +621,7 @@ object GMat {
   	  	cudaFree(aa)
   	  	done(ithread,0) = 1
 //  	  	println("done %d" format ithread)
-  	  }
+//  	  }
   	}
     while (SciFunctions.mini(done).v == 0) Thread.`yield`
     Mat.nflops += keys.length
