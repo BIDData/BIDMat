@@ -148,9 +148,10 @@ __global__ void __apply_gfun(float *A, float *B, int N, int opn) {
   }
 }
 
-int apply_gfun(float *A, float *B, int N, int opn) {
-  int nthreads = 32;
-  int nblocks = 1;
+
+void setsizes(int N, dim3 *gridp, int *nthreadsp) {
+  int nblocks = 32;
+  int nthreads = 1;
   while (nblocks * nthreads < N) {
     if (nblocks < 16) {
       nblocks = 2*nblocks;
@@ -160,7 +161,16 @@ int apply_gfun(float *A, float *B, int N, int opn) {
       nblocks = 2*nblocks;
     }
   }
-  dim3 griddims(min(nblocks, 65536), max(1, nblocks / 65536), 1);
+  gridp->y = 1 + (nblocks-1)/65536;
+  gridp->x = 1 + (nblocks-1)/gridp->y;
+  gridp->z = 1;
+  *nthreadsp = nthreads;
+}
+
+int apply_gfun(float *A, float *B, int N, int opn) {
+  int nthreads;
+  dim3 griddims;
+  setsizes(N, &griddims, &nthreads);
   __apply_gfun<<<griddims,nthreads>>>(A, B, N, opn);
   cudaError_t err = cudaGetLastError();
   return err;
@@ -175,18 +185,9 @@ __global__ void __apply_gfun2(float *A, float *B, float *C, int N, int opn) {
 }
 
 int apply_gfun2(float *A, float *B, float *C, int N, int opn) {
-  int nthreads = 32;
-  int nblocks = 1;
-  while (nblocks * nthreads < N) {
-    if (nblocks < 16) {
-      nblocks = 2*nblocks;
-    } else if (nthreads < 1024) {
-      nthreads = 2*nthreads;
-    } else {
-      nblocks = 2*nblocks;
-    }
-  }
-  dim3 griddims(min(nblocks, 65536), max(1, nblocks / 65536), 1);
+  int nthreads;
+  dim3 griddims;
+  setsizes(N, &griddims, &nthreads);
   __apply_gfun2<<<griddims,nthreads>>>(A, B, C, N, opn);
   cudaError_t err = cudaGetLastError();
   return err;
@@ -253,18 +254,9 @@ __global__ void __apply_left_val(float *A, float *B, float *C, int nrows, int nc
 int apply_binop(float *A, int Anrows, int Ancols, 
      float *B, int Bnrows, int Bncols, float *C, int opn) {
   int N = max(Anrows, Bnrows)*max(Ancols, Bncols);
-  int nthreads = 32;
-  int nblocks = 1;
-  while (nblocks * nthreads < N) {
-    if (nblocks < 16) {
-      nblocks = 2*nblocks;
-    } else if (nthreads < 1024) {
-      nthreads = 2*nthreads;
-    } else {
-      nblocks = 2*nblocks;
-    }
-  }
-  dim3 griddims(min(nblocks, 65536), max(1, nblocks / 65536), 1);
+  int nthreads;
+  dim3 griddims;
+  setsizes(N, &griddims, &nthreads);
   if (Anrows == Bnrows && Ancols == Bncols) {
     __apply_full<<<griddims,nthreads>>>(A, B, C, N, opn);
   } else if (Anrows == Bnrows && Bncols == 1) {
@@ -346,18 +338,9 @@ int apply_biniop(int *A, int Anrows, int Ancols,
      int *B, int Bnrows, int Bncols, 
      int *C, int opn) {
   int N = max(Anrows, Bnrows)*max(Ancols, Bncols);
-  int nthreads = 32;
-  int nblocks = 1;
-  while (nblocks * nthreads < N) {
-    if (nblocks < 16) {
-      nblocks = 2*nblocks;
-    } else if (nthreads < 1024) {
-      nthreads = 2*nthreads;
-    } else {
-      nblocks = 2*nblocks;
-    }
-  }
-  dim3 griddims(min(nblocks, 65536), max(1, nblocks / 65536), 1);
+  int nthreads;
+  dim3 griddims;
+  setsizes(N, &griddims, &nthreads);
   if (Anrows == Bnrows && Ancols == Bncols) {
     __apply_full_int<<<griddims,nthreads>>>(A, B, C, N, opn);
   } else if (Anrows == Bnrows && Bncols == 1) {
@@ -677,8 +660,8 @@ int reducebin1op(int nrows, int ncols, float *A, float *B, float *C, int opb, in
 }
 
 __global__ void __embedmat(float *a, long long *b, int nrows, int ncols) {
-  int tid = threadIdx.x + blockIdx.x * blockDim.x;
-  for (int i = tid; i < nrows*ncols; i += blockDim.x*gridDim.x) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = tid; i < nrows*ncols; i += blockDim.x*gridDim.x*gridDim.y) {
     float v = a[i];
     int vi = *((int *)&v);
     int mask = (vi >> 31) | 0x80000000;
@@ -688,8 +671,8 @@ __global__ void __embedmat(float *a, long long *b, int nrows, int ncols) {
 }
 
 __global__ void __extractmat(float *a, long long *b, int nrows, int ncols) {
-  int tid = threadIdx.x + blockIdx.x * blockDim.x;
-  for (int i = tid; i < nrows*ncols; i += blockDim.x*gridDim.x) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = tid; i < nrows*ncols; i += blockDim.x*gridDim.x*gridDim.y) {
     long long v = b[i];
     int vi = *((int *)&v);
     int mask = (~(vi >> 31)) | 0x80000000;
@@ -698,27 +681,10 @@ __global__ void __extractmat(float *a, long long *b, int nrows, int ncols) {
   }
 }
 
-void setsizes(int N, int *nblocksp, int *nthreadsp) {
-  int nblocks = 32;
-  int nthreads = 1;
-  while (nblocks * nthreads < N) {
-    if (nblocks < 16) {
-      nblocks = 2*nblocks;
-    } else if (nthreads < 1024) {
-      nthreads = 2*nthreads;
-    } else {
-      nblocks = 2*nblocks;
-    }
-  }
-  *nblocksp = nblocks;
-  *nthreadsp = nthreads;
-}
-
 int embedmat(float *a, long long *b, int nrows, int ncols) {
   int nthreads;
-  int nblocks;
-  setsizes(nrows*ncols, &nblocks, &nthreads);
-  dim3 griddims(min(nblocks, 65536), max(1, nblocks / 65536), 1);
+  dim3 griddims;
+  setsizes(nrows*ncols, &griddims, &nthreads);
   __embedmat<<<griddims,nthreads>>>(a, b, nrows, ncols);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -727,9 +693,8 @@ int embedmat(float *a, long long *b, int nrows, int ncols) {
 
 int extractmat(float *a, long long *b, int nrows, int ncols) {
   int nthreads;
-  int nblocks;
-  setsizes(nrows*ncols, &nblocks, &nthreads);
-  dim3 griddims(min(nblocks, 65536), max(1, nblocks / 65536), 1);
+  dim3 griddims;
+  setsizes(nrows*ncols, &griddims, &nthreads);
   __extractmat<<<griddims,nthreads>>>(a, b, nrows, ncols);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
