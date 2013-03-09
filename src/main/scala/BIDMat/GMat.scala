@@ -582,7 +582,7 @@ object GMat {
   	}
   }
    
-  def GPUsort(keys:FMat, vals:IMat):Unit = {
+  def GPUsort_old(keys:FMat, vals:IMat):Unit = {
     if (keys.nrows != vals.nrows || keys.ncols != vals.ncols)
       throw new RuntimeException("Dimensions mismatch in GPUsort ("+keys.nrows+","+keys.ncols+") ("+vals.nrows+","+vals.ncols+")")
  	
@@ -700,7 +700,7 @@ object GMat {
   }
    
      
-  def GPUsort_exp(keys:FMat, vals:IMat):Unit = {
+  def GPUsort(keys:FMat, vals:IMat):Unit = {
     if (keys.nrows != vals.nrows || keys.ncols != vals.ncols)
       throw new RuntimeException("Dimensions mismatch in GPUsort ("+keys.nrows+","+keys.ncols+") ("+vals.nrows+","+vals.ncols+")")
  	
@@ -732,8 +732,7 @@ object GMat {
   	  			CUMAT.rsortx(aa, vv, tkeys, tvals, tspine, bflags, keys.nrows, colstodo)
   	  		} else {
   	  			CUMAT.embedmat(aa, kk, keys.nrows, colstodo)
-//  	  			CUMAT.rsorty(kk, vv, tkeys, tvals, tspine, bflags, todo)
-  	  			CUMAT.rsort(kk, vv, todo)
+  	  			CUMAT.rsorty(kk, vv, tkeys, tvals, tspine, bflags, todo)
   	  			CUMAT.extractmat(aa, kk, keys.nrows, colstodo)
   	  		}
   	  		cudaMemcpy(Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), aa, todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
