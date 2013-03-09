@@ -4,7 +4,7 @@
 :: Set as much memory as possible
 (SET JAVA_OPTS=-Xmx12G -Xms128M)
 :: Fix these if needed
-SET JCUDA_VERSION=0.5.0RC
+SET JCUDA_VERSION=0.5.0
 SET JCUDA_LIBDIR=%CD%\lib
 SET LIBDIR=%CD%\lib
 SET PATH=%LIBDIR%\win64;%LIBDIR%\win64\JCUDA5.0;%PATH%
