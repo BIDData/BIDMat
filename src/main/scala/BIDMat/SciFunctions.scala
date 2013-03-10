@@ -1471,6 +1471,10 @@ object SciFunctions {
   import GMat.BinOp
   def max(a:GMat, b:GMat):GMat    = max(a, b, null)
   def min(a:GMat, b:GMat):GMat    = min(a, b, null)
+  def max(a:GMat, b:FMat):GMat    = max(a, b, null)
+  def min(a:GMat, b:FMat):GMat    = min(a, b, null)
+  def max(a:FMat, b:GMat):GMat    = max(a, b, null)
+  def min(a:FMat, b:GMat):GMat    = min(a, b, null)
   def maxi(a:GMat, dir:Int):GMat  = a.reduceOp(null, dir, BinOp.op_max)
   def mini(a:GMat, dir:Int):GMat  = a.reduceOp(null, dir, BinOp.op_min)
   def sum(a:GMat, dir:Int):GMat   = a.reduceOp(null, dir, BinOp.op_add)
