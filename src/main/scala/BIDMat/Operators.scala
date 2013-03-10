@@ -44,6 +44,7 @@ object Operator {
   def applyMat(a:GMat, b:Mat, c:Mat, op:Mop):Mat = {
     b match {
       case gb:GMat => op.gop(a, gb, c)
+      case gf:FMat => op.gop(a, GMat(gf), c)
     }
   }
   

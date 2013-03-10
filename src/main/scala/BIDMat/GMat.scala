@@ -226,6 +226,17 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     }
   }
   
+  override def recycle(nr:Int, nc:Int, nnz:Int):GMat = {
+    if (nrows == nr && nc == ncols) {
+      this
+    } else if (realsize >= nr*nc) {
+      new GMat(nr, nc, data, realsize)
+    } else {
+      free
+      GMat(nr, nc)
+    }  
+  }
+  
   def free() = {
     JCublas.cublasFree(data)
     data = null
@@ -234,7 +245,10 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   override def finalize = {
     if (data != null) free
   }
-
+  
+  /*
+   * Basic compute routines on pairs of GMats
+   */
   override def unary_-() = gOp(GMat(-1f), null, op_mul)
   def * (a : GMat) = GMult(a, null)
   def * (a : GSMat) = GSMult(a, null)
@@ -258,51 +272,61 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   def <= (b : GMat) = gOp(b, null, op_le)
   def != (b : GMat) = gOp(b, null, op_ne)
   
-  override def +  (b : Float) = gOp(GMat(b), null, op_add)
-  override def -  (b : Float) = gOp(GMat(b), null, op_sub)
-  override def *@  (b : Float) = gOp(GMat(b), null, op_mul)
-  override def ∘   (b : Float) = gOp(GMat(b), null, op_mul)
-  override def /   (b : Float) = gOp(GMat(b), null, op_div)
-  override def *  (b : Float) = GMult(GMat(b), null)
+  /*
+   * Specializations to FMats
+   */
+  def +  (b : FMat) = gOp(GMat(b), null, op_add)
+  def -  (b : FMat) = gOp(GMat(b), null, op_sub)
+  def *@  (b : FMat) = gOp(GMat(b), null, op_mul)
+  def ∘   (b : FMat) = gOp(GMat(b), null, op_mul)
+  def /   (b : FMat) = gOp(GMat(b), null, op_div)
+  def *  (b : FMat) = GMult(GMat(b), null)
   
-  override def > (b : Float) = gOp(GMat(b), null, op_gt)
-  override def < (b : Float) = gOp(GMat(b), null, op_lt)
-  override def == (b : Float) = gOp(GMat(b), null, op_eq)
-  override def === (b : Float) = gOp(GMat(b), null, op_eq)
-  override def >= (b : Float) = gOp(GMat(b), null, op_ge)
-  override def <= (b : Float) = gOp(GMat(b), null, op_le)
-  override def != (b : Float) = gOp(GMat(b), null, op_ne)
+  def > (b : FMat) = gOp(GMat(b), null, op_gt)
+  def < (b : FMat) = gOp(GMat(b), null, op_lt)
+  def == (b : FMat) = gOp(GMat(b), null, op_eq)
+  def === (b : FMat) = gOp(GMat(b), null, op_eq)
+  def >= (b : FMat) = gOp(GMat(b), null, op_ge)
+  def <= (b : FMat) = gOp(GMat(b), null, op_le)
+  def != (b : FMat) = gOp(GMat(b), null, op_ne)
+  /*
+   * Specializations to IMat
+   */
+  def +  (b : IMat) = gOp(GMat(b), null, op_add)
+  def -  (b : IMat) = gOp(GMat(b), null, op_sub)
+  def *@  (b : IMat) = gOp(GMat(b), null, op_mul)
+  def ∘   (b : IMat) = gOp(GMat(b), null, op_mul)
+  def /   (b : IMat) = gOp(GMat(b), null, op_div)
+  def *  (b : IMat) = GMult(GMat(b), null)
   
-  override def +  (b : Int) = gOp(GMat(b), null, op_add)
-  override def -  (b : Int) = gOp(GMat(b), null, op_sub)
-  override def *@  (b : Int) = gOp(GMat(b), null, op_mul)
-  override def ∘   (b : Int) = gOp(GMat(b), null, op_mul)
-  override def /   (b : Int) = gOp(GMat(b), null, op_div)
-  override def *  (b : Int) = GMult(GMat(b), null)
+  def > (b : IMat) = gOp(GMat(b), null, op_gt)
+  def < (b : IMat) = gOp(GMat(b), null, op_lt)
+  def == (b : IMat) = gOp(GMat(b), null, op_eq)
+  def === (b : IMat) = gOp(GMat(b), null, op_eq)
+  def >= (b : IMat) = gOp(GMat(b), null, op_ge)
+  def <= (b : IMat) = gOp(GMat(b), null, op_le)
+  def != (b : IMat) = gOp(GMat(b), null, op_ne)
+  /*
+   * Specializations to DMat
+   */
+  def +  (b : DMat) = gOp(GMat(b), null, op_add)
+  def -  (b : DMat) = gOp(GMat(b), null, op_sub)
+  def *@  (b : DMat) = gOp(GMat(b), null, op_mul)
+  def ∘   (b : DMat) = gOp(GMat(b), null, op_mul)
+  def /   (b : DMat) = gOp(GMat(b), null, op_div)
+  def *  (b : DMat) = GMult(GMat(b), null)
   
-  override def > (b : Int) = gOp(GMat(b), null, op_gt)
-  override def < (b : Int) = gOp(GMat(b), null, op_lt)
-  override def == (b : Int) = gOp(GMat(b), null, op_eq)
-  override def === (b : Int) = gOp(GMat(b), null, op_eq)
-  override def >= (b : Int) = gOp(GMat(b), null, op_ge)
-  override def <= (b : Int) = gOp(GMat(b), null, op_le)
-  override def != (b : Int) = gOp(GMat(b), null, op_ne)
+  def > (b : DMat) = gOp(GMat(b), null, op_gt)
+  def < (b : DMat) = gOp(GMat(b), null, op_lt)
+  def == (b : DMat) = gOp(GMat(b), null, op_eq)
+  def === (b : DMat) = gOp(GMat(b), null, op_eq)
+  def >= (b : DMat) = gOp(GMat(b), null, op_ge)
+  def <= (b : DMat) = gOp(GMat(b), null, op_le)
+  def != (b : DMat) = gOp(GMat(b), null, op_ne)
   
-  override def +  (b : Double) = gOp(GMat(b), null, op_add)
-  override def -  (b : Double) = gOp(GMat(b), null, op_sub)
-  override def *@  (b : Double) = gOp(GMat(b), null, op_mul)
-  override def ∘   (b : Double) = gOp(GMat(b), null, op_mul)
-  override def /   (b : Double) = gOp(GMat(b), null, op_div)
-  override def *  (b : Double) = GMult(GMat(b), null)
-  
-  override def > (b : Double) = gOp(GMat(b), null, op_gt)
-  override def < (b : Double) = gOp(GMat(b), null, op_lt)
-  override def == (b : Double) = gOp(GMat(b), null, op_eq)
-  override def === (b : Double) = gOp(GMat(b), null, op_eq)
-  override def >= (b : Double) = gOp(GMat(b), null, op_ge)
-  override def <= (b : Double) = gOp(GMat(b), null, op_le)
-  override def != (b : Double) = gOp(GMat(b), null, op_ne)
-
+  /*
+   * Tilde operator
+   */
   def ~ (b: GMat) = new GPair(this, b)
   def ~ (b: GSMat) = new GSPair(this, b)
   override def ~ (b: Mat):Pair = b match {
@@ -310,6 +334,9 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     case bb:GSMat => new GSPair(this, bb)
   }
   
+  /*
+   * Generic matrix operators
+   */  
   import Operator._
   override def +  (b : Mat):Mat = applyMat(this, b, null, Mop_Plus)
   override def -  (b : Mat):Mat = applyMat(this, b, null, Mop_Minus)
@@ -337,19 +364,26 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   override def ==  (b : Mat):Mat = applyMat(this, b, null, Mop_EQ)
   override def === (b : Mat):Mat = applyMat(this, b, null, Mop_EQ) 
   override def !=  (b : Mat):Mat = applyMat(this, b, null, Mop_NE)
-  
-  override def recycle(nr:Int, nc:Int, nnz:Int):GMat = {
-    if (nrows == nr && nc == ncols) {
-      this
-    } else if (realsize >= nr*nc) {
-      new GMat(nr, nc, data, realsize)
-    } else {
-      free
-      GMat(nr, nc)
-    }  
-  }
+ 
+  /*
+   * @@ operator for DDS
+   */  
+  def @@ (b : GSMat) = new GDSPair(this, b)
+  def ^* (b : GDSPair) = MatFunctions.DDS(this, b.left, b.right, null)
+  def Tx (b : GDSPair) = MatFunctions.DDS(this, b.left, b.right, null)
+  override def ^* (b0 : DSPair) = {val b = b0.asInstanceOf[GDSPair]; MatFunctions.DDS(this, b.left, b.right, null)}
+  override def Tx (b0 : DSPair) = {val b = b0.asInstanceOf[GDSPair]; MatFunctions.DDS(this, b.left, b.right, null)}
+
 }
 
+/*
+ * Result of a@@b for DDS
+ */
+class GDSPair(val left:GMat, val right:GSMat) extends DSPair {}
+
+/*
+ * GPair is the result of a~b
+ */
 class GPair(val omat:Mat, val mat:GMat) extends Pair{
 	import GMat.BinOp._
 	

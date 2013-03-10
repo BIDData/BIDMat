@@ -171,13 +171,16 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   def - (b : SMat) = ssMatOp(b, SMat.subFun, null)
   def * (b : FMat):FMat = SMult(b, null)
   def Tx (b : FMat):FMat = Tmult(b, null)
+  def ^* (b : FMat):FMat = Tmult(b, null)
   def *# (b : SMat) = SSMult(b)
   def *@ (b : SMat) = ssMatOp(b, SMat.mulFun, null)
+  def ∘ (b : SMat) = ssMatOp(b, SMat.mulFun, null)
   def /  (b : SMat) = ssMatOp(b, SMat.divFun, null)
   
   def + (b : FMat) = ssMatOpD(b, SMat.sumFun, null)
   def - (b : FMat) = ssMatOpD(b, SMat.subFun, null)
   def *@ (b : FMat) = ssMatOpD(b, SMat.mulFun, null)
+  def ∘ (b : FMat) = ssMatOpD(b, SMat.mulFun, null)
   def /  (b : FMat) = ssMatOpD(b, SMat.divFun, null)
   
   def > (b : SMat) = ssMatOp(b, SMat.gtFun, null)
