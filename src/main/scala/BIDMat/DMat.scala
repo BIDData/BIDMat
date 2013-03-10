@@ -324,6 +324,26 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   def dot(a:DMat):DMat = dot(a, null)
   
   override def dot(a:Mat):Mat = dot(a.asInstanceOf[DMat])
+  
+  def dotr(a:DMat, omat:Mat):DMat = {
+   	if (nrows != a.nrows || ncols != a.ncols) {
+  		throw new RuntimeException("dotr dims not compatible")
+   	}	else {
+   		val out = DMat.newOrCheckDMat(nrows, 1, omat, GUID, a.GUID, "dotr".##)
+   		out.clear
+   		if (Mat.noMKL || length < 512) {
+   			gdotr(a, out)
+   		} else {
+   			Mat.nflops += 2L * length
+   			ddotr(nrows, ncols, data, nrows, a.data, nrows, out.data)
+   		}
+   		out
+   	}
+  }
+  
+  def dotr(a:DMat):DMat = dotr(a, null)
+  
+  override def dotr(a:Mat):Mat = dotr(a.asInstanceOf[DMat])
  
    def solvel(a0:Mat):DMat = 
     a0 match {
@@ -396,6 +416,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   /*
    * Routines to operate on two DMats. These are the compute routines.
    */
+  override def unary_- () = ddMatOpScalarv(-1, DMat.vecMulFun, null)
   def *  (b : DMat) = fDMult(b, null)
   def *  (b : SDMat) = fSMult(b, null)
   def *^ (b : SDMat) = multT(b, null)
@@ -410,6 +431,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   def /  (b : DMat) = ddMatOpv(b, DMat.vecDivFun, null)
   def ∘  (b : DMat) = ddMatOpv(b, DMat.vecMulFun, null)
   def ∙  (b : DMat):DMat = dot(b)
+  def ∙∙  (b : DMat):DMat = dotr(b)
 
   def >   (b : DMat) = ddMatOp(b, DMat.gtFun, null)
   def <   (b : DMat) = ddMatOp(b, DMat.ltFun, null)
@@ -575,6 +597,8 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   def != (b : DMat) = mat.ddMatOp(b, DMat.neFun, omat) 
   
   def dot (b :DMat) = mat.dot(b, omat)
+  def ∙ (b :DMat) = mat.dot(b, omat)
+  def ∙∙ (b :DMat) = mat.dotr(b, omat)
 
   override def * (b : Double) = mat.fDMult(DMat.delem(b), omat) 
   override def * (b : Float) = mat.fDMult(DMat.delem(b), omat)

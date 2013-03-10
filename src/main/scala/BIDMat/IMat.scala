@@ -150,6 +150,7 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   
   override def ddot(a:Mat):Double = super.ddot(a.asInstanceOf[IMat])
 
+  override def unary_- () = iiMatOpScalarv(-1, IMat.vecMulFun, null)
   def *  (b : IMat) = iMult(b, null)	
   def +  (b : IMat) = iiMatOpv(b, IMat.vecAddFun, null)
   def -  (b : IMat) = iiMatOpv(b, IMat.vecSubFun, null)

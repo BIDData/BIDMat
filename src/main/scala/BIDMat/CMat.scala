@@ -1044,6 +1044,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   def re:FMat = r
 
+  override def unary_- () = ccMatOpScalarv(-1, 0, CMat.vecMulFun, null)
   def *  (b : CMat) = fDMult(b, null)
   def +  (b : CMat) = ccMatOpv(b, CMat.vecAddFun, null)
   def -  (b : CMat) = ccMatOpv(b, CMat.vecSubFun, null)
