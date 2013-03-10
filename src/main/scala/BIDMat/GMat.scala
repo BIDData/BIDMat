@@ -272,6 +272,58 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   def <= (b : GMat) = gOp(b, null, op_le)
   def != (b : GMat) = gOp(b, null, op_ne)
   
+    /*
+   * Specializations to Float
+   */
+  override def +  (b : Float) = gOp(GMat(b), null, op_add)
+  override def -  (b : Float) = gOp(GMat(b), null, op_sub)
+  override def *@  (b : Float) = gOp(GMat(b), null, op_mul)
+  override def ∘   (b : Float) = gOp(GMat(b), null, op_mul)
+  override def /   (b : Float) = gOp(GMat(b), null, op_div)
+  override def *  (b : Float) = GMult(GMat(b), null)
+  
+  override def > (b : Float) = gOp(GMat(b), null, op_gt)
+  override def < (b : Float) = gOp(GMat(b), null, op_lt)
+  override def == (b : Float) = gOp(GMat(b), null, op_eq)
+  override def === (b : Float) = gOp(GMat(b), null, op_eq)
+  override def >= (b : Float) = gOp(GMat(b), null, op_ge)
+  override def <= (b : Float) = gOp(GMat(b), null, op_le)
+  override def != (b : Float) = gOp(GMat(b), null, op_ne)
+  /*
+   * Specializations to Int
+   */
+  override def +  (b : Int) = gOp(GMat(b), null, op_add)
+  override def -  (b : Int) = gOp(GMat(b), null, op_sub)
+  override def *@  (b : Int) = gOp(GMat(b), null, op_mul)
+  override def ∘   (b : Int) = gOp(GMat(b), null, op_mul)
+  override def /   (b : Int) = gOp(GMat(b), null, op_div)
+  override def *  (b : Int) = GMult(GMat(b), null)
+  
+  override def > (b : Int) = gOp(GMat(b), null, op_gt)
+  override def < (b : Int) = gOp(GMat(b), null, op_lt)
+  override def == (b : Int) = gOp(GMat(b), null, op_eq)
+  override def === (b : Int) = gOp(GMat(b), null, op_eq)
+  override def >= (b : Int) = gOp(GMat(b), null, op_ge)
+  override def <= (b : Int) = gOp(GMat(b), null, op_le)
+  override def != (b : Int) = gOp(GMat(b), null, op_ne)
+  /*
+   * Specializations to Double
+   */
+  override def +  (b : Double) = gOp(GMat(b), null, op_add)
+  override def -  (b : Double) = gOp(GMat(b), null, op_sub)
+  override def *@  (b : Double) = gOp(GMat(b), null, op_mul)
+  override def ∘   (b : Double) = gOp(GMat(b), null, op_mul)
+  override def /   (b : Double) = gOp(GMat(b), null, op_div)
+  override def *  (b : Double) = GMult(GMat(b), null)
+  
+  override def > (b : Double) = gOp(GMat(b), null, op_gt)
+  override def < (b : Double) = gOp(GMat(b), null, op_lt)
+  override def == (b : Double) = gOp(GMat(b), null, op_eq)
+  override def === (b : Double) = gOp(GMat(b), null, op_eq)
+  override def >= (b : Double) = gOp(GMat(b), null, op_ge)
+  override def <= (b : Double) = gOp(GMat(b), null, op_le)
+  override def != (b : Double) = gOp(GMat(b), null, op_ne)
+  
   /*
    * Specializations to FMats
    */
