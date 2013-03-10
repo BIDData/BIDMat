@@ -469,6 +469,8 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def *^! (b :FMat) = GPUmult(b, null, true)
   def /<  (b : FMat) = solvel(b)
   def \\ (b : FMat) = solver(b)
+  def ◁ (b : FMat) = solvel(b)
+  def ▷ (b : FMat) = solver(b)
   def *@ (b : FMat) = ffMatOpv(b, FMat.vecMulFun, null)
   def / (b : FMat) = ffMatOpv(b, FMat.vecDivFun, null)
   def ∘ (b : FMat) = ffMatOpv(b, FMat.vecMulFun, null)
@@ -747,6 +749,8 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
     }
   override def /< (b : Mat):Mat = applyMat(mat, b, omat, Mop_Div)
   override def \\ (b : Mat):Mat = applyMat(mat, b, omat, Mop_RSolve)
+  override def ◁ (b : Mat):Mat = applyMat(mat, b, omat, Mop_Div)
+  override def ▷ (b : Mat):Mat = applyMat(mat, b, omat, Mop_RSolve)
   override def *@ (b : Mat):Mat = applyMat(mat, b, omat, Mop_ETimes)
   override def ∘  (b : Mat):Mat = applyMat(mat, b, omat, Mop_ETimes)
   override def /  (b : Mat):Mat = applyMat(mat, b, omat, Mop_EDiv)
