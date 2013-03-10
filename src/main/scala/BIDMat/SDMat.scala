@@ -180,7 +180,7 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
   def <= (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => if (x <= y) 1.0 else 0.0, null)
   def != (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => if (x != y) 1.0 else 0.0, null)
   
-  override def + (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => x + y, null)
+/*  override def + (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => x + y, null)
   override def - (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => x - y, null)
   override def *@ (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => x * y, null)
   override def ∘  (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => x * y, null)
@@ -191,7 +191,7 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
   override def == (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => if (x == y) 1.0 else 0.0, null)
   override def >= (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => if (x >= y) 1.0 else 0.0, null)
   override def <= (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => if (x <= y) 1.0 else 0.0, null)
-  override def != (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => if (x != y) 1.0 else 0.0, null)
+  override def != (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => if (x != y) 1.0 else 0.0, null)*/
   
   def \ (b: SDMat) = horzcat(b)
   def on (b: SDMat) = vertcat(b)

@@ -275,7 +275,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     /*
    * Specializations to Float
    */
-  override def +  (b : Float) = gOp(GMat(b), null, op_add)
+/*  override def +  (b : Float) = gOp(GMat(b), null, op_add)
   override def -  (b : Float) = gOp(GMat(b), null, op_sub)
   override def *@  (b : Float) = gOp(GMat(b), null, op_mul)
   override def ∘   (b : Float) = gOp(GMat(b), null, op_mul)
@@ -322,7 +322,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   override def === (b : Double) = gOp(GMat(b), null, op_eq)
   override def >= (b : Double) = gOp(GMat(b), null, op_ge)
   override def <= (b : Double) = gOp(GMat(b), null, op_le)
-  override def != (b : Double) = gOp(GMat(b), null, op_ne)
+  override def != (b : Double) = gOp(GMat(b), null, op_ne)*/
   
   /*
    * Specializations to FMats

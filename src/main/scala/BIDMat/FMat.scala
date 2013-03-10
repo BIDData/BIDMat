@@ -500,7 +500,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   /*
    * Scalar operations
    */
-  override def *  (b : Float) = ffMatOpScalarv(b, FMat.vecMulFun, null)
+/*  override def *  (b : Float) = ffMatOpScalarv(b, FMat.vecMulFun, null)
   override def +  (b : Float) = ffMatOpScalarv(b, FMat.vecAddFun, null)
   override def -  (b : Float) = ffMatOpScalarv(b, FMat.vecSubFun, null)
   override def *@ (b : Float) = ffMatOpScalarv(b, FMat.vecMulFun, null)
@@ -543,7 +543,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   override def === (b : Int) = ffMatOpScalar(b, FMat.eqFun, null)
   override def >=  (b : Int) = ffMatOpScalar(b, FMat.geFun, null)
   override def <=  (b : Int) = ffMatOpScalar(b, FMat.leFun, null)
-  override def !=  (b : Int) = ffMatOpScalar(b, FMat.neFun, null) 
+  override def !=  (b : Int) = ffMatOpScalar(b, FMat.neFun, null) */
   
   def \ (b: FMat) = horzcat(b)
   def \ (b: Float) = horzcat(FMat.elem(b))
