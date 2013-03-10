@@ -145,13 +145,21 @@ class Mat(nr:Int, nc:Int) {
   
   def ddot (b : Mat):Double = {notImplemented1("ddot", b); 0}
   
-  def dot (b : Mat):Mat = {notImplemented1("dot", b); this}
-  def dotr (b : Mat):Mat = {notImplemented1("dotr", b); this}
+  def dot (b : Mat):Mat = notImplemented1("dot", b)
+  def dotr (b : Mat):Mat = notImplemented1("dotr", b)
   
-  def ∙ (b : Mat):Mat = {notImplemented1("dot", b); this}
-  def ∙∙ (b : Mat):Mat = {notImplemented1("dotr", b); this}
-
+  def ∙ (b : Mat):Mat = notImplemented1("dot", b)
+  def ∙∙ (b : Mat):Mat = notImplemented1("dotr", b)
+  
+  def ^* (b : DSPair):Mat = notImplemented0("^*")
+  def Tx (b : DSPair):Mat = notImplemented0("Tx")
+  def @@ (b : Mat):DSPair = (this, b) match {
+    case (aa:FMat, bb:SMat) => new FDSPair(aa, bb) 
+    case (aa:GMat, bb:GSMat) => new GDSPair(aa, bb)
+  }
 }
+
+abstract class DSPair {}
 
 abstract class Pair {
   
@@ -248,6 +256,7 @@ abstract class Pair {
   def ∙ (b : Mat):Mat = notImplemented1("dot", b)
   def ∙∙ (b : Mat):Mat = notImplemented1("dotr", b)
 }
+
 
 object Mat {
   import Ordered._
