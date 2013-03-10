@@ -236,6 +236,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     if (data != null) free
   }
 
+  override def unary_-() = gOp(GMat(-1f), null, op_mul)
   def * (a : GMat) = GMult(a, null)
   def * (a : GSMat) = GSMult(a, null)
   def *^ (a : GMat) = GMultT(a, null)

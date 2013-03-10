@@ -1,7 +1,7 @@
 package BIDMat
 import jcuda._;
 import jcuda.jcublas.JCublas;
-import jcuda.runtime.JCuda;
+import jcuda.runtime.JCuda._
 import edu.berkeley.bid.CUMAT;
 
 class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, nc) {
@@ -13,8 +13,37 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     JCublas.cublasGetMatrix(nr, nc, Sizeof.INT, data, nrows, Pointer.to(tmpMat.data), nr)
     tmpMat.toString
   }
+  
+  override def dv:Double =
+    if (nrows > 1 || ncols > 1) {
+      throw new RuntimeException("Matrix should be 1x1 to extract value")
+    } else {
+      toIMat().data(0)
+    }
 
   override def mytype = "GIMat"
+    
+  override def nnz = length
+  
+  override def clear = {
+  	cudaMemset(data, 0, Sizeof.INT*length)
+  	cudaDeviceSynchronize
+  	this    
+  }
+  
+  override def t = {
+    val out = GIMat.newOrCheckGIMat(ncols, nrows, null, GUID, "t".##)
+    CUMAT.transpose(this.data, nrows, out.data, ncols, nrows, ncols)
+    cudaDeviceSynchronize
+    out
+  }
+  
+  def set(v:Int):GIMat = {
+    val a = MatFunctions.irow(v)
+    JCublas.cublasSetVector(length, Sizeof.INT, Pointer.to(a.data), 0, data, 1);
+    cudaDeviceSynchronize
+    this
+  }
   
   def GIop(a:GIMat, oldmat:GIMat, op:Int):GIMat = {
     if ((nrows == a.nrows && ncols == a.ncols) ||
@@ -22,10 +51,10 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
         (ncols == a.ncols && (a.nrows == 1 || nrows == 1)) ||
         (a.ncols == 1 && a.nrows == 1) ||
         (ncols == 1 && nrows == 1)) {
-    	val out = GIMat.newOrCheckGIMat(nrows, a.ncols, oldmat, GUID, a.GUID, op)
+    	val out = GIMat.newOrCheckGIMat(math.max(nrows, a.nrows), math.max(ncols, a.ncols), oldmat, GUID, a.GUID, op)
       Mat.nflops += scala.math.max(length, a.length)
       CUMAT.applyiop(data, nrows, ncols, a.data, a.nrows, a.ncols, out.data, op)
-      JCuda.cudaDeviceSynchronize()
+      cudaDeviceSynchronize
       out
     }	else throw new RuntimeException("dimensions mismatch")
   }
@@ -39,7 +68,8 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   def free() = {
     JCublas.cublasFree(data)
   }
-
+  
+  override def unary_- () = GIop(GIMat(-1), null, 2)
   def + (a : GIMat) = GIop(a, null, 0)
   def - (a : GIMat) = GIop(a, null, 1)
   def *@ (a : GIMat) = GIop(a, null, 2)
@@ -95,6 +125,12 @@ object GIMat {
     val rsize = a.nrows*a.ncols
     JCublas.cublasSetVector(rsize, Sizeof.INT, Pointer.to(a.data), 1, retv.data, 1);
     retv
+  }
+  
+  def apply(a:Int):GIMat = {
+    val out = GIMat.newOrCheckGIMat(1, 1, null, a.##, "GIMat_Int".##)
+    out.set(a)
+    out
   }
 
   def newOrCheckGIMat(nr:Int, nc:Int, oldmat:Mat):GIMat = {

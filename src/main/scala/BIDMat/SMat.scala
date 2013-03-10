@@ -166,38 +166,39 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   		SMat(SparseMat.sparseImpl[Float](ii, jj, vv, nrows, a.ncols)) 
   	}
   
-  def + (b : SMat) = ssMatOp(b, (x:Float, y:Float) => x + y, null)
-  def - (b : SMat) = ssMatOp(b, (x:Float, y:Float) => x - y, null)
+  override def unary_- () = ssMatOpScalar(-1, SMat.mulFun, null)
+  def + (b : SMat) = ssMatOp(b, SMat.sumFun, null)
+  def - (b : SMat) = ssMatOp(b, SMat.subFun, null)
   def * (b : FMat):FMat = SMult(b, null)
   def Tx (b : FMat):FMat = Tmult(b, null)
   def *# (b : SMat) = SSMult(b)
-  def *@ (b : SMat) = ssMatOp(b, (x:Float, y:Float) => x * y, null)
-  def /  (b : SMat) = ssMatOp(b, (x:Float, y:Float) => x / y, null)
+  def *@ (b : SMat) = ssMatOp(b, SMat.mulFun, null)
+  def /  (b : SMat) = ssMatOp(b, SMat.divFun, null)
   
-  def + (b : FMat) = ssMatOpD(b, (x:Float, y:Float) => x + y, null)
-  def - (b : FMat) = ssMatOpD(b, (x:Float, y:Float) => x - y, null)
-  def *@ (b : FMat) = ssMatOpD(b, (x:Float, y:Float) => x * y, null)
-  def /  (b : FMat) = ssMatOpD(b, (x:Float, y:Float) => x / y, null)
+  def + (b : FMat) = ssMatOpD(b, SMat.sumFun, null)
+  def - (b : FMat) = ssMatOpD(b, SMat.subFun, null)
+  def *@ (b : FMat) = ssMatOpD(b, SMat.mulFun, null)
+  def /  (b : FMat) = ssMatOpD(b, SMat.divFun, null)
   
-  def > (b : SMat) = ssMatOp(b, (x:Float, y:Float) => if (x > y) 1.0f else 0f, null)
-  def < (b : SMat) = ssMatOp(b, (x:Float, y:Float) => if (x < y) 1.0f else 0f, null)
-  def == (b : SMat) = ssMatOp(b, (x:Float, y:Float) => if (x == y) 1.0f else 0f, null)
-  def === (b : SMat) = ssMatOp(b, (x:Float, y:Float) => if (x == y) 1.0f else 0f, null)
-  def >= (b : SMat) = ssMatOp(b, (x:Float, y:Float) => if (x >= y) 1.0f else 0f, null)
-  def <= (b : SMat) = ssMatOp(b, (x:Float, y:Float) => if (x <= y) 1.0f else 0f, null)
-  def != (b : SMat) = ssMatOp(b, (x:Float, y:Float) => if (x != y) 1.0f else 0f, null)
+  def > (b : SMat) = ssMatOp(b, SMat.gtFun, null)
+  def < (b : SMat) = ssMatOp(b, SMat.ltFun, null)
+  def == (b : SMat) = ssMatOp(b, SMat.eqFun, null)
+  def === (b : SMat) = ssMatOp(b, SMat.eqFun, null)
+  def >= (b : SMat) = ssMatOp(b, SMat.geFun, null)
+  def <= (b : SMat) = ssMatOp(b, SMat.leFun, null)
+  def != (b : SMat) = ssMatOp(b, SMat.neFun, null)
   
-  override def + (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => x + y, null)
-  override def - (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => x - y, null)
-  override def *@ (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => x * y, null)
-  override def /  (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => x / y, null)
+  override def + (b : Float) = ssMatOpScalar(b, SMat.sumFun, null)
+  override def - (b : Float) = ssMatOpScalar(b, SMat.subFun, null)
+  override def *@ (b : Float) = ssMatOpScalar(b, SMat.mulFun, null)
+  override def /  (b : Float) = ssMatOpScalar(b, SMat.divFun, null)
   
-  override def > (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => if (x > y) 1.0f else 0f, null)
-  override def < (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => if (x < y) 1.0f else 0f, null)
-  override def == (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => if (x == y) 1.0f else 0f, null)
-  override def >= (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => if (x >= y) 1.0f else 0f, null)
-  override def <= (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => if (x <= y) 1.0f else 0f, null)
-  override def != (b : Float) = ssMatOpScalar(b, (x:Float, y:Float) => if (x != y) 1.0f else 0f, null)
+  override def > (b : Float) = ssMatOpScalar(b, SMat.gtFun, null)
+  override def < (b : Float) = ssMatOpScalar(b, SMat.ltFun, null)
+  override def == (b : Float) = ssMatOpScalar(b, SMat.eqFun, null)
+  override def >= (b : Float) = ssMatOpScalar(b, SMat.geFun, null)
+  override def <= (b : Float) = ssMatOpScalar(b, SMat.leFun, null)
+  override def != (b : Float) = ssMatOpScalar(b, SMat.neFun, null)
   
   override def * (b : Mat):FMat = SMult(b, null)
   override def Tx (b : Mat):Mat = b match {case bb:FMat => Tmult(bb, null)}
@@ -239,15 +240,15 @@ class SPair (val omat:Mat, val mat:SMat) extends Pair{
   override def * (b : Mat):FMat = mat.SMult(b, omat)
   override def Tx (b : Mat):Mat = b match {case bb:FMat => mat.Tmult(bb, omat)}
   
-  def + (b : SMat) = mat.ssMatOp(b, (x:Float, y:Float) => x + y, omat)
-  def - (b : SMat) = mat.ssMatOp(b, (x:Float, y:Float) => x - y, omat)
-  def *@ (b : SMat) = mat.ssMatOp(b, (x:Float, y:Float) => x * y, omat)
-  def /  (b : SMat) = mat.ssMatOp(b, (x:Float, y:Float) => x / y, omat)
+  def + (b : SMat) = mat.ssMatOp(b, SMat.sumFun, omat)
+  def - (b : SMat) = mat.ssMatOp(b, SMat.subFun, omat)
+  def *@ (b : SMat) = mat.ssMatOp(b, SMat.mulFun, omat)
+  def /  (b : SMat) = mat.ssMatOp(b, SMat.divFun, omat)
   
-  def + (b : FMat) = mat.ssMatOpD(b, (x:Float, y:Float) => x + y, omat)
-  def - (b : FMat) = mat.ssMatOpD(b, (x:Float, y:Float) => x - y, omat)
-  def *@ (b : FMat) = mat.ssMatOpD(b, (x:Float, y:Float) => x * y, omat)
-  def /  (b : FMat) = mat.ssMatOpD(b, (x:Float, y:Float) => x / y, omat)
+  def + (b : FMat) = mat.ssMatOpD(b, SMat.sumFun, omat)
+  def - (b : FMat) = mat.ssMatOpD(b, SMat.subFun, omat)
+  def *@ (b : FMat) = mat.ssMatOpD(b, SMat.mulFun, omat)
+  def /  (b : FMat) = mat.ssMatOpD(b, SMat.divFun, omat)
   
   import Operator._
   override def +  (b : Mat):Mat = applyMat(mat, b, omat, Mop_Plus)
@@ -274,6 +275,23 @@ object SMat {
 //    case aa:GSMat => aa.toSMat
     case aa:SDMat => aa.toSMat
   }
+  
+  val sumFun = (x:Float, y:Float) => x + y
+  val subFun = (x:Float, y:Float) => x - y
+  val mulFun = (x:Float, y:Float) => x * y
+  val divFun = (x:Float, y:Float) => x / y
+    
+  val gtFun = (x:Float, y:Float) => if (x > y) 1.0f else 0.0f
+  val geFun = (x:Float, y:Float) => if (x >= y) 1.0f else 0.0f
+  val ltFun = (x:Float, y:Float) => if (x < y) 1.0f else 0.0f
+  val leFun = (x:Float, y:Float) => if (x <= y) 1.0f else 0.0f
+  val eqFun = (x:Float, y:Float) => if (x == y) 1.0f else 0.0f
+  val neFun = (x:Float, y:Float) => if (x != y) 1.0f else 0.0f
+  val powFun = (x:Float, y:Float) => math.pow(x,y).toFloat
+  
+  val maxFun = (x:Float, y:Float) => math.max(x, y)
+  val minFun = (x:Float, y:Float) => math.min(x, y)
+  val idFun = (x:Float) => x
   
   def SnoRows(nr:Int, nc:Int, nnz0:Int):SMat = new SMat(nr, nc, nnz0, null, new Array[Int](nc+1), new Array[Float](nnz0))
   
