@@ -1469,8 +1469,8 @@ object SciFunctions {
   def pow(a:GMat, b:GMat):GMat =     applyGfun2(a, b, TransF2.pow, 10L)
   
   import GMat.BinOp
-  def max(a:GMat, b:GMat):GMat    = a.gOp(b, null, BinOp.op_max)
-  def min(a:GMat, b:GMat):GMat    = a.gOp(b, null, BinOp.op_min)
+  def max(a:GMat, b:GMat):GMat    = max(a, b, null)
+  def min(a:GMat, b:GMat):GMat    = min(a, b, null)
   def maxi(a:GMat, dir:Int):GMat  = a.reduceOp(null, dir, BinOp.op_max)
   def mini(a:GMat, dir:Int):GMat  = a.reduceOp(null, dir, BinOp.op_min)
   def sum(a:GMat, dir:Int):GMat   = a.reduceOp(null, dir, BinOp.op_add)
@@ -1480,6 +1480,10 @@ object SciFunctions {
   
   def max(a:GMat, b:GMat, out:Mat):GMat    = a.gOp(b, out, BinOp.op_max)
   def min(a:GMat, b:GMat, out:Mat):GMat    = a.gOp(b, out, BinOp.op_min)
+  def max(a:GMat, b:FMat, out:Mat):GMat    = a.gOp(GMat(b), out, BinOp.op_max)
+  def min(a:GMat, b:FMat, out:Mat):GMat    = a.gOp(GMat(b), out, BinOp.op_min)
+  def max(a:FMat, b:GMat, out:Mat):GMat    = GMat(a).gOp(b, out, BinOp.op_max)
+  def min(a:FMat, b:GMat, out:Mat):GMat    = GMat(a).gOp(b, out, BinOp.op_min)
   def maxi(a:GMat, dir:Int, out:Mat):GMat  = a.reduceOp(out, dir, BinOp.op_max)
   def mini(a:GMat, dir:Int, out:Mat):GMat  = a.reduceOp(out, dir, BinOp.op_min)
   def sum(a:GMat, dir:Int, out:Mat):GMat   = a.reduceOp(out, dir, BinOp.op_add)
