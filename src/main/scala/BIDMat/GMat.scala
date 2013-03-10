@@ -264,8 +264,6 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   override def ∘   (b : Float) = gOp(GMat(b), null, op_mul)
   override def /   (b : Float) = gOp(GMat(b), null, op_div)
   override def *  (b : Float) = GMult(GMat(b), null)
-  override def *  (b : Int) = GMult(GMat(b), null)
-  override def *  (b : Double) = GMult(GMat(b.toFloat), null)
   
   override def > (b : Float) = gOp(GMat(b), null, op_gt)
   override def < (b : Float) = gOp(GMat(b), null, op_lt)
@@ -274,6 +272,36 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   override def >= (b : Float) = gOp(GMat(b), null, op_ge)
   override def <= (b : Float) = gOp(GMat(b), null, op_le)
   override def != (b : Float) = gOp(GMat(b), null, op_ne)
+  
+  override def +  (b : Int) = gOp(GMat(b), null, op_add)
+  override def -  (b : Int) = gOp(GMat(b), null, op_sub)
+  override def *@  (b : Int) = gOp(GMat(b), null, op_mul)
+  override def ∘   (b : Int) = gOp(GMat(b), null, op_mul)
+  override def /   (b : Int) = gOp(GMat(b), null, op_div)
+  override def *  (b : Int) = GMult(GMat(b), null)
+  
+  override def > (b : Int) = gOp(GMat(b), null, op_gt)
+  override def < (b : Int) = gOp(GMat(b), null, op_lt)
+  override def == (b : Int) = gOp(GMat(b), null, op_eq)
+  override def === (b : Int) = gOp(GMat(b), null, op_eq)
+  override def >= (b : Int) = gOp(GMat(b), null, op_ge)
+  override def <= (b : Int) = gOp(GMat(b), null, op_le)
+  override def != (b : Int) = gOp(GMat(b), null, op_ne)
+  
+  override def +  (b : Double) = gOp(GMat(b), null, op_add)
+  override def -  (b : Double) = gOp(GMat(b), null, op_sub)
+  override def *@  (b : Double) = gOp(GMat(b), null, op_mul)
+  override def ∘   (b : Double) = gOp(GMat(b), null, op_mul)
+  override def /   (b : Double) = gOp(GMat(b), null, op_div)
+  override def *  (b : Double) = GMult(GMat(b), null)
+  
+  override def > (b : Double) = gOp(GMat(b), null, op_gt)
+  override def < (b : Double) = gOp(GMat(b), null, op_lt)
+  override def == (b : Double) = gOp(GMat(b), null, op_eq)
+  override def === (b : Double) = gOp(GMat(b), null, op_eq)
+  override def >= (b : Double) = gOp(GMat(b), null, op_ge)
+  override def <= (b : Double) = gOp(GMat(b), null, op_le)
+  override def != (b : Double) = gOp(GMat(b), null, op_ne)
 
   def ~ (b: GMat) = new GPair(this, b)
   def ~ (b: GSMat) = new GSPair(this, b)
@@ -483,9 +511,7 @@ object GMat {
     val status = cublasAlloc(nr*nc, Sizeof.FLOAT, retv.data)
     if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
     retv        
-  }
-
-  def toFMat(a:GMat):FMat = a.toFMat(null)     
+  }   
   
   def apply(a:FMat):GMat = {
   	val rsize = a.nrows*a.ncols
@@ -506,6 +532,14 @@ object GMat {
     out.set(a)
     out
   }
+  
+  def apply(a:Double):GMat = {
+    val out = GMat.newOrCheckGMat(1, 1, null, a.##, "GMat_Float".##)
+    out.set(a.toFloat)
+    out
+  }
+  
+  def toFMat(a:GMat):FMat = a.toFMat(null)  
   
   def fromFMat(a:FMat, b:GMat):GMat = {
     val bb = GMat.newOrCheckGMat(a.nrows, a.ncols, b, a.GUID, "GMat_fromFMat".##)

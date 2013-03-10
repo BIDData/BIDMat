@@ -39,8 +39,7 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   }
   
   def set(v:Int):GIMat = {
-    val a = MatFunctions.irow(v)
-    JCublas.cublasSetVector(length, Sizeof.INT, Pointer.to(a.data), 0, data, 1);
+    CUMAT.setival(data, v, length)
     cudaDeviceSynchronize
     this
   }
