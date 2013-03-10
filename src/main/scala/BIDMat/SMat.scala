@@ -191,7 +191,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   def <= (b : SMat) = ssMatOp(b, SMat.leFun, null)
   def != (b : SMat) = ssMatOp(b, SMat.neFun, null)
   
-  override def + (b : Float) = ssMatOpScalar(b, SMat.sumFun, null)
+/*  override def + (b : Float) = ssMatOpScalar(b, SMat.sumFun, null)
   override def - (b : Float) = ssMatOpScalar(b, SMat.subFun, null)
   override def *@ (b : Float) = ssMatOpScalar(b, SMat.mulFun, null)
   override def /  (b : Float) = ssMatOpScalar(b, SMat.divFun, null)
@@ -201,7 +201,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   override def == (b : Float) = ssMatOpScalar(b, SMat.eqFun, null)
   override def >= (b : Float) = ssMatOpScalar(b, SMat.geFun, null)
   override def <= (b : Float) = ssMatOpScalar(b, SMat.leFun, null)
-  override def != (b : Float) = ssMatOpScalar(b, SMat.neFun, null)
+  override def != (b : Float) = ssMatOpScalar(b, SMat.neFun, null)*/
   
   override def * (b : Mat):FMat = SMult(b, null)
   override def Tx (b : Mat):Mat = b match {case bb:FMat => Tmult(bb, null)}

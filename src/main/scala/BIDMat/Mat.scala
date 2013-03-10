@@ -77,7 +77,7 @@ class Mat(nr:Int, nc:Int) {
   
   def <-- (b : Mat):Mat = b.copyTo(this)
   
-  def + (b : Int):Mat = notImplemented0("+")
+/*  def + (b : Int):Mat = notImplemented0("+")
   def - (b : Int):Mat = notImplemented0("-")
   def * (b : Int):Mat = notImplemented0("*")
   def /< (b : Int):Mat = notImplemented0("/<")
@@ -129,7 +129,7 @@ class Mat(nr:Int, nc:Int) {
   def <= (b : Double):Mat = notImplemented0("<=")
   def == (b : Double):Mat = notImplemented0("==")
   def === (b : Double):Mat = notImplemented0("===")
-  def != (b : Double):Mat = notImplemented0("!=")  
+  def != (b : Double):Mat = notImplemented0("!=")  */
   
   def \ (b : Mat):Mat = notImplemented1("\\", b)
   def on (b : Mat):Mat = notImplemented1("on", b)

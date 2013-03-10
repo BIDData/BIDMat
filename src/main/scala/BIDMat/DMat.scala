@@ -441,7 +441,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   def <=  (b : DMat) = ddMatOp(b, DMat.leFun, null)
   def !=  (b : DMat) = ddMatOp(b, DMat.neFun, null)
 
-  override def *  (b : Double) = fDMult(DMat.delem(b), null)
+/*  override def *  (b : Double) = fDMult(DMat.delem(b), null)
   override def +  (b : Double) = ddMatOpScalarv(b, DMat.vecAddFun, null)
   override def -  (b : Double) = ddMatOpScalarv(b, DMat.vecSubFun, null)
   override def *@ (b : Double) = ddMatOpScalarv(b, DMat.vecMulFun, null)
@@ -469,7 +469,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   override def ==  (b : Float) = ddMatOpScalar(b, DMat.eqFun, null)
   override def >=  (b : Float) = ddMatOpScalar(b, DMat.geFun, null)
   override def <=  (b : Float) = ddMatOpScalar(b, DMat.leFun, null)
-  override def !=  (b : Float) = ddMatOpScalar(b, DMat.neFun, null)
+  override def !=  (b : Float) = ddMatOpScalar(b, DMat.neFun, null) */
 
   def \ (b: DMat) = DMat(ghorzcat(b))
   def \ (b:Double) = DMat(ghorzcat(DMat.delem(b)))

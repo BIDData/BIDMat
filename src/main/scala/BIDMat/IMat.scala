@@ -149,7 +149,9 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   def ddot(a:IMat):Double = super.ddot(a)
   
   override def ddot(a:Mat):Double = super.ddot(a.asInstanceOf[IMat])
-
+  /*
+   * Operators with two IMat args
+   */
   override def unary_- () = iiMatOpScalarv(-1, IMat.vecMulFun, null)
   def *  (b : IMat) = iMult(b, null)	
   def +  (b : IMat) = iiMatOpv(b, IMat.vecAddFun, null)
@@ -158,11 +160,11 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   def ∘  (b : IMat) = iiMatOpv(b, IMat.vecMulFun, null)
   def /  (b : IMat) = iiMatOpv(b, IMat.vecDivFun, null)
   
-  override def +  (b : Int) = iiMatOpScalarv(b, IMat.vecAddFun, null)
+/*  override def +  (b : Int) = iiMatOpScalarv(b, IMat.vecAddFun, null)
   override def -  (b : Int) = iiMatOpScalarv(b, IMat.vecSubFun, null)
   override def *@ (b : Int) = iiMatOpScalarv(b, IMat.vecMulFun, null)
   override def ∘  (b : Int) = iiMatOpScalarv(b, IMat.vecMulFun, null)
-  override def /  (b : Int) = iiMatOpScalarv(b, IMat.vecDivFun, null)
+  override def /  (b : Int) = iiMatOpScalarv(b, IMat.vecDivFun, null)*/
 
   def >   (b : IMat) = iiMatOp(b, IMat.gtFun, null)
   def <   (b : IMat) = iiMatOp(b, IMat.ltFun, null)
@@ -172,13 +174,16 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   def <=  (b : IMat) = iiMatOp(b, IMat.leFun, null)
   def !=  (b : IMat) = iiMatOp(b, IMat.neFun, null)
 
-  override def >  (b : Int) = iiMatOpScalar(b, IMat.gtFun, null)
+  /*
+   * Scalar operations
+   */
+/*  override def >  (b : Int) = iiMatOpScalar(b, IMat.gtFun, null)
   override def <  (b : Int) = iiMatOpScalar(b, IMat.ltFun, null)
   override def == (b : Int) = iiMatOpScalar(b, IMat.eqFun, null)
   override def === (b : Int) = iiMatOpScalar(b, IMat.eqFun, null)
   override def >= (b : Int) = iiMatOpScalar(b, IMat.geFun, null)
   override def <= (b : Int) = iiMatOpScalar(b, IMat.leFun, null)
-  override def != (b : Int) = iiMatOpScalar(b, IMat.neFun, null) 
+  override def != (b : Int) = iiMatOpScalar(b, IMat.neFun, null) */
 
   def \ (b: IMat) = horzcat(b)
   def \ (b: Int) = horzcat(IMat.ielem(b))
@@ -241,6 +246,23 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   def /  (b : CMat):CMat = CMat(this) /  b
   def \  (b : CMat):CMat = CMat(this) \ b
   def on (b : CMat):CMat = CMat(this) on b 
+   /*
+  * Specialize to GMats to help the type system. 
+  */ 
+  def +  (b : GMat):GMat = GMat(this) + b
+  def -  (b : GMat):GMat = GMat(this) - b
+  def *  (b : GMat):GMat = GMat(this) * b
+  def *@ (b : GMat):GMat = GMat(this) *@ b
+  def ∘  (b : GMat):GMat = GMat(this) *@ b
+  def /  (b : GMat):GMat = GMat(this) /  b
+  
+  def >   (b : GMat):GMat = GMat(this) > b
+  def <   (b : GMat):GMat = GMat(this) < b
+  def >=  (b : GMat):GMat = GMat(this) >= b
+  def <=  (b : GMat):GMat = GMat(this) <= b
+  def ==  (b : GMat):GMat = GMat(this) == b
+  def === (b : GMat):GMat = GMat(this) === b 
+  def !=  (b : GMat):GMat = GMat(this) != b
   /*
   * Operators whose second arg is generic. 
   */ 
