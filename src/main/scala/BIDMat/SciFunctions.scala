@@ -529,23 +529,9 @@ object SciFunctions {
   def sum(a:CMat, n:Int) = a.ccReduceOpv(n, CMat.vecAddFun, null)
   def sum(a:CMat, n:Int, c:Mat) = a.ccReduceOpv(n, CMat.vecAddFun, c)
      
-  def max(a:Mat, b:Mat):Mat = {
-    (a, b) match {
-      case (aa:FMat, bb:FMat) => max(aa, bb):FMat
-      case (aa:IMat, bb:IMat) => max(aa, bb):IMat
-      case (aa:DMat, bb:DMat) => max(aa, bb):DMat
-      case (aa:GMat, bb:GMat) => max(aa, bb):GMat
-    }
-  }
-  
-  def min(a:Mat, b:Mat):Mat = {
-    (a, b) match {
-      case (aa:FMat, bb:FMat) => min(aa, bb):FMat
-      case (aa:IMat, bb:IMat) => min(aa, bb):IMat
-      case (aa:DMat, bb:DMat) => min(aa, bb):DMat
-      case (aa:GMat, bb:GMat) => min(aa, bb):GMat
-    }
-  }
+  def max(a:Mat, b:Mat):Mat = max(a, b, null)
+
+  def min(a:Mat, b:Mat):Mat = min(a, b, null)
   
   def max(a:Mat, b:Mat, c:Mat):Mat = {
     (a, b) match {
@@ -553,6 +539,12 @@ object SciFunctions {
       case (aa:IMat, bb:IMat) => max(aa, bb, c):IMat
       case (aa:DMat, bb:DMat) => max(aa, bb, c):DMat
       case (aa:GMat, bb:GMat) => max(aa, bb, c):GMat
+      case (aa:IMat, bb:FMat) => max(FMat(aa), bb, c):FMat
+      case (aa:FMat, bb:IMat) => max(aa, FMat(bb), c):FMat
+      case (aa:FMat, bb:GMat) => max(GMat(aa), bb, c):GMat
+      case (aa:GMat, bb:FMat) => max(aa, GMat(bb), c):GMat
+      case (aa:IMat, bb:GMat) => max(GMat(aa), bb, c):GMat
+      case (aa:GMat, bb:IMat) => max(aa, GMat(bb), c):GMat
     }
   }
   
@@ -562,86 +554,12 @@ object SciFunctions {
       case (aa:IMat, bb:IMat) => min(aa, bb, c):IMat
       case (aa:DMat, bb:DMat) => min(aa, bb, c):DMat
       case (aa:GMat, bb:GMat) => min(aa, bb, c):GMat
-    }
-  }
-  
-  def max(a:Float, b:Mat, c:Mat):Mat = {
-    b match {
-      case bb:FMat => max(a, bb, c):FMat
-      case bb:IMat => max(a.toInt, bb, c):IMat
-      case bb:DMat => max(DMat(a), bb, c):DMat
-      case bb:GMat => max(GMat(a), bb, c):GMat
-      case bb:SMat => max(a, bb, c):SMat
-    }
-  }
-  
-  def min(a:Float, b:Mat, c:Mat):Mat = {
-    b match {
-      case bb:FMat=> min(a, bb, c):FMat
-      case bb:IMat=> min(a.toInt, bb, c):IMat
-      case bb:DMat => min(DMat(a), bb, c):DMat
-      case bb:GMat => min(GMat(a), bb, c):GMat
-      case bb:SMat => min(a, bb, c):SMat
-    }
-  }
-  
-  def max(b:Mat, a:Float, c:Mat):Mat = {
-    b match {
-      case bb:FMat => max(a, bb, c):FMat
-      case bb:IMat => max(a.toInt, bb, c):IMat
-      case bb:DMat => max(DMat(a), bb, c):DMat
-      case bb:GMat => max(GMat(a), bb, c):GMat
-      case bb:SMat => max(a, bb, c):SMat
-    }
-  }
-  
-  def min(b:Mat, a:Float, c:Mat):Mat = {
-    b match {
-      case bb:FMat=> min(a, bb, c):FMat
-      case bb:IMat=> min(a.toInt, bb, c):IMat
-      case bb:DMat => min(DMat(a), bb, c):DMat
-      case bb:GMat => min(GMat(a), bb, c):GMat
-      case bb:SMat => min(a, bb, c):SMat
-    }
-  }
-  
-  def max(a:Double, b:Mat, c:Mat):Mat = {
-    b match {
-      case bb:FMat => max(a.toFloat, bb, c):FMat
-      case bb:IMat => max(a.toInt, bb, c):IMat
-      case bb:DMat => max(DMat(a), bb, c):DMat
-      case bb:GMat => max(GMat(a), bb, c):GMat
-      case bb:SMat => max(a.toFloat, bb, c):SMat
-    }
-  }
-  
-  def min(a:Double, b:Mat, c:Mat):Mat = {
-    b match {
-      case bb:FMat => min(a.toFloat, bb, c):FMat
-      case bb:IMat => min(a.toInt, bb, c):IMat
-      case bb:DMat=> min(DMat(a), bb, c):DMat
-      case bb:GMat => min(GMat(a), bb, c):GMat
-      case bb:SMat => min(a.toFloat, bb, c):SMat
-    }
-  }
-  
-  def max(a:Mat, b:Double, c:Mat):Mat = {
-    a match {
-      case aa:FMat => max(aa, b.toFloat, c):FMat
-      case aa:IMat => max(aa, b.toInt, c):IMat
-      case aa:DMat => max(aa, DMat(b), c):DMat
-      case aa:GMat => max(aa, GMat(b), c):GMat
-      case aa:SMat => max(b.toFloat, aa, c):SMat
-    }
-  }
-  
-  def min(a:Mat, b:Double, c:Mat):Mat = {
-    a match {
-      case aa:FMat => min(aa, b.toFloat, c):FMat
-      case aa:IMat => min(aa, b.toInt, c):IMat
-      case aa:DMat => min(aa, DMat(b), c):DMat
-      case aa:GMat => min(aa, GMat(b), c):GMat
-      case aa:SMat => min(b.toFloat, aa, c):SMat
+      case (aa:IMat, bb:FMat) => min(FMat(aa), bb, c):FMat
+      case (aa:FMat, bb:IMat) => min(aa, FMat(bb), c):FMat
+      case (aa:FMat, bb:GMat) => min(GMat(aa), bb, c):GMat
+      case (aa:GMat, bb:FMat) => min(aa, GMat(bb), c):GMat
+      case (aa:IMat, bb:GMat) => min(GMat(aa), bb, c):GMat
+      case (aa:GMat, bb:IMat) => min(aa, GMat(bb), c):GMat
     }
   }
    

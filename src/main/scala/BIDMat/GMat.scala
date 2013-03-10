@@ -525,6 +525,7 @@ object GMat {
     case aa:GMat => aa
     case aa:FMat => GMat(aa)
     case aa:DMat => GMat(FMat(aa))
+    case aa:IMat => GMat(FMat(aa))
   }
   
   def apply(a:Float):GMat = {
