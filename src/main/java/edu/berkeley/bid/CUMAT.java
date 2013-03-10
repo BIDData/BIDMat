@@ -16,6 +16,10 @@ public final class CUMAT {
     
     public static native int applygfun(Pointer A, Pointer B, int N, int opn);
     
+    public static native int setval(Pointer A, float vv, int N);
+    
+    public static native int setival(Pointer A, int iv, int N);
+    
     public static native int applygfun2(Pointer A, Pointer B, Pointer C, int N, int opn);
     
     public static native int reduce1op(int nr, int nc, Pointer A, Pointer B, int opn);

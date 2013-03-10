@@ -251,6 +251,31 @@ __global__ void __apply_left_val(float *A, float *B, float *C, int nrows, int nc
   }
 }
 
+__global__ void __set_val(float *A, float val, int length) {
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = ip; i < length; i += blockDim.x * gridDim.x * gridDim.y) {
+    A[i] = val;
+  }
+}
+
+int set_val(float *A, float val, int length) {
+  int nthreads;
+  dim3 griddims;
+  setsizes(length, &griddims, &nthreads);
+  __set_val<<<griddims,nthreads>>>(A, val, length);
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int set_ival(float *A, int val, int length) {
+  int nthreads;
+  dim3 griddims;
+  setsizes(length, &griddims, &nthreads);
+  __set_val<<<griddims,nthreads>>>(A, *((float *)&val), length);
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
 int apply_binop(float *A, int Anrows, int Ancols, 
      float *B, int Bnrows, int Bncols, float *C, int opn) {
   int N = max(Anrows, Bnrows)*max(Ancols, Bncols);
