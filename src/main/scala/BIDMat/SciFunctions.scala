@@ -1840,6 +1840,278 @@ object SciFunctions {
       case (aa:GMat, bb:GMat) => pow(aa, bb, c)
     }
   }
+  
+    def abs(a:Mat):Mat = {
+    a match {
+      case aa:FMat => abs(aa):FMat
+      case aa:CMat => abs(aa):FMat
+      case aa:DMat => abs(aa):DMat
+      case aa:GMat => abs(aa):GMat
+    }
+  }
+  
+  def sign(a:Mat):Mat = {
+    a match {
+      case aa:FMat => sign(aa)
+      case aa:DMat => sign(aa)
+      case aa:GMat => sign(aa)
+    }
+  }
+       
+  def sqrt(a:Mat):Mat = {
+    a match {
+      case aa:FMat => sqrt(aa)
+      case aa:CMat => sqrt(aa)
+      case aa:DMat => sqrt(aa)
+      case aa:GMat => sqrt(aa)
+    }
+  }
+  
+  def exp(a:Mat):Mat = {
+    a match {
+      case aa:FMat => exp(aa)
+      case aa:CMat => exp(aa)
+      case aa:DMat => exp(aa)
+      case aa:GMat => exp(aa)
+    }
+  }
+  
+  def expm1(a:Mat):Mat = {
+    a match {
+      case aa:FMat => expm1(aa)
+      case aa:DMat => expm1(aa)
+      case aa:GMat => expm1(aa)
+    }
+  }
+  
+  def ln(a:Mat):Mat = {
+    a match {
+      case aa:FMat => ln(aa)
+      case aa:CMat => ln(aa)
+      case aa:DMat => ln(aa)
+      case aa:GMat => ln(aa)
+    }
+  }
+  
+  def log10(a:Mat):Mat = {
+    a match {
+      case aa:FMat => log10(aa)
+      case aa:CMat => log10(aa)
+      case aa:DMat => log10(aa)
+      case aa:GMat => log10(aa)
+    }
+  }
+    
+  def log1p(a:Mat):Mat = {
+    a match {
+      case aa:FMat => log1p(aa)
+      case aa:DMat => log1p(aa)
+      case aa:GMat => log1p(aa)
+    }
+  }
+  
+  def cos(a:Mat):Mat = {
+    a match {
+      case aa:FMat => cos(aa)
+      case aa:CMat => cos(aa)
+      case aa:DMat => cos(aa)
+      case aa:GMat => cos(aa)
+    }
+  }
+  
+  def sin(a:Mat):Mat = {
+    a match {
+      case aa:FMat => sin(aa)
+      case aa:CMat => sin(aa)
+      case aa:DMat => sin(aa)
+      case aa:GMat => sin(aa)
+    }
+  }
+  
+  def tan(a:Mat):Mat = {
+    a match {
+      case aa:FMat => tan(aa)
+      case aa:CMat => tan(aa)
+      case aa:DMat => tan(aa)
+      case aa:GMat => tan(aa)
+    }
+  }
+    
+  def cosh(a:Mat):Mat = {
+    a match {
+      case aa:FMat => cosh(aa)
+      case aa:CMat => cosh(aa)
+      case aa:DMat => cosh(aa)
+      case aa:GMat => cosh(aa)
+    }
+  }
+     
+  def sinh(a:Mat):Mat = {
+    a match {
+      case aa:FMat => sinh(aa)
+      case aa:CMat => sinh(aa)
+      case aa:DMat => sinh(aa)
+      case aa:GMat => sinh(aa)
+    }
+  }
+      
+  def tanh(a:Mat):Mat = {
+    a match {
+      case aa:FMat => tanh(aa)
+      case aa:CMat => tanh(aa)
+      case aa:DMat => tanh(aa)
+      case aa:GMat => tanh(aa)
+    }
+  }
+    
+  def acos(a:Mat):Mat = {
+    a match {
+      case aa:FMat => acos(aa)
+      case aa:CMat => acos(aa)
+      case aa:DMat => acos(aa)
+      case aa:GMat => acos(aa)
+    }
+  }
+      
+  def asin(a:Mat):Mat = {
+    a match {
+      case aa:FMat => asin(aa)
+      case aa:CMat => asin(aa)
+      case aa:DMat => asin(aa)
+      case aa:GMat => asin(aa)
+    }
+  }
+  
+  def atan(a:Mat):Mat = {
+    a match {
+      case aa:FMat => atan(aa)
+      case aa:CMat => atan(aa)
+      case aa:DMat => atan(aa)
+      case aa:GMat => atan(aa)
+    }
+  }
+  
+  def acosh(a:Mat):Mat = {
+    a match {
+      case aa:FMat => acosh(aa)
+      case aa:CMat => acosh(aa)
+      case aa:DMat => acosh(aa)
+      case aa:GMat => acosh(aa)
+    }
+  }
+  
+  def asinh(a:Mat):Mat = {
+    a match {
+      case aa:FMat => asinh(aa)
+      case aa:CMat => asinh(aa)
+      case aa:DMat => asinh(aa)
+      case aa:GMat => asinh(aa)
+    }
+  }
+  
+  def erf(a:Mat):Mat = {
+    a match {
+      case aa:FMat => erf(aa)
+      case aa:DMat => erf(aa)
+      case aa:GMat => erf(aa)
+    }
+  }
+   
+  def erfinv(a:Mat):Mat = {
+    a match {
+      case aa:FMat => erfinv(aa)
+      case aa:DMat => erfinv(aa)
+      case aa:GMat => erfinv(aa)
+    }
+  }
+    
+  def erfc(a:Mat):Mat = {
+    a match {
+      case aa:FMat => erfc(aa)
+      case aa:DMat => erfc(aa)
+      case aa:GMat => erfc(aa)
+    }
+  }
+   
+  def erfcinv(a:Mat):Mat = {
+    a match {
+      case aa:FMat => erfcinv(aa)
+      case aa:DMat => erfcinv(aa)
+      case aa:GMat => erfcinv(aa)
+    }
+  }
+  
+  def gamma(a:Mat):Mat = {
+    a match {
+      case aa:FMat => gamma(aa)
+      case aa:DMat => gamma(aa)
+      case aa:GMat => gamma(aa)
+    }
+  }
+    
+  def gammaln(a:Mat):Mat = {
+    a match {
+      case aa:FMat => gammaln(aa)
+      case aa:DMat => gammaln(aa)
+      case aa:GMat => gammaln(aa)
+    }
+  }
+  
+  def floor(a:Mat):Mat = {
+    a match {
+      case aa:FMat => floor(aa)
+      case aa:DMat => floor(aa)
+      case aa:GMat => floor(aa)
+    }
+  }
+  
+  def ceil(a:Mat):Mat = {
+    a match {
+      case aa:FMat => ceil(aa)
+      case aa:DMat => ceil(aa)
+      case aa:GMat => ceil(aa)
+    }
+  }
+   
+  def round(a:Mat):Mat = {
+    a match {
+      case aa:FMat => round(aa)
+      case aa:DMat => round(aa)
+      case aa:GMat => round(aa)
+    }
+  }
+  
+  def trunc(a:Mat):Mat = {
+    a match {
+      case aa:FMat => trunc(aa)
+      case aa:DMat => trunc(aa)
+      case aa:GMat => trunc(aa)
+    }
+  }
+  
+  def exppsi(a:Mat):Mat = {
+    a match {
+      case aa:FMat => exppsi(aa)
+      case aa:DMat => exppsi(aa)
+      case aa:GMat => exppsi(aa)
+    }
+  }
+  
+  def atan2(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => atan2(aa, bb)
+      case (aa:DMat, bb:DMat) => atan2(aa, bb)
+      case (aa:GMat, bb:GMat) => atan2(aa, bb)
+    }
+  }
+  
+  def pow(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+      case (aa:FMat, bb:FMat) => pow(aa, bb)
+      case (aa:DMat, bb:DMat) => pow(aa, bb)
+      case (aa:GMat, bb:GMat) => pow(aa, bb)
+    }
+  }
 }
 
 

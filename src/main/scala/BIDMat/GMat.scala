@@ -150,6 +150,20 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   
   override def dot (a:Mat):Mat = dot(a.asInstanceOf[GMat], null)
   
+  def dotr (a:GMat, oldmat:Mat):GMat = 
+  	if (nrows != a.nrows || ncols != a.ncols) {
+  		throw new RuntimeException("dot dims not compatible")
+  	} else {
+  		val out = GMat.newOrCheckGMat(nrows, 1, oldmat, GUID, a.GUID, "dot".##) 
+  		Mat.nflops += 2L * length
+  	  CUMAT.reducebin2op(nrows, ncols, data, a.data, out.data, op_mul, op_add)
+  	  out
+  	}
+  
+  def dotr (a:GMat):GMat = dotr(a, null)
+  
+  override def dotr (a:Mat):Mat = dotr(a.asInstanceOf[GMat], null)
+  
   override def ddot (a : Mat):Double = 
   	if (nrows != a.nrows || ncols != a.ncols) {
   		throw new RuntimeException("dot dims not compatible")
@@ -234,6 +248,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   def ∘  (a : GMat) = gOp(a, null, op_mul)
   def /  (a : GMat) = gOp(a, null, op_div)
   def ∙  (a : GMat) = dot(a)
+  def ∙∙ (a : GMat) = dotr(a)
   
   def > (b : GMat) = gOp(b, null, op_gt)
   def < (b : GMat) = gOp(b, null, op_lt)
@@ -329,7 +344,9 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
 	def <= (b : GMat) = mat.gOp(b, omat, op_le)
 	def != (b : GMat) = mat.gOp(b, omat, op_ne)
 	
-	def dot (b :GMat) = mat.dot(b, omat)
+	def dot (b :GMat) = mat.dot(b, omat) 
+	def ∙ (b :GMat) = mat.dot(b, omat)
+	def ∙∙ (b :GMat) = mat.dotr(b, omat)
 	
 	override def +  (b : Float):Mat = mat.gOp(GMat(b), omat, op_add)
   override def -  (b : Float):Mat = mat.gOp(GMat(b), omat, op_sub)

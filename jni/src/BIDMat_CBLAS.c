@@ -1,7 +1,7 @@
 #include <jni.h>
 #include <mkl.h>
 #include <mkl_trans.h>
-
+#include <omp.h>
 
 JNIEXPORT jdouble JNICALL Java_edu_berkeley_bid_CBLAS_ddot 
 (JNIEnv * env, jobject calling_obj, jint N, jdoubleArray jX, jint incX, jdoubleArray jY, jint incY){
@@ -39,6 +39,25 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_ddotm
     
     for (i = 0; i < ncols; i++) {
       Z[i] = cblas_ddot(nrows, X+i*ldx, 1, Y+i*ldy, 1);
+    }
+
+	(*env)->ReleasePrimitiveArrayCritical(env, jZ, Z, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, jY, Y, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, jX, X, 0);
+}
+
+JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_ddotr
+(JNIEnv * env, jobject calling_obj, jint nrows, jint ncols, jdoubleArray jX, jint ldx, jdoubleArray jY, jint ldy, jdoubleArray jZ){
+	jdouble * X = (*env)->GetPrimitiveArrayCritical(env, jX, JNI_FALSE);
+	jdouble * Y = (*env)->GetPrimitiveArrayCritical(env, jY, JNI_FALSE);
+	jdouble * Z = (*env)->GetPrimitiveArrayCritical(env, jZ, JNI_FALSE);
+    int i, j;
+
+    for (i = 0; i < ncols; i++) {
+#pragma omp parallel for
+      for (j = 0; j < nrows; j++) {
+        Z[j] += X[j + i*ldx] * Y[j + i*ldy];
+      }
     }
 
 	(*env)->ReleasePrimitiveArrayCritical(env, jZ, Z, 0);
@@ -134,7 +153,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_dmcscm
 
 	(*env)->ReleasePrimitiveArrayCritical(env, j_C, C, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, j_jc, jc, 0);	
-        (*env)->ReleasePrimitiveArrayCritical(env, j_ir, ir, 0);
+    (*env)->ReleasePrimitiveArrayCritical(env, j_ir, ir, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, j_B, B, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, j_A, A, 0);
 }
@@ -149,14 +168,14 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_dmcsrm
 	jint * jc = (*env)->GetPrimitiveArrayCritical(env, j_jc, JNI_FALSE);
 	jdouble * C = (*env)->GetPrimitiveArrayCritical(env, j_C, JNI_FALSE);
 
-        int ioff = jc[0];
-        int i, j, k;
-        for (i = 0; i < N; i++) {
-          for (j = jc[i]-ioff; j < jc[i+1]-ioff; j++) {
-            k = ir[j]-ioff;
-            cblas_daxpy(M, B[j], A+(i*lda), 1, C+(k*ldc), 1);
-          }
-        }
+    int ioff = jc[0];
+    int i, j, k;
+    for (i = 0; i < N; i++) {
+      for (j = jc[i]-ioff; j < jc[i+1]-ioff; j++) {
+        k = ir[j]-ioff;
+        cblas_daxpy(M, B[j], A+(i*lda), 1, C+(k*ldc), 1);
+      }
+    }
 
 	(*env)->ReleasePrimitiveArrayCritical(env, j_C, C, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, j_jc, jc, 0);	
@@ -197,10 +216,29 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_sdotm
 	jfloat * X = (*env)->GetPrimitiveArrayCritical(env, jX, JNI_FALSE);
 	jfloat * Y = (*env)->GetPrimitiveArrayCritical(env, jY, JNI_FALSE);
 	jfloat * Z = (*env)->GetPrimitiveArrayCritical(env, jZ, JNI_FALSE);
-        int i;
+    int i, j;
     
     for (i = 0; i < ncols; i++) {
       Z[i] = cblas_sdot(nrows, X+i*ldx, 1, Y+i*ldy, 1);
+    }
+
+	(*env)->ReleasePrimitiveArrayCritical(env, jZ, Z, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, jY, Y, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, jX, X, 0);
+}
+
+JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_sdotr
+(JNIEnv * env, jobject calling_obj, jint nrows, jint ncols, jfloatArray jX, jint ldx, jfloatArray jY, jint ldy, jfloatArray jZ){
+	jfloat * X = (*env)->GetPrimitiveArrayCritical(env, jX, JNI_FALSE);
+	jfloat * Y = (*env)->GetPrimitiveArrayCritical(env, jY, JNI_FALSE);
+	jfloat * Z = (*env)->GetPrimitiveArrayCritical(env, jZ, JNI_FALSE);
+    int i, j;
+
+    for (i = 0; i < ncols; i++) {
+#pragma omp parallel for
+      for (j = 0; j < nrows; j++) {
+        Z[j] += X[j + i*ldx] * Y[j + i*ldy];
+      }
     }
 
 	(*env)->ReleasePrimitiveArrayCritical(env, jZ, Z, 0);
@@ -258,7 +296,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_saxpy
 	jfloat * X = (*env)->GetPrimitiveArrayCritical(env, jX, JNI_FALSE);
 	jfloat * Y = (*env)->GetPrimitiveArrayCritical(env, jY, JNI_FALSE);
 
-        cblas_saxpy(N, a, X, incX, Y, incY);
+    cblas_saxpy(N, a, X, incX, Y, incY);
 
 	(*env)->ReleasePrimitiveArrayCritical(env, jY, Y, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, jX, X, 0);
@@ -378,6 +416,28 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_cdotm
 	(*env)->ReleasePrimitiveArrayCritical(env, jX, X, 0);
 }
 
+JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_cdotr
+(JNIEnv * env, jobject calling_obj, jint nrows, jint ncols, jfloatArray jX, jint ldx, jfloatArray jY, jint ldy, jfloatArray jZ){
+	jfloat * X = (*env)->GetPrimitiveArrayCritical(env, jX, JNI_FALSE);
+	jfloat * Y = (*env)->GetPrimitiveArrayCritical(env, jY, JNI_FALSE);
+	jfloat * Z = (*env)->GetPrimitiveArrayCritical(env, jZ, JNI_FALSE);
+    int i, j, ix, iy;
+
+    for (i = 0; i < ncols; i++) {
+#pragma omp parallel for
+      for (j = 0; j < nrows; j++) {
+        ix = 2*(j + i*ldx);
+        iy = 2*(j + i*ldy);
+        Z[2*j] += X[ix] * Y[ix] - X[ix+1] * Y[ix+1];
+        Z[2*j+1] += X[ix] * Y[ix+1] + X[ix+1] * Y[ix];
+      }
+    }
+
+	(*env)->ReleasePrimitiveArrayCritical(env, jY, Y, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, jZ, Z, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, jX, X, 0);
+}
+
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_cgemv 
 (JNIEnv * env, jobject calling_obj, jint order, jint transA, jint M, jint N, jfloatArray jAlpha, 
 jfloatArray jA, jint lda, jfloatArray jX, jint incX, jfloatArray jBeta, jfloatArray jY, jint incY){
@@ -434,7 +494,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_caxpyxx
 	jfloat * Y = (*env)->GetPrimitiveArrayCritical(env, jY, JNI_FALSE);
 	jfloat * a = (*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE);
 
-        cblas_caxpy(N, a, X+startX, 1, Y+startY, 1);
+    cblas_caxpy(N, a, X+startX, 1, Y+startY, 1);
 
 	(*env)->ReleasePrimitiveArrayCritical(env, jA, a, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, jY, Y, 0);
