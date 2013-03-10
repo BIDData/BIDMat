@@ -46,8 +46,8 @@ if [ "$OS" = "apple" ] ; then
 #	ARCHD=ia32
 	OBJ="o"
 	OUTFLG="-o "
-	CPPFLAGS="-fPIC -c -O2 -DNDEBUG -I$JAVA_HOME/Headers -I$JCUDA_HOME/CommonJNI/src -I$CUDA_HOME/include"
-	CFLAGS="-fPIC -c -O2 -DNDEBUG -std=c99 -I$JAVA_HOME/Headers -I$MKL_ROOT/include -I$MKL_ROOT/include/${ARCHD}${SUBARCH}"
+	CPPFLAGS="-fPIC -c -O2 -openmp -DNDEBUG -I$JAVA_HOME/Headers -I$JCUDA_HOME/CommonJNI/src -I$CUDA_HOME/include"
+	CFLAGS="-fPIC -c -O2 -openmp -DNDEBUG -std=c99 -I$JAVA_HOME/Headers -I$MKL_ROOT/include -I$MKL_ROOT/include/${ARCHD}${SUBARCH}"
 	LB="ar rc"    
 	GLD="icc -bundle -static-intel"
 	LD="icc -bundle -static-intel"
@@ -88,8 +88,8 @@ elif [ "$OS" = "linux" ] ; then
         SUBLIB=linux64
 	OBJ="o"
 	OUTFLG="-o "
-	CPPFLAGS="-fPIC -c -O2 -DNDEBUG  -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$JCUDA_HOME/CommonJNI/src -I$CUDA_HOME/include" 
-	CFLAGS="-fPIC -c -O2 -std c99 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$MKL_ROOT/include -I$MKL_ROOT/include/intel64/lp64"
+	CPPFLAGS="-fPIC -c -O2 -openmp -DNDEBUG  -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$JCUDA_HOME/CommonJNI/src -I$CUDA_HOME/include" 
+	CFLAGS="-fPIC -c -O2 -openmp -std c99 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$MKL_ROOT/include -I$MKL_ROOT/include/intel64/lp64"
 	LB="ar rc"    
 	GLD="g++ -shared"
 	LD="icc -shared -static-intel"
