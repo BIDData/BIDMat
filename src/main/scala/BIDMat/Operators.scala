@@ -28,7 +28,7 @@ object Operator {
       case db:DMat => op.dop(DMat(a), db, c)
       case ib:IMat => op.iop(a, ib, c)
       case cb:CMat => op.cop(CMat(a), cb, c)
-      case gb:GMat => op.gop(GMat(a), gb, c)
+      case gb:GMat => op.gop(GMat(FMat(a)), gb, c)
     }
   }
   
