@@ -689,7 +689,9 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   def <= (b : FMat) = mat.ffMatOp(b, FMat.leFun, omat)
   def != (b : FMat) = mat.ffMatOp(b, FMat.neFun, omat) 
 
-  
+  /*
+   * Scalar second arguments
+   */
   override def * (b : Float) = mat.ffMatOpScalarv(b, FMat.vecMulFun, omat)
   override def + (b : Float) = mat.ffMatOpScalarv(b, FMat.vecAddFun, omat)
   override def - (b : Float) = mat.ffMatOpScalarv(b, FMat.vecSubFun, omat)
