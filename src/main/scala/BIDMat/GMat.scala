@@ -39,7 +39,8 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   
   override def set(v:Float):GMat = {
     val a = MatFunctions.row(v)
-    JCublas.cublasSetVector(length, Sizeof.FLOAT, Pointer.to(a.data), 0, data, 1);
+//    JCublas.cublasSetVector(length, Sizeof.FLOAT, Pointer.to(a.data), 0, data, 1);
+    cudaMemcpy2D(data, Sizeof.FLOAT, Pointer.to(a.data), Sizeof.FLOAT, Sizeof.FLOAT, length, cudaMemcpyHostToDevice)
     cudaDeviceSynchronize()
     this
   }
