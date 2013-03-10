@@ -361,6 +361,26 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   override def dot(a:Mat):Mat = dot(a.asInstanceOf[FMat])
   
+  def dotr(a:FMat, omat:Mat):FMat = {
+   	if (nrows != a.nrows || ncols != a.ncols) {
+  		throw new RuntimeException("dot dims not compatible")
+   	}	else {
+   		val out = FMat.newOrCheckFMat(nrows, 1, omat, GUID, a.GUID, "dotr".##)
+   		out.clear
+   		if (Mat.noMKL || length < 512) {
+   			gdotr(a, out)
+   		} else {
+   			Mat.nflops += 2L * length
+   			sdotr(nrows, ncols, data, nrows, a.data, nrows, out.data)
+   		}
+   		out
+   	}
+  }
+  
+  def dotr(a:FMat):FMat = dotr(a, null)
+  
+  override def dotr(a:Mat):Mat = dotr(a.asInstanceOf[FMat])
+  
   def solvel(a0:Mat):FMat = 
     a0 match {
       case a:FMat => { 
@@ -434,6 +454,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
    * Basic operators on pairs of FMats. These are the compute routines.
    */
 
+  override def unary_-() = ffMatOpScalarv(-1f, FMat.vecMulFun, null)
   def +  (b : FMat) = ffMatOpv(b, FMat.vecAddFun, null)
   def -  (b : FMat) = ffMatOpv(b, FMat.vecSubFun, null)
   def *  (b : FMat) = fDMult(b, null)
@@ -452,8 +473,10 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def / (b : FMat) = ffMatOpv(b, FMat.vecDivFun, null)
   def ∘ (b : FMat) = ffMatOpv(b, FMat.vecMulFun, null)
   def ∙ (b:FMat):FMat = dot(b)
+  def ∙∙ (b:FMat):FMat = dotr(b)
+  
 
-  override def *  (b : Float) = fDMult(FMat.elem(b), null)
+  override def *  (b : Float) = ffMatOpScalarv(b, FMat.vecMulFun, null)
   override def +  (b : Float) = ffMatOpScalarv(b, FMat.vecAddFun, null)
   override def -  (b : Float) = ffMatOpScalarv(b, FMat.vecSubFun, null)
   override def *@ (b : Float) = ffMatOpScalarv(b, FMat.vecMulFun, null)
@@ -607,7 +630,9 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
 
 class FPair(val omat:Mat, val mat:FMat) extends Pair {
   
-  override def t:FMat = FMat(mat.gt(omat))
+  override def t:FMat = FMat(mat.gt(omat)) 
+  def dot (b :FMat) = mat.dot(b, omat)
+  def dotr (b :FMat) = mat.dotr(b, omat)
   
   def * (b : FMat) = mat.fDMult(b, omat) 
   def * (b : SMat) = mat.fSMult(b, omat) 
@@ -624,7 +649,9 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   def *@ (b : FMat) = mat.ffMatOpv(b, FMat.vecMulFun, omat)
   def ∘  (b : FMat) = mat.ffMatOpv(b, FMat.vecMulFun, omat)
   def /  (b : FMat) = mat.ffMatOpv(b, FMat.vecDivFun, omat)  
-  def ^ (b : FMat) = mat.ffMatOp(b, FMat.powFun, omat)  
+  def ^ (b : FMat) = mat.ffMatOp(b, FMat.powFun, omat) 
+  def ∙ (b:FMat):FMat = mat.dot(b)
+  def ∙∙ (b:FMat):FMat = mat.dot(b)
 
   def > (b : FMat) = mat.ffMatOp(b, FMat.gtFun, omat)
   def < (b : FMat) = mat.ffMatOp(b, FMat.ltFun, omat)
@@ -633,8 +660,7 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   def >= (b : FMat) = mat.ffMatOp(b, FMat.geFun, omat)
   def <= (b : FMat) = mat.ffMatOp(b, FMat.leFun, omat)
   def != (b : FMat) = mat.ffMatOp(b, FMat.neFun, omat) 
-  
-  def dot (b :FMat) = mat.dot(b, omat)
+
   
   override def * (b : Float) = mat.fDMult(FMat.elem(b), omat)
   override def * (b : Double) = mat.fDMult(FMat.elem(b.toFloat), omat)

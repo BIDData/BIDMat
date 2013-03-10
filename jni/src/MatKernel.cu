@@ -637,12 +637,49 @@ __global__ void __reduce2op(int nrows, int ncols, float *A, float *B, int opn) {
   }
 }
 
+__global__ void __reducebin2op(int nrows, int ncols, float *A, float *B, float *C, int opb, int opr) {
+  __shared__ float parts[32][33];
+  optype opbf = operators[opb];
+  optype oprf = operators[opr];
+  int baserow = threadIdx.x + blockDim.x * blockIdx.x;
+  for (int irow = baserow; irow < nrows; irow += blockDim.x * gridDim.x) {
+    float v = opbf(A[irow + threadIdx.y * nrows], B[irow + threadIdx.y * nrows]);
+    for (int icol = threadIdx.y + blockDim.y; icol < ncols; icol += blockDim.y) {
+      v = oprf(v, opbf(A[irow + icol * nrows], B[irow + icol * nrows]));
+    }
+    parts[threadIdx.x][threadIdx.y] = v;
+    __syncthreads();
+    float newv = 0;
+    for (int i = 1; i < blockDim.y; i *= 2) {
+      if (i + threadIdx.y < blockDim.y) newv = parts[threadIdx.x][i+threadIdx.y];
+      __syncthreads();
+      if (i + threadIdx.y < blockDim.y) parts[threadIdx.x][threadIdx.y] = oprf(parts[threadIdx.x][threadIdx.y], newv);
+      __syncthreads();
+    }
+    if (threadIdx.y == 0) {
+      C[irow] = parts[threadIdx.x][0];
+    }
+    __syncthreads();
+  }
+}
+
 int reduce2op(int nrows, int ncols, float *A, float *B, int opn) {
   int blkx = min(32, nrows);
   int blky = min(32, ncols);
   int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));
   const dim3 blkdims(blkx,blky,1);
   __reduce2op<<<nblks,blkdims>>>(nrows, ncols, A, B, opn);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int reducebin2op(int nrows, int ncols, float *A, float *B, float *C, int opb, int opr) {
+  int blkx = min(32, nrows);
+  int blky = min(32, ncols);
+  int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));
+  const dim3 blkdims(blkx,blky,1);
+  __reducebin2op<<<nblks,blkdims>>>(nrows, ncols, A, B, C, opb, opr);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;

@@ -1049,6 +1049,25 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   		out
   	}
  
+   def gdotr (a : DenseMat[T], oldmat:Mat)(implicit numeric:Numeric[T]):DenseMat[T] = 
+  	if (nrows != a.nrows || ncols != a.ncols) {
+  		throw new RuntimeException("dotr dims not compatible")
+  	} else {
+  		val out = DenseMat.newOrCheck[T](nrows, 1, oldmat, GUID, a.GUID, "gdotr".hashCode)
+  		Mat.nflops += 2 * length
+  		var i = 0
+  		while (i < ncols){
+  		  val ix = i*nrows
+  		  var j = 0
+  		  while (j < nrows) {
+  		  	out.data(j) = numeric.plus(out.data(j), numeric.times(data(j+ix),a.data(j+ix)))
+  		  	j += 1
+  		  }
+  			i += 1
+  		}
+  		out
+  	}
+ 
   def mkdiag = {
     if (math.min(nrows, ncols) > 1) {
       throw new RuntimeException("mkdiag needs a vector input")

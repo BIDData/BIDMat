@@ -470,6 +470,8 @@ object MatFunctions {
   def szeros(nr:Int, nc:Int):SMat = SMat(nr, nc, 0)
   
   def sdzeros(nr:Int, nc:Int):SDMat = SDMat(nr, nc, 0)
+  
+  def gzeros(nr:Int, nc:Int):GMat = GMat.gzeros(nr, nc)
 
   def blank = new Mat(0,0)
   

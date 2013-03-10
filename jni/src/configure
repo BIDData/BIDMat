@@ -123,11 +123,11 @@ elif [ "$OS" = "windows" ] ; then
 	SUBLIB=win64
 	OBJ="obj"
 	OUTFLG="/OUT:"
-	CPPFLAGS="/c /MT /DNDEBUG /O2 /Qstd=c99 $CFLAGS"    # static linking
+	CPPFLAGS="/c /MT /DNDEBUG /O2 /Qstd=c99 /Qopenmp $CFLAGS"    # static linking
         NVCCFLAGS="-c -gencode arch=compute_20,code=sm_20 \
           -gencode arch=compute_30,code=sm_30 \
           --machine 64  -Xcompiler \"/EHsc /W3 /nologo /O2 /Zi  /MT\""
-	CFLAGS="/c /MT /DNDEBUG /O2 /Qstd=c99 $CFLAGS"    # static linking
+	CFLAGS="/c /MT /DNDEBUG /O2 /Qstd=c99 /Qopenmp $CFLAGS"    # static linking
 	LB="lib"    
 	LD="link"
 	GLD="link"

@@ -53,6 +53,7 @@ class Mat(nr:Int, nc:Int) {
   def update(a:IMat, b:Int, m:Mat) = notImplemented0("block update");	
   def update(a:Int, b:IMat, m:Mat) = notImplemented0("block update");
   
+  def unary_-():Mat = notImplemented1("-", this)
   def + (b : Mat):Mat = notImplemented1("+", b)
   def - (b : Mat):Mat = notImplemented1("-", b)
   def * (b : Mat):Mat = notImplemented1("*", b)
@@ -145,6 +146,10 @@ class Mat(nr:Int, nc:Int) {
   def ddot (b : Mat):Double = {notImplemented1("ddot", b); 0}
   
   def dot (b : Mat):Mat = {notImplemented1("dot", b); this}
+  def dotr (b : Mat):Mat = {notImplemented1("dotr", b); this}
+  
+  def ∙ (b : Mat):Mat = {notImplemented1("dot", b); this}
+  def ∙∙ (b : Mat):Mat = {notImplemented1("dotr", b); this}
 
 }
 
@@ -236,6 +241,12 @@ abstract class Pair {
   def == (b : Double):Mat = notImplemented0("==")
   def === (b : Double):Mat = notImplemented0("===")
   def != (b : Double):Mat = notImplemented0("!=")  
+  
+  
+  def dot (b : Mat):Mat = notImplemented1("dot", b)
+  def dotr (b : Mat):Mat = notImplemented1("dotr", b)
+  def ∙ (b : Mat):Mat = notImplemented1("dot", b)
+  def ∙∙ (b : Mat):Mat = notImplemented1("dotr", b)
 }
 
 object Mat {
