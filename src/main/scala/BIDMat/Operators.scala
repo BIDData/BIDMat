@@ -11,10 +11,10 @@ trait Mop {
   def op(a:DMat, b:DMat, c:Mat):DMat = {notImplemented(myname, a, b); a}
   def op(a:IMat, b:IMat, c:Mat):IMat = {notImplemented(myname, a, b); a}
   def op(a:CMat, b:CMat, c:Mat):CMat = {notImplemented(myname, a, b); a}
-  def sop(a:SMat, b:SMat, c:Mat):SMat = {notImplemented(myname, a, b); a}
+  def op(a:SMat, b:SMat, c:Mat):SMat = {notImplemented(myname, a, b); a}
   def op(a:GMat, b:GMat, c:Mat):GMat = {notImplemented(myname, a, b); a}
   def op(a:GSMat, b:GSMat, c:Mat):GSMat = {notImplemented(myname, a, b); a}
-  def dsop(a:SDMat, b:SDMat, c:Mat):SDMat = {notImplemented(myname, a, b); a}
+  def op(a:SDMat, b:SDMat, c:Mat):SDMat = {notImplemented(myname, a, b); a}
   
   /*
    * First mat is an FMat
@@ -192,7 +192,7 @@ object Mop_Plus extends Mop {
   override def op(a:IMat, b:IMat, c:Mat):IMat = getIPair(c, a) + b
   override def op(a:CMat, b:CMat, c:Mat):CMat = getCPair(c, a) + b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) + b
-  override def sop(a:SMat, b:SMat, c:Mat):SMat = getSPair(c, a) + b
+  override def op(a:SMat, b:SMat, c:Mat):SMat = getSPair(c, a) + b
 //  def apply(a:Mat, b:Mat, c:Mat):Mat = Operator.applyMat(a, b, c, Mop_Plus)
 }
 
@@ -203,7 +203,7 @@ object Mop_Minus extends Mop {
   override def op(a:IMat, b:IMat, c:Mat):IMat = getIPair(c, a) - b
   override def op(a:CMat, b:CMat, c:Mat):CMat = getCPair(c, a) - b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) - b
-  override def sop(a:SMat, b:SMat, c:Mat):SMat = getSPair(c, a) - b
+  override def op(a:SMat, b:SMat, c:Mat):SMat = getSPair(c, a) - b
 }
 
 object Mop_Times extends Mop {
@@ -252,7 +252,7 @@ object Mop_ETimes extends Mop {
   override def op(a:IMat, b:IMat, c:Mat):IMat = getIPair(c, a) *@ b
   override def op(a:CMat, b:CMat, c:Mat):CMat = getCPair(c, a) *@ b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) *@ b
-  override def sop(a:SMat, b:SMat, c:Mat):SMat = getSPair(c, a) *@ b
+  override def op(a:SMat, b:SMat, c:Mat):SMat = getSPair(c, a) *@ b
 }
 
 object Mop_EDiv extends Mop {
@@ -261,7 +261,7 @@ object Mop_EDiv extends Mop {
   override def op(a:DMat, b:DMat, c:Mat):DMat = getDPair(c, a) / b
   override def op(a:CMat, b:CMat, c:Mat):CMat = getCPair(c, a) / b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) / b
-  override def sop(a:SMat, b:SMat, c:Mat):SMat = getSPair(c, a) / b
+  override def op(a:SMat, b:SMat, c:Mat):SMat = getSPair(c, a) / b
 }
 
 object Mop_Dot extends Mop { 
