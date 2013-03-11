@@ -57,6 +57,18 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
       out
     }	else throw new RuntimeException("dimensions mismatch")
   }
+  
+  
+  override def recycle(nr:Int, nc:Int, nnz:Int):GIMat = {
+    if (nrows == nr && nc == ncols) {
+      this
+    } else if (realsize >= nr*nc) {
+      new GIMat(nr, nc, data, realsize)
+    } else {
+      free
+      GIMat(nr, nc)
+    }  
+  }
 
   def toIMat():IMat = {
     val out = IMat.newOrCheckIMat(nrows, ncols, null, GUID, "toIMat".##)
@@ -72,7 +84,7 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   def + (a : GIMat) = GIop(a, null, 0)
   def - (a : GIMat) = GIop(a, null, 1)
   def *@ (a : GIMat) = GIop(a, null, 2)
-  def /@ (a : GIMat) = GIop(a, null, 3)
+  def / (a : GIMat) = GIop(a, null, 3)
   def > (b : GIMat) = GIop(b, null, 4)
   def < (b : GIMat) = GIop(b, null, 5)
   def == (b : GIMat) = GIop(b, null, 6)
@@ -83,16 +95,6 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   
   def ~ (b: GIMat) = new GIPair(this, b)
 
-  override def recycle(nr:Int, nc:Int, nnz:Int):GIMat = {
-    if (nrows == nr && nc == ncols) {
-      this
-    } else if (realsize >= nr*nc) {
-      new GIMat(nr, nc, data, realsize)
-    } else {
-      free
-      GIMat(nr, nc)
-    }  
-  }
 }
 
 class GIPair (val omat:GIMat, val mat:GIMat){
@@ -100,7 +102,7 @@ class GIPair (val omat:GIMat, val mat:GIMat){
     def + (a : GIMat) = mat.GIop(a, omat, 0)
     def - (a : GIMat) = mat.GIop(a, omat, 1)
     def *@ (a : GIMat) = mat.GIop(a, omat, 2)
-    def /@ (a : GIMat) = mat.GIop(a, omat, 3)
+    def / (a : GIMat) = mat.GIop(a, omat, 3)
     def > (b : GIMat) = mat.GIop(b, omat, 4)
     def < (b : GIMat) = mat.GIop(b, omat, 5)
     def == (b : GIMat) = mat.GIop(b, omat, 6)
