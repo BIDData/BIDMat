@@ -589,7 +589,7 @@ class SparseMat[@specialized(Double,Float) T]
       i += 1
     } 
     i = 0
-    while (i < ncols) {
+    while (i <= ncols) {
       out.jc(i) = jc(i)
       i += 1
     }
