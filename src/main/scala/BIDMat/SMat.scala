@@ -127,7 +127,8 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
 	  out
   }
   
-  def SSMult(a:SMat):SMat = 
+
+  def SSMult(a:SMat, omat:Mat):SMat = 
   	if (ncols != a.nrows) {
   		throw new RuntimeException("dimensions mismatch")
   	} else {
@@ -142,9 +143,10 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   			}
   			i += 1
   		}
-  		val ii = new Array[Int](numnz)
+  		val out = SMat.newOrCheckSMat(nrows, a.ncols, numnz, omat, GUID, a.GUID, "*".##)
+  		val ii = out.ir
   		val jj = new Array[Int](numnz)
-  		val vv = new Array[Float](numnz)
+  		val vv = out.data
   		numnz = 0
   		i = 0
   		while (i < a.ncols) {
@@ -163,16 +165,20 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   			}
   			i += 1
   		}
-  		SMat(SparseMat.sparseImpl[Float](ii, jj, vv, nrows, a.ncols)) 
+  		Mat.ilexsort3(jj, ii, vv)
+  		val igood = SparseMat.remdups(ii, jj, vv)
+  		SparseMat.compressInds(jj, a.ncols, out.jc, igood)
+  		out.sparseTrim
+  		out
   	}
-  
+
   override def unary_- () = ssMatOpScalar(-1, SMat.mulFun, null)
   def + (b : SMat) = ssMatOp(b, SMat.sumFun, null)
   def - (b : SMat) = ssMatOp(b, SMat.subFun, null)
   def * (b : FMat):FMat = SMult(b, null)
   def Tx (b : FMat):FMat = Tmult(b, null)
   def ^* (b : FMat):FMat = Tmult(b, null)
-  def *# (b : SMat) = SSMult(b)
+  def * (b : SMat) = SSMult(b, null)
   def *@ (b : SMat) = ssMatOp(b, SMat.mulFun, null)
   def ∘ (b : SMat) = ssMatOp(b, SMat.mulFun, null)
   def /  (b : SMat) = ssMatOp(b, SMat.divFun, null)
@@ -382,7 +388,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   }
   
   def toSDMat:SDMat = {
-    val out = SDMat.newOrCheckSDMat(this, null, GUID, "toSDMat".hashCode)
+    val out = SDMat.newOrCheckSDMat(nrows, ncols, nnz, null, GUID, "toSDMat".hashCode)
     System.arraycopy(jc, 0, out.jc, 0, ncols+1)
     System.arraycopy(ir, 0, out.ir, 0, nnz)
     Mat.copyToDoubleArray(data, 0, out.data, 0, nnz)
@@ -403,6 +409,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
 
 class SPair (val omat:Mat, val mat:SMat) extends Pair{
   def * (b : FMat):FMat = mat.SMult(b, omat)
+  def * (b : SMat):SMat = mat.SSMult(b, omat)
   def Tx (b : FMat):FMat = mat.Tmult(b, omat)
   override def * (b : Mat):FMat = mat.SMult(b, omat)
   override def Tx (b : Mat):Mat = b match {case bb:FMat => mat.Tmult(bb, omat)}

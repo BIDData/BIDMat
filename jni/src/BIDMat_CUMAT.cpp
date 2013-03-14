@@ -275,6 +275,17 @@ extern "C" {
     unsigned int *bi = (unsigned int*)getPointer(env, jbi);
 
     return radixcounts(a, n, digit, bi);
-    }
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_distances
+  (JNIEnv *env, jobject obj, jobject ja, jint lda, jobject jb, jint ldb, jobject jc, jint ldc, 
+   jint d, jint nrows, jint ncols, jfloat p)
+  {
+    float *a = (float*)getPointer(env, ja);
+    float *b = (float*)getPointer(env, jb);
+    float *c = (float*)getPointer(env, jc);
+
+    return dists(a, lda, b, ldb, c, ldc, d, nrows, ncols, p);
+  }
 
 }

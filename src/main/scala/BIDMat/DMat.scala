@@ -237,6 +237,30 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
     }
   }
   
+  def multT(a:DMat, outmat:Mat):DMat = {
+    if (ncols == a.ncols) {
+    	val out = DMat.newOrCheckDMat(nrows, a.nrows, outmat, GUID, a.GUID, "multT".##)
+    	dgemm(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.Trans,
+  					nrows, a.nrows, ncols, 1.0f, data, nrows, a.data, a.nrows, 0, out.data, out.nrows)
+    	Mat.nflops += 2L * length * a.nrows
+    	out
+    } else {
+      throw new RuntimeException("xT dimensions mismatch")
+    }
+  }
+  
+  def Tmult(a:DMat, outmat:Mat):DMat = {
+    if (nrows == a.nrows) {
+    	val out = DMat.newOrCheckDMat(ncols, a.ncols, outmat, GUID, a.GUID, "Tmult".##)
+    	dgemm(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans,
+  					ncols, a.ncols, nrows, 1.0f, data, nrows, a.data, a.nrows, 0, out.data, out.nrows)
+    	Mat.nflops += 2L * length * a.nrows
+    	out
+    } else {
+      throw new RuntimeException("Tx dimensions mismatch")
+    }
+  }
+  
   /*
    * Very slow, row-and-column multiply
    */
@@ -417,6 +441,10 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   def *  (b : SDMat) = fSMult(b, null)
   def *^ (b : SDMat) = multT(b, null)
   def xT (b : SDMat) = multT(b, null)
+  def *^ (b : DMat) = multT(b, null)
+  def xT (b : DMat) = multT(b, null)
+  def Tx (b : DMat) = Tmult(b, null)
+  def ^* (b : DMat) = Tmult(b, null)
   def /< (b : DMat) = solvel(b)
   def \\ (b : DMat) = solver(b)
   def ^  (b : DMat) = ddMatOp(b, DMat.powFun, null)
@@ -664,6 +692,10 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   def * (b : SDMat) = mat.fSMult(b, omat)
   def *^ (b : SDMat) = mat.multT(b, omat)
   def xT (b : SDMat) = mat.multT(b, omat)
+  def *^ (b : DMat) = mat.multT(b, omat)
+  def xT (b : DMat) = mat.multT(b, omat)
+  def ^* (b : DMat) = mat.Tmult(b, omat)
+  def Tx (b : DMat) = mat.Tmult(b, omat)
   def + (b : DMat) = mat.ddMatOpv(b, DMat.vecAddFun, omat)
   def - (b : DMat) = mat.ddMatOpv(b, DMat.vecSubFun, omat)
   def *@ (b : DMat) = mat.ddMatOpv(b, DMat.vecMulFun, omat)
@@ -680,6 +712,7 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   def != (b : DMat) = mat.ddMatOp(b, DMat.neFun, omat) 
   
   def dot (b :DMat) = mat.dot(b, omat)
+  def dotr (b :DMat) = mat.dotr(b, omat)
   def ∙ (b :DMat) = mat.dot(b, omat)
   def ∙∙ (b :DMat) = mat.dotr(b, omat)
 

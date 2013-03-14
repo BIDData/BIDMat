@@ -38,7 +38,7 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
   
   def vertcat(a:DMat):DMat = MatFunctions.full(this).vertcat(a)
 
-  def SMult(a:Mat, omat:DMat):DMat = {
+  def SMult(a:Mat, omat:Mat):DMat = {
     val ioff = Mat.ioneBased
     if (ncols != a.nrows) {
       throw new RuntimeException("dimensions mismatch")
@@ -104,7 +104,7 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
     }	
   }
   
-  def Tmult(a:DMat, omat:DMat):DMat = {
+  def Tmult(a:DMat, omat:Mat):DMat = {
 	  val out = DMat.newOrCheckDMat(ncols, a.ncols, omat)
 	  if (omat.asInstanceOf[AnyRef] != null) out.clear
 	  var jc0 = jc
@@ -118,51 +118,57 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
 	  out
   }
   
-  def SSMult(a:SDMat):SDMat = 
-    if (ncols != a.nrows) {
-      throw new RuntimeException("dimensions mismatch")
-    } else {
-      val ioff = Mat.ioneBased
-      var numnz = 0
-      var i = 0
-      while (i < a.ncols) {
-	var j = a.jc(i)-ioff
-	while (j < a.jc(i+1)-ioff) {
-	  numnz += jc(a.ir(j)-ioff+1) - jc(a.ir(j)-ioff)
-	  j += 1
-	}
-	i += 1
-      }
-      val ii = new Array[Int](numnz)
-      val jj = new Array[Int](numnz)
-      val vv = new Array[Double](numnz)
-      numnz = 0
-      i = 0
-      while (i < a.ncols) {
-	var j = a.jc(i)-ioff
-	while (j < a.jc(i+1)-ioff) {
-	  val dval = a.data(j)
-	  var k = jc(a.ir(j)-ioff)-ioff
-	  while (k < jc(a.ir(j)-ioff+1)-ioff) {
-	    vv(numnz) =  data(k) * dval
-	    ii(numnz) = ir(k)-ioff
-	    jj(numnz) = i
-	    numnz += 1
-	    k += 1
-	  }
-	  j += 1
-	}
-	i += 1
-      }
-      SDMat(SparseMat.sparseImpl[Double](ii, jj, vv, nrows, a.ncols)) 
-    }	
+  
+  def SSMult(a:SDMat, omat:Mat):SDMat = 
+  	if (ncols != a.nrows) {
+  		throw new RuntimeException("dimensions mismatch")
+  	} else {
+  		val ioff = Mat.ioneBased
+  		var numnz = 0
+  		var i = 0
+  		while (i < a.ncols) {
+  			var j = a.jc(i)-ioff
+  			while (j < a.jc(i+1)-ioff) {
+  				numnz += jc(a.ir(j)-ioff+1) - jc(a.ir(j)-ioff)
+  				j += 1
+  			}
+  			i += 1
+  		}
+  		val out = SDMat.newOrCheckSDMat(nrows, a.ncols, numnz, omat, GUID, a.GUID, "*".##)
+  		val ii = out.ir
+  		val jj = new Array[Int](numnz)
+  		val vv = out.data
+  		numnz = 0
+  		i = 0
+  		while (i < a.ncols) {
+  			var j = a.jc(i)-ioff
+  			while (j < a.jc(i+1)-ioff) {
+  				val dval = a.data(j)
+  				var k = jc(a.ir(j)-ioff)-ioff
+  				while (k < jc(a.ir(j)-ioff+1)-ioff) {
+  					vv(numnz) =  data(k) * dval
+  					ii(numnz) = ir(k)-ioff
+  					jj(numnz) = i
+  					numnz += 1
+  					k += 1
+  				}
+  				j += 1
+  			}
+  			i += 1
+  		}
+  		Mat.ilexsort3(jj, ii, vv)
+  		val igood = SparseMat.remdups(ii, jj, vv)
+  		SparseMat.compressInds(jj, a.ncols, out.jc, igood)
+  		out.sparseTrim
+  		out
+  	}
+
   
   def + (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => x + y, null)
   def - (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => x - y, null)
   def * (b : DMat):DMat = SMult(b, null)
   def Tx (b : DMat):DMat = Tmult(b, null)
-  override def * (b : Mat):DMat = SMult(b, null)
-  def *# (b : SDMat) = SSMult(b)
+  def *  (b : SDMat) = SSMult(b, null)
   def *@ (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => x * y, null)
   def ∘  (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => x * y, null)
   def /  (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => x / y, null)
@@ -214,8 +220,9 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
   }
 }
 
-class SDPair (val omat:DMat, val mat:SDMat) extends Pair{
+class SDPair (val omat:Mat, val mat:SDMat) extends Pair{
 	def * (b : DMat):DMat = mat.SMult(b, omat)
+	def * (b : SDMat):SDMat = mat.SSMult(b, omat)
   def Tx (b : DMat):DMat = mat.Tmult(b, omat)
   override def * (b : Mat):DMat = mat.SMult(b, omat)
   
@@ -240,66 +247,66 @@ object SDMat {
   
   def apply(a:SMat) = a.toSDMat
   
-  def SDnoRows(nr:Int, nc:Int, nnz0:Int):SDMat = new SDMat(nr, nc, nnz0, null, new Array[Int](nc+1), new Array[Double](nnz0))
-
-   
-  def newOrCheckSDMat(mat:Mat, oldmat:Mat):SDMat = {
+   def SnoRows(nr:Int, nc:Int, nnz0:Int):SDMat = new SDMat(nr, nc, nnz0, null, new Array[Int](nc+1), new Array[Double](nnz0))
+  
+  def newOrCheckSDMat(nrows:Int, ncols:Int, nnz:Int, oldmat:Mat):SDMat = {
   	if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows == 0 && oldmat.ncols == 0)) {
-  		SDMat(mat.nrows, mat.ncols, mat.nnz)
+  		SDMat(nrows, ncols, nnz)
   	} else {
   	  oldmat match {
-  	    case omat:SDMat =>	if (oldmat.nrows == mat.nrows && oldmat.ncols == mat.ncols && oldmat.nnz == mat.nnz) {
+  	    case omat:SDMat =>	if (oldmat.nrows == nrows && oldmat.ncols == ncols && oldmat.nnz == nnz) {
   	    	omat
   	    } else {
-  	    	omat.recycle(mat.nrows, mat.ncols, mat.nnz)
+  	    	omat.recycle(nrows, ncols, nnz)
   	    }
   	  }
   	}
   }
   
-   
-  def newOrCheckSDMat(mat:Mat, outmat:Mat, matGuid:Long, opHash:Int):SDMat = {
+  
+  def newOrCheckSDMat(nrows:Int, ncols:Int, nnz:Int, outmat:Mat, guid1:Long, opHash:Int):SDMat = {
     if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
-      newOrCheckSDMat(mat, outmat)
+      newOrCheckSDMat(nrows, ncols, nnz, outmat)
     } else {
-      val key = (matGuid, opHash)
+      val key = (guid1, opHash)
       val res = Mat.cache2(key)
       if (res != null) {
-      	newOrCheckSDMat(mat, res)
+      	newOrCheckSDMat(nrows, ncols, nnz, res)
       } else {
-        val omat = newOrCheckSDMat(mat, null)
+        val omat = newOrCheckSDMat(nrows, ncols, nnz, null)
         Mat.cache2put(key, omat)
         omat
       }
     }
   }
+
   
-  def newOrCheckSDMat(mat:Mat, outmat:Mat, guid1:Long, guid2:Long, opHash:Int):SDMat = {
+  def newOrCheckSDMat(nrows:Int, ncols:Int, nnz:Int, outmat:Mat, guid1:Long, guid2:Long, opHash:Int):SDMat = {
     if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
-      newOrCheckSDMat(mat, outmat)
+      newOrCheckSDMat(nrows, ncols, nnz, outmat)
     } else {
       val key = (guid1, guid2, opHash)
       val res = Mat.cache3(key)
       if (res != null) {
-      	newOrCheckSDMat(mat, res)
+      	newOrCheckSDMat(nrows, ncols, nnz, res)
       } else {
-        val omat = newOrCheckSDMat(mat, null)
+        val omat = newOrCheckSDMat(nrows, ncols, nnz, null)
         Mat.cache3put(key, omat)
         omat
       }
     }
   }
     
-  def newOrCheckSDMat(mat:Mat, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):SDMat = {
+  def newOrCheckSDMat(nrows:Int, ncols:Int, nnz:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):SDMat = {
     if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
-      newOrCheckSDMat(mat, outmat)
+      newOrCheckSDMat(nrows, ncols, nnz, outmat)
     } else {
       val key = (guid1, guid2, guid3, opHash)
       val res = Mat.cache4(key)
       if (res != null) {
-      	newOrCheckSDMat(mat, res)
+      	newOrCheckSDMat(nrows, ncols, nnz, res)
       } else {
-        val omat = newOrCheckSDMat(mat, null)
+        val omat = newOrCheckSDMat(nrows, ncols, nnz, null)
         Mat.cache4put(key, omat)
         omat
       }

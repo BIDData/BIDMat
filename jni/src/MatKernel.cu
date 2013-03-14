@@ -991,6 +991,87 @@ int radixcounts(float *a, int n, int digit, unsigned int *bi) {
   return err;
 }
 
+#ifdef __CUDA_ARCH__
+#if __CUDA_ARCH__ > 200
+
+#define GENDIST(FNAME,DFUNC,OFUNC) __global__ void FNAME(float *A, int lda, float *B, int ldb, float *C, \
+                                                         int ldc, int d, int nrows, int ncols, float p) {\
+  int xi = threadIdx.x + blockDim.x * (threadIdx.y + blockIdx.y * blockDim.y);                           \
+  int yblk = blockDim.x * (threadIdx.z + blockIdx.z * blockDim.z);                                       \
+  int yi = threadIdx.x + yblk;                                                                           \
+  if (xi < nrows && yi < ncols) {                                                                        \
+    float va, vb;                                                                                        \
+    int zi = xi + ldc * yblk;                                                                            \
+    float R00 = 0; float R01 = 0; float R02 = 0; float R03 = 0; float R04 = 0;                           \
+    float R05 = 0; float R06 = 0; float R07 = 0; float R08 = 0; float R09 = 0;                           \
+    float R10 = 0; float R11 = 0; float R12 = 0; float R13 = 0; float R14 = 0;                           \
+    float R15 = 0; float R16 = 0; float R17 = 0; float R18 = 0; float R19 = 0;                           \
+    float R20 = 0; float R21 = 0; float R22 = 0; float R23 = 0; float R24 = 0;                           \
+    float R25 = 0; float R26 = 0; float R27 = 0; float R28 = 0; float R29 = 0;                           \
+    float R30 = 0; float R31 = 0;                                                                        \
+    int nbr = (threadIdx.x + 1) % 32;                                                                    \
+    for (int i = 0; i < d; i++) {                                                                        \
+      va = A[xi + i * lda];                                                                              \
+      vb = B[yi + i * ldb];                                                                              \
+      R00 += DFUNC; vb = __shfl(vb, nbr); R01 += DFUNC; vb = __shfl(vb, nbr);                            \
+      R02 += DFUNC; vb = __shfl(vb, nbr); R03 += DFUNC; vb = __shfl(vb, nbr);                            \
+      R04 += DFUNC; vb = __shfl(vb, nbr); R05 += DFUNC; vb = __shfl(vb, nbr);                            \
+      R06 += DFUNC; vb = __shfl(vb, nbr); R07 += DFUNC; vb = __shfl(vb, nbr);                            \
+      R08 += DFUNC; vb = __shfl(vb, nbr); R09 += DFUNC; vb = __shfl(vb, nbr);                            \
+      R10 += DFUNC; vb = __shfl(vb, nbr); R11 += DFUNC; vb = __shfl(vb, nbr);                            \
+      R12 += DFUNC; vb = __shfl(vb, nbr); R13 += DFUNC; vb = __shfl(vb, nbr);                            \
+      R14 += DFUNC; vb = __shfl(vb, nbr); R15 += DFUNC; vb = __shfl(vb, nbr);                            \
+      R16 += DFUNC; vb = __shfl(vb, nbr); R17 += DFUNC; vb = __shfl(vb, nbr);                            \
+      R18 += DFUNC; vb = __shfl(vb, nbr); R19 += DFUNC; vb = __shfl(vb, nbr);                            \
+      R20 += DFUNC; vb = __shfl(vb, nbr); R21 += DFUNC; vb = __shfl(vb, nbr);                            \
+      R22 += DFUNC; vb = __shfl(vb, nbr); R23 += DFUNC; vb = __shfl(vb, nbr);                            \
+      R24 += DFUNC; vb = __shfl(vb, nbr); R25 += DFUNC; vb = __shfl(vb, nbr);                            \
+      R26 += DFUNC; vb = __shfl(vb, nbr); R27 += DFUNC; vb = __shfl(vb, nbr);                            \
+      R28 += DFUNC; vb = __shfl(vb, nbr); R29 += DFUNC; vb = __shfl(vb, nbr);                            \
+      R30 += DFUNC; vb = __shfl(vb, nbr); R31 += DFUNC; vb = __shfl(vb, nbr);                            \
+    }                                                                                                    \
+    float pinv = 1.0f / p;                                                                               \
+    va = R00; C[zi] = OFUNC; zi += ldc; va = R01; C[zi] = OFUNC; zi += ldc;                              \
+    va = R02; C[zi] = OFUNC; zi += ldc; va = R03; C[zi] = OFUNC; zi += ldc;                              \
+    va = R04; C[zi] = OFUNC; zi += ldc; va = R05; C[zi] = OFUNC; zi += ldc;                              \
+    va = R06; C[zi] = OFUNC; zi += ldc; va = R07; C[zi] = OFUNC; zi += ldc;                              \
+    va = R08; C[zi] = OFUNC; zi += ldc; va = R09; C[zi] = OFUNC; zi += ldc;                              \
+    va = R10; C[zi] = OFUNC; zi += ldc; va = R11; C[zi] = OFUNC; zi += ldc;                              \
+    va = R12; C[zi] = OFUNC; zi += ldc; va = R13; C[zi] = OFUNC; zi += ldc;                              \
+    va = R14; C[zi] = OFUNC; zi += ldc; va = R15; C[zi] = OFUNC; zi += ldc;                              \
+    va = R16; C[zi] = OFUNC; zi += ldc; va = R17; C[zi] = OFUNC; zi += ldc;                              \
+    va = R18; C[zi] = OFUNC; zi += ldc; va = R19; C[zi] = OFUNC; zi += ldc;                              \
+    va = R20; C[zi] = OFUNC; zi += ldc; va = R21; C[zi] = OFUNC; zi += ldc;                              \
+    va = R22; C[zi] = OFUNC; zi += ldc; va = R23; C[zi] = OFUNC; zi += ldc;                              \
+    va = R24; C[zi] = OFUNC; zi += ldc; va = R25; C[zi] = OFUNC; zi += ldc;                              \
+    va = R26; C[zi] = OFUNC; zi += ldc; va = R27; C[zi] = OFUNC; zi += ldc;                              \
+    va = R28; C[zi] = OFUNC; zi += ldc; va = R29; C[zi] = OFUNC; zi += ldc;                              \
+    va = R30; C[zi] = OFUNC; zi += ldc; va = R31; C[zi] = OFUNC; zi += ldc;                              \
+  }                                                                                                      \
+}
+
+GENDIST(__l1dist,abs(va-vb),va)
+GENDIST(__minkowskidist,pow(abs(va-vb),p),pow(va,pinv))
+
+#else
+__global__ void __l1dist(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p) {}
+__global__ void __minkowskidist(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p) {}
+#endif
+#endif
+
+int dists(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p) {
+  dim3 blockdim(32,4,4);
+  dim3 griddim(1,1+(nrows-1)/128,1+(ncols-1)/128);
+  if (p == 1.0f) {
+    __l1dist<<<griddim,blockdim>>>(A, lda, B, ldb, C, ldc, d, nrows, ncols, p);
+  } else {
+    __minkowskidist<<<griddim,blockdim>>>(A, lda, B, ldb, C, ldc, d, nrows, ncols, p);
+  }
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
 #ifdef TEST
 int main(int argc, char **argv) {
   int m=8, n=8, opn = 0;
