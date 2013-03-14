@@ -99,6 +99,21 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     } else throw new RuntimeException("dimensions mismatch")
   }
   
+  def GTMult(a:GMat, oldmat:Mat):GMat = {
+    if (nrows == a.ncols) {
+      val out = GMat.newOrCheckGMat(ncols, a.nrows, oldmat, GUID, a.GUID, "GMultT".##)
+      Mat.nflops += 2L * length * a.ncols
+      cublasSgemm('t', 'n', ncols, a.ncols, nrows, 1.0f, data, nrows, a.data, a.nrows, 0f, out.data, out.nrows)
+      cudaDeviceSynchronize()
+      val ee = cublasGetError
+      if (ee != 0) {
+        println("device is %d" format SciFunctions.device)
+        throw new RuntimeException("Cublas error in Tx "+ee)
+      }
+      out
+    } else throw new RuntimeException("dimensions mismatch")
+  }
+  
   def GSMult(a:GSMat, oldmat:Mat):GMat = {
     if (ncols == a.nrows) {
       val out = GMat.newOrCheckGMat(nrows, a.ncols, oldmat, GUID, a.GUID, "GSMult".##)
@@ -252,6 +267,8 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   def *^ (a : GSMat) = GSMultT(a, null)
   def xT (a : GMat) = GMultT(a, null)
   def xT (a : GSMat) = GSMultT(a, null)
+  def ^* (a : GMat) = GTMult(a, null)
+  def Tx (a : GMat) = GTMult(a, null)
   def + (a : GMat) = gOp(a, null, op_add)
   def - (a : GMat) = gOp(a, null, op_sub)
   def *@ (a : GMat) = gOp(a, null, op_mul)
@@ -450,6 +467,8 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
   def *^ (a : GSMat) = mat.GSMultT(a, omat)
   def xT (a : GMat) = mat.GMultT(a, omat)
   def xT (a : GSMat) = mat.GSMultT(a, omat)
+  def ^* (a : GMat) = mat.GTMult(a, omat)
+  def Tx (a : GMat) = mat.GTMult(a, omat)
 	def +  (a : GMat) = mat.gOp(a, omat, op_add)
 	def -  (a : GMat) = mat.gOp(a, omat, op_sub)
 	def *@ (a : GMat) = mat.gOp(a, omat, op_mul)

@@ -453,6 +453,30 @@ object Mat {
     ind
   }
   
+  def ilexsort3[T](a:Array[Int], b:Array[Int], c:Array[T]):Unit = {
+    val n = a.length
+    def comp(i:Int, j:Int):Int = {
+      val c0 = a(i) compare a(j)
+      if (c0 != 0) {
+        c0
+      } else {
+      	b(i) compare b(j)     
+      }
+    }
+    def swap(i:Int, j:Int):Unit = {
+      val tmpa = a(i)
+      a(i) = a(j)
+      a(j) = tmpa
+      val tmpb = b(i)
+      b(i) = b(j)
+      b(j) = tmpb
+      val tmpc = c(i)
+      c(i) = c(j)
+      c(j) = tmpc
+    }
+    BIDMat.Sorting.quickSort(comp, swap, 0, n)
+  }
+  
   def ilexsort(args:Array[Int]*):Array[Int] = {
     ilexsort(args.toList)
   }

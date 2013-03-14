@@ -48,3 +48,5 @@ int stratify(float *strata, int n, float *a, float *b, unsigned int *bi, int str
 int stratifycounts(float *strata, int n, float *a, unsigned int *bi);
 
 int radixcounts(float *a, int n, int digit, unsigned int *bi);
+
+int dists(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p);
