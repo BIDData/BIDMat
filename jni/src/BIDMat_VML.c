@@ -1446,6 +1446,39 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_VML_vzPow
     (*env)->ReleasePrimitiveArrayCritical(env, j_r, r, 0);
 }
 
+JNIEXPORT void JNICALL Java_edu_berkeley_bid_VML_vsPowx
+(JNIEnv * env, jobject calling_obj, jint n, jfloatArray j_a, jfloat b, jfloatArray j_r) {
+    jfloat * a = (*env)->GetPrimitiveArrayCritical(env, j_a, JNI_FALSE);
+    jfloat * r = (*env)->GetPrimitiveArrayCritical(env, j_r, JNI_FALSE);
+
+    vsPowx(n, a, b, r);
+
+    (*env)->ReleasePrimitiveArrayCritical(env, j_a, a, 0);
+    (*env)->ReleasePrimitiveArrayCritical(env, j_r, r, 0);
+}
+
+JNIEXPORT void JNICALL Java_edu_berkeley_bid_VML_vdPowx
+(JNIEnv * env, jobject calling_obj, jint n, jdoubleArray j_a, jdouble b, jdoubleArray j_r) {
+    jdouble * a = (*env)->GetPrimitiveArrayCritical(env, j_a, JNI_FALSE);
+    jdouble * r = (*env)->GetPrimitiveArrayCritical(env, j_r, JNI_FALSE);
+
+    vdPowx(n, a, b, r);
+
+    (*env)->ReleasePrimitiveArrayCritical(env, j_a, a, 0);
+    (*env)->ReleasePrimitiveArrayCritical(env, j_r, r, 0);
+}
+
+JNIEXPORT void JNICALL Java_edu_berkeley_bid_VML_vcPowx
+(JNIEnv * env, jobject calling_obj, jint n, jfloatArray j_a, jdouble b, jfloatArray j_r) {
+    jfloat * a = (*env)->GetPrimitiveArrayCritical(env, j_a, JNI_FALSE);
+    jfloat * r = (*env)->GetPrimitiveArrayCritical(env, j_r, JNI_FALSE);
+
+    vcPowx(n, (MKL_Complex8 *)a, *((MKL_Complex8 *)&b), (MKL_Complex8 *)r);
+
+    (*env)->ReleasePrimitiveArrayCritical(env, j_a, a, 0);
+    (*env)->ReleasePrimitiveArrayCritical(env, j_r, r, 0);
+}
+
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_VML_vsPow3o2
 (JNIEnv * env, jobject calling_obj, jint n, jfloatArray j_a, jfloatArray j_r) {
     jfloat * a = (*env)->GetPrimitiveArrayCritical(env, j_a, JNI_FALSE);
