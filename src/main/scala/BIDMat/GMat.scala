@@ -993,7 +993,7 @@ object GMat {
     }
     val c = GMat.newOrCheckGMat(a.nrows, b.nrows, omat, a.GUID, b.GUID, "LXdist".##)
     Mat.nflops += 3L * c.nrows * c.ncols * a.ncols
-    val err = CUMAT.distances(a.data, a.nrows, b.data, b.nrows, c.data, c.nrows, a.ncols, c.nrows, c.ncols, p)
+    val err = CUMAT.distances(a.data, a.nrows, b.data, b.nrows, c.data, c.nrows, a.ncols, c.nrows, c.ncols, p, 0)
     if (err != 0) throw new RuntimeException("CUDA error in LXdist "+err)
     c
   }
@@ -1047,7 +1047,7 @@ object GMat {
     						cudaDeviceSynchronize
     						if (status != 0) throw new RuntimeException("LXdist copy b failed "+status)
 
-    						val err=CUMAT.distances(ga.data, garows, gb.data, gbrows, gc.data, gcrows, nk, ni, nj, p)  
+    						val err=CUMAT.distances(ga.data, garows, gb.data, gbrows, gc.data, gcrows, nk, ni, nj, p, ithread)  
     						
 //    						if (err != 0) throw new RuntimeException("CUDA error in LXdist %d thread %d %d %d %d" format (err, ithread, nk, ni, nj))
     						if (err != 0) println("CUDA error in LXdist %d thread %d %d %d %d" format (err, ithread, nk, ni, nj))

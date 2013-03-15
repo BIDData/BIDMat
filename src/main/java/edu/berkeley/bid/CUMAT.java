@@ -60,6 +60,6 @@ public final class CUMAT {
     
     public static native int radixcounts(Pointer a, int n, int digit, Pointer bi);
 
-    public static native int distances(Pointer A, int lda, Pointer B, int ldb, Pointer C, int ldc, int d, int nrows, int ncols, float p);
+    public static native int distances(Pointer A, int lda, Pointer B, int ldb, Pointer C, int ldc, int d, int nrows, int ncols, float p, int ithread);
 
 }
