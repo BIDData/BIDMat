@@ -853,8 +853,8 @@ object SciFunctions {
       throw new RuntimeException("LXdistance: ncols must match")
     }
     val c = FMat.newOrCheckFMat(a.nrows, b.nrows, omat, a.GUID, b.GUID, "LXdistance".##)
-    val tmp = DMat.newOrCheckDMat(a.nrows, 1, omat, a.GUID, b.GUID, "LXdistance_1".##) 
-    val tmp2 = DMat.newOrCheckDMat(a.nrows, 1, omat, a.GUID, b.GUID, "LXdistance_2".##) 
+    val tmp = DMat.newOrCheckDMat(a.nrows, 1, null, a.GUID, b.GUID, "LXdistance_1".##) 
+    val tmp2 = DMat.newOrCheckDMat(a.nrows, 1, null, a.GUID, b.GUID, "LXdistance_2".##) 
     val pinv = 1.0f/p
     var i = 0
     while (i < b.nrows) { 
