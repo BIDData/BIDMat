@@ -1048,7 +1048,7 @@ object GMat {
 
     						val err=CUMAT.distances(ga.data, garows, gb.data, gbrows, gc.data, gcrows, nk, ni, nj, p)  
     						
-    						if (err != 0) throw new RuntimeException("CUDA error in LXdist "+err)
+    						if (err != 0) throw new RuntimeException("CUDA error in LXdist %d %d %d %d" format (err, nk, ni, nj))
     						k += gacols
     					}
     					status = cudaMemcpy2D(Pointer.to(c.data).withByteOffset(1L*(i+j*c.nrows)*Sizeof.FLOAT), c.nrows*Sizeof.FLOAT, 
