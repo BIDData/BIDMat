@@ -987,7 +987,7 @@ object GMat {
     Mat.nflops += keys.length
   }
   
-  def LXdist(a:GMat, b:GMat, omat:GMat, p:Float) = {
+  def LXdist(a:GMat, b:GMat, omat:GMat, p:Float):GMat = {
     if (a.ncols != b.ncols) {
       throw new RuntimeException("LXdist number of columns = number of features must match")
     }
@@ -995,6 +995,7 @@ object GMat {
     Mat.nflops += 3L * c.nrows * c.ncols * a.ncols
     val err = CUMAT.distances(a.data, a.nrows, b.data, b.nrows, c.data, c.nrows, a.ncols, c.nrows, c.ncols, p)
     if (err != 0) throw new RuntimeException("CUDA error in LXdist "+err)
+    c
   }
   
   def LXdist(a:FMat, b:FMat, omat:FMat, p:Float):FMat = {
