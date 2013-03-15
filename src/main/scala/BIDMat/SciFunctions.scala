@@ -836,6 +836,18 @@ object SciFunctions {
   				out
   		}
   
+  def doPowx(n:Int, a:Array[Double], p:Float, r:Array[Double]) {
+    if (Mat.noMKL) {
+      var i = 0
+      while (i < n) {
+        r(i) = math.pow(a(i), p)
+        i += 1
+      }
+    } else {
+      vdPowx(n, a, p, r)
+    }
+  }
+  
   def LXdistance(a:FMat, b:FMat, omat:Mat, p:Float):FMat = {
     if (a.ncols != b.ncols) {
       throw new RuntimeException("LXdistance: ncols must match")
@@ -872,7 +884,7 @@ object SciFunctions {
     				tmp2.data(k) = math.abs(xx)
     				k += 1
     			}
-    			vdPowx(a.nrows, tmp2.data, p, tmp2.data)
+    		  doPowx(a.nrows, tmp2.data, p, tmp2.data)
     			k = 0
     			while (k < a.nrows) {
     				val xx = a.data(k + j*a.nrows) - b.data(i + j*b.nrows)
