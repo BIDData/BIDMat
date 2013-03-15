@@ -986,6 +986,89 @@ object GMat {
     while (SciFunctions.mini(done).v == 0) Thread.`yield`
     Mat.nflops += keys.length
   }
+  
+  def LXdist(a:GMat, b:GMat, omat:GMat, p:Float) = {
+    if (a.ncols != b.ncols) {
+      throw new RuntimeException("LXdist number of columns = number of features must match")
+    }
+    val c = GMat.newOrCheckGMat(a.nrows, b.nrows, omat, a.GUID, b.GUID, "LXdist".##)
+    Mat.nflops += 3L * c.nrows * c.ncols * a.ncols
+    val err = CUMAT.distances(a.data, a.nrows, b.data, b.nrows, c.data, c.nrows, a.ncols, c.nrows, c.ncols, p)
+    if (err != 0) throw new RuntimeException("CUDA error in LXdist "+err)
+  }
+  
+  def LXdist(a:FMat, b:FMat, omat:FMat, p:Float):FMat = {
+    if (a.ncols != b.ncols) {
+      throw new RuntimeException("LXdist number of columns = number of features must match")
+    }
+    val c = FMat.newOrCheckFMat(a.nrows, b.nrows, omat, a.GUID, b.GUID, "LXdist".##) 
+    val easyp = (p == 0f || p == 1f || p == 2f)
+    val maxrows = if (easyp) 8192 else 1024
+    val maxcols = if (easyp) 8192 else 1024
+    val rblkk = if (Mat.hasCUDA > 1) 2 else 1
+    val cblkk = if (Mat.hasCUDA > 3) 2 else 1
+    val rblk = rblkk*(math.max(1, math.ceil(c.nrows/maxrows/rblkk).toInt))
+    val cblk = cblkk*(math.max(1, math.ceil(c.ncols/maxcols/cblkk).toInt))
+    val kblk = math.max(1, math.ceil(a.ncols/maxcols).toInt)
+    val gcrows = 32*(c.nrows/rblk/32)
+    val gccols = 32*(c.ncols/cblk/32)
+    val garows = gcrows
+    val gacols = 32*(a.ncols/kblk/32)
+    val gbrows = gccols
+    val gbcols = gacols
+    var status = 0
+
+    val done = IMat(rblkk*cblkk,1)
+    for (ix <- 0 until rblkk) {
+    	for (iy <- 0 until cblkk) {
+    		actor {
+    			SciFunctions.device(ix+iy*2)
+    			val ga = GMat(garows, gacols)
+    			val gb = GMat(gbrows, gbcols)
+    			val gc = GMat(gcrows, gccols)
+    			var i = ix*gcrows; 
+    			while (i < c.nrows) {
+    				val ni = math.min(gcrows, c.nrows - i)
+    				var j = iy*gccols; 
+    				while (j < c.ncols) {
+    					val nj = math.min(gccols, c.ncols - j)
+    					var k = 0;
+    					gc.clear
+    					while (k < a.ncols) {
+    						val nk = math.min(gacols, a.ncols - k)
+    						status = cudaMemcpy2D(ga.data, garows*Sizeof.FLOAT, Pointer.to(a.data).withByteOffset(1L*(i+k*a.nrows)*Sizeof.FLOAT), 
+    							                  	a.nrows*Sizeof.FLOAT, ni*Sizeof.FLOAT, nk, cudaMemcpyHostToDevice)  	    							
+    						cudaDeviceSynchronize  	  
+    						if (status != 0) throw new RuntimeException("LXdist copy a failed "+status)
+    						status = cudaMemcpy2D(gb.data, gbrows*Sizeof.FLOAT, Pointer.to(b.data).withByteOffset(1L*(j+k*b.nrows)*Sizeof.FLOAT), 
+    								                  b.nrows*Sizeof.FLOAT, nj*Sizeof.FLOAT, nk, cudaMemcpyHostToDevice)
+    						cudaDeviceSynchronize
+    						if (status != 0) throw new RuntimeException("LXdist copy b failed "+status)
+
+    						val err=CUMAT.distances(ga.data, garows, gb.data, gbrows, gc.data, gcrows, nk, ni, nj, p)  
+    						
+    						if (err != 0) throw new RuntimeException("CUDA error in LXdist "+err)
+    						k += gacols
+    					}
+    					status = cudaMemcpy2D(Pointer.to(c.data).withByteOffset(1L*(i+j*c.nrows)*Sizeof.FLOAT), c.nrows*Sizeof.FLOAT, 
+    							                  gc.data, gcrows*Sizeof.FLOAT, ni*Sizeof.FLOAT, nj, cudaMemcpyDeviceToHost) 
+    					cudaDeviceSynchronize
+    					if (status != 0) throw new RuntimeException("LXdist copy c failed "+status)
+    					j += cblkk*gccols
+    				}
+    				i += rblkk*gcrows
+    			}
+    			gc.free
+    			gb.free
+    			ga.free
+    			done(ix+2*iy,0) = 1
+    		}
+    	}
+    }
+    while (SciFunctions.mini(done).v == 0) Thread.`yield`
+    Mat.nflops += 3L * c.nrows * c.ncols * a.ncols
+    c
+  }
 
 
   def newOrCheckGMat(nr:Int, nc:Int, outmat:Mat):GMat = {
