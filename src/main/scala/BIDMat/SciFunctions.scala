@@ -836,6 +836,65 @@ object SciFunctions {
   				out
   		}
   
+  def LXdistance(a:FMat, b:FMat, omat:Mat, p:Float):FMat = {
+    if (a.ncols != b.ncols) {
+      throw new RuntimeException("LXdistance: ncols must match")
+    }
+    val c = FMat.newOrCheckFMat(a.nrows, b.nrows, omat, a.GUID, b.GUID, "LXdistance".##)
+    val tmp = DMat.newOrCheckDMat(a.nrows, 1, omat, a.GUID, b.GUID, "LXdistance_1".##) 
+    val tmp2 = DMat.newOrCheckDMat(a.nrows, 1, omat, a.GUID, b.GUID, "LXdistance_2".##) 
+    val pinv = 1.0f/p
+    var i = 0
+    while (i < b.nrows) { 
+    	var k = 0
+    	while (k < a.nrows) {
+    	  tmp.data(k) = 0
+    		k += 1
+    	}
+    	var j = 0
+    	while (j < a.ncols) {
+    		k = 0
+    		if (p == 0f) {
+    			while (k < a.nrows) {
+    				val xx = a.data(k + j*a.nrows) - b.data(i + j*b.nrows)
+    				tmp.data(k) = math.max(tmp.data(k),math.abs(xx))
+    				k += 1
+    			}
+    		} else if (p == 1f) {
+    			while (k < a.nrows) {
+    				val xx = a.data(k + j*a.nrows) - b.data(i + j*b.nrows)
+    				tmp.data(k) += math.abs(xx)
+    				k += 1
+    			}
+    		} else {
+    			while (k < a.nrows) {
+    				val xx = a.data(k + j*a.nrows) - b.data(i + j*b.nrows)
+    				tmp2.data(k) = math.abs(xx)
+    				k += 1
+    			}
+    			vdPowx(a.nrows, tmp2.data, p, tmp2.data)
+    			k = 0
+    			while (k < a.nrows) {
+    				val xx = a.data(k + j*a.nrows) - b.data(i + j*b.nrows)
+    				tmp.data(k) += tmp2.data(k)
+    				k += 1
+    			}
+    		}
+        j += 1
+      }
+    	k = 0
+    	val dofast = (p == 0f || p == 1f)
+    	while (k < a.nrows) {
+    	  val xx = tmp.data(k)
+    	  c.data(k + i*c.nrows) = if (dofast) xx.toFloat else math.pow(xx, pinv).toFloat
+    		k += 1
+    	}
+      i += 1
+    }
+    Mat.nflops += 3L*a.nrows*a.ncols*b.nrows
+    c
+  }
+  
   /* 
    * Double scientific functions. Most have both an MKL and non-MKL implementation.
    * The MKL implementation is used unless Mat.noMKL = true. 
