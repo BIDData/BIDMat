@@ -1105,24 +1105,25 @@ GENDISTS(__linfdist,vc=max(vc,abs(va-vb)),vc)
                                                                                                    
 #else
 __global__ void __l1dist(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p) {
-  printf("Warning, running CPU arch <= 200\n");
+  printf("Warning, Lidist not supported on arch <= 200\n");
 }
 __global__ void __l2dist(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p) {
-  printf("Warning, running CPU arch <= 200\n");
+  printf("Warning, L2dist not supported on arch <= 200\n");
 }
 __global__ void __minkowskidist(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p) {
-  printf("Warning, running CPU arch <= 200\n");
+  printf("Warning, Minkowski distance not supported on arch <= 200\n");
 }
 __global__ void __linfdist(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p) {
-  printf("Warning, running CPU arch <= 200\n");
+  printf("Warning, Max-abs distance not supported on arch <= 200\n");
 }
 #endif
 #endif
 
 
-int dists(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p) {
+int dists(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p, int ithread) {
   dim3 blockdim(32,4,4);
   dim3 griddim(1,1+(nrows-1)/128,1+(ncols-1)/128);
+  cudaSetDevice(ithread);
   if (p == 0.0f) {
     __linfdist<<<griddim,blockdim>>>(A, lda, B, ldb, C, ldc, d, nrows, ncols, p);
   } else if (p == 1.0f) {
