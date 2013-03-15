@@ -1104,10 +1104,18 @@ GENDISTS(__minkowskidist,vc+=pow(abs(va-vb),p),pow(vc,pinv))
 GENDISTS(__linfdist,vc=max(vc,abs(va-vb)),vc)
                                                                                                    
 #else
-__global__ void __l1dist(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p) {}
-__global__ void __l2dist(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p) {}
-__global__ void __minkowskidist(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p) {}
-__global__ void __linfdist(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p) {}
+__global__ void __l1dist(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p) {
+  printf("Warning, running CPU arch <= 200\n");
+}
+__global__ void __l2dist(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p) {
+  printf("Warning, running CPU arch <= 200\n");
+}
+__global__ void __minkowskidist(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p) {
+  printf("Warning, running CPU arch <= 200\n");
+}
+__global__ void __linfdist(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p) {
+  printf("Warning, running CPU arch <= 200\n");
+}
 #endif
 #endif
 
