@@ -1023,7 +1023,8 @@ object GMat {
     for (ix <- 0 until rblkk) {
     	for (iy <- 0 until cblkk) {
     		actor {
-    			SciFunctions.device(ix+iy*2)
+    		  val ithread = ix+iy*2
+    			SciFunctions.device(ithread)
     			val ga = GMat(garows, gacols)
     			val gb = GMat(gbrows, gbcols)
     			val gc = GMat(gcrows, gccols)
@@ -1048,7 +1049,7 @@ object GMat {
 
     						val err=CUMAT.distances(ga.data, garows, gb.data, gbrows, gc.data, gcrows, nk, ni, nj, p)  
     						
-    						if (err != 0) throw new RuntimeException("CUDA error in LXdist %d %d %d %d" format (err, nk, ni, nj))
+    						if (err != 0) throw new RuntimeException("CUDA error in LXdist %d thread %d %d %d %d" format (err, nk, ni, nj))
     						k += gacols
     					}
     					status = cudaMemcpy2D(Pointer.to(c.data).withByteOffset(1L*(i+j*c.nrows)*Sizeof.FLOAT), c.nrows*Sizeof.FLOAT, 
@@ -1062,7 +1063,7 @@ object GMat {
     			gc.free
     			gb.free
     			ga.free
-    			done(ix+2*iy,0) = 1
+    			done(ithread,0) = 1
     		}
     	}
     }
