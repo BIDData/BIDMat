@@ -693,6 +693,7 @@ object GMat {
   def apply(nr:Int, nc:Int):GMat = {
     val retv = new GMat(nr, nc, new Pointer(), nr*nc)        
     val status = cublasAlloc(nr*nc, Sizeof.FLOAT, retv.data)
+    cudaDeviceSynchronize
     if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)
     retv        
   }   
@@ -818,7 +819,7 @@ object GMat {
   	}
   }
    
-  def GPUsort(keys:FMat, vals:IMat):Unit = {
+  def GPUsort_old(keys:FMat, vals:IMat):Unit = {
     if (keys.nrows != vals.nrows || keys.ncols != vals.ncols)
       throw new RuntimeException("Dimensions mismatch in GPUsort ("+keys.nrows+","+keys.ncols+") ("+vals.nrows+","+vals.ncols+")")
  	
@@ -829,8 +830,8 @@ object GMat {
   	val done = IMat(nthreads,1)
 
   	for (ithread <- 0 until nthreads) {
-//  	  actor {
-// 	    	SciFunctions.device(ithread)
+  	  actor {
+ 	    	SciFunctions.device(ithread)
   	  	val aa = GMat(maxsize, 1).data
   	  	val vv = GIMat(maxsize, 1).data
   	  	val kk = if (!tall) GMat(maxsize, 2).data else null
@@ -857,7 +858,7 @@ object GMat {
   	  	cudaFree(aa)
   	  	done(ithread,0) = 1
 //  	  	println("done %d" format ithread)
-//  	  }
+  	  }
   	}
     while (SciFunctions.mini(done).v == 0) Thread.`yield`
     Mat.nflops += keys.length
@@ -895,7 +896,7 @@ object GMat {
     val tspine = GIMat(nspine, 1)
     val bflags = GIMat(32, 1)
 
-    CUMAT.rsortx(keys.data,	vals.data, tkeys.data, tvals.data, tspine.data, bflags.data, keys.nrows, keys.ncols)
+    CUMAT.rsortx(keys.data, vals.data, tkeys.data, tvals.data, tspine.data, bflags.data, keys.nrows, keys.ncols)
 
     tkeys.free
     tvals.free
@@ -936,7 +937,7 @@ object GMat {
   }
    
      
-  def GPUsort_threaded(keys:FMat, vals:IMat):Unit = {
+  def GPUsort(keys:FMat, vals:IMat):Unit = {
     if (keys.nrows != vals.nrows || keys.ncols != vals.ncols)
       throw new RuntimeException("Dimensions mismatch in GPUsort ("+keys.nrows+","+keys.ncols+") ("+vals.nrows+","+vals.ncols+")")
  	
@@ -946,44 +947,52 @@ object GMat {
   	val nspine = CUMAT.rsortsizey(maxsize)
   	val tall = (keys.nrows > 32*1024)
   	val done = IMat(nthreads,1)
-
+        var status = 0
+        var myturn = 0
   	for (ithread <- 0 until nthreads) {
   	  actor {
  	    	SciFunctions.device(ithread)
-  	  	val aa = GMat(maxsize, 1).data
-  	  	val vv = GIMat(maxsize, 1).data
-  	  	val kk = if (!tall) GMat(maxsize, 2).data else null
-  	  	val tkeys = GMat(maxsize, 2).data
-  	  	val tvals = GIMat(maxsize, 1).data
-  	  	val tspine = GIMat(nspine, 1).data
-  	  	val bflags = GIMat(32, 1).data
+  	  	val aa = GMat(maxsize, 1)
+  	  	val vv = GIMat(maxsize, 1)
+  	  	val kk = if (!tall) GMat(maxsize, 2) else null
+  	  	val tkeys = GMat(maxsize, 2)
+  	  	val tvals = GIMat(maxsize, 1)
+  	  	val tspine = GIMat(nspine, 1)
+  	  	val bflags = GIMat(32, 1)
 
   	  	var ioff = ithread * maxsize
   	  	while (ioff < nsize) {
   	  		val todo = math.min(maxsize, nsize - ioff)
   	  		val colstodo = todo / keys.nrows
-  	  		cudaMemcpy(aa, Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
-  	  		cudaMemcpy(vv, Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
-  	  		if (tall) {
-  	  			CUMAT.rsortx(aa, vv, tkeys, tvals, tspine, bflags, keys.nrows, colstodo)
+  	  		status = cudaMemcpy(aa.data, Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+                        if (status != 0) throw new RuntimeException("GPUsort copy a in failed thread %d error %d" format (ithread,status))
+  	  		cudaMemcpy(vv.data, Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+                        if (status != 0) throw new RuntimeException("GPUsort copy v in failed thread %d error %d" format (ithread,status))
+                        if (tall) {
+  	  			status = CUMAT.rsortx(aa.data, vv.data, tkeys.data, tvals.data, tspine.data, bflags.data, keys.nrows, colstodo)
+                                if (status != 0) throw new RuntimeException("GPUsort tall sort failed thread %d error %d" format (ithread,status))
   	  		} else {
-  	  			CUMAT.embedmat(aa, kk, keys.nrows, colstodo)
-  	  			CUMAT.rsorty(kk, vv, tkeys, tvals, tspine, bflags, todo)
-  	  			CUMAT.extractmat(aa, kk, keys.nrows, colstodo)
+  	  			status = CUMAT.embedmat(aa.data, kk.data, keys.nrows, colstodo)
+                                if (status != 0) throw new RuntimeException("GPUsort embed failed thread %d error %d" format (ithread,status))
+  	  			status = CUMAT.rsorty(kk.data, vv.data, tkeys.data, tvals.data, tspine.data, bflags.data, todo)
+                                if (status != 0) throw new RuntimeException("GPUsort sort kernel failed thread %d error %d" format (ithread,status))
+  	  			status = CUMAT.extractmat(aa.data, kk.data, keys.nrows, colstodo)
+                                if (status != 0) throw new RuntimeException("GPUsort extract failed thread %d error %d" format (ithread,status))
   	  		}
-  	  		cudaMemcpy(Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), aa, todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
-  	  		cudaMemcpy(Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), vv, todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
+  	  		cudaMemcpy(Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), aa.data, todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
+                        if (status != 0) throw new RuntimeException("GPUsort copy a out failed thread %d error %d" format (ithread,status))
+  	  		cudaMemcpy(Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), vv.data, todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
+                        if (status != 0) throw new RuntimeException("GPUsort copy v out failed thread %d error %d" format (ithread,status))
   	  		ioff += nthreads * maxsize
   	  	}
-  	  	cudaFree(bflags)
-  	  	cudaFree(tspine)
-  	  	cudaFree(tvals)
-  	  	cudaFree(tkeys)
-  	  	if (!tall) cudaFree(kk)
-  	  	cudaFree(vv)
-  	  	cudaFree(aa)
+  	  	bflags.free
+  	  	tspine.free
+  	  	tvals.free
+  	  	tkeys.free
+  	  	if (!tall) kk.free
+  	  	vv.free
+  	  	aa.free
   	  	done(ithread,0) = 1
-//  	  	println("done %d" format ithread)
   	  }
   	}
     while (SciFunctions.mini(done).v == 0) Thread.`yield`
@@ -1014,6 +1023,7 @@ object GMat {
     }
     val c = FMat.newOrCheckFMat(a.nrows, b.nrows, omat, a.GUID, b.GUID, "LXdist".##) 
     val easyp = (p == 0f || p == 1f || p == 2f)
+    val takeroot = (p != 0f && p != 1f)
     val maxrows = if (easyp) 8192 else 2048
     val maxcols = if (easyp) 8192 else 2048
     val rblkk = if (Mat.hasCUDA > 1) 2 else 1
@@ -1035,7 +1045,7 @@ object GMat {
     		actor {
     		  val ithread = ix+iy*2
     			SciFunctions.device(ithread)
-                        val pinv = if (!easyp) GMat(1/p) else null:GMat
+                        val pinv = if (takeroot) GMat(1f/p) else null:GMat
     			val ga = GMat(garows, gacols)
     			val gb = GMat(gbrows, gbcols)
     			val gc = GMat(gcrows, gccols)
@@ -1052,11 +1062,7 @@ object GMat {
                                         cudaMemset(cc, 0, 1L*gcrows*gccols*Sizeof.FLOAT)
     				  cudaDeviceSynchronize  	  
     					while (k < a.ncols) {
-
     						val nk = math.min(gacols, a.ncols - k)
-
-//                                          println("%d %d %d %d %d %d,  %d,  %d %d %d,  %d %d %d,  %d %d" format (garows, gacols, gbrows, gbcols, gcrows, gccols,  ithread, i,j,k, ni,nj,nk,c.nrows,c.ncols))
-
     						status = cudaMemcpy2D(aa, garows*Sizeof.FLOAT, Pointer.to(a.data).withByteOffset(1L*(i+k*a.nrows)*Sizeof.FLOAT), 
     							              a.nrows*Sizeof.FLOAT, ni*Sizeof.FLOAT, nk, cudaMemcpyHostToDevice)
     						cudaDeviceSynchronize  	  
@@ -1072,7 +1078,7 @@ object GMat {
     						if (err != 0) println("CUDA error in LXdist %d thread %d %d %d %d" format (err, ithread, nk, ni, nj))
     						k += gacols
     					}
-                                        if (!easyp) status = CUMAT.applyop(cc, ni, nj, pinv.data, 1, 1, cc, BinOp.op_pow)
+                                        if (takeroot) status = CUMAT.applyop(cc, ni, nj, pinv.data, 1, 1, cc, BinOp.op_pow)
     					if (status != 0) throw new RuntimeException("LXdist scale c failed "+status)
     					status = cudaMemcpy2D(Pointer.to(c.data).withByteOffset(1L*(i+j*c.nrows)*Sizeof.FLOAT), c.nrows*Sizeof.FLOAT, 
     							                  cc, gcrows*Sizeof.FLOAT, ni*Sizeof.FLOAT, nj, cudaMemcpyDeviceToHost) 
@@ -1085,7 +1091,7 @@ object GMat {
     			gc.free
     			gb.free
     			ga.free
-                        if (!easyp) pinv.free
+                        if (takeroot) pinv.free
     			done(ithread,0) = 1
     		}
     	}

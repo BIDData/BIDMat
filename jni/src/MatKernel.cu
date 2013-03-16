@@ -176,6 +176,7 @@ int apply_gfun(float *A, float *B, int N, int opn) {
   dim3 griddims;
   setsizes(N, &griddims, &nthreads);
   __apply_gfun<<<griddims,nthreads>>>(A, B, N, opn);
+  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -193,6 +194,7 @@ int apply_gfun2(float *A, float *B, float *C, int N, int opn) {
   dim3 griddims;
   setsizes(N, &griddims, &nthreads);
   __apply_gfun2<<<griddims,nthreads>>>(A, B, C, N, opn);
+  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -267,6 +269,7 @@ int set_val(float *A, float val, int length) {
   dim3 griddims;
   setsizes(length, &griddims, &nthreads);
   __set_val<<<griddims,nthreads>>>(A, val, length);
+  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -276,6 +279,7 @@ int set_ival(float *A, int val, int length) {
   dim3 griddims;
   setsizes(length, &griddims, &nthreads);
   __set_val<<<griddims,nthreads>>>(A, *((float *)&val), length);
+  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -301,6 +305,7 @@ int apply_binop(float *A, int Anrows, int Ancols,
   } else if (Anrows == 1 && Ancols == 1) {
     __apply_left_val<<<griddims,nthreads>>>(A, B, C, Bnrows, Bncols, opn);
   }
+  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -385,6 +390,7 @@ int apply_biniop(int *A, int Anrows, int Ancols,
   } else if (Anrows == 1 && Ancols == 1) {
     __apply_left_val_int<<<griddims,nthreads>>>(A, B, C, Bnrows, Bncols, opn);
   }
+  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -408,6 +414,7 @@ int dsmult(int nrows, int ncols, int nnz, float *A, float *Bdata, int *Bir, int 
   int nthreads = min(1024, nrows);
   int nblocks = min(65536, ncols);
   __dsmult<<<nblocks,nthreads>>>(nrows, nnz, A, Bdata, Bir, Bic, C);
+  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -430,6 +437,7 @@ int dsmultT(int nrows, int ncols, int nnz, float *A, float *Bdata, int *Bir, int
   int nthreads = min(1024, nrows);
   int nblocks = min(65536, ncols);
   __dsmultT<<<nblocks,nthreads>>>(nrows, nnz, A, Bdata, Bir, Bic, C);
+  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -446,6 +454,7 @@ int dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P) {
   dim3 blockDims(min(32,nrows), min(DDS_BLKY, 1+(nrows-1)/32), 1);
   int nblocks = min(65536, max(1,nnz/8));
   __dds<<<nblocks,blockDims>>>(nrows, nnz, A, B, Cir, Cic, P);
+  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -1127,7 +1136,7 @@ __global__ void __linfdist(float *A, int lda, float *B, int ldb, float *C, int l
 int dists(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p, int ithread) {
   dim3 blockdim(32,4,4);
   dim3 griddim(1,1+(nrows-1)/128,1+(ncols-1)/128);
-  cudaSetDevice(ithread);
+//  cudaSetDevice(ithread);
   if (p == 0.0f) {
     __linfdist<<<griddim,blockdim>>>(A, lda, B, ldb, C, ldc, d, nrows, ncols, p);
   } else if (p == 1.0f) {

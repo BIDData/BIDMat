@@ -1,5 +1,5 @@
 #!/bin/bash
-export JAVA_OPTS="-Xmx4G -Xms128M -Dfile.encoding=UTF-8" # Set as much memory as possible
+export JAVA_OPTS="-Xmx24G -Xms128M -Dfile.encoding=UTF-8" # Set as much memory as possible
 # export JAVA_HOME="" # Set here if not set in environment
 BIDMAT_ROOT="${BASH_SOURCE[0]}"
 if [ ! `uname` = "Darwin" ]; then
@@ -12,7 +12,7 @@ BIDMAT_ROOT=`cd "$BIDMAT_ROOT";pwd`
 BIDMAT_ROOT="$( echo ${BIDMAT_ROOT} | sed s+/cygdrive/c+c:+ )" 
 # Fix these if needed
 JCUDA_VERSION="0.5.0"
-JCUDA_LIBDIR=${BIDMAT_ROOT}/lib/linux64/JCUDA5.0
+JCUDA_LIBDIR=${BIDMAT_ROOT}/lib
 LIBDIR=${BIDMAT_ROOT}/lib
 if [ `uname` = "Darwin" ]; then
   export DYLD_LIBRARY_PATH="${BIDMAT_ROOT}/lib/osx64:${BIDMAT_ROOT}/lib/osx64/JCUDA5.0:/usr/local/cuda/lib:${LD_LIBRARY_PATH}" 
