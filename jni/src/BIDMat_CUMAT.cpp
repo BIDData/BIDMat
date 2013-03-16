@@ -44,7 +44,6 @@ extern "C" {
     return set_ival(nativeA, vv, length);
   }
 
-
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_applyop 
   (JNIEnv *env, jobject obj, jobject jA, jint Anrows, jint Ancols, 
    jobject jB, jint Bnrows, jint Bncols, jobject jC, jint opn) 

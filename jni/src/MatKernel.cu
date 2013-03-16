@@ -13,6 +13,8 @@ __device__ float op_le(float a, float b) {return (a <= b) ? 1.0f : 0;}
 __device__ float op_ne(float a, float b) {return (a != b) ? 1.0f : 0;}
 __device__ float op_max(float a, float b) {return max(a,b);}
 __device__ float op_min(float a, float b) {return min(a,b);}
+__device__ float op_atan2(float a, float b) {return atan2f(a, b);}
+__device__ float op_pow(float a, float b) {return powf(a, b);}
 
 __device__ int iop_add(int a, int b) {return a+b;}
 __device__ int iop_sub(int a, int b) {return a-b;}
@@ -40,7 +42,9 @@ __device__ const optype operators[] = {
     op_le,
     op_ne,
     op_max,
-    op_min};
+    op_min,
+    op_atan2,
+    op_pow};
 
 __device__ const ioptype ioperators[] = {
     iop_add, 
@@ -994,17 +998,16 @@ int radixcounts(float *a, int n, int digit, unsigned int *bi) {
 #ifdef __CUDA_ARCH__
 #if __CUDA_ARCH__ > 200
 
-#define GENDISTS(DFNAME,DFUNC,OFUNC) \
+#define GENDISTS(DFNAME,DFUNC) \
 __global__ void DFNAME(float *A, int lda, float *B, int ldb, float *C,                              \
                        int ldc, int d, int nrows, int ncols, float p) {                             \
   int xblk = blockDim.x * (threadIdx.y + blockIdx.y * blockDim.y);                                  \
   int yblk = blockDim.x * (threadIdx.z + blockIdx.z * blockDim.z);                                  \
   float va, vb, vc;                                                                                 \
-  int nbr = (threadIdx.x + 1) % blockDim.x;                                                         \
-  int xi = threadIdx.x + xblk;                                                                      \
-  int yi = threadIdx.x;                                                                             \
   float R00, R01, R02, R03, R04, R05, R06, R07, R08, R09, R10, R11, R12, R13, R14, R15,             \
         R16, R17, R18, R19, R20, R21, R22, R23, R24, R25, R26, R27, R28, R29, R30, R31;             \
+  int xi = threadIdx.x + xblk;                                                                      \
+  int yi = threadIdx.x;                                                                             \
   if (xi < nrows) {                                                                                 \
     if (yi+yblk < ncols) {R00 = C[xi+(yi+yblk)*ldc];} yi = (yi+1) % blockDim.x;                     \
     if (yi+yblk < ncols) {R01 = C[xi+(yi+yblk)*ldc];} yi = (yi+1) % blockDim.x;                     \
@@ -1040,6 +1043,7 @@ __global__ void DFNAME(float *A, int lda, float *B, int ldb, float *C,          
     if (yi+yblk < ncols) {R31 = C[xi+(yi+yblk)*ldc];} yi = (yi+1) % blockDim.x;                     \
   }                                                                                                 \
   yi = threadIdx.x + yblk;                                                                          \
+  int nbr = (threadIdx.x + 1) % blockDim.x;                                                         \
   for (int i = 0; i < d; i++) {                                                                     \
     va = (xi < nrows) ? A[xi + i * lda] : 0;                                                        \
     vb = (yi < ncols) ? B[yi + i * ldb] : 0;                                                        \
@@ -1060,48 +1064,48 @@ __global__ void DFNAME(float *A, int lda, float *B, int ldb, float *C,          
     vc=R28; DFUNC; R28=vc; vb=__shfl(vb, nbr); vc=R29; DFUNC; R29=vc; vb=__shfl(vb, nbr);           \
     vc=R30; DFUNC; R30=vc; vb=__shfl(vb, nbr); vc=R31; DFUNC; R31=vc; vb=__shfl(vb, nbr);           \
   }                                                                                                 \
-  float pinv = 1.0f / p;                                                                            \
   yi = threadIdx.x;                                                                                 \
   if (xi < nrows) {                                                                                 \
-    vc = R00; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R01; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R02; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R03; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R04; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R05; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R06; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R07; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R08; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R09; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R10; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R11; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R12; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R13; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R14; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R15; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R16; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R17; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R18; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R19; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R20; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R21; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R22; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R23; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R24; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R25; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R26; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R27; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R28; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R29; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R30; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
-    vc = R31; if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = OFUNC;} yi = (yi+1) % blockDim.x;         \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R00;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R01;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R02;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R03;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R04;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R05;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R06;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R07;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R08;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R09;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R10;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R11;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R12;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R13;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R14;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R15;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R16;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R17;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R18;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R19;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R20;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R21;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R22;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R23;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R24;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R25;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R26;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R27;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R28;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R29;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R30;} yi = (yi+1) % blockDim.x;                     \
+    if (yi+yblk < ncols) {C[xi+(yi+yblk)*ldc] = R31;} yi = (yi+1) % blockDim.x;                     \
   }                                                                                                 \
 } 
 
-GENDISTS(__l1dist,vc+=abs(va-vb),vc)
-GENDISTS(__l2dist,vc+=(va-vb)*(va-vb),sqrt(vc))
-GENDISTS(__minkowskidist,vc+=pow(abs(va-vb),p),pow(vc,pinv))
-GENDISTS(__linfdist,vc=max(vc,abs(va-vb)),vc)
+
+GENDISTS(__l1dist,vc+=abs(va-vb))
+GENDISTS(__l2dist,vc+=(va-vb)*(va-vb))
+GENDISTS(__minkowskidist,vc+=pow(abs(va-vb),p))
+GENDISTS(__linfdist,vc=max(vc,abs(va-vb)))
                                                                                                    
 #else
 __global__ void __l1dist(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p) {
