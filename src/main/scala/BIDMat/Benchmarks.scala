@@ -274,7 +274,7 @@ object Twitter {
 	  		if (f2.exists) {
 	  			val bb = HMat.loadBMat(outfname + "%04d/%02d/dict.gz" format (yy, mm))
 	  			val cc = HMat.loadDMat(outfname + "%04d/%02d/wcount.gz" format (yy, mm))
-	  			yd(nmerged % 5) = Dict(bb, cc)
+	  			yd(nmerged % 5) = Dict(bb, cc, 4*threshold)
 	  			nmerged += 1
 	  			print("*")
 	  			if (nmerged % 5 == 0) {
