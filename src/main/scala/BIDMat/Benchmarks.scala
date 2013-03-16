@@ -225,6 +225,8 @@ object Twitter {
 	def mergedicts(year1:Int, year2:Int, infname:String, outfname:String, threshold:Int) = {
   	val dd = new Array[Dict](6)
   	val md = new Array[Dict](6)
+  	var dy:Dict = null
+  	var nmerged = 0
 	  for (yy <- year1 to year2) {
 	  	for (mm <- 1 to 12) {
 	  		print("\n%d/%02d" format (yy, mm))
@@ -267,7 +269,24 @@ object Twitter {
 	  			}
 //	  			println("")
 	  		}
+	  		val f2 = new File(outfname + "%04d/%02d/wcount.gz" format (yy, mm))
+	  		if (f2.exists) {
+	  			val bb = HMat.loadBMat(outfname + "%04d/%02d/dict.gz" format (yy, mm))
+	  			val cc = HMat.loadDMat(outfname + "%04d/%02d/wcount.gz" format (yy, mm))
+	  			if (nmerged == 0) {
+	  			  dy = Dict(bb, cc)
+	  			} else {
+	  			  dy = Dict.union(dy, Dict(bb,cc))
+	  			}
+	  			nmerged += 1
+	  			print("*")
+	  		}
 	  	}
 	  }
+  	println
+  	val (sv, iv) = sortdown2(dy.counts)
+  	val dyy = Dict(dy.cstr(iv), sv)
+  	HMat.saveBMat(outfname + "dict.gz", BMat(dyy.cstr))
+  	HMat.saveDMat(outfname + "wcount.gz", dyy.counts)
 	}
 }
