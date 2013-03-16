@@ -274,6 +274,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   def *@ (a : GMat) = gOp(a, null, op_mul)
   def ∘  (a : GMat) = gOp(a, null, op_mul)
   def /  (a : GMat) = gOp(a, null, op_div)
+  def ^  (a : GMat) = gOp(a, null, op_pow)
   def ∙  (a : GMat) = dot(a)
   def ∙∙ (a : GMat) = dotr(a)
   
@@ -631,6 +632,8 @@ object GMat {
 	  val op_ne=9
 	  val op_max=10
 	  val op_min=11
+          val op_atan2=12
+          val op_pow=13
   }  
   
   object TransF {
@@ -992,9 +995,16 @@ object GMat {
       throw new RuntimeException("LXdist number of columns = number of features must match")
     }
     val c = GMat.newOrCheckGMat(a.nrows, b.nrows, omat, a.GUID, b.GUID, "LXdist".##)
+    c.clear
     Mat.nflops += 3L * c.nrows * c.ncols * a.ncols
-    val err = CUMAT.distances(a.data, a.nrows, b.data, b.nrows, c.data, c.nrows, a.ncols, c.nrows, c.ncols, p, 0)
-    if (err != 0) throw new RuntimeException("CUDA error in LXdist "+err)
+    var err = CUMAT.distances(a.data, a.nrows, b.data, b.nrows, c.data, c.nrows, a.ncols, c.nrows, c.ncols, p, 0)
+    if (err != 0) throw new RuntimeException("LXdist kernel error "+err)
+    val easyp = (p == 0f || p == 1f || p == 2f)
+    if (!easyp) { 
+      val pinv = GMat(1/p)
+      err = CUMAT.applyop(c.data, c.nrows, c.ncols, pinv.data, 1, 1, c.data, BinOp.op_pow)
+    }
+    if (err != 0) throw new RuntimeException("LXdist scaling error "+err)
     c
   }
   
@@ -1004,8 +1014,8 @@ object GMat {
     }
     val c = FMat.newOrCheckFMat(a.nrows, b.nrows, omat, a.GUID, b.GUID, "LXdist".##) 
     val easyp = (p == 0f || p == 1f || p == 2f)
-    val maxrows = if (easyp) 8192 else 1024
-    val maxcols = if (easyp) 8192 else 1024
+    val maxrows = if (easyp) 8192 else 2048
+    val maxcols = if (easyp) 8192 else 2048
     val rblkk = if (Mat.hasCUDA > 1) 2 else 1
     val cblkk = if (Mat.hasCUDA > 3) 2 else 1
     val rblk = rblkk*(math.max(1, math.ceil(c.nrows/maxrows/rblkk).toInt))
@@ -1025,9 +1035,13 @@ object GMat {
     		actor {
     		  val ithread = ix+iy*2
     			SciFunctions.device(ithread)
+                        val pinv = if (!easyp) GMat(1/p) else null:GMat
     			val ga = GMat(garows, gacols)
     			val gb = GMat(gbrows, gbcols)
     			val gc = GMat(gcrows, gccols)
+                        val aa = ga.data
+                        val bb = gb.data
+                        val cc = gc.data         
     			var i = ix*gcrows; 
     			while (i < c.nrows) {
     				val ni = math.min(gcrows, c.nrows - i)
@@ -1035,26 +1049,33 @@ object GMat {
     				while (j < c.ncols) {
     					val nj = math.min(gccols, c.ncols - j)
     					var k = 0;
-    					gc.clear
+                                        cudaMemset(cc, 0, 1L*gcrows*gccols*Sizeof.FLOAT)
+    				  cudaDeviceSynchronize  	  
     					while (k < a.ncols) {
+
     						val nk = math.min(gacols, a.ncols - k)
-    						status = cudaMemcpy2D(ga.data, garows*Sizeof.FLOAT, Pointer.to(a.data).withByteOffset(1L*(i+k*a.nrows)*Sizeof.FLOAT), 
-    							                  	a.nrows*Sizeof.FLOAT, ni*Sizeof.FLOAT, nk, cudaMemcpyHostToDevice)  	    							
+
+//                                          println("%d %d %d %d %d %d,  %d,  %d %d %d,  %d %d %d,  %d %d" format (garows, gacols, gbrows, gbcols, gcrows, gccols,  ithread, i,j,k, ni,nj,nk,c.nrows,c.ncols))
+
+    						status = cudaMemcpy2D(aa, garows*Sizeof.FLOAT, Pointer.to(a.data).withByteOffset(1L*(i+k*a.nrows)*Sizeof.FLOAT), 
+    							              a.nrows*Sizeof.FLOAT, ni*Sizeof.FLOAT, nk, cudaMemcpyHostToDevice)
     						cudaDeviceSynchronize  	  
     						if (status != 0) throw new RuntimeException("LXdist copy a failed "+status)
-    						status = cudaMemcpy2D(gb.data, gbrows*Sizeof.FLOAT, Pointer.to(b.data).withByteOffset(1L*(j+k*b.nrows)*Sizeof.FLOAT), 
-    								                  b.nrows*Sizeof.FLOAT, nj*Sizeof.FLOAT, nk, cudaMemcpyHostToDevice)
+    						status = cudaMemcpy2D(bb, gbrows*Sizeof.FLOAT, Pointer.to(b.data).withByteOffset(1L*(j+k*b.nrows)*Sizeof.FLOAT), 
+    								      b.nrows*Sizeof.FLOAT, nj*Sizeof.FLOAT, nk, cudaMemcpyHostToDevice)
     						cudaDeviceSynchronize
     						if (status != 0) throw new RuntimeException("LXdist copy b failed "+status)
 
-    						val err=CUMAT.distances(ga.data, garows, gb.data, gbrows, gc.data, gcrows, nk, ni, nj, p, ithread)  
+    						val err=CUMAT.distances(aa, garows, bb, gbrows, cc, gcrows, nk, ni, nj, p, ithread)  
     						
 //    						if (err != 0) throw new RuntimeException("CUDA error in LXdist %d thread %d %d %d %d" format (err, ithread, nk, ni, nj))
     						if (err != 0) println("CUDA error in LXdist %d thread %d %d %d %d" format (err, ithread, nk, ni, nj))
     						k += gacols
     					}
+                                        if (!easyp) status = CUMAT.applyop(cc, ni, nj, pinv.data, 1, 1, cc, BinOp.op_pow)
+    					if (status != 0) throw new RuntimeException("LXdist scale c failed "+status)
     					status = cudaMemcpy2D(Pointer.to(c.data).withByteOffset(1L*(i+j*c.nrows)*Sizeof.FLOAT), c.nrows*Sizeof.FLOAT, 
-    							                  gc.data, gcrows*Sizeof.FLOAT, ni*Sizeof.FLOAT, nj, cudaMemcpyDeviceToHost) 
+    							                  cc, gcrows*Sizeof.FLOAT, ni*Sizeof.FLOAT, nj, cudaMemcpyDeviceToHost) 
     					cudaDeviceSynchronize
     					if (status != 0) throw new RuntimeException("LXdist copy c failed "+status)
     					j += cblkk*gccols
@@ -1064,11 +1085,13 @@ object GMat {
     			gc.free
     			gb.free
     			ga.free
+                        if (!easyp) pinv.free
     			done(ithread,0) = 1
     		}
     	}
     }
     while (SciFunctions.mini(done).v == 0) Thread.`yield`
+    SciFunctions.device(0)
     Mat.nflops += 3L * c.nrows * c.ncols * a.ncols
     c
   }
