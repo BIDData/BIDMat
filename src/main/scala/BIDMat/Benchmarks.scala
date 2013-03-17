@@ -222,7 +222,7 @@ object Twitter {
 	  mergedicts(2011, 2013, infname, outfname, threshold)
 	}
   
-	def mergedicts(year1:Int, year2:Int, infname:String, outfname:String, threshold:Int) = {
+	def mergedicts(year1:Int, year2:Int, infname:String, outfname:String, threshold:Int):Dict = {
   	val dd = new Array[Dict](6)
   	val md = new Array[Dict](6)
   	val yd = new Array[Dict](5)
@@ -297,5 +297,6 @@ object Twitter {
   	val dyy = Dict(dy.cstr(iv), sv)
   	HMat.saveBMat(outfname + "dict.gz", BMat(dyy.cstr))
   	HMat.saveDMat(outfname + "wcount.gz", dyy.counts)
+  	dyy
 	}
 }
