@@ -51,11 +51,55 @@ PUNCT	   [;:,.?!]
   int iv = checkword(yytext);
 	}
 
-[:;]-[>)] {
+[:;]-[>)}] {
   int iv = checkword(yytext);
 	  }
 
-[:;]-[<(] {
+">"?[:;]-[<(\[\{O] {
+  int iv = checkword(yytext);
+	  }
+
+[:;][>)}] {
+  int iv = checkword(yytext);
+	  }
+
+">"?[:;][<(\[\{O] {
+  int iv = checkword(yytext);
+	  }
+
+[:8]-?[D] {
+  int iv = checkword(yytext);
+	  }
+
+":-||"    {
+  int iv = checkword(yytext);
+	  }
+
+":@"    {
+  int iv = checkword(yytext);
+	  }
+
+"D:""<"? {
+  int iv = checkword(yytext);
+	  }
+
+"D"[8=]   {
+  int iv = checkword(yytext);
+	  }
+
+":\'"-?"(" {
+  int iv = checkword(yytext);
+	  }
+
+":o)"    {
+  int iv = checkword(yytext);
+	  }
+
+"8)"    {
+  int iv = checkword(yytext);
+	  }
+
+":^)"    {
   int iv = checkword(yytext);
 	  }
 
