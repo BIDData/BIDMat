@@ -214,15 +214,12 @@ object AltaVista {
 
 object Twitter { 
   
-  	def main(args:Array[String]):Unit = {
-	  val infname =  if (args != null && args.length > 0) args(0) else "/disk%02d/twitter/tokenized/"
-	  val outfname = if (args != null && args.length > 1) args(1) else "/big/twitter/tokenized/"
-	  val threshold = if (args != null && args.length > 2) args(2).toInt else 10
-
-	  mergedicts(2011, 2013, infname, outfname, threshold)
+   def doall(threshold:Int=10, rebuild:Boolean=false):Unit = {
+  		 mergedicts(2011, 2013, "/disk%02d/twitter/smiley/tokenized/", "/big/twitter/smiley/tokenized/", threshold, rebuild)
+  		 mergedicts(2011, 2013, "/disk%02d/twitter/tokenized/", "/big/twitter/tokenized/", threshold, rebuild)
 	}
   
-	def mergedicts(year1:Int, year2:Int, infname:String, outfname:String, threshold:Int):Dict = {
+	def mergedicts(year1:Int, year2:Int, infname:String, outfname:String, threshold:Int=10, rebuild:Boolean=false):Dict = {
   	val dd = new Array[Dict](6)
   	val md = new Array[Dict](6)
   	val yd = new Array[Dict](5)
@@ -232,29 +229,23 @@ object Twitter {
 	  	for (mm <- 1 to 12) {
 	  		print("\n%d/%02d" format (yy, mm))
 	  		val ff = new File(outfname + "%04d/%02d/wcount.gz" format (yy, mm))
-	  		if (! ff.exists) {
-	  			var here = 0
+	  		if (rebuild || ! ff.exists) {
 	  			var ndone = 0
 	  			for (id <- 1 to 31) {
-	  				var there = (here + 1) % 16
-	  				var foundit = false
-	  				while (!foundit && here != there) {
-	  					val fname = (infname + "%04d/%02d/%02d/" format (there, yy, mm, id))
-	  					val ff = new File(fname + "wcount.gz")
-	  					if (ff.exists) {
-	  						val bb = HMat.loadBMat(fname + "dict.gz")
-	  						val cc = HMat.loadIMat(fname + "wcount.gz")
-	  						dd(ndone % 6) = Dict(bb, cc, threshold)
-	  						ndone = ndone + 1
-	  						print("-")
-	  						if (ndone % 6 == 0) {
-	  							md(ndone / 6 - 1) = Dict.union(dd:_*)
-	  							print("+")
-	  						}
-	  						foundit = true
-	  						here = there
+	  				var ielem = 372*yy + 31*mm + id
+	  				var idisk = ielem % 16
+	  				val fname = (infname + "%04d/%02d/%02d/" format (idisk, yy, mm, id))
+	  				val ff = new File(fname + "wcount.gz")
+	  				if (ff.exists) {
+	  					val bb = HMat.loadBMat(fname + "dict.gz")
+	  					val cc = HMat.loadIMat(fname + "wcount.gz")
+	  					dd(ndone % 6) = Dict(bb, cc, threshold)
+	  					ndone = ndone + 1
+	  					print("-")
+	  					if (ndone % 6 == 0) {
+	  						md(ndone / 6 - 1) = Dict.union(dd:_*)
+	  						print("+")
 	  					}
-	  					there = (there + 1) % 16
 	  				}
 	  			}
 	  			if (ndone % 6 != 0) {

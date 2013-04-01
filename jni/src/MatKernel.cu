@@ -1132,7 +1132,6 @@ __global__ void __linfdist(float *A, int lda, float *B, int ldb, float *C, int l
 #endif
 #endif
 
-
 int dists(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p, int ithread) {
   dim3 blockdim(32,4,4);
   dim3 griddim(1,1+(nrows-1)/128,1+(ncols-1)/128);
@@ -1149,6 +1148,39 @@ int dists(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nr
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
+}
+
+#ifdef __CUDA_ARCH__
+#if __CUDA_ARCH__ >= 300
+
+#define edcellupdate(RR,RP1,RP2,RPP,WUN,TMP)                               \
+  asm("vmin4.s32.s32.s32.add" "%0, %1.b3210, %2.b4321, %3;": "=r" (RR) : "r" (RP1), "r" (RP2), "r" (WUN)); \
+  asm("vadd4.s32.s32.s32" "%0, %1, %2, %3;": "=r" (TMP) : "r" (MM), "r" (RZ), "r" (RR));       \
+  asm("vmin4.s32.s32.s32" "%0, %1, %2, %3;": "=r" (RR) : "r" (TMP), "r" (RR), "r" (RR));       
+
+__global__ void __veccmp(int *a, int *b, int *d) {
+  int xa = *a;
+  int xb = *b;
+  int xc = 0;
+  int xd = 0;
+  asm("vset4.s32.s32.ne" "%0, %1.b0000, %2, %3;": "=r" (xd) : "r" (xa), "r" (xb), "r" (xc));
+  *d++ = xd;
+  asm("vset4.s32.s32.ne" "%0, %1.b1111, %2, %3;": "=r" (xd) : "r" (xa), "r" (xb), "r" (xc));
+  *d++ = xd;
+  asm("vset4.s32.s32.ne" "%0, %1.b2222, %2, %3;": "=r" (xd) : "r" (xa), "r" (xb), "r" (xc));
+  *d++ = xd;
+  asm("vset4.s32.s32.ne" "%0, %1.b3333, %2, %3;": "=r" (xd) : "r" (xa), "r" (xb), "r" (xc));
+  *d = xd;
+}
+#else
+__global__ void __veccmp(int *a, int *b, int *d) {
+  printf("__veccmp() not defined for CUDA Arch < 300\n");
+}
+#endif
+#endif
+
+void veccmp(int *a, int *b, int *d) {
+  __veccmp<<<1,1>>>(a, b, d);
 }
 
 #ifdef TEST
