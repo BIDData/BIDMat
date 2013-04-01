@@ -215,8 +215,14 @@ object AltaVista {
 object Twitter { 
   
    def doall(threshold:Int=10, rebuild:Boolean=false):Unit = {
-  		 mergedicts(2011, 2013, "/disk%02d/twitter/smiley/tokenized/", "/big/twitter/smiley/tokenized/", threshold, rebuild)
-  		 mergedicts(2011, 2013, "/disk%02d/twitter/tokenized/", "/big/twitter/tokenized/", threshold, rebuild)
+  		 val stokdir = "/twitter/smiley/tokenized/"
+    	 val tokdir = "/twitter/tokenized/"
+  		 val dy1 = mergedicts(2011, 2013, "/disk%02d" + stokdir, "/big" + stokdir, threshold, rebuild)
+  		 val dy2 = mergedicts(2011, 2013, "/disk%02d" + tokdir, "/big" + tokdir, threshold, rebuild)
+  		 val dy = Dict.union(dy1, dy2)
+  		 val (sv, iv) = sortdown2(dy.counts)
+  		 HMat.saveBMat("/big"+tokdir+"alldict.gz", BMat(dy.cstr(iv)))
+  		 HMat.saveDMat("/big"+tokdir+"allwcount.gz", sv)
 	}
   
 	def mergedicts(year1:Int, year2:Int, infname:String, outfname:String, threshold:Int=10, rebuild:Boolean=false):Dict = {
