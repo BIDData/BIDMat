@@ -147,7 +147,7 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
   				var k = jc(a.ir(j)-ioff)-ioff
   				while (k < jc(a.ir(j)-ioff+1)-ioff) {
   					vv(numnz) =  data(k) * dval
-  					ii(numnz) = ir(k)-ioff
+  					ii(numnz) = ir(k)
   					jj(numnz) = i
   					numnz += 1
   					k += 1
