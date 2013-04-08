@@ -163,8 +163,8 @@ object MatFunctions {
   def sortlex(a:DMat):IMat = DenseMat.sortlex(a, true)
   def sortlexdown(a:DMat):IMat = DenseMat.sortlex(a, false)
   def uniquerows(a:DMat):(DMat, IMat, IMat) = { val (ii, jj) = DenseMat.uniquerows2(a) ; (a(ii,?), ii, jj)}
-  def unique(a:DMat):(DMat, IMat, IMat) = {val (ii, jj) =	DenseMat.unique2(if (math.min(a.nrows,a.ncols)==1) a else a(?)) ; (a(ii,?), ii, jj)}
-
+  def unique(a:DMat):(DMat, IMat, IMat) = {val (ii, jj) =	DenseMat.unique2(if (math.min(a.nrows,a.ncols) > 1) a(?) else a) ; (a(ii), ii, jj)}
+  
   def find(a:FMat) = a.find   
   def find2(a:FMat) = a.find2    
   def find3(a:FMat) = a.find3
@@ -183,8 +183,8 @@ object MatFunctions {
   def sortlex(a:FMat):IMat = DenseMat.sortlex(a, true)
   def sortlexdown(a:FMat):IMat = DenseMat.sortlex(a, false)
   def uniquerows(a:FMat):(FMat, IMat, IMat) = { val (ii, jj) = DenseMat.uniquerows2(a) ; (a(ii,?), ii, jj)}
-  def unique(a:FMat):(FMat, IMat, IMat) = {val (ii, jj) =	DenseMat.unique2(if (math.min(a.nrows,a.ncols)==1) a else a(?)) ; (a(ii,?), ii, jj)}
-
+  def unique(a:FMat):(FMat, IMat, IMat) = {val (ii, jj) =	DenseMat.unique2(if (math.min(a.nrows,a.ncols) > 1) a(?) else a) ; (a(ii), ii, jj)}
+  
   def find(a:IMat) = a.find   
   def find2(a:IMat) = a.find2    
   def find3(a:IMat) = a.find3
@@ -203,7 +203,7 @@ object MatFunctions {
   def sortlex(a:IMat):IMat = DenseMat.sortlex[Int](a, true)
   def sortlexdown(a:IMat):IMat = DenseMat.sortlex(a, false)
   def uniquerows(a:IMat):(IMat, IMat, IMat) = { val (ii, jj) = DenseMat.uniquerows2(a) ; (a(ii,?), ii, jj)}
-  def unique(a:IMat):(IMat, IMat, IMat) = {val (ii, jj) =	DenseMat.unique2(if (math.min(a.nrows,a.ncols)==1) a else a(?)) ; (a(ii,?), ii, jj)}
+  def unique(a:IMat):(IMat, IMat, IMat) = {val (ii, jj) =	DenseMat.unique2(if (math.min(a.nrows,a.ncols) > 1) a(?) else a) ; (a(ii), ii, jj)}
   
   def find(a:CSMat) = a.find   
   def find2(a:CSMat) = a.find2    
