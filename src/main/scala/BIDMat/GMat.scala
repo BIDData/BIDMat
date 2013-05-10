@@ -63,7 +63,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
       cublasSgemm('n', 'n', nrows, a.ncols, ncols, 1.0f, data, nrows, a.data, a.nrows, 0f, out.data, nrows)
       cudaDeviceSynchronize()
       if (cublasGetError != 0) {
-        println("device is %d" format SciFunctions.device)
+        println("device is %d" format SciFunctions.getGPU)
         throw new RuntimeException("Cublas error in * "+cublasGetError)
       }
       out
@@ -92,7 +92,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
       cudaDeviceSynchronize()
       val ee = cublasGetError
       if (ee != 0) {
-        println("device is %d" format SciFunctions.device)
+        println("device is %d" format SciFunctions.getGPU)
         throw new RuntimeException("Cublas error in xT "+ee)
       }
       out
@@ -107,7 +107,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
       cudaDeviceSynchronize()
       val ee = cublasGetError
       if (ee != 0) {
-        println("device is %d" format SciFunctions.device)
+        println("device is %d" format SciFunctions.getGPU)
         throw new RuntimeException("Cublas error in Tx "+ee)
       }
       out
@@ -771,7 +771,7 @@ object GMat {
   	  for (ix <- 0 until rblkk) {
   	    for (iy <- 0 until cblkk) {
   	    	actor {
-  	    		SciFunctions.device(ix+iy*2)
+  	    		SciFunctions.setGPU(ix+iy*2)
   	    		val aa = new Pointer
   	    		val bb = new Pointer
   	    		val cc = new Pointer
@@ -843,7 +843,7 @@ object GMat {
 
   	for (ithread <- 0 until nthreads) {
   	  actor {
- 	    	SciFunctions.device(ithread)
+ 	    	SciFunctions.setGPU(ithread)
   	  	val aa = GMat(maxsize, 1).data
   	  	val vv = GIMat(maxsize, 1).data
   	  	val kk = if (!tall) GMat(maxsize, 2).data else null
@@ -963,7 +963,7 @@ object GMat {
         var myturn = 0
   	for (ithread <- 0 until nthreads) {
   	  actor {
- 	    	SciFunctions.device(ithread)
+ 	    	SciFunctions.setGPU(ithread)
   	  	val aa = GMat(maxsize, 1)
   	  	val vv = GIMat(maxsize, 1)
   	  	val kk = if (!tall) GMat(maxsize, 2) else null
@@ -1056,7 +1056,7 @@ object GMat {
     	for (iy <- 0 until cblkk) {
     		actor {
     		  val ithread = ix+iy*2
-    			SciFunctions.device(ithread)
+    			SciFunctions.setGPU(ithread)
                         val pinv = if (takeroot) GMat(1f/p) else null:GMat
     			val ga = GMat(garows, gacols)
     			val gb = GMat(gbrows, gbcols)
@@ -1109,7 +1109,7 @@ object GMat {
     	}
     }
     while (SciFunctions.mini(done).v == 0) Thread.`yield`
-    SciFunctions.device(0)
+    SciFunctions.setGPU(0)
     Mat.nflops += 3L * c.nrows * c.ncols * a.ncols
     c
   }
