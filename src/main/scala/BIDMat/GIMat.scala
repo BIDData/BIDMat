@@ -2,6 +2,8 @@ package BIDMat
 import jcuda._;
 import jcuda.jcublas.JCublas;
 import jcuda.runtime.JCuda._
+import jcuda.runtime.cudaError._
+import jcuda.runtime.cudaMemcpyKind._
 import edu.berkeley.bid.CUMAT;
 
 class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, nc) {
@@ -74,6 +76,33 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     val out = IMat.newOrCheckIMat(nrows, ncols, null, GUID, "toIMat".##)
     JCublas.cublasGetVector(nrows*ncols, Sizeof.INT, data, 1, Pointer.to(out.data), 1);
     out
+  }
+  
+  def copyTo(out:IMat):IMat = {
+    val a = out.recycle(nrows, ncols, 0)
+    JCublas.cublasGetVector(nrows*ncols, Sizeof.INT, data, 1, Pointer.to(a.data), 1)
+    cudaDeviceSynchronize()
+    a
+  }
+
+  def copyFrom(in:IMat):GIMat = {
+    JCublas.cublasSetVector(nrows*ncols, Sizeof.INT, Pointer.to(in.data), 1, data, 1)
+    cudaDeviceSynchronize()
+    this
+  }
+  
+  def copyTo(out:GIMat):GIMat = {
+    val a = out.recycle(nrows, ncols, 0)
+    cudaMemcpy(a.data, data, length*Sizeof.FLOAT, cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize()
+    a
+  }
+  
+  override def copyTo(out:Mat):Mat = {
+    out match {
+      case a:IMat => copyTo(a)
+      case a:GIMat => copyTo(a)
+    }
   }
   
   def free() = {
