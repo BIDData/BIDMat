@@ -40,9 +40,9 @@ object SciFunctions {
   
   def resetCUDA = JCuda.cudaDeviceReset
   
-  def device(i:Int) = JCuda.cudaSetDevice(i)
+  def setGPU(i:Int) = JCuda.cudaSetDevice(i)
   
-  def device:Int = {
+  def getGPU:Int = {
     val ar = Array[Int](1)
     JCuda.cudaGetDevice(ar)
     ar(0)
@@ -50,25 +50,25 @@ object SciFunctions {
   
   def connect(i:Int) = {
   	val v0 = JCuda.cudaDeviceEnablePeerAccess(i,0)
-    val j = device
-    device(i)
+    val j = getGPU
+    setGPU(i)
     val v1 = JCuda.cudaDeviceEnablePeerAccess(j,0)
-    device(j)
+    setGPU(j)
     (v0, v1)
   }
   
   def disconnect(i:Int) = {
   	val v0 = JCuda.cudaDeviceDisablePeerAccess(i)
-    val j = device
-    device(i)
+    val j = getGPU
+    setGPU(i)
     val v1 = JCuda.cudaDeviceDisablePeerAccess(j)
-    device(j)
+    setGPU(j)
     (v0, v1)
   }
   
   def canconnect(i:Int) = {
   	val ar = Array[Int](1)
-  	val j = device
+  	val j = getGPU
   	JCuda.cudaDeviceCanAccessPeer(ar, i, j)
   	val v0 = ar(0) 
   	JCuda.cudaDeviceCanAccessPeer(ar, j, i)
