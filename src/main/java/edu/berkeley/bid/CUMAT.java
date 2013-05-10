@@ -62,4 +62,6 @@ public final class CUMAT {
 
     public static native int distances(Pointer A, int lda, Pointer B, int ldb, Pointer C, int ldc, int d, int nrows, int ncols, float p, int ithread);
 
+    public static native int maxsumx(Pointer A, int lda, Pointer B, int ldb, Pointer C, int ldc, int d, int nrows, int ncols);
+
 }

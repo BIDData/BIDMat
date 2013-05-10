@@ -136,6 +136,16 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     }	else throw new RuntimeException("dimensions mismatch")
   }
   
+  def GMST(a:GMat, oldmat:Mat):GMat = {
+    if (ncols == a.ncols) {
+      val out = GMat.newOrCheckGMat(nrows, a.nrows, oldmat, GUID, a.GUID, "GMST".##)
+      Mat.nflops += 2L * nrows * a.nrows * ncols
+      out.clear
+      CUMAT.maxsumx(data, nrows, a.data, a.nrows, out.data, nrows, ncols, nrows, a.nrows)
+      out
+    }	else throw new RuntimeException("dimensions mismatch")
+  }
+  
   def gOp(a:GMat, oldmat:Mat, op:Int):GMat = {
     if ((nrows == a.nrows && ncols == a.ncols) ||
         (nrows == a.nrows && (a.ncols == 1 || ncols == 1)) ||
@@ -268,6 +278,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   def xT (a : GMat) = GMultT(a, null)
   def xT (a : GSMat) = GSMultT(a, null)
   def ^* (a : GMat) = GTMult(a, null)
+  def *+^ (a : GMat) = GMST(a, null)
   def Tx (a : GMat) = GTMult(a, null)
   def + (a : GMat) = gOp(a, null, op_add)
   def - (a : GMat) = gOp(a, null, op_sub)
@@ -469,6 +480,7 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
   def xT (a : GMat) = mat.GMultT(a, omat)
   def xT (a : GSMat) = mat.GSMultT(a, omat)
   def ^* (a : GMat) = mat.GTMult(a, omat)
+  def *+^ (a : GMat) = mat.GMST(a, omat)
   def Tx (a : GMat) = mat.GTMult(a, omat)
 	def +  (a : GMat) = mat.gOp(a, omat, op_add)
 	def -  (a : GMat) = mat.gOp(a, omat, op_sub)

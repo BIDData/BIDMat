@@ -1115,7 +1115,8 @@ GENDISTS(__l1dist,vc+=abs(va-vb))
 GENDISTS(__l2dist,vc+=(va-vb)*(va-vb))
 GENDISTS(__minkowskidist,vc+=pow(abs(va-vb),p))
 GENDISTS(__linfdist,vc=max(vc,abs(va-vb)))
-                                                                                                   
+GENDISTS(__msum,vc=max(vc,va+vb))
+
 #else
 __global__ void __l1dist(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p) {
   printf("Warning, Lidist not supported on arch <= 200\n");
@@ -1128,6 +1129,9 @@ __global__ void __minkowskidist(float *A, int lda, float *B, int ldb, float *C, 
 }
 __global__ void __linfdist(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p) {
   printf("Warning, Max-abs distance not supported on arch <= 200\n");
+}
+__global__ void __msum(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p) {
+  printf("Warning, Max-sum multiply not supported on arch <= 200\n");
 }
 #endif
 #endif
@@ -1149,6 +1153,16 @@ int dists(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nr
   cudaError_t err = cudaGetLastError();
   return err;
 }
+
+int maxsumx(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols) {
+  dim3 blockdim(32,4,4);
+  dim3 griddim(1,1+(nrows-1)/128,1+(ncols-1)/128);
+  __msum<<<griddim,blockdim>>>(A, lda, B, ldb, C, ldc, d, nrows, ncols, 0);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+                                                                                                   
 
 #ifdef __CUDA_ARCH__
 #if __CUDA_ARCH__ >= 300

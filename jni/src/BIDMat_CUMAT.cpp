@@ -287,4 +287,15 @@ extern "C" {
     return dists(a, lda, b, ldb, c, ldc, d, nrows, ncols, p, ithread);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_maxsumx
+  (JNIEnv *env, jobject obj, jobject ja, jint lda, jobject jb, jint ldb, jobject jc, jint ldc, 
+   jint d, jint nrows, jint ncols)
+  {
+    float *a = (float*)getPointer(env, ja);
+    float *b = (float*)getPointer(env, jb);
+    float *c = (float*)getPointer(env, jc);
+
+    return maxsumx(a, lda, b, ldb, c, ldc, d, nrows, ncols);
+  }
+
 }
