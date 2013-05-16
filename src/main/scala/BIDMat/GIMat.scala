@@ -75,6 +75,7 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   def toIMat():IMat = {
     val out = IMat.newOrCheckIMat(nrows, ncols, null, GUID, "toIMat".##)
     JCublas.cublasGetVector(nrows*ncols, Sizeof.INT, data, 1, Pointer.to(out.data), 1);
+    cudaDeviceSynchronize()
     out
   }
   

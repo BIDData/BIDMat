@@ -543,40 +543,50 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   def printOne(i:Int):String = " "
   
   override def toString:String = {
-    val nChars = Mat.terminalWidth-4
-    val maxRows = 640/nChars
-    var maxCols = nChars
-    var fieldWidth = 4
-    var icols = 0
-    while (icols < math.min(ncols, maxCols)) {
-    	var newWidth = fieldWidth
-    	for (j <- 0 until math.min(nrows,maxRows)) newWidth = math.max(newWidth, 2+(printOne(j+nrows*icols).length))
-    	if ((icols+1)*newWidth < nChars) {
-    		fieldWidth = newWidth
-    		icols += 1
-    	} else {
-    		maxCols = icols
-    	}
-    }
     val sb:StringBuilder = new StringBuilder
-    val somespaces = "                                             "
-    for (i <- 0 until math.min(nrows, maxRows)) {
-      for (j <- 0 until math.min(ncols, icols)) {
-      	val str = printOne(i+j*nrows)
-      	sb.append(somespaces.substring(0,fieldWidth-str.length)+str)
+    if (nrows == 1) {
+      if (ncols > 0) sb.append(printOne(0))
+      var i = 1
+      while (i < math.min(20000, ncols)) {
+    	sb.append(",")
+    	sb.append(printOne(i))
+    	i += 1
       }
-      if (ncols > icols) {
-      	sb.append("...")
-      }
-      sb.append("\n")
-    }
-    if (nrows > maxRows) {
-    	for (j <- 0 until math.min(ncols, maxCols)) {
-    		sb.append(somespaces.substring(0, fieldWidth-2)+"..")
+    } else {
+    	val nChars = Mat.terminalWidth-4
+    	val maxRows = 640/nChars
+    	var maxCols = nChars
+    	var fieldWidth = 4
+    	var icols = 0
+    	while (icols < math.min(ncols, maxCols)) {
+    		var newWidth = fieldWidth
+    		for (j <- 0 until math.min(nrows,maxRows)) newWidth = math.max(newWidth, 2+(printOne(j+nrows*icols).length))
+    		if ((icols+1)*newWidth < nChars) {
+    			fieldWidth = newWidth
+    			icols += 1
+    		} else {
+    			maxCols = icols
+    		}
+    	}    	
+    	val somespaces = "                                             "
+    		for (i <- 0 until math.min(nrows, maxRows)) {
+    			for (j <- 0 until math.min(ncols, icols)) {
+    				val str = printOne(i+j*nrows)
+    				sb.append(somespaces.substring(0,fieldWidth-str.length)+str)
+    			}
+    			if (ncols > icols) {
+    				sb.append("...")
+    			}
+    			sb.append("\n")
+    		}
+    	if (nrows > maxRows) {
+    		for (j <- 0 until math.min(ncols, maxCols)) {
+    			sb.append(somespaces.substring(0, fieldWidth-2)+"..")
+    		}
+    		sb.append("\n")
     	}
-    	sb.append("\n")
     }
-    sb.toString()
+  sb.toString()
   }
   
   override def clear:DenseMat[T] ={
