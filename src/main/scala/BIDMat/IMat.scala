@@ -74,6 +74,7 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   override def copyTo(a:Mat) = {
   	a match {
   	  case out:IMat => System.arraycopy(data, 0, out.data, 0, length)
+  	  case aa:GIMat => aa.copyFrom(this)
   	}
   	a
   }
