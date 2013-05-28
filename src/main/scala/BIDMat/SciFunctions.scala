@@ -836,6 +836,40 @@ object SciFunctions {
   				out
   		}
   
+    def applyD2xFun(a:DMat, b:Double, omat:Mat, 
+  		vfn:(Int, Array[Double], Double, Array[Double]) => Unit, 
+  		efn:(Double, Double)=>Double, nflops:Long):DMat = {
+  				val out = DMat.newOrCheckDMat(a.nrows, a.ncols, omat, a.GUID, b.##, vfn.##, efn.##)
+  				if (Mat.noMKL) {
+  					if (efn == null) {
+  						throw new RuntimeException("no Scala builtin version of this math function, sorry")
+  					} 
+  					var	i = 0; val len = a.length; val odata = out.data; val adata = a.data
+  					while	(i < len) {odata(i) = efn(adata(i), b); i += 1}
+  				} else {
+  					vfn(a.length, a.data, b, out.data)
+  				}
+  				Mat.nflops += nflops*a.length
+  				out
+  		}
+    
+    def applyS2xFun(a:FMat, b:Float, omat:Mat, 
+  		vfn:(Int, Array[Float], Float, Array[Float]) => Unit, 
+  		efn:(Float, Float)=>Float, nflops:Long):FMat = {
+  				val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat, a.GUID, b.##, vfn.##, efn.##)
+  				if (Mat.noMKL) {
+  					if (efn == null) {
+  						throw new RuntimeException("no Scala builtin version of this math function, sorry")
+  					} 
+  					var	i = 0; val len = a.length; val odata = out.data; val adata = a.data
+  					while	(i < len) {odata(i) = efn(adata(i), b); i += 1}
+  				} else {
+  					vfn(a.length, a.data, b, out.data)
+  				}
+  				Mat.nflops += nflops*a.length
+  				out
+  		}
+  
   def doPowx(n:Int, a:Array[Double], p:Float, r:Array[Double]) {
     if (Mat.noMKL) {
       var i = 0
@@ -1079,6 +1113,9 @@ object SciFunctions {
   val vdPowDFun = (n:Int, x:Array[Double], y:Array[Double], z:Array[Double]) => vdPow(n,x,y,z)
   def pow(a:DMat, b:DMat, out:Mat) = applyD2Fun(a, b, out, vdPowDFun, powDFun, 10L)
   def pow(a:DMat, b:DMat):DMat = pow(a, b, null)
+  val vdPowxDFun = (n:Int, x:Array[Double], y:Double, z:Array[Double]) => vdPowx(n,x,y,z)
+  def powx(a:DMat, b:Double, out:Mat) = applyD2xFun(a, b, out, vdPowxDFun, powDFun, 10L)
+  def powx(a:DMat, b:Double):DMat = powx(a, b, null)
   
   val exppsiDFun = (x:Double)=>if (x<1.0) 0.5*x*x else x-0.5
   def exppsi(a:DMat, out:Mat) = applyDFun(a, out, null, exppsiDFun, 3L)
@@ -1253,6 +1290,9 @@ object SciFunctions {
   val vsPowFun = (n:Int, x:Array[Float], y:Array[Float], z:Array[Float]) => vsPow(n,x,y,z)
   def pow(a:FMat, b:FMat, out:Mat) = applyS2Fun(a, b, out, vsPowFun, powFun, 10L)
   def pow(a:FMat, b:FMat):FMat = pow(a, b, null)
+  val vsPowxFun = (n:Int, x:Array[Float], y:Float, z:Array[Float]) => vsPowx(n,x,y,z)
+  def powx(a:FMat, b:Float, out:Mat) = applyS2xFun(a, b, out, vsPowxFun, powFun, 10L)
+  def powx(a:FMat, b:Float):FMat = powx(a, b, null)
   
   val exppsiFun = (x:Float)=>if (x<1f) 0.5f*x*x else x-0.5f
   def exppsi(a:FMat, out:Mat) = applySFun(a, out, null, exppsiFun, 3L)
@@ -1838,6 +1878,14 @@ object SciFunctions {
       case (aa:FMat, bb:FMat) => pow(aa, bb, c)
       case (aa:DMat, bb:DMat) => pow(aa, bb, c)
       case (aa:GMat, bb:GMat) => pow(aa, bb, c)
+    }
+  }
+  
+  def powx(a:Mat, b:Double, c:Mat):Mat = {
+    a match {
+      case aa:FMat => powx(aa, b.toFloat, c)
+      case aa:DMat => powx(aa, b, c)
+// case aa:GMat => powx(aa, b, c)
     }
   }
   
