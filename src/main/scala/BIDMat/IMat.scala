@@ -36,6 +36,8 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   
   override def apply(a:Int, b:IMat):IMat = IMat(gapply(a, b))
   
+  override def colslice(a:Int, b:Int, out:Mat) = IMat(gcolslice(a, b, out))
+  
   def update(iv:IMat, jv:IMat, b:IMat):IMat = IMat(_update(iv, jv, b))
 
   def update(iv:IMat, j:Int, b:IMat):IMat = IMat(_update(iv, IMat.ielem(j), b))

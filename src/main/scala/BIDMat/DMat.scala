@@ -46,6 +46,8 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   override def apply(a:IMat, b:Int):DMat = DMat(gapply(a, b))	
 
   override def apply(a:Int, b:IMat):DMat = DMat(gapply(a, b))
+  
+  override def colslice(a:Int, b:Int, out:Mat) = DMat(gcolslice(a, b, out))
      
   def update(iv:IMat, jv:IMat, b:DMat):DMat = DMat(_update(iv, jv, b))
 

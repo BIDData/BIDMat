@@ -28,6 +28,8 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   override def apply(a:Int, b:IMat):SMat = SMat(gapply(a, b))	
   
   override def apply(a:IMat, b:Int):SMat = SMat(gapply(a, b))	
+  
+  override def colslice(a:Int, b:Int, out:Mat) = SMat(gcolslice(a, b, out))
        
   def ssMatOp(b: SMat, f:(Float, Float) => Float, omat:Mat) = SMat(sgMatOp(b, f, omat))
   

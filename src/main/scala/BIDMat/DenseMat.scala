@@ -373,6 +373,23 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   out
   }
   /*
+   * Tries to save a slice into an output matrix, but recreates it if too small
+   */
+  def gcolslice(a:Int, b:Int, out:Mat):DenseMat[T] = {
+    val off = Mat.oneBased
+    if (out.asInstanceOf[AnyRef] != null && nrows != out.nrows) throw new RuntimeException("colslice row dims mismatch")
+    if (a-off < 0) throw new RuntimeException("colslice index out of range %d" format (a))
+    if (b-off >= ncols) throw new RuntimeException("colslice index out of range %d %d" format (b, ncols))
+    var omat = out.asInstanceOf[DenseMat[T]]
+    if (omat.asInstanceOf[AnyRef] == null || (b-a)*nrows > omat.data.size) {
+    	omat = new DenseMat[T](nrows, b-a) 
+    }	else if (b-a != out.ncols) {
+    	omat = new DenseMat[T](nrows, b-a, omat.data)
+    }
+    System.arraycopy(data, (a-off)*nrows, omat.data, 0, (b-a)*nrows)
+    omat
+  }
+  /*
   * Implement slicing, a(iv,j) where iv a vector, j an integer, using ? as wildcard
   */
   def gapply(iv:IMat, jv:Int):DenseMat[T] = {

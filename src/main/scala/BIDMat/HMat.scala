@@ -177,6 +177,24 @@ object HMat {
   	_getOutputStream(fname, compressed, Mat.compressionLevel)
   }
   
+  def loadMat(fname:String, compressed:Boolean=true):Mat = {
+    val gin = getInputStream(fname, compressed)
+    val buff = ByteBuffer.allocate(1024).order(byteOrder)
+    val hints = new Array[Int](4)
+    readSomeInts(gin, hints, buff, 4)
+    val ftype = hints(0)
+    gin.close
+    ftype match {
+      case 130 => loadFMat(fname, compressed)
+      case 110 => loadIMat(fname, compressed)
+      case 140 => loadDMat(fname, compressed)
+      case 231 => loadSMat(fname, compressed)
+      case 331 => loadSMat(fname, compressed)
+      case 201 => loadBMat(fname, compressed)
+      case 301 => loadBMat(fname, compressed)
+    }
+  }
+  
   def loadFMat(fname:String, compressed:Boolean=true):FMat = {
     val gin = getInputStream(fname, compressed)
     val buff = ByteBuffer.allocate(1024*1024).order(byteOrder)
