@@ -47,6 +47,8 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   override def apply(a:Int, b:IMat):FMat = FMat(gapply(a, b))
   
+  override def colslice(a:Int, b:Int, out:Mat) = FMat(gcolslice(a, b, out))
+  
   def update(iv:IMat, jv:IMat, b:FMat):FMat = FMat(_update(iv, jv, b))
 
   def update(iv:IMat, j:Int, b:FMat):FMat = FMat(_update(iv, IMat.ielem(j), b))

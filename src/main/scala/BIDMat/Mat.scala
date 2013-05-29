@@ -41,7 +41,8 @@ class Mat(nr:Int, nc:Int) {
   def clear = notImplemented0("clear");
   def zeros(nr:Int, nc:Int, nnz:Int):Mat = zeros(nr, nc)
   def recycle(nr:Int, nc:Int, nnz:Int):Mat = notImplemented0("recycle");
-  def contents:Mat = notImplemented0("recycle");
+  def contents:Mat = notImplemented0("contents");
+  def colslice(a:Int, b:Int, out:Mat):Mat = notImplemented0("colslice");
   
   def apply(a:IMat):Mat = notImplemented0("linear array access");
   def apply(a:IMat, b:IMat):Mat = notImplemented0("block array access");
