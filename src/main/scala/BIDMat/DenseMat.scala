@@ -63,6 +63,16 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
     data(r+c*nrows)
   }
   
+  def indexOf(a:T):Int = {
+    data.indexOf(a) + Mat.oneBased
+  }
+  
+  def indexOf2(a:T):(Int, Int) = {
+    val off = Mat.oneBased
+    val v = data.indexOf(a)
+    (v % nrows + off, v / nrows + off)
+  }
+  
   /*
    * Update a matrix value, m(r,c) = v, 0- or 1-based 
    */
