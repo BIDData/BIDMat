@@ -32,6 +32,21 @@ class SparseMat[@specialized(Double,Float) T]
     }    
     if (ix >= 0) data(ix) else numeric.zero
   }	
+  
+  def indexOf2(a:T):(Int, Int) = {
+    val off = Mat.oneBased
+    val ioff = Mat.ioneBased
+    val i = data.indexOf(a)
+    var j = 0
+    while (jc(j)-ioff <= i) j += 1
+    (ir(i) - ioff + off, j-1+off)
+  }
+  
+  def indexOf(a:T):Int = {
+  	val off = Mat.oneBased
+    val (i,j) = indexOf2(a)
+    i + (j-off)*nrows
+  }
   /*
    * Update a matrix value, m(r,c) = v
    */
