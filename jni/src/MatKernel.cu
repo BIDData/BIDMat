@@ -1197,6 +1197,61 @@ void veccmp(int *a, int *b, int *d) {
   __veccmp<<<1,1>>>(a, b, d);
 }
 
+__global__ void __dmv(float *a, int nrows, int ncols, float *b, float *c) {
+  for (int tx = threadIdx.x + blockDim.x * blockIdx.x; tx < nrows; tx += blockDim.x * gridDim.x) {
+    float accum = 0.0f;
+    for (int ty = threadIdx.y + blockDim.y * blockIdx.y; ty < ncols; ty += blockDim.y * gridDim.y) {
+      accum += a[tx+nrows*ty] * b[ty];
+    }
+    atomicAdd(&c[tx], accum);
+  }
+}
+
+
+__global__ void __dmvt(float *a, int nrows, int ncols, float *b, float *c) {
+  for (int ty = threadIdx.y + blockDim.y * blockIdx.y; ty < ncols; ty += blockDim.y * gridDim.y) {
+    float accum = 0.0f;
+    for (int tx = threadIdx.x + blockDim.x * blockIdx.x; tx < nrows; tx += blockDim.x * gridDim.x) {
+      accum += a[tx+nrows*ty] * b[tx];
+    }
+    atomicAdd(&c[ty], accum);
+  }
+}
+
+__global__ void __dmv0(float *a, int nrows, int ncols, int tstep, float *b, float *c) {
+  float accum = 0.0f;
+  int tx = threadIdx.x + blockDim.x * blockIdx.x; 
+  if (tx < tstep) {
+    for (; tx < nrows*ncols; tx += tstep) {
+      int icol = tx / nrows;
+      accum += a[tx] * b[icol];
+    }
+    int irow = tx % nrows;
+    atomicAdd(&c[irow], accum);
+  }
+}
+
+int dmv(float *a, int nrows, int ncols, float *b, float *c, int trans) {
+  if (trans == 1) {
+    int ntx = min(32, nrows);
+    int nty = min(32, ncols);
+    int nbx = min(256, 1 + nrows/ntx/2);
+    int nby = min(256, 1 + ncols/nty/2);
+    dim3 blockdims(ntx,nty,1);
+    dim3 griddims(nbx,nby,1);
+    __dmvt<<<griddims,blockdims>>>(a, nrows, ncols, b, c);
+  } else {
+    int ntx = min(1024, nrows*ncols);
+    int nbx = max(1+(nrows-1)/ntx, nrows*ncols/ntx/32);
+    int tstep = (ntx*nbx/nrows)*nrows;   
+    __dmv0<<<nbx,ntx>>>(a, nrows, ncols, tstep, b, c);
+  }
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+
 #ifdef TEST
 int main(int argc, char **argv) {
   int m=8, n=8, opn = 0;

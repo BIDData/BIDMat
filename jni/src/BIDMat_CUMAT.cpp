@@ -298,4 +298,14 @@ extern "C" {
     return maxsumx(a, lda, b, ldb, c, ldc, d, nrows, ncols);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_dmv
+  (JNIEnv *env, jobject obj, jobject ja, jint nr, jint nc, jobject jb, jobject jc, jint trans)
+  {
+    float *a = (float*)getPointer(env, ja);
+    float *b = (float*)getPointer(env, jb);
+    float *c = (float*)getPointer(env, jc);
+
+    return dmv(a, nr, nc, b, c, trans);
+  }
+
 }
