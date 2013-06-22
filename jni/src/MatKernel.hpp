@@ -52,3 +52,5 @@ int radixcounts(float *a, int n, int digit, unsigned int *bi);
 int dists(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p, int ithread);
 
 int maxsumx(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols);
+
+int dmv(float *A, int nr, int nc, float *B, float *C, int trans);

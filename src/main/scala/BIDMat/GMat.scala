@@ -60,7 +60,17 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     if (ncols == a.nrows) {
       val out = GMat.newOrCheckGMat(nrows, a.ncols, oldmat, GUID, a.GUID, "GMult".##)
       Mat.nflops += 2L * length * a.ncols
-      cublasSgemm('n', 'n', nrows, a.ncols, ncols, 1.0f, data, nrows, a.data, a.nrows, 0f, out.data, nrows)
+      if (nrows == 1) {
+//        cublasSgemv('t', a.nrows, a.ncols, 1.0f, a.data, nrows, data, 1, 0f, out.data, 1)
+        out.clear
+        CUMAT.dmv(a.data, a.nrows, a.ncols, data, out.data, 1)
+      } else if (a.ncols == 1) {
+//        cublasSgemv('n', nrows, ncols, 1.0f, data, nrows, a.data, 1, 0f, out.data, 1)
+        out.clear
+        CUMAT.dmv(data, nrows, ncols, a.data, out.data, 0)
+      } else {
+      	cublasSgemm('n', 'n', nrows, a.ncols, ncols, 1.0f, data, nrows, a.data, a.nrows, 0f, out.data, nrows)
+      }
       cudaDeviceSynchronize()
       if (cublasGetError != 0) {
         println("device is %d" format SciFunctions.getGPU)
