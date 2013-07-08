@@ -38,7 +38,9 @@ object SciFunctions {
     curandSetPseudoRandomGeneratorSeed(cudarng, SEED)
   }
   
-  def resetCUDA = JCuda.cudaDeviceReset
+  def resetGPU = JCuda.cudaDeviceReset
+  
+  def initCUDA = JCuda.initialize
   
   def setGPU(i:Int) = JCuda.cudaSetDevice(i)
   
