@@ -40,7 +40,7 @@ object SciFunctions {
   
   def resetGPU = JCuda.cudaDeviceReset
   
-  def initCUDA = JCuda.initialize
+  def initJCUDA = JCuda.initialize
   
   def setGPU(i:Int) = JCuda.cudaSetDevice(i)
   

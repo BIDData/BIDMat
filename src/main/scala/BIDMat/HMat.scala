@@ -166,7 +166,7 @@ object HMat {
   def getInputStream(fname:String, compressed:Boolean):InputStream = {
     val fin = new FileInputStream(fname)
     if (compressed) {
-      new GZIPInputStream(fin, 1024*1024)
+      new BufferedInputStream (new GZIPInputStream(fin, 1024*1024))
     } else {
       new BufferedInputStream(fin, 1024*1024)
     }
@@ -177,7 +177,7 @@ object HMat {
   	_getOutputStream(fname, compressed, Mat.compressionLevel)
   }
   
-  def loadMat(fname:String, compressed:Boolean=true):Mat = {
+  def loadMat(fname:String, compressed:Boolean=true, omat:Mat=null):Mat = {
     val gin = getInputStream(fname, compressed)
     val buff = ByteBuffer.allocate(1024).order(byteOrder)
     val hints = new Array[Int](4)
@@ -185,9 +185,9 @@ object HMat {
     val ftype = hints(0)
     gin.close
     ftype match {
-      case 130 => loadFMat(fname, compressed)
-      case 110 => loadIMat(fname, compressed)
-      case 140 => loadDMat(fname, compressed)
+      case 130 => loadFMat(fname, compressed, omat)
+      case 110 => loadIMat(fname, compressed, omat)
+      case 140 => loadDMat(fname, compressed, omat)
       case 231 => loadSMat(fname, compressed)
       case 331 => loadSMat(fname, compressed)
       case 201 => loadBMat(fname, compressed)
@@ -195,7 +195,7 @@ object HMat {
     }
   }
   
-  def loadFMat(fname:String, compressed:Boolean=true):FMat = {
+  def loadFMat(fname:String, compressed:Boolean=true, omat:Mat=null):FMat = {
     val gin = getInputStream(fname, compressed)
     val buff = ByteBuffer.allocate(1024*1024).order(byteOrder)
     val hints = new Array[Int](4)
@@ -206,13 +206,13 @@ object HMat {
     if (ftype != 130) {
       throw new RuntimeException("loadFMat expected type field 130 but was %d" format ftype)
     }
-    val out = FMat(nrows, ncols)
+    val out = FMat.newOrCheckFMat(nrows, ncols, omat)
     readSomeFloats(gin, out.data, buff, ncols*nrows)
     gin.close
     out
   }
    
-  def loadIMat(fname:String, compressed:Boolean=true):IMat = {
+  def loadIMat(fname:String, compressed:Boolean=true, omat:Mat=null):IMat = {
     val gin = getInputStream(fname, compressed)
     val buff = ByteBuffer.allocate(1024*1024).order(byteOrder)
     val hints = new Array[Int](4)
@@ -224,13 +224,13 @@ object HMat {
       throw new RuntimeException("loadIMat expected type field 110 but was %d" format ftype)
     }
 //    println("%d %d %d\n" format (ftype, nrows, ncols))
-    val out = IMat(nrows, ncols)
+    val out = IMat.newOrCheckIMat(nrows, ncols, omat)
     readSomeInts(gin, out.data, buff, ncols*nrows)
     gin.close
     out
   }
    
-  def loadDMat(fname:String, compressed:Boolean=true):DMat = {
+  def loadDMat(fname:String, compressed:Boolean=true, omat:Mat=null):DMat = {
     val gin = getInputStream(fname, compressed)
     val bytebuff = ByteBuffer.allocate(1024*1024).order(byteOrder)
     val hints = new Array[Int](4)
@@ -241,7 +241,7 @@ object HMat {
     if (ftype != 140) {
       throw new RuntimeException("loadDMat expected type field 140 but was %d" format ftype)
     }
-    val out = DMat(nrows, ncols)
+    val out = DMat.newOrCheckDMat(nrows, ncols, omat)
     readSomeDoubles(gin, out.data, bytebuff, ncols*nrows)
     gin.close
     out
