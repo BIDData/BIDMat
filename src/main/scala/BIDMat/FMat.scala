@@ -455,7 +455,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     } else if (data.size >= nr*nc) {
       new FMat(nr, nc, data)
     } else {
-      FMat(nr, nc)
+      FMat(nr, nc, new Array[Float]((nc*nr*Mat.recycleGrow).toInt))
     }  
   }
 

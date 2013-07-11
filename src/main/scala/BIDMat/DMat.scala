@@ -432,7 +432,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
     } else if (data.size >= nr*nc) {
       new DMat(nr, nc, data)
     } else {
-      DMat(nr, nc)
+      DMat(nr, nc, new Array[Double]((nr*nc*Mat.recycleGrow).toInt))
     }  
   }
   /*

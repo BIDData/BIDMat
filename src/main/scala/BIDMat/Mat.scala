@@ -183,6 +183,8 @@ object Mat {
   
   var ioneBased = 1
   
+  var recycleGrow = 1.2
+  
   final val MSEED:Int = 1452462553 
 
   final val myrand = new java.util.Random(MSEED)

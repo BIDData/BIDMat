@@ -377,7 +377,7 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
     } else if (data.size >= nr*nc) {
       new IMat(nr, nc, data)
     } else {
-      IMat(nr, nc)
+      IMat(nr, nc, new Array[Int]((nr*nc*Mat.recycleGrow).toInt))
     }  
   }
 }
