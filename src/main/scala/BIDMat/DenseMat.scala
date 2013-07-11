@@ -389,7 +389,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
     val off = Mat.oneBased
     if (out.asInstanceOf[AnyRef] != null && nrows != out.nrows) throw new RuntimeException("colslice row dims mismatch")
     if (a-off < 0) throw new RuntimeException("colslice index out of range %d" format (a))
-    if (b-off >= ncols) throw new RuntimeException("colslice index out of range %d %d" format (b, ncols))
+    if (b-off > ncols) throw new RuntimeException("colslice index out of range %d %d" format (b, ncols))
     var omat = out.asInstanceOf[DenseMat[T]]
     if (omat.asInstanceOf[AnyRef] == null || (b-a)*nrows > omat.data.size) {
     	omat = new DenseMat[T](nrows, b-a) 
