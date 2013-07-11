@@ -177,7 +177,7 @@ object HMat {
   	_getOutputStream(fname, compressed, Mat.compressionLevel)
   }
   
-  def loadMat(fname:String, compressed:Boolean=true, omat:Mat=null):Mat = {
+  def loadMat(fname:String, compressed:Boolean, omat:Mat):Mat = {
     val gin = getInputStream(fname, compressed)
     val buff = ByteBuffer.allocate(1024).order(byteOrder)
     val hints = new Array[Int](4)
@@ -194,6 +194,10 @@ object HMat {
       case 301 => loadBMat(fname, compressed)
     }
   }
+  
+  def loadMat(fname:String):Mat = loadMat(fname, true, null)
+  
+  def loadMat(fname:String, compressed:Boolean):Mat = loadMat(fname, compressed, null)
   
   def loadFMat(fname:String, compressed:Boolean=true, omat:Mat=null):FMat = {
     val gin = getInputStream(fname, compressed)
