@@ -152,7 +152,7 @@ object AltaVista {
 	  val tmp1 = zeros(size, 1)
 	  val tmp2 = new FMat(1, size, tmp1.data)
 	  for (i <- 0 until nfiles) {
-	    val ss = HMat.loadSMat(fpath format i, false)
+	    val ss = HMat.loadSMat(fpath format i)
 	    scale ~ scale + sum(ss, 2, tmp1)  // add up outdegree
 	    iter ~ iter + sum(ss, 1, tmp2)   // add up indegree
 	    printf(".")
@@ -162,19 +162,19 @@ object AltaVista {
 	  scale ~ 1.0f / scale
 	  val scalet = new FMat(1, size, scale.data)
 	  iter ~ iter * (1.0f / sum(iter).v)
-	  HMat.saveFMat(scalepath, scalet, false)
-	  HMat.saveFMat(iterpath format 0, iter, false)
+	  HMat.saveFMat(scalepath, scalet)
+	  HMat.saveFMat(iterpath format 0, iter)
 	}
 	
   def pagerank_iter(fpath:String, size:Int, nfiles:Int, iiter:Int, scalepath:String, iterpath:String, alpha:Float) = {
 		printf("iteration %d" format (iiter+1))
-	  val iter = HMat.loadFMat(iterpath format iiter, false)
-	  val scale = HMat.loadFMat(scalepath, false)
+	  val iter = HMat.loadFMat(iterpath format iiter)
+	  val scale = HMat.loadFMat(scalepath)
 	  iter ~ iter *@ scale
 	  val newiter = zeros(1, size)
 	  var tmp = scale
 	  for (i <- 0 until nfiles) {
-	    val ss = HMat.loadSMat(fpath format i, false)	    
+	    val ss = HMat.loadSMat(fpath format i)	    
 	    newiter ~ newiter + (tmp ~ iter * ss)
 	    printf(".")
 	  }
@@ -183,7 +183,7 @@ object AltaVista {
 	  tmp ~ newiter - iter
 	  val v = tmp ddot tmp
 	  println("resid = %g, time = %f, gf = %f" format (math.sqrt(v/size), gflop._2, gflop._1))
-	  HMat.saveFMat(iterpath format (iiter+1), newiter, false)
+	  HMat.saveFMat(iterpath format (iiter+1), newiter)
 	}
   
   def pagerank_run(dirname:String, fname:String, nparts:Int, niter:Int) = {
@@ -214,7 +214,7 @@ object AltaVista {
 
 object Twitter { 
   
-   def doall(threshold:Int=10, rebuild:Boolean=false):Unit = {
+   def dodicts(threshold:Int=10, rebuild:Boolean=false):Unit = {
   		 val stokdir = "/twitter/smiley/tokenized/"
     	 val tokdir = "/twitter/tokenized/"
   		 val dy1 = mergedicts(2011, 2013, "/disk%02d" + stokdir, "/big" + stokdir, threshold, rebuild)
