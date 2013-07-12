@@ -182,7 +182,12 @@ object HMat {
     	_getOutputStream(fname, Mat.compressionLevel)
     } else  if (compressed == 3 || (compressed == 0 && fname.endsWith(".lz4"))) {
       val fout = new FileOutputStream(fname)
-      new BufferedOutputStream(new LZ4BlockOutputStream(fout), 1024*1024)   
+      if (Mat.compressionLevel >= 6) {
+        val hc = LZ4Factory.fastestInstance.highCompressor
+        new BufferedOutputStream(new LZ4BlockOutputStream(fout, 1 << 16, hc), 1024*1024)
+      } else {
+      	new BufferedOutputStream(new LZ4BlockOutputStream(fout), 1024*1024)   
+      }
     } else {
     	val fout = new FileOutputStream(fname)
     	new BufferedOutputStream(fout, 1024*1024)
