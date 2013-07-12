@@ -167,9 +167,9 @@ object HMat {
   
   def getInputStream(fname:String, compressed:Int):InputStream = {
     val fin = new FileInputStream(fname)
-    if (compressed == 2 || (compressed == 0 && fname.matches(".gz$"))) {
+    if (compressed == 2 || (compressed == 0 && fname.endsWith(".gz"))) {
       new BufferedInputStream (new GZIPInputStream(fin, 1024*1024))      
-    } else  if (compressed == 3 || (compressed == 0 && fname.matches(".lz4$"))) {
+    } else  if (compressed == 3 || (compressed == 0 && fname.endsWith(".lz4"))) {
       new BufferedInputStream (new BufferedInputStream(new LZ4BlockInputStream(fin), 1024*1024))    
     } else {
     	new BufferedInputStream(fin, 1024*1024)
@@ -177,10 +177,10 @@ object HMat {
   }
   
   def getOutputStream(fname:String, compressed:Int):OutputStream = {
-    if (compressed == 2 || (compressed == 0 && fname.matches(".gz$"))) {
+    if (compressed == 2 || (compressed == 0 && fname.endsWith(".gz"))) {
     	import edu.berkeley.bid.UTILS._
     	_getOutputStream(fname, Mat.compressionLevel)
-    } else  if (compressed == 3 || (compressed == 0 && fname.matches(".lz4$"))) {
+    } else  if (compressed == 3 || (compressed == 0 && fname.endsWith(".lz4"))) {
       val fout = new FileOutputStream(fname)
       new BufferedOutputStream(new LZ4BlockOutputStream(fout), 1024*1024)   
     } else {
