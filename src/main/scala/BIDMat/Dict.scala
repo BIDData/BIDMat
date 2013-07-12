@@ -252,7 +252,7 @@ class IDict(val grams:IMat) {
   
   def --> (b:IDict):IMat = { 
     makeSorted
-    val bhash = b.makeSorted
+    b.makeSorted
     val out = -iones(length, 1)
     var i = 0
     var ito = 0
@@ -263,9 +263,9 @@ class IDict(val grams:IMat) {
         i += 1
         ito += 1
       } else if (xx > 0) {
-        ito += 1
-      } else {
         i += 1
+      } else {
+        ito += 1
       }
     }
     out
