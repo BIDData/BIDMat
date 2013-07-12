@@ -259,7 +259,7 @@ class IDict(val grams:IMat) {
     while (i < length && ito < b.length) { 
       val xx = cmp(sortedMat, b.sortedMat, i, ito)
       if (xx == 0) {
-        out(perm(i)) = b.iperm(ito)
+        out(iperm(i)) = b.perm(ito)
         i += 1
         ito += 1
       } else if (xx > 0) {
