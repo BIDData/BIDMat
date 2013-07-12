@@ -24,6 +24,7 @@ public final class UTILS {
     public static OutputStream _getOutputStream(String fname, int compressionLevel) throws IOException {
     	FileOutputStream fout = new FileOutputStream(fname);
     	switch (compressionLevel) {
+    	case 0: return new GZIPOutputStream(fout, 1024*1024){{def.setLevel(0);}};
     	case 1: return new GZIPOutputStream(fout, 1024*1024){{def.setLevel(1);}};
     	case 2: return new GZIPOutputStream(fout, 1024*1024){{def.setLevel(2);}};
     	case 3: return new GZIPOutputStream(fout, 1024*1024){{def.setLevel(3);}};
