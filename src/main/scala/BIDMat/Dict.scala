@@ -37,6 +37,11 @@ class Dict(val cstr:CSMat) {
     out
   }
   
+  def apply(s:String) = {
+    makeHash
+    hash.get(s).get
+  }
+  
   def trim(thresh:Int):Dict = {
     val ii = find(counts >= thresh.toDouble)
     Dict(cstr(ii), DMat(counts(ii)))
@@ -66,6 +71,13 @@ object Dict {
     out.counts = counts
     out
   }
+  
+  def apply(b:BMat):Dict = {
+    val out = new Dict(CSMat(b))
+    out.counts = null
+    out
+  }
+  
   def apply(b:BMat, counts:IMat):Dict = Dict(b, DMat(counts))
   
   def apply(b:BMat, counts:DMat, thresh:Int):Dict = {
