@@ -246,11 +246,11 @@ extern "C" {
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_rsort4
-  (JNIEnv *env, jobject obj, jobject jpkeys, jint ncols, jint dev) 
+  (JNIEnv *env, jobject obj, jobject jpkeys, jint ncols) 
   {
     int *pkeys = (int *)getPointer(env, jpkeys);
 
-    return rsort4(pkeys, ncols, dev);
+    return rsort4(pkeys, ncols);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_stratify

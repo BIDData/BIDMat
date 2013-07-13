@@ -46,6 +46,8 @@ public final class CUMAT {
     
     public static native int rsort2(Pointer A, Pointer B, int nrows, int ncols);
     
+    public static native int rsort4(Pointer A, int ncols);
+    
     public static native int rsortsizex(int n);
     
     public static native int rsortsizey(int n);
