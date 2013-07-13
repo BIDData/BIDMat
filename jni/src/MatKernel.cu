@@ -854,17 +854,23 @@ int rsort2(float *pkeys, unsigned int *pvals, int nrows, int ncols) {
 }
 
 typedef struct lll {
-  long long x;
-  long long y;
+  int x;
+  int y;
+  int z;
+  int w;
 } lllint;
 
 struct cmp_lllint_key 
 {
-  __host__ __device__ bool operator()(const lllint &lhs, const lllint &rhs) const
+  __host__ __device__ inline bool operator()(const lllint &lhs, const lllint &rhs) const
   {
     if (lhs.x < rhs.x) return true;
     if (lhs.x > rhs.x) return false;
-    return (lhs.y < rhs.y);
+    if (lhs.y < rhs.y) return true;
+    if (lhs.y > rhs.y) return false;
+    if (lhs.z < rhs.z) return true;
+    if (lhs.z > rhs.z) return false;
+    return (lhs.w < rhs.w);
   }
 };
 
