@@ -842,6 +842,31 @@ int rsort(long long *pkeys, unsigned int *pvals, int N, int dev) {
   return err;
 }
 
+typedef struct lll {
+  long long x;
+  long long y;
+} lllint;
+
+struct cmp_lllint_key 
+{
+  __host__ __device__ bool operator()(const lllint &lhs, const lllint &rhs) const
+  {
+    if (lhs.x < rhs.x) return true;
+    if (lhs.x > rhs.x) return false;
+    return (lhs.y < rhs.y);
+  }
+};
+
+int rsort4(int *pkeys0, int N, int dev) {
+  lllint *pkeys = (lllint *)pkeys0;
+  cudaSetDevice(dev);
+  thrust::device_ptr<lllint> keys(pkeys);
+  thrust::sort(keys, keys + N, cmp_lllint_key());
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
 int rsort2(float *pkeys, unsigned int *pvals, int nrows, int ncols) {
   for (int i = 0; i < ncols; i++) {
     thrust::device_ptr<float> keys(pkeys+i*nrows);

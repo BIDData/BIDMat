@@ -43,6 +43,8 @@ int rsorty(long long *pkeys, unsigned int *pvals, long long *tkeys, unsigned int
 
 int rsort2(float *pkeys, unsigned int *pvals, int nrows, int ncols);
 
+int rsort4(int *pkeys, int ncols, int dev);
+
 int stratify(float *strata, int n, float *a, float *b, unsigned int *bi, int stride);
 
 int stratifycounts(float *strata, int n, float *a, unsigned int *bi);
