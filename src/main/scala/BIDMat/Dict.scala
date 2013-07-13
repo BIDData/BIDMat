@@ -303,8 +303,14 @@ object IDict {
   
   def union(dicts:Array[IDict]):IDict = {
     var totl = 0
-    dicts.foreach((d:IDict) => {if (d != null) totl += d.length})
-    val outx = IMat(totl, dicts(0).grams.ncols)
+    var somed:IDict = null
+    dicts.foreach((d:IDict) => {
+      if (d != null) {
+        totl += d.length
+        somed = d
+      }
+    })
+    val outx = IMat(totl, somed.grams.ncols)
     val countsx = DMat(totl, 1)
     var totx = 0
     dicts.foreach((d:IDict) => {
