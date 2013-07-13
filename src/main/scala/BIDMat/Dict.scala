@@ -224,14 +224,11 @@ class IDict(val grams:IMat) {
   var sortedMat:IMat = null
   
   var perm:IMat = null
-  
-  var iperm:IMat = null
 
   def makeSorted:IMat = { 
     if (sortedMat.asInstanceOf[AnyRef] == null) { 
       perm = sortlex(grams) 
       sortedMat = grams(perm, ?)
-      iperm = accum(perm, icol(0->perm.length), perm.length, 1)
     }
     sortedMat
   }
@@ -304,95 +301,66 @@ object IDict {
   
   def dictFromData(grams:IMat):IDict = dictFromData(grams, null)
   
-  def _union(dicts:IDict*):IDict = {
+  def union(dicts:Array[IDict]):IDict = {
     var totl = 0
-    dicts.foreach((d:IDict) => {totl += d.length})
+    dicts.foreach((d:IDict) => {if (d != null) totl += d.length})
     val outx = IMat(totl, dicts(0).grams.ncols)
     val countsx = DMat(totl, 1)
     var totx = 0
     dicts.foreach((d:IDict) => {
-      outx(totx->(totx+d.length),?) = d.grams
-      countsx(totx->(totx+d.length),0) = d.counts
-      totx += d.length
+      if (d != null) {
+      	outx(totx->(totx+d.length),?) = d.grams
+      	countsx(totx->(totx+d.length),0) = d.counts
+      	totx += d.length
+      }
       })
     dictFromData(outx, countsx)
   }
-
-  def union(dd:IDict*):IDict = {
-  	val d = _union(dd:_*) 	
-  	for (i <- 0 until dd.length) {
-  		val d1d = dd(i) --> d  
-  		if (i == 0) {
-  			d.counts = accum(d1d, dd(i).counts, d.length, 1)
-  		}	else {
-  			d.counts += accum(d1d, dd(i).counts, d.length, 1)
-  		}
-    }    
-    d
-  }
+  
+  def union(dicts:IDict*):IDict = union(dicts.toArray)
   
   def union2(d1:IDict, d2:IDict):(IDict, IMat, IMat) = {
-  	val d = _union(d1, d2)
+  	val d = union(d1, d2)
     val d1d = d1 --> d
     val d2d = d2 --> d
-    d.counts = accum(d1d, d1.counts, d.length, 1) +
-               accum(d2d, d2.counts, d.length, 1);
     (d, d1d, d2d)
   }
 
   def union3(d1:IDict, d2:IDict, d3:IDict):(IDict, IMat, IMat, IMat) = {
-  	val d = _union(d1, d2, d3)
+  	val d = union(d1, d2, d3)
     val d1d = d1 --> d
     val d2d = d2 --> d
     val d3d = d3 --> d
-    d.counts = accum(d1d, d1.counts, d.length, 1) +
-               accum(d2d, d2.counts, d.length, 1) +
-               accum(d3d, d3.counts, d.length, 1);
     (d, d1d, d2d, d3d)
   }
   
   def union4(d1:IDict, d2:IDict, d3:IDict, d4:IDict):(IDict, IMat, IMat, IMat, IMat) = {
-    val d = _union(d1, d2, d3, d4)
+    val d = union(d1, d2, d3, d4)
     val d1d = d1 --> d
     val d2d = d2 --> d
     val d3d = d3 --> d
     val d4d = d4 --> d
-    d.counts = (accum(d1d, d1.counts, d.length, 1) +
-               accum(d2d, d2.counts, d.length, 1)) +
-               (accum(d3d, d3.counts, d.length, 1) +
-               accum(d4d, d4.counts, d.length, 1));
     (d, d1d, d2d, d3d, d4d)
   }
   
   def union5(d1:IDict, d2:IDict, d3:IDict, d4:IDict, d5:IDict):(IDict, IMat, IMat, IMat, IMat, IMat) = {
-    val d = _union(d1, d2, d3, d4, d5)
+    val d = union(d1, d2, d3, d4, d5)
     val d1d = d1 --> d
     val d2d = d2 --> d
     val d3d = d3 --> d
     val d4d = d4 --> d
     val d5d = d5 --> d
-    d.counts = (accum(d1d, d1.counts, d.length, 1) +
-               accum(d2d, d2.counts, d.length, 1)) +
-               (accum(d3d, d3.counts, d.length, 1) +
-               accum(d4d, d4.counts, d.length, 1)) +
-               accum(d5d, d5.counts, d.length, 1);
     (d, d1d, d2d, d3d, d4d, d5d)
   }
   
   def union6(d1:IDict, d2:IDict, d3:IDict, d4:IDict, d5:IDict, d6:IDict):(IDict, IMat, IMat, IMat, IMat, IMat, IMat) = {
-    val d = _union(d1, d2, d3, d4, d5, d6)
+    val d = union(d1, d2, d3, d4, d5, d6)
     val d1d = d1 --> d
     val d2d = d2 --> d
     val d3d = d3 --> d
     val d4d = d4 --> d
     val d5d = d5 --> d
     val d6d = d6 --> d
-    d.counts = (accum(d1d, d1.counts, d.length, 1) +
-               accum(d2d, d2.counts, d.length, 1)) +
-               (accum(d3d, d3.counts, d.length, 1) +
-               accum(d4d, d4.counts, d.length, 1)) +
-               (accum(d5d, d5.counts, d.length, 1) +                              
-               accum(d6d, d6.counts, d.length, 1));
     (d, d1d, d2d, d3d, d4d, d5d, d6d)
   }
 
