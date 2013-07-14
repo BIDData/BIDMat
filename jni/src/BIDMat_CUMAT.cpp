@@ -190,30 +190,30 @@ extern "C" {
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_fsort2d
-  (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jint nrows, jint ncols) 
+  (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jint nrows, jint ncols, jint desc) 
   {
     float *pkeys = (float *)getPointer(env, jpkeys);
     unsigned int *pvals = (unsigned int *)getPointer(env, jpvals);
 
-    return fsort2d(pkeys, pvals, nrows, ncols);
+    return fsort2d(pkeys, pvals, nrows, ncols, desc);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_lsortk
-  (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jint n) 
+  (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jint n, jint desc) 
   {
     long long *pkeys = (long long *)getPointer(env, jpkeys);
     unsigned int *pvals = (unsigned int *)getPointer(env, jpvals);
 
-    return lsortk(pkeys, pvals, n);
+    return lsortk(pkeys, pvals, n, desc);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_dsortk
-  (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jint n) 
+  (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jint n, jint desc) 
   {
     double *pkeys = (double *)getPointer(env, jpkeys);
     unsigned int *pvals = (unsigned int *)getPointer(env, jpvals);
 
-    return dsortk(pkeys, pvals, n);
+    return dsortk(pkeys, pvals, n, desc);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_fsortsizex
@@ -229,7 +229,7 @@ extern "C" {
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_fsort2dx
-  (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jobject jtkeys, jobject jtvals, jobject jspine, jobject jflags, jint nrows, jint ncols) 
+  (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jobject jtkeys, jobject jtvals, jobject jspine, jobject jflags, jint nrows, jint ncols, jint desc) 
   {
     float *pkeys = (float *)getPointer(env, jpkeys);
     unsigned int *pvals = (unsigned int *)getPointer(env, jpvals);
@@ -238,11 +238,11 @@ extern "C" {
     int *spine = (int *)getPointer(env, jspine);
     bool *bflags = (bool *)getPointer(env, jflags);
 
-    return fsort2dx(pkeys, pvals, tkeys, tvals, spine, bflags, nrows, ncols);
+    return fsort2dx(pkeys, pvals, tkeys, tvals, spine, bflags, nrows, ncols, desc);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_lsortx
-  (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jobject jtkeys, jobject jtvals, jobject jspine, jobject jflags, jint n) 
+  (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jobject jtkeys, jobject jtvals, jobject jspine, jobject jflags, jint n, jint desc) 
   {
     long long *pkeys = (long long *)getPointer(env, jpkeys);
     unsigned int *pvals = (unsigned int *)getPointer(env, jpvals);
@@ -251,24 +251,24 @@ extern "C" {
     int *spine = (int *)getPointer(env, jspine);
     bool *bflags = (bool *)getPointer(env, jflags);
 
-    return lsortx(pkeys, pvals, tkeys, tvals, spine, bflags, n);
+    return lsortx(pkeys, pvals, tkeys, tvals, spine, bflags, n, desc);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_i4sort
-  (JNIEnv *env, jobject obj, jobject jpkeys, jint ncols) 
+  (JNIEnv *env, jobject obj, jobject jpkeys, jint ncols, jint desc) 
   {
     int *pkeys = (int *)getPointer(env, jpkeys);
 
-    return i4sort(pkeys, ncols);
+    return i4sort(pkeys, ncols, desc);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_i3sortk
-  (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jint n) 
+  (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jint n, jint desc) 
   {
     int *pkeys = (int *)getPointer(env, jpkeys);
     unsigned int *pvals = (unsigned int *)getPointer(env, jpvals);
 
-    return i3sortk(pkeys, pvals, n);
+    return i3sortk(pkeys, pvals, n, desc);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_stratify

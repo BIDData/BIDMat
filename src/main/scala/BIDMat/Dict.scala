@@ -296,13 +296,46 @@ object IDict {
   def apply(grams:IMat, counts:IMat, thresh:Int):IDict = IDict(grams, DMat(counts), thresh)
   
   def dictFromData(grams:IMat, counts:DMat):IDict = {
-    val (outy, ia, ib) = uniquerows(grams)
+    val (outy, ia, ib) = IDict.uniquerows(grams)
     val countsy = accum(ib, if (counts == null) drow(1.0) else counts, outy.nrows, 1)
     val (countsz, ip) = sortdown2(countsy)
     IDict(outy(ip, ?), countsz)
   }
   
   def dictFromData(grams:IMat):IDict = dictFromData(grams, null)
+  
+  def uniquerows(a:IMat):(IMat, IMat, IMat) = {
+    val iptrs = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "uniquerows".hashCode)
+    val iss = IMat.newOrCheckIMat(a.nrows, a.ncols, null, a.GUID, "uniquerows_1".hashCode)
+    iss <-- a
+    var i = 0; while (i < iptrs.nrows) {iptrs(i) = i; i += 1}
+    GIMat.lexsort2or3cols(iss, iptrs)
+    def compeq(i:Int, j:Int):Boolean = {
+      var k:Int = 0;
+      while (k < a.ncols && (a(i,k) == a(j,k))) {
+        k += 1
+      }
+      if (k == a.ncols) true
+      else false
+    }
+    var lastpos = 0
+    iptrs.data(iss.data(0)) = lastpos
+    i = 1
+    while (i < iss.length) {
+      if (!compeq(iss.data(i-1), iss.data(i))) {
+        lastpos += 1
+      }
+      iptrs.data(iss.data(i)) = lastpos
+      i += 1
+    }
+    val bptrs = IMat.newOrCheckIMat(lastpos+1, 1, null, a.GUID, "uniquerows_2".hashCode)
+    i = iss.length
+    while (i > 0) {
+      bptrs.data(iptrs.data(i-1)) = i-1
+      i = i - 1
+    }
+    (iss, bptrs, iptrs)    
+  }  
   
   def union(dicts:Array[IDict]):IDict = {
     var totl = 0

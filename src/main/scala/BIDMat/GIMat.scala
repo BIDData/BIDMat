@@ -199,7 +199,7 @@ object GIMat {
     if (status != 0) throw new RuntimeException("p4lexsortGPU error4 %d" format (status))  
     val ggramst = ggrams.t
     ggrams.free
-    CUMAT.i4sort(ggramst.data, nrows)
+    CUMAT.i4sort(ggramst.data, nrows, 0)
     val ograms = ggramst.t
     ggramst.free
     status = cudaMemcpy(p1, ograms.data, nrows*Sizeof.FLOAT, cudaMemcpyDeviceToHost)
@@ -254,7 +254,7 @@ object GIMat {
     if (status != 0) throw new RuntimeException("p3lexsortGPU error3 %d" format (status))  
     val ggramst = ggrams.t
     ggrams.free
-    CUMAT.lsortk(ggramst.data, gvals.data, nrows)
+    CUMAT.lsortk(ggramst.data, gvals.data, nrows, 0)
     val ograms = ggramst.t
     ggramst.free
     status = cudaMemcpy(p1, ograms.data.withByteOffset(nrows*Sizeof.FLOAT), nrows*Sizeof.FLOAT, cudaMemcpyDeviceToHost)
@@ -283,9 +283,9 @@ object GIMat {
   	} else true) {
   		val perm = MatFunctions.sortlex(mat)
   		val indsp = inds(perm)
-  		inds(?) = indsp
+  		inds <-- indsp
   		val matp = mat(perm, ?)
-  		mat(?) = matp(?)
+  		mat <-- matp
   	}
   }
 
