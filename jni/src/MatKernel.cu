@@ -793,7 +793,7 @@ int fsort2d(float *pkeys, unsigned int *pvals, int nrows, int ncols) {
   return err;
 }
  
-int lsort(long long *pkeys, unsigned int *pvals, int N) {
+int lsortk(long long *pkeys, unsigned int *pvals, int N) {
   thrust::device_ptr<long long> keys(pkeys);
   thrust::device_ptr<unsigned int> vals(pvals);
   thrust::sort_by_key(keys, keys + N, vals);
@@ -876,6 +876,34 @@ int i4sort(int *pkeys0, int N) {
   lllint *pkeys = (lllint *)pkeys0;
   thrust::device_ptr<lllint> keys(pkeys);
   thrust::sort(keys, keys + N, cmp_lllint_key());
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+typedef struct i3 {
+  int x;
+  int y;
+  int z;
+} i3struct;
+
+struct cmp_i3struct_key 
+{
+  __host__ __device__ inline bool operator()(const i3struct &lhs, const i3struct &rhs) const
+  {
+    if (lhs.x < rhs.x) return true;
+    if (lhs.x > rhs.x) return false;
+    if (lhs.y < rhs.y) return true;
+    if (lhs.y > rhs.y) return false;
+    return (lhs.z < rhs.z);
+  }
+};
+
+int i3sortk(int *pkeys0, unsigned int *pvals, int N) {
+  i3struct *pkeys = (i3struct *)pkeys0;
+  thrust::device_ptr<i3struct> keys(pkeys);
+  thrust::device_ptr<unsigned int> vals(pvals);
+  thrust::sort_by_key(keys, keys + N, vals, cmp_i3struct_key());
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
