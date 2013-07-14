@@ -918,7 +918,7 @@ object GMat {
     val tspine = GIMat(nspine, 1)
     val bflags = GIMat(32, 1)
 
-    CUMAT.fsortx(keys.data, vals.data, tkeys.data, tvals.data, tspine.data, bflags.data, keys.nrows, keys.ncols)
+    CUMAT.fsort2dx(keys.data, vals.data, tkeys.data, tvals.data, tspine.data, bflags.data, keys.nrows, keys.ncols)
 
     tkeys.free
     tvals.free
@@ -991,7 +991,7 @@ object GMat {
   	  		cudaMemcpy(vv.data, Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
                         if (status != 0) throw new RuntimeException("GPUsort copy v in failed thread %d error %d" format (ithread,status))
                         if (tall) {
-  	  			status = CUMAT.fsortx(aa.data, vv.data, tkeys.data, tvals.data, tspine.data, bflags.data, keys.nrows, colstodo)
+  	  			status = CUMAT.fsort2dx(aa.data, vv.data, tkeys.data, tvals.data, tspine.data, bflags.data, keys.nrows, colstodo)
                                 if (status != 0) throw new RuntimeException("GPUsort tall sort failed thread %d error %d" format (ithread,status))
   	  		} else {
   	  			status = CUMAT.embedmat(aa.data, kk.data, keys.nrows, colstodo)

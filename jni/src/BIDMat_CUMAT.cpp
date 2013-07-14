@@ -210,7 +210,7 @@ extern "C" {
     return lsortsizex(n);
   }
 
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_fsortx
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_fsort2dx
   (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jobject jtkeys, jobject jtvals, jobject jspine, jobject jflags, jint nrows, jint ncols) 
   {
     float *pkeys = (float *)getPointer(env, jpkeys);
@@ -220,7 +220,7 @@ extern "C" {
     int *spine = (int *)getPointer(env, jspine);
     bool *bflags = (bool *)getPointer(env, jflags);
 
-    return fsortx(pkeys, pvals, tkeys, tvals, spine, bflags, nrows, ncols);
+    return fsort2dx(pkeys, pvals, tkeys, tvals, spine, bflags, nrows, ncols);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_lsortx
