@@ -170,43 +170,99 @@ object GIMat {
   }
   
   def i3lexsortGPU(grams:IMat, inds:IMat) = {
-    val ggrams = GIMat(grams.nrows, 4)
-    var status = cudaMemcpy(ggrams.data, Pointer.to(grams.data), grams.nrows*3*Sizeof.FLOAT, cudaMemcpyHostToDevice)
-    if (status != 0) throw new RuntimeException("GPUi3lexsort error1 %d" format (status))  
-    status = cudaMemcpy(ggrams.data.withByteOffset(grams.nrows*3*Sizeof.FLOAT), Pointer.to(inds.data), grams.nrows*Sizeof.FLOAT, cudaMemcpyHostToDevice)
-    if (status != 0) throw new RuntimeException("GPUi3lexsort error2 %d" format (status))  
+    if (grams.nrows != inds.nrows) throw new RuntimeException("i3lexsortGPU mismatched dims")
+    val p1 = Pointer.to(grams.data)
+    val p2 = p1.withByteOffset(inds.nrows*Sizeof.FLOAT)
+    val p3 = p1.withByteOffset(inds.nrows*2*Sizeof.FLOAT)
+    val p4 = Pointer.to(inds.data)
+    p4lexsortGPU(p1, p2, p3, p4, grams.nrows)
+  }
+  
+  def i3lexsortGPU(col1:IMat, col2:IMat, col3:IMat, inds:IMat) = {
+    if (col1.nrows != inds.nrows || col2.nrows != inds.nrows || col3.nrows != inds.nrows) throw new RuntimeException("i3lexsortGPU mismatched dims")
+    val p1 = Pointer.to(col1.data)
+    val p2 = Pointer.to(col2.data)
+    val p3 = Pointer.to(col3.data)
+    val p4 = Pointer.to(inds.data)
+    p4lexsortGPU(p1, p2, p3, p4, inds.nrows)
+  }
+  
+  def p4lexsortGPU(p1:Pointer, p2:Pointer, p3:Pointer, p4:Pointer, nrows:Int) = {
+    val ggrams = GIMat(nrows, 4)
+    var status = cudaMemcpy(ggrams.data, p1, nrows*Sizeof.FLOAT, cudaMemcpyHostToDevice)
+    if (status != 0) throw new RuntimeException("p4lexsortGPU error1 %d" format (status)) 
+    status = cudaMemcpy(ggrams.data.withByteOffset(nrows*Sizeof.FLOAT), p2, nrows*Sizeof.FLOAT, cudaMemcpyHostToDevice)
+    if (status != 0) throw new RuntimeException("p4lexsortGPU error2 %d" format (status))
+    status = cudaMemcpy(ggrams.data.withByteOffset(nrows*2*Sizeof.FLOAT), p3, nrows*Sizeof.FLOAT, cudaMemcpyHostToDevice)
+    if (status != 0) throw new RuntimeException("p4lexsortGPU error3 %d" format (status))
+    status = cudaMemcpy(ggrams.data.withByteOffset(nrows*3*Sizeof.FLOAT), p4, nrows*Sizeof.FLOAT, cudaMemcpyHostToDevice)
+    if (status != 0) throw new RuntimeException("p4lexsortGPU error4 %d" format (status))  
     val ggramst = ggrams.t
     ggrams.free
-    CUMAT.i4sort(ggramst.data, grams.nrows)
+    CUMAT.i4sort(ggramst.data, nrows)
     val ograms = ggramst.t
     ggramst.free
-    status = cudaMemcpy(Pointer.to(grams.data), ograms.data, grams.nrows*3*Sizeof.FLOAT, cudaMemcpyDeviceToHost)
-    if (status != 0) throw new RuntimeException("GPUi3lexsort error3 %d" format (status))  
-    status = cudaMemcpy(Pointer.to(inds.data), ograms.data.withByteOffset(grams.nrows*3*Sizeof.FLOAT), grams.nrows*Sizeof.FLOAT, cudaMemcpyDeviceToHost)
-    if (status != 0) throw new RuntimeException("GPUi3lexsort error4 %d" format (status))  
+    status = cudaMemcpy(p1, ograms.data, nrows*Sizeof.FLOAT, cudaMemcpyDeviceToHost)
+    if (status != 0) throw new RuntimeException("p4lexsortGPU error5 %d" format (status)) 
+    status = cudaMemcpy(p2, ograms.data.withByteOffset(nrows*Sizeof.FLOAT), nrows*Sizeof.FLOAT, cudaMemcpyDeviceToHost)
+    if (status != 0) throw new RuntimeException("p4lexsortGPU error6 %d" format (status)) 
+    status = cudaMemcpy(p3, ograms.data.withByteOffset(nrows*2*Sizeof.FLOAT), nrows*Sizeof.FLOAT, cudaMemcpyDeviceToHost)
+    if (status != 0) throw new RuntimeException("p4lexsortGPU error7 %d" format (status)) 
+    status = cudaMemcpy(p4, ograms.data.withByteOffset(nrows*3*Sizeof.FLOAT), nrows*Sizeof.FLOAT, cudaMemcpyDeviceToHost)
+    if (status != 0) throw new RuntimeException("p4lexsortGPU error8 %d" format (status))  
     ograms.free
   }
   
   def i2lexsortGPU(grams:IMat, inds:IMat) = {
-    val ggrams = GIMat(grams.nrows, 2)
-    val gvals = GIMat(grams.nrows, 1)
-    var status = cudaMemcpy(ggrams.data, Pointer.to(grams.data).withByteOffset(grams.nrows*Sizeof.FLOAT), grams.nrows*Sizeof.FLOAT, cudaMemcpyHostToDevice)
-    if (status != 0) throw new RuntimeException("GPUi2lexsort error1 %d" format (status)) 
-    status = cudaMemcpy(ggrams.data.withByteOffset(grams.nrows*Sizeof.FLOAT), Pointer.to(grams.data), grams.nrows*Sizeof.FLOAT, cudaMemcpyHostToDevice)
-    if (status != 0) throw new RuntimeException("GPUi2lexsort error1 %d" format (status))  
-    status = cudaMemcpy(gvals.data, Pointer.to(inds.data), grams.nrows*Sizeof.FLOAT, cudaMemcpyHostToDevice)
-    if (status != 0) throw new RuntimeException("GPUi2lexsort error2 %d" format (status))  
+    if (grams.nrows != inds.nrows) throw new RuntimeException("i2lexsortGPU mismatched dims")
+    val p1 = Pointer.to(grams.data)
+    val p2 = p1.withByteOffset(inds.nrows*Sizeof.FLOAT)
+    val p3 = Pointer.to(inds.data)
+    p3lexsortGPU(p1, p2, p3, inds.nrows)
+  }
+  
+  def i2lexsortGPU(col1:IMat, col2:IMat, inds:IMat) = {
+    if (col1.nrows != inds.nrows || col2.nrows != inds.nrows) throw new RuntimeException("i2lexsortGPU mismatched dims")
+    val p1 = Pointer.to(col1.data)
+    val p2 = Pointer.to(col2.data) 
+    val p3 = Pointer.to(inds.data)
+    p3lexsortGPU(p1, p2, p3, inds.nrows)
+  }
+  /*
+   * Useful for creating sparse matrices
+   */
+  
+  def i2lexsortGPU(col1:IMat, col2:IMat, fvals:FMat) = {
+    if (col1.nrows != fvals.nrows || col2.nrows != fvals.nrows) throw new RuntimeException("i2lexsortGPU mismatched dims")
+    val p1 = Pointer.to(col1.data)
+    val p2 = Pointer.to(col2.data) 
+    val p3 = Pointer.to(fvals.data)
+    p3lexsortGPU(p1, p2, p3, fvals.nrows)
+  }
+  
+  /*
+   * This is not strictly a 3-column lex sort, only the first two columns are used, and the third is just permuted
+   */
+  def p3lexsortGPU(p1:Pointer, p2:Pointer, p3:Pointer, nrows:Int) = {
+    val ggrams = GIMat(nrows, 2)
+    val gvals = GIMat(nrows, 1)
+    var status = cudaMemcpy(ggrams.data, p2, nrows*Sizeof.FLOAT, cudaMemcpyHostToDevice)
+    if (status != 0) throw new RuntimeException("p3lexsortGPU error1 %d" format (status)) 
+    status = cudaMemcpy(ggrams.data.withByteOffset(nrows*Sizeof.FLOAT), p1, nrows*Sizeof.FLOAT, cudaMemcpyHostToDevice)
+    if (status != 0) throw new RuntimeException("p3lexsortGPU error2 %d" format (status))  
+    status = cudaMemcpy(gvals.data, p3, nrows*Sizeof.FLOAT, cudaMemcpyHostToDevice)
+    if (status != 0) throw new RuntimeException("p3lexsortGPU error3 %d" format (status))  
     val ggramst = ggrams.t
     ggrams.free
-    CUMAT.lsort(ggramst.data, gvals.data, grams.nrows)
+    CUMAT.lsortk(ggramst.data, gvals.data, nrows)
     val ograms = ggramst.t
     ggramst.free
-    status = cudaMemcpy(Pointer.to(grams.data), ograms.data.withByteOffset(grams.nrows*Sizeof.FLOAT), grams.nrows*Sizeof.FLOAT, cudaMemcpyDeviceToHost)
-    if (status != 0) throw new RuntimeException("GPUi2lexsort error3 %d" format (status)) 
-    status = cudaMemcpy(Pointer.to(grams.data).withByteOffset(grams.nrows*Sizeof.FLOAT), ograms.data, grams.nrows*Sizeof.FLOAT, cudaMemcpyDeviceToHost)
-    if (status != 0) throw new RuntimeException("GPUi2lexsort error3 %d" format (status)) 
-    status = cudaMemcpy(Pointer.to(inds.data), gvals.data, grams.nrows*Sizeof.FLOAT, cudaMemcpyDeviceToHost)
-    if (status != 0) throw new RuntimeException("GPUi2lexsort error4 %d" format (status)) 
+    status = cudaMemcpy(p1, ograms.data.withByteOffset(nrows*Sizeof.FLOAT), nrows*Sizeof.FLOAT, cudaMemcpyDeviceToHost)
+    if (status != 0) throw new RuntimeException("p3lexsortGPU error4 %d" format (status)) 
+    status = cudaMemcpy(p2, ograms.data, nrows*Sizeof.FLOAT, cudaMemcpyDeviceToHost)
+    if (status != 0) throw new RuntimeException("p3lexsortGPU error5 %d" format (status)) 
+    status = cudaMemcpy(p3, gvals.data, nrows*Sizeof.FLOAT, cudaMemcpyDeviceToHost)
+    if (status != 0) throw new RuntimeException("p3lexsortGPU error6 %d" format (status)) 
     ograms.free
     gvals.free
   }

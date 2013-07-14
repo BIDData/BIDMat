@@ -198,13 +198,13 @@ extern "C" {
     return fsort2d(pkeys, pvals, nrows, ncols);
   }
 
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_lsort
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_lsortk
   (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jint n) 
   {
     long long *pkeys = (long long *)getPointer(env, jpkeys);
     unsigned int *pvals = (unsigned int *)getPointer(env, jpvals);
 
-    return lsort(pkeys, pvals, n);
+    return lsortk(pkeys, pvals, n);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_fsortsizex
@@ -251,6 +251,15 @@ extern "C" {
     int *pkeys = (int *)getPointer(env, jpkeys);
 
     return i4sort(pkeys, ncols);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_i3sortk
+  (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jint n) 
+  {
+    int *pkeys = (int *)getPointer(env, jpkeys);
+    unsigned int *pvals = (unsigned int *)getPointer(env, jpvals);
+
+    return i3sortk(pkeys, pvals, n);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_stratify

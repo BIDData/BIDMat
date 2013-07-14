@@ -868,7 +868,7 @@ object GMat {
   	  			CUMAT.fsort2d(aa, vv, keys.nrows, colstodo)
   	  		} else {
   	  			CUMAT.embedmat(aa, kk, keys.nrows, colstodo)
-  	  			CUMAT.lsort(kk, vv, todo)
+  	  			CUMAT.lsortk(kk, vv, todo)
   	  			CUMAT.extractmat(aa, kk, keys.nrows, colstodo)
   	  		}
   	  		cudaMemcpy(Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), aa, todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
@@ -900,7 +900,7 @@ object GMat {
     		val todo = math.min(maxsize, nsize - ioff)
     		val colstodo = todo / keys.nrows
     		CUMAT.embedmat(keys.data.withByteOffset(ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
-    		CUMAT.lsort(kk, vals.data.withByteOffset(1L*ioff*Sizeof.INT), todo)
+    		CUMAT.lsortk(kk, vals.data.withByteOffset(1L*ioff*Sizeof.INT), todo)
     		CUMAT.extractmat(keys.data.withByteOffset(ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
     		ioff += maxsize
     	}
