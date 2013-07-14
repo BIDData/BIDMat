@@ -793,7 +793,7 @@ int lsortsizex(int N) {
 }
 
 
-int fsortx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tvals, 
+int fsort2dx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tvals, 
     int *ispine, bool * bflags, int nrows, int ncols) {
   int i;
   cudaError_t err;
