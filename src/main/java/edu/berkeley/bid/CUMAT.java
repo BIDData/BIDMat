@@ -44,6 +44,8 @@ public final class CUMAT {
     
     public static native int lsortk(Pointer A, Pointer B, int n);
     
+    public static native int dsortk(Pointer A, Pointer B, int n);
+    
     public static native int fsort2d(Pointer A, Pointer B, int nrows, int ncols);
     
     public static native int i4sort(Pointer A, int ncols);

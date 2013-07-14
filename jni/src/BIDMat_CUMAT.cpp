@@ -207,6 +207,15 @@ extern "C" {
     return lsortk(pkeys, pvals, n);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_dsortk
+  (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jint n) 
+  {
+    double *pkeys = (double *)getPointer(env, jpkeys);
+    unsigned int *pvals = (unsigned int *)getPointer(env, jpvals);
+
+    return dsortk(pkeys, pvals, n);
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_fsortsizex
   (JNIEnv *env, jobject obj, jint n) 
   {
