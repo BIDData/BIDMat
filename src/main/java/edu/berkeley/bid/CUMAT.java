@@ -42,19 +42,19 @@ public final class CUMAT {
     
     public static native int extractmat(Pointer A, Pointer B, int nrows, int ncols);
     
-    public static native int rsort(Pointer A, Pointer B, int n);
+    public static native int lsort(Pointer A, Pointer B, int n);
     
-    public static native int rsort2(Pointer A, Pointer B, int nrows, int ncols);
+    public static native int fsort2d(Pointer A, Pointer B, int nrows, int ncols);
     
-    public static native int rsort4(Pointer A, int ncols);
+    public static native int i4sort(Pointer A, int ncols);
     
-    public static native int rsortsizex(int n);
+    public static native int fsortsizex(int n);
     
-    public static native int rsortsizey(int n);
+    public static native int lsortsizex(int n);
     
-    public static native int rsortx(Pointer A, Pointer B, Pointer C, Pointer D, Pointer E, Pointer F, int nrows, int ncols);
+    public static native int fsortx(Pointer A, Pointer B, Pointer C, Pointer D, Pointer E, Pointer F, int nrows, int ncols);
     
-    public static native int rsorty(Pointer A, Pointer B, Pointer C, Pointer D, Pointer E, Pointer F, int n);
+    public static native int lsortx(Pointer A, Pointer B, Pointer C, Pointer D, Pointer E, Pointer F, int n);
     
     public static native int stratify(Pointer strata, int n, Pointer a,  Pointer b, Pointer bi, int stride);
     

@@ -31,19 +31,19 @@ int embedmat(float *a, long long *b, int nrows, int ncols);
 
 int extractmat(float *a, long long *b, int nrows, int ncols);
 
-int rsort(long long *pkeys, unsigned int *pvals, int n, int dev);
+int lsort(long long *pkeys, unsigned int *pvals, int n, int dev);
 
-int rsortsizex(int N);
+int fsortsizex(int N);
 
-int rsortsizey(int N);
+int lsortsizex(int N);
 
-int rsortx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tvals, int *ispine, bool *bflags, int nrows, int ncols);
+int fsortx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tvals, int *ispine, bool *bflags, int nrows, int ncols);
 
-int rsorty(long long *pkeys, unsigned int *pvals, long long *tkeys, unsigned int *tvals, int *ispine, bool *bflags, int n);
+int lsortx(long long *pkeys, unsigned int *pvals, long long *tkeys, unsigned int *tvals, int *ispine, bool *bflags, int n);
 
-int rsort2(float *pkeys, unsigned int *pvals, int nrows, int ncols);
+int fsort2d(float *pkeys, unsigned int *pvals, int nrows, int ncols);
 
-int rsort4(int *pkeys, int ncols);
+int i4sort(int *pkeys, int ncols);
 
 int stratify(float *strata, int n, float *a, float *b, unsigned int *bi, int stride);
 

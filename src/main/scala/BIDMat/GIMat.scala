@@ -46,7 +46,7 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     this
   }
   
-  def GIop(a:GIMat, oldmat:GIMat, op:Int):GIMat = {
+  def GIop(a:GIMat, oldmat:Mat, op:Int):GIMat = {
     if ((nrows == a.nrows && ncols == a.ncols) ||
         (nrows == a.nrows && (a.ncols == 1 || ncols == 1)) ||
         (ncols == a.ncols && (a.nrows == 1 || nrows == 1)) ||
@@ -127,19 +127,24 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
 
 }
 
-class GIPair (val omat:GIMat, val mat:GIMat){
+class GIPair (val omat:Mat, val mat:GIMat) extends Pair{
 
-    def + (a : GIMat) = mat.GIop(a, omat, 0)
-    def - (a : GIMat) = mat.GIop(a, omat, 1)
-    def *@ (a : GIMat) = mat.GIop(a, omat, 2)
-    def / (a : GIMat) = mat.GIop(a, omat, 3)
-    def > (b : GIMat) = mat.GIop(b, omat, 4)
-    def < (b : GIMat) = mat.GIop(b, omat, 5)
-    def == (b : GIMat) = mat.GIop(b, omat, 6)
-    def === (b : GIMat) = mat.GIop(b, omat, 6)
-    def >= (b : GIMat) = mat.GIop(b, omat, 7)
-    def <= (b : GIMat) = mat.GIop(b, omat, 8)
-    def != (b : GIMat) = mat.GIop(b, omat, 9)
+	override def t = {
+			val out = GIMat.newOrCheckGIMat(mat.ncols, mat.nrows, omat, mat.GUID, "pt".##)
+			CUMAT.transpose(mat.data, mat.nrows, out.data, mat.ncols, mat.nrows, mat.ncols)
+			out
+	}
+	def + (a : GIMat) = mat.GIop(a, omat, 0)
+	def - (a : GIMat) = mat.GIop(a, omat, 1)
+	def *@ (a : GIMat) = mat.GIop(a, omat, 2)
+	def / (a : GIMat) = mat.GIop(a, omat, 3)
+	def > (b : GIMat) = mat.GIop(b, omat, 4)
+	def < (b : GIMat) = mat.GIop(b, omat, 5)
+	def == (b : GIMat) = mat.GIop(b, omat, 6)
+	def === (b : GIMat) = mat.GIop(b, omat, 6)
+	def >= (b : GIMat) = mat.GIop(b, omat, 7)
+	def <= (b : GIMat) = mat.GIop(b, omat, 8)
+	def != (b : GIMat) = mat.GIop(b, omat, 9)
 }
 
 
