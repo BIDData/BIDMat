@@ -782,6 +782,26 @@ int extractmat(float *a, long long *b, int nrows, int ncols) {
 #include <thrust/device_ptr.h>
 #include <thrust/reverse.h>
 
+int fsort2d(float *pkeys, unsigned int *pvals, int nrows, int ncols) {
+  for (int i = 0; i < ncols; i++) {
+    thrust::device_ptr<float> keys(pkeys+i*nrows);
+    thrust::device_ptr<unsigned int> vals(pvals+i*nrows);
+    thrust::sort_by_key(keys, keys + nrows, vals);
+  }
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+ 
+int lsort(long long *pkeys, unsigned int *pvals, int N) {
+  thrust::device_ptr<long long> keys(pkeys);
+  thrust::device_ptr<unsigned int> vals(pvals);
+  thrust::sort_by_key(keys, keys + N, vals);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
 int fsortsizex(int N) {
   thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortingEnactor<float,unsigned int> sorter(N);
   return sorter.SpineElements();
@@ -826,27 +846,6 @@ int lsortx(long long *pkeys, unsigned int *pvals, long long *tkeys, unsigned int
   storage.d_from_alt_storage = bflags;
 
   sorter.EnactSort(storage);
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  return err;
-}
-
-int fsort2d(float *pkeys, unsigned int *pvals, int nrows, int ncols) {
-  for (int i = 0; i < ncols; i++) {
-    thrust::device_ptr<float> keys(pkeys+i*nrows);
-    thrust::device_ptr<unsigned int> vals(pvals+i*nrows);
-    thrust::sort_by_key(keys, keys + nrows, vals);
-  }
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  return err;
-}
- 
-int lsort(long long *pkeys, unsigned int *pvals, int N, int dev) {
-  cudaSetDevice(dev);
-  thrust::device_ptr<long long> keys(pkeys);
-  thrust::device_ptr<unsigned int> vals(pvals);
-  thrust::sort_by_key(keys, keys + N, vals);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
