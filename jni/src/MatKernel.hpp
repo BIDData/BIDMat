@@ -33,6 +33,8 @@ int extractmat(float *a, long long *b, int nrows, int ncols);
 
 int lsortk(long long *pkeys, unsigned int *pvals, int n);
 
+int dsortk(double *pkeys, unsigned int *pvals, int n);
+
 int fsortsizex(int N);
 
 int lsortsizex(int N);

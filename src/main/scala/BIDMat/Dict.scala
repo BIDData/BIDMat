@@ -215,7 +215,9 @@ object Dict {
 
 }
 
-class IDict(val grams:IMat) { 
+class IDict(val grams:IMat) {
+  
+  var useGPUsort = true;
 
   val length = grams.nrows
   
@@ -226,9 +228,10 @@ class IDict(val grams:IMat) {
   var perm:IMat = null
 
   def makeSorted:IMat = { 
-    if (sortedMat.asInstanceOf[AnyRef] == null) { 
-      perm = sortlex(grams) 
-      sortedMat = grams(perm, ?)
+    if (sortedMat.asInstanceOf[AnyRef] == null) {
+    	sortedMat = grams.copy
+    	perm = icol(0->grams.nrows)
+    	GIMat.lexsort2or3cols(sortedMat, perm) 
     }
     sortedMat
   }

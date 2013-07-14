@@ -266,6 +266,28 @@ object GIMat {
     ograms.free
     gvals.free
   }
+  
+  def lexsort2or3cols(mat:IMat, inds:IMat) {
+    import MatFunctions._
+  	if (if (Mat.hasCUDA > 0) {
+  		val (dmy, freebytes, allbytes) = SciFunctions.GPUmem
+  		if ((mat.length+inds.length)*12 < freebytes) {
+  			if (mat.ncols == 2) {
+  				GIMat.i2lexsortGPU(mat, inds)
+  				false
+  			} else if (mat.ncols == 3) {
+  				GIMat.i3lexsortGPU(mat, inds)
+  				false
+  			} else true
+  		} else true
+  	} else true) {
+  		val perm = MatFunctions.sortlex(mat)
+  		val indsp = inds(perm)
+  		inds(?) = indsp
+  		val matp = mat(perm, ?)
+  		mat(?) = matp(?)
+  	}
+  }
 
   def newOrCheckGIMat(nr:Int, nc:Int, oldmat:Mat):GIMat = {
  		if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows == 0 && oldmat.ncols == 0)) {
