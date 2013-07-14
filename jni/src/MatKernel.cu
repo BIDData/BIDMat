@@ -782,18 +782,18 @@ int extractmat(float *a, long long *b, int nrows, int ncols) {
 #include <thrust/device_ptr.h>
 #include <thrust/reverse.h>
 
-int rsortsizex(int N) {
+int fsortsizex(int N) {
   thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortingEnactor<float,unsigned int> sorter(N);
   return sorter.SpineElements();
 }
 
-int rsortsizey(int N) {
+int lsortsizex(int N) {
   thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortingEnactor<long long,unsigned int> sorter(N);
   return sorter.SpineElements();
 }
 
 
-int rsortx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tvals, 
+int fsortx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tvals, 
     int *ispine, bool * bflags, int nrows, int ncols) {
   int i;
   cudaError_t err;
@@ -814,8 +814,7 @@ int rsortx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tvals,
   return err;
 }
 
-
-int rsorty(long long *pkeys, unsigned int *pvals, long long *tkeys, unsigned int *tvals, int *ispine, bool * bflags, int N) {
+int lsortx(long long *pkeys, unsigned int *pvals, long long *tkeys, unsigned int *tvals, int *ispine, bool * bflags, int N) {
   thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortingEnactor<long long,unsigned int> sorter(N);
   thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortStorage<long long,unsigned int>    storage;
 
@@ -831,23 +830,23 @@ int rsorty(long long *pkeys, unsigned int *pvals, long long *tkeys, unsigned int
   cudaError_t err = cudaGetLastError();
   return err;
 }
- 
-int rsort(long long *pkeys, unsigned int *pvals, int N, int dev) {
-  cudaSetDevice(dev);
-  thrust::device_ptr<long long> keys(pkeys);
-  thrust::device_ptr<unsigned int> vals(pvals);
-  thrust::sort_by_key(keys, keys + N, vals);
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  return err;
-}
 
-int rsort2(float *pkeys, unsigned int *pvals, int nrows, int ncols) {
+int fsort2d(float *pkeys, unsigned int *pvals, int nrows, int ncols) {
   for (int i = 0; i < ncols; i++) {
     thrust::device_ptr<float> keys(pkeys+i*nrows);
     thrust::device_ptr<unsigned int> vals(pvals+i*nrows);
     thrust::sort_by_key(keys, keys + nrows, vals);
   }
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+ 
+int lsort(long long *pkeys, unsigned int *pvals, int N, int dev) {
+  cudaSetDevice(dev);
+  thrust::device_ptr<long long> keys(pkeys);
+  thrust::device_ptr<unsigned int> vals(pvals);
+  thrust::sort_by_key(keys, keys + N, vals);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
@@ -874,9 +873,8 @@ struct cmp_lllint_key
   }
 };
 
-int rsort4(int *pkeys0, int N) {
+int i4sort(int *pkeys0, int N) {
   lllint *pkeys = (lllint *)pkeys0;
-  //  cudaSetDevice(dev);
   thrust::device_ptr<lllint> keys(pkeys);
   thrust::sort(keys, keys + N, cmp_lllint_key());
   cudaDeviceSynchronize();
