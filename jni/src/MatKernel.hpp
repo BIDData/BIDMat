@@ -31,7 +31,7 @@ int embedmat(float *a, long long *b, int nrows, int ncols);
 
 int extractmat(float *a, long long *b, int nrows, int ncols);
 
-int lsort(long long *pkeys, unsigned int *pvals, int n, int dev);
+int lsort(long long *pkeys, unsigned int *pvals, int n);
 
 int fsortsizex(int N);
 
