@@ -312,7 +312,7 @@ object IDict {
     import MatFunctions._
   	if (if (useGPUsort && Mat.hasCUDA > 0) {
   		val (dmy, freebytes, allbytes) = SciFunctions.GPUmem
-  		if ((mat.length+inds.length)*12 < freebytes) {
+  		if ((mat.length+inds.length)*12L < freebytes) {
   			if (mat.ncols == 2) {
   				GIMat.i2lexsortGPU(mat, inds, desc)
   				false
