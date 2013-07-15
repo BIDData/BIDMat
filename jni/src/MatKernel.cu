@@ -744,7 +744,7 @@ __global__ void __embedmat(float *a, long long *b, int nrows, int ncols) {
     if (vi & signbit) {
       vi = -(vi & mag);
     }
-    b[i] = (long long)vi + ((long long)(tid+1))<<32;
+    b[i] = (long long)vi + ((long long)(i+1))<<32;
   }
 }
 
