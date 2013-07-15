@@ -643,10 +643,15 @@ int transpose(float *in, int instride, float *out, int outstride, int nrows, int
   const dim3 griddims(32,32);
   const dim3 blockdims(BLOCKDIM,16,1);
   cudaError_t err;
+  int dev = -1;
+  cudaGetDevice(&dev);
   __transpose<<<griddims,blockdims>>>(in, instride, out, outstride, nrows, ncols); 
   cudaDeviceSynchronize();
   err = cudaGetLastError();
-  if (err != cudaSuccess) {fprintf(stderr, "cuda error in transpose"); return err;}
+  if (err != cudaSuccess) {
+    fprintf(stderr, "cuda error device %d in transpose of %dx%d matrix", dev, nrows, ncols); 
+    return err;
+  }
   return 0;
 }
 
