@@ -1138,6 +1138,35 @@ object GMat {
   	Mat.nflops += 3L * c.nrows * c.ncols * a.ncols
   	c
   }
+  
+  def sortdown2(a:DMat) = _sort2(a, true)
+  
+  def _sort2(a:DMat, desc:Boolean):(DMat, IMat) = {
+    if (a.ncols != 1) throw new RuntimeException("_sort2 works only on column data")
+    val outv = DMat.newOrCheckDMat(a.nrows, a.ncols, null, a.GUID, "_sort2_1".hashCode)
+    val outi = IMat.newOrCheckIMat(a.nrows, a.ncols, null, a.GUID, "_sort2_2".hashCode)
+    if (Mat.hasCUDA > 0) {
+    	val (dmy, freebytes, allbytes) = SciFunctions.GPUmem
+    	if (a.length*12 < freebytes) {
+    		var i = 0; while (i < a.nrows) {outi(i) = i; i += 1}
+    		val gv = GMat(a.nrows, a.ncols)
+    		val gi = GIMat(outi)
+    		var status = cudaMemcpy(gv.data, Pointer.to(a.data), a.nrows*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyHostToDevice)
+    		if (status != 0) throw new RuntimeException("sortGPU copy v error %d" format status)    		
+    		CUMAT.dsortk(gv.data, gi.data, a.nrows, if (desc) 1 else 0)
+    		status = cudaMemcpy(Pointer.to(outv.data), gv.data, a.nrows*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyDeviceToHost)
+    		if (status != 0) throw new RuntimeException("sortGPU copy v error %d" format status)
+    		outi <-- gi
+    		gi.free
+    		gv.free
+    	} else {
+    	  DenseMat.sort2(a, 1, false, outv, outi)
+    	}
+    } else {
+    	DenseMat.sort2(a, 1, false, outv, outi)
+    }
+    (outv, outi)
+  }
 
 
   def newOrCheckGMat(nr:Int, nc:Int, outmat:Mat):GMat = {
