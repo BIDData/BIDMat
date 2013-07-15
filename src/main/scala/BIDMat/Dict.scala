@@ -1,6 +1,7 @@
 package BIDMat
 import scala.collection.mutable.HashMap
 import MatFunctions._
+import edu.berkeley.bid.CUMAT
 
 class Dict(val cstr:CSMat) { 
 
@@ -216,8 +217,6 @@ object Dict {
 }
 
 class IDict(val grams:IMat) {
-  
-  var useGPUsort = true;
 
   val length = grams.nrows
   
@@ -231,7 +230,7 @@ class IDict(val grams:IMat) {
     if (sortedMat.asInstanceOf[AnyRef] == null) {
     	sortedMat = grams.copy
     	perm = icol(0->grams.nrows)
-    	GIMat.lexsort2or3cols(sortedMat, perm) 
+    	IDict.lexsort2or3cols(sortedMat, perm) 
     }
     sortedMat
   }
@@ -280,6 +279,8 @@ class IDict(val grams:IMat) {
 
 object IDict {
   
+  var useGPUsort = true;
+  
   def apply(grams:IMat, counts:DMat):IDict = {
     val out = new IDict(grams)
     out.counts = counts
@@ -298,18 +299,43 @@ object IDict {
   def dictFromData(grams:IMat, counts:DMat):IDict = {
     val (outy, ia, ib) = IDict.uniquerows(grams)
     val countsy = accum(ib, if (counts == null) drow(1.0) else counts, outy.nrows, 1)
-    val (countsz, ip) = sortdown2(countsy)
+    val (countsz, ip) = GMat.sortdown2(countsy)
     IDict(outy(ip, ?), countsz)
   }
+
   
   def dictFromData(grams:IMat):IDict = dictFromData(grams, null)
+  
+  def lexsort2or3cols(mat:IMat, inds:IMat) = _lexsort2or3cols(mat, inds, false) 
+  
+  def _lexsort2or3cols(mat:IMat, inds:IMat, desc:Boolean) {
+    import MatFunctions._
+  	if (if (useGPUsort && Mat.hasCUDA > 0) {
+  		val (dmy, freebytes, allbytes) = SciFunctions.GPUmem
+  		if ((mat.length+inds.length)*12 < freebytes) {
+  			if (mat.ncols == 2) {
+  				GIMat.i2lexsortGPU(mat, inds, desc)
+  				false
+  			} else if (mat.ncols == 3) {
+  				GIMat.i3lexsortGPU(mat, inds, desc)
+  				false
+  			} else true
+  		} else true
+  	} else true) {
+  		val perm = if (desc) MatFunctions.sortlexdown(mat) else MatFunctions.sortlex(mat)
+  		val indsp = inds(perm)
+  		inds <-- indsp
+  		val matp = mat(perm, ?)
+  		mat <-- matp
+  	}
+  }
   
   def uniquerows(a:IMat):(IMat, IMat, IMat) = {
     val iptrs = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "uniquerows".hashCode)
     val iss = IMat.newOrCheckIMat(a.nrows, a.ncols, null, a.GUID, "uniquerows_1".hashCode)
     iss <-- a
     var i = 0; while (i < iptrs.nrows) {iptrs(i) = i; i += 1}
-    GIMat.lexsort2or3cols(iss, iptrs)
+    lexsort2or3cols(iss, iptrs)
     def compeq(i:Int, j:Int):Boolean = {
       var k:Int = 0;
       while (k < a.ncols && (a(i,k) == a(j,k))) {
