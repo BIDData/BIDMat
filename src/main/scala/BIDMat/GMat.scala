@@ -1149,7 +1149,7 @@ object GMat {
     	val (dmy, freebytes, allbytes) = SciFunctions.GPUmem
     	if (a.length*12 < freebytes) {
     		var i = 0; while (i < a.nrows) {outi(i) = i; i += 1}
-    		val gv = GMat(a.nrows, a.ncols)
+    		val gv = GMat(a.nrows, 2*a.ncols)
     		val gi = GIMat(outi)
     		var status = cudaMemcpy(gv.data, Pointer.to(a.data), a.nrows*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyHostToDevice)
     		if (status != 0) throw new RuntimeException("sortGPU copy v error %d" format status)    		
