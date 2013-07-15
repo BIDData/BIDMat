@@ -1056,6 +1056,36 @@ object FMat {
   val vecMaxFun = (vecMax _)
   val vecMinFun = (vecMin _)
   
+  def lexcomp(a:FMat, out:IMat):(Int, Int) => Int = {
+  	var k = 0
+  	val aa = a.data
+  	val nr = a.nrows
+  	val ii = out.data
+  	(i:Int, j:Int) => {
+  		val ip = ii(i)
+  		val jp = ii(j)
+  		var c0 = 0
+  		while (k < a.ncols && aa(ip+k*nr) == aa(jp+k*nr)) {
+  			k += 1
+  		}
+  		if (k == a.ncols) {
+  		  0
+  		} else {
+  		  if (aa(ip+k*nr) < aa(jp+k*nr)) {
+  		    -1
+  		  } else {
+  		    1
+  		  }
+  		}
+  	}
+  }
+  
+  def sortlex(a:FMat, asc:Boolean):IMat = {
+  	val out = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "sortlex".hashCode)
+  	val compp = lexcomp(a, out)
+  	DenseMat._sortlex(a, asc, out, compp)
+  }
+  
   val gtFun = (x:Float, y:Float) => if (x > y) 1.0f else 0.0f
   val geFun = (x:Float, y:Float) => if (x >= y) 1.0f else 0.0f
   val ltFun = (x:Float, y:Float) => if (x < y) 1.0f else 0.0f
