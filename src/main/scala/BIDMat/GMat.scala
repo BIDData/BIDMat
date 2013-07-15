@@ -1147,7 +1147,7 @@ object GMat {
     val outi = IMat.newOrCheckIMat(a.nrows, a.ncols, null, a.GUID, "_sort2_2".hashCode)
     if (Mat.hasCUDA > 0) {
     	val (dmy, freebytes, allbytes) = SciFunctions.GPUmem
-    	if (a.length*12 < freebytes) {
+    	if (a.length*26L < freebytes) {
     		var i = 0; while (i < a.nrows) {outi(i) = i; i += 1}
     		val gv = GMat(a.nrows, 2*a.ncols)
     		val gi = GIMat(outi)
