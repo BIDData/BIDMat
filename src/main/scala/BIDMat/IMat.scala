@@ -610,12 +610,42 @@ object IMat {
     0
   }
   
- def vecMin(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
+  def vecMin(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
     var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
     while (ci < cend) {
       c(ci) = math.min(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc
     }
     0
+  }
+ 
+  def lexcomp(a:IMat, out:IMat):(Int, Int) => Int = {
+  	var k = 0
+  	val aa = a.data
+  	val nr = a.nrows
+  	val ii = out.data
+  	(i:Int, j:Int) => {
+  		val ip = ii(i)
+  		val jp = ii(j)
+  		var c0 = 0
+  		while (k < a.ncols && aa(ip+k*nr) == aa(jp+k*nr)) {
+  			k += 1
+  		}
+  		if (k == a.ncols) {
+  		  0
+  		} else {
+  		  if (aa(ip+k*nr) < aa(jp+k*nr)) {
+  		    -1
+  		  } else {
+  		    1
+  		  }
+  		}
+  	}
+  }
+  
+  def sortlex(a:IMat, asc:Boolean):IMat = {
+  	val out = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "sortlex".hashCode)
+  	val compp = lexcomp(a, out)
+  	DenseMat._sortlex(a, asc, out, compp)
   }
  
   val vecAddFun = (vecAdd _) 

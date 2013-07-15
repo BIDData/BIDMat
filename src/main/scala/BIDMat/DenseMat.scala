@@ -1361,9 +1361,35 @@ object DenseMat {
     }
   }
   
+  def lexcomp[T](a:DenseMat[T], out:IMat)(implicit ordering:Ordering[T]):(Int, Int) => Int = {
+  	var k = 0
+  	val aa = a.data
+  	val nr = a.nrows
+  	val ii = out.data
+  	(i:Int, j:Int) => {
+  		val ip = ii(i)
+  		val jp = ii(j)
+  		var c0 = 0
+  		while (k < a.ncols && c0 == 0) {
+  			c0 = ordering.compare(aa(ip+k*nr), aa(jp+k*nr))
+  			k += 1
+  		}
+  		if (c0 != 0) {
+  			c0
+  		} else {
+  			ip compare jp
+  		}
+  	}
+  }
+   
   def sortlex[@specialized(Double, Float, Int, Byte) T](a:DenseMat[T], asc:Boolean)(implicit ordering:Ordering[T]):IMat = {
+  	val out = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "sortlex".hashCode)
+  	val compp = lexcomp(a, out)
+  	_sortlex(a, asc, out, compp)
+  }
+  
+  def _sortlex[@specialized(Double, Float, Int, Byte) T](a:DenseMat[T], asc:Boolean, out:IMat, compp:(Int, Int)=>Int)(implicit ordering:Ordering[T]):IMat = {
     import BIDMat.Sorting._
-    val out = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "sortlex".hashCode)
     val ii = out.data
     val aa = a.data
     val nr = a.nrows
@@ -1372,30 +1398,16 @@ object DenseMat {
       out.data(i) = i
       i += 1
     }
-    def comp(i:Int, j:Int):Int = {
-      var k = 0
-      val ip = ii(i)
-      val jp = ii(j)
-      var c0 = 0
-      while (k < a.ncols && c0 == 0) {
-        c0 = ordering.compare(aa(ip+k*nr), aa(jp+k*nr))
-        k += 1
-      }
-      if (c0 != 0) {
-        c0
-      } else {
-        ip compare jp
-      }
-    }
+ 
     def swap(i:Int, j:Int):Unit = {
       val tmp = ii(i)
       ii(i) = ii(j)
       ii(j) = tmp
     }
     if (asc) {
-      quickSort(comp, swap, 0, a.nrows)
+      quickSort(compp, swap, 0, a.nrows)
     } else {
-      quickSort((i:Int,j:Int)=>comp(j,i), swap, 0, a.nrows)
+      quickSort((i:Int,j:Int)=>compp(j,i), swap, 0, a.nrows)
     }
     out
   }
