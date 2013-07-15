@@ -187,7 +187,7 @@ object GIMat {
     p4lexsortGPU(p1, p2, p3, p4, inds.nrows, desc)
   }
   
-  def p4lexsortGPU(p1:Pointer, p2:Pointer, p3:Pointer, p4:Pointer, nrows:Int, desc:Boolean=false) = {
+  def p4lexsortGPU(p1:Pointer, p2:Pointer, p3:Pointer, p4:Pointer, nrows:Int, desc:Boolean) = {
     val ggrams = GIMat(nrows, 4)
     var status = cudaMemcpy(ggrams.data, p1, nrows*Sizeof.FLOAT, cudaMemcpyHostToDevice)
     if (status != 0) throw new RuntimeException("p4lexsortGPU error1 %d" format (status)) 
@@ -232,7 +232,7 @@ object GIMat {
    * Useful for creating sparse matrices
    */
   
-  def i2lexsortGPU(col1:IMat, col2:IMat, fvals:FMat, desc:Boolean= false) = {
+  def i2lexsortGPU(col1:IMat, col2:IMat, fvals:FMat, desc:Boolean) = {
     if (col1.nrows != fvals.nrows || col2.nrows != fvals.nrows) throw new RuntimeException("i2lexsortGPU mismatched dims")
     val p1 = Pointer.to(col1.data)
     val p2 = Pointer.to(col2.data) 
@@ -243,7 +243,7 @@ object GIMat {
   /*
    * This is not strictly a 3-column lex sort, only the first two columns are used, and the third is just permuted
    */
-  def p3lexsortGPU(p1:Pointer, p2:Pointer, p3:Pointer, nrows:Int, desc:Boolean=false) = {
+  def p3lexsortGPU(p1:Pointer, p2:Pointer, p3:Pointer, nrows:Int, desc:Boolean) = {
     val ggrams = GIMat(nrows, 2)
     val gvals = GIMat(nrows, 1)
     var status = cudaMemcpy(ggrams.data, p2, nrows*Sizeof.FLOAT, cudaMemcpyHostToDevice)
@@ -267,21 +267,23 @@ object GIMat {
     gvals.free
   }
   
-  def lexsort2or3cols(mat:IMat, inds:IMat) {
+  def lexsort2or3cols(mat:IMat, inds:IMat) = _lexsort2or3cols(mat, inds, false) 
+  
+  def _lexsort2or3cols(mat:IMat, inds:IMat, desc:Boolean) {
     import MatFunctions._
   	if (if (Mat.hasCUDA > 0) {
   		val (dmy, freebytes, allbytes) = SciFunctions.GPUmem
   		if ((mat.length+inds.length)*12 < freebytes) {
   			if (mat.ncols == 2) {
-  				GIMat.i2lexsortGPU(mat, inds, false)
+  				GIMat.i2lexsortGPU(mat, inds, desc)
   				false
   			} else if (mat.ncols == 3) {
-  				GIMat.i3lexsortGPU(mat, inds, false)
+  				GIMat.i3lexsortGPU(mat, inds, desc)
   				false
   			} else true
   		} else true
   	} else true) {
-  		val perm = MatFunctions.sortlex(mat)
+  		val perm = if (desc) MatFunctions.sortlexdown(mat) else MatFunctions.sortlex(mat)
   		val indsp = inds(perm)
   		inds <-- indsp
   		val matp = mat(perm, ?)
