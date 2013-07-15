@@ -332,10 +332,10 @@ object IDict {
   
   def uniquerows(a:IMat):(IMat, IMat, IMat) = {
     val iss = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "Dict.uniquerows".hashCode)
-    val outv = IMat.newOrCheckIMat(a.nrows, a.ncols, null, a.GUID, "Dict.uniquerows_1".hashCode)
-    outv <-- a
+    val sortv = IMat.newOrCheckIMat(a.nrows, a.ncols, null, a.GUID, "Dict.uniquerows_1".hashCode)
+    sortv <-- a
     var i = 0; while (i < iss.nrows) {iss(i) = i; i += 1}
-    lexsort2or3cols(outv, iss)
+    lexsort2or3cols(sortv, iss)
     def compeq(i:Int, j:Int):Boolean = {
       var k:Int = 0;
       while (k < a.ncols && (a(i,k) == a(j,k))) {
@@ -356,12 +356,13 @@ object IDict {
       i += 1
     }
     val bptrs = IMat.newOrCheckIMat(lastpos+1, 1, null, a.GUID, "Dict.uniquerows_3".hashCode)
+    val outv = IMat.newOrCheckIMat(lastpos+1, a.ncols, null, a.GUID, "Dict.uniquerows_4".hashCode)
     i = iss.length
     while (i > 0) {
       bptrs.data(iptrs.data(i-1)) = i-1
       i = i - 1
     }
-    (outv, bptrs, iptrs)    
+    (a(bptrs, ?), bptrs, iptrs)    
   }  
   
   def union(dicts:Array[IDict]):IDict = {
