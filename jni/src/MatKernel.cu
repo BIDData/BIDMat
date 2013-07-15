@@ -154,7 +154,7 @@ __global__ void __apply_gfun(float *A, float *B, int N, int opn) {
 
 
 void setsizes(int N, dim3 *gridp, int *nthreadsp) {
-  int nblocks = 32;
+  int nblocks = 1;
   int nthreads = 1;
   while (nblocks * nthreads < N) {
     if (nblocks < 16) {
@@ -736,22 +736,27 @@ int reducebin1op(int nrows, int ncols, float *A, float *B, float *C, int opb, in
 
 __global__ void __embedmat(float *a, long long *b, int nrows, int ncols) {
   int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  const int signbit = 0x80000000;
+  const int mag =     0x7fffffff;
   for (int i = tid; i < nrows*ncols; i += blockDim.x*gridDim.x*gridDim.y) {
     float v = a[i];
     int vi = *((int *)&v);
-    int mask = (vi >> 31) | 0x80000000;
-    vi = vi ^ mask;
-    b[i] = (long long)vi + (((long long)(i/nrows))<<32);
+    if (vi & signbit) {
+      vi = -(vi & mag);
+    }
+    b[i] = (long long)vi + ((long long)(tid+1))<<32;
   }
 }
 
 __global__ void __extractmat(float *a, long long *b, int nrows, int ncols) {
   int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  const int signbit = 0x80000000;
+  const int mag =     0x7fffffff;
   for (int i = tid; i < nrows*ncols; i += blockDim.x*gridDim.x*gridDim.y) {
-    long long v = b[i];
-    int vi = *((int *)&v);
-    int mask = (~(vi >> 31)) | 0x80000000;
-    vi = vi ^ mask;
+    int vi = *((int *)&b[i]);
+    if (vi & signbit) {
+      vi = -(vi & mag);
+    }
     a[i] = *((float *)&vi);
   }
 }
