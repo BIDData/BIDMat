@@ -309,7 +309,7 @@ object IDict {
   
   def dictFromData(grams:IMat):IDict = dictFromData(grams, null, false)
   
-  def sortlex2or3cols(mat:IMat, inds:IMat) = _sortlex2or3cols(mat, inds, false) 
+  def sortlex2or3cols(mat:IMat, inds:IMat) = _sortlex2or3cols(mat, inds, true) 
   
   def _sortlex2or3cols(mat:IMat, inds:IMat, asc:Boolean) {
     import MatFunctions._
