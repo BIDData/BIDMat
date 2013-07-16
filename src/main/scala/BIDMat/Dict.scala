@@ -400,7 +400,7 @@ object IDict {
   			k += 1
   		}
   		if (k == nc) {
-  			i compare j
+  			0
   		} else {
   			if (aa(i+k*nra) < bb(j+k*nrb)) {
   				-1
