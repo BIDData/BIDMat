@@ -488,7 +488,8 @@ object IDict {
       val c = ccomp(i,j) 
       if (c <= 0) {
         i += 1
-      } else if (c >= 0) {
+      } 
+      if (c >= 0) {
         j += 1
       } 
       nout += 1
