@@ -640,7 +640,9 @@ __global__ void __transpose(float *in, int instride, float *out, int outstride, 
 }
 
 int transpose(float *in, int instride, float *out, int outstride, int nrows, int ncols) {
-  const dim3 griddims(32,32);
+  int gridx = min(32, 1+(nrows-1)/256);
+  int gridy = min(32, 1+(ncols-1)/256);
+  const dim3 griddims(gridx, gridy, 1);
   const dim3 blockdims(BLOCKDIM,16,1);
   cudaError_t err;
   int dev = -1;
