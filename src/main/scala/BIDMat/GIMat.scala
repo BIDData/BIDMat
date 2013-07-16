@@ -189,31 +189,28 @@ object GIMat {
   
   def p4lexsortGPU(p1:Pointer, p2:Pointer, p3:Pointer, p4:Pointer, nrows:Int, asc:Boolean) = {
     val ggrams = GIMat(nrows, 4)
-    Mat.synchronized {
-    	var status = cudaMemcpy(ggrams.data, p1, nrows*Sizeof.FLOAT, cudaMemcpyHostToDevice)
-    	if (status != 0) throw new RuntimeException("p4lexsortGPU error1 %d" format (status)) 
-    	status = cudaMemcpy(ggrams.data.withByteOffset(nrows*Sizeof.FLOAT), p2, nrows*Sizeof.FLOAT, cudaMemcpyHostToDevice)
-    	if (status != 0) throw new RuntimeException("p4lexsortGPU error2 %d" format (status))
-    	status = cudaMemcpy(ggrams.data.withByteOffset(nrows*2*Sizeof.FLOAT), p3, nrows*Sizeof.FLOAT, cudaMemcpyHostToDevice)
-    	if (status != 0) throw new RuntimeException("p4lexsortGPU error3 %d" format (status))
-    	status = cudaMemcpy(ggrams.data.withByteOffset(nrows*3*Sizeof.FLOAT), p4, nrows*Sizeof.FLOAT, cudaMemcpyHostToDevice)
-    	if (status != 0) throw new RuntimeException("p4lexsortGPU error4 %d" format (status))
-    }
+    var status = cudaMemcpy(ggrams.data, p1, nrows*Sizeof.FLOAT, cudaMemcpyHostToDevice)
+    if (status != 0) throw new RuntimeException("p4lexsortGPU error1 %d" format (status)) 
+    status = cudaMemcpy(ggrams.data.withByteOffset(nrows*Sizeof.FLOAT), p2, nrows*Sizeof.FLOAT, cudaMemcpyHostToDevice)
+    if (status != 0) throw new RuntimeException("p4lexsortGPU error2 %d" format (status))
+    status = cudaMemcpy(ggrams.data.withByteOffset(nrows*2*Sizeof.FLOAT), p3, nrows*Sizeof.FLOAT, cudaMemcpyHostToDevice)
+    if (status != 0) throw new RuntimeException("p4lexsortGPU error3 %d" format (status))
+    status = cudaMemcpy(ggrams.data.withByteOffset(nrows*3*Sizeof.FLOAT), p4, nrows*Sizeof.FLOAT, cudaMemcpyHostToDevice)
+    if (status != 0) throw new RuntimeException("p4lexsortGPU error4 %d" format (status))
     val ggramst = ggrams.t
     ggrams.free
     CUMAT.i4sort(ggramst.data, nrows, if (asc) 1 else 0)
     val ograms = ggramst.t
     ggramst.free
-    Mat.synchronized {
-    	var status = cudaMemcpy(p1, ograms.data, nrows*Sizeof.FLOAT, cudaMemcpyDeviceToHost)
-    	if (status != 0) throw new RuntimeException("p4lexsortGPU error5 %d" format (status)) 
-    	status = cudaMemcpy(p2, ograms.data.withByteOffset(nrows*Sizeof.FLOAT), nrows*Sizeof.FLOAT, cudaMemcpyDeviceToHost)
-    	if (status != 0) throw new RuntimeException("p4lexsortGPU error6 %d" format (status)) 
-    	status = cudaMemcpy(p3, ograms.data.withByteOffset(nrows*2*Sizeof.FLOAT), nrows*Sizeof.FLOAT, cudaMemcpyDeviceToHost)
-    	if (status != 0) throw new RuntimeException("p4lexsortGPU error7 %d" format (status)) 
-    	status = cudaMemcpy(p4, ograms.data.withByteOffset(nrows*3*Sizeof.FLOAT), nrows*Sizeof.FLOAT, cudaMemcpyDeviceToHost)
-    	if (status != 0) throw new RuntimeException("p4lexsortGPU error8 %d" format (status)) 
-    }
+    status = cudaMemcpy(p1, ograms.data, nrows*Sizeof.FLOAT, cudaMemcpyDeviceToHost)
+    if (status != 0) throw new RuntimeException("p4lexsortGPU error5 %d" format (status)) 
+    status = cudaMemcpy(p2, ograms.data.withByteOffset(nrows*Sizeof.FLOAT), nrows*Sizeof.FLOAT, cudaMemcpyDeviceToHost)
+    if (status != 0) throw new RuntimeException("p4lexsortGPU error6 %d" format (status)) 
+    status = cudaMemcpy(p3, ograms.data.withByteOffset(nrows*2*Sizeof.FLOAT), nrows*Sizeof.FLOAT, cudaMemcpyDeviceToHost)
+    if (status != 0) throw new RuntimeException("p4lexsortGPU error7 %d" format (status)) 
+    status = cudaMemcpy(p4, ograms.data.withByteOffset(nrows*3*Sizeof.FLOAT), nrows*Sizeof.FLOAT, cudaMemcpyDeviceToHost)
+    if (status != 0) throw new RuntimeException("p4lexsortGPU error8 %d" format (status)) 
+
     ograms.free
   }
   
@@ -250,27 +247,23 @@ object GIMat {
   def p3lexsortGPU(p1:Pointer, p2:Pointer, p3:Pointer, nrows:Int, asc:Boolean) = {
     val ggrams = GIMat(nrows, 2)
     val gvals = GIMat(nrows, 1)
-    Mat.synchronized {
-    	var status = cudaMemcpy(ggrams.data, p2, nrows*Sizeof.INT, cudaMemcpyHostToDevice)
-    	if (status != 0) throw new RuntimeException("p3lexsortGPU error1 %d" format (status)) 
-    	status = cudaMemcpy(ggrams.data.withByteOffset(nrows*Sizeof.INT), p1, nrows*Sizeof.FLOAT, cudaMemcpyHostToDevice)
-    	if (status != 0) throw new RuntimeException("p3lexsortGPU error2 %d" format (status))  
-    	status = cudaMemcpy(gvals.data, p3, nrows*Sizeof.INT, cudaMemcpyHostToDevice)
-    	if (status != 0) throw new RuntimeException("p3lexsortGPU error3 %d" format (status)) 
-    }
+    var status = cudaMemcpy(ggrams.data, p2, nrows*Sizeof.INT, cudaMemcpyHostToDevice)
+    if (status != 0) throw new RuntimeException("p3lexsortGPU error1 %d" format (status)) 
+    status = cudaMemcpy(ggrams.data.withByteOffset(nrows*Sizeof.INT), p1, nrows*Sizeof.FLOAT, cudaMemcpyHostToDevice)
+    if (status != 0) throw new RuntimeException("p3lexsortGPU error2 %d" format (status))  
+    status = cudaMemcpy(gvals.data, p3, nrows*Sizeof.INT, cudaMemcpyHostToDevice)
+    if (status != 0) throw new RuntimeException("p3lexsortGPU error3 %d" format (status)) 
     val ggramst = ggrams.t
     ggrams.free
     CUMAT.lsortk(ggramst.data, gvals.data, nrows, if (asc) 1 else 0)
     val ograms = ggramst.t
     ggramst.free
-    Mat.synchronized {
-    	var status = cudaMemcpy(p1, ograms.data.withByteOffset(nrows*Sizeof.INT), nrows*Sizeof.FLOAT, cudaMemcpyDeviceToHost)
-    	if (status != 0) throw new RuntimeException("p3lexsortGPU error4 %d" format (status)) 
-    	status = cudaMemcpy(p2, ograms.data, nrows*Sizeof.INT, cudaMemcpyDeviceToHost)
-    	if (status != 0) throw new RuntimeException("p3lexsortGPU error5 %d" format (status)) 
-    	status = cudaMemcpy(p3, gvals.data, nrows*Sizeof.INT, cudaMemcpyDeviceToHost)
-    	if (status != 0) throw new RuntimeException("p3lexsortGPU error6 %d" format (status)) 
-    }
+    status = cudaMemcpy(p1, ograms.data.withByteOffset(nrows*Sizeof.INT), nrows*Sizeof.FLOAT, cudaMemcpyDeviceToHost)
+    if (status != 0) throw new RuntimeException("p3lexsortGPU error4 %d" format (status)) 
+    status = cudaMemcpy(p2, ograms.data, nrows*Sizeof.INT, cudaMemcpyDeviceToHost)
+    if (status != 0) throw new RuntimeException("p3lexsortGPU error5 %d" format (status)) 
+    status = cudaMemcpy(p3, gvals.data, nrows*Sizeof.INT, cudaMemcpyDeviceToHost)
+    if (status != 0) throw new RuntimeException("p3lexsortGPU error6 %d" format (status)) 
     ograms.free
     gvals.free
   }
