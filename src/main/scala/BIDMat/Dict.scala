@@ -510,14 +510,15 @@ object IDict {
       	copyrow(a, i, out, nout)
       	cout(nout) = ac(i)
         i += 1
-      } else if (c >= 0) {
+      }
+      if (c >= 0) {
       	if (c > 0) {
-      	  copyrow(b, j, out, nout)
-      	  cout(nout) = bc(j)
+      		copyrow(b, j, out, nout)
+      		cout(nout) = bc(j)
       	} else {
       		cout(nout) += bc(j)
       	}
-        j += 1
+      	j += 1
       } 
       nout += 1
     }
