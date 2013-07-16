@@ -1362,7 +1362,6 @@ object DenseMat {
   }
   
   def lexcomp[T](a:DenseMat[T], out:IMat)(implicit ordering:Ordering[T]):(Int, Int) => Int = {
-  	var k = 0
   	val aa = a.data
   	val nr = a.nrows
   	val ii = out.data
@@ -1370,6 +1369,7 @@ object DenseMat {
   		val ip = ii(i)
   		val jp = ii(j)
   		var c0 = 0
+  		var k = 0
   		while (k < a.ncols && c0 == 0) {
   			c0 = ordering.compare(aa(ip+k*nr), aa(jp+k*nr))
   			k += 1
