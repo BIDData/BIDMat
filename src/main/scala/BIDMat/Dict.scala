@@ -230,7 +230,7 @@ class IDict(val grams:IMat) {
     if (sortedMat.asInstanceOf[AnyRef] == null) {
     	sortedMat = grams.copy
     	perm = icol(0->grams.nrows)
-    	IDict.lexsort2or3cols(sortedMat, perm) 
+    	IDict.sortlex2or3cols(sortedMat, perm) 
     }
     sortedMat
   }
@@ -290,39 +290,42 @@ object IDict {
   
   def apply(grams:IMat, counts:DMat, thresh:Int):IDict = {
     val ii = find(counts >= thresh.toDouble)
-    val out = new IDict(grams(ii))
+    val out = new IDict(grams(ii,?))
     out.counts = counts(ii)
     out
   }
   def apply(grams:IMat, counts:IMat, thresh:Int):IDict = IDict(grams, DMat(counts), thresh)
   
-  def dictFromData(grams:IMat, counts:DMat):IDict = {
+  def dictFromData(grams:IMat, counts:DMat, countsort:Boolean):IDict = {
     val (outy, ia, ib) = IDict.uniquerows(grams)
     val countsy = accum(ib, if (counts == null) drow(1.0) else counts, outy.nrows, 1)
-    val (countsz, ip) = GMat.sortdown2(countsy)
-    IDict(outy(ip, ?), countsz)
+    if (countsort) {    	
+    	val (countsz, ip) = GMat.sortdown2(countsy)
+    	IDict(outy(ip, ?), countsz)
+    } else {
+      IDict(outy, countsy)
+    }
   }
-
   
-  def dictFromData(grams:IMat):IDict = dictFromData(grams, null)
+  def dictFromData(grams:IMat):IDict = dictFromData(grams, null, false)
   
-  def lexsort2or3cols(mat:IMat, inds:IMat) = _lexsort2or3cols(mat, inds, false) 
+  def sortlex2or3cols(mat:IMat, inds:IMat) = _sortlex2or3cols(mat, inds, false) 
   
-  def _lexsort2or3cols(mat:IMat, inds:IMat, desc:Boolean) {
+  def _sortlex2or3cols(mat:IMat, inds:IMat, asc:Boolean) {
     import MatFunctions._
   	if (if (useGPUsort && Mat.hasCUDA > 0) {
   		val (dmy, freebytes, allbytes) = SciFunctions.GPUmem
   		if ((mat.length+inds.length)*12L < freebytes) {
   			if (mat.ncols == 2) {
-  				GIMat.i2lexsortGPU(mat, inds, desc)
+  				GIMat.i2lexsortGPU(mat, inds, asc)
   				false
   			} else if (mat.ncols == 3) {
-  				GIMat.i3lexsortGPU(mat, inds, desc)
+  				GIMat.i3lexsortGPU(mat, inds, asc)
   				false
   			} else true
   		} else true
   	} else true) {
-  		val perm = if (desc) IMat.sortlex(mat, false) else IMat.sortlex(mat, true)
+  		val perm = IMat.sortlex(mat, asc) 
   		val indsp = inds(perm)
   		inds <-- indsp
   		val matp = mat(perm, ?)
@@ -330,15 +333,35 @@ object IDict {
   	}
   }
   
+    
+  def sortlexfast(mat:IMat, asc:Boolean):IMat = {
+    import MatFunctions._
+  	if (useGPUsort && Mat.hasCUDA > 0 && {
+  	  val (dmy, freebytes, allbytes) = SciFunctions.GPUmem; 
+  	  (mat.nrows*(mat.ncols+1)*12L < freebytes)
+  	  }) 
+  	{
+  		val inds = icol(0->mat.nrows)
+  		val tmat = mat.copy
+  		if (mat.ncols == 2) {
+  			GIMat.i2lexsortGPU(tmat, inds, asc)
+  			inds
+  		} else if (mat.ncols == 3) {
+  			GIMat.i3lexsortGPU(tmat, inds, asc)
+  			inds
+  		} else IMat.sortlex(mat, asc) 
+  	} else IMat.sortlex(mat, asc)
+  }
+  
   def uniquerows(a:IMat):(IMat, IMat, IMat) = {
     val iss = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "Dict.uniquerows".hashCode)
     val sortv = IMat.newOrCheckIMat(a.nrows, a.ncols, null, a.GUID, "Dict.uniquerows_1".hashCode)
     sortv <-- a
     var i = 0; while (i < iss.nrows) {iss(i) = i; i += 1}
-    lexsort2or3cols(sortv, iss)
+    sortlex2or3cols(sortv, iss)
     def compeq(i:Int, j:Int):Boolean = {
       var k:Int = 0;
-      while (k < a.ncols && (a(i,k) == a(j,k))) {
+      while (k < a.ncols && (a.data(i+k*a.nrows) == a.data(j+k*a.nrows))) {
         k += 1
       }
       if (k == a.ncols) true
@@ -398,7 +421,67 @@ object IDict {
     }
   }
   
-  def merge2(a:IMat, ac:DMat, b:IMat, bc:DMat):(IMat, DMat) = {
+  def treeMerge(aa:Array[IDict]):IDict = {
+    var n = 1
+    var ll = 0
+    while (n <= aa.length) {n *= 2; ll += 1}
+    val tree = new Array[IDict](ll)
+    var i = 0
+    while (i < aa.length) {
+      var dd = aa(i)
+      var j = 0 
+      while (tree(j) != null) {
+        dd = merge2(tree(j), dd)
+        tree(j) = null
+        j += 1
+      }
+      tree(j) = dd
+      i += 1
+    }
+    var j = ll-1
+    var dd = tree(j)
+    while (j > 0) {
+    	j -= 1
+    	if (tree(j) != null) dd = merge2(tree(j), dd)
+    }
+    dd
+  }
+  
+  def treeAdd(x:IDict, tree:Array[IDict]) = {
+    if (x != null) {
+    	var dd = x
+    	var j = 0 
+    	while (tree(j) != null) {
+    		dd = merge2(tree(j), dd)
+    		tree(j) = null
+    		j += 1
+    	}
+    	tree(j) = dd
+    }
+  }
+  
+  def treeFlush(tree:Array[IDict]):IDict = {
+    var j = 0
+    var dd:IDict = null
+    while (j < tree.length) {
+    	if (tree(j) != null) {
+    	  if (dd != null) {
+    	  	dd = merge2(tree(j), dd)
+    	  } else {
+    	    dd = tree(j)
+    	  }
+    	  tree(j) = null
+    	}
+    	j += 1
+    }
+    dd
+  }
+  
+  def merge2(ad:IDict, bd:IDict):(IDict) = {
+    val a = ad.grams
+    val ac = ad.counts
+    val b = bd.grams
+    val bc = bd.counts
     var i = 0
     var j = 0
     var nout = 0
@@ -452,7 +535,7 @@ object IDict {
       j += 1
       nout += 1
     }
-    (out, cout)
+    IDict(out, cout)
   }
   
   def union(dicts:Array[IDict]):IDict = {
@@ -474,7 +557,7 @@ object IDict {
       	totx += d.length
       }
       })
-    dictFromData(outx, countsx)
+    dictFromData(outx, countsx, true)
   }
   
   def union(dicts:IDict*):IDict = union(dicts.toArray)
