@@ -388,28 +388,26 @@ object IDict {
     (a(bptrs, ?), bptrs, iptrs)    
   }  
   
-  def lexcomp(a:IMat):(Int, Int) => Int = {
+  def lexcomp(a:IMat, b:IMat):(Int, Int) => Int = {
   	val aa = a.data
-  	val nr = a.nrows
+  	val bb = b.data
+  	val nra = a.nrows
+  	val nrb = b.nrows
   	val nc = a.ncols
   	(i:Int, j:Int) => {
-  	  if (i == j) {
-  	    0
-  	  } else {
-  	  	var k = 0
-  	  	while (k < nc && aa(i+k*nr) == aa(j+k*nr)) {
-  	  		k += 1
-  	  	}
-  	  	if (k == nc) {
-  	  		i compare j
-  	  	} else {
-  	  		if (aa(i+k*nr) < aa(j+k*nr)) {
-  	  			-1
-  	  		} else {
-  	  			1
-  	  		}
-  	  	}
-  	  }
+  		var k = 0
+  		while (k < nc && aa(i+k*nra) == bb(j+k*nrb)) {
+  			k += 1
+  		}
+  		if (k == nc) {
+  			i compare j
+  		} else {
+  			if (aa(i+k*nra) < bb(j+k*nrb)) {
+  				-1
+  			} else {
+  				1
+  			}
+  		}
   	}
   }
   
@@ -485,7 +483,7 @@ object IDict {
     var i = 0
     var j = 0
     var nout = 0
-    val ccomp = lexcomp(a)
+    val ccomp = lexcomp(a, b)
     while (i < a.nrows && j < b.nrows) {
       val c = ccomp(i,j) 
       if (c <= 0) {
