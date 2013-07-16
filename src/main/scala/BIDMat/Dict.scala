@@ -322,7 +322,7 @@ object IDict {
   			} else true
   		} else true
   	} else true) {
-  		val perm = if (desc) MatFunctions.sortlexdown(mat) else MatFunctions.sortlex(mat)
+  		val perm = if (desc) IMat.sortlex(mat, false) else IMat.sortlex(mat, true)
   		val indsp = inds(perm)
   		inds <-- indsp
   		val matp = mat(perm, ?)
@@ -364,6 +364,96 @@ object IDict {
     }
     (a(bptrs, ?), bptrs, iptrs)    
   }  
+  
+  def lexcomp(a:IMat):(Int, Int) => Int = {
+  	val aa = a.data
+  	val nr = a.nrows
+  	val nc = a.ncols
+  	(i:Int, j:Int) => {
+  	  if (i == j) {
+  	    0
+  	  } else {
+  	  	var k = 0
+  	  	while (k < nc && aa(i+k*nr) == aa(j+k*nr)) {
+  	  		k += 1
+  	  	}
+  	  	if (k == nc) {
+  	  		i compare j
+  	  	} else {
+  	  		if (aa(i+k*nr) < aa(j+k*nr)) {
+  	  			-1
+  	  		} else {
+  	  			1
+  	  		}
+  	  	}
+  	  }
+  	}
+  }
+  
+  def copyrow(a:IMat, i:Int, b:IMat, j:Int) = {
+    var k = 0 
+    while (k < a.ncols) {
+      b.data(j + k*b.nrows) = a.data(i + k*a.nrows)
+      k += 1
+    }
+  }
+  
+  def merge2(a:IMat, ac:DMat, b:IMat, bc:DMat):(IMat, DMat) = {
+    var i = 0
+    var j = 0
+    var nout = 0
+    val ccomp = lexcomp(a)
+    while (i < a.nrows && j < b.nrows) {
+      val c = ccomp(i,j) 
+      if (c <= 0) {
+        i += 1
+      } else if (c >= 0) {
+        j += 1
+      } 
+      nout += 1
+    }
+    if (i < a.nrows) {
+      nout += a.nrows - i
+    }
+    if (j < b.nrows) {
+      nout += b.nrows - j
+    }
+    val out = IMat.newOrCheckIMat(nout, a.ncols, null, a.GUID, "Dict.union2".hashCode)
+    val cout = DMat.newOrCheckDMat(nout, 1, null, a.GUID, "Dict.union2_1".hashCode)
+    i = 0
+    j = 0
+    nout = 0
+    while (i < a.nrows && j < b.nrows) {
+      val c = ccomp(i,j) 
+      if (c <= 0) {
+      	copyrow(a, i, out, nout)
+      	cout(nout) = ac(i)
+        i += 1
+      } else if (c >= 0) {
+      	if (c > 0) {
+      	  copyrow(b, j, out, nout)
+      	  cout(nout) = bc(j)
+      	} else {
+      		cout(nout) += bc(j)
+      	}
+        j += 1
+      } 
+      nout += 1
+    }
+    while (i < a.nrows) {
+    	copyrow(a, i, out, nout)
+    	cout(nout) = ac(i)
+      i += 1
+      nout += 1
+    }
+    while (j < b.nrows) {
+    	copyrow(b, j, out, nout)
+    	cout(nout) = bc(j)
+      j += 1
+      nout += 1
+    }
+    (out, cout)
+  }
   
   def union(dicts:Array[IDict]):IDict = {
     var totl = 0
