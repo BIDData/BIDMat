@@ -619,26 +619,29 @@ object IMat {
   }
  
   def lexcomp(a:IMat, out:IMat):(Int, Int) => Int = {
-  	var k = 0
   	val aa = a.data
   	val nr = a.nrows
   	val ii = out.data
   	(i:Int, j:Int) => {
-  		val ip = ii(i)
-  		val jp = ii(j)
-  		var c0 = 0
-  		while (k < a.ncols && aa(ip+k*nr) == aa(jp+k*nr)) {
-  			k += 1
-  		}
-  		if (k == a.ncols) {
-  		  0
-  		} else {
-  		  if (aa(ip+k*nr) < aa(jp+k*nr)) {
-  		    -1
-  		  } else {
-  		    1
-  		  }
-  		}
+  	  if (i == j) {
+  	    0
+  	  } else {
+  	  	val ip = ii(i)
+  	  	val jp = ii(j)
+  	  	var k = 0
+  	  	while (k < a.ncols && aa(ip+k*nr) == aa(jp+k*nr)) {
+  	  		k += 1
+  	  	}
+  	  	if (k == a.ncols) {
+  	  		ip compare jp
+  	  	} else {
+  	  		if (aa(ip+k*nr) < aa(jp+k*nr)) {
+  	  			-1
+  	  		} else {
+  	  			1
+  	  		}
+  	  	}
+  	  }
   	}
   }
   
