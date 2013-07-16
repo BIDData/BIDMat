@@ -169,25 +169,25 @@ object GIMat {
     out
   }
   
-  def i3lexsortGPU(grams:IMat, inds:IMat, desc:Boolean) = {
+  def i3lexsortGPU(grams:IMat, inds:IMat, asc:Boolean) = {
     if (grams.nrows != inds.nrows) throw new RuntimeException("i3lexsortGPU mismatched dims")
     val p1 = Pointer.to(grams.data)
     val p2 = p1.withByteOffset(inds.nrows*Sizeof.FLOAT)
     val p3 = p1.withByteOffset(inds.nrows*2*Sizeof.FLOAT)
     val p4 = Pointer.to(inds.data)
-    p4lexsortGPU(p1, p2, p3, p4, grams.nrows, desc)
+    p4lexsortGPU(p1, p2, p3, p4, grams.nrows, asc)
   }
   
-  def i3lexsortGPU(col1:IMat, col2:IMat, col3:IMat, inds:IMat, desc:Boolean) = {
+  def i3lexsortGPU(col1:IMat, col2:IMat, col3:IMat, inds:IMat, asc:Boolean) = {
     if (col1.nrows != inds.nrows || col2.nrows != inds.nrows || col3.nrows != inds.nrows) throw new RuntimeException("i3lexsortGPU mismatched dims")
     val p1 = Pointer.to(col1.data)
     val p2 = Pointer.to(col2.data)
     val p3 = Pointer.to(col3.data)
     val p4 = Pointer.to(inds.data)
-    p4lexsortGPU(p1, p2, p3, p4, inds.nrows, desc)
+    p4lexsortGPU(p1, p2, p3, p4, inds.nrows, asc)
   }
   
-  def p4lexsortGPU(p1:Pointer, p2:Pointer, p3:Pointer, p4:Pointer, nrows:Int, desc:Boolean) = {
+  def p4lexsortGPU(p1:Pointer, p2:Pointer, p3:Pointer, p4:Pointer, nrows:Int, asc:Boolean) = {
     val ggrams = GIMat(nrows, 4)
     var status = cudaMemcpy(ggrams.data, p1, nrows*Sizeof.FLOAT, cudaMemcpyHostToDevice)
     if (status != 0) throw new RuntimeException("p4lexsortGPU error1 %d" format (status)) 
@@ -199,7 +199,7 @@ object GIMat {
     if (status != 0) throw new RuntimeException("p4lexsortGPU error4 %d" format (status))  
     val ggramst = ggrams.t
     ggrams.free
-    CUMAT.i4sort(ggramst.data, nrows, if (desc) 1 else 0)
+    CUMAT.i4sort(ggramst.data, nrows, if (asc) 1 else 0)
     val ograms = ggramst.t
     ggramst.free
     status = cudaMemcpy(p1, ograms.data, nrows*Sizeof.FLOAT, cudaMemcpyDeviceToHost)
@@ -213,37 +213,37 @@ object GIMat {
     ograms.free
   }
   
-  def i2lexsortGPU(grams:IMat, inds:IMat, desc:Boolean) = {
+  def i2lexsortGPU(grams:IMat, inds:IMat, asc:Boolean) = {
     if (grams.nrows != inds.nrows) throw new RuntimeException("i2lexsortGPU mismatched dims")
     val p1 = Pointer.to(grams.data)
     val p2 = p1.withByteOffset(inds.nrows*Sizeof.INT)
     val p3 = Pointer.to(inds.data)
-    p3lexsortGPU(p1, p2, p3, inds.nrows, desc)
+    p3lexsortGPU(p1, p2, p3, inds.nrows, asc)
   }
   
-  def i2lexsortGPU(col1:IMat, col2:IMat, inds:IMat, desc:Boolean) = {
+  def i2lexsortGPU(col1:IMat, col2:IMat, inds:IMat, asc:Boolean) = {
     if (col1.nrows != inds.nrows || col2.nrows != inds.nrows) throw new RuntimeException("i2lexsortGPU mismatched dims")
     val p1 = Pointer.to(col1.data)
     val p2 = Pointer.to(col2.data) 
     val p3 = Pointer.to(inds.data)
-    p3lexsortGPU(p1, p2, p3, inds.nrows, desc)
+    p3lexsortGPU(p1, p2, p3, inds.nrows, asc)
   }
   /*
    * Useful for creating sparse matrices
    */
   
-  def i2lexsortGPU(col1:IMat, col2:IMat, fvals:FMat, desc:Boolean) = {
+  def i2lexsortGPU(col1:IMat, col2:IMat, fvals:FMat, asc:Boolean) = {
     if (col1.nrows != fvals.nrows || col2.nrows != fvals.nrows) throw new RuntimeException("i2lexsortGPU mismatched dims")
     val p1 = Pointer.to(col1.data)
     val p2 = Pointer.to(col2.data) 
     val p3 = Pointer.to(fvals.data)
-    p3lexsortGPU(p1, p2, p3, fvals.nrows, desc)
+    p3lexsortGPU(p1, p2, p3, fvals.nrows, asc)
   }
   
   /*
    * This is not strictly a 3-column lex sort, only the first two columns are used, and the third is just permuted
    */
-  def p3lexsortGPU(p1:Pointer, p2:Pointer, p3:Pointer, nrows:Int, desc:Boolean) = {
+  def p3lexsortGPU(p1:Pointer, p2:Pointer, p3:Pointer, nrows:Int, asc:Boolean) = {
     val ggrams = GIMat(nrows, 2)
     val gvals = GIMat(nrows, 1)
     var status = cudaMemcpy(ggrams.data, p2, nrows*Sizeof.INT, cudaMemcpyHostToDevice)
@@ -254,7 +254,7 @@ object GIMat {
     if (status != 0) throw new RuntimeException("p3lexsortGPU error3 %d" format (status))  
     val ggramst = ggrams.t
     ggrams.free
-    CUMAT.lsortk(ggramst.data, gvals.data, nrows, if (desc) 1 else 0)
+    CUMAT.lsortk(ggramst.data, gvals.data, nrows, if (asc) 1 else 0)
     val ograms = ggramst.t
     ggramst.free
     status = cudaMemcpy(p1, ograms.data.withByteOffset(nrows*Sizeof.INT), nrows*Sizeof.FLOAT, cudaMemcpyDeviceToHost)

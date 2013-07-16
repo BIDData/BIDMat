@@ -792,11 +792,11 @@ int extractmat(float *a, long long *b, int nrows, int ncols) {
 #include <thrust/device_ptr.h>
 #include <thrust/reverse.h>
 
-int fsort2d(float *pkeys, unsigned int *pvals, int nrows, int ncols, int desc) {
+int fsort2d(float *pkeys, unsigned int *pvals, int nrows, int ncols, int asc) {
   for (int i = 0; i < ncols; i++) {
     thrust::device_ptr<float> keys(pkeys+i*nrows);
     thrust::device_ptr<unsigned int> vals(pvals+i*nrows);
-    if (desc == 0) {
+    if (asc > 0) {
       thrust::sort_by_key(keys, keys + nrows, vals);
     } else {
       thrust::sort_by_key(keys, keys + nrows, vals, thrust::greater<float>());
@@ -807,10 +807,10 @@ int fsort2d(float *pkeys, unsigned int *pvals, int nrows, int ncols, int desc) {
   return err;
 }
  
-int dsortk(double *pkeys, unsigned int *pvals, int N, int desc) {
+int dsortk(double *pkeys, unsigned int *pvals, int N, int asc) {
   thrust::device_ptr<double> keys(pkeys);
   thrust::device_ptr<unsigned int> vals(pvals);
-  if (desc == 0) {
+  if (asc > 0) {
     thrust::sort_by_key(keys, keys + N, vals);
   } else {
     thrust::sort_by_key(keys, keys + N, vals,  thrust::greater<double>());
@@ -820,10 +820,10 @@ int dsortk(double *pkeys, unsigned int *pvals, int N, int desc) {
   return err;
 }
 
-int lsortk(long long *pkeys, unsigned int *pvals, int N, int desc) {
+int lsortk(long long *pkeys, unsigned int *pvals, int N, int asc) {
   thrust::device_ptr<long long> keys(pkeys);
   thrust::device_ptr<unsigned int> vals(pvals);
-  if (desc == 0) {
+  if (asc > 0) {
     thrust::sort_by_key(keys, keys + N, vals);
   } else {
     thrust::sort_by_key(keys, keys + N, vals,  thrust::greater<long long>());
@@ -845,7 +845,7 @@ int lsortsizex(int N) {
 
 
 int fsort2dx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tvals, 
-             int *ispine, bool * bflags, int nrows, int ncols, int desc) {
+             int *ispine, bool * bflags, int nrows, int ncols, int asc) {
   int i;
   cudaError_t err;
   thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortingEnactor<float,unsigned int> sorter(nrows);
@@ -858,7 +858,7 @@ int fsort2dx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tval
   for (i = 0; i < ncols; i++) {
     storage.d_keys             = pkeys+i*nrows;
     storage.d_values           = pvals+i*nrows;
-    if (desc > 0) {
+    if (asc == 0) {
       thrust::reverse(storage.d_keys,  storage.d_keys+nrows);
       thrust::reverse(storage.d_values, storage.d_values+nrows);
     }
@@ -866,7 +866,7 @@ int fsort2dx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tval
     cudaDeviceSynchronize();
     err = cudaGetLastError();
     if (err > 0) return err;
-    if (desc > 0) {
+    if (asc == 0) {
       thrust::reverse(storage.d_keys,  storage.d_keys+nrows);
       thrust::reverse(storage.d_values, storage.d_values+nrows);
     }
@@ -874,7 +874,7 @@ int fsort2dx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tval
   return err;
 }
 
-int lsortx(long long *pkeys, unsigned int *pvals, long long *tkeys, unsigned int *tvals, int *ispine, bool * bflags, int N, int desc) {
+int lsortx(long long *pkeys, unsigned int *pvals, long long *tkeys, unsigned int *tvals, int *ispine, bool * bflags, int N, int asc) {
   thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortingEnactor<long long,unsigned int> sorter(N);
   thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortStorage<long long,unsigned int>    storage;
 
@@ -884,14 +884,14 @@ int lsortx(long long *pkeys, unsigned int *pvals, long long *tkeys, unsigned int
   storage.d_alt_values       = tvals;
   storage.d_spine            = ispine;
   storage.d_from_alt_storage = bflags;
-  if (desc > 0) {
+  if (asc == 0) {
     thrust::reverse(storage.d_keys,  storage.d_keys+N);
     thrust::reverse(storage.d_values, storage.d_values+N);
   }
   sorter.EnactSort(storage);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
-  if (desc > 0) {
+  if (asc == 0) {
     thrust::reverse(storage.d_keys,  storage.d_keys+N);
     thrust::reverse(storage.d_values, storage.d_values+N);
   }
@@ -933,10 +933,10 @@ struct cmp_lllint_key_desc
   }
 };
 
-int i4sort(int *pkeys0, int N, int desc) {
+int i4sort(int *pkeys0, int N, int asc) {
   lllint *pkeys = (lllint *)pkeys0;
   thrust::device_ptr<lllint> keys(pkeys);
-  if (desc == 0) {
+  if (asc > 0) {
     thrust::sort(keys, keys + N, cmp_lllint_key_asc());
   } else {
     thrust::sort(keys, keys + N, cmp_lllint_key_desc());
@@ -976,11 +976,11 @@ struct cmp_i3struct_key_desc
   }
 };
 
-int i3sortk(int *pkeys0, unsigned int *pvals, int N, int desc) {
+int i3sortk(int *pkeys0, unsigned int *pvals, int N, int asc) {
   i3struct *pkeys = (i3struct *)pkeys0;
   thrust::device_ptr<i3struct> keys(pkeys);
   thrust::device_ptr<unsigned int> vals(pvals);
-  if (desc == 0) {
+  if (asc > 0) {
     thrust::sort_by_key(keys, keys + N, vals, cmp_i3struct_key_asc());
   } else {
     thrust::sort_by_key(keys, keys + N, vals, cmp_i3struct_key_desc());
