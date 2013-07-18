@@ -835,6 +835,19 @@ int lsortk(long long *pkeys, unsigned int *pvals, int N, int asc) {
   return err;
 }
 
+
+int lsort(long long *pkeys, int N, int asc) {
+  thrust::device_ptr<long long> keys(pkeys);
+  if (asc > 0) {
+    thrust::sort(keys, keys + N);
+  } else {
+    thrust::sort(keys, keys + N, thrust::greater<long long>());
+  }    
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
 int fsortsizex(int N) {
   thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortingEnactor<float,unsigned int> sorter(N);
   return sorter.SpineElements();

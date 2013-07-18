@@ -618,10 +618,10 @@ object IMat {
     0
   }
  
-  def lexcomp(a:IMat, out:IMat):(Int, Int) => Int = {
+  def lexcomp(a:IMat, inds:IMat):(Int, Int) => Int = {
   	val aa = a.data
   	val nr = a.nrows
-  	val ii = out.data
+  	val ii = inds.data
   	(i:Int, j:Int) => {
   	  if (i == j) {
   	    0
