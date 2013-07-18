@@ -218,7 +218,7 @@ object Dict {
     if (x != null) {
     	var dd = x
     	var j = 0 
-    	while (tree(j) != null) {
+    	while (j < tree.length && tree(j) != null) {
     		dd = union(tree(j), dd)
     		tree(j) = null
     		j += 1
