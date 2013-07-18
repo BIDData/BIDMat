@@ -218,7 +218,7 @@ object Dict {
     if (x != null) {
     	var dd = x
     	var j = 0 
-    	while (j < tree.length && tree(j) != null) {
+    	while (tree(j) != null) {
     		dd = union(tree(j), dd)
     		tree(j) = null
     		j += 1
@@ -518,7 +518,7 @@ object IDict {
     if (x != null) {
     	var dd = x
     	var j = 0 
-    	while (j < tree.length && tree(j) != null) {
+    	while (tree(j) != null) {
     		dd = merge2(tree(j), dd)
     		tree(j) = null
     		j += 1
