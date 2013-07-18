@@ -518,7 +518,7 @@ object IDict {
     if (x != null) {
     	var dd = x
     	var j = 0 
-    	while (tree(j) != null) {
+    	while (j < tree.length && tree(j) != null) {
     		dd = merge2(tree(j), dd)
     		tree(j) = null
     		j += 1
