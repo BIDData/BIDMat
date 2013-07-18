@@ -13,10 +13,8 @@ class Dict(val cstr:CSMat) {
 
   def makeHash:HashMap[String, Int] = { 
     if (hash.asInstanceOf[AnyRef] == null) { 
-      hash = new HashMap[String, Int] {
-        override def apply(s:String) = this.synchronized {
-          super.apply(s)
-        }
+      hash = new HashMap[String, Int] with SynchronizedMap[String, Int]{
+        override def default(key:String) = -1
       }
       var i = 0
       while (i < cstr.length) { 
