@@ -38,9 +38,9 @@ class Dict(val cstr:CSMat) {
     out
   }
   
-  def apply(s:String) = {
+  def apply(s:String):Int = {
     makeHash
-    hash.get(s).get
+    hash.getOrElse(s, -1)
   }
   
  def apply(i:Int) = {
@@ -213,6 +213,36 @@ object Dict {
                accum(d6d, d6.counts, d.length, 1));
     (d, d1d, d2d, d3d, d4d, d5d, d6d)
   }
+  
+  def treeAdd(x:Dict, tree:Array[Dict]) = {
+    if (x != null) {
+    	var dd = x
+    	var j = 0 
+    	while (tree(j) != null) {
+    		dd = union(tree(j), dd)
+    		tree(j) = null
+    		j += 1
+    	}
+    	tree(j) = dd
+    }
+  }
+  
+  def treeFlush(tree:Array[Dict]):Dict = {
+    var j = 0
+    var dd:Dict = null
+    while (j < tree.length) {
+    	if (tree(j) != null) {
+    	  if (dd != null) {
+    	  	dd = union(tree(j), dd)
+    	  } else {
+    	    dd = tree(j)
+    	  }
+    	  tree(j) = null
+    	}
+    	j += 1
+    }
+    dd
+  }
 
 }
 
@@ -230,7 +260,7 @@ class IDict(val grams:IMat) {
     if (sortedMat.asInstanceOf[AnyRef] == null) {
     	sortedMat = grams.copy
     	perm = icol(0->grams.nrows)
-    	IDict.sortlex2or3cols(sortedMat, perm) 
+    	IDict.sortlexInds(sortedMat, perm) 
     }
     sortedMat
   }
@@ -260,7 +290,6 @@ class IDict(val grams:IMat) {
       if (xx == 0) {
         out(perm(i)) = b.perm(ito)
         i += 1
-        ito += 1
       } else if (xx > 0) {
         ito += 1
       } else {
@@ -287,6 +316,7 @@ object IDict {
     out
   }
   def apply(grams:IMat, counts:IMat):IDict = IDict(grams, DMat(counts))
+  def apply(grams:IMat):IDict = IDict(grams, null:DMat)
   
   def apply(grams:IMat, counts:DMat, thresh:Int):IDict = {
     val ii = find(counts >= thresh.toDouble)
@@ -309,18 +339,18 @@ object IDict {
   
   def dictFromData(grams:IMat):IDict = dictFromData(grams, null, false)
   
-  def sortlex2or3cols(mat:IMat, inds:IMat) = _sortlex2or3cols(mat, inds, true) 
+  def sortlexInds(mat:IMat, inds:IMat) = _sortlexInds(mat, inds, true) 
   
-  def _sortlex2or3cols(mat:IMat, inds:IMat, asc:Boolean) {
+  def _sortlexInds(mat:IMat, inds:IMat, asc:Boolean) {
     import MatFunctions._
   	if (if (useGPUsort && Mat.hasCUDA > 0) {
   		val (dmy, freebytes, allbytes) = SciFunctions.GPUmem
   		if ((mat.length+inds.length)*12L < freebytes) {
   			if (mat.ncols == 2) {
-  				GIMat.i2lexsortGPU(mat, inds, asc)
+  				GIMat.i2sortlexIndsGPU(mat, inds, asc)
   				false
   			} else if (mat.ncols == 3) {
-  				GIMat.i3lexsortGPU(mat, inds, asc)
+  				GIMat.i3sortlexIndsGPU(mat, inds, asc)
   				false
   			} else true
   		} else true
@@ -333,6 +363,26 @@ object IDict {
   	}
   }
   
+  def sortlex(mat:IMat) = _sortlex(mat, true)
+  
+  def _sortlex(mat:IMat, asc:Boolean) {
+    import MatFunctions._
+  	if (if (useGPUsort && Mat.hasCUDA > 0) {
+  		val (dmy, freebytes, allbytes) = SciFunctions.GPUmem
+  		if ((mat.length)*12L < freebytes) {
+  			if (mat.ncols == 2) {
+  				GIMat.i2sortlexGPU(mat, asc)
+  				false
+  			} else true
+  		} else true
+  	} else true) {
+  		val perm = IMat.sortlex(mat, asc) 
+  		val matp = mat(perm, ?)
+  		mat <-- matp
+  	}
+  }
+  
+  
     
   def sortlexfast(mat:IMat, asc:Boolean):IMat = {
     import MatFunctions._
@@ -344,21 +394,17 @@ object IDict {
   		val inds = icol(0->mat.nrows)
   		val tmat = mat.copy
   		if (mat.ncols == 2) {
-  			GIMat.i2lexsortGPU(tmat, inds, asc)
+  			GIMat.i2sortlexIndsGPU(tmat, inds, asc)
   			inds
   		} else if (mat.ncols == 3) {
-  			GIMat.i3lexsortGPU(tmat, inds, asc)
+  			GIMat.i3sortlexIndsGPU(tmat, inds, asc)
   			inds
   		} else IMat.sortlex(mat, asc) 
   	} else IMat.sortlex(mat, asc)
   }
   
-  def uniquerows(a:IMat):(IMat, IMat, IMat) = {
-    val iss = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "Dict.uniquerows".hashCode)
-    val sortv = IMat.newOrCheckIMat(a.nrows, a.ncols, null, a.GUID, "Dict.uniquerows_1".hashCode)
-    sortv <-- a
-    var i = 0; while (i < iss.nrows) {iss(i) = i; i += 1}
-    sortlex2or3cols(sortv, iss)
+  def countDistinct(a:IMat):(IMat, IMat) = {
+  	val iptrs = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "Dict.countDistinct".hashCode)
     def compeq(i:Int, j:Int):Boolean = {
       var k:Int = 0;
       while (k < a.ncols && (a.data(i+k*a.nrows) == a.data(j+k*a.nrows))) {
@@ -367,25 +413,48 @@ object IDict {
       if (k == a.ncols) true
       else false
     }
-    val iptrs = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "Dict.uniquerows_2".hashCode)
     var lastpos = 0
-    iptrs.data(iss.data(0)) = lastpos
-    i = 1
-    while (i < iss.length) {
-      if (!compeq(iss.data(i-1), iss.data(i))) {
+    iptrs.data(0) = 0
+    var i = 1
+    while (i < iptrs.length) {
+      if (!compeq(i-1, i)) {
         lastpos += 1
       }
-      iptrs.data(iss.data(i)) = lastpos
+      iptrs.data(i) = lastpos
       i += 1
     }
-    val bptrs = IMat.newOrCheckIMat(lastpos+1, 1, null, a.GUID, "Dict.uniquerows_3".hashCode)
-    val outv = IMat.newOrCheckIMat(lastpos+1, a.ncols, null, a.GUID, "Dict.uniquerows_4".hashCode)
-    i = iss.length
-    while (i > 0) {
-      bptrs.data(iptrs.data(i-1)) = i-1
-      i = i - 1
+  	val bptrs = IMat.newOrCheckIMat(lastpos+1, 1, null, a.GUID, "Dict.countDistinct_1".hashCode)
+  	while (i > 0) {
+  		i = i - 1
+      bptrs.data(iptrs.data(i)) = i
     }
-    (a(bptrs, ?), bptrs, iptrs)    
+    (bptrs, iptrs)
+  }
+  
+  def uniquerows(a:IMat):(IMat, IMat, IMat) = {
+    val iss = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "Dict.uniquerows".hashCode)
+    val sortv = IMat.newOrCheckIMat(a.nrows, a.ncols, null, a.GUID, "Dict.uniquerows_1".hashCode)
+    sortv <-- a
+    var i = 0; while (i < iss.nrows) {iss(i) = i; i += 1}
+    sortlexInds(sortv, iss)
+    val (bptrs, iptrs) = countDistinct(sortv)
+    val outp = IMat.newOrCheckIMat(iptrs.length, 1, null, a.GUID, "Dict.uniquerows_1".hashCode)
+    val outv = IMat.newOrCheckIMat(bptrs.length, a.ncols, null, a.GUID, "Dict.uniquerows_3".hashCode)
+    i = 0
+    while (i < bptrs.length) {
+      copyrow(sortv, bptrs(i), outv, i)
+      i += 1
+    }
+    i = 0
+    while (i < iptrs.length) {
+      outp.data(iss.data(i)) = iptrs.data(i)
+      i += 1
+    }
+    while (i > 0) {
+      i -= 1
+      bptrs.data(outp.data(i)) = i
+    }    
+    (outv, bptrs, outp)    
   }  
   
   def lexcomp(a:IMat, b:IMat):(Int, Int) => Int = {

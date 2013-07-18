@@ -42,23 +42,25 @@ public final class CUMAT {
     
     public static native int extractmat(Pointer A, Pointer B, int nrows, int ncols);
     
-    public static native int lsortk(Pointer A, Pointer B, int n, int desc);
+    public static native int lsort(Pointer A, int n, int asc);
     
-    public static native int dsortk(Pointer A, Pointer B, int n, int desc);
+    public static native int lsortk(Pointer A, Pointer B, int n, int asc);
     
-    public static native int fsort2d(Pointer A, Pointer B, int nrows, int ncols, int desc);
+    public static native int dsortk(Pointer A, Pointer B, int n, int asc);
     
-    public static native int i4sort(Pointer A, int ncols, int desc);
+    public static native int fsort2d(Pointer A, Pointer B, int nrows, int ncols, int asc);
     
-    public static native int i3sortk(Pointer A, Pointer B, int ncols, int desc);
+    public static native int i4sort(Pointer A, int ncols, int asc);
+    
+    public static native int i3sortk(Pointer A, Pointer B, int ncols, int asc);
     
     public static native int fsortsizex(int n);
     
     public static native int lsortsizex(int n);
     
-    public static native int lsortx(Pointer A, Pointer B, Pointer C, Pointer D, Pointer E, Pointer F, int n, int desc);
+    public static native int lsortx(Pointer A, Pointer B, Pointer C, Pointer D, Pointer E, Pointer F, int n, int asc);
     
-    public static native int fsort2dx(Pointer A, Pointer B, Pointer C, Pointer D, Pointer E, Pointer F, int nrows, int ncols, int desc);
+    public static native int fsort2dx(Pointer A, Pointer B, Pointer C, Pointer D, Pointer E, Pointer F, int nrows, int ncols, int asc);
     
     public static native int stratify(Pointer strata, int n, Pointer a,  Pointer b, Pointer bi, int stride);
     

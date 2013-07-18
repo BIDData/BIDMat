@@ -198,6 +198,14 @@ extern "C" {
     return fsort2d(pkeys, pvals, nrows, ncols, desc);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_lsort
+  (JNIEnv *env, jobject obj, jobject jpkeys, jint n, jint desc) 
+  {
+    long long *pkeys = (long long *)getPointer(env, jpkeys);
+
+    return lsort(pkeys, n, desc);
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_lsortk
   (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jint n, jint desc) 
   {
