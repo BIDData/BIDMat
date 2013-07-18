@@ -1,5 +1,5 @@
 package BIDMat
-import scala.collection.mutable.HashMap
+import scala.collection.mutable.{Map,SynchronizedMap,HashMap}
 import MatFunctions._
 import edu.berkeley.bid.CUMAT
 
@@ -13,7 +13,11 @@ class Dict(val cstr:CSMat) {
 
   def makeHash:HashMap[String, Int] = { 
     if (hash.asInstanceOf[AnyRef] == null) { 
-      hash = new HashMap[String, Int]()
+      hash = new HashMap[String, Int] {
+        override def apply(s:String) = this.synchronized {
+          super.apply(s)
+        }
+      }
       var i = 0
       while (i < cstr.length) { 
         hash(cstr.data(i)) = i
