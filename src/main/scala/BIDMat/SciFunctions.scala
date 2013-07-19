@@ -1492,7 +1492,26 @@ object SciFunctions {
   }
   
   /*
-   * Power-law sparse random matrices. The density argument determines the approximate mean sum per column.
+   * Returns a generator for Pareto samples in the range low...high. 
+   * low and alpha must not be zero.
+   */
+  
+  def paretoGen(low:Int, high:Int, alpha:Double):(Int)=>IMat = {
+    val la = math.exp(math.log(low)*alpha)
+    val ha = math.exp(math.log(high)*alpha)
+    (n:Int) => {
+      val v = rand(n,1)
+      v ~ (la - ha) * v
+      v ~ v + ha
+      v ~ v / (ha * la)
+      powx(v, -1/alpha, v)
+      IMat(v)
+    }
+  }
+  
+  /*
+   * Power-law sparse random matrices with alpha =-1 exponents for row and column distributions. 
+   * The density argument determines the approximate mean sum per column.
    */
   
   def powrand(nrows:Int, ncols:Int, dens:Float = 10) = {
