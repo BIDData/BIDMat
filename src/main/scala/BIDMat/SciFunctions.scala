@@ -1492,18 +1492,18 @@ object SciFunctions {
   }
   
   /*
-   * Returns a generator for Pareto samples in the range low...high. 
-   * low and alpha must not be zero.
+   * Returns a generator for Pareto samples in the range low>0...high>0. 
+   * alpha must not be zero.
    */
   
   def paretoGen(low:Int, high:Int, alpha:Double):(Int)=>IMat = {
     val la = math.exp(math.log(low)*alpha)
     val ha = math.exp(math.log(high)*alpha)
+    val hala = ha*la
     (n:Int) => {
       val v = rand(n,1)
-      v ~ (la - ha) * v
-      v ~ v + ha
-      v ~ v / (ha * la)
+      v ~ ((la - ha)/hala) * v
+      v ~ v + (ha/hala)
       powx(v, -1/alpha, v)
       IMat(v)
     }
