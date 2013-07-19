@@ -1382,13 +1382,13 @@ object DenseMat {
   	}
   }
    
-  def sortlex[@specialized(Double, Float, Int, Byte) T](a:DenseMat[T], asc:Boolean)(implicit ordering:Ordering[T]):IMat = {
+  def isortlex[@specialized(Double, Float, Int, Byte) T](a:DenseMat[T], asc:Boolean)(implicit ordering:Ordering[T]):IMat = {
   	val out = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "sortlex".hashCode)
   	val compp = lexcomp(a, out)
-  	_sortlex(a, asc, out, compp)
+  	_isortlex(a, asc, out, compp)
   }
   
-  def _sortlex[@specialized(Double, Float, Int, Byte) T](a:DenseMat[T], asc:Boolean, out:IMat, compp:(Int, Int)=>Int)(implicit ordering:Ordering[T]):IMat = {
+  def _isortlex[@specialized(Double, Float, Int, Byte) T](a:DenseMat[T], asc:Boolean, out:IMat, compp:(Int, Int)=>Int)(implicit ordering:Ordering[T]):IMat = {
     import BIDMat.Sorting._
     val ii = out.data
     val aa = a.data
@@ -1436,7 +1436,7 @@ object DenseMat {
   } 
   
   def uniquerows2[@specialized(Double, Float, Int) T](a:DenseMat[T])(implicit ordering:Ordering[T]):(IMat, IMat) = {
-    val iss = sortlex(a, true)
+    val iss = isortlex(a, true)
     def compeq(i:Int, j:Int):Boolean = {
       var k:Int = 0;
       while (k < a.ncols && ordering.equiv(a(i,k):T, a(j,k):T)) {

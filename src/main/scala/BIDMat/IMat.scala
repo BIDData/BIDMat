@@ -645,10 +645,10 @@ object IMat {
   	}
   }
   
-  def sortlex(a:IMat, asc:Boolean):IMat = {
+  def isortlex(a:IMat, asc:Boolean):IMat = {
   	val out = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "sortlex".hashCode)
   	val compp = lexcomp(a, out)
-  	DenseMat._sortlex(a, asc, out, compp)
+  	DenseMat._isortlex(a, asc, out, compp)
   }
  
   val vecAddFun = (vecAdd _) 

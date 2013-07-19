@@ -967,10 +967,10 @@ object DMat {
   	}
   }
   
-  def sortlex(a:DMat, asc:Boolean):IMat = {
+  def isortlex(a:DMat, asc:Boolean):IMat = {
   	val out = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "sortlex".hashCode)
   	val compp = lexcomp(a, out)
-  	DenseMat._sortlex(a, asc, out, compp)
+  	DenseMat._isortlex(a, asc, out, compp)
   }
   
   val gtFun = (x:Double, y:Double) => if (x > y) 1.0f else 0.0

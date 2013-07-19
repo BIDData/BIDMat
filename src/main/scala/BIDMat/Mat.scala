@@ -185,6 +185,8 @@ object Mat {
   
   var recycleGrow = 1.2
   
+  var useGPUsort = true
+  
   final val MSEED:Int = 1452462553 
 
   final val myrand = new java.util.Random(MSEED)
