@@ -158,10 +158,10 @@ object MatFunctions {
   def sortdown(a:DMat):DMat = DMat(DenseMat.sort(a, 0, false))
   def sortdown2(a:DMat):(DMat, IMat) = {val (d,i) = DenseMat.sort2(a, false); (DMat(d), i)}
   def sortdown2(a:DMat, dir:Int):(DMat, IMat) = {val (d,i) = DenseMat.sort2(a, dir, false); (DMat(d), i)}
-  def sortrows(a:DMat):(DMat, IMat) = { val ii = DenseMat.sortlex(a, true); (a(ii,?), ii) }
-  def sortrowsdown(a:DMat):(DMat, IMat) = { val ii = DenseMat.sortlex(a, false); (a(ii,?), ii) }
-  def sortlex(a:DMat):IMat = DenseMat.sortlex(a, true)
-  def sortlexdown(a:DMat):IMat = DenseMat.sortlex(a, false)
+  def sortrows(a:DMat):(DMat, IMat) = { val ii = DenseMat.isortlex(a, true); (a(ii,?), ii) }
+  def sortrowsdown(a:DMat):(DMat, IMat) = { val ii = DenseMat.isortlex(a, false); (a(ii,?), ii) }
+  def isortlex(a:DMat):IMat = DenseMat.isortlex(a, true)
+  def isortlexdown(a:DMat):IMat = DenseMat.isortlex(a, false)
   def uniquerows(a:DMat):(DMat, IMat, IMat) = { val (ii, jj) = DenseMat.uniquerows2(a) ; (a(ii,?), ii, jj)}
   def unique(a:DMat):(DMat, IMat, IMat) = {val (ii, jj) =	DenseMat.unique2(if (math.min(a.nrows,a.ncols) > 1) a(?) else a) ; (a(ii), ii, jj)}
   
@@ -178,10 +178,10 @@ object MatFunctions {
   def sortdown(a:FMat):FMat = FMat(DenseMat.sort(a, 0, false))
   def sortdown2(a:FMat):(FMat, IMat) = {val (d,i) = DenseMat.sort2(a, false); (FMat(d), i)}
   def sortdown2(a:FMat, dir:Int):(FMat, IMat) = {val (d,i) = DenseMat.sort2(a, dir, false); (FMat(d), i)}
-  def sortrows(a:FMat):(FMat, IMat) = { val ii = DenseMat.sortlex(a, true); (a(ii,?), ii) }
-  def sortrowsdown(a:FMat):(FMat, IMat) = { val ii = DenseMat.sortlex(a, false); (a(ii,?), ii) }
-  def sortlex(a:FMat):IMat = DenseMat.sortlex(a, true)
-  def sortlexdown(a:FMat):IMat = DenseMat.sortlex(a, false)
+  def sortrows(a:FMat):(FMat, IMat) = { val ii = DenseMat.isortlex(a, true); (a(ii,?), ii) }
+  def sortrowsdown(a:FMat):(FMat, IMat) = { val ii = DenseMat.isortlex(a, false); (a(ii,?), ii) }
+  def isortlex(a:FMat):IMat = DenseMat.isortlex(a, true)
+  def isortlexdown(a:FMat):IMat = DenseMat.isortlex(a, false)
   def uniquerows(a:FMat):(FMat, IMat, IMat) = { val (ii, jj) = DenseMat.uniquerows2(a) ; (a(ii,?), ii, jj)}
   def unique(a:FMat):(FMat, IMat, IMat) = {val (ii, jj) =	DenseMat.unique2(if (math.min(a.nrows,a.ncols) > 1) a(?) else a) ; (a(ii), ii, jj)}
   
@@ -198,11 +198,11 @@ object MatFunctions {
   def sortdown(a:IMat):IMat = IMat(DenseMat.sort(a, 0, false))
   def sortdown2(a:IMat):(IMat, IMat) = {val (d,i) = DenseMat.sort2(a, false); (IMat(d), i)}
   def sortdown2(a:IMat, dir:Int):(IMat, IMat) = {val (d,i) = DenseMat.sort2(a, dir, false); (IMat(d), i)}
-  def sortrows(a:IMat):(IMat, IMat) = { val ii = DenseMat.sortlex(a, true); (a(ii,?), ii) }
-  def sortrowsdown(a:IMat):(IMat, IMat) = { val ii = DenseMat.sortlex(a, false); (a(ii,?), ii) }
-  def sortlex(a:IMat):IMat = DenseMat.sortlex[Int](a, true)
-  def sortlexdown(a:IMat):IMat = DenseMat.sortlex(a, false)
-  def uniquerows(a:IMat):(IMat, IMat, IMat) = { val (ii, jj) = DenseMat.uniquerows2(a) ; (a(ii,?), ii, jj)}
+  def sortrows(a:IMat):(IMat, IMat) = { val ii = DenseMat.isortlex(a, true); (a(ii,?), ii) }
+  def sortrowsdown(a:IMat):(IMat, IMat) = { val ii = DenseMat.isortlex(a, false); (a(ii,?), ii) }
+  def isortlex(a:IMat):IMat = DenseMat.isortlex[Int](a, true)
+  def isortlexdown(a:IMat):IMat = DenseMat.isortlex(a, false)
+//  def uniquerows(a:IMat):(IMat, IMat, IMat) = { val (ii, jj) = DenseMat.uniquerows2(a) ; (a(ii,?), ii, jj)}
   def unique(a:IMat):(IMat, IMat, IMat) = {val (ii, jj) =	DenseMat.unique2(if (math.min(a.nrows,a.ncols) > 1) a(?) else a) ; (a(ii), ii, jj)}
   
   def find(a:CSMat) = a.find   
@@ -214,10 +214,10 @@ object MatFunctions {
   def sortdown(a:CSMat, ind:Int):CSMat = CSMat(DenseMat.sort(a, ind, false))
   def sortdown(a:CSMat):CSMat = CSMat(DenseMat.sort(a, 0, false))
   def sortdown2(a:CSMat):(CSMat, IMat) = {val (d,i) = DenseMat.sort2(a, false); (CSMat(d), i)}
-  def sortrows(a:CSMat):(CSMat, IMat) = { val ii = DenseMat.sortlex(a, true); (a(ii,?), ii) }
-  def sortrowsdown(a:CSMat):(CSMat, IMat) = { val ii = DenseMat.sortlex(a, false); (a(ii,?), ii) }
-  def sortlex(a:CSMat):IMat = DenseMat.sortlex(a, true)
-  def sortlexdown(a:CSMat):IMat = DenseMat.sortlex(a, false)
+  def sortrows(a:CSMat):(CSMat, IMat) = { val ii = DenseMat.isortlex(a, true); (a(ii,?), ii) }
+  def sortrowsdown(a:CSMat):(CSMat, IMat) = { val ii = DenseMat.isortlex(a, false); (a(ii,?), ii) }
+  def isortlex(a:CSMat):IMat = DenseMat.isortlex(a, true)
+  def isortlexdown(a:CSMat):IMat = DenseMat.isortlex(a, false)
   def uniquerows(a:CSMat):(CSMat, IMat, IMat) = { val (ii, jj) = DenseMat.uniquerows2(a) ; (a(ii,?), ii, jj)}
   
   def find(a:SDMat) = a.find   
@@ -244,6 +244,128 @@ object MatFunctions {
     }
     out
   }
+  
+  def sortlexInds(mat:IMat, inds:IMat) = _sortlexInds(mat, inds, true) 
+  
+  def _sortlexInds(mat:IMat, inds:IMat, asc:Boolean) {
+  	if (if (Mat.useGPUsort && Mat.hasCUDA > 0) {
+  		val (dmy, freebytes, allbytes) = SciFunctions.GPUmem
+  		if ((mat.length+inds.length)*12L < freebytes) {
+  			if (mat.ncols == 2) {
+  				GIMat.i2sortlexIndsGPU(mat, inds, asc)
+  				false
+  			} else if (mat.ncols == 3) {
+  				GIMat.i3sortlexIndsGPU(mat, inds, asc)
+  				false
+  			} else true
+  		} else true
+  	} else true) {
+  		val perm = IMat.isortlex(mat, asc) 
+  		val indsp = inds(perm)
+  		inds <-- indsp
+  		val matp = mat(perm, ?)
+  		mat <-- matp
+  	}
+  }
+  
+  def sortlex(mat:IMat) = _sortlex(mat, true)
+  
+  def _sortlex(mat:IMat, asc:Boolean):Unit = {
+  	if (if (Mat.useGPUsort && Mat.hasCUDA > 0) {
+  		val (dmy, freebytes, allbytes) = SciFunctions.GPUmem
+  		if ((mat.length)*12L < freebytes) {
+  			if (mat.ncols == 2) {
+  				GIMat.i2sortlexGPU(mat, asc)
+  				false
+  			} else true
+  		} else true
+  	} else true) {
+  		val perm = IMat.isortlex(mat, asc) 
+  		val matp = mat(perm, ?)
+  		mat <-- matp
+  	}
+  }  
+    
+  def isortlexfast(mat:IMat, asc:Boolean):IMat = {
+  	if (Mat.useGPUsort && Mat.hasCUDA > 0 && {
+  	  val (dmy, freebytes, allbytes) = SciFunctions.GPUmem; 
+  	  (mat.nrows*(mat.ncols+1)*12L < freebytes)
+  	  }) 
+  	{
+  		val inds = icol(0->mat.nrows)
+  		val tmat = mat.copy
+  		if (mat.ncols == 2) {
+  			GIMat.i2sortlexIndsGPU(tmat, inds, asc)
+  			inds
+  		} else if (mat.ncols == 3) {
+  			GIMat.i3sortlexIndsGPU(tmat, inds, asc)
+  			inds
+  		} else IMat.isortlex(mat, asc) 
+  	} else IMat.isortlex(mat, asc)
+  }
+  
+  def countDistinct(a:IMat):(IMat, IMat) = {
+  	val iptrs = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "Dict.countDistinct".hashCode)
+    def compeq(i:Int, j:Int):Boolean = {
+      var k:Int = 0;
+      while (k < a.ncols && (a.data(i+k*a.nrows) == a.data(j+k*a.nrows))) {
+        k += 1
+      }
+      if (k == a.ncols) true
+      else false
+    }
+    var lastpos = 0
+    iptrs.data(0) = 0
+    var i = 1
+    while (i < iptrs.length) {
+      if (!compeq(i-1, i)) {
+        lastpos += 1
+      }
+      iptrs.data(i) = lastpos
+      i += 1
+    }
+  	val bptrs = IMat.newOrCheckIMat(lastpos+1, 1, null, a.GUID, "Dict.countDistinct_1".hashCode)
+  	while (i > 0) {
+  		i = i - 1
+      bptrs.data(iptrs.data(i)) = i
+    }
+    (bptrs, iptrs)
+  }
+     
+  def copyrow(a:IMat, i:Int, b:IMat, j:Int) = {
+    var k = 0 
+    while (k < a.ncols) {
+      b.data(j + k*b.nrows) = a.data(i + k*a.nrows)
+      k += 1
+    }
+  }
+  
+  def uniquerows(a:IMat):(IMat, IMat, IMat) = {
+    val iss = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "uniquerows".hashCode)
+    val sortv = IMat.newOrCheckIMat(a.nrows, a.ncols, null, a.GUID, "uniquerows_1".hashCode)
+    sortv <-- a
+    var i = 0; while (i < iss.nrows) {iss(i) = i; i += 1}
+    sortlexInds(sortv, iss)
+    val (bptrs, iptrs) = countDistinct(sortv)
+    val outp = IMat.newOrCheckIMat(iptrs.length, 1, null, a.GUID, "uniquerows_1".hashCode)
+    val outv = IMat.newOrCheckIMat(bptrs.length, a.ncols, null, a.GUID, "uniquerows_3".hashCode)
+    i = 0
+    while (i < bptrs.length) {
+      copyrow(sortv, bptrs(i), outv, i)
+      i += 1
+    }
+    i = 0
+    while (i < iptrs.length) {
+      outp.data(iss.data(i)) = iptrs.data(i)
+      i += 1
+    }
+    while (i > 0) {
+      i -= 1
+      bptrs.data(outp.data(i)) = i
+    }    
+    (outv, bptrs, outp)    
+  }  
+ 
 
   def drow(x:Array[Double]):DMat = {
   	val ahash = if (Mat.useCache) x.## else 0

@@ -1418,6 +1418,87 @@ object SciFunctions {
     }
     SMat(out.sparseTrim)
   }
+  
+  /*
+   * Generate a random sparse matrix with specified row and column distributions.
+   * The column distribution is sampled first to get the number of elements in each column.
+   * Then the row generator is sampled nelements_in_column(i) times to get the row indices
+   * for column i. 
+   */ 
+  
+  def sprand(nrows:Int, ncols:Int, rowdistr:(Int)=>IMat, coldistr:(Int)=>IMat):SMat = {
+    val ioff = Mat.ioneBased
+    val colsizes = coldistr(ncols)
+    val innz = sum(colsizes).v
+    val irows = rowdistr(innz)
+    Mat.nflops += 5L*innz
+    val mat = IMat.newOrCheckIMat(innz, 2, null, 0, "sprand".hashCode)
+    var i = 0
+    var ipos = 0
+    while (i < ncols) {
+      var j = 0
+      while (j < colsizes(i)) {
+        mat(ipos, 0) = i
+        mat(ipos, 1) = irows(ipos)
+        ipos += 1
+        j += 1
+      }
+      i += 1 
+    }                   // We have an unsorted list of elements with repetition. Now make a sparse matrix from them. 
+    sortlex(mat)
+    val (bptrs, iptrs) = countDistinct(mat)
+    val nnz = bptrs.length    
+    val out = SMat.newOrCheckSMat(nrows, ncols, nnz, null, 0, "sprand_1".hashCode)
+    i = 0
+    var oldcol = 0
+    var countcol = 0
+    out.jc(0) = ioff
+    while (i < nnz) {
+      val bp = bptrs(i)
+      out.ir(i) = mat(bp,1)+ioff
+      if (i < nnz-1) out.data(i) = bptrs(i+1) - bp else out.data(i) = iptrs.length - bp
+      if (oldcol != mat(bp,0)) {
+        var j = oldcol+1
+        while (j <= mat(bp,0)) {
+          out.jc(j) = i+ioff
+          j += 1
+        }
+        oldcol = mat(bp,0)
+      }
+    	i += 1
+    }
+    var j = oldcol+1
+    while (j <= ncols) {
+    	out.jc(j) = i+ioff
+    	j += 1
+    }
+    out
+  }
+  
+  /*
+   * Returns a generator for power-law samples with exponent -1 in the range 0...range-1
+   */
+  
+  def simplePowerLaw(range:Int):(Int)=>IMat = {
+    val alpha = math.log(range)
+    (n:Int) => {
+      val v = rand(n,1)
+      v ~ (-alpha)*v
+      exp(v, v)
+      v ~ range * v
+      v ~ v - 0.9
+      IMat(v)
+    }
+  }
+  
+  /*
+   * Power-law sparse random matrices. The density argument determines the approximate mean sum per column.
+   */
+  
+  def powrand(nrows:Int, ncols:Int, dens:Float = 10) = {
+    val v = dens*math.log(dens)
+    sprand(nrows, ncols, simplePowerLaw(nrows), simplePowerLaw((dens*math.log(v)).toInt))
+  }
 
   def histc(a:DMat, b:DMat):IMat = {
     val out = IMat(b.length, 1)
