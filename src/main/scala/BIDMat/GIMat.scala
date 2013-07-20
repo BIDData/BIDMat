@@ -199,6 +199,7 @@ object GIMat {
     if (status != 0) throw new RuntimeException("p4sortlexGPU error3 %d" format (status))
     status = cudaMemcpy(ggrams.data.withByteOffset(nrows*3*Sizeof.FLOAT), p4, nrows*Sizeof.FLOAT, cudaMemcpyHostToDevice)
     if (status != 0) throw new RuntimeException("p4sortlexGPU error4 %d" format (status))
+    cudaDeviceSynchronize
     val ggramst = ggrams.t
     ggrams.free
     CUMAT.i4sort(ggramst.data, nrows, if (asc) 1 else 0)
@@ -254,6 +255,7 @@ object GIMat {
     if (status != 0) throw new RuntimeException("p3sortlexGPU error2 %d" format (status))  
     status = cudaMemcpy(gvals.data, p3, nrows*Sizeof.INT, cudaMemcpyHostToDevice)
     if (status != 0) throw new RuntimeException("p3sortlexGPU error3 %d" format (status)) 
+    cudaDeviceSynchronize
     val ggramst = ggrams.t
     ggrams.free
     CUMAT.lsortk(ggramst.data, gvals.data, nrows, if (asc) 1 else 0)
@@ -290,6 +292,7 @@ object GIMat {
     if (status != 0) throw new RuntimeException("p3sortlexGPU error1 %d" format (status)) 
     status = cudaMemcpy(ggrams.data.withByteOffset(nrows*Sizeof.INT), p1, nrows*Sizeof.FLOAT, cudaMemcpyHostToDevice)
     if (status != 0) throw new RuntimeException("p3sortlexGPU error2 %d" format (status))  
+    cudaDeviceSynchronize
     val ggramst = ggrams.t
     ggrams.free
     CUMAT.lsort(ggramst.data, nrows, if (asc) 1 else 0)

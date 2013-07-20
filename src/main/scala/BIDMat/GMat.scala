@@ -864,6 +864,7 @@ object GMat {
   	  		val colstodo = todo / keys.nrows
   	  		cudaMemcpy(aa, Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
   	  		cudaMemcpy(vv, Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+  	  		cudaDeviceSynchronize
   	  		if (tall) {
   	  			CUMAT.fsort2d(aa, vv, keys.nrows, colstodo, 0)
   	  		} else {
@@ -1005,6 +1006,7 @@ object GMat {
   	  		if (status != 0) throw new RuntimeException("sortGPU copy a in failed thread %d error %d" format (ithread,status))
   	  		cudaMemcpy(vv.data, Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
   	  		if (status != 0) throw new RuntimeException("sortGPU copy v in failed thread %d error %d" format (ithread,status))
+  	  		cudaDeviceSynchronize
   	  		if (tall) {
   	  			status = CUMAT.fsort2dx(aa.data, vv.data, tkeys.data, tvals.data, tspine.data, bflags.data, keys.nrows, colstodo, iasc)
   	  			if (status != 0) throw new RuntimeException("sortGPU tall sort failed thread %d error %d" format (ithread,status))
@@ -1152,7 +1154,8 @@ object GMat {
     		val gv = GMat(a.nrows, 2*a.ncols)
     		val gi = GIMat(outi)
     		var status = cudaMemcpy(gv.data, Pointer.to(a.data), a.nrows*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyHostToDevice)
-    		if (status != 0) throw new RuntimeException("sortGPU copy v error %d" format status)    		
+    		if (status != 0) throw new RuntimeException("sortGPU copy v error %d" format status)    
+    		cudaDeviceSynchronize
     		CUMAT.dsortk(gv.data, gi.data, a.nrows, if (asc) 1 else 0)
     		status = cudaMemcpy(Pointer.to(outv.data), gv.data, a.nrows*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyDeviceToHost)
     		if (status != 0) throw new RuntimeException("sortGPU copy v error %d" format status)
