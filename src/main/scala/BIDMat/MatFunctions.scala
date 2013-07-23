@@ -3,6 +3,7 @@ package BIDMat
 import scala.compat.Platform._ 
 import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.LAPACK._
+import edu.berkeley.bid.SPBLAS._
 import scala.actors.Actor._
 
 class IMatWildcard extends IMat(0,0,null) with MatrixWildcard
@@ -227,6 +228,15 @@ object MatFunctions {
   def find(a:SMat) = a.find   
   def find2(a:SMat) = a.find2    
   def find3(a:SMat) = a.find3
+  
+  def coomult(inds:IMat, vals:FMat, in:FMat, out:FMat, transpose:Boolean=true) = {
+    Mat.nflops += inds.nrows*2L
+    if (transpose) {
+      scoomv1("N", out.length, in.length, 1.0f, "GLNF", vals.data, inds.data, inds.nrows, in.data, 0f, out.data)
+    } else {
+    	scoomv1("T", out.length, in.length, 1.0f, "GLNF", vals.data, inds.data, inds.nrows, in.data, 0f, out.data)
+    }
+  }
   
   def invperm(a:IMat):IMat = {
     val out = IMat.newOrCheckIMat(a.nrows, a.ncols, null, a.GUID, "invperm".##) 
