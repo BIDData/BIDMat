@@ -12,15 +12,17 @@ class Dict(val cstr:CSMat) {
   var hash:HashMap[String,Int] = null
 
   def makeHash:HashMap[String, Int] = { 
-    if (hash.asInstanceOf[AnyRef] == null) { 
-      hash = new HashMap[String, Int] with SynchronizedMap[String, Int]{
-        override def default(key:String) = -1
-      }
-      var i = 0
-      while (i < cstr.length) { 
-        hash(cstr.data(i)) = i
-        i += 1
-      } 
+    this.synchronized {
+    	if (hash.asInstanceOf[AnyRef] == null) { 
+    		hash = new HashMap[String, Int] with SynchronizedMap[String, Int]{
+    			override def default(key:String) = -1
+    		}
+    		var i = 0
+    		while (i < cstr.length) { 
+    			hash(cstr.data(i)) = i
+    			i += 1
+    		} 
+    	}
     }
     hash
   }
@@ -259,12 +261,14 @@ class IDict(val grams:IMat) {
   var perm:IMat = null
 
   def makeSorted:IMat = { 
-    if (sortedMat.asInstanceOf[AnyRef] == null) {
-    	sortedMat = grams.copy
-    	perm = icol(0->grams.nrows)
-    	sortlexInds(sortedMat, perm) 
+    this.synchronized {
+    	if (sortedMat.asInstanceOf[AnyRef] == null) {
+    		sortedMat = grams.copy
+    		perm = icol(0->grams.nrows)
+    		sortlexInds(sortedMat, perm) 
+    	}
+    	sortedMat
     }
-    sortedMat
   }
   
   def cmp(a:IMat, b:IMat, ia:Int, ib:Int):Int = {

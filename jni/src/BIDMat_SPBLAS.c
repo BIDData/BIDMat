@@ -89,6 +89,61 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_SPBLAS_scscmv
 	return returnValue;
 };
 
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_SPBLAS_scoomv 
+(JNIEnv * env, jobject calling_obj, jstring j_transa, jint m, jint k, jfloat alpha, jstring j_matdescra,
+ jfloatArray j_vals, jintArray j_irows, jintArray j_icols, jint nnz, jfloatArray j_x, jfloat beta, jfloatArray j_y){
+	char * transa = (char *)(*env)->GetStringUTFChars(env, j_transa, 0);
+	char * matdescra = (char *)(*env)->GetStringUTFChars(env, j_matdescra, 0);
+	jfloat * vals = (*env)->GetPrimitiveArrayCritical(env, j_vals, 0);
+	jint * irows = (*env)->GetPrimitiveArrayCritical(env, j_irows, 0);
+	jint * icols = (*env)->GetPrimitiveArrayCritical(env, j_icols, 0);
+	jfloat * x = (*env)->GetPrimitiveArrayCritical(env, j_x, 0);
+	jfloat * y = (*env)->GetPrimitiveArrayCritical(env, j_y, 0);
+	jint returnValue = 0;
+
+	if (transa != NULL && matdescra != NULL && vals != NULL && irows != NULL && icols != NULL && x != NULL && y != NULL) {   
+      MKL_SCOOMV(transa, &m, &k, &alpha, matdescra, vals, irows, icols, &nnz, x, &beta, y);
+    } else {
+      returnValue = 1;
+    }
+
+	(*env)->ReleasePrimitiveArrayCritical(env, j_y, y, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_x, x, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_icols, icols, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_irows, irows, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_vals, vals, 0);
+	(*env)->ReleaseStringUTFChars(env, j_matdescra, matdescra);
+	(*env)->ReleaseStringUTFChars(env, j_transa, transa);
+	return returnValue;
+};
+
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_SPBLAS_scoomv1 
+(JNIEnv * env, jobject calling_obj, jstring j_transa, jint m, jint k, jfloat alpha, jstring j_matdescra,
+ jfloatArray j_vals, jintArray j_inds, jint nnz, jfloatArray j_x, jfloat beta, jfloatArray j_y){
+	char * transa = (char *)(*env)->GetStringUTFChars(env, j_transa, 0);
+	char * matdescra = (char *)(*env)->GetStringUTFChars(env, j_matdescra, 0);
+	jfloat * vals = (*env)->GetPrimitiveArrayCritical(env, j_vals, 0);
+	jint * inds = (*env)->GetPrimitiveArrayCritical(env, j_inds, 0);
+	jfloat * x = (*env)->GetPrimitiveArrayCritical(env, j_x, 0);
+	jfloat * y = (*env)->GetPrimitiveArrayCritical(env, j_y, 0);
+	jint returnValue = 0;
+
+	if (transa != NULL && matdescra != NULL && vals != NULL && inds != NULL && x != NULL && y != NULL) {   
+      MKL_SCOOMV(transa, &m, &k, &alpha, matdescra, vals, inds, inds+nnz, &nnz, x, &beta, y);
+    } else {
+      returnValue = 1;
+    }
+
+	(*env)->ReleasePrimitiveArrayCritical(env, j_y, y, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_x, x, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_inds, inds, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_vals, vals, 0);
+	(*env)->ReleaseStringUTFChars(env, j_matdescra, matdescra);
+	(*env)->ReleaseStringUTFChars(env, j_transa, transa);
+	return returnValue;
+};
+
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_SPBLAS_scsrmv 
 (JNIEnv * env, jobject calling_obj, jstring j_transa, jint m, jint k, jfloat alpha, jstring j_matdescra,
  jfloatArray j_vals, jintArray j_ir, jintArray j_jc, jfloatArray j_x, jfloat beta, jfloatArray j_y){

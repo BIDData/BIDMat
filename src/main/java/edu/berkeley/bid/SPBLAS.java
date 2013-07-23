@@ -17,6 +17,12 @@ public final class SPBLAS {
   public static native  void scsrmv (String transa, int m, int k, float alpha, String matdescra, 
   		float [] val, int [] ir, int [] jc,  float []  x, float beta, float []  y);
   
+  public static native  void scoomv (String transa, int m, int k, float alpha, String matdescra, 
+  		float [] val, int [] rowinds, int [] colinds, int nnz, float []  x, float beta, float []  y);
+  
+  public static native  void scoomv1 (String transa, int m, int k, float alpha, String matdescra, 
+  		float [] val, int [] inds, int nnz, float []  x, float beta, float []  y);
+  
   public static native  void scscmv (String transa, int m, int k, float alpha, String matdescra, 
   		float [] val, int [] ir, int [] jc,  float []  x, float beta, float []  y);
   
