@@ -206,6 +206,16 @@ extern "C" {
     return lsort(pkeys, n, desc);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_isortk
+  (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jint n, jint desc) 
+  {
+    int *pkeys = (int *)getPointer(env, jpkeys);
+    unsigned int *pvals = (unsigned int *)getPointer(env, jpvals);
+
+    return isortk(pkeys, pvals, n, desc);
+  }
+
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_lsortk
   (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jint n, jint desc) 
   {
