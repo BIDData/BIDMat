@@ -809,6 +809,19 @@ int fsort2d(float *pkeys, unsigned int *pvals, int nrows, int ncols, int asc) {
   return err;
 }
  
+int isortk(int *pkeys, unsigned int *pvals, int N, int asc) {
+  thrust::device_ptr<int> keys(pkeys);
+  thrust::device_ptr<unsigned int> vals(pvals);
+  if (asc > 0) {
+    thrust::sort_by_key(keys, keys + N, vals);
+  } else {
+    thrust::sort_by_key(keys, keys + N, vals,  thrust::greater<int>());
+  }    
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
 int dsortk(double *pkeys, unsigned int *pvals, int N, int asc) {
   thrust::device_ptr<double> keys(pkeys);
   thrust::device_ptr<unsigned int> vals(pvals);

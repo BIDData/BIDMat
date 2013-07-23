@@ -261,7 +261,10 @@ object MatFunctions {
   	if (if (Mat.useGPUsort && Mat.hasCUDA > 0) {
   		val (dmy, freebytes, allbytes) = SciFunctions.GPUmem
   		if ((mat.length+inds.length)*12L < freebytes) {
-  			if (mat.ncols == 2) {
+  		  if (mat.ncols == 1) {
+  				GIMat.isortlexIndsGPU(mat, inds, asc)
+  				false
+  			} else if (mat.ncols == 2) {
   				GIMat.i2sortlexIndsGPU(mat, inds, asc)
   				false
   			} else if (mat.ncols == 3) {

@@ -271,6 +271,13 @@ object GIMat {
     gvals.free
   }
   
+  def isortlexIndsGPU(grams:IMat, inds:IMat, asc:Boolean) = {
+    if (grams.nrows != inds.nrows) throw new RuntimeException("isortlexIndsGPU mismatched dims")
+    val p1 = Pointer.to(grams.data)
+    val p2 = Pointer.to(inds.data)
+    p2sortlexGPU(p1, p2, inds.nrows, asc)
+  }
+  
   def i2sortlexGPU(mat:IMat, asc:Boolean) = {
     if (mat.ncols != 2) throw new RuntimeException("i2sortlexGPU mismatched dims")
     val p1 = Pointer.to(mat.data)
