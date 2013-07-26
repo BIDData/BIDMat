@@ -1373,15 +1373,36 @@ __global__ void __dmv(float *a, int nrows, int ncols, float *b, float *c) {
 }
 
 
+#ifdef __CUDA_ARCH__
+#if __CUDA_ARCH__ > 200
+
 __global__ void __dmvt(float *a, int nrows, int ncols, float *b, float *c) {
   for (int ty = threadIdx.y + blockDim.y * blockIdx.y; ty < ncols; ty += blockDim.y * gridDim.y) {
     float accum = 0.0f;
     for (int tx = threadIdx.x + blockDim.x * blockIdx.x; tx < nrows; tx += blockDim.x * gridDim.x) {
       accum += a[tx+nrows*ty] * b[tx];
     }
-    atomicAdd(&c[ty], accum);
+    for (int i = 1; i < blockDim.x; i *= 2) {
+      if (threadIdx.x + i < blockDim.x) accum = accum + __shfl_down(accum, i);
+    }
+    if (threadIdx.x == 0) {
+      atomicAdd(&c[ty], accum);   
+    }
   }
 }
+#else
+__global__ void __dmvt(float *a, int nrows, int ncols, float *b, float *c) {
+  for (int ty = threadIdx.y + blockDim.y * blockIdx.y; ty < ncols; ty += blockDim.y * gridDim.y) {
+    float accum = 0.0f;
+    for (int tx = threadIdx.x + blockDim.x * blockIdx.x; tx < nrows; tx += blockDim.x * gridDim.x) {
+      accum += a[tx+nrows*ty] * b[tx];
+    }
+    atomicAdd(&c[ty], accum);   
+  }
+}
+
+#endif
+#endif
 
 __global__ void __dmv0(float *a, int nrows, int ncols, int tstep, float *b, float *c) {
   float accum = 0.0f;
