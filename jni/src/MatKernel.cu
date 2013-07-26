@@ -1383,7 +1383,8 @@ __global__ void __dmvt(float *a, int nrows, int ncols, float *b, float *c) {
       accum += a[tx+nrows*ty] * b[tx];
     }
     for (int i = 1; i < blockDim.x; i *= 2) {
-      if (threadIdx.x + i < blockDim.x) accum = accum + __shfl_down(accum, i);
+      float tmp = __shfl_down(accum, i);
+      if (threadIdx.x + i < blockDim.x) accum += tmp;
     }
     if (threadIdx.x == 0) {
       atomicAdd(&c[ty], accum);   
@@ -1421,7 +1422,7 @@ int dmv(float *a, int nrows, int ncols, float *b, float *c, int trans) {
   if (trans == 1) {
     int ntx = min(32, nrows);
     int nty = min(32, ncols);
-    int nbx = min(256, 1 + nrows/ntx/2);
+    int nbx = min(256, 1 + nrows/ntx/8);
     int nby = min(256, 1 + ncols/nty/2);
     dim3 blockdims(ntx,nty,1);
     dim3 griddims(nbx,nby,1);
