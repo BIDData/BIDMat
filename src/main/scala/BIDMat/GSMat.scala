@@ -63,9 +63,13 @@ case class GSMat(nr:Int, nc:Int, val nnz0:Int, val ir:Pointer, val ic:Pointer, v
       GSMat(nr, nc, nnz)
     }
   } 
+  
+  def ~ (b: GMat) = new GPair(this, b)
+  
 }
 
 class GSPair (val omat:Mat, val mat:GSMat) extends Pair {
+  
 
 } 
 

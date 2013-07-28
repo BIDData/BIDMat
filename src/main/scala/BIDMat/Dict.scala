@@ -271,7 +271,7 @@ class IDict(val grams:IMat) {
     }
   }
   
-  def cmp(a:IMat, b:IMat, ia:Int, ib:Int):Int = {
+  @inline def cmp(a:IMat, b:IMat, ia:Int, ib:Int):Int = {
     var i = 0
     var retv = 0
     while (retv == 0 && i < a.ncols) {
