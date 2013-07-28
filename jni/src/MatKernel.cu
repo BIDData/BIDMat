@@ -486,7 +486,8 @@ __global__ void __dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic
       sum += A[i + aoff] * B[i + boff];
     }
     for (int i = 1; i < blockDim.x; i *= 2) {
-      sum = sum + __shfl_down(sum, i);
+      float tmp = __shfl_down(sum, i);
+      if (threadIdx.x + i < blockDim.x) sum = sum + tmp;
     } 
     if (threadIdx.x == 0) {
       parts[threadIdx.y] = sum;

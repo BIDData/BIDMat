@@ -799,6 +799,10 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   def ^   (b : FMat) = mat.ffMatOp(b, FMat.powFun, omat) 
   def ∙   (b:FMat):FMat = mat.dot(b)
   def ∙∙  (b:FMat):FMat = mat.dot(b)
+  
+    
+  def ^* (b : FDSPair) = MatFunctions.DDS(mat, b.left, b.right, omat)
+  def Tx (b : FDSPair) = MatFunctions.DDS(mat, b.left, b.right, omat)
 
   def > (b : FMat) = mat.ffMatOp(b, FMat.gtFun, omat)
   def < (b : FMat) = mat.ffMatOp(b, FMat.ltFun, omat)

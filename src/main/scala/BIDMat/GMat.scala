@@ -516,7 +516,9 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
   def != (b : Float) = mat.gOp(GMat(b), omat, op_ne)
   def != (b : Int) = mat.gOp(GMat(b), omat, op_ne)
   def != (b : Double) = mat.gOp(GMat(b), omat, op_ne)
-	
+
+  def ^* (b : GDSPair) = MatFunctions.DDS(mat, b.left, b.right, omat)
+  def Tx (b : GDSPair) = MatFunctions.DDS(mat, b.left, b.right, omat)
   /*
    * Specialize to IMat
    */

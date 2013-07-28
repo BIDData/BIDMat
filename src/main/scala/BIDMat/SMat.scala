@@ -382,6 +382,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
 
   
   def ~ (b : SMat):SPair = new SPair(this, b)
+  def ~ (b: FMat) = new FPair(this, b)
   
   override def ~ (b: Mat):Pair = 
     b match {
