@@ -272,10 +272,12 @@ class IDict(val grams:IMat) {
   @inline def cmp(a:IMat, b:IMat, ia:Int, ib:Int):Int = {
     var i = 0
     var retv = 0
+    val anr = a.nrows
+    val bnr = b.nrows
     while (retv == 0 && i < a.ncols) {
-    	if (a(ia, i) > b(ib, i)) {
+    	if (a.data(ia + i*anr) > b.data(ib + i*bnr)) {
     		retv = 1
-    	} else if (a(ia, i) < b(ib, i)) {
+    	} else if (a.data(ia + i*anr) < b.data(ib + i*bnr)) {
     		retv = -1
     	}
     	i += 1
@@ -292,7 +294,7 @@ class IDict(val grams:IMat) {
     while (i < length && ito < b.length) { 
       val xx = cmp(sortedMat, b.sortedMat, i, ito)
       if (xx == 0) {
-        out(perm(i)) = b.perm(ito)
+        out.data(perm(i)) = b.perm.data(ito)
         i += 1
       } else if (xx > 0) {
         ito += 1
