@@ -14,9 +14,7 @@ class Dict(val cstr:CSMat) {
   def makeHash:HashMap[String, Int] = { 
     this.synchronized {
     	if (hash.asInstanceOf[AnyRef] == null) { 
-    		hash = new HashMap[String, Int] with SynchronizedMap[String, Int]{
-    			override def default(key:String) = -1
-    		}
+    		hash = new HashMap[String, Int] 
     		var i = 0
     		while (i < cstr.length) { 
     			hash(cstr.data(i)) = i
