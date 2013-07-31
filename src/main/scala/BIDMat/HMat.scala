@@ -170,9 +170,9 @@ object HMat {
     if (compressed == 2 || (compressed == 0 && fname.endsWith(".gz"))) {
       new BufferedInputStream (new GZIPInputStream(fin, 1024*1024))      
     } else  if (compressed == 3 || (compressed == 0 && fname.endsWith(".lz4"))) {
-      new BufferedInputStream (new BufferedInputStream(new LZ4BlockInputStream(fin), 1024*1024))    
+      new BufferedInputStream (new LZ4BlockInputStream(new BufferedInputStream(fin, 8*1024*1024)), 8*1024*1024)   
     } else {
-    	new BufferedInputStream(fin, 1024*1024)
+    	new BufferedInputStream(fin, 8*1024*1024)
     } 
   }
   
