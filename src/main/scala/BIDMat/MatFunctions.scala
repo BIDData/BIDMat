@@ -807,6 +807,46 @@ object MatFunctions {
   def saveAsHDF5(fname:String, args:AnyRef*) = MatHDF5.hsaveAsHDF5(fname, args.toList)
 
   def saveAs(fname:String, args:AnyRef*) = MatHDF5.hsaveAs(fname, args.toList)
+  
+  def loadMat(fname:String) = HMat.loadMat(fname)  
+  def loadMat(fname:String, omat:Mat) = HMat.loadMat(fname, omat)  
+  def loadMat(fname:String, omat:Mat, compressed:Int) = HMat.loadMat(fname, omat, compressed)
+  
+  def loadDMat(fname:String) = HMat.loadDMat(fname)  
+  def loadDMat(fname:String, omat:Mat) = HMat.loadDMat(fname, omat)  
+  def loadDMat(fname:String, omat:Mat, compressed:Int) = HMat.loadDMat(fname, omat, compressed)
+  
+  def loadFMat(fname:String) = HMat.loadFMat(fname)  
+  def loadFMat(fname:String, omat:Mat) = HMat.loadFMat(fname, omat)  
+  def loadFMat(fname:String, omat:Mat, compressed:Int) = HMat.loadFMat(fname, omat, compressed)
+  
+  def loadIMat(fname:String) = HMat.loadIMat(fname)  
+  def loadIMat(fname:String, omat:Mat) = HMat.loadIMat(fname, omat)  
+  def loadIMat(fname:String, omat:Mat, compressed:Int) = HMat.loadIMat(fname, omat, compressed)
+      
+  def loadBMat(fname:String) = HMat.loadBMat(fname)   
+  def loadBMat(fname:String, compressed:Int) = HMat.loadBMat(fname, compressed)
+  
+  def loadSMat(fname:String) = HMat.loadSMat(fname)    
+  def loadSMat(fname:String, compressed:Int) = HMat.loadSMat(fname, compressed)
+  
+  def saveMat(fname:String, m:Mat) = HMat.saveMat(fname, m)    
+  def saveMat(fname:String, m:Mat, compressed:Int) = HMat.saveMat(fname, m, compressed)
+  
+  def saveFMat(fname:String, m:FMat) = HMat.saveFMat(fname, m)    
+  def saveFMat(fname:String, m:FMat, compressed:Int) = HMat.saveFMat(fname, m, compressed)
+  
+  def saveDMat(fname:String, m:DMat) = HMat.saveDMat(fname, m)    
+  def saveDMat(fname:String, m:DMat, compressed:Int) = HMat.saveDMat(fname, m, compressed)
+  
+  def saveIMat(fname:String, m:IMat) = HMat.saveIMat(fname, m)    
+  def saveIMat(fname:String, m:IMat, compressed:Int) = HMat.saveIMat(fname, m, compressed)
+  
+  def saveSMat(fname:String, m:SMat) = HMat.saveSMat(fname, m)    
+  def saveSMat(fname:String, m:SMat, compressed:Int) = HMat.saveSMat(fname, m, compressed)
+  
+  def saveBMat(fname:String, m:BMat) = HMat.saveBMat(fname, m)    
+  def saveBMat(fname:String, m:BMat, compressed:Int) = HMat.saveBMat(fname, m, compressed)
 
   final val ? = new IMatWildcard
 }
