@@ -328,7 +328,7 @@ class SparseMat[@specialized(Double,Float) T]
     val ioff = Mat.ioneBased
     if (out.asInstanceOf[AnyRef] != null && nrows != out.nrows) throw new RuntimeException("colslice row dims mismatch")
     if (a-off < 0) throw new RuntimeException("colslice index out of range %d" format (a))
-    if (b-off >= ncols) throw new RuntimeException("colslice index out of range %d %d" format (b, ncols))
+    if (b-off > ncols) throw new RuntimeException("colslice index out of range %d %d" format (b, ncols))
     var omat = out.asInstanceOf[SparseMat[T]]
     val newnnz = jc(b-off) - jc(a-off)
     if (omat.asInstanceOf[AnyRef] == null || newnnz > omat.nnz) {

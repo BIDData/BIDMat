@@ -547,6 +547,10 @@ object SciFunctions {
       case (aa:GMat, bb:FMat) => max(aa, GMat(bb), c):GMat
       case (aa:IMat, bb:GMat) => max(GMat(aa), bb, c):GMat
       case (aa:GMat, bb:IMat) => max(aa, GMat(bb), c):GMat
+      case (aa:FMat, bb:FMat) => max(aa, bb, c):FMat
+      case (aa:IMat, bb:IMat) => max(aa, bb, c):IMat
+      case (aa:DMat, bb:DMat) => max(aa, bb, c):DMat
+      case (aa:GMat, bb:GMat) => max(aa, bb, c):GMat
     }
   }
   
