@@ -435,7 +435,7 @@ __global__ void __dsmultT(int nrows, int nnz, float *A, float *Bdata, int *Bir, 
 
 int dsmultT(int nrows, int ncols, int nnz, float *A, float *Bdata, int *Bir, int *Bic, float *C) {
   int nthreads = min(1024, nrows);
-  int nblocks = min(65536, ncols);
+  int nblocks = min(8192, ncols);
   __dsmultT<<<nblocks,nthreads>>>(nrows, nnz, A, Bdata, Bir, Bic, C);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -448,11 +448,12 @@ __global__ void __reduce1op(int nrows, int ncols, float *A, float *B, int opn);
 
 __global__ void __reducebin1op(int nrows, int ncols, float *A, float *B, float *C, int opb, int opr);
 
-#define DDS_BLKY 4
+#define DDS_BLKY 32
 
 int dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P) {
-  dim3 blockDims(min(32,nrows), min(DDS_BLKY, 1+(nrows-1)/32), 1);
-  int nblocks = min(65536, max(1,nnz/8));
+  dim3 blockDims(min(32,nrows), min(DDS_BLKY, 1+(nrows-1)/64), 1);
+//  int nblocks = min(65536, max(1,nnz/8));
+  int nblocks = min(16384, max(1,nnz/128));
   __dds<<<nblocks,blockDims>>>(nrows, nnz, A, B, Cir, Cic, P);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -474,6 +475,27 @@ int reduce1op(int nrows, int ncols, float *A, float *B, int opn) {
 #if __CUDA_ARCH__ > 200
 
 __global__ void __dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P) {
+  int jstart = ((long long)blockIdx.x) * nnz / gridDim.x;
+  int jend = ((long long)(blockIdx.x + 1)) * nnz / gridDim.x;
+  int tid = threadIdx.x + blockDim.x * threadIdx.y;
+  for (int j = jstart; j < jend ; j++) {
+    float sum = 0;
+    int aoff = nrows * Cir[j];
+    int boff = nrows * Cic[j];
+    for (int i = tid; i < nrows; i += blockDim.x * blockDim.y) {
+      sum += A[i + aoff] * B[i + boff];
+    }
+    for (int i = 1; i < blockDim.x; i *= 2) {
+      float tmp = __shfl_down(sum, i);
+      if (threadIdx.x + i < blockDim.x) sum = sum + tmp;
+    } 
+    if (threadIdx.x == 0) {
+      atomicAdd(&P[j], sum);
+    }
+  }
+}
+// Mysterious (non-reproducible) problems with this one
+__global__ void __dds0(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P) {
   __shared__ float parts[DDS_BLKY];
   int jstart = ((long long)blockIdx.x) * nnz / gridDim.x;
   int jend = ((long long)(blockIdx.x + 1)) * nnz / gridDim.x;
@@ -491,16 +513,17 @@ __global__ void __dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic
     } 
     if (threadIdx.x == 0) {
       parts[threadIdx.y] = sum;
-      for (int i = 1; i < blockDim.y; i *= 2) {
-        __syncthreads();
-        if (i + threadIdx.y < blockDim.y) {
-          parts[threadIdx.y] = parts[threadIdx.y] + parts[i + threadIdx.y];
-        }
-      } 
-      if (threadIdx.y == 0) {
-        P[j] = parts[0];
-      } 
     }
+    for (int i = 1; i < blockDim.y; i *= 2) {
+      __syncthreads();
+      if (threadIdx.x == 0 && threadIdx.y + i < blockDim.y) {
+        parts[threadIdx.y] = parts[threadIdx.y] + parts[threadIdx.y + i];
+      }
+    } 
+    if (threadIdx.x == 0 && threadIdx.y == 0) {
+      P[j] = parts[0];
+    }
+    __syncthreads();
   }
 }
 
@@ -559,6 +582,7 @@ __global__ void __dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic
         parts[tid] = parts[tid] + parts[i + tid];
       }
     }
+    __syncthreads();
     if (tid == 0) {
       P[j] = parts[0];
     }
