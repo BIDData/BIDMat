@@ -739,7 +739,11 @@ object MatFunctions {
     }
   }
   
+  def DDS(a:FMat,b:FMat,c:SMat):SMat = DDS(a, b, c, null)
+  
   def DDS(a:GMat,b:GMat,c:GSMat,omat:Mat):GSMat = GSMat.DDS(a,b,c,omat)
+  
+  def DDS(a:GMat,b:GMat,c:GSMat):GSMat = GSMat.DDS(a, b, c, null)
   
   def DDS(a:Mat, b:Mat, c:Mat, omat:Mat=null):Mat = {
     (a, b, c) match {
