@@ -239,7 +239,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     if (ncols != a.nrows) {
     	throw new RuntimeException("dimensions mismatch")
     } else {
-    	val out = FMat.newOrCheckFMat(nrows, a.ncols, outmat, GUID, a.GUID, "dMult".##)
+    	val out = FMat.newOrCheckFMat(nrows, a.ncols, outmat, GUID, a.GUID, "fsMult".##)
     	out.clear
     	Mat.nflops += 2L * nrows * a.nnz
     	val ioff = Mat.ioneBased;

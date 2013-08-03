@@ -404,8 +404,12 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   
   override def recycle(nr:Int, nc:Int, nnz:Int):SMat = {
   	val jc0 = if (jc.size >= nc+1) jc else new Array[Int](nc+1)
-  	val ir0 = if (ir.size >= nnz) ir else new Array[Int](nnz)
-  	val data0 = if (data.size >= nnz) data else new Array[Float](nnz)
+  	val ir0 = if (ir.size >= nnz) ir else {
+  	  if (Mat.useCache) new Array[Int]((Mat.recycleGrow*nnz).toInt) else new Array[Int](nnz)
+  	}
+  	val data0 = if (data.size >= nnz) data else {
+  	  if (Mat.useCache) new Array[Float]((Mat.recycleGrow*nnz).toInt) else new Array[Float](nnz) 
+  	}
   	new SMat(nr, nc, nnz, ir0, jc0, data0)    
   }
 }
@@ -449,7 +453,11 @@ object SMat {
 
   def apply(nr:Int, nc:Int, nnz0:Int):SMat = new SMat(nr, nc, nnz0, new Array[Int](nnz0), new Array[Int](nc+1), new Array[Float](nnz0)) 
   
-  def apply(a:SparseMat[Float]):SMat = new SMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a.data) 
+  def apply(a:SparseMat[Float]):SMat = {
+    val m = new SMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a.data); 
+    m.setGUID(a.GUID); 
+    m
+  }
   
   def apply(a:SDMat) = a.toSMat
   
@@ -485,10 +493,17 @@ object SMat {
   
   def newOrCheckSMat(nrows:Int, ncols:Int, nnz:Int, oldmat:Mat):SMat = {
   	if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows == 0 && oldmat.ncols == 0)) {
-  		SMat(nrows, ncols, nnz)
+  		if (Mat.useCache) {
+  		  val m = SMat(nrows, ncols, (Mat.recycleGrow*nnz).toInt)
+  		  m.nnz0 = nnz
+  		  m
+  		} else {
+  		  SMat(nrows, ncols, nnz)
+  		}
   	} else {
   	  oldmat match {
-  	    case omat:SMat =>	if (oldmat.nrows == nrows && oldmat.ncols == ncols && oldmat.nnz == nnz) {
+  	    case omat:SMat =>	if (oldmat.nrows == nrows && oldmat.ncols == ncols && nnz <= omat.data.length) {
+  	    	omat.nnz0 = nnz
   	    	omat
   	    } else {
   	    	omat.recycle(nrows, ncols, nnz)
@@ -498,19 +513,21 @@ object SMat {
   }
   
   
-    def newOrCheckSMat(nrows:Int, ncols:Int, nnz:Int, outmat:Mat, guid1:Long, opHash:Int):SMat = {
+  def newOrCheckSMat(nrows:Int, ncols:Int, nnz:Int, outmat:Mat, guid1:Long, opHash:Int):SMat = {
     if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
-      newOrCheckSMat(nrows, ncols, nnz, outmat)
+    	newOrCheckSMat(nrows, ncols, nnz, outmat)
     } else {
-      val key = (guid1, opHash)
-      val res = Mat.cache2(key)
-      if (res != null) {
-      	newOrCheckSMat(nrows, ncols, nnz, res)
-      } else {
-        val omat = newOrCheckSMat(nrows, ncols, nnz, null)
-        Mat.cache2put(key, omat)
-        omat
-      }
+    	val key = (guid1, opHash)
+    	val res = Mat.cache2(key)
+    	if (res != null) {
+    		val omat = newOrCheckSMat(nrows, ncols, nnz, res)
+    		if (omat != res) Mat.cache2put(key, omat)
+    		omat
+    	} else {
+    		val omat = newOrCheckSMat(nrows, ncols, nnz, null)
+    		Mat.cache2put(key, omat)
+    		omat
+    	}
     }
   }
 
@@ -522,7 +539,9 @@ object SMat {
       val key = (guid1, guid2, opHash)
       val res = Mat.cache3(key)
       if (res != null) {
-      	newOrCheckSMat(nrows, ncols, nnz, res)
+      	val omat = newOrCheckSMat(nrows, ncols, nnz, res)
+      	if (omat != res) Mat.cache3put(key, omat)
+      	omat
       } else {
         val omat = newOrCheckSMat(nrows, ncols, nnz, null)
         Mat.cache3put(key, omat)
@@ -538,7 +557,9 @@ object SMat {
       val key = (guid1, guid2, guid3, opHash)
       val res = Mat.cache4(key)
       if (res != null) {
-      	newOrCheckSMat(nrows, ncols, nnz, res)
+      	val omat = newOrCheckSMat(nrows, ncols, nnz, res)
+      	if (omat != res) Mat.cache4put(key, omat)
+      	omat
       } else {
         val omat = newOrCheckSMat(nrows, ncols, nnz, null)
         Mat.cache4put(key, omat)

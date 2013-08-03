@@ -324,17 +324,23 @@ class SparseMat[@specialized(Double,Float) T]
   def gapply(iv:IMat, jv:Int):SparseMat[T] = gapply(iv, IMat.ielem(jv))
   
   def gcolslice(a:Int, b:Int, out:Mat):SparseMat[T] = {
+//    println("gcolslice %d %d, %d %d, %d %d" format (GUID, out.GUID, nrows, ncols, out.nrows, out.ncols))
     val off = Mat.oneBased
     val ioff = Mat.ioneBased
     if (out.asInstanceOf[AnyRef] != null && nrows != out.nrows) throw new RuntimeException("colslice row dims mismatch")
     if (a-off < 0) throw new RuntimeException("colslice index out of range %d" format (a))
     if (b-off > ncols) throw new RuntimeException("colslice index out of range %d %d" format (b, ncols))
     var omat = out.asInstanceOf[SparseMat[T]]
+//    println("gcolslice1 %d %d" format (GUID, omat.GUID))
     val newnnz = jc(b-off) - jc(a-off)
-    if (omat.asInstanceOf[AnyRef] == null || newnnz > omat.nnz) {
+    if (omat.asInstanceOf[AnyRef] == null || newnnz > omat.data.length) {
     	omat = new SparseMat[T](nrows, b-a, newnnz, new Array[Int](newnnz), new Array[Int](b-a+1), new Array[T](newnnz))
     }	else if (b-a <= omat.ncols) {
-    	omat = new SparseMat[T](nrows, b-a, newnnz, omat.ir, omat.jc, omat.data)
+      if (b-a != omat.ncols) {
+      	omat = new SparseMat[T](nrows, b-a, newnnz, omat.ir, omat.jc, omat.data)
+      } else {
+        omat.nnz0 = newnnz
+      }
     } else {
       omat = new SparseMat[T](nrows, b-a, newnnz, omat.ir, new Array[Int](b-a+1), omat.data)
     }
@@ -347,6 +353,7 @@ class SparseMat[@specialized(Double,Float) T]
       omat.jc(i) = jc(i+a) - jc(a) + ioff
     	i += 1
     }    
+//    println("gcolslice2 %d %d" format (GUID, omat.GUID))
     omat
   }
 
