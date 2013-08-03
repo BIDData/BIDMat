@@ -718,6 +718,7 @@ object MatFunctions {
       throw new RuntimeException("dims of C must match A'*B")
     } else {
       val out = SMat.newOrCheckSMat(c.nrows, c.ncols, c.nnz, omat, a.GUID, b.GUID, c.GUID, "DDS".##)     
+//      println("DDS %d %d %d, %d %d %d %d" format (c.nrows, c.ncols, c.nnz, a.GUID, b.GUID, c.GUID, out.GUID))
       Mat.nflops += 2L * c.nnz * a.nrows
       val ioff = Mat.ioneBased
       out.jc(0) = ioff
@@ -786,6 +787,33 @@ object MatFunctions {
     	i += 1
       }
       out
+    }
+  }
+  
+  def fsqrt(v:Float):Float = math.sqrt(v).asInstanceOf[Float]
+  
+  def mapfun2x2(fn:(Float, Float)=>(Float, Float), in0:FMat, in1:FMat, out0:FMat, out1:FMat) = {
+    if (in0.nrows != in1.nrows || in0.nrows != out0.nrows || in0.nrows != out1.nrows ||
+        in0.ncols != in1.ncols || in0.ncols != out0.ncols || in0.ncols != out1.ncols) {
+      throw new RuntimeException("dimensions mismatch")
+    }
+    var i = 0
+    while (i < in0.length) {
+      val (v1, v2) = fn(in0.data(i), in1.data(i))
+      out0.data(i) = v1
+      out1.data(i) = v2
+      i += 1
+    }
+  }
+  def mapfun2x1(fn:(Float, Float)=>Float, in0:FMat, in1:FMat, out0:FMat) = {
+    if (in0.nrows != in1.nrows || in0.nrows != out0.nrows ||
+        in0.ncols != in1.ncols || in0.ncols != out0.ncols) {
+      throw new RuntimeException("dimensions mismatch")
+    }
+    var i = 0
+    while (i < in0.length) {
+      out0.data(i) = fn(in0.data(i), in1.data(i))
+      i += 1
     }
   }
   
