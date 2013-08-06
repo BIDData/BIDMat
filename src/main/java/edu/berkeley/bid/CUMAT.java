@@ -34,6 +34,8 @@ public final class CUMAT {
     
     public static native int dsmultT(int nr, int nc, int nnz, Pointer A, Pointer Bdata, Pointer Bir, Pointer Bic, Pointer C);
     
+    public static native int spsum(int nr, int nc, int nnz, Pointer Air, Pointer Aic, Pointer P, Pointer B, int n);
+    
     public static native int dds(int nr, int nnz, Pointer A, Pointer B, Pointer Cir, Pointer Cic, Pointer P);
     
     public static native int transpose(Pointer A, int lda, Pointer B, int ldb, int nr, int nc);

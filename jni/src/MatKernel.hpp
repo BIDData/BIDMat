@@ -15,6 +15,8 @@ int dsmult(int nrows, int ncols, int nnz, float *A, float *Bdata, int *Bir, int 
 
 int dsmultT(int nrows, int ncols, int nnz, float *A, float *Bdata, int *Bir, int *Bic, float *C);
 
+int spsum(int nrows, int ncols, int nnz, int *Air, int *Aic, float *P, float *B, int n);
+
 int dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P);
 
 int reduce1op(int nrows, int ncols, float *A, float *B, int opn);

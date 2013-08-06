@@ -21,7 +21,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   
   def find3:(IMat, IMat, FMat) = { val (ii, jj, vv) = gfind3 ; (IMat(ii), IMat(jj), FMat(vv)) }	
   
-  override def contents:FMat = FMat(nnz, 1, data)
+  override def contents:FMat = FMat(nnz, 1, this.data)
   
   override def apply(a:IMat, b:IMat):SMat = SMat(gapply(a, b))	
   
@@ -116,7 +116,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   }
   
   def Tmult(a:FMat, omat:Mat):FMat = {
-	  val out = FMat.newOrCheckFMat(ncols, a.ncols, omat, GUID, a.GUID, "TMult".hashCode)
+	  val out = FMat.newOrCheckFMat(ncols, a.ncols, omat, GUID, a.GUID, "TMult".##)
 	  if (omat.asInstanceOf[AnyRef] != null) out.clear
 	  var jc0 = jc
 	  var ir0 = ir
@@ -398,7 +398,22 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
     out
   }
   
+  def copyTo(ss:SMat):SMat = {
+    val out = SMat.newOrCheckSMat(nrows, ncols, nnz, ss, GUID, "copyTo".hashCode)
+    System.arraycopy(jc, 0, out.jc, 0, ncols+1)
+    System.arraycopy(ir, 0, out.ir, 0, nnz)
+    System.arraycopy(data, 0, out.data, 0, nnz)
+    out
+  }
+  
   def copyTo(g:GSMat) = GSMat.fromSMat(this, g)
+  
+  override def copyTo(m:Mat):Mat = {
+    m match {
+      case ss:GSMat => GSMat.fromSMat(this, ss)
+      case ss:SMat => copyTo(ss):SMat
+    }
+  }
   
   override def zeros(nr:Int, nc:Int, nnz:Int) = SMat(nr, nc, nnz)
   
@@ -519,15 +534,9 @@ object SMat {
     } else {
     	val key = (guid1, opHash)
     	val res = Mat.cache2(key)
-    	if (res != null) {
-    		val omat = newOrCheckSMat(nrows, ncols, nnz, res)
-    		if (omat != res) Mat.cache2put(key, omat)
-    		omat
-    	} else {
-    		val omat = newOrCheckSMat(nrows, ncols, nnz, null)
-    		Mat.cache2put(key, omat)
-    		omat
-    	}
+    	val omat = newOrCheckSMat(nrows, ncols, nnz, res)
+    	if (omat != res) Mat.cache2put(key, omat)
+    	omat
     }
   }
 
@@ -538,15 +547,9 @@ object SMat {
     } else {
       val key = (guid1, guid2, opHash)
       val res = Mat.cache3(key)
-      if (res != null) {
-      	val omat = newOrCheckSMat(nrows, ncols, nnz, res)
-      	if (omat != res) Mat.cache3put(key, omat)
-      	omat
-      } else {
-        val omat = newOrCheckSMat(nrows, ncols, nnz, null)
-        Mat.cache3put(key, omat)
-        omat
-      }
+      val omat = newOrCheckSMat(nrows, ncols, nnz, res)
+      if (omat != res) Mat.cache3put(key, omat)
+      omat
     }
   }
     
@@ -556,15 +559,9 @@ object SMat {
     } else {
       val key = (guid1, guid2, guid3, opHash)
       val res = Mat.cache4(key)
-      if (res != null) {
-      	val omat = newOrCheckSMat(nrows, ncols, nnz, res)
-      	if (omat != res) Mat.cache4put(key, omat)
-      	omat
-      } else {
-        val omat = newOrCheckSMat(nrows, ncols, nnz, null)
-        Mat.cache4put(key, omat)
-        omat
-      }
+      val omat = newOrCheckSMat(nrows, ncols, nnz, res)
+      if (omat != res) Mat.cache4put(key, omat)
+      omat
     }
   }
 }

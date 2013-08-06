@@ -591,8 +591,11 @@ object SciFunctions {
       case aa:CMat => sum(aa, b):CMat
       case aa:SMat => sum(aa, b):FMat
       case aa:GMat => sum(aa, b):GMat
+      case aa:GSMat => sum(aa, b):GMat
     }
   }
+  
+  def sum(a:Mat):Mat = sum(a, 0)
   
   def sum(a:Mat, b:Int, c:Mat):Mat = {
     a match {
@@ -602,6 +605,7 @@ object SciFunctions {
       case aa:SMat=> sum(aa, b, c):FMat
       case aa:CMat => sum(aa, b, c):CMat
       case aa:GMat => sum(aa, b, c):GMat
+      case aa:GSMat => sum(aa, b, c):GMat
     }
   }
   
@@ -1710,6 +1714,10 @@ object SciFunctions {
   def maxi(a:GMat, out:Mat):GMat           = a.reduceOp(out, 0, BinOp.op_max)
   def mini(a:GMat, out:Mat):GMat           = a.reduceOp(out, 0, BinOp.op_min)
   def sum(a:GMat, out:Mat):GMat            = a.reduceOp(out, 0, BinOp.op_add)
+     
+  def sum(a:GSMat) = a.sum(0, null)
+  def sum(a:GSMat, n:Int) = a.sum(n, null)
+  def sum(a:GSMat, n:Int, omat:Mat) = a.sum(n, omat)
   
   def abs(a:Mat, b:Mat):Mat = {
     a match {

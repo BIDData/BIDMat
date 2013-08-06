@@ -110,8 +110,8 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   }
   
   def GTMult(a:GMat, oldmat:Mat):GMat = {
-    if (nrows == a.ncols) {
-      val out = GMat.newOrCheckGMat(ncols, a.nrows, oldmat, GUID, a.GUID, "GMultT".##)
+    if (nrows == a.nrows) {
+      val out = GMat.newOrCheckGMat(ncols, a.ncols, oldmat, GUID, a.GUID, "GMultT".##)
       Mat.nflops += 2L * length * a.ncols
       cublasSgemm('t', 'n', ncols, a.ncols, nrows, 1.0f, data, nrows, a.data, a.nrows, 0f, out.data, out.nrows)
       cudaDeviceSynchronize()
@@ -184,9 +184,9 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   
   def dotr (a:GMat, oldmat:Mat):GMat = 
   	if (nrows != a.nrows || ncols != a.ncols) {
-  		throw new RuntimeException("dot dims not compatible")
+  		throw new RuntimeException("dotr dims not compatible")
   	} else {
-  		val out = GMat.newOrCheckGMat(nrows, 1, oldmat, GUID, a.GUID, "dot".##) 
+  		val out = GMat.newOrCheckGMat(nrows, 1, oldmat, GUID, a.GUID, "dotr".##) 
   		Mat.nflops += 2L * length
   	  CUMAT.reducebin2op(nrows, ncols, data, a.data, out.data, op_mul, op_add)
   	  out
@@ -196,7 +196,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   
   override def ddot (a : Mat):Double = 
   	if (nrows != a.nrows || ncols != a.ncols) {
-  		throw new RuntimeException("dot dims not compatible")
+  		throw new RuntimeException("ddot dims not compatible")
   	} else {
   	  a match {
   	    case aa:GMat => cublasSdot(length, data, 1, aa.data, 1)
@@ -263,7 +263,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     } else if (realsize >= nr*nc) {
       new GMat(nr, nc, data, realsize)
     } else {
-      free
+//      free
       GMat(nr, nc)
     }  
   }
@@ -274,7 +274,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   }
   
   override def finalize = {
-    if (data != null) free
+//    if (data != null) free
   }
   
   /*
@@ -510,10 +510,11 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
 	def ∙ (b :GMat) = mat.dot(b, omat)
 	def ∙∙ (b :GMat) = mat.dotr(b, omat)
 	
-	def == (b : Float) = mat.gOp(GMat(b), omat, op_eq)
+	override def == (b : Float) = mat.gOp(GMat(b), omat, op_eq)
+  override def != (b : Float) = mat.gOp(GMat(b), omat, op_ne)
+  override def * (b : Float) = mat.gOp(GMat(b), omat, op_mul)
   def == (b : Int) = mat.gOp(GMat(b), omat, op_eq)
   def == (b : Double) = mat.gOp(GMat(b), omat, op_eq)
-  def != (b : Float) = mat.gOp(GMat(b), omat, op_ne)
   def != (b : Int) = mat.gOp(GMat(b), omat, op_ne)
   def != (b : Double) = mat.gOp(GMat(b), omat, op_ne)
 

@@ -442,6 +442,35 @@ int dsmultT(int nrows, int ncols, int nnz, float *A, float *Bdata, int *Bir, int
   return err;
 }
 
+__global__ void __spsum1(int nrows, int ncols, int nnz, int *Air, int *Aic, float *P, float *B) {
+  int jstart = ((long long)blockIdx.x) * nnz / gridDim.x;
+  int jend = ((long long)(blockIdx.x + 1)) * nnz / gridDim.x;
+  for (int i = jstart + threadIdx.x; i < jend; i += blockDim.x) {
+    atomicAdd(&B[Aic[i]], P[i]);
+  }
+}
+
+__global__ void __spsum2(int nrows, int ncols, int nnz, int *Air, int *Aic, float *P, float *B) {
+  int jstart = ((long long)blockIdx.x) * nnz / gridDim.x;
+  int jend = ((long long)(blockIdx.x + 1)) * nnz / gridDim.x;
+  for (int i = jstart + threadIdx.x; i < jend; i += blockDim.x) {
+    atomicAdd(&B[Air[i]], P[i]);
+  }
+}
+
+int spsum(int nrows, int ncols, int nnz, int *Air, int *Aic, float *P, float *B, int n) {
+  int nthreads = min(128, nnz);
+  int nblks = min(65536, max(1, (nnz-1) / 128));
+  if (n == 1) {
+    __spsum1<<<nblks,nthreads>>>(nrows, ncols, nnz, Air, Aic, P, B);
+  } else {
+    __spsum2<<<nblks,nthreads>>>(nrows, ncols, nnz, Air, Aic, P, B);
+  }
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
 __global__ void __dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P);
 
 __global__ void __reduce1op(int nrows, int ncols, float *A, float *B, int opn);
