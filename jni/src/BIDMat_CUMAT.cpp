@@ -142,6 +142,17 @@ extern "C" {
     return reduce2op(nrows, ncols, A, B, opn);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_spsum
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jint nnz, jobject jAir, jobject jAic, jobject jP, jobject jB, jint n)
+  {
+    int *Air = (int*)getPointer(env, jAir);
+    int *Aic = (int*)getPointer(env, jAic);
+    float *P = (float*)getPointer(env, jP);
+    float *B = (float*)getPointer(env, jB);
+
+    return spsum(nrows, ncols, nnz, Air, Aic, P, B, n);
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_reducebin1op
   (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jobject jC, jint opb, jint opr)
   {

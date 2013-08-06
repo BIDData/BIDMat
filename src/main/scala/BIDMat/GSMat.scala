@@ -6,7 +6,7 @@ import jcuda.runtime._
 import edu.berkeley.bid.CUMAT
 import GMat._
 
-case class GSMat(nr:Int, nc:Int, val nnz0:Int, val ir:Pointer, val ic:Pointer, val data:Pointer, val realnnz:Int) extends Mat(nr, nc) {
+case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, val data:Pointer, val realnnz:Int) extends Mat(nr, nc) {
 	
   def getdata() = data;	
 
@@ -55,16 +55,27 @@ case class GSMat(nr:Int, nc:Int, val nnz0:Int, val ir:Pointer, val ic:Pointer, v
     JCublas.cublasFree(ir)
   }
   
-  override def recycle(nr:Int, nc:Int, nnz:Int):GSMat = {
-    if (realnnz >= nnz) {  
-      new GSMat(nr, nc, nnz, ir, ic, data, realnnz)
+  override def recycle(nr:Int, nc:Int, nnzx:Int):GSMat = {
+    if (realnnz >= nnzx) {  
+      new GSMat(nr, nc, nnzx, ir, ic, data, realnnz)
     } else {
-      free
-      GSMat(nr, nc, nnz)
+//      free
+      GSMat(nr, nc, nnzx)
     }
   } 
   
+  def sum(n:Int, oldmat:Mat) = {
+    val nn = if (n > 0) n else if (nrows == 1) 2 else 1
+    val out = GMat.newOrCheckGMat(if (nn==1) 1 else nrows, if (nn==1) ncols else 1, oldmat, GUID, 0, "sum".##)
+    out.clear
+    Mat.nflops += nnz
+    CUMAT.spsum(nrows, ncols, nnz, ir, ic, data, out.data, nn)
+    cudaDeviceSynchronize
+    out
+  }
+  
   def ~ (b: GMat) = new GPair(this, b)
+  
   
 }
 
@@ -87,7 +98,8 @@ object GSMat {
   def apply(a:SMat):GSMat = fromSMat(a, null) 
  
   def fromSMat(a:SMat, b:GSMat):GSMat = {
-    val out = GSMat.newOrCheckGSMat(a.nrows, a.ncols, a.nnz, b, a.GUID, "fromSMat".##)
+    val out = GSMat.newOrCheckGSMat(a.nrows, a.ncols, a.data.length, b, a.GUID, "fromSMat".##)
+    out.nnz0 = a.nnz
     JCublas.cublasSetVector(a.nnz, Sizeof.FLOAT, Pointer.to(a.data), 1, out.data, 1)
     if (Mat.ioneBased == 1) {
       JCublas.cublasSetVector(a.nnz, Sizeof.INT, Pointer.to(SparseMat.decInds(a.ir)), 1, out.ir, 1)
@@ -120,10 +132,17 @@ object GSMat {
   
   def newOrCheckGSMat(nrows:Int, ncols:Int, nnz:Int, oldmat:Mat):GSMat = {
   	if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows ==0 && oldmat.ncols == 0)) {
-  		GSMat(nrows, ncols, nnz)
+  	  if (Mat.useCache) {
+  	    val m = GSMat(nrows, ncols, (Mat.recycleGrow*nnz).toInt)
+  	    m.nnz0 = nnz
+  	    m
+  	  } else {
+  	  	GSMat(nrows, ncols, nnz)
+  	  }
   	} else {
   		oldmat match {
-  		case omat:GSMat => if (oldmat.nrows == nrows && oldmat.ncols == ncols && oldmat.nnz == nnz) {
+  		case omat:GSMat => if (oldmat.nrows == nrows && oldmat.ncols == ncols && nnz <= omat.realnnz) {
+  		  omat.nnz0 = nnz
   			omat
   		} else {
   			omat.recycle(nrows, ncols, nnz)
@@ -138,13 +157,9 @@ object GSMat {
     } else {
       val key = (guid1, opHash)
       val res = Mat.cache2(key)
-      if (res != null) {
-      	newOrCheckGSMat(nrows, ncols, nnz, res)
-      } else {
-        val omat = newOrCheckGSMat(nrows, ncols, nnz, null)
-        Mat.cache2put(key, omat)
-        omat
-      }
+      val omat = newOrCheckGSMat(nrows, ncols, nnz, res)
+      if (res != omat) Mat.cache2put(key, omat)
+      omat
     }
   }   
 
@@ -154,13 +169,9 @@ object GSMat {
     } else {
       val key = (guid1, guid2, opHash)
       val res = Mat.cache3(key)
-      if (res != null) {
-      	newOrCheckGSMat(nrows, ncols, nnz, res)
-      } else {
-        val omat = newOrCheckGSMat(nrows, ncols, nnz, null)
-        Mat.cache3put(key, omat)
-        omat
-      }
+      val omat =newOrCheckGSMat(nrows, ncols, nnz, res)
+      if (res != omat) Mat.cache3put(key, omat)
+      omat
     }
   } 
 
@@ -171,13 +182,9 @@ object GSMat {
     } else {
       val key = (guid1, guid2, guid3, opHash)
       val res = Mat.cache4(key)
-      if (res != null) {
-      	newOrCheckGSMat(nrows, ncols, nnz, res)
-      } else {
-        val omat = newOrCheckGSMat(nrows, ncols, nnz, null)
-        Mat.cache4put(key, omat)
-        omat
-      }
+      val omat = newOrCheckGSMat(nrows, ncols, nnz, res)
+      if (res != omat) Mat.cache4put(key, omat)
+      omat
     }
   } 
 }

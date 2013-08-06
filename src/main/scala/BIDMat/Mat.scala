@@ -27,7 +27,7 @@ class Mat(nr:Int, nc:Int) {
   def dv:Double = throw new RuntimeException("operator dv not implemented for "+this.mytype)
   
   def mytype = "Mat"
-  def copyTo(a:Mat) = notImplemented0("copy");
+  def copyTo(a:Mat) = notImplemented0("copyTo");
   def copy = notImplemented0("copy");
   def set(v:Float) = notImplemented0("set")
   def zeros(nr:Int, nc:Int) = notImplemented0("zeros");
@@ -156,6 +156,37 @@ abstract class Pair {
   def \ (b : Mat):Mat = notImplemented1("\\", b)
   def on (b : Mat):Mat = notImplemented1("on", b)
   
+  def + (b : Float):Mat = notImplemented0("+")
+  def - (b : Float):Mat = notImplemented0("-")
+  def * (b : Float):Mat = notImplemented0("*")
+  def xT (b : Float):Mat = notImplemented0("xT")
+  def *^ (b : Float):Mat = notImplemented0("*^")
+  def Tx (b : Float):Mat = notImplemented0("Tx")
+  def ^* (b : Float):Mat = notImplemented0("*^")
+  def /< (b : Float):Mat = notImplemented0("/<")
+  def *@ (b : Float):Mat = notImplemented0("*@")
+  def ∘  (b : Float):Mat = notImplemented0("∘")
+  def /  (b : Float):Mat = notImplemented0("/")
+  def \\ (b : Float):Mat = notImplemented0("\\\\")
+  def ^ (b : Float):Mat = notImplemented0("^") 
+  def ◁ (b : Float):Mat = notImplemented0("◁")
+  def ▷ (b : Float):Mat = notImplemented0("▷")
+  def dot (b : Float):Mat = notImplemented0("dot")
+  def dotr (b : Float):Mat = notImplemented0("dotr")
+  def ∙ (b : Float):Mat = notImplemented0("dot")
+  def ∙∙ (b : Float):Mat = notImplemented0("dotr")
+  
+  def > (b : Float):Mat = notImplemented0(">")
+  def < (b : Float):Mat = notImplemented0("<")
+  def >= (b : Float):Mat = notImplemented0(">=")
+  def <= (b : Float):Mat = notImplemented0("<=")
+  def == (b : Float):Mat = notImplemented0("==")
+  def === (b : Float):Mat = notImplemented0("===")
+  def != (b : Float):Mat = notImplemented0("!=")
+  
+  def \ (b : Float):Mat = notImplemented0("\\")
+  def on (b : Float):Mat = notImplemented0("on")
+  
 
 }
 
@@ -238,6 +269,12 @@ object Mat {
   
   def cache4put(key:Tuple4[Long,Long,Long,Int], m:Mat):Unit = {
     _cache4(key) = new SoftReference(m)
+  }
+  
+  def clearCaches = {
+    _cache2.clear
+    _cache3.clear
+    _cache4.clear
   }
   
   val opcodes = HashMap.empty[String, Int]

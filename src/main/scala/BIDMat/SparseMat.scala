@@ -572,6 +572,7 @@ class SparseMat[@specialized(Double,Float) T]
   } 
   
   def sgReduceOp(dim0:Int, op1:(T) => T, op2:(T,T) => T, omat:Mat):DenseMat[T] = {
+    Mat.nflops += nnz
       var dim = if (nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
   		val ioff = Mat.ioneBased
   		if ((dim0 == 0) && (nrows == 1 || ncols == 1)) { // Sparse vector case
@@ -744,8 +745,20 @@ class SparseMat[@specialized(Double,Float) T]
   
    override def recycle(nr:Int, nc:Int, nnz:Int):SparseMat[T] = {
   	val jc0 = if (jc.size >= nc+1) jc else new Array[Int](nc+1)
-  	val ir0 = if (ir.size >= nnz) ir else new Array[Int](nnz)
-  	val data0 = if (data.size >= nnz) data else new Array[T](nnz)
+  	val ir0 = if (ir.size >= nnz) ir else {
+  	  if (Mat.useCache) {
+  	    new Array[Int]((Mat.recycleGrow*nnz).toInt)
+  	  } else {
+  	  	new Array[Int](nnz)
+  	  }
+  	}
+  	val data0 = if (data.size >= nnz) data else {
+  		if (Mat.useCache) {
+  			new Array[T]((Mat.recycleGrow*nnz).toInt)
+  		} else {
+  		  new Array[T](nnz)
+  		}  	
+  	}
   	new SparseMat[T](nr, nc, nnz, ir0, jc0, data0)    
   }
 
@@ -856,13 +869,25 @@ object SparseMat {
   def newOrCheck[T](nr:Int, nc:Int, nnz:Int, oldmat:Mat, norows:Boolean = false)
   (implicit manifest:Manifest[T], numeric:Numeric[T]):SparseMat[T] = {
     if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows == 0 && oldmat.ncols == 0)) {
-      if (norows)
-        SparseMat.noRows(nr, nc, nnz)
-      else
-        SparseMat(nr, nc, nnz)
+      if (Mat.useCache) {
+      	val m = if (norows) {
+      		SparseMat.noRows(nr, nc, (Mat.recycleGrow*nnz).toInt)
+      	}	else {
+      		SparseMat(nr, nc, (Mat.recycleGrow*nnz).toInt)
+      	} 
+      	m.nnz0 = nnz
+      	m
+      } else {
+      	if (norows) {
+      		SparseMat.noRows(nr, nc, nnz)
+      	}	else {
+      		SparseMat(nr, nc, nnz)
+      	}
+      }
     } else {
       val omat = oldmat.asInstanceOf[SparseMat[T]];
-      if (omat.nrows == nr && omat.ncols == nc && omat.nnz == nnz) {
+      if (omat.nrows == nr && omat.ncols == nc && nnz <= omat.data.length) {
+        omat.nnz0 = nnz
         omat
       } else {
       	omat.recycle(nr, nc, nnz)
@@ -878,13 +903,9 @@ object SparseMat {
     } else {
       val key = (matGuid, opHash)
       val res = Mat.cache2(key)
-      if (res != null) {
-      	newOrCheck(nr, nc, nnz0, res, norows)
-      } else {
-        val omat = newOrCheck(nr, nc, nnz0, null, norows)
-        Mat.cache2put(key, omat)
-        omat
-      }
+      val omat = newOrCheck(nr, nc, nnz0, res, norows)
+      if (res != omat) Mat.cache2put(key, omat)
+      omat
     }
   }
   
@@ -895,13 +916,9 @@ object SparseMat {
     } else {
       val key = (guid1, guid2, opHash)
       val res = Mat.cache3(key)
-      if (res != null) {
-      	newOrCheck(nr, nc, nnz0, res, norows)
-      } else {
-        val omat = newOrCheck(nr, nc, nnz0, null, norows)
-        Mat.cache3put(key, omat)
-        omat
-      }
+      val omat = newOrCheck(nr, nc, nnz0, res, norows)
+      if (res != omat) Mat.cache3put(key, omat)
+      omat
     }
   }
   
@@ -913,13 +930,9 @@ object SparseMat {
     } else {
       val key = (guid1, guid2, guid3, opHash)
       val res = Mat.cache4(key)
-      if (res != null) {
-      	newOrCheck(nr, nc, nnz0, res, norows)
-      } else {
-        val omat = newOrCheck(nr, nc, nnz0, null, norows)
-        Mat.cache4put(key, omat)
-        omat
-      }
+      val omat = newOrCheck(nr, nc, nnz0, res, norows)
+      if (res != omat) Mat.cache4put(key, omat)
+      omat
     }
   }
  
