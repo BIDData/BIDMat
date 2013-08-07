@@ -24,6 +24,8 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     
   override def nnz = length
   
+  val myGPU = SciFunctions.getGPU
+  
   override def clear = {
   	cudaMemset(data, 0, Sizeof.FLOAT*length)
   	cudaDeviceSynchronize
@@ -1191,7 +1193,7 @@ object GMat {
   }  
     
   def newOrCheckGMat(nr:Int, nc:Int, outmat:Mat, matGuid:Long, opHash:Int):GMat = {
-    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+    val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
       newOrCheckGMat(nr, nc, outmat)
     } else {
       val key = (matGuid, opHash)
@@ -1204,10 +1206,14 @@ object GMat {
         omat
       }
     }
+    if (m.myGPU != SciFunctions.getGPU) {
+    	throw new RuntimeException("newOrCheckGMat1 problem with mat %d" format m.GUID)
+    }
+    m
   }
   
   def newOrCheckGMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, opHash:Int):GMat = {
-    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+    val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
       newOrCheckGMat(nr, nc, outmat)
     } else {
       val key = (guid1, guid2, opHash)
@@ -1220,22 +1226,30 @@ object GMat {
         omat
       }
     }
+    if (m.myGPU != SciFunctions.getGPU) {
+    	throw new RuntimeException("newOrCheckGMat2 problem with mat %d" format m.GUID)
+    }
+    m
   }
     
   def newOrCheckGMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):GMat = {
-    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
-      newOrCheckGMat(nr, nc, outmat)
+    val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+    	newOrCheckGMat(nr, nc, outmat)
     } else {
-      val key = (guid1, guid2, guid3, opHash)
-      val res = Mat.cache4(key)
-      if (res != null) {
-      	newOrCheckGMat(nr, nc, res)
-      } else {
-        val omat = newOrCheckGMat(nr, nc, null)
-        Mat.cache4put(key, omat)
-        omat
-      }
+    	val key = (guid1, guid2, guid3, opHash)
+    	val res = Mat.cache4(key)
+    	if (res != null) {
+    		newOrCheckGMat(nr, nc, res)
+    	} else {
+    		val omat = newOrCheckGMat(nr, nc, null)
+    		Mat.cache4put(key, omat)
+    		omat
+    	}
     }
+    if (m.myGPU != SciFunctions.getGPU) {
+    	throw new RuntimeException("newOrCheckGMat3 problem with mat %d" format m.GUID)
+    }
+    m
   }
 }
 

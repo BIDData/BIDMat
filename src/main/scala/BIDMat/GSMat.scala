@@ -15,6 +15,8 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
   override def nnz = nnz0
   
   override def contents:GMat = new GMat(nnz, 1, data, realnnz)
+  
+  val myGPU = SciFunctions.getGPU
     
   override def toString:String = {
     val nnz0 = scala.math.min(nnz,12)       
@@ -152,7 +154,7 @@ object GSMat {
   }
   
    def newOrCheckGSMat(nrows:Int, ncols:Int, nnz:Int, outmat:Mat, guid1:Long, opHash:Int):GSMat = {
-    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+    val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
       newOrCheckGSMat(nrows, ncols, nnz, outmat)
     } else {
       val key = (guid1, opHash)
@@ -161,10 +163,14 @@ object GSMat {
       if (res != omat) Mat.cache2put(key, omat)
       omat
     }
+    if (m.myGPU != SciFunctions.getGPU) {
+    	throw new RuntimeException("newOrCheckGSMat1 problem with mat %d" format m.GUID)
+    }
+    m
   }   
 
   def newOrCheckGSMat(nrows:Int, ncols:Int, nnz:Int, outmat:Mat, guid1:Long, guid2:Long, opHash:Int):GSMat = {
-    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+    val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
       newOrCheckGSMat(nrows, ncols, nnz, outmat)
     } else {
       val key = (guid1, guid2, opHash)
@@ -173,11 +179,15 @@ object GSMat {
       if (res != omat) Mat.cache3put(key, omat)
       omat
     }
+    if (m.myGPU != SciFunctions.getGPU) {
+    	throw new RuntimeException("newOrCheckGSMat2 problem with mat %d" format m.GUID)
+    }
+    m
   } 
 
     
   def newOrCheckGSMat(nrows:Int, ncols:Int, nnz:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):GSMat = {
-    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+    val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
       newOrCheckGSMat(nrows, ncols, nnz, outmat)
     } else {
       val key = (guid1, guid2, guid3, opHash)
@@ -186,6 +196,10 @@ object GSMat {
       if (res != omat) Mat.cache4put(key, omat)
       omat
     }
+    if (m.myGPU != SciFunctions.getGPU) {
+    	throw new RuntimeException("newOrCheckGSMat3 problem with mat %d" format m.GUID)
+    }
+    m
   } 
 }
   
