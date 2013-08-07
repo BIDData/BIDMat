@@ -739,13 +739,13 @@ object GMat {
   }
   
   def apply(a:Float):GMat = {
-    val out = GMat.newOrCheckGMat(1, 1, null, a.##, "GMat_Float".##)
+    val out = GMat.newOrCheckGMat(1, 1, null, SciFunctions.getGPU, a.##, "GMat_Float".##)
     out.set(a)
     out
   }
   
   def apply(a:Double):GMat = {
-    val out = GMat.newOrCheckGMat(1, 1, null, a.##, "GMat_Float".##)
+    val out = GMat.newOrCheckGMat(1, 1, null, SciFunctions.getGPU, a.##, "GMat_Float".##)
     out.set(a.toFloat)
     out
   }
