@@ -62,6 +62,11 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
       new GSMat(nr, nc, nnzx, ir, ic, data, realnnz)
     } else {
 //      free
+      if (Mat.useCache) {
+        val m = GSMat(nr, nc, (Mat.recycleGrow * nnzx).toInt)
+        m.nnz0 = nnzx
+        m
+      }
       GSMat(nr, nc, nnzx)
     }
   } 
