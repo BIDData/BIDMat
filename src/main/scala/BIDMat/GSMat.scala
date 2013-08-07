@@ -100,7 +100,7 @@ object GSMat {
   def apply(a:SMat):GSMat = fromSMat(a, null) 
  
   def fromSMat(a:SMat, b:GSMat):GSMat = {
-    val out = GSMat.newOrCheckGSMat(a.nrows, a.ncols, a.data.length, b, a.GUID, "fromSMat".##)
+    val out = GSMat.newOrCheckGSMat(a.nrows, a.ncols, a.data.length, b, a.GUID, SciFunctions.getGPU, "fromSMat".##)
     out.nnz0 = a.nnz
     JCublas.cublasSetVector(a.nnz, Sizeof.FLOAT, Pointer.to(a.data), 1, out.data, 1)
     if (Mat.ioneBased == 1) {
