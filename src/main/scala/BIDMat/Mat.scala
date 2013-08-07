@@ -232,43 +232,55 @@ object Mat {
   val _cache4 = HashMap.empty[Tuple4[Long,Long,Long,Int], SoftReference[Mat]]
   
   def cache2(key:Tuple2[Long,Int]):Mat = {
-  	if (_cache2.contains(key)) {
-  		val rr = _cache2(key)
-  		if (rr != null) rr.get else null
-    } else {
-      null
+    _cache2.synchronized {
+    	if (_cache2.contains(key)) {
+    		val rr = _cache2(key)
+    		if (rr != null) rr.get else null
+    	} else {
+    		null
+    	}
     }
   }
   
   def cache3(key:Tuple3[Long,Long,Int]):Mat = {
-  	if (_cache3.contains(key)) {
-  		val rr = _cache3(key)
-  		if (rr != null) rr.get else null
-    } else {
-      null
+    _cache3.synchronized {
+    	if (_cache3.contains(key)) {
+    		val rr = _cache3(key)
+    		if (rr != null) rr.get else null
+    	} else {
+    		null
+    	}
     }
   }
   
     
   def cache4(key:Tuple4[Long,Long,Long,Int]):Mat = {
-  	if (_cache4.contains(key)) {
-  		val rr = _cache4(key)
-  		if (rr != null) rr.get else null
-    } else {
-      null
+    _cache4.synchronized {
+    	if (_cache4.contains(key)) {
+    		val rr = _cache4(key)
+    		if (rr != null) rr.get else null
+    	} else {
+    		null
+    	}
     }
   }
   
   def cache2put(key:Tuple2[Long,Int], m:Mat):Unit = {
-    _cache2(key) = new SoftReference(m)
+    _cache2.synchronized {
+    	_cache2(key) = new SoftReference(m)
+    }
   }
   
   def cache3put(key:Tuple3[Long,Long,Int], m:Mat):Unit = {
-    _cache3(key) = new SoftReference(m)
+  	_cache3.synchronized {
+  		_cache3(key) = new SoftReference(m)
+  	}
   }
   
   def cache4put(key:Tuple4[Long,Long,Long,Int], m:Mat):Unit = {
-    _cache4(key) = new SoftReference(m)
+  	_cache4.synchronized {
+  		_cache4(key) = new SoftReference(m)
+  	}
   }
   
   def clearCaches = {

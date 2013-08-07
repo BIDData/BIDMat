@@ -40,6 +40,15 @@ object SciFunctions {
   
   def resetGPU = JCuda.cudaDeviceReset
   
+  def resetGPUs = {
+    val oldi = getGPU
+    for (i <- 0 until Mat.hasCUDA) {
+      JCuda.cudaSetDevice(i)
+      JCuda.cudaDeviceReset
+    }
+    JCuda.cudaSetDevice(oldi)
+  }
+  
   def initJCUDA = JCuda.initialize
   
   def setGPU(i:Int) = JCuda.cudaSetDevice(i)
