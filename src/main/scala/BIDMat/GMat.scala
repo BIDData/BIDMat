@@ -728,7 +728,7 @@ object GMat {
   
   def apply(a:FMat):GMat = {
   	val rsize = a.nrows*a.ncols
-    val retv = GMat.newOrCheckGMat(a.nrows, a.ncols, null, a.GUID, "GMat_FMat".##)
+    val retv = GMat.newOrCheckGMat(a.nrows, a.ncols, null, a.GUID, SciFunctions.getGPU, "GMat_FMat".##)
     JCublas.cublasSetVector(rsize, Sizeof.FLOAT, Pointer.to(a.data), 1, retv.data, 1);
   	cudaDeviceSynchronize()
     retv
@@ -756,7 +756,7 @@ object GMat {
   def toFMat(a:GMat):FMat = a.toFMat(null)  
   
   def fromFMat(a:FMat, b:GMat):GMat = {
-    val bb = GMat.newOrCheckGMat(a.nrows, a.ncols, b, a.GUID, "GMat_fromFMat".##)
+    val bb = GMat.newOrCheckGMat(a.nrows, a.ncols, b, a.GUID, SciFunctions.getGPU, "GMat_fromFMat".##)
     JCublas.cublasSetVector(a.length, Sizeof.FLOAT, Pointer.to(a.data), 1, bb.data, 1)
     cudaDeviceSynchronize()
     bb
