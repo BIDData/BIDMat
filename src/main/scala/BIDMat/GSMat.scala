@@ -177,6 +177,10 @@ object GSMat {
     if (m.myGPU != SciFunctions.getGPU) {
     	throw new RuntimeException("newOrCheckGSMat1 problem with mat %d" format m.GUID)
     }
+    if (Mat.debugMem) {
+      println("nOCGSM1: %d %d %d %d, %d %d %d, %d %f" format (nrows, ncols, nnz, m.realnnz, 
+          if (outmat != null) outmat.GUID else 0, guid1, m.GUID, SciFunctions.getGPU, SciFunctions.GPUmem._1))
+    }
     m
   }   
 
@@ -192,6 +196,10 @@ object GSMat {
     }
     if (m.myGPU != SciFunctions.getGPU) {
     	throw new RuntimeException("newOrCheckGSMat2 problem with mat %d" format m.GUID)
+    }
+    if (Mat.debugMem) {
+      println("nOCGSM2: %d %d %d %d, %d %d %d %d, %d %f" format (nrows, ncols, nnz, m.realnnz, 
+          if (outmat != null) outmat.GUID else 0, guid1, guid2, m.GUID, SciFunctions.getGPU, SciFunctions.GPUmem._1))
     }
     m
   } 
@@ -209,6 +217,10 @@ object GSMat {
     }
     if (m.myGPU != SciFunctions.getGPU) {
     	throw new RuntimeException("newOrCheckGSMat3 problem with mat %d" format m.GUID)
+    }
+    if (Mat.debugMem) {
+      println("nOCGSM3: %d %d %d %d, %d %d %d %d %d, %d %f" format (nrows, ncols, nnz, m.realnnz, 
+          if (outmat != null) outmat.GUID else 0, guid1, guid2, guid3, m.GUID, SciFunctions.getGPU, SciFunctions.GPUmem._1))
     }
     m
   } 
