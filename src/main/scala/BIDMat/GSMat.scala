@@ -156,7 +156,7 @@ object GSMat {
   		}
   		}
   	}
-  	println("nOCGM %d %d %d %d %d" format (nrows, ncols, nnz, m.nnz, SciFunctions.getGPU))
+  	println("nOCGM %d %d %d %d %d %d %d" format (nrows, ncols, nnz, m.nnz, m.realnnz, m.GUID, SciFunctions.getGPU))
   	m
   }
   
