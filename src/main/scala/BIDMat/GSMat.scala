@@ -123,10 +123,11 @@ object GSMat {
     if (A.nrows != B.nrows || C.nrows != A.ncols || C.ncols != B.ncols) {
       throw new RuntimeException("dimensions mismatch")
     }
- //   println("DDS %d %d" format (C.nnz, SciFunctions.getGPU))
+    println("DDS %d %d %d %d" format (C.nnz, C.GUID, C.myGPU, SciFunctions.getGPU))
     val out = GSMat.newOrCheckGSMat(C.nrows, C.ncols, C.nnz, oldmat, A.GUID, B.GUID, C.GUID, "DDS".##)
-//    println("DDS1 %d %d" format (out.nnz, SciFunctions.getGPU))
+    println("DDS1 %d %d %d %d" format (out.nnz, out.GUID, out.myGPU, SciFunctions.getGPU))
     var err = cudaMemcpy(out.ir, C.ir, Sizeof.INT * C.nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize()
     if (err != 0) throw new RuntimeException("CUDA DDS row copy error "+cudaGetErrorString(err))
     err = cudaMemcpy(out.ic, C.ic, Sizeof.INT * C.nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
     cudaDeviceSynchronize()
