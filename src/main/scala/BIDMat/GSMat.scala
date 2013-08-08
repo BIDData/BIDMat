@@ -96,7 +96,7 @@ object GSMat {
   def apply(nr:Int, nc:Int, nnzx:Int):GSMat = { 
 //  		println("nr, nc, nnz = %d,%d,%d" format (nr,nc,nnz0))
     val out = new GSMat(nr, nc, nnzx, new Pointer(), new Pointer(), new Pointer(), nnzx) 
-    if (Mat.debugMem) println("GSMat %d %d %d, %d" format (nr, nc, nnzx, SciFunctions.getGPU))
+    if (Mat.debugMem) println("GSMat %d %d %d, %d %f" format (nr, nc, nnzx, SciFunctions.getGPU, SciFunctions.GPUmem))
     JCublas.cublasAlloc(out.nnz, Sizeof.INT, out.ir)
     JCublas.cublasAlloc(out.nnz, Sizeof.INT, out.ic)
     JCublas.cublasAlloc(out.nnz, Sizeof.FLOAT, out.data)
