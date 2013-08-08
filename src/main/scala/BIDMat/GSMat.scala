@@ -66,8 +66,9 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
         val m = GSMat(nr, nc, (Mat.recycleGrow * nnzx).toInt)
         m.nnz0 = nnzx
         m
+      } else {
+      	GSMat(nr, nc, nnzx)
       }
-      GSMat(nr, nc, nnzx)
     }
   } 
   
@@ -156,7 +157,9 @@ object GSMat {
   		  omat.nnz0 = nnz
   			omat
   		} else {
-  			omat.recycle(nrows, ncols, nnz)
+  			val m = omat.recycle(nrows, ncols, nnz)
+  			if (oldmat.nrows == nrows && oldmat.ncols == ncols) m.setGUID(omat.GUID)
+  			m
   		}
   		}
   	}
