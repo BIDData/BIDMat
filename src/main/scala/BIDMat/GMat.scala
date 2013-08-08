@@ -719,7 +719,8 @@ object GMat {
   }
   
   def apply(nr:Int, nc:Int):GMat = {
-    val retv = new GMat(nr, nc, new Pointer(), nr*nc)        
+    val retv = new GMat(nr, nc, new Pointer(), nr*nc)  
+    if (Mat.debugMem) println("GMat %d %d, %d" format (nr, nc, SciFunctions.getGPU))
     val status = cublasAlloc(nr*nc, Sizeof.FLOAT, retv.data)
     cudaDeviceSynchronize
     if (status != cublasStatus.CUBLAS_STATUS_SUCCESS) throw new RuntimeException("CUDA alloc failed "+status)

@@ -219,6 +219,8 @@ object Mat {
   
   var recycleGrow = 1.2
   
+  var debugMem = false
+  
   var useGPUsort = true
   
   final val MSEED:Int = 1452462553 
