@@ -398,6 +398,10 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
     out
   }
   
+  override def copy:SMat = {
+    copyTo(null)
+  }
+  
   def copyTo(ss:SMat):SMat = {
     val out = SMat.newOrCheckSMat(nrows, ncols, nnz, ss, GUID, "copyTo".hashCode)
     System.arraycopy(jc, 0, out.jc, 0, ncols+1)
