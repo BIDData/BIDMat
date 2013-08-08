@@ -138,7 +138,7 @@ object GSMat {
   }
   
   def newOrCheckGSMat(nrows:Int, ncols:Int, nnz:Int, oldmat:Mat):GSMat = {
-  	if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows ==0 && oldmat.ncols == 0)) {
+  	val m = if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows ==0 && oldmat.ncols == 0)) {
   	  if (Mat.useCache) {
   	    val m = GSMat(nrows, ncols, (Mat.recycleGrow*nnz).toInt)
   	    m.nnz0 = nnz
@@ -156,6 +156,8 @@ object GSMat {
   		}
   		}
   	}
+  	println("nOCGM %d %d %d %d %d %d" format (nrows, ncols, nnz, m.nnz, SciFunctions.getGPU))
+  	m
   }
   
    def newOrCheckGSMat(nrows:Int, ncols:Int, nnz:Int, outmat:Mat, guid1:Long, opHash:Int):GSMat = {
