@@ -116,7 +116,7 @@ object GSMat {
       JCublas.cublasSetVector(a.nnz, Sizeof.INT, Pointer.to(a.ir), 1, out.ir, 1)
     }
     val tmpcols = IMat.newOrCheckIMat(a.nnz, 1, null, a.GUID, "fromSMat_tmp".##).data
-    SparseMat.uncompressInds(a.jc, a.ir, tmpcols)
+    SparseMat.uncompressInds(a.jc, a.ncols, a.ir, tmpcols)
     JCublas.cublasSetVector(a.nnz, Sizeof.INT, Pointer.to(tmpcols), 1, out.ic, 1)
     out
   }

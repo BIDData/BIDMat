@@ -96,7 +96,7 @@ class SparseMat[@specialized(Double,Float) T]
    */
   def gt:SparseMat[T] = {
     explicitInds
-    SparseMat.sparseImpl[T](SparseMat.uncompressInds(jc, ir), 
+    SparseMat.sparseImpl[T](SparseMat.uncompressInds(jc, ncols, ir), 
     		            if (Mat.ioneBased==1) SparseMat.decInds(ir) else ir, data, ncols, nrows)
   }
   /*
@@ -217,9 +217,9 @@ class SparseMat[@specialized(Double,Float) T]
       i += 1
     }
     if (off == 0) {
-    	System.arraycopy(SparseMat.uncompressInds(jc, ir), 0, jout.data, 0, nnz)
+    	System.arraycopy(SparseMat.uncompressInds(jc, ncols, ir), 0, jout.data, 0, nnz)
     } else {
-    	SparseMat.incInds(SparseMat.uncompressInds(jc, ir), jout.data)
+    	SparseMat.incInds(SparseMat.uncompressInds(jc, ncols, ir), jout.data)
     }
     (iout, jout)
   }
@@ -723,7 +723,7 @@ class SparseMat[@specialized(Double,Float) T]
     val out = DenseMat.newOrCheck(nrows, ncols, mat, GUID, "full".hashCode)
     val ioff = Mat.ioneBased
     if (ir != null) {
-    	val cols = SparseMat.uncompressInds(jc, ir)
+    	val cols = SparseMat.uncompressInds(jc, ncols, ir)
     	var i = 0
     	while (i < nnz) {
     		out.data(ir(i)-ioff + nrows*cols(i)) = data(i)
@@ -825,11 +825,11 @@ object SparseMat {
     out
   }
   
-  def uncompressInds(coli:Array[Int], rowi:Array[Int], outx:Array[Int]):Array[Int] = {
+  def uncompressInds(coli:Array[Int], ncols:Int, rowi:Array[Int], outx:Array[Int]):Array[Int] = {
   	val ioff = Mat.ioneBased
   	val out = if (outx != null) outx else new Array[Int](rowi.length)
   	var i = 0
-  	while (i < (coli.length-1)) {
+  	while (i < ncols) {
   		var j = coli(i)-ioff
   		while (j < coli(i+1)-ioff) {
   			out(j) = i
@@ -840,7 +840,7 @@ object SparseMat {
   	out
   }
   
-  def uncompressInds(coli:Array[Int], rowi:Array[Int]):Array[Int] = uncompressInds(coli, rowi, null)
+  def uncompressInds(coli:Array[Int], ncols:Int, rowi:Array[Int]):Array[Int] = uncompressInds(coli, ncols, rowi, null)
 
   def incInds(inds:Array[Int], out:Array[Int]):Array[Int] = {
     var i = 0
