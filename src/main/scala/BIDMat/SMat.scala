@@ -413,9 +413,10 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   def copyTo(g:GSMat) = GSMat.fromSMat(this, g)
   
   override def copyTo(m:Mat):Mat = {
-    m match {
-      case ss:GSMat => GSMat.fromSMat(this, ss)
-      case ss:SMat => copyTo(ss):SMat
+    if (m == null) copyTo(null):SMat
+    else m match {
+    case ss:GSMat => GSMat.fromSMat(this, ss)
+    case ss:SMat => copyTo(ss):SMat
     }
   }
   
