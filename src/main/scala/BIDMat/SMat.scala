@@ -50,7 +50,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   		} else {
   			a match {
   			case aa:SMat => {
-  				val out = FMat.newOrCheckFMat(nrows, a.ncols, omat, GUID, a.GUID, "SMult".hashCode)
+  				val out = FMat.newOrCheckFMat(nrows, a.ncols, omat, GUID, a.GUID, "SMult".##)
   				if (omat.asInstanceOf[AnyRef] != null) out.clear
   				var i = 0
   				var myflops = 0L
@@ -73,7 +73,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   				out
   			}
   			case dd:FMat => {
-  				val out = FMat.newOrCheckFMat(nrows, a.ncols, omat, GUID, a.GUID, "SMult".hashCode)
+  				val out = FMat.newOrCheckFMat(nrows, a.ncols, omat, GUID, a.GUID, "SMult".##)
   				if (omat.asInstanceOf[AnyRef] != null) out.clear
   				Mat.nflops += 2L * nnz * a.ncols
   				if (Mat.noMKL) {
@@ -391,7 +391,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   }
   
   def toSDMat:SDMat = {
-    val out = SDMat.newOrCheckSDMat(nrows, ncols, nnz, null, GUID, "toSDMat".hashCode)
+    val out = SDMat.newOrCheckSDMat(nrows, ncols, nnz, null, GUID, "toSDMat".##)
     System.arraycopy(jc, 0, out.jc, 0, ncols+1)
     System.arraycopy(ir, 0, out.ir, 0, nnz)
     Mat.copyToDoubleArray(data, 0, out.data, 0, nnz)
@@ -403,7 +403,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   }
   
   def copyTo(ss:SMat):SMat = {
-    val out = SMat.newOrCheckSMat(nrows, ncols, nnz, ss, GUID, "copyTo".hashCode)
+    val out = SMat.newOrCheckSMat(nrows, ncols, nnz, ss, GUID, "copyTo".##)
     System.arraycopy(jc, 0, out.jc, 0, ncols+1)
     System.arraycopy(ir, 0, out.ir, 0, nnz)
     System.arraycopy(data, 0, out.data, 0, nnz)
@@ -526,7 +526,9 @@ object SMat {
   	    	omat.nnz0 = nnz
   	    	omat
   	    } else {
-  	    	omat.recycle(nrows, ncols, nnz)
+  	    	val m = omat.recycle(nrows, ncols, nnz)
+  	    	if (oldmat.nrows == nrows && oldmat.ncols == ncols) m.setGUID(omat.GUID)
+  	    	m
   	    }
   	  }
   	}
