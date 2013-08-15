@@ -178,7 +178,7 @@ object GSMat {
       omat
     }
     if (m.myGPU != SciFunctions.getGPU) {
-    	throw new RuntimeException("newOrCheckGSMat1 problem with mat %d" format m.GUID)
+    	throw new RuntimeException("newOrCheckGSMat1 wrong thread %d %d for mat %d" format (m.myGPU, SciFunctions.getGPU, m.GUID))
     }
     if (Mat.debugMem) {
       println("nOCGSM1: %d %d %d %d, %d %d %d, %d %f" format (nrows, ncols, nnz, m.realnnz, 
@@ -198,7 +198,7 @@ object GSMat {
       omat
     }
     if (m.myGPU != SciFunctions.getGPU) {
-    	throw new RuntimeException("newOrCheckGSMat2 problem with mat %d" format m.GUID)
+    	throw new RuntimeException("newOrCheckGSMat2 wrong thread %d %d for mat %d" format (m.myGPU, SciFunctions.getGPU, m.GUID))
     }
     if (Mat.debugMem) {
       println("nOCGSM2: %d %d %d %d, %d %d %d %d, %d %f" format (nrows, ncols, nnz, m.realnnz, 
@@ -219,7 +219,7 @@ object GSMat {
       omat
     }
     if (m.myGPU != SciFunctions.getGPU) {
-    	throw new RuntimeException("newOrCheckGSMat3 problem with mat %d" format m.GUID)
+    	throw new RuntimeException("newOrCheckGSMat3 wrong thread %d %d for mat %d" format (m.myGPU, SciFunctions.getGPU, m.GUID))
     }
     if (Mat.debugMem) {
       println("nOCGSM3: %d %d %d %d, %d %d %d %d %d, %d %f" format (nrows, ncols, nnz, m.realnnz, 
