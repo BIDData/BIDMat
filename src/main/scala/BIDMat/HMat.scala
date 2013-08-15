@@ -64,6 +64,8 @@ object HMat {
   
   val byteOrder = ByteOrder.LITTLE_ENDIAN
   
+  var DEFAULT_BUFSIZE = 236*1024
+  
   def readSomeBytes(din:InputStream, a:Array[Byte], n:Int) {
     var nread = 0
     while (nread < n) {
@@ -168,11 +170,11 @@ object HMat {
   def getInputStream(fname:String, compressed:Int):InputStream = {
     val fin = new FileInputStream(fname)
     if (compressed == 2 || (compressed == 0 && fname.endsWith(".gz"))) {
-      new BufferedInputStream (new GZIPInputStream(fin, 1024*1024))      
+      new BufferedInputStream (new GZIPInputStream(fin, DEFAULT_BUFSIZE))      
     } else  if (compressed == 3 || (compressed == 0 && fname.endsWith(".lz4"))) {
-      new LZ4BlockInputStream(new BufferedInputStream(fin, 8*1024*1024))   
+      new LZ4BlockInputStream(new BufferedInputStream(fin, DEFAULT_BUFSIZE))   
     } else {
-    	new BufferedInputStream(fin, 1024*1024)
+    	new BufferedInputStream(fin, DEFAULT_BUFSIZE)
     } 
   }
   
@@ -184,13 +186,13 @@ object HMat {
       val fout = new FileOutputStream(fname)
       if (Mat.compressionLevel >= 6) {
         val hc = LZ4Factory.fastestInstance.highCompressor
-        new BufferedOutputStream(new LZ4BlockOutputStream(fout, 1 << 16, hc), 1024*1024)
+        new BufferedOutputStream(new LZ4BlockOutputStream(fout, 1 << 16, hc), DEFAULT_BUFSIZE)
       } else {
-      	new BufferedOutputStream(new LZ4BlockOutputStream(fout), 1024*1024)   
+      	new BufferedOutputStream(new LZ4BlockOutputStream(fout), DEFAULT_BUFSIZE)   
       }
     } else {
     	val fout = new FileOutputStream(fname)
-    	new BufferedOutputStream(fout, 1024*1024)
+    	new BufferedOutputStream(fout, DEFAULT_BUFSIZE)
     }
   }
   
@@ -228,7 +230,7 @@ object HMat {
   
   def loadFMat(fname:String, omat:Mat, compressed:Int):FMat = {
     val gin = getInputStream(fname, compressed)
-    val buff = ByteBuffer.allocate(1024*1024).order(byteOrder)
+    val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
     val hints = new Array[Int](4)
     readSomeInts(gin, hints, buff, 4)
     val ftype = hints(0)
@@ -249,7 +251,7 @@ object HMat {
    
   def loadIMat(fname:String, omat:Mat, compressed:Int):IMat = {
     val gin = getInputStream(fname, compressed)
-    val buff = ByteBuffer.allocate(1024*1024).order(byteOrder)
+    val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
     val hints = new Array[Int](4)
     readSomeInts(gin, hints, buff, 4)
     val ftype = hints(0)
@@ -271,7 +273,7 @@ object HMat {
    
   def loadDMat(fname:String, omat:Mat, compressed:Int):DMat = {
     val gin = getInputStream(fname, compressed)
-    val bytebuff = ByteBuffer.allocate(1024*1024).order(byteOrder)
+    val bytebuff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
     val hints = new Array[Int](4)
     readSomeInts(gin, hints, bytebuff, 4)
     val ftype = hints(0)
@@ -299,7 +301,7 @@ object HMat {
     hints(2) = m.ncols
     hints(3) = 0
     writeSomeInts(gout, hints, tbuf, 4)
-    val buff = ByteBuffer.allocate(math.min(1024*1024, 4*m.ncols*m.nrows)).order(byteOrder)
+    val buff = ByteBuffer.allocate(math.min(DEFAULT_BUFSIZE, 4*m.ncols*m.nrows)).order(byteOrder)
     writeSomeFloats(gout, m.data, buff, m.nrows*m.ncols)
     gout.close
   }
@@ -313,7 +315,7 @@ object HMat {
     hints(2) = m.ncols
     hints(3) = 0
     writeSomeInts(gout, hints, tbuf, 4)
-    val buff = ByteBuffer.allocate(math.min(1024*1024, 4*m.ncols*m.nrows)).order(byteOrder)
+    val buff = ByteBuffer.allocate(math.min(DEFAULT_BUFSIZE, 4*m.ncols*m.nrows)).order(byteOrder)
     writeSomeInts(gout, m.data, buff, m.nrows*m.ncols)
     gout.close
   }
@@ -327,14 +329,14 @@ object HMat {
     hints(2) = m.ncols
     hints(3) = 0
     writeSomeInts(gout, hints, tbuf, 4)
-    val buff = ByteBuffer.allocate(math.min(1024*1024, 4*m.ncols*m.nrows)).order(byteOrder)
+    val buff = ByteBuffer.allocate(math.min(DEFAULT_BUFSIZE, 4*m.ncols*m.nrows)).order(byteOrder)
     writeSomeDoubles(gout, m.data, buff, m.nrows*m.ncols)
     gout.close
   }
   
   def loadSMat(fname:String, compressed:Int=0):SMat = {
     val gin = getInputStream(fname, compressed)
-    val buff = ByteBuffer.allocate(1024*1024).order(byteOrder)
+    val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
     val hints = new Array[Int](4)
     readSomeInts(gin, hints, buff, 4)
     val ftype = hints(0)
@@ -363,7 +365,7 @@ object HMat {
   
   def loadBMat(fname:String, compressed:Int=0):BMat = {
     val gin = getInputStream(fname, compressed)
-    val buff = ByteBuffer.allocate(1024*1024).order(byteOrder)
+    val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
     val hints = new Array[Int](4)
     readSomeInts(gin, hints, buff, 4)
     val ftype = hints(0)
@@ -403,7 +405,7 @@ object HMat {
     hints(2) = m.ncols
     hints(3) = m.nnz
     writeSomeInts(gout, hints, tbuf, 4)
-    val buff = ByteBuffer.allocate(math.min(1024*1024, 4*math.max(m.ncols+1, m.nnz))).order(byteOrder)
+    val buff = ByteBuffer.allocate(math.min(DEFAULT_BUFSIZE, 4*math.max(m.ncols+1, m.nnz))).order(byteOrder)
     try {
     	MatHDF5.subOne(m.jc)
     	writeSomeInts(gout, m.jc, buff, m.ncols+1)
@@ -442,7 +444,7 @@ object HMat {
     hints(2) = m.ncols
     hints(3) = m.nnz
     writeSomeInts(gout, hints, tbuf, 4)
-    val buff = ByteBuffer.allocate(math.min(1024*1024, 4*math.max(m.ncols+1, m.nnz))).order(byteOrder)
+    val buff = ByteBuffer.allocate(math.min(DEFAULT_BUFSIZE, 4*math.max(m.ncols+1, m.nnz))).order(byteOrder)
     try {
     	MatHDF5.subOne(m.jc)
     	writeSomeInts(gout, m.jc, buff, m.ncols+1)
