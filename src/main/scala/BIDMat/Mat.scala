@@ -227,11 +227,11 @@ object Mat {
 
   final val myrand = new java.util.Random(MSEED)
   
-  val _cache2 = HashMap.empty[Tuple2[Long,Int], Mat]
+  private val _cache2 = HashMap.empty[Tuple2[Long,Int], Mat]
   
-  val _cache3 = HashMap.empty[Tuple3[Long,Long,Int], Mat]
+  private val _cache3 = HashMap.empty[Tuple3[Long,Long,Int], Mat]
   
-  val _cache4 = HashMap.empty[Tuple4[Long,Long,Long,Int], Mat]
+  private val _cache4 = HashMap.empty[Tuple4[Long,Long,Long,Int], Mat]
   
   def cache2(key:Tuple2[Long,Int]):Mat = {
     _cache2.synchronized {
@@ -286,6 +286,54 @@ object Mat {
     _cache2.clear
     _cache3.clear
     _cache4.clear
+  }
+  
+  def trimCache2(ithread:Int) = {
+    _cache2.synchronized {
+      val keys = _cache2.keySet
+      keys.foreach((key:Tuple2[Long,Int]) => {
+      	val toremove:Boolean = _cache2.get(key) match {
+      	case aa:GMat => (aa.myGPU == ithread) 
+      	case aa:GSMat => (aa.myGPU == ithread)
+      	case _ => false
+      }
+      if (toremove) _cache2.remove(key)
+      })  
+    }
+  }
+  
+   def trimCache3(ithread:Int) = {
+    _cache3.synchronized {
+      val keys = _cache3.keySet
+      keys.foreach((key:Tuple3[Long,Long,Int]) => {
+      	val toremove:Boolean = _cache3.get(key) match {
+      	case aa:GMat => (aa.myGPU == ithread) 
+      	case aa:GSMat => (aa.myGPU == ithread)
+      	case _ => false
+      }
+      if (toremove) _cache3.remove(key)
+      })  
+    }
+  }
+   
+  def trimCache4(ithread:Int) = {
+    _cache3.synchronized {
+      val keys = _cache4.keySet
+      keys.foreach((key:Tuple4[Long,Long,Long,Int]) => {
+      	val toremove:Boolean = _cache4.get(key) match {
+      	case aa:GMat => (aa.myGPU == ithread) 
+      	case aa:GSMat => (aa.myGPU == ithread)
+      	case _ => false
+      }
+      if (toremove) _cache4.remove(key)
+      })  
+    }
+  }
+  
+  def trimCaches(ithread:Int) = {
+    trimCache2(ithread)
+    trimCache3(ithread)
+    trimCache4(ithread)
   }
   
   val opcodes = HashMap.empty[String, Int]
