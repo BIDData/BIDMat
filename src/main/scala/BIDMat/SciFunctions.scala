@@ -975,7 +975,7 @@ object SciFunctions {
 
   val vdExpDFunMKL = (n:Int, a:Array[Double], b:Array[Double]) => vdExp(n, a, b)
   val vdExpDFun = (n:Int, a:Array[Double], b:Array[Double]) => {var i=0 ; while (i<n) {b(i) = math.exp(a(i)); i+=1}}
-  def exp(a:DMat, out:DMat) = applyDFunV(a, out, vdExpDFunMKL, vdExpDFun, 10L)
+  def exp(a:DMat, out:Mat) = applyDFunV(a, out, vdExpDFunMKL, vdExpDFun, 10L)
   def exp(a:DMat):DMat = exp(a, null)
   
   val expm1DFun = (x:Double) => math.expm1(x)
@@ -1152,7 +1152,7 @@ object SciFunctions {
 
   val vsExpFunMKL = (n:Int, a:Array[Float], b:Array[Float]) => vsExp(n, a, b)
   val vsExpFun = (n:Int, a:Array[Float], b:Array[Float]) => {var i=0 ; while (i<n) {b(i) = math.exp(a(i)).toFloat; i+=1}}
-  def exp(a:FMat, out:FMat) = applySFunV(a, out, vsExpFunMKL, vsExpFun, 10L)
+  def exp(a:FMat, out:Mat) = applySFunV(a, out, vsExpFunMKL, vsExpFun, 10L)
   def exp(a:FMat):FMat = exp(a, null)
   
   val expm1Fun = (x:Float) => math.expm1(x).toFloat
@@ -1323,7 +1323,7 @@ object SciFunctions {
   def abs(a:CMat):FMat = abs(a, null)
 
   val vcExpCFun = (n:Int, a:Array[Float], b:Array[Float]) => vcExp(n, a, b)
-  def exp(a:CMat, out:CMat) = applyCFun(a, out, vcExpCFun, null, 10L)
+  def exp(a:CMat, out:Mat) = applyCFun(a, out, vcExpCFun, null, 10L)
   def exp(a:CMat):CMat = exp(a, null)
 
   
@@ -1756,10 +1756,10 @@ object SciFunctions {
   
   def exp(a:Mat, b:Mat):Mat = {
     a match {
-      case aa:FMat => exp(aa, b)
-      case aa:CMat => exp(aa, b)
-      case aa:DMat => exp(aa, b)
-      case aa:GMat => exp(aa, b)
+      case aa:FMat => exp(aa, b):FMat
+      case aa:CMat => exp(aa, b):CMat
+      case aa:DMat => exp(aa, b):DMat
+      case aa:GMat => exp(aa, b):GMat
     }
   }
   
