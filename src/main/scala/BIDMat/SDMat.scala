@@ -249,6 +249,12 @@ object SDMat {
   
   def apply(a:SMat) = a.toSDMat
   
+  def apply(a:Mat) = a match {
+    case aa:SMat => aa.toSDMat
+    case aa:GSMat => aa.toSMat.toSDMat
+    case aa:SDMat => aa
+  }
+  
    def SnoRows(nr:Int, nc:Int, nnz0:Int):SDMat = new SDMat(nr, nc, nnz0, null, new Array[Int](nc+1), new Array[Double](nnz0))
   
   def newOrCheckSDMat(nrows:Int, ncols:Int, nnz:Int, oldmat:Mat):SDMat = {
