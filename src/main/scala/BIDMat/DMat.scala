@@ -885,7 +885,7 @@ object DMat {
       case ff:FMat => {Mat.copyToDoubleArray(ff.data, 0, out.data, 0, ff.length)}
       case ii:IMat => {Mat.copyToDoubleArray(ii.data, 0, out.data, 0, ii.length)}
       case ss:SDMat => ss.full(out)
-      case gg:GMat => gg.toFMat(out)
+      case gg:GMat => {val ff = gg.toFMat(out); Mat.copyToDoubleArray(ff.data, 0, out.data, 0, ff.length)}
       case _ => throw new RuntimeException("Unsupported source type")
     }
     out
