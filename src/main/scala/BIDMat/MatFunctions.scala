@@ -821,11 +821,33 @@ object MatFunctions {
   def mkdiag(a:FMat) = FMat(a.mkdiag)
   def mkdiag(a:IMat) = IMat(a.mkdiag)
   def mkdiag(a:CMat) = CMat(a.mkdiag)
+  def mkdiag(a:GMat) = a.mkdiag
+  
+  def mkdiag(a:Mat):Mat = {
+    a match {
+      case aa:DMat => mkdiag(aa):DMat
+      case aa:FMat => mkdiag(aa):FMat
+      case aa:IMat => mkdiag(aa):IMat
+      case aa:CMat => mkdiag(aa):CMat 
+      case aa:GMat => mkdiag(aa):GMat
+    }
+  }
 
   def getdiag(a:DMat) = DMat(a.getdiag)
   def getdiag(a:FMat) = FMat(a.getdiag)
   def getdiag(a:IMat) = IMat(a.getdiag)
-  def getdiag(a:CMat) = CMat(a.getdiag)  
+  def getdiag(a:CMat) = CMat(a.getdiag) 
+  def getdiag(a:GMat) = a.mkdiag
+
+  def getdiag(a:Mat):Mat = {
+    a match {
+      case aa:DMat => getdiag(aa):DMat
+      case aa:FMat => getdiag(aa):FMat
+      case aa:IMat => getdiag(aa):IMat
+      case aa:CMat => getdiag(aa):CMat 
+      case aa:GMat => getdiag(aa):GMat
+    }
+  }
 
   def load[T](fname:String, vname:String):T = MatHDF5.hload(fname, vname).asInstanceOf[T]
 

@@ -279,6 +279,23 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
 //    if (data != null) free
   }
   
+  def getdiag():GMat = {
+    if (nrows != ncols) throw new RuntimeException("getdiag requires a square matrix, but dims= %d %d" format (nrows, ncols))
+    val out = GMat.newOrCheckGMat(nrows, 1, null, GUID, "getdiag".##)
+    cudaMemcpy2D(out.data, Sizeof.FLOAT, data, (nrows+1)*Sizeof.FLOAT, Sizeof.FLOAT, nrows, cudaMemcpyDeviceToDevice)
+    out
+  }
+  
+    
+  def mkdiag():GMat = {
+    if (math.max(nrows, ncols) != 1) throw new RuntimeException("mkdiag requires a vector argument, but dims= %d %d" format (nrows, ncols))
+    val size = math.max(nrows, ncols)
+    val out = GMat.newOrCheckGMat(size, size, null, GUID, "mkdiag".##)
+    out.clear
+    cudaMemcpy2D(out.data, (nrows+1)*Sizeof.FLOAT, data, Sizeof.FLOAT, Sizeof.FLOAT, nrows, cudaMemcpyDeviceToDevice)
+    out
+  }
+  
   /*
    * Basic compute routines on pairs of GMats
    */
