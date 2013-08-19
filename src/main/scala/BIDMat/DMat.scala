@@ -130,57 +130,57 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
 
 
   def fDMult(aa:DMat, outmat:Mat):DMat = {
-	if (ncols == aa.nrows) {
-	  val out = DMat.newOrCheckDMat(nrows, aa.ncols, outmat, GUID, aa.GUID, "dMult".##)
-	  Mat.nflops += 2 * length.toLong * aa.ncols.toLong
-	  if (Mat.noMKL) {
-	  	out.clear
-	  	var i = 0
-	  	while (i < aa.ncols) {
-	  		var j = 0
-	  		while (j < aa.nrows) {
-	  			var k = 0
-	  			val dval = aa.data(j + i*ncols)
-	  			while (k < nrows) {
-	  				out.data(k+i*nrows) += data(k+j*nrows)*dval
-	  				k += 1
-	  			}
-	  			j += 1
-	  		}
-	  		i += 1									
-	  	}
-	  } else {
-	    if (nrows == 1) {
-	      dgemv(ORDER.ColMajor, TRANSPOSE.Trans, aa.nrows, aa.ncols, 1.0, aa.data, aa.nrows, data, 1, 0, out.data, 1)
-	    } else if (aa.ncols == 1) {
-	      dgemv(ORDER.ColMajor, TRANSPOSE.NoTrans, nrows, ncols, 1.0, data, nrows, aa.data, 1, 0, out.data, 1)
-	    } else {
-	      dgemm(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.NoTrans,
-		    nrows, aa.ncols, ncols, 1.0, data, nrows, aa.data, aa.nrows, 0, out.data, nrows)
-	    }
-	  }
-	  out
-	} else if (ncols == 1 && nrows == 1) {
-	  val out = DMat.newOrCheckDMat(aa.nrows, aa.ncols, outmat, GUID, aa.GUID, "dMult".##)
-	  Mat.nflops += aa.length
-	  var i = 0
-	  val dvar = data(0)
-	  while (i < aa.length) {
-	    out.data(i) = dvar * aa.data(i)
-	    i += 1						
-	  }			    
-	  out			  
-	} else if (aa.ncols == 1 && aa.nrows == 1) {
-	  val out = DMat.newOrCheckDMat(nrows, ncols, outmat, GUID, aa.GUID, "dMult".##)
-	  Mat.nflops += length
-	  var i = 0
-	  val dvar = aa.data(0)
-	  while (i < length) {
-	    out.data(i) = dvar * data(i)
-	    i += 1
-	  }			    
-	  out			  
-	} else throw new RuntimeException("dimensions mismatch")
+  	if (ncols == 1 && nrows == 1) {
+  		val out = DMat.newOrCheckDMat(aa.nrows, aa.ncols, outmat, GUID, aa.GUID, "dMult".##)
+  		Mat.nflops += aa.length
+  		var i = 0
+  		val dvar = data(0)
+  		while (i < aa.length) {
+  			out.data(i) = dvar * aa.data(i)
+  			i += 1						
+  		}			    
+  		out			  
+  	} else if (aa.ncols == 1 && aa.nrows == 1) {
+  		val out = DMat.newOrCheckDMat(nrows, ncols, outmat, GUID, aa.GUID, "dMult".##)
+  		Mat.nflops += length
+  		var i = 0
+  		val dvar = aa.data(0)
+  		while (i < length) {
+  			out.data(i) = dvar * data(i)
+  			i += 1
+  		}			    
+  		out		
+  	} else	if (ncols == aa.nrows) {
+  		val out = DMat.newOrCheckDMat(nrows, aa.ncols, outmat, GUID, aa.GUID, "dMult".##)
+  		Mat.nflops += 2 * length.toLong * aa.ncols.toLong
+  		if (Mat.noMKL) {
+  			out.clear
+  			var i = 0
+  			while (i < aa.ncols) {
+  				var j = 0
+  				while (j < aa.nrows) {
+  					var k = 0
+  					val dval = aa.data(j + i*ncols)
+  					while (k < nrows) {
+  						out.data(k+i*nrows) += data(k+j*nrows)*dval
+  						k += 1
+  					}
+  					j += 1
+  				}
+  				i += 1									
+  			}
+  		} else {
+  			if (nrows == 1) {
+  				dgemv(ORDER.ColMajor, TRANSPOSE.Trans, aa.nrows, aa.ncols, 1.0, aa.data, aa.nrows, data, 1, 0, out.data, 1)
+  			} else if (aa.ncols == 1) {
+  				dgemv(ORDER.ColMajor, TRANSPOSE.NoTrans, nrows, ncols, 1.0, data, nrows, aa.data, 1, 0, out.data, 1)
+  			} else {
+  				dgemm(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.NoTrans,
+  						nrows, aa.ncols, ncols, 1.0, data, nrows, aa.data, aa.nrows, 0, out.data, nrows)
+  			}
+  		}
+  		out  
+  	} else throw new RuntimeException("dimensions mismatch")
   }
   
   def fSMult(ss:SDMat, outmat:Mat):DMat = {

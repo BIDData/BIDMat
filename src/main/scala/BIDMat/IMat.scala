@@ -117,21 +117,7 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   def iMult(a0:Mat, omat:Mat):IMat = 
     a0 match {
     case a:IMat =>
-	    if (ncols == a.nrows) {
-	      val out = IMat.newOrCheckIMat(nrows, a.ncols, omat, GUID, a0.GUID, "iMult".##)
-	      out.clear
-	    	Mat.nflops += 2L * length * a.ncols
-	    	for (i <- 0 until a.ncols)
-	    		for (j <- 0 until a.nrows) {
-	    			var k = 0
-	    			val dval = a.data(j + i*ncols)
-	    			while (k < nrows) {
-	    				out.data(k+i*nrows) += data(k+j*nrows)*dval
-	    				k += 1
-	    			}
-	    		}
-	    	out
-	    } else if (ncols == 1 && nrows == 1) {
+       if (ncols == 1 && nrows == 1) {
 	    	val out = IMat(a.nrows, a.ncols)
 	    	Mat.nflops += a.length
 	    	var i = 0
@@ -151,6 +137,20 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
 	    		i += 1
 	    	}			    
 	    	out			  
+	    } else if (ncols == a.nrows) {
+	      val out = IMat.newOrCheckIMat(nrows, a.ncols, omat, GUID, a0.GUID, "iMult".##)
+	      out.clear
+	    	Mat.nflops += 2L * length * a.ncols
+	    	for (i <- 0 until a.ncols)
+	    		for (j <- 0 until a.nrows) {
+	    			var k = 0
+	    			val dval = a.data(j + i*ncols)
+	    			while (k < nrows) {
+	    				out.data(k+i*nrows) += data(k+j*nrows)*dval
+	    				k += 1
+	    			}
+	    		}
+	    	out
 	    } else throw new RuntimeException("dimensions mismatch")
     case _ => throw new RuntimeException("unsupported arg to * "+a0)
   }
