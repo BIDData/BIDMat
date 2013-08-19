@@ -143,8 +143,28 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   override def clearLower = setLower(0, 0)
 
   
-  def fDMult(a:FMat, outmat:Mat):FMat = { 
-  	if (ncols == a.nrows) {
+  def fDMult(a:FMat, outmat:Mat):FMat = {
+    if (ncols == 1 && nrows == 1){
+  		val out = FMat.newOrCheckFMat(a.nrows, a.ncols, outmat, GUID, a.GUID, "dMult".##)
+  		Mat.nflops += a.length
+  		var i = 0
+  		val dvar = data(0)
+  		while (i < a.length) {
+  			out.data(i) = dvar * a.data(i)
+  			i += 1
+  		}			    
+  		out			  
+  	} else if (a.ncols == 1 && a.nrows == 1){
+  		val out = FMat.newOrCheckFMat(nrows, ncols, outmat, GUID, a.GUID, "dMult".##)
+  		Mat.nflops += length
+  		var i = 0
+  		val dvar = a.data(0)
+  		while (i < length) {
+  			out.data(i) = dvar * data(i)
+  			i += 1
+  		}
+  		out
+  	} else if (ncols == a.nrows) {
   		val out = FMat.newOrCheckFMat(nrows, a.ncols, outmat, GUID, a.GUID, "dMult".##)
   		Mat.nflops += 2L * length * a.ncols
   		if (Mat.noMKL) {
@@ -171,27 +191,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   			sgemm(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.NoTrans,
   					nrows, a.ncols, ncols, 1.0f, data, nrows, a.data, a.nrows, 0, out.data, nrows)
   		}
-  		out
-  	} else if (ncols == 1 && nrows == 1){
-  		val out = FMat.newOrCheckFMat(a.nrows, a.ncols, outmat, GUID, a.GUID, "dMult".##)
-  		Mat.nflops += a.length
-  		var i = 0
-  		val dvar = data(0)
-  		while (i < a.length) {
-  			out.data(i) = dvar * a.data(i)
-  			i += 1
-  		}			    
-  		out			  
-  	} else if (a.ncols == 1 && a.nrows == 1){
-  		val out = FMat.newOrCheckFMat(nrows, ncols, outmat, GUID, a.GUID, "dMult".##)
-  		Mat.nflops += length
-  		var i = 0
-  		val dvar = a.data(0)
-  		while (i < length) {
-  			out.data(i) = dvar * data(i)
-  			i += 1
-  		}			    
-  		out			  
+  		out 			  
   	}	else throw new RuntimeException("dimensions mismatch")
   }
   

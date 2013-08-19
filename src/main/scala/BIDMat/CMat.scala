@@ -790,7 +790,35 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
   
   def fDMult(aa:CMat, outmat:Mat):CMat = { 
-  		if (ncols == aa.nrows) {
+  		if (ncols == 1 && nrows == 1){
+  			val out = CMat.newOrCheckCMat(aa.nrows, aa.ncols, outmat, GUID, aa.GUID, "dMult".##)
+  			Mat.nflops += aa.length
+  			var i = 0
+  			val u0 = data(0)
+  			val u1 = data(1)
+  			while (i < aa.length) {
+  				val v0 = aa.data(2*i)
+  				val v1 = aa.data(2*i+1)
+  				out.data(2*i) = u0*v0-u1*v1
+  				out.data(2*i+1) = u0*v1+u1*v0
+  				i += 1
+  			}			    
+  			out			  
+  		} else if (aa.ncols == 1 && aa.nrows == 1){
+  			val out = CMat.newOrCheckCMat(nrows, ncols, outmat, GUID, aa.GUID, "dMult".##)
+  			Mat.nflops += length
+  			var i = 0
+  			val u0 = aa.data(0)
+  			val u1 = aa.data(1)
+  			while (i < length) {
+  				val v0 = data(2*i)
+  				val v1 = data(2*i+1)
+  				out.data(2*i) = u0*v0-u1*v1
+  				out.data(2*i+1) = u0*v1+u1*v0
+  				i += 1
+  			}			    
+  			out	
+  		} else if (ncols == aa.nrows) {
   			val out = CMat.newOrCheckCMat(nrows, aa.ncols, outmat, GUID, aa.GUID, "dMult".##)
   			Mat.nflops += 2L * length * aa.ncols
   			if (Mat.noMKL) {
@@ -825,35 +853,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   							nrows, aa.ncols, ncols, alpha, data, nrows, aa.data, aa.nrows, beta, out.data, nrows)
   				}
   			}
-  			out
-  		} else if (ncols == 1 && nrows == 1){
-  			val out = CMat.newOrCheckCMat(aa.nrows, aa.ncols, outmat, GUID, aa.GUID, "dMult".##)
-  			Mat.nflops += aa.length
-  			var i = 0
-  			val u0 = data(0)
-  			val u1 = data(1)
-  			while (i < aa.length) {
-  				val v0 = aa.data(2*i)
-  				val v1 = aa.data(2*i+1)
-  				out.data(2*i) = u0*v0-u1*v1
-  				out.data(2*i+1) = u0*v1+u1*v0
-  				i += 1
-  			}			    
-  			out			  
-  		} else if (aa.ncols == 1 && aa.nrows == 1){
-  			val out = CMat.newOrCheckCMat(nrows, ncols, outmat, GUID, aa.GUID, "dMult".##)
-  			Mat.nflops += length
-  			var i = 0
-  			val u0 = aa.data(0)
-  			val u1 = aa.data(1)
-  			while (i < length) {
-  				val v0 = data(2*i)
-  				val v1 = data(2*i+1)
-  				out.data(2*i) = u0*v0-u1*v1
-  				out.data(2*i+1) = u0*v1+u1*v0
-  				i += 1
-  			}			    
-  			out			  
+  			out		  
   		}	else throw new RuntimeException("dimensions mismatch")
   }
  
