@@ -15,9 +15,9 @@ JCUDA_VERSION="0.5.0"
 JCUDA_LIBDIR=${BIDMAT_ROOT}/lib
 LIBDIR=${BIDMAT_ROOT}/lib
 if [ `uname` = "Darwin" ]; then
-  export DYLD_LIBRARY_PATH="${BIDMAT_ROOT}/lib/osx64:${BIDMAT_ROOT}/lib/osx64/JCUDA5.0:/usr/local/cuda/lib:${LD_LIBRARY_PATH}" 
+  export DYLD_LIBRARY_PATH="${BIDMAT_ROOT}/lib:/usr/local/cuda/lib:${LD_LIBRARY_PATH}" 
 else
-  export LD_LIBRARY_PATH="${BIDMAT_ROOT}/lib/linux64:${BIDMAT_ROOT}/lib/linux64/JCUDA5.0:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}" 
+  export LD_LIBRARY_PATH="${BIDMAT_ROOT}/lib:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}" 
 fi
 
 BIDMAT_LIBS="${BIDMAT_ROOT}/BIDMat.jar;${LIBDIR}/ptplot.jar;${LIBDIR}/ptplotapplication.jar;${LIBDIR}/jhdf5.jar;${LIBDIR}/commons-math3-3.1.1.jar;${LIBDIR}/lz4-1.1.2.jar"
@@ -30,6 +30,6 @@ if [ ! "$OS" = "Windows_NT" ]; then
 else
     NEWPATH=`${BIDMAT_ROOT}/shortpath.bat "${CUDA_BIN_PATH}"`
     NEWPATH=`echo $NEWPATH | sed 's_\\\\_/_g'`
-#  JAVA_OPTS="-Djava.library.path=${BIDMAT_ROOT}/lib/win64;${BIDMAT_ROOT}/lib/win64/JCUDA5.0;${NEWPATH} "$JAVA_OPTS
+    JAVA_OPTS="-Djava.library.path=${BIDMAT_ROOT}/lib;${NEWPATH} "$JAVA_OPTS
 fi
 scala -nobootcp -cp "${ALL_LIBS}" -Yrepl-sync -i ${LIBDIR}/bidmat_init.scala
