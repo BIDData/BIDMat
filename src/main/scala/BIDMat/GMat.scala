@@ -59,40 +59,38 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   override def ones(nt:Int, nc:Int) = GMat.gones(nr, nc)
 
   def GMult(a:GMat, oldmat:Mat):GMat = {
-    if (ncols == a.nrows) {
-      val out = GMat.newOrCheckGMat(nrows, a.ncols, oldmat, GUID, a.GUID, "GMult".##)
-      Mat.nflops += 2L * length * a.ncols
-      if (nrows == 1) {
-//        cublasSgemv('t', a.nrows, a.ncols, 1.0f, a.data, nrows, data, 1, 0f, out.data, 1)
-        out.clear
-        CUMAT.dmv(a.data, a.nrows, a.ncols, data, out.data, 1)
-      } else if (a.ncols == 1) {
-//        cublasSgemv('n', nrows, ncols, 1.0f, data, nrows, a.data, 1, 0f, out.data, 1)
-        out.clear
-        CUMAT.dmv(data, nrows, ncols, a.data, out.data, 0)
-      } else {
-      	cublasSgemm('n', 'n', nrows, a.ncols, ncols, 1.0f, data, nrows, a.data, a.nrows, 0f, out.data, nrows)
-      }
-      cudaDeviceSynchronize()
-      if (cublasGetError != 0) {
-        println("device is %d" format SciFunctions.getGPU)
-        throw new RuntimeException("Cublas error in * "+cublasGetError)
-      }
-      out
-    }	else if (ncols == 1 && nrows == 1) {
+    if (ncols == 1 && nrows == 1) {
       val out = GMat.newOrCheckGMat(a.nrows, a.ncols, oldmat, GUID, a.GUID, "GMult1".##)
       Mat.nflops += 1L * a.length
-      out.clear
-      cublasSaxpy(a.length, this.dv.toFloat, a.data, 1, out.data, 1)
+      CUMAT.applyop(data, nrows, ncols, a.data, a.nrows, a.ncols, out.data, GMat.BinOp.op_mul)
       cudaDeviceSynchronize()
       out
     } else if (a.ncols == 1 && a.nrows == 1) {
       val out = GMat.newOrCheckGMat(nrows, ncols, oldmat, GUID, a.GUID, "GMult2".##)
       Mat.nflops += 1L * length
-      out.clear
-      cublasSaxpy(length, a.dv.toFloat, data, 1, out.data, 1)
+      CUMAT.applyop(data, nrows, ncols, a.data, a.nrows, a.ncols, out.data, GMat.BinOp.op_mul)
       cudaDeviceSynchronize()
       out
+    } else if (ncols == a.nrows) {
+    	val out = GMat.newOrCheckGMat(nrows, a.ncols, oldmat, GUID, a.GUID, "GMult".##)
+    	Mat.nflops += 2L * length * a.ncols
+    	if (nrows == 1) {
+    		//        cublasSgemv('t', a.nrows, a.ncols, 1.0f, a.data, nrows, data, 1, 0f, out.data, 1)
+    		out.clear
+    		CUMAT.dmv(a.data, a.nrows, a.ncols, data, out.data, 1)
+    	} else if (a.ncols == 1) {
+    		//        cublasSgemv('n', nrows, ncols, 1.0f, data, nrows, a.data, 1, 0f, out.data, 1)
+    		out.clear
+    		CUMAT.dmv(data, nrows, ncols, a.data, out.data, 0)
+    	} else {
+    		cublasSgemm('n', 'n', nrows, a.ncols, ncols, 1.0f, data, nrows, a.data, a.nrows, 0f, out.data, nrows)
+    	}
+    	cudaDeviceSynchronize()
+    	if (cublasGetError != 0) {
+    		println("device is %d" format SciFunctions.getGPU)
+    		throw new RuntimeException("Cublas error in * "+cublasGetError)
+    	}
+    	out 
     } else throw new RuntimeException("dimensions mismatch")
   }
   
