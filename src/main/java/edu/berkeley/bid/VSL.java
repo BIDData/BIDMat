@@ -3,11 +3,7 @@ package edu.berkeley.bid;
 public final class VSL {
 
     static { 
-    	try {
-    		System.loadLibrary( "bidmatmkl" ); 
-    	} catch (Throwable e) {
-    		System.out.println("Couldnt load bidmatmkl");
-    	}
+
     }
 
     private long handle = 0;

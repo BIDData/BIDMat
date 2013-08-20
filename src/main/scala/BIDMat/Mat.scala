@@ -344,27 +344,48 @@ object Mat {
   
   var useStdio = (! System.getProperty("os.name").startsWith("Windows"))
   
+  def getJARdir:String = {
+    val path = Mat.getClass.getProtectionDomain().getCodeSource().getLocation().getPath()
+    val jstr = java.net.URLDecoder.decode(path, "UTF-8")
+    path.replace("BIDMat.jar","")
+  }
+  
   def checkMKL:Unit = {
     if (!noMKL) {
-      try {
+      try {      	
       	System.loadLibrary("bidmatmkl")
       }	catch {
-    			case _ => {
-    				println("Cant find native CPU library")
-    				noMKL = true
-    			}
+      case _ =>
+      try {
+      	val os = System.getProperty("os.name")
+      	if (os.equals("Linux")) {
+      		System.load(getJARdir+"lib/linux64/libbidmatmkl.so")
+      		System.load(getJARdir+"lib/linux64/libjhdf5.so")
+      	} else if (os.equals("Mac OS X")) {
+      		System.load(getJARdir+"lib/osx64/libbidmatmkl.so")
+      		System.load(getJARdir+"lib/osx64/libjhdf5.so")      		      		
+      	} else {
+      		System.load(getJARdir.replace("/c:","C:")+"lib/win64/bidmatmkl.dll")
+      		System.load(getJARdir.replace("/c:","C:")+"lib/win64/jhdf5.dll")
+      	}
+      } catch {
+      case _ => {
+      	println("Cant find native CPU libraries")
+      	noMKL = true
+      }
+      }
       }
     }
   }
   
   def checkCUDA:Unit = {
     if (hasCUDA == 0) {
+    	val os = System.getProperty("os.name")
     	try {
-    		val os = System.getProperty("os.name")
     		if (os.equals("Linux")) {
     			System.loadLibrary("cudart")
     			System.loadLibrary("JCudaRuntime-linux-x86_64")
-		} else if (os.equals("Mac OS X")) {
+    		} else if (os.equals("Mac OS X")) {
     			System.loadLibrary("cudart")
     			System.loadLibrary("JCudaRuntime-apple-x86_64")
     		} else {
@@ -379,9 +400,23 @@ object Mat {
     			}
     		}
     	} catch {
+    	case _ => try {
+    		val JCuda_libs = List("JCudaRuntime", "JCublas2", "JCublas", "JCudaDriver", "JCufft", "JCurand", "JCusparse2", "JCusparse")
+    		if (os.equals("Linux")) {
+    		  JCuda_libs.foreach(i => System.load(getJARdir+"lib/linux64/JCUDA5.0/lib"+i+"-linux-x86_64.so"))
+    		  System.load(getJARdir+"lib/linux64/JCUDA5.0/libbidmatcuda.so")
+    		} else if (os.contains("Mac")) {
+    		  JCuda_libs.foreach(i => System.load(getJARdir+"lib/osx64/JCUDA5.0/lib"+i+"-apple-x86_64.dylib"))
+    		  System.load(getJARdir+"lib/osx64/JCUDA5.0/libbidmatcuda.dylib")
+    		} else {
+    		  JCuda_libs.foreach(i => System.load(getJARdir+"lib/win64/JCUDA5.0/"+i+"-windows-x86_64.dll"))
+    		  System.load(getJARdir+"lib/win64/JCUDA5.0/bidmatcuda.dll")
+    		}
+    	} catch {
     	case _ =>  {
     		println("Cant find CUDA SDK or JCUDA")
     		hasCUDA = -1    		
+    	}
     	}
     	}
     }

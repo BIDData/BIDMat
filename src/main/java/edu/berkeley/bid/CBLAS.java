@@ -5,7 +5,7 @@ public final class CBLAS {
     private CBLAS() {}
 
     static {
-        System.loadLibrary("bidmatmkl");
+
     }
 
     public final static class ORDER {
