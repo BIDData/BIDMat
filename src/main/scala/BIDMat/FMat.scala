@@ -142,6 +142,22 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   override def clearLower(off:Int) = setLower(0, off)
   override def clearLower = setLower(0, 0)
 
+  def fDMultHelper(a:FMat, out:FMat, istart:Int, iend:Int) = {
+  	var i = istart
+  	while (i < iend) {
+  		var j = 0
+  		while (j < a.nrows) {
+  			var k = 0
+  			val dval = a.data(j + i*ncols)
+  			while (k < nrows) {
+  				out.data(k+i*nrows) += data(k+j*nrows)*dval
+  				k += 1
+  			}
+  			j += 1
+  		}
+  		i += 1									
+  	}
+  }
   
   def fDMult(a:FMat, outmat:Mat):FMat = {
     if (ncols == 1 && nrows == 1){
@@ -169,20 +185,20 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   		Mat.nflops += 2L * length * a.ncols
   		if (Mat.noMKL) {
   			out.clear
-  			var i = 0
-  			while (i < a.ncols) {
-  				var j = 0
-  				while (j < a.nrows) {
-  					var k = 0
-  					val dval = a.data(j + i*ncols)
-  					while (k < nrows) {
-  						out.data(k+i*nrows) += data(k+j*nrows)*dval
-  						k += 1
-  					}
-  					j += 1
-  				}
-  				i += 1									
-  			}
+  		  if (a.ncols > 3 && 1L*nrows*a.length > 100000L && Mat.numThreads > 1) {
+    			val done = IMat(1,Mat.numThreads)
+    			for (ithread <- 0 until Mat.numThreads) {
+    				val istart = (1L*ithread*a.ncols/Mat.numThreads).toInt
+    				val iend = (1L*(ithread+1)*a.ncols/Mat.numThreads).toInt
+    				actor {
+    					fDMultHelper(a, out, istart, iend)
+    					done(ithread) = 1
+    				}
+    			}
+    			while (SciFunctions.sum(done).v < Mat.numThreads) {Thread.`yield`()}
+    		} else {
+    			fDMultHelper(a, out, 0, a.ncols)
+    		}
   		} else if (nrows == 1) {
   			sgemv(ORDER.ColMajor, TRANSPOSE.Trans, a.nrows, a.ncols, 1.0f, a.data, a.nrows, data, 1, 0, out.data, 1)
   		} else if (a.ncols == 1) {
