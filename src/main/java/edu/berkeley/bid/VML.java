@@ -5,11 +5,7 @@ public final class VML {
     private VML() {}
 
     static {
-    	try {
-        System.loadLibrary("bidmatmkl");
-    	} catch (Throwable e) {
-    		System.out.println("Couldnt load bidmatmkl");
-    	}
+    	
     }
     
     public final static class VMLMODE {

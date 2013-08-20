@@ -5,7 +5,7 @@ public final class LAPACK {
     private LAPACK() {}
 
     static {
-        System.loadLibrary("bidmatmkl");
+
     }
 
 /*    public final static class ORDER {

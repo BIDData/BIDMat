@@ -7,7 +7,7 @@ public final class UTILS {
     private UTILS() {}
 
     static {
-        System.loadLibrary("bidmatmkl");
+
     }
     
     public static native  int  getnumthreads( );

@@ -30,6 +30,6 @@ if [ ! "$OS" = "Windows_NT" ]; then
 else
     NEWPATH=`${BIDMAT_ROOT}/shortpath.bat "${CUDA_BIN_PATH}"`
     NEWPATH=`echo $NEWPATH | sed 's_\\\\_/_g'`
-    JAVA_OPTS="-Djava.library.path=${BIDMAT_ROOT}/lib/win64;${BIDMAT_ROOT}/lib/win64/JCUDA5.0;${NEWPATH} "$JAVA_OPTS
+#  JAVA_OPTS="-Djava.library.path=${BIDMAT_ROOT}/lib/win64;${BIDMAT_ROOT}/lib/win64/JCUDA5.0;${NEWPATH} "$JAVA_OPTS
 fi
 scala -nobootcp -cp "${ALL_LIBS}" -Yrepl-sync -i ${LIBDIR}/bidmat_init.scala
