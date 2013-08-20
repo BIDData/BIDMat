@@ -5,7 +5,7 @@ public final class VML {
     private VML() {}
 
     static {
-    	
+      jcuda.LibUtils.loadLibrary("bidmatmkl");
     }
     
     public final static class VMLMODE {

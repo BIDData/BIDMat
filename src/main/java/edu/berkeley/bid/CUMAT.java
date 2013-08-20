@@ -7,7 +7,7 @@ public final class CUMAT {
     private CUMAT() {}
 
     static {
-        System.loadLibrary("bidmatcuda");
+        jcuda.LibUtils.loadLibrary("bidmatcuda");
     }
 
     public static native int applyop(Pointer A, int Anrows, int Ancols, Pointer B, int Bnrows, int Bncols, Pointer C, int opn);
