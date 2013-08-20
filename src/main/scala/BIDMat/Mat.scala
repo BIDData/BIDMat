@@ -352,29 +352,15 @@ object Mat {
   
   def checkMKL:Unit = {
     if (!noMKL) {
-      try {      	
-      	System.loadLibrary("bidmatmkl")
-      }	catch {
-      case _ =>
-      try {
-      	val os = System.getProperty("os.name")
-      	if (os.equals("Linux")) {
-      		System.load(getJARdir+"lib/linux64/libbidmatmkl.so")
-      		System.load(getJARdir+"lib/linux64/libjhdf5.so")
-      	} else if (os.equals("Mac OS X")) {
-      		System.load(getJARdir+"lib/osx64/libbidmatmkl.so")
-      		System.load(getJARdir+"lib/osx64/libjhdf5.so")      		      		
-      	} else {
-      		System.load(getJARdir.replace("/c:","C:")+"lib/win64/bidmatmkl.dll")
-      		System.load(getJARdir.replace("/c:","C:")+"lib/win64/jhdf5.dll")
-      	}
-      } catch {
-      case _ => {
-      	println("Cant find native CPU libraries")
-      	noMKL = true
-      }
-      }
-      }
+    	try {
+    		jcuda.LibUtils.loadLibrary("bidmatmkl")
+    		jcuda.LibUtils.loadLibrary("jhdf5")
+    	} catch {
+    	case _ => {
+    		println("Cant find native CPU libraries")
+    		noMKL = true
+    	}
+    	}
     }
   }
   
@@ -417,6 +403,13 @@ object Mat {
     	case e:NoClassDefFoundError => println("Couldn't load the JCUDA driver")
     	case e:Exception => println("Exception while initializing JCUDA driver")
     	case _ => println("Something went wrong while loading JCUDA driver")
+    	}
+    	if (hasCUDA > 0) {
+    	  try {
+    	    jcuda.LibUtils.loadLibrary("bidmatcuda")
+    	  } catch {
+    	  case _ => println("Something went wrong while loading BIDMat CUDA library")
+    	  }
     	}
     }
   }
