@@ -274,6 +274,13 @@ object Mop_ETimes extends Mop {
   override def op(a:SMat, b:SMat, c:Mat):SMat = getSPair(c, a) *@ b
 }
 
+object Mop_Kron extends Mop { 
+  override def myname = "**"
+  override def op(a:FMat, b:FMat, c:Mat):FMat = getFPair(c, a) ** b
+  override def op(a:DMat, b:DMat, c:Mat):DMat = getDPair(c, a) ** b
+  override def op(a:IMat, b:IMat, c:Mat):IMat = getIPair(c, a) ** b
+}
+
 object Mop_EDiv extends Mop {
   override def myname = "/"
   override def op(a:FMat, b:FMat, c:Mat):FMat = getFPair(c, a) / b

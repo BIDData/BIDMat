@@ -373,9 +373,21 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   def GPUmult(b:FMat, out:Mat, btrans:Boolean) = GMat.GPUmult(this, b, out, btrans)
   
-  def ddot(a:FMat):Double = super.ddot(a)
+  def ddot(a : FMat):Double = 
+  	if (nrows != a.nrows || ncols != a.ncols) {
+  		throw new RuntimeException("ddot dims not compatible")
+  	} else {
+  		Mat.nflops += 2 * length
+  		var v = 0.0
+  		var i = 0
+  		while (i < length){
+  			v += data(i) * a.data(i)
+  			i += 1
+  		}
+  		v
+  	}
   
-  override def ddot(a:Mat):Double = super.ddot(a.asInstanceOf[FMat])
+  override def ddot(a:Mat):Double = ddot(a.asInstanceOf[FMat])
   
   def dot(a:FMat, omat:Mat):FMat = {
    	if (nrows != a.nrows || ncols != a.ncols) {
@@ -445,7 +457,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
           throw new RuntimeException("solve needs a square matrix")
         } else {
           val out = FMat.newOrCheckFMat(nrows, ncols, null, GUID, a.GUID, "solvel".##)
-          val tmp = FMat.newOrCheckFMat(nrows, ncols, null, GUID, a.GUID, "solvel1".##)
+          val tmp = FMat.newOrCheckFMat(a.nrows, a.ncols, null, GUID, a.GUID, "solvel1".##)
           System.arraycopy(a.data, 0, tmp.data, 0, a.length)
           System.arraycopy(data, 0, out.data, 0, length)
           val ipiv = IMat.newOrCheckIMat(1, ncols, null, GUID, a.GUID, "solvel2".##).data
@@ -464,7 +476,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
         if (nrows != ncols || ncols != a.nrows) {
           throw new RuntimeException("solve needs a square matrix")
         } else {
-          val out = FMat.newOrCheckFMat(nrows, ncols, null, GUID, a.GUID, "solver".##)
+          val out = FMat.newOrCheckFMat(a.nrows, a.ncols, null, GUID, a.GUID, "solver".##)
           val tmp = FMat.newOrCheckFMat(nrows, ncols, null, GUID, a.GUID, "solver1".##)
           System.arraycopy(data, 0, tmp.data, 0, length)
           System.arraycopy(a.data, 0, out.data, 0, a.length)
@@ -529,12 +541,13 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def ◁  (b : FMat) = solvel(b)
   def ▷  (b : FMat) = solver(b)
   def *@ (b : FMat) = ffMatOpv(b, FMat.vecMulFun, null)
-  def /  (b : FMat) = ffMatOpv(b, FMat.vecDivFun, null)
   def ∘  (b : FMat) = ffMatOpv(b, FMat.vecMulFun, null)
+  def /  (b : FMat) = ffMatOpv(b, FMat.vecDivFun, null)
   def ∙  (b:FMat):FMat = dot(b)
   def ∙→ (b:FMat):FMat = dotr(b)
+  def ∙∙ (b:FMat):Double = ddot(b)
   def ** (b : FMat) = kron(b, null)
-  def ⊗ (b : FMat) = kron(b, null)
+  def ⊗  (b : FMat) = kron(b, null)
   
   def >   (b : FMat) = ffMatOp(b, FMat.gtFun, null)
   def <   (b : FMat) = ffMatOp(b, FMat.ltFun, null)
@@ -630,6 +643,8 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def ∙→  (b : IMat) = Mop_Dotr.op(this, b, null)
   def dot (b : IMat) = Mop_Dot.op(this, b, null)
   def dotr(b : IMat) = Mop_Dotr.op(this, b, null)
+  def **  (b : IMat) = Mop_Kron.op(this, b, null)
+  def ⊗   (b : IMat) = Mop_Kron.op(this, b, null)
   def \   (b : IMat) = Mop_HCat.op(this, b, null)
   def on  (b : IMat) = Mop_VCat.op(this, b, null)
 
@@ -663,6 +678,8 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def ∙→  (b : DMat) = Mop_Dotr.op(this, b, null)
   def dot (b : DMat) = Mop_Dot.op(this, b, null)
   def dotr(b : DMat) = Mop_Dotr.op(this, b, null)
+  def **  (b : DMat) = Mop_Kron.op(this, b, null)
+  def ⊗   (b : DMat) = Mop_Kron.op(this, b, null)
   def \   (b : DMat) = Mop_HCat.op(this, b, null)
   def on  (b : DMat) = Mop_VCat.op(this, b, null)
   
@@ -696,6 +713,8 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def ∙→  (b : CMat) = Mop_Dotr.op(this, b, null)
   def dot (b : CMat) = Mop_Dot.op(this, b, null)
   def dotr(b : CMat) = Mop_Dotr.op(this, b, null)
+  def **  (b : CMat) = Mop_Kron.op(this, b, null)
+  def ⊗   (b : CMat) = Mop_Kron.op(this, b, null)
   def \   (b : CMat) = Mop_HCat.op(this, b, null)
   def on  (b : CMat) = Mop_VCat.op(this, b, null)
   
@@ -725,6 +744,8 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def ∙→  (b : SMat) = Mop_Dotr.op(this, b, null)
   def dot (b : SMat) = Mop_Dot.op(this, b, null)
   def dotr(b : SMat) = Mop_Dotr.op(this, b, null)
+  def **  (b : SMat) = Mop_Kron.op(this, b, null)
+  def ⊗   (b : SMat) = Mop_Kron.op(this, b, null)
   def \   (b : SMat) = Mop_HCat.op(this, b, null)
   def on  (b : SMat) = Mop_VCat.op(this, b, null)
   
@@ -758,6 +779,8 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def ∙→  (b : GMat) = Mop_Dotr.op(this, b, null)
   def dot (b : GMat) = Mop_Dot.op(this, b, null)
   def dotr(b : GMat) = Mop_Dotr.op(this, b, null)
+  def **  (b : GMat) = Mop_Kron.op(this, b, null)
+  def ⊗   (b : GMat) = Mop_Kron.op(this, b, null)
   def \   (b : GMat) = Mop_HCat.op(this, b, null)
   def on  (b : GMat) = Mop_VCat.op(this, b, null)
   
@@ -791,6 +814,8 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   override def ∙→ (b : Mat) = Mop_Dotr.op(this, b, null)
   override def dot  (b : Mat) = Mop_Dot.op(this, b, null)
   override def dotr (b : Mat) = Mop_Dotr.op(this, b, null)
+  override def ⊗  (b : Mat) = Mop_Kron.op(this, b, null)
+  override def ** (b : Mat) = Mop_Kron.op(this, b, null)
   override def \  (b : Mat) = Mop_HCat.op(this, b, null)
   override def on (b : Mat) = Mop_VCat.op(this, b, null)
   
@@ -840,10 +865,10 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   def ∘   (b : FMat) = mat.ffMatOpv(b, FMat.vecMulFun, omat)
   def /   (b : FMat) = mat.ffMatOpv(b, FMat.vecDivFun, omat)  
   def ^   (b : FMat) = mat.ffMatOp(b, FMat.powFun, omat) 
-  def ∙   (b:FMat):FMat = mat.dot(b)
-  def ∙→  (b:FMat):FMat = mat.dot(b)
-  def ** (b : FMat) = mat.kron(b, omat)
-  def ⊗ (b : FMat) = mat.kron(b, omat)
+  def ∙   (b:FMat):FMat = mat.dot(b, omat)
+  def ∙→  (b:FMat):FMat = mat.dotr(b, omat)
+  def **  (b : FMat) = mat.kron(b, omat)
+  def ⊗   (b : FMat) = mat.kron(b, omat)
   
     
   def ^* (b : FDSPair) = MatFunctions.DDS(mat, b.left, b.right, omat)
@@ -923,6 +948,8 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   def ∙→  (b : IMat) = Mop_Dotr.op(mat, b, omat)
   def dot (b : IMat) = Mop_Dot.op(mat, b, omat)
   def dotr(b : IMat) = Mop_Dotr.op(mat, b, omat)
+  def **  (b : IMat) = Mop_Kron.op(mat, b, omat)
+  def ⊗   (b : IMat) = Mop_Kron.op(mat, b, omat)
   def \   (b : IMat) = Mop_HCat.op(mat, b, omat)
   def on  (b : IMat) = Mop_VCat.op(mat, b, omat)
 
@@ -952,6 +979,8 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   def ∙→  (b : DMat) = Mop_Dotr.op(mat, b, omat)
   def dot (b : DMat) = Mop_Dot.op(mat, b, omat)
   def dotr(b : DMat) = Mop_Dotr.op(mat, b, omat)
+  def **  (b : DMat) = Mop_Kron.op(mat, b, omat)
+  def ⊗   (b : DMat) = Mop_Kron.op(mat, b, omat)
   def \   (b : DMat) = Mop_HCat.op(mat, b, omat)
   def on  (b : DMat) = Mop_VCat.op(mat, b, omat)
 
@@ -982,6 +1011,8 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   def dot (b : GMat) = Mop_Dot.op(mat, b, omat)
   def dotr(b : GMat) = Mop_Dotr.op(mat, b, omat)
   def \   (b : GMat) = Mop_HCat.op(mat, b, omat)
+  def **  (b : GMat) = Mop_Kron.op(mat, b, omat)
+  def ⊗   (b : GMat) = Mop_Kron.op(mat, b, omat)
   def on  (b : GMat) = Mop_VCat.op(mat, b, omat)
 
   def >   (b : GMat) = Mop_GT.op(mat, b, omat)
@@ -1013,7 +1044,9 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   override def ∙   (b : Mat) = Mop_Dot.op(mat, b, omat)
   override def ∙→  (b : Mat) = Mop_Dotr.op(mat, b, omat)
   override def dot (b : Mat) = Mop_Dot.op(mat, b, omat)
-  override def dotr(b : Mat) = Mop_Dotr.op(mat, b, omat)
+  override def dotr(b : Mat) = Mop_Dotr.op(mat, b, omat)   
+  override def ⊗  (b : Mat) = Mop_Kron.op(mat, b, omat)
+  override def ** (b : Mat) = Mop_Kron.op(mat, b, omat)
   override def \  (b : Mat):Mat = Mop_HCat.op(mat, b, omat)
   override def on (b : Mat):Mat = Mop_VCat.op(mat, b, omat)
   

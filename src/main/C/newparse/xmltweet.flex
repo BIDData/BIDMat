@@ -55,11 +55,11 @@ PUNCT	   [;:,.?!]
   int iv = checkword(yytext);
 	  }
 
-">"?[:;]-[<(\[\{O] {
+[:;][>)}] {
   int iv = checkword(yytext);
 	  }
 
-[:;][>)}] {
+">"?[:;]-[<(\[\{O] {
   int iv = checkword(yytext);
 	  }
 

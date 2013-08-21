@@ -58,31 +58,30 @@ class Mat(nr:Int, nc:Int) {
   def update(a:Int, b:IMat, m:Mat) = notImplemented0("block update");
   
   def unary_-():Mat = notImplemented1("-", this)
-  def + (b : Mat):Mat = notImplemented1("+", b)
-  def - (b : Mat):Mat = notImplemented1("-", b)
-  def * (b : Mat):Mat = notImplemented1("*", b)
+  def +  (b : Mat):Mat = notImplemented1("+", b)
+  def -  (b : Mat):Mat = notImplemented1("-", b)
+  def *  (b : Mat):Mat = notImplemented1("*", b)
   def *^ (b : Mat):Mat = notImplemented1("*^", b)
   def xT (b : Mat):Mat = notImplemented1("*", b)
   def Tx (b : Mat):Mat = notImplemented1("*", b)
   def ^* (b : Mat):Mat = notImplemented1("*^", b)
   def ** (b : Mat):Mat = notImplemented1("**", b)
-  def ⊗ (b : Mat):Mat = notImplemented1("**", b)       // unicode 8855, 0x2297
+  def ⊗  (b : Mat):Mat = notImplemented1("⊗", b)       // unicode 8855, 0x2297
   def /< (b : Mat):Mat = notImplemented1("/<", b)
   def *@ (b : Mat):Mat = notImplemented1("*@", b)
-  def ∘  (b : Mat):Mat = notImplemented1("∘", b)       // unicode 8728, 0x2218 
-  def / (b : Mat):Mat = notImplemented1("/", b)
+  def ∘  (b : Mat):Mat = notImplemented1("∘", b)        // unicode 8728, 0x2218 
+  def /  (b : Mat):Mat = notImplemented1("/", b)
   def \\ (b : Mat):Mat = notImplemented1("\\\\", b)
-  def ^ (b : Mat):Mat = notImplemented1("^", b) 
-  def ◁ (b : Mat):Mat = notImplemented1("◁", b)        // unicode 9965, 0x25C1 
-  def ▷ (b : Mat):Mat = notImplemented1("▷", b)        // unicode 9966, 0x25C2
+  def ^  (b : Mat):Mat = notImplemented1("^", b) 
+  def ◁  (b : Mat):Mat = notImplemented1("◁", b)        // unicode 9665, 0x25C1 
+  def ▷  (b : Mat):Mat = notImplemented1("▷", b)        // unicode 9666, 0x25C2
   def dot (b : Mat):Mat = notImplemented1("dot", b)
   def dotr (b : Mat):Mat = notImplemented1("dotr", b) 
-  def ∙ (b : Mat):Mat = notImplemented1("dot", b)      // unicode 8729, 0x2219 
-  def ∙→ (b : Mat):Mat = notImplemented1("dotr", b)    // unicode (8729, 8594) (0x2219, 0x2192)
-  def ∙∙ (b : Mat):Mat = notImplemented1("ddot", b)
+  def ∙ (b : Mat):Mat = notImplemented1("dot", b)       // unicode 8729, 0x2219 
+  def ∙→ (b : Mat):Mat = notImplemented1("dotr", b)     // unicode (8729, 8594) (0x2219, 0x2192)
     
-  def > (b : Mat):Mat = notImplemented1(">", b)
-  def < (b : Mat):Mat = notImplemented1("<", b)
+  def >  (b : Mat):Mat = notImplemented1(">", b)
+  def <  (b : Mat):Mat = notImplemented1("<", b)
   def >= (b : Mat):Mat = notImplemented1(">=", b)
   def <= (b : Mat):Mat = notImplemented1("<=", b)
   def == (b : Mat):Mat = notImplemented1("==", b)
@@ -104,6 +103,7 @@ class Mat(nr:Int, nc:Int) {
   }
   
   def ddot (b : Mat):Double = {notImplemented1("ddot", b); 0}
+  def ∙∙ (b : Mat):Double = {notImplemented1("ddot", b); 0}
   
 
   
@@ -147,6 +147,8 @@ abstract class Pair {
   def dotr (b : Mat):Mat = notImplemented1("dotr", b)
   def ∙ (b : Mat):Mat = notImplemented1("dot", b)
   def ∙→ (b : Mat):Mat = notImplemented1("dotr", b)
+  def ** (b : Mat):Mat = notImplemented1("**", b)
+  def ⊗  (b : Mat):Mat = notImplemented1("⊗", b) 
   
   def > (b : Mat):Mat = notImplemented1(">", b)
   def < (b : Mat):Mat = notImplemented1("<", b)
