@@ -65,19 +65,22 @@ class Mat(nr:Int, nc:Int) {
   def xT (b : Mat):Mat = notImplemented1("*", b)
   def Tx (b : Mat):Mat = notImplemented1("*", b)
   def ^* (b : Mat):Mat = notImplemented1("*^", b)
+  def ** (b : Mat):Mat = notImplemented1("**", b)
+  def ⊗ (b : Mat):Mat = notImplemented1("**", b)       // unicode 8855, 0x2297
   def /< (b : Mat):Mat = notImplemented1("/<", b)
   def *@ (b : Mat):Mat = notImplemented1("*@", b)
-  def ∘  (b : Mat):Mat = notImplemented1("∘", b)
+  def ∘  (b : Mat):Mat = notImplemented1("∘", b)       // unicode 8728, 0x2218 
   def / (b : Mat):Mat = notImplemented1("/", b)
   def \\ (b : Mat):Mat = notImplemented1("\\\\", b)
   def ^ (b : Mat):Mat = notImplemented1("^", b) 
-  def ◁ (b : Mat):Mat = notImplemented1("◁", b)
-  def ▷ (b : Mat):Mat = notImplemented1("▷", b)
+  def ◁ (b : Mat):Mat = notImplemented1("◁", b)        // unicode 9965, 0x25C1 
+  def ▷ (b : Mat):Mat = notImplemented1("▷", b)        // unicode 9966, 0x25C2
   def dot (b : Mat):Mat = notImplemented1("dot", b)
   def dotr (b : Mat):Mat = notImplemented1("dotr", b) 
-  def ∙ (b : Mat):Mat = notImplemented1("dot", b)
-  def ∙∙ (b : Mat):Mat = notImplemented1("dotr", b)
-  
+  def ∙ (b : Mat):Mat = notImplemented1("dot", b)      // unicode 8729, 0x2219 
+  def ∙→ (b : Mat):Mat = notImplemented1("dotr", b)    // unicode (8729, 8594) (0x2219, 0x2192)
+  def ∙∙ (b : Mat):Mat = notImplemented1("ddot", b)
+    
   def > (b : Mat):Mat = notImplemented1(">", b)
   def < (b : Mat):Mat = notImplemented1("<", b)
   def >= (b : Mat):Mat = notImplemented1(">=", b)
@@ -143,7 +146,7 @@ abstract class Pair {
   def dot (b : Mat):Mat = notImplemented1("dot", b)
   def dotr (b : Mat):Mat = notImplemented1("dotr", b)
   def ∙ (b : Mat):Mat = notImplemented1("dot", b)
-  def ∙∙ (b : Mat):Mat = notImplemented1("dotr", b)
+  def ∙→ (b : Mat):Mat = notImplemented1("dotr", b)
   
   def > (b : Mat):Mat = notImplemented1(">", b)
   def < (b : Mat):Mat = notImplemented1("<", b)
@@ -174,7 +177,7 @@ abstract class Pair {
   def dot (b : Float):Mat = notImplemented0("dot")
   def dotr (b : Float):Mat = notImplemented0("dotr")
   def ∙ (b : Float):Mat = notImplemented0("dot")
-  def ∙∙ (b : Float):Mat = notImplemented0("dotr")
+  def ∙→ (b : Float):Mat = notImplemented0("dotr")
   
   def > (b : Float):Mat = notImplemented0(">")
   def < (b : Float):Mat = notImplemented0("<")

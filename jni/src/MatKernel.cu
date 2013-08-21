@@ -1355,7 +1355,7 @@ __global__ void __msum(float *A, int lda, float *B, int ldb, float *C, int ldc, 
 #endif
 #endif
 
-int dists(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p, int ithread) {
+int dists(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p) {
   dim3 blockdim(32,4,4);
   dim3 griddim(1,1+(nrows-1)/128,1+(ncols-1)/128);
 //  cudaSetDevice(ithread);

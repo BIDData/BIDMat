@@ -1113,7 +1113,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   	if (nrows != a.nrows || ncols != a.ncols) {
   		throw new RuntimeException("dotr dims not compatible")
   	} else {
-  		val out = DenseMat.newOrCheck[T](nrows, 1, oldmat, GUID, a.GUID, "gdotr".hashCode)
+  		val out = DenseMat.newOrCheck[T](nrows, 1, oldmat, GUID, a.GUID, "gdotr".##)
   		Mat.nflops += 2 * length
   		var i = 0
   		while (i < ncols){
