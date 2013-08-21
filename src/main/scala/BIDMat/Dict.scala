@@ -48,6 +48,16 @@ class Dict(val cstr:CSMat) {
  def apply(i:Int) = {
     cstr(i)
   }
+ 
+ def count(s:String):Double = {
+   makeHash
+   val v = hash.getOrElse(s, -1)
+   if (v >= 0) counts(v) else 0.0
+ }
+ 
+ def count(i:Int):Double = {
+   counts(i) 
+ }
   
   def trim(thresh:Int):Dict = {
     val ii = find(counts >= thresh.toDouble)

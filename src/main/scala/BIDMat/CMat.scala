@@ -894,6 +894,35 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   override def dot(a:Mat):Mat = dot(a.asInstanceOf[CMat])
   
+  def dotr(b:CMat, omat:Mat):CMat = {
+   	if (nrows != b.nrows || ncols != b.ncols) {
+  		throw new RuntimeException("dotr dims not compatible")
+   	}	else {
+   		val out = CMat.newOrCheckCMat(nrows, 1, omat, GUID, b.GUID, "dotr".##)
+   		out.clear
+   		var i = 0
+   		while (i < ncols) {
+   			var j = 0
+   			while (j < nrows){
+   				val ix = 2*(j+i*nrows)
+   				val u0 = data(ix)
+   				val u1 = data(ix+1)
+   				val v0 = b.data(ix)
+   				val v1 = b.data(ix+1)
+   				out.data(2*j) += u0*v0-u1*v1
+   				out.data(2*j+1) += u0*v1+u1*v0
+   				j += 1
+   			}
+   			i += 1
+   		}
+   		out
+   	}
+  }
+  
+  def dotr(a:CMat):CMat = dotr(a, null)
+  
+  override def dotr(a:Mat):Mat = dotr(a.asInstanceOf[CMat])
+  
   def solvel(a0:Mat):CMat = 
     a0 match {
       case a:CMat => { 
@@ -1054,6 +1083,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def /< (b : CMat) = solvel(b)
   def \\ (b : CMat) = solver(b)
   def ∙  (b : CMat):CMat = dot(b)
+  def ∙→  (b : CMat):CMat = dotr(b)
   
   def == (b : CMat) = ccMatOp(b, CMat.eqFun, null)
   def != (b : CMat) = ccMatOp(b, CMat.neFun, null)
@@ -1112,6 +1142,8 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   override def /  (b : Mat):Mat = Mop_EDiv.op(this, b, null)
   override def \  (b : Mat):Mat = Mop_HCat.op(this, b, null)
   override def on (b : Mat):Mat = Mop_VCat.op(this, b, null)
+  override def ∙  (b : Mat):Mat = dot(b.asInstanceOf[CMat]):CMat
+  override def ∙→  (b : Mat):CMat = dotr(b.asInstanceOf[CMat]):CMat
   
   override def == (b : Mat):Mat = Mop_EQ.op(this, b, null)
   override def != (b : Mat):Mat = Mop_NE.op(this, b, null)
@@ -1144,6 +1176,8 @@ class CPair (val omat:Mat, val mat:CMat) extends Pair {
   
   def dot (b :CMat) = mat.dot(b, omat)
   def ∙   (b :CMat) = mat.dot(b, omat)
+  def dotr (b :CMat) = mat.dotr(b, omat)
+  def ∙→  (b :CMat) = mat.dotr(b, omat)
     
   override def * (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecMulFun, omat)
   override def + (b : Float) = mat.ccMatOpScalarv(b, 0, CMat.vecAddFun, omat)

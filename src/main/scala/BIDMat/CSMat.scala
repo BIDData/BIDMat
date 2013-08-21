@@ -136,8 +136,32 @@ case class CSMat(override val nrows:Int, override val ncols:Int, override val da
 		    throw new RuntimeException("index must 1 or 2")			    
 	}
 	
+	def kron(b: CSMat):CSMat = {
+	  val out = CSMat(nrows * b.nrows, ncols * b.ncols)
+	  var i = 0 
+	  while (i < nrows) {
+	    var j = 0 
+	    while (j < b.nrows) {
+	      var k = 0 
+	      while (k < ncols){
+	        var m = 0 
+	        while (m < b.ncols) {
+	          out.data(j + b.nrows*(i + nrows*(m + b.ncols*k))) = data(i + k*nrows) + b.data(j + m*b.nrows)
+	          m += 1
+	        }
+	        k += 1
+	      }
+	      j += 1	      
+	    }
+	    i += 1
+	  }
+	  out
+	}
+	
   def + (b : CSMat) = ccMatOp(b, (x:String, y:String) => x + y, null)
-  
+  def ** (b : CSMat) = kron(b)
+	def ⊗ (b : CSMat) = kron(b)
+	
 	def \ (b: CSMat) = horzcat(b)
 	def \ (b: String) = horzcat(CSMat.cselem(b))
 	def on (b: CSMat) = vertcat(b)
@@ -151,6 +175,8 @@ object CSMat {
     def apply(a:DenseMat[String]):CSMat = new CSMat(a.nrows, a.ncols, a.data) 
     
     def apply(a:BMat) = a.toCSMat
+    
+    def apply(a:List[String]) = new CSMat(1, a.length, a.toArray)
     
     def cselem(x:String) = {
     	val out = CSMat(1,1)

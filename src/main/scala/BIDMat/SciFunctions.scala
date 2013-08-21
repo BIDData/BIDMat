@@ -1728,6 +1728,14 @@ object SciFunctions {
   def sum(a:GSMat, n:Int) = a.sum(n, null)
   def sum(a:GSMat, n:Int, omat:Mat) = a.sum(n, omat)
   
+  def LXdist(a:GMat, b:GMat, omat:GMat, p:Float):GMat = GMat.LXdist(a, b, omat, p)
+  
+  def LXdist(a:FMat, b:FMat, omat:FMat, p:Float):FMat = GMat.LXdist(a, b, omat, p)
+  
+  def LXdist(a:GMat, b:GMat, p:Float):GMat = GMat.LXdist(a, b, null, p)
+  
+  def LXdist(a:FMat, b:FMat, p:Float):FMat = GMat.LXdist(a, b, null, p)
+  
   def abs(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => abs(aa, b):FMat

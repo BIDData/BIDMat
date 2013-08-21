@@ -372,8 +372,33 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   }
   
   def dotr(a:DMat):DMat = dotr(a, null)
+  
+  def kron(b: DMat, oldmat:Mat):DMat = {
+	  val out = DMat.newOrCheckDMat(nrows*b.nrows, ncols*b.ncols, oldmat, GUID, b.GUID, "kron".##)
+	  var i = 0 
+	  while (i < ncols){
+	  	var j = 0 
+	  	while (j < b.ncols) {
+	  		var k = 0 
+	  		while (k < nrows) {
+	  			var m = 0 
+	  			while (m < b.nrows) {
+	          out.data(m + b.nrows*(k + nrows*(j + b.ncols*i))) = data(k + i*nrows) * b.data(m + j*b.nrows)
+	          m += 1
+	        }
+	        k += 1
+	      }
+	      j += 1	      
+	    }
+	    i += 1
+	  }
+	  Mat.nflops += 1L * nrows * ncols * b.nrows * b.ncols
+	  out
+	}
+  
+  def kron(a:DMat):DMat = kron(a, null)
  
-   def solvel(a0:Mat):DMat = 
+  def solvel(a0:Mat):DMat = 
     a0 match {
       case a:DMat => { 
         Mat.nflops += 2L*a.nrows*a.nrows*a.nrows/3 + 2L*nrows*a.nrows*a.nrows
@@ -463,7 +488,9 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   def /  (b : DMat) = ddMatOpv(b, DMat.vecDivFun, null)
   def ∘  (b : DMat) = ddMatOpv(b, DMat.vecMulFun, null)
   def ∙  (b : DMat):DMat = dot(b)
-  def ∙∙  (b : DMat):DMat = dotr(b)
+  def ∙→  (b : DMat):DMat = dotr(b)
+  def ** (b : DMat) = kron(b, null)
+  def ⊗ (b : DMat) = kron(b, null)
 
   def >   (b : DMat) = ddMatOp(b, DMat.gtFun, null)
   def <   (b : DMat) = ddMatOp(b, DMat.ltFun, null)
@@ -537,7 +564,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   def /   (b : IMat) = Mop_EDiv.op(this, b, null)  
   def ^   (b : IMat) = Mop_Pow.op(this, b, null) 
   def ∙   (b : IMat) = Mop_Dot.op(this, b, null)
-  def ∙∙  (b : IMat) = Mop_Dotr.op(this, b, null)
+  def ∙→  (b : IMat) = Mop_Dotr.op(this, b, null)
   def dot (b : IMat) = Mop_Dot.op(this, b, null)
   def dotr(b : IMat) = Mop_Dotr.op(this, b, null)
   def \   (b : IMat) = Mop_HCat.op(this, b, null)
@@ -570,7 +597,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   def /   (b : FMat) = Mop_EDiv.op(this, b, null)  
   def ^   (b : FMat) = Mop_Pow.op(this, b, null) 
   def ∙   (b : FMat) = Mop_Dot.op(this, b, null)
-  def ∙∙  (b : FMat) = Mop_Dotr.op(this, b, null)
+  def ∙→  (b : FMat) = Mop_Dotr.op(this, b, null)
   def dot (b : FMat) = Mop_Dot.op(this, b, null)
   def dotr(b : FMat) = Mop_Dotr.op(this, b, null)
   def \   (b : FMat) = Mop_HCat.op(this, b, null)
@@ -603,7 +630,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   def /   (b : CMat) = Mop_EDiv.op(this, b, null)  
   def ^   (b : CMat) = Mop_Pow.op(this, b, null) 
   def ∙   (b : CMat) = Mop_Dot.op(this, b, null)
-  def ∙∙  (b : CMat) = Mop_Dotr.op(this, b, null)
+  def ∙→  (b : CMat) = Mop_Dotr.op(this, b, null)
   def dot (b : CMat) = Mop_Dot.op(this, b, null)
   def dotr(b : CMat) = Mop_Dotr.op(this, b, null)
   def \   (b : CMat) = Mop_HCat.op(this, b, null)
@@ -636,7 +663,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   def ▷   (b : GMat) = Mop_RSolve.op(this, b, null)
   def ^   (b : GMat) = Mop_Pow.op(this, b, null) 
   def ∙   (b : GMat) = Mop_Dot.op(this, b, null)
-  def ∙∙  (b : GMat) = Mop_Dotr.op(this, b, null)
+  def ∙→  (b : GMat) = Mop_Dotr.op(this, b, null)
   def dot (b : GMat) = Mop_Dot.op(this, b, null)
   def dotr(b : GMat) = Mop_Dotr.op(this, b, null)
   def \   (b : GMat) = Mop_HCat.op(this, b, null)
@@ -669,7 +696,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   override def ▷  (b : Mat) = Mop_RSolve.op(this, b, null)
   override def ^  (b : Mat) = Mop_Pow.op(this, b, null) 
   override def ∙  (b : Mat) = Mop_Dot.op(this, b, null)
-  override def ∙∙ (b : Mat) = Mop_Dotr.op(this, b, null)
+  override def ∙→ (b : Mat) = Mop_Dotr.op(this, b, null)
   override def dot  (b : Mat) = Mop_Dot.op(this, b, null)
   override def dotr (b : Mat) = Mop_Dotr.op(this, b, null)
   override def \  (b : Mat) = Mop_HCat.op(this, b, null)
@@ -722,7 +749,9 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   def dot (b :DMat) = mat.dot(b, omat)
   def dotr (b :DMat) = mat.dotr(b, omat)
   def ∙ (b :DMat) = mat.dot(b, omat)
-  def ∙∙ (b :DMat) = mat.dotr(b, omat)
+  def ∙→ (b :DMat) = mat.dotr(b, omat)
+  def ** (b : DMat) = mat.kron(b, omat)
+  def ⊗ (b : DMat) = mat.kron(b, omat)  
 
   def * (b : Double) = mat.fDMult(DMat.delem(b), omat) 
   override def * (b : Float) = mat.fDMult(DMat.delem(b), omat)
@@ -756,7 +785,7 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   def /   (b : IMat) = Mop_EDiv.op(mat, b, omat)  
   def ^   (b : IMat) = Mop_Pow.op(mat, b, omat) 
   def ∙   (b : IMat) = Mop_Dot.op(mat, b, omat)
-  def ∙∙  (b : IMat) = Mop_Dotr.op(mat, b, omat)
+  def ∙→  (b : IMat) = Mop_Dotr.op(mat, b, omat)
   def dot (b : IMat) = Mop_Dot.op(mat, b, omat)
   def dotr(b : IMat) = Mop_Dotr.op(mat, b, omat)
   def \   (b : IMat) = Mop_HCat.op(mat, b, omat)
@@ -785,7 +814,7 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   def /   (b : FMat) = Mop_EDiv.op(mat, b, omat)  
   def ^   (b : FMat) = Mop_Pow.op(mat, b, omat) 
   def ∙   (b : FMat) = Mop_Dot.op(mat, b, omat)
-  def ∙∙  (b : FMat) = Mop_Dotr.op(mat, b, omat)
+  def ∙→  (b : FMat) = Mop_Dotr.op(mat, b, omat)
   def dot (b : FMat) = Mop_Dot.op(mat, b, omat)
   def dotr(b : FMat) = Mop_Dotr.op(mat, b, omat)
   def \   (b : FMat) = Mop_HCat.op(mat, b, omat)
@@ -814,7 +843,7 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   def /   (b : GMat) = Mop_EDiv.op(mat, b, omat)  
   def ^   (b : GMat) = Mop_Pow.op(mat, b, omat) 
   def ∙   (b : GMat) = Mop_Dot.op(mat, b, omat)
-  def ∙∙  (b : GMat) = Mop_Dotr.op(mat, b, omat)
+  def ∙→  (b : GMat) = Mop_Dotr.op(mat, b, omat)
   def dot (b : GMat) = Mop_Dot.op(mat, b, omat)
   def dotr(b : GMat) = Mop_Dotr.op(mat, b, omat)
   def \   (b : GMat) = Mop_HCat.op(mat, b, omat)
@@ -847,7 +876,7 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   override def ◁  (b : Mat):Mat = Mop_Div.op(mat, b, omat)
   override def ▷  (b : Mat):Mat = Mop_RSolve.op(mat, b, omat)
   override def ∙   (b : Mat) = Mop_Dot.op(mat, b, omat)
-  override def ∙∙  (b : Mat) = Mop_Dotr.op(mat, b, omat)
+  override def ∙→  (b : Mat) = Mop_Dotr.op(mat, b, omat)
   override def dot (b : Mat) = Mop_Dot.op(mat, b, omat)
   override def dotr(b : Mat) = Mop_Dotr.op(mat, b, omat)
   override def \  (b : Mat):Mat = Mop_HCat.op(mat, b, omat)
