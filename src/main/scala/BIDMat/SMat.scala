@@ -396,7 +396,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   override def ▷  (b : Mat) = Mop_RSolve.op(this, b, null)
   override def ^  (b : Mat) = Mop_Pow.op(this, b, null) 
   override def ∙  (b : Mat) = Mop_Dot.op(this, b, null)
-  override def ∙∙ (b : Mat) = Mop_Dotr.op(this, b, null)
+  override def ∙→ (b : Mat) = Mop_Dotr.op(this, b, null)
   override def dot  (b : Mat) = Mop_Dot.op(this, b, null)
   override def dotr (b : Mat) = Mop_Dotr.op(this, b, null)
   override def \  (b : Mat) = Mop_HCat.op(this, b, null)
