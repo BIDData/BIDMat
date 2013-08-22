@@ -64,7 +64,7 @@ object HMat {
   
   val byteOrder = ByteOrder.LITTLE_ENDIAN
   
-  var DEFAULT_BUFSIZE = 32*1024
+  var DEFAULT_BUFSIZE = 64*1024
   
   def readSomeBytes(din:InputStream, a:Array[Byte], n:Int) {
     var nread = 0
