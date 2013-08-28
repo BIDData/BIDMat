@@ -15,12 +15,18 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
     Arrays.fill(data,0,length,v)
     this
   }
+  
+  override def t:DMat = tt(null)
+  
+  def t(omat:Mat):DMat = tt(omat)
  
-  override def t:DMat = if (Mat.noMKL) { 
-    DMat(gt(null))
-  } else { 
-    val out = DMat.newOrCheckDMat(ncols, nrows, null, GUID, "t".##)
-    domatcopy("C", "T", nrows, ncols, 1.0, data, nrows, out.data, ncols)
+  def tt(omat:Mat):DMat = {
+    val out = DMat.newOrCheckDMat(ncols, nrows, omat, GUID, "t".##)
+    if (Mat.noMKL) { 
+    	gt(out)
+    } else { 
+    	domatcopy("C", "T", nrows, ncols, 1.0, data, nrows, out.data, ncols)
+    }
     out
   }
   
@@ -736,13 +742,8 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
 }
 
 class DPair (val omat:Mat, val mat:DMat) extends Pair{
-  override def t:DMat = if (Mat.noMKL) {
-  	DMat(mat.gt(omat))
-  } else { 
-    val out = DMat.newOrCheckDMat(mat.ncols, mat.nrows, omat)
-    domatcopy("C", "T", mat.nrows, mat.ncols, 1.0, mat.data, mat.nrows, out.data, mat.ncols)
-    out
-  }
+  
+  override def t:DMat = mat.tt(omat)
   /*
    * Compute routines
    */

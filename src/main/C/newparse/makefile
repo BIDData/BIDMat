@@ -12,7 +12,7 @@ include gmake.options
 .SUFFIXES: 
 .SUFFIXES: .c .cpp .o .exe .lxc .flex
 
-EXES=xmltweet.exe 
+EXES=xmltweet.exe xmlwiki.exe
 OBJS=newparse.o gzstream.o
 
 .SECONDARY: xmltweet.lxc
@@ -24,7 +24,6 @@ all: $(EXES)
 
 .o.exe: 
 	$(LD) -o $@ $(OBJS) $< $(LINK_OPTS) -lz
-	rm -r $(OBJS) $<
 
 .cpp.o: 
 	$(CPP) $(CC_OPTS) -o $@ -c $<
