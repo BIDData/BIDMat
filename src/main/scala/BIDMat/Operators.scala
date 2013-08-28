@@ -248,6 +248,7 @@ object Mop_TTimes extends Mop {
   override def op(a:SMat, b:FMat, c:Mat):FMat = getSPair(c, a) Tx b
   override def op(a:SDMat, b:DMat, c:Mat):DMat = getSDPair(c, a) Tx b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) Tx b
+  override def op(a:GSMat, b:GMat, c:Mat):GMat = getGSPair(c, a) Tx b
 }
 
 object Mop_Div extends Mop { 
