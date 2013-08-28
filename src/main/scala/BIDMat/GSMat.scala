@@ -1,6 +1,7 @@
 package BIDMat
 import jcuda._
 import jcuda.jcublas.JCublas
+import jcuda.jcusparse._
 import jcuda.runtime.JCuda._
 import jcuda.runtime._
 import edu.berkeley.bid.CUMAT
@@ -82,17 +83,115 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     out
   }
   
+  // This works, but unfortunately is very slow. 
+  
+  def SDMult(a:GMat, omat:Mat):GMat = {
+    if (ncols != a.nrows) {
+      throw new RuntimeException("SDMult dimensions mismatch")
+    }
+    val out = GMat.newOrCheckGMat(nrows, a.ncols, omat, GUID, a.GUID, "SDMult".##)
+    val ginds = GIMat(ncols+1, 1) 
+    val handle = GSMat.getHandle
+    val descra = GSMat.getDescr  
+    
+    JCusparse.cusparseXcoo2csr(handle, ic, nnz, ncols, ginds.data, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO)    
+    JCusparse.cusparseScsrmm(handle, cusparseOperation.CUSPARSE_OPERATION_TRANSPOSE,
+        ncols, a.ncols, nrows, 1.0f, descra,	data, ginds.data, ir, a.data, a.nrows, 0, out.data, out.nrows)
+    ginds.free
+    Mat.nflops += 2L*nnz*a.ncols
+    out
+  }
+  
+  // This one is fine. 
+  
+  def SDTMult(a:GMat, omat:Mat):GMat = {
+    if (nrows != a.nrows) {
+      throw new RuntimeException("SDTMult dimensions mismatch")
+    }
+    val out = GMat.newOrCheckGMat(ncols, a.ncols, omat, GUID, a.GUID, "SDMult".##)
+    val ginds = GIMat(ncols+1, 1) 
+    val handle = GSMat.getHandle
+    val descra = GSMat.getDescr  
+    
+    JCusparse.cusparseXcoo2csr(handle, ic, nnz, ncols, ginds.data, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO)    
+    JCusparse.cusparseScsrmm(handle, cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE,
+        ncols, a.ncols, nrows, 1.0f, descra,	data, ginds.data, ir, a.data, a.nrows, 0, out.data, out.nrows)
+    ginds.free
+    Mat.nflops += 2L*nnz*a.ncols
+    out
+  }
+  
+  def ^*(a:GMat) = SDTMult(a, null)
+  def Tx(a:GMat) = SDTMult(a, null)
+  
   def ~ (b: GMat) = new GPair(this, b)
+  
+  override def Tx (b : Mat) = Mop_TTimes.op(this, b, null)
+  override def ^* (b : Mat) = Mop_TTimes.op(this, b, null)
+
   
   
 }
 
 class GSPair (val omat:Mat, val mat:GSMat) extends Pair {
-  
+	def Tx(a:GMat) = mat.SDTMult(a, omat)
+	def ^*(a:GMat) = mat.SDTMult(a, omat)
 
+	override def ^* (b : Mat):Mat = Mop_TTimes.op(mat, b, omat)
+	override def Tx (b : Mat):Mat = Mop_TTimes.op(mat, b, omat)
 } 
 
 object GSMat {
+  
+  var cusparseContexts:Array[cusparseHandle] = null
+  var cusparseMatDescrs:Array[cusparseMatDescr] = null
+  
+  def initHandles = {
+    import BIDMat.SciFunctions._
+    import jcuda.jcusparse.JCusparse._
+    if (cusparseContexts == null) {
+      val thisGPU = getGPU
+      val nGPUs = Mat.hasCUDA
+      cusparseContexts = new Array[cusparseHandle](nGPUs)
+      for (i <- 0 until nGPUs) {
+        setGPU(i)
+        cusparseContexts(i) = new cusparseHandle()
+        cusparseCreate(cusparseContexts(i))      
+      }  
+      setGPU(thisGPU)
+    }
+  }
+  
+  def initDescrs = {
+    import BIDMat.SciFunctions._
+    import jcuda.jcusparse.JCusparse._
+    if (cusparseMatDescrs == null) {
+      val thisGPU = getGPU
+      val nGPUs = Mat.hasCUDA
+      cusparseMatDescrs = new Array[cusparseMatDescr](nGPUs)
+      for (i <- 0 until nGPUs) {
+        setGPU(i)
+        val descra = new cusparseMatDescr()
+        cusparseCreateMatDescr(descra);
+        cusparseSetMatType(descra, cusparseMatrixType.CUSPARSE_MATRIX_TYPE_GENERAL)
+        cusparseSetMatIndexBase(descra, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO)
+        cusparseMatDescrs(i) = descra
+        
+      }  
+      setGPU(thisGPU)
+    }
+  }
+  
+  def getHandle = {
+    initHandles
+    cusparseContexts(SciFunctions.getGPU)
+  }
+  
+  def getDescr = {
+    initDescrs
+    cusparseMatDescrs(SciFunctions.getGPU)
+  }
+  
 
   def apply(nr:Int, nc:Int, nnzx:Int):GSMat = { 
 //  		println("nr, nc, nnz = %d,%d,%d" format (nr,nc,nnz0))

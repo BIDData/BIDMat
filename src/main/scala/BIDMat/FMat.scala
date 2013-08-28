@@ -11,9 +11,13 @@ import java.util.Arrays
 case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, nc, data0) {
 
   def size() = length;
-   
-  override def t:FMat = {
-  	val out = FMat.newOrCheckFMat(ncols, nrows, null, GUID, "t".##)      
+  
+  override def t:FMat = tt(null)
+  
+  def t(omat:Mat):FMat = tt(omat)
+  
+  def tt(omat:Mat):FMat = {
+  	val out = FMat.newOrCheckFMat(ncols, nrows, omat, GUID, "t".##)      
   	if (Mat.noMKL) { 
   		gt(out)
   	} else {
@@ -843,7 +847,7 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   /*
    * Compute routines
    */
-  override def t:FMat = FMat(mat.gt(omat)) 
+  override def t:FMat = mat.tt(omat)
   def dot (b :FMat) = mat.dot(b, omat)
   def dotr (b :FMat) = mat.dotr(b, omat)
   
