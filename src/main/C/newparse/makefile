@@ -15,14 +15,14 @@ include gmake.options
 EXES=xmltweet.exe xmlwiki.exe
 OBJS=newparse.o gzstream.o
 
-.SECONDARY: xmltweet.lxc
+.SECONDARY: xmltweet.lxc xmlwiki.lxc
 
 all: $(EXES)
 
 .flex.lxc: 
 	flex -o $@ $< 
 
-.o.exe: 
+.o.exe: $(OBJS)
 	$(LD) -o $@ $(OBJS) $< $(LINK_OPTS) -lz
 
 .cpp.o: 
