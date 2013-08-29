@@ -49,6 +49,10 @@ class Dict(val cstr:CSMat) {
     cstr(i)
   }
  
+  def apply(x:Range) = {
+    cstr(x)
+  }
+ 
  def count(s:String):Double = {
    makeHash
    val v = hash.getOrElse(s, -1)
