@@ -400,7 +400,6 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   def growslice(a:Int, b:Int, omat:Mat, c:Int):DenseMat[T] = {
     val off = Mat.oneBased
     val out = DenseMat.newOrCheck[T](b-a+c-off, ncols, omat, GUID, b-a+c-off, ncols, "growslice".##)
-    println("%d %d %d %d" format (GUID, out.GUID, b-a+c-off, ncols))
     if (a-off < 0) throw new RuntimeException("rowslice index out of range %d" format (a))
     if (b-off > nrows) throw new RuntimeException("rowslice index out of range %d %d" format (b, nrows))
     var i = 0
