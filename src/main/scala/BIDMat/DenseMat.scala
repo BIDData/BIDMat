@@ -385,41 +385,29 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   /*
    * Tries to save a slice into an output matrix, but recreates it if too small
    */
-  def gcolslice(a:Int, b:Int, out:Mat, c:Int):DenseMat[T] = {
+  def gcolslice(a:Int, b:Int, omat:Mat, c:Int):DenseMat[T] = {
     val off = Mat.oneBased
-    if (out.asInstanceOf[AnyRef] != null && nrows != out.nrows) throw new RuntimeException("colslice row dims mismatch")
+    val out = DenseMat.newOrCheck[T](nrows, b-a+c-off, omat, GUID, "gcolslice".##)
     if (a-off < 0) throw new RuntimeException("colslice index out of range %d" format (a))
     if (b-off > ncols) throw new RuntimeException("colslice index out of range %d %d" format (b, ncols))
-    var omat = out.asInstanceOf[DenseMat[T]]
-    if (omat.asInstanceOf[AnyRef] == null || (b-a+c-off)*nrows > omat.data.size) {
-    	omat = new DenseMat[T](nrows, b-a+c-off) 
-    }	else if (b-a+c-off != out.ncols) {
-    	omat = new DenseMat[T](nrows, b-a+c-off, omat.data)
-    }
-    System.arraycopy(data, (a-off)*nrows, omat.data, (c-off)*nrows, (b-a)*nrows)
-    omat
+    System.arraycopy(data, (a-off)*nrows, out.data, (c-off)*nrows, (b-a)*nrows)
+    out
   }
   
   /*
    * Tries to save a slice into an output matrix, but recreates it if too small
    */
-  def growslice(a:Int, b:Int, out:Mat, c:Int):DenseMat[T] = {
+  def growslice(a:Int, b:Int, omat:Mat, c:Int):DenseMat[T] = {
     val off = Mat.oneBased
-    if (out.asInstanceOf[AnyRef] != null && ncols != out.ncols) throw new RuntimeException("rowslice col dims mismatch")
+    val out = DenseMat.newOrCheck[T](b-a+c-off, ncols, omat, GUID, "growslice".##)
     if (a-off < 0) throw new RuntimeException("rowslice index out of range %d" format (a))
     if (b-off > nrows) throw new RuntimeException("rowslice index out of range %d %d" format (b, nrows))
-    var omat = out.asInstanceOf[DenseMat[T]]
-    if (omat.asInstanceOf[AnyRef] == null || (b-a+c-off)*ncols > omat.data.size) {
-    	omat = new DenseMat[T](b-a+c-off, ncols) 
-    }	else if (b-a+c-off != out.nrows) {
-    	omat = new DenseMat[T](b-a+c-off, ncols, omat.data)
-    }
     var i = 0
     while (i < ncols) {
-      System.arraycopy(data, (a-off)+i*nrows, omat.data, (c-off)+i*omat.nrows, (b-a))
+      System.arraycopy(data, (a-off)+i*nrows, out.data, (c-off)+i*out.nrows, (b-a))
       i += 1
     }    
-    omat
+    out
   }
   
   /*
