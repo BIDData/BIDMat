@@ -323,40 +323,32 @@ class SparseMat[@specialized(Double,Float) T]
   
   def gapply(iv:IMat, jv:Int):SparseMat[T] = gapply(iv, IMat.ielem(jv))
   
-  def gcolslice(a:Int, b:Int, out:Mat):SparseMat[T] = {
+  def gcolslice(a:Int, b:Int, omat:Mat):SparseMat[T] = {
 //    println("gcolslice %d %d, %d %d, %d %d" format (GUID, out.GUID, nrows, ncols, out.nrows, out.ncols))
     val off = Mat.oneBased
     val ioff = Mat.ioneBased
-    if (out.asInstanceOf[AnyRef] != null && nrows != out.nrows) throw new RuntimeException("colslice row dims mismatch")
+    val newnnz = jc(b-off) - jc(a-off)
+    val out = SparseMat.newOrCheck[T](nrows, b-a, newnnz, omat, false, GUID, "gcolslice".##)
     if (a-off < 0) throw new RuntimeException("colslice index out of range %d" format (a))
     if (b-off > ncols) throw new RuntimeException("colslice index out of range %d %d" format (b-a, ncols))
-    var omat = out.asInstanceOf[SparseMat[T]]
-//    println("gcolslice1 %d %d" format (GUID, omat.GUID))
-    val newnnz = jc(b-off) - jc(a-off)
-    if (omat.asInstanceOf[AnyRef] == null || newnnz > omat.data.length) {
-    	omat = new SparseMat[T](nrows, b-a, newnnz, new Array[Int](newnnz), new Array[Int](b-a+1), new Array[T](newnnz))
-    }	else if (b-a <= omat.ncols) {
-    	omat.nnz0 = newnnz
-    } else {
-      omat = new SparseMat[T](nrows, b-a, newnnz, omat.ir, new Array[Int](b-a+1), omat.data)
-    }
+
     val istart = jc(a-off)-ioff
     val iend = jc(b-off)-ioff
-    System.arraycopy(ir, istart, omat.ir, 0, iend-istart)
-    System.arraycopy(data, istart, omat.data, 0, iend-istart)
+    System.arraycopy(ir, istart, out.ir, 0, iend-istart)
+    System.arraycopy(data, istart, out.data, 0, iend-istart)
     var i = 0
     while (i <= b-a) {
-      omat.jc(i) = jc(i+a) - jc(a) + ioff
+      out.jc(i) = jc(i+a) - jc(a) + ioff
     	i += 1
     }
     var j = i
     while (j <= omat.ncols) {
-      omat.jc(j) = omat.jc(i-1)
+      out.jc(j) = out.jc(i-1)
       j += 1
     }
-    omat.nnz0 = omat.jc(i-1) - ioff 
+    out.nnz0 = out.jc(i-1) - ioff 
 //    println("gcolslice2 %d %d" format (GUID, omat.GUID))
-    omat
+    out
   }
 
   private def printOne(a:T):String = 
