@@ -387,7 +387,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
    */
   def gcolslice(a:Int, b:Int, omat:Mat, c:Int):DenseMat[T] = {
     val off = Mat.oneBased
-    val out = DenseMat.newOrCheck[T](nrows, b-a+c-off, omat, GUID, "gcolslice".##)
+    val out = DenseMat.newOrCheck[T](nrows, b-a+c-off, omat, GUID, nrows, b-a+c-off, "gcolslice".##)
     if (a-off < 0) throw new RuntimeException("colslice index out of range %d" format (a))
     if (b-off > ncols) throw new RuntimeException("colslice index out of range %d %d" format (b, ncols))
     System.arraycopy(data, (a-off)*nrows, out.data, (c-off)*nrows, (b-a)*nrows)
@@ -399,7 +399,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
    */
   def growslice(a:Int, b:Int, omat:Mat, c:Int):DenseMat[T] = {
     val off = Mat.oneBased
-    val out = DenseMat.newOrCheck[T](b-a+c-off, ncols, omat, GUID, "growslice".##)
+    val out = DenseMat.newOrCheck[T](b-a+c-off, ncols, omat, GUID, b-a+c-off, ncols, "growslice".##)
     println("%d %d %d %d" format (GUID, out.GUID, b-a+c-off, ncols))
     if (a-off < 0) throw new RuntimeException("rowslice index out of range %d" format (a))
     if (b-off > nrows) throw new RuntimeException("rowslice index out of range %d %d" format (b, nrows))
