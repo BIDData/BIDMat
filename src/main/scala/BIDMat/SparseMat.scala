@@ -329,7 +329,7 @@ class SparseMat[@specialized(Double,Float) T]
     val ioff = Mat.ioneBased
     val newnnz = jc(b-off) - jc(a-off)
     val out = SparseMat.newOrCheck[T](nrows, b-a, newnnz, omat, false, GUID, "gcolslice".##)
-        println("gcolslice %d %d, %d %d, %d %d" format (GUID, out.GUID, nrows, ncols, out.nrows, out.ncols))
+        println("gcolslice %d %d, %d %d, %d %d %d" format (GUID, out.GUID, nrows, ncols, out.nrows, out.ncols, out.ir.length))
     if (a-off < 0) throw new RuntimeException("colslice index out of range %d" format (a))
     if (b-off > ncols) throw new RuntimeException("colslice index out of range %d %d" format (b-a, ncols))
 
