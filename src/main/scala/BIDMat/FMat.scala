@@ -6,6 +6,7 @@ import edu.berkeley.bid.SPBLAS._
 import edu.berkeley.bid.UTILS._
 import scala.actors.Actor._
 import java.util.Arrays
+import java.util.concurrent.atomic._
 
 
 case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, nc, data0) {
@@ -236,7 +237,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   		i += 1
   	}
   }
-  
+    
   def fSMultHelper2(a:SMat, out:FMat, istart:Int, iend:Int, ioff:Int) = {
   	var i = 0
   	while (i < a.ncols) {
@@ -291,18 +292,65 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     }
   }
   
+    def fSMultTHelper(a:SMat, out:FMat, istart:Int, iend:Int, ioff:Int, colaccess:AtomicIntegerArray) = {
+  	var i = istart
+  	while (i < iend) {
+  		var j = a.jc(i) - ioff
+  		while (j < a.jc(i+1)-ioff) {
+  			val dval = a.data(j)
+  			val ival = a.ir(j) - ioff
+  			if (colaccess != null) {
+  				while (colaccess.incrementAndGet(ival) > 1) {
+  					colaccess.getAndDecrement(ival)
+  				}
+  			}
+  			if (Mat.noMKL || nrows < 220) {
+  				var k = 0
+  				while (k < nrows) {
+  					out.data(k+ival*nrows) += data(k+i*nrows)*dval
+  					k += 1
+  				} 			  
+  			} else {
+  				saxpyxx(nrows, dval, data, i*nrows, out.data, ival*nrows)
+  			}
+  			if (colaccess != null) colaccess.getAndDecrement(ival)
+  			j += 1
+  		}
+  		i += 1
+  	}
+  }
+
+  
   def multT(a:SMat, outmat:Mat):FMat = {
     if (ncols == a.ncols) {
     	val out = FMat.newOrCheckFMat(nrows, a.nrows, outmat, GUID, a.GUID, "multT".##)
     	out.clear
     	Mat.nflops += 2L * a.nnz * nrows
-    	if (nrows == 1) {
-    	  setnumthreads(1)  // Otherwise crashes 
-    		scscmv("N", a.nrows, a.ncols, 1.0f, "GLNF", a.data, a.ir, a.jc, data, 0f, out.data) 
-    		setnumthreads(Mat.numOMPthreads)
-    	} else {
-    		out.clear
-    		smcsrm(nrows, a.ncols, data, nrows, a.data, a.ir, a.jc, out.data, nrows)
+/*    	if (Mat.noMKL || nrows < 100) {
+    	  val ioff = Mat.ioneBased
+    	  val colaccess = new java.util.concurrent.atomic.AtomicIntegerArray(out.ncols)
+    		if (1L*nrows*a.nnz > 100000L && Mat.numThreads > 1) {
+    			val done = IMat(1,Mat.numThreads)
+    			for (ithread <- 0 until Mat.numThreads) {
+    				val istart = (1L*ithread*a.ncols/Mat.numThreads).toInt
+    				val iend = (1L*(ithread+1)*a.ncols/Mat.numThreads).toInt
+    				actor {
+    					fSMultTHelper(a, out, istart, iend, ioff, colaccess)
+    					done(ithread) = 1
+    				}
+    			}
+    			while (SciFunctions.sum(done).v < Mat.numThreads) {Thread.`yield`()}
+    		} else {
+    			fSMultTHelper(a, out, 0, a.ncols, ioff, null)
+    		}
+    	} else { */
+    		if (nrows == 1) {
+    			setnumthreads(1)  // Otherwise crashes 
+    			scscmv("N", a.nrows, a.ncols, 1.0f, "GLNF", a.data, a.ir, a.jc, data, 0f, out.data) 
+    			setnumthreads(Mat.numOMPthreads)
+    		} else {
+    			smcsrm(nrows, a.ncols, data, nrows, a.data, a.ir, a.jc, out.data, nrows)
+//    		}
     	}
     	out
     } else {
@@ -868,7 +916,7 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   def *@  (b : FMat) = mat.ffMatOpv(b, FMat.vecMulFun, omat)
   def ∘   (b : FMat) = mat.ffMatOpv(b, FMat.vecMulFun, omat)
   def /   (b : FMat) = mat.ffMatOpv(b, FMat.vecDivFun, omat)  
-  def ^   (b : FMat) = mat.ffMatOp(b, FMat.powFun, omat) 
+  def ^   (b : FMat) = mat.ffMatOpv(b, FMat.vecPowFun, omat) 
   def ∙   (b:FMat):FMat = mat.dot(b, omat)
   def ∙→  (b:FMat):FMat = mat.dotr(b, omat)
   def **  (b : FMat) = mat.kron(b, omat)
@@ -1125,6 +1173,14 @@ object FMat {
     0
   }
   
+  def vecPow(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = math.pow(a(ai), b(bi)).toFloat;  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+  
   def vecMax(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
     var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
     while (ci < cend) {
@@ -1145,6 +1201,7 @@ object FMat {
   val vecSubFun = (vecSub _) 
   val vecMulFun = (vecMul _)
   val vecDivFun = (vecDiv _)
+  val vecPowFun = (vecPow _)
   val vecMaxFun = (vecMax _)
   val vecMinFun = (vecMin _)
   

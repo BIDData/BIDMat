@@ -514,6 +514,7 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
 	def *@ (a : GMat) = mat.gOp(a, omat, op_mul)
 	def ∘  (a : GMat) = mat.gOp(a, omat, op_mul)
 	def /  (a : GMat) = mat.gOp(a, omat, op_div)
+	def ^  (a : GMat) = mat.gOp(a, omat, op_pow)
 	def >  (b : GMat) = mat.gOp(b, omat, op_gt)
 	def <  (b : GMat) = mat.gOp(b, omat, op_lt)
 	def == (b : GMat) = mat.gOp(b, omat, op_eq)

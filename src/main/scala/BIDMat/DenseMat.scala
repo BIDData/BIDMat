@@ -781,7 +781,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   * Implemented with vector operation primitives.
   */
   def ggMatOpv(aa:DenseMat[T], opv:(Array[T],Int,Int,Array[T],Int,Int,Array[T],Int,Int,Int) => T, oldmat:Mat):DenseMat[T] = 
-        if (nrows==aa.nrows && ncols==1) {
+        if (nrows==aa.nrows && ncols==1 && aa.ncols > 1) {
           val out = DenseMat.newOrCheck[T](nrows, aa.ncols, oldmat, GUID, aa.GUID, opv.hashCode)
           Mat.nflops += aa.length
           var i = 0          
@@ -790,7 +790,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
             i += 1
           }
           out
-        } else if (ncols==aa.ncols && nrows==1) {
+        } else if (ncols==aa.ncols && nrows==1 && aa.nrows > 1) {
           val out = DenseMat.newOrCheck[T](aa.nrows, ncols, oldmat, GUID, aa.GUID, opv.hashCode)
           Mat.nflops += aa.length
           var i = 0
@@ -799,7 +799,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
             i += 1
           }
           out
-        } else if (nrows==aa.nrows && aa.ncols==1) {
+        } else if (nrows==aa.nrows && aa.ncols==1 && ncols > 1) {
           val out = DenseMat.newOrCheck[T](nrows, ncols, oldmat, GUID, aa.GUID, opv.hashCode)
           Mat.nflops += length
           var i = 0
@@ -808,7 +808,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
             i += 1
           }
           out
-        } else if (ncols==aa.ncols && aa.nrows==1) {
+        } else if (ncols==aa.ncols && aa.nrows==1 && nrows > 1) {
           val out = DenseMat.newOrCheck[T](nrows, ncols, oldmat, GUID, aa.GUID, opv.hashCode)
           Mat.nflops += length
           var i = 0

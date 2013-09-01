@@ -310,6 +310,7 @@ object Mop_Pow extends Mop {
   override def myname = "^"
   override def op(a:FMat, b:FMat, c:Mat):FMat = getFPair(c, a) ^ b
   override def op(a:DMat, b:DMat, c:Mat):DMat = getDPair(c, a) ^ b
+  override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) ^ b
 }
 
 object Mop_HCat extends Mop { 
