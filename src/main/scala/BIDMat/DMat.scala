@@ -117,6 +117,12 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   	out
   }
   
+  override def newcopy = {
+  	val out = DMat(nrows, ncols)
+  	System.arraycopy(data, 0, out.data, 0, length)
+  	out
+  }
+  
   override def zeros(nr:Int, nc:Int) = {
     val out = DMat(nr, nc)
   	out

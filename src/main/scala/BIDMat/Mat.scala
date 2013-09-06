@@ -29,6 +29,7 @@ class Mat(nr:Int, nc:Int) {
   def mytype = "Mat"
   def copyTo(a:Mat) = notImplemented0("copyTo");
   def copy = notImplemented0("copy");
+  def newcopy = notImplemented0("newcopy");
   def set(v:Float) = notImplemented0("set")
   def zeros(nr:Int, nc:Int) = notImplemented0("zeros");
   def ones(nr:Int, nc:Int) = notImplemented0("ones");
