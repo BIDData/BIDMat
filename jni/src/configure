@@ -47,7 +47,7 @@ if [ "$OS" = "apple" ] ; then
 	OBJ="o"
 	OUTFLG="-o "
 	CPPFLAGS="-fPIC -c -O2 -openmp -DNDEBUG -I$JAVA_HOME/Headers -I$JCUDA_HOME/CommonJNI/src -I$CUDA_HOME/include"
-	CFLAGS="-fPIC -c -O2 -openmp -DNDEBUG -std=c99 -I$JAVA_HOME/Headers -I$MKL_ROOT/include -I$MKL_ROOT/include/${ARCHD}${SUBARCH}"
+	CFLAGS="-fPIC -c -O2 -openmp -std=c99 -DNDEBUG -I$JAVA_HOME/Headers -I$MKL_ROOT/include -I$MKL_ROOT/include/${ARCHD}${SUBARCH}"
 	LB="ar rc"    
 	GLD="icc -bundle -static-intel"
 	LD="icc -bundle -static-intel"
@@ -80,7 +80,7 @@ elif [ "$OS" = "linux" ] ; then
         CUDA_HOME="/usr/local/cuda"
         BIDMAT_HOME="`pwd`/../.."
         JCUDA_HOME="$BIDMAT_HOME/../JCUDA5"
-        CC="icc"
+        CC="gcc"
         GCC="g++"
         NVCC="nvcc"
         NVCCFLAGS="-c -use_fast_math -gencode arch=compute_20,code=sm_20 \
@@ -89,8 +89,8 @@ elif [ "$OS" = "linux" ] ; then
         SUBLIB=linux64
 	OBJ="o"
 	OUTFLG="-o "
-	CPPFLAGS="-fPIC -c -O2 -DNDEBUG  -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$JCUDA_HOME/CommonJNI/src -I$CUDA_HOME/include" 
-	CFLAGS="-fPIC -c -O2 -openmp -std c99 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$MKL_ROOT/include -I$MKL_ROOT/include/intel64/lp64"
+	CPPFLAGS="-fPIC -c -O2 -fopenmp -DNDEBUG  -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$JCUDA_HOME/CommonJNI/src -I$CUDA_HOME/include" 
+	CFLAGS="-fPIC -c -O2 -fopenmp -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$MKL_ROOT/include -I$MKL_ROOT/include/intel64/lp64"
 	LB="ar rc"    
 	GLD="g++ -shared"
 	LD="icc -shared -static-intel"
@@ -109,7 +109,7 @@ elif [ "$OS" = "linux" ] ; then
         else 
 	MKL_LIBS="-L$JAVA_HOME/lib -L/opt/intel/composerxe/lib/intel64 \
             $MKL_ROOT/lib/intel64/libmkl_intel_lp64.a -Wl,--start-group  \
-            $MKL_ROOT/lib/intel64/libmkl_intel_thread.a $MKL_ROOT/lib/intel64/libmkl_core.a \
+            $MKL_ROOT/lib/intel64/libmkl_gnu_thread.a $MKL_ROOT/lib/intel64/libmkl_core.a \
             -Wl,--end-group -liomp5 -lpthread -lm"
         fi
         CUDA_LIBS="-L${CUDA_HOME}/lib64 -L${JCUDA_HOME}/lib -lcudart -lCommonJNI"

@@ -25,8 +25,8 @@ $(LIBPREPEND)bidmatcuda$(LIBAPPEND): $(CUDA_OBJS)
 	$(NVCC) $(NVCCFLAGS) $*.cu
 
 install: all
-	cp $(LIBPREPEND)bidmatmkl$(LIBAPPEND)  ../../lib/$(SUBLIB)
-	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) ../../lib/$(SUBLIB)
+	cp $(LIBPREPEND)bidmatmkl$(LIBAPPEND)  ../../lib
+	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) ../../lib
 
 clean:
 	rm -f *.$(OBJ) *$(LIBAPPEND) *.pdb *.exp *.lib
