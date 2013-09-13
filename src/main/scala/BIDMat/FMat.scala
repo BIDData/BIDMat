@@ -356,8 +356,8 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     			setnumthreads(Mat.numOMPthreads)
     		} else {
     			smcsrm(nrows, a.ncols, data, nrows, a.data, a.ir, a.jc, out.data, nrows)
-//    		}
-    	}
+    		}
+//    	}
     	out
     } else {
       throw new RuntimeException("xT dimensions mismatch")
