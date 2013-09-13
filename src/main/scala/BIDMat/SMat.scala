@@ -154,7 +154,11 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
 	  	jc0 = SparseMat.incInds(jc)
 	  	ir0 = SparseMat.incInds(ir)
 	  }
-	  scscmm("T", nrows, a.ncols, ncols, 1.0f, "GLNF", data, ir0, jc0, a.data, a.nrows, 0f, out.data, out.nrows) 
+	  if (a.ncols == 1) {
+	    scscmv("T", nrows, ncols, 1.0f, "GLNF", data, ir0, jc0, a.data, 0f, out.data)
+	  } else {
+	  	scscmm("T", nrows, a.ncols, ncols, 1.0f, "GLNF", data, ir0, jc0, a.data, a.nrows, 0f, out.data, out.nrows) 
+	  }
 	  Mat.nflops += 2L * nnz * a.ncols
 	  out
   }
