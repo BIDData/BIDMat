@@ -468,8 +468,10 @@ class SPair (val omat:Mat, val mat:SMat) extends Pair{
   def * (b : FMat):FMat = mat.SMult(b, omat)
   def * (b : SMat):SMat = mat.SSMult(b, omat)
   def Tx (b : FMat):FMat = mat.Tmult(b, omat)
+  def ^* (b : FMat):FMat = mat.Tmult(b, omat)
   override def * (b : Mat):FMat = mat.SMult(b, omat)
   override def Tx (b : Mat):Mat = b match {case bb:FMat => mat.Tmult(bb, omat)}
+  override def ^* (b : Mat):Mat = b match {case bb:FMat => mat.Tmult(bb, omat)}
   
   def + (b : SMat) = mat.ssMatOp(b, SMat.sumFun, omat)
   def - (b : SMat) = mat.ssMatOp(b, SMat.subFun, omat)
