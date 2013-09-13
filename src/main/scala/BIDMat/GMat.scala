@@ -129,17 +129,17 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     if (ncols == a.nrows) {
       val out = GMat.newOrCheckGMat(nrows, a.ncols, oldmat, GUID, a.GUID, "GSMult".##)
       Mat.nflops += 2L * nrows * a.nnz
-      if (nrows == 1) {
+/*       if (nrows == 1) {                                   // Alas, breaks on large inputs
       	val handle = GSMat.getHandle
       	val descra = GSMat.getDescr
         JCusparse.cusparseScsrmv(handle, cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE,
         		ncols, a.ncols, 1.0f, descra,	a.data, a.jc, a.ir, data, 0, out.data)
         cudaDeviceSynchronize()
-      } else { 
+      } else { */
       	out.clear
       	CUMAT.dsmult(nrows, a.ncols, a.nnz, data, a.data, a.ir, a.ic, out.data)
       	cudaDeviceSynchronize()
-      }
+//      }
       out
     }	else throw new RuntimeException("dimensions mismatch")
   }
