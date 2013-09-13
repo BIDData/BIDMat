@@ -135,7 +135,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
         JCusparse.cusparseScsrmv(handle, cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE,
         		ncols, a.ncols, 1.0f, descra,	a.data, a.jc, a.ir, data, 0, out.data)
         cudaDeviceSynchronize()
-      } else {
+      } else { 
       	out.clear
       	CUMAT.dsmult(nrows, a.ncols, a.nnz, data, a.data, a.ir, a.ic, out.data)
       	cudaDeviceSynchronize()
