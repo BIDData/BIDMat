@@ -1,8 +1,10 @@
 package BIDMat
 import jcuda._
-import jcuda.jcublas.JCublas
+import jcuda.jcublas._
+import jcuda.jcublas.JCublas._
 import jcuda.jcusparse._
 import jcuda.runtime.JCuda._
+import jcuda.runtime.cudaError._
 import jcuda.runtime._
 import edu.berkeley.bid.CUMAT
 import GMat._
@@ -24,9 +26,17 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     val tmpcols = IMat(nnz0,1)
     val tmprows = IMat(nnz0,1)
     val tmpdata = FMat(nnz0,1)
-    JCublas.cublasGetVector(nnz0, Sizeof.INT, ir, 1, Pointer.to(tmprows.data), 1)
-    JCublas.cublasGetVector(nnz0, Sizeof.FLOAT, data, 1, Pointer.to(tmpdata.data), 1)
-    JCublas.cublasGetVector(nnz0, Sizeof.INT, ic, 1, Pointer.to(tmpcols.data), 1)    
+    var err = JCublas.cublasGetVector(nnz0, Sizeof.INT, ir, 1, Pointer.to(tmprows.data), 1)
+    cudaDeviceSynchronize
+    if (err == 0) err = cublasGetVector(nnz0, Sizeof.FLOAT, data, 1, Pointer.to(tmpdata.data), 1)
+    cudaDeviceSynchronize
+    if (err == 0) err = cublasGetVector(nnz0, Sizeof.INT, ic, 1, Pointer.to(tmpcols.data), 1)    
+    cudaDeviceSynchronize
+    if (err == 0) err = cublasGetError()
+    if (err != 0) {
+    	println("device is %d" format SciFunctions.getGPU)
+    	throw new RuntimeException("Cuda error in GSMAT.toString "+err)
+    }
     val ncolsn = SciFunctions.maxi(tmpcols).v + 1
     val tmpMat = SMat(nrows, ncolsn, tmprows.data, tmpcols.data, tmpdata.data)
     tmpMat.toString
@@ -35,9 +45,17 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
   def toSMat():SMat = { 
     val out = SMat.newOrCheckSMat(nrows, ncols, nnz, null, GUID, "toSMat".##)
     val tmpcols = IMat.newOrCheckIMat(nnz, 1, null, GUID, "toSMat_tmp".##).data
-    JCublas.cublasGetVector(nnz, Sizeof.INT, ir, 1, Pointer.to(out.ir), 1)
-    JCublas.cublasGetVector(nnz, Sizeof.FLOAT, data, 1, Pointer.to(out.data), 1)
-    JCublas.cublasGetVector(nnz, Sizeof.INT, ic, 1, Pointer.to(tmpcols), 1)
+    var err = JCublas.cublasGetVector(nnz, Sizeof.INT, ir, 1, Pointer.to(out.ir), 1)
+    cudaDeviceSynchronize
+    if (err == 0) err = JCublas.cublasGetVector(nnz, Sizeof.FLOAT, data, 1, Pointer.to(out.data), 1)
+    cudaDeviceSynchronize
+    if (err == 0) JCublas.cublasGetVector(nnz, Sizeof.INT, ic, 1, Pointer.to(tmpcols), 1)
+    cudaDeviceSynchronize
+    if (err == 0) err = cublasGetError()
+    if (err != 0) {
+    	println("device is %d" format SciFunctions.getGPU)
+    	throw new RuntimeException("Cuda error in GSMAT.toSMat "+err)
+    }    
     SparseMat.compressInds(tmpcols, ncols, out.jc, nnz)
     if (Mat.ioneBased == 1) {
       SparseMat.incInds(out.ir, out.ir)
@@ -46,8 +64,13 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
   }
   
   override def clear = {
-  	cudaMemset(data, 0, Sizeof.FLOAT*nnz)
-  	cudaDeviceSynchronize
+  	var err = cudaMemset(data, 0, Sizeof.FLOAT*nnz)
+  	cudaDeviceSynchronize  	
+    if (err == 0) err = cudaGetLastError()
+    if (err != 0) {
+    	println("device is %d" format SciFunctions.getGPU)
+    	throw new RuntimeException("Cuda error in GSMAT.clear "+err)
+    }
     this
   }
   
@@ -55,6 +78,8 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     JCublas.cublasFree(data)
     JCublas.cublasFree(ic)
     JCublas.cublasFree(ir)
+    JCublas.cublasFree(jc)
+    cudaDeviceSynchronize
   }
   
   override def recycle(nr:Int, nc:Int, nnzx:Int):GSMat = {
@@ -77,8 +102,11 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     val out = GMat.newOrCheckGMat(if (nn==1) 1 else nrows, if (nn==1) ncols else 1, oldmat, GUID, 0, "sum".##)
     out.clear
     Mat.nflops += nnz
-    CUMAT.spsum(nrows, ncols, nnz, ir, ic, data, out.data, nn)
-    cudaDeviceSynchronize
+    val err = CUMAT.spsum(nrows, ncols, nnz, ir, ic, data, out.data, nn)
+    if (err != 0) {
+    	println("device is %d" format SciFunctions.getGPU)
+    	throw new RuntimeException("Cuda error in GSMAT.sum "+err)
+    } 
     out
   }
   
@@ -93,6 +121,12 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     val descra = GSMat.getDescr      
     JCusparse.cusparseScsrmm(handle, cusparseOperation.CUSPARSE_OPERATION_TRANSPOSE,
         ncols, a.ncols, nrows, 1.0f, descra,	data, jc, ir, a.data, a.nrows, 0, out.data, out.nrows)
+    cudaDeviceSynchronize
+    val err = cudaGetLastError
+    if (err != 0) {
+    	println("device is %d" format SciFunctions.getGPU)
+    	throw new RuntimeException("Cuda error in GSMAT.SDMult "+err)
+    }
     Mat.nflops += 2L*nnz*a.ncols
     out
   }
@@ -108,6 +142,12 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     val descra = GSMat.getDescr     
     JCusparse.cusparseScsrmm(handle, cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE,
         ncols, a.ncols, nrows, 1.0f, descra,	data, jc, ir, a.data, a.nrows, 0, out.data, out.nrows)
+    cudaDeviceSynchronize
+    val err = cudaGetLastError
+    if (err != 0) {
+    	println("device is %d" format SciFunctions.getGPU)
+    	throw new RuntimeException("Cuda error in GSMAT.SDTMult "+err)
+    }
     Mat.nflops += 2L*nnz*a.ncols
     out
   }
@@ -138,10 +178,16 @@ object GSMat {
 //  		println("nr, nc, nnz = %d,%d,%d" format (nr,nc,nnz0))
     val out = new GSMat(nr, nc, nnzx, new Pointer(), new Pointer(), new Pointer(), new Pointer(), nnzx) 
     if (Mat.debugMem) println("GSMat %d %d %d, %d %f" format (nr, nc, nnzx, SciFunctions.getGPU, SciFunctions.GPUmem._1))
-    JCublas.cublasAlloc(out.nnz, Sizeof.INT, out.ir)
-    JCublas.cublasAlloc(out.nnz, Sizeof.INT, out.ic)
-    JCublas.cublasAlloc(out.ncols+1, Sizeof.INT, out.jc)
-    JCublas.cublasAlloc(out.nnz, Sizeof.FLOAT, out.data)
+    var err = JCublas.cublasAlloc(out.nnz, Sizeof.INT, out.ir)
+    if (err == 0) err = JCublas.cublasAlloc(out.nnz, Sizeof.INT, out.ic)
+    if (err == 0) err = JCublas.cublasAlloc(out.ncols+1, Sizeof.INT, out.jc)
+    if (err == 0) err = JCublas.cublasAlloc(out.nnz, Sizeof.FLOAT, out.data)
+    cudaDeviceSynchronize
+    if (err == 0) err = cublasGetError
+    if (err != 0) {
+    	println("device is %d" format SciFunctions.getGPU)
+    	throw new RuntimeException("Cuda error in GSMat() "+err)
+    } 
     out
   }
   
@@ -200,15 +246,22 @@ object GSMat {
     val out = GSMat.newOrCheckGSMat(a.nrows, a.ncols, a.nnz, b, a.GUID, SciFunctions.getGPU, "fromSMat".##)
     out.nnz0 = a.nnz
     val handle = GSMat.getHandle
-    JCublas.cublasSetVector(a.nnz, Sizeof.FLOAT, Pointer.to(a.data), 1, out.data, 1)
+    var err = JCublas.cublasSetVector(a.nnz, Sizeof.FLOAT, Pointer.to(a.data), 1, out.data, 1)
     if (Mat.ioneBased == 1) {
-      JCublas.cublasSetVector(a.nnz, Sizeof.INT, Pointer.to(SparseMat.decInds(a.ir)), 1, out.ir, 1)
-      JCublas.cublasSetVector(a.ncols+1, Sizeof.INT, Pointer.to(SparseMat.decInds(a.jc)), 1, out.jc, 1)
+      if (err == 0) err = JCublas.cublasSetVector(a.nnz, Sizeof.INT, Pointer.to(SparseMat.decInds(a.ir)), 1, out.ir, 1)
+      if (err == 0) err = JCublas.cublasSetVector(a.ncols+1, Sizeof.INT, Pointer.to(SparseMat.decInds(a.jc)), 1, out.jc, 1)
     } else {
-      JCublas.cublasSetVector(a.nnz, Sizeof.INT, Pointer.to(a.ir), 1, out.ir, 1)
-      JCublas.cublasSetVector(a.ncols+1, Sizeof.INT, Pointer.to(a.jc), 1, out.jc, 1)
+      if (err == 0) err = JCublas.cublasSetVector(a.nnz, Sizeof.INT, Pointer.to(a.ir), 1, out.ir, 1)
+      if (err == 0) err = JCublas.cublasSetVector(a.ncols+1, Sizeof.INT, Pointer.to(a.jc), 1, out.jc, 1)
     }
-    JCusparse.cusparseXcsr2coo(handle, out.jc, out.nnz, out.ncols, out.ic, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO)
+    cudaDeviceSynchronize
+    if (err == 0) err = JCusparse.cusparseXcsr2coo(handle, out.jc, out.nnz, out.ncols, out.ic, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO)
+    cudaDeviceSynchronize
+    if (err == 0) err = cudaGetLastError
+    if (err != 0) {
+    	println("device is %d" format SciFunctions.getGPU)
+    	throw new RuntimeException("Cuda error in GSMAT.fromSMat "+err)
+    }  
     out
   }
   
@@ -228,7 +281,6 @@ object GSMat {
     out.clear;
     err = CUMAT.dds(A.nrows, C.nnz, A.data, B.data, C.ir, C.ic, out.data)
     if (err != 0) throw new RuntimeException(("GPU %d DDS kernel error "+cudaGetErrorString(err)) format SciFunctions.getGPU)
-    cudaDeviceSynchronize()
     Mat.nflops += 2L * C.nnz * A.nrows
     out    
   }
