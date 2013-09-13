@@ -7,7 +7,7 @@ import jcuda.runtime._
 import edu.berkeley.bid.CUMAT
 import GMat._
 
-case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, val data:Pointer, val realnnz:Int) extends Mat(nr, nc) {
+case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, val jc:Pointer, val data:Pointer, val realnnz:Int) extends Mat(nr, nc) {
 	
   def getdata() = data;	
 
@@ -60,7 +60,7 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
   
   override def recycle(nr:Int, nc:Int, nnzx:Int):GSMat = {
     if (realnnz >= nnzx) {  
-      new GSMat(nr, nc, nnzx, ir, ic, data, realnnz)
+      new GSMat(nr, nc, nnzx, ir, ic, jc, data, realnnz)
     } else {
 //      free
       if (Mat.useCache) {
@@ -90,14 +90,10 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
       throw new RuntimeException("SDMult dimensions mismatch")
     }
     val out = GMat.newOrCheckGMat(nrows, a.ncols, omat, GUID, a.GUID, "SDMult".##)
-    val ginds = GIMat(ncols+1, 1) 
     val handle = GSMat.getHandle
-    val descra = GSMat.getDescr  
-    
-    JCusparse.cusparseXcoo2csr(handle, ic, nnz, ncols, ginds.data, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO)    
+    val descra = GSMat.getDescr      
     JCusparse.cusparseScsrmm(handle, cusparseOperation.CUSPARSE_OPERATION_TRANSPOSE,
-        ncols, a.ncols, nrows, 1.0f, descra,	data, ginds.data, ir, a.data, a.nrows, 0, out.data, out.nrows)
-    ginds.free
+        ncols, a.ncols, nrows, 1.0f, descra,	data, jc, ir, a.data, a.nrows, 0, out.data, out.nrows)
     Mat.nflops += 2L*nnz*a.ncols
     out
   }
@@ -109,14 +105,10 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
       throw new RuntimeException("SDTMult dimensions mismatch")
     }
     val out = GMat.newOrCheckGMat(ncols, a.ncols, omat, GUID, a.GUID, "SDMult".##)
-    val ginds = GIMat(ncols+1, 1) 
     val handle = GSMat.getHandle
-    val descra = GSMat.getDescr  
-    
-    JCusparse.cusparseXcoo2csr(handle, ic, nnz, ncols, ginds.data, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO)    
+    val descra = GSMat.getDescr     
     JCusparse.cusparseScsrmm(handle, cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE,
-        ncols, a.ncols, nrows, 1.0f, descra,	data, ginds.data, ir, a.data, a.nrows, 0, out.data, out.nrows)
-    ginds.free
+        ncols, a.ncols, nrows, 1.0f, descra,	data, jc, ir, a.data, a.nrows, 0, out.data, out.nrows)
     Mat.nflops += 2L*nnz*a.ncols
     out
   }
@@ -141,7 +133,20 @@ class GSPair (val omat:Mat, val mat:GSMat) extends Pair {
 	override def Tx (b : Mat):Mat = Mop_TTimes.op(mat, b, omat)
 } 
 
-object GSMat {
+object GSMat {  
+
+  def apply(nr:Int, nc:Int, nnzx:Int):GSMat = { 
+//  		println("nr, nc, nnz = %d,%d,%d" format (nr,nc,nnz0))
+    val out = new GSMat(nr, nc, nnzx, new Pointer(), new Pointer(), new Pointer(), new Pointer(), nnzx) 
+    if (Mat.debugMem) println("GSMat %d %d %d, %d %f" format (nr, nc, nnzx, SciFunctions.getGPU, SciFunctions.GPUmem._1))
+    JCublas.cublasAlloc(out.nnz, Sizeof.INT, out.ir)
+    JCublas.cublasAlloc(out.nnz, Sizeof.INT, out.ic)
+    JCublas.cublasAlloc(out.ncols+1, Sizeof.INT, out.jc)
+    JCublas.cublasAlloc(out.nnz, Sizeof.FLOAT, out.data)
+    out
+  }
+  
+  def apply(a:SMat):GSMat = fromSMat(a, null) 
   
   var cusparseContexts:Array[cusparseHandle] = null
   var cusparseMatDescrs:Array[cusparseMatDescr] = null
@@ -191,32 +196,20 @@ object GSMat {
     initDescrs
     cusparseMatDescrs(SciFunctions.getGPU)
   }
-  
-
-  def apply(nr:Int, nc:Int, nnzx:Int):GSMat = { 
-//  		println("nr, nc, nnz = %d,%d,%d" format (nr,nc,nnz0))
-    val out = new GSMat(nr, nc, nnzx, new Pointer(), new Pointer(), new Pointer(), nnzx) 
-    if (Mat.debugMem) println("GSMat %d %d %d, %d %f" format (nr, nc, nnzx, SciFunctions.getGPU, SciFunctions.GPUmem._1))
-    JCublas.cublasAlloc(out.nnz, Sizeof.INT, out.ir)
-    JCublas.cublasAlloc(out.nnz, Sizeof.INT, out.ic)
-    JCublas.cublasAlloc(out.nnz, Sizeof.FLOAT, out.data)
-    out
-  }
-  
-  def apply(a:SMat):GSMat = fromSMat(a, null) 
  
   def fromSMat(a:SMat, b:GSMat):GSMat = {
     val out = GSMat.newOrCheckGSMat(a.nrows, a.ncols, a.nnz, b, a.GUID, SciFunctions.getGPU, "fromSMat".##)
     out.nnz0 = a.nnz
+    val handle = GSMat.getHandle
     JCublas.cublasSetVector(a.nnz, Sizeof.FLOAT, Pointer.to(a.data), 1, out.data, 1)
     if (Mat.ioneBased == 1) {
       JCublas.cublasSetVector(a.nnz, Sizeof.INT, Pointer.to(SparseMat.decInds(a.ir)), 1, out.ir, 1)
+      JCublas.cublasSetVector(a.ncols+1, Sizeof.INT, Pointer.to(SparseMat.decInds(a.jc)), 1, out.jc, 1)
     } else {
       JCublas.cublasSetVector(a.nnz, Sizeof.INT, Pointer.to(a.ir), 1, out.ir, 1)
+      JCublas.cublasSetVector(a.ncols+1, Sizeof.INT, Pointer.to(a.jc), 1, out.jc, 1)
     }
-    val tmpcols = IMat.newOrCheckIMat(a.nnz, 1, null, a.GUID, "fromSMat_tmp".##).data
-    SparseMat.uncompressInds(a.jc, a.ncols, a.ir, tmpcols)
-    JCublas.cublasSetVector(a.nnz, Sizeof.INT, Pointer.to(tmpcols), 1, out.ic, 1)
+    JCusparse.cusparseXcsr2coo(handle, out.jc, out.nnz, out.ncols, out.ic, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO)
     out
   }
   

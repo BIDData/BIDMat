@@ -626,7 +626,7 @@ object MatFunctions {
   
   def giblank = new GIMat(0,0,null,0)
   
-  def gsblank = new GSMat(0,0,0,null,null,null,0)
+  def gsblank = new GSMat(0,0,0,null,null,null,null,0)
   
   
   def sparse(a:DMat):SDMat = {
