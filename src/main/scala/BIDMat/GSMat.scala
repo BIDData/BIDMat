@@ -27,7 +27,7 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     JCublas.cublasGetVector(nnz0, Sizeof.INT, ir, 1, Pointer.to(tmprows.data), 1)
     JCublas.cublasGetVector(nnz0, Sizeof.FLOAT, data, 1, Pointer.to(tmpdata.data), 1)
     JCublas.cublasGetVector(nnz0, Sizeof.INT, ic, 1, Pointer.to(tmpcols.data), 1)    
-    val ncolsn = SciFunctions.maxi(tmpcols).v
+    val ncolsn = SciFunctions.maxi(tmpcols).v + 1
     val tmpMat = SMat(nrows, ncolsn, tmprows.data, tmpcols.data, tmpdata.data)
     tmpMat.toString
   }
