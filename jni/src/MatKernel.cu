@@ -513,28 +513,26 @@ __global__ void __dsmult(int nrows, int nnz, float *A, float *Bdata, int *Bir, i
 
 
 __global__ void __dsmultx(int nrows, int nnz, float *A, float *Bdata, int *Bir, int *Bic, float *C) {
-  int tid = threadIdx.x % nrows;
-  int nt = max(1, blockDim.x / nrows);
-  int bid = threadIdx.x / nrows + nt * blockIdx.x;
-  int nb = nt * gridDim.x;
+  int bid = threadIdx.y + blockDim.y * blockIdx.x;
+  int nb = blockDim.y * gridDim.x;
   int jstart = ((long long)bid) * nnz / nb;
   int jend = ((long long)(bid + 1)) * nnz / nb;
   float sum = 0;
   for (int j = jstart; j < jend ; j++) {
-    sum += A[tid + nrows * Bir[j]] * Bdata[j];
+    sum += A[threadIdx.x + nrows * Bir[j]] * Bdata[j];
     if (j == jend-1 || Bic[j] != Bic[j+1]) {
-      atomicAdd(&C[tid + nrows * Bic[j]], sum);
+      atomicAdd(&C[threadIdx.x + nrows * Bic[j]], sum);
       sum = 0;
     }
   }
 }
 
 int dsmult(int nrows, int ncols, int nnz, float *A, float *Bdata, int *Bir, int *Bic, float *C) {
-  if (nrows < 32) {
-    int nt = 128/nrows;
-    int nthreads = nt * nrows;
+  if (nrows < 128) {
+    int nt = max(1, min(ncols/2, 256/nrows));
+    dim3 threadDim(nrows, nt, 1);
     int nblocks = min(MAXXGRID, max(1, ncols/nt));
-    __dsmultx<<<nblocks,nthreads>>>(nrows, nnz, A, Bdata, Bir, Bic, C);
+    __dsmultx<<<nblocks,threadDim>>>(nrows, nnz, A, Bdata, Bir, Bic, C);
   } else {
     int nthreads = min(1024, nrows);
     int nblocks = min(MAXXGRID, ncols);
@@ -568,28 +566,26 @@ __global__ void __dsmultT(int nrows, int nnz, float *A, float *Bdata, int *Bir, 
 
 
 __global__ void __dsmultTx(int nrows, int nnz, float *A, float *Bdata, int *Bir, int *Bic, float *C) {
-  int tid = threadIdx.x % nrows;
-  int nt = max(1, blockDim.x / nrows);
-  int bid = threadIdx.x / nrows + nt * blockIdx.x;
-  int nb = nt * gridDim.x;
+  int bid = threadIdx.y + blockDim.y * blockIdx.x;
+  int nb = blockDim.y * gridDim.x;
   int jstart = ((long long)bid) * nnz / nb;
   int jend = ((long long)(bid + 1)) * nnz / nb;
   float aval = 0;
   for (int j = jstart; j < jend ; j++) {
     if (j == jstart || Bic[j-1] != Bic[j]) {
-      aval = A[tid + nrows * Bic[j]];
+      aval = A[threadIdx.x + nrows * Bic[j]];
     }
-    atomicAdd(&C[tid + nrows * Bir[j]], aval * Bdata[j]);
+    atomicAdd(&C[threadIdx.x + nrows * Bir[j]], aval * Bdata[j]);
   }
 }
 
 
 int dsmultT(int nrows, int ncols, int nnz, float *A, float *Bdata, int *Bir, int *Bic, float *C) {
-  if (nrows < 32) {
-    int nt = 128/nrows;
-    int nthreads = nt * nrows;
+  if (nrows < 128) {
+    int nt = max(1, min(ncols/2, 256/nrows));
+    dim3 threadDim(nrows, nt, 1);
     int nblocks = min(MAXXGRID, max(1, ncols/nt));
-    __dsmultTx<<<nblocks,nthreads>>>(nrows, nnz, A, Bdata, Bir, Bic, C);
+    __dsmultTx<<<nblocks,threadDim>>>(nrows, nnz, A, Bdata, Bir, Bic, C);
   } else {
     int nthreads = min(1024, nrows);
     int nblocks = min(MAXXGRID, ncols);
