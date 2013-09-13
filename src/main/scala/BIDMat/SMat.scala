@@ -32,33 +32,39 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   override def colslice(a:Int, b:Int, out:Mat) = SMat(gcolslice(a, b, out))
      
   override def colslice(col1:Int, col2:Int, omat:Mat, there:Int) = {
-  		omat match {
-  		case (mms:SMat) => {
-  			val ioff = Mat.ioneBased
-  			val newnnz = jc(col2) - jc(col1) + mms.jc(there) - ioff
-  			val ms = SMat.newOrCheckSMat(nrows, mms.ncols, newnnz, mms)
-  			if (ms != mms) {
-  			  mms.colslice(0, there, ms)
-  			}
-  			if (there == 0) ms.jc(0) = ioff
-  			val todo = jc(col2) - jc(col1)
-  			var i = col1
-  			while (i < col2) {
-  				ms.jc(i+there-col1+1) = ms.jc(i+there-col1) + jc(i+1) - jc(i)
-  				i += 1
-  			}
-  			val ibase = there + col2 - col1
-  			i = ibase
-  			while (i < ms.ncols) {
-  				ms.jc(i+1) = ms.jc(ibase)
-  				i += 1
-  			}
-  			ms.nnz0 = ms.jc(ibase)-ioff
-  			System.arraycopy(data, jc(col1) - ioff, ms.data, ms.jc(there) - ioff, todo)
-  			System.arraycopy(ir, jc(col1) - ioff, ms.ir, ms.jc(there) - ioff, todo)
-  			ms
-  		}
+    val ioff = Mat.ioneBased
+    val ms = if (omat.asInstanceOf[AnyRef] != null) {
+      val mms = omat.asInstanceOf[SMat]
+    	val newnnz = jc(col2) - jc(col1) + mms.jc(there) - ioff
+    	val ms0 = SMat.newOrCheckSMat(nrows, mms.ncols, newnnz, mms)
+    	if (ms0 != omat.asInstanceOf[SMat]) {
+    		omat.asInstanceOf[SMat].colslice(0, there, ms0)
+    	}
+      ms0
+    } else {
+      if (there != 0) {
+        throw new RuntimeException("colslice trying to append to null output matrix")
+      }
+    	val newnnz = jc(col2) - jc(col1)
+      SMat.newOrCheckSMat(nrows, col2-col1, newnnz, null)
     }
+    if (there == 0) ms.jc(0) = ioff
+    val todo = jc(col2) - jc(col1)
+    var i = col1
+    while (i < col2) {
+    	ms.jc(i+there-col1+1) = ms.jc(i+there-col1) + jc(i+1) - jc(i)
+    	i += 1
+    }
+    val ibase = there + col2 - col1
+    i = ibase
+    while (i < ms.ncols) {
+    	ms.jc(i+1) = ms.jc(ibase)
+    	i += 1
+    }
+    ms.nnz0 = ms.jc(ibase)-ioff
+    System.arraycopy(data, jc(col1) - ioff, ms.data, ms.jc(there) - ioff, todo)
+    System.arraycopy(ir, jc(col1) - ioff, ms.ir, ms.jc(there) - ioff, todo)
+    ms
   }
        
   def ssMatOp(b: SMat, f:(Float, Float) => Float, omat:Mat) = SMat(sgMatOp(b, f, omat))

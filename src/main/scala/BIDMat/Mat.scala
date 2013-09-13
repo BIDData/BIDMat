@@ -69,8 +69,8 @@ class Mat(nr:Int, nc:Int) {
   def ** (b : Mat):Mat = notImplemented1("**", b)
   def ⊗  (b : Mat):Mat = notImplemented1("⊗", b)       // unicode 8855, 0x2297
   def /< (b : Mat):Mat = notImplemented1("/<", b)
-  def *@ (b : Mat):Mat = notImplemented1("*@", b)
   def ∘  (b : Mat):Mat = notImplemented1("∘", b)        // unicode 8728, 0x2218 
+  def *@ (b : Mat):Mat = notImplemented1("*@", b)
   def /  (b : Mat):Mat = notImplemented1("/", b)
   def \\ (b : Mat):Mat = notImplemented1("\\\\", b)
   def ^  (b : Mat):Mat = notImplemented1("^", b) 
@@ -201,31 +201,37 @@ object Mat {
   import Ordered._
   import scala.tools.jline.TerminalFactory
   
-  var useCache = false						// Use expression caching
+  var useCache = false						 // Use matrix caching
   
-  var compressType = 1            // 0=none, 1=zlib, 2=szip
+  var recycleGrow = 1.2            // For caching, amount to grow re-allocated matrices
   
-  var compressionLevel = 3        // for zlib
+  var hasCUDA = 0                  // Number of available CUDA GPUs
+    
+  var noMKL:Boolean = false        // Dont use MKL libs
   
-  var chunkSize = 1024*1024       // for either method
+  var debugMem = false             // Debug GPU mem calls
+   
+  var terminal = TerminalFactory.create
   
-  var szipBlock = 32              // szip block size
+  def terminalWidth = math.max(terminal.getWidth,80)
+  
+  var compressType = 1             // For HDF5 I/O, 0=none, 1=zlib, 2=szip
+  
+  var compressionLevel = 3         // for HDF5 zlib
+  
+  var chunkSize = 1024*1024        // for HDF5 compression
+  
+  var szipBlock = 32               // HDF5 szip block size
   
   var numThreads = Runtime.getRuntime().availableProcessors();
   
   var numOMPthreads = numThreads;
   
-  var noMKL:Boolean = false
-  
   var nflops = 0L
   
-  var oneBased = 0
+  var oneBased = 0                 // Whether matrix indices are 0: zero-based (like C) or 1: one-based (like Matlab)
   
-  var ioneBased = 1
-  
-  var recycleGrow = 1.2
-  
-  var debugMem = false
+  var ioneBased = 1                // Whether sparse matrix *internal* indices are zero 0: or one-based 1:
   
   var useGPUsort = true
   
@@ -233,7 +239,13 @@ object Mat {
 
   final val myrand = new java.util.Random(MSEED)
   
-  private val _cache2 = HashMap.empty[Tuple2[Long,Int], Mat]
+  val opcodes = HashMap.empty[String, Int]
+  
+  val _opcode = 1
+  
+  var useStdio = (! System.getProperty("os.name").startsWith("Windows"))  // HDF5 directive
+  
+  private val _cache2 = HashMap.empty[Tuple2[Long,Int], Mat]              // Matrix caches
   
   private val _cache3 = HashMap.empty[Tuple3[Long,Long,Int], Mat]
   
@@ -342,14 +354,6 @@ object Mat {
     trimCache4(ithread)
   }
   
-  val opcodes = HashMap.empty[String, Int]
-  
-  val _opcode = 1
-  
-  var hasCUDA = 0
-  
-  var useStdio = (! System.getProperty("os.name").startsWith("Windows"))
-  
   def getJARdir:String = {
     val path = Mat.getClass.getProtectionDomain().getCodeSource().getLocation().getPath()
     val jstr = java.net.URLDecoder.decode(path, "UTF-8")
@@ -419,10 +423,6 @@ object Mat {
     	}
     }
   }
-  
-  var terminal = TerminalFactory.create
-  
-  def terminalWidth = math.max(terminal.getWidth,80)
 
   def copyToIntArray[@specialized(Double, Float) T](data:Array[T], i0:Int, idata:Array[Int], d0:Int, n:Int)
   (implicit numeric : Numeric[T]) = {
