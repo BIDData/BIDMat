@@ -1,6 +1,17 @@
 #include <cuda_runtime.h>
 #include <stdio.h>
 
+#ifdef __CUDA_ARCH__ 
+#if __CUDA_ARCH__ > 200
+#define MAXXGRID 2147483647
+#else
+#define MAXXGRID 65535
+#endif
+#else
+#define MAXXGRID 65535
+#endif
+
+
 __device__ float op_add(float a, float b) {return a+b;}
 __device__ float op_sub(float a, float b) {return a-b;}
 __device__ float op_mul(float a, float b) {return a*b;}
@@ -484,6 +495,7 @@ int apply_biniop(int *A, int Anrows, int Ancols,
   return err;
 }
 
+
 __global__ void __dsmult(int nrows, int nnz, float *A, float *Bdata, int *Bir, int *Bic, float *C) {
   int jstart = ((long long)blockIdx.x) * nnz / gridDim.x;
   int jend = ((long long)(blockIdx.x + 1)) * nnz / gridDim.x;
@@ -499,9 +511,41 @@ __global__ void __dsmult(int nrows, int nnz, float *A, float *Bdata, int *Bir, i
   }
 }
 
+
+__global__ void __dsmultx(int nrows, int nnz, float *A, float *Bdata, int *Bir, int *Bic, float *C) {
+  int tid = threadIdx.x % nrows;
+  int nt = max(1, blockDim.x / nrows);
+  int bid = threadIdx.x / nrows + nt * blockIdx.x;
+  int nb = nt * gridDim.x;
+  int jstart = ((long long)bid) * nnz / nb;
+  int jend = ((long long)(bid + 1)) * nnz / nb;
+  float sum = 0;
+  for (int j = jstart; j < jend ; j++) {
+    sum += A[tid + nrows * Bir[j]] * Bdata[j];
+    if (j == jend-1 || Bic[j] != Bic[j+1]) {
+      atomicAdd(&C[tid + nrows * Bic[j]], sum);
+      sum = 0;
+    }
+  }
+}
+
 int dsmult(int nrows, int ncols, int nnz, float *A, float *Bdata, int *Bir, int *Bic, float *C) {
-  int nthreads = min(1024, nrows);
-  int nblocks = min(65536, ncols);
+  if (nrows < 32) {
+    int nt = 128/nrows;
+    int nthreads = nt * nrows;
+    int nblocks = min(MAXXGRID, max(1, ncols/nt));
+    __dsmultx<<<nblocks,nthreads>>>(nrows, nnz, A, Bdata, Bir, Bic, C);
+  } else {
+    int nthreads = min(1024, nrows);
+    int nblocks = min(MAXXGRID, ncols);
+    __dsmult<<<nblocks,nthreads>>>(nrows, nnz, A, Bdata, Bir, Bic, C);
+  }
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int dsmult_tune(int nrows, int ncols, int nnz, float *A, float *Bdata, int *Bir, int *Bic, float *C, int nblocks, int nthreads) {
   __dsmult<<<nblocks,nthreads>>>(nrows, nnz, A, Bdata, Bir, Bic, C);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -522,10 +566,35 @@ __global__ void __dsmultT(int nrows, int nnz, float *A, float *Bdata, int *Bir, 
   }
 }
 
+
+__global__ void __dsmultTx(int nrows, int nnz, float *A, float *Bdata, int *Bir, int *Bic, float *C) {
+  int tid = threadIdx.x % nrows;
+  int nt = max(1, blockDim.x / nrows);
+  int bid = threadIdx.x / nrows + nt * blockIdx.x;
+  int nb = nt * gridDim.x;
+  int jstart = ((long long)bid) * nnz / nb;
+  int jend = ((long long)(bid + 1)) * nnz / nb;
+  float aval = 0;
+  for (int j = jstart; j < jend ; j++) {
+    if (j == jstart || Bic[j-1] != Bic[j]) {
+      aval = A[tid + nrows * Bic[j]];
+    }
+    atomicAdd(&C[tid + nrows * Bir[j]], aval * Bdata[j]);
+  }
+}
+
+
 int dsmultT(int nrows, int ncols, int nnz, float *A, float *Bdata, int *Bir, int *Bic, float *C) {
-  int nthreads = min(1024, nrows);
-  int nblocks = min(8192, ncols);
-  __dsmultT<<<nblocks,nthreads>>>(nrows, nnz, A, Bdata, Bir, Bic, C);
+  if (nrows < 32) {
+    int nt = 128/nrows;
+    int nthreads = nt * nrows;
+    int nblocks = min(MAXXGRID, max(1, ncols/nt));
+    __dsmultTx<<<nblocks,nthreads>>>(nrows, nnz, A, Bdata, Bir, Bic, C);
+  } else {
+    int nthreads = min(1024, nrows);
+    int nblocks = min(MAXXGRID, ncols);
+    __dsmultT<<<nblocks,nthreads>>>(nrows, nnz, A, Bdata, Bir, Bic, C);
+  }
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;

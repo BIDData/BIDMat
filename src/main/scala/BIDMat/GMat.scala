@@ -6,6 +6,7 @@ import jcuda.runtime.cudaError._
 import jcuda.runtime.cudaMemcpyKind._
 import jcuda.jcublas._
 import jcuda.jcublas.JCublas._
+import jcuda.jcusparse._
 import scala.actors.Actor._
 import edu.berkeley.bid.CUMAT
 import GSMat._
@@ -128,9 +129,17 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     if (ncols == a.nrows) {
       val out = GMat.newOrCheckGMat(nrows, a.ncols, oldmat, GUID, a.GUID, "GSMult".##)
       Mat.nflops += 2L * nrows * a.nnz
-      out.clear
-      CUMAT.dsmult(nrows, ncols, a.nnz, data, a.data, a.ir, a.ic, out.data)
-      cudaDeviceSynchronize()
+      if (nrows == 1) {
+      	val handle = GSMat.getHandle
+      	val descra = GSMat.getDescr
+        JCusparse.cusparseScsrmv(handle, cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE,
+        		ncols, a.ncols, 1.0f, descra,	a.data, a.jc, a.ir, data, 0, out.data)
+        cudaDeviceSynchronize()
+      } else {
+      	out.clear
+      	CUMAT.dsmult(nrows, a.ncols, a.nnz, data, a.data, a.ir, a.ic, out.data)
+      	cudaDeviceSynchronize()
+      }
       out
     }	else throw new RuntimeException("dimensions mismatch")
   }
@@ -140,7 +149,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
       val out = GMat.newOrCheckGMat(nrows, a.nrows, oldmat, GUID, a.GUID, "GSMultT".##)
       Mat.nflops += 2L * nrows * a.nnz
       out.clear
-      CUMAT.dsmultT(nrows, ncols, a.nnz, data, a.data, a.ir, a.ic, out.data)
+      CUMAT.dsmultT(nrows, a.ncols, a.nnz, data, a.data, a.ir, a.ic, out.data)
       cudaDeviceSynchronize()
       out
     }	else throw new RuntimeException("dimensions mismatch")
