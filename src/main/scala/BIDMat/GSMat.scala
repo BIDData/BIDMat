@@ -21,15 +21,14 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     
   override def toString:String = {
     val nnz0 = scala.math.min(nnz,12)       
-    val tmpMat = SMat(nnz0, nnz0, nnz0)
-    val tmpcols = new Array[Int](nnz0)
-    JCublas.cublasGetVector(nnz0, Sizeof.INT, ir, 1, Pointer.to(tmpMat.ir), 1)
-    JCublas.cublasGetVector(nnz0, Sizeof.FLOAT, data, 1, Pointer.to(tmpMat.data), 1)
-    JCublas.cublasGetVector(nnz0, Sizeof.INT, ic, 1, Pointer.to(tmpcols), 1)
-    SparseMat.compressInds(tmpcols, math.min(ncols, tmpcols(nnz0-1)+1), tmpMat.jc, nnz0)
-    if (Mat.ioneBased == 1) {
-      SparseMat.incInds(tmpMat.ir, tmpMat.ir)
-    }
+    val tmpcols = IMat(nnz0,1)
+    val tmprows = IMat(nnz0,1)
+    val tmpdata = FMat(nnz0,1)
+    JCublas.cublasGetVector(nnz0, Sizeof.INT, ir, 1, Pointer.to(tmprows.data), 1)
+    JCublas.cublasGetVector(nnz0, Sizeof.FLOAT, data, 1, Pointer.to(tmpdata.data), 1)
+    JCublas.cublasGetVector(nnz0, Sizeof.INT, ic, 1, Pointer.to(tmpcols.data), 1)    
+    val ncolsn = SciFunctions.maxi(tmpcols).v
+    val tmpMat = SMat(nrows, ncolsn, tmprows.data, tmpcols.data, tmpdata.data)
     tmpMat.toString
   }
       
