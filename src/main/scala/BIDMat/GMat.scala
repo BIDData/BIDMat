@@ -132,7 +132,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     if (ncols == a.nrows) {
       val out = GMat.newOrCheckGMat(nrows, a.ncols, oldmat, GUID, a.GUID, "GSMult".##)
       Mat.nflops += 2L * nrows * a.nnz    
-/*      if (nrows == 1) {                    // Alas, throws "too many resources requested for launch" with large a.nrows
+      if (nrows == 1) {                    // Alas, throws "too many resources requested for launch" with large a.nrows
       	val handle = GSMat.getHandle
       	val descra = GSMat.getDescr
         var err = JCusparse.cusparseScsrmv(handle, cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE,
@@ -143,11 +143,11 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
         	println("device is %d" format SciFunctions.getGPU)
         	throw new RuntimeException("Cuda error in GSMult " + cudaGetErrorString(err))
         }
-      } else { */
+      } else { 
       	out.clear
       	val err = CUMAT.dsmult(nrows, a.ncols, a.nnz, data, a.data, a.ir, a.ic, out.data)
       	if (err != 0) throw new RuntimeException("GMult: CUDA kernel error in CUMAT.dsmult " + cudaGetErrorString(err))
-//      }
+      }
       out
     }	else throw new RuntimeException("dimensions mismatch")
   }
