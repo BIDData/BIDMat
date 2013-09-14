@@ -1,37 +1,40 @@
 #!/bin/bash
 
-OS=`uname`
+OS=`uname -a`
 PARLIB=$1
 ARCH=`arch`
  
 VERSION="dev"
 
 # standardise the OS and ARCH names
-if [ "$OS" = "Darwin" ] ; then
-	OS="apple"
-elif [ "$OS" = "Linux" ] ; then
-	OS="linux"
+if [[ "$OS" == Darwin* ]] ; then
+    if [[ "$OS" == *x86_64 ]] ; then
+	ARCH="x86_64"
+    fi
+    OS="apple"
+elif [[ "$OS" == Linux* ]] ; then
+    OS="linux"
 elif [[ "$OS" == CYGWIN* ]] ; then
     if [[ "$OS" == *WOW64 ]] ; then
         ARCH="x86_64"
     fi
 	OS="windows"
 else
-	echo "OS not supported" $OS
-	exit 1
+    echo "OS not supported" $OS
+    exit 1
 fi
 
 if [ "$ARCH" = "x86" ] || [ "$ARCH" = "i686" ] || [ "$ARCH" = "i586" ] \
 	|| [ "$ARCH" = "i486" ] || [ "$ARCH" = "i386" ] ; then
-	ARCH="x86"
-	ARCHD=ia32
-	SUBDIR=""
+    ARCH="x86"
+    ARCHD=ia32
+    SUBDIR=""
     PTYPE=""
     MBITS=32
 elif [ "$ARCH" = "amd64" ] || [ "$ARCH" = "x86_64" ] ; then
-	ARCH="x86_64"
-	ARCHD=intel64
-	SUBDIR=/lp64
+    ARCH="x86_64"
+    ARCHD=intel64
+    SUBDIR=/lp64
     PTYPE=_lp64
     MBITS=64
 else
@@ -53,35 +56,35 @@ if [ "$OS" = "apple" ] ; then
     NVCCFLAGS="-c -use_fast_math -gencode arch=compute_20,code=sm_20 \
           -gencode arch=compute_30,code=sm_30 \
           --machine ${MBITS}  -Xcompiler \"-fPIC -c -O2 -g -DNDEBUG\""
-	OBJ="o"
-	OUTFLG="-o "
-	CPPFLAGS="-fPIC -c -O2 -openmp -DNDEBUG -I$JAVA_HOME/Headers -I$JCUDA_HOME/CommonJNI/src -I$CUDA_HOME/include"
-	CFLAGS="-fPIC -c -O2 -openmp -std=c99 -DNDEBUG -I$JAVA_HOME/Headers -I$MKL_ROOT/include -I$MKL_ROOT/include/${ARCHD}${SUBDIR}"
-	LB="ar rc"    
-	GLD="icc -bundle -static-intel"
-	LD="icc -bundle -static-intel"
-	LDFLAGS="$LDFLAGS"
-	LIBPREPEND="lib"
-	LIBAPPEND="-${OS}-${ARCH}.dylib"
-	FC="gfortran"
-	FFLAGS="$CFLAGS"
-	LAPACK_INCLUDES=""
-	FORTRAN_LIBS="-lgfortran"
-	if [ "$PARLIB" = "sequential" ] ; then
+    OBJ="o"
+    OUTFLG="-o "
+    CPPFLAGS="-fPIC -c -O2 -fopenmp -DNDEBUG -I$JAVA_HOME/Headers -I$JCUDA_HOME/CommonJNI/src -I$CUDA_HOME/include"
+    CFLAGS="-fPIC -c -O2 -openmp -std=c99 -DNDEBUG -I$JAVA_HOME/Headers -I$MKL_ROOT/include -I$MKL_ROOT/include/${ARCHD}${SUBDIR}"
+    LB="ar rc"    
+    GLD="icc -bundle -static-intel"
+    LD="icc -bundle -static-intel"
+    LDFLAGS="$LDFLAGS"
+    LIBPREPEND="lib"
+    LIBAPPEND="-${OS}-${ARCH}.dylib"
+    FC="gfortran"
+    FFLAGS="$CFLAGS"
+    LAPACK_INCLUDES=""
+    FORTRAN_LIBS="-lgfortran"
+    if [ "$PARLIB" = "sequential" ] ; then
 	MKL_LIBS="-L$JAVA_HOME/Libraries -L${COMPOSER_ROOT}/lib/${ARCHD} \ 
             $MKL_ROOT/lib/libmkl_intel${PTYPE}.a $MKL_ROOT/lib/libmkl_sequential.a \
             $MKL_ROOT/lib/libmkl_core.a \
             $MKL_ROOT/lib/libmkl_intel${PTYPE}.a $MKL_ROOT/lib/libmkl_sequential.a \
             $MKL_ROOT/lib/libmkl_core.a \
             -lpthread -lm  -framework JavaVM"
-        else 
-	MKL_LIBS="-L$JAVA_HOME/Libraries -L/opt/intel/composerxe/lib/${ARCHD} \
+    else 
+	MKL_LIBS="-L$JAVA_HOME/Libraries -L${COMPOSER_ROOT}/lib/${ARCHD} \
             $MKL_ROOT/lib/libmkl_intel${PTYPE}.a $MKL_ROOT/lib/libmkl_intel_thread.a \
             $MKL_ROOT/lib/libmkl_core.a \
             $MKL_ROOT/lib/libmkl_intel${PTYPE}.a $MKL_ROOT/lib/libmkl_intel_thread.a \
-            $MKL_ROOT/lib/libmkl_core.a \
-            -liomp5 -lpthread -lm  -framework JavaVM"
-        fi
+            $MKL_ROOT/lib/libmkl_core.a ${COMPOSER_ROOT}/lib/libiomp5.a \
+            -lpthread -lm  -framework JavaVM"
+    fi
     CUDA_LIBS="-L${CUDA_HOME}/lib -L${JCUDA_HOME}/lib -lcudart -lCommonJNI"
 elif [ "$OS" = "linux" ] ; then
     MKL_ROOT="/opt/intel/mkl"
@@ -95,21 +98,21 @@ elif [ "$OS" = "linux" ] ; then
     NVCCFLAGS="-c -use_fast_math -gencode arch=compute_20,code=sm_20 \
           -gencode arch=compute_30,code=sm_30 \
           --machine ${MBITS}  -Xcompiler \"-fPIC -c -O2 -g -DNDEBUG\""
-	OBJ="o"
-	OUTFLG="-o "
-	CPPFLAGS="-fPIC -c -O2 -fopenmp -DNDEBUG  -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$JCUDA_HOME/CommonJNI/src -I$CUDA_HOME/include" 
-	CFLAGS="-fPIC -c -O2 -fopenmp -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$MKL_ROOT/include -I$MKL_ROOT/include/{ARCHD}${SUBDIR}"
-	LB="ar rc"    
-	GLD="g++ -shared"
-	LD="icc -shared -static-intel"
-	LDFLAGS="$LDFLAGS"
-	LIBPREPEND="lib"
-	LIBAPPEND="-${OS}-${ARCH}.so"
-	FC="gfortran"
-	FFLAGS="$CFLAGS"
-	LAPACK_INCLUDES=""
-	FORTRAN_LIBS="-lgfortran"
-	if [ "$PARLIB" = "sequential" ] ; then
+    OBJ="o"
+    OUTFLG="-o "
+    CPPFLAGS="-fPIC -c -O2 -fopenmp -DNDEBUG  -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$JCUDA_HOME/CommonJNI/src -I$CUDA_HOME/include" 
+    CFLAGS="-fPIC -c -O2 -fopenmp -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$MKL_ROOT/include -I$MKL_ROOT/include/{ARCHD}${SUBDIR}"
+    LB="ar rc"    
+    GLD="g++ -shared"
+    LD="icc -shared -static-intel"
+    LDFLAGS="$LDFLAGS"
+    LIBPREPEND="lib"
+    LIBAPPEND="-${OS}-${ARCH}.so"
+    FC="gfortran"
+    FFLAGS="$CFLAGS"
+    LAPACK_INCLUDES=""
+    FORTRAN_LIBS="-lgfortran"
+    if [ "$PARLIB" = "sequential" ] ; then
 	MKL_LIBS="-L$JAVA_HOME/lib -L${COMPOSER_ROOT}/lib/${ARCHD} \
             $MKL_ROOT/lib/${ARCHD}/libmkl_intel${PTYPE}.a -Wl,--start-group  \
             $MKL_ROOT/lib/${ARCHD}/libmkl_sequential.a $MKL_ROOT/lib/${ARCHD}/libmkl_core.a \
@@ -130,19 +133,19 @@ elif [ "$OS" = "windows" ] ; then
     CUDA_HOME="$CUDA_PATH"
     JCUDA_HOME="/code/JCUDA5"
     MKL_ROOT="$MKLROOT"
-	CC="icl"
-	GCC="icl"
-	NVCC="nvcc"
-	OBJ="obj"
-	OUTFLG="/OUT:"
-	CPPFLAGS="/c /MT /DNDEBUG /O2 /Qstd=c99 /Qopenmp $CFLAGS"    # static linking
+    CC="icl"
+    GCC="icl"
+    NVCC="nvcc"
+    OBJ="obj"
+    OUTFLG="/OUT:"
+    CPPFLAGS="/c /MT /DNDEBUG /O2 /Qstd=c99 /Qopenmp $CFLAGS"    # static linking
     NVCCFLAGS="-c -use_fast_math -gencode arch=compute_20,code=sm_20 \
           -gencode arch=compute_30,code=sm_30 \
           --machine ${MBITS}  -Xcompiler \"/EHsc /W3 /nologo /O2 /Zi  /MT\""
-	CFLAGS="/c /MT /DNDEBUG /O2 /Qstd=c99 /Qopenmp $CFLAGS"    # static linking
-	LB="lib"    
-	LD="link"
-	GLD="link"
+    CFLAGS="/c /MT /DNDEBUG /O2 /Qstd=c99 /Qopenmp $CFLAGS"    # static linking
+    LB="lib"    
+    LD="link"
+    GLD="link"
     if [ "$ARCH" = "x86" ] ; then
         WINARCH=x86
         CULIB="Win32"
@@ -152,24 +155,24 @@ elif [ "$OS" = "windows" ] ; then
         CULIB="x64"
         PTYPE="_lp64"
     fi
-	LDFLAGS="/DLL /MACHINE:${WINARCH} $LDFLAGS"
-	LIBPREPEND=""
-	LIBAPPEND="-${OS}-${ARCH}.dll"
-	FC="ifort"
-	FFLAGS="-c $FFLAGS"
-	LAPACK_INCLUDES=""
-	FORTRAN_LIBS=""
-	if [ "$PARLIB" = "sequential" ] ; then
+    LDFLAGS="/DLL /MACHINE:${WINARCH} $LDFLAGS"
+    LIBPREPEND=""
+    LIBAPPEND="-${OS}-${ARCH}.dll"
+    FC="ifort"
+    FFLAGS="-c $FFLAGS"
+    LAPACK_INCLUDES=""
+    FORTRAN_LIBS=""
+    if [ "$PARLIB" = "sequential" ] ; then
 	MKL_LIBS="mkl_intel${PTYPE}.lib mkl_sequential.lib mkl_core.lib libiomp5mt.lib"   
     else
 	MKL_LIBS="mkl_intel${PTYPE}.lib mkl_intel_thread.lib mkl_core.lib libiomp5mt.lib" 
     fi
     CUDA_LIBS="cudart.lib CommonJNI.lib"
-	LIB="$MKL_ROOT/lib/${ARCHD};$JAVA_HOME/lib;$CUDA_HOME/lib/${CULIB};$JCUDA_HOME/lib;$LIB"
-	INCLUDE="$JAVA_HOME/include;$JAVA_HOME/include/win32;c:/Intel/MKL/mkl/include;$JCUDA_HOME/CommonJNI/src;$CUDA_HOME/include;$INCLUDE"
+    LIB="$MKL_ROOT/lib/${ARCHD};$JAVA_HOME/lib;$CUDA_HOME/lib/${CULIB};$JCUDA_HOME/lib;$LIB"
+    INCLUDE="$JAVA_HOME/include;$JAVA_HOME/include/win32;c:/Intel/MKL/mkl/include;$JCUDA_HOME/CommonJNI/src;$CUDA_HOME/include;$INCLUDE"
 else
-	echo "OS not supported"
-	exit 1
+    echo "OS not supported"
+    exit 1
 fi
 
 echo "CC=$CC" > Makefile.incl
