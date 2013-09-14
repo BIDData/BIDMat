@@ -21,8 +21,6 @@ else
 	exit 1
 fi
 
-ARCH="x86"
-
 if [ "$ARCH" = "x86" ] || [ "$ARCH" = "i686" ] || [ "$ARCH" = "i586" ] \
 	|| [ "$ARCH" = "i486" ] || [ "$ARCH" = "i386" ] ; then
 	ARCH="x86"
@@ -152,7 +150,7 @@ elif [ "$OS" = "windows" ] ; then
     else
         WINARCH=amd64
         CULIB="x64"
-        PTYPE="lp64"
+        PTYPE="_lp64"
     fi
 	LDFLAGS="/DLL /MACHINE:${WINARCH} $LDFLAGS"
 	LIBPREPEND=""
