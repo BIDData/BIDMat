@@ -35,7 +35,7 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     if (err == 0) err = cublasGetError()
     if (err != 0) {
     	println("device is %d" format SciFunctions.getGPU)
-    	throw new RuntimeException("Cuda error in GSMAT.toString "+err)
+    	throw new RuntimeException("Cuda error in GSMAT.toString " + cudaGetErrorString(err))
     }
     val ncolsn = SciFunctions.maxi(tmpcols).v + 1
     val tmpMat = SMat(nrows, ncolsn, tmprows.data, tmpcols.data, tmpdata.data)
@@ -54,7 +54,7 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     if (err == 0) err = cublasGetError()
     if (err != 0) {
     	println("device is %d" format SciFunctions.getGPU)
-    	throw new RuntimeException("Cuda error in GSMAT.toSMat "+err)
+    	throw new RuntimeException("Cuda error in GSMAT.toSMat " + cudaGetErrorString(err))
     }    
     SparseMat.compressInds(tmpcols, ncols, out.jc, nnz)
     if (Mat.ioneBased == 1) {
@@ -69,7 +69,7 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     if (err == 0) err = cudaGetLastError()
     if (err != 0) {
     	println("device is %d" format SciFunctions.getGPU)
-    	throw new RuntimeException("Cuda error in GSMAT.clear "+err)
+    	throw new RuntimeException("Cuda error in GSMAT.clear " + cudaGetErrorString(err))
     }
     this
   }
@@ -105,7 +105,7 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     val err = CUMAT.spsum(nrows, ncols, nnz, ir, ic, data, out.data, nn)
     if (err != 0) {
     	println("device is %d" format SciFunctions.getGPU)
-    	throw new RuntimeException("Cuda error in GSMAT.sum "+err)
+    	throw new RuntimeException("Cuda error in GSMAT.sum " + cudaGetErrorString(err))
     } 
     out
   }
@@ -125,7 +125,7 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     val err = cudaGetLastError
     if (err != 0) {
     	println("device is %d" format SciFunctions.getGPU)
-    	throw new RuntimeException("Cuda error in GSMAT.SDMult "+err)
+    	throw new RuntimeException("Cuda error in GSMAT.SDMult " + cudaGetErrorString(err))
     }
     Mat.nflops += 2L*nnz*a.ncols
     out
@@ -146,7 +146,7 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     val err = cudaGetLastError
     if (err != 0) {
     	println("device is %d" format SciFunctions.getGPU)
-    	throw new RuntimeException("Cuda error in GSMAT.SDTMult "+err)
+    	throw new RuntimeException("Cuda error in GSMAT.SDTMult " + cudaGetErrorString(err))
     }
     Mat.nflops += 2L*nnz*a.ncols
     out
@@ -186,7 +186,7 @@ object GSMat {
     if (err == 0) err = cublasGetError
     if (err != 0) {
     	println("device is %d" format SciFunctions.getGPU)
-    	throw new RuntimeException("Cuda error in GSMat() "+err)
+    	throw new RuntimeException("Cuda error in GSMat() " + cudaGetErrorString(err))
     } 
     out
   }
@@ -260,7 +260,7 @@ object GSMat {
     if (err == 0) err = cudaGetLastError
     if (err != 0) {
     	println("device is %d" format SciFunctions.getGPU)
-    	throw new RuntimeException("Cuda error in GSMAT.fromSMat "+err)
+    	throw new RuntimeException("Cuda error in GSMAT.fromSMat " + cudaGetErrorString(err))
     }  
     out
   }
