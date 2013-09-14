@@ -119,10 +119,10 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     val out = GMat.newOrCheckGMat(nrows, a.ncols, omat, GUID, a.GUID, "SDMult".##)
     val handle = GSMat.getHandle
     val descra = GSMat.getDescr      
-    JCusparse.cusparseScsrmm(handle, cusparseOperation.CUSPARSE_OPERATION_TRANSPOSE,
+    var err = JCusparse.cusparseScsrmm(handle, cusparseOperation.CUSPARSE_OPERATION_TRANSPOSE,
         ncols, a.ncols, nrows, 1.0f, descra,	data, jc, ir, a.data, a.nrows, 0, out.data, out.nrows)
     cudaDeviceSynchronize
-    val err = cudaGetLastError
+    if (err == 0) err = cudaGetLastError
     if (err != 0) {
     	println("device is %d" format SciFunctions.getGPU)
     	throw new RuntimeException("Cuda error in GSMAT.SDMult " + cudaGetErrorString(err))
@@ -131,7 +131,7 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     out
   }
   
-  // This one is fine. 
+  // This one is OK, but may throw CUDA resource errors with large nrows
   
   def SDTMult(a:GMat, omat:Mat):GMat = {
     if (nrows != a.nrows) {
@@ -140,10 +140,10 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     val out = GMat.newOrCheckGMat(ncols, a.ncols, omat, GUID, a.GUID, "SDMult".##)
     val handle = GSMat.getHandle
     val descra = GSMat.getDescr     
-    JCusparse.cusparseScsrmm(handle, cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE,
+    var err = JCusparse.cusparseScsrmm(handle, cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE,
         ncols, a.ncols, nrows, 1.0f, descra,	data, jc, ir, a.data, a.nrows, 0, out.data, out.nrows)
     cudaDeviceSynchronize
-    val err = cudaGetLastError
+    if (err == 0) err = cudaGetLastError
     if (err != 0) {
     	println("device is %d" format SciFunctions.getGPU)
     	throw new RuntimeException("Cuda error in GSMAT.SDTMult " + cudaGetErrorString(err))
