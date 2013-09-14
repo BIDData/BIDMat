@@ -9,7 +9,7 @@ VERSION="dev"
 # standardise the OS and ARCH names
 if [[ "$OS" == Darwin* ]] ; then
     if [[ "$OS" == *x86_64 ]] ; then
-	ARCH="x86_64"
+	    ARCH="x86_64"
     fi
     OS="apple"
 elif [[ "$OS" == Linux* ]] ; then
@@ -71,14 +71,14 @@ if [ "$OS" = "apple" ] ; then
     LAPACK_INCLUDES=""
     FORTRAN_LIBS="-lgfortran"
     if [ "$PARLIB" = "sequential" ] ; then
-	MKL_LIBS="-L$JAVA_HOME/Libraries -L${COMPOSER_ROOT}/lib/${ARCHD} \ 
+	    MKL_LIBS="-L$JAVA_HOME/Libraries -L${COMPOSER_ROOT}/lib/${ARCHD} \ 
             $MKL_ROOT/lib/libmkl_intel${PTYPE}.a $MKL_ROOT/lib/libmkl_sequential.a \
             $MKL_ROOT/lib/libmkl_core.a \
             $MKL_ROOT/lib/libmkl_intel${PTYPE}.a $MKL_ROOT/lib/libmkl_sequential.a \
             $MKL_ROOT/lib/libmkl_core.a \
             -lpthread -lm  -framework JavaVM"
     else 
-	MKL_LIBS="-L$JAVA_HOME/Libraries -L${COMPOSER_ROOT}/lib/${ARCHD} \
+	    MKL_LIBS="-L$JAVA_HOME/Libraries -L${COMPOSER_ROOT}/lib/${ARCHD} \
             $MKL_ROOT/lib/libmkl_intel${PTYPE}.a $MKL_ROOT/lib/libmkl_intel_thread.a \
             $MKL_ROOT/lib/libmkl_core.a \
             $MKL_ROOT/lib/libmkl_intel${PTYPE}.a $MKL_ROOT/lib/libmkl_intel_thread.a \
@@ -113,16 +113,16 @@ elif [ "$OS" = "linux" ] ; then
     LAPACK_INCLUDES=""
     FORTRAN_LIBS="-lgfortran"
     if [ "$PARLIB" = "sequential" ] ; then
-	MKL_LIBS="-L$JAVA_HOME/lib -L${COMPOSER_ROOT}/lib/${ARCHD} \
+	    MKL_LIBS="-L$JAVA_HOME/lib -L${COMPOSER_ROOT}/lib/${ARCHD} \
             $MKL_ROOT/lib/${ARCHD}/libmkl_intel${PTYPE}.a -Wl,--start-group  \
             $MKL_ROOT/lib/${ARCHD}/libmkl_sequential.a $MKL_ROOT/lib/${ARCHD}/libmkl_core.a \
             -Wl,--end-group -liomp5 -lpthread -lm"
     else 
-	MKL_LIBS="-L$JAVA_HOME/lib -L${COMPOSER_ROOT}/lib/${ARCHD} \
+	    MKL_LIBS="-L$JAVA_HOME/lib -L${COMPOSER_ROOT}/lib/${ARCHD} \
             $MKL_ROOT/lib/${ARCHD}/libmkl_intel${PTYPE}.a -Wl,--start-group  \
             $MKL_ROOT/lib/${ARCHD}/libmkl_gnu_thread.a $MKL_ROOT/lib/${ARCHD}/libmkl_core.a \
             -Wl,--end-group -liomp5 -lpthread -lm"
-        fi
+    fi
     if [ "$ARCH" = "x86" ] ; then
         CULIB="lib"
     else
@@ -163,9 +163,9 @@ elif [ "$OS" = "windows" ] ; then
     LAPACK_INCLUDES=""
     FORTRAN_LIBS=""
     if [ "$PARLIB" = "sequential" ] ; then
-	MKL_LIBS="mkl_intel${PTYPE}.lib mkl_sequential.lib mkl_core.lib libiomp5mt.lib"   
+	    MKL_LIBS="mkl_intel${PTYPE}.lib mkl_sequential.lib mkl_core.lib libiomp5mt.lib"   
     else
-	MKL_LIBS="mkl_intel${PTYPE}.lib mkl_intel_thread.lib mkl_core.lib libiomp5mt.lib" 
+	    MKL_LIBS="mkl_intel${PTYPE}.lib mkl_intel_thread.lib mkl_core.lib libiomp5mt.lib" 
     fi
     CUDA_LIBS="cudart.lib CommonJNI.lib"
     LIB="$MKL_ROOT/lib/${ARCHD};$JAVA_HOME/lib;$CUDA_HOME/lib/${CULIB};$JCUDA_HOME/lib;$LIB"
