@@ -405,7 +405,7 @@ object HMat {
     hints(2) = m.ncols
     hints(3) = m.nnz
     writeSomeInts(gout, hints, tbuf, 4)
-    val buff = ByteBuffer.allocate(math.min(DEFAULT_BUFSIZE, 4*math.max(m.ncols+1, m.nnz))).order(byteOrder)
+    val buff = ByteBuffer.allocate(4*math.min(DEFAULT_BUFSIZE/4, math.max(m.ncols+1, m.nnz))).order(byteOrder)
     try {
     	MatHDF5.subOne(m.jc)
     	writeSomeInts(gout, m.jc, buff, m.ncols+1)
