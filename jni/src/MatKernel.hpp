@@ -21,6 +21,8 @@ int dsmult(int nrows, int ncols, int nnz, float *A, float *Bdata, int *Bir, int 
 
 int dsmult_tune(int nrows, int ncols, int nnz, float *A, float *Bdata, int *Bir, int *Bic, float *C, int nblocks, int nthreads);
 
+int dsmultx_tune(int nrows, int ncols, int nnz, float *A, float *Bdata, int *Bir, int *Bic, float *C, int nblocks, int nthreadsx, int nthreadsy);
+
 int dsmultT(int nrows, int ncols, int nnz, float *A, float *Bdata, int *Bir, int *Bic, float *C);
 
 int spsum(int nrows, int ncols, int nnz, int *Air, int *Aic, float *P, float *B, int n);

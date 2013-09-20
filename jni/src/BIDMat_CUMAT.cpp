@@ -142,6 +142,19 @@ extern "C" {
     return dsmult_tune(nrows, ncols, nnz, A, Bdata, Bir, Bic, C, nblocks, nthreads);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_dsmultxtune
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jint nnz, 
+   jobject jA, jobject jBdata, jobject jBir, jobject jBic, jobject jC, jint nblocks, jint nthreadsx, jint nthreadsy)
+  {
+    float *A = (float*)getPointer(env, jA);
+    float *Bdata = (float*)getPointer(env, jBdata);
+    float *C = (float*)getPointer(env, jC);
+    int *Bir = (int*)getPointer(env, jBir);
+    int *Bic = (int*)getPointer(env, jBic);
+
+    return dsmultx_tune(nrows, ncols, nnz, A, Bdata, Bir, Bic, C, nblocks, nthreadsx, nthreadsy);
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_dsmultT
   (JNIEnv *env, jobject obj, jint nrows, jint ncols, jint nnz, 
    jobject jA, jobject jBdata, jobject jBir, jobject jBic, jobject jC)
