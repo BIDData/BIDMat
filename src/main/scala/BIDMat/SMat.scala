@@ -213,9 +213,63 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   		out.sparseTrim
   		out
   	}
+  
+   
+  def sAdd(b:SMat, omat:Mat):SMat = {
+    Mat.nflops += nnz + b.nnz
+    if (nrows==b.nrows && ncols==b.ncols) {
+      b.explicitInds
+      explicitInds
+ 
+      val out = SMat.newOrCheckSMat(nrows, ncols, nnz+b.nnz, omat, GUID, b.GUID, "+".##)
+      val ioff = Mat.ioneBased
+      var nzc = 0
+      out.jc(0) = ioff 
+      var i = 0
+      while (i < ncols) {
+      	var ia = jc(i)-ioff
+      	var ib = b.jc(i)-ioff
+      	while (ia < jc(i+1)-ioff && ib < b.jc(i+1)-ioff) {
+      		if (ir(ia) < b.ir(ib)) {
+      			out.ir(nzc) = ir(ia)
+      			out.data(nzc) = data(ia) 
+      			ia += 1
+      		} else if (ir(ia) > b.ir(ib)) {
+      			out.ir(nzc) = b.ir(ib)
+      			out.data(nzc) = b.data(ib)
+      			ib += 1
+      		} else {
+      			out.ir(nzc) = ir(ia)
+      			out.data(nzc) = data(ia) + b.data(ib)
+      			ia += 1
+      			ib += 1
+      		}
+      		nzc += 1
+      	}
+      	while (ia < jc(i+1)-ioff) {
+      		out.ir(nzc) = ir(ia)
+      		out.data(nzc) = data(ia)
+      		ia += 1
+      		nzc += 1
+      	}
+      	while (ib < b.jc(i+1)-ioff) {
+      		out.ir(nzc) = b.ir(ib)
+      		out.data(nzc) = b.data(ib)
+      		ib += 1
+      		nzc += 1
+      	}
+      	out.jc(i+1) = nzc+ioff
+      	i += 1
+      }
+      SMat(out.sparseTrim)
+    } else {
+    	throw new RuntimeException("dimensions mismatch")
+    }
+  }
+  
 
   override def unary_- () = ssMatOpScalar(-1, SMat.mulFun, null)
-  def + (b : SMat) = ssMatOp(b, SMat.sumFun, null)
+  def + (b : SMat) = sAdd(b, null)
   def - (b : SMat) = ssMatOp(b, SMat.subFun, null)
   def * (b : FMat):FMat = SMult(b, null)
   def Tx (b : FMat):FMat = Tmult(b, null)
@@ -483,7 +537,7 @@ class SPair (val omat:Mat, val mat:SMat) extends Pair{
   override def Tx (b : Mat):Mat = b match {case bb:FMat => mat.Tmult(bb, omat)}
   override def ^* (b : Mat):Mat = b match {case bb:FMat => mat.Tmult(bb, omat)}
   
-  def + (b : SMat) = mat.ssMatOp(b, SMat.sumFun, omat)
+  def + (b : SMat) = mat.sAdd(b, omat)
   def - (b : SMat) = mat.ssMatOp(b, SMat.subFun, omat)
   def *@ (b : SMat) = mat.ssMatOp(b, SMat.mulFun, omat)
   def /  (b : SMat) = mat.ssMatOp(b, SMat.divFun, omat)
