@@ -443,7 +443,8 @@ class SparseMat[@specialized(Double,Float) T]
       out
     }
   
-  def sgMatOp(b:SparseMat[T], op2:(T,T) => T, omat:Mat):SparseMat[T] =
+  def sgMatOp(b:SparseMat[T], op2:(T,T) => T, omat:Mat):SparseMat[T] = {
+    Mat.nflops += nnz + b.nnz
     if (nrows==b.nrows && ncols==b.ncols) {
       if (ir != null) b.explicitInds
       if (b.ir != null) explicitInds
@@ -495,6 +496,7 @@ class SparseMat[@specialized(Double,Float) T]
     } else {
     	throw new RuntimeException("dimensions mismatch")
     }
+  }
   
     def sgMatOpD(b:DenseMat[T], op2:(T,T) => T, omat:Mat):SparseMat[T] =
     	if (b.nrows > 1 && b.ncols > 1) {
@@ -533,6 +535,7 @@ class SparseMat[@specialized(Double,Float) T]
     		out.jc(i) = jc(i)
     		out.sparseTrim
     	} 
+ 
 
 
   
