@@ -261,7 +261,8 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
       	out.jc(i+1) = nzc+ioff
       	i += 1
       }
-      SMat(out.sparseTrim)
+      nnz0 = out.jc(i)
+      out
     } else {
     	throw new RuntimeException("dimensions mismatch")
     }
