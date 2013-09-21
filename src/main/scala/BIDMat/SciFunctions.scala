@@ -1492,7 +1492,7 @@ object SciFunctions {
    * Returns a generator for power-law samples with exponent -1 in the range 0...range-1
    */
   
-  def simplePowerLaw(range:Int):(Int)=>IMat = {
+  def simplePowerLaw(range:Float):(Int)=>IMat = {
     val alpha = math.log(range)
     (n:Int) => {
       val v = rand(n,1)
@@ -1529,7 +1529,7 @@ object SciFunctions {
   
   def powrand(nrows:Int, ncols:Int, dens:Float = 10) = {
     val v = dens*math.log(dens)
-    sprand(nrows, ncols, simplePowerLaw(nrows), simplePowerLaw((dens*math.log(v)).toInt))
+    sprand(nrows, ncols, simplePowerLaw(nrows), simplePowerLaw((math.max(dens, dens*math.log(v))).toInt))
   }
 
   def histc(a:DMat, b:DMat):IMat = {
