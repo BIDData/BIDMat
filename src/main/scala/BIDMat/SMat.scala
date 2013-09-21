@@ -67,35 +67,21 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
     ms
   }
   
-  @inline def bsearchl(col:Int, ind0:Int, ioff:Int):Int = {
+  // return an index st ir(index) >= ind0
+  
+  @inline def bsearch(col:Int, ind0:Int, ioff:Int):Int = {
     val ind = ind0 + ioff
     var left = jc(col) - ioff
     var right = jc(col+1) - ioff
-    while (right > left+1) {
+    while (right > left) {
       val mid = (left+right)/2
       if (ind > ir(mid)) {
-      	left = mid
+      	left = mid + 1
       } else {
         right = mid
       }     
     }
-    left  // < ind0
-  }
-  
-  @inline def bsearchr(col:Int, ind0:Int, ioff:Int):Int = {
-    val ind = ind0 + ioff
-    val base = jc(col) - ioff
-    var left = base
-    var right = jc(col+1) - ioff
-    while (right > left+1) {
-      val mid = (left+right)/2
-      if (ind > ir(mid)) {
-      	left = mid
-      } else {
-        right = mid
-      }     
-    }
-    right  // >= ind0
+    left  // >= ind0
   }
   
   override def rowslice(row1:Int, row2:Int, omat:Mat):SMat = {
@@ -103,7 +89,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
     var newnnz = 0
     var i = 0
     while (i < ncols) {
-      newnnz += bsearchl(i, row2, ioff) - bsearchr(i, row1, ioff)
+      newnnz += bsearch(i, row2, ioff) - bsearch(i, row1, ioff)
       i += 1
     }
     val out = SMat.newOrCheckSMat(row2-row1, ncols, newnnz, omat, GUID, row1, row2, "rowslice".##)
@@ -111,8 +97,8 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
     newnnz = 0
     i = 0
     while (i < ncols) {
-      var start = bsearchr(i, row1, ioff)
-      val end = bsearchl(i, row2, ioff)
+      var start = bsearch(i, row1, ioff)
+      val end = bsearch(i, row2, ioff)
       while (start < end) {
         out.ir(newnnz) = ir(start) - row1
         out.data(newnnz) = data(start)
