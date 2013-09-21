@@ -84,6 +84,8 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
     left  // >= ind0
   }
   
+  override def rowslice(row1:Int, row2:Int):SMat = rowslice(row1, row2, null)
+  
   override def rowslice(row1:Int, row2:Int, omat:Mat):SMat = {
     val ioff = Mat.ioneBased
     var newnnz = 0
