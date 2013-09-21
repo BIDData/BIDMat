@@ -350,6 +350,8 @@ class SparseMat[@specialized(Double,Float) T]
 //    println("gcolslice2 %d %d" format (GUID, omat.GUID))
     out
   }
+  
+ 
 
   private def printOne(a:T):String = 
   	a match {
