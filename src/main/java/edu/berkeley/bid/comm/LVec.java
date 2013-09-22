@@ -23,8 +23,7 @@ public class LVec {
 	} 
 	
 	static public LVec lrow(long... d) {
-		LVec out = new LVec(d.length);
-		out.data = d;
+		LVec out = new LVec(d);
 		return out;
 	}
 	
