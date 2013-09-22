@@ -23,8 +23,7 @@ public class IVec {
 	} 
 	
 	static public IVec irow(int... d) {
-		IVec out = new IVec(d.length);
-		out.data = d;
+		IVec out = new IVec(d);
 		return out;
 	}
 	
