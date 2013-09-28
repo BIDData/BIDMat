@@ -59,4 +59,12 @@ public class Vec {
 		}
 	}
 	
+	public Vec mapFrom(IVec map) {
+		Vec out = new Vec(map.size());
+		for (int i = 0; i < out.size(); i++) {
+			out.data[i] = data[map.data[i]];
+		}
+		return out;
+	}
+	
 }
