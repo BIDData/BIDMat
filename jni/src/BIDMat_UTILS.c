@@ -82,3 +82,25 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_memcpydb
 	(*env)->ReleasePrimitiveArrayCritical(env, jB, B, 0);
 }
 
+JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_memcpyfi
+(JNIEnv * env, jobject calling_obj, jint N, jfloatArray jA, jlong startA, jintArray jB, jlong startB){
+	jfloat * A = (*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE);
+	jint * B = (*env)->GetPrimitiveArrayCritical(env, jB, JNI_FALSE);
+
+    memcpy(B+startB, A+startA, N*sizeof(float));
+
+	(*env)->ReleasePrimitiveArrayCritical(env, jA, A, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, jB, B, 0);
+}
+
+JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_memcpyif
+(JNIEnv * env, jobject calling_obj, jint N, jintArray jA, jlong startA, jfloatArray jB, jlong startB){
+	jint * A = (*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE);
+	jfloat * B = (*env)->GetPrimitiveArrayCritical(env, jB, JNI_FALSE);
+
+    memcpy(B+startB, A+startA, N*sizeof(float));
+
+	(*env)->ReleasePrimitiveArrayCritical(env, jA, A, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, jB, B, 0);
+}
+

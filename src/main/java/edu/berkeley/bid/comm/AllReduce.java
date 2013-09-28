@@ -3,6 +3,10 @@ package edu.berkeley.bid.comm;
 
 import java.util.List;
 import java.util.LinkedList;
+import edu.berkeley.bid.UTILS;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 class AllReduce {	
 	
@@ -17,9 +21,10 @@ class AllReduce {
 		Layer [] layers;                                         // All the layers
 		int [][] sendbuf;                                        // buffers, one for each destination in a group
 		int [][] recbuf;
-		IVec finalMap;
-		LinkedList<Msg> [] messages;
+		IVec finalMap;                                           // Map to down from down --> up at layer D-1
+		LinkedList<Msg> [] messages;                             // Message queue for the simulation
 		boolean doSim = false;
+		ExecutorService executor;
 
 		public Machine(int N0, int [] allks0, int imachine0, int M0, int bufsize, boolean doSim0) {
 			N = N0;
@@ -43,6 +48,7 @@ class AllReduce {
 				cumk *= k;
 				maxk = Math.max(maxk, k);
 			}
+			executor = Executors.newFixedThreadPool(maxk);
 			sendbuf = new int[maxk][];
 			recbuf = new int[maxk][];
 			for (int i = 0; i < maxk; i++) {
@@ -79,16 +85,20 @@ class AllReduce {
 		}
 	
 		class Layer {
-			/* Layer Configuration Variables */	                                                       
-			int k;        																					 // size of this group
-			int left;                                                // left boundary of its indices
-			int right;                                               // right boundary of its indices
-			int posInMyGroup;                                        // position in this machines group
-			int [] outNbr;                                           // machines we talk to 
-			int [] inNbr;                                            // machines we listen to
-			IVec partBoundaries;                                     // partition boundaries
-			IVec [] downMaps;                                        // maps to indices below for down indices
-			IVec [] upMaps;                                          // maps to indices below for up indices
+			
+			/* Layer Configuration Variables */
+			
+			int k;        																					 // Size of this group
+			int left;                                                // Left boundary of its indices
+			int right;                                               // Right boundary of its indices
+			int posInMyGroup;                                        // Position in this machines group
+			int [] outNbr;                                           // Machines we talk to 
+			int [] inNbr;                                            // Machines we listen to
+			IVec partBoundaries;                                     // Partition boundaries
+			IVec [] downMaps;                                        // Maps to indices below for down indices
+			IVec [] upMaps;                                          // Maps to indices below for up indices
+			int downn;                                               // Size of the down master list
+			int upn;                                                 // Size of the up master list
 			int [] dPartInds;
 			int [] uPartInds;
 
@@ -113,15 +123,25 @@ class AllReduce {
 					inNbr[i] = ibase + (ioff + (k - i) * cumk) % (cumk * k);
 				}		
 			}		
+			
+			class ConfigThread implements Runnable {
+				IVec [] downp;
+				IVec [] upp;
+				IVec [] dtree;
+				IVec [] utree;
+				int i;
+				CountDownLatch latch;
+				
+				public ConfigThread(IVec [] downp0, IVec [] upp0, IVec [] dtree0, IVec [] utree0, int i0, CountDownLatch latch0) {
+					downp = downp0;
+					upp = upp0;
+					dtree = dtree0;
+					utree = utree0;
+					i = i0;
+					latch = latch0;
+				}
 
-			public void config(IVec downi, IVec upi, IVec [] outputs) {
-				IVec [] downp = IVec.partition(downi, partBoundaries);
-				IVec [] upp = IVec.partition(upi, partBoundaries);
-				IVec [] dtree = new IVec[2*k-1];
-				IVec [] utree = new IVec[2*k-1];
-				dPartInds[0] = 0;
-				uPartInds[0] = 0;
-				for (int i = 0; i < k; i++) {
+				public void run() {
 					int [] segments = new int[2];
 					int [] sbuf = sendbuf[i];
 					int [] rbuf = recbuf[i];
@@ -133,18 +153,36 @@ class AllReduce {
 					segments[1] = segments[0] + upp[i].size();
 					sbuf[0] = segments[0];
 					sbuf[1] = segments[1];
-					
+
 					sendrecv(sbuf, segments[1]+2, outNbr[i], rbuf, rbuf.length, inNbr[i]);
-					
+
 					IVec downout = new IVec(rbuf[0]);
 					IVec upout =   new IVec(rbuf[1]-rbuf[0]);
 					System.arraycopy(rbuf, 2, downout.data, 0, rbuf[0]);
 					System.arraycopy(rbuf, 2 + rbuf[0], upout.data, 0, rbuf[1]-rbuf[0]);
 					IVec.checkTree(dtree, downout, i, k);
-					IVec.checkTree(utree, upout, i, k);
+					IVec.checkTree(utree, upout, i, k);	
+					latch.countDown();
 				}
+			}
+
+			public void config(IVec downi, IVec upi, IVec [] outputs) {
+				IVec [] downp = IVec.partition(downi, partBoundaries);
+				IVec [] upp = IVec.partition(upi, partBoundaries);
+				IVec [] dtree = new IVec[2*k-1];
+				IVec [] utree = new IVec[2*k-1];
+				dPartInds[0] = 0;
+				uPartInds[0] = 0;
+				
+				CountDownLatch latch = new CountDownLatch(k);
+				for (int i = 0; i < k; i++) {
+					executor.execute(new ConfigThread(downp, upp, dtree, utree, i, latch));
+				}
+				try {	latch.await(); } catch (InterruptedException e) {}
 				IVec dmaster = dtree[0];
+				downn = dmaster.size();
 				IVec umaster = utree[0];
+				upn = umaster.size();
 				for (int i = 0; i < k; i++) {
 					downMaps[i] = IVec.mapInds(downp[i], dmaster);
 					upMaps[i] = IVec.mapInds(upp[i], umaster);
@@ -153,12 +191,79 @@ class AllReduce {
 				outputs[1] = umaster;
 			}
 			
+			public class ReduceDownThread implements Runnable {
+				Vec newv;
+				Vec downv;
+				int i;
+				CountDownLatch latch;
+				
+				public ReduceDownThread(Vec newv0, Vec downv0, int i0, CountDownLatch latch0) {
+					newv = newv0;
+					downv = downv0;
+					i = i0;
+					latch = latch0;
+				}
+				
+				public void run() {
+					int [] sbuf = sendbuf[i];
+					int [] rbuf = recbuf[i];
+					int msize = dPartInds[i+1] - dPartInds[i];
+					sbuf[0] = msize;
+					UTILS.memcpyfi(msize, downv.data, dPartInds[i], sbuf, 1);
+					
+					sendrecv(sbuf, msize+1, outNbr[i], rbuf, rbuf.length, inNbr[i]);
+					
+					Vec res = new Vec(rbuf[0]);
+					UTILS.memcpyif(res.size(), rbuf, 1, res.data, 0);
+					res.addTo(newv, downMaps[i]);	
+					latch.countDown();
+				}
+			}
+			
 			public Vec reduceDown(Vec downv) {
-				return downv;
+				Vec newv = new Vec(downn);
+				CountDownLatch latch = new CountDownLatch(k);
+				for (int i = 0; i < k; i++) {
+					executor.execute(new ReduceDownThread(newv, downv, i, latch));
+				}
+				try { latch.await(); } catch (InterruptedException e) {}
+				return newv;
+			}
+			
+			public class ReduceUpThread implements Runnable {
+				Vec newv;
+				Vec upv;
+				int i;
+				CountDownLatch latch;
+				
+				public ReduceUpThread(Vec newv0, Vec upv0, int i0, CountDownLatch latch0) {
+					newv = newv0;
+					upv = upv0;
+					i = i0;
+					latch = latch0;
+				}
+				
+				public void run () {
+					int [] sbuf = sendbuf[i];
+					int [] rbuf = recbuf[i];
+					sbuf[0] = upv.size();
+					UTILS.memcpyfi(upv.size(), upv.data, 0, sbuf, 1);
+					
+					sendrecv(sbuf, upv.size()+1, outNbr[i], rbuf, rbuf.length, inNbr[i]);
+					
+					int msize = uPartInds[i+1] - uPartInds[i];
+					UTILS.memcpyif(msize, rbuf, 1, newv.data, uPartInds[i]);						
+				}
 			}
 			
 			public Vec reduceUp(Vec upv) {
-				return upv;
+				Vec newv = new Vec(upn);
+				CountDownLatch latch = new CountDownLatch(k);
+				for (int i = 0; i < k; i++) {
+					executor.execute(new ReduceUpThread(newv, upv, i, latch));
+				}
+				try { latch.await(); } catch (InterruptedException e) {}
+				return newv;
 			}
 		}
 
@@ -193,8 +298,6 @@ class AllReduce {
 			receiver = receiver0;
 		}
 	}
-	
-
 	
 	Machine [] simNetwork;
 
