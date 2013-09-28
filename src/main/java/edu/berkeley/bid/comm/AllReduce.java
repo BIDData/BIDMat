@@ -108,9 +108,6 @@ class AllReduce {
 				left = left0;
 				right = right0;
 				partBoundaries = new IVec(k);
-				for (i = 0; i < k; i++) {
-					partBoundaries.data[i] = left + (int)(((long)(right - left)) * (i+1) / k);				
-				}
 				inNbr = new int [k];
 				outNbr = new int [k];
 				dPartInds = new int[k+1];
@@ -119,6 +116,7 @@ class AllReduce {
 				int ibase = imachine - ioff;
 				posInMyGroup = ioff / cumk;
 				for (i = 0; i < k; i++) {
+					partBoundaries.data[i] = left + (int)(((long)(right - left)) * (i+1) / k);
 					outNbr[i] = ibase + (ioff + i * cumk) % (cumk * k);
 					inNbr[i] = ibase + (ioff + (k - i) * cumk) % (cumk * k);
 				}		
@@ -268,20 +266,25 @@ class AllReduce {
 		}
 
 		public void sendrecv(int [] sbuf, int sendn, int outi, int [] rbuf, int recn, int ini) {
-			synchronized (simNetwork[outi].messages[imachine]) {
-				simNetwork[outi].messages[imachine].add(new Msg(sbuf, sendn, imachine, outi));
-				simNetwork[outi].messages[imachine].notify();
-			}
-			synchronized (messages[ini]) {
-				while (messages[ini].size() == 0) {
-					try {
-						messages[ini].wait();
-					} catch (InterruptedException e) {					
-					}
+			if (doSim) {
+				synchronized (simNetwork[outi].messages[imachine]) {
+					simNetwork[outi].messages[imachine].add(new Msg(sbuf, sendn, imachine, outi));
+					simNetwork[outi].messages[imachine].notify();
 				}
-				Msg msg = messages[ini].removeFirst();
-				System.arraycopy(msg.inbuf, 0, rbuf, 0, sendn);
+				synchronized (messages[ini]) {
+					while (messages[ini].size() == 0) {
+						try {
+							messages[ini].wait();
+						} catch (InterruptedException e) {					
+						}
+					}
+					Msg msg = messages[ini].removeFirst();
+					System.arraycopy(msg.inbuf, 0, rbuf, 0, sendn);
+				}
+			} else {
+//				MPI.COMM_WORLD.Sendrecv(sbuf, 0, sendn, MPI.INT, outi, 0, rbuf, 0, recn, MPI.INT, ini, 0);
 			}
+			
 		}
 	}
 	
