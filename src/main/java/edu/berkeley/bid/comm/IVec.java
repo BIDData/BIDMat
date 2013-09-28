@@ -46,8 +46,8 @@ public class IVec {
 	/* Partition the input indices into ranges set by the elements of part */
 	/* there are part.length ranges: (>-infty,...,<part(0)), (>=part(0) && <part(1)), ...(>=part(n-2) && <part(n-1) */
 	
-	static public LinkedList<IVec> partition(IVec inds, IVec part) {
-		LinkedList<IVec> out = new LinkedList<IVec>();
+	static public IVec [] partition(IVec inds, IVec part) {
+		IVec [] out = new IVec[part.length];
 		int [] id = inds.data;
 		int here = 0;
 		int newsize = 0;
@@ -57,7 +57,7 @@ public class IVec {
 				newsize++;
 				here++;
 			}
-			out.add(new IVec(newsize));
+			out[i] = (new IVec(newsize));
 			newsize = 0;
 		}
 		here = 0;
@@ -157,6 +157,20 @@ public class IVec {
     	j += 1;
     }
     return dd;
+  }
+  
+  static public void checkTree(IVec [] tree, IVec vals, int i, int k) {
+  	int here = k - 1 + i;
+    tree[here] = vals;
+    int parent = (here-1) / 2;
+    int sibling = 4*parent+3 - here;
+    
+    while (here > 0 && tree[sibling] != null && tree[parent] == null) {
+    	tree[parent] = merge2(tree[here], tree[sibling]);
+    	here = parent;
+    	parent = (here-1) / 2;
+      sibling = 4*parent+3 - here;
+    }
   }
 	
 	static public IVec merge2(IVec a, IVec b) {
