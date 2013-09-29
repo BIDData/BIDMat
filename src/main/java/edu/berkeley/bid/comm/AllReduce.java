@@ -244,10 +244,11 @@ class AllReduce {
 				public void run () {
 					int [] sbuf = sendbuf[i];
 					int [] rbuf = recbuf[i];
-					sbuf[0] = upv.size();
-					UTILS.memcpyfi(upv.size(), upv.data, 0, sbuf, 1);
+					Vec up = upv.mapFrom(upMaps[i]);
+					sbuf[0] = up.size();
+					UTILS.memcpyfi(up.size(), up.data, 0, sbuf, 1);
 					
-					sendrecv(sbuf, upv.size()+1, outNbr[i], rbuf, rbuf.length, inNbr[i]);
+					sendrecv(sbuf, up.size()+1, outNbr[i], rbuf, rbuf.length, inNbr[i]);
 					
 					int msize = uPartInds[i+1] - uPartInds[i];
 					UTILS.memcpyif(msize, rbuf, 1, newv.data, uPartInds[i]);						
@@ -303,5 +304,9 @@ class AllReduce {
 	}
 	
 	Machine [] simNetwork;
+	
+	public static void runSim() {
+		
+	}
 
 }
