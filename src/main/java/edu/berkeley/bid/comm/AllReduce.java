@@ -305,7 +305,7 @@ class AllReduce {
 	
 	Machine [] simNetwork;
 	
-	public static void runSim() {
+	public static void runSim(int N, float dens, int [] allks) {
 		
 	}
 
