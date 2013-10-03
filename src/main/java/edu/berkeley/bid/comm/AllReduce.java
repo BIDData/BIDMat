@@ -8,9 +8,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-class AllReduce {	
+public class AllReduce {
 	
-	class Machine {
+	public class Machine {
 		/* Machine Configuration Variables */	
 		int N;                                                   // Number of features
 		int D;                                                   // Depth of the network
@@ -303,10 +303,11 @@ class AllReduce {
 		}
 	}
 	
-	Machine [] simNetwork;
+	public Machine [] simNetwork;
 	
-	public static void runSim(int N, float dens, int [] allks) {
-		
+	public AllReduce(int M) {
+		simNetwork = new Machine[M];
 	}
+
 
 }
