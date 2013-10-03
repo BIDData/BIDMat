@@ -112,6 +112,8 @@ public class AllReduce {
 				outNbr = new int [k];
 				dPartInds = new int[k+1];
 				uPartInds = new int[k+1];
+				downMaps = new IVec[k];
+				upMaps = new IVec[k];
 				int ioff = imachine % (cumk * k);
 				int ibase = imachine - ioff;
 				posInMyGroup = ioff / cumk;
