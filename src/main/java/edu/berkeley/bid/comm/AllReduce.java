@@ -22,7 +22,7 @@ public class AllReduce {
 		int [][] sendbuf;                                        // buffers, one for each destination in a group
 		int [][] recbuf;
 		IVec finalMap;                                           // Map to down from down --> up at layer D-1
-		LinkedList<Msg> [] messages;                             // Message queue for the simulation
+		LinkedList<Msg> [][] messages;                           // Message queue for the simulation
 		boolean doSim = false;
 		ExecutorService executor;
 
@@ -40,7 +40,7 @@ public class AllReduce {
 			int maxk = 1;
 			for (int i = 0; i < D; i++) {
 				int k = allks[i];
-				layers[i] = new Layer(k, cumk, left, right, imachine);
+				layers[i] = new Layer(k, cumk, left, right, imachine, i);
 				int pimg = layers[i].posInMyGroup;
 				left = layers[i].left;
 				if (pimg > 0) left = layers[i].partBoundaries.data[pimg-1];
@@ -56,9 +56,12 @@ public class AllReduce {
 				recbuf[i] = new int[bufsize];
 			}
 			if (doSim) {
-				messages = new LinkedList[M];
+				messages = new LinkedList[M][];
 				for (int i = 0; i < M; i++) {
-					messages[i] = new LinkedList<Msg>();
+					messages[i] = new LinkedList[3*D];
+					for (int j = 0; j < 3*D; j++) {
+						messages[i][j] = new LinkedList<Msg>();
+					}
 				}
 			}
 		}
@@ -91,6 +94,7 @@ public class AllReduce {
 			int k;        																					 // Size of this group
 			int left;                                                // Left boundary of its indices
 			int right;                                               // Right boundary of its indices
+			int depth;
 			int posInMyGroup;                                        // Position in this machines group
 			int [] outNbr;                                           // Machines we talk to 
 			int [] inNbr;                                            // Machines we listen to
@@ -102,18 +106,17 @@ public class AllReduce {
 			int [] dPartInds;
 			int [] uPartInds;
 
-			public Layer(int k0, int cumk, int left0, int right0, int imachine) {
+			public Layer(int k0, int cumk, int left0, int right0, int imachine, int depth0) {
 				k = k0;
 				int i;
 				left = left0;
 				right = right0;
+				depth = depth0;
 				partBoundaries = new IVec(k);
 				inNbr = new int [k];
 				outNbr = new int [k];
 				dPartInds = new int[k+1];
 				uPartInds = new int[k+1];
-				downMaps = new IVec[k];
-				upMaps = new IVec[k];
 				int ioff = imachine % (cumk * k);
 				int ibase = imachine - ioff;
 				posInMyGroup = ioff / cumk;
@@ -122,6 +125,8 @@ public class AllReduce {
 					outNbr[i] = ibase + (ioff + i * cumk) % (cumk * k);
 					inNbr[i] = ibase + (ioff + (k - i) * cumk) % (cumk * k);
 				}		
+				downMaps = new IVec[k];
+				upMaps = new IVec[k];
 			}		
 			
 			class ConfigThread implements Runnable {
@@ -144,9 +149,7 @@ public class AllReduce {
 				public void run() {
 					int [] segments = new int[2];
 					int [] sbuf = sendbuf[i];
-					int [] rbuf = recbuf[i];
-					dPartInds[i+1] = dPartInds[i] + downp[i].data.length;
-					uPartInds[i+1] = uPartInds[i] + upp[i].data.length;					
+					int [] rbuf = recbuf[i];				
 					System.arraycopy(downp[i].data, 0, sbuf, 2, downp[i].size());
 					segments[0] = downp[i].size();
 					System.arraycopy(upp[i].data, 0, sbuf, segments[0]+2, upp[i].size());
@@ -154,7 +157,7 @@ public class AllReduce {
 					sbuf[0] = segments[0];
 					sbuf[1] = segments[1];
 
-					sendrecv(sbuf, segments[1]+2, outNbr[i], rbuf, rbuf.length, inNbr[i]);
+					sendrecv(sbuf, segments[1]+2, outNbr[i], rbuf, rbuf.length, inNbr[i], depth*3);
 
 					IVec downout = new IVec(rbuf[0]);
 					IVec upout =   new IVec(rbuf[1]-rbuf[0]);
@@ -176,6 +179,8 @@ public class AllReduce {
 				
 				CountDownLatch latch = new CountDownLatch(k);
 				for (int i = 0; i < k; i++) {
+					dPartInds[i+1] = dPartInds[i] + downp[i].data.length;
+					uPartInds[i+1] = uPartInds[i] + upp[i].data.length;	
 					executor.execute(new ConfigThread(downp, upp, dtree, utree, i, latch));
 				}
 				try {	latch.await(); } catch (InterruptedException e) {}
@@ -211,7 +216,7 @@ public class AllReduce {
 					sbuf[0] = msize;
 					UTILS.memcpyfi(msize, downv.data, dPartInds[i], sbuf, 1);
 					
-					sendrecv(sbuf, msize+1, outNbr[i], rbuf, rbuf.length, inNbr[i]);
+					sendrecv(sbuf, msize+1, outNbr[i], rbuf, rbuf.length, inNbr[i], depth*3+1);
 					
 					Vec res = new Vec(rbuf[0]);
 					UTILS.memcpyif(res.size(), rbuf, 1, res.data, 0);
@@ -250,7 +255,7 @@ public class AllReduce {
 					sbuf[0] = up.size();
 					UTILS.memcpyfi(up.size(), up.data, 0, sbuf, 1);
 					
-					sendrecv(sbuf, up.size()+1, outNbr[i], rbuf, rbuf.length, inNbr[i]);
+					sendrecv(sbuf, up.size()+1, inNbr[i], rbuf, rbuf.length, outNbr[i], depth*3+2);
 					
 					int msize = uPartInds[i+1] - uPartInds[i];
 					UTILS.memcpyif(msize, rbuf, 1, newv.data, uPartInds[i]);						
@@ -268,26 +273,45 @@ public class AllReduce {
 			}
 		}
 
-		public void sendrecv(int [] sbuf, int sendn, int outi, int [] rbuf, int recn, int ini) {
+		public boolean sendrecv(int [] sbuf, int sendn, int outi, int [] rbuf, int recn, int ini, int tag) {
 			if (doSim) {
-				synchronized (simNetwork[outi].messages[imachine]) {
-					simNetwork[outi].messages[imachine].add(new Msg(sbuf, sendn, imachine, outi));
-					simNetwork[outi].messages[imachine].notify();
+				synchronized (simNetwork[outi].messages[imachine][tag]) {
+					simNetwork[outi].messages[imachine][tag].add(new Msg(sbuf, sendn, imachine, outi));
+					simNetwork[outi].messages[imachine][tag].notify();
 				}
-				synchronized (messages[ini]) {
-					while (messages[ini].size() == 0) {
+				synchronized (messages[ini][tag]) {
+					while (messages[ini][tag].size() == 0) {
 						try {
-							messages[ini].wait();
-						} catch (InterruptedException e) {					
-						}
+							messages[ini][tag].wait();
+						} catch (InterruptedException e) {}
 					}
-					Msg msg = messages[ini].removeFirst();
+					Msg msg = messages[ini][tag].removeFirst();
 					System.arraycopy(msg.inbuf, 0, rbuf, 0, sendn);
 				}
+				return true;
 			} else {
-//				MPI.COMM_WORLD.Sendrecv(sbuf, 0, sendn, MPI.INT, outi, 0, rbuf, 0, recn, MPI.INT, ini, 0);
-			}
-			
+/*				MPI.COMM_WORLD.Sendrecv(sbuf, 0, sendn, MPI.INT, outi, tag, rbuf, 0, recn, MPI.INT, ini, tag);
+			  Request sreq = MPI.COMM_WORLD.ISend(sbuf, 0, sendn, MPI.INT, outi, tag)
+				Request rreq = MPI.COMM_WORLD.IRecv(rbuf, 0, recn, MPI.INT, ini, tag)
+				Status rdone = null;
+				Status sdone = null;
+				long timeout = 1000;   // Wait this many msecs
+				long then = System.currentTimeMillis();
+				while ((sdone == null || rdone == null) && System.currentTimeMillis() - then < timeout) {
+					if (rdone == null) rdone = rreq.Test();
+					if (sdone == null) sdone = sreq.Test();
+					sleep(1);
+				} 
+				if (rdone == null) rreq.Cancel();
+				if (sdone == null) sreq.Cancel();
+				if (rdone == null || sdone == null) {
+				  return false;
+				} else {
+				  return true;
+				}
+				*/
+				return true;			
+			}		
 		}
 	}
 	
