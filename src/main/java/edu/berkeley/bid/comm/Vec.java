@@ -47,6 +47,14 @@ public class Vec {
 		}
 	}
 	
+	public int nnz() {
+		int nn = 0;
+		for (int i = 0; i < length; i++) {
+			if (data[i] != 0) nn++;
+		}
+		return nn;
+	}
+	
 	public void addTo(Vec b, IVec map) {
 		if (length != map.length) {
 			throw new RuntimeException("addTo dimensions mismatch "+length+" "+map.length);
