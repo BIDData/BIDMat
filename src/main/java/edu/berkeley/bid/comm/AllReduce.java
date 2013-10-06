@@ -127,6 +127,7 @@ public class AllReduce {
 				int ioff = imachine % cumk;
 				int ibase = (imachine/ckk)*ckk;
 				posInMyGroup = (imachine - ibase) / cumk;
+//				System.out.format("layer %d machine %d pos %d\n", depth, imachine, posInMyGroup);
 				for (i = 0; i < k; i++) {
 					partBoundaries.data[i] = left + (int)(((long)(right - left)) * (i+1) / k);
 					outNbr[i] = ibase + (ioff + i * cumk);
