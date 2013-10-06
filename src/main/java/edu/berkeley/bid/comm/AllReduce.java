@@ -25,7 +25,7 @@ public class AllReduce {
 		LinkedList<Msg> [][] messages;                           // Message queue for the simulation
 		boolean doSim = true;
 		ExecutorService executor;
-		boolean trace = false;
+		boolean trace = true;
 
 		public Machine(int N0, int [] allks0, int imachine0, int M0, int bufsize, boolean doSim0) {
 			N = N0;
@@ -49,7 +49,7 @@ public class AllReduce {
 				cumk *= k;
 				maxk = Math.max(maxk, k);
 			}
-			executor = Executors.newFixedThreadPool(maxk);
+			executor = Executors.newFixedThreadPool(2*maxk);
 			sendbuf = new int[maxk][];
 			recbuf = new int[maxk][];
 			for (int i = 0; i < maxk; i++) {
@@ -118,12 +118,13 @@ public class AllReduce {
 				outNbr = new int [k];
 				dPartInds = new int[k+1];
 				uPartInds = new int[k+1];
+				int ckk = cumk * k;
 				int ioff = imachine % cumk;
-				int ibase = imachine/(cumk*k);
-				posInMyGroup = ioff / cumk;
+				int ibase = (imachine/ckk)*ckk;
+				posInMyGroup = (imachine - ibase) / cumk;
 				for (i = 0; i < k; i++) {
 					partBoundaries.data[i] = left + (int)(((long)(right - left)) * (i+1) / k);
-					outNbr[i] = ibase + (ioff + i * cumk) % (cumk * k);
+					outNbr[i] = ibase + (ioff + i * cumk);
 					inNbr[i] = outNbr[i];
 //					inNbr[i] = ibase + (ioff + (k - i) * cumk) % (cumk * k);
 				}		
@@ -188,7 +189,8 @@ public class AllReduce {
 				IVec [] dtree = new IVec[2*k-1];
 				IVec [] utree = new IVec[2*k-1];
 //				System.out.format("machine %d layer %d, dparts %d %d\n", imachine, depth, downp[0].size(), downp[1].size());
-				if (trace) System.out.format("machine %d layer %d, uparts %d %d\n", imachine, depth, upp[0].size(), upp[1].size());
+				if (trace) System.out.format("machine %d layer %d, uparts %d %d %d, bounds %d %d\n", imachine, depth, 
+						upp[0].size(), upp[1].size(), upi.size(), partBoundaries.data[0], partBoundaries.data[partBoundaries.size()-1]);
 				dPartInds[0] = 0;
 				uPartInds[0] = 0;
 				
@@ -300,25 +302,29 @@ public class AllReduce {
 		}
 
 		public boolean sendrecv(int [] sbuf, int sendn, int outi, int [] rbuf, int recn, int ini, int tag) {
-			if (doSim) {
-				synchronized (simNetwork[outi].messages[imachine][tag]) {
-//					if (trace) System.out.format("Message sent %d %d %d\n", imachine, sendn, outi);
-					simNetwork[outi].messages[imachine][tag].add(new Msg(sbuf, sendn, imachine, outi));
-					simNetwork[outi].messages[imachine][tag].notify();
-				}
-				synchronized (messages[ini][tag]) {
-					while (messages[ini][tag].size() == 0) {
-						try {
-							messages[ini][tag].wait();
-						} catch (InterruptedException e) {}
-					}
-					Msg msg = messages[ini][tag].removeFirst();
-//					if (trace) System.out.format("Message recv %d %d %d\n", imachine, msg.sender, msg.receiver, msg.size);
-					System.arraycopy(msg.buf, 0, rbuf, 0, msg.size);
-				}
-				return true;
+			if (imachine == outi) {
+				System.arraycopy(sbuf, 0, rbuf, 0, sendn);
+				return true;				
 			} else {
-/*				MPI.COMM_WORLD.Sendrecv(sbuf, 0, sendn, MPI.INT, outi, tag, rbuf, 0, recn, MPI.INT, ini, tag);
+				if (doSim) {
+					synchronized (simNetwork[outi].messages[imachine][tag]) {
+						//					if (trace) System.out.format("Message sent %d %d %d\n", imachine, sendn, outi);
+						simNetwork[outi].messages[imachine][tag].add(new Msg(sbuf, sendn, imachine, outi));
+						simNetwork[outi].messages[imachine][tag].notify();
+					}
+					synchronized (messages[ini][tag]) {
+						while (messages[ini][tag].size() == 0) {
+							try {
+								messages[ini][tag].wait();
+							} catch (InterruptedException e) {}
+						}
+						Msg msg = messages[ini][tag].removeFirst();
+						//					if (trace) System.out.format("Message recv %d %d %d\n", imachine, msg.sender, msg.receiver, msg.size);
+						System.arraycopy(msg.buf, 0, rbuf, 0, msg.size);
+					}
+					return true;
+				} else {
+					/*				MPI.COMM_WORLD.Sendrecv(sbuf, 0, sendn, MPI.INT, outi, tag, rbuf, 0, recn, MPI.INT, ini, tag);
 			  Request sreq = MPI.COMM_WORLD.ISend(sbuf, 0, sendn, MPI.INT, outi, tag)
 				Request rreq = MPI.COMM_WORLD.IRecv(rbuf, 0, recn, MPI.INT, ini, tag)
 				Status rdone = null;
@@ -338,7 +344,8 @@ public class AllReduce {
 				  return true;
 				}
 				*/
-				return true;			
+					return true;	
+				}
 			}		
 		}
 	}
