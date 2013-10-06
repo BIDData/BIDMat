@@ -200,7 +200,6 @@ public class AllReduce {
 				IVec [] newupp = new IVec[upp.length];
 				IVec [] dtree = new IVec[2*k-1];
 				IVec [] utree = new IVec[2*k-1];
-//				System.out.format("machine %d layer %d, dparts %d %d\n", imachine, depth, downp[0].size(), downp[1].size());
 				if (trace > 0) {
 					synchronized (AllReduce.this) {
 						System.out.format("machine %d layer %d, dparts (%d", imachine, depth, downp[0].size());
