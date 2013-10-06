@@ -23,8 +23,9 @@ public class AllReduce {
 		int [][] recbuf;
 		IVec finalMap;                                           // Map to down from down --> up at layer D-1
 		LinkedList<Msg> [][] messages;                           // Message queue for the simulation
-		boolean doSim = false;
+		boolean doSim = true;
 		ExecutorService executor;
+		boolean trace = false;
 
 		public Machine(int N0, int [] allks0, int imachine0, int M0, int bufsize, boolean doSim0) {
 			N = N0;
@@ -102,7 +103,7 @@ public class AllReduce {
 			IVec [] downMaps;                                        // Maps to indices below for down indices
 			IVec [] upMaps;                                          // Maps to indices below for up indices
 			int downn;                                               // Size of the down master list
-			int upn;                                                 // Size of the up master list
+			int upn;                                                 // Size of the up vector
 			int [] dPartInds;
 			int [] uPartInds;
 
@@ -117,13 +118,14 @@ public class AllReduce {
 				outNbr = new int [k];
 				dPartInds = new int[k+1];
 				uPartInds = new int[k+1];
-				int ioff = imachine % (cumk * k);
-				int ibase = imachine - ioff;
+				int ioff = imachine % cumk;
+				int ibase = imachine/(cumk*k);
 				posInMyGroup = ioff / cumk;
 				for (i = 0; i < k; i++) {
 					partBoundaries.data[i] = left + (int)(((long)(right - left)) * (i+1) / k);
 					outNbr[i] = ibase + (ioff + i * cumk) % (cumk * k);
-					inNbr[i] = ibase + (ioff + (k - i) * cumk) % (cumk * k);
+					inNbr[i] = outNbr[i];
+//					inNbr[i] = ibase + (ioff + (k - i) * cumk) % (cumk * k);
 				}		
 				downMaps = new IVec[k];
 				upMaps = new IVec[k];
@@ -132,14 +134,19 @@ public class AllReduce {
 			class ConfigThread implements Runnable {
 				IVec [] downp;
 				IVec [] upp;
+				IVec [] newdownp;
+				IVec [] newupp; 
 				IVec [] dtree;
 				IVec [] utree;
 				int i;
 				CountDownLatch latch;
 				
-				public ConfigThread(IVec [] downp0, IVec [] upp0, IVec [] dtree0, IVec [] utree0, int i0, CountDownLatch latch0) {
+				public ConfigThread(IVec [] downp0, IVec [] upp0, IVec [] newdownp0, IVec [] newupp0, 
+						IVec [] dtree0, IVec [] utree0, int i0, CountDownLatch latch0) {
 					downp = downp0;
-					upp = upp0;
+					upp = upp0;					
+					newdownp = newdownp0;
+					newupp = newupp0;
 					dtree = dtree0;
 					utree = utree0;
 					i = i0;
@@ -157,7 +164,9 @@ public class AllReduce {
 					sbuf[0] = segments[0];
 					sbuf[1] = segments[1];
 
+					if (trace) System.out.format("config layer %d machine %d sent msg to %d, from %d, sizes %d %d\n", depth, imachine, outNbr[i],  inNbr[i],  sbuf[0], sbuf[1]);
 					sendrecv(sbuf, segments[1]+2, outNbr[i], rbuf, rbuf.length, inNbr[i], depth*3);
+					if (trace) System.out.format("config layer %d machine %d got msg from %d, sizes %d %d\n", depth, imachine, inNbr[i], rbuf[0], rbuf[1]);
 
 					IVec downout = new IVec(rbuf[0]);
 					IVec upout =   new IVec(rbuf[1]-rbuf[0]);
@@ -165,6 +174,8 @@ public class AllReduce {
 					System.arraycopy(rbuf, 2 + rbuf[0], upout.data, 0, rbuf[1]-rbuf[0]);
 					IVec.checkTree(dtree, downout, i, k);
 					IVec.checkTree(utree, upout, i, k);	
+					newdownp[i] = downout;
+					newupp[i] = upout;
 					latch.countDown();
 				}
 			}
@@ -172,25 +183,32 @@ public class AllReduce {
 			public void config(IVec downi, IVec upi, IVec [] outputs) {
 				IVec [] downp = IVec.partition(downi, partBoundaries);
 				IVec [] upp = IVec.partition(upi, partBoundaries);
+				IVec [] newdownp = new IVec[downp.length];
+				IVec [] newupp = new IVec[upp.length];
 				IVec [] dtree = new IVec[2*k-1];
 				IVec [] utree = new IVec[2*k-1];
+//				System.out.format("machine %d layer %d, dparts %d %d\n", imachine, depth, downp[0].size(), downp[1].size());
+				if (trace) System.out.format("machine %d layer %d, uparts %d %d\n", imachine, depth, upp[0].size(), upp[1].size());
 				dPartInds[0] = 0;
 				uPartInds[0] = 0;
 				
 				CountDownLatch latch = new CountDownLatch(k);
 				for (int i = 0; i < k; i++) {
-					dPartInds[i+1] = dPartInds[i] + downp[i].data.length;
-					uPartInds[i+1] = uPartInds[i] + upp[i].data.length;	
-					executor.execute(new ConfigThread(downp, upp, dtree, utree, i, latch));
+					dPartInds[i+1] = dPartInds[i] + downp[i].size();
+					uPartInds[i+1] = uPartInds[i] + upp[i].size();
+					
+					executor.execute(new ConfigThread(downp, upp, newdownp, newupp, dtree, utree, i, latch));
 				}
 				try {	latch.await(); } catch (InterruptedException e) {}
 				IVec dmaster = dtree[0];
 				downn = dmaster.size();
 				IVec umaster = utree[0];
-				upn = umaster.size();
+				upn = upi.size();
 				for (int i = 0; i < k; i++) {
-					downMaps[i] = IVec.mapInds(downp[i], dmaster);
-					upMaps[i] = IVec.mapInds(upp[i], umaster);
+					downMaps[i] = IVec.mapInds(newdownp[i], dmaster);
+					upMaps[i] = IVec.mapInds(newupp[i], umaster);
+//					System.out.format("machine %d dmap(%d) size %d\n", imachine, i, downMaps[i].size());
+					if (trace) System.out.format("machine %d umap(%d) size %d\n", imachine, i, upMaps[i].size());
 				}
 				outputs[0] = dmaster;
 				outputs[1] = umaster;
@@ -216,10 +234,12 @@ public class AllReduce {
 					sbuf[0] = msize;
 					UTILS.memcpyfi(msize, downv.data, dPartInds[i], sbuf, 1);
 					
+					if (trace) System.out.format("reduce layer %d machine %d sent msg to %d, from %d, size %d\n", depth, imachine, outNbr[i],  inNbr[i],  sbuf[0]);
 					sendrecv(sbuf, msize+1, outNbr[i], rbuf, rbuf.length, inNbr[i], depth*3+1);
+					if (trace) System.out.format("reduce layer %d machine %d got msg from %d, size %d\n", depth, imachine, inNbr[i], rbuf[0]);
 					
 					Vec res = new Vec(rbuf[0]);
-					UTILS.memcpyif(res.size(), rbuf, 1, res.data, 0);
+					UTILS.memcpyif(rbuf[0], rbuf, 1, res.data, 0);
 					res.addTo(newv, downMaps[i]);	
 					latch.countDown();
 				}
@@ -232,6 +252,7 @@ public class AllReduce {
 					executor.execute(new ReduceDownThread(newv, downv, i, latch));
 				}
 				try { latch.await(); } catch (InterruptedException e) {}
+				System.out.format("layer %d machine %d reduce down finished\n", depth, imachine);
 				return newv;
 			}
 			
@@ -255,10 +276,14 @@ public class AllReduce {
 					sbuf[0] = up.size();
 					UTILS.memcpyfi(up.size(), up.data, 0, sbuf, 1);
 					
+					if (trace) System.out.format("reduce up layer %d machine %d sent msg to %d, from %d, size %d\n", depth, imachine, outNbr[i],  inNbr[i],  sbuf[0]);
 					sendrecv(sbuf, up.size()+1, inNbr[i], rbuf, rbuf.length, outNbr[i], depth*3+2);
+					if (trace) System.out.format("reduce up layer %d machine %d got msg from %d, size %d\n", depth, imachine, inNbr[i], rbuf[0]);
 					
 					int msize = uPartInds[i+1] - uPartInds[i];
-					UTILS.memcpyif(msize, rbuf, 1, newv.data, uPartInds[i]);						
+					if (uPartInds[i+1] > newv.size()) throw new RuntimeException("ReduceUp index out of range "+uPartInds[i+1]+" "+newv.size());
+					UTILS.memcpyif(msize, rbuf, 1, newv.data, uPartInds[i]);	
+					latch.countDown();
 				}
 			}
 			
@@ -269,6 +294,7 @@ public class AllReduce {
 					executor.execute(new ReduceUpThread(newv, upv, i, latch));
 				}
 				try { latch.await(); } catch (InterruptedException e) {}
+				System.out.format("layer %d machine %d reduce up finished\n", depth, imachine);
 				return newv;
 			}
 		}
@@ -276,6 +302,7 @@ public class AllReduce {
 		public boolean sendrecv(int [] sbuf, int sendn, int outi, int [] rbuf, int recn, int ini, int tag) {
 			if (doSim) {
 				synchronized (simNetwork[outi].messages[imachine][tag]) {
+//					if (trace) System.out.format("Message sent %d %d %d\n", imachine, sendn, outi);
 					simNetwork[outi].messages[imachine][tag].add(new Msg(sbuf, sendn, imachine, outi));
 					simNetwork[outi].messages[imachine][tag].notify();
 				}
@@ -286,7 +313,8 @@ public class AllReduce {
 						} catch (InterruptedException e) {}
 					}
 					Msg msg = messages[ini][tag].removeFirst();
-					System.arraycopy(msg.inbuf, 0, rbuf, 0, sendn);
+//					if (trace) System.out.format("Message recv %d %d %d\n", imachine, msg.sender, msg.receiver, msg.size);
+					System.arraycopy(msg.buf, 0, rbuf, 0, msg.size);
 				}
 				return true;
 			} else {
@@ -316,14 +344,15 @@ public class AllReduce {
 	}
 	
 	public class Msg {
-		int [] inbuf;
-		int insize;
+		int [] buf;
+		int size;
 		int sender;
 		int receiver;
 		
-		public Msg(int [] inbuf0, int insize0, int sender0, int receiver0) {
-			inbuf = inbuf0;
-			insize = insize0;
+		public Msg(int [] inbuf0, int size0, int sender0, int receiver0) {
+			buf = new int[size0];
+			System.arraycopy(inbuf0, 0, buf, 0, size0);
+			size = size0;
 			sender = sender0;
 			receiver = receiver0;
 		}

@@ -49,7 +49,7 @@ public class Vec {
 	
 	public void addTo(Vec b, IVec map) {
 		if (length != map.length) {
-			throw new RuntimeException("addTo dimensions mismatch");
+			throw new RuntimeException("addTo dimensions mismatch "+length+" "+map.length);
 		}
 		float [] ad = data;
 		float [] bd = b.data;

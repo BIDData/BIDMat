@@ -848,6 +848,20 @@ object MatFunctions {
       case aa:GMat => getdiag(aa):GMat
     }
   }
+  
+  def spdiag(n:Int):SMat = {
+    val a = SMat(n,n,n)
+    val ioff = Mat.ioneBased
+    var i = 0
+    while (i < n) {
+      a.ir(i) = i + ioff
+      a.jc(i) = i + ioff
+      a.data(i) = 1f
+      i += 1
+    }
+    a.jc(n) = n+ioff
+    a
+  }
 
   def load[T](fname:String, vname:String):T = MatHDF5.hload(fname, vname).asInstanceOf[T]
 
