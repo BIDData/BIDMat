@@ -25,7 +25,7 @@ public class AllReduce {
 		LinkedList<Msg> [][] messages;                           // Message queue for the simulation
 		boolean doSim = true;
 		ExecutorService executor;
-		boolean trace = true;
+		int trace = 1;                                           // 0: no trace, 1: high-level, 2: everything
 
 		public Machine(int N0, int [] allks0, int imachine0, int M0, int bufsize, boolean doSim0) {
 			N = N0;
@@ -85,6 +85,11 @@ public class AllReduce {
 			for (int d = D-1; d >= 0; d--) {
 				upv = layers[d].reduceUp(upv);
 			}
+			if (trace > 0) {
+				synchronized (AllReduce.this) {
+					System.out.format("machine %d reduce result nnz %d out of %d\n", imachine, upv.nnz(), upv.size());
+				}
+			}
 			return upv;
 		}
 	
@@ -126,7 +131,6 @@ public class AllReduce {
 					partBoundaries.data[i] = left + (int)(((long)(right - left)) * (i+1) / k);
 					outNbr[i] = ibase + (ioff + i * cumk);
 					inNbr[i] = outNbr[i];
-//					inNbr[i] = ibase + (ioff + (k - i) * cumk) % (cumk * k);
 				}		
 				downMaps = new IVec[k];
 				upMaps = new IVec[k];
@@ -165,9 +169,17 @@ public class AllReduce {
 					sbuf[0] = segments[0];
 					sbuf[1] = segments[1];
 
-					if (trace) System.out.format("config layer %d machine %d sent msg to %d, from %d, sizes %d %d\n", depth, imachine, outNbr[i],  inNbr[i],  sbuf[0], sbuf[1]);
+					if (trace > 1) {
+						synchronized (AllReduce.this) {
+							System.out.format("config layer %d machine %d sent msg to %d, from %d, sizes %d %d\n", depth, imachine, outNbr[i],  inNbr[i],  sbuf[0], sbuf[1]);
+						}
+					}
 					sendrecv(sbuf, segments[1]+2, outNbr[i], rbuf, rbuf.length, inNbr[i], depth*3);
-					if (trace) System.out.format("config layer %d machine %d got msg from %d, sizes %d %d\n", depth, imachine, inNbr[i], rbuf[0], rbuf[1]);
+					if (trace > 1) {
+						synchronized (AllReduce.this) {
+							System.out.format("config layer %d machine %d got msg from %d, sizes %d %d\n", depth, imachine, inNbr[i], rbuf[0], rbuf[1]);
+						}
+					}
 
 					IVec downout = new IVec(rbuf[0]);
 					IVec upout =   new IVec(rbuf[1]-rbuf[0]);
@@ -189,17 +201,26 @@ public class AllReduce {
 				IVec [] dtree = new IVec[2*k-1];
 				IVec [] utree = new IVec[2*k-1];
 //				System.out.format("machine %d layer %d, dparts %d %d\n", imachine, depth, downp[0].size(), downp[1].size());
-				if (trace) System.out.format("machine %d layer %d, uparts %d %d %d, bounds %d %d\n", imachine, depth, 
-						upp[0].size(), upp[1].size(), upi.size(), partBoundaries.data[0], partBoundaries.data[partBoundaries.size()-1]);
+				if (trace > 0) {
+					synchronized (AllReduce.this) {
+						System.out.format("machine %d layer %d, dparts (%d", imachine, depth, downp[0].size());
+						for (int i = 1; i < downp.length; i++) System.out.format(", %d", downp[i].size());
+						System.out.format(") from %d, bounds %d %d\n", downi.size(), partBoundaries.data[0], partBoundaries.data[partBoundaries.size()-1]);
+						System.out.format("machine %d layer %d, uparts (%d", imachine, depth, upp[0].size());
+						for (int i = 1; i < upp.length; i++) System.out.format(", %d", upp[i].size());
+						System.out.format(") from %d, bounds %d %d\n", upi.size(), partBoundaries.data[0], partBoundaries.data[partBoundaries.size()-1]);
+					}
+				}
 				dPartInds[0] = 0;
 				uPartInds[0] = 0;
-				
-				CountDownLatch latch = new CountDownLatch(k);
 				for (int i = 0; i < k; i++) {
 					dPartInds[i+1] = dPartInds[i] + downp[i].size();
 					uPartInds[i+1] = uPartInds[i] + upp[i].size();
-					
-					executor.execute(new ConfigThread(downp, upp, newdownp, newupp, dtree, utree, i, latch));
+				}
+				CountDownLatch latch = new CountDownLatch(k);
+				for (int i = 0; i < k; i++) {
+					int ix = (i + posInMyGroup) % k;                               // Try to stagger the traffic
+					executor.execute(new ConfigThread(downp, upp, newdownp, newupp, dtree, utree, ix, latch));
 				}
 				try {	latch.await(); } catch (InterruptedException e) {}
 				IVec dmaster = dtree[0];
@@ -209,8 +230,12 @@ public class AllReduce {
 				for (int i = 0; i < k; i++) {
 					downMaps[i] = IVec.mapInds(newdownp[i], dmaster);
 					upMaps[i] = IVec.mapInds(newupp[i], umaster);
-//					System.out.format("machine %d dmap(%d) size %d\n", imachine, i, downMaps[i].size());
-					if (trace) System.out.format("machine %d umap(%d) size %d\n", imachine, i, upMaps[i].size());
+  				if (trace > 0) {
+  					synchronized (AllReduce.this) { 
+  						System.out.format("machine %d dmap(%d) size %d\n", imachine, i, downMaps[i].size());
+  						System.out.format("machine %d umap(%d) size %d\n", imachine, i, upMaps[i].size());
+  					}
+  				}
 				}
 				outputs[0] = dmaster;
 				outputs[1] = umaster;
@@ -236,9 +261,17 @@ public class AllReduce {
 					sbuf[0] = msize;
 					UTILS.memcpyfi(msize, downv.data, dPartInds[i], sbuf, 1);
 					
-					if (trace) System.out.format("reduce layer %d machine %d sent msg to %d, from %d, size %d\n", depth, imachine, outNbr[i],  inNbr[i],  sbuf[0]);
+					if (trace > 1) {
+						synchronized (AllReduce.this) {
+							System.out.format("reduce layer %d machine %d sent msg to %d, from %d, size %d\n", depth, imachine, outNbr[i],  inNbr[i],  sbuf[0]);
+						}
+					}
 					sendrecv(sbuf, msize+1, outNbr[i], rbuf, rbuf.length, inNbr[i], depth*3+1);
-					if (trace) System.out.format("reduce layer %d machine %d got msg from %d, size %d\n", depth, imachine, inNbr[i], rbuf[0]);
+					if (trace > 1) {
+						synchronized (AllReduce.this) {
+							System.out.format("reduce layer %d machine %d got msg from %d, size %d\n", depth, imachine, inNbr[i], rbuf[0]);
+						}
+					}
 					
 					Vec res = new Vec(rbuf[0]);
 					UTILS.memcpyif(rbuf[0], rbuf, 1, res.data, 0);
@@ -251,10 +284,10 @@ public class AllReduce {
 				Vec newv = new Vec(downn);
 				CountDownLatch latch = new CountDownLatch(k);
 				for (int i = 0; i < k; i++) {
-					executor.execute(new ReduceDownThread(newv, downv, i, latch));
+					int ix = (i + posInMyGroup) % k;                               // Try to stagger the traffic
+					executor.execute(new ReduceDownThread(newv, downv, ix, latch));
 				}
 				try { latch.await(); } catch (InterruptedException e) {}
-				System.out.format("layer %d machine %d reduce down finished\n", depth, imachine);
 				return newv;
 			}
 			
@@ -278,9 +311,17 @@ public class AllReduce {
 					sbuf[0] = up.size();
 					UTILS.memcpyfi(up.size(), up.data, 0, sbuf, 1);
 					
-					if (trace) System.out.format("reduce up layer %d machine %d sent msg to %d, from %d, size %d\n", depth, imachine, outNbr[i],  inNbr[i],  sbuf[0]);
+					if (trace > 1) {
+						synchronized (AllReduce.this) {
+							System.out.format("reduce up layer %d machine %d sent msg to %d, from %d, size %d\n", depth, imachine, outNbr[i],  inNbr[i],  sbuf[0]);
+						}
+					}
 					sendrecv(sbuf, up.size()+1, inNbr[i], rbuf, rbuf.length, outNbr[i], depth*3+2);
-					if (trace) System.out.format("reduce up layer %d machine %d got msg from %d, size %d\n", depth, imachine, inNbr[i], rbuf[0]);
+					if (trace > 1) {
+						synchronized (AllReduce.this) {
+							System.out.format("reduce up layer %d machine %d got msg from %d, size %d\n", depth, imachine, inNbr[i], rbuf[0]);
+						}
+					}
 					
 					int msize = uPartInds[i+1] - uPartInds[i];
 					if (uPartInds[i+1] > newv.size()) throw new RuntimeException("ReduceUp index out of range "+uPartInds[i+1]+" "+newv.size());
@@ -293,10 +334,10 @@ public class AllReduce {
 				Vec newv = new Vec(upn);
 				CountDownLatch latch = new CountDownLatch(k);
 				for (int i = 0; i < k; i++) {
-					executor.execute(new ReduceUpThread(newv, upv, i, latch));
+					int ix = (i + posInMyGroup) % k;                               // Try to stagger the traffic
+					executor.execute(new ReduceUpThread(newv, upv, ix, latch));
 				}
 				try { latch.await(); } catch (InterruptedException e) {}
-				System.out.format("layer %d machine %d reduce up finished\n", depth, imachine);
 				return newv;
 			}
 		}
@@ -308,7 +349,6 @@ public class AllReduce {
 			} else {
 				if (doSim) {
 					synchronized (simNetwork[outi].messages[imachine][tag]) {
-						//					if (trace) System.out.format("Message sent %d %d %d\n", imachine, sendn, outi);
 						simNetwork[outi].messages[imachine][tag].add(new Msg(sbuf, sendn, imachine, outi));
 						simNetwork[outi].messages[imachine][tag].notify();
 					}
@@ -319,7 +359,6 @@ public class AllReduce {
 							} catch (InterruptedException e) {}
 						}
 						Msg msg = messages[ini][tag].removeFirst();
-						//					if (trace) System.out.format("Message recv %d %d %d\n", imachine, msg.sender, msg.receiver, msg.size);
 						System.arraycopy(msg.buf, 0, rbuf, 0, msg.size);
 					}
 					return true;
