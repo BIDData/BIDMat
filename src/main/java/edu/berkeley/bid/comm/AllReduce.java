@@ -127,7 +127,6 @@ public class AllReduce {
 				int ioff = imachine % cumk;
 				int ibase = (imachine/ckk)*ckk;
 				posInMyGroup = (imachine - ibase) / cumk;
-//				System.out.format("layer %d machine %d pos %d\n", depth, imachine, posInMyGroup);
 				for (i = 0; i < k; i++) {
 					partBoundaries.data[i] = left + (int)(((long)(right - left)) * (i+1) / k);
 					outNbr[i] = ibase + (ioff + i * cumk);
@@ -140,19 +139,14 @@ public class AllReduce {
 			class ConfigThread implements Runnable {
 				IVec [] downp;
 				IVec [] upp;
-				IVec [] newdownp;
-				IVec [] newupp; 
 				IVec [] dtree;
 				IVec [] utree;
 				int i;
 				CountDownLatch latch;
 				
-				public ConfigThread(IVec [] downp0, IVec [] upp0, IVec [] newdownp0, IVec [] newupp0, 
-						IVec [] dtree0, IVec [] utree0, int i0, CountDownLatch latch0) {
+				public ConfigThread(IVec [] downp0, IVec [] upp0,	IVec [] dtree0, IVec [] utree0, int i0, CountDownLatch latch0) {
 					downp = downp0;
 					upp = upp0;					
-					newdownp = newdownp0;
-					newupp = newupp0;
 					dtree = dtree0;
 					utree = utree0;
 					i = i0;
@@ -188,8 +182,9 @@ public class AllReduce {
 					System.arraycopy(rbuf, 2 + rbuf[0], upout.data, 0, rbuf[1]-rbuf[0]);
 					IVec.checkTree(dtree, downout, i, k);
 					IVec.checkTree(utree, upout, i, k);	
-					newdownp[i] = downout;
-					newupp[i] = upout;
+					downp[i] = downout;
+					upp[i] = upout;
+					
 					latch.countDown();
 				}
 			}
@@ -197,8 +192,6 @@ public class AllReduce {
 			public void config(IVec downi, IVec upi, IVec [] outputs) {
 				IVec [] downp = IVec.partition(downi, partBoundaries);
 				IVec [] upp = IVec.partition(upi, partBoundaries);
-				IVec [] newdownp = new IVec[downp.length];
-				IVec [] newupp = new IVec[upp.length];
 				IVec [] dtree = new IVec[2*k-1];
 				IVec [] utree = new IVec[2*k-1];
 				if (trace > 0) {
@@ -220,7 +213,7 @@ public class AllReduce {
 				CountDownLatch latch = new CountDownLatch(k);
 				for (int i = 0; i < k; i++) {
 					int ix = (i + posInMyGroup) % k;                               // Try to stagger the traffic
-					executor.execute(new ConfigThread(downp, upp, newdownp, newupp, dtree, utree, ix, latch));
+					executor.execute(new ConfigThread(downp, upp, dtree, utree, ix, latch));
 				}
 				try {	latch.await(); } catch (InterruptedException e) {}
 				IVec dmaster = dtree[0];
@@ -228,8 +221,8 @@ public class AllReduce {
 				IVec umaster = utree[0];
 				upn = upi.size();
 				for (int i = 0; i < k; i++) {
-					downMaps[i] = IVec.mapInds(newdownp[i], dmaster);
-					upMaps[i] = IVec.mapInds(newupp[i], umaster);
+					downMaps[i] = IVec.mapInds(downp[i], dmaster);
+					upMaps[i] = IVec.mapInds(upp[i], umaster);
   				if (trace > 0) {
   					synchronized (AllReduce.this) { 
   						System.out.format("machine %d dmap(%d) size %d\n", imachine, i, downMaps[i].size());
