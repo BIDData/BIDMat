@@ -276,7 +276,9 @@ public class AllReduce {
 					
 					Vec res = new Vec(rbuf[0]);
 					UTILS.memcpyif(rbuf[0], rbuf, 1, res.data, 0);
-					res.addTo(newv, downMaps[i]);	
+					synchronized (newv) {
+						res.addTo(newv, downMaps[i]);	
+					}
 					latch.countDown();
 				}
 			}
