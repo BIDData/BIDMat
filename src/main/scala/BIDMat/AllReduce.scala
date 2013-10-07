@@ -78,16 +78,15 @@ object AllReducer {
       }
     }
     latch.await();
-    println("All done")
+    println("Allreduce done")
     
-    println("Calculate reference")
+    println("Checking")
     val msum = new Vec(a.ncols)
     msum.clear
     for (i <- 0 until M) {
       ivals(i).addTo(msum, irows(i))
     }
-    println("Done calculating")
-    println("Checking")
+    var nerrors = 0
     for (i <- 0 until M) {
       var j = 0 
       while (j < icols(i).size()) {
@@ -95,11 +94,12 @@ object AllReducer {
         val v2 = msum.data(icols(i).data(j))
         if (Math.abs(v1-v2)/Math.max(1e-9, v2) > 1e-6) {
           println("Bad value machine %d, pos %d, index %d, vals %f %f" format (i, j, icols(i).data(j), v1, v2))
+          nerrors += 1
         }
         j += 1
       }
     }
-    println("Done checking")
+    println("Done checking, %d errors" format nerrors)
   }
   
   
