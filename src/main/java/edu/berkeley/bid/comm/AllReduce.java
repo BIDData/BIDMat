@@ -1,7 +1,6 @@
 
 package edu.berkeley.bid.comm;
 
-import java.util.List;
 import java.util.LinkedList;
 import edu.berkeley.bid.UTILS;
 import java.util.concurrent.CountDownLatch;
