@@ -80,7 +80,6 @@ object AllReducer {
     latch.await();
     println("Allreduce done")
     
-    println("Checking")
     val msum = new Vec(a.ncols)
     msum.clear
     for (i <- 0 until M) {
@@ -99,7 +98,7 @@ object AllReducer {
         j += 1
       }
     }
-    println("Done checking, %d errors" format nerrors)
+    println("Checking done, %d errors" format nerrors)
   }
   
   
