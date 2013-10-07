@@ -25,15 +25,16 @@ public class AllReduce {
 		LinkedList<Msg> [][] messages;                           // Message queue for the simulation
 		boolean doSim = true;
 		ExecutorService executor;
-		int trace = 1;                                           // 0: no trace, 1: high-level, 2: everything
+		int trace = 0;                                           // 0: no trace, 1: high-level, 2: everything
 
-		public Machine(int N0, int [] allks0, int imachine0, int M0, int bufsize, boolean doSim0) {
+		public Machine(int N0, int [] allks0, int imachine0, int M0, int bufsize, boolean doSim0, int trace0) {
 			N = N0;
 			M = M0;
 			imachine = imachine0;
 			allks = allks0;
 			D = allks.length;
 			doSim = doSim0;
+			trace = trace0;
 			layers = new Layer[D];
 			int left = 0;
 			int right = N;
