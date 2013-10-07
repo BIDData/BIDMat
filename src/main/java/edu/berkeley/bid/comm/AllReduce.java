@@ -6,6 +6,8 @@ import edu.berkeley.bid.UTILS;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.nio.*;
+//import mpi.*;
 
 public class AllReduce {
 	
@@ -18,8 +20,8 @@ public class AllReduce {
 		int [] allks;                                            // k values
 		
 		Layer [] layers;                                         // All the layers
-		int [][] sendbuf;                                        // buffers, one for each destination in a group
-		int [][] recbuf;
+		ByteBuffer [] sendbuf;                                   // buffers, one for each destination in a group
+		ByteBuffer [] recbuf;
 		IVec finalMap;                                           // Map to down from down --> up at layer D-1
 		LinkedList<Msg> [][] messages;                           // Message queue for the simulation
 		boolean doSim = true;
@@ -50,11 +52,11 @@ public class AllReduce {
 				maxk = Math.max(maxk, k);
 			}
 			executor = Executors.newFixedThreadPool(2*maxk);
-			sendbuf = new int[maxk][];
-			recbuf = new int[maxk][];
+			sendbuf = new ByteBuffer[maxk];
+			recbuf = new ByteBuffer[maxk];
 			for (int i = 0; i < maxk; i++) {
-				sendbuf[i] = new int[bufsize];
-				recbuf[i] = new int[bufsize];
+				sendbuf[i] = ByteBuffer.allocate(bufsize*4);
+				recbuf[i] = ByteBuffer.allocate(bufsize*4);
 			}
 			if (doSim) {
 				messages = new LinkedList[M][];
@@ -154,32 +156,35 @@ public class AllReduce {
 				}
 
 				public void run() {
-					int [] segments = new int[2];
-					int [] sbuf = sendbuf[i];
-					int [] rbuf = recbuf[i];				
-					System.arraycopy(downp[i].data, 0, sbuf, 2, downp[i].size());
-					segments[0] = downp[i].size();
-					System.arraycopy(upp[i].data, 0, sbuf, segments[0]+2, upp[i].size());
-					segments[1] = segments[0] + upp[i].size();
-					sbuf[0] = segments[0];
-					sbuf[1] = segments[1];
+					sendbuf[i].clear();
+					recbuf[i].clear();
+					IntBuffer sbuf = sendbuf[i].asIntBuffer();
+					IntBuffer rbuf = recbuf[i].asIntBuffer();	
+					int seg1 = downp[i].size();
+					int seg2 = seg1 + upp[i].size();
+					sbuf.put(seg1);
+					sbuf.put(seg2);
+					sbuf.put(downp[i].data, 0, seg1);
+					sbuf.put(upp[i].data, 0, seg2-seg1);
 
 					if (trace > 1) {
 						synchronized (AllReduce.this) {
-							System.out.format("config layer %d machine %d sent msg to %d, from %d, sizes %d %d\n", depth, imachine, outNbr[i],  inNbr[i],  sbuf[0], sbuf[1]);
+							System.out.format("config layer %d machine %d sent msg to %d, from %d, sizes %d %d\n", depth, imachine, outNbr[i],  inNbr[i],  sbuf.get(0), sbuf.get(1));
 						}
 					}
-					sendrecv(sbuf, segments[1]+2, outNbr[i], rbuf, rbuf.length, inNbr[i], depth*3);
+					sendrecv(sbuf, seg2+2, outNbr[i], rbuf, rbuf.capacity(), inNbr[i], depth*3);
+					seg1 = rbuf.get();
+					seg2 = rbuf.get();
 					if (trace > 1) {
 						synchronized (AllReduce.this) {
-							System.out.format("config layer %d machine %d got msg from %d, sizes %d %d\n", depth, imachine, inNbr[i], rbuf[0], rbuf[1]);
+							System.out.format("config layer %d machine %d got msg from %d, sizes %d %d\n", depth, imachine, inNbr[i], seg1, seg2);
 						}
 					}
 
-					IVec downout = new IVec(rbuf[0]);
-					IVec upout =   new IVec(rbuf[1]-rbuf[0]);
-					System.arraycopy(rbuf, 2, downout.data, 0, rbuf[0]);
-					System.arraycopy(rbuf, 2 + rbuf[0], upout.data, 0, rbuf[1]-rbuf[0]);
+					IVec downout = new IVec(seg1);
+					IVec upout =   new IVec(seg2-seg1);
+					rbuf.get(downout.data, 0, seg1);
+					rbuf.get(upout.data, 0, seg2-seg1);
 					IVec.checkTree(dtree, downout, i, k);
 					IVec.checkTree(utree, upout, i, k);	
 					downp[i] = downout;
@@ -248,26 +253,33 @@ public class AllReduce {
 				}
 				
 				public void run() {
-					int [] sbuf = sendbuf[i];
-					int [] rbuf = recbuf[i];
+					sendbuf[i].clear();
+					recbuf[i].clear();
+					IntBuffer isbuf = sendbuf[i].asIntBuffer();
+					IntBuffer irbuf = recbuf[i].asIntBuffer();
+					FloatBuffer sbuf = sendbuf[i].asFloatBuffer();
+					FloatBuffer rbuf = recbuf[i].asFloatBuffer();
 					int msize = dPartInds[i+1] - dPartInds[i];
-					sbuf[0] = msize;
-					UTILS.memcpyfi(msize, downv.data, dPartInds[i], sbuf, 1);
+					isbuf.put(msize);
+					sbuf.position(1);
+					sbuf.put(downv.data, dPartInds[i], msize);
 					
 					if (trace > 1) {
 						synchronized (AllReduce.this) {
-							System.out.format("reduce layer %d machine %d sent msg to %d, from %d, size %d\n", depth, imachine, outNbr[i],  inNbr[i],  sbuf[0]);
+							System.out.format("reduce layer %d machine %d sent msg to %d, from %d, size %d\n", depth, imachine, outNbr[i],  inNbr[i],  msize);
 						}
 					}
-					sendrecv(sbuf, msize+1, outNbr[i], rbuf, rbuf.length, inNbr[i], depth*3+1);
+					sendrecv(isbuf, msize+1, outNbr[i], irbuf, rbuf.capacity(), inNbr[i], depth*3+1);
+					msize = irbuf.get();
 					if (trace > 1) {
 						synchronized (AllReduce.this) {
-							System.out.format("reduce layer %d machine %d got msg from %d, size %d\n", depth, imachine, inNbr[i], rbuf[0]);
+							System.out.format("reduce layer %d machine %d got msg from %d, size %d\n", depth, imachine, inNbr[i], msize);
 						}
 					}
 					
-					Vec res = new Vec(rbuf[0]);
-					UTILS.memcpyif(rbuf[0], rbuf, 1, res.data, 0);
+					Vec res = new Vec(msize);
+					rbuf.position(1);
+					rbuf.get(res.data, 0, msize);
 					synchronized (newv) {
 						res.addTo(newv, downMaps[i]);	
 					}
@@ -300,27 +312,36 @@ public class AllReduce {
 				}
 				
 				public void run () {
-					int [] sbuf = sendbuf[i];
-					int [] rbuf = recbuf[i];
+					sendbuf[i].clear();
+					recbuf[i].clear();
+					IntBuffer isbuf = sendbuf[i].asIntBuffer();
+					IntBuffer irbuf = recbuf[i].asIntBuffer();
+					FloatBuffer sbuf = sendbuf[i].asFloatBuffer();
+					FloatBuffer rbuf = recbuf[i].asFloatBuffer();
 					Vec up = upv.mapFrom(upMaps[i]);
-					sbuf[0] = up.size();
-					UTILS.memcpyfi(up.size(), up.data, 0, sbuf, 1);
+					int msize = up.size();
+					isbuf.put(msize);
+					sbuf.position(1);
+					sbuf.put(up.data, 0, msize);
 					
 					if (trace > 1) {
 						synchronized (AllReduce.this) {
-							System.out.format("reduce up layer %d machine %d sent msg to %d, from %d, size %d\n", depth, imachine, outNbr[i],  inNbr[i],  sbuf[0]);
+							System.out.format("reduce up layer %d machine %d sent msg to %d, from %d, size %d\n", depth, imachine, outNbr[i],  inNbr[i],  msize);
 						}
 					}
-					sendrecv(sbuf, up.size()+1, inNbr[i], rbuf, rbuf.length, outNbr[i], depth*3+2);
+					sendrecv(isbuf, msize+1, inNbr[i], irbuf, irbuf.capacity(), outNbr[i], depth*3+2);
+					msize = irbuf.get();
 					if (trace > 1) {
 						synchronized (AllReduce.this) {
-							System.out.format("reduce up layer %d machine %d got msg from %d, size %d\n", depth, imachine, inNbr[i], rbuf[0]);
+							System.out.format("reduce up layer %d machine %d got msg from %d, size %d\n", depth, imachine, inNbr[i], msize);
 						}
 					}
 					
-					int msize = uPartInds[i+1] - uPartInds[i];
+					int psize = uPartInds[i+1] - uPartInds[i];
 					if (uPartInds[i+1] > newv.size()) throw new RuntimeException("ReduceUp index out of range "+uPartInds[i+1]+" "+newv.size());
-					UTILS.memcpyif(msize, rbuf, 1, newv.data, uPartInds[i]);	
+					if (msize != psize) throw new RuntimeException("ReduceUp size mismatch "+msize+" "+psize);
+					rbuf.position(1);
+					rbuf.get(newv.data, uPartInds[i], msize);
 					latch.countDown();
 				}
 			}
@@ -337,9 +358,12 @@ public class AllReduce {
 			}
 		}
 
-		public boolean sendrecv(int [] sbuf, int sendn, int outi, int [] rbuf, int recn, int ini, int tag) {
+		public boolean sendrecv(IntBuffer sbuf, int sendn, int outi, IntBuffer rbuf, int recn, int ini, int tag) {
 			if (imachine == outi) {
-				System.arraycopy(sbuf, 0, rbuf, 0, sendn);
+				Msg a = new Msg(sbuf, sendn, imachine, outi);
+				rbuf.clear();
+				rbuf.put(a.buf, 0, sendn);
+				rbuf.rewind();
 				return true;				
 			} else {
 				if (doSim) {
@@ -354,32 +378,39 @@ public class AllReduce {
 							} catch (InterruptedException e) {}
 						}
 						Msg msg = messages[ini][tag].removeFirst();
-						System.arraycopy(msg.buf, 0, rbuf, 0, msg.size);
+						rbuf.clear();
+						rbuf.put(msg.buf, 0, msg.size);
+						rbuf.rewind();
 					}
 					return true;
 				} else {
-					/*				MPI.COMM_WORLD.Sendrecv(sbuf, 0, sendn, MPI.INT, outi, tag, rbuf, 0, recn, MPI.INT, ini, tag);
-			  Request sreq = MPI.COMM_WORLD.ISend(sbuf, 0, sendn, MPI.INT, outi, tag)
-				Request rreq = MPI.COMM_WORLD.IRecv(rbuf, 0, recn, MPI.INT, ini, tag)
-				Status rdone = null;
-				Status sdone = null;
-				long timeout = 1000;   // Wait this many msecs
-				long then = System.currentTimeMillis();
-				while ((sdone == null || rdone == null) && System.currentTimeMillis() - then < timeout) {
-					if (rdone == null) rdone = rreq.Test();
-					if (sdone == null) sdone = sreq.Test();
-					sleep(1);
-				} 
-				if (rdone == null) rreq.Cancel();
-				if (sdone == null) sreq.Cancel();
-				if (rdone == null || sdone == null) {
-				  return false;
-				} else {
-				  return true;
+/*					try {
+						MPI.COMM_WORLD.sendRecv(sbuf, sendn, MPI.INT, outi, tag, rbuf, recn, MPI.INT, ini, tag); 
+					} catch (MPIException e) {
+						throw new RuntimeException("Exception in sendrecv "+e);
+					} */
+/*					try {		
+						Request sreq = MPI.COMM_WORLD.iSend(sbuf, sendn, MPI.INT, outi, tag);
+						Request rreq = MPI.COMM_WORLD.iRecv(rbuf, recn, MPI.INT, ini, tag);
+						Status rdone = null;
+						Status sdone = null;
+						long timeout = 1000;   // Wait this many msecs
+						long then = System.currentTimeMillis();
+						while ((sdone == null || rdone == null) && System.currentTimeMillis() - then < timeout) {
+							if (rdone == null) rdone = rreq.testStatus();
+							if (sdone == null) sdone = sreq.testStatus();
+							Thread.sleep(1);
+						}
+						if (rdone == null) rreq.cancel();
+						if (sdone == null) sreq.cancel();
+						if (rdone == null || sdone == null) {
+							return false;
+						} 
+					} catch (Exception e) {
+						throw new RuntimeException("Exception in sendrecv "+e);
+					} */
 				}
-				*/
-					return true;	
-				}
+				return true;
 			}		
 		}
 	}
@@ -390,9 +421,11 @@ public class AllReduce {
 		int sender;
 		int receiver;
 		
-		public Msg(int [] inbuf0, int size0, int sender0, int receiver0) {
+		public Msg(IntBuffer inbuf, int size0, int sender0, int receiver0) {
 			buf = new int[size0];
-			System.arraycopy(inbuf0, 0, buf, 0, size0);
+			inbuf.rewind();
+			inbuf.get(buf, 0, size0);
+			inbuf.rewind();
 			size = size0;
 			sender = sender0;
 			receiver = receiver0;
