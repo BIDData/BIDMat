@@ -69,6 +69,8 @@ object AllReducer {
       ivals(i) = new Vec(vv1.data)
       icols(i) = new IVec(find(sum(s,1)).data)
     }
+    System.setProperty("actors.corePoolSize", "%d" format M)
+    System.setProperty("actors.maxPoolSize", "%d" format M)
     val latch = new CountDownLatch(M)
     for (i <- 0 until M) {
       actor {

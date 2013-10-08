@@ -51,12 +51,12 @@ public class AllReduce {
 				cumk *= k;
 				maxk = Math.max(maxk, k);
 			}
-			executor = Executors.newFixedThreadPool(2*maxk);
+			executor = Executors.newFixedThreadPool(maxk); // set to 1 for sequential messaging. 
 			sendbuf = new ByteBuffer[maxk];
 			recbuf = new ByteBuffer[maxk];
 			for (int i = 0; i < maxk; i++) {
-				sendbuf[i] = ByteBuffer.allocate(bufsize*4);
-				recbuf[i] = ByteBuffer.allocate(bufsize*4);
+				sendbuf[i] = ByteBuffer.wrap(new byte[bufsize*4]);
+				recbuf[i] = ByteBuffer.wrap(new byte[bufsize*4]);
 			}
 			if (doSim) {
 				messages = new LinkedList[M][];
