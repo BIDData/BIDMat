@@ -31,10 +31,20 @@ public class AllReduce {
 		public Machine(int N0, int [] allks0, int imachine0, int M0, int bufsize, boolean doSim0, int trace0) {
 			N = N0;
 			M = M0;
-			imachine = imachine0;
+			doSim = doSim0;
+			if (doSim) {
+				imachine = imachine0;
+			} else {
+/*				try {
+					String [] args = {""};
+					MPI.InitThread(args, MPI.THREAD_MULTIPLE);
+					imachine = MPI.COMM_WORLD.getRank();
+				} catch (MPIException e) {
+					throw new RuntimeException("Couldnt init MPI "+e);
+				} */
+			}
 			allks = allks0;
 			D = allks.length;
-			doSim = doSim0;
 			trace = trace0;
 			layers = new Layer[D];
 			int left = 0;
@@ -447,6 +457,5 @@ public class AllReduce {
 	public AllReduce(int M) {
 		simNetwork = new Machine[M];
 	}
-
 
 }
