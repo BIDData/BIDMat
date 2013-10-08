@@ -65,8 +65,8 @@ public class AllReduce {
 			sendbuf = new ByteBuffer[maxk];
 			recbuf = new ByteBuffer[maxk];
 			for (int i = 0; i < maxk; i++) {
-				sendbuf[i] = ByteBuffer.wrap(new byte[bufsize*4]);
-				recbuf[i] = ByteBuffer.wrap(new byte[bufsize*4]);
+				sendbuf[i] = ByteBuffer.wrap(new byte[4*bufsize]);
+				recbuf[i] = ByteBuffer.wrap(new byte[4*bufsize]);
 			}
 			if (doSim) {
 				messages = new LinkedList[M][];
@@ -182,7 +182,7 @@ public class AllReduce {
 							System.out.format("config layer %d machine %d sent msg to %d, from %d, sizes %d %d\n", depth, imachine, outNbr[i],  inNbr[i],  sbuf.get(0), sbuf.get(1));
 						}
 					}
-					sendrecv(sbuf, seg2+2, outNbr[i], rbuf, rbuf.capacity(), inNbr[i], depth*3);
+					sendrecv(sendbuf[i], seg2+2, outNbr[i], recbuf[i], rbuf.capacity(), inNbr[i], depth*3);
 					seg1 = rbuf.get();
 					seg2 = rbuf.get();
 					if (trace > 1) {
@@ -281,7 +281,7 @@ public class AllReduce {
 							System.out.format("reduce layer %d machine %d sent msg to %d, from %d, size %d\n", depth, imachine, outNbr[i],  inNbr[i],  msize);
 						}
 					}
-					sendrecv(isbuf, msize+1, outNbr[i], irbuf, rbuf.capacity(), inNbr[i], depth*3+1);
+					sendrecv(sendbuf[i], msize+1, outNbr[i], recbuf[i], rbuf.capacity(), inNbr[i], depth*3+1);
 					msize = irbuf.get();
 					if (trace > 1) {
 						synchronized (AllReduce.this) {
@@ -341,7 +341,7 @@ public class AllReduce {
 							System.out.format("reduce up layer %d machine %d sent msg to %d, from %d, size %d\n", depth, imachine, outNbr[i],  inNbr[i],  msize);
 						}
 					}
-					sendrecv(isbuf, msize+1, inNbr[i], irbuf, irbuf.capacity(), outNbr[i], depth*3+2);
+					sendrecv(sendbuf[i], msize+1, inNbr[i], recbuf[i], irbuf.capacity(), outNbr[i], depth*3+2);
 					msize = irbuf.get();
 					if (trace > 1) {
 						synchronized (AllReduce.this) {
@@ -370,12 +370,11 @@ public class AllReduce {
 			}
 		}
 
-		public boolean sendrecv(IntBuffer sbuf, int sendn, int outi, IntBuffer rbuf, int recn, int ini, int tag) {
+		public boolean sendrecv(ByteBuffer sbuf, int sendn, int outi, ByteBuffer rbuf, int recn, int ini, int tag) {
 			if (imachine == outi) {
 				Msg a = new Msg(sbuf, sendn, imachine, outi);
 				rbuf.clear();
-				rbuf.put(a.buf, 0, sendn);
-				rbuf.rewind();
+				rbuf.asIntBuffer().put(a.buf, 0, sendn);
 				return true;				
 			} else {
 				if (doSim) {
@@ -391,15 +390,14 @@ public class AllReduce {
 						}
 						Msg msg = messages[ini][tag].removeFirst();
 						rbuf.clear();
-						rbuf.put(msg.buf, 0, msg.size);
-						rbuf.rewind();
+						rbuf.asIntBuffer().put(msg.buf, 0, msg.size);
 					}
 					return true;
 				} else {
 /*					try {
             sbuf.rewind();
             rbuf.clear();
-						MPI.COMM_WORLD.sendRecv(sbuf, sendn, MPI.INT, outi, tag, rbuf, recn, MPI.INT, ini, tag); 
+						MPI.COMM_WORLD.sendRecv(sbuf, 4*sendn, MPI.BYTE, outi, tag, rbuf, 4*recn, MPI.BYTE, ini, tag); 
 						sbuf.rewind();
 						rbuf.rewind();
 					} catch (MPIException e) {
@@ -408,11 +406,11 @@ public class AllReduce {
 /*					try {	
             sbuf.rewind();
             rbuf.clear();	
-						Request sreq = MPI.COMM_WORLD.iSend(sbuf, sendn, MPI.INT, outi, tag);
-						Request rreq = MPI.COMM_WORLD.iRecv(rbuf, recn, MPI.INT, ini, tag);
+						Request sreq = MPI.COMM_WORLD.iSend(sbuf, 4*sendn, MPI.BYTE, outi, tag);
+						Request rreq = MPI.COMM_WORLD.iRecv(rbuf, 4*recn, MPI.BYTE, ini, tag);
 						Status rdone = null;
 						Status sdone = null;
-						long timeout = 1000;   // Wait this many msecs
+						long timeout = 2000;   // Wait this many msecs
 						long then = System.currentTimeMillis();
 						while ((sdone == null || rdone == null) && System.currentTimeMillis() - then < timeout) {
 							if (rdone == null) rdone = rreq.testStatus();
@@ -441,11 +439,10 @@ public class AllReduce {
 		int sender;
 		int receiver;
 		
-		public Msg(IntBuffer inbuf, int size0, int sender0, int receiver0) {
+		public Msg(ByteBuffer inbuf, int size0, int sender0, int receiver0) {
 			buf = new int[size0];
 			inbuf.rewind();
-			inbuf.get(buf, 0, size0);
-			inbuf.rewind();
+			inbuf.asIntBuffer().get(buf, 0, size0);
 			size = size0;
 			sender = sender0;
 			receiver = receiver0;
