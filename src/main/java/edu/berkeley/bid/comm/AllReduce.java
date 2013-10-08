@@ -65,8 +65,10 @@ public class AllReduce {
 			sendbuf = new ByteBuffer[maxk];
 			recbuf = new ByteBuffer[maxk];
 			for (int i = 0; i < maxk; i++) {
-				sendbuf[i] = ByteBuffer.wrap(new byte[4*bufsize]);
-				recbuf[i] = ByteBuffer.wrap(new byte[4*bufsize]);
+//				sendbuf[i] = ByteBuffer.wrap(new byte[4*bufsize]);
+//				recbuf[i] = ByteBuffer.wrap(new byte[4*bufsize]);
+				sendbuf[i] = ByteBuffer.allocateDirect(4*bufsize);
+				recbuf[i] = ByteBuffer.allocateDirect(4*bufsize);
 			}
 			if (doSim) {
 				messages = new LinkedList[M][];
