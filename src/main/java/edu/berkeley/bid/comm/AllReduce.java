@@ -2,10 +2,10 @@
 package edu.berkeley.bid.comm;
 
 import java.util.LinkedList;
-import edu.berkeley.bid.UTILS;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.Arrays;
 import java.nio.*;
 //import mpi.*;
 
@@ -13,20 +13,20 @@ public class AllReduce {
 	
 	public class Machine {
 		/* Machine Configuration Variables */	
-		int N;                                                   // Number of features
-		int D;                                                   // Depth of the network
-		int M;                                                   // Number of Machines
-		int imachine;                                            // My identity
-		int [] allks;                                            // k values
+		int N;                                                     // Number of features
+		int D;                                                     // Depth of the network
+		int M;                                                     // Number of Machines
+		int imachine;                                              // My identity
+		int [] allks;                                              // k values
 		
-		Layer [] layers;                                         // All the layers
-		ByteBuffer [] sendbuf;                                   // buffers, one for each destination in a group
+		Layer [] layers;                                           // All the layers
+		ByteBuffer [] sendbuf;                                     // buffers, one for each destination in a group
 		ByteBuffer [] recbuf;
-		IVec finalMap;                                           // Map to down from down --> up at layer D-1
-		LinkedList<Msg> [][] messages;                           // Message queue for the simulation
+		IVec finalMap;                                             // Map to down from down --> up at layer D-1
+		LinkedList<Msg> [][] messages;                             // Message queue for the simulation
 		boolean doSim = true;
 		ExecutorService executor;
-		int trace = 0;                                           // 0: no trace, 1: high-level, 2: everything
+		int trace = 0;                                             // 0: no trace, 1: high-level, 2: everything
 
 		public Machine(int N0, int [] allks0, int imachine0, int M0, int bufsize, boolean doSim0, int trace0) {
 			N = N0;
@@ -126,13 +126,13 @@ public class AllReduce {
 				dPartInds = new int[k+1];
 				uPartInds = new int[k+1];
 				int ckk = cumk * k;
-				int ioff = imachine % cumk;
-				int ibase = (imachine/ckk)*ckk;
-				posInMyGroup = (imachine - ibase) / cumk;
+				posInMyGroup = (imachine % ckk) / cumk;
+				int ibase = imachine - posInMyGroup * cumk;
 				for (i = 0; i < k; i++) {
 					partBoundaries.data[i] = left + (int)(((long)(right - left)) * (i+1) / k);
-					outNbr[i] = ibase + (ioff + i * cumk);
-					inNbr[i] = outNbr[i];
+					outNbr[i] = ibase + i * cumk;
+					int toMe = (k + 2*posInMyGroup - i) % k;
+					inNbr[i] = ibase + toMe * cumk;
 				}		
 				downMaps = new IVec[k];
 				upMaps = new IVec[k];
@@ -222,8 +222,10 @@ public class AllReduce {
 				}
 				try {	latch.await(); } catch (InterruptedException e) {}
 				IVec dmaster = dtree[0];
+				Arrays.fill(dtree, null);
 				downn = dmaster.size();
 				IVec umaster = utree[0];
+				Arrays.fill(utree, null);
 				upn = upi.size();
 				for (int i = 0; i < k; i++) {
 					downMaps[i] = IVec.mapInds(downp[i], dmaster);
@@ -385,11 +387,17 @@ public class AllReduce {
 					return true;
 				} else {
 /*					try {
+            sbuf.rewind();
+            rbuf.clear();
 						MPI.COMM_WORLD.sendRecv(sbuf, sendn, MPI.INT, outi, tag, rbuf, recn, MPI.INT, ini, tag); 
+						sbuf.rewind();
+						rbuf.rewind();
 					} catch (MPIException e) {
 						throw new RuntimeException("Exception in sendrecv "+e);
 					} */
-/*					try {		
+/*					try {	
+            sbuf.rewind();
+            rbuf.clear();	
 						Request sreq = MPI.COMM_WORLD.iSend(sbuf, sendn, MPI.INT, outi, tag);
 						Request rreq = MPI.COMM_WORLD.iRecv(rbuf, recn, MPI.INT, ini, tag);
 						Status rdone = null;
@@ -406,6 +414,8 @@ public class AllReduce {
 						if (rdone == null || sdone == null) {
 							return false;
 						} 
+						sbuf.rewind();
+						rbuf.rewind();
 					} catch (Exception e) {
 						throw new RuntimeException("Exception in sendrecv "+e);
 					} */
