@@ -426,13 +426,13 @@ public class AllReduceX {
             boolean sdone = false;
             boolean rdone = false;
             for (int i = 0; i < replicate; i++) {
-              sbuf[igroup + i*M].rewind();
-              rbuf[igroup + i*M].clear();  
+              sbuf[igroup + i*k].rewind();
+              rbuf[igroup + i*k].clear();  
             	if (i > 0) {
-            		sbuf[igroup + i*M].put(sbuf[igroup].array(), 0, sendn);
+            		sbuf[igroup + i*k].put(sbuf[igroup].array(), 0, sendn);
             	}
-            	sreq[i] = MPI.COMM_WORLD.iSend(sbuf[igroup + i*M].array(), 4*sendn, MPI.BYTE, outi + i*M, tag);
-            	rreq[i] = MPI.COMM_WORLD.iRecv(rbuf[igroup + i*M].array(), 4*recn, MPI.BYTE, ini + i*M, tag);
+            	sreq[i] = MPI.COMM_WORLD.iSend(sbuf[igroup + i*k].array(), 4*sendn, MPI.BYTE, outi + i*M, tag);
+            	rreq[i] = MPI.COMM_WORLD.iRecv(rbuf[igroup + i*k].array(), 4*recn, MPI.BYTE, ini + i*M, tag);
             }
             // Wait until timeout or when one send and one receive are done, then cancel others
 						long timeout = 2000;   // Wait this many msecs
@@ -442,8 +442,8 @@ public class AllReduceX {
 								for (int i = 0; i < replicate; i++) {
 									if (rreq[i].testStatus() != null) {
 										if (i > 0) {
-											int msize = rbuf[igroup + i*M].asIntBuffer().get(0);
-											rbuf[igroup].put(rbuf[igroup + i*M].array(), 0, msize);
+											int msize = rbuf[igroup + i*k].asIntBuffer().get(0);
+											rbuf[igroup].put(rbuf[igroup + i*k].array(), 0, msize);
 										}
 										rreq[i] = null;
 										rdone = true;
