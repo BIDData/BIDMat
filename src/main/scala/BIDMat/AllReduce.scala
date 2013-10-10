@@ -9,7 +9,7 @@ import BIDMat.SciFunctions._
 import java.util.concurrent.CountDownLatch
 
 
-object AllReducer {
+object AllReduce {
   /*
    * Arguments: 
    *   n: array size
