@@ -14,42 +14,43 @@ public class AllReduceX {
 	
 	public class Machine {
 		/* Machine Configuration Variables */	
-		int N;                                                     // Number of features
-		int D;                                                     // Depth of the network
-		int M;                                                     // Number of Machines
-		int imachine;                                              // My identity
-		int [] allks;                                              // k values
-		int replicate = 1;                                         // replication factor
+		final int N;                                               // Number of features
+		final int D;                                               // Depth of the network
+		final int M;                                               // Number of Machines
+		final int imachine;                                        // My identity
+		final int [] allks;                                        // k values
+		final int replicate;                                       // replication factor
+		final String [] machineIP;                                 // String IP names
+		final boolean doSim;                                       // Simulation on one machine: send messages directly without sockets
 		int sockBase = 50000;                                      // Socket base address
 		int sendTimeout = 1000;                                    // in msec
-		String [] machineIP;                                       // String IP names
+		int trace = 0;                                             // 0: no trace, 1: high-level, 2: everything
 		
 		Layer [] layers;                                           // All the layers
 		ByteBuffer [] sendbuf;                                     // buffers, one for each destination in a group
 		ByteBuffer [] recbuf;
-		IVec finalMap;                                             // Map to down from down --> up at layer D-1
-		Msg [][] messages;                                         // Message queue for the simulation
-		boolean [][] msgrecvd;
-		boolean [][] amsending;
-		boolean doSim = true;
+		IVec finalMap;                                             // Map from down --> up at layer D-1
+		Msg [][] messages;                                         // Message queue 
+		boolean [][] msgrecvd;                                     // Receiver status
+		boolean [][] amsending;                                    // Sender status
 		ExecutorService executor;
 		ExecutorService sockExecutor;
 		Listener listener;
-		int trace = 0;                                             // 0: no trace, 1: high-level, 2: everything
 
 		public Machine(int N0, int [] allks0, int imachine0, int M0, int bufsize, boolean doSim0, int trace0, 
 				           int replicate0, String [] machineIP0) {
 			N = N0;
 			M = M0;
 			doSim = doSim0;
-			replicate = replicate0;
-			machineIP = machineIP0;
-			if (machineIP == null) {
-				machineIP = new String[M*replicate];
-				for (int i = 0; i < M*replicate; i++) machineIP[i] = "localhost";
-			}
 			imachine = imachine0;
 			allks = allks0;
+			replicate = replicate0;
+			if (machineIP0 == null) {
+				machineIP = new String[M*replicate];
+				for (int i = 0; i < M*replicate; i++) machineIP[i] = "localhost";
+			} else {
+				machineIP = machineIP0;
+			}
 			D = allks.length;
 			trace = trace0;
 			layers = new Layer[D];
