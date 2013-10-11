@@ -455,6 +455,8 @@ public class AllReduceX {
 					// No need to do anything
 				} catch (ConnectException e) {
 					// Server may have been killed - OK
+				}	catch (SocketException e) {
+				// Server may have been killed - OK
 				}	catch (Exception e) {
 					throw new RuntimeException("Problem writing socket "+e);
 				} finally {
