@@ -1,7 +1,6 @@
 package BIDMat
 
 import edu.berkeley.bid.comm.{IVec,LVec,Vec}
-import edu.berkeley.bid.comm.AllReduce
 import edu.berkeley.bid.comm.AllReduceX
 import scala.actors.Actor._
 import BIDMat.MatFunctions._
@@ -63,7 +62,7 @@ object AllReduce {
     		rowvecs(i) = IMat(counts(i), 1)
     		colvecs(i) = IMat(counts(i), 1)
     		vvecs(i) = new Vec(counts(i))
-    		network.simNetwork(i+j*M) = new network.Machine(a.nrows, allks.data, i + j*M, M, bufsize, true, trace, replicate)
+    		network.simNetwork(i+j*M) = new network.Machine(a.nrows, allks.data, i + j*M, M, bufsize, false, trace, replicate, null);
     	}
     }
     var i = 0
@@ -99,6 +98,7 @@ object AllReduce {
       }
     }
     latch.await();
+    network.stop
     println("Allreduce done")
     
     val msum = new Vec(a.ncols)

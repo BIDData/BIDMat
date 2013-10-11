@@ -1,12 +1,13 @@
 
 package edu.berkeley.bid.comm;
 
-import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.Arrays;
+import java.io.*;
 import java.nio.*;
+import java.net.*;
 //import mpi.*;
 
 public class AllReduceX {
@@ -19,32 +20,34 @@ public class AllReduceX {
 		int imachine;                                              // My identity
 		int [] allks;                                              // k values
 		int replicate = 1;                                         // replication factor
+		int sockBase = 50000;                                      // Socket base address
+		int sendTimeout = 1000;                                    // in msec
+		String [] machineIP;                                       // String IP names
 		
 		Layer [] layers;                                           // All the layers
 		ByteBuffer [] sendbuf;                                     // buffers, one for each destination in a group
 		ByteBuffer [] recbuf;
 		IVec finalMap;                                             // Map to down from down --> up at layer D-1
-		LinkedList<Msg> [][] messages;                             // Message queue for the simulation
+		Msg [][] messages;                                         // Message queue for the simulation
+		boolean [][] msgrecvd;
 		boolean doSim = true;
 		ExecutorService executor;
+		ExecutorService sockExecutor;
+		Listener listener;
 		int trace = 0;                                             // 0: no trace, 1: high-level, 2: everything
 
-		public Machine(int N0, int [] allks0, int imachine0, int M0, int bufsize, boolean doSim0, int trace0, int replicate0) {
+		public Machine(int N0, int [] allks0, int imachine0, int M0, int bufsize, boolean doSim0, int trace0, 
+				           int replicate0, String [] machineIP0) {
 			N = N0;
 			M = M0;
 			doSim = doSim0;
 			replicate = replicate0;
-			if (doSim) {
-				imachine = imachine0;
-			} else {
-/*				try {
-					String [] args = {""};
-					MPI.InitThread(args, MPI.THREAD_MULTIPLE);
-					imachine = MPI.COMM_WORLD.getRank();
-				} catch (MPIException e) {
-					throw new RuntimeException("Couldnt init MPI "+e);
-				} */
+			machineIP = machineIP0;
+			if (machineIP == null) {
+				machineIP = new String[M*replicate];
+				for (int i = 0; i < M*replicate; i++) machineIP[i] = "localhost";
 			}
+			imachine = imachine0;
 			allks = allks0;
 			D = allks.length;
 			trace = trace0;
@@ -64,22 +67,26 @@ public class AllReduceX {
 				maxk = Math.max(maxk, k);
 			}
 			executor = Executors.newFixedThreadPool(maxk); // set to 1 for sequential messaging. 
-			sendbuf = new ByteBuffer[replicate*maxk];
-			recbuf = new ByteBuffer[replicate*maxk];
-			for (int i = 0; i < replicate*maxk; i++) {
+			sendbuf = new ByteBuffer[maxk];
+			recbuf = new ByteBuffer[maxk];
+			for (int i = 0; i < maxk; i++) {
 				sendbuf[i] = ByteBuffer.wrap(new byte[4*bufsize]);
 				recbuf[i] = ByteBuffer.wrap(new byte[4*bufsize]);
-//				sendbuf[i] = ByteBuffer.allocateDirect(4*bufsize);
-//				recbuf[i] = ByteBuffer.allocateDirect(4*bufsize);
 			}
-			if (doSim) {
-				messages = new LinkedList[M*replicate][];
-				for (int i = 0; i < M*replicate; i++) {
-					messages[i] = new LinkedList[3*D];
-					for (int j = 0; j < 3*D; j++) {
-						messages[i][j] = new LinkedList<Msg>();
-					}
-				}
+			messages = new Msg[M*replicate][];
+			for (int i = 0; i < M*replicate; i++) {
+				messages[i] = new Msg[3*D];
+			}
+			if (!doSim) {
+				sockExecutor = Executors.newFixedThreadPool(1+4*maxk); 
+				listener = new Listener();
+				sockExecutor.execute(listener);
+			}
+		}
+		
+		public void stop() {
+			if (listener != null) {
+				listener.stop();
 			}
 		}
 		
@@ -377,38 +384,40 @@ public class AllReduceX {
 
 		public boolean sendrecv(int igroup, ByteBuffer [] sbuf, int sendn, int outi, ByteBuffer [] rbuf, int recn, int ini, int tag) {
 			if (imachine == outi) {
-				Msg a = new Msg(sbuf[igroup], sendn, imachine, outi);
+				Msg a = new Msg(sbuf[igroup].array(), sendn, imachine, outi, tag);
 				rbuf[igroup].clear();
 				rbuf[igroup].put(a.buf, 0, 4*sendn);
 				return true;				
-			} else {
-				if (doSim) { 
+			} else { 
+				sbuf[igroup].rewind();
+				if (doSim) {					
           for (int i = 0; i < replicate; i++) { 
-          	sbuf[igroup].rewind();
-          	synchronized (simNetwork[outi + i*M].messages[imachine][tag]) {
-          		simNetwork[outi + i*M].messages[imachine][tag].add(new Msg(sbuf[igroup], sendn, imachine, outi));
-          		simNetwork[outi + i*M].messages[imachine][tag].notify();
-          	}
+          	simNetwork[outi + i*M].messages[imachine][tag] = new Msg(sbuf[igroup].array(), sendn, imachine, outi, tag);
 					}
-          boolean gotit = false;
-          while (!gotit) {
-          	for (int i = 0; i < replicate; i++) {
-          		synchronized (messages[ini + i*M][tag]) {
-          			if (messages[ini + i*M][tag].size() != 0) {
-          				Msg msg = messages[ini + i*M][tag].removeFirst();
-          				rbuf[igroup].clear();
-          				rbuf[igroup].put(msg.buf, 0, 4*msg.size);
-          				gotit = true;
-          				break;
-          			}
-          		}
-          		try {
-          			Thread.sleep(1);
-          		} catch (InterruptedException e) {}
-          	}
-					}
-					return true;
 				} else {
+          for (int i = 0; i < replicate; i++) { 
+          	sockExecutor.execute(new SockWriter(outi + i*M, imachine, tag, sendn, sbuf[igroup].array()));
+          }
+				}
+				boolean gotit = false;
+				while (!gotit) {
+					for (int i = 0; i < replicate; i++) {
+						if (messages[ini + i*M][tag] != null) {
+							Msg msg = messages[ini + i*M][tag];
+							rbuf[igroup].clear();
+							rbuf[igroup].put(msg.buf, 0, 4*msg.size);
+							gotit = true;
+							break;
+						}
+						try {
+							Thread.sleep(1);
+						} catch (InterruptedException e) {}
+					}
+				}
+				for (int i = 0; i < replicate; i++) messages[ini + i*M][tag] = null;
+				return true;
+			}
+					
 /*					try {
             sbuf.rewind();
             rbuf.clear();
@@ -475,9 +484,100 @@ public class AllReduceX {
 					} catch (Exception e) {
 						throw new RuntimeException("Exception in sendrecv "+e);
 					} */
+		}	
+		
+		public class SockWriter implements Runnable {
+			int dest;
+			int src;
+			int tag;
+			int len;
+			byte [] bytes;
+
+			public SockWriter(int dest0, int src0, int tag0, int len0, byte [] bytes0) {
+				dest = dest0;
+				src = src0;
+				tag = tag0;
+				len = len0;
+				bytes = bytes0;
+			}
+
+			public void run() {
+				try {
+					Socket socket = new Socket();
+					socket.connect(new InetSocketAddress(machineIP[dest], sockBase + dest), sendTimeout);
+					if (socket.isConnected()) {
+						DataOutputStream ostr = new DataOutputStream(socket.getOutputStream());
+						ostr.writeInt(len);
+						ostr.writeInt(src);
+						ostr.writeInt(tag);
+						ostr.write(bytes, 0, len*4);		
+						socket.close();
+					}
+				}	catch (SocketTimeoutException e) {
+					// No need to do anything
+				} catch (ConnectException e) {
+					// Server may have been killed - OK
+				}	catch (Exception e) {
+					throw new RuntimeException("Problem writing socket "+e);
 				}
-				return true;
-			}		
+			}
+		}
+
+		public class SockReader implements Runnable {
+			Socket socket = null;
+
+			public SockReader(Socket sock) {
+				socket = sock;
+			}
+
+			public void run() {
+				try {
+					DataInputStream istr = new DataInputStream(socket.getInputStream());
+					int len = istr.readInt();
+					int src = istr.readInt();
+					int tag = istr.readInt();
+					Msg msg = new Msg(len, src, imachine, tag);
+					istr.readFully(msg.buf, 0, len*4);
+					messages[src][tag] = msg;		
+					socket.close();
+				} catch (Exception e) {
+					throw new RuntimeException("Problem reading socket "+e);
+				}
+			}
+		}
+
+		public class Listener implements Runnable {
+			boolean stop = false;
+			ServerSocket ss = null;
+
+			public Listener() {
+				try {
+					ss = new ServerSocket(sockBase + imachine);
+				} catch (Exception e) {
+					throw new RuntimeException("Couldnt start socket listener "+e);
+				}			
+			}
+
+			public void run() {
+				while (!stop) {
+					try {
+						Socket cs = ss.accept();
+						sockExecutor.execute(new SockReader(cs));
+					} catch (SocketException e) {
+						// This is probably due to the server shutting down. Don't do anything.
+					}
+					catch (Exception e) {
+						throw new RuntimeException("Socket listener had a problem "+e);
+					}
+				}
+			}
+			
+			public void stop() {
+				try {
+					stop = true;
+					ss.close();
+				} catch (Exception e) {}			
+			}
 		}
 	}
 	
@@ -486,21 +586,36 @@ public class AllReduceX {
 		int size;
 		int sender;
 		int receiver;
+		int tag;
 		
-		public Msg(ByteBuffer inbuf, int size0, int sender0, int receiver0) {
+		public Msg(int size0, int sender0, int receiver0, int tag0) {
 			buf = new byte[4*size0];
-			inbuf.rewind();
-			inbuf.get(buf, 0, 4*size0);
 			size = size0;
 			sender = sender0;
 			receiver = receiver0;
+			tag = tag0;
+		}
+		
+		public Msg(byte [] inbuf, int size0, int sender0, int receiver0, int tag0) {
+			buf = new byte[4*size0];
+			System.arraycopy(inbuf, 0, buf, 0, 4*size0);
+			size = size0;
+			sender = sender0;
+			receiver = receiver0;
+			tag = tag0;
 		}
 	}
 	
-	public Machine [] simNetwork;
+	public Machine [] simNetwork = null;
 	
 	public AllReduceX(int M) {
 		simNetwork = new Machine[M];
+	}
+	
+	public void stop() {
+		if (simNetwork != null) {
+			for (int i = 0; i < simNetwork.length; i++) simNetwork[i].stop();
+		}
 	}
 
 }
