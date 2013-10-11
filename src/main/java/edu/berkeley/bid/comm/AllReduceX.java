@@ -30,6 +30,7 @@ public class AllReduceX {
 		IVec finalMap;                                             // Map to down from down --> up at layer D-1
 		Msg [][] messages;                                         // Message queue for the simulation
 		boolean [][] msgrecvd;
+		boolean [][] amsending;
 		boolean doSim = true;
 		ExecutorService executor;
 		ExecutorService sockExecutor;
@@ -75,9 +76,11 @@ public class AllReduceX {
 			}
 			messages = new Msg[M*replicate][];
 			msgrecvd = new boolean[M*replicate][];
+			amsending = new boolean[M*replicate][];
 			for (int i = 0; i < M*replicate; i++) {
 				messages[i] = new Msg[3*D];
 				msgrecvd[i] = new boolean[3*D];
+				amsending[i] = new boolean[3*D];
 			}
 			if (!doSim) {
 				sockExecutor = Executors.newFixedThreadPool(1+4*maxk); 
@@ -390,6 +393,7 @@ public class AllReduceX {
 			if (imachine == outi) {
 				rbuf[igroup].clear();
 				rbuf[igroup].put(msg.buf, 0, 4*sendn);
+				rbuf[igroup].rewind();
 				return true;				
 			} else { 
 				if (doSim) {					
@@ -408,6 +412,7 @@ public class AllReduceX {
 							Msg rmsg = messages[ini + i*M][tag];
 							rbuf[igroup].clear();
 							rbuf[igroup].put(rmsg.buf, 0, 4*rmsg.size);
+							rbuf[igroup].rewind();
 							gotit = true;
 							break;
 						}
@@ -422,73 +427,6 @@ public class AllReduceX {
 				}
 				return true;
 			}
-					
-/*					try {
-            sbuf.rewind();
-            rbuf.clear();
-						MPI.COMM_WORLD.sendRecv(sbuf, 4*sendn, MPI.BYTE, outi, tag, rbuf, 4*recn, MPI.BYTE, ini, tag); 
-						sbuf.rewind();
-						rbuf.rewind();
-					} catch (MPIException e) {
-						throw new RuntimeException("Exception in sendrecv "+e);
-					} */
-					
-					// JFC: Use this code
-				/*	try {	 
-            Request [] sreq = new Request[replicate];
-            Request [] rreq = new Request[replicate];
-            boolean sdone = false;
-            boolean rdone = false;
-            for (int i = 0; i < replicate; i++) {
-              sbuf[igroup + i*k].rewind();
-              rbuf[igroup + i*k].clear();  
-            	if (i > 0) {
-            		sbuf[igroup + i*k].put(sbuf[igroup].array(), 0, sendn);
-            	}
-            	sreq[i] = MPI.COMM_WORLD.iSend(sbuf[igroup + i*k].array(), 4*sendn, MPI.BYTE, outi + i*M, tag);
-            	rreq[i] = MPI.COMM_WORLD.iRecv(rbuf[igroup + i*k].array(), 4*recn, MPI.BYTE, ini + i*M, tag);
-            }
-            // Wait until timeout or when one send and one receive are done, then cancel others
-						long timeout = 2000;   // Wait this many msecs
-						long then = System.currentTimeMillis();
-						while ((!sdone || !rdone) && System.currentTimeMillis() - then < timeout) {
-							if (!rdone) {
-								for (int i = 0; i < replicate; i++) {
-									if (rreq[i].testStatus() != null) {
-										if (i > 0) {
-											int msize = rbuf[igroup + i*k].asIntBuffer().get(0);
-											rbuf[igroup].put(rbuf[igroup + i*k].array(), 0, msize);
-										}
-										rreq[i] = null;
-										rdone = true;
-										break;
-									}
-								}
-							}
-							if (!sdone) {
-								for (int i = 0; i < replicate; i++) {
-									if (sreq[i].testStatus() != null) {
-										sreq[i] = null;
-										sdone = true;
-										break;
-									}
-								}
-							}
-							Thread.sleep(1);
-            }  
-						for (int i = 0; i < replicate; i++) {
-							if (sreq[i] != null && sreq[i].testStatus() == null) sreq[i].cancel();
-							if (rreq[i] != null && rreq[i].testStatus() == null) rreq[i].cancel();
-						}
-
-						if (!rdone || !sdone) {
-							return false;
-						} 
-						sbuf[igroup].rewind();
-						rbuf[igroup].rewind();
-					} catch (Exception e) {
-						throw new RuntimeException("Exception in sendrecv "+e);
-					} */
 		}	
 		
 		public class SockWriter implements Runnable {
@@ -501,16 +439,17 @@ public class AllReduceX {
 			}
 
 			public void run() {
+				Socket socket = null;
 				try {
-					Socket socket = new Socket();
+					socket = new Socket();
 					socket.connect(new InetSocketAddress(machineIP[dest], sockBase + dest), sendTimeout);
 					if (socket.isConnected()) {
+						amsending[dest][msg.tag] = true;
 						DataOutputStream ostr = new DataOutputStream(socket.getOutputStream());
 						ostr.writeInt(msg.size);
 						ostr.writeInt(msg.sender);
 						ostr.writeInt(msg.tag);
 						ostr.write(msg.buf, 0, msg.size*4);		
-						socket.close();
 					}
 				}	catch (SocketTimeoutException e) {
 					// No need to do anything
@@ -518,6 +457,9 @@ public class AllReduceX {
 					// Server may have been killed - OK
 				}	catch (Exception e) {
 					throw new RuntimeException("Problem writing socket "+e);
+				} finally {
+					try { if (socket != null) socket.close(); } catch (Exception e) {}
+					amsending[dest][msg.tag] = false;
 				}
 			}
 		}
@@ -576,11 +518,27 @@ public class AllReduceX {
 				}
 			}
 			
+			public boolean stillSending() {
+				boolean sending = false;
+				for (int i = 0; i < amsending.length; i++) {
+					boolean [] sendrow = amsending[i];
+					for (int j = 0; j < sendrow.length; j++) {
+						if (amsending[i][j]) sending = true;
+					}
+				}			
+				return sending;
+			}
+			
 			public void stop() {
+				while (stillSending()) {
+					try { Thread.sleep(1); } catch (InterruptedException e) {}
+				}
 				try {
 					stop = true;
 					ss.close();
-				} catch (Exception e) {}			
+				} catch (Exception e) {
+					throw new RuntimeException("Trouble closing listener");
+				}			
 			}
 		}
 	}
