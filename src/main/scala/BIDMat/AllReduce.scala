@@ -55,7 +55,7 @@ object AllReduce {
     val retval = new Array[Vec](M*replicate)
     val smats = new Array[SMat](M)
     val (ii, jj, vv) = find3(a)
-    val rr = IMat(rand(ii.nrows, 1)*M)
+    val rr = min(M-1, IMat(rand(ii.nrows, 1)*M))
     val counts = accum(rr, 1, M)
     for (j <- 0 until replicate) {
     	for (i <- 0 until M) {
@@ -76,6 +76,7 @@ object AllReduce {
       counts(iix) = ic+1
       i += 1
     }
+    var totvals = 0L
     for (i <- 0 until M) {
       val s = new SMat(a.nrows, a.ncols, rowvecs(i).length, SparseMat.incInds(rowvecs(i).data),
           SparseMat.compressInds(colvecs(i).data, a.ncols, new Array[Int](a.ncols+1), rowvecs(i).length), vvecs(i).data)
@@ -83,23 +84,28 @@ object AllReduce {
       irows(i) = new IVec(ii1.data)      
       ivals(i) = new Vec(vv1.data)
       icols(i) = new IVec(find(sum(s,1)).data)
+      totvals += icols(i).size()
     }
     System.setProperty("actors.corePoolSize", "%d" format M*replicate)
     System.setProperty("actors.maxPoolSize", "%d" format M*replicate)
-    val latch = new CountDownLatch(M)
-    for (i <- 0 until M*replicate) {
-      actor {        
-        if (deadnodes.length > 0 && sum(deadnodes == i).v == 0) {                                   // Simulate dead nodes
-        	val i0 = i % M
-        	network.simNetwork(i).config(irows(i0), icols(i0))
-        	retval(i) = network.simNetwork(i).reduce(ivals(i0))
-        }
-        latch.countDown()
-      }
-    }
-    latch.await();
+    val latch = new CountDownLatch(M*replicate)
+    tic
+    val nreps = 1
+    	for (i <- 0 until M*replicate) {
+//    	  if (irep == 17) network.simNetwork(i).trace=2; else network.simNetwork(i).trace=0;
+    		actor {        
+    			if (deadnodes.length == 0 || sum(deadnodes == i).v == 0) {    // Simulate dead nodes
+    				val i0 = i % M
+    				network.simNetwork(i).config(irows(i0), icols(i0))
+    				retval(i) = network.simNetwork(i).reduce(ivals(i0))
+    			}
+    			latch.countDown()
+    		}
+    	}
+    	latch.await()
     network.stop
-    println("Allreduce done")
+    val tt= toc
+    println("Allreduce done, t=%4.3f msecs, BW=%4.3fGB/s" format (1000*tt/nreps, totvals*replicate*8*2/tt*nreps/1e9))
     
     val msum = new Vec(a.ncols)
     msum.clear
@@ -107,21 +113,25 @@ object AllReduce {
       ivals(i).addTo(msum, irows(i))
     }
     var nerrors = 0
-    for (i <- 0 until M) {
-      var j = 0 
-      while (j < icols(i).size()) {
-        if (retval(i) != null) {
-        	val v1 = retval(i).data(j)
-        	val v2 = msum.data(icols(i).data(j))
-        	if (Math.abs(v1-v2)/Math.max(1e-9, v2) > 1e-6) {
-        		println("Bad value machine %d, pos %d, index %d, vals %f %f" format (i, j, icols(i).data(j), v1, v2))
-        		nerrors += 1
-        	}
-        }
-        j += 1
+    var nnodes = 0
+    for (i <- 0 until M*replicate) {
+    	if (retval(i) != null && retval(i).length > 0) {
+    	  nnodes += 1
+    		var j = 0 
+    		val i0 = i % M
+    		while (j < icols(i0).size()) {
+
+    			val v1 = retval(i).data(j)
+    			val v2 = msum.data(icols(i0).data(j))
+    			if (Math.abs(v1-v2)/Math.max(1e-9, v2) > 1e-6) {
+    				println("Bad value machine %d, pos %d, index %d, vals %f %f" format (i, j, icols(i0).data(j), v1, v2))
+    				nerrors += 1
+    			}
+    			j += 1
+    		}
       }
     }
-    println("Checking done, %d errors" format nerrors)
+    println("Checked %d nodes, %d errors" format (nnodes, nerrors))
   }
   
   
