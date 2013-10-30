@@ -566,6 +566,20 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     this
   }
   
+  def sadd(b:FMat, c:FMat) = {
+    if ((nrows != b.nrows) || (nrows != c.nrows) || (ncols != b.ncols) || (ncols != c.ncols)) 
+      throw new RuntimeException("sadd: dims mismatch")
+    var i = 0
+    while (i < ncols) {
+      var j = 0 
+      while (j < nrows) {
+      	c(j,i) = b(j,i) + this(j,i)
+      	j += 1
+      }
+      i += 1
+    }
+  }
+  
   override def recycle(nr:Int, nc:Int, nnz:Int):FMat = {
     if (nrows == nr && nc == ncols) {
       this

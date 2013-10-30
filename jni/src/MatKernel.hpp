@@ -76,3 +76,7 @@ int dists(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nr
 int maxsumx(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols);
 
 int dmv(float *A, int nr, int nc, float *B, float *C, int trans);
+
+int LDA_Gibbs(int nrows, int nnz, float *A, float *B, float *AN, float *BN, int *Cir, int *Cic, float *P, float nsamps);
+
+int LDA_Gibbs1(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P, int *samples);
