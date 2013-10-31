@@ -295,11 +295,11 @@ object GSMat {
     Mat.nflops += 2L * C.nnz * A.nrows   
   }
   
-  def LDAgibbsx(A:GMat, B:GMat, C:GSMat, samples:GIMat):Unit = {
-    if (A.nrows != B.nrows || C.nrows != A.ncols || C.ncols != B.ncols || C.nnz != samples.length) {
+  def LDAgibbsx(A:GMat, B:GMat, C:GSMat, Ms:GIMat, Us:GIMat):Unit = {
+    if (A.nrows != B.nrows || C.nrows != A.ncols || C.ncols != B.ncols || C.nnz != Ms.ncols || C.nnz != Us.ncols || Ms.nrows != Us.nrows) {
       throw new RuntimeException("LDAgibbsx dimensions mismatch")
     }
-    var err = CUMAT.LDAgibbsx(A.nrows, C.nnz, A.data, B.data, C.ir, C.ic, C.data, samples.data)
+    var err = CUMAT.LDAgibbsx(A.nrows, C.nnz, A.data, B.data, C.ir, C.ic, C.data, Ms.data, Us.data, Ms.nrows)
     if (err != 0) throw new RuntimeException(("GPU %d LDAgibbs kernel error "+cudaGetErrorString(err)) format SciFunctions.getGPU)
     Mat.nflops += 2L * C.nnz * A.nrows   
   }
