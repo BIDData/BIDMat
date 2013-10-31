@@ -7,27 +7,28 @@
 #if __CUDA_ARCH__ > 200
 
 //
-// This version creates one sample per input feature, per iteration (with a multinomial random generator).
+// This version creates k samples per input feature, per iteration (with a multinomial random generator).
 // A and B are the factor matrices. Cir, Cic the row, column indices of the sparse matrix S, P its values, and nnz its size.
-// S holds inner products A[:,i] with B[:,j].
+// S holds inner products A[:,i] with B[:,j]. Ms holds model samples, Us holds user samples. 
 //
-__global__ void __LDA_Gibbs1(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P, int *samples, curandState *rstates) {
+__global__ void __LDA_Gibbs1(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P, int *Ms, int *Us, int k, curandState *rstates) {
   int jstart = ((long long)blockIdx.x) * nnz / gridDim.x;
   int jend = ((long long)(blockIdx.x + 1)) * nnz / gridDim.x;
-  int id = blockIdx.x;
-  curandState rstate = rstates[id];
+  int id = threadIdx.x + k*blockIdx.x;
+  curandState rstate; 
+  if (threadIdx.x < k) {
+    rstate = rstates[id];
+  }
   for (int j = jstart; j < jend ; j++) {
     int aoff = nrows * Cir[j];
     int boff = nrows * Cic[j];
     float cr;
-    if (threadIdx.x == 0) {
+    if (threadIdx.x < k) {
       cr = P[j] * curand_uniform(&rstate);
     }
-    cr = __shfl(cr, 0);
     int tid = threadIdx.x;
     float sum = 0;
-    float bsum;
-    while (tid < nrows && cr > sum) {
+    while (tid < nrows) {
       float tot = A[tid + aoff] * B[tid + boff];
       float tmp = __shfl_up(tot, 1);
       if (threadIdx.x >= 1) tot += tmp;
@@ -40,17 +41,23 @@ __global__ void __LDA_Gibbs1(int nrows, int nnz, float *A, float *B, int *Cir, i
       tmp = __shfl_up(tot, 0x10);
       if (threadIdx.x >= 0x10) tot += tmp;
 
-      bsum = sum;
+      float bsum = sum;
       sum += tot;
       tmp = __shfl_up(sum, 1);
-      if (threadIdx.x > 0) 
+      if (threadIdx.x > 0) {
         bsum = tmp;
-      if (cr > bsum && cr <= sum) {
-        samples[j] = tid + aoff;
+      }
+      for (int i = 0; i < k; i++) {
+        float crx = __shfl(cr, i);
+        if (crx > bsum && crx <= sum) {
+          Ms[i + j*k] = tid + aoff;
+          Us[i + j*k] = tid + boff;
+        }
       }
       sum = __shfl(sum, 0x1f);
       tid += blockDim.x;
     }
+          
   }
 }
 
@@ -92,31 +99,31 @@ __global__ void __randinit(curandState *rstates) {
   
 
 #else
-__global__ void __LDA_Gibbs1(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P, int *samples, curandState *) {}
+__global__ void __LDA_Gibbs1(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P, int *Ms, int *Us, int k, curandState *) {}
 __global__ void __LDA_Gibbs(int nrows, int nnz, float *A, float *B, float *AN, float *BN, int *Cir, int *Cic, float *P, float nsamps, curandState *) {}
 __global__ void __randinit(curandState *rstates) {}
 #endif
 #else
-__global__ void __LDA_Gibbs1(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P, int *samples, curandState *) {}
+__global__ void __LDA_Gibbs1(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P, int *Ms, int *Us, int k, curandState *) {}
 __global__ void __LDA_Gibbs(int nrows, int nnz, float *A, float *B, float *AN, float *BN, int *Cir, int *Cic, float *P, float nsamps, curandState *) {}
 __global__ void __randinit(curandState *rstates) {}
 #endif
 
 #define DDS_BLKY 32
 
-int LDA_Gibbs1(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P, int *samples) {
+int LDA_Gibbs1(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P, int *Ms, int *Us, int k) {
   int nblocks = min(1024, max(1,nnz/128));
   curandState *rstates;
   int err;
-  err = cudaMalloc(( void **)& rstates , nblocks * sizeof(curandState));
+  err = cudaMalloc(( void **)& rstates , k * nblocks * sizeof(curandState));
   if (err > 0) {
     fprintf(stderr, "Error in cudaMalloc %d", err);
     return err;
   }
   cudaDeviceSynchronize();
-  __randinit<<<1,nblocks>>>(rstates); 
+  __randinit<<<nblocks,k>>>(rstates); 
   cudaDeviceSynchronize();
-  __LDA_Gibbs1<<<nblocks,32>>>(nrows, nnz, A, B, Cir, Cic, P, samples, rstates);
+  __LDA_Gibbs1<<<nblocks,32>>>(nrows, nnz, A, B, Cir, Cic, P, Ms, Us, k, rstates);
   cudaDeviceSynchronize();
   cudaFree(rstates);
   err = cudaGetLastError();
@@ -124,8 +131,8 @@ int LDA_Gibbs1(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float
 }
 
 int LDA_Gibbs(int nrows, int nnz, float *A, float *B, float *AN, float *BN, int *Cir, int *Cic, float *P, float nsamps) {
-  dim3 blockDims(min(32,nrows), min(DDS_BLKY, 1+(nrows-1)/64), 1);
-  int nblocks = min(256, max(1,nnz/128));
+  dim3 blockDims(min(32,nrows), min(32, 1+(nrows-1)/64), 1);
+  int nblocks = min(128, max(1,nnz/128));
   curandState *rstates;
   int err;
   err = cudaMalloc(( void **)& rstates , nblocks * blockDims.x * blockDims.y * sizeof(curandState));
@@ -134,12 +141,9 @@ int LDA_Gibbs(int nrows, int nnz, float *A, float *B, float *AN, float *BN, int 
     return err;
   }
   cudaDeviceSynchronize();
-  //  printf("Did malloc %d %d %d %d\n", nblocks,blockDims.x,blockDims.y,sizeof(curandState)); fflush(stdout);
   __randinit<<<nblocks,blockDims>>>(rstates); 
   cudaDeviceSynchronize(); 
-  //  printf("Did randinit\n");  fflush(stdout); 
   __LDA_Gibbs<<<nblocks,blockDims>>>(nrows, nnz, A, B, AN, BN, Cir, Cic, P, nsamps, rstates);
-  //  printf("Did Gibbs\n");  fflush(stdout);
   cudaDeviceSynchronize();
   cudaFree(rstates);
   err = cudaGetLastError();

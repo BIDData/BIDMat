@@ -436,16 +436,17 @@ extern "C" {
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_LDAgibbsx
   (JNIEnv *env, jobject obj, jint nrows, jint nnz, jobject jA, jobject jB,
-   jobject jCir, jobject jCic, jobject jP, jobject jsamples)
+   jobject jCir, jobject jCic, jobject jP, jobject jMs, jobject jUs, int k)
   {
     float *A = (float*)getPointer(env, jA);
     float *B = (float*)getPointer(env, jB);
     int *Cir = (int*)getPointer(env, jCir);
     int *Cic = (int*)getPointer(env, jCic);
     float *P = (float*)getPointer(env, jP);
-    int *samples = (int*)getPointer(env, jsamples);
+    int *Ms = (int*)getPointer(env, jMs);
+    int *Us = (int*)getPointer(env, jUs);
 
-    return LDA_Gibbs1(nrows, nnz, A, B, Cir, Cic, P, samples);
+    return LDA_Gibbs1(nrows, nnz, A, B, Cir, Cic, P, Ms, Us, k);
   }
 
 }
