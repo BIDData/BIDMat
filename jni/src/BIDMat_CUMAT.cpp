@@ -181,6 +181,19 @@ extern "C" {
     return dds(nrows, nnz, A, B, Cir, Cic, P);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_dds0
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, 
+   jobject jA, jobject jB, jobject jCir, jobject jCic, jobject jP)
+  {
+    float *A = (float*)getPointer(env, jA);
+    float *B = (float*)getPointer(env, jB);
+    float *P = (float*)getPointer(env, jP);
+    int *Cir = (int*)getPointer(env, jCir);
+    int *Cic = (int*)getPointer(env, jCic);
+
+    return dds0(nrows, ncols, A, B, Cir, Cic, P);
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_reduce1op
   (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jint opn)
   {

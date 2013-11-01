@@ -61,6 +61,60 @@ __global__ void __LDA_Gibbs1(int nrows, int nnz, float *A, float *B, int *Cir, i
   }
 }
 
+
+__global__ void __LDA_Gibbsy(int nrows, int ncols, float *A, float *B, float *AN, 
+                             int *Cir, int *Cjc, float *P, float nsamps, curandState *rstates) {
+  __shared__ float merge[32];
+  int jstart = ((long long)blockIdx.x) * ncols / gridDim.x;
+  int jend = ((long long)(blockIdx.x + 1)) * ncols / gridDim.x;
+  int tid = threadIdx.x + blockDim.x * threadIdx.y;
+  int id = threadIdx.x + blockDim.x * (threadIdx.y + blockDim.y * blockIdx.x);
+  curandState rstate = rstates[id];
+  float prod, sum, bsum, user;
+  int aoff, boff;
+  for (int j0 = jstart; j0 < jend ; j0++) {
+    boff = nrows * j0;
+    user = B[tid + boff];
+    for (int j = Cjc[j0]; j < Cjc[j0+1]; j++) {
+      aoff = nrows * Cir[j];
+      prod = A[tid + aoff] * user;
+      sum = prod + __shfl_down(prod, 1);
+      sum = sum + __shfl_down(sum, 2);
+      sum = sum + __shfl_down(sum, 4);
+      sum = sum + __shfl_down(sum, 8);
+      sum = sum + __shfl_down(sum, 16);
+      bsum = __shfl(sum, 0);
+      __syncthreads();
+      if (threadIdx.x == threadIdx.y) {
+        merge[threadIdx.x] = bsum;
+      }
+      __syncthreads();
+      if (threadIdx.y == 0) {
+        sum = merge[threadIdx.x];
+        sum = sum + __shfl_down(sum, 1);
+        sum = sum + __shfl_down(sum, 2);
+        sum = sum + __shfl_down(sum, 4);
+        sum = sum + __shfl_down(sum, 8);
+        sum = sum + __shfl_down(sum, 16);
+        bsum = __shfl(sum, 0);
+        merge[threadIdx.x] = bsum;
+      }
+      __syncthreads();
+      if (threadIdx.x == threadIdx.y) {
+        sum = merge[threadIdx.x];
+      }
+      bsum = __shfl(sum, threadIdx.y);
+      float pval = nsamps / bsum;
+      int cr = curand_poisson(&rstate, prod * pval);
+      if (cr > 0) {
+        atomicAdd(&AN[tid + aoff], cr);
+        user += cr;
+      }
+    }
+    B[tid + boff] = user;
+  }
+}
+
 //
 // This version uses Poisson RNG to generate several random numbers per point, per iteration.
 // nrows is number of rows in models A and B. A is nrows * nfeats, B is nrows * nusers
@@ -101,11 +155,13 @@ __global__ void __randinit(curandState *rstates) {
 #else
 __global__ void __LDA_Gibbs1(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P, int *Ms, int *Us, int k, curandState *) {}
 __global__ void __LDA_Gibbs(int nrows, int nnz, float *A, float *B, float *AN, float *BN, int *Cir, int *Cic, float *P, float nsamps, curandState *) {}
+__global__ void __LDA_Gibbsy(int nrows, int nnz, float *A, float *B, float *AN, int *Cir, int *Cic, float *P, float nsamps, curandState *) {}
 __global__ void __randinit(curandState *rstates) {}
 #endif
 #else
 __global__ void __LDA_Gibbs1(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P, int *Ms, int *Us, int k, curandState *) {}
 __global__ void __LDA_Gibbs(int nrows, int nnz, float *A, float *B, float *AN, float *BN, int *Cir, int *Cic, float *P, float nsamps, curandState *) {}
+__global__ void __LDA_Gibbsy(int nrows, int nnz, float *A, float *B, float *AN, int *Cir, int *Cic, float *P, float nsamps, curandState *) {}
 __global__ void __randinit(curandState *rstates) {}
 #endif
 
@@ -149,4 +205,25 @@ int LDA_Gibbs(int nrows, int nnz, float *A, float *B, float *AN, float *BN, int 
   err = cudaGetLastError();
   return err;
 }
+
+int LDA_Gibbsy(int nrows, int ncols, float *A, float *B, float *AN, int *Cir, int *Cic, float *P, float nsamps) {
+  dim3 blockDims(32, 32);
+  int nblocks = min(128, max(1,ncols/2));
+  curandState *rstates;
+  int err;
+  err = cudaMalloc(( void **)& rstates , nblocks * blockDims.x * blockDims.y * sizeof(curandState));
+  if (err > 0) {
+    fprintf(stderr, "Error in cudaMalloc %d", err);
+    return err;
+  }
+  cudaDeviceSynchronize();
+  __randinit<<<nblocks,blockDims>>>(rstates); 
+  cudaDeviceSynchronize(); 
+  __LDA_Gibbsy<<<nblocks,blockDims>>>(nrows, ncols, A, B, AN, Cir, Cic, P, nsamps, rstates);
+  cudaDeviceSynchronize();
+  cudaFree(rstates);
+  err = cudaGetLastError();
+  return err;
+}
+
 

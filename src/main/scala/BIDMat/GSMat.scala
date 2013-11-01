@@ -285,6 +285,26 @@ object GSMat {
     out    
   }
   
+  def DDS0(A:GMat, B:GMat, C:GSMat, oldmat:Mat):GSMat = {
+    if (A.nrows != B.nrows || C.nrows != A.ncols || C.ncols != B.ncols) {
+      throw new RuntimeException("dimensions mismatch")
+    }
+//    println("DDS %d %d %d %d %f" format (C.nnz, C.GUID, C.myGPU, SciFunctions.getGPU, SciFunctions.GPUmem._1))
+    val out = GSMat.newOrCheckGSMat(C.nrows, C.ncols, C.nnz, oldmat, A.GUID, B.GUID, C.GUID, "DDS".##)
+//    println("DDS1 %d %d %d %d %f" format (out.nnz, out.GUID, out.myGPU, SciFunctions.getGPU, SciFunctions.GPUmem._1))
+    var err = cudaMemcpy(out.ir, C.ir, Sizeof.INT * C.nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize()
+    if (err != 0) throw new RuntimeException(("GPU %d DDS row copy error "+cudaGetErrorString(err)) format SciFunctions.getGPU)
+    err = cudaMemcpy(out.ic, C.ic, Sizeof.INT * C.nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize()
+    if (err != 0) throw new RuntimeException(("GPU %d DDS column copy error "+cudaGetErrorString(err)) format SciFunctions.getGPU)
+    out.clear;
+    err = CUMAT.dds0(A.nrows, C.ncols, A.data, B.data, C.ir, C.jc, out.data)
+    if (err != 0) throw new RuntimeException(("GPU %d DDS kernel error "+cudaGetErrorString(err)) format SciFunctions.getGPU)
+    Mat.nflops += 2L * C.nnz * A.nrows
+    out    
+  }
+  
   def LDAgibbs(A:GMat, B:GMat, AN:GMat, BN:GMat, C:GSMat, nsamps:Float):Unit = {
     if (A.nrows != B.nrows || C.nrows != A.ncols || C.ncols != B.ncols || 
         A.nrows != AN.nrows || A.ncols != AN.ncols || B.nrows != BN.nrows || B.ncols != BN.ncols) {

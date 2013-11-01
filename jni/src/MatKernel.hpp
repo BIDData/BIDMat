@@ -29,6 +29,8 @@ int spsum(int nrows, int ncols, int nnz, int *Air, int *Aic, float *P, float *B,
 
 int dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P);
 
+int dds0(int nrows, int ncols, float *A, float *B, int *Cir, int *Cic, float *P);
+
 int reduce1op(int nrows, int ncols, float *A, float *B, int opn);
 
 int reduce2op(int nrows, int ncols, float *A, float *B, int opn);
