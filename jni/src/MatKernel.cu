@@ -631,6 +631,7 @@ int spsum(int nrows, int ncols, int nnz, int *Air, int *Aic, float *P, float *B,
 
 
 __global__ void __dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P);
+__global__ void __dds0(int nrows, int ncols, float *A, float *B, int *Cir, int *Cic, float *P);
 __global__ void __reduce1op(int nrows, int ncols, float *A, float *B, int opn);
 __global__ void __reducebin1op(int nrows, int ncols, float *A, float *B, float *C, int opb, int opr);
 
@@ -659,36 +660,43 @@ __global__ void __dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic
     }
   }
 }
-// Mysterious (non-reproducible) problems with this one
-__global__ void __dds0(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P) {
-  __shared__ float parts[DDS_BLKY];
-  int jstart = ((long long)blockIdx.x) * nnz / gridDim.x;
-  int jend = ((long long)(blockIdx.x + 1)) * nnz / gridDim.x;
+
+__global__ void __dds0(int nrows, int ncols, float *A, float *B, int *Cir, int *Cjc, float *P) {
+  __shared__ float merge[32];
+  int jstart = ((long long)blockIdx.x) * ncols / gridDim.x;
+  int jend = ((long long)(blockIdx.x + 1)) * ncols / gridDim.x;
   int tid = threadIdx.x + blockDim.x * threadIdx.y;
-  for (int j = jstart; j < jend ; j++) {
-    float sum = 0;
-    int aoff = nrows * Cir[j];
-    int boff = nrows * Cic[j];
-    for (int i = tid; i < nrows; i += blockDim.x * blockDim.y) {
-      sum += A[i + aoff] * B[i + boff];
-    }
-    for (int i = 1; i < blockDim.x; i *= 2) {
-      float tmp = __shfl_down(sum, i);
-      if (threadIdx.x + i < blockDim.x) sum = sum + tmp;
-    } 
-    if (threadIdx.x == 0) {
-      parts[threadIdx.y] = sum;
-    }
-    for (int i = 1; i < blockDim.y; i *= 2) {
+  int aoff, boff;
+  float user, prod, sum, bsum;
+  for (int j0 = jstart; j0 < jend ; j0++) {
+    boff = nrows * j0;
+    user = B[tid + boff];
+    for (int j = Cjc[j0]; j < Cjc[j0+1]; j++) {
+      aoff = nrows * Cir[j];
+      prod = A[tid + aoff] * user;
+      sum = prod + __shfl_down(prod, 1);
+      sum = sum + __shfl_down(sum, 2);
+      sum = sum + __shfl_down(sum, 4);
+      sum = sum + __shfl_down(sum, 8);
+      sum = sum + __shfl_down(sum, 16);
+      bsum = __shfl(sum, 0);
       __syncthreads();
-      if (threadIdx.x == 0 && threadIdx.y + i < blockDim.y) {
-        parts[threadIdx.y] = parts[threadIdx.y] + parts[threadIdx.y + i];
+      if (threadIdx.x == threadIdx.y) {
+        merge[threadIdx.x] = bsum;
       }
-    } 
-    if (threadIdx.x == 0 && threadIdx.y == 0) {
-      P[j] = parts[0];
+      __syncthreads();
+      if (threadIdx.y == 0) {
+        sum = merge[threadIdx.x];
+        sum = sum + __shfl_down(sum, 1);
+        sum = sum + __shfl_down(sum, 2);
+        sum = sum + __shfl_down(sum, 4);
+        sum = sum + __shfl_down(sum, 8);
+        sum = sum + __shfl_down(sum, 16);
+        if (threadIdx.x == 0) {
+          P[j] = sum;
+        }
+      }
     }
-    __syncthreads();
   }
 }
 #else
@@ -718,6 +726,8 @@ __global__ void __dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic
     __syncthreads();
   }
 }
+
+__global__ void __dds0(int nrows, int ncols, float *A, float *B, int *Cir, int *Cjc, float *P) {}
 #endif
 #endif
 
@@ -726,6 +736,16 @@ int dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P) {
 //  int nblocks = min(65536, max(1,nnz/8));
   int nblocks = min(16384, max(1,nnz/128));
   __dds<<<nblocks,blockDims>>>(nrows, nnz, A, B, Cir, Cic, P);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int dds0(int nrows, int ncols, float *A, float *B, int *Cir, int *Cic, float *P) {
+  dim3 blockDims(32, 32, 1);
+//  int nblocks = min(65536, max(1,nnz/8));
+  int nblocks = min(16384, max(1,ncols/64));
+  __dds0<<<nblocks,blockDims>>>(nrows, ncols, A, B, Cir, Cic, P);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
