@@ -252,6 +252,16 @@ extern "C" {
     return transpose(A, instride, B, outstride, nrows, ncols);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumsumi
+  (JNIEnv *env, jobject obj, jobject jin, jobject jout, jobject jjc, jint nrows, jint ncols, jint m) 
+  {
+    int *in = (int*)getPointer(env, jin);
+    int *out = (int*)getPointer(env, jout);
+    int *jc = (int*)getPointer(env, jjc);
+
+    return cumsumi(in, out, jc, nrows, ncols, m);
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_embedmat
   (JNIEnv *env, jobject obj, jobject ja, jobject jb, jint nrows, jint ncols) 
   {

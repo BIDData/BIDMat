@@ -56,6 +56,8 @@ public final class CUMAT {
 
     public static native int transpose(Pointer A, int lda, Pointer B, int ldb, int nr, int nc);
     
+    public static native int cumsumi(Pointer in, Pointer out, Pointer jc, int nrows, int ncols, int m);
+    
     public static native int embedmat(Pointer A, Pointer B, int nrows, int ncols);
     
     public static native int extractmat(Pointer A, Pointer B, int nrows, int ncols);

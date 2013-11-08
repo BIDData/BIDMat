@@ -983,6 +983,72 @@ int reducebin2op(int nrows, int ncols, float *A, float *B, float *C, int opb, in
   return err;
 }
 
+#ifdef __CUDA_ARCH__ 
+#if __CUDA_ARCH__ > 200
+__global__ void __cumsumi(int *in, int *out, int *jc, int nrows) {
+  __shared__ int tots[32];
+  int start = jc[blockIdx.x] + nrows * blockIdx.y;
+  int end = jc[blockIdx.x+1] + nrows * blockIdx.y;
+  int sum = 0;
+  int tsum, tmp, ttot, ttot0;
+  for (int i = start + threadIdx.x + threadIdx.y * blockDim.x; i < end; i += blockDim.x * blockDim.y) {
+    tsum = in[i];
+    tmp = __shfl_up(tsum, 1);
+    if (threadIdx.x >= 1) tsum += tmp;
+    tmp = __shfl_up(tsum, 2);
+    if (threadIdx.x >= 2) tsum += tmp;
+    tmp = __shfl_up(tsum, 4);
+    if (threadIdx.x >= 4) tsum += tmp;
+    tmp = __shfl_up(tsum, 8);
+    if (threadIdx.x >= 8) tsum += tmp;
+    tmp = __shfl_up(tsum, 16);
+    if (threadIdx.x >= 16) tsum += tmp;
+    ttot = __shfl(tsum, 31);
+    ttot0 = ttot;
+    __syncthreads();
+    if (threadIdx.x == threadIdx.y) {
+      tots[threadIdx.y] = ttot;
+    }
+    __syncthreads();
+    for (int k = 1; k < blockDim.y; k *= 2) {
+      if (threadIdx.y >= k) {
+        if (threadIdx.x == threadIdx.y - k) {
+          ttot += tots[threadIdx.x];
+        }
+      }
+      __syncthreads();
+      if (threadIdx.y >= k) {
+        ttot = __shfl(ttot, threadIdx.y - k);
+        if (threadIdx.x == threadIdx.y) {
+          tots[threadIdx.y] = ttot;
+        }
+      }
+      __syncthreads();
+    }
+    out[i] = sum + tsum + ttot - ttot0;
+    if (threadIdx.x == blockDim.y - 1) {
+      ttot = tots[threadIdx.x];
+    }
+    ttot = __shfl(ttot, blockDim.y  - 1);
+    sum += ttot;
+  }
+}
+#else
+__global__ void __cumsumi(int *in, int *out, int *jc, int nrows) {}
+#endif
+#else
+__global__ void __cumsumi(int *in, int *out, int *jc, int nrows) {}
+#endif
+
+int cumsumi(int *in, int *out, int *jc, int nrows, int ncols, int m) {
+  dim3 grid(m, ncols, 1);
+  dim3 tblock(32, 32, 1);
+  __cumsumi<<<grid,tblock>>>(in, out, jc, nrows);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
 __global__ void __embedmat(float *a, long long *b, int nrows, int ncols) {
   int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
   const int signbit = 0x80000000;
