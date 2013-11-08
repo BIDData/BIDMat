@@ -42,6 +42,8 @@ int reducebin2op(int nrows, int ncols, float *A, float *B, float *C, int opb, in
 
 int transpose(float *in, int instride, float *out, int outstride, int nrows, int ncols);
 
+int cumsumi(int *in, int *out, int *jc, int nrows, int ncols, int m);
+
 int embedmat(float *a, long long *b, int nrows, int ncols);
 
 int extractmat(float *a, long long *b, int nrows, int ncols);
