@@ -262,6 +262,17 @@ extern "C" {
     return cumsumi(in, out, jc, nrows, ncols, m);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_maxs
+  (JNIEnv *env, jobject obj, jobject jin, jobject jout, jobject jouti, jobject jjc, jint m) 
+  {
+    float *in = (float*)getPointer(env, jin);
+    float *out = (float*)getPointer(env, jout);
+    int *outi = (int*)getPointer(env, jouti);
+    int *jc = (int*)getPointer(env, jjc);
+
+    return maxs(in, out, outi, jc, m);
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_embedmat
   (JNIEnv *env, jobject obj, jobject ja, jobject jb, jint nrows, jint ncols) 
   {

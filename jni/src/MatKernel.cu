@@ -1033,17 +1033,94 @@ __global__ void __cumsumi(int *in, int *out, int *jc, int nrows) {
     sum += ttot;
   }
 }
+
+__global__ void __maxs(float *in, float *out, int *outi, int *jc) {
+  __shared__ float maxv[32];
+  __shared__ int maxi[32];
+  int start = jc[blockIdx.x];
+  int end = jc[blockIdx.x+1];
+  float vmax, vtmp;
+  int imax, itmp, i, k;
+  int istart = start + threadIdx.x + threadIdx.y * blockDim.x;
+
+  if (istart < end) {
+    vmax = in[istart];
+    imax = istart;
+  }
+
+  for (i = istart + blockDim.x * blockDim.y; i < end; i += blockDim.x * blockDim.y) {
+    vtmp = in[i];
+    itmp = i;
+    if (vtmp > vmax) {
+      vmax = vtmp;
+      imax = itmp;
+    }
+  }
+
+  for (k = 1; k < blockDim.x; k *= 2) {
+    vtmp = __shfl_up(vmax, k);
+    itmp = __shfl_up(imax, k);
+    if (threadIdx.x >= k) {
+      if (vtmp > vmax) {
+        vmax = vtmp;
+        imax = itmp;
+      }
+    }
+  }
+  vmax = __shfl(vmax, blockDim.x - 1);
+  imax = __shfl(imax, blockDim.x - 1);
+  __syncthreads();
+
+  if (threadIdx.x == threadIdx.y) {
+    maxv[threadIdx.y] = vmax;
+    maxi[threadIdx.y] = imax;
+  }
+
+  __syncthreads();
+  if (threadIdx.y == 0) {
+    vmax = maxv[threadIdx.x];
+    imax = maxi[threadIdx.x];
+  }
+  __syncthreads();
+  if (threadIdx.y == 0) {
+    for (k = 1; k < blockDim.y; k *= 2) {
+      vtmp = __shfl_up(vmax, k);
+      itmp = __shfl_up(imax, k);
+      if (threadIdx.x >= k) {
+        if (vtmp > vmax) {
+          vmax = vtmp;
+          imax = itmp;
+        }
+      }
+    }
+    if (threadIdx.x == blockDim.y - 1) {
+      out[blockIdx.x] = vmax;
+      outi[blockIdx.x] = imax;
+    }
+  }
+}
 #else
 __global__ void __cumsumi(int *in, int *out, int *jc, int nrows) {}
+__global__ void __maxs(float *in, float *out, int *outi, int *jc) {}
 #endif
 #else
 __global__ void __cumsumi(int *in, int *out, int *jc, int nrows) {}
+__global__ void __maxs(float *in, float *out, int *outi, int *jc) {}
 #endif
 
 int cumsumi(int *in, int *out, int *jc, int nrows, int ncols, int m) {
   dim3 grid(m, ncols, 1);
   dim3 tblock(32, 32, 1);
   __cumsumi<<<grid,tblock>>>(in, out, jc, nrows);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int maxs(float *in, float *out, int *outi, int *jc, int m) {
+  dim3 grid(m, 1, 1);
+  dim3 tblock(32, 32, 1);
+  __maxs<<<grid,tblock>>>(in, out, outi, jc);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;

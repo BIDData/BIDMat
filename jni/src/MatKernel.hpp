@@ -44,6 +44,8 @@ int transpose(float *in, int instride, float *out, int outstride, int nrows, int
 
 int cumsumi(int *in, int *out, int *jc, int nrows, int ncols, int m);
 
+int maxs(float *in, float *out, int *outi, int *jc, int m);
+
 int embedmat(float *a, long long *b, int nrows, int ncols);
 
 int extractmat(float *a, long long *b, int nrows, int ncols);
