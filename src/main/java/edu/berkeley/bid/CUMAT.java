@@ -58,6 +58,8 @@ public final class CUMAT {
     
     public static native int cumsumi(Pointer in, Pointer out, Pointer jc, int nrows, int ncols, int m);
     
+    public static native int maxs(Pointer in, Pointer out, Pointer outi, Pointer jc, int m);
+    
     public static native int embedmat(Pointer A, Pointer B, int nrows, int ncols);
     
     public static native int extractmat(Pointer A, Pointer B, int nrows, int ncols);
