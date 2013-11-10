@@ -48,13 +48,19 @@ int maxs(float *in, float *out, int *outi, int *jc, int m);
 
 int embedmat(float *a, long long *b, int nrows, int ncols);
 
+int embedmatx(float *a, int *b, long long *c, int n);
+
 int extractmat(float *a, long long *b, int nrows, int ncols);
+
+int extractmatx(float *a, int *b, long long *c, int n);
 
 int isortk(int *pkeys, unsigned int *pvals, int n, int asc);
 
 int lsortk(long long *pkeys, unsigned int *pvals, int n, int asc);
 
 int lsort(long long *pkeys, int n, int asc);
+
+int fsorts(float *pkeys, unsigned int *pvals, int *jc, int m, int asc);
 
 int dsortk(double *pkeys, unsigned int *pvals, int n, int asc);
 

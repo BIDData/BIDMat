@@ -1140,11 +1140,35 @@ __global__ void __embedmat(float *a, long long *b, int nrows, int ncols) {
   }
 }
 
+__global__ void __embedmatx(float *a, int *b, long long *c, int n) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  const int signbit = 0x80000000;
+  const int mag =     0x7fffffff;
+  for (int i = tid; i < n; i += blockDim.x*gridDim.x*gridDim.y) {
+    float v = a[i];
+    int vi = *((int *)&v);
+    if (vi & signbit) {
+      vi = -(vi & mag);
+    }
+    c[i] = (long long)vi + (((long long)b[i])<<32);
+  }
+}
+
 int embedmat(float *a, long long *b, int nrows, int ncols) {
   int nthreads;
   dim3 griddims;
   setsizes(nrows*ncols, &griddims, &nthreads);
   __embedmat<<<griddims,nthreads>>>(a, b, nrows, ncols);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int embedmatx(float *a, int *b, long long *c, int n) {
+  int nthreads;
+  dim3 griddims;
+  setsizes(n, &griddims, &nthreads);
+  __embedmatx<<<griddims,nthreads>>>(a, b, c, n);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
@@ -1163,11 +1187,35 @@ __global__ void __extractmat(float *a, long long *b, int nrows, int ncols) {
   }
 }
 
+__global__ void __extractmatx(float *a, int *b, long long *c, int n) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  const int signbit = 0x80000000;
+  const int mag =     0x7fffffff;
+  for (int i = tid; i < n; i += blockDim.x*gridDim.x*gridDim.y) {
+    int vi = *((int *)&c[i]);
+    if (vi & signbit) {
+      vi = -(vi & mag);
+    }
+    a[i] = *((float *)&vi);
+    b[i] = *(((int *)&c[i])+1);
+  }
+}
+
 int extractmat(float *a, long long *b, int nrows, int ncols) {
   int nthreads;
   dim3 griddims;
   setsizes(nrows*ncols, &griddims, &nthreads);
   __extractmat<<<griddims,nthreads>>>(a, b, nrows, ncols);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int extractmatx(float *a, int *b, long long *c, int n) {
+  int nthreads;
+  dim3 griddims;
+  setsizes(n, &griddims, &nthreads);
+  __extractmatx<<<griddims,nthreads>>>(a, b, c, n);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
@@ -1202,6 +1250,22 @@ int isortk(int *pkeys, unsigned int *pvals, int N, int asc) {
   } else {
     thrust::sort_by_key(keys, keys + N, vals,  thrust::greater<int>());
   }    
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int fsorts(float *pkeys, unsigned int *pvals, int *jc, int m, int asc) {
+  for (int i = 0; i < m; i++) {
+    thrust::device_ptr<float> keys(pkeys + jc[i]);
+    thrust::device_ptr<unsigned int> vals(pvals + jc[i]);
+    int b = jc[i+1] - jc[i];
+    if (asc > 0) {
+      thrust::sort_by_key(keys, keys + b, vals);
+    } else {
+      thrust::sort_by_key(keys, keys + b, vals, thrust::greater<float>());
+    }    
+  }
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;

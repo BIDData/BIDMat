@@ -992,15 +992,15 @@ object GMat {
     Mat.nflops += keys.length
   }
   
-  def sortGPU(keys:GMat, vals:GIMat):Unit = _sortGPU(keys, vals, false)
+  def sortGPU(keys:GMat, vals:GIMat):Unit = _sortGPU(keys, vals, true)
   
-  def sortdownGPU(keys:GMat, vals:GIMat):Unit = _sortGPU(keys, vals, true)
+  def sortdownGPU(keys:GMat, vals:GIMat):Unit = _sortGPU(keys, vals, false)
     
   def _sortGPU(keys:GMat, vals:GIMat, asc:Boolean):Unit = {
   	if (keys.nrows != vals.nrows || keys.ncols != vals.ncols)
       throw new RuntimeException("Dimensions mismatch in GPUsort")
   	if (keys.nrows > 128*1024) {
-  		CUMAT.fsort2d(keys.data,	vals.data, keys.nrows, keys.ncols, 0)
+  		CUMAT.fsort2d(keys.data,	vals.data, keys.nrows, keys.ncols, if (asc) 1 else 0)
     } else {
     	val maxsize = keys.nrows * math.min(16*1024*1024/keys.nrows, keys.ncols)
     	val nsize = keys.nrows*keys.ncols

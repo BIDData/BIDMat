@@ -6,6 +6,7 @@
 #include "PointerUtils.hpp"
 #include "MatKernel.hpp"
 
+
 extern "C" {
 
   JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
@@ -282,6 +283,16 @@ extern "C" {
     return embedmat(a, b, nrows, ncols);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_embedmatx
+  (JNIEnv *env, jobject obj, jobject ja, jobject jb, jobject jc, jint n) 
+  {
+    float *a = (float*)getPointer(env, ja);
+    int *b = (int*)getPointer(env, jb);
+    long long *c = (long long*)getPointer(env, jc);
+
+    return embedmatx(a, b, c, n);
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_extractmat
   (JNIEnv *env, jobject obj, jobject ja, jobject jb, jint nrows, jint ncols) 
   {
@@ -289,6 +300,28 @@ extern "C" {
     long long *b = (long long*)getPointer(env, jb);
 
     return extractmat(a, b, nrows, ncols);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_extractmatx
+  (JNIEnv *env, jobject obj, jobject ja, jobject jb, jobject jc, jint n) 
+  {
+    float *a = (float*)getPointer(env, ja);
+    int *b = (int*)getPointer(env, jb);
+    long long *c = (long long*)getPointer(env, jc);
+
+    return extractmatx(a, b, c, n);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_fsorts
+  (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jintArray jjc, jint m, jint asc) 
+  {
+    float *pkeys = (float *)getPointer(env, jpkeys);
+    unsigned int *pvals = (unsigned int *)getPointer(env, jpvals);
+	int *jc  = (int *)(env->GetPrimitiveArrayCritical(jjc, JNI_FALSE));
+
+    return fsorts(pkeys, pvals, jc, m, asc);
+
+	env->ReleasePrimitiveArrayCritical(jjc, jc, 0);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_fsort2d
