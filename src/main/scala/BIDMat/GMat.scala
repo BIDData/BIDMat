@@ -1019,9 +1019,9 @@ object GMat {
   	Mat.nflops += keys.length
   }
   
-  def sortxGPU(keys:GMat, vals:GIMat):Unit = _sortxGPU(keys, vals, false)
+  def sortxGPU(keys:GMat, vals:GIMat):Unit = _sortxGPU(keys, vals, true)
   
-  def sortdownxGPU(keys:GMat, vals:GIMat):Unit = _sortxGPU(keys, vals, true)
+  def sortdownxGPU(keys:GMat, vals:GIMat):Unit = _sortxGPU(keys, vals, false)
   
   def _sortxGPU(keys:GMat, vals:GIMat, asc:Boolean):Unit = {
     if (keys.nrows != vals.nrows || keys.ncols != vals.ncols)
