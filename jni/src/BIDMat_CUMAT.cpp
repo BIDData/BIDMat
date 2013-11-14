@@ -516,4 +516,16 @@ extern "C" {
     return LDA_Gibbs1(nrows, nnz, A, B, Cir, Cic, P, Ms, Us, k);
   }
 
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_treeprod
+  (JNIEnv *env, jobject obj, jobject jtrees, jobject jfeats, jobject jtpos, jobject jotpos, 
+   jint nrows, jint ncols, jint ns, jint tstride, jint ntrees)
+  {
+    int *trees = (int*)getPointer(env, jtrees);
+    float *feats = (float*)getPointer(env, jfeats);
+    int *tpos = (int*)getPointer(env, jtpos);
+    int *otpos = (int*)getPointer(env, jotpos);
+
+    return treeprod(trees, feats, tpos, otpos, nrows, ncols, ns, tstride, ntrees);
+  }
 }
