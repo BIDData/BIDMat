@@ -56,9 +56,11 @@ public final class CUMAT {
     
     public static native int treeprod(Pointer trees, Pointer feats, Pointer tpos, Pointer otpos, int nrows, int ncols, int ns, int tstride, int ntrees);
 
-    public static native int icopytranspose(Pointer iptrs, Pointer in, Pointer out, int stride, int nrows, int ncols);
+    public static native int icopyt(Pointer iptrs, Pointer in, Pointer out, int stride, int nrows, int ncols);
     
-    public static native int ocopytranspose(Pointer iptrs, Pointer in, Pointer out, int stride, int nrows, int ncols);
+    public static native int ocopytadd(Pointer iptrs, Pointer in, Pointer out, int stride, int nrows, int ncols);
+    
+    public static native int ocopytmin(Pointer iptrs, Pointer in, Pointer out, int stride, int nrows, int ncols);
     
     public static native int transpose(Pointer A, int lda, Pointer B, int ldb, int nr, int nc);
     
