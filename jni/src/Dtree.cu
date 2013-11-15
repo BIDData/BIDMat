@@ -27,7 +27,7 @@ __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *ot
   __shared__ float totals[32][33];
 
   unsigned int t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16,t17,t18,t19,t20,t21,t22,t23,t24,t25,t26,t27,t28,t29,t30,t31;
-  int tp, imax, imin, newt, bd, th, tid, tx;
+  int tp, newt, bd, tid;
   float vv, fthresh, vtmp;
 
   // Block position
@@ -203,8 +203,8 @@ __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *ot
 __global__ void __treeprod16f(int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees) {
   __shared__ float totals[32][17];
 
-  int t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16,t17,t18,t19,t20,t21,t22,t23,t24,t25,t26,t27,t28,t29,t30,t31;
-  int tp, imax, imin, newt, bd, th, tid, tx;
+  int t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15;
+  int tp, imax, imin, newt, bd, tid, tx;
   float vv, fthresh, vtmp;
 
   // Block position
@@ -304,13 +304,13 @@ __global__ void __treeprod16f(int *trees, float *feats, int *tpos, int *otpos, i
 }
 
 #else
-__global__ void __treeprod(int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees) {}
+__global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees) {}
 #endif
 #else
-__global__ void __treeprod(int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees) {}
+__global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees) {}
 #endif
 
-int treeprod(int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees) {
+int treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees) {
   int d1, d2, err;
   if (ncols < 65536) {
     d1 = ncols;
@@ -326,3 +326,48 @@ int treeprod(int *trees, float *feats, int *tpos, int *otpos, int nrows, int nco
   return err;
 }
 
+#define BLOCKDIM 32
+const int INBLOCK = 4;
+
+// copy and transpose columns of the input matrix into the output matrix. nrows refers to the input matrix 
+// (and so is ncols for the output). ncols is the length of the iptrs array, which will be the number of 
+// rows of the output matrix. iptrs specifies the columns of the input array to copy. 
+// outstride is stride of the output matrix
+
+__global__ void __icopy_transpose(int *iptrs, float *in, float *out, int outstride, int nrows, int ncols) {
+  __shared__ float tile[BLOCKDIM][BLOCKDIM+1];
+  int nx = BLOCKDIM * gridDim.x;
+  int ny = BLOCKDIM * gridDim.y;
+  int ix = BLOCKDIM * blockIdx.x;
+  int iy = BLOCKDIM * blockIdx.y;
+
+  for (int yb = iy; yb < ncols; yb += ny) {
+    for (int xb = ix; xb < nrows; xb += nx) {
+      if (xb + threadIdx.x < nrows) {
+        int ylim = min(ncols, yb + BLOCKDIM);
+        for (int y = threadIdx.y + yb; y < ylim; y += blockDim.y) {
+          tile[threadIdx.x][y-yb] = in[threadIdx.x + xb + iptrs[y]*nrows];
+        }
+      }
+      __syncthreads();
+      if (yb + threadIdx.x < ncols) {
+        int xlim = min(nrows, xb + BLOCKDIM);
+        for (int x = threadIdx.y + xb; x < xlim; x += blockDim.y) {
+          out[threadIdx.x + yb + x*outstride] = tile[x-xb][threadIdx.x];
+        }
+      }
+      __syncthreads();
+    }
+  } 
+}
+
+int icopy_transpose(int *iptrs, float *in, float *out, int stride, int nrows, int ncols) {
+  const dim3 griddims(20,256,1);
+  const dim3 blockdims(BLOCKDIM,INBLOCK,1);
+  cudaError_t err;
+  __icopy_transpose<<<griddims,blockdims>>>(iptrs, in, out, stride, nrows, ncols); 
+  cudaDeviceSynchronize();
+  err = cudaGetLastError();
+  if (err != cudaSuccess) {fprintf(stderr, "cuda error in icopy_transpose"); return err;}
+  return 0;
+}
