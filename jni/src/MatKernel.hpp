@@ -58,6 +58,8 @@ int treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows
 
 int icopy_transpose(int *iptrs, float *in, float *out, int stride, int nrows, int ncols);
 
+int ocopy_transpose(int *iptrs, float *in, float *out, int stride, int nrows, int ncols);
+
 int isortk(int *pkeys, unsigned int *pvals, int n, int asc);
 
 int lsortk(long long *pkeys, unsigned int *pvals, int n, int asc);

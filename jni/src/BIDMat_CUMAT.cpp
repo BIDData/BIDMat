@@ -540,4 +540,15 @@ extern "C" {
     return icopy_transpose(iptrs, in, out, stride, nrows, ncols);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_ocopytranspose
+  (JNIEnv *env, jobject obj, jobject jiptrs, jobject jin, jobject jout,
+   jint stride, jint nrows, jint ncols)
+  {
+    int *iptrs = (int*)getPointer(env, jiptrs);
+    float *in = (float*)getPointer(env, jin);
+    float *out = (float*)getPointer(env, jout);
+
+    return ocopy_transpose(iptrs, in, out, stride, nrows, ncols);
+  }
+
 }
