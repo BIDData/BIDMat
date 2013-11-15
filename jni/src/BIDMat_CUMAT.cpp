@@ -529,7 +529,7 @@ extern "C" {
     return treeprod(trees, feats, tpos, otpos, nrows, ncols, ns, tstride, ntrees);
   }
 
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_icopytranspose
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_icopyt
   (JNIEnv *env, jobject obj, jobject jiptrs, jobject jin, jobject jout,
    jint stride, jint nrows, jint ncols)
   {
@@ -540,7 +540,7 @@ extern "C" {
     return icopy_transpose(iptrs, in, out, stride, nrows, ncols);
   }
 
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_ocopytranspose
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_ocopytadd
   (JNIEnv *env, jobject obj, jobject jiptrs, jobject jin, jobject jout,
    jint stride, jint nrows, jint ncols)
   {
@@ -548,7 +548,18 @@ extern "C" {
     float *in = (float*)getPointer(env, jin);
     float *out = (float*)getPointer(env, jout);
 
-    return ocopy_transpose(iptrs, in, out, stride, nrows, ncols);
+    return ocopy_transpose_add(iptrs, in, out, stride, nrows, ncols);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_ocopytmin
+  (JNIEnv *env, jobject obj, jobject jiptrs, jobject jin, jobject jout,
+   jint stride, jint nrows, jint ncols)
+  {
+    int *iptrs = (int*)getPointer(env, jiptrs);
+    float *in = (float*)getPointer(env, jin);
+    float *out = (float*)getPointer(env, jout);
+
+    return ocopy_transpose_min(iptrs, in, out, stride, nrows, ncols);
   }
 
 }

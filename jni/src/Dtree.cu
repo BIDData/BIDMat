@@ -374,7 +374,7 @@ int icopy_transpose(int *iptrs, float *in, float *out, int stride, int nrows, in
 
 // copy and transpose the input matrix into columns of the output matrix. nrows, ncols refer to output matrix
 
-__global__ void __ocopy_transpose(int *optrs, float *in, float *out, int instride, int nrows, int ncols) {
+__global__ void __ocopy_transpose_add(int *optrs, float *in, float *out, int instride, int nrows, int ncols) {
   int nx = BLOCKDIM * gridDim.x;
   int ny = BLOCKDIM * gridDim.y;
   int ix = BLOCKDIM * blockIdx.x;
@@ -393,7 +393,33 @@ __global__ void __ocopy_transpose(int *optrs, float *in, float *out, int instrid
       if (xb + threadIdx.x < nrows) {
         int ylim = min(ncols, yb + BLOCKDIM);
         for (int y = threadIdx.y + yb; y < ylim; y += blockDim.y) {
-//          atomicAdd(&out[optrs[y]*nrows + threadIdx.x + xb], tile[threadIdx.x][y-yb]);
+          atomicAdd(&out[optrs[y]*nrows + threadIdx.x + xb], tile[threadIdx.x][y-yb]);
+        }
+      }
+      __syncthreads();
+    }
+  } 
+}
+
+__global__ void __ocopy_transpose_min(int *optrs, float *in, float *out, int instride, int nrows, int ncols) {
+  int nx = BLOCKDIM * gridDim.x;
+  int ny = BLOCKDIM * gridDim.y;
+  int ix = BLOCKDIM * blockIdx.x;
+  int iy = BLOCKDIM * blockIdx.y;
+  __shared__ float tile[BLOCKDIM][BLOCKDIM+1];
+
+  for (int yb = iy; yb < ncols; yb += ny) {
+    for (int xb = ix; xb < nrows; xb += nx) {
+      if (yb + threadIdx.x < ncols) {
+        int xlim = min(nrows, xb + BLOCKDIM);
+        for (int x = threadIdx.y + xb; x < xlim; x += blockDim.y) {
+          tile[x-xb][threadIdx.x] = in[threadIdx.x + yb + x*instride];
+        }
+      }
+      __syncthreads();
+      if (xb + threadIdx.x < nrows) {
+        int ylim = min(ncols, yb + BLOCKDIM);
+        for (int y = threadIdx.y + yb; y < ylim; y += blockDim.y) {
           atomicMin((int *)&out[optrs[y]*nrows + threadIdx.x + xb], *(int *)(&tile[threadIdx.x][y-yb]));
         }
       }
@@ -402,11 +428,22 @@ __global__ void __ocopy_transpose(int *optrs, float *in, float *out, int instrid
   } 
 }
 
-int ocopy_transpose(int *optrs, float *in, float *out, int stride, int nrows, int ncols) {
+int ocopy_transpose_add(int *optrs, float *in, float *out, int stride, int nrows, int ncols) {
   const dim3 griddims(20,256,1);
   const dim3 blockdims(BLOCKDIM,INBLOCK,1);
   cudaError_t err;
-  __ocopy_transpose<<<griddims,blockdims>>>(optrs, in, out, stride, nrows, ncols); 
+  __ocopy_transpose_add<<<griddims,blockdims>>>(optrs, in, out, stride, nrows, ncols); 
+  cudaDeviceSynchronize();
+  err = cudaGetLastError();
+  if (err != cudaSuccess) {fprintf(stderr, "cuda error in ocopy_transpose"); return err;}
+  return 0;
+}
+
+int ocopy_transpose_min(int *optrs, float *in, float *out, int stride, int nrows, int ncols) {
+  const dim3 griddims(20,256,1);
+  const dim3 blockdims(BLOCKDIM,INBLOCK,1);
+  cudaError_t err;
+  __ocopy_transpose_min<<<griddims,blockdims>>>(optrs, in, out, stride, nrows, ncols); 
   cudaDeviceSynchronize();
   err = cudaGetLastError();
   if (err != cudaSuccess) {fprintf(stderr, "cuda error in ocopy_transpose"); return err;}
