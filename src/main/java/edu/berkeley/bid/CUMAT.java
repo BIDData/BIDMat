@@ -54,9 +54,11 @@ public final class CUMAT {
 
     public static native int LDAgibbsx(int nr, int nnz, Pointer A, Pointer B, Pointer Cir, Pointer Cic, Pointer P, Pointer Ms, Pointer Us, int k);
     
-    public static native int treeprod(Pointer trees, Pointer feats, Pointer tpos, Pointer otpos, int nrows, int ncols, int ns, int tstride, int ntrees);
+    public static native int treeprod(Pointer trees, Pointer feats, Pointer tpos, Pointer otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth);
 
     public static native int icopyt(Pointer iptrs, Pointer in, Pointer out, int stride, int nrows, int ncols);
+    
+    public static native int ocopyt(Pointer iptrs, Pointer in, Pointer out, int stride, int nrows, int ncols);
     
     public static native int ocopytadd(Pointer iptrs, Pointer in, Pointer out, int stride, int nrows, int ncols);
     

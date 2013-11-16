@@ -23,7 +23,7 @@
 // It is converted and saved in a variable named fthresh
 
 
-__global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees) {
+__global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth) {
   __shared__ float totals[32][33];
 
   unsigned int t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16,t17,t18,t19,t20,t21,t22,t23,t24,t25,t26,t27,t28,t29,t30,t31;
@@ -186,21 +186,24 @@ __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *ot
       vtmp = __shfl(vv, t29); if (t29 < nrem) totals[threadIdx.x][0] += vtmp; t29 -= 32;
       vtmp = __shfl(vv, t30); if (t30 < nrem) totals[threadIdx.x][0] += vtmp; t30 -= 32;
       vtmp = __shfl(vv, t31); if (t31 < nrem) totals[threadIdx.x][0] += vtmp; t31 -= 32;
-
-
     }
 
     // Compare the total for tree = threadIdx.x with its threshold. Save right child index if its bigger, else left child. 
-    newt = 2 * tp;
-    if (totals[threadIdx.x][0] > fthresh) {
-      newt++;
+    vtmp = totals[threadIdx.x][0];
+    if (doth) {                       // Apply the threshold if doth true, otherwise save the value
+      newt = 2 * tp + 1;
+      if (vtmp > fthresh) {
+        newt++;
+      }
+      otpos[threadIdx.x + ntrees * bd] = newt; 
+    } else {
+      otpos[threadIdx.x + ntrees * bd] = *((int *)&vtmp); 
     }
-    otpos[threadIdx.x + ntrees * bd] = newt;
   }
 }
 
 // restrict to at most 16 features per tree node.
-__global__ void __treeprod16f(int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees) {
+__global__ void __treeprod16f(int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth) {
   __shared__ float totals[32][17];
 
   int t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15;
@@ -295,22 +298,27 @@ __global__ void __treeprod16f(int *trees, float *feats, int *tpos, int *otpos, i
       tx = min(31, max(0, t15 - imin)); vtmp = __shfl(vv, tx); if (t15 >= imin && t15 < imax) totals[threadIdx.x][0] += vtmp;
     }
 
-    newt = 2 * tp;
-    if (totals[threadIdx.x][0] > fthresh) {
-      newt++;
+    vtmp = totals[threadIdx.x][0];
+    if (doth) {
+      newt = 2 * tp + 1;
+      if (vtmp > fthresh) {
+        newt++;
+      }
+      otpos[threadIdx.x + ntrees * bd] = newt;
+    } else {
+      otpos[threadIdx.x + ntrees * bd] = *((int *)&vtmp);
     }
-    otpos[threadIdx.x + ntrees * bd] = newt;
   }
 }
 
 #else
-__global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees) {}
+__global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth) {}
 #endif
 #else
-__global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees) {}
+__global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth) {}
 #endif
 
-int treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees) {
+int treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth) {
   int d1, d2, err;
   if (ncols < 65536) {
     d1 = ncols;
@@ -320,7 +328,7 @@ int treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows
     d2 = 1 + ncols/d1;
   }
   dim3 grid(d1, d2, 1);
-  __treeprod<<<grid,32>>>(trees, feats, tpos, otpos, nrows, ncols, ns, tstride, ntrees);
+  __treeprod<<<grid,32>>>(trees, feats, tpos, otpos, nrows, ncols, ns, tstride, ntrees, doth);
   cudaDeviceSynchronize();
   err = cudaGetLastError();
   return err;
@@ -373,6 +381,33 @@ int icopy_transpose(int *iptrs, float *in, float *out, int stride, int nrows, in
 }
 
 // copy and transpose the input matrix into columns of the output matrix. nrows, ncols refer to output matrix
+
+__global__ void __ocopy_transpose(int *optrs, float *in, float *out, int instride, int nrows, int ncols) {
+  int nx = BLOCKDIM * gridDim.x;
+  int ny = BLOCKDIM * gridDim.y;
+  int ix = BLOCKDIM * blockIdx.x;
+  int iy = BLOCKDIM * blockIdx.y;
+  __shared__ float tile[BLOCKDIM][BLOCKDIM+1];
+
+  for (int yb = iy; yb < ncols; yb += ny) {
+    for (int xb = ix; xb < nrows; xb += nx) {
+      if (yb + threadIdx.x < ncols) {
+        int xlim = min(nrows, xb + BLOCKDIM);
+        for (int x = threadIdx.y + xb; x < xlim; x += blockDim.y) {
+          tile[x-xb][threadIdx.x] = in[threadIdx.x + yb + x*instride];
+        }
+      }
+      __syncthreads();
+      if (xb + threadIdx.x < nrows) {
+        int ylim = min(ncols, yb + BLOCKDIM);
+        for (int y = threadIdx.y + yb; y < ylim; y += blockDim.y) {
+          out[optrs[y]*nrows + threadIdx.x + xb] = tile[threadIdx.x][y-yb];
+        }
+      }
+      __syncthreads();
+    }
+  } 
+}
 
 __global__ void __ocopy_transpose_add(int *optrs, float *in, float *out, int instride, int nrows, int ncols) {
   int nx = BLOCKDIM * gridDim.x;
@@ -439,6 +474,17 @@ int ocopy_transpose_add(int *optrs, float *in, float *out, int stride, int nrows
   return 0;
 }
 
+int ocopy_transpose(int *optrs, float *in, float *out, int stride, int nrows, int ncols) {
+  const dim3 griddims(20,256,1);
+  const dim3 blockdims(BLOCKDIM,INBLOCK,1);
+  cudaError_t err;
+  __ocopy_transpose<<<griddims,blockdims>>>(optrs, in, out, stride, nrows, ncols); 
+  cudaDeviceSynchronize();
+  err = cudaGetLastError();
+  if (err != cudaSuccess) {fprintf(stderr, "cuda error in ocopy_transpose"); return err;}
+  return 0;
+}
+
 int ocopy_transpose_min(int *optrs, float *in, float *out, int stride, int nrows, int ncols) {
   const dim3 griddims(20,256,1);
   const dim3 blockdims(BLOCKDIM,INBLOCK,1);
@@ -448,4 +494,148 @@ int ocopy_transpose_min(int *optrs, float *in, float *out, int stride, int nrows
   err = cudaGetLastError();
   if (err != cudaSuccess) {fprintf(stderr, "cuda error in ocopy_transpose"); return err;}
   return 0;
+}
+
+
+#ifdef __CUDA_ARCH__ 
+#if __CUDA_ARCH__ > 200
+__global__ void __cumsumi(int *in, int *out, int *jc, int nrows) {
+  __shared__ int tots[32];
+  int start = jc[blockIdx.x] + nrows * blockIdx.y;
+  int end = jc[blockIdx.x+1] + nrows * blockIdx.y;
+  int sum = 0;
+  int tsum, tmp, ttot, ttot0;
+  for (int i = start + threadIdx.x + threadIdx.y * blockDim.x; i < end; i += blockDim.x * blockDim.y) {
+    tsum = in[i];
+    tmp = __shfl_up(tsum, 1);
+    if (threadIdx.x >= 1) tsum += tmp;
+    tmp = __shfl_up(tsum, 2);
+    if (threadIdx.x >= 2) tsum += tmp;
+    tmp = __shfl_up(tsum, 4);
+    if (threadIdx.x >= 4) tsum += tmp;
+    tmp = __shfl_up(tsum, 8);
+    if (threadIdx.x >= 8) tsum += tmp;
+    tmp = __shfl_up(tsum, 16);
+    if (threadIdx.x >= 16) tsum += tmp;
+    ttot = __shfl(tsum, 31);
+    ttot0 = ttot;
+    __syncthreads();
+    if (threadIdx.x == threadIdx.y) {
+      tots[threadIdx.y] = ttot;
+    }
+    __syncthreads();
+    for (int k = 1; k < blockDim.y; k *= 2) {
+      if (threadIdx.y >= k) {
+        if (threadIdx.x == threadIdx.y - k) {
+          ttot += tots[threadIdx.x];
+        }
+      }
+      __syncthreads();
+      if (threadIdx.y >= k) {
+        ttot = __shfl(ttot, threadIdx.y - k);
+        if (threadIdx.x == threadIdx.y) {
+          tots[threadIdx.y] = ttot;
+        }
+      }
+      __syncthreads();
+    }
+    out[i] = sum + tsum + ttot - ttot0;
+    if (threadIdx.x == blockDim.y - 1) {
+      ttot = tots[threadIdx.x];
+    }
+    ttot = __shfl(ttot, blockDim.y  - 1);
+    sum += ttot;
+  }
+}
+
+__global__ void __maxs(float *in, float *out, int *outi, int *jc) {
+  __shared__ float maxv[32];
+  __shared__ int maxi[32];
+  int start = jc[blockIdx.x];
+  int end = jc[blockIdx.x+1];
+  float vmax, vtmp;
+  int imax, itmp, i, k;
+  int istart = start + threadIdx.x + threadIdx.y * blockDim.x;
+
+  if (istart < end) {
+    vmax = in[istart];
+    imax = istart;
+  }
+
+  for (i = istart + blockDim.x * blockDim.y; i < end; i += blockDim.x * blockDim.y) {
+    vtmp = in[i];
+    itmp = i;
+    if (vtmp > vmax) {
+      vmax = vtmp;
+      imax = itmp;
+    }
+  }
+
+  for (k = 1; k < blockDim.x; k *= 2) {
+    vtmp = __shfl_up(vmax, k);
+    itmp = __shfl_up(imax, k);
+    if (threadIdx.x >= k) {
+      if (vtmp > vmax) {
+        vmax = vtmp;
+        imax = itmp;
+      }
+    }
+  }
+  vmax = __shfl(vmax, blockDim.x - 1);
+  imax = __shfl(imax, blockDim.x - 1);
+  __syncthreads();
+
+  if (threadIdx.x == threadIdx.y) {
+    maxv[threadIdx.y] = vmax;
+    maxi[threadIdx.y] = imax;
+  }
+
+  __syncthreads();
+  if (threadIdx.y == 0) {
+    vmax = maxv[threadIdx.x];
+    imax = maxi[threadIdx.x];
+  }
+  __syncthreads();
+  if (threadIdx.y == 0) {
+    for (k = 1; k < blockDim.y; k *= 2) {
+      vtmp = __shfl_up(vmax, k);
+      itmp = __shfl_up(imax, k);
+      if (threadIdx.x >= k) {
+        if (vtmp > vmax) {
+          vmax = vtmp;
+          imax = itmp;
+        }
+      }
+    }
+    if (threadIdx.x == blockDim.y - 1) {
+      out[blockIdx.x] = vmax;
+      outi[blockIdx.x] = imax;
+    }
+  }
+}
+#else
+__global__ void __cumsumi(int *in, int *out, int *jc, int nrows) {}
+__global__ void __maxs(float *in, float *out, int *outi, int *jc) {}
+#endif
+#else
+__global__ void __cumsumi(int *in, int *out, int *jc, int nrows) {}
+__global__ void __maxs(float *in, float *out, int *outi, int *jc) {}
+#endif
+
+int cumsumi(int *in, int *out, int *jc, int nrows, int ncols, int m) {
+  dim3 grid(m, ncols, 1);
+  dim3 tblock(32, 32, 1);
+  __cumsumi<<<grid,tblock>>>(in, out, jc, nrows);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int maxs(float *in, float *out, int *outi, int *jc, int m) {
+  dim3 grid(m, 1, 1);
+  dim3 tblock(32, 32, 1);
+  __maxs<<<grid,tblock>>>(in, out, outi, jc);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
 }

@@ -54,9 +54,11 @@ int extractmat(float *a, long long *b, int nrows, int ncols);
 
 int extractmatx(float *a, int *b, long long *c, int n);
 
-int treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees);
+int treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth);
 
 int icopy_transpose(int *iptrs, float *in, float *out, int stride, int nrows, int ncols);
+
+int ocopy_transpose(int *iptrs, float *in, float *out, int stride, int nrows, int ncols);
 
 int ocopy_transpose_add(int *iptrs, float *in, float *out, int stride, int nrows, int ncols);
 
