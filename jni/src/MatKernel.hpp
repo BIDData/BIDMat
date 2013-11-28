@@ -4,6 +4,10 @@ int apply_binop(float *nativeA, int Anrows, int Ancols, float *nativeB, int Bnro
 
 int apply_biniop(int *nativeA, int Anrows, int Ancols, int *nativeB, int Bnrows, int Bncols, int *nativeC, int opn);
 
+int copyToInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols);
+
+int copyFromInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols);
+
 int set_val(float *A, float val, int length);
 
 int set_ival(float *A, int val, int length);

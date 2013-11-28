@@ -14,6 +14,10 @@ public final class CUMAT {
 
     public static native int applyiop(Pointer A, int Anrows, int Ancols, Pointer B, int Bnrows, int Bncols, Pointer C, int opn);
     
+    public static native int copyToInds2D(Pointer A, int lda, Pointer B, int ldb, Pointer I, int nrows, Pointer J, int ncols);
+
+    public static native int copyFromInds2D(Pointer A, int lda, Pointer B, int ldb, Pointer I, int nrows, Pointer J, int ncols);
+    
     public static native int applygfun(Pointer A, Pointer B, int N, int opn);
     
     public static native int applylinks(Pointer A, Pointer L, Pointer C, int nrows, int ncols);

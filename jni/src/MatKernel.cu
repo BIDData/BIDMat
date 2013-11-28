@@ -496,6 +496,104 @@ int apply_biniop(int *A, int Anrows, int Ancols,
   return err;
 }
 
+// Implement B[I,J] = A
+// indexed copy: version with one block per column
+__global__ void __copyToInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols) {
+  int iblock = blockIdx.x + blockIdx.y * gridDim.x;
+  if (iblock < ncols) {
+    int icol = J[iblock];
+    for (int i = threadIdx.x; i < nrows; i += blockDim.x) {
+      B[I[i] + icol * ldb] = A[i + iblock * lda];
+    }
+  }
+}
+
+// Implement B[I,J] = A
+// indexed copy: version with one thread per element
+__global__ void __copyToInds2Dx(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols) {
+  int indx = threadIdx.x + blockDim.x * (blockIdx.x + blockIdx.y * gridDim.x);
+  if (indx < nrows * ncols) {
+    int irow = indx % nrows;
+    int icol = indx / nrows;
+    B[I[irow] + J[icol] * ldb] = A[irow + icol * lda];
+  }
+}
+
+// Implement B[I,J] = A
+int copyToInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols) {
+  int len = nrows * ncols;
+  int nthreads = min(len, max(32, min(1024, nrows)));
+  int nblocks = min(ncols, (len-1)/nthreads + 1);
+  dim3 griddims;
+  griddims.x = 1;
+  griddims.y = 1;
+  griddims.z = 1;
+  if (nblocks < 65536) {
+    griddims.x = nblocks;
+  } else {
+    int vs = (int)sqrt((float)nblocks);
+    griddims.x = vs;
+    griddims.y = (nblocks-1)/vs + 1;
+  }
+  if (nblocks == ncols) {
+    __copyToInds2D<<<griddims,nthreads>>>(A, lda, B, ldb, I, nrows, J, ncols);
+  } else {
+    __copyToInds2Dx<<<griddims,nthreads>>>(A, lda, B, ldb, I, nrows, J, ncols);
+  }
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+// Implement B = A[I,J]
+// indexed copy: version with one block per column
+__global__ void __copyFromInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols) {
+  int iblock = blockIdx.x + blockIdx.y * gridDim.x;
+  if (iblock < ncols) {
+    int icol = J[iblock];
+    for (int i = threadIdx.x; i < nrows; i += blockDim.x) {
+      B[i + iblock * ldb] = A[I[i] + icol * lda];
+    }
+  }
+}
+
+// Implement B = A[I,J]
+// indexed copy: version with one thread per element
+__global__ void __copyFromInds2Dx(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols) {
+  int indx = threadIdx.x + blockDim.x * (blockIdx.x + blockIdx.y * gridDim.x);
+  if (indx < nrows * ncols) {
+    int irow = indx % nrows;
+    int icol = indx / nrows;
+    B[irow + icol * ldb] = A[I[irow] + J[icol] * lda];
+  }
+}
+
+// Implement B = A[I,J]
+int copyFromInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols) {
+  int len = nrows * ncols;
+  int nthreads = min(len, max(32, min(1024, nrows)));
+  int nblocks = min(ncols, (len-1)/nthreads + 1);
+  dim3 griddims;
+  griddims.x = 1;
+  griddims.y = 1;
+  griddims.z = 1;
+  if (nblocks < 65536) {
+    griddims.x = nblocks;
+  } else {
+    int vs = (int)sqrt((float)nblocks);
+    griddims.x = vs;
+    griddims.y = (nblocks-1)/vs + 1;
+  }
+  if (nblocks == ncols) {
+    __copyFromInds2D<<<griddims,nthreads>>>(A, lda, B, ldb, I, nrows, J, ncols);
+  } else {
+    __copyFromInds2Dx<<<griddims,nthreads>>>(A, lda, B, ldb, I, nrows, J, ncols);
+  }
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
 __global__ void __dsmult(int nrows, int nnz, float *A, float *Bdata, int *Bir, int *Bic, float *C) {
   int jstart = ((long long)blockIdx.x) * nnz / gridDim.x;
   int jend = ((long long)(blockIdx.x + 1)) * nnz / gridDim.x;

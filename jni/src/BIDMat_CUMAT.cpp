@@ -67,6 +67,30 @@ extern "C" {
     return apply_biniop(nativeA, Anrows, Ancols, nativeB, Bnrows, Bncols, nativeC, opn);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_copyToInds2D
+  (JNIEnv *env, jobject obj, jobject jA, jint lda, jobject jB, jint ldb,
+   jobject jI, jint nrows, jobject jJ, jint ncols) 
+  {
+    float *A = (float*)getPointer(env, jA);
+    float *B = (float*)getPointer(env, jB);
+    int *I = (int*)getPointer(env, jI);
+    int *J = (int*)getPointer(env, jJ);
+
+    return copyToInds2D(A, lda, B, ldb, I, nrows, J, ncols);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_copyFromInds2D
+  (JNIEnv *env, jobject obj, jobject jA, jint lda, jobject jB, jint ldb,
+   jobject jI, jint nrows, jobject jJ, jint ncols) 
+  {
+    float *A = (float*)getPointer(env, jA);
+    float *B = (float*)getPointer(env, jB);
+    int *I = (int*)getPointer(env, jI);
+    int *J = (int*)getPointer(env, jJ);
+
+    return copyFromInds2D(A, lda, B, ldb, I, nrows, J, ncols);
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_applygfun
   (JNIEnv *env, jobject obj, jobject jA, jobject jB, jint N, jint opn) 
   {
