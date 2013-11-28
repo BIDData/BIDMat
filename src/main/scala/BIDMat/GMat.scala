@@ -25,6 +25,60 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     
   override def nnz = length
   
+  def apply(I:GIMat, J:GIMat):GMat = {
+    val out = GMat.newOrCheckGMat(I.length, J.length, null, GUID, I.GUID, J.GUID, "apply".##)
+    CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, J.length)
+    out
+  }
+  
+  def apply(i:Int, J:GIMat):GMat = {
+    val I = GIMat(i)
+    val out = GMat.newOrCheckGMat(I.length, J.length, null, GUID, I.GUID, J.GUID, "apply".##)
+    CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, J.length)
+    I.free
+    out
+  }
+  
+  def apply(I:GIMat, j:Int):GMat = {
+    val J = GIMat(j)
+    val out = GMat.newOrCheckGMat(I.length, J.length, null, GUID, I.GUID, J.GUID, "apply".##)
+    CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, J.length)
+    J.free
+    out
+  }
+  
+  def apply(i:Int, j:Int):Float = {
+    val tmp = new Array[Float](1)
+    cudaMemcpy(Pointer.to(tmp), data.withByteOffset(1L*(i + j*nrows)*Sizeof.FLOAT), Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
+    tmp(0)
+  }
+  
+  def update(I:GIMat, J:GIMat, V:GMat):GMat = {
+    CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, I.length, J.data, J.length)
+    this
+  }
+  
+  def update(i:Int, J:GIMat, V:GMat):GMat = {
+  	val I = GIMat(i)
+    CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, I.length, J.data, J.length)
+    I.free
+    this
+  }
+    
+  def update(I:GIMat, j:Int, V:GMat):GMat = {
+  	val J = GIMat(j)
+    CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, I.length, J.data, J.length)
+    J.free
+    this
+  }
+      
+  def update(i:Int, j:Int, v:Float):GMat = {
+    val tmp = new Array[Float](1)
+    tmp(0) = v
+    cudaMemcpy(data.withByteOffset(1L*(i + j*nrows)*Sizeof.FLOAT), Pointer.to(tmp), Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+    this
+  }
+  
   val myGPU = SciFunctions.getGPU
   
   override def clear = {
@@ -88,9 +142,10 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     	} else {
     		cublasSgemm('n', 'n', nrows, a.ncols, ncols, 1.0f, data, nrows, a.data, a.nrows, 0f, out.data, nrows)
     		cudaDeviceSynchronize()
-    		if (cublasGetError != 0) {
+    		val err = cublasGetError
+    		if (err != 0) {
     			println("device is %d" format SciFunctions.getGPU)
-    			throw new RuntimeException("Cublas error in * "+cublasGetError)
+    			throw new RuntimeException("Cublas error in * "+err)
     		}
     	}
 
