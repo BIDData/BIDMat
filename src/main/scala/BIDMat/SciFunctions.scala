@@ -539,6 +539,14 @@ object SciFunctions {
   
   def sum(a:CMat, n:Int) = a.ccReduceOpv(n, CMat.vecAddFun, null)
   def sum(a:CMat, n:Int, c:Mat) = a.ccReduceOpv(n, CMat.vecAddFun, c)
+  
+  def cumsumi(a:GMat, jc:GIMat, omat:Mat):GMat = {
+    val out = GMat.newOrCheckGMat(a.nrows, a.ncols, omat, a.GUID, jc.GUID, "cumsumi".##)
+    CUMAT.cumsumi(a.data, out.data, jc.data, a.nrows, a.ncols, jc.length)
+    out
+  }
+  
+  def cumsumi(a:GMat, jc:GIMat):GMat = cumsumi(a, jc, null)
      
   def max(a:Mat, b:Mat):Mat = max(a, b, null)
 
