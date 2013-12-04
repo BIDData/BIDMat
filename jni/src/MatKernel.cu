@@ -1910,5 +1910,5 @@ int main(int argc, char **argv) {
   if (dB != NULL) cudaFree(dB);
   if (dC != NULL) cudaFree(dC);
   if (C != NULL) free(C);
-}
+} 
 #endif
