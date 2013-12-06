@@ -277,6 +277,60 @@ extern "C" {
     return transpose(A, instride, B, outstride, nrows, ncols);
   }
 
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_accum
+  (JNIEnv *env, jobject obj, jobject jI, jobject jJ, jobject jV, jobject jS, jint m, jint nrows)
+  {
+    int *I = (int*)getPointer(env, jI);
+    int *J = (int*)getPointer(env, jJ);
+    float *V = (float*)getPointer(env, jV);
+    float *S = (float*)getPointer(env, jS);
+    return accum(I, J, V, S, m, nrows);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_accumI
+  (JNIEnv *env, jobject obj, jint I, jobject jJ, jobject jV, jobject jS, jint m, jint nrows)
+  {
+    int *J = (int*)getPointer(env, jJ);
+    float *V = (float*)getPointer(env, jV);
+    float *S = (float*)getPointer(env, jS);
+    return accum(I, J, V, S, m, nrows);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_accumJ
+  (JNIEnv *env, jobject obj, jobject jI, jint J, jobject jV, jobject jS, jint m, jint nrows)
+  {
+    int *I = (int*)getPointer(env, jI);
+    float *V = (float*)getPointer(env, jV);
+    float *S = (float*)getPointer(env, jS);
+    return accum(I, J, V, S, m, nrows);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_accumV
+  (JNIEnv *env, jobject obj, jobject jI, jobject jJ, jfloat V, jobject jS, jint m, jint nrows)
+  {
+    int *I = (int*)getPointer(env, jI);
+    int *J = (int*)getPointer(env, jJ);
+    float *S = (float*)getPointer(env, jS);
+    return accum(I, J, V, S, m, nrows);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_accumIV
+  (JNIEnv *env, jobject obj, jint I, jobject jJ, jfloat V, jobject jS, jint m, jint nrows)
+  {
+    int *J = (int*)getPointer(env, jJ);
+    float *S = (float*)getPointer(env, jS);
+    return accum(I, J, V, S, m, nrows);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_accumJV
+  (JNIEnv *env, jobject obj, jobject jI, jint J, jfloat V, jobject jS, jint m, jint nrows)
+  {
+    int *I = (int*)getPointer(env, jI);
+    float *S = (float*)getPointer(env, jS);
+    return accum(I, J, V, S, m, nrows);
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumsumi
   (JNIEnv *env, jobject obj, jobject jin, jobject jout, jobject jjc, jint nrows, jint ncols, jint m) 
   {
