@@ -1861,6 +1861,133 @@ int dmv(float *a, int nrows, int ncols, float *b, float *c, int trans) {
   return err;
 }
 
+__global__ void __accum(int *I, int *J, float *V, float *S, int m, int nrows) {
+  int istart = ((int)(((long long)blockIdx.x) * m / gridDim.x));
+  int iend = ((int)(((long long)blockIdx.x + 1) * m / gridDim.x));
+  istart = (istart / 32) * 32;
+  if (blockIdx.x != gridDim.x - 1) {
+    iend = (iend / 32) * 32;
+  }
+  for (int i = istart + threadIdx.x; i < iend; i+= blockDim.x) {
+    atomicAdd(&S[I[i] + nrows * J[i]], V[i]); 
+  }  
+}
+
+__global__ void __accum(int I, int *J, float *V, float *S, int m, int nrows) {
+  int istart = ((int)(((long long)blockIdx.x) * m / gridDim.x));
+  int iend = ((int)(((long long)blockIdx.x + 1) * m / gridDim.x));
+  istart = (istart / 32) * 32;
+  if (blockIdx.x != gridDim.x - 1) {
+    iend = (iend / 32) * 32;
+  }
+  for (int i = istart + threadIdx.x; i < iend; i+= blockDim.x) {
+    atomicAdd(&S[I + nrows * J[i]], V[i]); 
+  }  
+}
+
+__global__ void __accum(int *I, int J, float *V, float *S, int m, int nrows) {
+  int istart = ((int)(((long long)blockIdx.x) * m / gridDim.x));
+  int iend = ((int)(((long long)blockIdx.x + 1) * m / gridDim.x));
+  istart = (istart / 32) * 32;
+  if (blockIdx.x != gridDim.x - 1) {
+    iend = (iend / 32) * 32;
+  }
+  for (int i = istart + threadIdx.x; i < iend; i+= blockDim.x) {
+    atomicAdd(&S[I[i] + nrows * J], V[i]); 
+  }  
+}
+
+
+__global__ void __accum(int *I, int *J, float V, float *S, int m, int nrows) {
+  int istart = ((int)(((long long)blockIdx.x) * m / gridDim.x));
+  int iend = ((int)(((long long)blockIdx.x + 1) * m / gridDim.x));
+  istart = (istart / 32) * 32;
+  if (blockIdx.x != gridDim.x - 1) {
+    iend = (iend / 32) * 32;
+  }
+  for (int i = istart + threadIdx.x; i < iend; i+= blockDim.x) {
+    atomicAdd(&S[I[i] + nrows * J[i]], V); 
+  }  
+}
+
+__global__ void __accum(int I, int *J, float V, float *S, int m, int nrows) {
+  int istart = ((int)(((long long)blockIdx.x) * m / gridDim.x));
+  int iend = ((int)(((long long)blockIdx.x + 1) * m / gridDim.x));
+  istart = (istart / 32) * 32;
+  if (blockIdx.x != gridDim.x - 1) {
+    iend = (iend / 32) * 32;
+  }
+  for (int i = istart + threadIdx.x; i < iend; i+= blockDim.x) {
+    atomicAdd(&S[I + nrows * J[i]], V); 
+  }  
+}
+
+__global__ void __accum(int *I, int J, float V, float *S, int m, int nrows) {
+  int istart = ((int)(((long long)blockIdx.x) * m / gridDim.x));
+  int iend = ((int)(((long long)blockIdx.x + 1) * m / gridDim.x));
+  istart = (istart / 32) * 32;
+  if (blockIdx.x != gridDim.x - 1) {
+    iend = (iend / 32) * 32;
+  }
+  for (int i = istart + threadIdx.x; i < iend; i+= blockDim.x) {
+    atomicAdd(&S[I[i] + nrows * J], V); 
+  }  
+}
+
+int accum(int *I, int *J, float *V, float *S, int m, int nrows) {
+  int nthreads = min(512, m);
+  int nblocks = max(1, min(65535, m/nthreads/8));
+  __accum<<<nblocks,nthreads>>>(I,J,V,S,m,nrows);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int accum(int *I, int J, float *V, float *S, int m, int nrows) {
+  int nthreads = min(512, m);
+  int nblocks = max(1, min(65535, m/nthreads/8));
+  __accum<<<nblocks,nthreads>>>(I,J,V,S,m,nrows);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int accum(int I, int *J, float *V, float *S, int m, int nrows) {
+  int nthreads = min(512, m);
+  int nblocks = max(1, min(65535, m/nthreads/8));
+  __accum<<<nblocks,nthreads>>>(I,J,V,S,m,nrows);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+
+int accum(int *I, int *J, float V, float *S, int m, int nrows) {
+  int nthreads = min(512, m);
+  int nblocks = max(1, min(65535, m/nthreads/8));
+  __accum<<<nblocks,nthreads>>>(I,J,V,S,m,nrows);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int accum(int *I, int J, float V, float *S, int m, int nrows) {
+  int nthreads = min(512, m);
+  int nblocks = max(1, min(65535, m/nthreads/8));
+  __accum<<<nblocks,nthreads>>>(I,J,V,S,m,nrows);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int accum(int I, int *J, float V, float *S, int m, int nrows) {
+  int nthreads = min(512, m);
+  int nblocks = max(1, min(65535, m/nthreads/8));
+  __accum<<<nblocks,nthreads>>>(I,J,V,S,m,nrows);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
 
 #ifdef TEST
 int main(int argc, char **argv) {

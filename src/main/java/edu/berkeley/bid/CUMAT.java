@@ -48,6 +48,18 @@ public final class CUMAT {
     
     public static native int dsmultT(int nr, int nc, int nnz, Pointer A, Pointer Bdata, Pointer Bir, Pointer Bic, Pointer C);
     
+    public static native int accum(Pointer I, Pointer J, Pointer V, Pointer S, int m, int nrows);
+    
+    public static native int accumI(int I, Pointer J, Pointer V, Pointer S, int m, int nrows);
+    
+    public static native int accumJ(Pointer I, int J, Pointer V, Pointer S, int m, int nrows);
+
+    public static native int accumV(Pointer I, Pointer J, float V, Pointer S, int m, int nrows);
+    
+    public static native int accumIV(int I, Pointer J, float V, Pointer S, int m, int nrows);
+    
+    public static native int accumJV(Pointer I, int J, float V, Pointer S, int m, int nrows);  
+    
     public static native int spsum(int nr, int nc, int nnz, Pointer Air, Pointer Aic, Pointer P, Pointer B, int n);
     
     public static native int dds(int nr, int nnz, Pointer A, Pointer B, Pointer Cir, Pointer Cic, Pointer P);

@@ -46,6 +46,18 @@ int reducebin2op(int nrows, int ncols, float *A, float *B, float *C, int opb, in
 
 int transpose(float *in, int instride, float *out, int outstride, int nrows, int ncols);
 
+int accum(int *I, int *J, float *V, float *S, int m, int nrows);
+
+int accum(int *I, int J, float *V, float *S, int m, int nrows);
+
+int accum(int I, int *J, float *V, float *S, int m, int nrows);
+
+int accum(int *I, int *J, float V, float *S, int m, int nrows);
+
+int accum(int *I, int J, float V, float *S, int m, int nrows);
+
+int accum(int I, int *J, float V, float *S, int m, int nrows);
+
 int cumsumi(int *in, int *out, int *jc, int nrows, int ncols, int m);
 
 int maxs(float *in, float *out, int *outi, int *jc, int m);
