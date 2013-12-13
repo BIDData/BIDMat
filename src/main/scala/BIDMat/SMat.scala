@@ -29,7 +29,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   
   override def apply(a:IMat, b:Int):SMat = SMat(gapply(a, b))	
   
-  override def colslice(a:Int, b:Int, out:Mat) = SMat(gcolslice(a, b, out))
+  override def colslice(a:Int, b:Int, out:Mat) = colslice(a, b, out, 0)
      
   override def colslice(col1:Int, col2:Int, omat:Mat, there:Int) = {
     val ioff = Mat.ioneBased
@@ -46,7 +46,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
         throw new RuntimeException("colslice trying to append to null output matrix")
       }
     	val newnnz = jc(col2) - jc(col1)
-      SMat.newOrCheckSMat(nrows, col2-col1, newnnz, null)
+      SMat.newOrCheckSMat(nrows, col2-col1, newnnz, null, GUID, col1, "colslice".##)
     }
     if (there == 0) ms.jc(0) = ioff
     val todo = jc(col2) - jc(col1)
