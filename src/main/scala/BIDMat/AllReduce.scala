@@ -123,7 +123,7 @@ object AllReduce {
 
     			val v1 = retval(i).data(j)
     			val v2 = msum.data(icols(i0).data(j))
-    			if (Math.abs(v1-v2)/Math.max(1e-9, v2) > 1e-6) {
+    			if (math.abs(v1-v2)/math.max(1e-9, v2) > 1e-6) {
     				println("Bad value machine %d, pos %d, index %d, vals %f %f" format (i, j, icols(i0).data(j), v1, v2))
     				nerrors += 1
     			}

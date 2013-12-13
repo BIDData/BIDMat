@@ -267,7 +267,7 @@ object GSMat {
   
   def DDS(A:GMat, B:GMat, C:GSMat, oldmat:Mat):GSMat = {
     if (A.nrows != B.nrows || C.nrows != A.ncols || C.ncols != B.ncols) {
-      throw new RuntimeException("dimensions mismatch")
+      throw new RuntimeException("dimensions mismatch %d,%d  %d,%d  %d,%d" format (A.nrows, A.ncols, B.nrows, B.ncols, C.nrows, C.ncols))
     }
 //    println("DDS %d %d %d %d %f" format (C.nnz, C.GUID, C.myGPU, SciFunctions.getGPU, SciFunctions.GPUmem._1))
     val out = GSMat.newOrCheckGSMat(C.nrows, C.ncols, C.nnz, oldmat, A.GUID, B.GUID, C.GUID, "DDS".##)
