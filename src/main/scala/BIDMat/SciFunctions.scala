@@ -591,12 +591,31 @@ object SciFunctions {
     }
   }
   
+  def mini(a:Mat):Mat = {
+    a match {
+      case aa:FMat => mini(aa):FMat
+      case aa:IMat => mini(aa):IMat
+      case aa:DMat => mini(aa):DMat
+      case aa:GMat => mini(aa):GMat
+    }
+  }
+  
   def maxi(a:Mat, b:Int):Mat = {
     a match {
       case aa:FMat => maxi(aa, b):FMat
       case aa:IMat => maxi(aa, b):IMat
       case aa:DMat => maxi(aa, b):DMat
       case aa:GMat => maxi(aa, b):GMat
+    }
+  }
+  
+    
+  def maxi(a:Mat):Mat = {
+    a match {
+      case aa:FMat => maxi(aa):FMat
+      case aa:IMat => maxi(aa):IMat
+      case aa:DMat => maxi(aa):DMat
+      case aa:GMat => maxi(aa):GMat
     }
   }
   
