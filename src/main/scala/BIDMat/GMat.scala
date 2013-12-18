@@ -112,6 +112,14 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   override def zeros(nr:Int, nc:Int) = GMat.gzeros(nr, nc)
   
   override def ones(nt:Int, nc:Int) = GMat.gones(nr, nc)
+  
+  override def izeros(m:Int, n:Int) = {
+    GIMat.izeros(m,n)
+  }
+  
+  override def iones(m:Int, n:Int) = {
+    GIMat.iones(m,n)
+  }
 
   def GMult(a:GMat, oldmat:Mat):GMat = {
     if (ncols == 1 && nrows == 1) {

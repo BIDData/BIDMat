@@ -33,6 +33,8 @@ class Mat(nr:Int, nc:Int) {
   def set(v:Float) = notImplemented0("set")
   def zeros(nr:Int, nc:Int) = notImplemented0("zeros");
   def ones(nr:Int, nc:Int) = notImplemented0("ones");
+  def izeros(nr:Int, nc:Int) = notImplemented0("izeros");
+  def iones(nr:Int, nc:Int) = notImplemented0("iones");
   def clearUpper(i:Int) = notImplemented0("clearUpper");
   def clearLower(i:Int) = notImplemented0("clearLower"); 
   def clearUpper = notImplemented0("clearUpper");
