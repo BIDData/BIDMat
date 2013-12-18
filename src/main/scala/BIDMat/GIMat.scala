@@ -1,7 +1,9 @@
 package BIDMat
 import jcuda._;
 import jcuda.jcublas.JCublas;
+import jcuda.runtime._
 import jcuda.runtime.JCuda._
+import jcuda.runtime.cudaMemcpyKind._
 import jcuda.runtime.cudaError._
 import jcuda.runtime.cudaMemcpyKind._
 import edu.berkeley.bid.CUMAT;
@@ -26,6 +28,60 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   override def mytype = "GIMat"
     
   override def nnz = length
+  
+    def apply(I:GIMat, J:GIMat):GIMat = {
+    val out = GIMat.newOrCheckGIMat(I.length, J.length, null, GUID, I.GUID, J.GUID, "apply".##)
+    CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, J.length)
+    out
+  }
+  
+  def apply(i:Int, J:GIMat):GIMat = {
+    val I = GIMat(i)
+    val out = GIMat.newOrCheckGIMat(I.length, J.length, null, GUID, I.GUID, J.GUID, "apply".##)
+    CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, J.length)
+    I.free
+    out
+  }
+  
+  def apply(I:GIMat, j:Int):GIMat = {
+    val J = GIMat(j)
+    val out = GIMat.newOrCheckGIMat(I.length, J.length, null, GUID, I.GUID, J.GUID, "apply".##)
+    CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, J.length)
+    J.free
+    out
+  }
+  
+  def apply(i:Int, j:Int):Int = {
+    val tmp = new Array[Int](1)
+    cudaMemcpy(Pointer.to(tmp), data.withByteOffset(1L*(i + j*nrows)*Sizeof.FLOAT), Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
+    tmp(0)
+  }
+  
+  def update(I:GIMat, J:GIMat, V:GIMat):GIMat = {
+    CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, I.length, J.data, J.length)
+    this
+  }
+  
+  def update(i:Int, J:GIMat, V:GIMat):GIMat = {
+  	val I = GIMat(i)
+    CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, I.length, J.data, J.length)
+    I.free
+    this
+  }
+    
+  def update(I:GIMat, j:Int, V:GIMat):GIMat = {
+  	val J = GIMat(j)
+    CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, I.length, J.data, J.length)
+    J.free
+    this
+  }
+      
+  def update(i:Int, j:Int, v:Int):GIMat = {
+    val tmp = new Array[Int](1)
+    tmp(0) = v
+    cudaMemcpy(data.withByteOffset(1L*(i + j*nrows)*Sizeof.FLOAT), Pointer.to(tmp), Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+    this
+  }
   
   override def clear = {
   	cudaMemset(data, 0, Sizeof.INT*length)
