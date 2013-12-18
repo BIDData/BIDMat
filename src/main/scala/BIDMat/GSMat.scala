@@ -74,6 +74,14 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     this
   }
   
+  override def izeros(m:Int, n:Int) = {
+    GIMat.izeros(m,n)
+  }
+  
+  override def iones(m:Int, n:Int) = {
+    GIMat.iones(m,n)
+  }
+  
   def free() = {
     JCublas.cublasFree(data)
     JCublas.cublasFree(ic)

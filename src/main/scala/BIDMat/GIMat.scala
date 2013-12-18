@@ -89,6 +89,14 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   	this    
   }
   
+  override def izeros(m:Int, n:Int) = {
+    GIMat.izeros(m,n)
+  }
+  
+  override def iones(m:Int, n:Int) = {
+    GIMat.iones(m,n)
+  }
+  
   override def t = {
     val out = GIMat.newOrCheckGIMat(ncols, nrows, null, GUID, "t".##)
     CUMAT.transpose(this.data, nrows, out.data, ncols, nrows, ncols)
@@ -222,6 +230,18 @@ object GIMat {
   def apply(a:Int):GIMat = {
     val out = GIMat.newOrCheckGIMat(1, 1, null, a.##, "GIMat_Int".##)
     out.set(a)
+    out
+  }
+  
+  def izeros(m:Int, n:Int):GIMat = {
+    val out = GIMat(m,n)
+    out.clear
+    out
+  }
+  
+  def iones(m:Int, n:Int):GIMat = {
+    val out = GIMat(m,n)
+    out.set(1f)
     out
   }
   
