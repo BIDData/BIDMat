@@ -22,10 +22,81 @@
 // In each column of ns feature indices for a tree node, the 0^th index is actually the floating point threshold for the node. 
 // It is converted and saved in a variable named fthresh
 
-
 __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth) {
 
+  __shared__ int pos[32];
+  __shared__ int inds[32][33];                // (ns+1) x ntrees
+  __shared__ float totals[32][33];            // (ns+1) x ntrees
+  __shared__ float vecs[1024];
+  int newt, bd, tid;
+  unsigned int tind;
+  float vv, fthresh, vtmp;
+  tid = threadIdx.x + blockDim.x * threadIdx.y;
+
+  for (bd = blockIdx.x; bd < ncols; bd += gridDim.x) {
+    __syncthreads();
+    // Read in the index of parent for each tree
+    if (threadIdx.y == 0 && threadIdx.x < ntrees) {
+      pos[threadIdx.x] = tpos[threadIdx.x + ntrees * bd];
+    }
+
+    __syncthreads();
+    if (threadIdx.x < ns + 1 && threadIdx.y < ntrees) {
+      inds[threadIdx.x][threadIdx.y] = trees[threadIdx.x + ns*pos[threadIdx.y] + threadIdx.y*tstride];
+    }
+    totals[threadIdx.y][threadIdx.x] = 0;
+
+    __syncthreads();
+    if (threadIdx.x > 0 && threadIdx.x < ns + 1 && threadIdx.y < ntrees) {
+      tind = inds[threadIdx.x][threadIdx.y];
+    }
+    for (int i = 0; i < nrows; i += blockDim.x * blockDim.y) {
+      if (i + tid < nrows) {
+        vecs[tid] = feats[tid + i + bd * nrows];
+      }
+      __syncthreads();
+      if (threadIdx.x > 0 && threadIdx.x < ns + 1 && threadIdx.y < ntrees) {
+        if (tind < blockDim.x * blockDim.y) {
+          totals[threadIdx.x][threadIdx.y] += vecs[tind];
+        }
+        tind -= blockDim.x * blockDim.y;
+      }
+      __syncthreads();
+    }     
+    vv = totals[threadIdx.x][threadIdx.y];
+    for (int i = 1; i < ns + 1; i *= 2) {
+      vtmp = __shfl_down(vv, i);
+      if (threadIdx.x > 0 && threadIdx.x + i < ns + 1) {
+        vv += vtmp;
+      }
+    }
+    __syncthreads();
+    if (threadIdx.x == 1) {
+      totals[1][threadIdx.y] = vv;
+    }
+    __syncthreads();
+
+    if (threadIdx.x < ntrees && threadIdx.y == 0) {
+      vtmp = totals[1][threadIdx.x];
+      if (doth) {                       // Apply the threshold if doth true, otherwise save the value
+        newt = 2 * pos[threadIdx.x] + 1;
+        fthresh = *((float *)&inds[0][threadIdx.x]);
+        if (vtmp > fthresh) {
+          newt++;
+        }
+        otpos[threadIdx.x + ntrees * bd] = newt; 
+      } else {
+        otpos[threadIdx.x + ntrees * bd] = *((int *)&vtmp); 
+      }
+    }
+    __syncthreads();
+  }
+}
+
+__global__ void __treeprodx(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth) {
+
   __shared__ float totals[32][33];  // up to ntrees x (ns+1)
+  int (*itotals)[20] = (int (*)[20])totals;
   unsigned int t[33];
   int tp, newt, id, bd, tid;
   float vv, fthresh, vtmp;
@@ -40,7 +111,7 @@ __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *ot
     for (int i = threadIdx.y; i < ntrees; i += blockDim.y) {
       int tptmp = __shfl(tp, i);
       if (threadIdx.x < ns + 1) {
-        totals[i][threadIdx.x] = trees[threadIdx.x + ns*tptmp + i*tstride];
+        itotals[i][threadIdx.x] = trees[threadIdx.x + ns*tptmp + i*tstride];
       }
     }
     __syncthreads();
@@ -49,7 +120,7 @@ __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *ot
     // the (32) trees. 
 #pragma unroll
     for (int i = 0; i < 32; i++) {
-      t[i] = totals[threadIdx.x][i] - threadIdx.y * blockDim.x;
+      t[i] = itotals[threadIdx.x][i] - threadIdx.y * blockDim.x;
     }
     __syncthreads();
 
@@ -65,13 +136,13 @@ __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *ot
       // Check each feature index in turn, and see if it matches an input feature. Skip t0 which is actually the thresholds.
       int nrem = min(32, nrows - id);
 #pragma unroll
-      for (int i = 1; i <= 32; i++) {
+      for (int i = 1; i < 32; i++) {
         if (i <= ns) {
           vtmp = __shfl(vv, t[i]); 
           if (t[i] < nrem) {
             totals[threadIdx.x][threadIdx.y] += vtmp; 
           }
-          t[i] -= 32 * blockDim.y;
+          t[i] -= blockDim.x * blockDim.y;
         }
       }
     }
@@ -103,8 +174,8 @@ __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *ot
   }
 }
 
-/*
-__global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth) {
+
+__global__ void __treeprody(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth) {
   __shared__ float totals[32][33];
 
   unsigned int t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16,t17,t18,t19,t20,t21,t22,t23,t24,t25,t26,t27,t28,t29,t30,t31;
@@ -232,7 +303,7 @@ __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *ot
       tx = min(31, max(0, t28 - imin)); vtmp = __shfl(vv, tx); if (t28 >= imin && t28 < imax) totals[threadIdx.x][0] += vtmp;
       tx = min(31, max(0, t29 - imin)); vtmp = __shfl(vv, tx); if (t29 >= imin && t29 < imax) totals[threadIdx.x][0] += vtmp;
       tx = min(31, max(0, t30 - imin)); vtmp = __shfl(vv, tx); if (t30 >= imin && t30 < imax) totals[threadIdx.x][0] += vtmp;
-      tx = min(31, max(0, t31 - imin)); vtmp = __shfl(vv, tx); if (t31 >= imin && t31 < imax) totals[threadIdx.x][0] += vtmp; 
+      tx = min(31, max(0, t31 - imin)); vtmp = __shfl(vv, tx); if (t31 >= imin && t31 < imax) totals[threadIdx.x][0] += vtmp; */
 // end commented code
       // Check each feature index in turn, and see if it matches an input feature. Skip t0 which is actually the thresholds.
       int nrem = min(32, nrows - tid);
@@ -281,23 +352,36 @@ __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *ot
       otpos[threadIdx.x + ntrees * bd] = *((int *)&vtmp); 
     }
   }
-} */
+} 
 
 #else
 __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth) {}
+__global__ void __treeprodx(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth) {}
+__global__ void __treeprody(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth) {}
 #endif
 #else
 __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth) {}
+__global__ void __treeprodx(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth) {}
+__global__ void __treeprody(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth) {}
 #endif
 
 int treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth) {
-  int nby, nblks, err;
-  nby = min(32, 1+(nrows-1)/32);
-  nblks = min(1024, max(ncols/8, min(32, ncols)));
-  dim3 blocks(32, nby, 1);
-  __treeprod<<<nblks,blocks>>>(trees, feats, tpos, otpos, nrows, ncols, ns, tstride, ntrees, doth);
+  int nblks = min(1024, max(ncols/8, min(32, ncols)));
+  dim3 blocks(32, 32, 1);
+  /*  __treeprod<<<nblks,blocks>>>(trees, feats, tpos, otpos, nrows, ncols, ns, tstride, ntrees, doth);
+  int nb1, nb2;
+  if (ncols < 65536) {
+    nb1 = ncols;
+    nb2 = 1;
+  } else {
+    nb1 = (int)sqrt((double)ncols);
+    nb2 = ncols/nb1 + 1;
+  }
+  dim3 grid(nb1,nb2,1);
+  dim3 blocks(32, 1, 1);
+  __treeprody<<<grid,blocks>>>(trees, feats, tpos, otpos, nrows, ncols, ns, tstride, ntrees, doth); */
   cudaDeviceSynchronize();
-  err = cudaGetLastError();
+  int err = cudaGetLastError();
   return err;
 }
 
