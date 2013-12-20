@@ -24,6 +24,87 @@
 
 
 __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth) {
+
+  __shared__ float totals[32][33];  // up to ntrees x (ns+1)
+  unsigned int t[33];
+  int tp, newt, id, bd, tid;
+  float vv, fthresh, vtmp;
+  tid = threadIdx.x + blockDim.x * threadIdx.y;
+
+  for (bd = blockIdx.x; bd < ncols; bd += gridDim.x) {
+    // Read in the index of parent for each tree
+    if (threadIdx.x < ntrees) tp = tpos[threadIdx.x + ntrees * bd];
+
+    // Now read in the random feature indices for <= 32 trees and transpose them... 
+    __syncthreads();
+    for (int i = threadIdx.y; i < ntrees; i += blockDim.y) {
+      int tptmp = __shfl(tp, i);
+      if (threadIdx.x < ns + 1) {
+        totals[i][threadIdx.x] = trees[threadIdx.x + ns*tptmp + i*tstride];
+      }
+    }
+    __syncthreads();
+
+    // so that ti stores the i^th feature index for the node, and threadIdx.x indexes
+    // the (32) trees. 
+#pragma unroll
+    for (int i = 0; i < 32; i++) {
+      t[i] = totals[threadIdx.x][i] - threadIdx.y * blockDim.x;
+    }
+    __syncthreads();
+
+    // Clear totals for each tree
+    totals[threadIdx.x][threadIdx.y] = 0;
+    __syncthreads();
+    // Now read the column and update totals
+    for (id = tid; id - tid < nrows; id += blockDim.x * blockDim.y) {
+      if (id < nrows) {
+        vv = feats[id + bd * nrows];
+      }
+
+      // Check each feature index in turn, and see if it matches an input feature. Skip t0 which is actually the thresholds.
+      int nrem = min(32, nrows - id);
+#pragma unroll
+      for (int i = 1; i <= 32; i++) {
+        if (i <= ns) {
+          vtmp = __shfl(vv, t[i]); 
+          if (t[i] < nrem) {
+            totals[threadIdx.x][threadIdx.y] += vtmp; 
+          }
+          t[i] -= 32 * blockDim.y;
+        }
+      }
+    }
+    
+    // accumulate totals for each tree
+    __syncthreads();
+    for (int i = 1; i < blockDim.y; i *= 2) {
+      if (threadIdx.y + i < blockDim.y) vtmp = totals[threadIdx.x][threadIdx.y + i];
+      __syncthreads();
+      if (threadIdx.y + i < blockDim.y) totals[threadIdx.x][threadIdx.y] += vtmp;
+      __syncthreads();
+    }
+
+    // Compare the total for tree = threadIdx.x with its threshold. Save right child index if its bigger, else left child. 
+    if (threadIdx.y == 0 && threadIdx.x < ntrees) {
+      vtmp = totals[threadIdx.x][0];
+      if (doth) {                       // Apply the threshold if doth true, otherwise save the value
+        newt = 2 * tp + 1;
+        fthresh = *((float *)&t[0]);
+        if (vtmp > fthresh) {
+          newt++;
+        }
+        otpos[threadIdx.x + ntrees * bd] = newt; 
+      } else {
+        otpos[threadIdx.x + ntrees * bd] = *((int *)&vtmp); 
+      }
+    }
+    __syncthreads();
+  }
+}
+
+/*
+__global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth) {
   __shared__ float totals[32][33];
 
   unsigned int t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16,t17,t18,t19,t20,t21,t22,t23,t24,t25,t26,t27,t28,t29,t30,t31;
@@ -151,8 +232,8 @@ __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *ot
       tx = min(31, max(0, t28 - imin)); vtmp = __shfl(vv, tx); if (t28 >= imin && t28 < imax) totals[threadIdx.x][0] += vtmp;
       tx = min(31, max(0, t29 - imin)); vtmp = __shfl(vv, tx); if (t29 >= imin && t29 < imax) totals[threadIdx.x][0] += vtmp;
       tx = min(31, max(0, t30 - imin)); vtmp = __shfl(vv, tx); if (t30 >= imin && t30 < imax) totals[threadIdx.x][0] += vtmp;
-      tx = min(31, max(0, t31 - imin)); vtmp = __shfl(vv, tx); if (t31 >= imin && t31 < imax) totals[threadIdx.x][0] += vtmp; */
-
+      tx = min(31, max(0, t31 - imin)); vtmp = __shfl(vv, tx); if (t31 >= imin && t31 < imax) totals[threadIdx.x][0] += vtmp; 
+// end commented code
       // Check each feature index in turn, and see if it matches an input feature. Skip t0 which is actually the thresholds.
       int nrem = min(32, nrows - tid);
       vtmp = __shfl(vv, t1); if (t1 < nrem) totals[threadIdx.x][0] += vtmp; t1 -= 32;
@@ -200,116 +281,7 @@ __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *ot
       otpos[threadIdx.x + ntrees * bd] = *((int *)&vtmp); 
     }
   }
-}
-
-// restrict to at most 16 features per tree node.
-__global__ void __treeprod16f(int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth) {
-  __shared__ float totals[32][17];
-
-  int t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15;
-  int tp, imax, imin, newt, bd, tid, tx;
-  float vv, fthresh, vtmp;
-
-  // Block position
-  bd = blockIdx.x + blockIdx.y * gridDim.x;
-
-  if (bd < ncols) {
-  
-    // Read in the index of parent for each tree
-    tp = tpos[threadIdx.x + ntrees * bd];
-
-    // Now read in the random feature indices for 32 trees. 
-    if (threadIdx.x < ns) {
-      totals[0][threadIdx.x] = trees[threadIdx.x + ns * __shfl(tp, 0)];
-      totals[1][threadIdx.x] = trees[threadIdx.x + 1*tstride + ns * __shfl(tp, 1)];
-      totals[2][threadIdx.x] = trees[threadIdx.x + 2*tstride + ns * __shfl(tp, 2)];
-      totals[3][threadIdx.x] = trees[threadIdx.x + 3*tstride + ns * __shfl(tp, 3)];
-      totals[4][threadIdx.x] = trees[threadIdx.x + 4*tstride + ns * __shfl(tp, 4)];
-      totals[5][threadIdx.x] = trees[threadIdx.x + 5*tstride + ns * __shfl(tp, 5)];
-      totals[6][threadIdx.x] = trees[threadIdx.x + 6*tstride + ns * __shfl(tp, 6)];
-      totals[7][threadIdx.x] = trees[threadIdx.x + 7*tstride + ns * __shfl(tp, 7)];
-      totals[8][threadIdx.x] = trees[threadIdx.x + 8*tstride + ns * __shfl(tp, 8)];
-      totals[9][threadIdx.x] = trees[threadIdx.x + 9*tstride + ns * __shfl(tp, 9)];
-      totals[10][threadIdx.x] = trees[threadIdx.x + 10*tstride + ns * __shfl(tp, 10)];
-      totals[11][threadIdx.x] = trees[threadIdx.x + 11*tstride + ns * __shfl(tp, 11)];
-      totals[12][threadIdx.x] = trees[threadIdx.x + 12*tstride + ns * __shfl(tp, 12)];
-      totals[13][threadIdx.x] = trees[threadIdx.x + 13*tstride + ns * __shfl(tp, 13)];
-      totals[14][threadIdx.x] = trees[threadIdx.x + 14*tstride + ns * __shfl(tp, 14)];
-      totals[15][threadIdx.x] = trees[threadIdx.x + 15*tstride + ns * __shfl(tp, 15)];
-      totals[16][threadIdx.x] = trees[threadIdx.x + 16*tstride + ns * __shfl(tp, 16)];
-      totals[17][threadIdx.x] = trees[threadIdx.x + 17*tstride + ns * __shfl(tp, 17)];
-      totals[18][threadIdx.x] = trees[threadIdx.x + 18*tstride + ns * __shfl(tp, 18)];
-      totals[19][threadIdx.x] = trees[threadIdx.x + 19*tstride + ns * __shfl(tp, 19)];
-      totals[20][threadIdx.x] = trees[threadIdx.x + 20*tstride + ns * __shfl(tp, 20)];
-      totals[20][threadIdx.x] = trees[threadIdx.x + 20*tstride + ns * __shfl(tp, 20)];
-      totals[21][threadIdx.x] = trees[threadIdx.x + 21*tstride + ns * __shfl(tp, 21)];
-      totals[22][threadIdx.x] = trees[threadIdx.x + 22*tstride + ns * __shfl(tp, 22)];
-      totals[23][threadIdx.x] = trees[threadIdx.x + 23*tstride + ns * __shfl(tp, 23)];
-      totals[24][threadIdx.x] = trees[threadIdx.x + 24*tstride + ns * __shfl(tp, 24)];
-      totals[25][threadIdx.x] = trees[threadIdx.x + 25*tstride + ns * __shfl(tp, 25)];
-      totals[26][threadIdx.x] = trees[threadIdx.x + 26*tstride + ns * __shfl(tp, 26)];
-      totals[27][threadIdx.x] = trees[threadIdx.x + 27*tstride + ns * __shfl(tp, 27)];
-      totals[28][threadIdx.x] = trees[threadIdx.x + 28*tstride + ns * __shfl(tp, 28)];
-      totals[29][threadIdx.x] = trees[threadIdx.x + 29*tstride + ns * __shfl(tp, 29)];
-      totals[30][threadIdx.x] = trees[threadIdx.x + 30*tstride + ns * __shfl(tp, 30)];
-      totals[31][threadIdx.x] = trees[threadIdx.x + 31*tstride + ns * __shfl(tp, 31)]; 
-    }
-    t0 = totals[threadIdx.x][0];
-    t1 = totals[threadIdx.x][1];
-    t2 = totals[threadIdx.x][2];
-    t3 = totals[threadIdx.x][3];
-    t4 = totals[threadIdx.x][4];
-    t5 = totals[threadIdx.x][5];
-    t6 = totals[threadIdx.x][6];
-    t7 = totals[threadIdx.x][7];
-    t8 = totals[threadIdx.x][8];
-    t9 = totals[threadIdx.x][9];
-    t10 = totals[threadIdx.x][10];
-    t11 = totals[threadIdx.x][11];
-    t12 = totals[threadIdx.x][12];
-    t13 = totals[threadIdx.x][13];
-    t14 = totals[threadIdx.x][14];
-    t15 = totals[threadIdx.x][15];
-
-    fthresh = *((float *)&t0);
-
-    // Clear totals for each tree
-    totals[threadIdx.x][0] = 0;
-  
-    // Now read the column and update totals
-    for (tid = 0; tid + threadIdx.x < nrows; tid += blockDim.x) {
-      vv = feats[tid + threadIdx.x + bd * nrows];
-      imin = tid;
-      imax = tid + blockDim.x;
-      tx = min(31, max(0, t1 - imin)); vtmp = __shfl(vv, tx); if (t1 >= imin && t1 < imax) totals[threadIdx.x][0] += vtmp;
-      tx = min(31, max(0, t2 - imin)); vtmp = __shfl(vv, tx); if (t2 >= imin && t2 < imax) totals[threadIdx.x][0] += vtmp;
-      tx = min(31, max(0, t3 - imin)); vtmp = __shfl(vv, tx); if (t3 >= imin && t3 < imax) totals[threadIdx.x][0] += vtmp;
-      tx = min(31, max(0, t4 - imin)); vtmp = __shfl(vv, tx); if (t4 >= imin && t4 < imax) totals[threadIdx.x][0] += vtmp;
-      tx = min(31, max(0, t5 - imin)); vtmp = __shfl(vv, tx); if (t5 >= imin && t5 < imax) totals[threadIdx.x][0] += vtmp;
-      tx = min(31, max(0, t6 - imin)); vtmp = __shfl(vv, tx); if (t6 >= imin && t6 < imax) totals[threadIdx.x][0] += vtmp;
-      tx = min(31, max(0, t7 - imin)); vtmp = __shfl(vv, tx); if (t7 >= imin && t7 < imax) totals[threadIdx.x][0] += vtmp;
-      tx = min(31, max(0, t8 - imin)); vtmp = __shfl(vv, tx); if (t8 >= imin && t8 < imax) totals[threadIdx.x][0] += vtmp;
-      tx = min(31, max(0, t9 - imin)); vtmp = __shfl(vv, tx); if (t9 >= imin && t9 < imax) totals[threadIdx.x][0] += vtmp;
-      tx = min(31, max(0, t10 - imin)); vtmp = __shfl(vv, tx); if (t10 >= imin && t10 < imax) totals[threadIdx.x][0] += vtmp;
-      tx = min(31, max(0, t11 - imin)); vtmp = __shfl(vv, tx); if (t11 >= imin && t11 < imax) totals[threadIdx.x][0] += vtmp;
-      tx = min(31, max(0, t12 - imin)); vtmp = __shfl(vv, tx); if (t12 >= imin && t12 < imax) totals[threadIdx.x][0] += vtmp;
-      tx = min(31, max(0, t13 - imin)); vtmp = __shfl(vv, tx); if (t13 >= imin && t13 < imax) totals[threadIdx.x][0] += vtmp;
-      tx = min(31, max(0, t14 - imin)); vtmp = __shfl(vv, tx); if (t14 >= imin && t14 < imax) totals[threadIdx.x][0] += vtmp;
-      tx = min(31, max(0, t15 - imin)); vtmp = __shfl(vv, tx); if (t15 >= imin && t15 < imax) totals[threadIdx.x][0] += vtmp;
-    }
-
-    vtmp = totals[threadIdx.x][0];
-    if (doth) {
-      newt = 2 * tp + 1;
-      if (vtmp > fthresh) {
-        newt++;
-      }
-      otpos[threadIdx.x + ntrees * bd] = newt;
-    } else {
-      otpos[threadIdx.x + ntrees * bd] = *((int *)&vtmp);
-    }
-  }
-}
+} */
 
 #else
 __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth) {}
@@ -319,16 +291,11 @@ __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *ot
 #endif
 
 int treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth) {
-  int d1, d2, err;
-  if (ncols < 65536) {
-    d1 = ncols;
-    d2 = 1;
-  } else {
-    d1 = (int)sqrt((double)ncols);
-    d2 = 1 + ncols/d1;
-  }
-  dim3 grid(d1, d2, 1);
-  __treeprod<<<grid,32>>>(trees, feats, tpos, otpos, nrows, ncols, ns, tstride, ntrees, doth);
+  int nby, nblks, err;
+  nby = min(32, 1+(nrows-1)/32);
+  nblks = min(1024, max(ncols/8, min(32, ncols)));
+  dim3 blocks(32, nby, 1);
+  __treeprod<<<nblks,blocks>>>(trees, feats, tpos, otpos, nrows, ncols, ns, tstride, ntrees, doth);
   cudaDeviceSynchronize();
   err = cudaGetLastError();
   return err;

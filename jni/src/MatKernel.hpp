@@ -58,17 +58,29 @@ int accum(int *I, int J, float V, float *S, int m, int nrows);
 
 int accum(int I, int *J, float V, float *S, int m, int nrows);
 
+int accum(int *I, int *J, int *V, int *S, int m, int nrows);
+
+int accum(int *I, int J, int *V, int *S, int m, int nrows);
+
+int accum(int I, int *J, int *V, int *S, int m, int nrows);
+
+int accum(int *I, int *J, int V, int *S, int m, int nrows);
+
+int accum(int *I, int J, int V, int *S, int m, int nrows);
+
+int accum(int I, int *J, int V, int *S, int m, int nrows);
+
 int cumsumi(int *in, int *out, int *jc, int nrows, int ncols, int m);
 
 int maxs(float *in, float *out, int *outi, int *jc, int m);
 
-int embedmat(float *a, long long *b, int nrows, int ncols);
+int embedmat2d(float *a, long long *b, int nrows, int ncols);
 
-int embedmatx(float *a, int *b, long long *c, int n);
+int embedmat(float *a, int *b, long long *c, int n);
 
-int extractmat(float *a, long long *b, int nrows, int ncols);
+int extractmat2d(float *a, long long *b, int nrows, int ncols);
 
-int extractmatx(float *a, int *b, long long *c, int n);
+int extractmat(float *a, int *b, long long *c, int n);
 
 int treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth);
 

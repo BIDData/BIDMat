@@ -99,6 +99,28 @@ class SparseMat[@specialized(Double,Float) T]
     SparseMat.sparseImpl[T](SparseMat.uncompressInds(jc, ncols, ir), 
     		            if (Mat.ioneBased==1) SparseMat.decInds(ir) else ir, data, ncols, nrows)
   }
+  
+  def gcountnz(n:Int, omat:Mat):IMat = {
+    val dir = if (n > 0) n else { if (nrows == 1) 2 else 1 }
+    val out = IMat.newOrCheckIMat(if (dir == 1) 1 else nrows, if (dir == 2) 1 else ncols, omat, this.GUID, "gcount".##)
+    if (dir == 1) {
+      var i = 0
+      while (i < ncols) {
+        out.data(i) = jc(i+1)-jc(i)
+        i += 1
+      }
+    } else {
+      val ioff = Mat.ioneBased
+      out.clear
+      var i = 0
+      while (i < nnz) {
+        out.data(ir(i)-ioff) += 1
+        i += 1
+      }    
+    }
+    out
+  }
+  
   /*
    * Stack matrices vertically
    */

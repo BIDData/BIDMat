@@ -508,6 +508,10 @@ object SciFunctions {
   def sum(a:SDMat, omat:Mat) = a.ssReduceOp(0, DMat.idFun, DMat.sumFun, omat)
   def maxi(a:SDMat, omat:Mat) = a.ssReduceOp(0, DMat.idFun, DMat.maxFun, omat)
   def mini(a:SDMat, omat:Mat) = a.ssReduceOp(0, DMat.idFun, DMat.minFun, omat)
+  def countnz(a:SDMat, omat:Mat) = a.countnz(0, omat)
+  def countnz(a:SDMat, n:Int, omat:Mat) = a.countnz(n, omat)
+  def countnz(a:SDMat) = a.countnz(0, null)
+  def countnz(a:SDMat, n:Int) = a.countnz(n, null)
   
   def min(a:SMat, b:SMat) = a.ssMatOp(b, FMat.minFun, null)
   def max(a:SMat, b:SMat) = a.ssMatOp(b, FMat.maxFun, null)
@@ -525,6 +529,10 @@ object SciFunctions {
   def max(a:SMat, b:Float, omat:Mat) = a.ssMatOpScalar(b, FMat.maxFun, omat)
   def min(b:Float, a:SMat, omat:Mat) = a.ssMatOpScalar(b, FMat.minFun, omat)
   def max(b:Float, a:SMat, omat:Mat) = a.ssMatOpScalar(b, FMat.maxFun, omat)
+  def countnz(a:SMat, omat:Mat) = a.countnz(0, omat)
+  def countnz(a:SMat, n:Int, omat:Mat) = a.countnz(n, omat)
+  def countnz(a:SMat) = a.countnz(0, null)
+  def countnz(a:SMat, n:Int) = a.countnz(n, null)
 
   def sum(a:SMat, n:Int, omat:Mat) = a.ssReduceOp(n, FMat.idFun, FMat.sumFun, omat)
   def maxi(a:SMat, n:Int, omat:Mat) = a.ssReduceOp(n, FMat.idFun, FMat.maxFun, omat)
@@ -544,6 +552,16 @@ object SciFunctions {
     val out = GMat.newOrCheckGMat(a.nrows, a.ncols, omat, a.GUID, jc.GUID, "cumsumi".##)
     CUMAT.cumsumi(a.data, out.data, jc.data, a.nrows, a.ncols, jc.length)
     out
+  }
+  
+  def countnz(a:Mat, n:Int):IMat = countnz(a, n, null)
+  def countnz(a:Mat):IMat = countnz(a, 0, null)
+  
+  def countnz(a:Mat, n:Int, omat:Mat):IMat = {
+    a match {
+      case as:SMat => as.countnz(n, omat)
+      case as:SDMat => as.countnz(n, omat)
+    }
   }
   
   def cumsumi(a:GMat, jc:GIMat):GMat = cumsumi(a, jc, null)

@@ -134,6 +134,14 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   	out
   }
   
+  override def izeros(m:Int, n:Int) = {
+    IMat.izeros(m,n)
+  }
+  
+  override def iones(m:Int, n:Int) = {
+    IMat.iones(m,n)
+  }
+  
   override def clearUpper(off:Int) = setUpper(0, off)
   override def clearUpper = setUpper(0, 0)
   

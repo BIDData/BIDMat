@@ -229,6 +229,59 @@ object MatFunctions {
   def find2(a:SMat) = a.find2    
   def find3(a:SMat) = a.find3
   
+  def accum(inds:GIMat, vals:GMat, omat:Mat, nrows:Int, ncols:Int):GMat = {
+    GMat.accum(inds, vals, omat, nrows, ncols):GMat
+  }
+  def accum(inds:GIMat, vals:GMat, nrows:Int, ncols:Int):GMat = {
+    GMat.accum(inds, vals, null, nrows, ncols):GMat
+  }
+  def accum(inds:GIMat, fval:Float, omat:Mat, nrows:Int, ncols:Int):GMat = {
+    GMat.accum(inds, fval, omat, nrows, ncols):GMat
+  }
+  def accum(inds:GIMat, fval:Float, nrows:Int, ncols:Int):GMat = {
+    GMat.accum(inds, fval, null, nrows, ncols):GMat
+  }
+  def accum(inds:GIMat, vals:GIMat, omat:Mat, nrows:Int, ncols:Int):GIMat = {
+    GIMat.accum(inds, vals, omat, nrows, ncols):GIMat
+  }
+  def accum(inds:GIMat, vals:GIMat, nrows:Int, ncols:Int):GIMat = {
+    GIMat.accum(inds, vals, null, nrows, ncols):GIMat
+  }
+  def accum(inds:GIMat, fval:Int, omat:Mat, nrows:Int, ncols:Int):GIMat = {
+    GIMat.accum(inds, fval, omat, nrows, ncols):GIMat
+  }
+  def accum(inds:GIMat, fval:Int, nrows:Int, ncols:Int):GIMat = {
+    GIMat.accum(inds, fval, null, nrows, ncols):GIMat
+  }
+  
+  def accum(inds:Mat, vals:Mat, omat:Mat, nrows:Int, ncols:Int):Mat = {
+    (inds, vals) match {
+      case (iinds:IMat, fvals:FMat) => accum(iinds, fvals, nrows, ncols):FMat
+      case (iinds:IMat, ivals:IMat) => accum(iinds, ivals, nrows, ncols):IMat
+      case (iinds:IMat, dvals:DMat) => accum(iinds, dvals, nrows, ncols):DMat
+      case (ginds:GIMat, gvals:GMat) => GMat.accum(ginds, gvals, omat, nrows, ncols):GMat
+      case (ginds:GIMat, gvals:GIMat) => GIMat.accum(ginds, gvals, omat, nrows, ncols):GIMat
+    }
+  }
+  def accum(inds:Mat, vals:Mat, nrows:Int, ncols:Int):Mat = accum(inds, vals, null, nrows, ncols)
+  
+  def accum(inds:Mat, fval:Float, omat:Mat, nrows:Int, ncols:Int):Mat = {
+    inds match {
+      case iinds:IMat => accum(iinds, fval, nrows, ncols):FMat
+      case ginds:GIMat => GMat.accum(ginds, fval, omat, nrows, ncols):GMat
+    }
+  }
+  def accum(inds:Mat, fval:Float, nrows:Int, ncols:Int):Mat = accum(inds, fval, null, nrows, ncols)
+  
+  def accum(inds:Mat, ival:Int, omat:Mat, nrows:Int, ncols:Int):Mat = {
+    inds match {
+      case iinds:IMat => accum(iinds, ival, nrows, ncols):IMat
+      case ginds:GIMat => GIMat.accum(ginds, ival, omat, nrows, ncols):GIMat
+    }
+  }
+  def accum(inds:Mat, ival:Int, nrows:Int, ncols:Int):Mat = accum(inds, ival, null, nrows, ncols)
+    
+  
   def coomult(inds:IMat, vals:FMat, in:FMat, out:FMat, transpose:Boolean=true) = {
     Mat.nflops += inds.nrows*2L
     if (transpose) {
@@ -606,7 +659,9 @@ object MatFunctions {
   
   def sdzeros(nr:Int, nc:Int):SDMat = SDMat(nr, nc, 0)
   
-  def gzeros(nr:Int, nc:Int):GMat = GMat.gzeros(nr, nc)
+  def gzeros(nr:Int, nc:Int):GMat = GMat.zeros(nr, nc)
+  
+  def gizeros(nr:Int, nc:Int):GIMat = GIMat.izeros(nr, nc)
 
   def blank = new Mat(0,0)
   

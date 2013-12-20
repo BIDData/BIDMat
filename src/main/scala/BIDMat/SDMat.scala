@@ -30,6 +30,8 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
   
   override def contents:DMat = DMat(nnz, 1, this.data)
   
+  def countnz(n:Int, omat:Mat) = gcountnz(n, omat)
+  
   def ssMatOp(b: SDMat, f:(Double, Double) => Double, omat:Mat) = SDMat(sgMatOp(b, f, omat))
   
   def ssMatOpD(b: DMat, f:(Double, Double) => Double, omat:Mat) = SDMat(sgMatOpD(b, f, omat))

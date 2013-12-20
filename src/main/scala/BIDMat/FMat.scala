@@ -136,15 +136,19 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
    
   override def zeros(nr:Int, nc:Int) = {
-    val out = FMat(nr, nc)
-  	out.clear
-  	out
+    FMat.zeros(nr, nc)
   }
   
   override def ones(nr:Int, nc:Int) = {
-  	val out = FMat(nr, nc)
-  	Arrays.fill(out.data, 1.0f)
-  	out
+  	FMat.ones(nr, nc)
+  }
+  
+  override def izeros(m:Int, n:Int) = {
+    IMat.izeros(m,n)
+  }
+  
+  override def iones(m:Int, n:Int) = {
+    IMat.iones(m,n)
   }
    
   override def clearUpper(off:Int) = setUpper(0, off)
@@ -1159,7 +1163,18 @@ object FMat {
     }
     out
   }
+    
+  def zeros(nr:Int, nc:Int) = {
+    val out = FMat(nr, nc)
+  	out.clear
+  	out
+  }
   
+  def ones(nr:Int, nc:Int) = {
+  	val out = FMat(nr, nc)
+  	Arrays.fill(out.data, 1.0f)
+  	out
+  }
    
   def vecDiv(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
     var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
