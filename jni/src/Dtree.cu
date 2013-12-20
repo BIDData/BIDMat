@@ -368,8 +368,8 @@ __global__ void __treeprody(unsigned int *trees, float *feats, int *tpos, int *o
 int treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth) {
   int nblks = min(1024, max(ncols/8, min(32, ncols)));
   dim3 blocks(32, 32, 1);
-  /*  __treeprod<<<nblks,blocks>>>(trees, feats, tpos, otpos, nrows, ncols, ns, tstride, ntrees, doth);
-  int nb1, nb2;
+  __treeprod<<<nblks,blocks>>>(trees, feats, tpos, otpos, nrows, ncols, ns, tstride, ntrees, doth);
+  /* int nb1, nb2;
   if (ncols < 65536) {
     nb1 = ncols;
     nb2 = 1;
