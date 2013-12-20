@@ -277,59 +277,33 @@ extern "C" {
     return transpose(A, instride, B, outstride, nrows, ncols);
   }
 
+#define CGETI(VNAME) int*VNAME=(int*)getPointer(env,j ## VNAME )
+#define CGETF(VNAME) float*VNAME=(float*)getPointer(env,j ## VNAME )
 
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_accum
-  (JNIEnv *env, jobject obj, jobject jI, jobject jJ, jobject jV, jobject jS, jint m, jint nrows)
-  {
-    int *I = (int*)getPointer(env, jI);
-    int *J = (int*)getPointer(env, jJ);
-    float *V = (float*)getPointer(env, jV);
-    float *S = (float*)getPointer(env, jS);
-    return accum(I, J, V, S, m, nrows);
+#define CUMAT_ACCUM(FNAME,ITYPE,JTYPE,VTYPE,ICONV,JCONV,VCONV,SCONV)                            \
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_ ## FNAME                                  \
+  (JNIEnv *env, jobject obj, ITYPE, JTYPE, VTYPE, jobject jS, jint m, jint nrows)               \
+  {                                                                                             \
+    ICONV;                                                                                      \
+    JCONV;                                                                                      \
+    VCONV;                                                                                      \
+    SCONV;                                                                                      \
+    return accum(I, J, V, S, m, nrows);                                                         \
   }
 
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_accumI
-  (JNIEnv *env, jobject obj, jint I, jobject jJ, jobject jV, jobject jS, jint m, jint nrows)
-  {
-    int *J = (int*)getPointer(env, jJ);
-    float *V = (float*)getPointer(env, jV);
-    float *S = (float*)getPointer(env, jS);
-    return accum(I, J, V, S, m, nrows);
-  }
+  CUMAT_ACCUM(accum,   jobject jI, jobject jJ, jobject jV, CGETI(I), CGETI(J), CGETF(V), CGETF(S))
+  CUMAT_ACCUM(accumI,  jint I,     jobject jJ, jobject jV,         , CGETI(J), CGETF(V), CGETF(S))
+  CUMAT_ACCUM(accumJ,  jobject jI, jint J,     jobject jV, CGETI(I),         , CGETF(V), CGETF(S))
+  CUMAT_ACCUM(accumV,  jobject jI, jobject jJ, jfloat V,   CGETI(I), CGETI(J),         , CGETF(S))
+  CUMAT_ACCUM(accumIV, jint I,     jobject jJ, jfloat V,           , CGETI(J),         , CGETF(S))
+  CUMAT_ACCUM(accumJV, jobject jI, jint J,     jfloat V,   CGETI(I),         ,         , CGETF(S)) 
 
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_accumJ
-  (JNIEnv *env, jobject obj, jobject jI, jint J, jobject jV, jobject jS, jint m, jint nrows)
-  {
-    int *I = (int*)getPointer(env, jI);
-    float *V = (float*)getPointer(env, jV);
-    float *S = (float*)getPointer(env, jS);
-    return accum(I, J, V, S, m, nrows);
-  }
-
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_accumV
-  (JNIEnv *env, jobject obj, jobject jI, jobject jJ, jfloat V, jobject jS, jint m, jint nrows)
-  {
-    int *I = (int*)getPointer(env, jI);
-    int *J = (int*)getPointer(env, jJ);
-    float *S = (float*)getPointer(env, jS);
-    return accum(I, J, V, S, m, nrows);
-  }
-
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_accumIV
-  (JNIEnv *env, jobject obj, jint I, jobject jJ, jfloat V, jobject jS, jint m, jint nrows)
-  {
-    int *J = (int*)getPointer(env, jJ);
-    float *S = (float*)getPointer(env, jS);
-    return accum(I, J, V, S, m, nrows);
-  }
-
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_accumJV
-  (JNIEnv *env, jobject obj, jobject jI, jint J, jfloat V, jobject jS, jint m, jint nrows)
-  {
-    int *I = (int*)getPointer(env, jI);
-    float *S = (float*)getPointer(env, jS);
-    return accum(I, J, V, S, m, nrows);
-  }
+  CUMAT_ACCUM(iaccum,   jobject jI, jobject jJ, jobject jV, CGETI(I), CGETI(J), CGETI(V), CGETI(S))
+  CUMAT_ACCUM(iaccumI,  jint I,     jobject jJ, jobject jV,         , CGETI(J), CGETI(V), CGETI(S))
+  CUMAT_ACCUM(iaccumJ,  jobject jI, jint J,     jobject jV, CGETI(I),         , CGETI(V), CGETI(S))
+  CUMAT_ACCUM(iaccumV,  jobject jI, jobject jJ, jint V,     CGETI(I), CGETI(J),         , CGETI(S))
+  CUMAT_ACCUM(iaccumIV, jint I,     jobject jJ, jint V,             , CGETI(J),         , CGETI(S))
+  CUMAT_ACCUM(iaccumJV, jobject jI, jint J,     jint V,     CGETI(I),         ,         , CGETI(S)) 
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumsumi
   (JNIEnv *env, jobject obj, jobject jin, jobject jout, jobject jjc, jint nrows, jint ncols, jint m) 
@@ -352,42 +326,42 @@ extern "C" {
     return maxs(in, out, outi, jc, m);
   }
 
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_embedmat
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_embedmat2d
   (JNIEnv *env, jobject obj, jobject ja, jobject jb, jint nrows, jint ncols) 
   {
     float *a = (float*)getPointer(env, ja);
     long long *b = (long long*)getPointer(env, jb);
 
-    return embedmat(a, b, nrows, ncols);
+    return embedmat2d(a, b, nrows, ncols);
   }
 
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_embedmatx
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_embedmat
   (JNIEnv *env, jobject obj, jobject ja, jobject jb, jobject jc, jint n) 
   {
     float *a = (float*)getPointer(env, ja);
     int *b = (int*)getPointer(env, jb);
     long long *c = (long long*)getPointer(env, jc);
 
-    return embedmatx(a, b, c, n);
+    return embedmat(a, b, c, n);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_extractmat2d
+  (JNIEnv *env, jobject obj, jobject ja, jobject jb, jint nrows, jint ncols) 
+  {
+    float *a = (float*)getPointer(env, ja);
+    long long *b = (long long*)getPointer(env, jb);
+
+    return extractmat2d(a, b, nrows, ncols);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_extractmat
-  (JNIEnv *env, jobject obj, jobject ja, jobject jb, jint nrows, jint ncols) 
-  {
-    float *a = (float*)getPointer(env, ja);
-    long long *b = (long long*)getPointer(env, jb);
-
-    return extractmat(a, b, nrows, ncols);
-  }
-
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_extractmatx
   (JNIEnv *env, jobject obj, jobject ja, jobject jb, jobject jc, jint n) 
   {
     float *a = (float*)getPointer(env, ja);
     int *b = (int*)getPointer(env, jb);
     long long *c = (long long*)getPointer(env, jc);
 
-    return extractmatx(a, b, c, n);
+    return extractmat(a, b, c, n);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_fsorts

@@ -241,9 +241,101 @@ object GIMat {
   
   def iones(m:Int, n:Int):GIMat = {
     val out = GIMat(m,n)
-    out.set(1f)
+    out.set(1)
     out
   }
+  
+  
+  def accumIJ(I:GIMat, J:GIMat, V:GIMat, omat:Mat, nrows:Int, ncols:Int):GIMat = {
+    val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, I.GUID, J.GUID, V.GUID, "GIMat_accum".##)
+    out.clear
+    if (I.length != J.length || I.length != V.length) {
+      throw new RuntimeException("GIMat accum: index lengths dont match")
+    }
+    CUMAT.iaccum(I.data, J.data, V.data, out.data, I.length, nrows)
+    Mat.nflops += I.length
+    out
+  }
+  
+  def accumIJ(I:Int, J:GIMat, V:GIMat, omat:Mat, nrows:Int, ncols:Int):GIMat = {
+    val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, I, J.GUID, V.GUID, "GIMat_accumI".##)
+    out.clear
+    if (J.length != V.length) {
+      throw new RuntimeException("GIMat accum: index lengths dont match")
+    }
+    CUMAT.iaccumI(I, J.data, V.data, out.data, J.length, nrows)
+    Mat.nflops += J.length
+    out
+  }
+  
+  def accumIJ(I:GIMat, J:Int, V:GIMat, omat:Mat, nrows:Int, ncols:Int):GIMat = {
+    val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, I.GUID, J, V.GUID, "GIMat_accumJ".##)
+    out.clear
+    if (I.length != V.length) {
+      throw new RuntimeException("GIMat accum: index lengths dont match")
+    }
+    CUMAT.iaccumJ(I.data, J, V.data, out.data, I.length, nrows)
+    Mat.nflops += I.length
+    out
+  }
+  
+  def accumIJ(I:GIMat, J:GIMat, V:Int, omat:Mat, nrows:Int, ncols:Int):GIMat = {
+    val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, I.GUID, J.GUID, V.hashCode, "GIMat_accumV".##)
+    out.clear
+    if (I.length != J.length) {
+      throw new RuntimeException("GIMat accum: index lengths dont match")
+    }
+    CUMAT.iaccumV(I.data, J.data, V, out.data, I.length, nrows)
+    Mat.nflops += I.length
+    out
+  }
+  
+  def accumIJ(I:Int, J:GIMat, V:Int, omat:Mat, nrows:Int, ncols:Int):GIMat = {
+    val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, I, J.GUID, V.hashCode, "GIMat_accumIV".##)
+    out.clear
+    CUMAT.iaccumIV(I, J.data, V, out.data, J.length, nrows)
+    Mat.nflops += J.length
+    out
+  }
+  
+  def accumIJ(I:GIMat, J:Int, V:Int, omat:Mat, nrows:Int, ncols:Int):GIMat = {
+    val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, I.GUID, J, V.hashCode, "GIMat_accumJV".##)
+    out.clear
+    CUMAT.iaccumJV(I.data, J, V, out.data, I.length, nrows)
+    Mat.nflops += I.length
+    out
+  }
+  
+  def accum(IJ:GIMat, V:GIMat, omat:Mat, nrows:Int, ncols:Int):GIMat = {
+    if (IJ.nrows != V.length || IJ.ncols > 2) {
+      throw new RuntimeException("GIMat accum: index lengths dont match")
+    }
+    val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, IJ.GUID, V.GUID, "GIMat_accumIJ".##)
+    out.clear
+    if (IJ.ncols == 2) {
+    	CUMAT.iaccum(IJ.data, IJ.data.withByteOffset(IJ.nrows*Sizeof.INT), V.data, out.data, V.length, nrows)
+    } else {
+      CUMAT.iaccumJ(IJ.data, 0, V.data, out.data, V.length, nrows)
+    }
+    Mat.nflops += V.length
+    out
+  }
+  
+  def accum(IJ:GIMat, V:Int, omat:Mat, nrows:Int, ncols:Int):GIMat = {
+    if (IJ.ncols > 2) {
+      throw new RuntimeException("GIMat accum: index lengths dont match")
+    }
+    val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, IJ.GUID, V.hashCode, "GIMat_accumIJV".##)
+    out.clear
+    if (IJ.ncols == 2) {
+    	CUMAT.iaccumV(IJ.data, IJ.data.withByteOffset(IJ.nrows*Sizeof.INT), V, out.data, IJ.nrows, nrows)
+    } else {
+      CUMAT.iaccumJV(IJ.data, 0, V, out.data, IJ.nrows, nrows)
+    }
+    Mat.nflops += IJ.nrows
+    out
+  }
+ 
   
   def i3sortlexIndsGPU(grams:IMat, inds:IMat, asc:Boolean) = {
     if (grams.nrows != inds.nrows) throw new RuntimeException("i3sortlexIndsGPU mismatched dims")

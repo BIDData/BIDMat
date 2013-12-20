@@ -100,17 +100,19 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   }
   
   override def zeros(nr:Int, nc:Int) = {
-  	IMat(nr, nc)
+  	FMat.zeros(nr, nc)
   }
   
   override def ones(nr:Int, nc:Int) = {
-  	val out = IMat(nr, nc)
-  	var i = 0
-  	while (i < out.length) {
-  	  out(i) = 1
-  	  i += 1
-  	}
-  	out
+  	FMat.ones(nr, nc)
+  }
+     
+  override def izeros(m:Int, n:Int) = {
+    IMat.izeros(m,n)
+  }
+  
+  override def iones(m:Int, n:Int) = {
+    IMat.iones(m,n)
   }
     
   override def clearUpper(off:Int) = setUpper(0, off)
@@ -657,6 +659,18 @@ object IMat {
   def apply(a:Int) = ielem(a)
   
   def apply(a:Double) = ielem(a.toInt)
+  
+  def izeros(m:Int, n:Int) = {
+    val out = IMat(m,n)
+    out.clear
+    out
+  }
+  
+  def iones(m:Int, n:Int) = {
+    val out = IMat(m,n)
+    out.set(1f)
+    out
+  }
 
   def apply(x:Mat):IMat = {
     var out:IMat = null
