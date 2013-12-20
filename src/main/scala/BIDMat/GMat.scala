@@ -277,7 +277,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   
   def dotr (a:GMat):GMat = dotr(a, null)
   
-  override def ddot (a : Mat):Double = 
+  override def ddot (a:Mat):Double = 
   	if (nrows != a.nrows || ncols != a.ncols) {
   		throw new RuntimeException("ddot dims not compatible")
   	} else {
@@ -1014,6 +1014,68 @@ object GMat {
     Mat.nflops += IJ.nrows
     out
   }
+  
+  def treeProd(treesArray:Mat, feats:Mat, treePos:Mat, oTreeVal:Mat) {
+    val nrows = feats.nrows;
+    val ncols = feats.ncols;
+    val ns = treesArray.nrows - 1;
+    val ntrees = treePos.nrows;
+    if (treePos.ncols != ncols || oTreeVal.ncols != ncols) {
+      throw new RuntimeException("treeProd mismatch in ncols")
+    }
+    if (oTreeVal.nrows != ntrees) {
+      throw new RuntimeException("treeProd mismatch in ntrees")
+    }
+    val tstride = (ns + 1) * (treesArray.ncols / ntrees);
+    (treesArray, feats, treePos, oTreeVal) match {
+      case (tA : GIMat, fs : GMat, tP : GIMat, oTV : GMat) => GMat.treeProd(tA, fs, tP, oTV, nrows, ncols, ns, tstride, ntrees)
+      case (tA : GIMat, fs : GMat, tP : GIMat, oTI : GIMat) => GMat.treeProd(tA, fs, tP, oTI, nrows, ncols, ns, tstride, ntrees)
+    }
+  }
+
+
+  
+  def treeProd(treesArray:GIMat, feats:GMat, treePos:GIMat, oTreeVal:GMat, nrows:Int, ncols:Int, ns: Int, tstride:Int, ntrees: Int) {
+  	val err = CUMAT.treeprod(treesArray.data, feats.data, treePos.data, oTreeVal.data, nrows, ncols, ns, tstride, ntrees, 0);
+  	Mat.nflops += 1L * ncols * ntrees * ns
+  	if (err != 0) throw new RuntimeException("treeProd error %d: " + cudaGetErrorString(err) format err);
+  }
+
+  def treeProd(treesArray:GIMat, feats:GMat, treePos:GIMat, oTreeI:GIMat, nrows:Int, ncols:Int, ns: Int, tstride:Int, ntrees: Int) {
+  	val err = CUMAT.treeprod(treesArray.data, feats.data, treePos.data, oTreeI.data, nrows, ncols, ns, tstride, ntrees, 1);
+  	Mat.nflops += 1L * ncols * ntrees * ns
+  	if (err != 0) throw new RuntimeException("treeProd error %d: " + cudaGetErrorString(err) format err);
+  }
+
+  def lexsort2i(a:GIMat, b:GMat, i:GIMat) {
+    val ab = GMat.embedmat(a,b)
+    val err = CUMAT.lsortk(ab.data, i.data, i.length, 1);
+    if (err != 0) throw new RuntimeException("lexsort2i error %d: " + cudaGetErrorString(err) format err);
+    GMat.extractmat(a, b, ab);
+  }
+
+  def embedmat(a:GIMat, b:GMat, oMat: Mat):GIMat = {
+    if (a.nrows != b.nrows || a.ncols != b.ncols) {
+      throw new RuntimeException("embedmat error: mismatched dimensions");
+    }
+    val out = GIMat.newOrCheckGIMat(a.nrows * 2, a.ncols, oMat, a.GUID, b.GUID, "embedmat".##)
+    val err = CUMAT.embedmat(b.data, a.data, out.data, a.length);
+    if (err != 0) throw new RuntimeException("embedmat error %d: " + cudaGetErrorString(err) format err);
+    out
+  }
+
+  def embedmat(a:GIMat, b: GMat):GIMat = embedmat(a, b, null);
+
+  def extractmat(a:Mat, b: Mat, c: GIMat):(GIMat, GMat) = {
+    val outA = GIMat.newOrCheckGIMat(c.nrows /2, c.ncols, a, c.GUID, "extractmat_A".##)
+    val outB = GMat.newOrCheckGMat(c.nrows /2, c.ncols, b, c.GUID, "extractmat_B".##)
+    val err = CUMAT.extractmat(outB.data, outA.data, c.data, outA.length);
+    if (err != 0) throw new RuntimeException("extractmat error %d: " + cudaGetErrorString(err) format err);
+    (outA, outB)
+  }
+
+  def extractmat(c: GIMat):(GIMat, GMat) = extractmat(null, null, c);
+
   
   def GPUmult(a:FMat, b:FMat, omat:Mat, btrans:Boolean):FMat = {
     val bnrows = if (btrans) b.ncols else b.nrows
