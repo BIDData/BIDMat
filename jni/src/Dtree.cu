@@ -69,7 +69,7 @@ __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, float *
       }
     }
 
-    // save 
+    // save
     __syncthreads();
     if (threadIdx.x + threadIdx.y*ATHREADS < ntrees) {
       otv[threadIdx.x + threadIdx.y*ATHREADS + ntrees * bd] = totals[threadIdx.y][threadIdx.x];
@@ -80,7 +80,7 @@ __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, float *
 
 
 template<int ATHREADS, int BTHREADS, int REPTREES>
-__global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int tdepth) {
+__global__ void __treesteps(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int tdepth) {
 
   int newt, bd;
   __shared__ int pos[REPTREES][ATHREADS];
@@ -148,13 +148,13 @@ __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *ot
 template<int ATHREADS, int BTHREADS, int REPTREES>
 __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, float *otval, int nrows, int ncols, int ns, int tstride, int ntrees) {}
 template<int ATHREADS, int BTHREADS, int REPTREES>
-__global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int tdepth) {}
+__global__ void __treesteps(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int tdepth) {}
 #endif
 #else
 template<int ATHREADS, int BTHREADS, int REPTREES>
 __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, float *otval, int nrows, int ncols, int ns, int tstride, int ntrees) {}
 template<int ATHREADS, int BTHREADS, int REPTREES>
-  __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int tdepth){}
+  __global__ void __treesteps(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int tdepth){}
 #endif
 
 int treeprod(unsigned int *trees, float *feats, int *tpos, float *otv, int nrows, int ncols, int ns, int tstride, int ntrees) {
@@ -182,24 +182,24 @@ int treeprod(unsigned int *trees, float *feats, int *tpos, float *otv, int nrows
 }
 
 
-int treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int tdepth) {
+int treesteps(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int tdepth) {
   int nblks = min(1024, max(ncols/8, min(32, ncols)));
   dim3 blocks(32, 32, 1);
   int ntt;
   for (ntt = 32; ntt < ntrees; ntt *= 2) {}
   switch (ntt) {
   case (32) :
-    __treeprod<32,32,1><<<nblks,blocks>>>(trees, feats, tpos, otpos, nrows, ncols, ns, tstride, ntrees, tdepth); break;
+    __treesteps<32,32,1><<<nblks,blocks>>>(trees, feats, tpos, otpos, nrows, ncols, ns, tstride, ntrees, tdepth); break;
   case (64) :
-    __treeprod<32,32,2><<<nblks,blocks>>>(trees, feats, tpos, otpos, nrows, ncols, ns, tstride, ntrees, tdepth); break;
+    __treesteps<32,32,2><<<nblks,blocks>>>(trees, feats, tpos, otpos, nrows, ncols, ns, tstride, ntrees, tdepth); break;
   case (128) :
-    __treeprod<32,32,4><<<nblks,blocks>>>(trees, feats, tpos, otpos, nrows, ncols, ns, tstride, ntrees, tdepth); break;
+    __treesteps<32,32,4><<<nblks,blocks>>>(trees, feats, tpos, otpos, nrows, ncols, ns, tstride, ntrees, tdepth); break;
   case (256) :
-    __treeprod<32,32,8><<<nblks,blocks>>>(trees, feats, tpos, otpos, nrows, ncols, ns, tstride, ntrees, tdepth); break;
+    __treesteps<32,32,8><<<nblks,blocks>>>(trees, feats, tpos, otpos, nrows, ncols, ns, tstride, ntrees, tdepth); break;
   case (512) :
-    __treeprod<32,32,16><<<nblks,blocks>>>(trees, feats, tpos, otpos, nrows, ncols, ns, tstride, ntrees, tdepth); break;
+    __treesteps<32,32,16><<<nblks,blocks>>>(trees, feats, tpos, otpos, nrows, ncols, ns, tstride, ntrees, tdepth); break;
   case (1024) :
-    __treeprod<32,32,32><<<nblks,blocks>>>(trees, feats, tpos, otpos, nrows, ncols, ns, tstride, ntrees, tdepth); break;
+    __treesteps<32,32,32><<<nblks,blocks>>>(trees, feats, tpos, otpos, nrows, ncols, ns, tstride, ntrees, tdepth); break;
   } 
   cudaDeviceSynchronize();
   int err = cudaGetLastError();

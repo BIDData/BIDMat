@@ -568,20 +568,20 @@ extern "C" {
     return LDA_Gibbs1(nrows, nnz, A, B, Cir, Cic, P, Ms, Us, k);
   }
 
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_treeprodv
-  (JNIEnv *env, jobject obj, jobject jtrees, jobject jfeats, jobject jtpos, jobject jotpos, 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_treeprod
+  (JNIEnv *env, jobject obj, jobject jtrees, jobject jfeats, jobject jtpos, jobject jotv, 
    jint nrows, jint ncols, jint ns, jint tstride, jint ntrees)
   {
     unsigned int *trees = (unsigned int*)getPointer(env, jtrees);
     float *feats = (float*)getPointer(env, jfeats);
     int *tpos = (int*)getPointer(env, jtpos);
-    float *otpos = (float*)getPointer(env, jotpos);
+    float *otv = (float*)getPointer(env, jotv);
 
     return treeprod(trees, feats, tpos, otv, nrows, ncols, ns, tstride, ntrees);
   }
 
 
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_treeprodp
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_treesteps
   (JNIEnv *env, jobject obj, jobject jtrees, jobject jfeats, jobject jtpos, jobject jotpos, 
    jint nrows, jint ncols, jint ns, jint tstride, jint ntrees, jint tdepth)
   {
@@ -590,7 +590,7 @@ extern "C" {
     int *tpos = (int*)getPointer(env, jtpos);
     int *otpos = (int*)getPointer(env, jotpos);
 
-    return treeprod(trees, feats, tpos, otpos, nrows, ncols, ns, tstride, ntrees, tdepth);
+    return treesteps(trees, feats, tpos, otpos, nrows, ncols, ns, tstride, ntrees, tdepth);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_icopyt
