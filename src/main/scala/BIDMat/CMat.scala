@@ -99,7 +99,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   	v
   }
   
-  def t(oldmat:Mat):CMat  = {
+  def tx(oldmat:Mat):CMat  = {
     var out = CMat.newOrCheckCMat(ncols, nrows, oldmat, GUID, "t".##)
     var i = 0
     while (i < nrows) {
@@ -114,9 +114,11 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     out
   }
   
-  override def t:CMat = t(null:CMat)
+  def t(oldmat:Mat):CMat = tx(oldmat)
   
-  def h(oldmat:Mat):CMat  = {
+  override def t:CMat = tx(null:CMat)
+  
+  def hx(oldmat:Mat):CMat  = {
     var out = CMat.newOrCheckCMat(ncols, nrows, oldmat, GUID, "h".##)
     var i = 0
     while (i < nrows) {
@@ -131,7 +133,9 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     out
   }
   
-  def h:CMat = h(null:CMat)
+  def h:CMat = hx(null:CMat)
+  
+  def h(oldmat:Mat):CMat = hx(oldmat)
 
   def vertcat(a:CMat):CMat = 
     if (ncols != a.ncols) {
@@ -200,7 +204,11 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     (iout, jout, vout)
   } 
   
-  override def apply(iv:IMat):CMat = 
+  def apply(iv:IMat):CMat = applyx(iv)
+    
+  override def apply(iv:Mat):CMat = applyx(iv.asInstanceOf[IMat])
+  
+  def applyx(iv:IMat):CMat = 
     iv match {
       case aa:MatrixWildcard => {
         val out = CMat.newOrCheckCMat(length, 1, null, GUID, iv.GUID, "apply1dx".##)
@@ -277,7 +285,11 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
       }
     } 
   
-  override def apply(rowinds:IMat, colinds:IMat):CMat = {
+  def apply(r:IMat, c:IMat) = applyx(r, c)
+  
+  override def apply(r:Mat, c:Mat):CMat = applyx(r.asInstanceOf[IMat], c.asInstanceOf[IMat])
+  
+  def applyx(rowinds:IMat, colinds:IMat):CMat = {
   	var out:CMat = null
   	val off = Mat.oneBased
   	rowinds match {
@@ -337,14 +349,23 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
   out
   }
-  
-  override def apply(iv:IMat, j:Int):CMat = {
-  	apply(iv, IMat.ielem(j))
+    
+  def apply(iv:IMat, j:Int):CMat = {
+  	applyx(iv, IMat.ielem(j))
   } 
   
-  override def apply(i:Int, jv:IMat):CMat = {
-  	apply(IMat.ielem(i), jv)
+  def apply(i:Int, jv:IMat):CMat = {
+  	applyx(IMat.ielem(i), jv)
   }
+  
+  override def apply(iv:Mat, j:Int):CMat = {
+  	applyx(iv.asInstanceOf[IMat], IMat.ielem(j))
+  } 
+  
+  override def apply(i:Int, jv:Mat):CMat = {
+  	applyx(IMat.ielem(i), jv.asInstanceOf[IMat])
+  }
+
  
   /*
   * Implement sliced assignment, a(iv,jv) = b where iv and jv are vectors, using ? as wildcard

@@ -498,26 +498,38 @@ int apply_biniop(int *A, int Anrows, int Ancols,
 
 // Implement B[I,J] = A
 // indexed copy: version with one block per column
-__global__ void __copyToInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols) {
-  int iblock = blockIdx.x + blockIdx.y * gridDim.x;
-  if (iblock < ncols) {
-    int icol = J[iblock];
-    for (int i = threadIdx.x; i < nrows; i += blockDim.x) {
-      B[I[i] + icol * ldb] = A[i + iblock * lda];
-    }
-  }
+#define COPYTOINDS2DA(DFNAME,IEXPR,JEXPR)                             \
+__global__ void __copyToInds2D##DFNAME(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols) {  \
+  int iblock = blockIdx.x + blockIdx.y * gridDim.x;                                                                   \
+  if (iblock < ncols) {                                                                                               \
+    int icol = JEXPR;                                                                                                 \
+    for (int i = threadIdx.x; i < nrows; i += blockDim.x) {                                                           \
+      B[IEXPR + icol * ldb] = A[i + iblock * lda];                                                                    \
+    }                                                                                                                 \
+  }                                                                                                                   \
 }
+
+COPYTOINDS2DA(nn,I[i],J[iblock])
+COPYTOINDS2DA(xn,i,J[iblock])
+COPYTOINDS2DA(nx,I[i],iblock)
+COPYTOINDS2DA(xx,i,iblock) 
 
 // Implement B[I,J] = A
 // indexed copy: version with one thread per element
-__global__ void __copyToInds2Dx(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols) {
-  int indx = threadIdx.x + blockDim.x * (blockIdx.x + blockIdx.y * gridDim.x);
-  if (indx < nrows * ncols) {
-    int irow = indx % nrows;
-    int icol = indx / nrows;
-    B[I[irow] + J[icol] * ldb] = A[irow + icol * lda];
-  }
+#define COPYTOINDS2DB(DFNAME,IEXPR,JEXPR)                                                                              \
+__global__ void __copyToInds2DB##DFNAME(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols) {         \
+  int indx = threadIdx.x + blockDim.x * (blockIdx.x + blockIdx.y * gridDim.x);                                        \
+  if (indx < nrows * ncols) {                                                                                         \
+    int irow = indx % nrows;                                                                                          \
+    int icol = indx / nrows;                                                                                          \
+    B[IEXPR + JEXPR * ldb] = A[irow + icol * lda];                                                                    \
+  }                                                                                                                   \
 }
+
+COPYTOINDS2DB(nn,I[irow],J[icol])
+COPYTOINDS2DB(xn,irow,J[icol])
+COPYTOINDS2DB(nx,I[irow],icol)
+COPYTOINDS2DB(xx,irow,icol)
 
 // Implement B[I,J] = A
 int copyToInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols) {
@@ -536,9 +548,33 @@ int copyToInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J
     griddims.y = (nblocks-1)/vs + 1;
   }
   if (nblocks == ncols) {
-    __copyToInds2D<<<griddims,nthreads>>>(A, lda, B, ldb, I, nrows, J, ncols);
+    if (I == NULL) {
+      if (J == NULL) {
+        __copyToInds2Dxx<<<griddims,nthreads>>>(A, lda, B, ldb, I, nrows, J, ncols);
+      } else {
+        __copyToInds2Dxn<<<griddims,nthreads>>>(A, lda, B, ldb, I, nrows, J, ncols);
+      }
+    } else {
+      if (J == NULL) {
+        __copyToInds2Dnx<<<griddims,nthreads>>>(A, lda, B, ldb, I, nrows, J, ncols);
+      } else {
+        __copyToInds2Dnn<<<griddims,nthreads>>>(A, lda, B, ldb, I, nrows, J, ncols);
+      }
+    }
   } else {
-    __copyToInds2Dx<<<griddims,nthreads>>>(A, lda, B, ldb, I, nrows, J, ncols);
+    if (I == NULL) {
+      if (J == NULL) {
+        __copyToInds2DBxx<<<griddims,nthreads>>>(A, lda, B, ldb, I, nrows, J, ncols);
+      } else {
+        __copyToInds2DBxn<<<griddims,nthreads>>>(A, lda, B, ldb, I, nrows, J, ncols);
+      }
+    } else {
+      if (J == NULL) {
+        __copyToInds2DBnx<<<griddims,nthreads>>>(A, lda, B, ldb, I, nrows, J, ncols);
+      } else {
+        __copyToInds2DBnn<<<griddims,nthreads>>>(A, lda, B, ldb, I, nrows, J, ncols);
+      }
+    }
   }
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -547,26 +583,38 @@ int copyToInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J
 
 // Implement B = A[I,J]
 // indexed copy: version with one block per column
-__global__ void __copyFromInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols) {
-  int iblock = blockIdx.x + blockIdx.y * gridDim.x;
-  if (iblock < ncols) {
-    int icol = J[iblock];
-    for (int i = threadIdx.x; i < nrows; i += blockDim.x) {
-      B[i + iblock * ldb] = A[I[i] + icol * lda];
-    }
-  }
+#define COPYFROMINDS2DA(FNAME,IEXPR,JEXPR)                                                                              \
+__global__ void __copyFromInds2D##FNAME(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols) {   \
+  int iblock = blockIdx.x + blockIdx.y * gridDim.x;                                                                     \
+  if (iblock < ncols) {                                                                                                 \
+    int icol = JEXPR;                                                                                                   \
+    for (int i = threadIdx.x; i < nrows; i += blockDim.x) {                                                             \
+      B[i + iblock * ldb] = A[IEXPR + icol * lda];                                                                      \
+    }                                                                                                                   \
+  }                                                                                                                     \
 }
+
+COPYFROMINDS2DA(nn,I[i],J[iblock])
+COPYFROMINDS2DA(xn,i,J[iblock])
+COPYFROMINDS2DA(nx,I[i],iblock)
+COPYFROMINDS2DA(xx,i,iblock)
 
 // Implement B = A[I,J]
 // indexed copy: version with one thread per element
-__global__ void __copyFromInds2Dx(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols) {
-  int indx = threadIdx.x + blockDim.x * (blockIdx.x + blockIdx.y * gridDim.x);
-  if (indx < nrows * ncols) {
-    int irow = indx % nrows;
-    int icol = indx / nrows;
-    B[irow + icol * ldb] = A[I[irow] + J[icol] * lda];
-  }
+#define COPYFROMINDS2DB(FNAME,IEXPR,JEXPR)                                                                              \
+__global__ void __copyFromInds2DB##FNAME(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols) {  \
+  int indx = threadIdx.x + blockDim.x * (blockIdx.x + blockIdx.y * gridDim.x);                                          \
+  if (indx < nrows * ncols) {                                                                                           \
+    int irow = indx % nrows;                                                                                            \
+    int icol = indx / nrows;                                                                                            \
+    B[irow + icol * ldb] = A[IEXPR + JEXPR * lda];                                                                      \
+  }                                                                                                                     \
 }
+
+COPYFROMINDS2DB(nn,I[irow],J[icol])
+COPYFROMINDS2DB(xn,irow,J[icol])
+COPYFROMINDS2DB(nx,I[irow],icol)
+COPYFROMINDS2DB(xx,irow,icol)
 
 // Implement B = A[I,J]
 int copyFromInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols) {
@@ -585,9 +633,33 @@ int copyFromInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int 
     griddims.y = (nblocks-1)/vs + 1;
   }
   if (nblocks == ncols) {
-    __copyFromInds2D<<<griddims,nthreads>>>(A, lda, B, ldb, I, nrows, J, ncols);
+    if (I == NULL) {
+      if (J == NULL) {
+        __copyFromInds2Dxx<<<griddims,nthreads>>>(A, lda, B, ldb, I, nrows, J, ncols);
+      } else {
+        __copyFromInds2Dxn<<<griddims,nthreads>>>(A, lda, B, ldb, I, nrows, J, ncols);
+      }
+    } else {
+      if (J == NULL) {
+        __copyFromInds2Dnx<<<griddims,nthreads>>>(A, lda, B, ldb, I, nrows, J, ncols);
+      } else {
+        __copyFromInds2Dnn<<<griddims,nthreads>>>(A, lda, B, ldb, I, nrows, J, ncols);
+      }
+    }
   } else {
-    __copyFromInds2Dx<<<griddims,nthreads>>>(A, lda, B, ldb, I, nrows, J, ncols);
+    if (I == NULL) {
+      if (J == NULL) {
+        __copyFromInds2DBxx<<<griddims,nthreads>>>(A, lda, B, ldb, I, nrows, J, ncols);
+      } else {
+        __copyFromInds2DBxn<<<griddims,nthreads>>>(A, lda, B, ldb, I, nrows, J, ncols);
+      }
+    } else {
+      if (J == NULL) {
+        __copyFromInds2DBnx<<<griddims,nthreads>>>(A, lda, B, ldb, I, nrows, J, ncols);
+      } else {
+        __copyFromInds2DBnn<<<griddims,nthreads>>>(A, lda, B, ldb, I, nrows, J, ncols);
+      }
+    }
   }
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();

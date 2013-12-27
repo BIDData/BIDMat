@@ -12,10 +12,14 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   
   override def toString:String = {
     val nr = scala.math.min(nrows,10)
-    val nc = scala.math.min(ncols,50)        
-    val tmpMat = IMat(nr, nc)
-    JCublas.cublasGetMatrix(nr, nc, Sizeof.INT, data, nrows, Pointer.to(tmpMat.data), nr)
-    tmpMat.toString
+    val nc = scala.math.min(ncols,50)   
+    if	(nr*nc > 0) {
+    	val tmpMat = IMat(nr, nc)
+    	JCublas.cublasGetMatrix(nr, nc, Sizeof.INT, data, nrows, Pointer.to(tmpMat.data), nr)
+    	tmpMat.toString
+    } else {
+      ""
+    }
   }
   
   override def dv:Double =
@@ -211,6 +215,7 @@ class GIPair (val omat:Mat, val mat:GIMat) extends Pair{
 	def != (b : GIMat) = mat.GIop(b, omat, 9)
 }
 
+class GIMatWildcard extends GIMat(0,0,null,0) with MatrixWildcard
 
 object GIMat {
   
@@ -220,11 +225,18 @@ object GIMat {
     retv        
   }    
   
+  val wildcard = new GIMatWildcard
+  
   def apply(a:IMat):GIMat = {
-    val retv = GIMat.newOrCheckGIMat(a.nrows, a.ncols, null, a.GUID, "GIMat".##)
-    val rsize = a.nrows*a.ncols
-    JCublas.cublasSetVector(rsize, Sizeof.INT, Pointer.to(a.data), 1, retv.data, 1);
-    retv
+    a match {
+    case aa:MatrixWildcard => GIMat.wildcard
+    case _ => {
+    	val retv = GIMat.newOrCheckGIMat(a.nrows, a.ncols, null, a.GUID, "GIMat".##)
+    	val rsize = a.nrows*a.ncols
+    	JCublas.cublasSetVector(rsize, Sizeof.INT, Pointer.to(a.data), 1, retv.data, 1);
+    	retv
+      }
+    }
   }
   
   def apply(a:Int):GIMat = {
