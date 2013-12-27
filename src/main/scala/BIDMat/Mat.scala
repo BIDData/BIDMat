@@ -52,10 +52,10 @@ class Mat(nr:Int, nc:Int) {
   def colslice(a:Int, b:Int):Mat = notImplemented0("colslice");
   def rowslice(a:Int, b:Int):Mat = notImplemented0("rowslice");
   
-  def apply(a:IMat):Mat = notImplemented0("linear array access");
-  def apply(a:IMat, b:IMat):Mat = notImplemented0("block array access");
-  def apply(a:IMat, b:Int):Mat = notImplemented0("block array access");	
-  def apply(a:Int, b:IMat):Mat = notImplemented0("block array access");
+  def apply(a:Mat):Mat = notImplemented0("linear array access");
+  def apply(a:Mat, b:Mat):Mat = notImplemented0("block array access");
+  def apply(a:Mat, b:Int):Mat = notImplemented0("block array access");	
+  def apply(a:Int, b:Mat):Mat = notImplemented0("block array access");
   
   def update(a:IMat, b:Mat) = notImplemented0("linear update");
   def update(a:IMat, b:IMat, m:Mat) = notImplemented0("block update");

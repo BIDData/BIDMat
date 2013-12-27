@@ -22,12 +22,18 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   def find3:(IMat, IMat, FMat) = { val (ii, jj, vv) = gfind3 ; (IMat(ii), IMat(jj), FMat(vv)) }	
   
   override def contents:FMat = FMat(nnz, 1, this.data)
-  
-  override def apply(a:IMat, b:IMat):SMat = SMat(gapply(a, b))	
-  
-  override def apply(a:Int, b:IMat):SMat = SMat(gapply(a, b))	
-  
-  override def apply(a:IMat, b:Int):SMat = SMat(gapply(a, b))	
+
+  def apply(a:IMat, b:IMat):SMat = SMat(gapply(a, b))	
+
+  def apply(a:IMat, b:Int):SMat = SMat(gapply(a, b))	
+
+  def apply(a:Int, b:IMat):SMat = SMat(gapply(a, b))
+
+  override def apply(a:Mat, b:Mat):SMat = SMat(gapply(a.asInstanceOf[IMat], b.asInstanceOf[IMat]))	
+
+  override def apply(a:Mat, b:Int):SMat = SMat(gapply(a.asInstanceOf[IMat], b))	
+
+  override def apply(a:Int, b:Mat):SMat = SMat(gapply(a, b.asInstanceOf[IMat]))
   
   override def zeros(nr:Int, nc:Int) = {
     FMat.zeros(nr, nc)

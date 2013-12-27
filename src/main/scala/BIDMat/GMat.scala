@@ -25,26 +25,104 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     
   override def nnz = length
   
-  def apply(I:GIMat, J:GIMat):GMat = {
-    val out = GMat.newOrCheckGMat(I.length, J.length, null, GUID, I.GUID, J.GUID, "apply".##)
-    CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, J.length)
-    out
+  def apply(I:MatrixWildcard, J:MatrixWildcard):GMat = applyx(GIMat.wildcard, GIMat.wildcard):GMat
+
+  def apply(I:GIMat, J:GIMat):GMat = applyx(I, J)
+  
+  override def apply(I:Mat, J:Mat):GMat = {
+    (I, J) match {
+      case (ig:GIMat, jg:GIMat) => applyx(ig, jg)
+      case (im:MatrixWildcard, jg:GIMat) => applyx(GIMat.wildcard, jg)
+      case (ig:GIMat, jm:MatrixWildcard) => applyx(ig, GIMat.wildcard)
+      case (im:MatrixWildcard, jm:MatrixWildcard) => applyx(GIMat.wildcard, GIMat.wildcard)
+    }
   }
   
-  def apply(i:Int, J:GIMat):GMat = {
+  def applyx(I:GIMat, J:GIMat):GMat = {
+    (I, J) match {
+      case (ii:MatrixWildcard, jj:MatrixWildcard) => {
+        val out = GMat.newOrCheckGMat(nrows, ncols, null, GUID, 0, 0, "applyXJ".##)
+        CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, GMat.nullPointer, nrows, GMat.nullPointer, ncols)
+        out
+      }
+      case (ii:MatrixWildcard, jj:GIMat) => {
+      	val out = GMat.newOrCheckGMat(nrows, J.length, null, GUID, 0, J.GUID, "applyXJ".##)
+        CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, GMat.nullPointer, nrows, J.data, J.length)
+        out
+      }
+      case (ii:GIMat, jj:MatrixWildcard) => {
+        val out = GMat.newOrCheckGMat(I.length, ncols, null, GUID, I.GUID, 0, "applyIX".##)
+        CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, GMat.nullPointer, ncols)
+        out
+      }
+      case _ => {
+      	val out = GMat.newOrCheckGMat(I.length, J.length, null, GUID, I.GUID, J.GUID, "applyIJ".##)
+      	CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, J.length)
+      	out
+      }
+    }
+  }
+  
+    
+  def apply(i:Int, J:MatrixWildcard):GMat = applyx(i, GIMat.wildcard):GMat
+
+  def apply(i:Int, J:GIMat):GMat = applyx(i, J)
+  
+  override def apply(i:Int, J:Mat):GMat = {
+    J match {
+      case jg:GIMat => applyx(i, jg)
+      case jm:MatrixWildcard => applyx(i, GIMat.wildcard)
+    }
+  }
+ 
+  
+  def applyx(i:Int, J:GIMat):GMat = {
     val I = GIMat(i)
-    val out = GMat.newOrCheckGMat(I.length, J.length, null, GUID, I.GUID, J.GUID, "apply".##)
-    CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, J.length)
-    I.free
-    out
+    J match {
+    case (jj:MatrixWildcard) => {
+    	val out = GMat.newOrCheckGMat(1, ncols, null, GUID, i, 0, "applyiX".##)
+    	CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, 1, GMat.nullPointer, ncols)
+    	I.free
+    	out
+    }
+    case _ => {
+    	val out = GMat.newOrCheckGMat(1, J.length, null, GUID, i, J.GUID, "applyiJ".##)
+    	CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, 1, J.data, J.length)
+    	I.free
+    	out
+    }
+    }
   }
   
-  def apply(I:GIMat, j:Int):GMat = {
+      
+  def apply(I:MatrixWildcard, j:Int):GMat = applyx(GIMat.wildcard, j):GMat
+
+  def apply(I:GIMat, j:Int):GMat = applyx(I, j)
+    
+  override def apply(I:Mat, j:Int):GMat = {
+    I match {
+      case ig:GIMat => applyx(ig, j)
+      case im:MatrixWildcard => applyx(GIMat.wildcard, j)
+    }
+  }
+ 
+  
+  def applyx(I:GIMat, j:Int):GMat = {
     val J = GIMat(j)
-    val out = GMat.newOrCheckGMat(I.length, J.length, null, GUID, I.GUID, J.GUID, "apply".##)
-    CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, J.length)
-    J.free
-    out
+    I match {
+    case (ii:MatrixWildcard) => {
+    	val out = GMat.newOrCheckGMat(nrows, 1, null, GUID, 0, j, "applyXj".##)
+    	CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, GMat.nullPointer, nrows, J.data, 1)
+    	J.free
+    	out
+    }    
+    case _ => {
+    	val out = GMat.newOrCheckGMat(I.length, 1, null, GUID, I.GUID, j, "applyIj".##)
+    	CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, 1)
+    	J.free
+    	out
+    }
+    }
   }
   
   def apply(i:Int, j:Int):Float = {
@@ -54,21 +132,48 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   }
   
   def update(I:GIMat, J:GIMat, V:GMat):GMat = {
-    CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, I.length, J.data, J.length)
+    (I, J) match {
+      case (ii:MatrixWildcard, jj:MatrixWildcard) => {
+        CUMAT.copyFromInds2D(V.data, V.nrows, data, nrows, GMat.nullPointer, nrows, GMat.nullPointer, ncols)
+      }
+      case (ii:MatrixWildcard, jj:GIMat) => {
+        CUMAT.copyFromInds2D(V.data, V.nrows, data, nrows, GMat.nullPointer, nrows, J.data, J.length)
+      }
+      case (ii:GIMat, jj:MatrixWildcard) => {
+        CUMAT.copyFromInds2D(V.data, V.nrows, data, nrows, I.data, I.length, GMat.nullPointer, ncols)
+      }
+      case _ => {
+      	CUMAT.copyFromInds2D(V.data, V.nrows, data, nrows, I.data, I.length, J.data, J.length)
+      }
+    }
     this
   }
   
   def update(i:Int, J:GIMat, V:GMat):GMat = {
   	val I = GIMat(i)
-    CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, I.length, J.data, J.length)
+  	J match {
+  	case jj:MatrixWildcard => {
+  		CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, 1, GMat.nullPointer, ncols)
+  	}
+  	case _ => {
+  		CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, 1, J.data, J.length)
+  	}
+  	}
     I.free
     this
   }
     
   def update(I:GIMat, j:Int, V:GMat):GMat = {
   	val J = GIMat(j)
-    CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, I.length, J.data, J.length)
-    J.free
+  	I match {
+  	case ii:MatrixWildcard => {
+  		CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, GMat.nullPointer, I.length, J.data, 1)
+  	}
+  	case _ => {
+  		CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, I.length, J.data, 1)
+  	}
+  	}
+    I.free
     this
   }
       
@@ -842,6 +947,8 @@ object GMat {
     val atan2=0
     val pow=1 
   }  
+  
+  val nullPointer = new Pointer
   
   def zeros(nr:Int, nc:Int) = {
     val out = GMat(nr, nc)
