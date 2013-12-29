@@ -33,13 +33,13 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     
   override def nnz = length
   
-    def apply(I:GIMat, J:GIMat):GIMat = {
+  override def apply(I:GIMat, J:GIMat):GIMat = {
     val out = GIMat.newOrCheckGIMat(I.length, J.length, null, GUID, I.GUID, J.GUID, "apply".##)
     CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, J.length)
     out
   }
   
-  def apply(i:Int, J:GIMat):GIMat = {
+  override def apply(i:Int, J:GIMat):GIMat = {
     val I = GIMat(i)
     val out = GIMat.newOrCheckGIMat(I.length, J.length, null, GUID, I.GUID, J.GUID, "apply".##)
     CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, J.length)
@@ -47,7 +47,7 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     out
   }
   
-  def apply(I:GIMat, j:Int):GIMat = {
+  override def apply(I:GIMat, j:Int):GIMat = {
     val J = GIMat(j)
     val out = GIMat.newOrCheckGIMat(I.length, J.length, null, GUID, I.GUID, J.GUID, "apply".##)
     CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, J.length)

@@ -24,20 +24,23 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   override def mytype = "GMat"
     
   override def nnz = length
-  
-  def apply(I:MatrixWildcard, J:MatrixWildcard):GMat = applyx(GIMat.wildcard, GIMat.wildcard):GMat
 
-  def apply(I:GIMat, J:GIMat):GMat = applyx(I, J)
+  override def apply(I:GIMat, J:GIMat):GMat = applyx(I, J)
+     
+  override def apply(i:Int, J:IMat):GMat = applyx(i, GIMat(J))
+
+  override def apply(i:Int, J:GIMat):GMat = applyx(i, J)  
+      
+  override def apply(I:IMat, j:Int):GMat = applyx(GIMat(I), j)
+
+  override def apply(I:GIMat, j:Int):GMat = applyx(I, j)
   
-  override def apply(I:Mat, J:Mat):GMat = {
-    (I, J) match {
-      case (ig:GIMat, jg:GIMat) => applyx(ig, jg)
-      case (im:MatrixWildcard, jg:GIMat) => applyx(GIMat.wildcard, jg)
-      case (ig:GIMat, jm:MatrixWildcard) => applyx(ig, GIMat.wildcard)
-      case (im:MatrixWildcard, jm:MatrixWildcard) => applyx(GIMat.wildcard, GIMat.wildcard)
-    }
-  }
+  override def apply(I:IMat, J:GIMat):GMat = applyx(GIMat(I), J)
   
+  override def apply(I:GIMat, J:IMat):GMat = applyx(I, GIMat(J))
+  
+  override def apply(I:IMat, J:IMat):GMat = applyx(GIMat(I), GIMat(J))
+    
   def applyx(I:GIMat, J:GIMat):GMat = {
     (I, J) match {
       case (ii:MatrixWildcard, jj:MatrixWildcard) => {
@@ -61,20 +64,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
       	out
       }
     }
-  }
-  
-    
-  def apply(i:Int, J:MatrixWildcard):GMat = applyx(i, GIMat.wildcard):GMat
-
-  def apply(i:Int, J:GIMat):GMat = applyx(i, J)
-  
-  override def apply(i:Int, J:Mat):GMat = {
-    J match {
-      case jg:GIMat => applyx(i, jg)
-      case jm:MatrixWildcard => applyx(i, GIMat.wildcard)
-    }
-  }
- 
+  } 
   
   def applyx(i:Int, J:GIMat):GMat = {
     val I = GIMat(i)
@@ -93,19 +83,6 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     }
     }
   }
-  
-      
-  def apply(I:MatrixWildcard, j:Int):GMat = applyx(GIMat.wildcard, j):GMat
-
-  def apply(I:GIMat, j:Int):GMat = applyx(I, j)
-    
-  override def apply(I:Mat, j:Int):GMat = {
-    I match {
-      case ig:GIMat => applyx(ig, j)
-      case im:MatrixWildcard => applyx(GIMat.wildcard, j)
-    }
-  }
- 
   
   def applyx(I:GIMat, j:Int):GMat = {
     val J = GIMat(j)
@@ -159,7 +136,6 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   		CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, 1, J.data, J.length)
   	}
   	}
-    I.free
     this
   }
     
@@ -173,7 +149,6 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   		CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, I.length, J.data, 1)
   	}
   	}
-    I.free
     this
   }
       
@@ -972,7 +947,6 @@ object GMat {
     	println("device is %d" format SciFunctions.getGPU)
     	throw new RuntimeException("Cublas error in gones " + cudaGetErrorString(err))
     }
-    one.free
     out
   }
   

@@ -44,21 +44,13 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   def find3:(IMat, IMat, FMat) = { val (ii, jj, vv) = gfind3 ; (IMat(ii), IMat(jj), FMat(vv)) }
   
-  def apply(a:IMat):FMat = FMat(gapply(a))
+  override def apply(a:IMat):FMat = FMat(gapply(a))
 
-  def apply(a:IMat, b:IMat):FMat = FMat(gapply(a, b))	
+  override def apply(a:IMat, b:IMat):FMat = FMat(gapply(a, b))	
 
-  def apply(a:IMat, b:Int):FMat = FMat(gapply(a, b))	
+  override def apply(a:IMat, b:Int):FMat = FMat(gapply(a, b))	
 
-  def apply(a:Int, b:IMat):FMat = FMat(gapply(a, b))
-  
-  override def apply(a:Mat):FMat = FMat(gapply(a.asInstanceOf[IMat]))
-
-  override def apply(a:Mat, b:Mat):FMat = FMat(gapply(a.asInstanceOf[IMat], b.asInstanceOf[IMat]))	
-
-  override def apply(a:Mat, b:Int):FMat = FMat(gapply(a.asInstanceOf[IMat], b))	
-
-  override def apply(a:Int, b:Mat):FMat = FMat(gapply(a, b.asInstanceOf[IMat]))
+  override def apply(a:Int, b:IMat):FMat = FMat(gapply(a, b))
   
   override def colslice(a:Int, b:Int, out:Mat) = FMat(gcolslice(a, b, out, Mat.oneBased))
   

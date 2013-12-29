@@ -15,21 +15,13 @@ case class CSMat(override val nrows:Int, override val ncols:Int, override val da
 	
 	def find3:(IMat, IMat, CSMat) = { val vv = gfind3 ; (IMat(vv._1), IMat(vv._2), CSMat(vv._3)) }
 	
-	def apply(a:IMat):CSMat = CSMat(gapply(a))
+	override def apply(a:IMat):CSMat = CSMat(gapply(a))
 	
-	def apply(a:IMat, b:IMat):CSMat = CSMat(gapply(a, b))	
+	override def apply(a:IMat, b:IMat):CSMat = CSMat(gapply(a, b))	
 	
-	def apply(a:Int, b:IMat):CSMat = CSMat(gapply(a, b))	
+	override def apply(a:Int, b:IMat):CSMat = CSMat(gapply(a, b))	
 		
-	def apply(a:IMat, b:Int):CSMat = CSMat(gapply(a, b))	
-	
-  override def apply(a:Mat):CSMat = CSMat(gapply(a.asInstanceOf[IMat]))
-	
-	override def apply(a:Mat, b:Mat):CSMat = CSMat(gapply(a.asInstanceOf[IMat], b.asInstanceOf[IMat]))	
-	
-	override def apply(a:Int, b:Mat):CSMat = CSMat(gapply(a, b.asInstanceOf[IMat]))	
-		
-	override def apply(a:Mat, b:Int):CSMat = CSMat(gapply(a.asInstanceOf[IMat], b))	
+	override def apply(a:IMat, b:Int):CSMat = CSMat(gapply(a, b))	
 		
 	def ccMatOp(b: CSMat, f:(String, String) => String, old:CSMat) = CSMat(ggMatOp(b, f, old))
 	
