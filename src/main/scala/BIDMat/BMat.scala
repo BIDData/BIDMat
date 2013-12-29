@@ -37,17 +37,11 @@ case class BMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
     (IMat(ii), IMat(jj), vi)
   }
   
-  def apply(a:IMat, b:IMat):BMat = BMat(gapply(a, b))	
+  override def apply(a:IMat, b:IMat):BMat = BMat(gapply(a, b))	
   
-  def apply(a:IMat, b:Int):BMat = BMat(gapply(a, IMat.ielem(b)))	
+  override def apply(a:IMat, b:Int):BMat = BMat(gapply(a, IMat.ielem(b)))	
   
-  def apply(a:Int, b:IMat):BMat = BMat(gapply(IMat.ielem(a), b))
-  
-  override def apply(a:Mat, b:Mat):BMat = BMat(gapply(a.asInstanceOf[IMat], b.asInstanceOf[IMat]))	
-  
-  override def apply(a:Mat, b:Int):BMat = BMat(gapply(a.asInstanceOf[IMat], IMat.ielem(b)))	
-  
-  override def apply(a:Int, b:Mat):BMat = BMat(gapply(IMat.ielem(a), b.asInstanceOf[IMat]))
+  override def apply(a:Int, b:IMat):BMat = BMat(gapply(IMat.ielem(a), b))
   
   def bbMatOp(b: BMat, f:(Byte, Byte) => Byte, out:Mat):BMat = BMat(sgMatOp(b, f, out))
   

@@ -76,8 +76,6 @@ object MatFunctions {
     out
   }
   
-  implicit def iMat2GIMat(x:IMat):GIMat = GIMat(x)
-  
   def recycleTry(a:Mat, nr:Int, nc:Int, b:FMat, nnz:Int):FMat = recycleTry(a, nr, nc, b:Mat, nnz).asInstanceOf[FMat]
   
   def recycleTry(a:Mat, nr:Int, nc:Int, b:DMat, nnz:Int):DMat = recycleTry(a, nr, nc, b:Mat, nnz).asInstanceOf[DMat]

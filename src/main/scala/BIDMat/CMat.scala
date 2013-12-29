@@ -204,9 +204,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     (iout, jout, vout)
   } 
   
-  def apply(iv:IMat):CMat = applyx(iv)
-    
-  override def apply(iv:Mat):CMat = applyx(iv.asInstanceOf[IMat])
+  override def apply(iv:IMat):CMat = applyx(iv)
   
   def applyx(iv:IMat):CMat = 
     iv match {
@@ -285,9 +283,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
       }
     } 
   
-  def apply(r:IMat, c:IMat) = applyx(r, c)
-  
-  override def apply(r:Mat, c:Mat):CMat = applyx(r.asInstanceOf[IMat], c.asInstanceOf[IMat])
+  override def apply(r:IMat, c:IMat) = applyx(r, c)
   
   def applyx(rowinds:IMat, colinds:IMat):CMat = {
   	var out:CMat = null
@@ -350,22 +346,13 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   out
   }
     
-  def apply(iv:IMat, j:Int):CMat = {
+  override def apply(iv:IMat, j:Int):CMat = {
   	applyx(iv, IMat.ielem(j))
   } 
   
-  def apply(i:Int, jv:IMat):CMat = {
+  override def apply(i:Int, jv:IMat):CMat = {
   	applyx(IMat.ielem(i), jv)
   }
-  
-  override def apply(iv:Mat, j:Int):CMat = {
-  	applyx(iv.asInstanceOf[IMat], IMat.ielem(j))
-  } 
-  
-  override def apply(i:Int, jv:Mat):CMat = {
-  	applyx(IMat.ielem(i), jv.asInstanceOf[IMat])
-  }
-
  
   /*
   * Implement sliced assignment, a(iv,jv) = b where iv and jv are vectors, using ? as wildcard

@@ -45,21 +45,13 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
 
   def find3:(IMat, IMat, DMat) = { val (ii, jj, vv) = gfind3 ; (ii, jj, DMat(vv)) }
 
-  def apply(a:IMat):DMat = DMat(gapply(a))
+  override def apply(a:IMat):DMat = DMat(gapply(a))
 
-  def apply(a:IMat, b:IMat):DMat = DMat(gapply(a, b))	
+  override def apply(a:IMat, b:IMat):DMat = DMat(gapply(a, b))	
 
-  def apply(a:IMat, b:Int):DMat = DMat(gapply(a, b))	
+  override def apply(a:IMat, b:Int):DMat = DMat(gapply(a, b))	
 
-  def apply(a:Int, b:IMat):DMat = DMat(gapply(a, b))
-  
-  override def apply(a:Mat):DMat = DMat(gapply(a.asInstanceOf[IMat]))
-
-  override def apply(a:Mat, b:Mat):DMat = DMat(gapply(a.asInstanceOf[IMat], b.asInstanceOf[IMat]))	
-
-  override def apply(a:Mat, b:Int):DMat = DMat(gapply(a.asInstanceOf[IMat], b))	
-
-  override def apply(a:Int, b:Mat):DMat = DMat(gapply(a, b.asInstanceOf[IMat]))
+  override def apply(a:Int, b:IMat):DMat = DMat(gapply(a, b))
   
   override def colslice(a:Int, b:Int, out:Mat) = DMat(gcolslice(a, b, out, Mat.oneBased))
   
