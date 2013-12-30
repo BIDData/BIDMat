@@ -78,6 +78,14 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   def update(i:Int, J:IMat, V:CMat) = updatex(IMat.ielem(i), J, V)
   
+  override def update(I:IMat, V:Mat) = updatex(I, V.asInstanceOf[CMat])
+  
+  override def update(I:IMat, J:IMat, V:Mat) = updatex(I, J, V.asInstanceOf[CMat])
+  
+  override def update(I:IMat, j:Int, V:Mat) = updatex(I, IMat.ielem(j), V.asInstanceOf[CMat])
+  
+  override def update(i:Int, J:IMat, V:Mat) = updatex(IMat.ielem(i), J, V.asInstanceOf[CMat])
+  
   override def update(I:Mat, V:Mat) = updatex(I.asInstanceOf[IMat], V.asInstanceOf[CMat])
   
   override def update(I:Mat, J:Mat, V:Mat) = updatex(I.asInstanceOf[IMat], J.asInstanceOf[IMat], V.asInstanceOf[CMat])
