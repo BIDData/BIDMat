@@ -77,6 +77,14 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
 
   def update(i:Int, jv:IMat, b:DMat):DMat = DMat(_update(IMat.ielem(i), jv, b))
   
+  override def update(iv:IMat, b:Mat):DMat = DMat(_update(iv, b.asInstanceOf[DMat]))
+  
+  override def update(iv:IMat, jv:IMat, b:Mat):DMat = DMat(_update(iv, jv, b.asInstanceOf[DMat]))
+
+  override def update(iv:IMat, j:Int, b:Mat):DMat = DMat(_update(iv, IMat.ielem(j), b.asInstanceOf[DMat]))
+
+  override def update(i:Int, jv:IMat, b:Mat):DMat = DMat(_update(IMat.ielem(i), jv, b.asInstanceOf[DMat]))
+  
   override def update(iv:Mat, b:Mat):DMat = DMat(_update(iv.asInstanceOf[IMat], b.asInstanceOf[DMat]))
   
   override def update(iv:Mat, jv:Mat, b:Mat):DMat = DMat(_update(iv.asInstanceOf[IMat], jv.asInstanceOf[IMat], b.asInstanceOf[DMat]))

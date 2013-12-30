@@ -60,6 +60,14 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
 
   def update(i:Int, jv:IMat, b:IMat):IMat = IMat(_update(IMat.ielem(i), jv, b))
   
+  override def update(iv:IMat, b:Mat):IMat = IMat(_update(iv, b.asInstanceOf[IMat]))
+  
+  override def update(iv:IMat, jv:IMat, b:Mat):IMat = IMat(_update(iv, jv, b.asInstanceOf[IMat]))
+
+  override def update(iv:IMat, j:Int, b:Mat):IMat = IMat(_update(iv, IMat.ielem(j), b.asInstanceOf[IMat]))
+
+  override def update(i:Int, jv:IMat, b:Mat):IMat = IMat(_update(IMat.ielem(i), jv, b.asInstanceOf[IMat]))
+  
   override def update(iv:Mat, b:Mat):IMat = IMat(_update(iv.asInstanceOf[IMat], b.asInstanceOf[IMat]))
   
   override def update(iv:Mat, jv:Mat, b:Mat):IMat = IMat(_update(iv.asInstanceOf[IMat], jv.asInstanceOf[IMat], b.asInstanceOf[IMat]))
