@@ -45,7 +45,46 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   override def apply(i:Int, j:Int):Float = {
   		throw new RuntimeException("can't use a(i,j) indexing on CMat, use a.get(i,j) instead");
   } 
+  
+  override def apply(iv:IMat):CMat = {
+  	applyx(iv)
+  }
+   
+  override def apply(iv:IMat, jv:IMat):CMat = {
+  	applyx(iv, jv)
+  }
+     
+  override def apply(iv:IMat, j:Int):CMat = {
+  	applyx(iv, IMat.ielem(j))
+  } 
+  
+  override def apply(i:Int, jv:IMat):CMat = {
+  	applyx(IMat.ielem(i), jv)
+  }
 
+  override def apply(a:Mat):CMat = applyx(a.asInstanceOf[IMat])
+    
+  override def apply(a:Mat, b:Mat):CMat = applyx(a.asInstanceOf[IMat], b.asInstanceOf[IMat])
+  
+  override def apply(a:Mat, b:Int):CMat = applyx(a.asInstanceOf[IMat], IMat.ielem(b))
+  
+  override def apply(a:Int, b:Mat):CMat = applyx(IMat.ielem(a), b.asInstanceOf[IMat])
+  
+  def update(I:IMat, V:CMat) = updatex(I, V)
+  
+  def update(I:IMat, J:IMat, V:CMat) = updatex(I, J, V)
+  
+  def update(I:IMat, j:Int, V:CMat) = updatex(I, IMat.ielem(j), V)
+  
+  def update(i:Int, J:IMat, V:CMat) = updatex(IMat.ielem(i), J, V)
+  
+  override def update(I:Mat, V:Mat) = updatex(I.asInstanceOf[IMat], V.asInstanceOf[CMat])
+  
+  override def update(I:Mat, J:Mat, V:Mat) = updatex(I.asInstanceOf[IMat], J.asInstanceOf[IMat], V.asInstanceOf[CMat])
+    
+  override def update(I:Mat, j:Int, V:Mat) = updatex(I.asInstanceOf[IMat], IMat.ielem(j), V.asInstanceOf[CMat])
+  
+  override def update(i:Int, J:Mat, V:Mat) = updatex(IMat.ielem(i), J.asInstanceOf[IMat], V.asInstanceOf[CMat])
 
   def update(r0:Int, c0:Int, v:CMat):CMat = {
     val off = Mat.oneBased
@@ -204,8 +243,6 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     (iout, jout, vout)
   } 
   
-  override def apply(iv:IMat):CMat = applyx(iv)
-  
   def applyx(iv:IMat):CMat = 
     iv match {
       case aa:MatrixWildcard => {
@@ -231,7 +268,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
       }
     } 
   
-  def update(iv:IMat, b:CMat) = 
+  def updatex(iv:IMat, b:CMat):CMat = {
     iv match {
       case aaa:MatrixWildcard => {
         if (length != b.length || b.ncols != 1) {
@@ -281,9 +318,9 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
           }
         }
       }
-    } 
-  
-  override def apply(r:IMat, c:IMat) = applyx(r, c)
+    }
+    b
+  }
   
   def applyx(rowinds:IMat, colinds:IMat):CMat = {
   	var out:CMat = null
@@ -345,19 +382,11 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
   out
   }
-    
-  override def apply(iv:IMat, j:Int):CMat = {
-  	applyx(iv, IMat.ielem(j))
-  } 
-  
-  override def apply(i:Int, jv:IMat):CMat = {
-  	applyx(IMat.ielem(i), jv)
-  }
  
   /*
   * Implement sliced assignment, a(iv,jv) = b where iv and jv are vectors, using ? as wildcard
   */ 
-  def update(rowinds:IMat, colinds:IMat, b:CMat):CMat = {
+  def updatex(rowinds:IMat, colinds:IMat, b:CMat):CMat = {
     if (b.nrows == 1 && b.ncols == 1) {
       update_scalar(rowinds, colinds, b)
     } else {
@@ -495,14 +524,6 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     }
   	}
     b
-  }
-
-  def update(iv:IMat, j:Int, b:CMat):CMat = {
-  	update(iv, IMat.ielem(j), b)
-  }
-
-  def update(i:Int, jv:IMat, b:CMat):CMat = {
-  	update(IMat.ielem(i), jv, b)
   }
   
    def ccMatOp(a:Mat, op2:(Float,Float,Float,Float) => (Float,Float), oldmat:Mat):CMat = {

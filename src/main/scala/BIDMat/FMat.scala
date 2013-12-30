@@ -52,6 +52,14 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
 
   override def apply(a:Int, b:IMat):FMat = FMat(gapply(a, b))
   
+  override def apply(a:Mat):FMat = FMat(gapply(a.asInstanceOf[IMat]))
+  
+  override def apply(a:Mat, b:Mat):FMat = FMat(gapply(a.asInstanceOf[IMat], b.asInstanceOf[IMat]))
+  
+  override def apply(a:Mat, b:Int):FMat = FMat(gapply(a.asInstanceOf[IMat], b))
+  
+  override def apply(a:Int, b:Mat):FMat = FMat(gapply(a, b.asInstanceOf[IMat]))
+  
   override def colslice(a:Int, b:Int, out:Mat) = FMat(gcolslice(a, b, out, Mat.oneBased))
   
   override def colslice(a:Int, b:Int, out:Mat, c:Int) = FMat(gcolslice(a, b, out, c))
@@ -60,11 +68,21 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   override def rowslice(a:Int, b:Int, out:Mat, c:Int) = FMat(growslice(a, b, out, c))
   
+  def update(iv:IMat, b:FMat):FMat = FMat(_update(iv, b))
+  
   def update(iv:IMat, jv:IMat, b:FMat):FMat = FMat(_update(iv, jv, b))
 
   def update(iv:IMat, j:Int, b:FMat):FMat = FMat(_update(iv, IMat.ielem(j), b))
 
   def update(i:Int, jv:IMat, b:FMat):FMat = FMat(_update(IMat.ielem(i), jv, b))
+   
+  override def update(iv:Mat, b:Mat):FMat = FMat(_update(iv.asInstanceOf[IMat], b.asInstanceOf[FMat]))
+  
+  override def update(iv:Mat, jv:Mat, b:Mat):FMat = FMat(_update(iv.asInstanceOf[IMat], jv.asInstanceOf[IMat], b.asInstanceOf[FMat]))
+
+  override def update(iv:Mat, j:Int, b:Mat):FMat = FMat(_update(iv.asInstanceOf[IMat], IMat.ielem(j), b.asInstanceOf[FMat]))
+
+  override def update(i:Int, jv:Mat, b:Mat):FMat = FMat(_update(IMat.ielem(i), jv.asInstanceOf[IMat], b.asInstanceOf[FMat]))
   
   def ffMatOp(b: Mat, f:(Float, Float) => Float, out:Mat):FMat = 
     b match {

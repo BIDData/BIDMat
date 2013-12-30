@@ -22,7 +22,13 @@ case class CSMat(override val nrows:Int, override val ncols:Int, override val da
 	override def apply(a:Int, b:IMat):CSMat = CSMat(gapply(a, b))	
 		
 	override def apply(a:IMat, b:Int):CSMat = CSMat(gapply(a, b))	
-		
+		  
+  override def apply(a:Mat, b:Mat):CSMat = CSMat(gapply(a.asInstanceOf[IMat], b.asInstanceOf[IMat]))
+  
+  override def apply(a:Mat, b:Int):CSMat = CSMat(gapply(a.asInstanceOf[IMat], b))
+  
+  override def apply(a:Int, b:Mat):CSMat = CSMat(gapply(a, b.asInstanceOf[IMat]))
+  
 	def ccMatOp(b: CSMat, f:(String, String) => String, old:CSMat) = CSMat(ggMatOp(b, f, old))
 	
 	def ccMatOpScalar(b: String, f:(String, String) => String, old:CSMat) = CSMat(ggMatOpScalar(b, f, old))

@@ -33,26 +33,140 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     
   override def nnz = length
   
-  override def apply(I:GIMat, J:GIMat):GIMat = {
-    val out = GIMat.newOrCheckGIMat(I.length, J.length, null, GUID, I.GUID, J.GUID, "apply".##)
-    CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, J.length)
-    out
+  override def apply(I:GIMat, J:GIMat):GIMat = applyx(I, J)
+     
+  override def apply(i:Int, J:IMat):GIMat = applyx(i, GIMat(J))
+
+  override def apply(i:Int, J:GIMat):GIMat = applyx(i, J)  
+      
+  override def apply(I:IMat, j:Int):GIMat = applyx(GIMat(I), j)
+
+  override def apply(I:GIMat, j:Int):GIMat = applyx(I, j)
+  
+  override def apply(I:IMat, J:GIMat):GIMat = applyx(GIMat(I), J)
+  
+  override def apply(I:GIMat, J:IMat):GIMat = applyx(I, GIMat(J))
+  
+  override def apply(I:IMat, J:IMat):GIMat = applyx(GIMat(I), GIMat(J))
+  
+  override def apply(I:Mat, J:Mat):GIMat = {
+    	(I, J) match {
+    	  case (ii:IMat, jj:IMat) => applyx(GIMat(ii), GIMat(jj))
+    	  case (ii:GIMat, jj:IMat) => applyx(ii, GIMat(jj))
+    	  case (ii:IMat, jj:GIMat) => applyx(GIMat(ii), jj)
+    	  case (ii:GIMat, jj:GIMat) => applyx(ii, jj)
+    	}
   }
   
-  override def apply(i:Int, J:GIMat):GIMat = {
+  override def apply(I:Mat, j:Int):GIMat = {
+  	I match {
+  	case ii:IMat=> applyx(GIMat(ii), j)
+  	case ii:GIMat => applyx(ii, j)
+  	}
+  }
+  
+  override def apply(i:Int, J:Mat):GIMat = {
+  	J match {
+  	case jj:IMat=> applyx(i, GIMat(jj))
+  	case jj:GIMat => applyx(i, jj)
+  	}
+  }
+  
+  override def update(I:GIMat, J:GIMat, V:Mat) = updatex(I, J, V.asInstanceOf[GIMat])
+  
+  override def update(I:GIMat, j:Int, V:Mat) = updatex(I, j, V.asInstanceOf[GIMat])
+  
+  override def update(i:Int, J:GIMat, V:Mat) = updatex(i, J, V.asInstanceOf[GIMat])
+  
+  override def update(I:IMat, J:IMat, V:Mat) = updatex(GIMat(I), GIMat(J), V.asInstanceOf[GIMat])
+  
+  override def update(I:IMat, j:Int, V:Mat) = updatex(GIMat(I), j, V.asInstanceOf[GIMat])
+
+  override def update(i:Int, J:IMat, V:Mat) = updatex(i, GIMat(J), V.asInstanceOf[GIMat])
+  
+  override def update(I:Mat, J:Mat, V:Mat):GIMat = {
+  	(I, J, V) match {
+  	case (ii:IMat, jj:IMat, vv:GIMat) => update(GIMat(ii), GIMat(jj), vv)
+  	case (ii:GIMat, jj:IMat, vv:GIMat) => update(ii, GIMat(jj), vv)
+  	case (ii:IMat, jj:GIMat, vv:GIMat) => update(GIMat(ii), jj, vv)
+  	case (ii:GIMat, jj:GIMat, vv:GIMat) => update(ii, jj, vv)
+  	}
+  }
+  
+  override def update(I:Mat, j:Int, V:Mat):GIMat = {
+  	(I, V) match {
+  	case (ii:IMat, vv:GIMat) => update(GIMat(ii), j, vv)
+  	case (ii:GIMat, vv:GIMat) => update(ii, j, vv)
+  	}
+  }
+  
+  override def update(i:Int, J:Mat, V:Mat):GIMat = {
+  	(J, V) match {
+  	case (jj:IMat, vv:GIMat) => update(i, GIMat(jj), vv)
+  	case (jj:GIMat, vv:GIMat) => update(i, jj, vv)
+  	}
+  }
+ 
+    
+  def applyx(I:GIMat, J:GIMat):GIMat = {
+    (I, J) match {
+      case (ii:MatrixWildcard, jj:MatrixWildcard) => {
+        val out = GIMat.newOrCheckGIMat(nrows, ncols, null, GUID, 0, 0, "applyXJ".##)
+        CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, GMat.nullPointer, nrows, GMat.nullPointer, ncols)
+        out
+      }
+      case (ii:MatrixWildcard, jj:GIMat) => {
+      	val out = GIMat.newOrCheckGIMat(nrows, J.length, null, GUID, 0, J.GUID, "applyXJ".##)
+        CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, GMat.nullPointer, nrows, J.data, J.length)
+        out
+      }
+      case (ii:GIMat, jj:MatrixWildcard) => {
+        val out = GIMat.newOrCheckGIMat(I.length, ncols, null, GUID, I.GUID, 0, "applyIX".##)
+        CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, GMat.nullPointer, ncols)
+        out
+      }
+      case _ => {
+      	val out = GIMat.newOrCheckGIMat(I.length, J.length, null, GUID, I.GUID, J.GUID, "applyIJ".##)
+      	CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, J.length)
+      	out
+      }
+    }
+  } 
+  
+  def applyx(i:Int, J:GIMat):GIMat = {
     val I = GIMat(i)
-    val out = GIMat.newOrCheckGIMat(I.length, J.length, null, GUID, I.GUID, J.GUID, "apply".##)
-    CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, J.length)
-    I.free
-    out
+    J match {
+    case (jj:MatrixWildcard) => {
+    	val out = GIMat.newOrCheckGIMat(1, ncols, null, GUID, i, 0, "applyiX".##)
+    	CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, 1, GMat.nullPointer, ncols)
+    	I.free
+    	out
+    }
+    case _ => {
+    	val out = GIMat.newOrCheckGIMat(1, J.length, null, GUID, i, J.GUID, "applyiJ".##)
+    	CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, 1, J.data, J.length)
+    	I.free
+    	out
+    }
+    }
   }
   
-  override def apply(I:GIMat, j:Int):GIMat = {
+  def applyx(I:GIMat, j:Int):GIMat = {
     val J = GIMat(j)
-    val out = GIMat.newOrCheckGIMat(I.length, J.length, null, GUID, I.GUID, J.GUID, "apply".##)
-    CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, J.length)
-    J.free
-    out
+    I match {
+    case (ii:MatrixWildcard) => {
+    	val out = GIMat.newOrCheckGIMat(nrows, 1, null, GUID, 0, j, "applyXj".##)
+    	CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, GMat.nullPointer, nrows, J.data, 1)
+    	J.free
+    	out
+    }    
+    case _ => {
+    	val out = GIMat.newOrCheckGIMat(I.length, 1, null, GUID, I.GUID, j, "applyIj".##)
+    	CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, 1)
+    	J.free
+    	out
+    }
+    }
   }
   
   def apply(i:Int, j:Int):Int = {
@@ -61,22 +175,47 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     tmp(0)
   }
   
-  def update(I:GIMat, J:GIMat, V:GIMat):GIMat = {
-    CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, I.length, J.data, J.length)
+  def updatex(I:GIMat, J:GIMat, V:GIMat):GIMat = {
+    (I, J) match {
+      case (ii:MatrixWildcard, jj:MatrixWildcard) => {
+        CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, GMat.nullPointer, nrows, GMat.nullPointer, ncols)
+      }
+      case (ii:MatrixWildcard, jj:GIMat) => {
+        CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, GMat.nullPointer, nrows, J.data, J.length)
+      }
+      case (ii:GIMat, jj:MatrixWildcard) => {
+        CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, I.length, GMat.nullPointer, ncols)
+      }
+      case _ => {
+      	CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, I.length, J.data, J.length)
+      }
+    }
     this
   }
   
-  def update(i:Int, J:GIMat, V:GIMat):GIMat = {
+  def updatex(i:Int, J:GIMat, V:GIMat):GIMat = {
   	val I = GIMat(i)
-    CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, I.length, J.data, J.length)
-    I.free
+  	J match {
+  	case jj:MatrixWildcard => {
+  		CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, 1, GMat.nullPointer, ncols)
+  	}
+  	case _ => {
+  		CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, 1, J.data, J.length)
+  	}
+  	}
     this
   }
     
-  def update(I:GIMat, j:Int, V:GIMat):GIMat = {
+  def updatex(I:GIMat, j:Int, V:GIMat):GIMat = {
   	val J = GIMat(j)
-    CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, I.length, J.data, J.length)
-    J.free
+  	I match {
+  	case ii:MatrixWildcard => {
+  		CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, GMat.nullPointer, I.length, J.data, 1)
+  	}
+  	case _ => {
+  		CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, I.length, J.data, 1)
+  	}
+  	}
     this
   }
       

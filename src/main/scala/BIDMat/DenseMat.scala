@@ -422,6 +422,34 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   def gapply(i:Int, jv:IMat):DenseMat[T] = {
   		gapply(IMat.ielem(i), jv)
   }
+  
+    /*
+  * Implement sliced assignment, a(iv,jv) = b where iv and jv are vectors, using ? as wildcard
+  */ 
+  def _update(inds:IMat, b:DenseMat[T]):DenseMat[T] = {
+  	val off = Mat.oneBased
+  	inds match {
+  	case dummy:MatrixWildcard => {
+  		if (nrows != b.nrows || ncols != b.ncols) {
+  			throw new RuntimeException("dims mismatch in assignment")
+  		}
+  		System.arraycopy(b.data, 0, data, 0, length) 
+  	}
+  	case _ => {
+  		if (inds.nrows != b.nrows || inds.ncols != b.ncols) {
+  			throw new RuntimeException("dims mismatch in assignment")
+  		}
+  		var i = 0 
+  		while (i < inds.length) {
+  			val c = inds.data(i) - off
+  			if (c >= length) throw new RuntimeException("index out of range %d %d" format (c, length))
+  			data(c) = b.data(i)
+  			i += 1
+  		}
+  	}
+  	}
+    this
+  }
 
   /*
   * Implement sliced assignment, a(iv,jv) = b where iv and jv are vectors, using ? as wildcard
@@ -489,7 +517,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
       }
     }
   	}
-    b
+    this
   }
   
   override def update(iv:IMat, jv:IMat, b:Mat):Mat = {
@@ -504,7 +532,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
  /*
   * Implement sliced assignment, a(iv,jv) = b:T where iv and jv are vectors, using ? as wildcard
   */ 
-  def update(rowinds:IMat, colinds:IMat, b:T):T = {
+  def update(rowinds:IMat, colinds:IMat, b:T):DenseMat[T] = {
   	val off = Mat.oneBased
   	rowinds match {
   	case dummy:MatrixWildcard => {
@@ -563,18 +591,18 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
       }
     }
   	}
-    b
+    this
   }
   /*
   * Implement sliced assignment, a(iv,j) = b where iv a vectors, j integer, using ? as wildcard
   */ 
-  def update(iv:IMat, j:Int, b:T):T = {
+  def update(iv:IMat, j:Int, b:T):DenseMat[T] = {
     update(iv, IMat.ielem(j), b)
   }
   /*
   * Implement sliced assignment, a(i,jv) = b where jv a vector, using ? as wildcard
   */ 
-  def update(i:Int, jv:IMat, b:T):T = {
+  def update(i:Int, jv:IMat, b:T):DenseMat[T] = {
     update(IMat.ielem(i), jv, b)
   }
   
