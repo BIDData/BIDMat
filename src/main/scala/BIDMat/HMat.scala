@@ -24,7 +24,7 @@ case class HMat(nr:Int, nc:Int, fileList:List[String], varname:String, blkinds:A
   
   override def apply(a:IMat, b:IMat) = applyx(a,b)
   
-  def apply(a:Mat, b:Mat) = applyx(a.asInstanceOf[IMat], b.asInstanceOf[IMat])
+  override def apply(a:Mat, b:Mat) = applyx(a.asInstanceOf[IMat], b.asInstanceOf[IMat])
 // Implement slicing from a hard disk matrix
   def applyx(a:IMat, b:IMat):Mat = { 
     var ilast:Int = 0

@@ -53,6 +53,14 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
 
   override def apply(a:Int, b:IMat):DMat = DMat(gapply(a, b))
   
+  override def apply(a:Mat):DMat = DMat(gapply(a.asInstanceOf[IMat]))
+  
+  override def apply(a:Mat, b:Mat):DMat = DMat(gapply(a.asInstanceOf[IMat], b.asInstanceOf[IMat]))
+  
+  override def apply(a:Mat, b:Int):DMat = DMat(gapply(a.asInstanceOf[IMat], b))
+  
+  override def apply(a:Int, b:Mat):DMat = DMat(gapply(a, b.asInstanceOf[IMat]))
+  
   override def colslice(a:Int, b:Int, out:Mat) = DMat(gcolslice(a, b, out, Mat.oneBased))
   
   override def colslice(a:Int, b:Int, out:Mat, c:Int) = DMat(gcolslice(a, b, out, c))
@@ -61,11 +69,21 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   
   override def rowslice(a:Int, b:Int, out:Mat, c:Int) = DMat(growslice(a, b, out, c))
      
+  def update(iv:IMat, b:DMat):DMat = DMat(_update(iv, b))
+  
   def update(iv:IMat, jv:IMat, b:DMat):DMat = DMat(_update(iv, jv, b))
 
   def update(iv:IMat, j:Int, b:DMat):DMat = DMat(_update(iv, IMat.ielem(j), b))
 
   def update(i:Int, jv:IMat, b:DMat):DMat = DMat(_update(IMat.ielem(i), jv, b))
+  
+  override def update(iv:Mat, b:Mat):DMat = DMat(_update(iv.asInstanceOf[IMat], b.asInstanceOf[DMat]))
+  
+  override def update(iv:Mat, jv:Mat, b:Mat):DMat = DMat(_update(iv.asInstanceOf[IMat], jv.asInstanceOf[IMat], b.asInstanceOf[DMat]))
+
+  override def update(iv:Mat, j:Int, b:Mat):DMat = DMat(_update(iv.asInstanceOf[IMat], IMat.ielem(j), b.asInstanceOf[DMat]))
+
+  override def update(i:Int, jv:Mat, b:Mat):DMat = DMat(_update(IMat.ielem(i), jv.asInstanceOf[IMat], b.asInstanceOf[DMat]))
   
   def ddMatOp(b: Mat, f:(Double, Double) => Double, out:Mat) = 
     b match {

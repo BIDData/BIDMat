@@ -65,6 +65,11 @@ class Mat(nr:Int, nc:Int) {
   def apply(a:IMat, b:GIMat):Mat = notImplemented0("block array access");
   def apply(a:GIMat, b:IMat):Mat = notImplemented0("block array access");
   
+  def apply(a:Mat):Mat = notImplemented0("linear array access");
+  def apply(a:Mat, b:Mat):Mat = notImplemented0("block array access");
+  def apply(a:Mat, b:Int):Mat = notImplemented0("block array access");
+  def apply(a:Int, b:Mat):Mat = notImplemented0("block array access");
+  
   def update(a:IMat, b:Mat) = notImplemented0("linear update");
   def update(a:IMat, b:IMat, m:Mat) = notImplemented0("block update");
   def update(a:IMat, b:Int, m:Mat) = notImplemented0("block update");	
@@ -77,6 +82,11 @@ class Mat(nr:Int, nc:Int) {
   
   def update(a:GIMat, b:IMat, m:Mat) = notImplemented0("block update");
   def update(a:IMat, b:GIMat, m:Mat) = notImplemented0("block update");
+  
+  def update(a:Mat, v:Mat):Mat = notImplemented0("linear update");
+  def update(a:Mat, b:Mat, v:Mat):Mat = notImplemented0("block update");
+  def update(a:Mat, b:Int, v:Mat):Mat = notImplemented0("block update");
+  def update(a:Int, b:Mat, v:Mat):Mat = notImplemented0("block update");
   
   def unary_-():Mat = notImplemented1("-", this)
   def +  (b : Mat):Mat = notImplemented1("+", b)
