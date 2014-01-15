@@ -1337,20 +1337,22 @@ int lsort(long long *pkeys, int N, int asc) {
   return err;
 }
 
+//  using namespace thrust::detail::backend::cuda::detail::b40c_thrust;
+using namespace thrust::system::cuda::detail::detail::b40c_thrust;
+
 int fsortsizex(int N) {
-  thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortingEnactor<float,unsigned int> sorter(N);
+  RadixSortingEnactor<float,unsigned int> sorter(N);
   return sorter.SpineElements();
 }
 
 int lsortsizex(int N) {
-  thrust::detail::backend::cuda::detail::b40c_thrust::RadixSortingEnactor<long long,unsigned int> sorter(N);
+  RadixSortingEnactor<long long,unsigned int> sorter(N);
   return sorter.SpineElements();
 }
 
 
 int fsort2dx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tvals, 
              int *ispine, bool * bflags, int nrows, int ncols, int asc) {
-  using namespace thrust::detail::backend::cuda::detail::b40c_thrust;
   int i;
   cudaError_t err;
   RadixSortingEnactor<float,unsigned int> sorter(nrows);
@@ -1393,7 +1395,6 @@ int fsort2dx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tval
 }
 
 int lsortx(long long *pkeys, unsigned int *pvals, long long *tkeys, unsigned int *tvals, int *ispine, bool * bflags, int N, int asc) {
-  using namespace thrust::detail::backend::cuda::detail::b40c_thrust;
   RadixSortingEnactor<long long,unsigned int> sorter(N);
   RadixSortStorage<long long,unsigned int>    storage;
   storage.d_keys             = pkeys;
