@@ -28,8 +28,8 @@ ALL_LIBS="${BIDMAT_LIBS};${JCUDA_LIBS};${JAVA_HOME}/lib/tools.jar"
 if [ ! "$OS" = "Windows_NT" ]; then
     ALL_LIBS=`echo "${ALL_LIBS}" | sed 's/;/:/g'`
 else
-    NEWPATH=`${BIDMAT_ROOT}/shortpath.bat "${CUDA_BIN_PATH}"`
+    NEWPATH=`${BIDMAT_ROOT}/shortpath.bat "${CUDA_PATH}"`
     NEWPATH=`echo $NEWPATH | sed 's_\\\\_/_g'`
-    JAVA_OPTS="-Djava.library.path=${BIDMAT_ROOT}/lib;${NEWPATH} "$JAVA_OPTS
+    JAVA_OPTS="-Djava.library.path=${BIDMAT_ROOT}/lib;${NEWPATH}/bin "$JAVA_OPTS
 fi
 scala -nobootcp -cp "${ALL_LIBS}" -Yrepl-sync -i ${LIBDIR}/bidmat_init.scala
