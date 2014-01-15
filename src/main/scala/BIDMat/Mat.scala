@@ -411,13 +411,17 @@ object Mat {
     		if (os.equals("Linux") || os.equals("Mac OS X")) {
     			System.loadLibrary("cudart")
     		} else {
-    		  try{
-    				System.loadLibrary("cudart64_50_35")
-    			} catch {
-    			case _ => try {
-    				System.loadLibrary("cudart64_42_9")
-    			} 
+    			val libnames = List("cudart64_55", "cudart64_50_35", "cudart64_42_9").iterator
+    			var found = false
+    			while (!found && libnames.hasNext) {
+    			  found = true
+    				try{
+    					System.loadLibrary(libnames.next)
+    				} catch {
+    				case _ => found = false
+    				}
     			}
+    			if (!found) throw new RuntimeException("Couldnt find a cudart lib")
     		}
     		jcuda.LibUtils.loadLibrary("JCudaRuntime")
     	} catch {

@@ -1335,91 +1335,6 @@ int lsort(long long *pkeys, int N, int asc) {
   return err;
 }
 
-// This path may break. If so look for radixsort_api.h in /usr/local/cuda/include
-// and fix the path below.
-using namespace thrust::system::cuda::detail::detail::b40c_thrust;
-
-int fsortsizex(int N) {
-  RadixSortingEnactor<float,unsigned int> sorter(N);
-  return sorter.SpineElements();
-}
-
-int lsortsizex(int N) {
-  RadixSortingEnactor<long long,unsigned int> sorter(N);
-  return sorter.SpineElements();
-}
-
-
-int fsort2dx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tvals, 
-             int *ispine, bool * bflags, int nrows, int ncols, int asc) {
-  int i;
-  cudaError_t err;
-  RadixSortingEnactor<float,unsigned int> sorter(nrows);
-  RadixSortStorage<float,unsigned int>  storage;
-  storage.d_spine                 = ispine;
-  storage.d_from_alt_storage      = bflags;
-  storage.using_alternate_storage = false;
-
-  for (i = 0; i < ncols; i++) {
-    storage.d_keys             = pkeys+i*nrows;
-    storage.d_values           = pvals+i*nrows;
-    storage.d_alt_keys         = tkeys;
-    storage.d_alt_values       = tvals;
-    if (asc == 0) {
-      thrust::device_ptr<float> keys(storage.d_keys);
-      thrust::device_ptr<unsigned int> vals(storage.d_values);
-      thrust::reverse(keys, keys+nrows);
-      thrust::reverse(vals, vals+nrows);
-    }
-    cudaDeviceSynchronize();
-    sorter.EnactSort(storage);
-    cudaDeviceSynchronize();
-    err = cudaGetLastError();
-    if (err > 0) return err;
-    if (asc == 0) {
-      thrust::device_ptr<float> keys(storage.d_keys);
-      thrust::device_ptr<unsigned int> vals(storage.d_values);
-      thrust::reverse(keys, keys+nrows);
-      thrust::reverse(vals, vals+nrows);
-    }
-    cudaDeviceSynchronize();
-    if (storage.d_keys == tkeys) {
-      cudaMemcpy(pkeys+i*nrows, tkeys, nrows*sizeof(float), cudaMemcpyDeviceToDevice);
-    }
-    if (storage.d_values == tvals) {
-      cudaMemcpy(pvals+i*nrows, tvals, nrows*sizeof(unsigned int), cudaMemcpyDeviceToDevice);
-    }
-  }
-  return err;
-}
-
-int lsortx(long long *pkeys, unsigned int *pvals, long long *tkeys, unsigned int *tvals, int *ispine, bool * bflags, int N, int asc) {
-  RadixSortingEnactor<long long,unsigned int> sorter(N);
-  RadixSortStorage<long long,unsigned int>    storage;
-  storage.d_keys             = pkeys;
-  storage.d_values           = pvals;
-  storage.d_alt_keys         = tkeys;
-  storage.d_alt_values       = tvals;
-  storage.d_spine            = ispine;
-  storage.d_from_alt_storage = bflags;
-  if (asc == 0) {
-    thrust::device_ptr<long long> keys(storage.d_keys);
-    thrust::device_ptr<unsigned int> vals(storage.d_values);
-    thrust::reverse(keys, keys+N);
-    thrust::reverse(vals, vals+N);
-  }
-  cudaDeviceSynchronize();
-  sorter.EnactSort(storage);
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  if (asc == 0) {
-    thrust::device_ptr<long long> keys(storage.d_keys);
-    thrust::device_ptr<unsigned int> vals(storage.d_values);
-    thrust::reverse(keys, keys+N);
-    thrust::reverse(vals, vals+N);
-  }
-  return err;
-}
 
 typedef struct lll {
   int x;
@@ -1512,6 +1427,94 @@ int i3sortk(int *pkeys0, unsigned int *pvals, int N, int asc) {
   cudaError_t err = cudaGetLastError();
   return err;
 }
+
+
+// This path may break. If so look for radixsort_api.h in /usr/local/cuda/include
+// and fix the path below.
+using namespace thrust::system::cuda::detail::detail::b40c_thrust;
+
+int fsortsizex(int N) {
+  RadixSortingEnactor<float,unsigned int> sorter(N);
+  return sorter.SpineElements();
+}
+
+int lsortsizex(int N) {
+  RadixSortingEnactor<long long,unsigned int> sorter(N);
+  return sorter.SpineElements();
+}
+
+
+int fsort2dx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tvals, 
+             int *ispine, bool * bflags, int nrows, int ncols, int asc) {
+  int i;
+  cudaError_t err;
+  RadixSortingEnactor<float,unsigned int> sorter(nrows);
+  RadixSortStorage<float,unsigned int>  storage;
+  storage.d_spine                 = ispine;
+  storage.d_from_alt_storage      = bflags;
+  storage.using_alternate_storage = false;
+
+  for (i = 0; i < ncols; i++) {
+    storage.d_keys             = pkeys+i*nrows;
+    storage.d_values           = pvals+i*nrows;
+    storage.d_alt_keys         = tkeys;
+    storage.d_alt_values       = tvals;
+    if (asc == 0) {
+      thrust::device_ptr<float> keys(storage.d_keys);
+      thrust::device_ptr<unsigned int> vals(storage.d_values);
+      thrust::reverse(keys, keys+nrows);
+      thrust::reverse(vals, vals+nrows);
+    }
+    cudaDeviceSynchronize();
+    sorter.EnactSort(storage);
+    cudaDeviceSynchronize();
+    err = cudaGetLastError();
+    if (err > 0) return err;
+    if (asc == 0) {
+      thrust::device_ptr<float> keys(storage.d_keys);
+      thrust::device_ptr<unsigned int> vals(storage.d_values);
+      thrust::reverse(keys, keys+nrows);
+      thrust::reverse(vals, vals+nrows);
+    }
+    cudaDeviceSynchronize();
+    if (storage.d_keys == tkeys) {
+      cudaMemcpy(pkeys+i*nrows, tkeys, nrows*sizeof(float), cudaMemcpyDeviceToDevice);
+    }
+    if (storage.d_values == tvals) {
+      cudaMemcpy(pvals+i*nrows, tvals, nrows*sizeof(unsigned int), cudaMemcpyDeviceToDevice);
+    }
+  }
+  return err;
+}
+
+int lsortx(long long *pkeys, unsigned int *pvals, long long *tkeys, unsigned int *tvals, int *ispine, bool * bflags, int N, int asc) {
+  RadixSortingEnactor<long long,unsigned int> sorter(N);
+  RadixSortStorage<long long,unsigned int>    storage;
+  storage.d_keys             = pkeys;
+  storage.d_values           = pvals;
+  storage.d_alt_keys         = tkeys;
+  storage.d_alt_values       = tvals;
+  storage.d_spine            = ispine;
+  storage.d_from_alt_storage = bflags;
+  if (asc == 0) {
+    thrust::device_ptr<long long> keys(storage.d_keys);
+    thrust::device_ptr<unsigned int> vals(storage.d_values);
+    thrust::reverse(keys, keys+N);
+    thrust::reverse(vals, vals+N);
+  }
+  cudaDeviceSynchronize();
+  sorter.EnactSort(storage);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  if (asc == 0) {
+    thrust::device_ptr<long long> keys(storage.d_keys);
+    thrust::device_ptr<unsigned int> vals(storage.d_values);
+    thrust::reverse(keys, keys+N);
+    thrust::reverse(vals, vals+N);
+  }
+  return err;
+}
+
 
 __global__ void __stratify(float *strata, int n, float *a, float *b, unsigned int *bi, int stride) {
   __shared__ float ss[32];

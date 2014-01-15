@@ -44,12 +44,21 @@ fi
 
 echo "Creating config for $OS $ARCH"
 
+BIDMAT_ROOT="${BASH_SOURCE[0]}"
+if [ ! `uname` = "Darwin" ]; then
+  BIDMAT_ROOT=`readlink -f "${BIDMAT_ROOT}"`
+else 
+  BIDMAT_ROOT=`readlink "${BIDMAT_ROOT}"`
+fi
+BIDMAT_ROOT=`dirname "$BIDMAT_ROOT"`
+BIDMAT_ROOT=`cd "$BIDMAT_ROOT/../..";pwd`
+BIDMAT_ROOT="$( echo ${BIDMAT_ROOT} | sed s+/cygdrive/c+c:+ )" 
+
 if [ "$OS" = "apple" ] ; then
     MKL_ROOT="/opt/intel/mkl"
     COMPOSER_ROOT="/opt/intel/composerxe"
     JAVA_HOME="/System/Library/Frameworks/JavaVM.framework"
     CUDA_HOME="/usr/local/cuda"
-    JCUDA_HOME="$HOME/code/JCUDA5"
     CC="icc"
     GCC="gcc"
     NVCC="nvcc"
@@ -58,7 +67,7 @@ if [ "$OS" = "apple" ] ; then
           --machine ${MBITS}  -Xcompiler \"-fPIC -c -O2 -g -DNDEBUG\""
     OBJ="o"
     OUTFLG="-o "
-    CPPFLAGS="-fPIC -c -O2 -fopenmp -DNDEBUG -I$JAVA_HOME/Headers -I$JCUDA_HOME/CommonJNI/src -I$CUDA_HOME/include"
+    CPPFLAGS="-fPIC -c -O2 -fopenmp -DNDEBUG -I$JAVA_HOME/Headers -I$BIDMAT_ROOT/jni/include -I$CUDA_HOME/include"
     CFLAGS="-fPIC -c -O2 -openmp -std=c99 -DNDEBUG -I$JAVA_HOME/Headers -I$MKL_ROOT/include -I$MKL_ROOT/include/${ARCHD}${SUBDIR}"
     LB="ar rc"    
     GLD="icc -bundle -static-intel"
@@ -85,13 +94,11 @@ if [ "$OS" = "apple" ] ; then
             $MKL_ROOT/lib/libmkl_core.a ${COMPOSER_ROOT}/lib/libiomp5.a \
             -lpthread -lm  -framework JavaVM"
     fi
-    CUDA_LIBS="-L${CUDA_HOME}/lib -L${JCUDA_HOME}/lib -lcudart -lCommonJNI"
+    CUDA_LIBS="-L${CUDA_HOME}/lib -L${BIDMAT_ROOT}/lib -lcudart -lCommonJNI"
 elif [ "$OS" = "linux" ] ; then
     MKL_ROOT="/opt/intel/mkl"
     JAVA_HOME="/usr/java/default"
     CUDA_HOME="/usr/local/cuda"
-    BIDMAT_HOME="`pwd`/../.."
-    JCUDA_HOME="$BIDMAT_HOME/../JCUDA5.5"
     CC="gcc"
     GCC="g++"
     NVCC="nvcc"
@@ -100,7 +107,7 @@ elif [ "$OS" = "linux" ] ; then
           --machine ${MBITS}  -Xcompiler \"-fPIC -c -O2 -g -DNDEBUG\""
     OBJ="o"
     OUTFLG="-o "
-    CPPFLAGS="-fPIC -c -O2 -fopenmp -DNDEBUG  -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$JCUDA_HOME/CommonJNI/src -I$CUDA_HOME/include" 
+    CPPFLAGS="-fPIC -c -O2 -fopenmp -DNDEBUG  -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$CUDA_HOME/include" 
     CFLAGS="-fPIC -c -O2 -fopenmp -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$MKL_ROOT/include -I$MKL_ROOT/include/${ARCHD}${SUBDIR}"
     LB="ar rc"    
     GLD="g++ -shared"
@@ -128,10 +135,9 @@ elif [ "$OS" = "linux" ] ; then
     else
         CULIB="lib64"
     fi
-    CUDA_LIBS="-L${CUDA_HOME}/${CULIB} -L${JCUDA_HOME}/lib -lcudart -lCommonJNI"
+    CUDA_LIBS="-L${CUDA_HOME}/${CULIB} -L$BIDMAT_ROOT/lib -lcudart -lCommonJNI"
 elif [ "$OS" = "windows" ] ; then
     CUDA_HOME="$CUDA_PATH"
-    JCUDA_HOME="/code/JCUDA5"
     MKL_ROOT="$MKLROOT"
     CC="icl"
     GCC="icl"
@@ -168,8 +174,8 @@ elif [ "$OS" = "windows" ] ; then
 	    MKL_LIBS="mkl_intel${PTYPE}.lib mkl_intel_thread.lib mkl_core.lib libiomp5mt.lib" 
     fi
     CUDA_LIBS="cudart.lib CommonJNI.lib"
-    LIB="$MKL_ROOT/lib/${ARCHD};$JAVA_HOME/lib;$CUDA_HOME/lib/${CULIB};$JCUDA_HOME/lib;$LIB"
-    INCLUDE="$JAVA_HOME/include;$JAVA_HOME/include/win32;c:/Intel/MKL/mkl/include;$JCUDA_HOME/CommonJNI/src;$CUDA_HOME/include;$INCLUDE"
+    LIB="$MKL_ROOT/lib/${ARCHD};$JAVA_HOME/lib;$CUDA_HOME/lib/${CULIB};${BIDMAT_ROOT}/lib;$LIB"
+    INCLUDE="$JAVA_HOME/include;$JAVA_HOME/include/win32;$MKL_ROOT/include;${BIDMAT_ROOT}/jni/include;$CUDA_HOME/include;$INCLUDE"
 else
     echo "OS not supported"
     exit 1
@@ -198,6 +204,5 @@ echo "FC=$FC" >> Makefile.incl
 echo "FFLAGS=$FFLAGS" >> Makefile.incl
 echo "LIB=$LIB" >> Makefile.incl
 echo "INCLUDE=$INCLUDE" >> Makefile.incl
-echo "JCUDA_COMMON=$JCUDA_HOME/CommonJNI/src" >> Makefile.incl
 
 
