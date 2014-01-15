@@ -1,0 +1,26 @@
+Updating CUDA version
+=====================
+
+
+Windows
+-------
+Install new CUDA version
+
+Copy updated JCUDA binaries into BIDMat/lib 
+
+Compile JCUDA (to get CommonJNI.lib):
+  add these lines to CMakeLists.txt:
+    SET(CMAKE_BUILD_TYPE mine)
+    set(CMAKE_C_FLAGS_MINE "/MT /O2 /Ob2 /D NDEBUG")
+    set(CMAKE_CXX_FLAGS_MINE "/MT /O2 /Ob2 /D NDEBUG")
+    set(CMAKE_VERBOSE_MAKEFILE ON)
+
+  then from a command line (not cygwin which has the wrong cmake)
+    cmake -G "NMake Makefiles"
+
+  then
+    nmake -f Makefile
+
+  copy CommonJNI.lib into BIDMat/lib
+  
+Have to hardwire cudart lib numbers in Mat.checkCUDA :-(
