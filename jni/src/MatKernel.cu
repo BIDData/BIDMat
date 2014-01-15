@@ -1248,8 +1248,6 @@ int extractmat(float *a, int *b, long long *c, int n) {
   return err;
 }
 
-//#include <thrust/detail/backend/cuda/detail/b40c/radixsort_api.h>
-//#include "myradix_sort.inl"
 #include <thrust/sort.h>
 #include <thrust/device_ptr.h>
 #include <thrust/reverse.h>
@@ -1337,7 +1335,8 @@ int lsort(long long *pkeys, int N, int asc) {
   return err;
 }
 
-//  using namespace thrust::detail::backend::cuda::detail::b40c_thrust;
+// This path may break. If so look for radixsort_api.h in /usr/local/cuda/include
+// and fix the path below.
 using namespace thrust::system::cuda::detail::detail::b40c_thrust;
 
 int fsortsizex(int N) {
