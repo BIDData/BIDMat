@@ -9,15 +9,18 @@ Copy updated JCUDA binaries into BIDMat/lib
 
 edit bidmat script to change JCUDA_VERSION
 
-If compiling MatKernel.cu breaks on the sorting functions,
-check the path for radixsort_api.h and update the namespace line.
+copy headers from JCUDA/CommonJNI/src to BIDMat/jni/include
+
+If compiling MatKernel.cu breaks on the sorting functions, check 
+the CUDA path for radixsort_api.h and update the namespace line as
+path XX/YY/ZZ ==> namespace XX::YY::ZZ
 
 Windows
 -------
-fix %CUDA_*% environment variables, these were broken in 5.5
+fix %CUDA_*% environment variables on your machine, these were broken in 5.5
 
 Compile JCUDA (to get CommonJNI.lib):
-  add these lines to CMakeLists.txt:
+  add these lines to CMakeLists.txt to compile statically:
     SET(CMAKE_BUILD_TYPE mine)
     set(CMAKE_C_FLAGS_MINE "/MT /O2 /Ob2 /D NDEBUG")
     set(CMAKE_CXX_FLAGS_MINE "/MT /O2 /Ob2 /D NDEBUG")
@@ -31,8 +34,6 @@ Compile JCUDA (to get CommonJNI.lib):
 
 copy CommonJNI.lib into BIDMat/lib
 
-copy headers from JCUDA/CommonJNI/src to BIDMat/jni/include
-  
 Have to hardwire cudart lib numbers in Mat.checkCUDA :-(
 
 Linux
@@ -41,4 +42,3 @@ Compile JCUDA
 
 copy libCommonJNI.a into BIDMat/lib
 
-copy headers (if needed) from JCUDA/CommonJNI/src to BIDMat/jni/include
