@@ -1,6 +1,7 @@
 #!/bin/bash
-export JAVA_OPTS="-Xmx2G -Xms128M -Dfile.encoding=UTF-8" # Set as much memory as possible
 # export JAVA_HOME="" # Set here if not set in environment
+# export CUDA_PATH="" # Set here if not set in environment
+export JAVA_OPTS="-Xmx12G -Xms128M -Dfile.encoding=UTF-8" # Set as much memory as possible
 BIDMAT_ROOT="${BASH_SOURCE[0]}"
 if [ ! `uname` = "Darwin" ]; then
   BIDMAT_ROOT=`readlink -f "${BIDMAT_ROOT}"`
