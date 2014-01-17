@@ -1858,6 +1858,8 @@ __global__ void __hammingdists(int *a, int *b, int *w, int *op, int *ow) {
   int i, ioff, ioffmv, ip, j, k, c, tmp, cmin, imin;
   int zero = 0;
   int sid = threadIdx.x + blockDim.x * threadIdx.y;
+
+  // Load data into shared memory
   for (i = 0; i < TLEN/1024; i++) {
     sa[sid * i*1024] = a[sid + i*1024 + TLEN*blockIdx.x];
   }
@@ -1872,6 +1874,8 @@ __global__ void __hammingdists(int *a, int *b, int *w, int *op, int *ow) {
   ioff = ioffmv + ip * (TLEN*NVEC/32);
   cmin = 0x7fffffff;
   imin = -1;
+
+  // Load data for this thread into registers
 #pragma unroll
   for (j = 0; j < VECLEN; j++) {
     tmp = j + ioff;
@@ -1881,28 +1885,34 @@ __global__ void __hammingdists(int *a, int *b, int *w, int *op, int *ow) {
     bb[j] = sb[threadIdx.y][j + ioffmv];
     ww[j] = sw[threadIdx.y][j + ioffmv];
   }
-  for (j = 0; j < TLEN*NVEC/32; j++) {
+
+  // Step through offsets in A string
+  for (j = 0; j < TLEN*NVEC/8; j++) {
     tmp = VECLEN + ioff + j / 4;
     if (tmp - ioffmv < TLEN - VECLEN * NVEC) {
       if (j % 4 == 0) {
         aa[VECLEN] = sa[tmp];
       }
       c = 0;
+      // Inner loop over the length of the vector in registers
 #pragma unroll
       for (k = 0; k < VECLEN; k++) {    
         hammingcell(aa[k], aa[k+1], bb[k], ww[k], c, tmp, zero);
       }
       hammingend(aa[k]);
+      // Need to sum over NVEC to get complete score for a string
 #pragma unroll
       for (k = 1; k < NVEC; k *= 2) {    
         c = c + __shfl_down(c, k);
       }
+      // Now compare with the accumulated min
       if (c < cmin) {
         cmin = c;
-        imin = ioff + j;
+        imin = 4 * ioff + j;
       }
     }
   }
+  // Compute the min across groups of NVEC threads in this warp
   for (k = NVEC; k < 32; k *= 2) {    
     tmp = __shfl_down(cmin, k);
     if (tmp < cmin) {
@@ -1910,11 +1920,13 @@ __global__ void __hammingdists(int *a, int *b, int *w, int *op, int *ow) {
       imin = __shfl_down(imin, k);
     }
   }
+  // Save to shared memory in prep for saving to main memory
   if (threadIdx.x == 0) {
     sop[threadIdx.y] = imin;
     sow[threadIdx.y] = cmin;
   }
   __syncthreads();
+  // Save to main memory
   if (threadIdx.y == 0) {
     op[threadIdx.x + 32*blockIdx.x] = sop[threadIdx.x];
     ow[threadIdx.x + 32*blockIdx.x] = sow[threadIdx.x];
