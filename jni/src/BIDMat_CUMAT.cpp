@@ -528,6 +528,28 @@ extern "C" {
     return maxsumx(a, lda, b, ldb, c, ldc, d, nrows, ncols);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_veccmp
+  (JNIEnv *env, jobject obj, jobject ja, jobject jb, jobject jc)
+  {
+    int *a = (int*)getPointer(env, ja);
+    int *b = (int*)getPointer(env, jb);
+    int *c = (int*)getPointer(env, jc);
+
+    return veccmp(a, b, c);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_hammingdists
+  (JNIEnv *env, jobject obj, jobject ja, jobject jb, jobject jw, jobject jop, jobject jow)
+  {
+    int *a = (int*)getPointer(env, ja);
+    int *b = (int*)getPointer(env, jb);
+    int *w = (int*)getPointer(env, jw);
+    int *op = (int*)getPointer(env, jop);
+    int *ow = (int*)getPointer(env, jow);
+
+    return hammingdists(a, b, w, op, ow);
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_dmv
   (JNIEnv *env, jobject obj, jobject ja, jint nr, jint nc, jobject jb, jobject jc, jint trans)
   {

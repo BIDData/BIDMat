@@ -1835,6 +1835,92 @@ int maxsumx(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int 
   asm("vadd4.s32.s32.s32" "%0, %1, %2, %3;": "=r" (TMP) : "r" (MM), "r" (RZ), "r" (RR));       \
   asm("vmin4.s32.s32.s32" "%0, %1, %2, %3;": "=r" (RR) : "r" (TMP), "r" (RR), "r" (RR));       
 
+#define hammingcell(A0,A1,B0,W0,C,TMP,ZERO)                               \
+  asm("vmax4.u32.u32.u32" "%0, %1.b4321, %2.b4321, %3;": "=r" (A0) : "r" (A0), "r" (A1), "r" (ZERO));     \
+  asm("and.b32" "%0, %1, %2;": "=r" (TMP) : "r" (A0), "r" (B0));                                          \
+  asm("vset4.u32.u32.u32.ne" "%0, %1, %2, %3;": "=r" (TMP) : "r" (TMP), "r" (ZERO), "r" (ZERO));          \
+  asm("vsub4.s32.s32.s32" "%0, %1, %2, %3;": "=r" (TMP) : "r" (ZERO), "r" (TMP), "r" (ZERO));             \
+  asm("vmin4.u32.u32.u32.add" "%0, %1, %2, %3;": "=r" (TMP) : "r" (W0), "r" (TMP), "r" (C));    
+
+#define hammingend(A0)                               \
+  asm("shr.b32" "%0, %1, 8;": "=r" (A0) : "r" (A0)); 
+
+template<int VECLEN, int NVEC, int TLEN>
+__global__ void __hammingdists(int *a, int *b, int *w, int *op, int *ow) {   
+  __shared__ int sa[TLEN];
+  __shared__ int sb[32][VECLEN*NVEC+1];
+  __shared__ int sw[32][VECLEN*NVEC+1];
+  __shared__ int sop[32];
+  __shared__ int sow[32];
+  int aa[VECLEN+1];           
+  int bb[VECLEN];
+  int ww[VECLEN];
+  int i, ioff, ioffmv, ip, j, k, c, tmp, cmin, imin;
+  int zero = 0;
+  int sid = threadIdx.x + blockDim.x * threadIdx.y;
+  for (i = 0; i < TLEN/1024; i++) {
+    sa[sid * i*1024] = a[sid + i*1024 + TLEN*blockIdx.x];
+  }
+  for (i = 0; i < VECLEN*NVEC/32; i++) {
+    sb[threadIdx.y][threadIdx.x + i*blockDim.x] = b[sid + i*1024 + VECLEN*NVEC*blockIdx.x];
+    sw[threadIdx.y][threadIdx.x + i*blockDim.x] = w[sid + i*1024 + VECLEN*NVEC*blockIdx.x];
+  }
+  __syncthreads();
+
+  ip = threadIdx.x / NVEC;
+  ioffmv = (threadIdx.x % NVEC) * VECLEN;
+  ioff = ioffmv + ip * (TLEN*NVEC/32);
+  cmin = 0x7fffffff;
+  imin = -1;
+#pragma unroll
+  for (j = 0; j < VECLEN; j++) {
+    tmp = j + ioff;
+    if (tmp < TLEN) {
+      aa[j] = sa[tmp];
+    }
+    bb[j] = sb[threadIdx.y][j + ioffmv];
+    ww[j] = sw[threadIdx.y][j + ioffmv];
+  }
+  for (j = 0; j < TLEN*NVEC/32; j++) {
+    tmp = VECLEN + ioff + j / 4;
+    if (tmp - ioffmv < TLEN - VECLEN * NVEC) {
+      if (j % 4 == 0) {
+        aa[VECLEN] = sa[tmp];
+      }
+      c = 0;
+#pragma unroll
+      for (k = 0; k < VECLEN; k++) {    
+        hammingcell(aa[k], aa[k+1], bb[k], ww[k], c, tmp, zero);
+      }
+      hammingend(aa[k]);
+#pragma unroll
+      for (k = 1; k < NVEC; k *= 2) {    
+        c = c + __shfl_down(c, k);
+      }
+      if (c < cmin) {
+        cmin = c;
+        imin = ioff + j;
+      }
+    }
+  }
+  for (k = NVEC; k < 32; k *= 2) {    
+    tmp = __shfl_down(cmin, k);
+    if (tmp < cmin) {
+      cmin = tmp;
+      imin = __shfl_down(imin, k);
+    }
+  }
+  if (threadIdx.x == 0) {
+    sop[threadIdx.y] = imin;
+    sow[threadIdx.y] = cmin;
+  }
+  __syncthreads();
+  if (threadIdx.y == 0) {
+    op[threadIdx.x + 32*blockIdx.x] = sop[threadIdx.x];
+    ow[threadIdx.x + 32*blockIdx.x] = sow[threadIdx.x];
+  }
+}
+
 __global__ void __veccmp(int *a, int *b, int *d) {
   int xa = *a;
   int xb = *b;
@@ -1853,12 +1939,26 @@ __global__ void __veccmp(int *a, int *b, int *d) {
 __global__ void __veccmp(int *a, int *b, int *d) {
   printf("__veccmp() not defined for CUDA Arch < 300\n");
 }
+
+template<int VECLEN, int NVEC, int TLEN>
+__global__ void __hammingdists(int *a, int *b, int *w, int *op, int *ow) {
+  printf("__hammingdists() not defined for CUDA Arch < 300\n");
+}
 #endif
 #endif
 
-void veccmp(int *a, int *b, int *d) {
+int veccmp(int *a, int *b, int *d) {
   __veccmp<<<1,1>>>(a, b, d);
+  return 0;
 }
+
+int hammingdists(int *a, int *b, int *w, int *op, int *ow) {    
+  dim3 blockdims(32,32,1);
+  __hammingdists<16,2,1024><<<32,blockdims>>>(a, b, w, op, ow);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}    
 
 __global__ void __dmv(float *a, int nrows, int ncols, float *b, float *c) {
   for (int tx = threadIdx.x + blockDim.x * blockIdx.x; tx < nrows; tx += blockDim.x * gridDim.x) {
