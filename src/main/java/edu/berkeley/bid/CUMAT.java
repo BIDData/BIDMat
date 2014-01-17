@@ -143,5 +143,9 @@ public final class CUMAT {
     public static native int maxsumx(Pointer A, int lda, Pointer B, int ldb, Pointer C, int ldc, int d, int nrows, int ncols);
     
     public static native int dmv(Pointer A, int nrows, int ncols, Pointer B, Pointer C, int trans);
+    
+    public static native int veccmp(Pointer A, Pointer B, Pointer C);
+    
+    public static native int hammingdists(Pointer A, Pointer B, Pointer W, Pointer OP, Pointer OW);
 
 }

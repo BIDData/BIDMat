@@ -128,6 +128,10 @@ int dists(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nr
 
 int maxsumx(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols);
 
+int veccmp(int *A, int *B, int *C);
+
+int hammingdists(int *a, int *b, int *w, int *op, int *ow);
+
 int dmv(float *A, int nr, int nc, float *B, float *C, int trans);
 
 int LDA_Gibbs(int nrows, int nnz, float *A, float *B, float *AN, float *BN, int *Cir, int *Cic, float *P, float nsamps);
