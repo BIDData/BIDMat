@@ -3,7 +3,7 @@ include Makefile.incl
 MKL_OBJS=BIDMat_CBLAS.$(OBJ) BIDMat_UTILS.$(OBJ) BIDMat_SPBLAS.$(OBJ) BIDMat_LAPACK.$(OBJ) \
          BIDMat_VML.$(OBJ) BIDMat_VSL.$(OBJ)
 
-CUDA_OBJS=BIDMat_CUMAT.$(OBJ) MatKernel.$(OBJ) Samplers.$(OBJ) Dtree.$(OBJ)
+CUDA_OBJS=BIDMat_CUMAT.$(OBJ) MatKernel.$(OBJ) Samplers.$(OBJ) Dtree.$(OBJ) Devel.$(OBJ)
 
 .SUFFIXES: .$(OBJ) .c .cpp .cu
 

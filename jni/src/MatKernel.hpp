@@ -130,7 +130,7 @@ int maxsumx(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int 
 
 int veccmp(int *A, int *B, int *C);
 
-int hammingdists(int *a, int *b, int *w, int *op, int *ow);
+int hammingdists(int *a, int *b, int *w, int *op, int *ow, int n);
 
 int dmv(float *A, int nr, int nc, float *B, float *C, int trans);
 
