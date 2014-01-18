@@ -539,7 +539,7 @@ extern "C" {
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_hammingdists
-  (JNIEnv *env, jobject obj, jobject ja, jobject jb, jobject jw, jobject jop, jobject jow)
+  (JNIEnv *env, jobject obj, jobject ja, jobject jb, jobject jw, jobject jop, jobject jow, jint n)
   {
     int *a = (int*)getPointer(env, ja);
     int *b = (int*)getPointer(env, jb);
@@ -547,7 +547,7 @@ extern "C" {
     int *op = (int*)getPointer(env, jop);
     int *ow = (int*)getPointer(env, jow);
 
-    return hammingdists(a, b, w, op, ow);
+    return hammingdists(a, b, w, op, ow, n);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_dmv
