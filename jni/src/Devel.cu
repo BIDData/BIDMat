@@ -10,7 +10,7 @@
   asm("vadd4.s32.s32.s32" "%0, %1, %2, %3;": "=r" (TMP) : "r" (MM), "r" (RZ), "r" (RR));       \
   asm("vmin4.s32.s32.s32" "%0, %1, %2, %3;": "=r" (RR) : "r" (TMP), "r" (RR), "r" (RR));       
 
-#define hammingcell(A0,A1,B0,W0,C,TMP,TMP1,ZERO)                        \
+#define hammingcell(A0,A1,B0,W0,C,TMP,TMP1,ZERO)                                                          \
   asm("and.b32" "%0, %1, %2;": "=r" (TMP) : "r" (A0), "r" (B0));                                          \
   asm("vset4.s32.s32.eq" "%0, %1, %2, %3;": "=r" (TMP1) : "r" (TMP), "r" (ZERO), "r" (ZERO));             \
   asm("vsub4.s32.s32.s32" "%0, %1, %2, %3;": "=r" (TMP1) : "r" (ZERO), "r" (TMP1), "r" (ZERO));           \
@@ -82,7 +82,7 @@ __global__ void __hammingdists(int *a, int *b, int *w, int *op, int *ow) {
       c = 0;
       // Inner loop over the length of the vector in registers
 #pragma unroll
-        for (k = 0; k < VECLEN; k++) {
+      for (k = 0; k < VECLEN; k++) {
         hammingcell(aa[k], aa[k+1], bb[k], ww[k], c, tmp, tmp1, zero);
       }
       hammingend(aa[k]);
