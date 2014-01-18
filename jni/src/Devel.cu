@@ -89,7 +89,8 @@ __global__ void __hammingdists(int *a, int *b, int *w, int *op, int *ow) {
       // Need to sum over NVEC to get complete score for a string
 #pragma unroll
       for (k = 1; k < NVEC; k *= 2) {    
-        c = c + __shfl_down(c, k);  
+        tmp = __shfl_down(c, k);  
+        c = c + tmp;
       }
       // Now compare with the accumulated min
       if (c < cmin) {
@@ -101,9 +102,10 @@ __global__ void __hammingdists(int *a, int *b, int *w, int *op, int *ow) {
   // Compute the min across groups of NVEC threads in this warp
   for (k = NVEC; k < 32; k *= 2) {    
     tmp = __shfl_down(cmin, k);
+    tmp1 = __shfl_down(imin, k);
     if (tmp < cmin) {
       cmin = tmp;
-      imin = __shfl_down(imin, k);
+      imin = tmp1;
     }
   }
   // Save to shared memory in prep for saving to main memory
