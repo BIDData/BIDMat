@@ -33,22 +33,32 @@ object SciFunctions {
   var cudarng:Array[curandGenerator] = null
   if (Mat.hasCUDA > 0) {
   	JCuda.initialize
-  	initCUDArng
+  	initCUDArngs
   }
   
-  def initCUDArng = {
+  def initCUDArngs = {
     val thisGPU = getGPU
     cudarng = new Array[curandGenerator](Mat.hasCUDA)
     for (i <- 0 until Mat.hasCUDA) {
       setGPU(i)
-    	cudarng(i) = new curandGenerator
-    	curandCreateGenerator(cudarng(i), CURAND_RNG_PSEUDO_DEFAULT) 
-    	curandSetPseudoRandomGeneratorSeed(cudarng(i), SEED)
+    	initCUDArng(i)
     }
     setGPU(thisGPU)
   }
   
-  def resetGPU = JCuda.cudaDeviceReset
+  def initCUDArng(igpu:Int) = {
+    val thisGPU = getGPU
+    setGPU(igpu)
+    cudarng(igpu) = new curandGenerator
+    curandCreateGenerator(cudarng(igpu), CURAND_RNG_PSEUDO_DEFAULT) 
+    curandSetPseudoRandomGeneratorSeed(cudarng(igpu), SEED)
+    setGPU(thisGPU)
+  }
+  
+  def resetGPU = {
+    JCuda.cudaDeviceReset
+    initCUDArng(getGPU)
+  }
   
   def resetGPUs = {
     val oldi = getGPU
@@ -57,7 +67,6 @@ object SciFunctions {
       resetGPU
     }
     JCuda.cudaSetDevice(oldi)
-  	initCUDArng
   }
   
   def initJCUDA = JCuda.initialize
@@ -112,8 +121,20 @@ object SciFunctions {
       vslNewStream(stream, BRNG, seed)
     }
     if (Mat.hasCUDA > 0) {
-    	curandSetPseudoRandomGeneratorSeed(cudarng(getGPU), seed)
+      val thisGPU = getGPU
+      for (i <- 0 until Mat.hasCUDA) {
+        setGPU(i)
+      	curandSetPseudoRandomGeneratorSeed(cudarng(i), seed)
+      }
+      setGPU(thisGPU)
     }
+  }
+  
+  def setseed(seed:Int, igpu:Int):Unit = {
+  	val thisGPU = getGPU
+  	setGPU(igpu)
+  	curandSetPseudoRandomGeneratorSeed(cudarng(igpu), seed)
+  	setGPU(thisGPU)
   }
     
   def norm(a:FMat) = math.sqrt(sdot(a.length, a.data, 1, a.data, 1)).toFloat
