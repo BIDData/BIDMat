@@ -203,50 +203,57 @@ object GSMat {
   
   var cusparseContexts:Array[cusparseHandle] = null
   var cusparseMatDescrs:Array[cusparseMatDescr] = null
+  var cusparseContextsInitialized = false
+  var cusparseDescrsInitialized = false
   
   def initHandles = {
     import BIDMat.SciFunctions._
     import jcuda.jcusparse.JCusparse._
-    if (cusparseContexts == null) {
-      val thisGPU = getGPU
-      val nGPUs = Mat.hasCUDA
-      cusparseContexts = new Array[cusparseHandle](nGPUs)
-      for (i <- 0 until nGPUs) {
-        setGPU(i)
-        cusparseContexts(i) = new cusparseHandle()
-        cusparseCreate(cusparseContexts(i))      
-      }  
-      setGPU(thisGPU)
+    GSMat.synchronized { 
+      if (!cusparseContextsInitialized) {
+        val thisGPU = getGPU
+        val nGPUs = Mat.hasCUDA
+        cusparseContexts = new Array[cusparseHandle](nGPUs)
+        for (i <- 0 until nGPUs) {
+          setGPU(i)
+          cusparseContexts(i) = new cusparseHandle()
+          cusparseCreate(cusparseContexts(i))      
+        }  
+        setGPU(thisGPU)
+        cusparseContextsInitialized = true
+      }
     }
   }
   
   def initDescrs = {
     import BIDMat.SciFunctions._
     import jcuda.jcusparse.JCusparse._
-    if (cusparseMatDescrs == null) {
-      val thisGPU = getGPU
-      val nGPUs = Mat.hasCUDA
-      cusparseMatDescrs = new Array[cusparseMatDescr](nGPUs)
-      for (i <- 0 until nGPUs) {
-        setGPU(i)
-        val descra = new cusparseMatDescr()
-        cusparseCreateMatDescr(descra);
-        cusparseSetMatType(descra, cusparseMatrixType.CUSPARSE_MATRIX_TYPE_GENERAL)
-        cusparseSetMatIndexBase(descra, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO)
-        cusparseMatDescrs(i) = descra
-        
-      }  
-      setGPU(thisGPU)
+    GSMat.synchronized { 
+      if (!cusparseDescrsInitialized) { 
+        val thisGPU = getGPU
+        val nGPUs = Mat.hasCUDA
+        cusparseMatDescrs = new Array[cusparseMatDescr](nGPUs)
+        for (i <- 0 until nGPUs) {
+          setGPU(i)
+          val descra = new cusparseMatDescr()
+          cusparseCreateMatDescr(descra);
+          cusparseSetMatType(descra, cusparseMatrixType.CUSPARSE_MATRIX_TYPE_GENERAL)
+          cusparseSetMatIndexBase(descra, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO)
+          cusparseMatDescrs(i) = descra
+        }  
+        setGPU(thisGPU)
+        cusparseDescrsInitialized = true
+      }
     }
   }
   
   def getHandle = {
-    initHandles
+    if (!cusparseContextsInitialized) initHandles
     cusparseContexts(SciFunctions.getGPU)
   }
   
   def getDescr = {
-    initDescrs
+   if (!cusparseDescrsInitialized) initDescrs
     cusparseMatDescrs(SciFunctions.getGPU)
   }
  
