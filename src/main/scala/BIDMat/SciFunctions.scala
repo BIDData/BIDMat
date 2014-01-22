@@ -30,12 +30,22 @@ object SciFunctions {
   final val VMLfast =    if (Mat.noMKL) 0 else VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_LA   // Faster, Low accuracy, default error handling
   final val VMLturbo =   if (Mat.noMKL) 0 else VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_EP   // Fastest, Lower accuracy, default error handling
   // Curand initialization
-  var cudarng:curandGenerator = null
+  var cudarng:Array[curandGenerator] = null
   if (Mat.hasCUDA > 0) {
   	JCuda.initialize
-    cudarng = new curandGenerator
-    curandCreateGenerator(cudarng, CURAND_RNG_PSEUDO_DEFAULT) 
-    curandSetPseudoRandomGeneratorSeed(cudarng, SEED)
+  	initCUDArng
+  }
+  
+  def initCUDArng = {
+    val thisGPU = getGPU
+    cudarng = new Array[curandGenerator](Mat.hasCUDA)
+    for (i <- 0 until Mat.hasCUDA) {
+      setGPU(i)
+    	cudarng(i) = new curandGenerator
+    	curandCreateGenerator(cudarng(i), CURAND_RNG_PSEUDO_DEFAULT) 
+    	curandSetPseudoRandomGeneratorSeed(cudarng(i), SEED)
+    }
+    setGPU(thisGPU)
   }
   
   def resetGPU = JCuda.cudaDeviceReset
@@ -44,9 +54,10 @@ object SciFunctions {
     val oldi = getGPU
     for (i <- 0 until Mat.hasCUDA) {
       JCuda.cudaSetDevice(i)
-      JCuda.cudaDeviceReset
+      resetGPU
     }
     JCuda.cudaSetDevice(oldi)
+  	initCUDArng
   }
   
   def initJCUDA = JCuda.initialize
@@ -101,7 +112,7 @@ object SciFunctions {
       vslNewStream(stream, BRNG, seed)
     }
     if (Mat.hasCUDA > 0) {
-    	curandSetPseudoRandomGeneratorSeed(cudarng, seed)
+    	curandSetPseudoRandomGeneratorSeed(cudarng(getGPU), seed)
     }
   }
     
@@ -156,7 +167,7 @@ object SciFunctions {
 
   def grand(out:GMat, nr:Int, nc:Int):GMat = {
     Mat.nflops += 10L*out.length
-    curandGenerateUniform(cudarng, out.data, out.length)
+    curandGenerateUniform(cudarng(getGPU), out.data, out.length)
     JCuda.cudaDeviceSynchronize()
     out
   }
@@ -200,7 +211,7 @@ object SciFunctions {
   
   def gnormrnd(mu:Float, sig:Float, out:GMat, nr:Int, nc:Int):GMat = {
     Mat.nflops += 10L*out.length
-    curandGenerateNormal(cudarng, out.data, out.length, mu, sig)
+    curandGenerateNormal(cudarng(getGPU), out.data, out.length, mu, sig)
     JCuda.cudaDeviceSynchronize()
     out
   }
