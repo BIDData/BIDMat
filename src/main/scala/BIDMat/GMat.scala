@@ -465,8 +465,8 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     out
   }
   
-  def copyTo(out:FMat):FMat = {
-  		val a = out.recycle(nrows, ncols, 0)
+  def copyTo(a:FMat):FMat = {
+//  		val a = out.recycle(nrows, ncols, 0)
   		cublasGetVector(nrows*ncols, Sizeof.FLOAT, data, 1, Pointer.to(a.data), 1)
   		cudaDeviceSynchronize()
   		val err = cublasGetError
@@ -488,8 +488,8 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   		this
   }
   
-  def copyTo(out:GMat):GMat = {
-    val a = out.recycle(nrows, ncols, 0)
+  def copyTo(a:GMat):GMat = {
+//    val a = out.recycle(nrows, ncols, 0)
     cudaMemcpy(a.data, data, length*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
     cudaDeviceSynchronize()
     val err = cublasGetError
