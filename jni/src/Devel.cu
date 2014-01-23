@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include "MatKernel.hpp"
 
-#ifdef __CUDA_ARCH__ 
 #if __CUDA_ARCH__ > 200
 
 #define edcellupdate(RR,RP1,RP2,RPP,WUN,TMP)                                                               \
@@ -10,25 +9,12 @@
   asm("vadd4.s32.s32.s32" "%0, %1, %2, %3;": "=r" (TMP) : "r" (MM), "r" (RZ), "r" (RR));                   \
   asm("vmin4.s32.s32.s32" "%0, %1, %2, %3;": "=r" (RR) : "r" (TMP), "r" (RR), "r" (RR));       
 
-#define hammingcell(A0,A1,B0,W0,C,TMP,TMP1,ZERO)                                                          \
+#define hammingcell(A0,A1,B0,W0,C,TMP,ZERO)                                                               \
   asm("and.b32" "%0, %1, %2;": "=r" (TMP) : "r" (A0), "r" (B0));                                          \
   asm("vset4.s32.s32.eq" "%0, %1, %2, %3;": "=r" (TMP) : "r" (TMP), "r" (ZERO), "r" (ZERO));              \
-  asm("vsub4.s32.s32.s32" "%0, %1, %2, %3;": "=r" (TMP1) : "r" (ZERO), "r" (TMP), "r" (ZERO));            \
-  asm("vmin4.u32.u32.u32.add" "%0, %1, %2, %3;": "=r" (C) : "r" (W0), "r" (TMP1), "r" (C));               \
+  asm("vsub4.s32.s32.s32" "%0, %1, %2, %3;": "=r" (TMP) : "r" (ZERO), "r" (TMP), "r" (ZERO));             \
+  asm("vmin4.u32.u32.u32.add" "%0, %1, %2, %3;": "=r" (C) : "r" (W0), "r" (TMP), "r" (C));                \
   asm("vmax4.u32.u32.u32" "%0, %1.b4321, %2.b4321, %3;": "=r" (A0) : "r" (A0), "r" (A1), "r" (ZERO));  
-
-
-#define hammingcell2(A0,A1,B0,W0,C0,TMP0,A2,A3,B1,W1,C1,TMP1,ZERO)                                        \
-  asm("and.b32" "%0, %1, %2;": "=r" (TMP0) : "r" (A0), "r" (B0));                                         \
-  asm("and.b32" "%0, %1, %2;": "=r" (TMP1) : "r" (A2), "r" (B1));                                         \
-  asm("vset4.s32.s32.eq" "%0, %1, %2, %3;": "=r" (TMP0) : "r" (TMP0), "r" (ZERO), "r" (ZERO));            \
-  asm("vset4.s32.s32.eq" "%0, %1, %2, %3;": "=r" (TMP1) : "r" (TMP1), "r" (ZERO), "r" (ZERO));            \
-  asm("vsub4.s32.s32.s32" "%0, %1, %2, %3;": "=r" (TMP0) : "r" (ZERO), "r" (TMP0), "r" (ZERO));           \
-  asm("vsub4.s32.s32.s32" "%0, %1, %2, %3;": "=r" (TMP1) : "r" (ZERO), "r" (TMP1), "r" (ZERO));           \
-  asm("vmin4.u32.u32.u32.add" "%0, %1, %2, %3;": "=r" (C0) : "r" (W0), "r" (TMP0), "r" (C0));             \
-  asm("vmin4.u32.u32.u32.add" "%0, %1, %2, %3;": "=r" (C1) : "r" (W1), "r" (TMP1), "r" (C1));             \
-  asm("vmax4.u32.u32.u32" "%0, %1.b4321, %2.b4321, %3;": "=r" (A0) : "r" (A0), "r" (A1), "r" (ZERO));     \
-  asm("vmax4.u32.u32.u32" "%0, %1.b4321, %2.b4321, %3;": "=r" (A2) : "r" (A2), "r" (A3), "r" (ZERO)); 
 
 #define hammingend(A0)                               \
   asm("shr.b32" "%0, %1, 8;": "=r" (A0) : "r" (A0)); 
@@ -87,7 +73,7 @@ template<int VECLEN, int NVEC, int TLEN>
 #pragma unroll
         for (k = 0; k < VECLEN; k++) {
           tmp1 = aa[k];
-          hammingcell(tmp1, aa[k+1], bb[k], ww[k], c, tmp, tmp, zero);
+          hammingcell(tmp1, aa[k+1], bb[k], ww[k], c, tmp, zero);
           aa[k] = tmp1;
         }
         tmp1 = aa[VECLEN];
@@ -143,16 +129,6 @@ __global__ void __veccmp(int *a, int *b, int *d) {
   asm("vset4.s32.s32.ne" "%0, %1.b3333, %2, %3;": "=r" (xd) : "r" (xa), "r" (xb), "r" (xc));
   *d = xd;
 }
-#else
-__global__ void __veccmp(int *a, int *b, int *d) {
-  printf("__veccmp() not defined for CUDA Arch < 300\n");
-}
-
-template<int VECLEN, int NVEC, int TLEN>
-__global__ void __hammingdists(int *a, int *b, int *w, int *op, int *ow, int n) {
-  printf("__hammingdists() not defined for CUDA Arch < 300\n");
-}
-#endif
 #else
 __global__ void __veccmp(int *a, int *b, int *d) {
   printf("__veccmp() not defined for CUDA Arch < 300\n");
