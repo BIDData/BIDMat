@@ -21,6 +21,9 @@ $(LIBPREPEND)bidmatcuda$(LIBAPPEND): $(CUDA_OBJS)
 %.$(OBJ) : %.cpp
 	$(GCC) $(CPPFLAGS) $(LAPACK_INCLUDES) $*.cpp
 
+Devel.$(OBJ) : Devel.cu
+	$(NVCC) $(NVCCFLAGS) -Xptxas -v Devel.cu
+
 %.$(OBJ) : %.cu
 	$(NVCC) $(NVCCFLAGS) $*.cu
 
