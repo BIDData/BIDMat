@@ -16,22 +16,21 @@
   asm("vmin4.u32.u32.u32.add" "%0, %1, %2, %3;": "=r" (C) : "r" (W0), "r" (TMP), "r" (C));                \
   asm("vmax4.u32.u32.u32" "%0, %1.b4321, %2.b4321, %3;": "=r" (A0) : "r" (A0), "r" (A1), "r" (ZERO));  
 
-__device__ int hammingcell(int A0, int A1, int B0, int W0, int C, int TMP, int ZERO) {
-  asm("and.b32" "%0, %1, %2;": "=r" (TMP) : "r" (A0), "r" (B0));
-  asm("vset4.s32.s32.eq" "%0, %1, %2, %3;": "=r" (TMP) : "r" (TMP), "r" (ZERO), "r" (ZERO));
-  asm("vsub4.s32.s32.s32" "%0, %1, %2, %3;": "=r" (TMP) : "r" (ZERO), "r" (TMP), "r" (ZERO));
-  asm("vmin4.u32.u32.u32.add" "%0, %1, %2, %3;": "=r" (C) : "r" (W0), "r" (TMP), "r" (C));
-  return C;
+__device__ int hammingcell(int a0, int a1, int b0, int w0, int c, int tmp, int zero) {
+  asm("and.b32" "%0, %1, %2;": "=r" (tmp) : "r" (a0), "r" (b0));
+  asm("vset4.s32.s32.eq" "%0, %1, %2, %3;": "=r" (tmp) : "r" (tmp), "r" (zero), "r" (zero));
+  asm("vsub4.s32.s32.s32" "%0, %1, %2, %3;": "=r" (tmp) : "r" (zero), "r" (tmp), "r" (zero));
+  asm("vmin4.u32.u32.u32.add" "%0, %1, %2, %3;": "=r" (c) : "r" (w0), "r" (tmp), "r" (c));
+  return c;
 }
 
-__device__ int rotate2(int A0, int A1) {
-  asm("vmax4.u32.u32.u32" "%0, %1.b4321, %2.b4321, %3;": "=r" (A0) : "r" (A0), "r" (A1), "r" (A0));  
-  return A0;
+__device__ int rotate2(int a0, int a1) {
+  asm("vmax4.u32.u32.u32" "%0, %1.b4321, %2.b4321, %3;": "=r" (a0) : "r" (a0), "r" (a1), "r" (a0));  
+  return a0;
 }
 
-__device__ int rotate1(int A0) {
-  asm("shr.b32" "%0, %1, 8;": "=r" (A0) : "r" (A0)); 
-  return A0;
+__device__ void rotate1(int &a0) {
+  asm("shr.b32" "%0, %1, 8;": "=r" (a0) : "r" (a0)); 
 }
 
 template<int VECLEN, int NVEC, int TLEN>
@@ -90,7 +89,7 @@ template<int VECLEN, int NVEC, int TLEN>
           c = hammingcell(aa[k], aa[k+1], bb[k], ww[k], c, tmp, zero);
           aa[k] = rotate2(aa[k], aa[k+1]);
         }
-        aa[VECLEN] = rotate1(aa[VECLEN]);
+        /* aa[VECLEN] =*/ rotate1(aa[VECLEN]);
         // Need to sum over NVEC to get complete score for a string
 #pragma unroll
         for (k = 1; k < NVEC; k *= 2) {    
