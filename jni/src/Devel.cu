@@ -84,13 +84,15 @@ template<int VECLEN, int NVEC, int TLEN>
         }
         c = 0;
         // Inner loop over the length of the vector in registers
-#ifdef __CUDACC__
 #pragma unroll
         for (k = 0; k < VECLEN; k++) {
-          hammingcell(aa[k], aa[k+1], bb[k], ww[k], c, tmp, tmp1, zero);
+          tmp1 = aa[k];
+          hammingcell(tmp1, aa[k+1], bb[k], ww[k], c, tmp, tmp, zero);
+          aa[k] = tmp1;
         }
-        hammingend(aa[VECLEN]);
-#endif
+        tmp1 = aa[VECLEN];
+        hammingend(tmp1);
+        aa[VECLEN] = tmp1;
         // Need to sum over NVEC to get complete score for a string
 #pragma unroll
         for (k = 1; k < NVEC; k *= 2) {    
