@@ -88,7 +88,7 @@ template<int VECLEN, int NVEC, int TLEN>
         for (k = 0; k < VECLEN; k++) {
           hammingcell(aa[k], aa[k+1], bb[k], ww[k], c, tmp, tmp1, zero);
         }
-        hammingend(aa[k]);
+        hammingend(aa[VECLEN]);
         // Need to sum over NVEC to get complete score for a string
 #pragma unroll
         for (k = 1; k < NVEC; k *= 2) {    
