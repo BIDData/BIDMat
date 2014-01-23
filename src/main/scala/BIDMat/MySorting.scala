@@ -2,7 +2,7 @@ package BIDMat
 
 import scala.reflect.ClassManifest
 import scala.math.Ordering
-import scala.actors.Actor._
+import scala.concurrent.ops._
 
 object Sorting {
 
@@ -23,8 +23,8 @@ object Sorting {
 					if (nthreads > 1 && (hi-lo)/stride > 400) {
 						var done0 = false
 						var done1 = false
-						actor { quickSort2(a, ii, lo, ip, stride, nthreads/2); done0 = true }
-						actor { quickSort2(a, ii, ip, hi, stride, nthreads/2); done1 = true }
+						spawn { quickSort2(a, ii, lo, ip, stride, nthreads/2); done0 = true }
+						spawn { quickSort2(a, ii, ip, hi, stride, nthreads/2); done1 = true }
 						while (!done0 || !done1) {Thread.`yield`}
 					} else {
 						quickSort2(a, ii, lo, ip, stride, nthreads/2)
@@ -142,8 +142,8 @@ object Sorting {
 					if (nthreads > 1 && (hi-lo)/stride > 400) {
 						var done0 = false
 						var done1 = false
-						actor { quickSort2(a, ii, lo, ip, stride, nthreads/2); done0 = true }
-						actor { quickSort2(a, ii, ip, hi, stride, nthreads/2); done1 = true }
+						spawn { quickSort2(a, ii, lo, ip, stride, nthreads/2); done0 = true }
+						spawn { quickSort2(a, ii, ip, hi, stride, nthreads/2); done1 = true }
 						while (!done0 || !done1) {Thread.`yield`}
 					} else {
 						quickSort2(a, ii, lo, ip, stride, nthreads/2)
@@ -263,8 +263,8 @@ object Sorting {
 					if (nthreads > 1 && (hi-lo)/stride > 400) {
 						var done0 = false
 						var done1 = false
-						actor { quickSort2(a, ii, lo, ip, stride, nthreads/2); done0 = true }
-						actor { quickSort2(a, ii, ip, hi, stride, nthreads/2); done1 = true }
+						spawn { quickSort2(a, ii, lo, ip, stride, nthreads/2); done0 = true }
+						spawn { quickSort2(a, ii, ip, hi, stride, nthreads/2); done1 = true }
 						while (!done0 || !done1) {Thread.`yield`}
 					} else {
 						quickSort2(a, ii, lo, ip, stride, nthreads/2)

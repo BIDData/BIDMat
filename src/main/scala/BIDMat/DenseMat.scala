@@ -2,8 +2,7 @@ package BIDMat
 import scala.math.Numeric._
 import java.util.Arrays
 import java.util.Comparator
-import scala.actors._
-import scala.actors.Actor._
+import scala.concurrent.ops._
 
 class DenseMat[@specialized(Double,Float,Int,Byte) T]
 (nr: Int, nc: Int, val data:Array[T])(implicit manifest:ClassManifest[T]) extends Mat(nr, nc) {
@@ -863,7 +862,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
         	for (ithread<- 0 until Mat.numThreads) {
         		val istart = (1L*ithread*mylen/Mat.numThreads).toInt
         		val len = (1L*(ithread+1)*mylen/Mat.numThreads).toInt - istart
-        		actor {
+        		spawn {
         			if (nrows==aa.nrows && ncols==aa.ncols) {
         				opv(data, istart, 1, aa.data, istart, 1, out.data, istart, 1, len)
         			} else if (aa.nrows == 1 && aa.ncols == 1) {

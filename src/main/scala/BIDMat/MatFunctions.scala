@@ -4,7 +4,7 @@ import scala.compat.Platform._
 import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.LAPACK._
 import edu.berkeley.bid.SPBLAS._
-import scala.actors.Actor._
+import scala.concurrent.ops._
 
 class IMatWildcard extends IMat(0,0,null) with MatrixWildcard
 
@@ -780,7 +780,7 @@ object MatFunctions {
       if (c.nnz > 100000 && Mat.numThreads > 1) {
         val done = IMat(1,Mat.numThreads)
         for (i <- 0 until Mat.numThreads) {
-          actor {
+          spawn {
           	val istart = i*c.ncols/Mat.numThreads
           	val iend = (i+1)*c.ncols/Mat.numThreads
           	DDShelper(a, b, c, out, istart, iend, ioff)

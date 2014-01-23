@@ -2,7 +2,7 @@ package BIDMat
 
 import edu.berkeley.bid.comm.{IVec,LVec,Vec}
 import edu.berkeley.bid.comm.AllReduceX
-import scala.actors.Actor._
+import scala.concurrent.ops._
 import BIDMat.MatFunctions._
 import BIDMat.SciFunctions._
 import java.util.concurrent.CountDownLatch
@@ -93,7 +93,7 @@ object AllReduce {
     val nreps = 1
     	for (i <- 0 until M*replicate) {
 //    	  if (irep == 17) network.simNetwork(i).trace=2; else network.simNetwork(i).trace=0;
-    		actor {        
+    		spawn {        
     			if (deadnodes.length == 0 || sum(deadnodes == i).v == 0) {    // Simulate dead nodes
     				val i0 = i % M
     				network.simNetwork(i).config(irows(i0), icols(i0))
