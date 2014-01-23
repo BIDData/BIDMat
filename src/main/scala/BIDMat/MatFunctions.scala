@@ -780,7 +780,7 @@ object MatFunctions {
       if (c.nnz > 100000 && Mat.numThreads > 1) {
         val done = IMat(1,Mat.numThreads)
         for (i <- 0 until Mat.numThreads) {
-          spawn {
+          future {
           	val istart = i*c.ncols/Mat.numThreads
           	val iend = (i+1)*c.ncols/Mat.numThreads
           	DDShelper(a, b, c, out, istart, iend, ioff)

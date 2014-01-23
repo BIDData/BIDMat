@@ -476,7 +476,7 @@ object HMat {
     val a = new Array[SMat](n)
     var ndone = izeros(n,1)
     for (i <- 0 until n) {
-      spawn {
+      future {
         a(i) = loadSMat(("/disk%02d/" format i)+fname)
         ndone(i) = 1
       }
