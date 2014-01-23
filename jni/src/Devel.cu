@@ -172,7 +172,7 @@ int veccmp(int *a, int *b, int *d) {
 int hammingdists(int *a, int *b, int *w, int *op, int *ow, int n) {    
   int nb = 1+((n-1)/32);
   dim3 blockdims(32,32,1);
-  __hammingdists<8,4,1024><<<nb,blockdims>>>(a, b, w, op, ow, n);
+  __hammingdists<16,2,1024><<<nb,blockdims>>>(a, b, w, op, ow, n);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
