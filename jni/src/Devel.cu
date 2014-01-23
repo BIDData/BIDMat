@@ -40,9 +40,9 @@ template<int VECLEN, int NVEC, int TLEN>
   __shared__ int sw[32][VECLEN*NVEC+1];
   __shared__ int sop[32];
   __shared__ int sow[32];
-  int aa[VECLEN+1];           
-  int bb[VECLEN];
-  int ww[VECLEN];
+  register int aa[VECLEN+1];           
+  register int bb[VECLEN];
+  register int ww[VECLEN];
   int i, ioff, ioffmv, ip, tmp, tmp1, j, k, c, cmin, imin;
   int zero = 0;
   int sid = threadIdx.x + blockDim.x * threadIdx.y;
