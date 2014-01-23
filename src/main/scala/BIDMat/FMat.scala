@@ -4,9 +4,9 @@ import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.LAPACK._
 import edu.berkeley.bid.SPBLAS._
 import edu.berkeley.bid.UTILS._
-import scala.actors.Actor._
 import java.util.Arrays
 import java.util.concurrent.atomic._
+import scala.concurrent.ops._
 
 
 case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, nc, data0) {
@@ -231,7 +231,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     			for (ithread <- 0 until Mat.numThreads) {
     				val istart = (1L*ithread*a.ncols/Mat.numThreads).toInt
     				val iend = (1L*(ithread+1)*a.ncols/Mat.numThreads).toInt
-    				actor {
+    				spawn {
     					fDMultHelper(a, out, istart, iend)
     					done(ithread) = 1
     				}
@@ -306,7 +306,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     			for (ithread <- 0 until Mat.numThreads) {
     				val istart = (1L*ithread*a.ncols/Mat.numThreads).toInt
     				val iend = (1L*(ithread+1)*a.ncols/Mat.numThreads).toInt
-    				actor {
+    				spawn {
     					fSMultHelper(a, out, istart, iend, ioff)
     					done(ithread) = 1
     				}
@@ -370,7 +370,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     			for (ithread <- 0 until Mat.numThreads) {
     				val istart = (1L*ithread*a.ncols/Mat.numThreads).toInt
     				val iend = (1L*(ithread+1)*a.ncols/Mat.numThreads).toInt
-    				actor {
+    				spawn {
     					fSMultTHelper(a, out, istart, iend, ioff, colaccess)
     					done(ithread) = 1
     				}

@@ -6,8 +6,7 @@ import java.nio._
 import scala.util.matching.Regex
 import Regex._
 import scala.collection.mutable._
-import scala.actors._
-import scala.actors.Actor._
+import scala.concurrent.ops._
 import MatFunctions._
 import MatHDF5._
 import edu.berkeley.bid.UTILS._
@@ -477,7 +476,7 @@ object HMat {
     val a = new Array[SMat](n)
     var ndone = izeros(n,1)
     for (i <- 0 until n) {
-      actor {
+      spawn {
         a(i) = loadSMat(("/disk%02d/" format i)+fname)
         ndone(i) = 1
       }
