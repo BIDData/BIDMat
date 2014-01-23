@@ -9,15 +9,30 @@
   asm("vadd4.s32.s32.s32" "%0, %1, %2, %3;": "=r" (TMP) : "r" (MM), "r" (RZ), "r" (RR));                   \
   asm("vmin4.s32.s32.s32" "%0, %1, %2, %3;": "=r" (RR) : "r" (TMP), "r" (RR), "r" (RR));       
 
-#define hammingcell(A0,A1,B0,W0,C,TMP,ZERO)                                                               \
+#define hammingcellx(A0,A1,B0,W0,C,TMP,ZERO)                                                               \
   asm("and.b32" "%0, %1, %2;": "=r" (TMP) : "r" (A0), "r" (B0));                                          \
   asm("vset4.s32.s32.eq" "%0, %1, %2, %3;": "=r" (TMP) : "r" (TMP), "r" (ZERO), "r" (ZERO));              \
   asm("vsub4.s32.s32.s32" "%0, %1, %2, %3;": "=r" (TMP) : "r" (ZERO), "r" (TMP), "r" (ZERO));             \
   asm("vmin4.u32.u32.u32.add" "%0, %1, %2, %3;": "=r" (C) : "r" (W0), "r" (TMP), "r" (C));                \
   asm("vmax4.u32.u32.u32" "%0, %1.b4321, %2.b4321, %3;": "=r" (A0) : "r" (A0), "r" (A1), "r" (ZERO));  
 
-#define hammingend(A0)                               \
+__device__ int hammingcell(int A0, int A1, int B0, int W0, int C, int TMP, int ZERO) {
+  asm("and.b32" "%0, %1, %2;": "=r" (TMP) : "r" (A0), "r" (B0));
+  asm("vset4.s32.s32.eq" "%0, %1, %2, %3;": "=r" (TMP) : "r" (TMP), "r" (ZERO), "r" (ZERO));
+  asm("vsub4.s32.s32.s32" "%0, %1, %2, %3;": "=r" (TMP) : "r" (ZERO), "r" (TMP), "r" (ZERO));
+  asm("vmin4.u32.u32.u32.add" "%0, %1, %2, %3;": "=r" (C) : "r" (W0), "r" (TMP), "r" (C));
+  return C;
+}
+
+__device__ int rotate2(int A0, int A1) {
+  asm("vmax4.u32.u32.u32" "%0, %1.b4321, %2.b4321, %3;": "=r" (A0) : "r" (A0), "r" (A1), "r" (A0));  
+  return A0;
+}
+
+__device__ int rotate1(int A0) {
   asm("shr.b32" "%0, %1, 8;": "=r" (A0) : "r" (A0)); 
+  return A0;
+}
 
 template<int VECLEN, int NVEC, int TLEN>
   __global__ void __hammingdists(int *a, int *b, int *w, int *op, int *ow, int n) {   
@@ -72,13 +87,10 @@ template<int VECLEN, int NVEC, int TLEN>
         // Inner loop over the length of the vector in registers
 #pragma unroll
         for (k = 0; k < VECLEN; k++) {
-          tmp1 = aa[k];
-          hammingcell(tmp1, aa[k+1], bb[k], ww[k], c, tmp, zero);
-          aa[k] = tmp1;
+          c = hammingcell(aa[k], aa[k+1], bb[k], ww[k], c, tmp, zero);
+          aa[k] = rotate2(aa[k], aa[k+1]);
         }
-        tmp1 = aa[VECLEN];
-        hammingend(tmp1);
-        aa[VECLEN] = tmp1;
+        aa[VECLEN] = rotate1(aa[VECLEN]);
         // Need to sum over NVEC to get complete score for a string
 #pragma unroll
         for (k = 1; k < NVEC; k *= 2) {    
