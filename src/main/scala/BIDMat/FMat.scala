@@ -231,7 +231,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     			for (ithread <- 0 until Mat.numThreads) {
     				val istart = (1L*ithread*a.ncols/Mat.numThreads).toInt
     				val iend = (1L*(ithread+1)*a.ncols/Mat.numThreads).toInt
-    				spawn {
+    				future {
     					fDMultHelper(a, out, istart, iend)
     					done(ithread) = 1
     				}
@@ -306,7 +306,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     			for (ithread <- 0 until Mat.numThreads) {
     				val istart = (1L*ithread*a.ncols/Mat.numThreads).toInt
     				val iend = (1L*(ithread+1)*a.ncols/Mat.numThreads).toInt
-    				spawn {
+    				future {
     					fSMultHelper(a, out, istart, iend, ioff)
     					done(ithread) = 1
     				}
@@ -370,7 +370,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     			for (ithread <- 0 until Mat.numThreads) {
     				val istart = (1L*ithread*a.ncols/Mat.numThreads).toInt
     				val iend = (1L*(ithread+1)*a.ncols/Mat.numThreads).toInt
-    				spawn {
+    				future {
     					fSMultTHelper(a, out, istart, iend, ioff, colaccess)
     					done(ithread) = 1
     				}

@@ -1257,7 +1257,7 @@ object GMat {
   	  val done = IMat(rblkk*cblkk,1)
   	  for (ix <- 0 until rblkk) {
   	    for (iy <- 0 until cblkk) {
-  	    	spawn {
+  	    	future {
   	    		SciFunctions.setGPU(ix+iy*2)
   	    		val aa = new Pointer
   	    		val bb = new Pointer
@@ -1329,7 +1329,7 @@ object GMat {
   	val done = IMat(nthreads,1)
 
   	for (ithread <- 0 until nthreads) {
-  	  spawn {
+  	  future {
  	    	SciFunctions.setGPU(ithread)
   	  	val aa = GMat(maxsize, 1).data
   	  	val vv = GIMat(maxsize, 1).data
@@ -1465,7 +1465,7 @@ object GMat {
   	var err = 0
   	var myturn = 0
   	for (ithread <- 0 until nthreads) {
-  	  spawn {
+  	  future {
  	    	SciFunctions.setGPU(ithread)
   	  	val aa = GMat(maxsize, 1)
   	  	val vv = GIMat(maxsize, 1)
@@ -1557,7 +1557,7 @@ object GMat {
   	val done = IMat(rblkk*cblkk,1)
   	for (ix <- 0 until rblkk) {
   		for (iy <- 0 until cblkk) {
-  			spawn {
+  			future {
   				val ithread = ix+iy*2
   				var err = 0
   				SciFunctions.setGPU(ithread)
