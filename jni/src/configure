@@ -97,7 +97,9 @@ if [ "$OS" = "apple" ] ; then
     CUDA_LIBS="-L${CUDA_HOME}/lib -L${BIDMAT_ROOT}/lib -lcudart -lCommonJNI"
 elif [ "$OS" = "linux" ] ; then
     MKL_ROOT="/opt/intel/mkl"
+    if [ "$JAVA_HOME" = "" ]; then
     JAVA_HOME="/usr/java/default"
+    fi
     CUDA_HOME="/usr/local/cuda"
     CC="gcc"
     GCC="g++"
