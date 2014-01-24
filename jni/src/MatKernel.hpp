@@ -70,9 +70,9 @@ int accum(int *I, int J, int V, int *S, int m, int nrows);
 
 int accum(int I, int *J, int V, int *S, int m, int nrows);
 
-int cumsumi(int *in, int *out, int *jc, int nrows, int ncols, int m);
+int cumsumi(float *in, float *out, int *jc, int nrows, int ncols, int m);
 
-int maxs(float *in, float *out, int *outi, int *jc, int m);
+int maxs(float *in, float *out, int *outi, int *jc, int nrows, int ncols, int m);
 
 int embedmat2d(float *a, long long *b, int nrows, int ncols);
 

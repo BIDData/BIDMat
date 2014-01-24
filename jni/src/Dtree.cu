@@ -2,7 +2,6 @@
 #include <curand_kernel.h>
 #include <stdio.h>
 
-#ifdef __CUDA_ARCH__ 
 #if __CUDA_ARCH__ > 200
 
 // Compute one level of random forest evaluation for a set of 32 trees. 
@@ -149,12 +148,6 @@ template<int ATHREADS, int BTHREADS, int REPTREES>
 __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, float *otval, int nrows, int ncols, int ns, int tstride, int ntrees) {}
 template<int ATHREADS, int BTHREADS, int REPTREES>
 __global__ void __treesteps(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int tdepth) {}
-#endif
-#else
-template<int ATHREADS, int BTHREADS, int REPTREES>
-__global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, float *otval, int nrows, int ncols, int ns, int tstride, int ntrees) {}
-template<int ATHREADS, int BTHREADS, int REPTREES>
-  __global__ void __treesteps(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int tdepth){}
 #endif
 
 int treeprod(unsigned int *trees, float *feats, int *tpos, float *otv, int nrows, int ncols, int ns, int tstride, int ntrees) {
@@ -369,14 +362,13 @@ int ocopy_transpose_min(int *optrs, float *in, float *out, int stride, int nrows
 }
 
 
-#ifdef __CUDA_ARCH__ 
 #if __CUDA_ARCH__ > 200
-__global__ void __cumsumi(int *in, int *out, int *jc, int nrows) {
-  __shared__ int tots[32];
+__global__ void __cumsumi(float *in, float *out, int *jc, int nrows) {
+  __shared__ float tots[32];
   int start = jc[blockIdx.x] + nrows * blockIdx.y;
   int end = jc[blockIdx.x+1] + nrows * blockIdx.y;
-  int sum = 0;
-  int tsum, tmp, ttot, ttot0;
+  float sum = 0;
+  float tsum, tmp, ttot, ttot0;
   for (int i = start + threadIdx.x + threadIdx.y * blockDim.x; i < end; i += blockDim.x * blockDim.y) {
     tsum = in[i];
     tmp = __shfl_up(tsum, 1);
@@ -389,7 +381,7 @@ __global__ void __cumsumi(int *in, int *out, int *jc, int nrows) {
     if (threadIdx.x >= 8) tsum += tmp;
     tmp = __shfl_up(tsum, 16);
     if (threadIdx.x >= 16) tsum += tmp;
-    ttot = __shfl(tsum, 31);
+    ttot = __shfl(tsum, min(end-start-1, 31));
     ttot0 = ttot;
     __syncthreads();
     if (threadIdx.x == threadIdx.y) {
@@ -420,7 +412,7 @@ __global__ void __cumsumi(int *in, int *out, int *jc, int nrows) {
   }
 }
 
-__global__ void __maxs(float *in, float *out, int *outi, int *jc) {
+__global__ void __maxs(float *in, float *out, int *outi, int *jc, int nrows, int m) {
   __shared__ float maxv[32];
   __shared__ int maxi[32];
   int start = jc[blockIdx.x];
@@ -430,12 +422,12 @@ __global__ void __maxs(float *in, float *out, int *outi, int *jc) {
   int istart = start + threadIdx.x + threadIdx.y * blockDim.x;
 
   if (istart < end) {
-    vmax = in[istart];
+    vmax = in[istart + nrows * blockIdx.y];
     imax = istart;
   }
 
   for (i = istart + blockDim.x * blockDim.y; i < end; i += blockDim.x * blockDim.y) {
-    vtmp = in[i];
+    vtmp = in[i + nrows * blockIdx.y];
     itmp = i;
     if (vtmp > vmax) {
       vmax = vtmp;
@@ -480,21 +472,17 @@ __global__ void __maxs(float *in, float *out, int *outi, int *jc) {
       }
     }
     if (threadIdx.x == blockDim.y - 1) {
-      out[blockIdx.x] = vmax;
-      outi[blockIdx.x] = imax;
+      out[blockIdx.x + m * blockIdx.y] = vmax;
+      outi[blockIdx.x + m * blockIdx.y] = imax;
     }
   }
 }
 #else
-__global__ void __cumsumi(int *in, int *out, int *jc, int nrows) {}
-__global__ void __maxs(float *in, float *out, int *outi, int *jc) {}
-#endif
-#else
-__global__ void __cumsumi(int *in, int *out, int *jc, int nrows) {}
-__global__ void __maxs(float *in, float *out, int *outi, int *jc) {}
+__global__ void __cumsumi(float *in, float *out, int *jc, int nrows) {}
+__global__ void __maxs(float *in, float *out, int *outi, int *jc, int nrows, int m) {}
 #endif
 
-int cumsumi(int *in, int *out, int *jc, int nrows, int ncols, int m) {
+int cumsumi(float *in, float *out, int *jc, int nrows, int ncols, int m) {
   dim3 grid(m, ncols, 1);
   dim3 tblock(32, 32, 1);
   __cumsumi<<<grid,tblock>>>(in, out, jc, nrows);
@@ -503,10 +491,10 @@ int cumsumi(int *in, int *out, int *jc, int nrows, int ncols, int m) {
   return err;
 }
 
-int maxs(float *in, float *out, int *outi, int *jc, int m) {
-  dim3 grid(m, 1, 1);
+int maxs(float *in, float *out, int *outi, int *jc, int nrows, int ncols, int m) {
+  dim3 grid(m, ncols, 1);
   dim3 tblock(32, 32, 1);
-  __maxs<<<grid,tblock>>>(in, out, outi, jc);
+  __maxs<<<grid,tblock>>>(in, out, outi, jc, nrows, m);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;

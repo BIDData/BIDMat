@@ -308,22 +308,22 @@ extern "C" {
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumsumi
   (JNIEnv *env, jobject obj, jobject jin, jobject jout, jobject jjc, jint nrows, jint ncols, jint m) 
   {
-    int *in = (int*)getPointer(env, jin);
-    int *out = (int*)getPointer(env, jout);
+    float *in = (float*)getPointer(env, jin);
+    float *out = (float*)getPointer(env, jout);
     int *jc = (int*)getPointer(env, jjc);
 
     return cumsumi(in, out, jc, nrows, ncols, m);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_maxs
-  (JNIEnv *env, jobject obj, jobject jin, jobject jout, jobject jouti, jobject jjc, jint m) 
+  (JNIEnv *env, jobject obj, jobject jin, jobject jout, jobject jouti, jobject jjc, jint nrows, jint ncols, jint m) 
   {
     float *in = (float*)getPointer(env, jin);
     float *out = (float*)getPointer(env, jout);
     int *outi = (int*)getPointer(env, jouti);
     int *jc = (int*)getPointer(env, jjc);
 
-    return maxs(in, out, outi, jc, m);
+    return maxs(in, out, outi, jc, nrows, ncols, m);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_embedmat2d
