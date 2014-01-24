@@ -1,13 +1,15 @@
 package BIDMat
 import scala.math.Numeric._
+import scala.reflect._
 import java.util.Arrays
 import java.util.Comparator
-import scala.concurrent.ops._
+import scala.concurrent.future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class DenseMat[@specialized(Double,Float,Int,Byte) T]
-(nr: Int, nc: Int, val data:Array[T])(implicit manifest:ClassManifest[T]) extends Mat(nr, nc) {
+(nr: Int, nc: Int, val data:Array[T])(implicit manifest:ClassTag[T]) extends Mat(nr, nc) {
   
-  def this(nr:Int, nc:Int)(implicit manifest:ClassManifest[T]) = this(nr, nc, new Array[T](nr*nc))
+  def this(nr:Int, nc:Int)(implicit manifest:ClassTag[T]) = this(nr, nc, new Array[T](nr*nc))
 
   /*
    * Return the (0,0) value as a scalar
@@ -663,7 +665,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
         case a:Float => Arrays.fill(data.asInstanceOf[Array[Float]], 0, length, 0)
         case a:Double => Arrays.fill(data.asInstanceOf[Array[Double]], 0, length, 0)
         case a:Int => Arrays.fill(data.asInstanceOf[Array[Int]], 0, length, 0)
-        case a:AnyRef => Arrays.fill(data.asInstanceOf[Array[AnyRef]], 0, length, null)
+        case _ => Arrays.fill(data.asInstanceOf[Array[AnyRef]], 0, length, null)
       }
     }
     this
@@ -1251,7 +1253,7 @@ object DenseMat {
   }
 
   def sort[@specialized(Double, Float, Int, Byte) T](a:DenseMat[T], ik0:Int, asc:Boolean)
-  (implicit classManifest:ClassManifest[T], ordering:Ordering[T]):DenseMat[T] = {
+  (implicit classTag:ClassTag[T], ordering:Ordering[T]):DenseMat[T] = {
     import BIDMat.Sorting._
     val out = DenseMat.newOrCheck(a.nrows, a.ncols, null, a.GUID, ik0, "DenseMat.sort".hashCode)
     var ik = ik0
@@ -1335,7 +1337,7 @@ object DenseMat {
   }
   
    def sort2[@specialized(Double, Float, Int, Byte) T](a:DenseMat[T], asc:Boolean)
-  (implicit classManifest:ClassManifest[T], ord:Ordering[T]): (DenseMat[T], IMat) = 
+  (implicit classTag:ClassTag[T], ord:Ordering[T]): (DenseMat[T], IMat) = 
     if (a.nrows == 1) {
       sort2(a, 2, asc, null, null)
     } else {
@@ -1343,10 +1345,10 @@ object DenseMat {
     }
    
   def sort2[@specialized(Double, Float, Int, Byte) T](a:DenseMat[T], ik:Int, asc:Boolean)
-  (implicit classManifest:ClassManifest[T], ord:Ordering[T]):(DenseMat[T], IMat) = sort2(a, ik, asc, null, null)
+  (implicit classTag:ClassTag[T], ord:Ordering[T]):(DenseMat[T], IMat) = sort2(a, ik, asc, null, null)
 
   def sort2[@specialized(Double, Float, Int, Byte) T](a:DenseMat[T], ik:Int, asc:Boolean, odmat:Mat, oimat:Mat)
-  (implicit classManifest:ClassManifest[T], ord:Ordering[T]):(DenseMat[T], IMat) = {
+  (implicit classTag:ClassTag[T], ord:Ordering[T]):(DenseMat[T], IMat) = {
     import BIDMat.Sorting._
     val out = DenseMat.newOrCheck[T](a.nrows, a.ncols, odmat, a.GUID, ik, "sort2_1".hashCode)
     val iout = IMat.newOrCheckIMat(a.nrows, a.ncols, oimat, a.GUID, ik, "sort2_2".hashCode)
@@ -1504,7 +1506,7 @@ object DenseMat {
   }    
   
   def accum[@specialized(Double, Float, Int) T](inds:IMat, vals:DenseMat[T], nr:Int, nc:Int)
-  (implicit numeric:Numeric[T], classManifest:ClassManifest[T]):DenseMat[T] = { 
+  (implicit numeric:Numeric[T], classTag:ClassTag[T]):DenseMat[T] = { 
     if (inds.ncols > 2 || (vals.length > 1 && (inds.nrows != vals.nrows)))
       throw new RuntimeException("mismatch in array dimensions")
     else { 
@@ -1550,7 +1552,7 @@ object DenseMat {
   }
   
   def newOrCheck[T](nr:Int, nc:Int, oldmat:Mat)
-  (implicit classManifest:ClassManifest[T]):DenseMat[T] = {
+  (implicit classTag:ClassTag[T]):DenseMat[T] = {
     if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows == 0 && oldmat.ncols == 0)) {
       new DenseMat[T](nr, nc)
     } else {
@@ -1568,7 +1570,7 @@ object DenseMat {
   }
   
   def newOrCheck[T](nr:Int, nc:Int, outmat:Mat, matGuid:Long, opHash:Int)
-    (implicit classManifest:ClassManifest[T]):DenseMat[T] = {
+    (implicit classTag:ClassTag[T]):DenseMat[T] = {
     if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
       newOrCheck(nr, nc, outmat)
     } else {
@@ -1585,7 +1587,7 @@ object DenseMat {
   }
   
   def newOrCheck[T](nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, opHash:Int)
-  (implicit classManifest:ClassManifest[T]):DenseMat[T] = {
+  (implicit classTag:ClassTag[T]):DenseMat[T] = {
     if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
       newOrCheck(nr, nc, outmat)
     } else {
@@ -1602,7 +1604,7 @@ object DenseMat {
   }
     
   def newOrCheck[T](nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int)
-  (implicit classManifest:ClassManifest[T]):DenseMat[T] = {
+  (implicit classTag:ClassTag[T]):DenseMat[T] = {
     if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
       newOrCheck(nr, nc, outmat)
     } else {

@@ -4,7 +4,9 @@ import scala.compat.Platform._
 import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.LAPACK._
 import edu.berkeley.bid.SPBLAS._
-import scala.concurrent.ops._
+import scala.concurrent.future
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.language.implicitConversions
 
 class IMatWildcard extends IMat(0,0,null) with MatrixWildcard
 

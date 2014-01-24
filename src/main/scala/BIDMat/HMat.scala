@@ -6,7 +6,8 @@ import java.nio._
 import scala.util.matching.Regex
 import Regex._
 import scala.collection.mutable._
-import scala.concurrent.ops._
+import scala.concurrent.future
+import scala.concurrent.ExecutionContext.Implicits.global
 import MatFunctions._
 import MatHDF5._
 import edu.berkeley.bid.UTILS._
@@ -422,7 +423,7 @@ object HMat {
       	if (m.ir != null) MatHDF5.addOne(m.ir)
       	throw new RuntimeException("Exception in saveSMat "+e)
       }
-      case _ => {
+      case _:Throwable => {
       	MatHDF5.addOne(m.jc)
       	if (m.ir != null) MatHDF5.addOne(m.ir)
       	throw new RuntimeException("Problem in saveSMat")
@@ -461,7 +462,7 @@ object HMat {
       	if (m.ir != null) MatHDF5.addOne(m.ir)
       	throw new RuntimeException("Exception in saveSMat "+e)
       }
-      case _ => {
+      case _:Throwable => {
       	MatHDF5.addOne(m.jc)
       	if (m.ir != null) MatHDF5.addOne(m.ir)
       	throw new RuntimeException("Problem in saveSMat")

@@ -6,7 +6,8 @@ import edu.berkeley.bid.SPBLAS._
 import edu.berkeley.bid.UTILS._
 import java.util.Arrays
 import java.util.concurrent.atomic._
-import scala.concurrent.ops._
+import scala.concurrent.future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 
 case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, nc, data0) {

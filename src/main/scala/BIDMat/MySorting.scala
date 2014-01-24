@@ -2,7 +2,8 @@ package BIDMat
 
 import scala.reflect.ClassManifest
 import scala.math.Ordering
-import scala.concurrent.ops._
+import scala.concurrent.future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object Sorting {
 

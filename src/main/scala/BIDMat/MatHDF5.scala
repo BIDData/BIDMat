@@ -2,6 +2,7 @@ package BIDMat
 import ncsa.hdf.hdf5lib.structs._
 import ncsa.hdf.hdf5lib.H5._
 import ncsa.hdf.hdf5lib.HDF5Constants._
+import scala.reflect._
 
 object MatHDF5 {
   var refcount:Long = -1
@@ -119,7 +120,7 @@ object MatHDF5 {
     }
   }
 
-  def getDenseMat[T : ClassManifest](fid:Int, varname:String, h5class:Int, dsize:Int):DenseMat[T] = {
+  def getDenseMat[T : ClassTag](fid:Int, varname:String, h5class:Int, dsize:Int):DenseMat[T] = {
 	val data_id = H5Dopen(fid, varname, H5P_DEFAULT)
 	val data_type_id = H5Dget_type(data_id)
 	val data_class = H5Tget_class(data_type_id)
@@ -188,7 +189,7 @@ object MatHDF5 {
 	try {
 	  ir_id = H5Dopen(fid, varname+"/ir", H5P_DEFAULT)
 	} catch {
-	  case _ => {}
+	  case _:Throwable => {}
 	}
 	val sdata = if (ir_id >= 0) {
 	  SparseMat(nrows, ncols, nnz) 
@@ -352,7 +353,7 @@ object MatHDF5 {
 	try {
 	  H5Dwrite(jc_id, convert_ints, H5S_ALL, H5S_ALL, H5P_DEFAULT, a.jc)
 	} catch  {
-	  case e => {
+	  case e:Throwable => {
 		addOne(a.jc)
 		throw new RuntimeException("Error writing sparse mat "+e)
 	  }
@@ -372,7 +373,7 @@ object MatHDF5 {
 	  try {
 		H5Dwrite(ir_id, convert_ints, H5S_ALL, H5S_ALL, H5P_DEFAULT, a.ir)
 	  } catch  {
-		case e => {
+		case e:Throwable => {
 		  addOne(a.ir)
 		  throw new RuntimeException("Error writing sparse mat "+e)
 		}
