@@ -18,7 +18,9 @@ class Options {
     println("Type        Value       Field Name")
     println("====        =====       ==========")
     for (meth <- a) {
-    	println("%-10s  %-10s  %s" format (meth.getReturnType.getSimpleName, meth.invoke(this).toString, meth.getName))
+      val ref = meth.invoke(this)
+      val valstr = if (ref != null) ref.toString else "null"
+    	println("%-10s  %-10s  %s" format (meth.getReturnType.getSimpleName, valstr, meth.getName))
     }    
   }
 }
