@@ -2,7 +2,8 @@ package BIDMat
 
 import edu.berkeley.bid.comm.{IVec,LVec,Vec}
 import edu.berkeley.bid.comm.AllReduceX
-import scala.concurrent.ops._
+import scala.concurrent.future
+import scala.concurrent.ExecutionContext.Implicits.global
 import BIDMat.MatFunctions._
 import BIDMat.SciFunctions._
 import java.util.concurrent.CountDownLatch

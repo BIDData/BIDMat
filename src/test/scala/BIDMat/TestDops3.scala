@@ -21,7 +21,7 @@ object TestDops3 {
     for (i <- 0 until m) {
 //      val c = b * a
 //      val e = a * d
-      val c = a t
+      val c = a.t
     }
     val t1 = currentTime - t0
 	println("time="+t1+"msec, gflops="+(2.0*k*n*l*m/t1/1e6))

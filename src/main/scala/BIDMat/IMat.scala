@@ -114,7 +114,7 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   }
   
   override def copy = {
-  	val out = IMat.newOrCheckIMat(nrows, ncols, null, GUID, "copy"##)
+  	val out = IMat.newOrCheckIMat(nrows, ncols, null, GUID, "copy".##)
   	System.arraycopy(data, 0, out.data, 0, length)
   	out
   }

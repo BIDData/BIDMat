@@ -7,7 +7,8 @@ import jcuda.runtime.cudaMemcpyKind._
 import jcuda.jcublas._
 import jcuda.jcublas.JCublas._
 import jcuda.jcusparse._
-import scala.concurrent.ops._
+import scala.concurrent.future
+import scala.concurrent.ExecutionContext.Implicits.global
 import edu.berkeley.bid.CUMAT
 import GSMat._
 

@@ -1,6 +1,5 @@
 package edu.berkeley.bid;
 import jcuda.*;
-import jcuda.runtime.*;
 
 public final class CUMAT {
 

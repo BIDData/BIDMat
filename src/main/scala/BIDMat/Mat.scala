@@ -340,7 +340,7 @@ object Mat {
     _cache2.synchronized {
       val keys = _cache2.keySet
       keys.foreach((key:Tuple2[Long,Int]) => {
-      	val toremove:Boolean = _cache2.get(key) match {
+      	val toremove:Boolean = _cache2.get(key).get match {
       	case aa:GMat => (aa.myGPU == ithread) 
       	case aa:GSMat => (aa.myGPU == ithread)
       	case _ => false
@@ -354,7 +354,7 @@ object Mat {
     _cache3.synchronized {
       val keys = _cache3.keySet
       keys.foreach((key:Tuple3[Long,Long,Int]) => {
-      	val toremove:Boolean = _cache3.get(key) match {
+      	val toremove:Boolean = _cache3.get(key).get match {
       	case aa:GMat => (aa.myGPU == ithread) 
       	case aa:GSMat => (aa.myGPU == ithread)
       	case _ => false
@@ -368,7 +368,7 @@ object Mat {
     _cache3.synchronized {
       val keys = _cache4.keySet
       keys.foreach((key:Tuple4[Long,Long,Long,Int]) => {
-      	val toremove:Boolean = _cache4.get(key) match {
+      	val toremove:Boolean = _cache4.get(key).get match {
       	case aa:GMat => (aa.myGPU == ithread) 
       	case aa:GSMat => (aa.myGPU == ithread)
       	case _ => false
@@ -396,7 +396,7 @@ object Mat {
     		jcuda.LibUtils.loadLibrary("bidmatmkl")
     		jcuda.LibUtils.loadLibrary("jhdf5")
     	} catch {
-    	case _ => {
+    	case _:Throwable => {
     		println("Cant find native CPU libraries")
     		noMKL = true
     	}
@@ -418,14 +418,14 @@ object Mat {
     				try{
     					System.loadLibrary(libnames.next)
     				} catch {
-    				case _ => found = false
+    				case _:Throwable => found = false
     				}
     			}
     			if (!found) throw new RuntimeException("Couldnt find a cudart lib")
     		}
     		jcuda.LibUtils.loadLibrary("JCudaRuntime")
     	} catch {
-    	case _ =>  {
+    	case _:Throwable =>  {
     		println("Cant find CUDA SDK or JCUDA")
     		hasCUDA = -1    		
     	}
@@ -446,13 +446,13 @@ object Mat {
     	} catch {
     	case e:NoClassDefFoundError => println("Couldn't load the JCUDA driver")
     	case e:Exception => println("Exception while initializing JCUDA driver")
-    	case _ => println("Something went wrong while loading JCUDA driver")
+    	case _:Throwable => println("Something went wrong while loading JCUDA driver")
     	}
     	if (hasCUDA > 0) {
     	  try {
     	    jcuda.LibUtils.loadLibrary("bidmatcuda")
     	  } catch {
-    	  case _ => println("Something went wrong while loading BIDMat CUDA library")
+    	  case _:Throwable => println("Something went wrong while loading BIDMat CUDA library")
     	  }
     	}
     }
