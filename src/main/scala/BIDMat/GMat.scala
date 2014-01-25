@@ -477,6 +477,17 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   		a
   }
   
+  def copyTo(a:GIMat):GIMat = {
+    if (nrows != a.nrows || ncols != a.ncols)
+      throw new RuntimeException("dimensions mismatch in GIMat <-- GMat")
+    val err = CUMAT.toInt(data, a.data, length)
+    if (err != 0) {
+    	println("device is %d" format SciFunctions.getGPU)
+    	throw new RuntimeException("error in copyTo " + cudaGetErrorString(err))
+    }
+    a
+  }
+  
   def copyFrom(in:FMat):GMat = {
   		cublasSetVector(nrows*ncols, Sizeof.FLOAT, Pointer.to(in.data), 1, data, 1)
   		cudaDeviceSynchronize()
@@ -504,6 +515,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     out match {
       case a:FMat => copyTo(a)
       case a:GMat => copyTo(a)
+      case a:GIMat => copyTo(a)
     }
   }
   

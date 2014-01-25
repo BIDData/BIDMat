@@ -226,6 +226,40 @@ int apply_gfun(float *A, float *B, int N, int opn) {
   return err;
 }
 
+__global__ void __toFloat(int *A, float *B, int N) {
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {
+    B[i] = (float)(A[i]);
+  }
+}
+
+__global__ void __toInt(float *A, int *B, int N) {
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {
+    B[i] = (int)(A[i]);
+  }
+}
+
+int toFloat(int *A, float *B, int N) {
+  int nthreads;
+  dim3 griddims;
+  setsizes(N, &griddims, &nthreads);
+  __toFloat<<<griddims,nthreads>>>(A, B, N);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int toInt(float *A, int *B, int N) {
+  int nthreads;
+  dim3 griddims;
+  setsizes(N, &griddims, &nthreads);
+  __toInt<<<griddims,nthreads>>>(A, B, N);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
 __global__ void __apply_gfun2(float *A, float *B, float *C, int N, int opn) {
   optype fn = fctns2[opn];
   int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
