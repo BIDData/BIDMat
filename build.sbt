@@ -22,7 +22,7 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "2.0" % "test"
 
 libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.11.2" % "test"
 
-libraryDependencies += "junit" % "junit" % "4.5" % "test"
+libraryDependencies += "junit" % "junit" % "4.10" % "test"
 
 credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 
