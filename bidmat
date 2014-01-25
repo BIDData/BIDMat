@@ -34,6 +34,6 @@ else
 	NEWPATH=`${BIDMAT_ROOT}/shortpath.bat "${CUDA_PATH}"`
 	NEWPATH=`echo $NEWPATH | sed 's_\\\\_/_g'`/bin
     fi
-    JAVA_OPTS="-Djava.library.path=${BIDMAT_ROOT}/lib;${NEWPATH} "$JAVA_OPTS
+JAVA_OPTS="-Djava.library.path=${BIDMAT_ROOT}/lib;${NEWPATH} "$JAVA_OPTS
 fi
 scala -nobootcp -cp "${ALL_LIBS}" -Yrepl-sync -i ${LIBDIR}/bidmat_init.scala
