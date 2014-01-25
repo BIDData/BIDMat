@@ -223,6 +223,9 @@ object MatFunctions {
   def isortlexdown(a:CSMat):IMat = DenseMat.isortlex(a, false)
   def uniquerows(a:CSMat):(CSMat, IMat, IMat) = { val (ii, jj) = DenseMat.uniquerows2(a) ; (a(ii,?), ii, jj)}
   
+  def sort2(a:GMat):(GMat,GIMat) = GMat.sort2(a)
+  def sortdown2(a:GMat):(GMat,GIMat) = GMat.sortdown2(a)
+  
   def find(a:SDMat) = a.find   
   def find2(a:SDMat) = a.find2    
   def find3(a:SDMat) = a.find3
