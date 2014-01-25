@@ -45,6 +45,25 @@ extern "C" {
     return set_ival(nativeA, vv, length);
   }
 
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_toFloat 
+  (JNIEnv *env, jobject obj, jobject jA, jobject jB, jint N)
+  {
+    int *A = (int*)getPointer(env, jA);
+    float *B = (float*)getPointer(env, jB);
+
+    return toFloat(A, B, N);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_toInt 
+  (JNIEnv *env, jobject obj, jobject jA, jobject jB, jint N)
+  {
+    float *A = (float*)getPointer(env, jA);
+    int *B = (int*)getPointer(env, jB);
+
+    return toInt(A, B, N);
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_applyop 
   (JNIEnv *env, jobject obj, jobject jA, jint Anrows, jint Ancols, 
    jobject jB, jint Bnrows, jint Bncols, jobject jC, jint opn) 

@@ -2,16 +2,11 @@
 #include <stdio.h>
 #include "MatKernel.hpp"
 
-#ifdef __CUDA_ARCH__ 
 #if __CUDA_ARCH__ > 200
 #define MAXXGRID 2147483647
 #else
 #define MAXXGRID 65535
 #endif
-#else
-#define MAXXGRID 65535
-#endif
-
 
 __device__ float op_add(float a, float b) {return a+b;}
 __device__ float op_sub(float a, float b) {return a-b;}
@@ -221,6 +216,40 @@ int apply_gfun(float *A, float *B, int N, int opn) {
   dim3 griddims;
   setsizes(N, &griddims, &nthreads);
   __apply_gfun<<<griddims,nthreads>>>(A, B, N, opn);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+__global__ void __toFloat(int *A, float *B, int N) {
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {
+    B[i] = (float)(A[i]);
+  }
+}
+
+__global__ void __toInt(float *A, int *B, int N) {
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {
+    B[i] = (int)(A[i]);
+  }
+}
+
+int toFloat(int *A, float *B, int N) {
+  int nthreads;
+  dim3 griddims;
+  setsizes(N, &griddims, &nthreads);
+  __toFloat<<<griddims,nthreads>>>(A, B, N);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int toInt(float *A, int *B, int N) {
+  int nthreads;
+  dim3 griddims;
+  setsizes(N, &griddims, &nthreads);
+  __toInt<<<griddims,nthreads>>>(A, B, N);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
@@ -808,7 +837,6 @@ __global__ void __reducebin1op(int nrows, int ncols, float *A, float *B, float *
 
 #define DDS_BLKY 32
 
-#ifdef __CUDA_ARCH__
 #if __CUDA_ARCH__ > 200
 
 __global__ void __dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P) {
@@ -900,7 +928,6 @@ __global__ void __dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic
 
 __global__ void __dds0(int nrows, int ncols, float *A, float *B, int *Cir, int *Cjc, float *P) {}
 #endif
-#endif
 
 int dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P) {
   dim3 blockDims(min(32,nrows), min(DDS_BLKY, 1+(nrows-1)/64), 1);
@@ -922,7 +949,6 @@ int dds0(int nrows, int ncols, float *A, float *B, int *Cir, int *Cic, float *P)
   return err;
 }
 
-#ifdef __CUDA_ARCH__
 #if __CUDA_ARCH__ > 200
 
 __global__ void __reduce1op(int nrows, int ncols, float *A, float *B, int opn) {
@@ -963,7 +989,6 @@ __global__ void __reduce1op(int nrows, int ncols, float *A, float *B, int opn) {
   }
 }
 #endif
-#endif
 
 int reduce1op(int nrows, int ncols, float *A, float *B, int opn) {
   int blkx = min(32, nrows);
@@ -977,7 +1002,6 @@ int reduce1op(int nrows, int ncols, float *A, float *B, int opn) {
 }
 
 
-#ifdef __CUDA_ARCH__
 #if __CUDA_ARCH__ > 200
 
 __global__ void __reducebin1op(int nrows, int ncols, float *A, float *B, float *C, int opb, int opr) {
@@ -1019,7 +1043,6 @@ __global__ void __reducebin1op(int nrows, int ncols, float *A, float *B, float *
     __syncthreads();
   }
 }
-#endif
 #endif
 
 int reducebin1op(int nrows, int ncols, float *A, float *B, float *C, int opb, int opr) {
@@ -1667,7 +1690,6 @@ int radixcounts(float *a, int n, int digit, unsigned int *bi) {
   return err;
 }
 
-#ifdef __CUDA_ARCH__
 #if __CUDA_ARCH__ > 200
 
 #define GENDISTS(DFNAME,DFUNC) \
@@ -1797,7 +1819,6 @@ __global__ void __msum(float *A, int lda, float *B, int ldb, float *C, int ldc, 
   printf("Warning, Max-sum multiply not supported on arch <= 200\n");
 }
 #endif
-#endif
 
 int dists(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nrows, int ncols, float p) {
   dim3 blockdim(32,4,4);
@@ -1836,8 +1857,6 @@ __global__ void __dmv(float *a, int nrows, int ncols, float *b, float *c) {
   }
 }
 
-
-#ifdef __CUDA_ARCH__
 #if __CUDA_ARCH__ > 200
 
 __global__ void __dmvt(float *a, int nrows, int ncols, float *b, float *c) {
@@ -1866,7 +1885,6 @@ __global__ void __dmvt(float *a, int nrows, int ncols, float *b, float *c) {
   }
 }
 
-#endif
 #endif
 
 __global__ void __dmv0(float *a, int nrows, int ncols, int tstep, float *b, float *c) {

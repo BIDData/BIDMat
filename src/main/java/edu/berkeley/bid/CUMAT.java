@@ -9,6 +9,10 @@ public final class CUMAT {
         jcuda.LibUtils.loadLibrary("bidmatcuda");
     }
 
+    public static native int toFloat(Pointer A, Pointer B, int N);
+
+    public static native int toInt(Pointer A, Pointer B, int N);
+
     public static native int applyop(Pointer A, int Anrows, int Ancols, Pointer B, int Bnrows, int Bncols, Pointer C, int opn);
 
     public static native int applyiop(Pointer A, int Anrows, int Ancols, Pointer B, int Bnrows, int Bncols, Pointer C, int opn);
