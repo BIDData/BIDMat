@@ -16,6 +16,8 @@ int toFloat(int *A, float *B, int N);
 
 int toInt(float *A, int *B, int N);
 
+int initSeq(int *A, int nrows, int ncols);
+
 int apply_gfun(float *nativeA, float *nativeB, int N, int opn);
 
 int apply_gfun2(float *nativeA, float *nativeB, float *nativeC, int N, int opn);

@@ -1392,6 +1392,24 @@ object GMat {
     Mat.nflops += keys.length
   }
   
+  def sort2(keys:GMat):(GMat,GIMat) = {
+	 val nkeys = GMat.newOrCheckGMat(keys.nrows, keys.ncols, null, keys.GUID, "GMat.sort2".##)
+	 val nvals = GIMat.newOrCheckGIMat(keys.nrows, keys.ncols, null, keys.GUID, "GMat.sort2i".##)
+	 CUMAT.initSeq(nvals.data, keys.nrows, keys.ncols)
+	 nkeys <-- keys
+	 sortGPU(nkeys, nvals)
+	 (nkeys, nvals)
+  }
+  
+  def sortdown2(keys:GMat):(GMat,GIMat) = {
+	 val nkeys = GMat.newOrCheckGMat(keys.nrows, keys.ncols, null, keys.GUID, "GMat.sortdown2".##)
+	 val nvals = GIMat.newOrCheckGIMat(keys.nrows, keys.ncols, null, keys.GUID, "GMat.sortdown2i".##)
+	 CUMAT.initSeq(nvals.data, keys.nrows, keys.ncols)
+	 nkeys <-- keys
+	 sortdownGPU(nkeys, nvals)
+	 (nkeys, nvals)
+  }
+  
   def sortGPU(keys:GMat, vals:GIMat):Unit = _sortGPU(keys, vals, true)
   
   def sortdownGPU(keys:GMat, vals:GIMat):Unit = _sortGPU(keys, vals, false)
