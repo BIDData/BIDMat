@@ -2,6 +2,8 @@
 #include <curand_kernel.h>
 #include <stdio.h>
 
+#define NEG_INFINITY 0xff800000
+
 #if __CUDA_ARCH__ > 200
 
 // Compute one level of random forest evaluation for a set of 32 trees. 
@@ -21,15 +23,16 @@
 // In each column of ns feature indices for a tree node, the 0^th index is actually the floating point threshold for the node. 
 // It is converted and saved in a variable named fthresh
 
-// currently the number of rows for the trees array must be a multiple of 32. 
+// ATHREADS and BTHREADS match blockDim.x and blockDim.y (they're used for sizing the arrays). 
+// REPTREES is the number of trees processed by each "y" thread group.
 
 template<int ATHREADS, int BTHREADS, int REPTREES>
 __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, float *otv, int nrows, int ncols, int ns, int tstride, int ntrees) {
-
   int bd;
   __shared__ int pos[REPTREES][ATHREADS];
   __shared__ float totals[REPTREES][ATHREADS];
   unsigned int tind;
+  int ttop;
   float vv[REPTREES];
 
   for (bd = blockIdx.x; bd < ncols; bd += gridDim.x) {
@@ -46,21 +49,28 @@ __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, float *
       if (threadIdx.y + k*BTHREADS < ntrees) {
         for (int j = threadIdx.x; j < ns+1; j += blockDim.x) {
           tind = trees[j + (ns+1)*pos[k][threadIdx.y] + (threadIdx.y+k*BTHREADS)*tstride];
+          ttop = __shfl(*((int *)&tind), 0);
+          if (ttop == NEG_INFINITY) {
+            vv[k] = ttop;
+            break;
+          }
           if (j > 0) {
             vv[k] += feats[tind + bd * nrows];  
           }              
         }
       }
     }
-
-    // Sum the contents of the totals array
+    // vv[k] is a thread variable, so sum it over the threads
 #pragma unroll
-    for (int i = 1; i < 32; i *= 2) {
+    for (int k = 0; k < REPTREES; k++) {
+      if (vv[k] != NEG_INFINITY) {            // This is a leaf node, dont do anything (leaf marker will be output)
 #pragma unroll
-      for (int k = 0; k < REPTREES; k++) {
-        vv[k] += __shfl_down(vv[k], i);
+        for (int i = 1; i < 32; i *= 2) {
+          vv[k] += __shfl_down(vv[k], i);
+        }
       }
     }
+
     if (threadIdx.x == 0) {
 #pragma unroll
       for (int k = 0; k < REPTREES; k++) {   // and save in the totals array
@@ -86,6 +96,8 @@ __global__ void __treesteps(unsigned int *trees, float *feats, int *tpos, int *o
   __shared__ float thresh[REPTREES][ATHREADS];
   __shared__ float totals[REPTREES][ATHREADS];
   unsigned int tind;
+  int ttop;
+  int kk;
   float vv[REPTREES];
 
   for (bd = blockIdx.x; bd < ncols; bd += gridDim.x) {
@@ -99,23 +111,32 @@ __global__ void __treesteps(unsigned int *trees, float *feats, int *tpos, int *o
 #pragma unroll
       for (int k = 0; k < REPTREES; k++) {
         vv[k] = 0;
-        if (threadIdx.y + k*BTHREADS < ntrees) {
+        kk = threadIdx.y + k*BTHREADS; 
+        if (kk < ntrees) {
           for (int j = threadIdx.x; j < ns+1; j += blockDim.x) {
             tind = trees[j + (ns+1)*pos[k][threadIdx.y] + (threadIdx.y+k*BTHREADS)*tstride];
             if (j == 0) {
-              thresh[k][threadIdx.y] = *((float *)&tind);
-            } else {
-              vv[k] += feats[tind + bd * nrows];  
+              thresh[k][threadIdx.y] = *((float *)&tind); // Save the node threshold
+            }
+            ttop = __shfl(*((int *)&tind), 0);                         
+            if (ttop == NEG_INFINITY) {            // This is a leaf
+              if (j == 1) {
+                pos[k][threadIdx.y] = tind;        // Save the class label
+              }
+              break;
+            }
+            if (j > 0) {
+              vv[k] += feats[tind + bd * nrows];  // Non-leaf, compute the node score
             }              
           }
         }
       }
 
-      // Sum the contents of the totals array
+      // Since vv[k] is a thread variable, sum it over threads
 #pragma unroll
-      for (int i = 1; i < 32; i *= 2) {
+      for (int k = 0; k < REPTREES; k++) {
 #pragma unroll
-        for (int k = 0; k < REPTREES; k++) {
+        for (int i = 1; i < 32; i *= 2) {
           vv[k] += __shfl_down(vv[k], i);
         }
       }
@@ -129,11 +150,13 @@ __global__ void __treesteps(unsigned int *trees, float *feats, int *tpos, int *o
       // check thresholds and save as needed
       __syncthreads();
       if (threadIdx.x + threadIdx.y*ATHREADS < ntrees) {
-        newt = 2 * pos[threadIdx.y][threadIdx.x] + 1;
-        if (totals[threadIdx.y][threadIdx.x] > thresh[threadIdx.y][threadIdx.x]) {
-          newt++;
-        }
-        pos[threadIdx.y][threadIdx.x] = newt; 
+        if (thresh[threadIdx.y][threadIdx.x] != NEG_INFINITY) {  // Check if non-leaf
+          newt = 2 * pos[threadIdx.y][threadIdx.x] + 1;
+          if (totals[threadIdx.y][threadIdx.x] > thresh[threadIdx.y][threadIdx.x]) {
+            newt++;
+          }
+          pos[threadIdx.y][threadIdx.x] = newt; 
+        }                          // Do nothing if its a leaf, pos already contains the class label
       }  
       __syncthreads();
     }

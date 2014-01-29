@@ -1716,7 +1716,7 @@ object GMat {
       val key = (matGuid, opHash)
       val res = Mat.cache2(key)
       if (res != null) {
-      	newOrCheckGMat(nr, nc, res)
+        newOrCheckGMat(nr, nc, res)
       } else {
         val omat = newOrCheckGMat(nr, nc, null)
         Mat.cache2put(key, omat)
@@ -1754,7 +1754,7 @@ object GMat {
     	newOrCheckGMat(nr, nc, outmat)
     } else {
     	val key = (guid1, guid2, guid3, opHash)
-    	val res = Mat.cache4(key)
+        val res = Mat.cache4(key)
     	if (res != null) {
     		newOrCheckGMat(nr, nc, res)
     	} else {
