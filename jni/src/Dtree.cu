@@ -60,7 +60,7 @@ __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, float *
         }
       }
     }
-    // vv[k] is a thread variable, so sum it over the threads
+    // vv[k] is a thread variable, so sum it over the warp threads
 #pragma unroll
     for (int k = 0; k < REPTREES; k++) {
       if (vv[k] != NEG_INFINITY) {            // This is a leaf node, dont do anything (leaf marker will be output)
