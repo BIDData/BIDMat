@@ -22,6 +22,25 @@ __device__ void rotate1(int &a0) {
   asm("shr.b32" "%0, %1, 8;": "=r" (a0) : "r" (a0)); 
 }
 
+__device__ void editcell(unsigned int a0, unsigned int a1, unsigned int m, unsigned int &b0, unsigned int &b1) {
+  unsigned int a, am, c, nd, ne, f0, f1;
+  a = a0 & ~ a1;              // a = 1
+  am = a & m;
+  c = (a + am) ^ a ^ am;      // carry bit
+  nd = m | c | (a0 & a1);     // complement of diagonal bit d
+  ne = nd >> 1;               // shifted diagonal bit
+
+  f0 = nd ^ ne;               // f = bits of e - d
+  f1 = ne & ~ nd;
+  b0 = a0 ^ f0;
+  b1 = (a1 & ~ f0) | (f1 & ~ a0) ; 
+}
+
+__device__ void shlc(unsigned int &a0, unsigned int &a1) {
+  asm("add.cc.u32" "%0, %1, %2;": "=r" (a0) : "r" (a0), "r" (a0));
+  asm("addc.cc.u32" "%0, %1, %2;": "=r" (a1) : "r" (a1), "r" (a1));
+}
+
 template<int VECLEN, int NVEC, int TLEN>
   __global__ void __hammingdists(int *a, int *b, int *w, int *op, int *ow, int n) {   
   __shared__ int sa[TLEN];
