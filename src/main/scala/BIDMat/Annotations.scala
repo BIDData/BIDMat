@@ -20,7 +20,7 @@ class Options {
     for (meth <- a) {
       val cname = meth.getDeclaringClass().getName
       val ref = meth.invoke(this)
-      val valstr = if (ref != null) "\"" + ref.toString + "\"" else "null"
+      val valstr = if (ref != null) ref.toString else "null"
     	println("%-10s  %-10s  %s" format (meth.getReturnType.getSimpleName, valstr, meth.getName))
     }    
   }
