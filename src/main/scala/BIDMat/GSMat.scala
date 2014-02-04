@@ -327,7 +327,7 @@ object GSMat {
     }
     var err = CUMAT.LDAgibbs(A.nrows, C.nnz, A.data, B.data, AN.data, BN.data, C.ir, C.ic, C.data, nsamps)
     if (err != 0) throw new RuntimeException(("GPU %d LDAgibbs kernel error "+cudaGetErrorString(err)) format SciFunctions.getGPU)
-    Mat.nflops += 2L * C.nnz * A.nrows   
+    Mat.nflops += 12L * C.nnz * A.nrows   // Charge 10 for Poisson RNG
   }
   
   def LDAgibbsx(A:GMat, B:GMat, C:GSMat, Ms:GIMat, Us:GIMat):Unit = {
@@ -336,7 +336,7 @@ object GSMat {
     }
     var err = CUMAT.LDAgibbsx(A.nrows, C.nnz, A.data, B.data, C.ir, C.ic, C.data, Ms.data, Us.data, Ms.nrows)
     if (err != 0) throw new RuntimeException(("GPU %d LDAgibbs kernel error "+cudaGetErrorString(err)) format SciFunctions.getGPU)
-    Mat.nflops += 2L * C.nnz * A.nrows   
+    Mat.nflops += 12L * C.nnz * A.nrows    // Charge 10 for Poisson RNG
   }
   
   def newOrCheckGSMat(nrows:Int, ncols:Int, nnz:Int, oldmat:Mat):GSMat = {

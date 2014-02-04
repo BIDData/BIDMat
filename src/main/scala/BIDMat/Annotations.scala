@@ -19,9 +19,12 @@ class Options {
     println("====        =====       ==========")
     for (meth <- a) {
       val cname = meth.getDeclaringClass().getName
-      val ref = meth.invoke(this)
-      val valstr = if (ref != null) ref.toString else "null"
-    	println("%-10s  %-10s  %s" format (meth.getReturnType.getSimpleName, valstr, meth.getName))
+      val params = meth.getParameterTypes();
+      if (params.length == 0) {
+        val ref = meth.invoke(this)
+        val valstr = if (ref != null) ref.toString else "null"
+        println("%-10s  %-10s  %s" format (meth.getReturnType.getSimpleName, valstr, meth.getName))
+      }
     }    
   }
 }
