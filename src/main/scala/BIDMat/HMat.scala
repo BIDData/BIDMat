@@ -304,7 +304,8 @@ object HMat {
     hints(2) = m.ncols
     hints(3) = 0
     writeSomeInts(gout, hints, tbuf, 4)
-    val buff = ByteBuffer.allocate(math.min(DEFAULT_BUFSIZE, 4*m.ncols*m.nrows)).order(byteOrder)
+    val bsize = 4*m.ncols*m.nrows
+    val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder)
     writeSomeFloats(gout, m.data, buff, m.nrows*m.ncols)
     gout.close
   }
@@ -318,7 +319,8 @@ object HMat {
     hints(2) = m.ncols
     hints(3) = 0
     writeSomeInts(gout, hints, tbuf, 4)
-    val buff = ByteBuffer.allocate(math.min(DEFAULT_BUFSIZE, 4*m.ncols*m.nrows)).order(byteOrder)
+    val bsize = 4*m.ncols*m.nrows
+    val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder)
     writeSomeInts(gout, m.data, buff, m.nrows*m.ncols)
     gout.close
   }
@@ -332,7 +334,8 @@ object HMat {
     hints(2) = m.ncols
     hints(3) = 0
     writeSomeInts(gout, hints, tbuf, 4)
-    val buff = ByteBuffer.allocate(math.min(DEFAULT_BUFSIZE, 4*m.ncols*m.nrows)).order(byteOrder)
+    val bsize = 8*m.ncols*m.nrows
+    val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder)
     writeSomeDoubles(gout, m.data, buff, m.nrows*m.ncols)
     gout.close
   }
