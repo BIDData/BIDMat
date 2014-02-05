@@ -3,7 +3,6 @@ package BIDMat
 import java.lang.reflect.Method
 import scala.util.Sorting._
 
-
 class about(x:String) extends scala.annotation.Annotation {}
 
 class Options {
