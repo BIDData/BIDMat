@@ -43,6 +43,31 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   def vertcat(b: FMat) = FMat(gvertcat(b))
   
+  override def nnz:Int = {
+    var count:Int = 0
+    var i = 0
+    while (i < length) {
+      if (data(i) != 0) {
+        count += 1
+      }
+      i += 1
+    }
+    count
+  }
+  
+  override def findInds(out:IMat, off:Int):IMat = {
+    var count = 0
+    var i = off
+    while (i < length+off) {
+      if (data(i) != 0) {
+        out.data(count) = i
+        count += 1
+      } 
+      i += 1
+    }
+    out
+  }
+  
   def find3:(IMat, IMat, FMat) = { val (ii, jj, vv) = gfind3 ; (IMat(ii), IMat(jj), FMat(vv)) }
   
   override def apply(a:IMat):FMat = FMat(gapply(a))
@@ -652,13 +677,13 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def ** (b : FMat) = kron(b, null)
   def ⊗  (b : FMat) = kron(b, null)
   
-  def >   (b : FMat) = ffMatOp(b, FMat.gtFun, null)
-  def <   (b : FMat) = ffMatOp(b, FMat.ltFun, null)
-  def ==  (b : FMat) = ffMatOp(b, FMat.eqFun, null)
-  def === (b : FMat) = ffMatOp(b, FMat.eqFun, null)
-  def >=  (b : FMat) = ffMatOp(b, FMat.geFun, null)
-  def <=  (b : FMat) = ffMatOp(b, FMat.leFun, null)
-  def !=  (b : FMat) = ffMatOp(b, FMat.neFun, null)
+  def >   (b : FMat) = ffMatOpv(b, FMat.vecGTFun, null)
+  def <   (b : FMat) = ffMatOpv(b, FMat.vecLTFun, null)
+  def ==  (b : FMat) = ffMatOpv(b, FMat.vecEQFun, null)
+  def === (b : FMat) = ffMatOpv(b, FMat.vecEQFun, null)
+  def >=  (b : FMat) = ffMatOpv(b, FMat.vecGEFun, null)
+  def <=  (b : FMat) = ffMatOpv(b, FMat.vecLEFun, null)
+  def !=  (b : FMat) = ffMatOpv(b, FMat.vecNEFun, null)
   
   /*
    * Scalar operations
@@ -670,13 +695,13 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def ∘  (b : Float) = ffMatOpScalarv(b, FMat.vecMulFun, null)
   def /  (b : Float) = ffMatOpScalarv(b, FMat.vecDivFun, null)
   
-  def >   (b : Float) = ffMatOpScalar(b, FMat.gtFun, null)
-  def <   (b : Float) = ffMatOpScalar(b, FMat.ltFun, null)
-  def ==  (b : Float) = ffMatOpScalar(b, FMat.eqFun, null)
-  def === (b : Float) = ffMatOpScalar(b, FMat.eqFun, null)
-  def >=  (b : Float) = ffMatOpScalar(b, FMat.geFun, null)
-  def <=  (b : Float) = ffMatOpScalar(b, FMat.leFun, null)
-  def !=  (b : Float) = ffMatOpScalar(b, FMat.neFun, null) 
+  def >   (b : Float) = ffMatOpScalarv(b, FMat.vecGTFun, null)
+  def <   (b : Float) = ffMatOpScalarv(b, FMat.vecLTFun, null)
+  def ==  (b : Float) = ffMatOpScalarv(b, FMat.vecEQFun, null)
+  def === (b : Float) = ffMatOpScalarv(b, FMat.vecEQFun, null)
+  def >=  (b : Float) = ffMatOpScalarv(b, FMat.vecGEFun, null)
+  def <=  (b : Float) = ffMatOpScalarv(b, FMat.vecLEFun, null)
+  def !=  (b : Float) = ffMatOpScalarv(b, FMat.vecNEFun, null) 
 
   def *  (b : Double) = fDMult(FMat.elem(b.toFloat), null)
   def +  (b : Double) = ffMatOpScalarv(b.toFloat, FMat.vecAddFun, null)
@@ -685,13 +710,13 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def ∘  (b : Double) = ffMatOpScalarv(b.toFloat, FMat.vecMulFun, null)
   def /  (b : Double) = ffMatOpScalarv(b.toFloat, FMat.vecDivFun, null)
 
-  def >   (b : Double) = ffMatOpScalar(b.toFloat, FMat.gtFun, null)
-  def <   (b : Double) = ffMatOpScalar(b.toFloat, FMat.ltFun, null)
-  def ==  (b : Double) = ffMatOpScalar(b.toFloat, FMat.eqFun, null)
-  def === (b : Double) = ffMatOpScalar(b.toFloat, FMat.eqFun, null)
-  def >=  (b : Double) = ffMatOpScalar(b.toFloat, FMat.geFun, null)
-  def <=  (b : Double) = ffMatOpScalar(b.toFloat, FMat.leFun, null)
-  def !=  (b : Double) = ffMatOpScalar(b.toFloat, FMat.neFun, null) 
+  def >   (b : Double) = ffMatOpScalarv(b.toFloat, FMat.vecGTFun, null)
+  def <   (b : Double) = ffMatOpScalarv(b.toFloat, FMat.vecLTFun, null)
+  def ==  (b : Double) = ffMatOpScalarv(b.toFloat, FMat.vecEQFun, null)
+  def === (b : Double) = ffMatOpScalarv(b.toFloat, FMat.vecEQFun, null)
+  def >=  (b : Double) = ffMatOpScalarv(b.toFloat, FMat.vecGEFun, null)
+  def <=  (b : Double) = ffMatOpScalarv(b.toFloat, FMat.vecLEFun, null)
+  def !=  (b : Double) = ffMatOpScalarv(b.toFloat, FMat.vecNEFun, null) 
    
   def *  (b : Int) = fDMult(FMat.elem(b), null)
   def +  (b : Int) = ffMatOpScalarv(b, FMat.vecAddFun, null)
@@ -700,13 +725,13 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def ∘  (b : Int) = ffMatOpScalarv(b, FMat.vecMulFun, null)
   def /  (b : Int) = ffMatOpScalarv(b, FMat.vecDivFun, null)
   
-  def >   (b : Int) = ffMatOpScalar(b, FMat.gtFun, null)
-  def <   (b : Int) = ffMatOpScalar(b, FMat.ltFun, null)
-  def ==  (b : Int) = ffMatOpScalar(b, FMat.eqFun, null)
-  def === (b : Int) = ffMatOpScalar(b, FMat.eqFun, null)
-  def >=  (b : Int) = ffMatOpScalar(b, FMat.geFun, null)
-  def <=  (b : Int) = ffMatOpScalar(b, FMat.leFun, null)
-  def !=  (b : Int) = ffMatOpScalar(b, FMat.neFun, null) 
+  def >   (b : Int) = ffMatOpScalarv(b, FMat.vecGTFun, null)
+  def <   (b : Int) = ffMatOpScalarv(b, FMat.vecLTFun, null)
+  def ==  (b : Int) = ffMatOpScalarv(b, FMat.vecEQFun, null)
+  def === (b : Int) = ffMatOpScalarv(b, FMat.vecEQFun, null)
+  def >=  (b : Int) = ffMatOpScalarv(b, FMat.vecGEFun, null)
+  def <=  (b : Int) = ffMatOpScalarv(b, FMat.vecLEFun, null)
+  def !=  (b : Int) = ffMatOpScalarv(b, FMat.vecNEFun, null) 
   
   def \ (b: FMat) = horzcat(b)
   def \ (b: Float) = horzcat(FMat.elem(b))
@@ -1258,6 +1283,53 @@ object FMat {
     }
     0
   }
+ 
+ def vecEQ(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = if (a(ai) == b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+ 
+  def vecNE(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = if (a(ai) != b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+  
+   def vecGT(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = if (a(ai) > b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+ 
+  def vecLT(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = if (a(ai) < b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+   def vecGE(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = if (a(ai) >= b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+ 
+  def vecLE(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = if (a(ai) <= b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
   
   val vecAddFun = (vecAdd _) 
   val vecSubFun = (vecSub _) 
@@ -1266,6 +1338,13 @@ object FMat {
   val vecPowFun = (vecPow _)
   val vecMaxFun = (vecMax _)
   val vecMinFun = (vecMin _)
+  
+  val vecEQFun = (vecEQ _) 
+  val vecNEFun = (vecNE _) 
+  val vecGTFun = (vecGT _)
+  val vecLTFun = (vecLT _)
+  val vecGEFun = (vecGE _)
+  val vecLEFun = (vecLE _)
   
   def lexcomp(a:FMat, out:IMat):(Int, Int) => Int = {
   	val aa = a.data
