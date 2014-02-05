@@ -318,6 +318,8 @@ object Mop_HCat extends Mop {
   override def op(a:FMat, b:FMat, c:Mat):FMat = a \ b
   override def op(a:DMat, b:DMat, c:Mat):DMat = a \ b
   override def op(a:IMat, b:IMat, c:Mat):IMat = a \ b
+  override def op(a:SMat, b:SMat, c:Mat):SMat = a \ b
+  override def op(a:SDMat, b:SDMat, c:Mat):SDMat = a \ b
   override def op(a:CMat, b:CMat, c:Mat):CMat = a \ b
 }
 
@@ -326,6 +328,8 @@ object Mop_VCat extends Mop {
   override def op(a:FMat, b:FMat, c:Mat):FMat = a on b
   override def op(a:DMat, b:DMat, c:Mat):DMat = a on b
   override def op(a:IMat, b:IMat, c:Mat):IMat = a on b
+  override def op(a:SMat, b:SMat, c:Mat):SMat = a on b
+  override def op(a:SDMat, b:SDMat, c:Mat):SDMat = a on b
   override def op(a:CMat, b:CMat, c:Mat):CMat = a on b
 }
 
