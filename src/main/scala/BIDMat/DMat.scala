@@ -42,6 +42,31 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   def horzcat(b: DMat) = DMat(ghorzcat(b))
 
   def vertcat(b: DMat) = DMat(gvertcat(b))
+  
+  override def nnz:Int = {
+    var count:Int = 0
+    var i = 0
+    while (i < length) {
+      if (data(i) != 0) {
+        count += 1
+      }
+      i += 1
+    }
+    count
+  }
+  
+  override def findInds(out:IMat, off:Int):IMat = {
+    var count = 0
+    var i = off
+    while (i < length+off) {
+      if (data(i) != 0) {
+        out.data(count) = i
+        count += 1
+      } 
+      i += 1
+    }
+    out
+  }
 
   def find3:(IMat, IMat, DMat) = { val (ii, jj, vv) = gfind3 ; (ii, jj, DMat(vv)) }
 
