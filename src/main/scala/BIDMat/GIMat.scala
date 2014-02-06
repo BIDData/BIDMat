@@ -390,6 +390,26 @@ object GIMat {
     }
   }
   
+  def apply(a:GMat):GIMat = {
+    val rsize = a.nrows*a.ncols
+    val retv = GIMat.newOrCheckGIMat(a.nrows, a.ncols, null, a.GUID, SciFunctions.getGPU, "GIMat_GMat".##)
+    var err = CUMAT.toInt(a.data, retv.data, a.length)
+    cudaDeviceSynchronize()
+    if (err == 0) err = cudaGetLastError()
+    if (err != 0) {
+        println("device is %d" format SciFunctions.getGPU)
+        throw new RuntimeException("GIMat(GMat) error " + cudaGetErrorString(err))
+    }
+    retv
+  }
+  
+  def apply(a:Mat):GIMat = a match {
+    case aa:GIMat => aa
+    case aa:IMat => GIMat(aa)
+    case aa:GMat => GIMat(aa)
+    case aa:FMat => GIMat(GMat(aa))
+  }
+  
   def apply(a:Int):GIMat = {
     val out = GIMat.newOrCheckGIMat(1, 1, null, a.##, "GIMat_Int".##)
     out.set(a)
