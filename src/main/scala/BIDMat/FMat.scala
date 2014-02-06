@@ -1002,13 +1002,13 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   def ^* (b : FDSPair) = MatFunctions.DDS(mat, b.left, b.right, omat)
   def Tx (b : FDSPair) = MatFunctions.DDS(mat, b.left, b.right, omat)
 
-  def > (b : FMat) = mat.ffMatOp(b, FMat.gtFun, omat)
-  def < (b : FMat) = mat.ffMatOp(b, FMat.ltFun, omat)
-  def == (b : FMat) = mat.ffMatOp(b, FMat.eqFun, omat)
-  def === (b : FMat) = mat.ffMatOp(b, FMat.eqFun, omat)
-  def >= (b : FMat) = mat.ffMatOp(b, FMat.geFun, omat)
-  def <= (b : FMat) = mat.ffMatOp(b, FMat.leFun, omat)
-  def != (b : FMat) = mat.ffMatOp(b, FMat.neFun, omat) 
+  def > (b : FMat) = mat.ffMatOpv(b, FMat.vecGTFun, omat)
+  def < (b : FMat) = mat.ffMatOpv(b, FMat.vecLTFun, omat)
+  def == (b : FMat) = mat.ffMatOpv(b, FMat.vecEQFun, omat)
+  def === (b : FMat) = mat.ffMatOpv(b, FMat.vecEQFun, omat)
+  def >= (b : FMat) = mat.ffMatOpv(b, FMat.vecGEFun, omat)
+  def <= (b : FMat) = mat.ffMatOpv(b, FMat.vecLEFun, omat)
+  def != (b : FMat) = mat.ffMatOpv(b, FMat.vecNEFun, omat) 
 
   /*
    * Scalar second arguments
@@ -1036,12 +1036,12 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   def /  (b : Double) = mat.ffMatOpScalarv(b.toFloat, FMat.vecDivFun, omat)
   def ^ (b : Double) = mat.ffMatOpScalar(b.toFloat, FMat.powFun, omat)
 
-  def > (b : Double) = mat.ffMatOpScalar(b.toFloat, FMat.gtFun, omat)
-  def < (b : Double) = mat.ffMatOpScalar(b.toFloat, FMat.ltFun, omat)
-  def == (b : Double) = mat.ffMatOpScalar(b.toFloat, FMat.eqFun, omat)
-  def >= (b : Double) = mat.ffMatOpScalar(b.toFloat, FMat.geFun, omat)
-  def <= (b : Double) = mat.ffMatOpScalar(b.toFloat, FMat.leFun, omat)
-  def != (b : Double) = mat.ffMatOpScalar(b.toFloat, FMat.neFun, omat)
+  def > (b : Double) = mat.ffMatOpScalarv(b.toFloat, FMat.vecGTFun, omat)
+  def < (b : Double) = mat.ffMatOpScalarv(b.toFloat, FMat.vecLTFun, omat)
+  def == (b : Double) = mat.ffMatOpScalarv(b.toFloat, FMat.vecEQFun, omat)
+  def >= (b : Double) = mat.ffMatOpScalarv(b.toFloat, FMat.vecGEFun, omat)
+  def <= (b : Double) = mat.ffMatOpScalarv(b.toFloat, FMat.vecLEFun, omat)
+  def != (b : Double) = mat.ffMatOpScalarv(b.toFloat, FMat.vecNEFun, omat)
     
   def * (b : Int) = mat.fDMult(FMat.elem(b), omat)
   def + (b : Int) = mat.ffMatOpScalarv(b, FMat.vecAddFun, omat)
@@ -1051,12 +1051,12 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   def /  (b : Int) = mat.ffMatOpScalarv(b, FMat.vecDivFun, omat)
   def ^ (b : Int) = mat.ffMatOpScalar(b, FMat.powFun, omat)
 
-  def > (b : Int) = mat.ffMatOpScalar(b, FMat.gtFun, omat)
-  def < (b : Int) = mat.ffMatOpScalar(b, FMat.ltFun, omat)
-  def == (b : Int) = mat.ffMatOpScalar(b, FMat.eqFun, omat)
-  def >= (b : Int) = mat.ffMatOpScalar(b, FMat.geFun, omat)
-  def <= (b : Int) = mat.ffMatOpScalar(b, FMat.leFun, omat)
-  def != (b : Int) = mat.ffMatOpScalar(b, FMat.neFun, omat)
+  def > (b : Int) = mat.ffMatOpScalarv(b, FMat.vecGTFun, omat)
+  def < (b : Int) = mat.ffMatOpScalarv(b, FMat.vecLTFun, omat)
+  def == (b : Int) = mat.ffMatOpScalarv(b, FMat.vecEQFun, omat)
+  def >= (b : Int) = mat.ffMatOpScalarv(b, FMat.vecGEFun, omat)
+  def <= (b : Int) = mat.ffMatOpScalarv(b, FMat.vecLEFun, omat)
+  def != (b : Int) = mat.ffMatOpScalarv(b, FMat.vecNEFun, omat)
   
   /*
    * Specialize to IMat
