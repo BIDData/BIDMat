@@ -289,13 +289,13 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   def *@ (b : IMat) = iiMatOpv(b, IMat.vecMulFun, null)
   def ∘  (b : IMat) = iiMatOpv(b, IMat.vecMulFun, null)
   def /  (b : IMat) = iiMatOpv(b, IMat.vecDivFun, null)
-  def >   (b : IMat) = iiMatOp(b, IMat.gtFun, null)
-  def <   (b : IMat) = iiMatOp(b, IMat.ltFun, null)
-  def ==  (b : IMat) = iiMatOp(b, IMat.eqFun, null)
-  def === (b : IMat) = iiMatOp(b, IMat.eqFun, null)
-  def >=  (b : IMat) = iiMatOp(b, IMat.geFun, null)
-  def <=  (b : IMat) = iiMatOp(b, IMat.leFun, null)
-  def !=  (b : IMat) = iiMatOp(b, IMat.neFun, null)
+  def >   (b : IMat) = iiMatOpv(b, IMat.vecGTFun, null)
+  def <   (b : IMat) = iiMatOpv(b, IMat.vecLTFun, null)
+  def ==  (b : IMat) = iiMatOpv(b, IMat.vecEQFun, null)
+  def === (b : IMat) = iiMatOpv(b, IMat.vecEQFun, null)
+  def >=  (b : IMat) = iiMatOpv(b, IMat.vecGEFun, null)
+  def <=  (b : IMat) = iiMatOpv(b, IMat.vecLEFun, null)
+  def !=  (b : IMat) = iiMatOpv(b, IMat.vecNEFun, null)
   def ∙  (b : IMat):IMat = dot(b)
   def ∙→ (b : IMat):IMat = dotr(b)
   def ∙∙ (b : IMat):Double = ddot(b)
@@ -315,17 +315,28 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
 //  def /@ (b : Int) = mat.iiMatOpScalarv(b, IMat.fVecDiv _, null)
 //  def ^ (b : Int) = mat.iiMatOpScalar(b, (x:Float, y:Float) => math.pow(x,y).toFloat, null)
 
-  def > (b : Int) = iiMatOpScalar(b, IMat.gtFun, null)
-  def < (b : Int) = iiMatOpScalar(b, IMat.ltFun, null)
-  def == (b : Int) = iiMatOpScalar(b, IMat.eqFun, null)
-  def >= (b : Int) = iiMatOpScalar(b, IMat.geFun, null)
-  def <= (b : Int) = iiMatOpScalar(b, IMat.leFun, null)
-  def != (b : Int) = iiMatOpScalar(b, IMat.neFun, null) 
+  def > (b : Int) = iiMatOpScalarv(b, IMat.vecGTFun, null)
+  def < (b : Int) = iiMatOpScalarv(b, IMat.vecLTFun, null)
+  def == (b : Int) = iiMatOpScalarv(b, IMat.vecEQFun, null)
+  def >= (b : Int) = iiMatOpScalarv(b, IMat.vecGEFun, null)
+  def <= (b : Int) = iiMatOpScalarv(b, IMat.vecLEFun, null)
+  def != (b : Int) = iiMatOpScalarv(b, IMat.vecNEFun, null)
   
-  def == (b : Float) = iiMatOpScalar(b.toInt, IMat.eqFun, null)
-  def == (b : Double) = iiMatOpScalar(b.toInt, IMat.eqFun, null)
-  def != (b : Float) = iiMatOpScalar(b.toInt, IMat.neFun, null)
-  def != (b : Double) = iiMatOpScalar(b.toInt, IMat.neFun, null)
+  def > (b : Float) = iiMatOpScalarv(b.toInt, IMat.vecGTFun, null)
+  def < (b : Float) = iiMatOpScalarv(b.toInt, IMat.vecLTFun, null)
+  def == (b : Float) = iiMatOpScalarv(b.toInt, IMat.vecEQFun, null)
+  def >= (b : Float) = iiMatOpScalarv(b.toInt, IMat.vecGEFun, null)
+  def <= (b : Float) = iiMatOpScalarv(b.toInt, IMat.vecLEFun, null)
+  def != (b : Float) = iiMatOpScalarv(b.toInt, IMat.vecNEFun, null)
+  
+  def > (b : Double) = iiMatOpScalarv(b.toInt, IMat.vecGTFun, null)
+  def < (b : Double) = iiMatOpScalarv(b.toInt, IMat.vecLTFun, null)
+  def == (b : Double) = iiMatOpScalarv(b.toInt, IMat.vecEQFun, null)
+  def >= (b : Double) = iiMatOpScalarv(b.toInt, IMat.vecGEFun, null)
+  def <= (b : Double) = iiMatOpScalarv(b.toInt, IMat.vecLEFun, null)
+  def != (b : Double) = iiMatOpScalarv(b.toInt, IMat.vecNEFun, null)
+  
+
  /*
   * Specialize to FMats to help the type system. 
   */
@@ -541,13 +552,13 @@ class IPair(val omat:Mat, val mat:IMat) extends Pair {
 //  def /@ (b : IMat) = mat.iiMatOpv(b, IMat.fVecDiv _, omat)  
 //  def ^ (b : IMat) = mat.iiMatOp(b, (x:Float, y:Float) => math.pow(x,y).toFloat, omat)  
 
-  def > (b : IMat) = mat.iiMatOp(b, IMat.gtFun, omat)
-  def < (b : IMat) = mat.iiMatOp(b, IMat.ltFun, omat)
-  def == (b : IMat) = mat.iiMatOp(b, IMat.eqFun, omat)
-  def === (b : IMat) = mat.iiMatOp(b, IMat.eqFun, omat)
-  def >= (b : IMat) = mat.iiMatOp(b, IMat.geFun, omat)
-  def <= (b : IMat) = mat.iiMatOp(b, IMat.leFun, omat)
-  def != (b : IMat) = mat.iiMatOp(b, IMat.neFun, omat) 
+  def > (b : IMat) = mat.iiMatOpv(b, IMat.vecGTFun, omat)
+  def < (b : IMat) = mat.iiMatOpv(b, IMat.vecLTFun, omat)
+  def == (b : IMat) = mat.iiMatOpv(b, IMat.vecEQFun, omat)
+  def === (b : IMat) = mat.iiMatOpv(b, IMat.vecEQFun, omat)
+  def >= (b : IMat) = mat.iiMatOpv(b, IMat.vecGEFun, omat)
+  def <= (b : IMat) = mat.iiMatOpv(b, IMat.vecLEFun, omat)
+  def != (b : IMat) = mat.iiMatOpv(b, IMat.vecNEFun, omat) 
   
    
   def * (b : Int) = mat.iMult(IMat.ielem(b), omat)
@@ -558,12 +569,12 @@ class IPair(val omat:Mat, val mat:IMat) extends Pair {
 //  override def /@ (b : Int) = mat.iiMatOpScalarv(b, IMat.fVecDiv _, omat)
 //  override def ^ (b : Int) = mat.iiMatOpScalar(b, (x:Float, y:Float) => math.pow(x,y).toFloat, omat)
 
-  def > (b : Int) = mat.iiMatOpScalar(b, IMat.gtFun, omat)
-  def < (b : Int) = mat.iiMatOpScalar(b, IMat.ltFun, omat)
-  def == (b : Int) = mat.iiMatOpScalar(b, IMat.eqFun, omat)
-  def >= (b : Int) = mat.iiMatOpScalar(b, IMat.geFun, omat)
-  def <= (b : Int) = mat.iiMatOpScalar(b, IMat.leFun, omat)
-  def != (b : Int) = mat.iiMatOpScalar(b, IMat.neFun, omat) 
+  def > (b : Int) = mat.iiMatOpScalarv(b, IMat.vecGTFun, omat)
+  def < (b : Int) = mat.iiMatOpScalarv(b, IMat.vecLTFun, omat)
+  def == (b : Int) = mat.iiMatOpScalarv(b, IMat.vecEQFun, omat)
+  def >= (b : Int) = mat.iiMatOpScalarv(b, IMat.vecGEFun, omat)
+  def <= (b : Int) = mat.iiMatOpScalarv(b, IMat.vecLEFun, omat)
+  def != (b : Int) = mat.iiMatOpScalarv(b, IMat.vecNEFun, omat) 
   
   /*
    * Specialize to FMat
@@ -782,6 +793,54 @@ object IMat {
     }
     0
   }
+  
+   def vecEQ(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = if (a(ai) == b(bi)) 1 else 0;  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+ 
+  def vecNE(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = if (a(ai) != b(bi)) 1 else 0;  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+  
+   def vecGT(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = if (a(ai) > b(bi)) 1 else 0;  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+ 
+  def vecLT(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = if (a(ai) < b(bi)) 1 else 0;  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+  
+  def vecGE(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = if (a(ai) >= b(bi)) 1 else 0;  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+ 
+  def vecLE(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    while (ci < cend) {
+      c(ci) = if (a(ai) <= b(bi)) 1 else 0;  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
  
   def lexcomp(a:IMat, inds:IMat):(Int, Int) => Int = {
   	val aa = a.data
@@ -822,6 +881,13 @@ object IMat {
   val vecDivFun = (vecDiv _)
   val vecMaxFun = (vecMax _)
   val vecMinFun = (vecMin _)
+  
+  val vecEQFun = (vecEQ _) 
+  val vecNEFun = (vecNE _) 
+  val vecGTFun = (vecGT _)
+  val vecLTFun = (vecLT _)
+  val vecGEFun = (vecGE _)
+  val vecLEFun = (vecLE _)
   
   val gtFun = (x:Int, y:Int) => if (x > y) 1 else 0
   val geFun = (x:Int, y:Int) => if (x >= y) 1 else 0
