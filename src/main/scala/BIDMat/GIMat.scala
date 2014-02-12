@@ -253,6 +253,28 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     this
   }
   
+  def horzcat(a:GIMat, omat:Mat) = {
+    if (nrows != a.nrows)
+      throw new RuntimeException("GMat \\ row dims not equal")
+    val out = GIMat.newOrCheckGIMat(nrows, ncols+a.ncols, omat, GUID, a.GUID, "horzcat".##)
+    cudaMemcpy(out.data, data, 1L*length*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize()
+    cudaMemcpy(out.data.withByteOffset(1L*length*Sizeof.FLOAT), a.data, 1L*a.length*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize()
+    out
+  }
+  
+  def vertcat(a:GIMat, omat:Mat) = {
+    if (ncols != a.ncols)
+      throw new RuntimeException("GMat on row dims not equal")
+    val out = GIMat.newOrCheckGIMat(nrows+a.nrows, ncols, omat, GUID, a.GUID, "vertcat".##)
+    cudaMemcpy2D(out.data, 1L*out.nrows*Sizeof.FLOAT, data, 1L*nrows*Sizeof.FLOAT, 1L*nrows*Sizeof.FLOAT, 1L*ncols, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize()
+    cudaMemcpy2D(out.data.withByteOffset(1L*nrows*Sizeof.FLOAT), 1L*out.nrows*Sizeof.FLOAT, a.data, 1L*a.nrows*Sizeof.FLOAT, 1L*a.nrows*Sizeof.FLOAT,  1L*a.ncols, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize()
+    out
+  }
+  
   def GIop(a:GIMat, oldmat:Mat, op:Int):GIMat = {
     if ((nrows == a.nrows && ncols == a.ncols) ||
         (nrows == a.nrows && (a.ncols == 1 || ncols == 1)) ||
@@ -341,6 +363,8 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   def >= (b : GIMat) = GIop(b, null, 7)
   def <= (b : GIMat) = GIop(b, null, 8)
   def != (b : GIMat) = GIop(b, null, 9)
+  def on(a : GIMat) = vertcat(a, null)
+  def \ (a : GIMat) = horzcat(a, null)
   
   def ~ (b: GIMat) = new GIPair(this, b)
 
@@ -364,6 +388,9 @@ class GIPair (val omat:Mat, val mat:GIMat) extends Pair{
 	def >= (b : GIMat) = mat.GIop(b, omat, 7)
 	def <= (b : GIMat) = mat.GIop(b, omat, 8)
 	def != (b : GIMat) = mat.GIop(b, omat, 9)
+	
+	def on(a : GIMat) = mat.vertcat(a, omat)
+	def \ (a : GIMat) = mat.horzcat(a, omat)
 }
 
 class GIMatWildcard extends GIMat(0,0,null,0) with MatrixWildcard

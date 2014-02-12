@@ -16,6 +16,7 @@ trait Mop {
   def op(a:CMat, b:CMat, c:Mat):CMat = {notImplemented(myname, a, b); a}
   def op(a:SMat, b:SMat, c:Mat):SMat = {notImplemented(myname, a, b); a}
   def op(a:GMat, b:GMat, c:Mat):GMat = {notImplemented(myname, a, b); a}
+  def op(a:GIMat, b:GIMat, c:Mat):GIMat = {notImplemented(myname, a, b); a}
   def op(a:GSMat, b:GSMat, c:Mat):GSMat = {notImplemented(myname, a, b); a}
   def op(a:SDMat, b:SDMat, c:Mat):SDMat = {notImplemented(myname, a, b); a}
   
@@ -154,6 +155,7 @@ trait Mop {
       case bb:IMat => op(a, bb, c)
       case bb:DMat => op(a, bb, c)
       case bb:GMat => op(a, bb, c)
+      case bb:GIMat => op(a, bb, c)
       case bb:GSMat => op(a, bb, c)
     }
   }
@@ -191,7 +193,8 @@ trait Mop {
   def getCPair(c:Mat, a:CMat):CPair = new CPair(c, a)  
   def getSPair(c:Mat, a:SMat):SPair = new SPair(c, a) 
   def getSDPair(c:Mat, a:SDMat):SDPair = new SDPair(c, a)
-  def getGPair(c:Mat, a:GMat):GPair = new GPair(c, a)  
+  def getGPair(c:Mat, a:GMat):GPair = new GPair(c, a) 
+  def getGIPair(c:Mat, a:GIMat):GIPair = new GIPair(c, a) 
   def getGSPair(c:Mat, a:GSMat):GSPair = new GSPair(c, a)
 }
 
@@ -321,6 +324,8 @@ object Mop_HCat extends Mop {
   override def op(a:SMat, b:SMat, c:Mat):SMat = a \ b
   override def op(a:SDMat, b:SDMat, c:Mat):SDMat = a \ b
   override def op(a:CMat, b:CMat, c:Mat):CMat = a \ b
+  override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) \ b
+  override def op(a:GIMat, b:GIMat, c:Mat):GIMat = getGIPair(c, a) \ b
 }
 
 object Mop_VCat extends Mop {
@@ -331,6 +336,8 @@ object Mop_VCat extends Mop {
   override def op(a:SMat, b:SMat, c:Mat):SMat = a on b
   override def op(a:SDMat, b:SDMat, c:Mat):SDMat = a on b
   override def op(a:CMat, b:CMat, c:Mat):CMat = a on b
+  override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) on b
+  override def op(a:GIMat, b:GIMat, c:Mat):GIMat = getGIPair(c, a) on b
 }
 
 object Mop_LT extends Mop { 
@@ -339,6 +346,7 @@ object Mop_LT extends Mop {
   override def op(a:DMat, b:DMat, c:Mat):DMat = getDPair(c, a) < b
   override def op(a:IMat, b:IMat, c:Mat):IMat = getIPair(c, a) < b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) < b
+  override def op(a:GIMat, b:GIMat, c:Mat):GIMat = getGIPair(c, a) < b
 }
 
 object Mop_GT extends Mop { 
@@ -347,6 +355,8 @@ object Mop_GT extends Mop {
   override def op(a:DMat, b:DMat, c:Mat):DMat = getDPair(c, a) > b
   override def op(a:IMat, b:IMat, c:Mat):IMat = getIPair(c, a) > b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) > b
+  override def op(a:GIMat, b:GIMat, c:Mat):GIMat = getGIPair(c, a) > b
+  
 }
 
 object Mop_LE extends Mop {
@@ -355,6 +365,7 @@ object Mop_LE extends Mop {
   override def op(a:DMat, b:DMat, c:Mat):DMat = getDPair(c, a) <= b
   override def op(a:IMat, b:IMat, c:Mat):IMat = getIPair(c, a) <= b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) <= b
+  override def op(a:GIMat, b:GIMat, c:Mat):GIMat = getGIPair(c, a) <= b
 }
 
 object Mop_GE extends Mop { 
@@ -363,6 +374,7 @@ object Mop_GE extends Mop {
   override def op(a:DMat, b:DMat, c:Mat):DMat = getDPair(c, a) >= b
   override def op(a:IMat, b:IMat, c:Mat):IMat = getIPair(c, a) >= b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) >= b
+  override def op(a:GIMat, b:GIMat, c:Mat):GIMat = getGIPair(c, a) >= b
 }
 
 object Mop_EQ extends Mop { 
@@ -372,6 +384,7 @@ object Mop_EQ extends Mop {
   override def op(a:IMat, b:IMat, c:Mat):IMat = getIPair(c, a) == b
   override def op(a:CMat, b:CMat, c:Mat):CMat = getCPair(c, a) == b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) == b
+  override def op(a:GIMat, b:GIMat, c:Mat):GIMat = getGIPair(c, a) == b
 }
 
 object Mop_NE extends Mop { 
@@ -381,4 +394,5 @@ object Mop_NE extends Mop {
   override def op(a:IMat, b:IMat, c:Mat):IMat = getIPair(c, a) != b
   override def op(a:CMat, b:CMat, c:Mat):CMat = getCPair(c, a) != b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) != b
+  override def op(a:GIMat, b:GIMat, c:Mat):GIMat = getGIPair(c, a) != b
 }
