@@ -922,6 +922,81 @@ object MatFunctions {
     a.jc(n) = n+ioff
     a
   }
+  
+  /*
+   * Distribute the data in the vv matrix using indices in the indx matrix into the mats array. 
+   * Left and right are the range of the output buffer indices. 
+   * Element vv(i) goes into buffer number (indx(i)-left)
+   */
+  def distribute(indx:FMat, vv:IMat, mats:Array[IMat], locs:IMat, left:Int, right:Int) {
+    if (indx.nrows != vv.nrows || vv.ncols != mats(0).ncols)
+      throw new RuntimeException("Partition: dimensions mismatch")
+    var i = 0
+    while (i < indx.nrows) {
+      val ind = indx.data(i).toInt
+      if (ind >= left && ind < right) {
+        val ix = ind - left
+        val m = mats(ix)
+        var j = 0
+        while (j < vv.ncols) { 
+          m.data(locs.data(ix) + j * m.nrows) = vv.data(i + j * vv.nrows)
+          j += 1
+        }
+        locs.data(ix) = locs.data(ix) + 1
+      }      
+      i += 1
+    }
+  }
+  
+  /*
+   * Distribute the data in the vv matrix using indices in the indx matrix into the mats array. 
+   * Left and right are the range of the output buffer indices. 
+   * Element vv(i) goes into buffer number (indx(i)-left)
+   */
+  def distribute(indx:IMat, vv:IMat, mats:Array[IMat], locs:IMat, left:Int, right:Int) {
+    if (indx.nrows != vv.nrows || vv.ncols != mats(0).ncols)
+      throw new RuntimeException("Partition: dimensions mismatch")
+    var i = 0
+    while (i < indx.nrows) {
+      val ind = indx.data(i)
+      if (ind >= left && ind < right) {
+        val ix = ind - left
+        val m = mats(ix)
+        var j = 0
+        while (j < vv.ncols) { 
+          m.data(locs.data(ix) + j * m.nrows) = vv.data(i + j * vv.nrows)
+          j += 1
+        }
+        locs.data(ix) = locs.data(ix) + 1
+      }      
+      i += 1
+    }
+  }
+  
+  /*
+   * Distribute the data in the vv matrix using indices in the indx matrix into the mats array. 
+   * Left and right are the range of the output buffer indices. 
+   * Element vv(i) goes into buffer number (indx(i)-left)
+   */
+  def distribute(indx:IMat, vv:FMat, mats:Array[FMat], locs:IMat, left:Int, right:Int) {
+    if (indx.nrows != vv.nrows || vv.ncols != mats(0).ncols)
+      throw new RuntimeException("Partition: dimensions mismatch")
+    var i = 0
+    while (i < indx.nrows) {
+      val ind = indx.data(i)
+      if (ind >= left && ind < right) {
+        val ix = ind - left
+        val m = mats(ix)
+        var j = 0
+        while (j < vv.ncols) { 
+          m.data(locs.data(ix) + j * m.nrows) = vv.data(i + j * vv.nrows)
+          j += 1
+        }
+        locs.data(ix) = locs.data(ix) + 1
+      }      
+      i += 1
+    }
+  }
 
   def load[T](fname:String, vname:String):T = MatHDF5.hload(fname, vname).asInstanceOf[T]
 
