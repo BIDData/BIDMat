@@ -259,6 +259,28 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   override def iones(m:Int, n:Int) = {
     GIMat.iones(m,n)
   }
+  
+  def horzcat(a:GMat, omat:Mat) = {
+    if (nrows != a.nrows)
+      throw new RuntimeException("GMat \\ row dims not equal")
+    val out = GMat.newOrCheckGMat(nrows, ncols+a.ncols, omat, GUID, a.GUID, "horzcat".##)
+    cudaMemcpy(out.data, data, 1L*length*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize()
+    cudaMemcpy(out.data.withByteOffset(1L*length*Sizeof.FLOAT), a.data, 1L*a.length*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize()
+    out
+  }
+  
+  def vertcat(a:GMat, omat:Mat) = {
+    if (ncols != a.ncols)
+      throw new RuntimeException("GMat on row dims not equal")
+    val out = GMat.newOrCheckGMat(nrows+a.nrows, ncols, omat, GUID, a.GUID, "vertcat".##)
+    cudaMemcpy2D(out.data, 1L*out.nrows*Sizeof.FLOAT, data, 1L*nrows*Sizeof.FLOAT, 1L*nrows*Sizeof.FLOAT, 1L*ncols, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize()
+    cudaMemcpy2D(out.data.withByteOffset(1L*nrows*Sizeof.FLOAT), 1L*out.nrows*Sizeof.FLOAT, a.data, 1L*a.nrows*Sizeof.FLOAT, 1L*a.nrows*Sizeof.FLOAT,  1L*a.ncols, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize()
+    out
+  }
 
   def GMult(a:GMat, oldmat:Mat):GMat = {
     if (ncols == 1 && nrows == 1) {
@@ -605,6 +627,9 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   def != (b : Float) = gOp(GMat(b), null, op_ne)
   def != (b : Int) = gOp(GMat(b), null, op_ne)
   def != (b : Double) = gOp(GMat(b), null, op_ne)
+  
+  def on(a : GMat) = vertcat(a, null)
+  def \ (a : GMat) = horzcat(a, null)
    
  /*
   * Specialize to IMats to help the type system. 
@@ -802,6 +827,8 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
 	def dotr (b :GMat) = mat.dotr(b, omat) 
 	def ∙ (b :GMat) = mat.dot(b, omat)
 	def ∙→ (b :GMat) = mat.dotr(b, omat)
+	def on(a : GMat) = mat.vertcat(a, omat)
+	def \ (a : GMat) = mat.horzcat(a, omat)
 	
 	override def == (b : Float) = mat.gOp(GMat(b), omat, op_eq)
   override def != (b : Float) = mat.gOp(GMat(b), omat, op_ne)
