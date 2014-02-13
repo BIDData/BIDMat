@@ -423,12 +423,21 @@ object Mat {
     			}
     			if (!found) throw new RuntimeException("Couldnt find a cudart lib")
     		}
-    		jcuda.LibUtils.loadLibrary("JCudaRuntime")
     	} catch {
     	case _:Throwable =>  {
-    		println("Cant find CUDA SDK or JCUDA")
+    		println("Couldnt load CUDA runtime")
     		hasCUDA = -1    		
     	}
+    	}
+    	if (hasCUDA >= 0) {
+    	  try {
+    	    jcuda.LibUtils.loadLibrary("JCudaRuntime")
+    	  } catch {
+    	  case _:Throwable =>  {
+    	    println("Couldnt load JCuda")
+    	    hasCUDA = -1            
+    	  }
+    	  }
     	}
     }
     if (hasCUDA >= 0) {
