@@ -20,13 +20,46 @@ object MatFunctions {
 
   def toc:Float = {(currentTime - currentTimeWasThen)/1000.0f}
   
+  /**
+   * Reset timer and flop counters. Complement to flop which returns the time and
+   * flops since the last flip. 
+   */
+  
   def flip = { lastFlops = Mat.nflops ; tic }
   
+  /**
+   * Wrap 
+   * {{{
+   * flip; code; val f=flop 
+   * }}}
+   * around any code you want to profile. 
+   * f is a tuple of (flops,time)
+   */
+  
   def flop:(Float, Float) = { val t1 = toc; ( (Mat.nflops -lastFlops)/t1, t1 ) }
+  
+  /**
+   * Wrap 
+   * {{{
+   * flip; code; val g=gflop 
+   * }}}
+   * around any code you want to profile. 
+   * g is a tuple of (gflops,time)
+   */
 
   def gflop:(Float, Float) = { val t1 = toc; ( (Mat.nflops -lastFlops)/t1/1e9f, t1 ) }
   
+  /**
+   * Return the size of '''a''' as a (rows, columns) tuple
+   */
+  
   def size(a:Mat):(Int, Int) = (a.nrows, a.ncols)
+  
+  /**
+   * Retrieve the size of '''a''' along axis '''n'''
+ - n=1: Number of rows
+ - n=2: Number of columns
+   */
     
   def size(a:Mat, n:Int):Int = {
   		if (n == 1) {
@@ -38,40 +71,55 @@ object MatFunctions {
   		}
   }
   
+  /** Return the length of '''a''', (number of rows x columns) */  
   def length(a:DMat):Int = a.length
-
+  
+  /** Return the length of '''a''', (number of rows x columns) */
   def length(a:FMat):Int = a.length
-
+  
+  /** Return the length of '''a''', (number of rows x columns) */
   def length(a:IMat):Int = a.length
   
+  /** Return the number of non-zeros in '''a''' */  
   def nnz(a:DMat):Int = a.nnz
-
-  def nnz(a:FMat):Int = a.nnz
-
-  def nnz(a:IMat):Int = a.nnz
   
+  /** Return the number of non-zeros in '''a''' */  
+  def nnz(a:FMat):Int = a.nnz
+  
+  /** Return the number of non-zeros in '''a''' */  
+  def nnz(a:IMat):Int = a.nnz
+   
+  /** Return the number of non-zeros in '''a''' */   
   def nnz(a:SMat):Int = a.nnz
-
+  
+  /** Return the number of non-zeros in '''a''' */  
   def nnz(a:SDMat):Int = a.nnz
   
+  /** implicit to convert floats to 1x1 FMats */  
   implicit def flt2FMat(x:Float):FMat = FMat.elem(x)
-
+  
+  /** implicit to convert doubles to 1x1 FMats */
   implicit def dbl2FMat(x:Double):FMat = FMat.elem(x.toFloat) 
-
+  
+  /** implicit to convert ints to 1x1 IMats */
   implicit def int2IMat(x:Int):IMat = IMat.ielem(x)
   
 //  implicit def dbl2CMat(x:Double):CMat = CMat.celem(x.asInstanceOf[Float],0)
-
+  
+  /** implicit to convert ranges to IMats */
   implicit def range2IMat(x:Range):IMat = irow(x)
   
+  /** implicit to convert 2-tuples to IMats over the range of the 2-tuple */  
   implicit def tuple2IMat(x:Tuple2[Int,Int]):IMat = irow(x._1 until x._2)
-
+  
+  /** implicit to convert an FMat to a DMat */
   implicit def fMat2DMat(x:FMat):DMat = {
     val out = DMat.newOrCheckDMat(x.nrows, x.ncols, null, x.GUID, "fMat2DMat".##)
     Mat.copyToDoubleArray(x.data, 0, out.data, 0, x.length)
     out
   }
-
+  
+  /** implicit to convert an IMat to an FMat */
   implicit def iMat2FMat(x:IMat):FMat = {
     val out = FMat.newOrCheckFMat(x.nrows, x.ncols, null, x.GUID, "iMat2FMat".##)
     Mat.copyToFloatArray(x.data, 0, out.data, 0, x.length)
@@ -148,39 +196,103 @@ object MatFunctions {
   
   def recycleTry(a:Mat, b:Mat, c:Mat):Mat = recycleTry(a, math.max(b.nrows, c.nrows), math.max(b.ncols, c.ncols), b, b.nnz)
 
-  def find(a:DMat) = a.find   
-  def find2(a:DMat) = a.find2    
+  /** Find non-zero linear indices */
+  def find(a:DMat) = a.find
+  
+  /** Find non-zero (row, col) indices */
+  def find2(a:DMat) = a.find2 
+  
+  /** Find non-zero (row, col, value) tuples */
   def find3(a:DMat) = a.find3
+  
+  /** Accumulate (row, col, value) tuples from inds \\ vals. nr and nc are row and column bounds */
   def accum(inds:IMat, vals:DMat, nr:Int, nc:Int) = DMat(DenseMat.accum(inds, vals, nr, nc))
+  
+  /** Accumulate (row, value) tuples from inds \\ vals. nr is row bound. Assumes 1 column */
   def accum(inds:IMat, vals:DMat, nr:Int) = DMat(DenseMat.accum(inds, vals, nr, 1))
+  
+  /** Sort a set of key/ind pairs ascending. */
   def sort(a:DMat, ind:Int):DMat = DMat(DenseMat.sort(a, ind, true))
+  
+  /** Sort a set of keys ascending. */
   def sort(a:DMat):DMat = DMat(DenseMat.sort(a, 0, true))
+  
+  /** Sort a set of keys ascending, and return sorted keys and indices. */
   def sort2(a:DMat):(DMat, IMat) = {val (d,i) = DenseMat.sort2(a, true); (DMat(d), i)}
+  
+  /** Sort a set of keys and return sorted keys and indices along a given direction: 1=columns, 2=rows */
   def sort2(a:DMat,dir:Int):(DMat, IMat) = {val (d,i) = DenseMat.sort2(a, dir, true); (DMat(d), i)}
+  
+  /** Sort a set of key/ind pairs descending. */
   def sortdown(a:DMat, ind:Int):DMat = DMat(DenseMat.sort(a, ind, false))
+  
+  /** Sort a set of keys descending, and return sorted keys and indices. */
   def sortdown(a:DMat):DMat = DMat(DenseMat.sort(a, 0, false))
+  
+  /** Sort a set of keys descending, and return sorted keys and indices. */
   def sortdown2(a:DMat):(DMat, IMat) = {val (d,i) = DenseMat.sort2(a, false); (DMat(d), i)}
+  
+  /** Sort a set of keys descending and return sorted keys and indices along a given direction: 1=columns, 2=rows */
   def sortdown2(a:DMat, dir:Int):(DMat, IMat) = {val (d,i) = DenseMat.sort2(a, dir, false); (DMat(d), i)}
+  
+  /** Lexicographically sort some rows ascending */
   def sortrows(a:DMat):(DMat, IMat) = { val ii = DenseMat.isortlex(a, true); (a(ii,?), ii) }
+  
+  /** Lexicographically sort some rows descending */
   def sortrowsdown(a:DMat):(DMat, IMat) = { val ii = DenseMat.isortlex(a, false); (a(ii,?), ii) }
+  
+  /** Lexicographically sort some rows ascending, return only the indices */
   def isortlex(a:DMat):IMat = DenseMat.isortlex(a, true)
+  
+  /** Lexicographically sort some rows descending, return only the indices */
   def isortlexdown(a:DMat):IMat = DenseMat.isortlex(a, false)
+  
+  /** Find unique rows. Return: (b,ii,jj) s.t. b=uniquerows(a), b=a(ii,?), a=b(jj,?)  */
   def uniquerows(a:DMat):(DMat, IMat, IMat) = { val (ii, jj) = DenseMat.uniquerows2(a) ; (a(ii,?), ii, jj)}
+  
+  /** Find unique elements. Return: (b,ii,jj) s.t. b=unique(a), b=a(ii,?), a=b(jj,?)  */
   def unique(a:DMat):(DMat, IMat, IMat) = {val (ii, jj) =	DenseMat.unique2(if (math.min(a.nrows,a.ncols) > 1) a(?) else a) ; (a(ii), ii, jj)}
   
-  def find(a:FMat) = a.find   
-  def find2(a:FMat) = a.find2    
+  /** Find non-zero linear indices */
+  def find(a:FMat) = a.find  
+  
+  /** Find non-zero (row, col) indices */
+  def find2(a:FMat) = a.find2   
+  
+  /** Find non-zero (row, col, value) tuples */
   def find3(a:FMat) = a.find3
+  
+  /** Accumulate (row, col, value) tuples from inds \\ vals. nr and nc are row and column bounds */
   def accum(inds:IMat, vals:FMat, nr:Int, nc:Int) = FMat(DenseMat.accum(inds, vals, nr, nc))
+  
+  /** Accumulate (row, col, value) tuples from inds \\ vals. nr is row and bounds, ncols = 1 */
   def accum(inds:IMat, vals:FMat, nr:Int) = FMat(DenseMat.accum(inds, vals, nr, 1))
+  
+  /** Sort a set of key/ind pairs ascending. */
   def sort(a:FMat, ind:Int):FMat = FMat(DenseMat.sort(a, ind, true))
+  
+  /** Sort a set of keys ascending. */
   def sort(a:FMat):FMat = FMat(DenseMat.sort(a, 0, true))
+  
+  /** Sort a set of keys ascending, and return sorted keys and indices. */
   def sort2(a:FMat):(FMat, IMat) = {val (d,i) = DenseMat.sort2(a, true); (FMat(d), i)}
+  
+  /** Sort a set of keys and return sorted keys and indices along a given direction: 1=columns, 2=rows */
   def sort2(a:FMat,dir:Int):(FMat, IMat) = {val (d,i) = DenseMat.sort2(a, dir, true); (FMat(d), i)}
-  def sortdown(a:FMat, ind:Int):FMat = FMat(DenseMat.sort(a, ind, false))
+  
+  /** Sort a set of keys descending along a given direction: 1=columns, 2=rows. */
+  def sortdown(a:FMat, dir:Int):FMat = FMat(DenseMat.sort(a, dir, false))
+  
+  /** Sort a set of keys descending. */
   def sortdown(a:FMat):FMat = FMat(DenseMat.sort(a, 0, false))
+  
+  /** Sort a set of keys descending and return sorted keys and indices. */
   def sortdown2(a:FMat):(FMat, IMat) = {val (d,i) = DenseMat.sort2(a, false); (FMat(d), i)}
+  
+  /** Sort a set of keys descending and return sorted keys and indices along a given direction: 1=columns, 2=rows */
   def sortdown2(a:FMat, dir:Int):(FMat, IMat) = {val (d,i) = DenseMat.sort2(a, dir, false); (FMat(d), i)}
+  
+  /** Lexicographically sort rows ascending */
   def sortrows(a:FMat):(FMat, IMat) = { val ii = DenseMat.isortlex(a, true); (a(ii,?), ii) }
   def sortrowsdown(a:FMat):(FMat, IMat) = { val ii = DenseMat.isortlex(a, false); (a(ii,?), ii) }
   def isortlex(a:FMat):IMat = DenseMat.isortlex(a, true)
@@ -188,19 +300,47 @@ object MatFunctions {
   def uniquerows(a:FMat):(FMat, IMat, IMat) = { val (ii, jj) = DenseMat.uniquerows2(a) ; (a(ii,?), ii, jj)}
   def unique(a:FMat):(FMat, IMat, IMat) = {val (ii, jj) =	DenseMat.unique2(if (math.min(a.nrows,a.ncols) > 1) a(?) else a) ; (a(ii), ii, jj)}
   
-  def find(a:IMat) = a.find   
-  def find2(a:IMat) = a.find2    
+  
+  /** Find non-zero linear indices */
+  def find(a:IMat) = a.find 
+  
+  /** Find non-zero (row, col) indices */
+  def find2(a:IMat) = a.find2   
+  
+  /** Find non-zero (row, col, value) tuples */
   def find3(a:IMat) = a.find3
+  
+  /** Accumulate (row, col, value) tuples from inds \\ vals. nr and nc are row and column bounds */
   def accum(inds:IMat, vals:IMat, nr:Int, nc:Int) = IMat(DenseMat.accum(inds, vals, nr, nc))
+  
+  /** Accumulate (row, col, value) tuples from inds \\ vals. nr is row and bounds, ncols = 1 */
   def accum(inds:IMat, vals:IMat, nr:Int) = IMat(DenseMat.accum(inds, vals, nr, 1))
+  
+  /** Sort a set of key/ind pairs ascending. */
   def sort(a:IMat, ind:Int):IMat = IMat(DenseMat.sort(a, ind, true))
+  
+  /** Sort a set of keys ascending. */
   def sort(a:IMat):IMat = IMat(DenseMat.sort(a, 0, true))
+  
+  /** Sort a set of keys ascending, and return sorted keys and indices. */
   def sort2(a:IMat):(IMat, IMat) = {val (d,i) = DenseMat.sort2(a, true); (IMat(d), i)}
+  
+  /** Sort a set of keys and return sorted keys and indices along a given direction: 1=columns, 2=rows */
   def sort2(a:IMat,dir:Int):(IMat, IMat) = {val (d,i) = DenseMat.sort2(a, dir, true); (IMat(d), i)}
-  def sortdown(a:IMat, ind:Int):IMat = IMat(DenseMat.sort(a, ind, false))
+  
+  /** Sort a set of keys descending along a given direction: 1=columns, 2=rows. */
+  def sortdown(a:IMat, dir:Int):IMat = IMat(DenseMat.sort(a, dir, false))
+  
+  /** Sort a set of keys descending. */
   def sortdown(a:IMat):IMat = IMat(DenseMat.sort(a, 0, false))
+  
+  /** Sort a set of keys descending and return sorted keys and indices. */
   def sortdown2(a:IMat):(IMat, IMat) = {val (d,i) = DenseMat.sort2(a, false); (IMat(d), i)}
+  
+  /** Sort a set of keys descending and return sorted keys and indices along a given direction: 1=columns, 2=rows */
   def sortdown2(a:IMat, dir:Int):(IMat, IMat) = {val (d,i) = DenseMat.sort2(a, dir, false); (IMat(d), i)}
+  
+  /** Lexicographically sort some rows ascending */
   def sortrows(a:IMat):(IMat, IMat) = { val ii = DenseMat.isortlex(a, true); (a(ii,?), ii) }
   def sortrowsdown(a:IMat):(IMat, IMat) = { val ii = DenseMat.isortlex(a, false); (a(ii,?), ii) }
   def isortlex(a:IMat):IMat = DenseMat.isortlex[Int](a, true)
@@ -208,12 +348,25 @@ object MatFunctions {
 //  def uniquerows(a:IMat):(IMat, IMat, IMat) = { val (ii, jj) = DenseMat.uniquerows2(a) ; (a(ii,?), ii, jj)}
   def unique(a:IMat):(IMat, IMat, IMat) = {val (ii, jj) =	DenseMat.unique2(if (math.min(a.nrows,a.ncols) > 1) a(?) else a) ; (a(ii), ii, jj)}
   
+  /** Find non-zero linear indices */
   def find(a:CSMat) = a.find   
-  def find2(a:CSMat) = a.find2    
+  
+  /** Find non-zero (row, col) tuples */
+  def find2(a:CSMat) = a.find2  
+  
+  /** Find non-zero (row, col, value) tuples */
   def find3(a:CSMat) = a.find3
+  
+  /** Sort a set of key/ind pairs ascending. */
   def sort(a:CSMat, ind:Int):CSMat = CSMat(DenseMat.sort(a, ind, true))
+  
+  /** Sort a set of keys ascending. */
   def sort(a:CSMat):CSMat = CSMat(DenseMat.sort(a, 0, true))
+  
+  /** Sort a set of keys ascending, and return sorted keys and indices. */
   def sort2(a:CSMat):(CSMat, IMat) = {val (d,i) = DenseMat.sort2(a, true); (CSMat(d), i)}
+  
+  /** Sort a set of key/ind pairs descending. */
   def sortdown(a:CSMat, ind:Int):CSMat = CSMat(DenseMat.sort(a, ind, false))
   def sortdown(a:CSMat):CSMat = CSMat(DenseMat.sort(a, 0, false))
   def sortdown2(a:CSMat):(CSMat, IMat) = {val (d,i) = DenseMat.sort2(a, false); (CSMat(d), i)}
@@ -226,39 +379,65 @@ object MatFunctions {
   def sort2(a:GMat):(GMat,GIMat) = GMat.sort2(a)
   def sortdown2(a:GMat):(GMat,GIMat) = GMat.sortdown2(a)
   
+  /** Find non-zero linear indices */
   def find(a:SDMat) = a.find   
-  def find2(a:SDMat) = a.find2    
+  
+  /** Find non-zero (row, col) tuples */
+  def find2(a:SDMat) = a.find2   
+  
+  /** Find non-zero (row, col, value) tuples */
   def find3(a:SDMat) = a.find3
 
-  def find(a:SMat) = a.find   
-  def find2(a:SMat) = a.find2    
+  /** Find non-zero linear indices */
+  def find(a:SMat) = a.find
+  
+  /** Find non-zero (row, col) tuples */
+  def find2(a:SMat) = a.find2 
+  
+  /** Find non-zero (row, col, value) tuples */
   def find3(a:SMat) = a.find3
   
+  /** Accumulate (row, col, value) tuples from inds \\ vals into omat. nr and nc are row and column bounds */
   def accum(inds:GIMat, vals:GMat, omat:Mat, nrows:Int, ncols:Int):GMat = {
     GMat.accum(inds, vals, omat, nrows, ncols):GMat
   }
+  
+  /** Accumulate (row, col, value) tuples from inds \\ vals. nr and nc are row and column bounds */
   def accum(inds:GIMat, vals:GMat, nrows:Int, ncols:Int):GMat = {
     GMat.accum(inds, vals, null, nrows, ncols):GMat
   }
+  
+  /** Accumulate (row, col, fval) tuples from inds into omat. nr and nc are row and column bounds */
   def accum(inds:GIMat, fval:Float, omat:Mat, nrows:Int, ncols:Int):GMat = {
     GMat.accum(inds, fval, omat, nrows, ncols):GMat
   }
+  
+  /** Accumulate (row, col, fval) tuples from inds. nr and nc are row and column bounds */
   def accum(inds:GIMat, fval:Float, nrows:Int, ncols:Int):GMat = {
     GMat.accum(inds, fval, null, nrows, ncols):GMat
   }
+  
+  /** Accumulate (row, col, value) tuples from inds \\ vals into omat. nr and nc are row and column bounds */
   def accum(inds:GIMat, vals:GIMat, omat:Mat, nrows:Int, ncols:Int):GIMat = {
     GIMat.accum(inds, vals, omat, nrows, ncols):GIMat
   }
+  
+  /** Accumulate (row, col, value) tuples from inds \\ vals. nr and nc are row and column bounds */
   def accum(inds:GIMat, vals:GIMat, nrows:Int, ncols:Int):GIMat = {
     GIMat.accum(inds, vals, null, nrows, ncols):GIMat
   }
+  
+  /** Accumulate (row, col, fval) tuples from inds into omat. nr and nc are row and column bounds */
   def accum(inds:GIMat, fval:Int, omat:Mat, nrows:Int, ncols:Int):GIMat = {
     GIMat.accum(inds, fval, omat, nrows, ncols):GIMat
   }
+  
+  /** Accumulate (row, col, fval) tuples from inds. nr and nc are row and column bounds */
   def accum(inds:GIMat, fval:Int, nrows:Int, ncols:Int):GIMat = {
     GIMat.accum(inds, fval, null, nrows, ncols):GIMat
   }
   
+  /** Accumulate (row, col, value) tuples from inds \\ vals (generic version) into omat. nr and nc are row and column bounds */
   def accum(inds:Mat, vals:Mat, omat:Mat, nrows:Int, ncols:Int):Mat = {
     (inds, vals) match {
       case (iinds:IMat, fvals:FMat) => accum(iinds, fvals, nrows, ncols):FMat
@@ -268,26 +447,41 @@ object MatFunctions {
       case (ginds:GIMat, gvals:GIMat) => GIMat.accum(ginds, gvals, omat, nrows, ncols):GIMat
     }
   }
+  
+  /** Accumulate (row, col, value) tuples from inds \\ vals (generic version). nr and nc are row and column bounds */
   def accum(inds:Mat, vals:Mat, nrows:Int, ncols:Int):Mat = accum(inds, vals, null, nrows, ncols)
   
+  /** Accumulate (row, col, fval) tuples from inds (generic version) into omat. nr and nc are row and column bounds */
   def accum(inds:Mat, fval:Float, omat:Mat, nrows:Int, ncols:Int):Mat = {
     inds match {
       case iinds:IMat => accum(iinds, fval, nrows, ncols):FMat
       case ginds:GIMat => GMat.accum(ginds, fval, omat, nrows, ncols):GMat
     }
   }
+  
+  /** Accumulate (row, col, fval) tuples from inds (generic version). nr and nc are row and column bounds */
   def accum(inds:Mat, fval:Float, nrows:Int, ncols:Int):Mat = accum(inds, fval, null, nrows, ncols)
   
+  /** Accumulate (row, col, ival) tuples from inds (generic version) into omat. nr and nc are row and column bounds */
   def accum(inds:Mat, ival:Int, omat:Mat, nrows:Int, ncols:Int):Mat = {
     inds match {
       case iinds:IMat => accum(iinds, ival, nrows, ncols):IMat
       case ginds:GIMat => GIMat.accum(ginds, ival, omat, nrows, ncols):GIMat
     }
   }
+  
+  /** Accumulate (row, col, ival) tuples from inds (generic version). nr and nc are row and column bounds */
   def accum(inds:Mat, ival:Int, nrows:Int, ncols:Int):Mat = accum(inds, ival, null, nrows, ncols)
     
-  
+  /** sparse matrix-vector multiply in coordinate form. 
+   *  inds should be an nnz x 2 matrix containing row/column indices of the sparse matrix. 
+   *  vals is an nnz x 1 matrix of values of the sparse matrix. 
+   *  in is the input vector, out is the output vector. 
+   *  Note that the bounds of row/col indices are not checked. 
+   */
   def coomult(inds:IMat, vals:FMat, in:FMat, out:FMat, transpose:Boolean=true) = {
+    if (inds.nrows != vals.nrows) 
+      throw new RuntimeException("coomult dimensions mismatch")
     Mat.nflops += inds.nrows*2L
     if (transpose) {
       scoomv1("N", out.length, in.length, 1.0f, "GLNF", vals.data, inds.data, inds.nrows, in.data, 0f, out.data)
@@ -296,6 +490,12 @@ object MatFunctions {
     }
   }
   
+  /** 
+   *  Compute the inverse permutation to a given integer permutation matrix.
+   *  i.e. given a vector ii which is a one-to-one map of 0...(n-1) to 0...(n-1),
+   *  Compute a vector iinv s.t. iinv(ii) = ii(iinv) = 0...(n-1). 
+   *  For matrices, compute inverse permutations within columns.
+   */    
   def invperm(a:IMat):IMat = {
     val out = IMat.newOrCheckIMat(a.nrows, a.ncols, null, a.GUID, "invperm".##) 
     var nrows = a.nrows
@@ -312,6 +512,11 @@ object MatFunctions {
     }
     out
   }
+  
+  /**
+   * Lexicographic sort of a matrix '''mat''' and a set of indices '''inds'''. 
+   * Side-effects both matrices, i.e. both '''mat''' and '''inds''' are modified.
+   */
   
   def sortlexInds(mat:IMat, inds:IMat) = _sortlexInds(mat, inds, true) 
   
@@ -339,6 +544,10 @@ object MatFunctions {
   	}
   }
   
+  /**
+   * Lexicographic sort of a matrix '''mat'''. Side-effects '''mat'''.
+   */
+  
   def sortlex(mat:IMat) = _sortlex(mat, true)
   
   def _sortlex(mat:IMat, asc:Boolean):Unit = {
@@ -356,6 +565,10 @@ object MatFunctions {
   		mat <-- matp
   	}
   }  
+  
+  /**
+   * Lexicographic sort of a matrix '''mat''' with order '''asc''' (boolean true for ascending order). Side-effects '''mat'''.
+   */
     
   def isortlexfast(mat:IMat, asc:Boolean):IMat = {
   	if (Mat.useGPUsort && Mat.hasCUDA > 0 && {
@@ -375,8 +588,13 @@ object MatFunctions {
   	} else IMat.isortlex(mat, asc)
   }
   
+  /**
+   * Count distinct elements in a sorted array of rows. Returns (bptrs, iptrs), where bptrs points to a
+   * set of distinct rows, and iptrs gives the index in this list for each input row. 
+   */
+  
   def countDistinct(a:IMat):(IMat, IMat) = {
-  	val iptrs = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "Dict.countDistinct".hashCode)
+  	val iptrs = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "countDistinct".hashCode)
     def compeq(i:Int, j:Int):Boolean = {
       var k:Int = 0;
       while (k < a.ncols && (a.data(i+k*a.nrows) == a.data(j+k*a.nrows))) {
@@ -395,7 +613,7 @@ object MatFunctions {
       iptrs.data(i) = lastpos
       i += 1
     }
-  	val bptrs = IMat.newOrCheckIMat(lastpos+1, 1, null, a.GUID, "Dict.countDistinct_1".hashCode)
+  	val bptrs = IMat.newOrCheckIMat(lastpos+1, 1, null, a.GUID, "countDistinct_1".hashCode)
   	while (i > 0) {
   		i = i - 1
       bptrs.data(iptrs.data(i)) = i
@@ -410,6 +628,13 @@ object MatFunctions {
       k += 1
     }
   }
+  
+  /**
+   * Find the unique rows from a matrix of input rows. Returns (outv, bptrs, outp) where
+ - outv is a matrix of sorted rows.
+ - bptrs are the positions of the distinct rows in the original matrix.
+ - output are the positions of each input row in the output row matrix. 
+   */
   
   def uniquerows(a:IMat):(IMat, IMat, IMat) = {
     val iss = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "uniquerows".hashCode)
@@ -438,13 +663,15 @@ object MatFunctions {
   }  
  
 
+  /** Make a double row vector from an array of doubles. */
   def drow(x:Array[Double]):DMat = {
   	val ahash = if (Mat.useCache) x.## else 0
     val mat = DMat.newOrCheckDMat(1,x.length, null, ahash, "drow".##)
     System.arraycopy(x, 0, mat.data, 0, x.length)
     mat
   }
-
+  
+  /** Make a double row vector from a list of doubles. */
   def drow(x:List[Double]):DMat = {
   	val ahash = if (Mat.useCache) x.## else 0
     val mat = DMat.newOrCheckDMat(1,x.length, null, ahash, "drow_list".##)
@@ -452,37 +679,44 @@ object MatFunctions {
     mat
   }
 
+  /** Make a double row vector from the varargs to this function. */
   def drow(args:Double*):DMat = drow(args.toArray) 
   
+  /** Make a double row vector from a range. */
   def drow(x:Range):DMat = {
     val mat = DMat.newOrCheckDMat(1,x.length, null, x.##, "drow_range".##)
     for (i <- 0 until x.length)
       mat.data(i) = x(i)
     mat
   }
-
+  
+  /** Make a double column vector from a range. */
   def dcol(x:Range):DMat = {
     val mat = DMat.newOrCheckDMat(x.length, 1, null, x.##, "dcol_range".##)
     for (i <- 0 until x.length)
       mat.data(i) = x(i)
     mat
   }
-
+  
+  /** Make a double column vector from a list of doubles. */
   def dcol(x:List[Double]):DMat = {
   	val ahash = if (Mat.useCache) x.## else 0
     val mat = DMat.newOrCheckDMat(x.length, 1, null, ahash, "dcol_list".##)
     x.copyToArray(mat.data)
     mat
   }
-
+  
+  /** Make a double column vector from the varargs to this function. */
   def dcol(args:Double*):DMat = {
     dcol(args.toList)
   }
 
+  /** Make a double matrix of zeros of the given dimensions. */
   def dzeros(nr:Int, nc:Int):DMat = {
     DMat.newOrCheckDMat(nr, nc, null)
   }
-
+  
+  /** Make a double matrix of ones with the given dimensions. */
   def dones(nr:Int, nc:Int):DMat = {
     val out = DMat(nr,nc)
     var i = 0
@@ -493,13 +727,15 @@ object MatFunctions {
     out
   }
 
+  /** Make a float row matrix from an array of Floats. */
   def row(x:Array[Float]):FMat = {
     val ahash = if (Mat.useCache) x.## else 0
     val mat = FMat.newOrCheckFMat(1, x.length, null, ahash, "row_array".##)
     System.arraycopy(x, 0, mat.data, 0, x.length)
     mat
   }
-
+  
+  /** Make a float row vector from an array of doubles. */
   def row(x:Array[Double]):FMat = {
   	val ahash = if (Mat.useCache) x.## else 0
     val mat = FMat.newOrCheckFMat(1, x.length, null, ahash, "row_array_double".##)
@@ -507,6 +743,7 @@ object MatFunctions {
     mat
   }
   
+  /** Make a float row vector from an array of Ints. */
   def row(x:Array[Int]):FMat = {
   	val ahash = if (Mat.useCache) x.## else 0
     val mat = FMat.newOrCheckFMat(1,x.length, null, ahash, "row_array_int".##)
@@ -514,6 +751,7 @@ object MatFunctions {
     mat
   }
 
+  /** Make a float row vector from a List of generic type. */
   def row[T](x:List[T])(implicit numeric : Numeric[T]):FMat = {
   	val ahash = if (Mat.useCache) x.## else 0
   		val mat = FMat.newOrCheckFMat(1, x.length, null, ahash, "row_list_gen".##)
@@ -521,8 +759,10 @@ object MatFunctions {
   		mat	
   }
 
+  /** Make a float row vector from varargs. */
   def row[T](x:T*)(implicit numeric : Numeric[T]):FMat = row(x.toList)
   
+  /** Make a float row vector from a range. */
   def row(x:Range):FMat = {
     val mat = FMat.newOrCheckFMat(1, x.length, null, x.##, "row_range".##)
     for (i <- 0 until x.length)
@@ -530,6 +770,7 @@ object MatFunctions {
     mat
   }
   
+  /** Make a float column vector from an array of Floats. */
   def col(x:Array[Float]):FMat = {
   	val ahash = if (Mat.useCache) x.## else 0
     val mat = FMat.newOrCheckFMat(x.length, 1, null, ahash, "col_array".##)
@@ -537,6 +778,7 @@ object MatFunctions {
     mat
   }
   
+  /** Make a float column vector from an array of Doubles. */  
   def col(x:Array[Double]):FMat = {
   	val ahash = if (Mat.useCache) x.## else 0
     val mat = FMat.newOrCheckFMat(x.length, 1, null, ahash, "col_array_double".##)
@@ -544,6 +786,7 @@ object MatFunctions {
     mat
   }
   
+  /** Make a float column vector from an array of Ints. */  
   def col(x:Array[Int]):FMat = {
   	val ahash = if (Mat.useCache) x.## else 0
     val mat = FMat.newOrCheckFMat(x.length, 1, null, ahash, "col_array_int".##)
@@ -551,6 +794,7 @@ object MatFunctions {
     mat
   }
   
+  /** Make a float column vector from a list of type T. */  
   def col[T](x:List[T])(implicit numeric : Numeric[T]):FMat = {
   	val ahash = if (Mat.useCache) x.## else 0
   	val mat = FMat.newOrCheckFMat(x.length, 1, null, ahash, "col_array_list_gen".##)
@@ -558,17 +802,21 @@ object MatFunctions {
   	mat	
   }
 
+  /** Make a float column vector from a vararg list. */
   def col[T](x:T*)(implicit numeric : Numeric[T]):FMat = col(x.toList)
 
+  /** Make a float column vector from a range. */
   def col(x:Range):FMat = {
     val mat = FMat.newOrCheckFMat(x.length, 1, null, x.##, "col_range".##)
     for (i <- 0 until x.length)
       mat.data(i) = x(i)
     mat
   }
-
+  
+  /** Make a float matrix of zeros of the given size. */
   def zeros(nr:Int, nc:Int):FMat = FMat(nr,nc)
 
+ /**  Make a float matrix of ones of the given size. */  
   def ones(nr:Int, nc:Int):FMat = {
     val out = FMat(nr,nc)
     var i = 0
@@ -578,7 +826,8 @@ object MatFunctions {
     }
     out
   }  
-
+  
+  /** Make an integer row vector from a range. */
   def irow(x:Range):IMat = {
     val mat = IMat.newOrCheckIMat(1,x.length, null, x.##, "irow_range".##)
     for (i <- 0 until x.length)
@@ -586,14 +835,18 @@ object MatFunctions {
     mat
   }
   
+  /** Make an integer row vector from a 2-tuple. Supports the syntax 0->5 for ranges. */
   def irow(x:Tuple2[Int,Int]):IMat = irow(x._1 until x._2)
 
+  /** Make an integer row vector from an array of Ints.  */
   def irow(x:Array[Int]):IMat = {
   	val ahash = if (Mat.useCache) x.## else 0
     val mat = IMat.newOrCheckIMat(1,x.length, null, ahash, "irow_array".##)
     System.arraycopy(x, 0, mat.data, 0, x.length)
     mat
   }
+  
+  /** Make an integer row vector from a List of Ints. */
 
   def irow(x:List[Int]):IMat = {
   	val ahash = if (Mat.useCache) x.## else 0
@@ -601,11 +854,13 @@ object MatFunctions {
     x.copyToArray(mat.data)
     mat
   }
-
+  
+  /** Make an integer row vector from this call's vararg list. */
   def irow(args:Int*):IMat = {
     irow(args.toList)
   }
-
+  
+  /** Make an integer column vector from a range. */
   def icol(x:Range):IMat = {
     val mat = IMat.newOrCheckIMat(x.length,1, null, x.##, "icol_range".##)
     for (i <- 0 until x.length)
@@ -613,8 +868,11 @@ object MatFunctions {
     mat
   }
   
+  /** Make an integer column vector from a tuple to support 0->5 syntax for ranges. */  
   def icol(x:Tuple2[Int,Int]):IMat = icol(x._1 until x._2)
 
+  
+ /** Make an integer column vector from a List. */
   def icol(x:List[Int]):IMat = {
   	val ahash = if (Mat.useCache) x.## else 0
     val mat = IMat.newOrCheckIMat(x.length,1, null, ahash, "icol_list".##)
@@ -622,14 +880,17 @@ object MatFunctions {
     mat
   }
 
+  /** Make an integer column vector from this calls vararg list. */
   def icol(args:Int*):IMat = {
     icol(args.toList)
   }
-
+  
+  /** Make an integer matrix of zeros of the given dimensions. */
   def izeros(nr:Int, nc:Int):IMat = {
     IMat(nr,nc)
   }
-
+  
+  /** Make an integer matrix of ones of the given dimensions. */
   def iones(nr:Int, nc:Int):IMat = {
     val out = IMat(nr,nc)
     var i = 0
@@ -640,16 +901,19 @@ object MatFunctions {
     out
   }
   
+  /** Make a string row vector from a list of strings. */  
   def csrow(x:List[String]):CSMat = {
     val mat = CSMat(1, x.length)
     x.copyToArray(mat.data)
     mat
   }
 
+  /** Make a string row vector from this calls vararg list. */
   def csrow(args:String*):CSMat = {
     csrow(args.toList)
   }
   
+  /** Make a string column vector from a list of strings */  
   def cscol(x:List[String]):CSMat = {
     val mat = CSMat(x.length,1)
     x.copyToArray(mat.data)
