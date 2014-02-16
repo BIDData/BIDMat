@@ -332,17 +332,27 @@ extern "C" {
   CUMAT_ACCUM(iaccumIV, jint I,     jobject jJ, jint V,             , CGETI(J),         , CGETI(S))
   CUMAT_ACCUM(iaccumJV, jobject jI, jint J,     jint V,     CGETI(I),         ,         , CGETI(S)) 
 
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumsumi
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumsumgf
   (JNIEnv *env, jobject obj, jobject jin, jobject jout, jobject jjc, jint nrows, jint ncols, jint m) 
   {
     float *in = (float*)getPointer(env, jin);
     float *out = (float*)getPointer(env, jout);
     int *jc = (int*)getPointer(env, jjc);
 
-    return cumsumi(in, out, jc, nrows, ncols, m);
+    return cumsumgf(in, out, jc, nrows, ncols, m);
   }
 
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_maxs
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumsumgi
+  (JNIEnv *env, jobject obj, jobject jin, jobject jout, jobject jjc, jint nrows, jint ncols, jint m) 
+  {
+    int *in = (int*)getPointer(env, jin);
+    int *out = (int*)getPointer(env, jout);
+    int *jc = (int*)getPointer(env, jjc);
+
+    return cumsumgi(in, out, jc, nrows, ncols, m);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_maxgf
   (JNIEnv *env, jobject obj, jobject jin, jobject jout, jobject jouti, jobject jjc, jint nrows, jint ncols, jint m) 
   {
     float *in = (float*)getPointer(env, jin);
@@ -350,7 +360,18 @@ extern "C" {
     int *outi = (int*)getPointer(env, jouti);
     int *jc = (int*)getPointer(env, jjc);
 
-    return maxs(in, out, outi, jc, nrows, ncols, m);
+    return maxgf(in, out, outi, jc, nrows, ncols, m);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_maxgi
+  (JNIEnv *env, jobject obj, jobject jin, jobject jout, jobject jouti, jobject jjc, jint nrows, jint ncols, jint m) 
+  {
+    int *in = (int*)getPointer(env, jin);
+    int *out = (int*)getPointer(env, jout);
+    int *outi = (int*)getPointer(env, jouti);
+    int *jc = (int*)getPointer(env, jjc);
+
+    return maxgi(in, out, outi, jc, nrows, ncols, m);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_embedmat2d

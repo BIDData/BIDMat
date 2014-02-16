@@ -386,12 +386,12 @@ int ocopy_transpose_min(int *optrs, float *in, float *out, int stride, int nrows
 
 
 #if __CUDA_ARCH__ > 200
-__global__ void __cumsumi(float *in, float *out, int *jc, int nrows, int ncols) {
-  __shared__ float tots[32];
+template<class T>
+__global__ void __cumsumg(T *in, T *out, int *jc, int nrows, int ncols) {
+  __shared__ T tots[32];
   int start, end;
-  float sum = 0;
-  float tsum, tmp, ttot, ttot0;
   int bid = blockIdx.y + blockIdx.z * blockDim.y;
+  T sum, tsum, tmp, ttot, ttot0;
 
   if (bid < ncols) {
     start = jc[blockIdx.x] + bid * nrows;
@@ -441,14 +441,15 @@ __global__ void __cumsumi(float *in, float *out, int *jc, int nrows, int ncols) 
   }
 }
 
-__global__ void __maxs(float *in, float *out, int *outi, int *jc, int nrows, int ncols, int m) {
-  __shared__ float maxv[32];
+template<class T>
+__global__ void __maxg(T *in, T *out, int *outi, int *jc, int nrows, int ncols, int m, T minv) {
+  __shared__ T maxv[32];
   __shared__ int maxi[32];
   int start = jc[blockIdx.x];
   int end = jc[blockIdx.x+1];
-  float vmax, vtmp;
+  T vmax, vtmp;
   int imax, itmp, i, k;
-  vmax = -3e38f;
+  vmax = minv;
   imax = -1;
   int bid = blockIdx.y + blockIdx.z * blockDim.y;
 
@@ -506,8 +507,11 @@ __global__ void __maxs(float *in, float *out, int *outi, int *jc, int nrows, int
   }
 }
 #else
-__global__ void __cumsumi(float *in, float *out, int *jc, int nrows, int ncols) {}
-__global__ void __maxs(float *in, float *out, int *outi, int *jc, int nrows, int ncols, int m) {}
+template<class T>
+__global__ void __cumsumg(T *in, T *out, int *jc, int nrows, int ncols) {}
+
+template<class T>
+__global__ void __maxg(T *in, T *out, int *outi, int *jc, int nrows, int ncols, int m, T minv) {}
 #endif
 
 void setinds(int ncols, int &nc1, int &nc2) {
@@ -520,26 +524,44 @@ void setinds(int ncols, int &nc1, int &nc2) {
   }
 }
 
-int cumsumi(float *in, float *out, int *jc, int nrows, int ncols, int m) {
+template<class T>
+int cumsumg(T *in, T *out, int *jc, int nrows, int ncols, int m) {
   int nc1, nc2;
   setinds(ncols, nc1, nc2);
   dim3 grid(m, nc1, nc2);
   int ny = min(32, 1+nrows/m/32);
   dim3 tblock(32, ny, 1);
-  __cumsumi<<<grid,tblock>>>(in, out, jc, nrows, ncols);
+  __cumsumg<T><<<grid,tblock>>>(in, out, jc, nrows, ncols);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
 }
 
-int maxs(float *in, float *out, int *outi, int *jc, int nrows, int ncols, int m) {
+int cumsumgf(float *in, float *out, int *jc, int nrows, int ncols, int m) {      
+  return cumsumg<float>(in, out, jc, nrows, ncols, m);
+}
+
+int cumsumgi(int *in, int *out, int *jc, int nrows, int ncols, int m) {      
+  return cumsumg<int>(in, out, jc, nrows, ncols, m);
+}
+
+template<class T>
+int maxg(T *in, T *out, int *outi, int *jc, int nrows, int ncols, int m, T minv) {
   int nc1, nc2;
   setinds(ncols, nc1, nc2);
   dim3 grid(m, nc1, nc2);
   int ny = min(32, 1+nrows/m/32);
   dim3 tblock(32, ny, 1);
-  __maxs<<<grid,tblock>>>(in, out, outi, jc, nrows, ncols, m);
+  __maxg<T><<<grid,tblock>>>(in, out, outi, jc, nrows, ncols, m, minv);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
+}
+
+int maxgf(float *in, float *out, int *outi, int *jc, int nrows, int ncols, int m) {
+  return maxg<float>(in, out, outi, jc, nrows, ncols, m, -3e38f);
+}
+
+int maxgi(int *in, int *out, int *outi, int *jc, int nrows, int ncols, int m) {
+  return maxg<int>(in, out, outi, jc, nrows, ncols, m, 0x80000000);
 }
