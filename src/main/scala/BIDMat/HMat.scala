@@ -212,8 +212,8 @@ object HMat {
       case 140 => loadDMat(fname, omat, compressed)
       case 231 => loadSMat(fname, compressed)
       case 331 => loadSMat(fname, compressed)
-      case 201 => loadBMat(fname, compressed)
-      case 301 => loadBMat(fname, compressed)
+      case 201 => loadSBMat(fname, compressed)
+      case 301 => loadSBMat(fname, compressed)
     }
   }
   
@@ -226,7 +226,7 @@ object HMat {
       case a:FMat => saveFMat(fname, a, compressed)
       case a:DMat => saveDMat(fname, a, compressed)
       case a:IMat => saveIMat(fname, a, compressed)
-      case a:BMat => saveBMat(fname, a, compressed)
+      case a:SBMat => saveSBMat(fname, a, compressed)
       case a:SMat => saveSMat(fname, a, compressed)
     }
   }
@@ -369,7 +369,7 @@ object HMat {
     out
   }
   
-  def loadBMat(fname:String, compressed:Int=0):BMat = {
+  def loadSBMat(fname:String, compressed:Int=0):SBMat = {
     val gin = getInputStream(fname, compressed)
     val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
     val hints = new Array[Int](4)
@@ -383,9 +383,9 @@ object HMat {
     }
     val norows:Boolean = (ftype/100 == 3)
     val out = if (norows) {
-    	BMat.SnoRows(nrows, ncols, nnz)
+    	SBMat.SnoRows(nrows, ncols, nnz)
     } else {
-    	BMat(nrows, ncols, nnz)
+    	SBMat(nrows, ncols, nnz)
     }
     readSomeInts(gin, out.jc, buff, ncols+1)
     if (!norows) readSomeInts(gin, out.ir, buff, nnz)
@@ -437,7 +437,7 @@ object HMat {
     gout.close
   } 
   
-   def saveBMat(fname:String, m:BMat, compressed:Int=0):Unit = {
+   def saveSBMat(fname:String, m:SBMat, compressed:Int=0):Unit = {
     val gout = getOutputStream(fname, compressed)
     val hints = new Array[Int](4)
     val tbuf = ByteBuffer.allocate(16).order(byteOrder)

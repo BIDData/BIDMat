@@ -220,7 +220,7 @@ object MatFunctions {
   /** Sort a set of keys ascending, and return sorted keys and indices. */
   def sort2(a:DMat):(DMat, IMat) = {val (d,i) = DenseMat.sort2(a, true); (DMat(d), i)}
   
-  /** Sort a set of keys and return sorted keys and indices along a given direction: 1=columns, 2=rows */
+  /** Sort a set of keys and return sorted keys and indices along a given direction: 1=columns, 2=rows, 0=smart */
   def sort2(a:DMat,dir:Int):(DMat, IMat) = {val (d,i) = DenseMat.sort2(a, dir, true); (DMat(d), i)}
   
   /** Sort a set of key/ind pairs descending. */
@@ -232,7 +232,7 @@ object MatFunctions {
   /** Sort a set of keys descending, and return sorted keys and indices. */
   def sortdown2(a:DMat):(DMat, IMat) = {val (d,i) = DenseMat.sort2(a, false); (DMat(d), i)}
   
-  /** Sort a set of keys descending and return sorted keys and indices along a given direction: 1=columns, 2=rows */
+  /** Sort a set of keys descending and return sorted keys and indices along a given direction: 1=columns, 2=rows, 0=smart */
   def sortdown2(a:DMat, dir:Int):(DMat, IMat) = {val (d,i) = DenseMat.sort2(a, dir, false); (DMat(d), i)}
   
   /** Lexicographically sort some rows ascending */
@@ -268,34 +268,40 @@ object MatFunctions {
   /** Accumulate (row, col, value) tuples from inds \\ vals. nr is row and bounds, ncols = 1 */
   def accum(inds:IMat, vals:FMat, nr:Int) = FMat(DenseMat.accum(inds, vals, nr, 1))
   
-  /** Sort a set of key/ind pairs ascending. */
-  def sort(a:FMat, ind:Int):FMat = FMat(DenseMat.sort(a, ind, true))
+  /** Sort a set of keys ascending along a given direction '''dir''': 1=columns, 2=rows, 0=smart. */
+  def sort(keys:FMat, dir:Int):FMat = FMat(DenseMat.sort(keys, dir, true))
   
   /** Sort a set of keys ascending. */
-  def sort(a:FMat):FMat = FMat(DenseMat.sort(a, 0, true))
+  def sort(keys:FMat):FMat = FMat(DenseMat.sort(keys, 0, true))
   
   /** Sort a set of keys ascending, and return sorted keys and indices. */
-  def sort2(a:FMat):(FMat, IMat) = {val (d,i) = DenseMat.sort2(a, true); (FMat(d), i)}
+  def sort2(keys:FMat):(FMat, IMat) = {val (d,i) = DenseMat.sort2(keys, true); (FMat(d), i)}
   
-  /** Sort a set of keys and return sorted keys and indices along a given direction: 1=columns, 2=rows */
-  def sort2(a:FMat,dir:Int):(FMat, IMat) = {val (d,i) = DenseMat.sort2(a, dir, true); (FMat(d), i)}
+  /** Sort a set of keys and return sorted keys and indices along a given direction: 1=columns, 2=rows, 0=smart */
+  def sort2(keys:FMat,dir:Int):(FMat, IMat) = {val (d,i) = DenseMat.sort2(keys, dir, true); (FMat(d), i)}
   
-  /** Sort a set of keys descending along a given direction: 1=columns, 2=rows. */
-  def sortdown(a:FMat, dir:Int):FMat = FMat(DenseMat.sort(a, dir, false))
+  /** Sort a set of keys descending along a given direction: 1=columns, 2=rows, 0=smart. */
+  def sortdown(keys:FMat, dir:Int):FMat = FMat(DenseMat.sort(keys, dir, false))
   
   /** Sort a set of keys descending. */
-  def sortdown(a:FMat):FMat = FMat(DenseMat.sort(a, 0, false))
+  def sortdown(keys:FMat):FMat = FMat(DenseMat.sort(keys, 0, false))
   
   /** Sort a set of keys descending and return sorted keys and indices. */
-  def sortdown2(a:FMat):(FMat, IMat) = {val (d,i) = DenseMat.sort2(a, false); (FMat(d), i)}
+  def sortdown2(keys:FMat):(FMat, IMat) = {val (d,i) = DenseMat.sort2(keys, false); (FMat(d), i)}
   
-  /** Sort a set of keys descending and return sorted keys and indices along a given direction: 1=columns, 2=rows */
-  def sortdown2(a:FMat, dir:Int):(FMat, IMat) = {val (d,i) = DenseMat.sort2(a, dir, false); (FMat(d), i)}
+  /** Sort a set of keys descending and return sorted keys and indices along a given direction: 1=columns, 2=rows, 0=smart */
+  def sortdown2(keys:FMat, dir:Int):(FMat, IMat) = {val (d,i) = DenseMat.sort2(keys, dir, false); (FMat(d), i)}
   
   /** Lexicographically sort rows ascending */
-  def sortrows(a:FMat):(FMat, IMat) = { val ii = DenseMat.isortlex(a, true); (a(ii,?), ii) }
-  def sortrowsdown(a:FMat):(FMat, IMat) = { val ii = DenseMat.isortlex(a, false); (a(ii,?), ii) }
+  def sortrows(rows:FMat):(FMat, IMat) = { val ii = DenseMat.isortlex(rows, true); (rows(ii,?), ii) }
+  
+  /** Lexicographically sort rows descending */
+  def sortrowsdown(rows:FMat):(FMat, IMat) = { val ii = DenseMat.isortlex(rows, false); (rows(ii,?), ii) }
+  
+  /** Lexicographially sort with an index array, and return it. '''a''' is not modified */
   def isortlex(a:FMat):IMat = DenseMat.isortlex(a, true)
+  
+  /** Lexicographially sort descending with an index array, and return it. '''a''' is not modified */
   def isortlexdown(a:FMat):IMat = DenseMat.isortlex(a, false)
   def uniquerows(a:FMat):(FMat, IMat, IMat) = { val (ii, jj) = DenseMat.uniquerows2(a) ; (a(ii,?), ii, jj)}
   def unique(a:FMat):(FMat, IMat, IMat) = {val (ii, jj) =	DenseMat.unique2(if (math.min(a.nrows,a.ncols) > 1) a(?) else a) ; (a(ii), ii, jj)}
@@ -342,7 +348,11 @@ object MatFunctions {
   
   /** Lexicographically sort some rows ascending */
   def sortrows(a:IMat):(IMat, IMat) = { val ii = DenseMat.isortlex(a, true); (a(ii,?), ii) }
+  
+  /** Lexicographically sort rows descending */
   def sortrowsdown(a:IMat):(IMat, IMat) = { val ii = DenseMat.isortlex(a, false); (a(ii,?), ii) }
+  
+  /** Lexicographially sort with an index array, and return it. '''a''' is not modified */
   def isortlex(a:IMat):IMat = DenseMat.isortlex[Int](a, true)
   def isortlexdown(a:IMat):IMat = DenseMat.isortlex(a, false)
 //  def uniquerows(a:IMat):(IMat, IMat, IMat) = { val (ii, jj) = DenseMat.uniquerows2(a) ; (a(ii,?), ii, jj)}
@@ -368,11 +378,19 @@ object MatFunctions {
   
   /** Sort a set of key/ind pairs descending. */
   def sortdown(a:CSMat, ind:Int):CSMat = CSMat(DenseMat.sort(a, ind, false))
+  
+  /** Sort a set of key/ind pairs descending. */
   def sortdown(a:CSMat):CSMat = CSMat(DenseMat.sort(a, 0, false))
+  
+  /** Sort a set of keys descending and return sorted keys and indices. */
   def sortdown2(a:CSMat):(CSMat, IMat) = {val (d,i) = DenseMat.sort2(a, false); (CSMat(d), i)}
   def sortrows(a:CSMat):(CSMat, IMat) = { val ii = DenseMat.isortlex(a, true); (a(ii,?), ii) }
   def sortrowsdown(a:CSMat):(CSMat, IMat) = { val ii = DenseMat.isortlex(a, false); (a(ii,?), ii) }
+  
+  /** Lexicographially sort with an index array, and return it. '''a''' is not modified */
   def isortlex(a:CSMat):IMat = DenseMat.isortlex(a, true)
+  
+  /** Lexicographically sort rows ascending */
   def isortlexdown(a:CSMat):IMat = DenseMat.isortlex(a, false)
   def uniquerows(a:CSMat):(CSMat, IMat, IMat) = { val (ii, jj) = DenseMat.uniquerows2(a) ; (a(ii,?), ii, jj)}
   
@@ -1291,8 +1309,8 @@ object MatFunctions {
   def loadIMat(fname:String, omat:Mat) = HMat.loadIMat(fname, omat)  
   def loadIMat(fname:String, omat:Mat, compressed:Int) = HMat.loadIMat(fname, omat, compressed)
       
-  def loadBMat(fname:String) = HMat.loadBMat(fname)   
-  def loadBMat(fname:String, compressed:Int) = HMat.loadBMat(fname, compressed)
+  def loadSBMat(fname:String) = HMat.loadSBMat(fname)   
+  def loadSBMat(fname:String, compressed:Int) = HMat.loadSBMat(fname, compressed)
   
   def loadSMat(fname:String) = HMat.loadSMat(fname)    
   def loadSMat(fname:String, compressed:Int) = HMat.loadSMat(fname, compressed)
@@ -1312,8 +1330,8 @@ object MatFunctions {
   def saveSMat(fname:String, m:SMat) = HMat.saveSMat(fname, m)    
   def saveSMat(fname:String, m:SMat, compressed:Int) = HMat.saveSMat(fname, m, compressed)
   
-  def saveBMat(fname:String, m:BMat) = HMat.saveBMat(fname, m)    
-  def saveBMat(fname:String, m:BMat, compressed:Int) = HMat.saveBMat(fname, m, compressed)
+  def saveSBMat(fname:String, m:SBMat) = HMat.saveSBMat(fname, m)    
+  def saveSBMat(fname:String, m:SBMat, compressed:Int) = HMat.saveSBMat(fname, m, compressed)
 
   final val ? = new IMatWildcard
 }
