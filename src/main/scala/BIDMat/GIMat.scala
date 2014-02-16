@@ -9,6 +9,7 @@ import jcuda.runtime.cudaMemcpyKind._
 import edu.berkeley.bid.CUMAT;
 
 class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, nc) {
+  import GIMat.BinOp._
   
   override def toString:String = {
     val nr = scala.math.min(nrows,10)
@@ -363,8 +364,42 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   def >= (b : GIMat) = GIop(b, null, 7)
   def <= (b : GIMat) = GIop(b, null, 8)
   def != (b : GIMat) = GIop(b, null, 9)
+  
   def on(a : GIMat) = vertcat(a, null)
   def \ (a : GIMat) = horzcat(a, null)
+  
+  def + (a : Float) = GIop(GIMat(a.toInt), null, op_add)
+  def - (a : Float) = GIop(GIMat(a.toInt), null, op_sub)
+  def *@ (a : Float) = GIop(GIMat(a.toInt), null, op_mul)
+  def ∘  (a : Float) = GIop(GIMat(a.toInt), null, op_mul)
+  def /  (a : Float) = GIop(GIMat(a.toInt), null, op_div)
+  def ^  (a : Float) = GIop(GIMat(a.toInt), null, op_pow)
+  
+  def + (a : Int) = GIop(GIMat(a), null, op_add)
+  def - (a : Int) = GIop(GIMat(a), null, op_sub)
+  def *@ (a : Int) = GIop(GIMat(a), null, op_mul)
+  def ∘  (a : Int) = GIop(GIMat(a), null, op_mul)
+  def /  (a : Int) = GIop(GIMat(a), null, op_div)
+  def ^  (a : Int) = GIop(GIMat(a), null, op_pow)
+   
+  def < (b : Float) = GIop(GIMat(b.toInt), null, op_lt)
+  def < (b : Int) = GIop(GIMat(b), null, op_lt)
+  def < (b : Double) = GIop(GIMat(b.toInt), null, op_lt)
+  def > (b : Float) = GIop(GIMat(b.toInt), null, op_gt)
+  def > (b : Int) = GIop(GIMat(b), null, op_gt)
+  def > (b : Double) = GIop(GIMat(b.toInt), null, op_gt)
+  def <= (b : Float) = GIop(GIMat(b.toInt), null, op_le)
+  def <= (b : Int) = GIop(GIMat(b), null, op_le)
+  def <= (b : Double) = GIop(GIMat(b.toInt), null, op_le)
+  def >= (b : Float) = GIop(GIMat(b.toInt), null, op_ge)
+  def >= (b : Int) = GIop(GIMat(b), null, op_ge)
+  def >= (b : Double) = GIop(GIMat(b.toInt), null, op_ge)
+  def == (b : Float) = GIop(GIMat(b.toInt), null, op_eq)
+  def == (b : Int) = GIop(GIMat(b), null, op_eq)
+  def == (b : Double) = GIop(GIMat(b.toInt), null, op_eq)
+  def != (b : Float) = GIop(GIMat(b.toInt), null, op_ne)
+  def != (b : Int) = GIop(GIMat(b), null, op_ne)
+  def != (b : Double) = GIop(GIMat(b.toInt), null, op_ne)
   
   def ~ (b: GIMat) = new GIPair(this, b)
 
@@ -396,6 +431,23 @@ class GIPair (val omat:Mat, val mat:GIMat) extends Pair{
 class GIMatWildcard extends GIMat(0,0,null,0) with MatrixWildcard
 
 object GIMat {
+  
+   object BinOp {
+      val op_add=0
+      val op_sub=1
+      val op_mul=2
+      val op_div=3
+      val op_gt=4
+      val op_lt=5
+      val op_eq=6
+      val op_ge=7
+      val op_le=8
+      val op_ne=9
+      val op_max=10
+      val op_min=11
+      val op_atan2=12
+      val op_pow=13
+  }  
   
   def apply(nr:Int, nc:Int):GIMat = {
     val retv = new GIMat(nr, nc, new Pointer(), nr*nc)        
