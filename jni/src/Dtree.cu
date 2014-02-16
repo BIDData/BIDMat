@@ -31,8 +31,7 @@ __global__ void __treeprod(int *trees, float *feats, int *tpos, float *otv, int 
   __shared__ int pos[REPTREES][ATHREADS];
   __shared__ float totals[REPTREES][ATHREADS];
   int bd, tind, ttop;
-  int neg_infty = NEG_INFINITY;
-  float fneg_infty = *((float *)&neg_infty);
+  float ftmp;
   float vv[REPTREES];
   
 
@@ -64,7 +63,8 @@ __global__ void __treeprod(int *trees, float *feats, int *tpos, float *otv, int 
     // vv[k] is a thread variable, so sum it over the warp threads
 #pragma unroll
     for (int k = 0; k < REPTREES; k++) {
-      if (vv[k] != fneg_infty) {            // This is a leaf node, dont do anything (leaf marker will be output)
+      ftmp = vv[k];
+      if (*((int *)&ftmp) != NEG_INFINITY) {            // This is a leaf node, dont do anything (leaf marker will be output)
 #pragma unroll
         for (int i = 1; i < 32; i *= 2) {
           vv[k] += __shfl_down(vv[k], i);
@@ -96,8 +96,7 @@ __global__ void __treesteps(int *trees, float *feats, int *tpos, int *otpos, int
   __shared__ float thresh[REPTREES][ATHREADS];
   __shared__ float totals[REPTREES][ATHREADS];
   int newt, bd, tind, ttop, kk;
-  int neg_infty = NEG_INFINITY;
-  float fneg_infty = *((float *)&neg_infty);
+  float ftmp;
   float vv[REPTREES];
 
   for (bd = blockIdx.x; bd < ncols; bd += gridDim.x) {
@@ -150,7 +149,8 @@ __global__ void __treesteps(int *trees, float *feats, int *tpos, int *otpos, int
       // check thresholds and save as needed
       __syncthreads();
       if (threadIdx.x + threadIdx.y*ATHREADS < ntrees) {
-        if (thresh[threadIdx.y][threadIdx.x] != fneg_infty) {  // Check if non-leaf
+        ftmp = thresh[threadIdx.y][threadIdx.x];
+        if (*((int *)&ftmp) != NEG_INFINITY) {  // Check if non-leaf
           newt = 2 * pos[threadIdx.y][threadIdx.x] + 1;
           if (totals[threadIdx.y][threadIdx.x] > thresh[threadIdx.y][threadIdx.x]) {
             newt++;
