@@ -87,27 +87,27 @@ object Dict {
   }
   def apply(cstr:CSMat, counts:IMat, thresh:Int):Dict = Dict(cstr, DMat(counts), thresh)
   
-  def apply(b:BMat, counts:DMat):Dict = {
+  def apply(b:SBMat, counts:DMat):Dict = {
     val out = new Dict(CSMat(b))
     out.counts = counts
     out
   }
   
-  def apply(b:BMat):Dict = {
+  def apply(b:SBMat):Dict = {
     val out = new Dict(CSMat(b))
     out.counts = null
     out
   }
   
-  def apply(b:BMat, counts:IMat):Dict = Dict(b, DMat(counts))
+  def apply(b:SBMat, counts:IMat):Dict = Dict(b, DMat(counts))
   
-  def apply(b:BMat, counts:DMat, thresh:Int):Dict = {
+  def apply(b:SBMat, counts:DMat, thresh:Int):Dict = {
     val ii = find(counts >= thresh.toDouble)
     val out = new Dict(CSMat(b(?,ii)))
     out.counts = counts(ii)
     out
   }
-  def apply(b:BMat, counts:IMat, thresh:Int):Dict = Dict(b, DMat(counts), thresh)
+  def apply(b:SBMat, counts:IMat, thresh:Int):Dict = Dict(b, DMat(counts), thresh)
   
   def apply(cstr:CSMat, counts:DMat, h:HashMap[String,Int]):Dict = {
     val out = new Dict(cstr)

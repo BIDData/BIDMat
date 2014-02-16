@@ -180,7 +180,7 @@ object CSMat {
 
     def apply(a:DenseMat[String]):CSMat = new CSMat(a.nrows, a.ncols, a.data) 
     
-    def apply(a:BMat) = a.toCSMat
+    def apply(a:SBMat) = a.toCSMat
     
     def apply(a:List[String]) = new CSMat(1, a.length, a.toArray)
     

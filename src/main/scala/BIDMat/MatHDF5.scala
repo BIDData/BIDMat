@@ -235,7 +235,7 @@ object MatHDF5 {
 		}
 	  } else if (attr_class.equals("int8")) {
 		if (H5Aexists_by_name(fid, varname, "MATLAB_sparse", H5P_DEFAULT)) {
-		  BMat(getSparseMat[Byte](fid, varname))
+		  SBMat(getSparseMat[Byte](fid, varname))
 		} else {
 		  throw new RuntimeException("Dense arrays of bytes unsupported")
 		}
@@ -419,7 +419,7 @@ object MatHDF5 {
 	  case aa:DMat => putDenseMat[Double](fid, aa, aname, H5T_NATIVE_DOUBLE, "double")
 	  case aa:FMat => putDenseMat[Float](fid, aa, aname, H5T_NATIVE_FLOAT, "single")
 	  case aa:IMat => putDenseMat[Int](fid, aa, aname, H5T_NATIVE_INT, "int32")
-	  case aa:BMat => putSparseMat[Byte](fid, aa, aname, H5T_NATIVE_CHAR, "int8")
+	  case aa:SBMat => putSparseMat[Byte](fid, aa, aname, H5T_NATIVE_CHAR, "int8")
 	  case aa:SMat => putSparseMat[Float](fid, aa, aname, H5T_NATIVE_FLOAT, "single")
 	  case aa:SDMat => putSparseMat[Double](fid, aa, aname, H5T_NATIVE_DOUBLE, "double")
 	  case aa:CSMat => putCellMat(fid, aname, aa)

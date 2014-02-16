@@ -1239,7 +1239,7 @@ object GMat {
     }
     val tsize = (treesArray.ncols / ntrees);
     val tstride = (ns + 1) * tsize;
-    val tdepth = (math.round(math.log(tsize)/math.log(2))).toInt - 1
+    val tdepth = (math.round(math.log(tsize)/math.log(2))).toInt
     (treesArray, feats, treePos, oTreeVal) match {
       case (tA : GIMat, fs : GMat, tP : GIMat, oTI : GIMat) => GMat.treeSteps(tA, fs, tP, oTI, nrows, ncols, ns, tstride, ntrees, tdepth)
     }
