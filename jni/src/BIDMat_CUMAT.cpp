@@ -621,7 +621,7 @@ extern "C" {
   (JNIEnv *env, jobject obj, jobject jtrees, jobject jfeats, jobject jtpos, jobject jotv, 
    jint nrows, jint ncols, jint ns, jint tstride, jint ntrees)
   {
-    unsigned int *trees = (unsigned int*)getPointer(env, jtrees);
+    int *trees = (int*)getPointer(env, jtrees);
     float *feats = (float*)getPointer(env, jfeats);
     int *tpos = (int*)getPointer(env, jtpos);
     float *otv = (float*)getPointer(env, jotv);
@@ -634,7 +634,7 @@ extern "C" {
   (JNIEnv *env, jobject obj, jobject jtrees, jobject jfeats, jobject jtpos, jobject jotpos, 
    jint nrows, jint ncols, jint ns, jint tstride, jint ntrees, jint tdepth)
   {
-    unsigned int *trees = (unsigned int*)getPointer(env, jtrees);
+    int *trees = (int*)getPointer(env, jtrees);
     float *feats = (float*)getPointer(env, jfeats);
     int *tpos = (int*)getPointer(env, jtpos);
     int *otpos = (int*)getPointer(env, jotpos);

@@ -27,13 +27,14 @@
 // REPTREES is the number of trees processed by each "y" thread group.
 
 template<int ATHREADS, int BTHREADS, int REPTREES>
-__global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, float *otv, int nrows, int ncols, int ns, int tstride, int ntrees) {
-  int bd;
+__global__ void __treeprod(int *trees, float *feats, int *tpos, float *otv, int nrows, int ncols, int ns, int tstride, int ntrees) {
   __shared__ int pos[REPTREES][ATHREADS];
   __shared__ float totals[REPTREES][ATHREADS];
-  unsigned int tind;
-  int ttop;
+  int bd, tind, ttop;
+  int neg_infty = NEG_INFINITY;
+  float fneg_infty = *((float *)&neg_infty);
   float vv[REPTREES];
+  
 
   for (bd = blockIdx.x; bd < ncols; bd += gridDim.x) {
     // Read in the index of parent for each tree
@@ -49,7 +50,7 @@ __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, float *
       if (threadIdx.y + k*BTHREADS < ntrees) {
         for (int j = threadIdx.x; j < ns+1; j += blockDim.x) {
           tind = trees[j + (ns+1)*pos[k][threadIdx.y] + (threadIdx.y+k*BTHREADS)*tstride];
-          ttop = __shfl(*((int *)&tind), 0);
+          ttop = __shfl(tind, 0);
           if (ttop == NEG_INFINITY) {
             vv[k] = ttop;
             break;
@@ -63,7 +64,7 @@ __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, float *
     // vv[k] is a thread variable, so sum it over the warp threads
 #pragma unroll
     for (int k = 0; k < REPTREES; k++) {
-      if (vv[k] != NEG_INFINITY) {            // This is a leaf node, dont do anything (leaf marker will be output)
+      if (vv[k] != fneg_infty) {            // This is a leaf node, dont do anything (leaf marker will be output)
 #pragma unroll
         for (int i = 1; i < 32; i *= 2) {
           vv[k] += __shfl_down(vv[k], i);
@@ -89,15 +90,14 @@ __global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, float *
 
 
 template<int ATHREADS, int BTHREADS, int REPTREES>
-__global__ void __treesteps(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int tdepth) {
+__global__ void __treesteps(int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int tdepth) {
 
-  int newt, bd;
   __shared__ int pos[REPTREES][ATHREADS];
   __shared__ float thresh[REPTREES][ATHREADS];
   __shared__ float totals[REPTREES][ATHREADS];
-  unsigned int tind;
-  int ttop;
-  int kk;
+  int newt, bd, tind, ttop, kk;
+  int neg_infty = NEG_INFINITY;
+  float fneg_infty = *((float *)&neg_infty);
   float vv[REPTREES];
 
   for (bd = blockIdx.x; bd < ncols; bd += gridDim.x) {
@@ -118,7 +118,7 @@ __global__ void __treesteps(unsigned int *trees, float *feats, int *tpos, int *o
             if (j == 0) {
               thresh[k][threadIdx.y] = *((float *)&tind); // Save the node threshold
             }
-            ttop = __shfl(*((int *)&tind), 0);                         
+            ttop = __shfl(tind, 0);                         
             if (ttop == NEG_INFINITY) {            // This is a leaf
               if (j == 1) {
                 pos[k][threadIdx.y] = tind;        // Save the class label
@@ -150,7 +150,7 @@ __global__ void __treesteps(unsigned int *trees, float *feats, int *tpos, int *o
       // check thresholds and save as needed
       __syncthreads();
       if (threadIdx.x + threadIdx.y*ATHREADS < ntrees) {
-        if (thresh[threadIdx.y][threadIdx.x] != NEG_INFINITY) {  // Check if non-leaf
+        if (thresh[threadIdx.y][threadIdx.x] != fneg_infty) {  // Check if non-leaf
           newt = 2 * pos[threadIdx.y][threadIdx.x] + 1;
           if (totals[threadIdx.y][threadIdx.x] > thresh[threadIdx.y][threadIdx.x]) {
             newt++;
@@ -168,12 +168,12 @@ __global__ void __treesteps(unsigned int *trees, float *feats, int *tpos, int *o
 
 #else
 template<int ATHREADS, int BTHREADS, int REPTREES>
-__global__ void __treeprod(unsigned int *trees, float *feats, int *tpos, float *otval, int nrows, int ncols, int ns, int tstride, int ntrees) {}
+__global__ void __treeprod(int *trees, float *feats, int *tpos, float *otval, int nrows, int ncols, int ns, int tstride, int ntrees) {}
 template<int ATHREADS, int BTHREADS, int REPTREES>
-__global__ void __treesteps(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int tdepth) {}
+__global__ void __treesteps(int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int tdepth) {}
 #endif
 
-int treeprod(unsigned int *trees, float *feats, int *tpos, float *otv, int nrows, int ncols, int ns, int tstride, int ntrees) {
+int treeprod(int *trees, float *feats, int *tpos, float *otv, int nrows, int ncols, int ns, int tstride, int ntrees) {
   int nblks = min(1024, max(ncols/8, min(32, ncols)));
   dim3 blocks(32, 32, 1);
   int ntt;
@@ -198,7 +198,7 @@ int treeprod(unsigned int *trees, float *feats, int *tpos, float *otv, int nrows
 }
 
 
-int treesteps(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int tdepth) {
+int treesteps(int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int tdepth) {
   int nblks = min(1024, max(ncols/8, min(32, ncols)));
   dim3 blocks(32, 32, 1);
   int ntt;
