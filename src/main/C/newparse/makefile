@@ -12,10 +12,10 @@ include gmake.options
 .SUFFIXES: 
 .SUFFIXES: .c .cpp .o .exe .lxc .flex
 
-EXES=xmltweet.exe xmlwiki.exe
+EXES=xmltweet.exe xmlwiki.exe trec.exe
 OBJS=newparse.o gzstream.o
 
-.SECONDARY: xmltweet.lxc xmlwiki.lxc
+.SECONDARY: xmltweet.lxc xmlwiki.lxc trec.lxc
 
 all: $(EXES)
 
