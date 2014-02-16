@@ -353,17 +353,17 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   }
   
   override def unary_- () = GIop(GIMat(-1), null, 2)
-  def + (a : GIMat) = GIop(a, null, 0)
-  def - (a : GIMat) = GIop(a, null, 1)
-  def *@ (a : GIMat) = GIop(a, null, 2)
-  def / (a : GIMat) = GIop(a, null, 3)
-  def > (b : GIMat) = GIop(b, null, 4)
-  def < (b : GIMat) = GIop(b, null, 5)
-  def == (b : GIMat) = GIop(b, null, 6)
-  def === (b : GIMat) = GIop(b, null, 6)
-  def >= (b : GIMat) = GIop(b, null, 7)
-  def <= (b : GIMat) = GIop(b, null, 8)
-  def != (b : GIMat) = GIop(b, null, 9)
+  def + (a : GIMat) = GIop(a, null, op_add)
+  def - (a : GIMat) = GIop(a, null, op_sub)
+  def *@ (a : GIMat) = GIop(a, null, op_mul)
+  def / (a : GIMat) = GIop(a, null, op_div)
+  def > (b : GIMat) = GIop(b, null, op_gt)
+  def < (b : GIMat) = GIop(b, null, op_lt)
+  def == (b : GIMat) = GIop(b, null, op_eq)
+  def === (b : GIMat) = GIop(b, null,op_eq)
+  def >= (b : GIMat) = GIop(b, null, op_ge)
+  def <= (b : GIMat) = GIop(b, null, op_le)
+  def != (b : GIMat) = GIop(b, null, op_ne)
   
   def on(a : GIMat) = vertcat(a, null)
   def \ (a : GIMat) = horzcat(a, null)
@@ -399,33 +399,67 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   def == (b : Double) = GIop(GIMat(b.toInt), null, op_eq)
   def != (b : Float) = GIop(GIMat(b.toInt), null, op_ne)
   def != (b : Int) = GIop(GIMat(b), null, op_ne)
-  def != (b : Double) = GIop(GIMat(b.toInt), null, op_ne)
+  def != (b : Double) = GIop(GIMat(b.toInt), null, op_ne)            
   
   def ~ (b: GIMat) = new GIPair(this, b)
 
 }
 
 class GIPair (val omat:Mat, val mat:GIMat) extends Pair{
+    import GIMat.BinOp._
 
 	override def t = {
 			val out = GIMat.newOrCheckGIMat(mat.ncols, mat.nrows, omat, mat.GUID, "pt".##)
 			CUMAT.transpose(mat.data, mat.nrows, out.data, mat.ncols, mat.nrows, mat.ncols)
 			out
 	}
-	def + (a : GIMat) = mat.GIop(a, omat, 0)
-	def - (a : GIMat) = mat.GIop(a, omat, 1)
-	def *@ (a : GIMat) = mat.GIop(a, omat, 2)
-	def / (a : GIMat) = mat.GIop(a, omat, 3)
-	def > (b : GIMat) = mat.GIop(b, omat, 4)
-	def < (b : GIMat) = mat.GIop(b, omat, 5)
-	def == (b : GIMat) = mat.GIop(b, omat, 6)
-	def === (b : GIMat) = mat.GIop(b, omat, 6)
-	def >= (b : GIMat) = mat.GIop(b, omat, 7)
-	def <= (b : GIMat) = mat.GIop(b, omat, 8)
-	def != (b : GIMat) = mat.GIop(b, omat, 9)
+	def + (a : GIMat) = mat.GIop(a, omat, op_add)
+	def - (a : GIMat) = mat.GIop(a, omat, op_sub)
+	def *@ (a : GIMat) = mat.GIop(a, omat, op_mul)
+	def / (a : GIMat) = mat.GIop(a, omat, op_div)
+	def > (b : GIMat) = mat.GIop(b, omat, op_gt)
+	def < (b : GIMat) = mat.GIop(b, omat, op_lt)
+	def == (b : GIMat) = mat.GIop(b, omat, op_eq)
+	def === (b : GIMat) = mat.GIop(b, omat, op_eq)
+	def >= (b : GIMat) = mat.GIop(b, omat, op_ge)
+	def <= (b : GIMat) = mat.GIop(b, omat, op_le)
+	def != (b : GIMat) = mat.GIop(b, omat, op_ne)
 	
 	def on(a : GIMat) = mat.vertcat(a, omat)
 	def \ (a : GIMat) = mat.horzcat(a, omat)
+	
+	override def + (a : Float) = mat.GIop(GIMat(a.toInt), omat, op_add)
+	override def - (a : Float) = mat.GIop(GIMat(a.toInt), omat, op_sub)
+	override def *@ (a : Float) = mat.GIop(GIMat(a.toInt), omat, op_mul)
+	override def ∘  (a : Float) = mat.GIop(GIMat(a.toInt), omat, op_mul)
+	override def /  (a : Float) = mat.GIop(GIMat(a.toInt), omat, op_div)
+	override def ^  (a : Float) = mat.GIop(GIMat(a.toInt), omat, op_pow)
+
+	def + (a : Int) = mat.GIop(GIMat(a), omat, op_add)
+	def - (a : Int) = mat.GIop(GIMat(a), omat, op_sub)
+	def *@ (a : Int) = mat.GIop(GIMat(a), omat, op_mul)
+	def ∘  (a : Int) = mat.GIop(GIMat(a), omat, op_mul)
+	def /  (a : Int) = mat.GIop(GIMat(a), omat, op_div)
+	def ^  (a : Int) = mat.GIop(GIMat(a), omat, op_pow)
+
+	override def < (b : Float) = mat.GIop(GIMat(b.toInt), omat, op_lt)
+	def < (b : Int) = mat.GIop(GIMat(b), omat, op_lt)
+	def < (b : Double) = mat.GIop(GIMat(b.toInt), omat, op_lt)
+	override def > (b : Float) = mat.GIop(GIMat(b.toInt), omat, op_gt)
+	def > (b : Int) = mat.GIop(GIMat(b), omat, op_gt)
+	def > (b : Double) = mat.GIop(GIMat(b.toInt), omat, op_gt)
+	override def <= (b : Float) = mat.GIop(GIMat(b.toInt), omat, op_le)
+	def <= (b : Int) = mat.GIop(GIMat(b), omat, op_le)
+	def <= (b : Double) = mat.GIop(GIMat(b.toInt), omat, op_le)
+	override def >= (b : Float) = mat.GIop(GIMat(b.toInt), omat, op_ge)
+	def >= (b : Int) = mat.GIop(GIMat(b), omat, op_ge)
+	def >= (b : Double) = mat.GIop(GIMat(b.toInt), omat, op_ge)
+	override def == (b : Float) = mat.GIop(GIMat(b.toInt), omat, op_eq)
+	def == (b : Int) = mat.GIop(GIMat(b), omat, op_eq)
+	def == (b : Double) = mat.GIop(GIMat(b.toInt), omat, op_eq)
+	override def != (b : Float) = mat.GIop(GIMat(b.toInt), omat, op_ne)
+	def != (b : Int) = mat.GIop(GIMat(b), omat, op_ne)
+	def != (b : Double) = mat.GIop(GIMat(b.toInt), null, op_ne)  
 }
 
 class GIMatWildcard extends GIMat(0,0,null,0) with MatrixWildcard
