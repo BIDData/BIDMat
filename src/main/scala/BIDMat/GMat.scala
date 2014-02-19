@@ -1283,17 +1283,17 @@ object GMat {
   	if (err != 0) throw new RuntimeException("treeProd error %d: " + cudaGetErrorString(err) format err);
   }
   
-  def cumsumi(a:GMat, jc:GIMat, omat:Mat):GMat = {
+  def cumsumg(a:GMat, jc:GIMat, omat:Mat):GMat = {
     val out = GMat.newOrCheckGMat(a.nrows, a.ncols, omat, a.GUID, jc.GUID, "cumsumi".##)
-    val err = CUMAT.cumsumi(a.data, out.data, jc.data, a.nrows, a.ncols, jc.length-1)
+    val err = CUMAT.cumsumgf(a.data, out.data, jc.data, a.nrows, a.ncols, jc.length-1)
     if (err != 0) throw new RuntimeException("cumsumi error %d: " + cudaGetErrorString(err) format err);
     out
   }
   
-  def maxs(a:GMat, jc:GIMat, omat:Mat, omati:Mat):(GMat, GIMat) = {
+  def maxg(a:GMat, jc:GIMat, omat:Mat, omati:Mat):(GMat, GIMat) = {
     val out = GMat.newOrCheckGMat(jc.length-1, a.ncols, omat, a.GUID, jc.GUID, "maxs".##)
     val outi = GIMat.newOrCheckGIMat(jc.length-1, a.ncols, omati, a.GUID, jc.GUID, "maxs_i".##)
-    val err = CUMAT.maxs(a.data, out.data, outi.data, jc.data, a.nrows, a.ncols, jc.length-1)
+    val err = CUMAT.maxgf(a.data, out.data, outi.data, jc.data, a.nrows, a.ncols, jc.length-1)
     if (err != 0) throw new RuntimeException("maxs error %d: " + cudaGetErrorString(err) format err);
     (out, outi)
   }

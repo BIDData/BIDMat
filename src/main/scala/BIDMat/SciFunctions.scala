@@ -580,9 +580,13 @@ object SciFunctions {
   def sum(a:CMat, n:Int) = a.ccReduceOpv(n, CMat.vecAddFun, null)
   def sum(a:CMat, n:Int, c:Mat) = a.ccReduceOpv(n, CMat.vecAddFun, c)
   
-  def cumsumi(a:GMat, jc:GIMat, omat:Mat):GMat = GMat.cumsumi(a, jc, omat)
+  def cumsumg(a:GMat, jc:GIMat, omat:Mat):GMat = GMat.cumsumg(a, jc, omat)
   
-  def maxs(a:GMat, jc:GIMat, omat:Mat, omati:Mat):(GMat,GIMat) = GMat.maxs(a, jc, omat, omati)
+  def maxg(a:GMat, jc:GIMat, omat:Mat, omati:Mat):(GMat,GIMat) = GMat.maxg(a, jc, omat, omati)
+  
+  def cumsumg(a:GIMat, jc:GIMat, omat:Mat):GIMat = GIMat.cumsumg(a, jc, omat)
+  
+  def maxg(a:GIMat, jc:GIMat, omat:Mat, omati:Mat):(GIMat,GIMat) = GIMat.maxg(a, jc, omat, omati)
   
   def countnz(a:Mat, n:Int):IMat = countnz(a, n, null)
   def countnz(a:Mat):IMat = countnz(a, 0, null)
@@ -594,9 +598,13 @@ object SciFunctions {
     }
   }
   
-  def cumsumi(a:GMat, jc:GIMat):GMat = GMat.cumsumi(a, jc, null)
+  def cumsumg(a:GMat, jc:GIMat):GMat = GMat.cumsumg(a, jc, null)
   
-  def maxs(a:GMat, jc:GIMat) = GMat.maxs(a, jc, null, null)
+  def maxg(a:GMat, jc:GIMat) = GMat.maxg(a, jc, null, null)
+  
+  def cumsumg(a:GIMat, jc:GIMat):GIMat = GIMat.cumsumg(a, jc, null)
+  
+  def maxg(a:GIMat, jc:GIMat) = GIMat.maxg(a, jc, null, null)
      
   def max(a:Mat, b:Mat):Mat = max(a, b, null)
 
