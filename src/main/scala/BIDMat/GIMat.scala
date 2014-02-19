@@ -631,6 +631,21 @@ object GIMat {
     Mat.nflops += IJ.nrows
     out
   }
+  
+  def cumsumg(a:GIMat, jc:GIMat, omat:Mat):GIMat = {
+    val out = GIMat.newOrCheckGIMat(a.nrows, a.ncols, omat, a.GUID, jc.GUID, "cumsumi".##)
+    val err = CUMAT.cumsumgi(a.data, out.data, jc.data, a.nrows, a.ncols, jc.length-1)
+    if (err != 0) throw new RuntimeException("cumsumi error %d: " + cudaGetErrorString(err) format err);
+    out
+  }
+  
+  def maxg(a:GIMat, jc:GIMat, omat:Mat, omati:Mat):(GIMat, GIMat) = {
+    val out = GIMat.newOrCheckGIMat(jc.length-1, a.ncols, omat, a.GUID, jc.GUID, "maxs".##)
+    val outi = GIMat.newOrCheckGIMat(jc.length-1, a.ncols, omati, a.GUID, jc.GUID, "maxs_i".##)
+    val err = CUMAT.maxgf(a.data, out.data, outi.data, jc.data, a.nrows, a.ncols, jc.length-1)
+    if (err != 0) throw new RuntimeException("maxs error %d: " + cudaGetErrorString(err) format err);
+    (out, outi)
+  }
  
   
   def i3sortlexIndsGPU(grams:IMat, inds:IMat, asc:Boolean) = {
