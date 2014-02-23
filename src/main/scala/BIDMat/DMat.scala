@@ -118,6 +118,30 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
 
   override def update(i:Int, jv:Mat, b:Mat):DMat = DMat(_update(IMat.ielem(i), jv.asInstanceOf[IMat], b.asInstanceOf[DMat]))
   
+  def quickdists(b:DMat) = {
+    val out = DMat(ncols, b.ncols)
+    val bd = b.data
+    var i = 0
+    while (i < ncols) {
+      var j = 0
+      while (j < b.ncols) {
+        var k = 0
+        var sum = 0.0
+        while (k < nrows) {
+          val indx1 = k + i*nrows
+          val indx2 = k + j*nrows
+          sum += (data(indx1) - bd(indx2))*(data(indx1) - bd(indx2))
+          k += 1
+        }
+        out.data(i+j*ncols) = sum
+        j += 1
+      }
+      i += 1
+    }
+    Mat.nflops += 3L * nrows * ncols * b.ncols
+    out
+  }
+  
   def ddMatOp(b: Mat, f:(Double, Double) => Double, out:Mat) = 
     b match {
       case bb:DMat => DMat(ggMatOp(bb, f, out))
