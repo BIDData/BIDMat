@@ -387,56 +387,59 @@ int ocopy_transpose_min(int *optrs, float *in, float *out, int stride, int nrows
 
 #if __CUDA_ARCH__ > 200
 template<class T>
-__global__ void __cumsumg(T *in, T *out, int *jc, int nrows, int ncols) {
+__global__ void __cumsumg(T *in, T *out, int *jc, int nrows, int ncols, int m) {
   __shared__ T tots[32];
-  int start, end;
-  int bid = blockIdx.y + blockIdx.z * blockDim.y;
+  int start, end, ij;
+  int bid = blockIdx.y + blockIdx.z * blockDim.y;  // column index
   T sum, tsum, tmp, ttot, ttot0;
 
   if (bid < ncols) {
-    start = jc[blockIdx.x] + bid * nrows;
-    end = jc[blockIdx.x+1] + bid * nrows;
-
-    for (int i = start + threadIdx.x + threadIdx.y * blockDim.x; i < end; i += blockDim.x * blockDim.y) {
-      tsum = in[i];
-      tmp = __shfl_up(tsum, 1);
-      if (threadIdx.x >= 1) tsum += tmp;
-      tmp = __shfl_up(tsum, 2);
-      if (threadIdx.x >= 2) tsum += tmp;
-      tmp = __shfl_up(tsum, 4);
-      if (threadIdx.x >= 4) tsum += tmp;
-      tmp = __shfl_up(tsum, 8);
-      if (threadIdx.x >= 8) tsum += tmp;
-      tmp = __shfl_up(tsum, 16);
-      if (threadIdx.x >= 16) tsum += tmp;
-      ttot = __shfl(tsum, min(end-start-1, 31));
-      ttot0 = ttot;
-      __syncthreads();
-      if (threadIdx.x == threadIdx.y) {
-        tots[threadIdx.y] = ttot;
-      }
-      __syncthreads();
-      for (int k = 1; k < blockDim.y; k *= 2) {
-        if (threadIdx.y >= k) {
-          if (threadIdx.x == threadIdx.y - k) {
-            ttot += tots[threadIdx.x];
-          }
+    for (ij = blockIdx.x; ij < m; ij += gridDim.x) {
+      start = jc[ij] + bid * nrows;
+      end = jc[ij+1] + bid * nrows;
+      sum = 0;
+      for (int i = start + threadIdx.x + threadIdx.y * blockDim.x; i < end; i += blockDim.x * blockDim.y) {
+        tsum = in[i];
+        tmp = __shfl_up(tsum, 1);
+        if (threadIdx.x >= 1) tsum += tmp;
+        tmp = __shfl_up(tsum, 2);
+        if (threadIdx.x >= 2) tsum += tmp;
+        tmp = __shfl_up(tsum, 4);
+        if (threadIdx.x >= 4) tsum += tmp;
+        tmp = __shfl_up(tsum, 8);
+        if (threadIdx.x >= 8) tsum += tmp;
+        tmp = __shfl_up(tsum, 16);
+        if (threadIdx.x >= 16) tsum += tmp;
+        ttot = __shfl(tsum, min(end-start-1, 31));
+        ttot0 = ttot;
+        __syncthreads();
+        if (threadIdx.x == threadIdx.y) {
+          tots[threadIdx.y] = ttot;
         }
         __syncthreads();
-        if (threadIdx.y >= k) {
-          ttot = __shfl(ttot, threadIdx.y - k);
-          if (threadIdx.x == threadIdx.y) {
-            tots[threadIdx.y] = ttot;
+        for (int k = 1; k < blockDim.y; k *= 2) {
+          if (threadIdx.y >= k) {
+            if (threadIdx.x == threadIdx.y - k) {
+              ttot += tots[threadIdx.x];
+            }
           }
+          __syncthreads();
+          if (threadIdx.y >= k) {
+            ttot = __shfl(ttot, threadIdx.y - k);
+            if (threadIdx.x == threadIdx.y) {
+              tots[threadIdx.y] = ttot;
+            }
+          }
+          __syncthreads();
         }
-        __syncthreads();
+        out[i] = sum + tsum + ttot - ttot0;
+        if (threadIdx.x == blockDim.y - 1) {
+          ttot = tots[threadIdx.x];
+        }
+        __syncthreads();        
+        ttot = __shfl(ttot, blockDim.y  - 1);
+        sum += ttot;
       }
-      out[i] = sum + tsum + ttot - ttot0;
-      if (threadIdx.x == blockDim.y - 1) {
-        ttot = tots[threadIdx.x];
-      }
-      ttot = __shfl(ttot, blockDim.y  - 1);
-      sum += ttot;
     }
   }
 }
@@ -445,51 +448,26 @@ template<class T>
 __global__ void __maxg(T *in, T *out, int *outi, int *jc, int nrows, int ncols, int m, T minv) {
   __shared__ T maxv[32];
   __shared__ int maxi[32];
-  int start = jc[blockIdx.x];
-  int end = jc[blockIdx.x+1];
   T vmax, vtmp;
-  int imax, itmp, i, k;
+  int imax, itmp, i, k, start, end, ij;
   vmax = minv;
   imax = -1;
   int bid = blockIdx.y + blockIdx.z * blockDim.y;
 
   if (bid < ncols) {
-    for (i = start + threadIdx.x + threadIdx.y * blockDim.x; i < end; i += blockDim.x * blockDim.y) {
-      vtmp = in[i + nrows * bid];
-      itmp = i;
-      if (vtmp > vmax) {
-        vmax = vtmp;
-        imax = itmp;
-      }
-    }
-
-    for (k = 1; k < blockDim.x; k *= 2) {
-      vtmp = __shfl_up(vmax, k);
-      itmp = __shfl_up(imax, k);
-      if (threadIdx.x >= k) {
+    for (ij = blockIdx.x; ij < m; ij += gridDim.x) {
+      start = jc[ij] + bid * nrows;
+      end = jc[ij+1] + bid * nrows;
+      for (i = start + threadIdx.x + threadIdx.y * blockDim.x; i < end; i += blockDim.x * blockDim.y) {
+        vtmp = in[i + nrows * bid];
+        itmp = i;
         if (vtmp > vmax) {
           vmax = vtmp;
           imax = itmp;
         }
       }
-    }
-    vmax = __shfl(vmax, blockDim.x - 1);
-    imax = __shfl(imax, blockDim.x - 1);
-    __syncthreads();
 
-    if (threadIdx.x == threadIdx.y) {
-      maxv[threadIdx.y] = vmax;
-      maxi[threadIdx.y] = imax;
-    }
-
-    __syncthreads();
-    if (threadIdx.y == 0) {
-      vmax = maxv[threadIdx.x];
-      imax = maxi[threadIdx.x];
-    }
-    __syncthreads();
-    if (threadIdx.y == 0) {
-      for (k = 1; k < blockDim.y; k *= 2) {
+      for (k = 1; k < blockDim.x; k *= 2) {
         vtmp = __shfl_up(vmax, k);
         itmp = __shfl_up(imax, k);
         if (threadIdx.x >= k) {
@@ -499,16 +477,44 @@ __global__ void __maxg(T *in, T *out, int *outi, int *jc, int nrows, int ncols, 
           }
         }
       }
-      if (threadIdx.x == blockDim.y - 1) {
-        out[blockIdx.x + m * bid] = vmax;
-        outi[blockIdx.x + m * bid] = imax;
+
+      vmax = __shfl(vmax, blockDim.x - 1);
+      imax = __shfl(imax, blockDim.x - 1);
+      __syncthreads();
+
+      if (threadIdx.x == threadIdx.y) {
+        maxv[threadIdx.y] = vmax;
+        maxi[threadIdx.y] = imax;
+      }
+
+      __syncthreads();
+      if (threadIdx.y == 0) {
+        vmax = maxv[threadIdx.x];
+        imax = maxi[threadIdx.x];
+      }
+      __syncthreads();
+      if (threadIdx.y == 0) {
+        for (k = 1; k < blockDim.y; k *= 2) {
+          vtmp = __shfl_up(vmax, k);
+          itmp = __shfl_up(imax, k);
+          if (threadIdx.x >= k) {
+            if (vtmp > vmax) {
+              vmax = vtmp;
+              imax = itmp;
+            }
+          }
+        }
+        if (threadIdx.x == blockDim.y - 1) {
+          out[ij + m * bid] = vmax;
+          outi[ij + m * bid] = imax;
+        }
       }
     }
   }
 }
 #else
 template<class T>
-__global__ void __cumsumg(T *in, T *out, int *jc, int nrows, int ncols) {}
+__global__ void __cumsumg(T *in, T *out, int *jc, int nrows, int ncols, int m) {}
 
 template<class T>
 __global__ void __maxg(T *in, T *out, int *outi, int *jc, int nrows, int ncols, int m, T minv) {}
@@ -528,10 +534,10 @@ template<class T>
 int cumsumg(T *in, T *out, int *jc, int nrows, int ncols, int m) {
   int nc1, nc2;
   setinds(ncols, nc1, nc2);
-  dim3 grid(m, nc1, nc2);
+  dim3 grid(min(64, m), nc1, nc2);
   int ny = min(32, 1+nrows/m/32);
   dim3 tblock(32, ny, 1);
-  __cumsumg<T><<<grid,tblock>>>(in, out, jc, nrows, ncols);
+  __cumsumg<T><<<grid,tblock>>>(in, out, jc, nrows, ncols, m);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
@@ -549,7 +555,7 @@ template<class T>
 int maxg(T *in, T *out, int *outi, int *jc, int nrows, int ncols, int m, T minv) {
   int nc1, nc2;
   setinds(ncols, nc1, nc2);
-  dim3 grid(m, nc1, nc2);
+  dim3 grid(min(64, m), nc1, nc2);
   int ny = min(32, 1+nrows/m/32);
   dim3 tblock(32, ny, 1);
   __maxg<T><<<grid,tblock>>>(in, out, outi, jc, nrows, ncols, m, minv);
