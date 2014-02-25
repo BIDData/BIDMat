@@ -1863,6 +1863,362 @@ int maxsumx(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int 
   cudaError_t err = cudaGetLastError();
   return err;
 }
+
+
+#if __CUDA_ARCH__ > 200
+template<class T>
+__global__ void __cumsumg(T *in, T *out, int *jc, int nrows, int ncols, int m) {
+  __shared__ T tots[32];
+  int start, end, ij;
+  int bid = blockIdx.y + blockIdx.z * blockDim.y;  // column index
+  T sum, tsum, tmp, ttot, ttot0;
+
+  if (bid < ncols) {
+    for (ij = blockIdx.x; ij < m; ij += gridDim.x) {
+      start = jc[ij] + bid * nrows;
+      end = jc[ij+1] + bid * nrows;
+      sum = 0;
+      for (int i = start + threadIdx.x + threadIdx.y * blockDim.x; i < end; i += blockDim.x * blockDim.y) {
+        tsum = in[i];
+        tmp = __shfl_up(tsum, 1);
+        if (threadIdx.x >= 1) tsum += tmp;
+        tmp = __shfl_up(tsum, 2);
+        if (threadIdx.x >= 2) tsum += tmp;
+        tmp = __shfl_up(tsum, 4);
+        if (threadIdx.x >= 4) tsum += tmp;
+        tmp = __shfl_up(tsum, 8);
+        if (threadIdx.x >= 8) tsum += tmp;
+        tmp = __shfl_up(tsum, 16);
+        if (threadIdx.x >= 16) tsum += tmp;
+        ttot = __shfl(tsum, min(end-start-1, 31));
+        ttot0 = ttot;
+        __syncthreads();
+        if (threadIdx.x == threadIdx.y) {
+          tots[threadIdx.y] = ttot;
+        }
+        __syncthreads();
+        for (int k = 1; k < blockDim.y; k *= 2) {
+          if (threadIdx.y >= k) {
+            if (threadIdx.x == threadIdx.y - k) {
+              ttot += tots[threadIdx.x];
+            }
+          }
+          __syncthreads();
+          if (threadIdx.y >= k) {
+            ttot = __shfl(ttot, threadIdx.y - k);
+            if (threadIdx.x == threadIdx.y) {
+              tots[threadIdx.y] = ttot;
+            }
+          }
+          __syncthreads();
+        }
+        out[i] = sum + tsum + ttot - ttot0;
+        if (threadIdx.x == blockDim.y - 1) {
+          ttot = tots[threadIdx.x];
+        }
+        __syncthreads();        
+        ttot = __shfl(ttot, blockDim.y  - 1);
+        sum += ttot;
+      }
+    }
+  }
+}
+
+template<class T>
+__global__ void __maxming(T *in, T *out, int *outi, int *jc, int nrows, int ncols, int m, T maxminv, int dir) {
+  __shared__ T maxv[32];
+  __shared__ int maxi[32];
+  T vmax, vtmp;
+  int imax, itmp, i, k, start, end, ij;
+  int bid = blockIdx.y + blockIdx.z * blockDim.y;
+
+  if (bid < ncols) {
+    for (ij = blockIdx.x; ij < m; ij += gridDim.x) {
+      vmax = maxminv;
+      imax = -1;
+      start = jc[ij];
+      end = jc[ij+1];
+      for (i = start + threadIdx.x + threadIdx.y * blockDim.x; i < end; i += blockDim.x * blockDim.y) {
+        vtmp = in[i + nrows * bid];
+        itmp = i;
+        if (dir ? (vtmp > vmax) : (vtmp < vmax)) {
+          vmax = vtmp;
+          imax = itmp;
+        }
+      }
+      for (k = 1; k < blockDim.x; k *= 2) {
+        vtmp = __shfl_up(vmax, k);
+        itmp = __shfl_up(imax, k);
+        if (threadIdx.x >= k) {
+          if (dir ? (vtmp > vmax) : (vtmp < vmax)) {
+            vmax = vtmp;
+            imax = itmp;
+          }
+        }
+      }
+
+      vmax = __shfl(vmax, blockDim.x - 1);
+      imax = __shfl(imax, blockDim.x - 1);
+      __syncthreads();
+
+      if (threadIdx.x == threadIdx.y) {
+        maxv[threadIdx.y] = vmax;
+        maxi[threadIdx.y] = imax;
+      }
+
+      __syncthreads();
+      if (threadIdx.y == 0) {
+        vmax = maxv[threadIdx.x];
+        imax = maxi[threadIdx.x];
+      }
+      __syncthreads();
+      if (threadIdx.y == 0) {
+        for (k = 1; k < blockDim.y; k *= 2) {
+          vtmp = __shfl_up(vmax, k);
+          itmp = __shfl_up(imax, k);
+          if (threadIdx.x >= k) {
+            if (dir ? (vtmp > vmax) : (vtmp < vmax)) {
+              vmax = vtmp;
+              imax = itmp;
+            }
+          }
+        }
+        if (threadIdx.x == blockDim.y - 1) {
+          out[ij + m * bid] = vmax;
+          outi[ij + m * bid] = imax;
+        }
+      }
+    }
+  }
+}
+
+template<class T>
+__global__ void __maxmini_cols(T *in, T *out, int *outi, int nrows, int ncols, T maxminv, int dir) {
+  __shared__ T maxv[32];
+  __shared__ int maxi[32];
+  T vmax, vtmp;
+  int imax, itmp, i, k;
+  int bid = blockIdx.y + blockIdx.z * blockDim.y;
+
+  if (bid < ncols) {
+    vmax = maxminv;
+    imax = -1;
+    for (i = threadIdx.x + threadIdx.y * blockDim.x; i < nrows; i += blockDim.x * blockDim.y) {
+      vtmp = in[i + nrows * bid];
+      itmp = i;
+      if (dir ? (vtmp > vmax) : (vtmp < vmax)) {
+        vmax = vtmp;
+        imax = itmp;
+      }
+    }
+
+    for (k = 1; k < blockDim.x; k *= 2) {
+      vtmp = __shfl_up(vmax, k);
+      itmp = __shfl_up(imax, k);
+      if (threadIdx.x >= k) {
+        if (dir ? (vtmp > vmax) : (vtmp < vmax)) {
+          vmax = vtmp;
+          imax = itmp;
+        }
+      }
+    }
+
+    vmax = __shfl(vmax, blockDim.x - 1);
+    imax = __shfl(imax, blockDim.x - 1);
+    __syncthreads();
+
+    if (threadIdx.x == threadIdx.y) {
+      maxv[threadIdx.y] = vmax;
+      maxi[threadIdx.y] = imax;
+    }
+
+    __syncthreads();
+    if (threadIdx.y == 0) {
+      vmax = maxv[threadIdx.x];
+      imax = maxi[threadIdx.x];
+    }
+    __syncthreads();
+    if (threadIdx.y == 0) {
+      for (k = 1; k < blockDim.y; k *= 2) {
+        vtmp = __shfl_up(vmax, k);
+        itmp = __shfl_up(imax, k);
+        if (threadIdx.x >= k) {
+          if (dir ? (vtmp > vmax) : (vtmp < vmax)) {
+            vmax = vtmp;
+            imax = itmp;
+          }
+        }
+      }
+      if (threadIdx.x == blockDim.y - 1) {
+        out[bid] = vmax;
+        outi[bid] = imax;
+      }
+    }
+  }
+}
+
+// Not very fast for wide matrices
+
+template<class T>
+__global__ void __maxmini_rows(T *in, T *out, int *outi, int nrows, int ncols, int dir) {
+  T vmax, vtmp;
+  int imax, itmp, i, j;
+
+  for (i = threadIdx.x + blockDim.x * (threadIdx.y + blockDim.y * blockIdx.x); i < nrows; i += blockDim.x * blockDim.y * gridDim.x) {
+    if (ncols > 0) {
+      vmax = in[i];
+      imax = 0;
+      for (j = 1; j < ncols; j++) {
+        vtmp = in[i + nrows * j];
+        itmp = j;
+        if (dir ? (vtmp > vmax) : (vtmp < vmax)) {
+          vmax = vtmp;
+          imax = itmp;
+        }
+      }
+      out[i] = vmax;
+      outi[i] = imax;
+    }
+  }
+}
+#else
+template<class T>
+__global__ void __cumsumg(T *in, T *out, int *jc, int nrows, int ncols, int m) {}
+
+template<class T>
+__global__ void __maxming(T *in, T *out, int *outi, int *jc, int nrows, int ncols, int m, T minv, int dir) {}
+
+template<class T>
+__global__ void __maxmini_cols(T *in, T *out, int *outi, int nrows, int ncols, T minv, int dir) {}
+
+template<class T>
+__global__ void __maxmini_rows(T *in, T *out, int *outi, int nrows, int ncols, int dir) {}
+#endif
+
+void setinds(int ncols, int &nc1, int &nc2) {
+  if (ncols < 65536) {
+    nc1 = ncols;
+    nc2 = 1;
+  } else {
+    nc1 = (int)sqrt((double)ncols);
+    nc2 = 1 + (ncols-1)/nc1;
+  }
+}
+
+template<class T>
+int cumsumg(T *in, T *out, int *jc, int nrows, int ncols, int m) {
+  int nc1, nc2;
+  setinds(ncols, nc1, nc2);
+  dim3 grid(min(64, m), nc1, nc2);
+  int ny = min(32, 1+nrows/m/32);
+  dim3 tblock(32, ny, 1);
+  __cumsumg<T><<<grid,tblock>>>(in, out, jc, nrows, ncols, m);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int cumsumgf(float *in, float *out, int *jc, int nrows, int ncols, int m) {      
+  return cumsumg<float>(in, out, jc, nrows, ncols, m);
+}
+
+int cumsumgi(int *in, int *out, int *jc, int nrows, int ncols, int m) {      
+  return cumsumg<int>(in, out, jc, nrows, ncols, m);
+}
+
+template<class T>
+int maxming(T *in, T *out, int *outi, int *jc, int nrows, int ncols, int m, T minv, int dir) {
+  int nc1, nc2;
+  setinds(ncols, nc1, nc2);
+  dim3 grid(min(64, m), nc1, nc2);
+  int ny = min(32, 1+nrows/m/32);
+  dim3 tblock(32, ny, 1);
+  __maxming<T><<<grid,tblock>>>(in, out, outi, jc, nrows, ncols, m, minv, dir);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+template<class T>
+int maxmini_cols(T *in, T *out, int *outi, int nrows, int ncols, T minv, int dir) {
+  int nc1, nc2;
+  setinds(ncols, nc1, nc2);
+  dim3 grid(1, nc1, nc2);
+  int ny = min(32, 1+nrows/32);
+  dim3 tblock(32, ny, 1);
+  __maxmini_cols<T><<<grid,tblock>>>(in, out, outi, nrows, ncols, minv, dir);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+template<class T>
+int maxmini_rows(T *in, T *out, int *outi, int nrows, int ncols, int dir) {
+  int nb = min(32,1+nrows/32);
+  dim3 grid(nb,1,1);
+  int ny = min(32, 1+nrows/nb/32);
+  dim3 tblock(32, ny, 1);
+  __maxmini_rows<T><<<grid,tblock>>>(in, out, outi, nrows, ncols, dir);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int maxgf(float *in, float *out, int *outi, int *jc, int nrows, int ncols, int m) {
+  return maxming<float>(in, out, outi, jc, nrows, ncols, m, -3e38f, 1);
+}
+
+int maxgi(int *in, int *out, int *outi, int *jc, int nrows, int ncols, int m) {
+  return maxming<int>(in, out, outi, jc, nrows, ncols, m, 0x80000000, 1);
+}
+
+int mingf(float *in, float *out, int *outi, int *jc, int nrows, int ncols, int m) {
+  return maxming<float>(in, out, outi, jc, nrows, ncols, m, 3e38f, 0);
+}
+
+int mingi(int *in, int *out, int *outi, int *jc, int nrows, int ncols, int m) {
+  return maxming<int>(in, out, outi, jc, nrows, ncols, m, 0x7fffffff, 0);
+}
+
+int maxif(float *in, float *out, int *outi, int nrows, int ncols, int dir) {
+  if (dir == 1) {
+    return maxmini_cols<float>(in, out, outi, nrows, ncols, -3e38f, 1);
+  } else if (dir == 2) {
+    return maxmini_rows<float>(in, out, outi, nrows, ncols, 1);
+  } else {
+    return -1;
+  }
+}
+
+int maxii(int *in, int *out, int *outi, int nrows, int ncols, int dir) {
+  if (dir == 1) {
+    return maxmini_cols<int>(in, out, outi, nrows, ncols, 0x80000000, 1);
+  } else if (dir == 2) {
+    return maxmini_rows<int>(in, out, outi, nrows, ncols, 1);
+  } else {
+    return -1;
+  }
+}
+
+int minif(float *in, float *out, int *outi, int nrows, int ncols, int dir) {
+  if (dir == 1) {
+    return maxmini_cols<float>(in, out, outi, nrows, ncols, 3e38f, 0);
+  } else if (dir == 2) {
+    return maxmini_rows<float>(in, out, outi, nrows, ncols, 0);
+  } else {
+    return -1;
+  }
+}
+
+int minii(int *in, int *out, int *outi, int nrows, int ncols, int dir) {
+  if (dir == 1) {
+    return maxmini_cols<int>(in, out, outi, nrows, ncols, 0x7fffffff, 0);
+  } else if (dir == 2) {
+    return maxmini_rows<int>(in, out, outi, nrows, ncols, 0);
+  } else {
+    return -1;
+  }
+}
                                                                                                    
 __global__ void __dmv(float *a, int nrows, int ncols, float *b, float *c) {
   for (int tx = threadIdx.x + blockDim.x * blockIdx.x; tx < nrows; tx += blockDim.x * gridDim.x) {
