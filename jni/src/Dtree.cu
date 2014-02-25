@@ -456,8 +456,8 @@ __global__ void __maxg(T *in, T *out, int *outi, int *jc, int nrows, int ncols, 
     for (ij = blockIdx.x; ij < m; ij += gridDim.x) {
       vmax = minv;
       imax = -1;
-      start = jc[ij] + bid * nrows;
-      end = jc[ij+1] + bid * nrows;
+      start = jc[ij];
+      end = jc[ij+1];
       for (i = start + threadIdx.x + threadIdx.y * blockDim.x; i < end; i += blockDim.x * blockDim.y) {
         vtmp = in[i + nrows * bid];
         itmp = i;
@@ -506,7 +506,7 @@ __global__ void __maxg(T *in, T *out, int *outi, int *jc, int nrows, int ncols, 
         }
         if (threadIdx.x == blockDim.y - 1) {
           out[ij + m * bid] = vmax;
-          outi[ij + m * bid] = imax - bid * nrows;
+          outi[ij + m * bid] = imax;
         }
       }
     }
