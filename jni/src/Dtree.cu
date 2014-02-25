@@ -506,7 +506,7 @@ __global__ void __maxg(T *in, T *out, int *outi, int *jc, int nrows, int ncols, 
         }
         if (threadIdx.x == blockDim.y - 1) {
           out[ij + m * bid] = vmax;
-          outi[ij + m * bid] = imax;
+          outi[ij + m * bid] = imax - bid * nrows;
         }
       }
     }
