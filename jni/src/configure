@@ -94,7 +94,7 @@ if [ "$OS" = "apple" ] ; then
             $MKL_ROOT/lib/libmkl_core.a ${COMPOSER_ROOT}/lib/libiomp5.a \
             -lpthread -lm  -framework JavaVM"
     fi
-    CUDA_LIBS="-L${CUDA_HOME}/lib -L${BIDMAT_ROOT}/lib -lcudart -lCommonJNI"
+    CUDA_LIBS="-L${CUDA_HOME}/lib -L${BIDMAT_ROOT}/lib -lcudart -lCommonJNI_mac"
 elif [ "$OS" = "linux" ] ; then
     MKL_ROOT="/opt/intel/mkl"
     if [ "$JAVA_HOME" = "" ]; then
