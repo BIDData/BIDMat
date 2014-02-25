@@ -450,12 +450,12 @@ __global__ void __maxg(T *in, T *out, int *outi, int *jc, int nrows, int ncols, 
   __shared__ int maxi[32];
   T vmax, vtmp;
   int imax, itmp, i, k, start, end, ij;
-  vmax = minv;
-  imax = -1;
   int bid = blockIdx.y + blockIdx.z * blockDim.y;
 
   if (bid < ncols) {
     for (ij = blockIdx.x; ij < m; ij += gridDim.x) {
+      vmax = minv;
+      imax = -1;
       start = jc[ij] + bid * nrows;
       end = jc[ij+1] + bid * nrows;
       for (i = start + threadIdx.x + threadIdx.y * blockDim.x; i < end; i += blockDim.x * blockDim.y) {
