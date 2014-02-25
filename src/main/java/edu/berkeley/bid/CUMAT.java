@@ -109,6 +109,18 @@ public final class CUMAT {
     
     public static native int maxgf(Pointer in, Pointer out, Pointer outi, Pointer jc, int nrows, int ncols, int m);
     
+    public static native int mingi(Pointer in, Pointer out, Pointer outi, Pointer jc, int nrows, int ncols, int m);
+    
+    public static native int mingf(Pointer in, Pointer out, Pointer outi, Pointer jc, int nrows, int ncols, int m);
+    
+    public static native int maxii(Pointer in, Pointer out, Pointer outi, int nrows, int ncols, int dir);
+    
+    public static native int maxif(Pointer in, Pointer out, Pointer outi, int nrows, int ncols, int dir);
+    
+    public static native int minii(Pointer in, Pointer out, Pointer outi, int nrows, int ncols, int dir);
+    
+    public static native int minif(Pointer in, Pointer out, Pointer outi, int nrows, int ncols, int dir);
+    
     public static native int embedmat2d(Pointer A, Pointer B, int nrows, int ncols);
     
     public static native int extractmat2d(Pointer A, Pointer B, int nrows, int ncols);

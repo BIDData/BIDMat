@@ -84,6 +84,18 @@ int maxgf(float *in, float *out, int *outi, int *jc, int nrows, int ncols, int m
 
 int maxgi(int *in, int *out, int *outi, int *jc, int nrows, int ncols, int m);
 
+int mingf(float *in, float *out, int *outi, int *jc, int nrows, int ncols, int m);
+
+int mingi(int *in, int *out, int *outi, int *jc, int nrows, int ncols, int m);
+
+int maxif(float *in, float *out, int *outi, int nrows, int ncols, int dir);
+
+int maxii(int *in, int *out, int *outi, int nrows, int ncols, int dir);
+
+int minif(float *in, float *out, int *outi, int nrows, int ncols, int dir);
+
+int minii(int *in, int *out, int *outi, int nrows, int ncols, int dir);
+
 int embedmat2d(float *a, long long *b, int nrows, int ncols);
 
 int embedmat(float *a, int *b, long long *c, int n);

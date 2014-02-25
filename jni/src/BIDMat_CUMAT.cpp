@@ -374,6 +374,69 @@ extern "C" {
     return maxgi(in, out, outi, jc, nrows, ncols, m);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_mingf
+  (JNIEnv *env, jobject obj, jobject jin, jobject jout, jobject jouti, jobject jjc, jint nrows, jint ncols, jint m) 
+  {
+    float *in = (float*)getPointer(env, jin);
+    float *out = (float*)getPointer(env, jout);
+    int *outi = (int*)getPointer(env, jouti);
+    int *jc = (int*)getPointer(env, jjc);
+
+    return mingf(in, out, outi, jc, nrows, ncols, m);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_mingi
+  (JNIEnv *env, jobject obj, jobject jin, jobject jout, jobject jouti, jobject jjc, jint nrows, jint ncols, jint m) 
+  {
+    int *in = (int*)getPointer(env, jin);
+    int *out = (int*)getPointer(env, jout);
+    int *outi = (int*)getPointer(env, jouti);
+    int *jc = (int*)getPointer(env, jjc);
+
+    return mingi(in, out, outi, jc, nrows, ncols, m);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_maxif
+  (JNIEnv *env, jobject obj, jobject jin, jobject jout, jobject jouti, jint nrows, jint ncols, jint dir) 
+  {
+    float *in = (float*)getPointer(env, jin);
+    float *out = (float*)getPointer(env, jout);
+    int *outi = (int*)getPointer(env, jouti);
+
+    return maxif(in, out, outi, nrows, ncols, dir);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_maxii
+  (JNIEnv *env, jobject obj, jobject jin, jobject jout, jobject jouti, jint nrows, jint ncols, jint dir) 
+  {
+    int *in = (int*)getPointer(env, jin);
+    int *out = (int*)getPointer(env, jout);
+    int *outi = (int*)getPointer(env, jouti);
+
+    return maxii(in, out, outi, nrows, ncols, dir);
+  }
+
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_minif
+  (JNIEnv *env, jobject obj, jobject jin, jobject jout, jobject jouti, jint nrows, jint ncols, jint dir) 
+  {
+    float *in = (float*)getPointer(env, jin);
+    float *out = (float*)getPointer(env, jout);
+    int *outi = (int*)getPointer(env, jouti);
+
+    return minif(in, out, outi, nrows, ncols, dir);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_minii
+  (JNIEnv *env, jobject obj, jobject jin, jobject jout, jobject jouti, jint nrows, jint ncols, jint dir) 
+  {
+    int *in = (int*)getPointer(env, jin);
+    int *out = (int*)getPointer(env, jout);
+    int *outi = (int*)getPointer(env, jouti);
+
+    return minii(in, out, outi, nrows, ncols, dir);
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_embedmat2d
   (JNIEnv *env, jobject obj, jobject ja, jobject jb, jint nrows, jint ncols) 
   {

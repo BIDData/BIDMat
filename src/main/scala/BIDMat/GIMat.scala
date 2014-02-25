@@ -633,20 +633,71 @@ object GIMat {
   }
   
   def cumsumg(a:GIMat, jc:GIMat, omat:Mat):GIMat = {
-    val out = GIMat.newOrCheckGIMat(a.nrows, a.ncols, omat, a.GUID, jc.GUID, "cumsumi".##)
+    Mat.nflops += 1L * a.length
+    val out = GIMat.newOrCheckGIMat(a.nrows, a.ncols, omat, a.GUID, jc.GUID, "cumsumg".##)
     val err = CUMAT.cumsumgi(a.data, out.data, jc.data, a.nrows, a.ncols, jc.length-1)
-    if (err != 0) throw new RuntimeException("cumsumi error %d: " + cudaGetErrorString(err) format err);
+    if (err != 0) throw new RuntimeException("cumsumg error %d: " + cudaGetErrorString(err) format err);
     out
   }
   
   def maxg(a:GIMat, jc:GIMat, omat:Mat, omati:Mat):(GIMat, GIMat) = {
-    val out = GIMat.newOrCheckGIMat(jc.length-1, a.ncols, omat, a.GUID, jc.GUID, "maxs".##)
+    Mat.nflops += 1L * a.length
+    val out = GIMat.newOrCheckGIMat(jc.length-1, a.ncols, omat, a.GUID, jc.GUID, "maxg".##)
     val outi = GIMat.newOrCheckGIMat(jc.length-1, a.ncols, omati, a.GUID, jc.GUID, "maxs_i".##)
-    val err = CUMAT.maxgf(a.data, out.data, outi.data, jc.data, a.nrows, a.ncols, jc.length-1)
-    if (err != 0) throw new RuntimeException("maxs error %d: " + cudaGetErrorString(err) format err);
+    val err = CUMAT.maxgi(a.data, out.data, outi.data, jc.data, a.nrows, a.ncols, jc.length-1)
+    if (err != 0) throw new RuntimeException("maxg error %d: " + cudaGetErrorString(err) format err);
     (out, outi)
   }
- 
+  
+  def ming(a:GIMat, jc:GIMat, omat:Mat, omati:Mat):(GIMat, GIMat) = {
+    Mat.nflops += 1L * a.length
+    val out = GIMat.newOrCheckGIMat(jc.length-1, a.ncols, omat, a.GUID, jc.GUID, "ming".##)
+    val outi = GIMat.newOrCheckGIMat(jc.length-1, a.ncols, omati, a.GUID, jc.GUID, "ming_1".##)
+    val err = CUMAT.mingi(a.data, out.data, outi.data, jc.data, a.nrows, a.ncols, jc.length-1)
+    if (err != 0) throw new RuntimeException("ming error %d: " + cudaGetErrorString(err) format err);
+    (out, outi)
+  }
+  
+  def maxi2(a:GIMat, omat:Mat, omati:Mat, dim0:Int):(GIMat, GIMat) = {
+    Mat.nflops += 1L * a.length
+    val dim = if (a.nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
+    if (dim == 1) {
+      val out = GIMat.newOrCheckGIMat(1, a.ncols, omat, a.GUID, "maxi2".##)
+      val outi = GIMat.newOrCheckGIMat(1, a.ncols, omati, a.GUID, "maxi2_1".##)
+      val err = CUMAT.maxii(a.data, out.data, outi.data, a.nrows, a.ncols, 1)
+      if (err != 0) throw new RuntimeException("maxi2 error %d: " + cudaGetErrorString(err) format err);
+      (out, outi)
+    } else if (dim == 2) {
+      val out = GIMat.newOrCheckGIMat(a.nrows, 1, omat, a.GUID, "maxi2".##)
+      val outi = GIMat.newOrCheckGIMat(a.nrows, 1, omati, a.GUID, "maxi2_1".##)
+      val err = CUMAT.maxii(a.data, out.data, outi.data, a.nrows, a.ncols, 2)
+      if (err != 0) throw new RuntimeException("maxi2 error %d: " + cudaGetErrorString(err) format err);
+      (out, outi)
+    } else {
+      throw new RuntimeException("maxi2 dimension not recognized %d" format dim0)
+    }      
+  }
+  
+  def mini2(a:GIMat, omat:Mat, omati:Mat, dim0:Int):(GIMat, GIMat) = {
+    Mat.nflops += 1L * a.length
+    val dim = if (a.nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
+    if (dim == 1) {
+      val out = GIMat.newOrCheckGIMat(1, a.ncols, omat, a.GUID, "mini2".##)
+      val outi = GIMat.newOrCheckGIMat(1, a.ncols, omati, a.GUID, "mini2_1".##)
+      val err = CUMAT.minii(a.data, out.data, outi.data, a.nrows, a.ncols, 1)
+      if (err != 0) throw new RuntimeException("mini2 error %d: " + cudaGetErrorString(err) format err);
+      (out, outi)
+    } else if (dim == 2) {
+      val out = GIMat.newOrCheckGIMat(a.nrows, 1, omat, a.GUID, "maxi2".##)
+      val outi = GIMat.newOrCheckGIMat(a.nrows, 1, omati, a.GUID, "maxi2_1".##)
+      val err = CUMAT.minii(a.data, out.data, outi.data, a.nrows, a.ncols, 2)
+      if (err != 0) throw new RuntimeException("mini2 error %d: " + cudaGetErrorString(err) format err);
+      (out, outi)
+    } else {
+      throw new RuntimeException("mini2 direction not recognized %d" format dim)
+    }      
+  }
+
   
   def i3sortlexIndsGPU(grams:IMat, inds:IMat, asc:Boolean) = {
     if (grams.nrows != inds.nrows) throw new RuntimeException("i3sortlexIndsGPU mismatched dims")

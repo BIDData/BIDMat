@@ -1284,6 +1284,7 @@ object GMat {
   }
   
   def cumsumg(a:GMat, jc:GIMat, omat:Mat):GMat = {
+    Mat.nflops += 1L * a.length
     val out = GMat.newOrCheckGMat(a.nrows, a.ncols, omat, a.GUID, jc.GUID, "cumsumi".##)
     val err = CUMAT.cumsumgf(a.data, out.data, jc.data, a.nrows, a.ncols, jc.length-1)
     if (err != 0) throw new RuntimeException("cumsumi error %d: " + cudaGetErrorString(err) format err);
@@ -1291,11 +1292,61 @@ object GMat {
   }
   
   def maxg(a:GMat, jc:GIMat, omat:Mat, omati:Mat):(GMat, GIMat) = {
-    val out = GMat.newOrCheckGMat(jc.length-1, a.ncols, omat, a.GUID, jc.GUID, "maxs".##)
-    val outi = GIMat.newOrCheckGIMat(jc.length-1, a.ncols, omati, a.GUID, jc.GUID, "maxs_i".##)
+    Mat.nflops += 1L * a.length
+    val out = GMat.newOrCheckGMat(jc.length-1, a.ncols, omat, a.GUID, jc.GUID, "maxg".##)
+    val outi = GIMat.newOrCheckGIMat(jc.length-1, a.ncols, omati, a.GUID, jc.GUID, "maxg_1".##)
     val err = CUMAT.maxgf(a.data, out.data, outi.data, jc.data, a.nrows, a.ncols, jc.length-1)
-    if (err != 0) throw new RuntimeException("maxs error %d: " + cudaGetErrorString(err) format err);
+    if (err != 0) throw new RuntimeException("maxg error %d: " + cudaGetErrorString(err) format err);
     (out, outi)
+  }
+  
+  def ming(a:GMat, jc:GIMat, omat:Mat, omati:Mat):(GMat, GIMat) = {
+    Mat.nflops += 1L * a.length
+    val out = GMat.newOrCheckGMat(jc.length-1, a.ncols, omat, a.GUID, jc.GUID, "ming".##)
+    val outi = GIMat.newOrCheckGIMat(jc.length-1, a.ncols, omati, a.GUID, jc.GUID, "ming_1".##)
+    val err = CUMAT.mingf(a.data, out.data, outi.data, jc.data, a.nrows, a.ncols, jc.length-1)
+    if (err != 0) throw new RuntimeException("ming error %d: " + cudaGetErrorString(err) format err);
+    (out, outi)
+  }
+  
+  def maxi2(a:GMat, omat:Mat, omati:Mat, dim0:Int):(GMat, GIMat) = {
+    Mat.nflops += 1L * a.length
+    val dim = if (a.nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
+    if (dim == 1) {
+      val out = GMat.newOrCheckGMat(1, a.ncols, omat, a.GUID, "maxi2".##)
+      val outi = GIMat.newOrCheckGIMat(1, a.ncols, omati, a.GUID, "maxi2_1".##)
+      val err = CUMAT.maxif(a.data, out.data, outi.data, a.nrows, a.ncols, 1)
+      if (err != 0) throw new RuntimeException("maxi2 error %d: " + cudaGetErrorString(err) format err);
+      (out, outi)
+    } else if (dim == 2) {
+      val out = GMat.newOrCheckGMat(a.nrows, 1, omat, a.GUID, "maxi2".##)
+      val outi = GIMat.newOrCheckGIMat(a.nrows, 1, omati, a.GUID, "maxi2_1".##)
+      val err = CUMAT.maxif(a.data, out.data, outi.data, a.nrows, a.ncols, 2)
+      if (err != 0) throw new RuntimeException("maxi2 error %d: " + cudaGetErrorString(err) format err);
+      (out, outi)
+    } else {
+      throw new RuntimeException("maxi2 directions not recognized %d" format dim0)
+    }      
+  }
+  
+  def mini2(a:GMat, omat:Mat, omati:Mat, dim0:Int):(GMat, GIMat) = {
+    Mat.nflops += 1L * a.length
+    val dim = if (a.nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
+    if (dim == 1) {
+      val out = GMat.newOrCheckGMat(1, a.ncols, omat, a.GUID, "maxi2".##)
+      val outi = GIMat.newOrCheckGIMat(1, a.ncols, omati, a.GUID, "maxi2_1".##)
+      val err = CUMAT.minif(a.data, out.data, outi.data, a.nrows, a.ncols, dim)
+      if (err != 0) throw new RuntimeException("mini2 error %d: " + cudaGetErrorString(err) format err);
+      (out, outi)
+    } else if (dim == 2) {
+      val out = GMat.newOrCheckGMat(a.nrows, 1, omat, a.GUID, "maxi2".##)
+      val outi = GIMat.newOrCheckGIMat(a.nrows, 1, omati, a.GUID, "maxi2_1".##)
+      val err = CUMAT.minif(a.data, out.data, outi.data, a.nrows, a.ncols, dim)
+      if (err != 0) throw new RuntimeException("mini2 error %d: " + cudaGetErrorString(err) format err);
+      (out, outi)
+    } else {
+      throw new RuntimeException("mini2 directions not recognized %d" format dim)
+    }      
   }
 
   def lexsort2i(a:GIMat, b:GMat, i:GIMat) {
