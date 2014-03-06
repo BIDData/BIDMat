@@ -22,6 +22,10 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
       toFMat(null).data(0)
     }
   
+  override def contents() = {
+    new GMat(length, 1, data, realsize)
+  }
+  
   override def mytype = "GMat"
     
   override def nnz = length

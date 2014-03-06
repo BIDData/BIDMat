@@ -931,46 +931,61 @@ object MatFunctions {
     csrow(args.toList)
   }
   
-  /** Make a string column vector from a list of strings */  
+  /** Make a string column vector from a list of strings. */  
   def cscol(x:List[String]):CSMat = {
     val mat = CSMat(x.length,1)
     x.copyToArray(mat.data)
     mat
   }
-
+  
+  /** Make a string column vector from string arguments to this function. */
   def cscol(args:String*):CSMat = {
     cscol(args.toList)
   }
   
+  /** Make a sparse single-precision matrix which is all zeros. */
   def szeros(nr:Int, nc:Int):SMat = SMat(nr, nc, 0)
   
+  /** Make a sparse double-precision matrix which is all zeros. */
   def sdzeros(nr:Int, nc:Int):SDMat = SDMat(nr, nc, 0)
   
+  /** Make a single-precision matrix of zeros in GPU memory. */
   def gzeros(nr:Int, nc:Int):GMat = GMat.zeros(nr, nc)
   
+  /** Make an integer matrix of zeros in GPU memory. */
   def gizeros(nr:Int, nc:Int):GIMat = GIMat.izeros(nr, nc)
 
+  /** Legacy function to make a placeholder matrix with no storage. */
   def blank = new Mat(0,0)
   
+  /** Legacy function to make a placeholder matrix with no storage. */
   def fblank = new FMat(0,0,null)
   
+  /** Legacy function to make a placeholder matrix with no storage. */
   def dblank = new DMat(0,0,null)
   
+  /** Legacy function to make a placeholder matrix with no storage. */
   def cblank = new CMat(0,0,null)
   
+  /** Legacy function to make a placeholder matrix with no storage. */
   def iblank = new IMat(0,0,null)
   
+  /** Legacy function to make a placeholder matrix with no storage. */
   def sblank = new SMat(0,0,0,null,null,null)
   
+  /** Legacy function to make a placeholder matrix with no storage. */
   def sdblank = new SDMat(0,0,0,null,null,null)
   
+  /** Legacy function to make a placeholder matrix with no storage. */
   def gblank = new GMat(0,0,null,0)
   
+  /** Legacy function to make a placeholder matrix with no storage. */
   def giblank = new GIMat(0,0,null,0)
   
+  /** Legacy function to make a placeholder matrix with no storage. */
   def gsblank = new GSMat(0,0,0,null,null,null,null,0)
   
-  
+  /** Convert a dense double-precision sparse matrix to sparse. */
   def sparse(a:DMat):SDMat = {
     val (ii, jj, vv) = a.find3
     val out = SDMat(a.nrows, a.ncols, ii.nrows)
@@ -982,6 +997,7 @@ object MatFunctions {
     out
   }    
 
+  /** Convert a sparse double-precision sparse matrix to sparse. */
   def sparse(a:FMat):SMat = {
     val (ii, jj, vv) = a.find3
     val out = SMat(a.nrows, a.ncols, ii.nrows)
@@ -993,30 +1009,38 @@ object MatFunctions {
     out
   }    
   
+  /** Construct a sparse double matrix from arrays of indices (ii=row, jj=col) and values, with given size. */
   def sparse(ii:IMat, jj:IMat, vv:DMat, nr:Int, nc:Int):SDMat = {
     SDMat(SparseMat.sparseImpl[Double](ii.data, jj.data, vv.data, nr, nc))
   } 
   
   def _maxi(a:IMat) = a.iiReduceOp(0, IMat.idFun, IMat.maxFun, null)
 
+  /** Construct an auto-sized sparse double matrix from arrays of indices (ii=row, jj=col) and values. */
   def sparse(ii:IMat, jj:IMat, vv:DMat):SDMat = {
     SDMat(SparseMat.sparseImpl[Double](ii.data, jj.data, vv.data, _maxi(ii).v+1, _maxi(jj).v+1))
   } 
 
+  /** Construct a sparse float matrix from arrays of indices (ii=row, jj=col) and values, with given size. */
   def sparse(ii:IMat, jj:IMat, vv:FMat, nr:Int, nc:Int):SMat = {
     SMat(SparseMat.sparseImpl[Float](ii.data, jj.data, vv.data, nr, nc))
   } 
 
+  /** Construct an auto-sized sparse float matrix from arrays of indices (ii=row, jj=col) and values. */
   def sparse(ii:IMat, jj:IMat, vv:FMat):SMat = {
     SMat(SparseMat.sparseImpl[Float](ii.data, jj.data, vv.data, _maxi(ii).v+1, _maxi(jj).v+1))
   } 
 
+  /** Convert from double dense to double dense. */
   def full(a:DMat):DMat = a
 
+  /** Convert from single dense to single dense. */
   def full(a:FMat):FMat = a
 
+  /** Convert from double sparse to double dense. */
   def full(sd:SDMat):DMat = DMat(sd.full)
 
+  /** Convert from float sparse to double dense. */
   def full(ss:SMat):FMat = FMat(ss.full)
   
   def full(a:Mat):Mat = a match {
@@ -1088,10 +1112,16 @@ object MatFunctions {
   
   def DDS(a:GMat,b:GMat,c:GSMat):GSMat = GSMat.DDS(a, b, c, null)
   
+  def DDS(a:FMat, b:FMat, c:FMat):FMat = a.t * b
+  
+  def DDS(a:GMat, b:GMat, c:GMat):GMat = a.t * b
+  
   def DDS(a:Mat, b:Mat, c:Mat, omat:Mat=null):Mat = {
     (a, b, c) match {
       case (a:FMat, b:FMat, c:SMat) => DDS(a, b, c, omat):SMat
       case (a:GMat, b:GMat, c:GSMat) => GSMat.DDS(a, b, c, omat):GSMat
+      case (a:GMat, b:GMat, c:GMat) => a.t * b
+      case (a:FMat, b:FMat, c:FMat) => a.t * b
     }
   }
   
