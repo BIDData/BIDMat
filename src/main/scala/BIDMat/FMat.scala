@@ -43,6 +43,10 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   def vertcat(b: FMat) = FMat(gvertcat(b))
   
+  override def contents():FMat = {
+    new FMat(length, 1, data)
+  }
+  
   override def nnz:Int = {
     var count:Int = 0
     var i = 0

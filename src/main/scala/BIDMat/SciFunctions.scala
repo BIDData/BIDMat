@@ -645,24 +645,6 @@ object SciFunctions {
     }
   }
    
-  def mini(a:Mat, b:Int):Mat = {
-    a match {
-      case aa:FMat => mini(aa, b):FMat
-      case aa:IMat => mini(aa, b):IMat
-      case aa:DMat => mini(aa, b):DMat
-      case aa:GMat => mini(aa, b):GMat
-    }
-  }
-  
-  def mini(a:Mat):Mat = {
-    a match {
-      case aa:FMat => mini(aa):FMat
-      case aa:IMat => mini(aa):IMat
-      case aa:DMat => mini(aa):DMat
-      case aa:GMat => mini(aa):GMat
-    }
-  }
-  
   def maxi(a:Mat, b:Int):Mat = {
     a match {
       case aa:FMat => maxi(aa, b):FMat
@@ -681,6 +663,62 @@ object SciFunctions {
       case aa:GMat => maxi(aa):GMat
     }
   }
+  
+  def mini(a:Mat, b:Int):Mat = {
+    a match {
+      case aa:FMat => mini(aa, b):FMat
+      case aa:IMat => mini(aa, b):IMat
+      case aa:DMat => mini(aa, b):DMat
+      case aa:GMat => mini(aa, b):GMat
+    }
+  }
+  
+  def mini(a:Mat):Mat = {
+    a match {
+      case aa:FMat => mini(aa):FMat
+      case aa:IMat => mini(aa):IMat
+      case aa:DMat => mini(aa):DMat
+      case aa:GMat => mini(aa):GMat
+    }
+  }
+  
+  def maxi2(a:Mat, b:Int):(Mat,Mat) = {
+    a match {
+      case aa:FMat => maxi2(aa, b):(FMat,IMat)
+      case aa:IMat => maxi2(aa, b):(IMat,IMat)
+      case aa:DMat => maxi2(aa, b):(DMat,IMat)
+      case aa:GMat => maxi2(aa, b):(GMat,GIMat)
+    }
+  }
+  
+  def maxi2(a:Mat):(Mat,Mat) = {
+    a match {
+      case aa:FMat => maxi2(aa):(FMat,IMat)
+      case aa:IMat => maxi2(aa):(IMat,IMat)
+      case aa:DMat => maxi2(aa):(DMat,IMat)
+      case aa:GMat => maxi2(aa):(GMat,GIMat)
+    }
+  }
+    
+
+  
+  def mini2(a:Mat, b:Int):(Mat,Mat) = {
+    a match {
+      case aa:FMat => mini2(aa, b):(FMat,IMat)
+      case aa:IMat => mini2(aa, b):(IMat,IMat)
+      case aa:DMat => mini2(aa, b):(DMat,IMat)
+      case aa:GMat => mini2(aa, b):(GMat,GIMat)
+    }
+  }
+  
+  def mini2(a:Mat):(Mat,Mat) = {
+    a match {
+      case aa:FMat => mini2(aa):(FMat,IMat)
+      case aa:IMat => mini2(aa):(IMat,IMat)
+      case aa:DMat => mini2(aa):(DMat,IMat)
+      case aa:GMat => mini2(aa):(GMat,GIMat)
+    }
+  } 
   
   def sum(a:Mat, b:Int):Mat = {
     a match {
