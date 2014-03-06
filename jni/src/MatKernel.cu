@@ -255,6 +255,27 @@ int toInt(float *A, int *B, int N) {
   return err;
 }
 
+__global__ void __full(int *ir, int *ic, float *data, float *od, int nrows, int ncols, int nnz) {   
+  int i, row, col;
+  float v;
+  int id = threadIdx.x + blockIdx.x * blockDim.x;
+  for (i = id; i < nnz; i += blockDim.x * gridDim.x) {
+    v = data[i];
+    row = ir[i];
+    col = ic[i];
+    od[row + col * nrows] = v;
+  }    
+}
+
+int full(int *ir, int *ic, float *data, float *od, int nrows, int ncols, int nnz) {
+  int nblocks = min(32, 1+(nnz-1)/32);
+  int nthreads = min(1+(nnz-1)/nblocks, 1024);
+  __full<<<nblocks,nthreads>>>(ir, ic, data, od, nrows, ncols, nnz);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
 __global__ void __initSeq(int *A, int nrows, int ncols) {
   int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
   for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {

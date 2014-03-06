@@ -1043,12 +1043,16 @@ object MatFunctions {
   /** Convert from float sparse to double dense. */
   def full(ss:SMat):FMat = FMat(ss.full)
   
+  /** Convert from GPU float sparse to GPU float dense. */
+  def full(ss:GSMat):GMat = ss.full
+  
   def full(a:Mat):Mat = a match {
     case aa:DMat => a
     case aa:FMat => a
     case aa:IMat => a
     case aa:SMat => full(aa):FMat
     case aa:SDMat => full(aa):DMat
+    case aa:GSMat => aa.full:GMat
   }
   
   def DDShelper(a:FMat, b:FMat, c:SMat, out:SMat, istart:Int, iend:Int, ioff:Int) = {

@@ -83,6 +83,18 @@ extern "C" {
     return apply_binop(nativeA, Anrows, Ancols, nativeB, Bnrows, Bncols, nativeC, opn);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_full
+  (JNIEnv *env, jobject obj, jobject jir, jobject jic, jobject jdata, jobject jod,
+   jint nrows, jint ncols, jint nnz)
+  {
+    int *ir = (int*)getPointer(env, jir);
+    int *ic = (int*)getPointer(env, jic);
+    float *data = (float*)getPointer(env, jdata);
+    float *od = (float*)getPointer(env, jod);
+
+    return full(ir, ic, data, od, nrows, ncols, nnz);
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_applyiop 
   (JNIEnv *env, jobject obj, jobject jA, jint Anrows, jint Ancols, 
    jobject jB, jint Bnrows, jint Bncols, jobject jC, jint opn) 

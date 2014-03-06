@@ -41,6 +41,23 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     val tmpMat = SMat(nrows, ncolsn, tmprows.data, tmpcols.data, tmpdata.data)
     tmpMat.toString
   }
+  
+  override def copy:GSMat = {
+    val out = GSMat.newOrCheckGSMat(nrows, ncols, nnz, null, GUID, "GSMat.copy".##)
+    var err = cudaMemcpy(out.jc, jc, Sizeof.INT * (ncols+1), cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize()
+    if (err == 0) err = cudaMemcpy(out.ir, ir, Sizeof.INT * nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize()
+    if (err == 0) err = cudaMemcpy(out.ic, ic, Sizeof.INT * nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize()
+    if (err == 0) err = cudaMemcpy(out.data, data, Sizeof.FLOAT * nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize()
+    if (err != 0) {
+        println("device is %d" format SciFunctions.getGPU)
+        throw new RuntimeException("Cuda error in GSMAT.toString " + cudaGetErrorString(err))
+    }
+    out    
+  }
       
   def toSMat():SMat = { 
     val out = SMat.newOrCheckSMat(nrows, ncols, nnz, null, GUID, "toSMat".##)
@@ -81,6 +98,18 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
   override def iones(m:Int, n:Int) = {
     GIMat.iones(m,n)
   }
+  
+  def full(omat:Mat):GMat = {
+    val out = GMat.newOrCheckGMat(nrows, ncols, omat, GUID, "full".##)
+    out.clear
+    var err = CUMAT.full(ir, ic, data, out.data, nrows, ncols, nnz)  
+    cudaDeviceSynchronize()
+    if (err == 0) err = cudaGetLastError
+    if (err != 0) throw new RuntimeException(("GPU %d full kernel error "+cudaGetErrorString(err)) format SciFunctions.getGPU)
+    out
+  }
+  
+  def full():GMat = full(null):GMat
   
   def free() = {
     JCublas.cublasFree(data)
@@ -334,8 +363,8 @@ object GSMat {
     if (A.nrows != B.nrows || C.nrows != A.ncols || C.ncols != B.ncols || C.nnz != Ms.ncols || C.nnz != Us.ncols || Ms.nrows != Us.nrows) {
       throw new RuntimeException("LDAgibbsx dimensions mismatch")
     }
-    var err = CUMAT.LDAgibbsx(A.nrows, C.nnz, A.data, B.data, C.ir, C.ic, C.data, Ms.data, Us.data, Ms.nrows)
-    if (err != 0) throw new RuntimeException(("GPU %d LDAgibbs kernel error "+cudaGetErrorString(err)) format SciFunctions.getGPU)
+
+
     Mat.nflops += 12L * C.nnz * A.nrows    // Charge 10 for Poisson RNG
   }
   

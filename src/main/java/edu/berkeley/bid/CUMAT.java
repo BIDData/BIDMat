@@ -31,6 +31,8 @@ public final class CUMAT {
     
     public static native int applylls(Pointer A, Pointer B, Pointer L, Pointer C, int nrows, int ncols);
     
+    public static native int full(Pointer ir, Pointer ic, Pointer vv, Pointer dd, int nrows, int ncols, int nnz);
+    
     public static native int setval(Pointer A, float vv, int N);
     
     public static native int setival(Pointer A, int iv, int N);

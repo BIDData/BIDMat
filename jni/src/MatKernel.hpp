@@ -12,6 +12,8 @@ int set_val(float *A, float val, int length);
 
 int set_ival(float *A, int val, int length);
 
+int full(int *ir, int *ic, float *data, float *od, int nrows, int ncols, int nnz);
+
 int toFloat(int *A, float *B, int N);
 
 int toInt(float *A, int *B, int N);
