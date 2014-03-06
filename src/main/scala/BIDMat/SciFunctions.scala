@@ -18,7 +18,6 @@ import org.apache.commons.math3.util.FastMath
 
 object SciFunctions {
   final val SEED:Int = 1452462553 
-  // Java initialization
   final val myrand = new java.util.Random(SEED)
   // VSL random number generator initialization
   final val BRNG:Int = if (Mat.noMKL) 0 else BRNG_MCG31
@@ -149,6 +148,13 @@ object SciFunctions {
       case aa:DMat => norm(aa)
       case aa:GMat => norm(aa)
     }
+  }
+  
+  def colnorm(a:Mat):Mat = {
+    val acopy = a.copy
+    val sc = acopy.contents
+    sc ~ sc *@ sc
+    sqrt(sum(acopy))
   }
   
   

@@ -546,6 +546,12 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     }
   }
   
+  override def copy() = {
+    val out = GMat.newOrCheckGMat(nrows, ncols, null, GUID, "GMat.copy".##)
+    copyTo(out)
+  }
+
+  
   override def recycle(nr:Int, nc:Int, nnz:Int):GMat = {
     if (nrows == nr && nc == ncols) {
       this
