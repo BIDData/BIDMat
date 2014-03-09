@@ -359,6 +359,17 @@ object GSMat {
     Mat.nflops += 12L * C.nnz * A.nrows   // Charge 10 for Poisson RNG
   }
   
+  def LDAgibbsv(A:GMat, B:GMat, AN:GMat, BN:GMat, C:GSMat, nsamps:GMat):Unit = {
+    if (A.nrows != B.nrows || C.nrows != A.ncols || C.ncols != B.ncols || 
+        A.nrows != AN.nrows || A.ncols != AN.ncols || B.nrows != BN.nrows || B.ncols != BN.ncols) {
+      throw new RuntimeException("LDAgibbs dimensions mismatch")
+    }
+    //var err = CUMAT.LDAgibbsv(A.nrows, C.nnz, A.data, B.data, AN.data, BN.data, C.ir, C.ic, C.data, Pointer.to(nsamps.data))
+    var err = CUMAT.LDAgibbsv(A.nrows, C.nnz, A.data, B.data, AN.data, BN.data, C.ir, C.ic, C.data, nsamps.data)
+    if (err != 0) throw new RuntimeException(("GPU %d LDAgibbsv kernel error "+cudaGetErrorString(err)) format SciFunctions.getGPU)
+    Mat.nflops += 12L * C.nnz * A.nrows   // Charge 10 for Poisson RNG
+  }
+  
   def LDAgibbsx(A:GMat, B:GMat, C:GSMat, Ms:GIMat, Us:GIMat):Unit = {
     if (A.nrows != B.nrows || C.nrows != A.ncols || C.ncols != B.ncols || C.nnz != Ms.ncols || C.nnz != Us.ncols || Ms.nrows != Us.nrows) {
       throw new RuntimeException("LDAgibbsx dimensions mismatch")
