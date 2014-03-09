@@ -157,14 +157,16 @@ __global__ void __LDA_Gibbsv(int nrows, int nnz, float *A, float *B, float *AN, 
     int aoff = nrows * Cir[j];
     int boff = nrows * Cic[j];
     float Pj = P[j];
+    //float nsampsi = nsamps[i];
+    float nsampsi = nsamps[Cir[j]];
+    float pval = nsampsi / Pj;
     for (int i = tid; i < nrows; i += blockDim.x * blockDim.y) {
-      float nsampsi = nsamps[i];
-      float pval = nsampsi / Pj;
+
       float prod = A[i + aoff] * B[i + boff];
       int cr = curand_poisson(&rstate, prod * pval);
       if (cr > 0) {
-        atomicAdd(&AN[i + aoff], cr/nsampsi );
-        atomicAdd(&BN[i + boff], cr/nsampsi );
+        atomicAdd(&AN[i + aoff], cr );
+        atomicAdd(&BN[i + boff], cr );
       }
     }
   }
