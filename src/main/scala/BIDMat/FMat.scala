@@ -392,24 +392,10 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     	val out = FMat.newOrCheckFMat(nrows, a.nrows, outmat, GUID, a.GUID, "multT".##)
     	out.clear
     	Mat.nflops += 2L * a.nnz * nrows
-/*    	if (Mat.noMKL || nrows < 100) {
+    	if (Mat.noMKL || nrows < 100) {
     	  val ioff = Mat.ioneBased
-    	  val colaccess = new java.util.concurrent.atomic.AtomicIntegerArray(out.ncols)
-    		if (1L*nrows*a.nnz > 100000L && Mat.numThreads > 1) {
-    			val done = IMat(1,Mat.numThreads)
-    			for (ithread <- 0 until Mat.numThreads) {
-    				val istart = (1L*ithread*a.ncols/Mat.numThreads).toInt
-    				val iend = (1L*(ithread+1)*a.ncols/Mat.numThreads).toInt
-    				future {
-    					fSMultTHelper(a, out, istart, iend, ioff, colaccess)
-    					done(ithread) = 1
-    				}
-    			}
-    			while (SciFunctions.sum(done).v < Mat.numThreads) {Thread.`yield`()}
-    		} else {
-    			fSMultTHelper(a, out, 0, a.ncols, ioff, null)
-    		}
-    	} else { */
+    	  fSMultTHelper(a, out, 0, a.ncols, ioff, null)
+    	} else { 
     		if (nrows == 1) {
     			setnumthreads(1)  // Otherwise crashes 
     			scscmv("N", a.nrows, a.ncols, 1.0f, "GLNF", a.data, a.ir, a.jc, data, 0f, out.data) 
@@ -417,7 +403,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     		} else {
     			smcsrm(nrows, a.ncols, data, nrows, a.data, a.ir, a.jc, out.data, nrows)
     		}
-//    	}
+    	}
     	out
     } else {
       throw new RuntimeException("xT dimensions mismatch")
