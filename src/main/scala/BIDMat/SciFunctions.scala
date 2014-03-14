@@ -154,7 +154,7 @@ object SciFunctions {
     val acopy = a.copy
     val sc = acopy.contents
     sc ~ sc *@ sc
-    sqrt(sum(acopy))
+    sum(acopy)
   }
   
   
