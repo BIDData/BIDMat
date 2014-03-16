@@ -32,15 +32,25 @@ struct ltstr {
   }
 };
 
-#ifdef __GNUC__
-//#include <unordered_map>
-//typedef unordered_map<string, int> strhash;
-#include <hash_map>
-typedef __gnu_cxx::hash_map<const char*, int,  __gnu_cxx::hash<const char*>, eqstr > strhash;
+struct strhashfn {
+  size_t operator()(const char* str) const {
+    unsigned long hash = 5381;
+    int c;
+    while (c = *str++) {
+      hash = ((hash << 5) + hash) + c;
+    }
+    return hash;
+  }
+};
+
+#ifdef __GNUC
+#include <unordered_map>
+typedef std::unordered_map<const char*, int, __gnu_cxx::hash<const char*>, eqstr> strhash;
 #else
-#include <hash_map>
-typedef stdext::hash_map<const char*, int,  stdext::hash_compare<const char*, std::less<const char *> > > strhash;
+#include <unordered_map>
+typedef std::unordered_map<const char*, int, strhashfn, eqstr> strhash;
 #endif
+
 
 typedef vector<char *> unhash;
 typedef vector<int> ivector;
