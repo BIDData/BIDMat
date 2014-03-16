@@ -414,7 +414,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     var i = istart
     while (i < iend) {
         var j = 0
-        while (j < a.nrows) {
+        while (j < a.ncols) {
             var k = 0
             val dval = a.data(i + j*a.nrows)
             while (k < nrows) {
@@ -435,8 +435,8 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
           if (a.nrows > 3 && 1L*nrows*a.length > 100000L && Mat.numThreads > 1) {
                 val done = IMat(1,Mat.numThreads)
                 for (ithread <- 0 until Mat.numThreads) {
-                    val istart = (1L*ithread*a.ncols/Mat.numThreads).toInt
-                    val iend = (1L*(ithread+1)*a.ncols/Mat.numThreads).toInt
+                    val istart = (1L*ithread*a.nrows/Mat.numThreads).toInt
+                    val iend = (1L*(ithread+1)*a.nrows/Mat.numThreads).toInt
                     future {
                         fDMultTHelper(a, out, istart, iend)
                         done(ithread) = 1
