@@ -28,8 +28,8 @@ Devel.$(OBJ) : Devel.cu
 	$(NVCC) $(NVCCFLAGS) $*.cu
 
 install: all
-	cp $(LIBPREPEND)bidmatmkl$(LIBAPPEND)  ../../lib
-	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) ../../lib
+	cp $(LIBPREPEND)bidmatmkl$(LIBAPPEND)  $(INSTALL_DIR)
+	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(INSTALL_DIR)
 
 clean:
 	rm -f *.$(OBJ) *$(LIBAPPEND) *.pdb *.exp *.lib

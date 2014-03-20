@@ -94,7 +94,8 @@ if [ "$OS" = "apple" ] ; then
             $MKL_ROOT/lib/libmkl_core.a ${COMPOSER_ROOT}/lib/libiomp5.a \
             -lpthread -lm  -framework JavaVM"
     fi
-    CUDA_LIBS="-L${CUDA_HOME}/lib -L${BIDMAT_ROOT}/lib -lcudart -lCommonJNI_mac"
+    INSTALL_DIR=${BIDMAT_ROOT}/lib
+    CUDA_LIBS="-L${CUDA_HOME}/lib -L${INSTALL_DIR} -lcudart -lCommonJNI_mac"
 elif [ "$OS" = "linux" ] ; then
     MKL_ROOT="/opt/intel/mkl"
     if [ "$JAVA_HOME" = "" ]; then
@@ -137,7 +138,8 @@ elif [ "$OS" = "linux" ] ; then
     else
         CULIB="lib64"
     fi
-    CUDA_LIBS="-L${CUDA_HOME}/${CULIB} -L$BIDMAT_ROOT/lib -lcudart -lCommonJNI"
+    INSTALL_DIR=${BIDMAT_ROOT}/lib
+    CUDA_LIBS="-L${CUDA_HOME}/${CULIB} -L${INSTALL_DIR} -lcudart -lCommonJNI"
 elif [ "$OS" = "windows" ] ; then
     CUDA_HOME="$CUDA_PATH"
     MKL_ROOT="$MKLROOT"
@@ -175,8 +177,9 @@ elif [ "$OS" = "windows" ] ; then
     else
 	    MKL_LIBS="mkl_intel${PTYPE}.lib mkl_intel_thread.lib mkl_core.lib libiomp5mt.lib" 
     fi
+    INSTALL_DIR=${BIDMAT_ROOT}/lib
     CUDA_LIBS="cudart.lib CommonJNI.lib"
-    LIB="$MKL_ROOT/lib/${ARCHD};$JAVA_HOME/lib;$CUDA_HOME/lib/${CULIB};${BIDMAT_ROOT}/lib;$LIB"
+    LIB="$MKL_ROOT/lib/${ARCHD};$JAVA_HOME/lib;$CUDA_HOME/lib/${CULIB};${INSTALL_DIR};$LIB"
     INCLUDE="$JAVA_HOME/include;$JAVA_HOME/include/win32;$MKL_ROOT/include;${BIDMAT_ROOT}/jni/include;$CUDA_HOME/include;$INCLUDE"
 else
     echo "OS not supported"
@@ -205,6 +208,7 @@ echo "FORTRAN_LIBS=$FORTRAN_LIBS" >> Makefile.incl
 echo "FC=$FC" >> Makefile.incl
 echo "FFLAGS=$FFLAGS" >> Makefile.incl
 echo "LIB=$LIB" >> Makefile.incl
+echo "INSTALL_DIR=$INSTALL_DIR" >> Makefile.incl
 echo "INCLUDE=$INCLUDE" >> Makefile.incl
 
 
