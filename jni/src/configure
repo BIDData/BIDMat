@@ -62,13 +62,14 @@ if [ "$OS" = "apple" ] ; then
     CC="icc"
     GCC="gcc"
     NVCC="nvcc"
-    NVCCFLAGS="-c -use_fast_math -gencode arch=compute_20,code=sm_20 \
+    NVCCFLAGS="-c -use_fast_math -I$BIDMAT_ROOT/jni/include \
+          -gencode arch=compute_20,code=sm_20 \
           -gencode arch=compute_30,code=sm_30 \
           --machine ${MBITS}  -Xcompiler \"-fPIC -c -O2 -g -DNDEBUG\""
     OBJ="o"
     OUTFLG="-o "
     CPPFLAGS="-fPIC -c -O2 -fopenmp -DNDEBUG -I$JAVA_HOME/Headers -I$BIDMAT_ROOT/jni/include -I$CUDA_HOME/include"
-    CFLAGS="-fPIC -c -O2 -openmp -std=c99 -DNDEBUG -I$JAVA_HOME/Headers -I$MKL_ROOT/include -I$MKL_ROOT/include/${ARCHD}${SUBDIR}"
+    CFLAGS="-fPIC -c -O2 -openmp -std=c99 -DNDEBUG -I$JAVA_HOME/Headers -I$BIDMAT_ROOT/jni/include -I$MKL_ROOT/include -I$MKL_ROOT/include/${ARCHD}${SUBDIR}"
     LB="ar rc"    
     GLD="icc -bundle -static-intel"
     LD="icc -bundle -static-intel"
@@ -105,13 +106,14 @@ elif [ "$OS" = "linux" ] ; then
     CC="gcc"
     GCC="g++"
     NVCC="nvcc"
-    NVCCFLAGS="-c -use_fast_math -gencode arch=compute_20,code=sm_20 \
+    NVCCFLAGS="-c -use_fast_math  -I$BIDMAT_ROOT/jni/include \
+          -gencode arch=compute_20,code=sm_20 \
           -gencode arch=compute_30,code=sm_30 \
           --machine ${MBITS}  -Xcompiler \"-fPIC -c -O2 -g -DNDEBUG\""
     OBJ="o"
     OUTFLG="-o "
     CPPFLAGS="-fPIC -c -O2 -fopenmp -DNDEBUG  -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$CUDA_HOME/include" 
-    CFLAGS="-fPIC -c -O2 -fopenmp -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$MKL_ROOT/include -I$MKL_ROOT/include/${ARCHD}${SUBDIR}"
+    CFLAGS="-fPIC -c -O2 -fopenmp -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$MKL_ROOT/include -I$MKL_ROOT/include/${ARCHD}${SUBDIR}"
     LB="ar rc"    
     GLD="g++ -shared"
     LD="icc -shared -static-intel -z noexecstack"
@@ -149,7 +151,8 @@ elif [ "$OS" = "windows" ] ; then
     OBJ="obj"
     OUTFLG="/OUT:"
     CPPFLAGS="/c /MT /DNDEBUG /O2 /Qstd=c99 /Qopenmp $CFLAGS"    # static linking
-    NVCCFLAGS="-c -use_fast_math -gencode arch=compute_20,code=sm_20 \
+    NVCCFLAGS="-c -use_fast_math  -I$BIDMAT_ROOT/jni/include \
+          -gencode arch=compute_20,code=sm_20 \
           -gencode arch=compute_30,code=sm_30 \
           --machine ${MBITS}  -Xcompiler \"/EHsc /W3 /nologo /O2 /Zi  /MT\""
     CFLAGS="/c /MT /DNDEBUG /O2 /Qstd=c99 /Qopenmp $CFLAGS"    # static linking
