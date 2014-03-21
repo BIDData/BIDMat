@@ -3,7 +3,7 @@ include Makefile.incl
 MKL_OBJS=BIDMat_CBLAS.$(OBJ) BIDMat_UTILS.$(OBJ) BIDMat_SPBLAS.$(OBJ) BIDMat_LAPACK.$(OBJ) \
          BIDMat_VML.$(OBJ) BIDMat_VSL.$(OBJ)
 
-CUDA_OBJS=BIDMat_CUMAT.$(OBJ) MatKernel.$(OBJ) Samplers.$(OBJ) Dtree.$(OBJ) Devel.$(OBJ)
+CUDA_OBJS=BIDMat_CUMAT.$(OBJ) MatKernel.$(OBJ)
 
 .SUFFIXES: .$(OBJ) .c .cpp .cu
 
@@ -20,9 +20,6 @@ $(LIBPREPEND)bidmatcuda$(LIBAPPEND): $(CUDA_OBJS)
 
 %.$(OBJ) : %.cpp
 	$(GCC) $(CPPFLAGS) $(LAPACK_INCLUDES) $*.cpp
-
-Devel.$(OBJ) : Devel.cu
-	$(NVCC) $(NVCCFLAGS) -Xptxas -v Devel.cu
 
 %.$(OBJ) : %.cu
 	$(NVCC) $(NVCCFLAGS) $*.cu
