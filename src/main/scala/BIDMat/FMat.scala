@@ -358,18 +358,13 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     }
   }
   
-    def fSMultTHelper(a:SMat, out:FMat, istart:Int, iend:Int, ioff:Int, colaccess:AtomicIntegerArray) = {
+  def fSMultTHelper(a:SMat, out:FMat, istart:Int, iend:Int, ioff:Int) = {
   	var i = istart
   	while (i < iend) {
   		var j = a.jc(i) - ioff
   		while (j < a.jc(i+1)-ioff) {
   			val dval = a.data(j)
   			val ival = a.ir(j) - ioff
-  			if (colaccess != null) {
-  				while (colaccess.incrementAndGet(ival) > 1) {
-  					colaccess.getAndDecrement(ival)
-  				}
-  			}
   			if (Mat.noMKL || nrows < 220) {
   				var k = 0
   				while (k < nrows) {
@@ -379,11 +374,32 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   			} else {
   				saxpyxx(nrows, dval, data, i*nrows, out.data, ival*nrows)
   			}
-  			if (colaccess != null) colaccess.getAndDecrement(ival)
   			j += 1
   		}
   		i += 1
   	}
+  }
+  
+  def fSMultTHelper2(a:SMat, out:FMat, istart:Int, iend:Int, ioff:Int) = {
+    var i = 0
+    while (i < a.ncols) {
+        var j = a.jc(i) - ioff
+        while (j < a.jc(i+1)-ioff) {
+            val dval = a.data(j)
+            val ival = a.ir(j) - ioff
+            if (Mat.noMKL || iend-istart < 220) {
+                var k = istart
+                while (k < iend) {
+                    out.data(k+ival*nrows) += data(k+i*nrows)*dval
+                    k += 1
+                }             
+            } else {
+                saxpyxx(iend-istart, dval, data, istart+i*nrows, out.data, istart+ival*nrows)
+            }
+            j += 1
+        }
+        i += 1
+    }
   }
 
   
@@ -394,7 +410,19 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     	Mat.nflops += 2L * a.nnz * nrows
     	if (Mat.noMKL || nrows < 100) {
     	  val ioff = Mat.ioneBased
-    	  fSMultTHelper(a, out, 0, a.ncols, ioff, null)
+    	  if (nrows >= 64 && Mat.numThreads > 1) {
+    	    val nthreads = math.min(Mat.numThreads, nrows/32)
+    	    val done = IMat(1, nthreads)
+    	    for (ithread <- 0 until nthreads) {
+    	      future {
+    	        fSMultTHelper2(a, out, (1L*nrows*ithread/nthreads).toInt, (1L*nrows*(ithread+1)/nthreads).toInt, ioff)
+    	        done(ithread) = 1
+    	      }
+    	    }  
+    	    while (SciFunctions.sum(done).v < nthreads) {Thread.`yield`()}
+    	  } else {
+    	    fSMultTHelper2(a, out, 0, nrows, ioff)
+    	  }
     	} else { 
     		if (nrows == 1) {
     			setnumthreads(1)  // Otherwise crashes 

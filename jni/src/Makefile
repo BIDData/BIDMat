@@ -7,7 +7,7 @@ CUDA_OBJS=BIDMat_CUMAT.$(OBJ) MatKernel.$(OBJ)
 
 .SUFFIXES: .$(OBJ) .c .cpp .cu
 
-all: $(LIBPREPEND)bidmatmkl$(LIBAPPEND) $(LIBPREPEND)bidmatcuda$(LIBAPPEND)
+all: $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(LIBPREPEND)bidmatmkl$(LIBAPPEND) 
 
 $(LIBPREPEND)bidmatmkl$(LIBAPPEND): $(MKL_OBJS)
 	$(LD) $(LDFLAGS) $(MKL_OBJS) $(MKL_LIBS) $(OUTFLG)$@
@@ -25,8 +25,8 @@ $(LIBPREPEND)bidmatcuda$(LIBAPPEND): $(CUDA_OBJS)
 	$(NVCC) $(NVCCFLAGS) $*.cu
 
 install: all
-	cp $(LIBPREPEND)bidmatmkl$(LIBAPPEND)  $(INSTALL_DIR)
 	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(INSTALL_DIR)
+	cp $(LIBPREPEND)bidmatmkl$(LIBAPPEND)  $(INSTALL_DIR)
 
 clean:
 	rm -f *.$(OBJ) *$(LIBAPPEND) *.pdb *.exp *.lib
