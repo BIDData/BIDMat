@@ -231,21 +231,52 @@ object HMat {
     }
   }
   
-  def loadFMat(fname:String, omat:Mat, compressed:Int):FMat = {
-    val gin = getInputStream(fname, compressed)
-    val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
-    val hints = new Array[Int](4)
-    readSomeInts(gin, hints, buff, 4)
-    val ftype = hints(0)
-    val nrows = hints(1)
-    val ncols = hints(2)
-    if (ftype != 130) {
-      throw new RuntimeException("loadFMat expected type field 130 but was %d" format ftype)
+  def loadFMatTxt(fname:String, omat:Mat, compressed:Int):FMat = {
+    val fin = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed)))
+    var nrows = 0
+    var firstline = fin.readLine()
+    val parts = firstline.split("[\t ]+")
+    while (firstline != null && firstline.length > 0) {
+      firstline = fin.readLine()
+      nrows += 1  
     }
+    fin.close
+    val din = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed)))
+    val ncols = parts.length
     val out = FMat.newOrCheckFMat(nrows, ncols, omat)
-    readSomeFloats(gin, out.data, buff, ncols*nrows)
-    gin.close
-    out
+    var irow = 0
+    while (irow < nrows) {
+      val parts = din.readLine().split("[\t ]+")
+      var icol = 0
+      while (icol < ncols) {
+        out.data(irow + icol*out.nrows) = parts(icol).toFloat
+        icol += 1
+      }     
+      irow += 1
+    } 
+    din.close
+    out    
+  }
+  
+  def loadFMat(fname:String, omat:Mat, compressed:Int):FMat = {
+    if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
+      loadFMatTxt(fname, omat, compressed)
+    } else {
+      val gin = getInputStream(fname, compressed)
+      val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
+      val hints = new Array[Int](4)
+      readSomeInts(gin, hints, buff, 4)
+      val ftype = hints(0)
+      val nrows = hints(1)
+      val ncols = hints(2)
+      if (ftype != 130) {
+        throw new RuntimeException("loadFMat expected type field 130 but was %d" format ftype)
+      }
+      val out = FMat.newOrCheckFMat(nrows, ncols, omat)
+      readSomeFloats(gin, out.data, buff, ncols*nrows)
+      gin.close
+      out
+    }
   }
   
   def loadFMat(fname:String):FMat = loadFMat(fname, null, 0)
