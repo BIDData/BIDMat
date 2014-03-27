@@ -749,7 +749,6 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def ∘  (b : Float) = ffMatOpScalarv(b, FMat.vecMulFun, null)
   def /  (b : Float) = ffMatOpScalarv(b, FMat.vecDivFun, null)
   def ^  (b : Float) = ffMatOpScalarv(b, FMat.vecPowFun, null)
-  
   def >   (b : Float) = ffMatOpScalarv(b, FMat.vecGTFun, null)
   def <   (b : Float) = ffMatOpScalarv(b, FMat.vecLTFun, null)
   def ==  (b : Float) = ffMatOpScalarv(b, FMat.vecEQFun, null)
@@ -765,7 +764,6 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def ∘  (b : Double) = ffMatOpScalarv(b.toFloat, FMat.vecMulFun, null)
   def /  (b : Double) = ffMatOpScalarv(b.toFloat, FMat.vecDivFun, null)
   def ^  (b : Double) = ffMatOpScalarv(b.toFloat, FMat.vecPowFun, null)
-
   def >   (b : Double) = ffMatOpScalarv(b.toFloat, FMat.vecGTFun, null)
   def <   (b : Double) = ffMatOpScalarv(b.toFloat, FMat.vecLTFun, null)
   def ==  (b : Double) = ffMatOpScalarv(b.toFloat, FMat.vecEQFun, null)
@@ -781,7 +779,6 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def ∘  (b : Int) = ffMatOpScalarv(b, FMat.vecMulFun, null)
   def /  (b : Int) = ffMatOpScalarv(b, FMat.vecDivFun, null)
   def ^  (b : Int) = ffMatOpScalarv(b, FMat.vecPowFun, null)
-  
   def >   (b : Int) = ffMatOpScalarv(b, FMat.vecGTFun, null)
   def <   (b : Int) = ffMatOpScalarv(b, FMat.vecLTFun, null)
   def ==  (b : Int) = ffMatOpScalarv(b, FMat.vecEQFun, null)
