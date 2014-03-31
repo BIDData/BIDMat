@@ -14,6 +14,13 @@ import edu.berkeley.bid.UTILS._
 import net.jpountz.lz4._
 
 
+// Matrix format key
+// Type = WXYZ00ABC (decimal digits)
+// WXYZ = version number (currently zero)
+// A = matrix type: 1 (dense), 2 (sparse), 3 (sparse, norows), 4 (3-tensor), 5 (4-tensor), 6 (5-tensor)
+// B = data type: 0 (byte), 1 (int), 2 (long), 3 (float), 4 (double), 5 (complex float), 6 (complex double)
+// C = index type (sparse matrices only): 1 (int), 2 (long)
+
 case class HMat(nr:Int, nc:Int, fileList:List[String], varname:String, blkinds:Array[Int], catdim:Int) extends Mat(nr, nc) {
 
   var fnameCache:String = null
