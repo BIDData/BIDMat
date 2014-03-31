@@ -1,8 +1,8 @@
 
-RELOPTS=-O2 -DNDEBUG -Wno-deprecated -std=c++0x
-DBGOPTS=-O2 -DDEBUG -g -std=c++0x
-RELLINK=
-DBGLINK=
+RELOPTS=-O2 -DNDEBUG -Wno-deprecated -I.
+DBGOPTS=-O2 -DDEBUG -g -I.
+RELLINK=-lz
+DBGLINK==-lz
 CC_OPTS=$(DBGOPTS)
 LINK_OPTS=$(DBGLINK)
 CC=gcc
@@ -12,8 +12,8 @@ include gmake.options
 .SUFFIXES: 
 .SUFFIXES: .c .cpp .o .exe .lxc .flex
 
-EXES=xmltweet.exe xmlwiki.exe trec.exe tparse.exe
-OBJS=newparse.o gzstream.o utils.o
+EXES=xmltweet.exe xmlwiki.exe tparse.exe
+OBJS=newparse.o utils.o gzstream.o
 
 .SECONDARY: xmltweet.lxc xmlwiki.lxc trec.lxc
 
@@ -23,20 +23,18 @@ all: $(EXES)
 	flex -o $@ $< 
 
 tparse.exe: gzstream.o utils.o tparse.o utils.h
-	$(LD) -o tparse.exe tparse.o gzstream.o utils.o  $(LINK_OPTS) -lz
+	$(LD) -o tparse.exe tparse.o utils.o gzstream.o $(LINK_OPTS)
 
 .o.exe: $(OBJS)
-	$(LD) -o $@ $(OBJS) $< $(LINK_OPTS) -lz
+	$(LD) -o $@ $(OBJS) $< $(LINK_OPTS)
 
-.cpp.o: 
+.cpp.o: utils.h gzstream.h
 	$(CPP) $(CC_OPTS) -o $@ -c $<
 
 .lxc.o: 
 	$(CPP) $(CC_OPTS) -DYY_NO_UNISTD_H -o $@ -c -x c++ $<
 
 $(EXES): $(OBJS)
-
-newparse.o: newparse.h gzstream.h
 
 gzstream.o: gzstream.h
 

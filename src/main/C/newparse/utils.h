@@ -10,7 +10,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <limits>
-#include "gzstream.h"
+#include <gzstream.h>
 
 using namespace std;
 
@@ -48,9 +48,9 @@ struct strhashfn {
   }
 };
 
-#ifdef __GNUC
-#include <unordered_map>
-typedef std::unordered_map<const char*, int, __gnu_cxx::hash<const char*>, eqstr> strhash;
+#if (__GNUC__ < 4 || __GNUC_MINOR__ < 4)
+#include <ext/hash_map>
+typedef __gnu_cxx::hash_map<const char*, int, __gnu_cxx::hash<const char*>, eqstr> strhash;
 #else
 #include <unordered_map>
 typedef std::unordered_map<const char*, int, strhashfn, eqstr> strhash;
@@ -81,7 +81,6 @@ template <class T>
 bool valult(const vpair<T> & v1, const vpair<T> & v2) {
   return (v1.val < v2.val);
 }
-
 
 
 typedef vector<char *> unhash;

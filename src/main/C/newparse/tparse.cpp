@@ -149,7 +149,7 @@ checkgroup(char ** here, const char * delim2, int len) {
       *(next++) = 0;
     }
     if (strlen(*here) > 0) {
-      sscanf(*here, "%d", &val);
+      sscanf(*here, "%lld", &val);
       out.push_back(val);
     } else
       out.push_back(0);
@@ -455,15 +455,34 @@ int parseFormat(string ffname, ivector & tvec, svector & dnames, svector & delim
   delete [] linebuf;
 }
 
-  
+
+const char usage[] = 
+"\nParser for Tabular input files. Arguments are\n"
+"   -i <infile>     input file to read\n"
+"   -f <fmtfile>    format file\n"
+"   -o <outfile>    output file root. Multiple output files are written with names\n"
+"          <outfile>.<varname>.<type>[.gz]\n"
+"   -m <dictfile>   dictionary file root. Multiple output files are written with names\n"
+"          <dictfile>.<varname>.sbmat[.gz]\n"
+"   -d <dstring>    delimiter string for input fields. Defaults to tab.\n"
+"   -s N            set buffer size to N.\n"
+"   -c              produce compressed (gzipped) output files.\n\n"
+;
+
 int main(int argc, char ** argv) {
   int iline=0, i, iarg=1, nfields=1, jmax=0, writetxt=0, writemat=0, grpsize=1;
   int membuf=1048576;
   char * here;
-  string ifname = "", ofname = "", mfname = "", ffname = "", matfname = "", fdelim="\t";
+  string ifname = "", ofname = "", mfname = "", ffname = "", matfname = "", fdelim="\t", suffix="";
+  if (argc < 2) {
+    printf("%s", usage);
+    return 1;
+  }
   while (iarg < argc) {
     if (strncmp(argv[iarg], "-d", 2) == 0) {
       fdelim = argv[++iarg];
+    } else if (strncmp(argv[iarg], "-c", 2) == 0) {
+      suffix=".gz";
     } else if (strncmp(argv[iarg], "-f", 2) == 0) {
       ffname = argv[++iarg];
     } else if (strncmp(argv[iarg], "-i", 2) == 0) {
@@ -474,6 +493,12 @@ int main(int argc, char ** argv) {
       ofname = argv[++iarg];
     } else if (strncmp(argv[iarg], "-s", 2) == 0) {
       membuf = strtol(argv[++iarg],NULL,10);
+    } else if (strncmp(argv[iarg], "-?", 2) == 0) {
+      printf("%s", usage);
+      return 1;
+    } else if (strncmp(argv[iarg], "-h", 2) == 0) {
+      printf("%s", usage);
+      return 1;
     } else {
       cout << "Unknown option " << argv[iarg] << endl;
       exit(1);
@@ -527,30 +552,30 @@ int main(int argc, char ** argv) {
   for (i = 0; i < nfields; i++) {
     switch (tvec[i]) {
     case ftype_int: case ftype_dt: case ftype_mdt: case ftype_date: case ftype_mdate:
-      ftv[i].writeInts(ofname + "." + dnames[i]);
+      ftv[i].writeInts(ofname + "." + dnames[i] + ".imat" + suffix);
       break;
     case ftype_dint:
-      ftv[i].writeDInts(ofname + "." + dnames[i]);
+      ftv[i].writeDInts(ofname + "." + dnames[i] + ".dimat" + suffix);
       break;
     case ftype_qhex:
-      ftv[i].writeQInts(ofname + "." + dnames[i]);
+      ftv[i].writeQInts(ofname + "." + dnames[i] + ".imat" + suffix);
       break;
     case ftype_float:
-      ftv[i].writeFloats(ofname + "." + dnames[i]);
+      ftv[i].writeFloats(ofname + "." + dnames[i] + ".fmat" + suffix);
       break;
     case ftype_double:
-      ftv[i].writeDoubles(ofname + "." + dnames[i]);
+      ftv[i].writeDoubles(ofname + "." + dnames[i] + ".dmat" + suffix);
       break;
     case ftype_word:
-      ftv[i].writeInts(ofname + "." + dnames[i]);
-      srv[i].writeMap(mfname + "." + dnames[i]);
+      ftv[i].writeInts(ofname + "." + dnames[i] + ".imat" + suffix);
+      srv[i].writeMap(mfname + "." + dnames[i] + ".sbmat" + suffix);
       break;
     case ftype_string: case ftype_group: 
-      ftv[i].writeIVecs(ofname + "." + dnames[i]);
-      srv[i].writeMap(mfname + "." + dnames[i]);
+      ftv[i].writeIVecs(ofname + "." + dnames[i] + ".smat" + suffix);
+      srv[i].writeMap(mfname + "." + dnames[i] + ".sbmat" + suffix);
       break;
     case ftype_igroup:
-      ftv[i].writeIVecs(ofname + "." + dnames[i]);
+      ftv[i].writeIVecs(ofname + "." + dnames[i] + ".smat" + suffix);
       break;
     case ftype_digroup:
       ftv[i].writeDIVecs(ofname + "." + dnames[i]);
