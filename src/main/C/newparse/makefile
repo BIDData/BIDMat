@@ -1,6 +1,7 @@
+include makefile.incl
 
-RELOPTS=-O2 -DNDEBUG -Wno-deprecated -I.
-DBGOPTS=-O2 -DDEBUG -g -I.
+RELOPTS=$(CFLAGS) -O2 -DNDEBUG -Wno-deprecated -I.
+DBGOPTS=$(CFLAGS) -O2 -DDEBUG -g -I.
 RELLINK=-lz
 DBGLINK==-lz
 CC_OPTS=$(DBGOPTS)
