@@ -48,24 +48,24 @@ int main(int argc, char ** argv) {
   if (dictname.size() == 0) dictname = odname;
   here = strtok(ifname, " ,");
   while (here != NULL) {
-#ifdef __CYGWIN__
+#ifndef __CYGWIN__
     if (strstr(here, ".gz") - here == strlen(here) - 3) {
       yyin = popen( (string("gunzip -c ")+here).c_str(), "r" );
     } else {
 #endif
       yyin = fopen( here, "r" );
-#ifdef __CYGWIN__
+#ifndef __CYGWIN__
     }
 #endif
     fprintf(stderr, "\nScanning %s\n", here);
     yylex();
-#ifdef __CYGWIN__
+#ifndef __CYGWIN__
     if (strstr(here, ".gz") - here == strlen(here) - 3) {
       pclose(yyin);
     } else {
 #endif
       fclose(yyin);
-#ifdef __CYGWIN__
+#ifndef __CYGWIN__
     }
 #endif
     fprintf(stderr, "\r%05d lines", numlines);

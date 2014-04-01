@@ -2,7 +2,7 @@
 
 OS=`uname -a`
 if [[ "$OS" == CYGWIN* ]] ; then
-  CFLAGS="-D__CYGWIN__"
+  CFLAGS="-DCYGWIN"
 fi
 
 GCCV=`gcc -dumpversion`
