@@ -12,3 +12,5 @@ fi
 
 echo "CC=$CC" > makefile.incl
 echo "CFLAGS=$CFLAGS" >> makefile.incl
+
+make release
