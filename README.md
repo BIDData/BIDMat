@@ -1,17 +1,18 @@
 
-See the github wiki for Documentation.
-
 BIDMat is a matrix library intended to support large-scale exploratory
-data analysis and to accelerate production deployment on single
-machines or clusters.  While there are many excellent tools exist to
-support data analysis at small scale, there is a dearth of tools that
-support large-scale analysis or scale-up. Specifically, some goals of
-BIDMat are:
+data analysis. BIDMat is designed to be both fast and usable. Its
+speed comes from a combination of hardware-accelerated (CPU and GPU)
+kernels and roofline design: kernels have been systematically
+optimized against theoretical limits.  BIDMat is written in the Scala
+and inherits many of its virtues. Our tests show that it is much
+faster than any other similar tool (see the benchmarks in its sister
+project, BIDMach). The goals of BIDMat are:
 
-1. To provide an interactive data analysis environment, similar to R or
-Matlab. However, since we use the Scala language we have the advantage
-of a high-end programming language including good general-purpose data
-sructures. And also of Scala's compiler-based REPL (Read-Eval-Print Loop). 
+1. To provide an interactive data analysis environment, similar to R
+or scipy or Matlab. Thanks to the Scala language, we inherit a
+REPL, a very flexible operator syntax (including unicode math
+operators), and a very clean concurrent programming model using
+actors.
 
 2. To leverage native machine performance through native libraries
 (Intel MKL, HDF5, CUDA and string/XML processing). Java/Scala are
@@ -25,8 +26,8 @@ object.  GPUs now offer large improvements (again one or more orders
 of magnitude) over CPU performance in many areas that are relevant to
 data mining: matrix algebra, transcendental functions, random number
 generation. These advantages in low-level operations carry over to
-network and graph algorithms and even natural language parsing. Our
-own work suggests that the list is going to continue to grow, and that
-GPU acceleration will fairly soon be a requirement for competitive
-performance in most algorithms.
+network and graph algorithms and even natural language parsing. 
+
+<a href="https://github.com/BIDData/BIDMat/wiki">Documentation is here</a>
+on the github wiki page.
  
