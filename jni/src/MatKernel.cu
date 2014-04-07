@@ -369,6 +369,7 @@ __global__ void __apply_left_val(float *A, float *B, float *C, int nrows, int nc
   }
 }
 
+
 __global__ void __apply_means(float *A, int *L, float *C, int nrows, int ncols) {
   int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
   for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
@@ -423,7 +424,6 @@ int apply_lls(float *A, float *B, int *L, float *C, int nrows, int ncols) {
   cudaError_t err = cudaGetLastError();
   return err;
 }
-
 
 __global__ void __set_val(float *A, float val, int length) {
   int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
