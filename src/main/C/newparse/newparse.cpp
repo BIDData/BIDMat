@@ -48,26 +48,25 @@ int main(int argc, char ** argv) {
   if (dictname.size() == 0) dictname = odname;
   here = strtok(ifname, " ,");
   while (here != NULL) {
-#ifndef __CYGWIN__
     if (strstr(here, ".gz") - here == strlen(here) - 3) {
+#ifdef __CYGWIN__
+      printf("cant use compressed files in cygwin\n");
+      exit(1);
+#else 
       yyin = popen( (string("gunzip -c ")+here).c_str(), "r" );
+#endif
     } else {
-#endif
       yyin = fopen( here, "r" );
-#ifndef __CYGWIN__
     }
-#endif
     fprintf(stderr, "\nScanning %s\n", here);
     yylex();
-#ifndef __CYGWIN__
     if (strstr(here, ".gz") - here == strlen(here) - 3) {
-      pclose(yyin);
-    } else {
-#endif
-      fclose(yyin);
 #ifndef __CYGWIN__
-    }
+      pclose(yyin);
 #endif
+    } else {
+      fclose(yyin);
+    }
     fprintf(stderr, "\r%05d lines", numlines);
     writeIntVec(tokens, odname+here, membuf);
     tokens.clear();

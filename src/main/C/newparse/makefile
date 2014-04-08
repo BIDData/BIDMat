@@ -13,7 +13,7 @@ include gmake.options
 .SUFFIXES: 
 .SUFFIXES: .c .cpp .o .exe .lxc .flex
 
-EXES=xmltweet.exe xmlwiki.exe tparse.exe
+EXES=xmltweet.exe xmlwiki.exe trec.exe tparse.exe
 OBJS=newparse.o utils.o gzstream.o
 
 .SECONDARY: xmltweet.lxc xmlwiki.lxc trec.lxc

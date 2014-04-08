@@ -552,33 +552,33 @@ int main(int argc, char ** argv) {
   for (i = 0; i < nfields; i++) {
     switch (tvec[i]) {
     case ftype_int: case ftype_dt: case ftype_mdt: case ftype_date: case ftype_mdate:
-      ftv[i].writeInts(ofname + "." + dnames[i] + ".imat" + suffix);
+      ftv[i].writeInts(ofname + dnames[i] + ".imat" + suffix);
       break;
     case ftype_dint:
-      ftv[i].writeDInts(ofname + "." + dnames[i] + ".dimat" + suffix);
+      ftv[i].writeDInts(ofname + dnames[i] + ".dimat" + suffix);
       break;
     case ftype_qhex:
-      ftv[i].writeQInts(ofname + "." + dnames[i] + ".imat" + suffix);
+      ftv[i].writeQInts(ofname + dnames[i] + ".imat" + suffix);
       break;
     case ftype_float:
-      ftv[i].writeFloats(ofname + "." + dnames[i] + ".fmat" + suffix);
+      ftv[i].writeFloats(ofname + dnames[i] + ".fmat" + suffix);
       break;
     case ftype_double:
-      ftv[i].writeDoubles(ofname + "." + dnames[i] + ".dmat" + suffix);
+      ftv[i].writeDoubles(ofname + dnames[i] + ".dmat" + suffix);
       break;
     case ftype_word:
-      ftv[i].writeInts(ofname + "." + dnames[i] + ".imat" + suffix);
-      srv[i].writeMap(mfname + "." + dnames[i] + ".sbmat" + suffix);
+      ftv[i].writeInts(ofname + dnames[i] + ".imat" + suffix);
+      srv[i].writeMap(mfname + dnames[i] + ".sbmat" + suffix);
       break;
     case ftype_string: case ftype_group: 
-      ftv[i].writeIVecs(ofname + "." + dnames[i] + ".smat" + suffix);
-      srv[i].writeMap(mfname + "." + dnames[i] + ".sbmat" + suffix);
+      ftv[i].writeIVecs(ofname + dnames[i] + ".smat" + suffix);
+      srv[i].writeMap(mfname + dnames[i] + ".sbmat" + suffix);
       break;
     case ftype_igroup:
-      ftv[i].writeIVecs(ofname + "." + dnames[i] + ".smat" + suffix);
+      ftv[i].writeIVecs(ofname + dnames[i] + ".smat" + suffix);
       break;
     case ftype_digroup:
-      ftv[i].writeDIVecs(ofname + "." + dnames[i]);
+      ftv[i].writeDIVecs(ofname + dnames[i]);
       break;
     default:
       break;

@@ -290,43 +290,104 @@ object HMat {
   
   def loadFMat(fname:String, omat:Mat):FMat = loadFMat(fname, omat, 0)
    
-  def loadIMat(fname:String, omat:Mat, compressed:Int):IMat = {
-    val gin = getInputStream(fname, compressed)
-    val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
-    val hints = new Array[Int](4)
-    readSomeInts(gin, hints, buff, 4)
-    val ftype = hints(0)
-    val nrows = hints(1)
-    val ncols = hints(2)
-    if (ftype != 110) {
-      throw new RuntimeException("loadIMat expected type field 110 but was %d" format ftype)
+  def loadIMatTxt(fname:String, omat:Mat, compressed:Int):IMat = {
+    val fin = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed)))
+    var nrows = 0
+    var firstline = fin.readLine()
+    val parts = firstline.split("[\t ]+")
+    while (firstline != null && firstline.length > 0) {
+      firstline = fin.readLine()
+      nrows += 1  
     }
-//    println("%d %d %d\n" format (ftype, nrows, ncols))
+    fin.close
+    val din = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed)))
+    val ncols = parts.length
     val out = IMat.newOrCheckIMat(nrows, ncols, omat)
-    readSomeInts(gin, out.data, buff, ncols*nrows)
-    gin.close
-    out
+    var irow = 0
+    while (irow < nrows) {
+      val parts = din.readLine().split("[\t ]+")
+      var icol = 0
+      while (icol < ncols) {
+        out.data(irow + icol*out.nrows) = parts(icol).toInt
+        icol += 1
+      }     
+      irow += 1
+    } 
+    din.close
+    out    
+  }
+  
+  def loadIMat(fname:String, omat:Mat, compressed:Int):IMat = {
+    if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
+      loadIMatTxt(fname, omat, compressed)
+    } else {
+      val gin = getInputStream(fname, compressed)
+      val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
+      val hints = new Array[Int](4)
+      readSomeInts(gin, hints, buff, 4)
+      val ftype = hints(0)
+      val nrows = hints(1)
+      val ncols = hints(2)
+      if (ftype != 110) {
+        throw new RuntimeException("loadIMat expected type field 110 but was %d" format ftype)
+      }
+      val out = IMat.newOrCheckIMat(nrows, ncols, omat)
+      readSomeInts(gin, out.data, buff, ncols*nrows)
+      gin.close
+      out
+    }
   }  
     
   def loadIMat(fname:String):IMat = loadIMat(fname, null, 0)
   
   def loadIMat(fname:String, omat:Mat):IMat = loadIMat(fname, omat, 0)
    
-  def loadDMat(fname:String, omat:Mat, compressed:Int):DMat = {
-    val gin = getInputStream(fname, compressed)
-    val bytebuff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
-    val hints = new Array[Int](4)
-    readSomeInts(gin, hints, bytebuff, 4)
-    val ftype = hints(0)
-    val nrows = hints(1)
-    val ncols = hints(2)
-    if (ftype != 140) {
-      throw new RuntimeException("loadDMat expected type field 140 but was %d" format ftype)
+  def loadDMatTxt(fname:String, omat:Mat, compressed:Int):DMat = {
+    val fin = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed)))
+    var nrows = 0
+    var firstline = fin.readLine()
+    val parts = firstline.split("[\t ]+")
+    while (firstline != null && firstline.length > 0) {
+      firstline = fin.readLine()
+      nrows += 1  
     }
+    fin.close
+    val din = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed)))
+    val ncols = parts.length
     val out = DMat.newOrCheckDMat(nrows, ncols, omat)
-    readSomeDoubles(gin, out.data, bytebuff, ncols*nrows)
-    gin.close
-    out
+    var irow = 0
+    while (irow < nrows) {
+      val parts = din.readLine().split("[\t ]+")
+      var icol = 0
+      while (icol < ncols) {
+        out.data(irow + icol*out.nrows) = parts(icol).toDouble
+        icol += 1
+      }     
+      irow += 1
+    } 
+    din.close
+    out    
+  }
+  
+  def loadDMat(fname:String, omat:Mat, compressed:Int):DMat = {
+    if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
+      loadDMatTxt(fname, omat, compressed)
+    } else {
+      val gin = getInputStream(fname, compressed)
+      val bytebuff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
+      val hints = new Array[Int](4)
+      readSomeInts(gin, hints, bytebuff, 4)
+      val ftype = hints(0)
+      val nrows = hints(1)
+      val ncols = hints(2)
+      if (ftype != 140) {
+        throw new RuntimeException("loadDMat expected type field 140 but was %d" format ftype)
+      }
+      val out = DMat.newOrCheckDMat(nrows, ncols, omat)
+      readSomeDoubles(gin, out.data, bytebuff, ncols*nrows)
+      gin.close
+      out
+    }
   } 
     
   def loadDMat(fname:String):DMat = loadDMat(fname, null, 0)
