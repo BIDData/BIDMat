@@ -20,7 +20,11 @@ PUNCT	   [;:,.?!]
 %% 
 
 -?{DIGIT}+    {
+#if (__GNUC__ > 3 && __GNUC_MINOR__ > 6)
   long long iv = strtoll(yytext, NULL, 10);
+#else
+  long iv = strtol(yytext, NULL, 10);
+#endif
   addtok(iv);
   iv = iv >> 31;
   if (iv > 0 || iv < -1) {
