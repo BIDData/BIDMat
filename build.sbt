@@ -18,6 +18,14 @@ libraryDependencies <<= (scalaVersion, libraryDependencies) { (sv, deps) =>
 
 libraryDependencies += "org.scala-lang" % "jline" % "2.10.3"
 
+libraryDependencies += "org.apache.commons" % "commons-math3" % "3.2"
+
+libraryDependencies += "net.jpountz.lz4" % "lz4" % "1.2.0"
+
+libraryDependencies += "org.scala-saddle" % "jhdf5" % "2.9"
+
+libraryDependencies += "org.opt4j" % "opt4j-viewer" % "3.0.1"
+
 libraryDependencies += "org.scalatest" %% "scalatest" % "2.0" % "test"
 
 libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.11.2" % "test"
