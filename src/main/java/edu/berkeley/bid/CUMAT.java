@@ -131,6 +131,10 @@ public final class CUMAT {
     
     public static native int extractmat(Pointer A, Pointer B, Pointer C, int n);
     
+    public static native int isort(Pointer A, int n, int asc);
+    
+    public static native int fsort(Pointer A, int n, int asc);
+    
     public static native int lsort(Pointer A, int n, int asc);
     
     public static native int isortk(Pointer A, Pointer B, int n, int asc);

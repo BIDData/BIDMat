@@ -27,6 +27,8 @@ $(LIBPREPEND)bidmatcuda$(LIBAPPEND): $(CUDA_OBJS)
 install: all
 	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(INSTALL_DIR)
 	cp $(LIBPREPEND)bidmatmkl$(LIBAPPEND)  $(INSTALL_DIR)
+	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(INSTALL_DIR)/../BIDMach
+	cp $(LIBPREPEND)bidmatmkl$(LIBAPPEND)  $(INSTALL_DIR)/../BIDMach
 
 clean:
 	rm -f *.$(OBJ) *$(LIBAPPEND) *.pdb *.exp *.lib

@@ -120,6 +120,10 @@ int lsortk(long long *pkeys, unsigned int *pvals, int n, int asc);
 
 int lsort(long long *pkeys, int n, int asc);
 
+int isort(int *pkeys, int n, int asc);
+
+int fsort(float *pkeys, int n, int asc);
+
 int fsorts(float *pkeys, unsigned int *pvals, int *jc, int m, int asc);
 
 int dsortk(double *pkeys, unsigned int *pvals, int n, int asc);

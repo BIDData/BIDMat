@@ -512,7 +512,7 @@ object Mat {
       var mid:Int = (istart + iend)/2
       if (v < x(mid)) iend = mid else istart = mid
     }
-    if (v == x(istart)) istart else -1
+    if (iend > istart && v == x(istart)) istart else -1
   }
 
   def binsearch[T : Ordering](v:T, x:Array[T], istartp:Int, iendp:Int):Int = {
