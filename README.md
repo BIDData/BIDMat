@@ -1,4 +1,3 @@
-
 BIDMat is a matrix library intended to support large-scale exploratory
 data analysis. BIDMat is designed to be both fast and usable. Its
 speed comes from a combination of hardware-accelerated (CPU and GPU)
@@ -28,6 +27,6 @@ data mining: matrix algebra, transcendental functions, random number
 generation. These advantages in low-level operations carry over to
 network and graph algorithms and even natural language parsing. 
 
-<a href="https://github.com/BIDData/BIDMat/wiki">Documentation is here</a>
+<b><a href="https://github.com/BIDData/BIDMat/wiki">Documentation is here</a></b>
 on the github wiki page.
  
