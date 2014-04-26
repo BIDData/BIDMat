@@ -1330,17 +1330,22 @@ object MatFunctions {
   
   def cols2sparse(rows:IMat, cols:IMat, values:FMat, issorted:Boolean, ibase:Int):SMat = {
     val nnz = rows.length
-    if (ibase > 0) {
-      cols ~ cols - ibase
-      rows ~ rows - ibase
-    }
-    val ncols = SciFunctions.maxi(cols).v + 1
-    val nrows = SciFunctions.maxi(rows).v + 1
+    val ioff = Mat.ioneBased
+    val ncols = SciFunctions.maxi(cols).v + 1 - ibase
+    val nrows = SciFunctions.maxi(rows).v + 1 - ibase
     if (issorted) {
+      if (ibase == 0 && ioff > 0) {
+        cols ~ cols + ioff
+        rows ~ rows + ioff
+      }
       val cc = izeros(ncols+1,1).data;
       val ccols = SparseMat.compressInds((cols - 1).data, ncols, cc, nnz);
       new SMat(nrows, ncols, nnz, rows.data, ccols, values.data);
     } else {
+      if (ibase > 0) {
+        cols ~ cols - ibase
+        rows ~ rows - ibase
+      }
       SMat(nrows, ncols, rows, cols, values)
     }
   }
