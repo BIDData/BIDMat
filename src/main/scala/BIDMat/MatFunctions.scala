@@ -1315,6 +1315,40 @@ object MatFunctions {
     }
   }
 
+  def cols2sparse(mat:DMat, fliprc:Boolean, issorted:Boolean, ibase:Int):SMat = {
+    val rows = IMat(if (fliprc) mat(?, 1) else mat(?, 0))
+    val cols = IMat(if (fliprc) mat(?, 0) else mat(?, 1))
+    val values = FMat(mat(?,2))
+    cols2sparse(rows, cols, values, issorted, ibase)
+  }
+  
+  def cols2sparse(mat:DMat, fliprc:Boolean, issorted:Boolean):SMat = cols2sparse(mat, fliprc, issorted, 0)
+  
+  def cols2sparse(mat:DMat, fliprc:Boolean):SMat = cols2sparse(mat, fliprc, true, 0)
+  
+  def cols2sparse(mat:DMat):SMat = cols2sparse(mat, false, true, 0)
+  
+  def cols2sparse(rows:IMat, cols:IMat, values:FMat, issorted:Boolean, ibase:Int):SMat = {
+    val nnz = rows.length
+    if (ibase > 0) {
+      cols ~ cols - ibase
+      rows ~ rows - ibase
+    }
+    val ncols = SciFunctions.maxi(cols).v + 1
+    val nrows = SciFunctions.maxi(rows).v + 1
+    if (issorted) {
+      val cc = izeros(ncols+1,1).data;
+      val ccols = SparseMat.compressInds((cols - 1).data, ncols, cc, nnz);
+      new SMat(nrows, ncols, nnz, rows.data, ccols, values.data);
+    } else {
+      SMat(nrows, ncols, rows, cols, values)
+    }
+  }
+  
+  def cols2sparse(rows:IMat, cols:IMat, values:FMat, issorted:Boolean):SMat = cols2sparse(rows, cols, values, issorted, 0)
+  
+  def cols2sparse(rows:IMat, cols:IMat, values:FMat):SMat = cols2sparse(rows, cols, values, true, 0)
+  
   def load[T](fname:String, vname:String):T = MatHDF5.hload(fname, vname).asInstanceOf[T]
 
   def load[A,B](fname:String, v1:String, v2:String):(A,B) = {

@@ -653,6 +653,11 @@ object SMat {
     new SMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a.data)
   }
   
+  def apply(nrows:Int, ncols:Int, arows:IMat, acols:IMat, avals:FMat) = {
+    val a = SparseMat.sparseImpl(arows.data, acols.data, avals.data, nrows, ncols)
+    new SMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a.data)
+  }
+  
   def apply(a:Mat) = a match {
     case aa:SMat => aa
     case aa:GSMat => aa.toSMat
