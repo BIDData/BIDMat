@@ -1,6 +1,8 @@
 #!/bin/bash
 # export JAVA_HOME="" # Set here if not set in environment
 # export CUDA_PATH="" # Set here if not set in environment
+# Fix these if needed
+JCUDA_VERSION="0.5.5"
 export JAVA_OPTS="-Xmx32G -Xms128M -Dfile.encoding=UTF-8" # Set as much memory as possible
 BIDMAT_ROOT="${BASH_SOURCE[0]}"
 if [ ! `uname` = "Darwin" ]; then
@@ -11,12 +13,10 @@ fi
 BIDMAT_ROOT=`dirname "$BIDMAT_ROOT"`
 BIDMAT_ROOT=`cd "$BIDMAT_ROOT";pwd`
 BIDMAT_ROOT="$( echo ${BIDMAT_ROOT} | sed s+/cygdrive/c+c:+ )" 
-# Fix these if needed
-JCUDA_VERSION="0.5.5"
 JCUDA_LIBDIR=${BIDMAT_ROOT}/lib
 LIBDIR=${BIDMAT_ROOT}/lib
 if [ `uname` = "Darwin" ]; then
-  export DYLD_LIBRARY_PATH="${BIDMAT_ROOT}/lib:/usr/local/cuda/lib:${LD_LIBRARY_PATH}" 
+  export DYLD_LIBRARY_PATH="${BIDMAT_ROOT}/lib:/usr/local/cuda/lib:${DYLD_LIBRARY_PATH}" 
 else
   export LD_LIBRARY_PATH="${BIDMAT_ROOT}/lib:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}" 
 fi
@@ -36,4 +36,5 @@ else
     fi
 JAVA_OPTS="-Djava.library.path=${BIDMAT_ROOT}/lib;${NEWPATH} "$JAVA_OPTS
 fi
-scala -nobootcp -cp "${ALL_LIBS}" -Yrepl-sync -i ${LIBDIR}/bidmat_init.scala
+
+scala -nobootcp -cp "${ALL_LIBS}" -Yrepl-sync -i ${LIBDIR}/bidmat_init.scala "$@"
