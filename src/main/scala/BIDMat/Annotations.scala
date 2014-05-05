@@ -14,15 +14,16 @@ class Options {
     	def compare(x: Method, y: Method) = x.getName.toLowerCase.compareTo(y.getName.toLowerCase) 
     }
     stableSort(a)
-    println("Type        Value       Field Name")
-    println("====        =====       ==========")
+    println("Option Name       Type          Value")
+    println("===========       ====          =====")
     for (meth <- a) {
       val cname = meth.getDeclaringClass().getName
       val params = meth.getParameterTypes();
       if (params.length == 0) {
         val ref = meth.invoke(this)
-        val valstr = if (ref != null) ref.toString else "null"
-        println("%-10s  %-10s  %s" format (meth.getReturnType.getSimpleName, valstr, meth.getName))
+        val valstring = if (ref != null) ref.toString else "null"
+        val valstr = valstring.substring(0,math.min(20, valstring.length)) + (if (valstring.length > 20) "..." else "")
+        println("%-16s  %-12s  %s" format (meth.getName, meth.getReturnType.getSimpleName, valstr))
       }
     }    
   }

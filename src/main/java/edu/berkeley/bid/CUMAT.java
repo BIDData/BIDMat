@@ -25,12 +25,6 @@ public final class CUMAT {
     
     public static native int applygfun(Pointer A, Pointer B, int N, int opn);
     
-    public static native int applylinks(Pointer A, Pointer L, Pointer C, int nrows, int ncols);
-    
-    public static native int applymeans(Pointer A, Pointer L, Pointer C, int nrows, int ncols);
-    
-    public static native int applylls(Pointer A, Pointer B, Pointer L, Pointer C, int nrows, int ncols);
-    
     public static native int full(Pointer ir, Pointer ic, Pointer vv, Pointer dd, int nrows, int ncols, int nnz);
     
     public static native int setval(Pointer A, float vv, int N);

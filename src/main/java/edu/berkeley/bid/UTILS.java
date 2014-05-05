@@ -24,6 +24,9 @@ public final class UTILS {
     public static native  void memcpyfi( int n, float [] a, long startA, int [] b, long startB );
     public static native  void memcpyif( int n, int [] a, long startA, float [] b, long startB );
     
+    public static native  void memcpyli( int n, long [] a, long startA, int [] b, long startB );
+    public static native  void memcpyil( int n, int [] a, long startA, long [] b, long startB );
+    
     public static OutputStream _getOutputStream(String fname, int compressionLevel) throws IOException {
     	FileOutputStream fout = new FileOutputStream(fname);
     	switch (compressionLevel) {

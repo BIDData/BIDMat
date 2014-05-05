@@ -150,40 +150,6 @@ __device__ const optype fctns2[2] = {
     fn_atan2,
     fn_pow};
 
-
-__device__ float link_linear(float a) {return a;}
-__device__ float link_logistic(float a) {return log(a/1.0f - a);}
-
-__device__ float mean_linear(float a) {return a;}
-__device__ float mean_logistic(float a) {
-  float tmp;
-  if (a > 0) {
-    tmp = exp(-a);
-    return 1.0f/(1.0f + tmp);
-  } else {
-    tmp = exp(a);
-    return tmp/(1.0f + tmp);
-  }
-}
-
-#define eps 1.0e-20f
-__device__ float ll_linear(float a, float b) {return (b-a)*(a-b);}
-__device__ float ll_logistic(float a, float b) {
-  return log(a * b + (1.0f - a) * (1.0f - b) + eps);
-}
-
-__device__ const fntype linkfns[] = {
-  link_linear,
-  link_logistic};
-
-__device__ const fntype meanfns[] = {
-  mean_linear,
-  mean_logistic};
-
-__device__ const optype llfns[] = {
-  ll_linear,
-  ll_logistic};
-
 __global__ void __apply_gfun(float *A, float *B, int N, int opn) {
   fntype fn = fctns[opn];
   int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
@@ -369,61 +335,6 @@ __global__ void __apply_left_val(float *A, float *B, float *C, int nrows, int nc
   }
 }
 
-
-__global__ void __apply_means(float *A, int *L, float *C, int nrows, int ncols) {
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
-    fntype fn = meanfns[L[i % nrows]];
-    C[i] = fn(A[i]);
-  }
-}
-
-int apply_means(float *A, int *L, float *C, int nrows, int ncols) {
-  int nthreads;
-  dim3 griddims;
-  setsizes(nrows*ncols, &griddims, &nthreads);
-  __apply_means<<<griddims,nthreads>>>(A, L, C, nrows, ncols);
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  return err;
-}
-
-__global__ void __apply_links(float *A, int *L, float *C, int nrows, int ncols) {
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
-    fntype fn = linkfns[L[i % nrows]];
-    C[i] = fn(A[i]);
-  }
-}
-
-int apply_links(float *A, int *L, float *C, int nrows, int ncols) {
-  int nthreads;
-  dim3 griddims;
-  setsizes(nrows*ncols, &griddims, &nthreads);
-  __apply_links<<<griddims,nthreads>>>(A, L, C, nrows, ncols);
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  return err;
-}
-
-__global__ void __apply_lls(float *A, float *B, int *L, float *C, int nrows, int ncols) {
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
-    optype op = llfns[L[i % nrows]];
-    C[i] = op(A[i],B[i]);
-  }
-}
-
-
-int apply_lls(float *A, float *B, int *L, float *C, int nrows, int ncols) {
-  int nthreads;
-  dim3 griddims;
-  setsizes(nrows*ncols, &griddims, &nthreads);
-  __apply_lls<<<griddims,nthreads>>>(A, B, L, C, nrows, ncols);
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  return err;
-}
 
 __global__ void __set_val(float *A, float val, int length) {
   int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);

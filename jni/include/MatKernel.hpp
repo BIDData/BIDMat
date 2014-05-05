@@ -24,12 +24,6 @@ int apply_gfun(float *nativeA, float *nativeB, int N, int opn);
 
 int apply_gfun2(float *nativeA, float *nativeB, float *nativeC, int N, int opn);
 
-int apply_links(float *A, int *L, float *C, int nrows, int ncols);
-
-int apply_means(float *A, int *L, float *C, int nrows, int ncols);
-
-int apply_lls(float *A, float *B, int *L, float *C, int nrows, int ncols);
-
 int dsmult(int nrows, int ncols, int nnz, float *A, float *Bdata, int *Bir, int *Bic, float *C);
 
 int dsmult_tune(int nrows, int ncols, int nnz, float *A, float *Bdata, int *Bir, int *Bic, float *C, int nblocks, int nthreads);

@@ -242,7 +242,7 @@ object HMat {
     val fin = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed)))
     var nrows = 0
     var firstline = fin.readLine()
-    val parts = firstline.split("[\t ]+")
+    val parts = firstline.split("[\t ,]+")
     while (firstline != null && firstline.length > 0) {
       firstline = fin.readLine()
       nrows += 1  
@@ -253,7 +253,7 @@ object HMat {
     val out = FMat.newOrCheckFMat(nrows, ncols, omat)
     var irow = 0
     while (irow < nrows) {
-      val parts = din.readLine().split("[\t ]+")
+      val parts = din.readLine().split("[\t ,]+")
       var icol = 0
       while (icol < ncols) {
         out.data(irow + icol*out.nrows) = parts(icol).toFloat
@@ -294,7 +294,7 @@ object HMat {
     val fin = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed)))
     var nrows = 0
     var firstline = fin.readLine()
-    val parts = firstline.split("[\t ]+")
+    val parts = firstline.split("[\t ,]+")
     while (firstline != null && firstline.length > 0) {
       firstline = fin.readLine()
       nrows += 1  
@@ -305,7 +305,7 @@ object HMat {
     val out = IMat.newOrCheckIMat(nrows, ncols, omat)
     var irow = 0
     while (irow < nrows) {
-      val parts = din.readLine().split("[\t ]+")
+      val parts = din.readLine().split("[\t ,]+")
       var icol = 0
       while (icol < ncols) {
         out.data(irow + icol*out.nrows) = parts(icol).toInt
@@ -346,7 +346,7 @@ object HMat {
     val fin = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed)))
     var nrows = 0
     var firstline = fin.readLine()
-    val parts = firstline.split("[\t ]+")
+    val parts = firstline.split("[\t ,]+")
     while (firstline != null && firstline.length > 0) {
       firstline = fin.readLine()
       nrows += 1  
@@ -357,7 +357,7 @@ object HMat {
     val out = DMat.newOrCheckDMat(nrows, ncols, omat)
     var irow = 0
     while (irow < nrows) {
-      val parts = din.readLine().split("[\t ]+")
+      val parts = din.readLine().split("[\t ,]+")
       var icol = 0
       while (icol < ncols) {
         out.data(irow + icol*out.nrows) = parts(icol).toDouble

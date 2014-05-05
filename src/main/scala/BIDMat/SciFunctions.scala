@@ -453,6 +453,11 @@ object SciFunctions {
     poissrnd(lambda, IMat(lambda.nrows, lambda.ncols))
   }
   
+  def randperm(n:Int):IMat = {
+    val (dmy, rp) = sort2(rand(1,n))
+    rp
+  }
+  
   def min(a:DMat, b:DMat) = a.ddMatOpv(b, DMat.vecMinFun, null)
   def max(a:DMat, b:DMat) = a.ddMatOpv(b, DMat.vecMaxFun, null)
   def sum(a:DMat, n:Int) = a.ddReduceOp(n, DMat.idFun, DMat.sumFun, null)

@@ -149,37 +149,6 @@ extern "C" {
     return apply_gfun2(nativeA, nativeB, nativeC, N, opn);
   }
 
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_applylinks
-  (JNIEnv *env, jobject obj, jobject jA, jobject jL, jobject jC, jint nrows, jint ncols) 
-  {
-    float *nativeA = (float*)getPointer(env, jA);
-    int *nativeL = (int*)getPointer(env, jL);
-    float *nativeC = (float*)getPointer(env, jC);
-
-    return apply_links(nativeA, nativeL, nativeC, nrows, ncols);
-  }
-
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_applymeans
-  (JNIEnv *env, jobject obj, jobject jA, jobject jL, jobject jC, jint nrows, jint ncols) 
-  {
-    float *nativeA = (float*)getPointer(env, jA);
-    int *nativeL = (int*)getPointer(env, jL);
-    float *nativeC = (float*)getPointer(env, jC);
-
-    return apply_means(nativeA, nativeL, nativeC, nrows, ncols);
-  }
-
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_applylls
-  (JNIEnv *env, jobject obj, jobject jA, jobject jB, jobject jL, jobject jC, jint nrows, jint ncols) 
-  {
-    float *nativeA = (float*)getPointer(env, jA);
-    float *nativeB = (float*)getPointer(env, jB);
-    int *nativeL = (int*)getPointer(env, jL);
-    float *nativeC = (float*)getPointer(env, jC);
-
-    return apply_lls(nativeA, nativeB, nativeL, nativeC, nrows, ncols);
-  }
-
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_dsmult
   (JNIEnv *env, jobject obj, jint nrows, jint ncols, jint nnz, 
    jobject jA, jobject jBdata, jobject jBir, jobject jBic, jobject jC)
