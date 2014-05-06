@@ -394,13 +394,19 @@ object Mat {
     if (!noMKL) {
     	try {
     		jcuda.LibUtils.loadLibrary("bidmatmkl")
-    		jcuda.LibUtils.loadLibrary("jhdf5")
     	} catch {
     	case _:Throwable => {
     		println("Cant find native CPU libraries")
     		noMKL = true
     	}
     	}
+    }
+    try {
+      System.loadLibrary("jhdf5")
+    } catch {
+    case _:Throwable => {
+      println("Cant find native HDF5 library")
+    }
     }
   }
   

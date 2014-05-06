@@ -27,6 +27,8 @@ public final class UTILS {
     public static native  void memcpyli( int n, long [] a, long startA, int [] b, long startB );
     public static native  void memcpyil( int n, int [] a, long startA, long [] b, long startB );
     
+    public static native  void lsort(long [] A, int N, int asc);
+    
     public static OutputStream _getOutputStream(String fname, int compressionLevel) throws IOException {
     	FileOutputStream fout = new FileOutputStream(fname);
     	switch (compressionLevel) {
