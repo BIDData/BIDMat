@@ -150,13 +150,12 @@ object SciFunctions {
     }
   }
   
-  def colnorm(a:Mat):Mat = {
+  def snorm(a:Mat):Mat = {
     val acopy = a.copy
     val sc = acopy.contents
     sc ~ sc *@ sc
     sum(acopy)
-  }
-  
+  }  
   
   def drand(minv:Double, maxv:Double, out:DMat):DMat = {
     if (Mat.noMKL) {
