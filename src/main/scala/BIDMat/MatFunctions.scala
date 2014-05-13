@@ -1011,24 +1011,24 @@ object MatFunctions {
   
   /** Construct a sparse double matrix from arrays of indices (ii=row, jj=col) and values, with given size. */
   def sparse(ii:IMat, jj:IMat, vv:DMat, nr:Int, nc:Int):SDMat = {
-    SDMat(SparseMat.sparseImpl[Double](ii.data, jj.data, vv.data, nr, nc))
+    SDMat(SparseMat.sparseImpl[Double](ii.data, jj.data, vv.data, nr, nc, ii.length))
   } 
   
   def _maxi(a:IMat) = a.iiReduceOp(0, IMat.idFun, IMat.maxFun, null)
 
   /** Construct an auto-sized sparse double matrix from arrays of indices (ii=row, jj=col) and values. */
   def sparse(ii:IMat, jj:IMat, vv:DMat):SDMat = {
-    SDMat(SparseMat.sparseImpl[Double](ii.data, jj.data, vv.data, _maxi(ii).v+1, _maxi(jj).v+1))
+    SDMat(SparseMat.sparseImpl[Double](ii.data, jj.data, vv.data, _maxi(ii).v+1, _maxi(jj).v+1, ii.length))
   } 
 
   /** Construct a sparse float matrix from arrays of indices (ii=row, jj=col) and values, with given size. */
   def sparse(ii:IMat, jj:IMat, vv:FMat, nr:Int, nc:Int):SMat = {
-    SMat(SparseMat.sparseImpl[Float](ii.data, jj.data, vv.data, nr, nc))
+    SMat(SparseMat.sparseImpl[Float](ii.data, jj.data, vv.data, nr, nc, ii.length))
   } 
 
   /** Construct an auto-sized sparse float matrix from arrays of indices (ii=row, jj=col) and values. */
   def sparse(ii:IMat, jj:IMat, vv:FMat):SMat = {
-    SMat(SparseMat.sparseImpl[Float](ii.data, jj.data, vv.data, _maxi(ii).v+1, _maxi(jj).v+1))
+    SMat(SparseMat.sparseImpl[Float](ii.data, jj.data, vv.data, _maxi(ii).v+1, _maxi(jj).v+1, ii.length))
   } 
 
   /** Convert from double dense to double dense. */
