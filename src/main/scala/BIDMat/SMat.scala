@@ -649,12 +649,12 @@ object SMat {
   def apply(a:SDMat) = a.toSMat
   
   def apply(nrows:Int, ncols:Int, arows:Array[Int], acols:Array[Int], avals:Array[Float]) = {
-    val a = SparseMat.sparseImpl(arows, acols, avals, nrows, ncols)
+    val a = SparseMat.sparseImpl(arows, acols, avals, nrows, ncols, arows.size)
     new SMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a.data)
   }
   
   def apply(nrows:Int, ncols:Int, arows:IMat, acols:IMat, avals:FMat) = {
-    val a = SparseMat.sparseImpl(arows.data, acols.data, avals.data, nrows, ncols)
+    val a = SparseMat.sparseImpl(arows.data, acols.data, avals.data, nrows, ncols, arows.length)
     new SMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a.data)
   }
   
