@@ -848,7 +848,7 @@ object SparseMat {
   
   def uncompressInds(coli:Array[Int], ncols:Int, rowi:Array[Int], outx:Array[Int]):Array[Int] = {
   	val ioff = Mat.ioneBased
-  	val out = if (outx != null) outx else new Array[Int](rowi.length)
+  	val out = if (outx != null) outx else new Array[Int](coli(ncols)-ioff)
   	var i = 0
   	while (i < ncols) {
   		var j = coli(i)-ioff
