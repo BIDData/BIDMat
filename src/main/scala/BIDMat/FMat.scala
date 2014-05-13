@@ -98,6 +98,12 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   override def rowslice(a:Int, b:Int, out:Mat, c:Int) = FMat(growslice(a, b, out, c))
   
+  override def rowslice(a:Int, b:Int):FMat = {
+    val out = FMat.newOrCheckFMat(b-a, ncols, null, GUID, a, "rowslice".##)
+    rowslice(a, b, out)
+    out
+  }
+  
   def update(iv:IMat, b:FMat):FMat = FMat(_update(iv, b))
   
   def update(iv:IMat, jv:IMat, b:FMat):FMat = FMat(_update(iv, jv, b))

@@ -1,3 +1,4 @@
+
 package BIDMat
 import jcuda._
 import jcuda.runtime._
