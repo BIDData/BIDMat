@@ -78,6 +78,7 @@ object Dict {
     out
   }
   def apply(cstr:CSMat, counts:IMat):Dict = Dict(cstr, DMat(counts))
+  def apply(cstr:CSMat):Dict = Dict(cstr, dones(cstr.length,1))
   
   def apply(cstr:CSMat, counts:DMat, thresh:Int):Dict = {
     val ii = find(counts >= thresh.toDouble)
