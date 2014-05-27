@@ -219,6 +219,8 @@ object HMat {
       case 140 => loadDMat(fname, omat, compressed)
       case 231 => loadSMat(fname, compressed)
       case 331 => loadSMat(fname, compressed)
+      case 241 => loadSDMat(fname, compressed)
+      case 341 => loadSDMat(fname, compressed)
       case 201 => loadSBMat(fname, compressed)
       case 301 => loadSBMat(fname, compressed)
     }
@@ -234,6 +236,7 @@ object HMat {
       case a:DMat => saveDMat(fname, a, compressed)
       case a:IMat => saveIMat(fname, a, compressed)
       case a:SBMat => saveSBMat(fname, a, compressed)
+      case a:SDMat => saveSDMat(fname, a, compressed)
       case a:SMat => saveSMat(fname, a, compressed)
     }
   }
@@ -395,48 +398,117 @@ object HMat {
   def loadDMat(fname:String, omat:Mat):DMat = loadDMat(fname, omat, 0)
   
   def saveFMat(fname:String, m:FMat, compressed:Int=0):Unit = {
+    if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
+      saveFMatTxt(fname, m, compressed)
+    } else {
+      val gout = getOutputStream(fname, compressed)
+      val hints = new Array[Int](4)
+      val tbuf = ByteBuffer.allocate(16).order(byteOrder)
+      hints(0) = 130 // 1=dense, 3=float
+      hints(1) = m.nrows
+      hints(2) = m.ncols
+      hints(3) = 0
+      writeSomeInts(gout, hints, tbuf, 4)
+      val bsize = 4*m.ncols*m.nrows
+      val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder)
+      writeSomeFloats(gout, m.data, buff, m.nrows*m.ncols)
+      gout.close
+    }
+  }
+  
+  def saveFMatTxt(fname:String, m:FMat, compressed:Int=0, delim:String="\t"):Unit = {
     val gout = getOutputStream(fname, compressed)
-    val hints = new Array[Int](4)
-    val tbuf = ByteBuffer.allocate(16).order(byteOrder)
-    hints(0) = 130 // 1=dense, 3=float
-    hints(1) = m.nrows
-    hints(2) = m.ncols
-    hints(3) = 0
-    writeSomeInts(gout, hints, tbuf, 4)
-    val bsize = 4*m.ncols*m.nrows
-    val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder)
-    writeSomeFloats(gout, m.data, buff, m.nrows*m.ncols)
-    gout.close
+    val fout = new BufferedWriter(new OutputStreamWriter(gout))
+    var i = 0
+    while (i < m.nrows) {
+      if (m.ncols > 0) {
+        fout.write(m(i,0).toString)
+      }
+      var j = 1
+      while (j < m.ncols) {
+        fout.write(delim + m(i,j).toString)
+        j += 1
+      }
+      fout.write("\n")
+      i += 1
+    }
+    fout.close
   }
   
   def saveIMat(fname:String, m:IMat, compressed:Int=0):Unit = {
-  	val gout = getOutputStream(fname, compressed)
-    val hints = new Array[Int](4)
-    val tbuf = ByteBuffer.allocate(16).order(byteOrder)
-    hints(0) = 110 // 1=dense, 1=int
-    hints(1) = m.nrows
-    hints(2) = m.ncols
-    hints(3) = 0
-    writeSomeInts(gout, hints, tbuf, 4)
-    val bsize = 4*m.ncols*m.nrows
-    val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder)
-    writeSomeInts(gout, m.data, buff, m.nrows*m.ncols)
-    gout.close
+    if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
+      saveIMatTxt(fname, m, compressed)
+    } else {
+      val gout = getOutputStream(fname, compressed)
+      val hints = new Array[Int](4)
+      val tbuf = ByteBuffer.allocate(16).order(byteOrder)
+      hints(0) = 110 // 1=dense, 1=int
+      hints(1) = m.nrows
+      hints(2) = m.ncols
+      hints(3) = 0
+      writeSomeInts(gout, hints, tbuf, 4)
+      val bsize = 4*m.ncols*m.nrows
+      val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder)
+      writeSomeInts(gout, m.data, buff, m.nrows*m.ncols)
+      gout.close
+    }
+  }
+  
+  def saveIMatTxt(fname:String, m:IMat, compressed:Int=0, delim:String="\t"):Unit = {
+    val gout = getOutputStream(fname, compressed)
+    val fout = new BufferedWriter(new OutputStreamWriter(gout))
+    var i = 0
+    while (i < m.nrows) {
+      if (m.ncols > 0) {
+        fout.write(m(i,0).toString)
+      }
+      var j = 1
+      while (j < m.ncols) {
+        fout.write(delim + m(i,j).toString)
+        j += 1
+      }
+      fout.write("\n")
+      i += 1
+    }
+    fout.close
   }
   
   def saveDMat(fname:String, m:DMat, compressed:Int=0):Unit = {
+    if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
+      saveDMatTxt(fname, m, compressed)
+    } else {
+      val gout = getOutputStream(fname, compressed)
+      val hints = new Array[Int](4)
+      val tbuf = ByteBuffer.allocate(16).order(byteOrder)
+      hints(0) = 140 // 1=dense, 4=double
+      hints(1) = m.nrows
+      hints(2) = m.ncols
+      hints(3) = 0
+      writeSomeInts(gout, hints, tbuf, 4)
+      val bsize = 8*m.ncols*m.nrows
+      val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder)
+      writeSomeDoubles(gout, m.data, buff, m.nrows*m.ncols)
+      gout.close
+    }
+  }
+  
+  def saveDMatTxt(fname:String, m:DMat, compressed:Int=0, delim:String="\t"):Unit = {
     val gout = getOutputStream(fname, compressed)
-    val hints = new Array[Int](4)
-    val tbuf = ByteBuffer.allocate(16).order(byteOrder)
-    hints(0) = 140 // 1=dense, 4=double
-    hints(1) = m.nrows
-    hints(2) = m.ncols
-    hints(3) = 0
-    writeSomeInts(gout, hints, tbuf, 4)
-    val bsize = 8*m.ncols*m.nrows
-    val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder)
-    writeSomeDoubles(gout, m.data, buff, m.nrows*m.ncols)
-    gout.close
+    val fout = new BufferedWriter(new OutputStreamWriter(gout))
+    var i = 0
+    while (i < m.nrows) {
+      if (m.ncols > 0) {
+        fout.write(m(i,0).toString)
+      }
+      var j = 1
+      while (j < m.ncols) {
+        fout.write(delim + m(i,j).toString)
+        j += 1
+      }
+      fout.write("\n")
+      i += 1
+    }
+    fout.close
   }
   
   def loadSMat(fname:String, compressed:Int=0):SMat = {
@@ -460,6 +532,35 @@ object HMat {
     readSomeInts(gin, out.jc, buff, ncols+1)
     if (!norows) readSomeInts(gin, out.ir, buff, nnz)
     readSomeFloats(gin, out.data, buff, nnz)
+    if (Mat.ioneBased == 1) {
+      MatHDF5.addOne(out.jc)
+      if (!norows) MatHDF5.addOne(out.ir)
+    }
+    gin.close
+    out
+  }
+  
+  def loadSDMat(fname:String, compressed:Int=0):SDMat = {
+    val gin = getInputStream(fname, compressed)
+    val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
+    val hints = new Array[Int](4)
+    readSomeInts(gin, hints, buff, 4)
+    val ftype = hints(0)
+    val nrows = hints(1)
+    val ncols = hints(2)
+    val nnz = hints(3)
+    if (ftype != 241 && ftype != 341) {
+      throw new RuntimeException("loadSDMat expected type field 241 or 341 but was %d" format ftype)
+    }
+    val norows:Boolean = (ftype/100 == 3)
+    val out = if (norows) {
+        SDMat.SnoRows(nrows, ncols, nnz)
+    } else {
+      SDMat(nrows, ncols, nnz)
+    }
+    readSomeInts(gin, out.jc, buff, ncols+1)
+    if (!norows) readSomeInts(gin, out.ir, buff, nnz)
+    readSomeDoubles(gin, out.data, buff, nnz)
     if (Mat.ioneBased == 1) {
       MatHDF5.addOne(out.jc)
       if (!norows) MatHDF5.addOne(out.ir)
@@ -529,6 +630,45 @@ object HMat {
       	MatHDF5.addOne(m.jc)
       	if (m.ir != null) MatHDF5.addOne(m.ir)
       	throw new RuntimeException("Problem in saveSMat")
+      }
+    }
+    MatHDF5.addOne(m.jc)
+    if (m.ir != null) MatHDF5.addOne(m.ir)
+    gout.close
+  } 
+  
+   def saveSDMat(fname:String, m:SDMat, compressed:Int=0):Unit = {
+    val gout = getOutputStream(fname, compressed)
+    val hints = new Array[Int](4)
+    val tbuf = ByteBuffer.allocate(16).order(byteOrder)
+    if (m.ir != null) {
+        hints(0) = 241 // 2=sparse, 4=double, 1=int
+    } else {
+      hints(0) = 341 // 3=sparse:norows, 4=double, 1=int
+    }
+    hints(1) = m.nrows
+    hints(2) = m.ncols
+    hints(3) = m.nnz
+    writeSomeInts(gout, hints, tbuf, 4)
+    val buff = ByteBuffer.allocate(4*math.min(DEFAULT_BUFSIZE/4, math.max(m.ncols+1, m.nnz))).order(byteOrder)
+    try {
+        MatHDF5.subOne(m.jc)
+        writeSomeInts(gout, m.jc, buff, m.ncols+1)
+        if (m.ir != null) {
+          MatHDF5.subOne(m.ir)
+          writeSomeInts(gout, m.ir, buff, m.nnz)
+        }
+        writeSomeDoubles(gout, m.data, buff, m.nnz)
+    } catch {
+      case e:Exception => {
+        MatHDF5.addOne(m.jc)
+        if (m.ir != null) MatHDF5.addOne(m.ir)
+        throw new RuntimeException("Exception in saveSDMat "+e)
+      }
+      case _:Throwable => {
+        MatHDF5.addOne(m.jc)
+        if (m.ir != null) MatHDF5.addOne(m.ir)
+        throw new RuntimeException("Problem in saveSDMat")
       }
     }
     MatHDF5.addOne(m.jc)

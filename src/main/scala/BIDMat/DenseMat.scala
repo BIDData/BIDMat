@@ -425,13 +425,13 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
   }
   
     /*
-  * Implement sliced assignment, a(iv,jv) = b where iv and jv are vectors, using ? as wildcard
+  * Implement sliced assignment, a(iv) = b where iv is a vector, using ? as wildcard
   */ 
   def _update(inds:IMat, b:DenseMat[T]):DenseMat[T] = {
   	val off = Mat.oneBased
   	inds match {
   	case dummy:MatrixWildcard => {
-  		if (nrows != b.nrows || ncols != b.ncols) {
+  		if (length != b.length) {
   			throw new RuntimeException("dims mismatch in assignment")
   		}
   		System.arraycopy(b.data, 0, data, 0, length) 

@@ -919,6 +919,10 @@ object MatFunctions {
     out
   }
   
+  def gones(nr:Int, nc:Int):GMat = {
+    GMat.ones(nr,nc)
+  }
+  
   /** Make a string row vector from a list of strings. */  
   def csrow(x:List[String]):CSMat = {
     val mat = CSMat(1, x.length)
