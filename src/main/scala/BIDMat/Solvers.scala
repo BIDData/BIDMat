@@ -111,6 +111,18 @@ object Solvers {
     if (in.nrows != in.ncols) {
       throw new RuntimeException("eig needs a square matrix")
     } else {
+    val a = CMat(in)
+    val w = a.zeros(a.nrows, 1)
+    val z = a.zeros(a.nrows, a.nrows)
+    cgeev(ORDER.ColMajor, "N", if (getVecs) "V" else "N", a.nrows, a.data, a.nrows, w.data, null, a.nrows, z.data, z.nrows);
+    (w, z)
+    }
+
+  def geigx(in:Mat, getVecs:Boolean):(CMat, CMat) = {
+    Mat.nflops += 10L*in.nrows*in.nrows*in.nrows 
+    if (in.nrows != in.ncols) {
+      throw new RuntimeException("eig needs a square matrix")
+    } else {
       val ilo = new Array[Int](1)
       val ihi = new Array[Int](1)
       val a = CMat(in)
