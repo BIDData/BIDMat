@@ -61,7 +61,7 @@ object Solvers {
   def seig(a:FMat, getVecs:Boolean, omat:Mat):(FMat, FMat) = {
     Mat.nflops += 6L*a.nrows*a.nrows*a.nrows 
     if (a.nrows != a.ncols) {
-      throw new RuntimeException("eig needs a square matrix")
+      throw new RuntimeException("seig needs a square matrix")
     } else {
       val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat)
       out <-- a
@@ -78,7 +78,7 @@ object Solvers {
   def seig(a:DMat, getVecs:Boolean, omat:Mat):(DMat, DMat) = {
     Mat.nflops += 6L*a.nrows*a.nrows*a.nrows 
     if (a.nrows != a.ncols) {
-      throw new RuntimeException("eig needs a square matrix")
+      throw new RuntimeException("s eig needs a square matrix")
     } else {
       val out = DMat.newOrCheckDMat(a.nrows, a.ncols, omat)
       out <-- a
@@ -173,7 +173,7 @@ object Solvers {
   }
   def feig(a:Mat):(Mat, Mat) = feig(a, null)
    
-  /*
+  /**
    * Cholesky factorization. Can be lower or upper, specified by mode string = "L" or "U"
    * The other half of the matrix is cleared.
    */
@@ -242,7 +242,7 @@ object Solvers {
   def chol(a:Mat):Mat = chol(a, null, "L")
   def chol(a:Mat, omat:Mat):Mat = chol(a, omat, "L")
   
-  /*
+  /**
    * Standard QR decomposition. Given m x n input A, return m x m orthonormal Q and m x n upper-triangular R. 
    */
   
@@ -305,7 +305,7 @@ object Solvers {
   def QRdecomp(a:Mat):(Mat, Mat) = QRdecomp(a, null, null)
   
   
-  /*
+  /**
    * Thin QR decomposition. Given m x n input A with m >= n, return m x n orthonormal Q and n x n upper triangular R
    * such that A = Q*R 
    */

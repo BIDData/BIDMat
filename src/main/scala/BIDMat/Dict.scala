@@ -40,6 +40,14 @@ class Dict(val cstr:CSMat) {
     out
   }
   
+  def flatten:Dict = {
+    val h = Dict._union(this)
+    val d = Dict(Dict.getCSMat(h), null, h)
+    val d1d = this --> d
+    d.counts = accum(d1d, counts, d.length, 1)
+    d
+  }
+  
   def apply(s:String):Int = {
     makeHash
     hash.getOrElse(s, -1)
@@ -51,6 +59,35 @@ class Dict(val cstr:CSMat) {
  
   def apply(x:Range) = {
     cstr(x)
+  }
+    
+  def apply(m:IMat):CSMat = {
+    val out = CSMat(m.nrows,m.ncols);
+    var i = 0
+    while (i < m.ncols) {
+      var j = 0
+      while (j < m.nrows) {
+        out.data(j + m.nrows * i) = cstr(m.data(j + m.nrows * i))
+        j += 1
+      }
+      i += 1
+    }
+    out
+  }
+  
+  def apply(m:CSMat):IMat = {
+    val out = IMat(m.nrows,m.ncols);
+    makeHash
+    var i = 0
+    while (i < m.ncols) {
+      var j = 0
+      while (j < m.nrows) {
+        out.data(j + m.nrows * i) = hash.getOrElse(m.data(j + m.nrows * i), -1)
+        j += 1
+      }
+      i += 1
+    }
+    out
   }
  
  def count(s:String):Double = {
@@ -74,7 +111,7 @@ object Dict {
   
   def apply(cstr:CSMat, counts:DMat):Dict = {
     val out = new Dict(cstr)
-    out.counts = counts
+    out.counts = if (counts.ncols == 1) counts else counts.t
     out
   }
   def apply(cstr:CSMat, counts:IMat):Dict = Dict(cstr, DMat(counts))
@@ -139,13 +176,7 @@ object Dict {
     out
   }
     
-  def flatten(d1:Dict):Dict = {
-    val h = _union(d1)
-    val d = Dict(getCSMat(h), null, h)
-    val d1d = d1 --> d
-    d.counts = accum(d1d, d1.counts, d.length, 1)
-    d
-  }
+  def flatten(d1:Dict):Dict = d1.flatten
   
   def union(dd:Dict*):Dict = {
   	val h = _union(dd:_*)
@@ -318,6 +349,13 @@ class IDict(val grams:IMat) {
       }
     }
     out
+  }
+  
+  def flatten:IDict = {
+    val (fl, ii, jj) = uniquerows(grams)
+    if (counts.asInstanceOf[AnyRef] == null) counts = dones(grams.nrows,1)
+    val newcounts = accum(jj, counts, fl.nrows, 1)
+    IDict(fl, newcounts)
   }
   
   def trim(thresh:Int):IDict = {
