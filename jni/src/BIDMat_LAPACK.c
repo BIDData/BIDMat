@@ -432,7 +432,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_sgeev
 	jfloat * vr = (*env)->GetPrimitiveArrayCritical(env, j_vr, JNI_FALSE);
 	jint returnValue;
 
-	returnValue = LAPACKE_sgeev(order, *dolv, *dorv, a, lda, wr, wi, vl, ldvl, vr, ldvr);
+	returnValue = LAPACKE_sgeev(order, *dolv, *dorv, n, a, lda, wr, wi, vl, ldvl, vr, ldvr);
 
 	(*env)->ReleasePrimitiveArrayCritical(env, j_vr, vr, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, j_vl, vl, 0);
@@ -444,6 +444,78 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_sgeev
 
 	return returnValue;
 }
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_dgeev
+(JNIEnv * env, jobject calling_obj, jint order, jstring j_dolv, jstring j_dorv, jint n, 
+ jdoubleArray j_a, jint lda, jdoubleArray j_wr, jdoubleArray j_wi, jdoubleArray j_vl, int ldvl, jdoubleArray j_vr, jint ldvr) {
+	char * dolv = (char *)(*env)->GetStringUTFChars(env, j_dolv, JNI_FALSE);
+	char * dorv = (char *)(*env)->GetStringUTFChars(env, j_dorv, JNI_FALSE);
+	jdouble * a = (*env)->GetPrimitiveArrayCritical(env, j_a, JNI_FALSE);
+	jdouble * wr = (*env)->GetPrimitiveArrayCritical(env, j_wr, JNI_FALSE);
+	jdouble * wi = (*env)->GetPrimitiveArrayCritical(env, j_wi, JNI_FALSE);
+	jdouble * vl = (*env)->GetPrimitiveArrayCritical(env, j_vl, JNI_FALSE);
+	jdouble * vr = (*env)->GetPrimitiveArrayCritical(env, j_vr, JNI_FALSE);
+	jint returnValue;
+
+	returnValue = LAPACKE_dgeev(order, *dolv, *dorv, n, a, lda, wr, wi, vl, ldvl, vr, ldvr);
+
+	(*env)->ReleasePrimitiveArrayCritical(env, j_vr, vr, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_vl, vl, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_wi, wi, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_wr, wr, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_a, a, 0);
+	(*env)->ReleaseStringUTFChars(env, j_dorv, dorv);
+	(*env)->ReleaseStringUTFChars(env, j_dolv, dolv);
+
+	return returnValue;
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_cgeev
+(JNIEnv * env, jobject calling_obj, jint order, jstring j_dolv, jstring j_dorv, jint n, 
+ jfloatArray j_a, jint lda, jfloatArray j_w, jfloatArray j_vl, int ldvl, jfloatArray j_vr, jint ldvr) {
+	char * dolv = (char *)(*env)->GetStringUTFChars(env, j_dolv, JNI_FALSE);
+	char * dorv = (char *)(*env)->GetStringUTFChars(env, j_dorv, JNI_FALSE);
+	jfloat * a = (*env)->GetPrimitiveArrayCritical(env, j_a, JNI_FALSE);
+	jfloat * w = (*env)->GetPrimitiveArrayCritical(env, j_w, JNI_FALSE);
+	jfloat * vl = (*env)->GetPrimitiveArrayCritical(env, j_vl, JNI_FALSE);
+	jfloat * vr = (*env)->GetPrimitiveArrayCritical(env, j_vr, JNI_FALSE);
+	jint returnValue;
+
+	returnValue = LAPACKE_cgeev(order, *dolv, *dorv, n, (MKL_Complex8 *)a, lda, (MKL_Complex8 *)w, (MKL_Complex8 *)vl, ldvl, (MKL_Complex8 *)vr, ldvr);
+
+	(*env)->ReleasePrimitiveArrayCritical(env, j_vr, vr, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_vl, vl, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_w, w, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_a, a, 0);
+	(*env)->ReleaseStringUTFChars(env, j_dorv, dorv);
+	(*env)->ReleaseStringUTFChars(env, j_dolv, dolv);
+
+	return returnValue;
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_zgeev
+(JNIEnv * env, jobject calling_obj, jint order, jstring j_dolv, jstring j_dorv, jint n, 
+ jdoubleArray j_a, jint lda, jdoubleArray j_w, jdoubleArray j_vl, int ldvl, jdoubleArray j_vr, jint ldvr) {
+	char * dolv = (char *)(*env)->GetStringUTFChars(env, j_dolv, JNI_FALSE);
+	char * dorv = (char *)(*env)->GetStringUTFChars(env, j_dorv, JNI_FALSE);
+	jdouble * a = (*env)->GetPrimitiveArrayCritical(env, j_a, JNI_FALSE);
+	jdouble * w = (*env)->GetPrimitiveArrayCritical(env, j_w, JNI_FALSE);
+	jdouble * vl = (*env)->GetPrimitiveArrayCritical(env, j_vl, JNI_FALSE);
+	jdouble * vr = (*env)->GetPrimitiveArrayCritical(env, j_vr, JNI_FALSE);
+	jint returnValue;
+
+	returnValue = LAPACKE_zgeev(order, *dolv, *dorv, n, (MKL_Complex16 *)a, lda, (MKL_Complex16 *)w, (MKL_Complex16 *)vl, ldvl, (MKL_Complex16 *)vr, ldvr);
+
+	(*env)->ReleasePrimitiveArrayCritical(env, j_vr, vr, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_vl, vl, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_w, w, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_a, a, 0);
+	(*env)->ReleaseStringUTFChars(env, j_dorv, dorv);
+	(*env)->ReleaseStringUTFChars(env, j_dolv, dolv);
+
+	return returnValue;
+}
+
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_dsyevd
 (JNIEnv * env, jobject calling_obj, jint order, jstring j_compz, jstring j_uplo, jint n, 

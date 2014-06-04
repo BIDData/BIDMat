@@ -114,7 +114,7 @@ object Solvers {
     val a = CMat(in)
     val w = a.zeros(a.nrows, 1)
     val z = a.zeros(a.nrows, a.nrows)
-    cgeev(ORDER.ColMajor, "N", if (getVecs) "V" else "N", a.nrows, a.data, a.nrows, w.data, null, a.nrows, z.data, z.nrows);
+    cgeev(ORDER.ColMajor, "N", if (getVecs) "V" else "N", a.nrows, a.data, a.nrows, w.data, z.data, z.nrows, z.data, z.nrows);
     (w, z)
     }
   }
