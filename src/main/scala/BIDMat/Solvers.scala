@@ -104,9 +104,9 @@ object Solvers {
   def seig(a:Mat, getVecs:Boolean):(Mat, Mat) = seig(a, getVecs, null)
   def seig(a:Mat):(Mat, Mat) = seig(a, true, null)
 
-  def geig(a:Mat):(CMat, CMat) = geig(a, true)
+  def geig(a:Mat):(CMat, CMat) = geig(a, "R")
   
-  def geig(in:Mat, getVecs:Boolean):(CMat, CMat) = {
+  def geig(in:Mat, getVecs:String):(CMat, CMat) = {
     Mat.nflops += 10L*in.nrows*in.nrows*in.nrows 
     if (in.nrows != in.ncols) {
       throw new RuntimeException("eig needs a square matrix")
@@ -114,7 +114,8 @@ object Solvers {
     val a = CMat(in)
     val w = a.zeros(a.nrows, 1)
     val z = a.zeros(a.nrows, a.nrows)
-    cgeev(ORDER.ColMajor, "N", if (getVecs) "V" else "N", a.nrows, a.data, a.nrows, w.data, z.data, z.nrows, z.data, z.nrows);
+    cgeev(ORDER.ColMajor, if (getVecs != null & getVecs.equals("L")) "V" else "N", if (getVecs != null & getVecs.equals("R")) "V" else "N", 
+        a.nrows, a.data, a.nrows, w.data, z.data, z.nrows, z.data, z.nrows);
     (w, z)
     }
   }
