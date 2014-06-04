@@ -56,6 +56,13 @@ public final class LAPACK {
   public static native  int cpotrf( int order, String uplo, int n, float [] a, int lda); 
   public static native  int zpotrf( int order, String uplo, int n, double [] a, int lda); 
 
+
+  public static native int sgeev(int matrix_order, String dovl, String dovr, int n, float [] a, int lda, float [] wr, float [] wl, float [] vl, int vlda, float [] vr, int vrda);
+  public static native int dgeev(int matrix_order, String dovl, String dovr, int n, double [] a, int lda, double [] wr, double [] wl, double [] vl, int vlda, double [] vr, int vrda);
+  public static native int cgeev(int matrix_order, String dovl, String dovr, int n, float [] a, int lda, float [] w, float [] vl, int vlda, float [] vr, int vrda);
+  public static native int zgeev(int matrix_order, String dovl, String dovr, int n, double [] a, int lda, double [] w, double [] vl, int vlda, double [] vr, int vrda);
+
+
   public static native int sgebal(int matrix_order, String job, int n, float [] a, int lda, int [] ilo, int [] ihi, float [] scale);
   public static native int dgebal(int matrix_order, String job, int n, double [] a, int lda, int [] ilo, int [] ihi, double [] scale);
   public static native int cgebal(int matrix_order, String job, int n, float [] a, int lda, int [] ilo, int [] ihi, float [] scale);
