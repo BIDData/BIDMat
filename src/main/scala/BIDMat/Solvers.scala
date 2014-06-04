@@ -117,6 +117,7 @@ object Solvers {
     cgeev(ORDER.ColMajor, "N", if (getVecs) "V" else "N", a.nrows, a.data, a.nrows, w.data, null, a.nrows, z.data, z.nrows);
     (w, z)
     }
+  }
 
   def geigx(in:Mat, getVecs:Boolean):(CMat, CMat) = {
     Mat.nflops += 10L*in.nrows*in.nrows*in.nrows 
