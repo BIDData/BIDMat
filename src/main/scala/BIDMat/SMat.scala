@@ -255,6 +255,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   			}
   			i += 1
   		}
+  		Mat.nflops += numnz * 2
   		val out = SMat.newOrCheckSMat(nrows, a.ncols, numnz, omat, GUID, a.GUID, "*".##)
   		val ii = out.ir
   		val jj = new Array[Int](numnz)

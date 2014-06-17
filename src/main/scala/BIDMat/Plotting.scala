@@ -4,10 +4,12 @@ import ptolemy.plot._
 object Plotting { 
   var ifigure:Int = 1
   
-  def _plot(mats:Mat*)(xlog:Boolean=false, ylog:Boolean=false, isconnected:Boolean=true):Plot = {
+  def _plot(mats:Mat*)(xlog:Boolean=false, ylog:Boolean=false, isconnected:Boolean=true, bars:Boolean=false):Plot = {
     var p:Plot = new Plot
     p.setXLog(xlog)
     p.setYLog(ylog)
+    p.setBars(bars)
+    p.setConnected(isconnected)
     val dataset = 0
     if (mats.length == 1) {
       val m = mats(0)
@@ -56,6 +58,14 @@ object Plotting {
   def semilogx(mats:Mat*) = _plot(mats: _*)(xlog=true)
   
   def semilogy(mats:Mat*) = _plot(mats: _*)(ylog=true)
+
+  def barplot(mats:Mat*) = _plot(mats: _*)(isconnected=false, bars=true)
+  
+  def barloglog(mats:Mat*) = _plot(mats: _*)(xlog=true, ylog=true, isconnected=false, bars=true)
+  
+  def barsemilogx(mats:Mat*) = _plot(mats: _*)(xlog=true, isconnected=false, bars=true)
+  
+  def barsemilogy(mats:Mat*) = _plot(mats: _*)(ylog=true, isconnected=false, bars=true)
   
   def p_plot(mats:Mat*) = _plot(mats: _*)(isconnected=false)
   
