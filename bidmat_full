@@ -2,7 +2,7 @@
 # export JAVA_HOME="" # Set here if not set in environment
 # Fix these if needed
 JCUDA_VERSION="0.5.5"
-export JAVA_OPTS="-Xmx32G -Xms128M -Dfile.encoding=UTF-8" # Set as much memory as possible
+export JAVA_OPTS="-Xmx14G -Xms128M -Dfile.encoding=UTF-8" # Set as much memory as possible
 BIDMAT_ROOT="${BASH_SOURCE[0]}"
 if [ ! `uname` = "Darwin" ]; then
   BIDMAT_ROOT=`readlink -f "${BIDMAT_ROOT}"`
@@ -15,10 +15,11 @@ BIDMAT_ROOT="$( echo ${BIDMAT_ROOT} | sed s+/cygdrive/c+c:+ )"
 JCUDA_LIBDIR=${BIDMAT_ROOT}/lib
 LIBDIR=${BIDMAT_ROOT}/lib
 if [ `uname` = "Darwin" ]; then
-  export DYLD_LIBRARY_PATH="${BIDMAT_ROOT}/lib:${DYLD_LIBRARY_PATH}"
+  export DYLD_LIBRARY_PATH="${BIDMAT_ROOT}/lib:${BIDMAT_}/lib/cuda:${DYLD_LIBRARY_PATH}" 
 else
-  export LD_LIBRARY_PATH="${BIDMAT_ROOT}/lib:${LD_LIBRARY_PATH}" 
+  export LD_LIBRARY_PATH="${BIDMAT_ROOT}/lib:${BIDMAT_ROOT}/lib/cuda:${LD_LIBRARY_PATH}" 
 fi
+export CUDA_PATH="${BIDMAT_ROOT}/lib/cuda"
 
 BIDMAT_LIBS="${BIDMAT_ROOT}/BIDMat.jar;${LIBDIR}/ptplot.jar;${LIBDIR}/ptplotapplication.jar;${LIBDIR}/jhdf5.jar;${LIBDIR}/commons-math3-3.1.1.jar;${LIBDIR}/lz4-1.1.2.jar"
 
@@ -29,7 +30,7 @@ ALL_LIBS="${BIDMAT_LIBS};${JCUDA_LIBS};${JAVA_HOME}/lib/tools.jar"
 if [ ! "$OS" = "Windows_NT" ]; then
     ALL_LIBS=`echo "${ALL_LIBS}" | sed 's/;/:/g'`
 else
-JAVA_OPTS="-Djava.library.path=${BIDMAT_ROOT}/lib "$JAVA_OPTS
+JAVA_OPTS="-Djava.library.path=${BIDMAT_ROOT}/lib;${BIDMAT_ROOT}/lib/cuda "$JAVA_OPTS
 fi
 
-${BIDMAT_ROOT}/scala/bin/scala -nobootcp -cp "${ALL_LIBS}" -Yrepl-sync -i ${LIBDIR}/bidmat_init.scala "$@"
+scala -nobootcp -cp "${ALL_LIBS}" -Yrepl-sync -i ${LIBDIR}/bidmat_init.scala "$@"
