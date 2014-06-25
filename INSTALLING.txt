@@ -6,7 +6,7 @@ BIDMat is a set of Scala, Java and native code libraries. To run it, you need:
   You need Scala 2.10.3 or later. We have tested extensively on 2.10.3 and 2.10.4.
 
 * A 64bit Intel machine (Linux, Windows, and Mac), if you plan to use any native
-  code acceleration. We have tested on Windows 7 and RedHat Enterprise Linux 6. 
+  code acceleration. We have tested on Windows 7 and RedHat Enterprise Linux 6 and Mac OS X. 
   A lot of the code will still work, but that's really not the point of the library.
 
 * To use these libraries with a CUDA GPU, you need a CUDA-enabled GPU device. The code has
