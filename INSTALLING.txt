@@ -18,9 +18,8 @@ BIDMat is a set of Scala, Java and native code libraries. To run it, you need:
 * You need the [http://developer.nvidia.com/cuda/cuda-downloads NVIDIA CUDA driver and the
   CUDA Toolkit] from the NVIDIA website. This version is based on CUDA 5.5. 
 
-In Linux, you should just be able to run the "bidmat" script from the top-level
+You should just be able to run the "bidmat" script from the top-level
 directory. If that doesnt work, its probably because $JAVA_HOME is not set in your
-environment. You can set it inside the script instead.
-
-On windows you will need to set the system PATH variable to include the lib subdirectory,
-which is at <root_dir>/BIDMat/lib/win64, and which contains the native code dlls
+environment, because "scala" is not in your path, or because the script is allocating too
+much memory - if its the latter, edit "bidmat" and change the -Xmx option to something
+smaller.
