@@ -732,8 +732,8 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def ffReduceOp(n:Int, f1:(Float) => Float, f2:(Float, Float) => Float, out:Mat) = 
     CMat(ggReduceOp(n, f1, f2, out))
   
-  def ffReduceOpv(n:Int, f:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, out:Mat) = 
-    CMat(ggReduceOpv(n, f, out))
+  def ffReduceOpv(n:Int, f1:(Float) => Float, f2:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, out:Mat) = 
+    CMat(ggReduceOpv(n, f1, f2, out))
     
   def ccReduceOpv(dim0:Int, opv:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, oldmat:Mat):CMat = {
     var dim = if (nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)

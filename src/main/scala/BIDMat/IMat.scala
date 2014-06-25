@@ -119,7 +119,8 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   
   def iiReduceOp(n:Int, f1:(Int) => Int, f2:(Int, Int) => Int, old:Mat) = IMat(ggReduceOp(n, f1, f2, old))	
   
-  def iiReduceOpv(n:Int, f:(Array[Int],Int,Int,Array[Int],Int,Int,Array[Int],Int,Int,Int) => Int, old:Mat) = IMat(ggReduceOpv(n, f, old))
+  def iiReduceOpv(n:Int, f1:(Int) => Int, f2:(Array[Int],Int,Int,Array[Int],Int,Int,Array[Int],Int,Int,Int) => Int, old:Mat) = 
+    IMat(ggReduceOpv(n, f1, f2, old))
   
   def iiReduceAll(n:Int, f1:(Int) => Int, f2:(Int, Int) => Int, old:Mat) = IMat(ggReduceAll(n, f1, f2, old))
   
@@ -747,9 +748,9 @@ object IMat {
   }
        
   def vecAdd(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
-    while (ci < cend) {
-      c(ci) = a(ai) + b(bi);  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0
+    while (i < n) {
+      c(ci) = a(ai) + b(bi);  ai += ainc; bi += binc;  ci += cinc; i += 1
     }
     0
   }
@@ -779,17 +780,17 @@ object IMat {
 	}
   
   def vecMax(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
-    while (ci < cend) {
-      c(ci) = math.max(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0
+    while (i < n) {
+      c(ci) = math.max(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc; i += 1
     }
     0
   }
   
   def vecMin(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
-    while (ci < cend) {
-      c(ci) = math.min(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0
+    while (i < n) {
+      c(ci) = math.min(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc; i += 1
     }
     0
   }

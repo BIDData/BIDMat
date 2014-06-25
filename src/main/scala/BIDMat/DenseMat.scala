@@ -987,14 +987,14 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
       throw new RuntimeException("index must 1 or 2");
   }
   
-  def ggReduceOpv(dim0:Int, opv:(Array[T],Int,Int,Array[T],Int,Int,Array[T],Int,Int,Int) => T, oldmat:Mat):DenseMat[T] = {
+  def ggReduceOpv(dim0:Int, op1:(T) => T, opv:(Array[T],Int,Int,Array[T],Int,Int,Array[T],Int,Int,Int) => T, oldmat:Mat):DenseMat[T] = {
     var dim = if (nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
     if (dim == 1) {
       val out = DenseMat.newOrCheck[T](1, ncols, oldmat, GUID, 1, opv.hashCode)
       Mat.nflops += length
       var i = 0
       while (i < ncols) { 
-        out.data(i) = data(i*nrows)
+        out.data(i) = op1(data(i*nrows))
         opv(data, i*nrows+1, 1, out.data, i, 0, out.data, i, 0, nrows-1)
         i += 1
       }
@@ -1004,7 +1004,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
       Mat.nflops += length
       var j = 0
       while (j < nrows) { 
-        out.data(j) = data(j)
+        out.data(j) = op1(data(j))
         j += 1
       }
       var i = 1

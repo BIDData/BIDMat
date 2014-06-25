@@ -161,8 +161,8 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
 
   def ddReduceOp(n:Int, f1:(Double) => Double, f2:(Double, Double) => Double, out:Mat) = DMat(ggReduceOp(n, f1, f2, out))
 
-  def ddReduceOpv(n:Int, f:(Array[Double],Int,Int,Array[Double],Int,Int,Array[Double],Int,Int,Int) => Double, out:Mat) = 
-  	DMat(ggReduceOpv(n, f, out))
+  def ddReduceOpv(n:Int, f1:(Double) => Double, f2:(Array[Double],Int,Int,Array[Double],Int,Int,Array[Double],Int,Int,Int) => Double, out:Mat) = 
+  	DMat(ggReduceOpv(n, f1, f2, out))
   	
   def ddReduceAll(n:Int, f1:(Double) => Double, f2:(Double, Double) => Double, out:Mat) = 
   	DMat(ggReduceAll(n, f1, f2, out))  
@@ -1049,9 +1049,9 @@ object DMat {
   }
     
   def vecAdd(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
-    while (ci < cend) {
-      c(ci) = a(ai) + b(bi);  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0
+    while (i < n) {
+      c(ci) = a(ai) + b(bi);  ai += ainc; bi += binc;  ci += cinc; i += 1
     }
     0
   }
@@ -1073,17 +1073,17 @@ object DMat {
   }
   
   def vecMax(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
-    while (ci < cend) {
-      c(ci) = math.max(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0
+    while (i < n) {
+      c(ci) = math.max(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc; i += 1
     }
     0
   }
   
  def vecMin(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
-    while (ci < cend) {
-      c(ci) = math.min(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0
+    while (i < n) {
+      c(ci) = math.min(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc; i += 1
     }
     0
   }
