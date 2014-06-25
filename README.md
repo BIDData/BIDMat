@@ -1,11 +1,12 @@
 BIDMat is a matrix library intended to support large-scale exploratory
-data analysis. BIDMat is designed to be both fast and usable. Its
+data analysis. Its sister library <b><a href="https://github.com/BIDData/BIDMach">BIDMach</a></b>
+implements the machine learning layer.
+BIDMat is designed to be both fast and usable. Its
 speed comes from a combination of hardware-accelerated (CPU and GPU)
 kernels and roofline design: kernels have been systematically
-optimized against theoretical limits.  BIDMat is written in the Scala
-and inherits many of its virtues. Our tests show that it is much
-faster than any other similar tool (see the benchmarks in its sister
-project, BIDMach). The goals of BIDMat are:
+optimized against theoretical limits.  See the <b><a href="https://github.com/BIDData/BIDMach/wiki/Benchmarks">Benchmarks Page</a></b>. BIDMat is written in the Scala
+language which is ideal for an interactive, math-like DSL.
+The goals of BIDMat are:
 
 1. To provide an interactive data analysis environment, similar to R
 or scipy or Matlab. Thanks to the Scala language, we inherit a
