@@ -291,12 +291,26 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_somatcopy
 	(*env)->ReleaseStringUTFChars(env, j_order, order);
 }
 
+JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_spermute
+(JNIEnv * env, jobject calling_obj, jint M, jint N, jint K, jfloatArray j_A, jfloatArray j_B) {
+        int i, offset, step = M*N;
+	jfloat * A = (*env)->GetPrimitiveArrayCritical(env, j_A, JNI_FALSE);
+	jfloat * B = (*env)->GetPrimitiveArrayCritical(env, j_B, JNI_FALSE);
+
+        for (i = 0, offset = 0; i < K; i++, offset += step) {
+          mkl_somatcopy('C', 'T', M, N, 1.0f, A+offset, M, B+offset, N);
+        }
+
+	(*env)->ReleasePrimitiveArrayCritical(env, j_B, B, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_A, A, 0);
+}
+
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_saxpy
 (JNIEnv * env, jobject calling_obj, jint N, jfloat a, jfloatArray jX, jint incX, jfloatArray jY, jint incY){
 	jfloat * X = (*env)->GetPrimitiveArrayCritical(env, jX, JNI_FALSE);
 	jfloat * Y = (*env)->GetPrimitiveArrayCritical(env, jY, JNI_FALSE);
 
-    cblas_saxpy(N, a, X, incX, Y, incY);
+        cblas_saxpy(N, a, X, incX, Y, incY);
 
 	(*env)->ReleasePrimitiveArrayCritical(env, jY, Y, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, jX, X, 0);

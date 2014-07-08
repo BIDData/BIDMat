@@ -77,4 +77,7 @@ public final class CBLAS {
   
   public static native  void smcscm( int m, int n, float [] a, int lda, float [] b, int [] ir, int [] jc, float [] c, int ldc);
   public static native  void smcsrm( int m, int n, float [] a, int lda, float [] b, int [] ir, int [] jc, float [] c, int ldc);
+
+  public static native  void spermute(int d1, int d2, int d3, float [] in, float [] out);
+
 }
