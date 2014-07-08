@@ -1,14 +1,13 @@
 BIDMat is a set of Scala, Java and native code libraries. To run it, you need:
 
-* A java runtime, version 1.5 or later.
+* A java runtime, version 1.7 or later.
 
 * An Installation of the Scala language, which you can get from here: http://www.scala-lang.org/
-  You need Scala 2.9.1 or later. We have tested extensively on 2.9.1 and 2.9.2.
+  You need Scala 2.10.3 or later. We have tested extensively on 2.10.3 and 2.10.4.
 
-* A 64bit Intel machine (Linux, Windows, and *soon* Mac), if you plan to use any native
-  code acceleration. We have tested on Windows 7 and RedHat Enterprise Linux 6. 
-  You should set Mat.noMKL=true in scala if you dont have one. A lot of
-  the code will still work, but that's really not the point of the library.
+* A 64bit Intel machine (Linux, Windows, and Mac), if you plan to use any native
+  code acceleration. We have tested on Windows 7 and RedHat Enterprise Linux 6 and Mac OS X. 
+  A lot of the code will still work, but that's really not the point of the library.
 
 * To use these libraries with a CUDA GPU, you need a CUDA-enabled GPU device. The code has
   been developed for GTX 600-series, and this is the ideal platform. The code should work
@@ -17,12 +16,10 @@ BIDMat is a set of Scala, Java and native code libraries. To run it, you need:
   the others. 
 
 * You need the [http://developer.nvidia.com/cuda/cuda-downloads NVIDIA CUDA driver and the
-  CUDA Toolkit] from the NVIDIA website. This version is based on CUDA 4.2. CUDA 5.0 supported
-  should appear soon. 
+  CUDA Toolkit] from the NVIDIA website. This version is based on CUDA 5.5. 
 
-In Linux, you should just be able to run the "bidmat" script from the top-level
+You should just be able to run the "bidmat" script from the top-level
 directory. If that doesnt work, its probably because $JAVA_HOME is not set in your
-environment. You can set it inside the script instead.
-
-On windows you will need to set the system PATH variable to include the lib subdirectory,
-which is at <root_dir>/BIDMat/lib/win64, and which contains the native code dlls
+environment, because "scala" is not in your path, or because the script is allocating too
+much memory - if its the latter, edit "bidmat" and change the -Xmx option to something
+smaller.

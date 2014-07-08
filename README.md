@@ -7,5 +7,7 @@ on the github wiki page.
 
 Also check out the <b><a href="https://github.com/BIDData/BIDMach/wiki/Benchmarks">current benchmarks</a></b>. 
 
+Source code is here on github, executables and libraries are hosted on the <b><a href="http://bid2.berkeley.edu/bid-data-project/download/">main project site</a></b>.
+
 
  
