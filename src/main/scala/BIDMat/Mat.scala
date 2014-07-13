@@ -334,6 +334,7 @@ object Mat {
     _cache2.clear
     _cache3.clear
     _cache4.clear
+    ND.clearCaches
   }
   
   def trimCache2(ithread:Int) = {

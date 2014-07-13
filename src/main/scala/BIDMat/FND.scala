@@ -58,47 +58,51 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
     val offset = offset0 * _dims(inum);
     val outoffset = outoffset0 * out._dims(inum);
     if (inum == 0) {
-    	mat match {
-    	case aa:MatrixWildcard => {
+    	if (mat.asInstanceOf[AnyRef] == null) {
     		System.arraycopy(data, offset, out.data, outoffset, _dims(inum));
-    	}
-    	case _ => {
+    	} else {
     	  var i = 0;
     	  while (i < mat.length) {
     	    out.data(outoffset + i) = data(mat.data(i) + offset);
     	    i += 1;
     	  }
     	}
-      }
     } else {
-      mat match {
-      case aa:MatrixWildcard => {
+      if (mat.asInstanceOf[AnyRef] == null) {
     		var i = 0;
     	  while (i < _dims(inum)) {
     	    applyHelper(inds, out, offset + i, outoffset + i, inum-1);
     	    i += 1;
     	  }
-    	}
-    	case _ => {
+    	} else {
     	  var i = 0;
     	  while (i < mat.length) {
     	    applyHelper (inds, out, offset + mat.data(i), outoffset + i, inum-1);
     	    i += 1;
     	  }
     	}
-      }
     }
   }
   
   def apply(inds0:List[IMat]):FND = apply(inds0.toArray)
   
-  def apply(inds:Array[IMat]):FND = {
-    val newdims = new Array[Int](dims.length)
-    for (i <- 0 until dims.length) {
-      newdims(i) = inds(i) match {case aa:MatrixWildcard => _dims(i); case _ => inds(i).length}
+  def apply(inds:Array[IMat]):FND = {  
+    val newdims = new Array[Int](_dims.length)
+    val newinds = new Array[IMat](_dims.length)
+    var j = 0
+    for (i <- 0 until _dims.length) {
+      inds(i) match {
+        case aa:MatrixWildcard => {
+          newdims(i) = _dims(i); 
+        }
+        case _ => {
+          newdims(i) = inds(i).length;
+          newinds(i) = inds(i)
+        }
+      }
     }
     val out = FND.newOrCheckFND(newdims, null, GUID, ND.hashGUIDs(inds), "apply".##);
-    applyHelper(inds, out, 0, 0, inds.length-1)
+    applyHelper(newinds, out, 0, 0, inds.length-1)
     out
   }
   
