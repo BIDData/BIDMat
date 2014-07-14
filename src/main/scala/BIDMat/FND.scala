@@ -345,14 +345,215 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
   def permute(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):FND = permute(Array(i1, i2, i3, i4, i5, i6))
   def permute(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int):FND = permute(Array(i1, i2, i3, i4, i5, i6, i7))
   def permute(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int):FND = permute(Array(i1, i2, i3, i4, i5, i6, i7, i8))
+  
+  def printOne(i:Int):String = {
+    val v = data(i)
+    if (v % 1 == 0 && math.abs(v) < 1e10) {	      
+      "%d" format v.intValue
+    } else {
+      "%.5g" format v
+    }
+  }
+  
+  def prodDimsBy(i0:Int, step:Int):Int = {
+    var p = 1
+    var i = i0
+    while (i < _dims.length) {
+      p *= _dims(i)
+      i += step
+    }
+    p
+  }
+  
+  def prodDimsByX(i0:Int, step:Int):Int = {
+    var p = 1;
+    var i = i0;
+    var tot = 0;
+    while (i < _dims.length) i += step
+    i -= step
+    while (i >= 0) {
+      p *= _dims(i);
+      tot += p;
+      i -= step;
+    }
+    tot
+  }
+  
+  def linearize(inds:Array[Int], start:Int, step:Int):Int = {
+    var loc = 0
+    var mult = 1
+    var pos = start
+    var j = 0
+    for (i <- 0 until _dims.length) {
+      if (i == pos) {
+        pos += step
+        loc += mult * inds(j)
+        j += 1
+      }
+      mult *= _dims(i)
+    }
+    loc
+  }
+  
+  def subDims(start:Int, step:Int):Array[Int] = {
+    val out = new Array[Int](1 + (_dims.length-start-1) / step)
+    var j = 0
+    for (i <- start until _dims.length by step) {
+      out(j) = _dims(i)
+      j += 1
+    }
+    out
+  }
+  
+  def incInds(inds:Array[Int], dims:Array[Int]):Int = {
+    var ncarry = 0
+    inds(0) += 1
+    var j = 0
+    while (j < dims.length && inds(j) == dims(j)) {
+      inds(j) = 0
+      j += 1
+      if (j < dims.length) inds(j) += 1
+      ncarry += 1
+    }
+    ncarry
+  }
+  
+  def populateCS(maxRows:Int, maxCols:Int):CSMat = {
+    val cs = CSMat(maxRows, maxCols)
+    cs(?,?) = ""
+    val rowinds = new Array[Int]((_dims.length + 1) / 2)
+    val colinds = new Array[Int](_dims.length / 2)
+    val evenDims = subDims(0, 2)
+    val oddDims = subDims(1, 2)
+    val evenLength = evenDims.reduce(_*_)
+    var rind = 0
+    var i = 0
+    while (rind < maxRows && i < evenLength) {
+      val ri = linearize(rowinds, 0, 2)
+      for (j <- 0 until maxCols) {
+        val ci = linearize(colinds, 1, 2)
+        cs(rind, j) = printOne(ri + ci)
+        incInds(colinds, oddDims)
+      }
+      Arrays.fill(colinds,0)
+      rind += 1 + incInds(rowinds, evenDims)
+      i += 1
+    }
+    cs
+  }
 
+  final val somespaces = "                                             "
+  
+  override def toString:String = {
+  	if (_dims.length < 3) {
+  		val nc = if (_dims.length == 2) _dims(1) else 1;
+  		val tmpFMat = new FMat(_dims(0), nc, data);
+  		tmpFMat.toString
+  	} else {
+  		val sb:StringBuilder = new StringBuilder();
+  	  val nChars = Mat.terminalWidth-4;
+  	  val ncols = prodDimsBy(1,2);
+  	  val nrows = prodDimsByX(0,2);
+  	  val maxRows = math.min(4096/nChars, nrows);
+  	  var maxCols = math.min(nChars, ncols);
+  	  var fieldWidth = 4;
+  	  val cs = populateCS(maxRows, maxCols);
+  	  val ws = new IMat(maxRows, maxCols, cs.data.map(_.length));
+  	  var icols = 0;
+  	  val colinds = new Array[Int](_dims.length / 2);
+  	  val oddDims = subDims(1, 2);
+  	  while (icols < maxCols) {
+  	  	var newWidth = fieldWidth;
+  	  	for (j <- 0 until maxRows) newWidth = math.max(newWidth, 2+(cs(j, icols).length));
+  	    if ((icols+1)*newWidth < nChars) {
+  	    	fieldWidth = newWidth;
+  	    	icols += 1;
+  	    } else {
+  	    	maxCols = icols;
+  	    }
+  	  }    	
+  	  for (i <- 0 until maxRows) {
+  	  	Arrays.fill(colinds, 0)
+  	  	for (j <- 0 until icols) {
+  	  		val str = cs(i,j);
+  	  		val ncarry = incInds(colinds, oddDims);
+  	  		sb.append(somespaces.substring(0,fieldWidth-str.length)+str+somespaces.substring(0,ncarry));
+  	  	}
+  	  	if (ncols > icols) {
+  	  		sb.append("...");
+  	  	}
+  	  	sb.append("\n");
+  	  }
+    	sb.toString()
+    }
+  }
+   
+  def + (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "+"); c ~ a + b; d}
+  def - (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "-"); c ~ a - b; d}
+  def *@ (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "*@"); c ~ a *@ b; d}
+  def / (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "/"); c ~ a / b; d}
+  
+  def > (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, ">"); c ~ a > b; d}
+  def < (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "<"); c ~ a < b; d}
+  def >= (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, ">="); c ~ a >= b; d}
+  def <= (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "<="); c ~ a <= b; d}
+  def != (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "!="); c ~ a != b; d}
+  def == (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "=="); c ~ a == b; d}
+  def === (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "==="); c ~ a === b; d}
+    
+  def ~ (b : FND):FNDPair = new FNDPair(this, b)
+
+}
+
+class FNDPair(val omat:ND, val amat:FND) {
+  def + (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(amat, mat, omat, "+"); c ~ a + b; d}
+  def - (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(amat, mat, omat, "-"); c ~ a - b; d}
+  def *@ (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(amat, mat, omat, "*@"); c ~ a *@ b; d}
+  def / (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(amat, mat, omat, "/"); c ~ a / b; d}
+  
+  def > (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(amat, mat, omat, ">"); c ~ a > b; d}
+  def < (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(amat, mat, omat, "<"); c ~ a < b; d}
+  def >= (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(amat, mat, omat, ">="); c ~ a >= b; d}
+  def <= (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(amat, mat, omat, "<="); c ~ a <= b; d}
+  def != (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(amat, mat, omat, "!="); c ~ a != b; d}
+  def == (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(amat, mat, omat, "=="); c ~ a == b; d}
+  def === (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(amat, mat, omat, "==="); c ~ a === b; d}
 }
 
 object FND {
   
+  def scalar(v:Float, nd:Int):FND = {
+    val newdims = new Array[Int](nd)
+    Arrays.fill(newdims,1)
+    val out = FND(newdims)
+    out.data(0) = v
+    out
+  }
+  
   def apply(dims:Array[Int]):FND = new FND(dims, new Array[Float](dims.reduce(_*_)))
   
   def apply(dims:Int*):FND = apply(dims.toArray)
+  
+  def apply(f:FMat):FND = {
+    val out:FND = apply(f.nrows, f.ncols)
+    System.arraycopy(f.data, 0, out.data, 0, f.length)
+    out
+  }
+  
+  def asFMats(mat1:FND, mat2:FND, omat:ND, opname:String):(FMat, FMat, FMat, FND) = {
+    if (mat1._dims.length != mat2._dims.length) {
+      throw new RuntimeException("Operator "+opname+" inconsistent number of dims in operands")
+    }
+    val (nr1, nc1, nr2, nc2) = ND.compatibleDims(mat1._dims, mat2._dims, opname);
+    val a = new FMat(nr1, nc1, mat1.data)
+    val b = new FMat(nr2, nc2, mat2.data)
+    val nr3 = math.max(nr1, nr2)
+    val nc3 = math.max(nc1, nc2)
+    val xdims = if (mat1.length > mat2.length) mat1._dims else mat2._dims
+    val d = FND.newOrCheckFND(xdims, omat, mat1.GUID, mat2.GUID, opname.##)
+    val c = new FMat(nr3, nc3, d.data)
+    (a, b, c, d)
+  }
   
   def newOrCheckFND(dims:Array[Int], out:ND):FND = {
     if (out.asInstanceOf[AnyRef] != null && ND.checkDims("FND newOrCheckFND: ", out.dims, dims)) {

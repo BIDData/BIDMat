@@ -115,6 +115,84 @@ object ND {
     out
   }
   
+  def checkHead(dims1:Array[Int], dims2:Array[Int]):(Int, Int) = {
+    var ishead = true;
+    var matches = true;
+    var nrows = 1
+    var ncols = 1
+    for (i <- 0 until dims1.length) {
+      if (ishead) {
+        if (dims1(i) == 1) {
+          nrows *= dims2(i);
+        } else {
+          ishead = false;
+        }
+      }
+      if (!ishead) {
+        if (dims1(i) == dims2(i)) {
+          ncols *= dims1(i);
+        } else {
+          matches = false;
+        }
+      }
+    }
+    if (matches) (nrows, ncols) else (-1, -1)
+  }
+  
+  def checkTail(dims1:Array[Int], dims2:Array[Int]):(Int, Int) = {
+    var istail = true;
+    var matches = true;
+    var nrows = 1
+    var ncols = 1
+    for (i <- (dims1.length - 1) to 0 by -1 ) {
+      if (istail) {
+        if (dims1(i) == 1) {
+          ncols *= dims2(i);
+        } else {
+          istail = false;
+        }
+      }
+      if (!istail) {
+        if (dims1(i) == dims2(i)) {
+          nrows *= dims1(i);
+        } else {
+          matches = false;
+        }
+      }
+    }
+    if (matches) (nrows, ncols) else (-1, -1)
+  }
+  
+  def compatibleDims(dims1:Array[Int], dims2:Array[Int], opname:String):(Int, Int, Int, Int) = {
+  	val len = dims1.reduce(_*_)
+    if (len == dims2.reduce(_*_)) {
+      ND.checkDims(opname, dims1, dims2);      
+      (len, 1, len, 1)
+    } else {
+    	val (nr, nc) = checkHead(dims1, dims2);
+    	if (nr > 0) {
+    	  (1, nc, nr, nc)
+    	} else {
+    	  val (nr, nc) = checkHead(dims2, dims1);
+    	  if (nr > 0) {
+    	  	(nr, nc, 1, nc) 
+    	  } else {
+    	    val (nr, nc) = checkTail(dims1, dims2);
+    	    if (nr > 0) {
+    	    	(nr, 1, nr, nc)
+    	    } else {
+    	      val (nr, nc) = checkTail(dims1, dims2);
+    	      if (nr > 0) {
+    	      	(nr, nc, nr, 1)
+    	      } else {
+    	        throw new RuntimeException("Operator "+opname+" incompatible dimensions")
+    	      }
+    	    }
+    	  }
+    	}
+    }
+  }
+  
   def hashGUIDs(inds:Array[IMat]):Long = {
   	MurmurHash3.MurmurHash3_x64_64(inds.map(_.GUID), 0x3142341)
   }
