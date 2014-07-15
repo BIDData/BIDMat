@@ -114,7 +114,7 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
   def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat):FND = apply(Array(i1, i2, i3, i4, i5, i6, i7))
   def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat):FND = apply(Array(i1, i2, i3, i4, i5, i6, i7, i8)) 
   
-  def reshape(newdims:List[Int]):FND = reshape(newdims.toArray)
+  def reshape(newdims:Int*):FND = reshape(newdims.toArray)
   
   def reshape(newdims:Array[Int]):FND = {
     if (newdims.reduce(_*_) == length) {
@@ -126,13 +126,16 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
     }
   }
   
-  def reshape(i1:Int, i2:Int):FND = reshape(Array(i1, i2))
-  def reshape(i1:Int, i2:Int, i3:Int):FND = reshape(Array(i1, i2, i3))
-  def reshape(i1:Int, i2:Int, i3:Int, i4:Int):FND = reshape(Array(i1, i2, i3, i4))
-  def reshape(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):FND = reshape(Array(i1, i2, i3, i4, i5))
-  def reshape(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):FND = reshape(Array(i1, i2, i3, i4, i5, i6))
-  def reshape(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int):FND = reshape(Array(i1, i2, i3, i4, i5, i6, i7))
-  def reshape(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int):FND = reshape(Array(i1, i2, i3, i4, i5, i6, i7, i8)) 
+  def reshapeView(newdims:Int*):FND = reshapeView(newdims.toArray)
+  
+  def reshapeView(newdims:Array[Int]):FND = {
+    if (newdims.reduce(_*_) == length) {
+      val out = FND(newdims, data)
+      out
+    } else {
+      throw new RuntimeException("FND reshapeView total length doesnt match")
+    }
+  }
 
 
   def update(indx:Int, v:Float) = { 
@@ -311,28 +314,28 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
   
   def permute(dims:Array[Int]):FND = permute(irow(dims))
 
-  def permute(perm0:IMat):FND = { 
+  def permute(perm:IMat):FND = { 
     val nd = _dims.length
-    if (perm0.length != nd) { 
+    if (perm.length != nd) { 
       throw new RuntimeException("FND permute bad permutation ")
     }
-    val perm = perm0.copy
     val xdims = irow(_dims)
     val iperm = invperm(perm)
-    val pdims = xdims(iperm).data
+    val pdims = xdims(perm).data
     var out = FND.newOrCheckFND(pdims, null, GUID, ND.hashInts(pdims), "permute".##)
     var out2 = FND.newOrCheckFND(pdims, null, GUID, ND.hashInts(pdims), "permute1".##)
     System.arraycopy(data, 0, out.data, 0, length)
     for (i <- (nd - 1) until 0 by -1) { 
-      if (perm(i) != i) { 
-        val (d1, d2, d3) = ND.getDims(i, perm, xdims)
+      if (iperm(i) != i) { 
+        val (d1, d2, d3) = ND.getDims(i, iperm, xdims)
         if (d1 > 1 && d2 > 1) { 
+          println("spermute %d %d %d" format (d1,d2,d3))
           spermute(d1, d2, d3, out.data, out2.data)
           val tmp = out2
           out2 = out
           out = tmp
         }
-        ND.rotate(i, perm, xdims)
+        ND.rotate(i, iperm, xdims)
       } 
     }
     out
@@ -500,6 +503,34 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
   def != (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "!="); c ~ a != b; d}
   def == (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "=="); c ~ a == b; d}
   def === (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "==="); c ~ a === b; d}
+  
+  def reduce(inds:Array[Int], fctn:(FMat)=>FMat, opname:String):FND = {
+    val alldims = izeros(_dims.length,1)
+    val xinds = new IMat(inds.length, 1, inds)
+    val xdims = new IMat(_dims.length, 1, dims)
+    alldims(xinds) = 1
+    if (SciFunctions.sum(alldims).v != inds.length) {
+      throw new RuntimeException(opname+ " indices arent a legal subset of dims")
+    }
+    val restdims = find(alldims == 0)
+    val tmp = permute((xinds on restdims).data)
+    val tmpF = new FMat(SciFunctions.prod(xdims(xinds)).v, SciFunctions.prod(xdims(restdims)).v, tmp.data)
+    val tmpSum:FMat = fctn(tmpF)
+    val out1 = new FND((iones(inds.length,1) on xdims(restdims)).data, tmpSum.data)
+    out1.permute(invperm(xinds on restdims).data)
+  }
+  
+  def sum(inds:Array[Int]):FND = reduce(inds, SciFunctions.sum, "sum")
+  def prod(inds:Array[Int]):FND = reduce(inds, SciFunctions.prod, "prod")
+  def mean(inds:Array[Int]):FND = reduce(inds, SciFunctions.mean, "mean")
+  def maxi(inds:Array[Int]):FND = reduce(inds, SciFunctions.maxi, "maxi")
+  def mini(inds:Array[Int]):FND = reduce(inds, SciFunctions.mini, "mini")
+  
+  def sum(inds:Int*):FND = sum(inds.toArray)
+  def prod(inds:Int*):FND = prod(inds.toArray)
+  def mean(inds:Int*):FND = mean(inds.toArray)
+  def maxi(inds:Int*):FND = maxi(inds.toArray)
+  def mini(inds:Int*):FND = mini(inds.toArray)  
     
   def ~ (b : FND):FNDPair = new FNDPair(this, b)
 

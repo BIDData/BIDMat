@@ -764,9 +764,9 @@ object IMat {
   }
   
   def vecMul(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
-    while (ci < cend) {
-      c(ci) = a(ai) * b(bi);  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0
+    while (i < n) {
+      c(ci) = a(ai) * b(bi);  ai += ainc; bi += binc;  ci += cinc; i += 1
     }
     0
   }

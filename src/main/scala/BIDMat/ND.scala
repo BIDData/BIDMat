@@ -223,7 +223,7 @@ object ND {
     var d2 = 1
     var d3 = 1
     var foundit = false
-    for (i <- 0 until 3) { 
+    for (i <- 0 until dims.length) { 
       if (i > todo) { 
         d3 *= dims(i)
       } else if (foundit) { 
