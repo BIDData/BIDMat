@@ -101,23 +101,18 @@ object MatHDF5 {
 
   def getMatDims(data_id:Int):Array[Long] = { 
 	val space_id = H5Dget_space(data_id)
-	val dims = new Array[Long](2)
+	val ndims = H5Sget_simple_extent_ndims(space_id)
+	val dims = new Array[Long](ndims)
 	val ok = H5Sget_simple_extent_dims(space_id, dims, null)
 	H5Sclose(space_id)
 	dims
   }
 
-  def readMatDims(fname:String, varname:String):(Long, Long) = { 
-	val fid = H5Fopen(fname,H5F_ACC_RDONLY,H5P_DEFAULT)
+  def readMatDims(fid:Int, varname:String):Array[Long] = { 
 	val data_id = H5Dopen(fid, varname, H5P_DEFAULT)
     val dims = getMatDims(data_id)
 	H5Dclose(data_id)
-	H5Fclose(fid)
-    if (dims(1) == 0) { 
-      (dims(0), dims(1))
-    } else { 
-      (dims(1), dims(0))
-    }
+	dims
   }
 
   def getDenseMat[T : ClassTag](fid:Int, varname:String, h5class:Int, dsize:Int):DenseMat[T] = {
@@ -136,6 +131,25 @@ object MatHDF5 {
 	H5Tclose(data_type_id)
 	H5Dclose(data_id)
 	mdata
+  }
+  
+  def getFND(fid:Int, varname:String, h5class:Int, dsize:Int):FND = {
+    val data_id = H5Dopen(fid, varname, H5P_DEFAULT)
+    val data_type_id = H5Dget_type(data_id)
+    val data_class = H5Tget_class(data_type_id)
+    val data_size = H5Tget_size(data_type_id)
+    val dims = getMatDims(data_id)
+    val idims = dims.map(_.toInt)
+    var mdata:FND = null
+    if (data_class == h5class && data_size == dsize) {
+      mdata = FND(idims)
+      H5Dread(data_id, data_type_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, mdata.data)
+    } else {
+      throw new RuntimeException("Bad class or data size "+data_class+" "+data_size)
+    }
+    H5Tclose(data_type_id)
+    H5Dclose(data_id)
+    mdata
   }
 
   def getCellMat(fid:Int, varname:String):CSMat = {
@@ -219,7 +233,11 @@ object MatHDF5 {
 		if (H5Aexists_by_name(fid, varname, "MATLAB_sparse", H5P_DEFAULT)) {
 		  SDMat(getSparseMat[Double](fid, varname))
 		} else {
-		  DMat(getDenseMat[Double](fid, varname, H5T_FLOAT, 8))
+		  if (readMatDims(fid, varname).length <= 2) {
+		    DMat(getDenseMat[Double](fid, varname, H5T_FLOAT, 8))
+		  } else {
+		    getFND(fid, varname, H5T_FLOAT, 4)
+		  }
 		}
 	  } else if (attr_class.equals("single")) {
 		if (H5Aexists_by_name(fid, varname, "MATLAB_sparse", H5P_DEFAULT)) {
@@ -289,6 +307,21 @@ object MatHDF5 {
 	H5Dclose(dataset_id)
 	H5Sclose(filespace_id)
 	ref
+  }
+  
+  def putFND(fid:Int, a:FND, aname:String, h5class:Int, matclass:String):Array[Byte] = {
+    val dims = a.dims.map(_.toLong)
+    val filespace_id = H5Screate_simple(dims.length, dims, null)
+    val dplist_id = H5Pcreate(H5P_DATASET_CREATE)
+//  setCompressionPlist(dplist_id, dims)
+    val dataset_id = H5Dcreate(fid, "/"+aname, h5class, filespace_id, H5P_DEFAULT, dplist_id, H5P_DEFAULT)
+    H5Dwrite(dataset_id, h5class, H5S_ALL, H5S_ALL, H5P_DEFAULT, a.data)
+    H5Pclose(dplist_id)
+    putStringAttr(dataset_id, "MATLAB_class", matclass)
+    val ref = H5Rcreate(dataset_id, ".", H5R_OBJECT, -1)
+    H5Dclose(dataset_id)
+    H5Sclose(filespace_id)
+    ref
   }
 
   def putEmptyRef(id:Int):Array[Byte] = {
@@ -424,6 +457,7 @@ object MatHDF5 {
 	  case aa:SDMat => putSparseMat[Double](fid, aa, aname, H5T_NATIVE_DOUBLE, "double")
 	  case aa:CSMat => putCellMat(fid, aname, aa)
 	  case aa:String => putMatString(fid, aname, aa)
+	  case aa:FND => putFND(fid, aa, aname, H5T_NATIVE_FLOAT, "single")
 	  case _ => throw new RuntimeException("unsupported matrix type to save")
 	}
   }
