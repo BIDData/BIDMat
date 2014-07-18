@@ -751,7 +751,7 @@ object HMat {
     var nrows = -1
     var ncols = -1
     files.foreach((fn:String) => { 
-      val (nr, nc) = MatHDF5.readMatDims(fn, varname)
+      val (nr, nc) = MatHDF5.readMat2Dims(fn, varname)
       if (catd == 2) { 
         if (nrows >= 0) { 
           if (nr != nrows) { 

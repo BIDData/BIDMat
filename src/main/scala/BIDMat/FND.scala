@@ -312,24 +312,24 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
   def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:Float):FND = update(Array(i1, i2, i3, i4, i5, i6, i7), vv)
   def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:Float):FND = update(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv)
   
-  def permute(dims:Array[Int]):FND = permute(irow(dims))
+  def transpose(dims:Array[Int]):FND = transpose(irow(dims))
 
-  def permute(perm:IMat):FND = { 
+  def transpose(perm:IMat):FND = { 
     val nd = _dims.length
     if (perm.length != nd) { 
-      throw new RuntimeException("FND permute bad permutation ")
+      throw new RuntimeException("FND transpose bad permutation ")
     }
     val xdims = irow(_dims)
     val iperm = invperm(perm)
     val pdims = xdims(perm).data
-    var out = FND.newOrCheckFND(pdims, null, GUID, ND.hashInts(pdims), "permute".##)
-    var out2 = FND.newOrCheckFND(pdims, null, GUID, ND.hashInts(pdims), "permute1".##)
+    var out = FND.newOrCheckFND(pdims, null, GUID, ND.hashInts(pdims), "transpose".##)
+    var out2 = FND.newOrCheckFND(pdims, null, GUID, ND.hashInts(pdims), "transpose1".##)
     System.arraycopy(data, 0, out.data, 0, length)
     for (i <- (nd - 1) until 0 by -1) { 
       if (iperm(i) != i) { 
         val (d1, d2, d3) = ND.getDims(i, iperm, xdims)
         if (d1 > 1 && d2 > 1) { 
-          println("spermute %d %d %d" format (d1,d2,d3))
+ //         println("spermute %d %d %d" format (d1,d2,d3))
           spermute(d1, d2, d3, out.data, out2.data)
           val tmp = out2
           out2 = out
@@ -341,13 +341,13 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
     out
   }
   
-  def permute(i1:Int, i2:Int):FND = permute(Array(i1, i2))
-  def permute(i1:Int, i2:Int, i3:Int):FND = permute(Array(i1, i2, i3))
-  def permute(i1:Int, i2:Int, i3:Int, i4:Int):FND = permute(Array(i1, i2, i3, i4))
-  def permute(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):FND = permute(Array(i1, i2, i3, i4, i5))
-  def permute(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):FND = permute(Array(i1, i2, i3, i4, i5, i6))
-  def permute(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int):FND = permute(Array(i1, i2, i3, i4, i5, i6, i7))
-  def permute(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int):FND = permute(Array(i1, i2, i3, i4, i5, i6, i7, i8))
+  def transpose(i1:Int, i2:Int):FND = transpose(Array(i1, i2))
+  def transpose(i1:Int, i2:Int, i3:Int):FND = transpose(Array(i1, i2, i3))
+  def transpose(i1:Int, i2:Int, i3:Int, i4:Int):FND = transpose(Array(i1, i2, i3, i4))
+  def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):FND = transpose(Array(i1, i2, i3, i4, i5))
+  def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):FND = transpose(Array(i1, i2, i3, i4, i5, i6))
+  def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int):FND = transpose(Array(i1, i2, i3, i4, i5, i6, i7))
+  def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int):FND = transpose(Array(i1, i2, i3, i4, i5, i6, i7, i8))
   
   def printOne(i:Int):String = {
     val v = data(i)
@@ -504,6 +504,19 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
   def == (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "=="); c ~ a == b; d}
   def === (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "==="); c ~ a === b; d}
   
+  def + (b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "+"); c ~ a + b; d}
+  def - (b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "-"); c ~ a - b; d}
+  def *@ (b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "*@"); c ~ a *@ b; d}
+  def / (b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "/"); c ~ a / b; d}
+  
+  def > (b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, ">"); c ~ a > b; d}
+  def < (b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "<"); c ~ a < b; d}
+  def >= (b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, ">="); c ~ a >= b; d}
+  def <= (b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "<="); c ~ a <= b; d}
+  def != (b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "!="); c ~ a != b; d}
+  def == (b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "=="); c ~ a == b; d}
+  def === (b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "==="); c ~ a === b; d}
+  
   def reduce(inds:Array[Int], fctn:(FMat)=>FMat, opname:String):FND = {
     val alldims = izeros(_dims.length,1)
     val xinds = new IMat(inds.length, 1, inds)
@@ -513,11 +526,11 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
       throw new RuntimeException(opname+ " indices arent a legal subset of dims")
     }
     val restdims = find(alldims == 0)
-    val tmp = permute((xinds on restdims).data)
+    val tmp = transpose((xinds on restdims).data)
     val tmpF = new FMat(SciFunctions.prod(xdims(xinds)).v, SciFunctions.prod(xdims(restdims)).v, tmp.data)
     val tmpSum:FMat = fctn(tmpF)
     val out1 = new FND((iones(inds.length,1) on xdims(restdims)).data, tmpSum.data)
-    out1.permute(invperm(xinds on restdims).data)
+    out1.transpose(invperm(xinds on restdims).data)
   }
   
   def sum(inds:Array[Int]):FND = reduce(inds, SciFunctions.sum, "sum")
@@ -584,6 +597,13 @@ object FND {
     val d = FND.newOrCheckFND(xdims, omat, mat1.GUID, mat2.GUID, opname.##)
     val c = new FMat(nr3, nc3, d.data)
     (a, b, c, d)
+  }
+  
+  def asFMats(mat1:FND, omat:ND, opname:String):(FMat, FMat, FND) = {
+    val d = FND.newOrCheckFND(mat1._dims, omat, mat1.GUID, opname.##)
+    val a = new FMat(mat1.length, 1, mat1.data)
+    val c = new FMat(mat1.length, 1, d.data)
+    (a, c, d)
   }
   
   def newOrCheckFND(dims:Array[Int], out:ND):FND = {
