@@ -311,6 +311,12 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
   def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:Float):FND = update(Array(i1, i2, i3, i4, i5, i6), vv)
   def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:Float):FND = update(Array(i1, i2, i3, i4, i5, i6, i7), vv)
   def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:Float):FND = update(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv)
+
+  def clear:FND = {
+    Arrays.fill(data, 0f)
+    this
+  }
+  
   
   def transpose(dims:Array[Int]):FND = transpose(irow(dims))
 
