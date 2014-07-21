@@ -136,7 +136,24 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
       throw new RuntimeException("FND reshapeView total length doesnt match")
     }
   }
+  
+  def toFMat(nr:Int, nc:Int):FMat = {
+    if (nr*nc != length) {
+      throw new RuntimeException("FND output FMat dims dont match")
+    } else {
+      val out = FMat.newOrCheckFMat(nr, nc, null, GUID, nr, nc, "toFMat".##)
+      System.arraycopy(data, 0, out.data, 0, length)
+      out
+    }
+  }
 
+  def toFMatView(nr:Int, nc:Int):FMat = {
+    if (nr*nc != length) {
+      throw new RuntimeException("FND output FMat dims dont match")
+    } else {
+      new FMat(nr, nc, data)
+    }
+  }
 
   def update(indx:Int, v:Float) = { 
     if (indx < 0 || indx >= length) {
