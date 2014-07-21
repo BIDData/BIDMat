@@ -123,8 +123,8 @@ object Image {
     val height = mat.dim(2)
     val img:BufferedImage = mat.dims(0) match {
   	    case 1 => new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY)
-  	    case 3 => new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
-  	    case 4 => new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+  	    case 3 => new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR)
+  	    case 4 => new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR)
   	    case _ => throw new RuntimeException("Image from FND dimension not recognized")
   	  }
     img.getRaster.setPixels(0, 0, width, height, mat.data)
