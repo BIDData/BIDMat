@@ -257,7 +257,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_VSL_viRngGeometric
 }
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_VSL_viRngBinomial
-(JNIEnv * env, jobject calling_obj, jint method, jobject j_stream, jint n, jintArray j_r, jdouble m, jdouble p) {
+(JNIEnv * env, jobject calling_obj, jint method, jobject j_stream, jint n, jintArray j_r, jint m, jdouble p) {
 
     VSLStreamStatePtr stream = getStream(env, calling_obj, j_stream);
     jint * r = (*env)->GetPrimitiveArrayCritical(env, j_r, JNI_FALSE);
