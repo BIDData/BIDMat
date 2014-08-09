@@ -1,7 +1,7 @@
 package edu.berkeley.bid;
 
 
-import java.nio.charset.Charset;
+//import java.nio.charset.Charset;
 
 /**
 * MurmurHash3 implementation in Java, based on Austin Appleby's <a href=
