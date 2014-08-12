@@ -548,9 +548,13 @@ class IPair(val omat:Mat, val mat:IMat) extends Pair {
   def - (b : IMat) = mat.iiMatOpv(b, IMat.vecSubFun, omat)
   def *@ (b : IMat) = mat.iiMatOpv(b, IMat.vecMulFun, omat)
   def ∘  (b : IMat) = mat.iiMatOpv(b, IMat.vecMulFun, omat)
+  def / (b : IMat) = mat.iiMatOpv(b, IMat.vecDivFun, omat)
+  def dot (b : IMat) = mat.dot(b);
+  def ∙ (b : IMat) = mat.dot(b);
+  def dotr (b : IMat) = mat.dotr(b);
+  def ∙→ (b : IMat) = mat.dotr(b);
   def ** (b : IMat) = mat.kron(b, omat)
   def ⊗ (b : IMat) = mat.kron(b, omat)
-//  def /@ (b : IMat) = mat.iiMatOpv(b, IMat.fVecDiv _, omat)  
 //  def ^ (b : IMat) = mat.iiMatOp(b, (x:Float, y:Float) => math.pow(x,y).toFloat, omat)  
 
   def > (b : IMat) = mat.iiMatOpv(b, IMat.vecGTFun, omat)
@@ -567,6 +571,7 @@ class IPair(val omat:Mat, val mat:IMat) extends Pair {
   def - (b : Int) = mat.iiMatOpScalarv(b, IMat.vecSubFun, omat)
   def *@ (b : Int) = mat.iiMatOpScalarv(b, IMat.vecMulFun, omat)
   def ∘  (b : Int) = mat.iiMatOpScalarv(b, IMat.vecMulFun, omat)
+  def /  (b : Int) = mat.iiMatOpScalarv(b, IMat.vecDivFun, omat)
 //  override def /@ (b : Int) = mat.iiMatOpScalarv(b, IMat.fVecDiv _, omat)
 //  override def ^ (b : Int) = mat.iiMatOpScalar(b, (x:Float, y:Float) => math.pow(x,y).toFloat, omat)
 
@@ -772,11 +777,11 @@ object IMat {
   }
   
   def vecDiv(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
-			var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
-			while (ci < cend) {
-				c(ci) = a(ai) / b(bi);  ai += ainc; bi += binc;  ci += cinc
-			}
-			0
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+        while (ci < cend) {
+          c(ci) = a(ai) / b(bi);  ai += ainc; bi += binc;  ci += cinc
+        }
+    0
 	}
   
   def vecMax(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {

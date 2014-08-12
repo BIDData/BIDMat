@@ -88,6 +88,9 @@ object MatFunctions {
   
   /** Return the number of non-zeros in '''a''' */  
   def nnz(a:IMat):Int = a.nnz
+  
+    /** Return the number of non-zeros in '''a''' */  
+  def nnz(a:LMat):Int = a.nnz
    
   /** Return the number of non-zeros in '''a''' */   
   def nnz(a:SMat):Int = a.nnz
@@ -358,6 +361,59 @@ object MatFunctions {
 //  def uniquerows(a:IMat):(IMat, IMat, IMat) = { val (ii, jj) = DenseMat.uniquerows2(a) ; (a(ii,?), ii, jj)}
   def unique(a:IMat):(IMat, IMat, IMat) = {val (ii, jj) =	DenseMat.unique2(if (math.min(a.nrows,a.ncols) > 1) a(?) else a) ; (a(ii), ii, jj)}
   
+    /** Find non-zero linear indices */
+  def find(a:LMat) = a.find  
+  
+  /** Find non-zero (row, col) indices */
+  def find2(a:LMat) = a.find2   
+  
+  /** Find non-zero (row, col, value) tuples */
+  def find3(a:LMat) = a.find3
+  
+  /** Accumulate (row, col, value) tuples from inds \\ vals. nr and nc are row and column bounds */
+  def accum(inds:IMat, vals:LMat, nr:Int, nc:Int) = LMat(DenseMat.accum(inds, vals, nr, nc))
+  
+  /** Accumulate (row, col, value) tuples from inds \\ vals. nr is row and bounds, ncols = 1 */
+  def accum(inds:IMat, vals:LMat, nr:Int) = LMat(DenseMat.accum(inds, vals, nr, 1))
+  
+  /** Sort a set of keys ascending along a given direction '''dir''': 1=columns, 2=rows, 0=smart. */
+  def sort(keys:LMat, dir:Int):LMat = LMat(DenseMat.sort(keys, dir, true))
+  
+  /** Sort a set of keys ascending. */
+  def sort(keys:LMat):LMat = LMat(DenseMat.sort(keys, 0, true))
+  
+  /** Sort a set of keys ascending, and return sorted keys and indices. */
+  def sort2(keys:LMat):(LMat, IMat) = {val (d,i) = DenseMat.sort2(keys, true); (LMat(d), i)}
+  
+  /** Sort a set of keys and return sorted keys and indices along a given direction: 1=columns, 2=rows, 0=smart */
+  def sort2(keys:LMat,dir:Int):(LMat, IMat) = {val (d,i) = DenseMat.sort2(keys, dir, true); (LMat(d), i)}
+  
+  /** Sort a set of keys descending along a given direction: 1=columns, 2=rows, 0=smart. */
+  def sortdown(keys:LMat, dir:Int):LMat = LMat(DenseMat.sort(keys, dir, false))
+  
+  /** Sort a set of keys descending. */
+  def sortdown(keys:LMat):LMat = LMat(DenseMat.sort(keys, 0, false))
+  
+  /** Sort a set of keys descending and return sorted keys and indices. */
+  def sortdown2(keys:LMat):(LMat, IMat) = {val (d,i) = DenseMat.sort2(keys, false); (LMat(d), i)}
+  
+  /** Sort a set of keys descending and return sorted keys and indices along a given direction: 1=columns, 2=rows, 0=smart */
+  def sortdown2(keys:LMat, dir:Int):(LMat, IMat) = {val (d,i) = DenseMat.sort2(keys, dir, false); (LMat(d), i)}
+  
+  /** Lexicographically sort rows ascending */
+  def sortrows(rows:LMat):(LMat, IMat) = { val ii = DenseMat.isortlex(rows, true); (rows(ii,?), ii) }
+  
+  /** Lexicographically sort rows descending */
+  def sortrowsdown(rows:LMat):(LMat, IMat) = { val ii = DenseMat.isortlex(rows, false); (rows(ii,?), ii) }
+  
+  /** Lexicographially sort with an index array, and return it. '''a''' is not modified */
+  def isortlex(a:LMat):IMat = DenseMat.isortlex(a, true)
+  
+  /** Lexicographially sort descending with an index array, and return it. '''a''' is not modified */
+  def isortlexdown(a:LMat):IMat = DenseMat.isortlex(a, false)
+  def uniquerows(a:LMat):(LMat, IMat, IMat) = { val (ii, jj) = DenseMat.uniquerows2(a) ; (a(ii,?), ii, jj)}
+  def unique(a:LMat):(LMat, IMat, IMat) = {val (ii, jj) =   DenseMat.unique2(if (math.min(a.nrows,a.ncols) > 1) a(?) else a) ; (a(ii), ii, jj)}
+
   /** Find non-zero linear indices */
   def find(a:CSMat) = a.find   
   
@@ -460,6 +516,7 @@ object MatFunctions {
     (inds, vals) match {
       case (iinds:IMat, fvals:FMat) => accum(iinds, fvals, nrows, ncols):FMat
       case (iinds:IMat, ivals:IMat) => accum(iinds, ivals, nrows, ncols):IMat
+      case (iinds:IMat, ivals:LMat) => accum(iinds, ivals, nrows, ncols):LMat
       case (iinds:IMat, dvals:DMat) => accum(iinds, dvals, nrows, ncols):DMat
       case (ginds:GIMat, gvals:GMat) => GMat.accum(ginds, gvals, omat, nrows, ncols):GMat
       case (ginds:GIMat, gvals:GIMat) => GIMat.accum(ginds, gvals, omat, nrows, ncols):GIMat
@@ -919,9 +976,80 @@ object MatFunctions {
     out
   }
   
-  def gones(nr:Int, nc:Int):GMat = {
-    GMat.ones(nr,nc)
+    /** Make an integer row vector from a range. */
+  def lrow(x:Range):LMat = {
+    val mat = LMat.newOrCheckLMat(1,x.length, null, x.##, "irow_range".##)
+    for (i <- 0 until x.length)
+      mat.data(i) = x(i)
+    mat
   }
+  
+  /** Make an integer row vector from a 2-tuple. Supports the syntax 0->5 for ranges. */
+  def lrow(x:Tuple2[Int,Int]):LMat = lrow(x._1 until x._2)
+
+  /** Make an integer row vector from an array of Ints.  */
+  def lrow(x:Array[Long]):LMat = {
+    val ahash = if (Mat.useCache) x.## else 0
+    val mat = LMat.newOrCheckLMat(1,x.length, null, ahash, "lrow_array".##)
+    System.arraycopy(x, 0, mat.data, 0, x.length)
+    mat
+  }
+  
+  /** Make an long row vector from a List of Ints. */
+
+  def lrow(x:List[Long]):LMat = {
+    val ahash = if (Mat.useCache) x.## else 0
+    val mat = LMat.newOrCheckLMat(1,x.length, null, ahash, "lrow_list".##)
+    x.copyToArray(mat.data)
+    mat
+  }
+  
+  /** Make an integer row vector from this call's vararg list. */
+  def lrow(args:Long*):LMat = {
+    lrow(args.toList)
+  }
+  
+  /** Make an integer column vector from a range. */
+  def lcol(x:Range):LMat = {
+    val mat = LMat.newOrCheckLMat(x.length,1, null, x.##, "lcol_range".##)
+    for (i <- 0 until x.length)
+      mat.data(i) = x(i)
+    mat
+  }
+  
+  /** Make an integer column vector from a tuple to support 0->5 syntax for ranges. */  
+  def lcol(x:Tuple2[Int,Int]):LMat = lcol(x._1 until x._2)
+
+  
+ /** Make an integer column vector from a List. */
+  def lcol(x:List[Long]):LMat = {
+    val ahash = if (Mat.useCache) x.## else 0
+    val mat = LMat.newOrCheckLMat(x.length,1, null, ahash, "lcol_list".##)
+    x.copyToArray(mat.data)
+    mat
+  }
+
+  /** Make an integer column vector from this calls vararg list. */
+  def lcol(args:Long*):LMat = {
+    lcol(args.toList)
+  }
+  
+  /** Make an integer matrix of zeros of the given dimensions. */
+  def lzeros(nr:Int, nc:Int):LMat = {
+    LMat(nr,nc)
+  }
+  
+  /** Make an integer matrix of ones of the given dimensions. */
+  def lones(nr:Int, nc:Int):LMat = {
+    val out = LMat(nr,nc)
+    var i = 0
+    while (i < out.length) {
+      out.data(i) = 1
+      i += 1
+    }
+    out
+  }
+
   
   /** Make a string row vector from a list of strings. */  
   def csrow(x:List[String]):CSMat = {
@@ -958,6 +1086,10 @@ object MatFunctions {
   
   /** Make an integer matrix of zeros in GPU memory. */
   def gizeros(nr:Int, nc:Int):GIMat = GIMat.izeros(nr, nc)
+   
+  def gones(nr:Int, nc:Int):GMat = {
+    GMat.ones(nr,nc)
+  }
 
   /** Legacy function to make a placeholder matrix with no storage. */
   def blank = new Mat(0,0)

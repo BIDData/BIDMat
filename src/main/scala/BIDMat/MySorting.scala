@@ -12,6 +12,7 @@ object Sorting {
 			case a:Array[Float] => quickSort2(a, ii, lo, hi, stride, Mat.numThreads/2)
 			case a:Array[Double] => quickSort2(a, ii, lo, hi, stride, Mat.numThreads/2)
 			case a:Array[Int] => quickSort2(a, ii, lo, hi, stride, Mat.numThreads/2)
+			case a:Array[Long] => quickSort2(a, ii, lo, hi, stride, Mat.numThreads/2)
 			}
 	}
 
@@ -134,7 +135,7 @@ object Sorting {
 			j + stride
 	}
 
-	def quickSort2(a:Array[Double], ii:Array[Int], lo:Int, hi:Int, stride:Int, nthreads:Int):Unit = {
+	def quickSort2(a:Array[Long], ii:Array[Int], lo:Int, hi:Int, stride:Int, nthreads:Int):Unit = {
 			if ((hi - lo)/stride > 0) {
 				if ((hi - lo)/stride <= 16) {
 					isort(a, ii, lo, hi, stride)
@@ -154,7 +155,7 @@ object Sorting {
 			}
 	}
 
-	def isort(a:Array[Double], ii:Array[Int], lo:Int, hi:Int, stride:Int):Unit = {
+	def isort(a:Array[Long], ii:Array[Int], lo:Int, hi:Int, stride:Int):Unit = {
 			var i = lo
 			while (i != hi) {
 				var j = i+stride
@@ -176,7 +177,7 @@ object Sorting {
 			}
 	}
 
-	def med3(a:Array[Double], ii:Array[Int], lo:Int, hi:Int, stride:Int):Int = {
+	def med3(a:Array[Long], ii:Array[Int], lo:Int, hi:Int, stride:Int):Int = {
 			val nv = (hi - lo)/stride
 			val i1 = lo + stride*(math.floor(nv*java.lang.Math.random()).asInstanceOf[Int])
 			val i2 = lo + stride*(math.floor(nv*java.lang.Math.random()).asInstanceOf[Int])
@@ -198,7 +199,7 @@ object Sorting {
 			}
 	}
 
-	def med9(a:Array[Double], ii:Array[Int], lo:Int, hi:Int, stride:Int):Int = {
+	def med9(a:Array[Long], ii:Array[Int], lo:Int, hi:Int, stride:Int):Int = {
 			val i1 = med3(a, ii, lo, hi, stride)
 			val i2 = med3(a, ii, lo, hi, stride)
 			val i3 = med3(a, ii, lo, hi, stride)
@@ -219,7 +220,7 @@ object Sorting {
 			}
 	}
 
-	def partition(a:Array[Double], ii:Array[Int], lo:Int, hi:Int, stride:Int):Int = {
+	def partition(a:Array[Long], ii:Array[Int], lo:Int, hi:Int, stride:Int):Int = {
 			val sstride = math.signum(stride)
 			val nvals = (hi - lo)/stride
 			val im = if (nvals > 600) {
@@ -253,6 +254,124 @@ object Sorting {
 			j + stride
 	}
 
+    def quickSort2(a:Array[Double], ii:Array[Int], lo:Int, hi:Int, stride:Int, nthreads:Int):Unit = {
+            if ((hi - lo)/stride > 0) {
+                if ((hi - lo)/stride <= 16) {
+                    isort(a, ii, lo, hi, stride)
+                } else {
+                    val ip = partition(a, ii, lo, hi, stride)
+                    if (nthreads > 1 && (hi-lo)/stride > 400) {
+                        var done0 = false
+                        var done1 = false
+                        future { quickSort2(a, ii, lo, ip, stride, nthreads/2); done0 = true }
+                        future { quickSort2(a, ii, ip, hi, stride, nthreads/2); done1 = true }
+                        while (!done0 || !done1) {Thread.`yield`}
+                    } else {
+                        quickSort2(a, ii, lo, ip, stride, nthreads/2)
+                        quickSort2(a, ii, ip, hi, stride, nthreads/2)
+                    }
+                }
+            }
+    }
+
+    def isort(a:Array[Double], ii:Array[Int], lo:Int, hi:Int, stride:Int):Unit = {
+            var i = lo
+            while (i != hi) {
+                var j = i+stride
+                var imin = i
+                var vmin = a(i)
+                while (j != hi) {
+                    if (a(j) <= vmin && ((a(j) < vmin) || ii(j) < ii(imin))) {
+                        vmin = a(j)
+                        imin = j
+                    }
+                    j += stride
+                }
+                a(imin) = a(i)
+                a(i) = vmin
+                val itmp = ii(imin)
+                ii(imin) = ii(i)
+                ii(i) = itmp
+                i += stride
+            }
+    }
+
+    def med3(a:Array[Double], ii:Array[Int], lo:Int, hi:Int, stride:Int):Int = {
+            val nv = (hi - lo)/stride
+            val i1 = lo + stride*(math.floor(nv*java.lang.Math.random()).asInstanceOf[Int])
+            val i2 = lo + stride*(math.floor(nv*java.lang.Math.random()).asInstanceOf[Int])
+            val i3 = lo + stride*(math.floor(nv*java.lang.Math.random()).asInstanceOf[Int])
+            val v1 = a(i1)
+            val v2 = a(i2)
+            val v3 = a(i3)
+            val ii1 = ii(i1)
+            val ii2 = ii(i2)
+            val ii3 = ii(i3)
+            if ((v2 >= v1) && ((v2 > v1) || ii2 > ii1)) {
+                if ((v3 >= v2) && ((v3 > v2) || ii3 > ii2)) i2 else {
+                    if ((v3 >= v1) && ((v3 > v1) || ii3 > ii1)) i3 else i1
+                }
+            } else {
+                if ((v3 >= v1) && ((v3 > v1) || ii3 > ii1)) i1 else {
+                    if ((v3 >= v2) && ((v3 > v2) || ii3 > ii2)) i3 else i2
+                }
+            }
+    }
+
+    def med9(a:Array[Double], ii:Array[Int], lo:Int, hi:Int, stride:Int):Int = {
+            val i1 = med3(a, ii, lo, hi, stride)
+            val i2 = med3(a, ii, lo, hi, stride)
+            val i3 = med3(a, ii, lo, hi, stride)
+            val v1 = a(i1)
+            val v2 = a(i2)
+            val v3 = a(i3)
+            val ii1 = ii(i1)
+            val ii2 = ii(i2)
+            val ii3 = ii(i3)
+            if ((v2 >= v1) && ((v2 > v1) || ii2 > ii1)) {
+                if ((v3 >= v2) && ((v3 > v2) || ii3 > ii2)) i2 else {
+                    if ((v3 >= v1) && ((v3 > v1) || ii3 > ii1)) i3 else i1
+                }
+            } else {
+                if ((v3 >= v1) && ((v3 > v1) || ii3 > ii1)) i1 else {
+                    if ((v3 >= v2) && ((v3 > v2) || ii3 > ii2)) i3 else i2
+                }
+            }
+    }
+
+    def partition(a:Array[Double], ii:Array[Int], lo:Int, hi:Int, stride:Int):Int = {
+            val sstride = math.signum(stride)
+            val nvals = (hi - lo)/stride
+            val im = if (nvals > 600) {
+                med9(a, ii, lo, hi, stride)   
+            } else if (nvals > 100) {
+                med3(a, ii, lo, hi, stride)
+            } else {
+                lo + stride*(math.floor(nvals*java.lang.Math.random()).asInstanceOf[Int])
+            }
+            var v = a(im)
+            var iv = ii(im)
+            var done = false
+            var i = lo - stride
+            var j = hi 
+            while (! done) { 
+                i += stride
+                j -= stride
+                while ((hi-i)*sstride > sstride*stride && ((a(i) <= v) && ((a(i) < v) || ii(i) <= iv))) {i += stride}
+                while (                                   ((a(j) >= v) && ((a(j) > v) || ii(j) > iv)))  {j -= stride}
+                if ((i - j)*sstride >= 0) {
+                    done = true
+                } else {
+                    val atmp = a(i)
+                    a(i) = a(j)
+                    a(j) = atmp
+                    val itmp = ii(i)
+                    ii(i) = ii(j)
+                    ii(j) = itmp
+                }
+            }
+            j + stride
+    }
 
 
 	def quickSort2(a:Array[Int], ii:Array[Int], lo:Int, hi:Int, stride:Int, nthreads:Int):Unit = {

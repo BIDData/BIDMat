@@ -6,7 +6,7 @@ import java.util.Comparator
 import scala.concurrent.future
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class DenseMat[@specialized(Double,Float,Int,Byte) T]
+class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
 (nr: Int, nc: Int, val data:Array[T])(implicit manifest:ClassTag[T]) extends Mat(nr, nc) {
   
   def this(nr:Int, nc:Int)(implicit manifest:ClassTag[T]) = this(nr, nc, new Array[T](nr*nc))
@@ -1174,7 +1174,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte) T]
 
 object DenseMat {
   
-  def vecCmp[@specialized(Double, Float, Int, Byte) T](xmap:Array[T])(a:Array[T], a0:Int, ainc:Int, b:Array[T], b0:Int, binc:Int, c:Array[T], c0:Int, cinc:Int, n:Int)
+  def vecCmp[@specialized(Double, Float, Int, Byte, Long) T](xmap:Array[T])(a:Array[T], a0:Int, ainc:Int, b:Array[T], b0:Int, binc:Int, c:Array[T], c0:Int, cinc:Int, n:Int)
   (implicit numeric:Numeric[T]):T = {
     var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
     while (ci < cend) {
@@ -1216,7 +1216,7 @@ object DenseMat {
   inds
   }
    
-  def genSort[@specialized(Double, Float, Int, Byte) T](a:Array[T],from:Int,to:Int):Unit = { 
+  def genSort[@specialized(Double, Float, Int, Byte, Long) T](a:Array[T],from:Int,to:Int):Unit = { 
     a match { 
       case aa:Array[Double] => { 
         Arrays.sort(aa, from, to)
@@ -1227,17 +1227,20 @@ object DenseMat {
       case aa:Array[Int] => { 
         Arrays.sort(aa, from, to)
       }
+      case aa:Array[Long] => { 
+        Arrays.sort(aa, from, to)
+      }
       case aa:Array[Byte] => { 
         Arrays.sort(aa, from, to)
       }
     }
   }
   
-  def genSort[@specialized(Double, Float, Int, Byte) T](a:Array[T]):Unit = { 
+  def genSort[@specialized(Double, Float, Int, Byte, Long) T](a:Array[T]):Unit = { 
   	genSort(a, 0, a.size)
   }
   
-  def reverse[@specialized(Double, Float, Int, Byte) T](a:Array[T],from:Int,to:Int) = {
+  def reverse[@specialized(Double, Float, Int, Byte, Long) T](a:Array[T],from:Int,to:Int) = {
   	var i = 0
   	var n = to - from
   	while (2*i < n-1) {
@@ -1248,11 +1251,11 @@ object DenseMat {
   	}
   }
   
-  def reverse[@specialized(Double, Float, Int, Byte) T](a:Array[T]):Unit = { 
+  def reverse[@specialized(Double, Float, Int, Byte, Long) T](a:Array[T]):Unit = { 
   	reverse(a, 0, a.size)
   }
 
-  def sort[@specialized(Double, Float, Int, Byte) T](a:DenseMat[T], ik0:Int, asc:Boolean)
+  def sort[@specialized(Double, Float, Int, Byte, Long) T](a:DenseMat[T], ik0:Int, asc:Boolean)
   (implicit classTag:ClassTag[T], ordering:Ordering[T]):DenseMat[T] = {
     import BIDMat.Sorting._
     val out = DenseMat.newOrCheck(a.nrows, a.ncols, null, a.GUID, ik0, "DenseMat.sort".hashCode)
@@ -1324,7 +1327,7 @@ object DenseMat {
     }
   }
   
-  class MyComparator[@specialized(Double, Float, Int, Byte) T](a:Array[T])
+  class MyComparator[@specialized(Double, Float, Int, Byte, Long) T](a:Array[T])
   	(implicit ordering:Ordering[T]) extends java.util.Comparator[Int] {
       def compare(ii:Int, jj:Int):Int = {
       val c0 = ordering.compare(a(ii), a(jj))
@@ -1336,7 +1339,7 @@ object DenseMat {
     }
   }
   
-   def sort2[@specialized(Double, Float, Int, Byte) T](a:DenseMat[T], asc:Boolean)
+   def sort2[@specialized(Double, Float, Int, Byte, Long) T](a:DenseMat[T], asc:Boolean)
   (implicit classTag:ClassTag[T], ord:Ordering[T]): (DenseMat[T], IMat) = 
     if (a.nrows == 1) {
       sort2(a, 2, asc, null, null)
@@ -1344,10 +1347,10 @@ object DenseMat {
       sort2(a, 1, asc, null, null)
     }
    
-  def sort2[@specialized(Double, Float, Int, Byte) T](a:DenseMat[T], ik:Int, asc:Boolean)
+  def sort2[@specialized(Double, Float, Int, Byte, Long) T](a:DenseMat[T], ik:Int, asc:Boolean)
   (implicit classTag:ClassTag[T], ord:Ordering[T]):(DenseMat[T], IMat) = sort2(a, ik, asc, null, null)
 
-  def sort2[@specialized(Double, Float, Int, Byte) T](a:DenseMat[T], ik:Int, asc:Boolean, odmat:Mat, oimat:Mat)
+  def sort2[@specialized(Double, Float, Int, Byte, Long) T](a:DenseMat[T], ik:Int, asc:Boolean, odmat:Mat, oimat:Mat)
   (implicit classTag:ClassTag[T], ord:Ordering[T]):(DenseMat[T], IMat) = {
     import BIDMat.Sorting._
     val out = DenseMat.newOrCheck[T](a.nrows, a.ncols, odmat, a.GUID, ik, "sort2_1".hashCode)
@@ -1422,13 +1425,13 @@ object DenseMat {
   	}
   }
    
-  def isortlex[@specialized(Double, Float, Int, Byte) T](a:DenseMat[T], asc:Boolean)(implicit ordering:Ordering[T]):IMat = {
+  def isortlex[@specialized(Double, Float, Int, Byte, Long) T](a:DenseMat[T], asc:Boolean)(implicit ordering:Ordering[T]):IMat = {
   	val out = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "sortlex".hashCode)
   	val compp = lexcomp(a, out)
   	_isortlex(a, asc, out, compp)
   }
   
-  def _isortlex[@specialized(Double, Float, Int, Byte) T](a:DenseMat[T], asc:Boolean, out:IMat, compp:(Int, Int)=>Int)(implicit ordering:Ordering[T]):IMat = {
+  def _isortlex[@specialized(Double, Float, Int, Byte, Long) T](a:DenseMat[T], asc:Boolean, out:IMat, compp:(Int, Int)=>Int)(implicit ordering:Ordering[T]):IMat = {
     import BIDMat.Sorting._
     val ii = out.data
     val aa = a.data
@@ -1452,7 +1455,7 @@ object DenseMat {
     out
   }
   
-  def unique2[@specialized(Double, Float, Int) T](a:DenseMat[T])
+  def unique2[@specialized(Double, Float, Int, Long) T](a:DenseMat[T])
   (implicit manifest:Manifest[T], numeric:Numeric[T],  ord:Ordering[T]):(IMat, IMat) = {
     val (vss, iss) = sort2(a, true)  
     val iptrs = IMat.newOrCheckIMat(a.length, 1, null, a.GUID, "unique2".hashCode)
@@ -1475,7 +1478,7 @@ object DenseMat {
     (bptrs, iptrs)    
   } 
   
-  def uniquerows2[@specialized(Double, Float, Int) T](a:DenseMat[T])(implicit ordering:Ordering[T]):(IMat, IMat) = {
+  def uniquerows2[@specialized(Double, Float, Int, Long) T](a:DenseMat[T])(implicit ordering:Ordering[T]):(IMat, IMat) = {
     val iss = isortlex(a, true)
     def compeq(i:Int, j:Int):Boolean = {
       var k:Int = 0;
@@ -1505,7 +1508,7 @@ object DenseMat {
     (bptrs, iptrs)    
   }    
   
-  def accum[@specialized(Double, Float, Int) T](inds:IMat, vals:DenseMat[T], nr:Int, nc:Int)
+  def accum[@specialized(Double, Float, Int, Long) T](inds:IMat, vals:DenseMat[T], nr:Int, nc:Int)
   (implicit numeric:Numeric[T], classTag:ClassTag[T]):DenseMat[T] = { 
     if (inds.ncols > 2 || (vals.length > 1 && (inds.nrows != vals.nrows)))
       throw new RuntimeException("mismatch in array dimensions")

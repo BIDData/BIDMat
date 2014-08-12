@@ -474,7 +474,7 @@ object Mat {
     }
   }
 
-  def copyToIntArray[@specialized(Double, Float) T](data:Array[T], i0:Int, idata:Array[Int], d0:Int, n:Int)
+  def copyToIntArray[@specialized(Double, Float, Long) T](data:Array[T], i0:Int, idata:Array[Int], d0:Int, n:Int)
   (implicit numeric : Numeric[T]) = {
     var i = 0 
     while (i < n) {
@@ -483,7 +483,7 @@ object Mat {
     }
   }
   
-  def copyToDoubleArray[@specialized(Int, Float) T](data:Array[T], i0:Int, ddata:Array[Double], d0:Int, n:Int)
+  def copyToDoubleArray[@specialized(Int, Float, Long) T](data:Array[T], i0:Int, ddata:Array[Double], d0:Int, n:Int)
   (implicit numeric : Numeric[T]) = {
     var i = 0 
     while (i < n) {
@@ -492,11 +492,20 @@ object Mat {
     }
   }
   
-  def copyToFloatArray[@specialized(Int, Double) T](data:Array[T], i0:Int, fdata:Array[Float], d0:Int, n:Int)
+  def copyToFloatArray[@specialized(Int, Double, Long) T](data:Array[T], i0:Int, fdata:Array[Float], d0:Int, n:Int)
   (implicit numeric : Numeric[T]) = {
     var i = 0 
     while (i < n) {
       fdata(i+d0) = numeric.toFloat(data(i+i0));
+      i += 1
+    }
+  }
+  
+  def copyToLongArray[@specialized(Int, Double, Float) T](data:Array[T], i0:Int, fdata:Array[Long], d0:Int, n:Int)
+  (implicit numeric : Numeric[T]) = {
+    var i = 0 
+    while (i < n) {
+      fdata(i+d0) = numeric.toLong(data(i+i0));
       i += 1
     }
   }

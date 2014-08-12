@@ -547,6 +547,36 @@ object SciFunctions {
   def maxi(a:IMat, out:Mat) = a.iiReduceOpv(0, IMat.idFun, IMat.vecMaxFun, out)
   def mini(a:IMat, out:Mat):IMat = a.iiReduceOpv(0, IMat.idFun, IMat.vecMinFun, out)
   
+  def min (a:LMat, b:LMat) = a.iiMatOpv(b, LMat.vecMinFun, null)
+  def max (a:LMat, b:LMat) = a.iiMatOpv(b, LMat.vecMaxFun, null)
+  def sum(a:LMat, n:Int) = a.iiReduceOpv(n, LMat.idFun, LMat.vecAddFun, null)
+  def prod(a:LMat, n:Int) = a.iiReduceOpv(n, LMat.idFun, LMat.vecMulFun, null)
+  def cumsum(a:LMat, n:Int) = a.iiReduceAll(n, LMat.idFun, LMat.sumFun, null)
+  def maxi(a:LMat, n:Int) = a.iiReduceOpv(n, LMat.idFun, LMat.vecMaxFun, null)
+  def mini(a:LMat, n:Int):LMat = a.iiReduceOpv(n, LMat.idFun, LMat.vecMinFun, null)
+  def sum(a:LMat) = a.iiReduceOpv(0, LMat.idFun, LMat.vecAddFun, null)
+  def prod(a:LMat) = a.iiReduceOpv(0, LMat.idFun, LMat.vecMulFun, null)
+  def cumsum(a:LMat) = a.iiReduceAll(0, LMat.idFun, LMat.sumFun, null)
+  def maxi(a:LMat) = a.iiReduceOpv(0, LMat.idFun, LMat.vecMaxFun, null)
+  def mini(a:LMat):LMat = a.iiReduceOpv(0, LMat.idFun, LMat.vecMinFun, null)
+  def maxi2(a:LMat,d:Int):(LMat,IMat) = {val (m,ii)=a.ggOpt2(d,LMat.gtPred); (LMat(m), ii)}
+  def mini2(a:LMat,d:Int):(LMat,IMat) = {val (m,ii)=a.ggOpt2(d,LMat.ltPred); (LMat(m), ii)}
+  def maxi2(a:LMat):(LMat,IMat) = {val (m,ii)=a.ggOpt2(0,LMat.gtPred); (LMat(m), ii)}
+  def mini2(a:LMat):(LMat,IMat) = {val (m,ii)=a.ggOpt2(0,LMat.ltPred); (LMat(m), ii)}
+  
+  def min (a:LMat, b:LMat, out:Mat) = a.iiMatOpv(b, LMat.vecMinFun, out)
+  def max (a:LMat, b:LMat, out:Mat) = a.iiMatOpv(b, LMat.vecMaxFun, out)
+  def sum(a:LMat, n:Int, out:Mat) = a.iiReduceOpv(n, LMat.idFun, LMat.vecAddFun, out)
+  def prod(a:LMat, n:Int, out:Mat) = a.iiReduceOpv(n, LMat.idFun, LMat.vecMulFun, out)
+  def cumsum(a:LMat, n:Int, out:Mat) = a.iiReduceAll(n, LMat.idFun, LMat.sumFun, out)
+  def maxi(a:LMat, n:Int, out:Mat) = a.iiReduceOpv(n, LMat.idFun, LMat.vecMaxFun, out)
+  def mini(a:LMat, n:Int, out:Mat):LMat = a.iiReduceOpv(n, LMat.idFun, LMat.vecMinFun, out)
+  def sum(a:LMat, out:Mat) = a.iiReduceOpv(0, LMat.idFun, LMat.vecAddFun, out)
+  def prod(a:LMat, out:Mat) = a.iiReduceOpv(0, LMat.idFun, LMat.vecMulFun, out)
+  def cumsum(a:LMat, out:Mat) = a.iiReduceAll(0, LMat.idFun, LMat.sumFun, out)
+  def maxi(a:LMat, out:Mat) = a.iiReduceOpv(0, LMat.idFun, LMat.vecMaxFun, out)
+  def mini(a:LMat, out:Mat):LMat = a.iiReduceOpv(0, LMat.idFun, LMat.vecMinFun, out)
+  
   def min(a:SDMat, b:SDMat) = a.ssMatOp(b, DMat.minFun, null)
   def max(a:SDMat, b:SDMat) = a.ssMatOp(b, DMat.maxFun, null)
   def sum(a:SDMat, n:Int) = a.ssReduceOp(n, DMat.idFun, DMat.sumFun, null)
@@ -641,6 +671,7 @@ object SciFunctions {
     (a, b) match {
       case (aa:FMat, bb:FMat) => max(aa, bb, c):FMat
       case (aa:IMat, bb:IMat) => max(aa, bb, c):IMat
+      case (aa:LMat, bb:LMat) => max(aa, bb, c):LMat
       case (aa:DMat, bb:DMat) => max(aa, bb, c):DMat
       case (aa:GMat, bb:GMat) => max(aa, bb, c):GMat
       case (aa:IMat, bb:FMat) => max(FMat(aa), bb, c):FMat
@@ -656,6 +687,7 @@ object SciFunctions {
     (a, b) match {
       case (aa:FMat, bb:FMat) => min(aa, bb, c):FMat
       case (aa:IMat, bb:IMat) => min(aa, bb, c):IMat
+      case (aa:LMat, bb:LMat) => min(aa, bb, c):LMat
       case (aa:DMat, bb:DMat) => min(aa, bb, c):DMat
       case (aa:GMat, bb:GMat) => min(aa, bb, c):GMat
       case (aa:IMat, bb:FMat) => min(FMat(aa), bb, c):FMat
@@ -671,6 +703,7 @@ object SciFunctions {
     a match {
       case aa:FMat => maxi(aa, b):FMat
       case aa:IMat => maxi(aa, b):IMat
+      case aa:LMat => maxi(aa, b):LMat
       case aa:DMat => maxi(aa, b):DMat
       case aa:GMat => maxi(aa, b):GMat
     }
@@ -681,6 +714,7 @@ object SciFunctions {
     a match {
       case aa:FMat => maxi(aa):FMat
       case aa:IMat => maxi(aa):IMat
+      case aa:LMat => maxi(aa):LMat
       case aa:DMat => maxi(aa):DMat
       case aa:GMat => maxi(aa):GMat
     }
@@ -690,6 +724,7 @@ object SciFunctions {
     a match {
       case aa:FMat => mini(aa, b):FMat
       case aa:IMat => mini(aa, b):IMat
+      case aa:LMat => mini(aa, b):LMat
       case aa:DMat => mini(aa, b):DMat
       case aa:GMat => mini(aa, b):GMat
     }
@@ -699,6 +734,7 @@ object SciFunctions {
     a match {
       case aa:FMat => mini(aa):FMat
       case aa:IMat => mini(aa):IMat
+      case aa:LMat => mini(aa):LMat
       case aa:DMat => mini(aa):DMat
       case aa:GMat => mini(aa):GMat
     }
@@ -708,6 +744,7 @@ object SciFunctions {
     a match {
       case aa:FMat => maxi2(aa, b):(FMat,IMat)
       case aa:IMat => maxi2(aa, b):(IMat,IMat)
+      case aa:LMat => maxi2(aa, b):(LMat,IMat)
       case aa:DMat => maxi2(aa, b):(DMat,IMat)
       case aa:GMat => maxi2(aa, b):(GMat,GIMat)
     }
@@ -717,6 +754,7 @@ object SciFunctions {
     a match {
       case aa:FMat => maxi2(aa):(FMat,IMat)
       case aa:IMat => maxi2(aa):(IMat,IMat)
+      case aa:LMat => maxi2(aa):(LMat,IMat)
       case aa:DMat => maxi2(aa):(DMat,IMat)
       case aa:GMat => maxi2(aa):(GMat,GIMat)
     }
@@ -728,6 +766,7 @@ object SciFunctions {
     a match {
       case aa:FMat => mini2(aa, b):(FMat,IMat)
       case aa:IMat => mini2(aa, b):(IMat,IMat)
+      case aa:LMat => mini2(aa, b):(LMat,IMat)
       case aa:DMat => mini2(aa, b):(DMat,IMat)
       case aa:GMat => mini2(aa, b):(GMat,GIMat)
     }
@@ -737,6 +776,7 @@ object SciFunctions {
     a match {
       case aa:FMat => mini2(aa):(FMat,IMat)
       case aa:IMat => mini2(aa):(IMat,IMat)
+      case aa:LMat => mini2(aa):(LMat,IMat)
       case aa:DMat => mini2(aa):(DMat,IMat)
       case aa:GMat => mini2(aa):(GMat,GIMat)
     }
@@ -746,6 +786,7 @@ object SciFunctions {
     a match {
       case aa:FMat => sum(aa, b):FMat
       case aa:IMat => sum(aa, b):IMat
+      case aa:LMat => sum(aa, b):LMat
       case aa:DMat => sum(aa, b):DMat
       case aa:CMat => sum(aa, b):CMat
       case aa:SMat => sum(aa, b):FMat
@@ -760,6 +801,7 @@ object SciFunctions {
     a match {
       case aa:FMat => sum(aa, b, c):FMat
       case aa:IMat => sum(aa, b, c):IMat
+      case aa:LMat => sum(aa, b, c):LMat
       case aa:DMat=> sum(aa, b, c):DMat
       case aa:SMat=> sum(aa, b, c):FMat
       case aa:CMat => sum(aa, b, c):CMat
@@ -772,6 +814,7 @@ object SciFunctions {
     a match {
       case aa:FMat => prod(aa, b):FMat
       case aa:IMat => prod(aa, b):IMat
+      case aa:LMat => prod(aa, b):LMat
       case aa:DMat => prod(aa, b):DMat
     }
   }
@@ -782,6 +825,7 @@ object SciFunctions {
     a match {
       case aa:FMat => prod(aa, b, c):FMat
       case aa:IMat => prod(aa, b, c):IMat
+      case aa:LMat => prod(aa, b, c):LMat
       case aa:DMat=> prod(aa, b, c):DMat
     }
   }
