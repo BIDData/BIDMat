@@ -71,9 +71,13 @@ public class AllReduce {
 				recbuf[i] = ByteBuffer.allocateDirect(4*bufsize);
 			}
 			if (doSim) {
-				messages = new LinkedList[M][];
+		    @SuppressWarnings("unchecked")
+		    LinkedList<Msg>[][] xm = new LinkedList[M][];
+		    messages = xm;
 				for (int i = 0; i < M; i++) {
-					messages[i] = new LinkedList[3*D];
+				  @SuppressWarnings("unchecked")
+				  LinkedList<Msg>[] xmi = new LinkedList[3*D];
+				  messages[i] = xmi;
 					for (int j = 0; j < 3*D; j++) {
 						messages[i][j] = new LinkedList<Msg>();
 					}
