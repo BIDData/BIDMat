@@ -237,7 +237,7 @@ object Mat {
   
   var hasCUDA = 0                  // Number of available CUDA GPUs
     
-  var noMKL:Boolean = false        // Dont use MKL libs
+  var useMKL:Boolean = true        // Use MKL libs
   
   var debugMem = false             // Debug GPU mem calls
    
@@ -392,13 +392,13 @@ object Mat {
   }
   
   def checkMKL:Unit = {
-    if (!noMKL) {
+    if (useMKL) {
     	try {
     		jcuda.LibUtils.loadLibrary("bidmatmkl")
     	} catch {
     	case _:Throwable => {
     		println("Cant find native CPU libraries")
-    		noMKL = true
+    		useMKL = false
     	}
     	}
     }

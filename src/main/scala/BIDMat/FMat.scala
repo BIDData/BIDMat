@@ -20,7 +20,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   def tt(omat:Mat):FMat = {
   	val out = FMat.newOrCheckFMat(ncols, nrows, omat, GUID, "t".##)      
-  	if (Mat.noMKL) { 
+  	if (!Mat.useMKL) { 
   		gt(out)
   	} else {
   		somatcopy("C", "T", nrows, ncols, 1.0f, data, nrows, out.data, ncols)
@@ -260,7 +260,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   	} else if (ncols == a.nrows) {
   		val out = FMat.newOrCheckFMat(nrows, a.ncols, outmat, GUID, a.GUID, "dMult".##)
   		Mat.nflops += 2L * length * a.ncols
-  		if (Mat.noMKL) {
+  		if (!Mat.useMKL) {
   			out.clear
   		  if (a.ncols > 3 && 1L*nrows*a.length > 100000L && Mat.numThreads > 1) {
     			val done = IMat(1,Mat.numThreads)
@@ -295,7 +295,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   		while (j < a.jc(i+1)-ioff) {
   			val dval = a.data(j)
   			val ival = a.ir(j) - ioff
-  			if (Mat.noMKL || nrows < 220) {
+  			if (!Mat.useMKL || nrows < 220) {
   				var k = 0
   				while (k < nrows) {
   					out.data(k+i*nrows) += data(k+ival*nrows)*dval
@@ -336,7 +336,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     	out.clear
     	Mat.nflops += 2L * nrows * a.nnz
     	val ioff = Mat.ioneBased;
-    	if (Mat.noMKL) {
+    	if (!Mat.useMKL) {
     		if (1L*nrows*a.nnz > 100000L && Mat.numThreads > 1) {
     			val done = IMat(1,Mat.numThreads)
     			for (ithread <- 0 until Mat.numThreads) {
@@ -371,7 +371,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   		while (j < a.jc(i+1)-ioff) {
   			val dval = a.data(j)
   			val ival = a.ir(j) - ioff
-  			if (Mat.noMKL || nrows < 220) {
+  			if (!Mat.useMKL || nrows < 220) {
   				var k = 0
   				while (k < nrows) {
   					out.data(k+ival*nrows) += data(k+i*nrows)*dval
@@ -393,7 +393,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
         while (j < a.jc(i+1)-ioff) {
             val dval = a.data(j)
             val ival = a.ir(j) - ioff
-            if (Mat.noMKL || iend-istart < 220) {
+            if (!Mat.useMKL || iend-istart < 220) {
                 var k = istart
                 while (k < iend) {
                     out.data(k+ival*nrows) += data(k+i*nrows)*dval
@@ -414,7 +414,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     	val out = FMat.newOrCheckFMat(nrows, a.nrows, outmat, GUID, a.GUID, "multT".##)
     	out.clear
     	Mat.nflops += 2L * a.nnz * nrows
-    	if (Mat.noMKL || nrows < 100) {
+    	if (!Mat.useMKL || nrows < 100) {
     	  val ioff = Mat.ioneBased
     	  if (nrows >= 64 && Mat.numThreads > 1) {
     	    val nthreads = math.min(Mat.numThreads, nrows/32)
@@ -464,7 +464,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def multT(a:FMat, outmat:Mat):FMat = {
     if (ncols == a.ncols) {
     	val out = FMat.newOrCheckFMat(nrows, a.nrows, outmat, GUID, a.GUID, "multT".##)
-    	if (Mat.noMKL) {
+    	if (!Mat.useMKL) {
             out.clear
           if (a.nrows > 3 && 1L*nrows*a.length > 100000L && Mat.numThreads > 1) {
                 val done = IMat(1,Mat.numThreads)
@@ -567,7 +567,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   		throw new RuntimeException("dot dims not compatible")
    	}	else {
    		val out = FMat.newOrCheckFMat(1, ncols, omat, GUID, a.GUID, "dot".##)
-   		if (Mat.noMKL || length < 512) {
+   		if (!Mat.useMKL || length < 512) {
    			gdot(a, out)
    		} else {
    			Mat.nflops += 2L * length
@@ -585,7 +585,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
    	}	else {
    		val out = FMat.newOrCheckFMat(nrows, 1, omat, GUID, a.GUID, "dotr".##)
    		out.clear
-   		if (Mat.noMKL || length < 512) {
+   		if (!Mat.useMKL || length < 512) {
    			gdotr(a, out)
    		} else {
    			Mat.nflops += 2L * length
