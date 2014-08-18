@@ -392,6 +392,48 @@ object HMat {
       out
     }
   } 
+  
+  def loadIDX(fname:String):FND = loadIDX(fname, 0);
+  
+  def loadIDX(fname:String, compressed:Int, byteOrder:ByteOrder=ByteOrder.BIG_ENDIAN):FND = {
+    val gin = getInputStream(fname, compressed);
+    val bytebuff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder);
+    val magicnum = new Array[Int](1);
+    readSomeInts(gin, magicnum, bytebuff, 1);
+    val mnum = magicnum(0);
+    val mtype = (mnum >>> 8) & 0xff;
+    val ndims = mnum & 0xff;
+    val dims = new Array[Int](ndims);
+    readSomeInts(gin, dims, bytebuff, ndims);
+    val length = dims.reduce(_*_);
+    val result = mtype match {
+      case 0xD => {
+        val out = FND(dims);
+        readSomeFloats(gin, out.data, bytebuff, length);
+        out;
+      }      
+      case 0x8 => {
+        val out = FND(dims);
+        val btmp = new Array[Byte](length);
+        readSomeBytes(gin, btmp, length);
+        var i = 0;
+        while (i < length) {
+          out.data(i) = (btmp(i).toInt & 0xff).toFloat;
+          i += 1;
+        }
+        out;
+      }
+      case 0x9 => {
+        val out = FND(dims);
+        val btmp = new Array[Byte](length);
+        readSomeBytes(gin, btmp, length);
+        Mat.copyToFloatArray(btmp, 0, out.data, 0, length);
+        out;
+      }
+    }
+    gin.close;
+    result;
+  } 
     
   def loadDMat(fname:String):DMat = loadDMat(fname, null, 0)
   
