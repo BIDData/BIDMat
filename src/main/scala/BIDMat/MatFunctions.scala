@@ -1542,6 +1542,9 @@ object MatFunctions {
   
   def saveSBMat(fname:String, m:SBMat) = HMat.saveSBMat(fname, m)    
   def saveSBMat(fname:String, m:SBMat, compressed:Int) = HMat.saveSBMat(fname, m, compressed)
+  
+  def loadIDX(fname:String, compressed:Int) = HMat.loadIDX(fname, compressed)
+  def loadIDX(fname:String) = HMat.loadIDX(fname, 0)
 
   final val ? = new IMatWildcard
 }
