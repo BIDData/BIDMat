@@ -135,11 +135,15 @@ object Image {
   
   def show (mat:IMat):JFrame = {show(Image(mat))}
   
+  def show (mat:FMat):JFrame = {show(Image(mat))}
+  
   def show (mat:FND):JFrame = {show(Image(mat))}
   
   def show (image:Image, title:String):JFrame = image.show(title)
   
   def show (mat:IMat, title:String):JFrame = {show(Image(mat), title)}
+  
+  def show (mat:FMat, title:String):JFrame = {show(Image(mat), title)}
   
   def show (mat:FND, title:String):JFrame = {show(Image(mat), title)}
 }

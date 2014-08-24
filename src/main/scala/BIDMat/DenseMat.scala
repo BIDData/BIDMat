@@ -391,6 +391,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
     val out = DenseMat.newOrCheck[T](nrows, b-a+c-off, omat, GUID, nrows, b-a+c-off, "gcolslice".##)
     if (a-off < 0) throw new RuntimeException("colslice index out of range %d" format (a))
     if (b-off > ncols) throw new RuntimeException("colslice index out of range %d %d" format (b, ncols))
+    
     System.arraycopy(data, (a-off)*nrows, out.data, (c-off)*nrows, (b-a)*nrows)
     out
   }

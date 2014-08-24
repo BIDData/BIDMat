@@ -76,6 +76,35 @@ object HMat {
   
   var DEFAULT_BUFSIZE = 64*1024
   
+  def getInputStream(fname:String, compressed:Int):InputStream = {
+    val fin = new FileInputStream(fname)
+    if (compressed == 2 || (compressed == 0 && fname.endsWith(".gz"))) {
+      new BufferedInputStream (new GZIPInputStream(fin, DEFAULT_BUFSIZE))      
+    } else  if (compressed == 3 || (compressed == 0 && fname.endsWith(".lz4"))) {
+      new LZ4BlockInputStream(new BufferedInputStream(fin, DEFAULT_BUFSIZE))   
+    } else {
+      new BufferedInputStream(fin, DEFAULT_BUFSIZE)
+    } 
+  }
+  
+  def getOutputStream(fname:String, compressed:Int):OutputStream = {
+    if (compressed == 2 || (compressed == 0 && fname.endsWith(".gz"))) {
+      import edu.berkeley.bid.UTILS._
+      _getOutputStream(fname, Mat.compressionLevel)
+    } else  if (compressed == 3 || (compressed == 0 && fname.endsWith(".lz4"))) {
+      val fout = new FileOutputStream(fname)
+      if (Mat.compressionLevel >= 6) {
+        val hc = LZ4Factory.fastestInstance.highCompressor
+        new BufferedOutputStream(new LZ4BlockOutputStream(fout, 1 << 16, hc), DEFAULT_BUFSIZE)
+      } else {
+        new BufferedOutputStream(new LZ4BlockOutputStream(fout), DEFAULT_BUFSIZE)   
+      }
+    } else {
+      val fout = new FileOutputStream(fname)
+      new BufferedOutputStream(fout, DEFAULT_BUFSIZE)
+    }
+  }
+  
   def readSomeBytes(din:InputStream, a:Array[Byte], n:Int) {
     var nread = 0
     while (nread < n) {
@@ -174,35 +203,6 @@ object HMat {
     	dbuff.position(0)
       dout.write(bbuff, 0, todo*8)
       nwritten += todo
-    }
-  }
-  
-  def getInputStream(fname:String, compressed:Int):InputStream = {
-    val fin = new FileInputStream(fname)
-    if (compressed == 2 || (compressed == 0 && fname.endsWith(".gz"))) {
-      new BufferedInputStream (new GZIPInputStream(fin, DEFAULT_BUFSIZE))      
-    } else  if (compressed == 3 || (compressed == 0 && fname.endsWith(".lz4"))) {
-      new LZ4BlockInputStream(new BufferedInputStream(fin, DEFAULT_BUFSIZE))   
-    } else {
-    	new BufferedInputStream(fin, DEFAULT_BUFSIZE)
-    } 
-  }
-  
-  def getOutputStream(fname:String, compressed:Int):OutputStream = {
-    if (compressed == 2 || (compressed == 0 && fname.endsWith(".gz"))) {
-    	import edu.berkeley.bid.UTILS._
-    	_getOutputStream(fname, Mat.compressionLevel)
-    } else  if (compressed == 3 || (compressed == 0 && fname.endsWith(".lz4"))) {
-      val fout = new FileOutputStream(fname)
-      if (Mat.compressionLevel >= 6) {
-        val hc = LZ4Factory.fastestInstance.highCompressor
-        new BufferedOutputStream(new LZ4BlockOutputStream(fout, 1 << 16, hc), DEFAULT_BUFSIZE)
-      } else {
-      	new BufferedOutputStream(new LZ4BlockOutputStream(fout), DEFAULT_BUFSIZE)   
-      }
-    } else {
-    	val fout = new FileOutputStream(fname)
-    	new BufferedOutputStream(fout, DEFAULT_BUFSIZE)
     }
   }
   
@@ -756,6 +756,53 @@ object HMat {
     if (m.ir != null) MatHDF5.addOne(m.ir)
     gout.close
   } 
+   
+  // Load a file in ASCII LibSVM format
+  // Outputs a data matrix first, and then a matrix of cat labels.
+  // Both are SMat since data can be sparse and there may be multiple labels per instance. 
+  def loadLibSVM(fname:String, nrows:Int, compressed:Int = 0):(SMat, IMat) = {
+    var fin = new BufferedReader(new InputStreamReader (getInputStream(fname, compressed)));
+    var firstline = fin.readLine();
+    var parts = if (firstline != null) firstline.split("[\t ]+") else null;
+    var ncols = 0;
+    var nnz = 0;
+    var maxindx = 0;
+    while (firstline != null && parts.length > 0) {
+      nnz += parts.length - 1;
+      firstline = fin.readLine();
+      if (firstline != null) parts = firstline.split("[\t ]+");
+      ncols += 1;
+    }
+    var datamat = SMat(nrows, ncols, nnz);
+    var cmat = IMat(1, ncols);
+    fin.close();
+    fin = new BufferedReader(new InputStreamReader (getInputStream(fname, compressed)));
+    firstline = fin.readLine();
+    if (firstline != null) parts = firstline.split("[\t ]+");
+    ncols = 0;
+    nnz = 0;
+    val ioneBased = Mat.ioneBased;
+    datamat.jc(0) = ioneBased; 
+    while (firstline != null && parts.length > 0) {
+      cmat.data(ncols) = parts(0).toInt;
+      var i = 1;
+      while (i < parts.length) {
+        val pair = parts(i).split(":");
+        val indx = pair(0).toInt;
+        val vval = pair(1).toFloat;
+        datamat.ir(nnz) = indx + ioneBased;
+        datamat.data(nnz) = vval;
+        i += 1;
+        nnz += 1;
+      }
+      firstline = fin.readLine();
+      if (firstline != null) parts = firstline.split("[\t ]+");
+      ncols += 1;
+      datamat.jc(ncols) = nnz + ioneBased;
+    }
+    fin.close();
+    (datamat, cmat);    
+  }
    
   def testLoad(fname:String, varname:String, n:Int) = {
     val a = new Array[SMat](n)
