@@ -79,7 +79,7 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
 	  val out = DMat.newOrCheckDMat(nrows, a.ncols, omat)
 	  if (omat.asInstanceOf[AnyRef] != null) out.clear
 	  Mat.nflops += 2L * nnz * a.ncols
-	  if (Mat.noMKL) {
+	  if (!Mat.useMKL) {
 	    var i = 0
 	    while (i < dd.ncols) {
 	      var j = 0

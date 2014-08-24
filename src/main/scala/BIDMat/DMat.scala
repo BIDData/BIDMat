@@ -22,7 +22,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
  
   def tt(omat:Mat):DMat = {
     val out = DMat.newOrCheckDMat(ncols, nrows, omat, GUID, "t".##)
-    if (Mat.noMKL) { 
+    if (!Mat.useMKL) { 
     	gt(out)
     } else { 
     	domatcopy("C", "T", nrows, ncols, 1.0, data, nrows, out.data, ncols)
@@ -248,7 +248,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   	} else	if (ncols == aa.nrows) {
   		val out = DMat.newOrCheckDMat(nrows, aa.ncols, outmat, GUID, aa.GUID, "dMult".##)
   		Mat.nflops += 2 * length.toLong * aa.ncols.toLong
-  		if (Mat.noMKL) {
+  		if (!Mat.useMKL) {
   			out.clear
   			var i = 0
   			while (i < aa.ncols) {
@@ -297,12 +297,12 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   			jc0 = ss.jc
   			ir0 = ss.ir
   		}	 
-  		if (nrows == 1 && !Mat.noMKL) {
+  		if (nrows == 1 && Mat.useMKL) {
   			dcscmv("T", nr, nc, 1.0, "GLNF", ss.data, ir0, jc0, data, 0.0, out.data)
   			out
   		} else {
   			out.clear
-  			if (nrows < 20 || Mat.noMKL) {
+  			if (nrows < 20 || !Mat.useMKL) {
   				var i = 0
   				while (i < ss.ncols) {
   					var j = ss.jc(i) - ioff
@@ -450,7 +450,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   		throw new RuntimeException("dot dims not compatible")
    	}	else {
    		val out = DMat.newOrCheckDMat(1, ncols, null, GUID, a.GUID, "dot".##)
-   		if (Mat.noMKL || length < 512) {
+   		if (!Mat.useMKL || length < 512) {
    			gdot(a, out)
    		} else {
    			Mat.nflops += 2L * length
@@ -468,7 +468,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
    	}	else {
    		val out = DMat.newOrCheckDMat(nrows, 1, omat, GUID, a.GUID, "dotr".##)
    		out.clear
-   		if (Mat.noMKL || length < 512) {
+   		if (!Mat.useMKL || length < 512) {
    			gdotr(a, out)
    		} else {
    			Mat.nflops += 2L * length

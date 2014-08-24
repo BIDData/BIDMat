@@ -20,14 +20,14 @@ object SciFunctions {
   final val SEED:Int = 1452462553 
   final val myrand = new java.util.Random(SEED)
   // VSL random number generator initialization
-  final val BRNG:Int = if (Mat.noMKL) 0 else BRNG_MCG31
+  final val BRNG:Int = if (!Mat.useMKL) 0 else BRNG_MCG31
   final val METHOD:Int = 0
-  final val stream = if (Mat.noMKL) null else new VSL();
-  final val errcode = if (Mat.noMKL) null else vslNewStream(stream, BRNG, SEED)
+  final val stream = if (!Mat.useMKL) null else new VSL();
+  final val errcode = if (!Mat.useMKL) null else vslNewStream(stream, BRNG, SEED)
   // VML mode control, controlled with setVMLmode()
-  final val VMLdefault = if (Mat.noMKL) 0 else VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_HA   // Default
-  final val VMLfast =    if (Mat.noMKL) 0 else VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_LA   // Faster, Low accuracy, default error handling
-  final val VMLturbo =   if (Mat.noMKL) 0 else VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_EP   // Fastest, Lower accuracy, default error handling
+  final val VMLdefault = if (!Mat.useMKL) 0 else VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_HA   // Default
+  final val VMLfast =    if (!Mat.useMKL) 0 else VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_LA   // Faster, Low accuracy, default error handling
+  final val VMLturbo =   if (!Mat.useMKL) 0 else VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_EP   // Fastest, Lower accuracy, default error handling
   // Curand initialization
   var cudarng:Array[curandGenerator] = null
   if (Mat.hasCUDA > 0) {
@@ -158,7 +158,7 @@ object SciFunctions {
   }  
   
   def drand(minv:Double, maxv:Double, out:DMat):DMat = {
-    if (Mat.noMKL) {
+    if (!Mat.useMKL) {
       var i = 0; val len = out.length; val odata = out.data; 
       while (i < len) {odata(i) = myrand.nextDouble; i += 1}     
     } else {
@@ -175,7 +175,7 @@ object SciFunctions {
   def drand(out:DMat):DMat = drand(0.0, 1.0, out)
 
   def rand(minv:Float, maxv:Float, out:FMat):FMat = {
-    if (Mat.noMKL) {
+    if (!Mat.useMKL) {
       var i = 0; val len = out.length; val odata = out.data; 
       while (i < len) {odata(i) = myrand.nextFloat; i += 1}     
     } else {
@@ -206,7 +206,7 @@ object SciFunctions {
   }
  
   def normrnd(mu:Float, sig:Float, out:FMat):FMat = {
-    if (Mat.noMKL) {
+    if (!Mat.useMKL) {
       var i = 0; val len = out.length; val odata = out.data; 
       while (i < len) {odata(i) = mu + sig*myrand.nextGaussian.toFloat; i += 1}  
     } else {
@@ -221,7 +221,7 @@ object SciFunctions {
   }
   
   def cnormrnd(mu:Float, sig:Float, out:CMat):CMat = {
-    if (Mat.noMKL) {
+    if (!Mat.useMKL) {
       var i = 0; val len = out.length; val odata = out.data; 
       while (i < 2*len) {odata(i) = mu + sig*myrand.nextGaussian.toFloat; i += 1}  
     } else {
@@ -319,7 +319,7 @@ object SciFunctions {
   }
   
   def dnormrnd(mu:Double, sig:Double, out:DMat):DMat = {
-    if (Mat.noMKL) {
+    if (!Mat.useMKL) {
       var i = 0; val len = out.length; val odata = out.data; 
       while (i < len) {odata(i) = mu + sig*myrand.nextGaussian; i += 1}  
     } else {
@@ -941,7 +941,7 @@ object SciFunctions {
   
   def applyDFun(a:DMat, omat:Mat, vfn:(Int, Array[Double], Array[Double])=>Unit, efn:(Double)=>Double, nflops:Long) ={
       val out = DMat.newOrCheckDMat(a.nrows, a.ncols, omat, a.GUID, vfn.##, efn.##)
-	    if (Mat.noMKL || vfn == null) {
+	    if (!Mat.useMKL || vfn == null) {
 	      if (efn == null) {
 	        throw new RuntimeException("no Scala builtin version of this math function, sorry")
 	      } 
@@ -957,7 +957,7 @@ object SciFunctions {
   def applyDFunV(a:DMat, omat:Mat, vfn:(Int, Array[Double], Array[Double])=>Unit,
                 efn:(Int, Array[Double], Array[Double])=>Unit, nflops:Long) = {
 	    val out = DMat.newOrCheckDMat(a.nrows, a.ncols, omat, a.GUID, vfn.##, efn.##)
-	    if (Mat.noMKL) {
+	    if (!Mat.useMKL) {
 	      if (efn == null) {
 	        throw new RuntimeException("no Scala builtin version of this math function, sorry")
 	      } 
@@ -971,7 +971,7 @@ object SciFunctions {
   
   def applySFun(a:FMat, omat:Mat, vfn:(Int, Array[Float], Array[Float])=>Unit, efn:(Float)=>Float, nflops:Long) ={
   	val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat, a.GUID, vfn.##, efn.##)
-  	if (Mat.noMKL || vfn == null) {
+  	if (!Mat.useMKL || vfn == null) {
   		if (efn == null) {
   			throw new RuntimeException("no Scala builtin version of this math function, sorry")
   		} 
@@ -986,7 +986,7 @@ object SciFunctions {
 
   def applyCFun(a:CMat, omat:Mat, vfn:(Int, Array[Float], Array[Float])=>Unit, efn:(Float,Float)=>(Float,Float), nflops:Long) ={
   	val out = CMat.newOrCheckCMat(a.nrows, a.ncols, omat, a.GUID, vfn.##, efn.##)
-  	if (Mat.noMKL || vfn == null) {
+  	if (!Mat.useMKL || vfn == null) {
   		if (efn == null) {
   			throw new RuntimeException("no Scala builtin version of this math function, sorry")
   		} 
@@ -1001,7 +1001,7 @@ object SciFunctions {
 
   def applyCSFun(a:CMat, omat:Mat, vfn:(Int, Array[Float], Array[Float])=>Unit, efn:(Float,Float)=>Float, nflops:Long) ={
   	val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat, a.GUID, vfn.##, efn.##)
-  	if (Mat.noMKL || vfn == null) {
+  	if (!Mat.useMKL || vfn == null) {
   		if (efn == null) {
   			throw new RuntimeException("no Scala builtin version of this math function, sorry")
   		} 
@@ -1017,7 +1017,7 @@ object SciFunctions {
   def applySFunV(a:FMat, omat:Mat, vfn:(Int, Array[Float], Array[Float])=>Unit, 
   		efn:(Int, Array[Float], Array[Float])=>Unit, nflops:Long) ={
   	val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat, a.GUID, vfn.##, efn.##)
-  	if (Mat.noMKL) {
+  	if (!Mat.useMKL) {
   		if (efn == null) {
   			throw new RuntimeException("no Scala builtin version of this math function, sorry")
   		} 
@@ -1033,7 +1033,7 @@ object SciFunctions {
   		vfn:(Int, Array[Double], Array[Double], Array[Double]) => Unit, 
   		efn:(Double, Double)=>Double, nflops:Long):DMat = {
   				val out = DMat.newOrCheckDMat(math.max(a.nrows, b.nrows), math.max(a.ncols, b.ncols), omat, a.GUID, b.GUID, vfn.##, efn.##)
-  				if (Mat.noMKL) {
+  				if (!Mat.useMKL) {
   					if (efn == null) {
   						throw new RuntimeException("no Scala builtin version of this math function, sorry")
   					} 
@@ -1050,7 +1050,7 @@ object SciFunctions {
   		vfn:(Int, Array[Float], Array[Float], Array[Float]) => Unit, 
   		efn:(Float, Float)=>Float, nflops:Long):FMat = {
   				val out = FMat.newOrCheckFMat(math.max(a.nrows, b.nrows), math.max(a.ncols, b.ncols), omat, a.GUID, b.GUID, vfn.##, efn.##)
-  				if (Mat.noMKL) {
+  				if (!Mat.useMKL) {
   					if (efn == null) {
   						throw new RuntimeException("no Scala builtin version of this math function, sorry")
   					} 
@@ -1067,7 +1067,7 @@ object SciFunctions {
   		vfn:(Int, Array[Double], Double, Array[Double]) => Unit, 
   		efn:(Double, Double)=>Double, nflops:Long):DMat = {
   				val out = DMat.newOrCheckDMat(a.nrows, a.ncols, omat, a.GUID, b.##, vfn.##, efn.##)
-  				if (Mat.noMKL) {
+  				if (!Mat.useMKL) {
   					if (efn == null) {
   						throw new RuntimeException("no Scala builtin version of this math function, sorry")
   					} 
@@ -1084,7 +1084,7 @@ object SciFunctions {
   		vfn:(Int, Array[Float], Float, Array[Float]) => Unit, 
   		efn:(Float, Float)=>Float, nflops:Long):FMat = {
   				val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat, a.GUID, b.##, vfn.##, efn.##)
-  				if (Mat.noMKL) {
+  				if (!Mat.useMKL) {
   					if (efn == null) {
   						throw new RuntimeException("no Scala builtin version of this math function, sorry")
   					} 
@@ -1098,7 +1098,7 @@ object SciFunctions {
   		}
   
   def doPowx(n:Int, a:Array[Double], p:Float, r:Array[Double]) {
-    if (Mat.noMKL) {
+    if (!Mat.useMKL) {
       var i = 0
       while (i < n) {
         r(i) = math.pow(a(i), p)
@@ -1173,7 +1173,7 @@ object SciFunctions {
   
   /* 
    * Double scientific functions. Most have both an MKL and non-MKL implementation.
-   * The MKL implementation is used unless Mat.noMKL = true. 
+   * The MKL implementation is used unless !Mat.useMKL = true. 
    */
   
   val signumDFun = (x:Double) => math.signum(x)
@@ -1350,7 +1350,7 @@ object SciFunctions {
   
   /* 
    * Single-precision scientific functions. Most have both an MKL and non-MKL implementation.
-   * The MKL implementation is used unless Mat.noMKL = true. 
+   * The MKL implementation is used unless !Mat.useMKL = true. 
    */
     
   val signumFun = (x:Float) => math.signum(x).toFloat
@@ -1527,7 +1527,7 @@ object SciFunctions {
 
   /* 
    * Complex single-precision scientific functions. Most have both an MKL and non-MKL implementation.
-   * The MKL implementation is used unless Mat.noMKL = true. 
+   * The MKL implementation is used unless Mat.useMKL = false. 
    */
   
   val vcAbsCFun = (n:Int, x:Array[Float], y:Array[Float]) => vcAbs(n,x,y)

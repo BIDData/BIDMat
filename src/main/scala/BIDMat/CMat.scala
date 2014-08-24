@@ -858,7 +858,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   		} else if (ncols == aa.nrows) {
   			val out = CMat.newOrCheckCMat(nrows, aa.ncols, outmat, GUID, aa.GUID, "dMult".##)
   			Mat.nflops += 2L * length * aa.ncols
-  			if (Mat.noMKL) {
+  			if (!Mat.useMKL) {
   				if (outmat.asInstanceOf[AnyRef] != null) out.clear
   				var i = 0
   				while (i < aa.ncols) {
@@ -901,7 +901,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   	} else {
   	  val out = CMat.newOrCheckCMat(1, ncols, omat, GUID, b.GUID, "dot".##)
   		Mat.nflops += 6L * length
-  		if (Mat.noMKL || length < 512) {
+  		if (!Mat.useMKL || length < 512) {
   			var i = 0
   			while (i < ncols) {
   				var w0 = 0.0

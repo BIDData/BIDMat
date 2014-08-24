@@ -254,7 +254,9 @@ object MatFunctions {
   def uniquerows(a:DMat):(DMat, IMat, IMat) = { val (ii, jj) = DenseMat.uniquerows2(a) ; (a(ii,?), ii, jj)}
   
   /** Find unique elements. Return: (b,ii,jj) s.t. b=unique(a), b=a(ii,?), a=b(jj,?)  */
-  def unique(a:DMat):(DMat, IMat, IMat) = {val (ii, jj) =	DenseMat.unique2(if (math.min(a.nrows,a.ncols) > 1) a(?) else a) ; (a(ii), ii, jj)}
+  def unique3(a:DMat):(DMat, IMat, IMat) = {val (ii, jj) =	DenseMat.unique2(if (math.min(a.nrows,a.ncols) > 1) a(?) else a) ; (a(ii), ii, jj)}
+  
+  def unique(a:DMat):(DMat) = {val (ii, jj) =  DenseMat.unique2(if (math.min(a.nrows,a.ncols) > 1) a(?) else a) ; a(ii)}
   
   /** Find non-zero linear indices */
   def find(a:FMat) = a.find  
@@ -307,8 +309,10 @@ object MatFunctions {
   /** Lexicographially sort descending with an index array, and return it. '''a''' is not modified */
   def isortlexdown(a:FMat):IMat = DenseMat.isortlex(a, false)
   def uniquerows(a:FMat):(FMat, IMat, IMat) = { val (ii, jj) = DenseMat.uniquerows2(a) ; (a(ii,?), ii, jj)}
-  def unique(a:FMat):(FMat, IMat, IMat) = {val (ii, jj) =	DenseMat.unique2(if (math.min(a.nrows,a.ncols) > 1) a(?) else a) ; (a(ii), ii, jj)}
   
+  def unique3(a:FMat):(FMat, IMat, IMat) = {val (ii, jj) =	DenseMat.unique2(if (math.min(a.nrows,a.ncols) > 1) a(?) else a) ; (a(ii), ii, jj)}
+  
+  def unique(a:FMat):(FMat) = {val (ii, jj) = DenseMat.unique2(if (math.min(a.nrows,a.ncols) > 1) a(?) else a) ; a(ii)}  
   
   /** Find non-zero linear indices */
   def find(a:IMat) = a.find 
@@ -358,9 +362,13 @@ object MatFunctions {
   /** Lexicographially sort with an index array, and return it. '''a''' is not modified */
   def isortlex(a:IMat):IMat = DenseMat.isortlex[Int](a, true)
   def isortlexdown(a:IMat):IMat = DenseMat.isortlex(a, false)
-//  def uniquerows(a:IMat):(IMat, IMat, IMat) = { val (ii, jj) = DenseMat.uniquerows2(a) ; (a(ii,?), ii, jj)}
-  def unique(a:IMat):(IMat, IMat, IMat) = {val (ii, jj) =	DenseMat.unique2(if (math.min(a.nrows,a.ncols) > 1) a(?) else a) ; (a(ii), ii, jj)}
   
+//  def uniquerows(a:IMat):(IMat, IMat, IMat) = { val (ii, jj) = DenseMat.uniquerows2(a) ; (a(ii,?), ii, jj)}
+  
+  def unique3(a:IMat):(IMat, IMat, IMat) = {val (ii, jj) = DenseMat.unique2(if (math.min(a.nrows,a.ncols) > 1) a(?) else a) ; (a(ii), ii, jj)}
+  
+  def unique(a:IMat):(IMat) = {val (ii, jj) = DenseMat.unique2(if (math.min(a.nrows,a.ncols) > 1) a(?) else a) ; a(ii)}
+
     /** Find non-zero linear indices */
   def find(a:LMat) = a.find  
   
@@ -1200,7 +1208,7 @@ object MatFunctions {
     		var dsum = 0.0f
     		val a0 = (c.ir(j)-ioff)*a.nrows
     		val b0 = i*a.nrows
-    		if (Mat.noMKL || a.nrows < 256) {
+    		if (!Mat.useMKL || a.nrows < 256) {
     			var k = 0
     			while (k < a.nrows) {
     				dsum += a.data(k + a0) * b.data(k + b0)
@@ -1284,7 +1292,7 @@ object MatFunctions {
     	  var k = 0
     	  val a0 = (c.ir(j)-ioff)*a.nrows
     	  val b0 = i*a.nrows
-    	  if (Mat.noMKL) {
+    	  if (!Mat.useMKL) {
     	    while (k < a.nrows) {
     	      dsum += a.data(k + a0) * b.data(k + b0)
     	      k += 1
