@@ -291,6 +291,38 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_somatcopy
 	(*env)->ReleaseStringUTFChars(env, j_order, order);
 }
 
+JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_iomatcopy
+(JNIEnv * env, jobject calling_obj, jstring j_order, jstring j_transA, jint M, jint N,
+ jintArray j_A, jint lda, jintArray j_B, jint ldb) {
+	char * order = (char *)(*env)->GetStringUTFChars(env, j_order, 0);
+	char * transA = (char *)(*env)->GetStringUTFChars(env, j_transA, 0);
+	jfloat * A = (*env)->GetPrimitiveArrayCritical(env, j_A, JNI_FALSE);
+	jfloat * B = (*env)->GetPrimitiveArrayCritical(env, j_B, JNI_FALSE);
+
+	mkl_somatcopy(order[0], transA[0], M, N, 1.0f, A, lda, B, ldb);
+
+	(*env)->ReleasePrimitiveArrayCritical(env, j_B, B, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_A, A, 0);
+	(*env)->ReleaseStringUTFChars(env, j_transA, transA);
+	(*env)->ReleaseStringUTFChars(env, j_order, order);
+}
+
+JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_lomatcopy
+(JNIEnv * env, jobject calling_obj, jstring j_order, jstring j_transA, jint M, jint N,
+ jlongArray j_A, jint lda, jlongArray j_B, jint ldb) {
+	char * order = (char *)(*env)->GetStringUTFChars(env, j_order, 0);
+	char * transA = (char *)(*env)->GetStringUTFChars(env, j_transA, 0);
+	jdouble * A = (*env)->GetPrimitiveArrayCritical(env, j_A, JNI_FALSE);
+	jdouble * B = (*env)->GetPrimitiveArrayCritical(env, j_B, JNI_FALSE);
+
+	mkl_domatcopy(order[0], transA[0], M, N, 1.0, A, lda, B, ldb);
+
+	(*env)->ReleasePrimitiveArrayCritical(env, j_B, B, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_A, A, 0);
+	(*env)->ReleaseStringUTFChars(env, j_transA, transA);
+	(*env)->ReleaseStringUTFChars(env, j_order, order);
+}
+
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_spermute
 (JNIEnv * env, jobject calling_obj, jint M, jint N, jint K, jfloatArray j_A, jfloatArray j_B) {
         int i, offset, step = M*N;

@@ -871,9 +871,9 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
   override def != (b : Float) = mat.gOp(GMat(b), omat, op_ne)
   override def * (b : Float) = mat.gOp(GMat(b), omat, op_mul)
   override def + (b : Float) = mat.gOp(GMat(b), omat, op_add)
-  def == (b : Int) = mat.gOp(GMat(b), omat, op_eq)
+  override def == (b : Int) = mat.gOp(GMat(b), omat, op_eq)
   def == (b : Double) = mat.gOp(GMat(b), omat, op_eq)
-  def != (b : Int) = mat.gOp(GMat(b), omat, op_ne)
+  override def != (b : Int) = mat.gOp(GMat(b), omat, op_ne)
   def != (b : Double) = mat.gOp(GMat(b), omat, op_ne)
 
   def ^* (b : GDSPair) = MatFunctions.DDS(mat, b.left, b.right, omat)

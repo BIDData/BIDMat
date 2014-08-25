@@ -223,6 +223,38 @@ abstract class Pair {
   def \ (b : Float):Mat = notImplemented0("\\")
   def on (b : Float):Mat = notImplemented0("on")
   
+  
+  def + (b : Int):Mat = notImplemented0("+")
+  def - (b : Int):Mat = notImplemented0("-")
+  def * (b : Int):Mat = notImplemented0("*")
+  def xT (b : Int):Mat = notImplemented0("xT")
+  def *^ (b : Int):Mat = notImplemented0("*^")
+  def Tx (b : Int):Mat = notImplemented0("Tx")
+  def ^* (b : Int):Mat = notImplemented0("*^")
+  def /< (b : Int):Mat = notImplemented0("/<")
+  def *@ (b : Int):Mat = notImplemented0("*@")
+  def ∘  (b : Int):Mat = notImplemented0("∘")
+  def /  (b : Int):Mat = notImplemented0("/")
+  def \\ (b : Int):Mat = notImplemented0("\\\\")
+  def ^ (b : Int):Mat = notImplemented0("^") 
+  def ◁ (b : Int):Mat = notImplemented0("◁")
+  def ▷ (b : Int):Mat = notImplemented0("▷")
+  def dot (b : Int):Mat = notImplemented0("dot")
+  def dotr (b : Int):Mat = notImplemented0("dotr")
+  def ∙ (b : Int):Mat = notImplemented0("dot")
+  def ∙→ (b : Int):Mat = notImplemented0("dotr")
+  
+  def > (b : Int):Mat = notImplemented0(">")
+  def < (b : Int):Mat = notImplemented0("<")
+  def >= (b : Int):Mat = notImplemented0(">=")
+  def <= (b : Int):Mat = notImplemented0("<=")
+  def == (b : Int):Mat = notImplemented0("==")
+  def === (b : Int):Mat = notImplemented0("===")
+  def != (b : Int):Mat = notImplemented0("!=")
+  
+  def \ (b : Int):Mat = notImplemented0("\\")
+  def on (b : Int):Mat = notImplemented0("on")
+  
 
 }
 

@@ -1,12 +1,25 @@
 package BIDMat
 
 import java.util.Arrays
+import edu.berkeley.bid.CBLAS._
 
 case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, data0) { 
   
   def size() = length;
   
-  override def t:IMat = IMat(gt(null))
+  override def t:IMat = tt(null)
+  
+  def t(omat:Mat):IMat = tt(omat)
+  
+  def tt(omat:Mat):IMat = {
+    val out = IMat.newOrCheckIMat(ncols, nrows, omat, GUID, "t".##)      
+    if (!Mat.useMKL) { 
+      gt(out)
+    } else {
+      iomatcopy("C", "T", nrows, ncols, data, nrows, out.data, ncols)
+    }
+    out
+  }
   
   override def dv:Double =
     if (nrows > 1 || ncols > 1) {
@@ -566,21 +579,23 @@ class IPair(val omat:Mat, val mat:IMat) extends Pair {
   def != (b : IMat) = mat.iiMatOpv(b, IMat.vecNEFun, omat) 
   
    
-  def * (b : Int) = mat.iMult(IMat.ielem(b), omat)
-  def + (b : Int) = mat.iiMatOpScalarv(b, IMat.vecAddFun, omat)
-  def - (b : Int) = mat.iiMatOpScalarv(b, IMat.vecSubFun, omat)
-  def *@ (b : Int) = mat.iiMatOpScalarv(b, IMat.vecMulFun, omat)
-  def ∘  (b : Int) = mat.iiMatOpScalarv(b, IMat.vecMulFun, omat)
-  def /  (b : Int) = mat.iiMatOpScalarv(b, IMat.vecDivFun, omat)
+  override def * (b : Int) = mat.iMult(IMat.ielem(b), omat)
+  override def + (b : Int) = mat.iiMatOpScalarv(b, IMat.vecAddFun, omat)
+  override def - (b : Int) = mat.iiMatOpScalarv(b, IMat.vecSubFun, omat)
+  override def *@ (b : Int) = mat.iiMatOpScalarv(b, IMat.vecMulFun, omat)
+  override def ∘  (b : Int) = mat.iiMatOpScalarv(b, IMat.vecMulFun, omat)
+  override def /  (b : Int) = mat.iiMatOpScalarv(b, IMat.vecDivFun, omat)
 //  override def /@ (b : Int) = mat.iiMatOpScalarv(b, IMat.fVecDiv _, omat)
 //  override def ^ (b : Int) = mat.iiMatOpScalar(b, (x:Float, y:Float) => math.pow(x,y).toFloat, omat)
 
-  def > (b : Int) = mat.iiMatOpScalarv(b, IMat.vecGTFun, omat)
-  def < (b : Int) = mat.iiMatOpScalarv(b, IMat.vecLTFun, omat)
-  def == (b : Int) = mat.iiMatOpScalarv(b, IMat.vecEQFun, omat)
-  def >= (b : Int) = mat.iiMatOpScalarv(b, IMat.vecGEFun, omat)
-  def <= (b : Int) = mat.iiMatOpScalarv(b, IMat.vecLEFun, omat)
-  def != (b : Int) = mat.iiMatOpScalarv(b, IMat.vecNEFun, omat) 
+  override def > (b : Int) = mat.iiMatOpScalarv(b, IMat.vecGTFun, omat)
+  override def < (b : Int) = mat.iiMatOpScalarv(b, IMat.vecLTFun, omat)
+  override def == (b : Int) = mat.iiMatOpScalarv(b, IMat.vecEQFun, omat)
+  override def >= (b : Int) = mat.iiMatOpScalarv(b, IMat.vecGEFun, omat)
+  override def <= (b : Int) = mat.iiMatOpScalarv(b, IMat.vecLEFun, omat)
+  override def != (b : Int) = mat.iiMatOpScalarv(b, IMat.vecNEFun, omat) 
+  
+
   
   /*
    * Specialize to FMat

@@ -1236,16 +1236,16 @@ class CPair (val omat:Mat, val mat:CMat) extends Pair {
   
   def == (b : Double) = mat.ccMatOp(CMat.celem(b.toFloat, 0), CMat.eqFun, omat)
   def != (b : Double) = mat.ccMatOp(CMat.celem(b.toFloat, 0), CMat.neFun, omat)
-  
-  def *  (b : Int) = mat.ccMatOpScalarv(b.toFloat, 0, CMat.vecMulFun, omat)
-  def +  (b : Int) = mat.ccMatOpScalarv(b.toFloat, 0, CMat.vecAddFun, omat)
-  def -  (b : Int) = mat.ccMatOpScalarv(b.toFloat, 0, CMat.vecSubFun, omat)
-  def *@ (b : Int) = mat.ccMatOpScalarv(b.toFloat, 0, CMat.vecMulFun, omat)
-  def ∘  (b : Int) = mat.ccMatOpScalarv(b.toFloat, 0, CMat.vecMulFun, omat)
-  def /  (b : Int) = mat.ccMatOpScalarv(b.toFloat, 0, CMat.vecDivFun, omat)
+   
+  override def *  (b : Int) = mat.ccMatOpScalarv(b.toFloat, 0, CMat.vecMulFun, omat)
+  override def +  (b : Int) = mat.ccMatOpScalarv(b.toFloat, 0, CMat.vecAddFun, omat)
+  override def -  (b : Int) = mat.ccMatOpScalarv(b.toFloat, 0, CMat.vecSubFun, omat)
+  override def *@ (b : Int) = mat.ccMatOpScalarv(b.toFloat, 0, CMat.vecMulFun, omat)
+  override def ∘  (b : Int) = mat.ccMatOpScalarv(b.toFloat, 0, CMat.vecMulFun, omat)
+  override def /  (b : Int) = mat.ccMatOpScalarv(b.toFloat, 0, CMat.vecDivFun, omat)
      
-  def == (b : Int) = mat.ccMatOp(CMat.celem(b.toFloat, 0), CMat.eqFun, omat)
-  def != (b : Int) = mat.ccMatOp(CMat.celem(b.toFloat, 0), CMat.neFun, omat)
+  override def == (b : Int) = mat.ccMatOp(CMat.celem(b.toFloat, 0), CMat.eqFun, omat)
+  override def != (b : Int) = mat.ccMatOp(CMat.celem(b.toFloat, 0), CMat.neFun, omat)
 
 }
 

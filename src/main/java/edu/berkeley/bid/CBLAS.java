@@ -53,6 +53,9 @@ public final class CBLAS {
   public static native  void dmcscm( int m, int n, double [] a, int lda, double [] b, int [] ir, int [] jc, double [] c, int ldc);
   public static native  void dmcsrm( int m, int n, double [] a, int lda, double [] b, int [] ir, int [] jc, double [] c, int ldc);
   
+  public static native  void iomatcopy( String Order, String TransA, int M, int N, int [] A, int lda, int [] B, int ldb);
+  public static native  void lomatcopy( String Order, String TransA, int M, int N, long [] A, int lda, long [] B, int ldb);
+  
   public static native  float sdot( int N,  float []  X,  int incX,  float []  Y,  int incY);
   public static native  float sdotxx( int N,  float []  X,  int startX,  float []  Y,  int startY);
   public static native  void sdotm( int nrows, int ncols, float []  X,  int ldx,  float []  Y,  int ldy, float [] Z);

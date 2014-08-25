@@ -1103,20 +1103,20 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   def <= (b : Double) = mat.ffMatOpScalarv(b.toFloat, FMat.vecLEFun, omat)
   def != (b : Double) = mat.ffMatOpScalarv(b.toFloat, FMat.vecNEFun, omat)
     
-  def * (b : Int) = mat.fDMult(FMat.elem(b), omat)
-  def + (b : Int) = mat.ffMatOpScalarv(b, FMat.vecAddFun, omat)
-  def - (b : Int) = mat.ffMatOpScalarv(b, FMat.vecSubFun, omat)
-  def *@ (b : Int) = mat.ffMatOpScalarv(b, FMat.vecMulFun, omat)
-  def ∘  (b : Int) = mat.ffMatOpScalarv(b, FMat.vecMulFun, omat)
-  def /  (b : Int) = mat.ffMatOpScalarv(b, FMat.vecDivFun, omat)
-  def ^ (b : Int) = mat.ffMatOpScalar(b, FMat.powFun, omat)
+  override def * (b : Int) = mat.fDMult(FMat.elem(b), omat)
+  override def + (b : Int) = mat.ffMatOpScalarv(b, FMat.vecAddFun, omat)
+  override def - (b : Int) = mat.ffMatOpScalarv(b, FMat.vecSubFun, omat)
+  override def *@ (b : Int) = mat.ffMatOpScalarv(b, FMat.vecMulFun, omat)
+  override def ∘  (b : Int) = mat.ffMatOpScalarv(b, FMat.vecMulFun, omat)
+  override def /  (b : Int) = mat.ffMatOpScalarv(b, FMat.vecDivFun, omat)
+  override def ^ (b : Int) = mat.ffMatOpScalar(b, FMat.powFun, omat)
 
-  def > (b : Int) = mat.ffMatOpScalarv(b, FMat.vecGTFun, omat)
-  def < (b : Int) = mat.ffMatOpScalarv(b, FMat.vecLTFun, omat)
-  def == (b : Int) = mat.ffMatOpScalarv(b, FMat.vecEQFun, omat)
-  def >= (b : Int) = mat.ffMatOpScalarv(b, FMat.vecGEFun, omat)
-  def <= (b : Int) = mat.ffMatOpScalarv(b, FMat.vecLEFun, omat)
-  def != (b : Int) = mat.ffMatOpScalarv(b, FMat.vecNEFun, omat)
+  override def > (b : Int) = mat.ffMatOpScalarv(b, FMat.vecGTFun, omat)
+  override def < (b : Int) = mat.ffMatOpScalarv(b, FMat.vecLTFun, omat)
+  override def == (b : Int) = mat.ffMatOpScalarv(b, FMat.vecEQFun, omat)
+  override def >= (b : Int) = mat.ffMatOpScalarv(b, FMat.vecGEFun, omat)
+  override def <= (b : Int) = mat.ffMatOpScalarv(b, FMat.vecLEFun, omat)
+  override def != (b : Int) = mat.ffMatOpScalarv(b, FMat.vecNEFun, omat)
   
   /*
    * Specialize to IMat
