@@ -15,7 +15,7 @@
 	<classpathentry kind="lib" path="lib/jcufft-0.5.5.jar"/>
 	<classpathentry kind="lib" path="lib/jcurand-0.5.5.jar"/>
 	<classpathentry kind="lib" path="lib/jcusparse-0.5.5.jar"/>
-	<classpathentry kind="lib" path="lib/jline-2.10.3.jar"/>
+	<classpathentry kind="lib" path="lib/jline-2.11.jar"/>
 	<classpathentry kind="lib" path="lib/scalacheck_2.10-1.10.0.jar"/>
 	<classpathentry kind="lib" path="lib/scalatest_2.10-2.0.jar"/>
 	<classpathentry kind="output" path="bin"/>

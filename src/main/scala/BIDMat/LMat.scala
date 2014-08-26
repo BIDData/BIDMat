@@ -585,7 +585,7 @@ case class LMat(nr:Int, nc:Int, data0:Array[Long]) extends DenseMat[Long](nr, nc
 
 class LPair(val omat:Mat, val mat:LMat) extends Pair {
   
-  override def t:LMat = LMat(mat.gt(omat))
+  override def t:LMat = mat.tt(omat)
   
   def * (b : LMat) = mat.iMult(b, omat) 
   def * (b : SMat) = mat.iMult(b, omat) 
