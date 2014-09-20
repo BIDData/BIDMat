@@ -7,8 +7,7 @@ export JAVA_OPTS="-Xmx14G -Xms128M -Dfile.encoding=UTF-8" # Set as much memory a
 BIDMAT_ROOT="${BASH_SOURCE[0]}"
 if [ ! `uname` = "Darwin" ]; then
   BIDMAT_ROOT=`readlink -f "${BIDMAT_ROOT}"`
-else 
-  BIDMAT_ROOT=`readlink "${BIDMAT_ROOT}"`
+else BIDMAT_ROOT=`readlink "${BIDMAT_ROOT}"`
 fi
 BIDMAT_ROOT=`dirname "$BIDMAT_ROOT"`
 BIDMAT_ROOT=`cd "$BIDMAT_ROOT";pwd`

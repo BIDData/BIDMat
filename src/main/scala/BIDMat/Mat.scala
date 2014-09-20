@@ -261,7 +261,7 @@ abstract class Pair {
 
 object Mat {
   import Ordered._
-  import jline.TerminalFactory
+  import scala.tools.jline.TerminalFactory
   
   var useCache = false						 // Use matrix caching
   
