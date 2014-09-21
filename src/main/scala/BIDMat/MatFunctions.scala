@@ -910,6 +910,11 @@ object MatFunctions {
     out
   }  
   
+  /**  Make an empty sparse matrix of ones of the given size. */
+  def spzeros(nr:Int, nc:Int):SMat = {
+    SMat(nr, nc, 0)
+  }
+  
   /** Make an integer row vector from a range. */
   def irow(x:Range):IMat = {
     val mat = IMat.newOrCheckIMat(1,x.length, null, x.##, "irow_range".##)
