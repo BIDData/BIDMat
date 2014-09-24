@@ -759,8 +759,8 @@ object HMat {
    
   // Load a file in ASCII LibSVM format
   // Outputs a data matrix first, and then a matrix of cat labels.
-  // Both are SMat since data can be sparse and there may be multiple labels per instance. 
-  def loadLibSVM(fname:String, nrows:Int, compressed:Int = 0):(SMat, IMat) = {
+  // data is an SMat, labels are integer, weights are FMat. 
+  def loadLibSVM(fname:String, nrows:Int, compressed:Int = 0):(SMat, IMat, FMat) = {
     var fin = new BufferedReader(new InputStreamReader (getInputStream(fname, compressed)));
     var firstline = fin.readLine();
     var parts = if (firstline != null) firstline.split("[\t ]+") else null;
@@ -775,6 +775,7 @@ object HMat {
     }
     var datamat = SMat(nrows, ncols, nnz);
     var cmat = IMat(1, ncols);
+    var wmat = ones(1, ncols);
     fin.close();
     fin = new BufferedReader(new InputStreamReader (getInputStream(fname, compressed)));
     firstline = fin.readLine();
@@ -784,7 +785,9 @@ object HMat {
     val ioneBased = Mat.ioneBased;
     datamat.jc(0) = ioneBased; 
     while (firstline != null && parts.length > 0) {
-      cmat.data(ncols) = parts(0).toInt;
+      val parts0 = parts(0).split(":");
+      cmat.data(ncols) = parts0(0).toInt;
+      if (parts0.length > 1) wmat.data(ncols) = parts0(1).toFloat;
       var i = 1;
       while (i < parts.length) {
         val pair = parts(i).split(":");
@@ -801,7 +804,7 @@ object HMat {
       datamat.jc(ncols) = nnz + ioneBased;
     }
     fin.close();
-    (datamat, cmat);    
+    (datamat, cmat, wmat);    
   }
    
   def testLoad(fname:String, varname:String, n:Int) = {
