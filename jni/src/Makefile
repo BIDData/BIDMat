@@ -3,7 +3,7 @@ include Makefile.incl
 MKL_OBJS=BIDMat_CBLAS.$(OBJ) BIDMat_UTILS.$(OBJ) BIDMat_SPBLAS.$(OBJ) BIDMat_LAPACK.$(OBJ) \
          BIDMat_VML.$(OBJ) BIDMat_VSL.$(OBJ)
 
-CUDA_OBJS=BIDMat_CUMAT.$(OBJ) MatKernel.$(OBJ)
+CUDA_OBJS=BIDMat_CUMAT.$(OBJ) MatKernel.$(OBJ) Logger.$(OBJ) JNIUtils.$(OBJ) PointerUtils.$(OBJ)
 
 .SUFFIXES: .$(OBJ) .c .cpp .cu
 
@@ -16,7 +16,7 @@ $(LIBPREPEND)bidmatcuda$(LIBAPPEND): $(CUDA_OBJS)
 	$(GLD) $(LDFLAGS) $(CUDA_OBJS) $(CUDA_LIBS) $(OUTFLG)$@
 
 %.$(OBJ) : %.c
-	$(CC) $(LAPACK_INCLUDES) $(CFLAGS) $*.c
+	$(CC) $(CFLAGS) $(LAPACK_INCLUDES) $*.c
 
 %.$(OBJ) : %.cpp
 	$(GCC) $(CPPFLAGS) $(LAPACK_INCLUDES) $*.cpp
@@ -34,5 +34,5 @@ clean:
 	rm -f *.$(OBJ) *$(LIBAPPEND) *.pdb *.exp *.lib
 
 distclean: clean
-	rm -f *$(LIBAPPEND) *.exp *.lib *.jnilib Makefile.incl
+	rm -f *.jnilib Makefile.incl
 
