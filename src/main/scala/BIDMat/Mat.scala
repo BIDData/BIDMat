@@ -88,6 +88,9 @@ class Mat(nr:Int, nc:Int) {
   def update(a:Mat, b:Int, v:Mat):Mat = notImplemented0("block update");
   def update(a:Int, b:Mat, v:Mat):Mat = notImplemented0("block update");
   
+  def update(inds:IMat, b:Int):Mat = notImplemented0{"uniform assignment: Int"};
+  def update(inds:IMat, b:Float):Mat = notImplemented0{"uniform assignment: Float"};
+  
   def unary_-():Mat = notImplemented1("-", this)
   def +  (b : Mat):Mat = notImplemented1("+", b)
   def -  (b : Mat):Mat = notImplemented1("-", b)
