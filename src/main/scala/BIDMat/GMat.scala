@@ -564,9 +564,10 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     }  
   }
   
-  def free() = {
+  override def free() = {
     JCublas.cublasFree(data)
-    data = null
+    data = null;
+    this
   }
   
   override def finalize = {
@@ -1339,7 +1340,30 @@ object GMat {
   }
 
   def extractmat(c: GIMat):(GIMat, GMat) = extractmat(null, null, c);
-
+  
+ 
+  // sort some indices on the GPU. Output to the input arrays. Also moves the contents of a secondary array. 
+  // This can be used to build SMats from row, column, value arrays.
+  def sortInds(ii:IMat, jj:IMat, vals:Mat, asc:Int):Unit = {
+    val inds = ii \ jj;
+    val ginds = GIMat(inds);
+    val gindst = ginds.t;
+    val (gvals, gdata) = vals match {
+      case ivals:IMat => {val gd = GIMat(ivals); (gd, gd.data) }
+      case fvals:FMat => {val gd = GMat(fvals); (gd, gd.data) }
+    }
+    CUMAT.lsortk(gindst.data, gdata, ginds.length/2, asc);
+    ginds ~ gindst t;
+    inds <-- ginds
+    vals <-- gvals
+    ii <-- inds(MatFunctions.?,0)
+    jj <-- inds(MatFunctions.?,1)
+    gvals.free
+    gindst.free
+    ginds.free
+  }
+  
+  def sortInds(ii:IMat, jj:IMat, vals:Mat):Unit = sortInds(ii, jj, vals, 1)
   
   def GPUmult(a:FMat, b:FMat, omat:Mat, btrans:Boolean):FMat = {
     val bnrows = if (btrans) b.ncols else b.nrows

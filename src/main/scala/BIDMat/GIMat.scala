@@ -348,8 +348,9 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     }
   }
   
-  def free() = {
-    JCublas.cublasFree(data)
+  override def free() = {
+    JCublas.cublasFree(data);
+    this
   }
   
   override def unary_- () = GIop(GIMat(-1), null, 2)

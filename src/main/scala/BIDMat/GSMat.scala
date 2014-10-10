@@ -111,12 +111,13 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
   
   def full():GMat = full(null):GMat
   
-  def free() = {
+  override def free() = {
     JCublas.cublasFree(data)
     JCublas.cublasFree(ic)
     JCublas.cublasFree(ir)
     JCublas.cublasFree(jc)
     cudaDeviceSynchronize
+    this
   }
   
   override def recycle(nr:Int, nc:Int, nnzx:Int):GSMat = {

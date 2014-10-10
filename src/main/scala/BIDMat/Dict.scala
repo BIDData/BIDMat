@@ -422,7 +422,7 @@ object IDict {
   	}
   }
   
-  def treeMerge(aa:Array[IDict]):IDict = {
+  def treeMerge(aa:Array[IDict], thresholds:IMat = null):IDict = {
     var n = 1
     var ll = 0
     while (n <= aa.length) {n *= 2; ll += 1}
@@ -432,9 +432,10 @@ object IDict {
       var dd = aa(i)
       var j = 0 
       while (tree(j) != null) {
-        dd = merge2(tree(j), dd)
-        tree(j) = null
-        j += 1
+	  val thresh = if (thresholds == null) 0 else if (thresholds.length > 1) thresholds(j) else thresholds(0);
+	  dd = merge2(tree(j), dd, thresh);
+	  tree(j) = null;
+	  j += 1;
       }
       tree(j) = dd
       i += 1
@@ -448,37 +449,39 @@ object IDict {
     dd
   }
   
-  def treeAdd(x:IDict, tree:Array[IDict]) = {
+  def treeAdd(x:IDict, tree:Array[IDict], thresholds:IMat=null) = {
     if (x != null) {
     	var dd = x
     	var j = 0 
     	while (tree(j) != null) {
-    		dd = merge2(tree(j), dd)
-    		tree(j) = null
-    		j += 1
+	    val thresh = if (thresholds == null) 0 else if (thresholds.length > 1) thresholds(j) else thresholds(0);
+	    dd = merge2(tree(j), dd, thresh);
+	    tree(j) = null;
+	    j += 1;
     	}
     	tree(j) = dd
     }
   }
   
-  def treeFlush(tree:Array[IDict]):IDict = {
-    var j = 0
-    var dd:IDict = null
+  def treeFlush(tree:Array[IDict], thresholds:IMat = null):IDict = {
+    var j = 0;
+    var dd:IDict = null;
     while (j < tree.length) {
     	if (tree(j) != null) {
-    	  if (dd != null) {
-    	  	dd = merge2(tree(j), dd)
-    	  } else {
-    	    dd = tree(j)
-    	  }
-    	  tree(j) = null
+	    if (dd != null) {
+		val thresh = if (thresholds == null) 0 else if (thresholds.length > 1) thresholds(j) else thresholds(0);
+    	  	dd = merge2(tree(j), dd, thresh);
+	    } else {
+		dd = tree(j);
+	    }
+	    tree(j) = null;
     	}
-    	j += 1
+    	j += 1;
     }
-    dd
+    dd;
   }
   
-  def merge2(ad:IDict, bd:IDict):(IDict) = {
+  def merge2(ad:IDict, bd:IDict, threshold:Int = 0):(IDict) = {
     val a = ad.grams
     val ac = ad.counts
     val b = bd.grams
@@ -538,7 +541,7 @@ object IDict {
       j += 1
       nout += 1
     }
-    IDict(out, cout)
+    IDict(out, cout, threshold)
   }
   
   def union(dicts:Array[IDict]):IDict = {
