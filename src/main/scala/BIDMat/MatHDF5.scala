@@ -6,7 +6,7 @@ import scala.reflect._
 
 object MatHDF5 {
   
-	var refcount:Long = -1;
+  var refcount:Long = -1;
 
   def setCompressionPlist(dplist_id:Int, dims:Array[Long]) = {
   	if (Mat.compressType > 0) {
@@ -323,7 +323,7 @@ object MatHDF5 {
   }
 
   def putFND(fid:Int, a:FND, aname:String, h5class:Int, matclass:String):Array[Byte] = {
-  	val dims = a.dims.map(_.toLong);
+  	val dims = a.dims.data.map(_.toLong);
   	val filespace_id = H5Screate_simple(dims.length, dims, null);
   	val dplist_id = H5Pcreate(H5P_DATASET_CREATE);
   	//  setCompressionPlist(dplist_id, dims);

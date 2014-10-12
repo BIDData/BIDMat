@@ -403,8 +403,9 @@ object HMat {
     val mnum = magicnum(0);
     val mtype = (mnum >>> 8) & 0xff;
     val ndims = mnum & 0xff;
-    val dims = new Array[Int](ndims);
-    readSomeInts(gin, dims, bytebuff, ndims);
+    val idims = new Array[Int](ndims);
+    readSomeInts(gin, idims, bytebuff, ndims);
+    val dims = idims.reverse
     val length = dims.reduce(_*_);
     val result = mtype match {
       case 0xD => {

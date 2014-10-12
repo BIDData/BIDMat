@@ -543,7 +543,7 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
   def reduce(inds:Array[Int], fctn:(FMat)=>FMat, opname:String):FND = {
     val alldims = izeros(_dims.length,1)
     val xinds = new IMat(inds.length, 1, inds)
-    val xdims = new IMat(_dims.length, 1, dims)
+    val xdims = new IMat(_dims.length, 1, _dims)
     alldims(xinds) = 1
     if (SciFunctions.sum(alldims).v != inds.length) {
       throw new RuntimeException(opname+ " indices arent a legal subset of dims")
@@ -630,7 +630,7 @@ object FND {
   }
   
   def newOrCheckFND(dims:Array[Int], out:ND):FND = {
-    if (out.asInstanceOf[AnyRef] != null && ND.checkDims("FND newOrCheckFND: ", out.dims, dims)) {
+    if (out.asInstanceOf[AnyRef] != null && ND.checkDims("FND newOrCheckFND: ", out.dims.data, dims)) {
     	out.asInstanceOf[FND]
     } else {
       FND(dims)

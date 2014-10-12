@@ -15,7 +15,7 @@ abstract class ND(protected val _dims:Array[Int]) {
 
   final val length = _dims.reduce(_*_)
   
-  def dims = _dims.clone
+  def dims = new IMat(1, _dims.length, _dims.clone)
   
   def dim(i:Int):Int = _dims(i)
 
@@ -98,6 +98,8 @@ object ND {
     }
     return true
   }
+  
+  def checkDims(fname:String, dims1:IMat, dims2:IMat):Boolean = checkDims(fname, dims1.data, dims2.data);
   
   def trimDims(dims:Array[Int]):Array[Int] = {
     var nd = 0;
@@ -201,7 +203,7 @@ object ND {
   	MurmurHash3.MurmurHash3_x64_64(inds.map(_.toLong), 0x3142341)
   }
   
-  def linearize(inds:Array[Int], dims:Array[Int]):Int = {
+  def linearize(inds:Array[Int], dims:IMat):Int = {
     if (inds.length != dims.length) {
       throw new RuntimeException("Dimension of indices dont match array dimension")
     }
