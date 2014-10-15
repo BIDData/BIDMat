@@ -1886,7 +1886,7 @@ __global__ void __maxming(T *in, T *out, int *outi, int *jc, int nrows, int ncol
   __shared__ int maxi[32];
   T vmax, vtmp;
   int imax, itmp, i, k, start, end, ij;
-  int bid = blockIdx.y + blockIdx.z * blockDim.y;
+  int bid = blockIdx.y + blockIdx.z * gridDim.y;
 
   if (bid < ncols) {
     for (ij = blockIdx.x; ij < m; ij += gridDim.x) {
@@ -1954,7 +1954,7 @@ __global__ void __maxmini_cols(T *in, T *out, int *outi, int nrows, int ncols, T
   __shared__ int maxi[32];
   T vmax, vtmp;
   int imax, itmp, i, k;
-  int bid = blockIdx.y + blockIdx.z * blockDim.y;
+  int bid = blockIdx.x + blockIdx.y * gridDim.x;
 
   if (bid < ncols) {
     vmax = maxminv;
@@ -2010,6 +2010,7 @@ __global__ void __maxmini_cols(T *in, T *out, int *outi, int nrows, int ncols, T
         outi[bid] = imax;
       }
     }
+    __syncthreads();
   }
 }
 
@@ -2095,11 +2096,13 @@ int maxming(T *in, T *out, int *outi, int *jc, int nrows, int ncols, int m, T mi
   return err;
 }
 
+// JFC: problem here ncols a non-multiple of 16, and nrows < 32. 
+
 template<class T>
 int maxmini_cols(T *in, T *out, int *outi, int nrows, int ncols, T minv, int dir) {
   int nc1, nc2;
   setinds(ncols, nc1, nc2);
-  dim3 grid(1, nc1, nc2);
+  dim3 grid(nc1, nc2, 1);    
   int ny = min(32, 1+nrows/32);
   dim3 tblock(32, ny, 1);
   __maxmini_cols<T><<<grid,tblock>>>(in, out, outi, nrows, ncols, minv, dir);
