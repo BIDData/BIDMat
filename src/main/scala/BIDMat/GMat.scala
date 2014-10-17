@@ -1353,7 +1353,7 @@ object GMat {
       case fvals:FMat => {val gd = GMat(fvals); (gd, gd.data) }
     }
     CUMAT.lsortk(gindst.data, gdata, ginds.length/2, asc);
-    ginds ~ gindst t;
+    (ginds ~ gindst).t;
     inds <-- ginds
     vals <-- gvals
     ii <-- inds(MatFunctions.?,0)

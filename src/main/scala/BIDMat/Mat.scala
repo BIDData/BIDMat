@@ -265,7 +265,11 @@ abstract class Pair {
 
 object Mat {
   import Ordered._
-  import scala.tools.jline.TerminalFactory
+  import scala.tools.jline.TerminalFactory;
+
+  var terminal = TerminalFactory.create;
+  
+  def terminalWidth = math.max(terminal.getWidth,80);
   
   var useCache = false						 // Use matrix caching
   
@@ -276,10 +280,6 @@ object Mat {
   var useMKL:Boolean = true        // Use MKL libs
   
   var debugMem = false             // Debug GPU mem calls
-   
-  var terminal = TerminalFactory.create
-  
-  def terminalWidth = math.max(terminal.getWidth,80)
   
   var compressType = 1             // For HDF5 I/O, 0=none, 1=zlib, 2=szip
   
