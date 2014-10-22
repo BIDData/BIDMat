@@ -470,7 +470,7 @@ object Mat {
     	case e:Throwable =>  {
     		println("Couldnt load CUDA runtime")
     		hasCUDA = -1    		
-                e.printStackTrace
+        e.printStackTrace
     	}
     	}
     	if (hasCUDA >= 0) {
@@ -480,7 +480,7 @@ object Mat {
     	  case e:Throwable =>  {
     	    println("Couldnt load JCuda")
     	    hasCUDA = -1            
-            e.printStackTrace
+          e.printStackTrace
     	  }
     	  }
     	}
@@ -499,26 +499,26 @@ object Mat {
     		}
     	} catch {
     	case e:NoClassDefFoundError => {
-            println("Couldn't load the JCUDA driver")
-            e.printStackTrace
-        }
+        println("Couldn't load the JCUDA driver")
+        e.printStackTrace
+      }
     	case e:Exception => {
-            println("Exception while initializing JCUDA driver")
-            e.printStackTrace
-        }
+        println("Exception while initializing JCUDA driver")
+        e.printStackTrace
+      }
     	case e:Throwable => {
-            println("Something went wrong while loading JCUDA driver")
-            e.printStackTrace
-        }
+        println("Something went wrong while loading JCUDA driver")
+        e.printStackTrace
+      }
     	}
     	if (hasCUDA > 0) {
     	  try {
     	    jcuda.LibUtils.loadLibrary("bidmatcuda")
     	  } catch {
     	  case e:Throwable => {
-              println("Something went wrong while loading BIDMat CUDA library")
-              e.printStackTrace
-          }
+          println("Something went wrong while loading BIDMat CUDA library")
+          e.printStackTrace
+        }
     	  }
     	}
     }
