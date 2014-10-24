@@ -76,21 +76,52 @@ class Mat(nr:Int, nc:Int) {
   def update(a:IMat, b:Int, m:Mat) = notImplemented0("block update");	
   def update(a:Int, b:IMat, m:Mat) = notImplemented0("block update");
   
+  def update(a:IMat, b:Int) = notImplemented0("linear update");
+  def update(a:IMat, b:IMat, c:Int) = notImplemented0("block update");
+  def update(a:IMat, b:Int, c:Int) = notImplemented0("block update");   
+  def update(a:Int, b:IMat, c:Int) = notImplemented0("block update");
+  
+  def update(a:IMat, b:Float) = notImplemented0("linear update");
+  def update(a:IMat, b:IMat, c:Float) = notImplemented0("block update");
+  def update(a:IMat, b:Int, c:Float) = notImplemented0("block update");   
+  def update(a:Int, b:IMat, c:Float) = notImplemented0("block update");
+  
   def update(a:GIMat, b:Mat) = notImplemented0("linear update");
   def update(a:GIMat, b:GIMat, m:Mat) = notImplemented0("block update");
   def update(a:GIMat, b:Int, m:Mat) = notImplemented0("block update");	
   def update(a:Int, b:GIMat, m:Mat) = notImplemented0("block update");
-  
   def update(a:GIMat, b:IMat, m:Mat) = notImplemented0("block update");
   def update(a:IMat, b:GIMat, m:Mat) = notImplemented0("block update");
+  
+  def update(a:GIMat, b:Int) = notImplemented0("linear update");
+  def update(a:GIMat, b:GIMat, c:Int) = notImplemented0("block update");
+  def update(a:GIMat, b:Int, c:Int) = notImplemented0("block update");  
+  def update(a:Int, b:GIMat, c:Int) = notImplemented0("block update");
+  def update(a:GIMat, b:IMat, c:Int) = notImplemented0("block update");
+  def update(a:IMat, b:GIMat, c:Int) = notImplemented0("block update");
+  
+  def update(a:GIMat, b:Float) = notImplemented0("linear update");
+  def update(a:GIMat, b:GIMat, c:Float) = notImplemented0("block update");
+  def update(a:GIMat, b:Int, c:Float) = notImplemented0("block update");  
+  def update(a:Int, b:GIMat, c:Float) = notImplemented0("block update");
+  def update(a:GIMat, b:IMat, c:Float) = notImplemented0("block update");
+  def update(a:IMat, b:GIMat, c:Float) = notImplemented0("block update");
   
   def update(a:Mat, v:Mat):Mat = notImplemented0("linear update");
   def update(a:Mat, b:Mat, v:Mat):Mat = notImplemented0("block update");
   def update(a:Mat, b:Int, v:Mat):Mat = notImplemented0("block update");
   def update(a:Int, b:Mat, v:Mat):Mat = notImplemented0("block update");
   
-  def update(inds:IMat, b:Int):Mat = notImplemented0{"uniform assignment: Int"};
-  def update(inds:IMat, b:Float):Mat = notImplemented0{"uniform assignment: Float"};
+  def update(a:Mat, v:Int):Mat = notImplemented0("linear update");
+  def update(a:Mat, b:Mat, v:Int):Mat = notImplemented0("block update");
+  def update(a:Mat, b:Int, v:Int):Mat = notImplemented0("block update");
+  def update(a:Int, b:Mat, v:Int):Mat = notImplemented0("block update");
+  
+  def update(a:Mat, v:Float):Mat = notImplemented0("linear update");
+  def update(a:Mat, b:Mat, v:Float):Mat = notImplemented0("block update");
+  def update(a:Mat, b:Int, v:Float):Mat = notImplemented0("block update");
+  def update(a:Int, b:Mat, v:Float):Mat = notImplemented0("block update");
+  
   
   def unary_-():Mat = notImplemented1("-", this)
   def +  (b : Mat):Mat = notImplemented1("+", b)

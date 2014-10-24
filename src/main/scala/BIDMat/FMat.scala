@@ -112,7 +112,9 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
 
   def update(i:Int, jv:IMat, b:FMat):FMat = FMat(_update(IMat.ielem(i), jv, b))
   
-  override def update(inds:IMat, b:Int):Mat = FMat(update(inds, b.toFloat))
+//  override def update(inds:IMat, b:Int):Mat = FMat(_update(inds, b.toFloat))
+  
+//  override def update(inds:IMat, b:Float):Mat = FMat(_update(inds, b))
   
   override def update(iv:IMat, b:Mat):FMat = FMat(_update(iv, b.asInstanceOf[FMat]))
   

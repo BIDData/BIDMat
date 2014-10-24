@@ -57,6 +57,9 @@ object SciFunctions {
   def resetGPU = {
     JCuda.cudaDeviceReset
     initCUDArng(getGPU)
+    GSMat.cusparseContextsInitialized = false
+    GSMat.cusparseDescrsInitialized = false
+    Mat.clearCaches
   }
   
   def resetGPUs = {

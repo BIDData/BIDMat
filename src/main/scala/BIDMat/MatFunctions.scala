@@ -129,6 +129,12 @@ object MatFunctions {
     out
   }
   
+  def threadPool(n:Int = Mat.numThreads):scala.concurrent.ExecutionContextExecutor = {
+    import scala.concurrent.ExecutionContext
+    import java.util.concurrent.Executors
+    ExecutionContext.fromExecutor(Executors.newFixedThreadPool(n));
+  }
+  
   def recycleTry(a:Mat, nr:Int, nc:Int, b:FMat, nnz:Int):FMat = recycleTry(a, nr, nc, b:Mat, nnz).asInstanceOf[FMat]
   
   def recycleTry(a:Mat, nr:Int, nc:Int, b:DMat, nnz:Int):DMat = recycleTry(a, nr, nc, b:Mat, nnz).asInstanceOf[DMat]
