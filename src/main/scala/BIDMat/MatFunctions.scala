@@ -1509,6 +1509,8 @@ object MatFunctions {
   
   def cols2sparse(rows:IMat, cols:IMat, values:FMat):SMat = cols2sparse(rows, cols, values, true, 0)
   
+  def union(dd:Dict*) = Dict._union(dd:_*)
+  
   def load[T](fname:String, vname:String):T = MatHDF5.hload(fname, vname).asInstanceOf[T]
 
   def load[A,B](fname:String, v1:String, v2:String):(A,B) = {
@@ -1564,6 +1566,9 @@ object MatFunctions {
   
   def loadIDX(fname:String, compressed:Int) = HMat.loadIDX(fname, compressed)
   def loadIDX(fname:String) = HMat.loadIDX(fname, 0)
+  
+  def loadLibSVM(fname:String, nrows:Int, compressed:Int) = HMat.loadLibSVM(fname, nrows, compressed)
+  def loadLibSVM(fname:String, nrows:Int) = HMat.loadLibSVM(fname, nrows, 0)
 
   final val ? = new IMatWildcard
 }
