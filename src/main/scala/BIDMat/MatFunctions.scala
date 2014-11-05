@@ -1337,6 +1337,7 @@ object MatFunctions {
       i += 1
     }
   }
+  
   def mapfun2x1(fn:(Float, Float)=>Float, in0:FMat, in1:FMat, out0:FMat) = {
     if (in0.nrows != in1.nrows || in0.nrows != out0.nrows ||
         in0.ncols != in1.ncols || in0.ncols != out0.ncols) {

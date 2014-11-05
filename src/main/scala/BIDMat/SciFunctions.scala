@@ -194,14 +194,14 @@ object SciFunctions {
   
   def rand(out:FMat):FMat = rand(0.0f, 1.0f, out)
 
-  def grand(out:GMat, nr:Int, nc:Int):GMat = {
+  def grand(nr:Int, nc:Int, out:GMat):GMat = {
     Mat.nflops += 10L*out.length
     curandGenerateUniform(cudarng(getGPU), out.data, out.length)
     JCuda.cudaDeviceSynchronize()
     out
   }
   
-  def grand(out:GMat):GMat = grand(out, out.nrows, out.ncols)
+  def grand(out:GMat):GMat = grand(out.nrows, out.ncols, out)
   
   def grand(nr:Int, nc:Int):GMat = {
     val out = GMat(nr, nc)
@@ -1746,6 +1746,11 @@ object SciFunctions {
     val v = dens*math.log(dens)
     sprand(nrows, ncols, simplePowerLaw(nrows), simplePowerLaw((math.max(dens, dens*math.log(v))).toInt))
   }
+  
+  /**
+   * histc takes a sorted a and b, and returns an IMat "out" of size b.length s.t. out(i) is the count of 
+   * elements < b(i+1), and >= b(i) if i > 0. 
+   */
 
   def histc(a:DMat, b:DMat):IMat = {
     val out = IMat(b.length, 1)
@@ -1754,15 +1759,15 @@ object SciFunctions {
     var j = 0
     while (j < a.length) {
       if (i >= b.length-1 || a.data(j) < b.data(i+1)) {
-  	hc += 1
+        hc += 1;
       } else {
-  	out.data(i) = hc
-  	hc = 0
-  	i += 1
+        out.data(i) = hc;
+        hc = 1;
+        i += 1;
       };
-      j += 1
+      j += 1;
     }
-    out.data(b.length-1) = hc
+    out.data(i) = hc;
     out
   }
   
@@ -1796,6 +1801,33 @@ object SciFunctions {
     var nc:IMat = histc(fp, 0.0f \ xvals);
     var loci = max(cumsum(nc(0 until nxvals)), 1);
     val curve = (0.0 on tp(loci-1, 0))*(1.0/npos)
+    curve
+  }
+  
+   def roc2(score:DMat, vpos0:DMat, vneg0:DMat, nxvals:Int):DMat = {
+    import BIDMat.MatFunctions._
+    val (vv, ii) = sortdown2(score);
+    val vpos = vpos0(ii);
+    val vneg = vneg0(ii);
+    val n = vpos.nrows;
+    if (nnz(vneg < 0.0) + nnz(vpos < 0.0) > 0) {
+      sys.error("ROCcurve assumes vneg & vpos >= 0");
+    };
+
+    val tp = cumsum(vpos);
+    val fp = cumsum(vneg);
+    val npos = tp(n-1,0);
+    val nneg = fp(n-1,0);
+    val xvals = row(0 to nxvals)*(1f*nneg/nxvals)
+    var i = 0
+    val curve = dzeros(nxvals+1, score.ncols);
+    while (i < score.ncols) {
+      val nc = histc(fp(?,i), xvals);
+      val loci = cumsum(nc);
+      val tp0 = 0 on tp(?,i);
+      curve(?,i) = (0.0 on tp0(loci, 0))*(1.0/npos)
+      i += 1
+    }
     curve
   }
   
