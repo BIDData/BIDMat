@@ -1804,12 +1804,17 @@ object SciFunctions {
     curve
   }
   
+  /**
+   * ROC curve function for multiple scores. Each column of "score" represents an ordering. 
+   * A ROC curve is computed for each column. 
+   */
+  
    def roc2(score:DMat, vpos0:DMat, vneg0:DMat, nxvals:Int):DMat = {
     import BIDMat.MatFunctions._
     val (vv, ii) = sortdown2(score);
     val vpos = vpos0(ii);
     val vneg = vneg0(ii);
-    val n = vpos.nrows;
+    val n = score.nrows;
     if (nnz(vneg < 0.0) + nnz(vpos < 0.0) > 0) {
       sys.error("ROCcurve assumes vneg & vpos >= 0");
     };
@@ -1818,15 +1823,15 @@ object SciFunctions {
     val fp = cumsum(vneg);
     val npos = tp(n-1,0);
     val nneg = fp(n-1,0);
-    val xvals = row(0 to nxvals)*(1f*nneg/nxvals)
-    var i = 0
+    val xvals = row(0 to nxvals)*(1f*nneg/nxvals);
+    var i = 0;
     val curve = dzeros(nxvals+1, score.ncols);
     while (i < score.ncols) {
       val nc = histc(fp(?,i), xvals);
       val loci = cumsum(nc);
       val tp0 = 0 on tp(?,i);
-      curve(?,i) = (0.0 on tp0(loci, 0))*(1.0/npos)
-      i += 1
+      curve(?,i) = (0.0 on tp0(loci, 0))*(1.0/npos);
+      i += 1;
     }
     curve
   }
