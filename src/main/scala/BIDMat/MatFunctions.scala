@@ -220,6 +220,12 @@ object MatFunctions {
   /** Accumulate (row, value) tuples from inds \\ vals. nr is row bound. Assumes 1 column */
   def accum(inds:IMat, vals:DMat, nr:Int) = DMat(DenseMat.accum(inds, vals, nr, 1))
   
+  /** Accumulate (row, col, value) tuples from inds \\ vals. nr and nc are row and column bounds */
+  def accum(inds:IMat, v:Double, nr:Int, nc:Int) = DMat(DenseMat.accum(inds, v, nr, nc))
+  
+  /** Accumulate (row, value) tuples from inds \\ vals. nr is row bound. Assumes 1 column */
+  def accum(inds:IMat, v:Double, nr:Int) = DMat(DenseMat.accum(inds, v, nr, 1))
+  
   /** Sort a set of key/ind pairs ascending. */
   def sort(a:DMat, ind:Int):DMat = DMat(DenseMat.sort(a, ind, true))
   
@@ -279,6 +285,12 @@ object MatFunctions {
   /** Accumulate (row, col, value) tuples from inds \\ vals. nr is row and bounds, ncols = 1 */
   def accum(inds:IMat, vals:FMat, nr:Int) = FMat(DenseMat.accum(inds, vals, nr, 1))
   
+  /** Accumulate (row, col, value) tuples from inds \\ vals. nr and nc are row and column bounds */
+  def accum(inds:IMat, v:Float, nr:Int, nc:Int) = FMat(DenseMat.accum(inds, v, nr, nc))
+  
+  /** Accumulate (row, col, value) tuples from inds \\ vals. nr is row and bounds, ncols = 1 */
+  def accum(inds:IMat, v:Float, nr:Int) = FMat(DenseMat.accum(inds, v, nr, 1))
+  
   /** Sort a set of keys ascending along a given direction '''dir''': 1=columns, 2=rows, 0=smart. */
   def sort(keys:FMat, dir:Int):FMat = FMat(DenseMat.sort(keys, dir, true))
   
@@ -335,6 +347,12 @@ object MatFunctions {
   /** Accumulate (row, col, value) tuples from inds \\ vals. nr is row and bounds, ncols = 1 */
   def accum(inds:IMat, vals:IMat, nr:Int) = IMat(DenseMat.accum(inds, vals, nr, 1))
   
+  /** Accumulate (row, col, value) tuples from inds \\ vals. nr and nc are row and column bounds */
+  def accum(inds:IMat, v:Int, nr:Int, nc:Int) = IMat(DenseMat.accum(inds, v, nr, nc))
+  
+  /** Accumulate (row, col, value) tuples from inds \\ vals. nr is row and bounds, ncols = 1 */
+  def accum(inds:IMat, v:Int, nr:Int) = IMat(DenseMat.accum(inds, v, nr, 1))
+  
   /** Sort a set of key/ind pairs ascending. */
   def sort(a:IMat, ind:Int):IMat = IMat(DenseMat.sort(a, ind, true))
   
@@ -389,6 +407,12 @@ object MatFunctions {
   
   /** Accumulate (row, col, value) tuples from inds \\ vals. nr is row and bounds, ncols = 1 */
   def accum(inds:IMat, vals:LMat, nr:Int) = LMat(DenseMat.accum(inds, vals, nr, 1))
+  
+  /** Accumulate (row, col, value) tuples from inds \\ vals. nr and nc are row and column bounds */
+  def accum(inds:IMat, v:Long, nr:Int, nc:Int) = LMat(DenseMat.accum(inds, v, nr, nc))
+  
+  /** Accumulate (row, col, value) tuples from inds \\ vals. nr is row and bounds, ncols = 1 */
+  def accum(inds:IMat, v:Long, nr:Int) = LMat(DenseMat.accum(inds, v, nr, 1))
   
   /** Sort a set of keys ascending along a given direction '''dir''': 1=columns, 2=rows, 0=smart. */
   def sort(keys:LMat, dir:Int):LMat = LMat(DenseMat.sort(keys, dir, true))

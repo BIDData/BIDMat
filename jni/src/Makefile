@@ -9,6 +9,9 @@ CUDA_OBJS=BIDMat_CUMAT.$(OBJ) MatKernel.$(OBJ) Logger.$(OBJ) JNIUtils.$(OBJ) Poi
 
 all: $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(LIBPREPEND)bidmatmkl$(LIBAPPEND) 
 
+BIDMat_UTILS.$(OBJ): BIDMat_UTILS.cpp
+	$(CC) $(CFLAGS) $(LAPACK_INCLUDES) BIDMat_UTILS.cpp
+
 $(LIBPREPEND)bidmatmkl$(LIBAPPEND): $(MKL_OBJS)
 	$(LD) $(LDFLAGS) $(MKL_OBJS) $(MKL_LIBS) $(OUTFLG)$@
 

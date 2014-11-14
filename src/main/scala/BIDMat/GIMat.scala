@@ -317,7 +317,7 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   }
 
   def copyFrom(in:IMat):GIMat = {
-    JCublas.cublasSetVector(nrows*ncols, Sizeof.INT, Pointer.to(in.data), 1, data, 1)
+    cudaMemcpy(data, Pointer.to(in.data), nrows*ncols*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice);
     cudaDeviceSynchronize()
     this
   }
@@ -498,7 +498,8 @@ object GIMat {
     case _ => {
     	val retv = GIMat.newOrCheckGIMat(a.nrows, a.ncols, null, a.GUID, "GIMat".##)
     	val rsize = a.nrows*a.ncols
-    	JCublas.cublasSetVector(rsize, Sizeof.INT, Pointer.to(a.data), 1, retv.data, 1);
+    	cudaMemcpy(retv.data, Pointer.to(a.data), rsize*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+    	cudaDeviceSynchronize()
     	retv
       }
     }

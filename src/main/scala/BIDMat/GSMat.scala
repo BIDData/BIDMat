@@ -157,8 +157,10 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     val out = GMat.newOrCheckGMat(nrows, a.ncols, omat, GUID, a.GUID, "SDMult".##)
     val handle = GSMat.getHandle
     val descra = GSMat.getDescr      
+    val one = GSMat.myones(SciFunctions.getGPU)
+    val zero = GSMat.myzeros(SciFunctions.getGPU)
     var err = JCusparse.cusparseScsrmm(handle, cusparseOperation.CUSPARSE_OPERATION_TRANSPOSE,
-        ncols, a.ncols, nrows, 1.0f, descra,	data, jc, ir, a.data, a.nrows, 0, out.data, out.nrows)
+        ncols, a.ncols, nrows, nnz, one.data, descra,	data, jc, ir, a.data, a.nrows, zero.data, out.data, out.nrows)
     cudaDeviceSynchronize
     if (err == 0) err = cudaGetLastError
     if (err != 0) {
@@ -177,9 +179,11 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     }
     val out = GMat.newOrCheckGMat(ncols, a.ncols, omat, GUID, a.GUID, "SDMult".##)
     val handle = GSMat.getHandle
-    val descra = GSMat.getDescr     
+    val descra = GSMat.getDescr    
+    val one = GSMat.myones(SciFunctions.getGPU)
+    val zero = GSMat.myzeros(SciFunctions.getGPU)
     var err = JCusparse.cusparseScsrmm(handle, cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE,
-        ncols, a.ncols, nrows, 1.0f, descra,	data, jc, ir, a.data, a.nrows, 0, out.data, out.nrows)
+        ncols, a.ncols, nrows, nnz, one.data, descra,	data, jc, ir, a.data, a.nrows, zero.data, out.data, out.nrows)
     cudaDeviceSynchronize
     if (err == 0) err = cudaGetLastError
     if (err != 0) {
@@ -233,6 +237,8 @@ object GSMat {
   
   var cusparseContexts:Array[cusparseHandle] = null
   var cusparseMatDescrs:Array[cusparseMatDescr] = null
+  var myones:Array[GMat] = null
+  var myzeros:Array[GMat] = null
   var cusparseContextsInitialized = false
   var cusparseDescrsInitialized = false
   
@@ -244,10 +250,14 @@ object GSMat {
         val thisGPU = getGPU
         val nGPUs = Mat.hasCUDA
         cusparseContexts = new Array[cusparseHandle](nGPUs)
+        myzeros = new Array[GMat](nGPUs)
+        myones = new Array[GMat](nGPUs)
         for (i <- 0 until nGPUs) {
           setGPU(i)
           cusparseContexts(i) = new cusparseHandle()
-          cusparseCreate(cusparseContexts(i))      
+          cusparseCreate(cusparseContexts(i))
+          myzeros(i) = GMat.zeros(0,0)
+          myones(i) = GMat.ones(0,0)
         }  
         setGPU(thisGPU)
         cusparseContextsInitialized = true
@@ -291,13 +301,14 @@ object GSMat {
     val out = GSMat.newOrCheckGSMat(a.nrows, a.ncols, a.nnz, b, a.GUID, SciFunctions.getGPU, "fromSMat".##)
     out.nnz0 = a.nnz
     val handle = GSMat.getHandle
-    var err = JCublas.cublasSetVector(a.nnz, Sizeof.FLOAT, Pointer.to(a.data), 1, out.data, 1)
+    var err = 0
+    cudaMemcpy(out.data, Pointer.to(a.data), a.nnz*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
     if (Mat.ioneBased == 1) {
-      if (err == 0) err = JCublas.cublasSetVector(a.nnz, Sizeof.INT, Pointer.to(SparseMat.decInds(a.ir)), 1, out.ir, 1)
-      if (err == 0) err = JCublas.cublasSetVector(a.ncols+1, Sizeof.INT, Pointer.to(SparseMat.decInds(a.jc)), 1, out.jc, 1)
+      cudaMemcpy(out.ir, Pointer.to(SparseMat.decInds(a.ir)), a.nnz*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+      cudaMemcpy(out.jc, Pointer.to(SparseMat.decInds(a.jc)), (a.ncols+1)*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
     } else {
-      if (err == 0) err = JCublas.cublasSetVector(a.nnz, Sizeof.INT, Pointer.to(a.ir), 1, out.ir, 1)
-      if (err == 0) err = JCublas.cublasSetVector(a.ncols+1, Sizeof.INT, Pointer.to(a.jc), 1, out.jc, 1)
+      cudaMemcpy(out.ir, Pointer.to(a.ir), a.nnz*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+      cudaMemcpy(out.jc, Pointer.to(a.jc), (a.ncols+1)*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
     }
     cudaDeviceSynchronize
     if (err == 0) err = JCusparse.cusparseXcsr2coo(handle, out.jc, out.nnz, out.ncols, out.ic, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO)
