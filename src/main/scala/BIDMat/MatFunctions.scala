@@ -1530,6 +1530,16 @@ object MatFunctions {
     }
   }
   
+  def checkCUDAerrors() = {
+    var err = 0
+    jcuda.runtime.JCuda.cudaDeviceSynchronize
+    if (err == 0) err = jcuda.runtime.JCuda.cudaGetLastError
+    if (err != 0) {
+        val g =  SciFunctions.getGPU
+        throw new RuntimeException("GPU "+g+": Cuda error: " + jcuda.runtime.JCuda.cudaGetErrorString(err))
+    }
+  }
+  
   def cols2sparse(rows:IMat, cols:IMat, values:FMat, issorted:Boolean):SMat = cols2sparse(rows, cols, values, issorted, 0)
   
   def cols2sparse(rows:IMat, cols:IMat, values:FMat):SMat = cols2sparse(rows, cols, values, true, 0)
@@ -1594,6 +1604,10 @@ object MatFunctions {
   
   def loadLibSVM(fname:String, nrows:Int, compressed:Int) = HMat.loadLibSVM(fname, nrows, compressed)
   def loadLibSVM(fname:String, nrows:Int) = HMat.loadLibSVM(fname, nrows, 0)
+  
+  def saveLibSVM(fname:String, data:SMat, cats:SMat, weights:FMat, compressed:Int):Unit = HMat.saveLibSVM(fname, data, cats, weights, compressed)
+  def saveLibSVM(fname:String, data:SMat, cats:SMat, weights:FMat):Unit = HMat.saveLibSVM(fname, data, cats, weights, 0)
+  def saveLibSVM(fname:String, data:SMat, cats:SMat):Unit = HMat.saveLibSVM(fname, data, cats, null, 0)
 
   final val ? = new IMatWildcard
 }

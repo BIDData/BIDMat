@@ -156,7 +156,8 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     }
     val out = GMat.newOrCheckGMat(nrows, a.ncols, omat, GUID, a.GUID, "SDMult".##)
     val handle = GSMat.getHandle
-    val descra = GSMat.getDescr      
+    val descra = GSMat.getDescr
+    GSMat.initZerosAndOnes
     val one = GSMat.myones(SciFunctions.getGPU)
     val zero = GSMat.myzeros(SciFunctions.getGPU)
     var err = JCusparse.cusparseScsrmm(handle, cusparseOperation.CUSPARSE_OPERATION_TRANSPOSE,
@@ -179,7 +180,8 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     }
     val out = GMat.newOrCheckGMat(ncols, a.ncols, omat, GUID, a.GUID, "SDMult".##)
     val handle = GSMat.getHandle
-    val descra = GSMat.getDescr    
+    val descra = GSMat.getDescr  
+    GSMat.initZerosAndOnes
     val one = GSMat.myones(SciFunctions.getGPU)
     val zero = GSMat.myzeros(SciFunctions.getGPU)
     var err = JCusparse.cusparseScsrmm(handle, cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE,
@@ -218,14 +220,15 @@ object GSMat {
 
   def apply(nr:Int, nc:Int, nnzx:Int):GSMat = { 
 //  		println("nr, nc, nnz = %d,%d,%d" format (nr,nc,nnz0))
+    var err=0
     val out = new GSMat(nr, nc, nnzx, new Pointer(), new Pointer(), new Pointer(), new Pointer(), nnzx) 
     if (Mat.debugMem) println("GSMat %d %d %d, %d %f" format (nr, nc, nnzx, SciFunctions.getGPU, SciFunctions.GPUmem._1))
-    var err = JCublas.cublasAlloc(out.nnz, Sizeof.INT, out.ir)
+    err = JCublas.cublasAlloc(out.nnz, Sizeof.INT, out.ir)
     if (err == 0) err = JCublas.cublasAlloc(out.nnz, Sizeof.INT, out.ic)
     if (err == 0) err = JCublas.cublasAlloc(out.ncols+1, Sizeof.INT, out.jc)
     if (err == 0) err = JCublas.cublasAlloc(out.nnz, Sizeof.FLOAT, out.data)
     cudaDeviceSynchronize
-    if (err == 0) err = cublasGetError
+    if (err == 0) err = cudaGetLastError
     if (err != 0) {
     	println("device is %d" format SciFunctions.getGPU)
     	throw new RuntimeException("Cuda error in GSMat() " + cudaGetErrorString(err))
@@ -241,6 +244,7 @@ object GSMat {
   var myzeros:Array[GMat] = null
   var cusparseContextsInitialized = false
   var cusparseDescrsInitialized = false
+  var zeroOnesInitialized = false
   
   def initHandles = {
     import BIDMat.SciFunctions._
@@ -250,19 +254,32 @@ object GSMat {
         val thisGPU = getGPU
         val nGPUs = Mat.hasCUDA
         cusparseContexts = new Array[cusparseHandle](nGPUs)
-        myzeros = new Array[GMat](nGPUs)
-        myones = new Array[GMat](nGPUs)
         for (i <- 0 until nGPUs) {
           setGPU(i)
           cusparseContexts(i) = new cusparseHandle()
           cusparseCreate(cusparseContexts(i))
-          myzeros(i) = GMat.zeros(0,0)
-          myones(i) = GMat.ones(0,0)
         }  
         setGPU(thisGPU)
         cusparseContextsInitialized = true
       }
     }
+  }
+  
+  def initZerosAndOnes = {
+    import SciFunctions._
+      if (! zeroOnesInitialized) {
+        val thisGPU = getGPU;
+        val nGPUs = Mat.hasCUDA;
+        myzeros = new Array[GMat](nGPUs);
+        myones = new Array[GMat](nGPUs);
+        for (i <- 0 until nGPUs) {
+          setGPU(i);
+          myzeros(i) = GMat.zeros(1,1);
+          myones(i) = GMat.ones(1,1);
+        }
+        setGPU(thisGPU);
+        zeroOnesInitialized = true
+      }
   }
   
   def initDescrs = {
@@ -300,8 +317,8 @@ object GSMat {
   def fromSMat(a:SMat, b:GSMat):GSMat = {
     val out = GSMat.newOrCheckGSMat(a.nrows, a.ncols, a.nnz, b, a.GUID, SciFunctions.getGPU, "fromSMat".##)
     out.nnz0 = a.nnz
-    val handle = GSMat.getHandle
     var err = 0
+    val handle = GSMat.getHandle
     cudaMemcpy(out.data, Pointer.to(a.data), a.nnz*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
     if (Mat.ioneBased == 1) {
       cudaMemcpy(out.ir, Pointer.to(SparseMat.decInds(a.ir)), a.nnz*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
@@ -311,6 +328,11 @@ object GSMat {
       cudaMemcpy(out.jc, Pointer.to(a.jc), (a.ncols+1)*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
     }
     cudaDeviceSynchronize
+    if (err == 0) err = cudaGetLastError
+    if (err != 0) {
+        println("device is %d" format SciFunctions.getGPU)
+        throw new RuntimeException("Cuda copy error in GSMAT.fromSMat " + cudaGetErrorString(err))
+    }
     if (err == 0) err = JCusparse.cusparseXcsr2coo(handle, out.jc, out.nnz, out.ncols, out.ic, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO)
     cudaDeviceSynchronize
     if (err == 0) err = cudaGetLastError

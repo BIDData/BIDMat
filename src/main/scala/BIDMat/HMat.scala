@@ -807,7 +807,34 @@ object HMat {
     fin.close();
     (datamat, cmat, wmat);    
   }
+  
+  def saveLibSVM(fname:String, data:SMat, labels:SMat):Unit = saveLibSVM(fname, data, labels, null, 0);
+  
+  def saveLibSVM(fname:String, data:SMat, labels:SMat, weights:FMat):Unit = saveLibSVM(fname, data, labels, weights, 0);
    
+  def saveLibSVM(fname:String, data:SMat, labels:SMat, weights:FMat, compressed:Int):Unit = {
+    val fout = new BufferedWriter (new OutputStreamWriter (getOutputStream(fname, compressed)));
+    val (ilab, jlab) = find2(labels);
+    val jc = data.jc;
+    val ioffset = Mat.ioneBased;
+    var i = 0;
+    while (i < ilab.length) {
+      fout.write(ilab.data(i).toString);
+      val icol = jlab.data(i);
+      if (weights.asInstanceOf[AnyRef] != null) {
+        fout.write(":"+weights.data(icol))
+      } 
+      var j = jc(icol) - ioffset
+      while (j < jc(icol+1) - ioffset) {
+        fout.write(" "+(data.ir(j)-ioffset).toString + ":" + data.data(j).toString);
+        j += 1
+      }
+      fout.write("\n")
+      i += 1
+    }
+    fout.close()
+  }
+
   def testLoad(fname:String, varname:String, n:Int) = {
     val a = new Array[SMat](n)
     var ndone = izeros(n,1)

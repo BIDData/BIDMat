@@ -316,7 +316,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     	} else {
     		cublasSgemm('n', 'n', nrows, a.ncols, ncols, 1.0f, data, nrows, a.data, a.nrows, 0f, out.data, nrows)
     		cudaDeviceSynchronize()
-    		val err = cublasGetError
+    		val err = cudaGetLastError
     		if (err != 0) {
     			println("device is %d" format SciFunctions.getGPU)
     			throw new RuntimeException("Cublas error in * "+err)
@@ -333,7 +333,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
       Mat.nflops += 2L * length * a.nrows
       cublasSgemm('n', 't', nrows, a.nrows, ncols, 1.0f, data, nrows, a.data, a.nrows, 0f, out.data, nrows)
       cudaDeviceSynchronize()
-      val err = cublasGetError
+      val err = cudaGetLastError
       if (err != 0) {
         println("device is %d" format SciFunctions.getGPU)
         throw new RuntimeException("Cublas error in xT " + cudaGetErrorString(err))
@@ -348,7 +348,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
       Mat.nflops += 2L * length * a.ncols
       cublasSgemm('t', 'n', ncols, a.ncols, nrows, 1.0f, data, nrows, a.data, a.nrows, 0f, out.data, out.nrows)
       cudaDeviceSynchronize()
-      val err = cublasGetError
+      val err = cudaGetLastError
       if (err != 0) {
         println("device is %d" format SciFunctions.getGPU)
         throw new RuntimeException("Cublas error in Tx " + cudaGetErrorString(err))
@@ -451,7 +451,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   	  case aa:GMat => {
   	    val v = cublasSdot(length, data, 1, aa.data, 1)
   	  	cudaDeviceSynchronize()
-  	  	val err = cublasGetError
+  	  	val err = cudaGetLastError
   	  	if (err != 0) {
   	  		println("device is %d" format SciFunctions.getGPU)
   	  		throw new RuntimeException("Cublas error in ddot " + cudaGetErrorString(err))
@@ -485,7 +485,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     val out = FMat.newOrCheckFMat(nrows, ncols, a, GUID, "toFMat".##)
     cublasGetVector(nrows*ncols, Sizeof.FLOAT, data, 1, Pointer.to(out.data), 1)
     cudaDeviceSynchronize()
-    val err = cublasGetError
+    val err = cudaGetLastError
     if (err != 0) {
     	println("device is %d" format SciFunctions.getGPU)
     	throw new RuntimeException("Cublas error in toFMat " + cudaGetErrorString(err))
@@ -497,7 +497,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
 //  		val a = out.recycle(nrows, ncols, 0)
   		cublasGetVector(nrows*ncols, Sizeof.FLOAT, data, 1, Pointer.to(a.data), 1)
   		cudaDeviceSynchronize()
-  		val err = cublasGetError
+  		val err = cudaGetLastError
   		if (err != 0) {
   			println("device is %d" format SciFunctions.getGPU)
   			throw new RuntimeException("Cublas error in copyTo " + cudaGetErrorString(err))
@@ -517,9 +517,9 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   }
   
   def copyFrom(in:FMat):GMat = {
-  		cudaMemcpy(data, Pointer.to(in.data), nrows*ncols*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+  		cudaMemcpy(data, Pointer.to(in.data), 1L*nrows*ncols*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
   		cudaDeviceSynchronize()
-  		val err = cublasGetError
+  		val err = cudaGetLastError
   		if (err != 0) {
   			println("device is %d" format SciFunctions.getGPU)
   			throw new RuntimeException("Cublas error in copyFrom " + cudaGetErrorString(err))
@@ -529,9 +529,9 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   
   def copyTo(a:GMat):GMat = {
 //    val a = out.recycle(nrows, ncols, 0)
-    cudaMemcpy(a.data, data, length*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaMemcpy(a.data, data, 1L*length*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
     cudaDeviceSynchronize()
-    val err = cublasGetError
+    val err = cudaGetLastError
     if (err != 0) {
     	println("device is %d" format SciFunctions.getGPU)
     	throw new RuntimeException("Cublas error in copyTo " + cudaGetErrorString(err))
@@ -1067,8 +1067,8 @@ object GMat {
     cudaDeviceSynchronize()
     val err = cudaGetLastError()
     if (err != 0) {
-    	println("device is %d" format SciFunctions.getGPU)
-    	throw new RuntimeException("Cuda error in gzeros " + cudaGetErrorString(err))
+        val gpu = SciFunctions.getGPU
+    	throw new RuntimeException("GPU "+gpu+": Cuda error in gzeros " + cudaGetErrorString(err))
     }
     out
   }
@@ -1078,7 +1078,7 @@ object GMat {
     val one = GMat(FMat.elem(1))
     cublasScopy(out.length, one.data, 0, out.data, 1)
     cudaDeviceSynchronize()
-    val err = cublasGetError()
+    val err = cudaGetLastError()
     if (err != 0) {
     	println("device is %d" format SciFunctions.getGPU)
     	throw new RuntimeException("Cublas error in gones " + cudaGetErrorString(err))
@@ -1091,7 +1091,7 @@ object GMat {
     if (Mat.debugMem) println("GMat %d %d, %d %f" format (nr, nc, SciFunctions.getGPU, SciFunctions.GPUmem._1))
     var err = cublasAlloc(nr*nc, Sizeof.FLOAT, retv.data)
     cudaDeviceSynchronize
-    if (err == 0) err = cublasGetError()
+    if (err == 0) err = cudaGetLastError()
     if (err != 0) throw new RuntimeException("CUDA alloc failed " + cudaGetErrorString(err))
     retv        
   }   
@@ -1101,10 +1101,10 @@ object GMat {
     val retv = GMat.newOrCheckGMat(a.nrows, a.ncols, null, a.GUID, SciFunctions.getGPU, "GMat_FMat".##)
   	cudaMemcpy(retv.data, Pointer.to(a.data), rsize*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
   	cudaDeviceSynchronize()
-  	val err = cublasGetError()
+  	val err = cudaGetLastError()
     if (err != 0) {
     	println("device is %d" format SciFunctions.getGPU)
-    	throw new RuntimeException("Cublas error in GMat() " + cudaGetErrorString(err))
+    	throw new RuntimeException("CUDA error in GMat() " + cudaGetErrorString(err))
     }
     retv
   }
@@ -1146,12 +1146,12 @@ object GMat {
   
   def fromFMat(a:FMat, b:GMat):GMat = {
     val bb = GMat.newOrCheckGMat(a.nrows, a.ncols, b, a.GUID, SciFunctions.getGPU, "GMat_fromFMat".##)
-    cudaMemcpy(bb.data, Pointer.to(a.data), a.length*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+    cudaMemcpy(bb.data, Pointer.to(a.data), a.length*1L*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
     cudaDeviceSynchronize()
-    var err = cublasGetError()
+    var err = cudaGetLastError()
     if (err != 0) {
     	println("device is %d" format SciFunctions.getGPU)
-    	throw new RuntimeException("Cublas error in fromFMat " + cudaGetErrorString(err))
+    	throw new RuntimeException("CUDA error in fromFMat " + cudaGetErrorString(err))
     }
     bb
   }
@@ -1424,7 +1424,7 @@ object GMat {
   	    					cublasSgemm('n', if (btrans) 't' else 'n', ni, nj, nk, 1.0f, aa, garows, bb, gbrows, if (k==0) 0f else 1f, cc, gcrows)
   	    					
   	    					cudaDeviceSynchronize
-  	    					err = cublasGetError
+  	    					err = cudaGetLastError
   	    					if (err != 0) throw new RuntimeException("Cublas error in xG, sgemm "+err)
   	    					k += gacols
   	    				}
