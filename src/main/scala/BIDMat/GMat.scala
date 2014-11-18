@@ -8,7 +8,7 @@ import jcuda.runtime.cudaMemcpyKind._
 import jcuda.jcublas._
 import jcuda.jcublas.JCublas._
 import jcuda.jcusparse._
-import scala.concurrent.future
+import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import edu.berkeley.bid.CUMAT
 import GSMat._
@@ -1389,7 +1389,7 @@ object GMat {
   	  val done = IMat(rblkk*cblkk,1)
   	  for (ix <- 0 until rblkk) {
   	    for (iy <- 0 until cblkk) {
-  	    	future {
+  	    	Future {
   	    		SciFunctions.setGPU(ix+iy*2)
   	    		val aa = new Pointer
   	    		val bb = new Pointer
@@ -1461,7 +1461,7 @@ object GMat {
   	val done = IMat(nthreads,1)
 
   	for (ithread <- 0 until nthreads) {
-  	  future {
+  	  Future {
  	    	SciFunctions.setGPU(ithread)
   	  	val aa = GMat(maxsize, 1).data
   	  	val vv = GIMat(maxsize, 1).data
@@ -1615,7 +1615,7 @@ object GMat {
   	var err = 0
   	var myturn = 0
   	for (ithread <- 0 until nthreads) {
-  	  future {
+  	  Future {
  	    	SciFunctions.setGPU(ithread)
   	  	val aa = GMat(maxsize, 1)
   	  	val vv = GIMat(maxsize, 1)
@@ -1707,7 +1707,7 @@ object GMat {
   	val done = IMat(rblkk*cblkk,1)
   	for (ix <- 0 until rblkk) {
   		for (iy <- 0 until cblkk) {
-  			future {
+  			Future {
   				val ithread = ix+iy*2
   				var err = 0
   				SciFunctions.setGPU(ithread)

@@ -3,7 +3,7 @@ import scala.math.Numeric._
 import scala.reflect._
 import java.util.Arrays
 import java.util.Comparator
-import scala.concurrent.future
+import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
@@ -837,7 +837,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
         	for (ithread<- 0 until Mat.numThreads) {
         		val istart = (1L*ithread*mylen/Mat.numThreads).toInt
         		val len = (1L*(ithread+1)*mylen/Mat.numThreads).toInt - istart
-        		future {
+        		Future {
         			if (nrows==aa.nrows && ncols==aa.ncols) {
         				opv(data, istart, 1, aa.data, istart, 1, out.data, istart, 1, len)
         			} else if (aa.nrows == 1 && aa.ncols == 1) {

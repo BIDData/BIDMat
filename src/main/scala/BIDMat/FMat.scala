@@ -6,7 +6,7 @@ import edu.berkeley.bid.SPBLAS._
 import edu.berkeley.bid.UTILS._
 import java.util.Arrays
 import java.util.concurrent.atomic._
-import scala.concurrent.future
+import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
@@ -271,7 +271,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     			for (ithread <- 0 until Mat.numThreads) {
     				val istart = (1L*ithread*a.ncols/Mat.numThreads).toInt
     				val iend = (1L*(ithread+1)*a.ncols/Mat.numThreads).toInt
-    				future {
+    				Future {
     					fDMultHelper(a, out, istart, iend)
     					done(ithread) = 1
     				}
@@ -346,7 +346,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     			for (ithread <- 0 until Mat.numThreads) {
     				val istart = (1L*ithread*a.ncols/Mat.numThreads).toInt
     				val iend = (1L*(ithread+1)*a.ncols/Mat.numThreads).toInt
-    				future {
+    				Future {
     					fSMultHelper(a, out, istart, iend, ioff)
     					done(ithread) = 1
     				}
@@ -424,7 +424,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     	    val nthreads = math.min(Mat.numThreads, nrows/32)
     	    val done = IMat(1, nthreads)
     	    for (ithread <- 0 until nthreads) {
-    	      future {
+    	      Future {
     	        fSMultTHelper2(a, out, (1L*nrows*ithread/nthreads).toInt, (1L*nrows*(ithread+1)/nthreads).toInt, ioff)
     	        done(ithread) = 1
     	      }
@@ -475,7 +475,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
                 for (ithread <- 0 until Mat.numThreads) {
                     val istart = (1L*ithread*a.nrows/Mat.numThreads).toInt
                     val iend = (1L*(ithread+1)*a.nrows/Mat.numThreads).toInt
-                    future {
+                    Future {
                         fDMultTHelper(a, out, istart, iend)
                         done(ithread) = 1
                     }

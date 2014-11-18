@@ -6,7 +6,7 @@ import java.nio._
 import scala.util.matching.Regex
 import Regex._
 import scala.collection.mutable._
-import scala.concurrent.future
+import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import MatFunctions._
 import MatHDF5._
@@ -839,7 +839,7 @@ object HMat {
     val a = new Array[SMat](n)
     var ndone = izeros(n,1)
     for (i <- 0 until n) {
-      future {
+      Future {
         a(i) = loadSMat(("/disk%02d/" format i)+fname)
         ndone(i) = 1
       }
