@@ -15,4 +15,4 @@ SET JCUDA_LIBS=%JCUDA_LIBDIR%\jcuda-%JCUDA_VERSION%.jar;%JCUDA_LIBDIR%\jcublas-%
 
 SET ALL_LIBS=%BIDMAT_LIBS%;%JCUDA_LIBS%;%JAVA_HOME%\lib\tools.jar
 
-scala -nobootcp -cp "%ALL_LIBS%" -Yrepl-sync -i %LIBDIR%\bidmat_init.scala
+%CD%\scripts\scala\scala.bat -toolcp "%ALL_LIBS%" -Yrepl-sync -i %LIBDIR%\bidmat_init.scala

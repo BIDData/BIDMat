@@ -1526,7 +1526,7 @@ object DenseMat {
       }
     }
   }
-  
+
   def newOrCheck[T](nr:Int, nc:Int, oldmat:Mat)
   (implicit classTag:ClassTag[T]):DenseMat[T] = {
     if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows == 0 && oldmat.ncols == 0)) {
