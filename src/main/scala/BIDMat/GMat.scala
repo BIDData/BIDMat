@@ -255,7 +255,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   
   override def zeros(nr:Int, nc:Int) = GMat.zeros(nr, nc)
   
-  override def ones(nt:Int, nc:Int) = GMat.ones(nr, nc)
+  override def ones(nr:Int, nc:Int) = GMat.ones(nr, nc)
   
   override def izeros(m:Int, n:Int) = {
     GIMat.izeros(m,n)
@@ -1075,8 +1075,7 @@ object GMat {
   
   def ones(nr:Int, nc:Int) = {
     val out = GMat(nr, nc)
-    val one = GMat(FMat.elem(1))
-    cublasScopy(out.length, one.data, 0, out.data, 1)
+    CUMAT.setval(out.data, 1f, out.length)
     cudaDeviceSynchronize()
     val err = cudaGetLastError()
     if (err != 0) {
