@@ -206,6 +206,20 @@ object SciFunctions {
   def grand(nr:Int, nc:Int):GMat = {
     val out = GMat(nr, nc)
     grand(out)
+  }  
+    
+  def gdrand(nr:Int, nc:Int, out:GDMat):GDMat = {
+    Mat.nflops += 10L*out.length
+    curandGenerateUniformDouble(cudarng(getGPU), out.data, out.length)
+    JCuda.cudaDeviceSynchronize()
+    out
+  }
+  
+  def gdrand(out:GDMat):GDMat = gdrand(out.nrows, out.ncols, out)
+  
+  def gdrand(nr:Int, nc:Int):GDMat = {
+    val out = GDMat(nr, nc)
+    gdrand(out)
   }
  
   def normrnd(mu:Float, sig:Float, out:FMat):FMat = {
@@ -241,6 +255,13 @@ object SciFunctions {
   def gnormrnd(mu:Float, sig:Float, out:GMat, nr:Int, nc:Int):GMat = {
     Mat.nflops += 10L*out.length
     curandGenerateNormal(cudarng(getGPU), out.data, out.length, mu, sig)
+    JCuda.cudaDeviceSynchronize()
+    out
+  }
+  
+  def gdnormrnd(mu:Double, sig:Double, out:GMat, nr:Int, nc:Int):GMat = {
+    Mat.nflops += 10L*out.length
+    curandGenerateNormalDouble(cudarng(getGPU), out.data, out.length, mu, sig)
     JCuda.cudaDeviceSynchronize()
     out
   }
