@@ -223,6 +223,50 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     this
   }
   
+  override def update(I:GIMat, j:Int, v:Float):GMat = {
+    val V = GMat(v)
+    val J = GIMat(j)
+    CUMAT.copyToInds2D(V.data, 0, data, nrows, I.data, I.length, J.data, 1)
+    this
+  }
+  
+  override def update(i:Int, J:GIMat, v:Float):GMat = {
+    val V = GMat(v)
+    val I = GIMat(i)
+    CUMAT.copyToInds2D(V.data, 0, data, nrows, I.data, 1, J.data, J.length)
+    this
+  }
+  
+  override def update(I:IMat, j:Int, v:Float):GMat = {
+    val V = GMat(v)
+    val J = GIMat(j)
+    I match {
+    case ii:MatrixWildcard => {
+      CUMAT.copyToInds2D(V.data, 0, data, nrows, GMat.nullPointer, I.length, J.data, 1)
+    }
+    case _ => {
+      val gi = GIMat(I)
+      CUMAT.copyToInds2D(V.data, 0, data, nrows, gi.data, I.length, J.data, 1)
+    }
+    }
+    this
+  }
+  
+  override def update(i:Int, J:IMat, v:Float):GMat = {
+    val V = GMat(v)
+    val I = GIMat(i)
+    J match {
+    case jj:MatrixWildcard => {
+      CUMAT.copyToInds2D(V.data, 0, data, nrows, I.data, 1, GMat.nullPointer, ncols)
+    }
+    case _ => {
+      val gj = GIMat(J)
+      CUMAT.copyToInds2D(V.data, 0, data, nrows, I.data, 1, gj.data, J.length)
+    }
+    }
+    this
+  }
+  
   val myGPU = SciFunctions.getGPU
   
   override def clear = {
