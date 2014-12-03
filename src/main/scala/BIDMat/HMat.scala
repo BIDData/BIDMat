@@ -758,9 +758,9 @@ object HMat {
     gout.close
   } 
    
-  // Load a file in ASCII LibSVM format
-  // Outputs a data matrix first, and then a matrix of cat labels.
-  // data is an SMat, labels are integer, weights are FMat. 
+  /** Load a file in ASCII LibSVM format */
+  /* Outputs a data matrix first, and then a matrix c of cat labels where c(i) = label of instance i. */
+  /* data is an SMat, labels are integer, weights are FMat. */
   def loadLibSVM(fname:String, nrows:Int, compressed:Int = 0):(SMat, IMat, FMat) = {
     var fin = new BufferedReader(new InputStreamReader (getInputStream(fname, compressed)));
     var firstline = fin.readLine();
