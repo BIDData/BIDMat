@@ -1348,6 +1348,20 @@ object MatFunctions {
     }
   }
   
+  def cat2sparse(c:IMat, ncats:Int):SMat = {
+    val out = SMat(ncats, c.length, c.length);
+    var i = 0;
+    var ioff = Mat.ioneBased;
+    out.jc(0) = ioff;
+    while (i < c.length) {
+      out.ir(i) = c.data(i) + ioff;
+      out.data(i) = 1f;
+      out.jc(i + 1) = i + 1 + ioff;
+      i += 1;
+    }
+    out;
+  }
+  
   def fsqrt(v:Float):Float = math.sqrt(v).asInstanceOf[Float]
   
   def mapfun2x2(fn:(Float, Float)=>(Float, Float), in0:FMat, in1:FMat, out0:FMat, out1:FMat) = {
