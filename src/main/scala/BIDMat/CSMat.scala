@@ -29,6 +29,42 @@ case class CSMat(override val nrows:Int, override val ncols:Int, override val da
   
   override def apply(a:Int, b:Mat):CSMat = CSMat(gapply(a, b.asInstanceOf[IMat]))
   
+  def update(iv:IMat, b:CSMat):CSMat = CSMat(_update(iv, b))
+  
+  def update(iv:IMat, jv:IMat, b:CSMat):CSMat = CSMat(_update(iv, jv, b))
+
+  def update(iv:IMat, j:Int, b:CSMat):CSMat = CSMat(_update(iv, IMat.ielem(j), b))
+
+  def update(i:Int, jv:IMat, b:CSMat):CSMat = CSMat(_update(IMat.ielem(i), jv, b))
+  
+//  override def update(inds:IMat, b:Int):Mat = CSMat(_update(inds, b.toFloat))
+  
+//  override def update(inds:IMat, b:Float):Mat = CSMat(_update(inds, b))
+  
+  override def update(iv:IMat, b:Mat):CSMat = CSMat(_update(iv, b.asInstanceOf[CSMat]))
+  
+  override def update(iv:IMat, jv:IMat, b:Mat):CSMat = CSMat(_update(iv, jv, b.asInstanceOf[CSMat]))
+
+  override def update(iv:IMat, j:Int, b:Mat):CSMat = CSMat(_update(iv, IMat.ielem(j), b.asInstanceOf[CSMat]))
+
+  override def update(i:Int, jv:IMat, b:Mat):CSMat = CSMat(_update(IMat.ielem(i), jv, b.asInstanceOf[CSMat]))
+   
+  override def update(iv:Mat, b:Mat):CSMat = CSMat(_update(iv.asInstanceOf[IMat], b.asInstanceOf[CSMat]))
+  
+  override def update(iv:Mat, jv:Mat, b:Mat):CSMat = CSMat(_update(iv.asInstanceOf[IMat], jv.asInstanceOf[IMat], b.asInstanceOf[CSMat]))
+
+  override def update(iv:Mat, j:Int, b:Mat):CSMat = CSMat(_update(iv.asInstanceOf[IMat], IMat.ielem(j), b.asInstanceOf[CSMat]))
+
+  override def update(i:Int, jv:Mat, b:Mat):CSMat = CSMat(_update(IMat.ielem(i), jv.asInstanceOf[IMat], b.asInstanceOf[CSMat]))
+  
+  def update(iv:Mat, b:String):CSMat = CSMat(_update(iv.asInstanceOf[IMat], b))
+  
+  def update(iv:Mat, jv:Mat, b:String):CSMat = CSMat(_update(iv.asInstanceOf[IMat], jv.asInstanceOf[IMat], b))
+
+  def update(iv:Mat, j:Int, b:String):CSMat = CSMat(_update(iv.asInstanceOf[IMat], IMat.ielem(j), b))
+
+  def update(i:Int, jv:Mat, b:String):CSMat = CSMat(_update(IMat.ielem(i), jv.asInstanceOf[IMat], b))
+  
 	def ccMatOp(b: CSMat, f:(String, String) => String, old:CSMat) = CSMat(ggMatOp(b, f, old))
 	
 	def ccMatOpScalar(b: String, f:(String, String) => String, old:CSMat) = CSMat(ggMatOpScalar(b, f, old))

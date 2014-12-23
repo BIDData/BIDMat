@@ -287,7 +287,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
  /*
   * Implement a(im) = b where im is a matrix of indices to a, and b is a constant
   */
-  def update(inds:IMat, b:T):T = {
+  def _update(inds:IMat, b:T):DenseMat[T] = {
     inds match {
   		case aaa:MatrixWildcard => {
   			var i = 0
@@ -310,7 +310,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
   			}
   		}
     }  
-    b
+    this
   }
   
   def checkInds(inds:IMat, limit:Int, typ:String) = {
@@ -505,7 +505,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
  /*
   * Implement sliced assignment, a(iv,jv) = b:T where iv and jv are vectors, using ? as wildcard
   */ 
-  def update(rowinds:IMat, colinds:IMat, b:T):T = {
+  def _update(rowinds:IMat, colinds:IMat, b:T):DenseMat[T] = {
   	val off = Mat.oneBased
   	rowinds match {
   	case dummy:MatrixWildcard => {
@@ -564,20 +564,20 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
       }
     }
   	}
-    b
+    this
   }
   
   /*
   * Implement sliced assignment, a(iv,j) = b where iv a vectors, j integer, using ? as wildcard
   */ 
-  def update(iv:IMat, j:Int, b:T):T = {
-    update(iv, IMat.ielem(j), b)
+  def _update(iv:IMat, j:Int, b:T):DenseMat[T] = {
+    _update(iv, IMat.ielem(j), b)
   }
   /*
   * Implement sliced assignment, a(i,jv) = b where jv a vector, using ? as wildcard
   */ 
-  def update(i:Int, jv:IMat, b:T):T = {
-    update(IMat.ielem(i), jv, b)
+  def _update(i:Int, jv:IMat, b:T):DenseMat[T] = {
+    _update(IMat.ielem(i), jv, b)
   }
   
   def printOne(i:Int):String = " "

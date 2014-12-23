@@ -90,6 +90,7 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   
   override def rowslice(a:Int, b:Int, out:Mat, c:Int) = IMat(growslice(a, b, out, c))
   
+  
   def update(iv:IMat, b:IMat):IMat = IMat(_update(iv, b))
   
   def update(iv:IMat, jv:IMat, b:IMat):IMat = IMat(_update(iv, jv, b))
@@ -97,6 +98,24 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   def update(iv:IMat, j:Int, b:IMat):IMat = IMat(_update(iv, IMat.ielem(j), b))
 
   def update(i:Int, jv:IMat, b:IMat):IMat = IMat(_update(IMat.ielem(i), jv, b))
+  
+
+  override def update(iv:IMat, b:Int):IMat = IMat(_update(iv, b))
+  
+  override def update(iv:IMat, jv:IMat, b:Int):IMat = IMat(_update(iv, jv, b))
+  
+  override def update(i:Int, jv:IMat, b:Int):IMat = IMat(_update(IMat.ielem(i), jv, b))
+  
+  override def update(iv:IMat, j:Int, b:Int):IMat = IMat(_update(iv, IMat.ielem(j), b))
+  
+  override def update(iv:Mat, b:Int):IMat = IMat(_update(iv.asInstanceOf[IMat], b))
+  
+  override def update(iv:Mat, jv:Mat, b:Int):IMat = IMat(_update(iv.asInstanceOf[IMat], jv.asInstanceOf[IMat], b))
+
+  override def update(iv:Mat, j:Int, b:Int):IMat = IMat(_update(iv.asInstanceOf[IMat], IMat.ielem(j), b))
+
+  override def update(i:Int, jv:Mat, b:Int):IMat = IMat(_update(IMat.ielem(i), jv.asInstanceOf[IMat], b))
+  
   
   override def update(iv:IMat, b:Mat):IMat = IMat(_update(iv, b.asInstanceOf[IMat]))
   
@@ -113,6 +132,7 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   override def update(iv:Mat, j:Int, b:Mat):IMat = IMat(_update(iv.asInstanceOf[IMat], IMat.ielem(j), b.asInstanceOf[IMat]))
 
   override def update(i:Int, jv:Mat, b:Mat):IMat = IMat(_update(IMat.ielem(i), jv.asInstanceOf[IMat], b.asInstanceOf[IMat]))
+  
   
   def iiMatOp(b: Mat, f:(Int, Int) => Int, old:Mat):IMat = 
     b match {
