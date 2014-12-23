@@ -108,7 +108,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     v
   }
   
-  override def update(r0:Int, c0:Int, v:Float):Float = {
+  def update(r0:Int, c0:Int, v:Float):Float = {
     val off = Mat.oneBased
     val r = r0 - off
     val c = c0 - off
@@ -134,7 +134,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     v
   }
   
-  override def update(i0:Int, v:Float):Float = {
+  def update(i0:Int, v:Float):Float = {
   	val off = Mat.oneBased
     val i = i0 - off
     if (i < 0 || i >= length) {

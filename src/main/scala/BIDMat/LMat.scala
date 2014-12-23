@@ -90,14 +90,14 @@ case class LMat(nr:Int, nc:Int, data0:Array[Long]) extends DenseMat[Long](nr, nc
   
   override def rowslice(a:Int, b:Int, out:Mat, c:Int) = LMat(growslice(a, b, out, c))
   
-
-  def update(iv:IMat, b:LMat):LMat = LMat(_update(iv, b))
   
-  def update(iv:IMat, jv:IMat, b:LMat):LMat = LMat(_update(iv, jv, b))
-
-  def update(iv:IMat, j:Int, b:LMat):LMat = LMat(_update(iv, IMat.ielem(j), b))
-
-  def update(i:Int, jv:IMat, b:LMat):LMat = LMat(_update(IMat.ielem(i), jv, b))
+  def update(i:Int, b:Long):Long = _update(i, b)
+  
+  def update(i:Int, j:Int, b:Long):Long = _update(i, j, b)
+  
+  def update(i:Int, b:Int):Long = _update(i, b.toLong)
+  
+  def update(i:Int, j:Int, b:Int):Long = _update(i, j, b.toLong)
   
   
   override def update(iv:IMat, b:Long):LMat = LMat(_update(iv, b))
@@ -113,6 +113,31 @@ case class LMat(nr:Int, nc:Int, data0:Array[Long]) extends DenseMat[Long](nr, nc
   override def update(iv:Mat, jv:Mat, b:Long):LMat = LMat(_update(iv.asInstanceOf[IMat], jv.asInstanceOf[IMat], b))
 
   override def update(i:Int, jv:Mat, b:Long):LMat = LMat(_update(IMat.ielem(i), jv.asInstanceOf[IMat], b))
+  
+  
+  override def update(iv:IMat, b:Int):LMat = LMat(_update(iv, b.toLong))
+  
+  override def update(iv:IMat, jv:IMat, b:Int):LMat = LMat(_update(iv, jv, b.toLong))
+  
+  override def update(i:Int, jv:IMat, b:Int):LMat = LMat(_update(IMat.ielem(i), jv, b.toLong))
+  
+  override def update(iv:IMat, j:Int, b:Int):LMat = LMat(_update(iv, IMat.ielem(j), b.toLong))
+  
+  override def update(iv:Mat, b:Int):LMat = LMat(_update(iv.asInstanceOf[IMat], b.toLong))
+  
+  override def update(iv:Mat, jv:Mat, b:Int):LMat = LMat(_update(iv.asInstanceOf[IMat], jv.asInstanceOf[IMat], b.toLong))
+
+  override def update(i:Int, jv:Mat, b:Int):LMat = LMat(_update(IMat.ielem(i), jv.asInstanceOf[IMat], b.toLong))
+  
+    
+
+  def update(iv:IMat, b:LMat):LMat = LMat(_update(iv, b))
+  
+  def update(iv:IMat, jv:IMat, b:LMat):LMat = LMat(_update(iv, jv, b))
+
+  def update(iv:IMat, j:Int, b:LMat):LMat = LMat(_update(iv, IMat.ielem(j), b))
+
+  def update(i:Int, jv:IMat, b:LMat):LMat = LMat(_update(IMat.ielem(i), jv, b))
   
   
   override def update(iv:IMat, b:Mat):LMat = LMat(_update(iv, b.asInstanceOf[LMat]))

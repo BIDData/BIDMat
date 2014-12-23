@@ -93,15 +93,19 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   override def rowslice(a:Int, b:Int, out:Mat) = DMat(growslice(a, b, out, Mat.oneBased))
   
   override def rowslice(a:Int, b:Int, out:Mat, c:Int) = DMat(growslice(a, b, out, c))
-     
 
-  def update(iv:IMat, b:DMat):DMat = DMat(_update(iv, b))
   
-  def update(iv:IMat, jv:IMat, b:DMat):DMat = DMat(_update(iv, jv, b))
-
-  def update(iv:IMat, j:Int, b:DMat):DMat = DMat(_update(iv, IMat.ielem(j), b))
-
-  def update(i:Int, jv:IMat, b:DMat):DMat = DMat(_update(IMat.ielem(i), jv, b))
+  def update(i:Int, b:Double):Double = _update(i, b)
+  
+  def update(i:Int, j:Int, b:Double):Double = _update(i, j, b)
+  
+  def update(i:Int, b:Float):Double = _update(i, b.toDouble)
+  
+  def update(i:Int, j:Int, b:Float):Double = _update(i, j, b.toDouble)
+  
+  def update(i:Int, b:Int):Double = _update(i, b.toDouble)
+  
+  def update(i:Int, j:Int, b:Int):Double = _update(i, j, b.toDouble)
   
   
   override def update(iv:IMat, b:Double):DMat = DMat(_update(iv, b))
@@ -117,6 +121,51 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   override def update(iv:Mat, jv:Mat, b:Double):DMat = DMat(_update(iv.asInstanceOf[IMat], jv.asInstanceOf[IMat], b))
 
   override def update(i:Int, jv:Mat, b:Double):DMat = DMat(_update(IMat.ielem(i), jv.asInstanceOf[IMat], b))
+  
+  override def update(iv:Mat, j:Int, b:Double):DMat = DMat(_update(iv.asInstanceOf[IMat], IMat.ielem(j), b))
+  
+  
+  override def update(iv:IMat, b:Float):DMat = DMat(_update(iv, b.toDouble))
+  
+  override def update(iv:IMat, jv:IMat, b:Float):DMat = DMat(_update(iv, jv, b.toDouble))
+  
+  override def update(i:Int, jv:IMat, b:Float):DMat = DMat(_update(IMat.ielem(i), jv, b.toDouble))
+  
+  override def update(iv:IMat, j:Int, b:Float):DMat = DMat(_update(iv, IMat.ielem(j), b.toDouble))
+  
+  override def update(iv:Mat, b:Float):DMat = DMat(_update(iv.asInstanceOf[IMat], b.toDouble))
+  
+  override def update(iv:Mat, jv:Mat, b:Float):DMat = DMat(_update(iv.asInstanceOf[IMat], jv.asInstanceOf[IMat], b.toDouble))
+
+  override def update(i:Int, jv:Mat, b:Float):DMat = DMat(_update(IMat.ielem(i), jv.asInstanceOf[IMat], b.toDouble))
+  
+  override def update(iv:Mat, j:Int, b:Float):DMat = DMat(_update(iv.asInstanceOf[IMat], IMat.ielem(j), b.toDouble))
+ 
+    
+  override def update(iv:IMat, b:Int):DMat = DMat(_update(iv, b.toDouble))
+  
+  override def update(iv:IMat, jv:IMat, b:Int):DMat = DMat(_update(iv, jv, b.toDouble))
+  
+  override def update(i:Int, jv:IMat, b:Int):DMat = DMat(_update(IMat.ielem(i), jv, b.toDouble))
+  
+  override def update(iv:IMat, j:Int, b:Int):DMat = DMat(_update(iv, IMat.ielem(j), b.toDouble))
+  
+  override def update(iv:Mat, b:Int):DMat = DMat(_update(iv.asInstanceOf[IMat], b.toDouble))
+  
+  override def update(iv:Mat, jv:Mat, b:Int):DMat = DMat(_update(iv.asInstanceOf[IMat], jv.asInstanceOf[IMat], b.toDouble))
+
+  override def update(i:Int, jv:Mat, b:Int):DMat = DMat(_update(IMat.ielem(i), jv.asInstanceOf[IMat], b.toDouble))
+  
+  override def update(iv:Mat, j:Int, b:Int):DMat = DMat(_update(iv.asInstanceOf[IMat], IMat.ielem(j), b.toDouble))
+  
+  
+  def update(iv:IMat, b:DMat):DMat = DMat(_update(iv, b))
+  
+  def update(iv:IMat, jv:IMat, b:DMat):DMat = DMat(_update(iv, jv, b))
+
+  def update(iv:IMat, j:Int, b:DMat):DMat = DMat(_update(iv, IMat.ielem(j), b))
+
+  def update(i:Int, jv:IMat, b:DMat):DMat = DMat(_update(IMat.ielem(i), jv, b))
   
   
   override def update(iv:IMat, b:Mat):DMat = DMat(_update(iv, b.asInstanceOf[DMat]))
@@ -134,6 +183,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   override def update(iv:Mat, j:Int, b:Mat):DMat = DMat(_update(iv.asInstanceOf[IMat], IMat.ielem(j), b.asInstanceOf[DMat]))
 
   override def update(i:Int, jv:Mat, b:Mat):DMat = DMat(_update(IMat.ielem(i), jv.asInstanceOf[IMat], b.asInstanceOf[DMat]))
+  
   
   def quickdists(b:DMat) = {
     val out = DMat(ncols, b.ncols)

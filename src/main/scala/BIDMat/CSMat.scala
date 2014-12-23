@@ -29,6 +29,12 @@ case class CSMat(override val nrows:Int, override val ncols:Int, override val da
   
   override def apply(a:Int, b:Mat):CSMat = CSMat(gapply(a, b.asInstanceOf[IMat]))
   
+  
+  def update(i:Int, b:String):String = _update(i, b)
+  
+  def update(i:Int, j:Int, b:String):String = _update(i, j, b)
+  
+  
   def update(iv:IMat, b:CSMat):CSMat = CSMat(_update(iv, b))
   
   def update(iv:IMat, jv:IMat, b:CSMat):CSMat = CSMat(_update(iv, jv, b))
@@ -56,6 +62,8 @@ case class CSMat(override val nrows:Int, override val ncols:Int, override val da
   override def update(iv:Mat, j:Int, b:Mat):CSMat = CSMat(_update(iv.asInstanceOf[IMat], IMat.ielem(j), b.asInstanceOf[CSMat]))
 
   override def update(i:Int, jv:Mat, b:Mat):CSMat = CSMat(_update(IMat.ielem(i), jv.asInstanceOf[IMat], b.asInstanceOf[CSMat]))
+  
+  
   
   def update(iv:Mat, b:String):CSMat = CSMat(_update(iv.asInstanceOf[IMat], b))
   

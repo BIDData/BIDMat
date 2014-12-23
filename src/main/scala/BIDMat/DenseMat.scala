@@ -77,7 +77,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
   /*
    * Update a matrix value, m(r,c) = v, 0- or 1-based 
    */
-  def update(r0:Int, c0:Int, v:T):T = {
+  def _update(r0:Int, c0:Int, v:T):T = {
     val off = Mat.oneBased
     val r = r0 - off
     val c = c0 - off
@@ -91,7 +91,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
   /*
    * Update a matrix value with linear access, m(i) = v
    */
-  def update(i0:Int, v:T):T = {
+  def _update(i0:Int, v:T):T = {
     val off = Mat.oneBased
     val i = i0 - off
     if (i < 0 || i >= length) {

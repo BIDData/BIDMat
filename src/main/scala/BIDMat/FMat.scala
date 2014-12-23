@@ -104,13 +104,17 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     out
   }
   
-  def update(iv:IMat, b:FMat):FMat = FMat(_update(iv, b))
+  def update(i:Int, b:Float):Float = _update(i, b)
   
-  def update(iv:IMat, jv:IMat, b:FMat):FMat = FMat(_update(iv, jv, b))
-
-  def update(iv:IMat, j:Int, b:FMat):FMat = FMat(_update(iv, IMat.ielem(j), b))
-
-  def update(i:Int, jv:IMat, b:FMat):FMat = FMat(_update(IMat.ielem(i), jv, b))
+  def update(i:Int, j:Int, b:Float):Float = _update(i, j, b)
+  
+  def update(i:Int, b:Double):Float = _update(i, b.toFloat)
+  
+  def update(i:Int, j:Int, b:Double):Float = _update(i, j, b.toFloat)
+  
+  def update(i:Int, b:Int):Float = _update(i, b.toFloat)
+  
+  def update(i:Int, j:Int, b:Int):Float = _update(i, j, b.toFloat)
   
   
   override def update(iv:IMat, b:Float):FMat = FMat(_update(iv, b))
@@ -127,6 +131,8 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
 
   override def update(i:Int, jv:Mat, b:Float):FMat = FMat(_update(IMat.ielem(i), jv.asInstanceOf[IMat], b))
   
+  override def update(iv:Mat, j:Int, b:Float):FMat = FMat(_update(iv.asInstanceOf[IMat], IMat.ielem(j), b))
+  
   
   override def update(iv:IMat, b:Double):FMat = FMat(_update(iv, b.toFloat))
   
@@ -141,6 +147,34 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   override def update(iv:Mat, jv:Mat, b:Double):FMat = FMat(_update(iv.asInstanceOf[IMat], jv.asInstanceOf[IMat], b.toFloat))
 
   override def update(i:Int, jv:Mat, b:Double):FMat = FMat(_update(IMat.ielem(i), jv.asInstanceOf[IMat], b.toFloat))
+  
+  override def update(iv:Mat, j:Int, b:Double):FMat = FMat(_update(iv.asInstanceOf[IMat], IMat.ielem(j), b.toFloat))
+  
+  
+  override def update(iv:IMat, b:Int):FMat = FMat(_update(iv, b.toFloat))
+  
+  override def update(iv:IMat, jv:IMat, b:Int):FMat = FMat(_update(iv, jv, b.toFloat))
+  
+  override def update(i:Int, jv:IMat, b:Int):FMat = FMat(_update(IMat.ielem(i), jv, b.toFloat))
+  
+  override def update(iv:IMat, j:Int, b:Int):FMat = FMat(_update(iv, IMat.ielem(j), b.toFloat))
+  
+  override def update(iv:Mat, b:Int):FMat = FMat(_update(iv.asInstanceOf[IMat], b.toFloat))
+  
+  override def update(iv:Mat, jv:Mat, b:Int):FMat = FMat(_update(iv.asInstanceOf[IMat], jv.asInstanceOf[IMat], b.toFloat))
+
+  override def update(i:Int, jv:Mat, b:Int):FMat = FMat(_update(IMat.ielem(i), jv.asInstanceOf[IMat], b.toFloat))
+  
+  override def update(iv:Mat, j:Int, b:Int):FMat = FMat(_update(iv.asInstanceOf[IMat], IMat.ielem(j), b.toFloat))
+    
+  
+  def update(iv:IMat, b:FMat):FMat = FMat(_update(iv, b))
+  
+  def update(iv:IMat, jv:IMat, b:FMat):FMat = FMat(_update(iv, jv, b))
+
+  def update(iv:IMat, j:Int, b:FMat):FMat = FMat(_update(iv, IMat.ielem(j), b))
+
+  def update(i:Int, jv:IMat, b:FMat):FMat = FMat(_update(IMat.ielem(i), jv, b))
   
   
   override def update(iv:IMat, b:Mat):FMat = FMat(_update(iv, b.asInstanceOf[FMat]))
