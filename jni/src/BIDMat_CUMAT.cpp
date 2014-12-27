@@ -690,4 +690,13 @@ extern "C" {
     return ocopy_transpose_min(iptrs, in, out, stride, nrows, ncols);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_poissonrnd
+  (JNIEnv *env, jobject obj, jint n, jobject jA, jobject jB, jint nthreads)
+  {
+    float *A = (float*)getPointer(env, jA);
+    int *B = (int*)getPointer(env, jB);
+
+    return poissonrnd(n, A, B, nthreads);
+  }
+
 }

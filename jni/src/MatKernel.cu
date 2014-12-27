@@ -1,4 +1,5 @@
 #include <cuda_runtime.h>
+#include <curand_kernel.h>
 #include <stdio.h>
 #include <MatKernel.hpp>
 
@@ -2500,3 +2501,40 @@ int main(int argc, char **argv) {
   if (C != NULL) free(C);
 } 
 #endif
+
+__global__ void __poissonrnd(int n, float *A, int *B, curandState *rstates) {
+  int id = threadIdx.x + blockDim.x * blockIdx.x;
+  int nthreads = blockDim.x * gridDim.x;
+  curandState rstate = rstates[id];
+  for (int i = id; i < n; i += nthreads) {
+    int cr = curand_poisson(&rstate, A[i]);
+    B[i] = cr;
+  }
+}
+
+
+__global__ void __randinit(curandState *rstates) {
+  int id = threadIdx.x + blockDim.x * blockIdx.x;
+  curand_init(1234, id, 0, &rstates[id]);
+}
+
+int poissonrnd(int n, float *A, int *B, int nthreads) {
+  int nblocks = min(1024, max(1,nthreads/1024));
+  int nth = min(n, 1024);
+  curandState *rstates;
+  int err;
+  err = cudaMalloc(( void **)& rstates , nblocks * nth * sizeof(curandState));
+  if (err > 0) {
+    fprintf(stderr, "Error in cudaMalloc %d", err);
+    return err;
+  }
+  cudaDeviceSynchronize();
+  __randinit<<<nblocks,nth>>>(rstates); 
+  cudaDeviceSynchronize();
+  __poissonrnd<<<nblocks,nth>>>(n, A, B, rstates);
+  cudaDeviceSynchronize();
+  cudaFree(rstates);
+  err = cudaGetLastError();
+  return err;
+}
+

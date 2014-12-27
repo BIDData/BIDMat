@@ -259,19 +259,53 @@ object SciFunctions {
     out
   }
   
-  def gdnormrnd(mu:Double, sig:Double, out:GMat, nr:Int, nc:Int):GMat = {
-    Mat.nflops += 10L*out.length
-    curandGenerateNormalDouble(cudarng(getGPU), out.data, out.length, mu, sig)
-    JCuda.cudaDeviceSynchronize()
-    out
-  }
-  
   def gnormrnd(mu:Float, sig:Float, out:GMat):GMat = gnormrnd(mu, sig, out, out.nrows, out.ncols)
   
   def gnormrnd(mu:Float, sig:Float, nr:Int, nc:Int):GMat = {
     val out = GMat(nr, nc)
     gnormrnd(mu, sig, out)
   }
+  
+  def gdnormrnd(mu:Double, sig:Double, out:GDMat, nr:Int, nc:Int):GDMat = {
+    Mat.nflops += 10L*out.length
+    curandGenerateNormalDouble(cudarng(getGPU), out.data, out.length, mu, sig)
+    JCuda.cudaDeviceSynchronize()
+    out
+  }
+  
+  def gdnormrnd(mu:Double, sig:Double, out:GDMat):GDMat = gdnormrnd(mu, sig, out, out.nrows, out.ncols)
+  
+  def gdnormrnd(mu:Double, sig:Double, nr:Int, nc:Int):GDMat = {
+    val out = GDMat(nr, nc)
+    gdnormrnd(mu, sig, out)
+  }
+  
+  def gpoisrnd(mu:Float, nr:Int, nc:Int):GIMat = {
+    val out = GIMat(nr, nc)
+    gpoisrnd(mu, out)
+  }
+  
+  def gpoisrnd(mu:Float, out:GIMat, nr:Int, nc:Int):GIMat = {
+    Mat.nflops += 10L*out.length
+    curandGeneratePoisson(cudarng(getGPU), out.data, out.length, mu)
+    JCuda.cudaDeviceSynchronize()
+    out
+  }
+  
+  def gpoisrnd(mu:GMat, out:GIMat):GIMat = {
+    Mat.nflops += 10L*out.length
+    val nthreads = math.max(1, mu.length / 1024);
+    CUMAT.poissonrnd(out.length, mu.data, out.data, nthreads)
+    JCuda.cudaDeviceSynchronize()
+    out
+  }
+  
+  def gpoisrnd(mu:GMat):GIMat = {
+    val out = GIMat(mu.nrows, mu.ncols);
+    gpoisrnd(mu, out);
+  }
+  
+  def gpoisrnd(mu:Float, out:GIMat):GIMat = gpoisrnd(mu, out, out.nrows, out.ncols)
 
   def gamrnd(shape:Float, scale:Float, out:FMat):FMat = {
     vsRngGamma( METHOD, stream, out.length, out.data, shape, 0, scale )

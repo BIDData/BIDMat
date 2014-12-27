@@ -168,5 +168,7 @@ public final class CUMAT {
     public static native int veccmp(Pointer A, Pointer B, Pointer C);
     
     public static native int hammingdists(Pointer A, Pointer B, Pointer W, Pointer OP, Pointer OW, int n);
+    
+    public static native int poissonrnd(int n, Pointer Lambda, Pointer Out, int nthreads);
 
 }

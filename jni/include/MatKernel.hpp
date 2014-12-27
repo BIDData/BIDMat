@@ -148,3 +148,4 @@ int maxsumx(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int 
 
 int dmv(float *A, int nr, int nc, float *B, float *C, int trans);
 
+int poissonrnd(int n, float *A, int *B, int nthreads);
