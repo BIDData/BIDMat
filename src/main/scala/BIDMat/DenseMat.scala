@@ -1481,50 +1481,83 @@ object DenseMat {
     (bptrs, iptrs)    
   }    
   
-  def accum[@specialized(Double, Float, Int, Long) T](inds:IMat, vals:DenseMat[T], nr:Int, nc:Int)
-  (implicit numeric:Numeric[T], classTag:ClassTag[T]):DenseMat[T] = { 
-    if (inds.ncols > 2 || (vals.length > 1 && (inds.nrows != vals.nrows)))
-      throw new RuntimeException("mismatch in array dimensions")
-    else { 
-    	val out = DenseMat.newOrCheck(nr, nc, null, inds.GUID, vals.GUID, "accum".hashCode)
-      if (inds.ncols == 1) {
-        Mat.nflops += inds.nrows
-        var i = 0
-        if (vals.length > 1) {
-          while (i < inds.nrows) { 
-            out.data(inds.data(i)) = numeric.plus(out.data(inds.data(i)), vals.data(i))
-            i += 1
-          }
-        } else {
-          while (i < inds.nrows) { 
-            out.data(inds.data(i)) = numeric.plus(out.data(inds.data(i)), vals.data(0))
-            i += 1
-          }
-        }
-        out
-      } else { 
-        Mat.nflops += inds.nrows
-        var i = 0
-        if (vals.length > 1) {
-          while (i < inds.nrows) { 
-            if (inds.data(i) >= nr || inds.data(i+inds.nrows) >= nc)
-              throw new RuntimeException("indices out of bounds "+inds.data(i)+" "+inds.data(i+inds.nrows))
-            val indx = inds.data(i) + nr*inds.data(i+inds.nrows)
-            out.data(indx) = numeric.plus(out.data(indx), vals.data(i))
-            i += 1
-          }
-        } else {
-          while (i < inds.nrows) { 
-            if (inds.data(i) >= nr || inds.data(i+inds.nrows) >= nc)
-              throw new RuntimeException("indices out of bounds "+inds.data(i)+" "+inds.data(i+inds.nrows))
-            val indx = inds.data(i) + nr*inds.data(i+inds.nrows)
-            out.data(indx) = numeric.plus(out.data(indx), vals.data(0))
-            i += 1
-          }
-        }
-        out
-      }
+  def maxelem(ii:IMat):Int = {
+    var max0 = 0;
+    var i = 0;
+    while (i < ii.length) {
+    	max0 = math.max(max0, ii.data(i));
+    	i += 1;
     }
+    max0+1;
+  }
+  
+  def maxcol(ii:IMat, icol:Int):Int = {
+    var max0 = 0;
+    var i = 0;
+    val coloff = icol * ii.nrows;
+    while (i < ii.nrows) {
+    	max0 = math.max(max0, ii.data(i + coloff));
+    	i += 1;
+    }
+    max0+1;
+  }
+  
+  def accum[@specialized(Double, Float, Int, Long) T](inds:IMat, vals:DenseMat[T], nr0:Int, nc0:Int)
+  (implicit numeric:Numeric[T], classTag:ClassTag[T]):DenseMat[T] = { 
+ //   if (inds.ncols > 2 || (vals.length > 1 && (inds.nrows != vals.nrows)))
+      
+  	if (math.min(inds.nrows, inds.ncols) == 1) { // vector case
+  	  if (vals.length > 1 && (inds.ncols != vals.ncols || inds.nrows != vals.nrows)) {
+  	  	throw new RuntimeException("accum: mismatch in array dimensions")
+  	  } 
+  	  val colvec = (inds.nrows > inds.ncols);
+  	  val nr = if (!colvec) 1 else if (nr0 > 0) nr0 else maxelem(inds);
+  	  val nc = if (colvec) 1 else if (nc0 > 0) nc0 else maxelem(inds);
+  	  val out = DenseMat.newOrCheck(nr, nc, null, inds.GUID, vals.GUID, "accum".hashCode)
+  	  		Mat.nflops += inds.length
+  	  		var i = 0;
+  	  if (vals.length > 1) {
+  	  	while (i < inds.length) { 
+  	  		out.data(inds.data(i)) = numeric.plus(out.data(inds.data(i)), vals.data(i));
+  	  		i += 1;
+  	  	}
+  	  } else {
+  	  	val v = vals.data(0);
+  	  	while (i < inds.length) { 
+  	  		out.data(inds.data(i)) = numeric.plus(out.data(inds.data(i)), v);
+  	  		i += 1;
+  	  	}
+  	  }
+  	  out
+  	} else { 
+  		Mat.nflops += 3L*inds.nrows;
+  		val nr = if (nr0 > 0) nr0 else maxcol(inds, 0);
+  		val nc = if (nc0 > 0) nc0 else maxcol(inds, 1);
+  		val out = DenseMat.newOrCheck(nr, nc, null, inds.GUID, vals.GUID, "accum".hashCode); 
+  		var i = 0;
+  		if (vals.length > 1) {      // Non-scalar case
+  			if (inds.nrows != vals.nrows) {
+  				throw new RuntimeException("accum: mismatch in array dimensions")
+  			}
+  			while (i < inds.nrows) { 
+  				if (inds.data(i) >= nr || inds.data(i+inds.nrows) >= nc)
+  					throw new RuntimeException("indices out of bounds "+inds.data(i)+" "+inds.data(i+inds.nrows))
+  				val indx = inds.data(i) + nr*inds.data(i+inds.nrows)
+  				out.data(indx) = numeric.plus(out.data(indx), vals.data(i))
+  				i += 1
+  			}
+  		} else {
+  			while (i < inds.nrows) { 
+  				if (inds.data(i) >= nr || inds.data(i+inds.nrows) >= nc)
+  					throw new RuntimeException("indices out of bounds "+inds.data(i)+" "+inds.data(i+inds.nrows))
+  				val v = vals.data(0);
+  				val indx = inds.data(i) + nr*inds.data(i+inds.nrows)
+  						out.data(indx) = numeric.plus(out.data(indx), v)
+  						i += 1
+  			}
+  		}
+  		out
+  	}
   }
 
   def newOrCheck[T](nr:Int, nc:Int, oldmat:Mat)
