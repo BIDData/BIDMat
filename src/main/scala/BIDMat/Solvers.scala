@@ -242,19 +242,19 @@ object Solvers {
     }
   }
    
-  def chol(a:FMat):FMat = chol(a, null, "L")
-  def chol(a:DMat):DMat = chol(a, null, "L")
-  def chol(a:CMat):CMat = chol(a, null, "L")
-  def chol(a:FMat, omat:Mat):FMat = chol(a, omat, "L")
-  def chol(a:DMat, omat:Mat):DMat = chol(a, omat, "L")
-  def chol(a:CMat, omat:Mat):CMat = chol(a, omat, "L")
+  def chol(a:FMat):FMat = chol(a, null, "U")
+  def chol(a:DMat):DMat = chol(a, null, "U")
+  def chol(a:CMat):CMat = chol(a, null, "U")
+  def chol(a:FMat, omat:Mat):FMat = chol(a, omat, "U")
+  def chol(a:DMat, omat:Mat):DMat = chol(a, omat, "U")
+  def chol(a:CMat, omat:Mat):CMat = chol(a, omat, "U")
   def chol(a:Mat, omat:Mat, mode:String):Mat = a match {
     case af:FMat => chol(af, omat, mode)
     case ad:DMat => chol(ad, omat, mode)
     case ac:CMat => chol(ac, omat, mode)
   }
-  def chol(a:Mat):Mat = chol(a, null, "L")
-  def chol(a:Mat, omat:Mat):Mat = chol(a, omat, "L")
+  def chol(a:Mat):Mat = chol(a, null, "U")
+  def chol(a:Mat, omat:Mat):Mat = chol(a, omat, "U")
   
   /**
    * Standard QR decomposition. Given m x n input A, return m x m orthonormal Q and m x n upper-triangular R. 
@@ -331,7 +331,7 @@ object Solvers {
     val r = FMat.newOrCheckFMat(a.ncols, a.ncols, rin)
     Mat.nflops += 2L*a.ncols*a.ncols*a.nrows
     sgemm(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans, n, n, m, 1f, a.data, m, a.data, m, 0f, r.data, n)
-    chol(r, r, "U")
+    chol(r, r)
     q <-- a
     strtrs(ORDER.RowMajor, "LNN", r.nrows, q.nrows, r.data, r.nrows, q.data, q.nrows)
     (q, r)    
@@ -344,7 +344,7 @@ object Solvers {
     val r = DMat.newOrCheckDMat(a.ncols, a.ncols, rin)
     Mat.nflops += 2L*a.ncols*a.ncols*a.nrows
     dgemm(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans, n, n, m, 1f, a.data, m, a.data, m, 0f, r.data, n)
-    chol(r, r, "U")
+    chol(r, r)
     q <-- a
     dtrtrs(ORDER.RowMajor, "LNN", r.nrows, q.nrows, r.data, r.nrows, q.data, q.nrows)
     (q, r)    
@@ -359,7 +359,7 @@ object Solvers {
     val cone = CMat.celem(1,0)
     val czero = CMat.celem(0,0)
     cgemm(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans, n, n, m, cone.data, a.data, m, a.data, m, czero.data, r.data, n)
-    chol(r, r, "U")
+    chol(r, r)
     q <-- a
     ctrtrs(ORDER.RowMajor, "LNN", r.nrows, q.nrows, r.data, r.nrows, q.data, q.nrows)
     (q, r)    
@@ -438,6 +438,59 @@ object Solvers {
   }
   def trisolve(a:Mat, r:Mat):Mat = trisolve(a, r, null, "UNN")
   def trisolve(a:Mat, r:Mat, omat:Mat):Mat = trisolve(a, r, omat, "UNN")
+  
+  /*
+   * triinv computes the inverse of triangular A. Mode string argument is 3 characters. 
+   * Char1 = "U" or "L" for upper or lower-triangular input.
+   * Char2 = "N", "T" or "C" for A not-transposed, transposed or conjugate respectively.  
+   */
+  
+  def triinv(a:FMat, omat:Mat, mode:String):FMat = {
+    if (a.nrows != a.ncols) {
+      throw new RuntimeException("tsolve a must be square")
+    }
+    val out = FMat.newOrCheckFMat(a.ncols, a.ncols, omat)
+    out <-- a
+    Mat.nflops += 2L*a.nrows*a.nrows
+    strtri(ORDER.ColMajor, mode, a.nrows, out.data, out.nrows) 
+    out
+  }
+  
+  def triinv(a:DMat, omat:Mat, mode:String):DMat = {
+    if (a.nrows != a.ncols) {
+      throw new RuntimeException("tsolve a must be square")
+    }
+    val out = DMat.newOrCheckDMat(a.ncols, a.ncols, omat)
+    out <-- a
+    Mat.nflops += 2L*a.nrows*a.nrows
+    dtrtri(ORDER.ColMajor, mode, a.nrows, out.data, out.nrows) 
+    out
+  }
+  
+  def triinv(a:CMat, omat:Mat, mode:String):CMat = {
+    if (a.nrows != a.ncols) {
+      throw new RuntimeException("tsolve a must be square")
+    }
+    val out = CMat.newOrCheckCMat(a.ncols, a.ncols, omat)
+    out <-- a
+    Mat.nflops += 2L*a.nrows*a.nrows
+    ctrtri(ORDER.ColMajor, mode, a.nrows, out.data, out.nrows) 
+    out
+  }
+  
+  def triinv(a:DMat):DMat = triinv(a, null, "UN")
+  def triinv(a:FMat):FMat = triinv(a, null, "UN")
+  def triinv(a:CMat):CMat = triinv(a, null, "UN")
+  def triinv(a:DMat, omat:Mat):DMat = triinv(a, omat, "UN")
+  def triinv(a:FMat, omat:Mat):FMat = triinv(a, omat, "UN")
+  def triinv(a:CMat, omat:Mat):CMat = triinv(a, omat, "UN")
+  def triinv(a:Mat, omat:Mat, mode:String):Mat = a match {
+    case af:FMat => triinv(af, omat, mode)
+    case ad:DMat => triinv(ad, omat, mode)
+    case ac:CMat => triinv(ac, omat, mode)
+  }
+  def triinv(a:Mat):Mat = triinv(a, null, "UNN")
+  def triinv(a:Mat, omat:Mat):Mat = triinv(a, omat, "UNN")
   
   def shiftLeft(mat:FMat, step:Int) = {
     var i = step

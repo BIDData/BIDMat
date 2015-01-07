@@ -627,12 +627,12 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
   def ∙  (a : GDMat) = dot(a)
   def ∙→ (a : GDMat) = dotr(a)
   
-  def + (a : Float) = gOp(GDMat(a), null, op_add)
-  def - (a : Float) = gOp(GDMat(a), null, op_sub)
-  def *@ (a : Float) = gOp(GDMat(a), null, op_mul)
-  def ∘  (a : Float) = gOp(GDMat(a), null, op_mul)
-  def /  (a : Float) = gOp(GDMat(a), null, op_div)
-  def ^  (a : Float) = gOp(GDMat(a), null, op_pow)
+  override def + (a : Float) = gOp(GDMat(a), null, op_add)
+  override def - (a : Float) = gOp(GDMat(a), null, op_sub)
+  override def *@ (a : Float) = gOp(GDMat(a), null, op_mul)
+  override def ∘  (a : Float) = gOp(GDMat(a), null, op_mul)
+  override def /  (a : Float) = gOp(GDMat(a), null, op_div)
+  override def ^  (a : Float) = gOp(GDMat(a), null, op_pow)
   
   def + (a : Int) = gOp(GDMat(a.toFloat), null, op_add)
   def - (a : Int) = gOp(GDMat(a.toFloat), null, op_sub)
@@ -649,22 +649,28 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
   def <= (b : GDMat) = gOp(b, null, op_le)
   def != (b : GDMat) = gOp(b, null, op_ne)
   
-  def < (b : Float) = gOp(GDMat(b), null, op_lt)
+  override def < (b : Float) = gOp(GDMat(b), null, op_lt)
+  override def > (b : Float) = gOp(GDMat(b), null, op_gt)
+  override def <= (b : Float) = gOp(GDMat(b), null, op_le)
+  override def >= (b : Float) = gOp(GDMat(b), null, op_ge)
+  override def == (b : Float) = gOp(GDMat(b), null, op_eq)
+  override def != (b : Float) = gOp(GDMat(b), null, op_ne)
+  
   def < (b : Int) = gOp(GDMat(b), null, op_lt)
   def < (b : Double) = gOp(GDMat(b), null, op_lt)
-  def > (b : Float) = gOp(GDMat(b), null, op_gt)
+
   def > (b : Int) = gOp(GDMat(b), null, op_gt)
   def > (b : Double) = gOp(GDMat(b), null, op_gt)
-  def <= (b : Float) = gOp(GDMat(b), null, op_le)
+
   def <= (b : Int) = gOp(GDMat(b), null, op_le)
   def <= (b : Double) = gOp(GDMat(b), null, op_le)
-  def >= (b : Float) = gOp(GDMat(b), null, op_ge)
+
   def >= (b : Int) = gOp(GDMat(b), null, op_ge)
   def >= (b : Double) = gOp(GDMat(b), null, op_ge)
-  def == (b : Float) = gOp(GDMat(b), null, op_eq)
+
   def == (b : Int) = gOp(GDMat(b), null, op_eq)
   def == (b : Double) = gOp(GDMat(b), null, op_eq)
-  def != (b : Float) = gOp(GDMat(b), null, op_ne)
+
   def != (b : Int) = gOp(GDMat(b), null, op_ne)
   def != (b : Double) = gOp(GDMat(b), null, op_ne)
   

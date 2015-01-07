@@ -29,6 +29,11 @@ public final class LAPACK {
   public static native  int cgetrs( int order, String trans, int N, int nrhs, float [] A, int lda, int [] ipiv, float [] b, int ldb);
   public static native  int zgetrs( int order, String trans, int N, int nrhs, double [] A, int lda, int [] ipiv, double [] b, int ldb);
   
+  public static native  int strtri( int order, String mdata, int n, float [] A, int lda);
+  public static native  int dtrtri( int order, String mdata, int n, double [] A, int lda);
+  public static native  int ctrtri( int order, String mdata, int n, float [] A, int lda);
+  public static native  int ztrtri( int order, String mdata, int n, double [] A, int lda);
+  
   public static native  int strtrs( int order, String mdata, int n, int nrhs, float [] A, int lda, float [] b, int ldb);
   public static native  int dtrtrs( int order, String mdata, int n, int nrhs, double [] A, int lda, double [] b, int ldb);
   public static native  int ctrtrs( int order, String mdata, int n, int nrhs, float [] A, int lda, float [] b, int ldb);

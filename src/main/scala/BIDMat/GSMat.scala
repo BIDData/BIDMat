@@ -203,8 +203,42 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
   
   override def Tx (b : Mat) = Mop_TTimes.op(this, b, null)
   override def ^* (b : Mat) = Mop_TTimes.op(this, b, null)
-
   
+  override def != (b : Float):GSMat = {
+    val out = copy
+    out.contents ~ out.contents != b;
+    out
+  }
+
+  override def > (b : Float):GSMat = {
+    val out = copy
+    out.contents ~ out.contents > b;
+    out
+  } 
+  
+  override def < (b : Float):GSMat = {
+    val out = copy
+    out.contents ~ out.contents < b;
+    out
+  } 
+  
+  override def <= (b : Float):GSMat = {
+    val out = copy
+    out.contents ~ out.contents <= b;
+    out
+  } 
+    
+  override def >= (b : Float):GSMat = {
+    val out = copy
+    out.contents ~ out.contents >= b;
+    out
+  } 
+      
+  override def == (b : Float):GSMat = {
+    val out = copy
+    out.contents ~ out.contents == b;
+    out
+  } 
   
 }
 

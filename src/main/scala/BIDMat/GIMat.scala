@@ -369,12 +369,12 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   def on(a : GIMat) = vertcat(a, null)
   def \ (a : GIMat) = horzcat(a, null)
   
-  def + (a : Float) = GIop(GIMat(a.toInt), null, op_add)
-  def - (a : Float) = GIop(GIMat(a.toInt), null, op_sub)
-  def *@ (a : Float) = GIop(GIMat(a.toInt), null, op_mul)
-  def ∘  (a : Float) = GIop(GIMat(a.toInt), null, op_mul)
-  def /  (a : Float) = GIop(GIMat(a.toInt), null, op_div)
-  def ^  (a : Float) = GIop(GIMat(a.toInt), null, op_pow)
+  override def + (a : Float) = GIop(GIMat(a.toInt), null, op_add)
+  override def - (a : Float) = GIop(GIMat(a.toInt), null, op_sub)
+  override def *@ (a : Float) = GIop(GIMat(a.toInt), null, op_mul)
+  override def ∘  (a : Float) = GIop(GIMat(a.toInt), null, op_mul)
+  override def /  (a : Float) = GIop(GIMat(a.toInt), null, op_div)
+  override def ^  (a : Float) = GIop(GIMat(a.toInt), null, op_pow)
   
   def + (a : Int) = GIop(GIMat(a), null, op_add)
   def - (a : Int) = GIop(GIMat(a), null, op_sub)
@@ -383,22 +383,28 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   def /  (a : Int) = GIop(GIMat(a), null, op_div)
   def ^  (a : Int) = GIop(GIMat(a), null, op_pow)
    
-  def < (b : Float) = GIop(GIMat(b.toInt), null, op_lt)
+  override def < (b : Float) = GIop(GIMat(b.toInt), null, op_lt);
+  override def > (b : Float) = GIop(GIMat(b.toInt), null, op_gt);
+  override def <= (b : Float) = GIop(GIMat(b.toInt), null, op_le);
+  override def >= (b : Float) = GIop(GIMat(b.toInt), null, op_ge);
+  override def == (b : Float) = GIop(GIMat(b.toInt), null, op_eq);
+  override def != (b : Float) = GIop(GIMat(b.toInt), null, op_ne);
+    
   def < (b : Int) = GIop(GIMat(b), null, op_lt)
   def < (b : Double) = GIop(GIMat(b.toInt), null, op_lt)
-  def > (b : Float) = GIop(GIMat(b.toInt), null, op_gt)
+
   def > (b : Int) = GIop(GIMat(b), null, op_gt)
   def > (b : Double) = GIop(GIMat(b.toInt), null, op_gt)
-  def <= (b : Float) = GIop(GIMat(b.toInt), null, op_le)
+
   def <= (b : Int) = GIop(GIMat(b), null, op_le)
   def <= (b : Double) = GIop(GIMat(b.toInt), null, op_le)
-  def >= (b : Float) = GIop(GIMat(b.toInt), null, op_ge)
+
   def >= (b : Int) = GIop(GIMat(b), null, op_ge)
   def >= (b : Double) = GIop(GIMat(b.toInt), null, op_ge)
-  def == (b : Float) = GIop(GIMat(b.toInt), null, op_eq)
+
   def == (b : Int) = GIop(GIMat(b), null, op_eq)
   def == (b : Double) = GIop(GIMat(b.toInt), null, op_eq)
-  def != (b : Float) = GIop(GIMat(b.toInt), null, op_ne)
+
   def != (b : Int) = GIop(GIMat(b), null, op_ne)
   def != (b : Double) = GIop(GIMat(b.toInt), null, op_ne)            
   

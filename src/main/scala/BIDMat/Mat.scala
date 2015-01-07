@@ -23,6 +23,10 @@ class Mat(nr:Int, nc:Int) {
     throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and "+that.mytype)
   }
   
+  def notImplemented2(s:String,that:Float):Mat = { 
+    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and Float")
+  }
+  
   def t = notImplemented0("t")  
   def dv:Double = throw new RuntimeException("operator dv not implemented for "+this.mytype)
   
@@ -175,6 +179,22 @@ class Mat(nr:Int, nc:Int) {
   def == (b : Mat):Mat = notImplemented1("==", b)
   def === (b : Mat):Mat = notImplemented1("===", b)
   def != (b : Mat):Mat = notImplemented1("!=", b)
+  
+  def *  (b : Float):Mat = notImplemented2("*", b)
+  def +  (b : Float):Mat = notImplemented2("+", b)
+  def -  (b : Float):Mat = notImplemented2("-", b)
+  def *@ (b : Float):Mat = notImplemented2("*@", b)
+  def ∘  (b : Float):Mat = notImplemented2("∘", b)
+  def / (b : Float):Mat = notImplemented2("/", b)
+  def ^  (b : Float):Mat = notImplemented2("^", b)
+  
+  def >  (b : Float):Mat = notImplemented2(">", b)
+  def <  (b : Float):Mat = notImplemented2("<", b)
+  def >= (b : Float):Mat = notImplemented2(">=", b)
+  def <= (b : Float):Mat = notImplemented2("<=", b)
+  def == (b : Float):Mat = notImplemented2("==", b)
+  def === (b : Float):Mat = notImplemented2("===", b)
+  def != (b : Float):Mat = notImplemented2("!=", b)
   
   def <-- (b : Mat):Mat = b.copyTo(this)
   

@@ -183,22 +183,57 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_zgetrs
 	return returnValue;
 }
 
-JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_dtrtrs
-(JNIEnv * env, jobject calling_obj, jint order, jstring j_meta, jint n, jint nrhs, jdoubleArray j_a, jint lda, 
- jdoubleArray j_b, int ldb){
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_strtri
+(JNIEnv * env, jobject calling_obj, jint order, jstring j_meta, jint n, jfloatArray j_a, jint lda){
 	char * meta = (char *)(*env)->GetStringUTFChars(env, j_meta, JNI_FALSE);
-	jdouble * a = (*env)->GetPrimitiveArrayCritical(env, j_a, JNI_FALSE);
-	jdouble * b = (*env)->GetPrimitiveArrayCritical(env, j_b, JNI_FALSE);
+	jfloat * a = (*env)->GetPrimitiveArrayCritical(env, j_a, JNI_FALSE);
 	jint returnValue;
 
-	returnValue = LAPACKE_dtrtrs(order, meta[0], meta[1], meta[2], n, nrhs, a, lda, b, ldb);
+	returnValue = LAPACKE_strtri(order, meta[0], meta[1], n, a, lda);
 
-	(*env)->ReleasePrimitiveArrayCritical(env, j_b, b, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, j_a, a, 0);
 	(*env)->ReleaseStringUTFChars(env, j_meta, meta);
 	return returnValue;
 }
 
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_dtrtri
+(JNIEnv * env, jobject calling_obj, jint order, jstring j_meta, jint n, jdoubleArray j_a, jint lda){
+	char * meta = (char *)(*env)->GetStringUTFChars(env, j_meta, JNI_FALSE);
+	jdouble * a = (*env)->GetPrimitiveArrayCritical(env, j_a, JNI_FALSE);
+	jint returnValue;
+
+	returnValue = LAPACKE_dtrtri(order, meta[0], meta[1], n, a, lda);
+
+	(*env)->ReleasePrimitiveArrayCritical(env, j_a, a, 0);
+	(*env)->ReleaseStringUTFChars(env, j_meta, meta);
+	return returnValue;
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_ctrtri
+(JNIEnv * env, jobject calling_obj, jint order, jstring j_meta, jint n, jfloatArray j_a, jint lda){
+	char * meta = (char *)(*env)->GetStringUTFChars(env, j_meta, JNI_FALSE);
+	jfloat * a = (*env)->GetPrimitiveArrayCritical(env, j_a, JNI_FALSE);
+	jint returnValue;
+
+	returnValue = LAPACKE_ctrtri(order, meta[0], meta[1], n, (MKL_Complex8 *)a, lda);
+
+	(*env)->ReleasePrimitiveArrayCritical(env, j_a, a, 0);
+	(*env)->ReleaseStringUTFChars(env, j_meta, meta);
+	return returnValue;
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_ztrtri
+(JNIEnv * env, jobject calling_obj, jint order, jstring j_meta, jint n, jdoubleArray j_a, jint lda){
+	char * meta = (char *)(*env)->GetStringUTFChars(env, j_meta, JNI_FALSE);
+	jdouble * a = (*env)->GetPrimitiveArrayCritical(env, j_a, JNI_FALSE);
+	jint returnValue;
+
+	returnValue = LAPACKE_ztrtri(order, meta[0], meta[1], n, (MKL_Complex16 *)a, lda);
+
+	(*env)->ReleasePrimitiveArrayCritical(env, j_a, a, 0);
+	(*env)->ReleaseStringUTFChars(env, j_meta, meta);
+	return returnValue;
+}
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_strtrs
 (JNIEnv * env, jobject calling_obj, jint order, jstring j_meta, jint n, jint nrhs, jfloatArray j_a, jint lda, 
@@ -209,6 +244,22 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_strtrs
 	jint returnValue;
 
 	returnValue = LAPACKE_strtrs(order, meta[0], meta[1], meta[2], n, nrhs, a, lda, b, ldb);
+
+	(*env)->ReleasePrimitiveArrayCritical(env, j_b, b, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_a, a, 0);
+	(*env)->ReleaseStringUTFChars(env, j_meta, meta);
+	return returnValue;
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_dtrtrs
+(JNIEnv * env, jobject calling_obj, jint order, jstring j_meta, jint n, jint nrhs, jdoubleArray j_a, jint lda, 
+ jdoubleArray j_b, int ldb){
+	char * meta = (char *)(*env)->GetStringUTFChars(env, j_meta, JNI_FALSE);
+	jdouble * a = (*env)->GetPrimitiveArrayCritical(env, j_a, JNI_FALSE);
+	jdouble * b = (*env)->GetPrimitiveArrayCritical(env, j_b, JNI_FALSE);
+	jint returnValue;
+
+	returnValue = LAPACKE_dtrtrs(order, meta[0], meta[1], meta[2], n, nrhs, a, lda, b, ldb);
 
 	(*env)->ReleasePrimitiveArrayCritical(env, j_b, b, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, j_a, a, 0);
@@ -231,7 +282,6 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_ctrtrs
 	(*env)->ReleaseStringUTFChars(env, j_meta, meta);
 	return returnValue;
 }
-
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_ztrtrs
 (JNIEnv * env, jobject calling_obj, jint order, jstring j_meta, jint n, jint nrhs, jdoubleArray j_a, jint lda, 
