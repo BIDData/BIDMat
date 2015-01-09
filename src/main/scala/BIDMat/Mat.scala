@@ -27,6 +27,22 @@ class Mat(nr:Int, nc:Int) {
     throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and Float")
   }
   
+  def notImplementedf(s:String):Float = { 
+    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
+  }
+  
+  def notImplementedd(s:String):Double = { 
+    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
+  }
+  
+  def notImplementedi(s:String):Int = { 
+    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
+  }
+  
+  def notImplementedl(s:String):Long = { 
+    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
+  }
+  
   def t = notImplemented0("t")  
   def dv:Double = throw new RuntimeException("operator dv not implemented for "+this.mytype)
   
@@ -101,7 +117,6 @@ class Mat(nr:Int, nc:Int) {
   def update(a:IMat, b:Int, c:Long) = notImplemented0("block update");   
   def update(a:Int, b:IMat, c:Long) = notImplemented0("block update");
 
-  
   def update(a:GIMat, b:Mat) = notImplemented0("linear update");
   def update(a:GIMat, b:GIMat, m:Mat) = notImplemented0("block update");
   def update(a:GIMat, b:Int, m:Mat) = notImplemented0("block update");	
@@ -122,6 +137,13 @@ class Mat(nr:Int, nc:Int) {
   def update(a:Int, b:GIMat, c:Float) = notImplemented0("block update");
   def update(a:GIMat, b:IMat, c:Float) = notImplemented0("block update");
   def update(a:IMat, b:GIMat, c:Float) = notImplemented0("block update");
+  
+  def update(a:GIMat, b:Double) = notImplemented0("linear update");
+  def update(a:GIMat, b:GIMat, c:Double) = notImplemented0("block update");
+  def update(a:GIMat, b:Int, c:Double) = notImplemented0("block update");  
+  def update(a:Int, b:GIMat, c:Double) = notImplemented0("block update");
+  def update(a:GIMat, b:IMat, c:Double) = notImplemented0("block update");
+  def update(a:IMat, b:GIMat, c:Double) = notImplemented0("block update");
   
   def update(a:Mat, v:Mat):Mat = notImplemented0("linear update");
   def update(a:Mat, b:Mat, v:Mat):Mat = notImplemented0("block update");
@@ -147,6 +169,16 @@ class Mat(nr:Int, nc:Int) {
   def update(a:Mat, b:Mat, v:Long):Mat = notImplemented0("block update");
   def update(a:Mat, b:Int, v:Long):Mat = notImplemented0("block update");
   def update(a:Int, b:Mat, v:Long):Mat = notImplemented0("block update");
+  
+  def update(a:Int, v:Float):Mat = notImplemented0("linear update");
+  def update(a:Int, v:Double):Mat = notImplemented0("linear update");
+  def update(a:Int, v:Int):Mat = notImplemented0("linear update");
+  def update(a:Int, v:Long):Mat = notImplemented0("linear update");
+  
+  def update(a:Int, b:Int, v:Float):Mat = notImplemented0("update");
+  def update(a:Int, b:Int, v:Double):Mat = notImplemented0("update");
+  def update(a:Int, b:Int, v:Int):Mat = notImplemented0("update");
+  def update(a:Int, b:Int, v:Long):Mat = notImplemented0("update");
   
   
   def unary_-():Mat = notImplemented1("-", this)

@@ -105,10 +105,10 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     	data(indx) = v.data(0)
     	data(indx+1) = v.data(1)
     }
-    v
+    this
   }
   
-  def update(r0:Int, c0:Int, v:Float):Float = {
+  override def update(r0:Int, c0:Int, v:Float):CMat = {
     val off = Mat.oneBased
     val r = r0 - off
     val c = c0 - off
@@ -119,7 +119,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     	data(indx) = v
     	data(indx+1) = 0
     }
-    v
+    this
   }
 
   def update(i0:Int, v:CMat):CMat = {
@@ -131,10 +131,10 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
       data(2*i) = v.data(0)
       data(2*i+1) = v.data(1)
     }
-    v
+    this
   }
   
-  def update(i0:Int, v:Float):Float = {
+  override def update(i0:Int, v:Float):CMat = {
   	val off = Mat.oneBased
     val i = i0 - off
     if (i < 0 || i >= length) {
@@ -143,7 +143,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
       data(2*i) = v
       data(2*i+1) = 0
     }
-  	v
+  	this
   }
   
   def tx(oldmat:Mat):CMat  = {
@@ -819,8 +819,8 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   	val out = CMat.newOrCheckCMat(nr, nc, null, nr, nc, "cones".##)
   	var i = 0
   	while (i < out.length) {
-  	  out(2*i) = 1
-  	  out(2*i+1) = 0
+  	  out(2*i) = 1f
+  	  out(2*i+1) = 0f
   	  i += 1
   	}
   	out

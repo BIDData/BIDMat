@@ -91,17 +91,17 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   override def rowslice(a:Int, b:Int, out:Mat, c:Int) = IMat(growslice(a, b, out, c))  
   
   
-  def update(i:Int, b:Int):Int = _update(i, b)
+  override def update(i:Int, b:Int):IMat = {_update(i, b); this}
   
-  def update(i:Int, j:Int, b:Int):Int = _update(i, j, b)
+  override def update(i:Int, j:Int, b:Int):IMat = {_update(i, j, b); this}
   
-  def update(i:Int, b:Double):Int = _update(i, b.toInt)
+  override def update(i:Int, b:Double):IMat = {_update(i, b.toInt); this}
   
-  def update(i:Int, j:Int, b:Double):Int = _update(i, j, b.toInt)
+  override def update(i:Int, j:Int, b:Double):IMat = {_update(i, j, b.toInt); this}
   
-  def update(i:Int, b:Float):Int = _update(i, b.toInt)
+  override def update(i:Int, b:Float):IMat = {_update(i, b.toInt); this}
   
-  def update(i:Int, j:Int, b:Float):Int = _update(i, j, b.toInt)
+  override def update(i:Int, j:Int, b:Float):IMat = {_update(i, j, b.toInt); this}
   
 
   override def update(iv:IMat, b:Int):IMat = IMat(_update(iv, b))

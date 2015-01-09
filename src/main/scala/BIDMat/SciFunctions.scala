@@ -11,6 +11,7 @@ import jcuda.jcurand.JCurand._;
 import jcuda.jcurand.curandGenerator;
 import jcuda.jcurand.curandRngType._;
 import edu.berkeley.bid.CUMAT;
+import edu.berkeley.bid.CUMATD;
 import java.util.Random._;
 import MatFunctions._
 import org.apache.commons.math3.special._
@@ -721,6 +722,22 @@ object SciFunctions {
   
   def cumsumg(a:GIMat, jc:GIMat):GIMat = GIMat.cumsumg(a, jc, null)  
   def maxg(a:GIMat, jc:GIMat) = GIMat.maxg(a, jc, null, null)
+  
+  def cumsumg(a:GDMat, jc:GIMat, omat:Mat):GDMat = GDMat.cumsumg(a, jc, omat) 
+  def maxg(a:GDMat, jc:GIMat, omat:Mat, omati:Mat):(GDMat,GIMat) = GDMat.maxg(a, jc, omat, omati) 
+  def ming(a:GDMat, jc:GIMat, omat:Mat, omati:Mat):(GDMat,GIMat) = GDMat.maxg(a, jc, omat, omati) 
+  def maxi2(a:GDMat, omat:Mat, omati:Mat, dir:Int):(GDMat,GIMat) = GDMat.maxi2(a, omat, omati, dir) 
+  def mini2(a:GDMat, omat:Mat, omati:Mat, dir:Int):(GDMat,GIMat) = GDMat.mini2(a, omat, omati, dir)
+  def maxi2(a:GDMat, omat:Mat, omati:Mat):(GDMat,GIMat) = GDMat.maxi2(a, omat, omati, 0) 
+  def mini2(a:GDMat, omat:Mat, omati:Mat):(GDMat,GIMat) = GDMat.mini2(a, omat, omati, 0)
+  
+  def cumsumg(a:GDMat, jc:GIMat):GDMat = GDMat.cumsumg(a, jc, null)  
+  def maxg(a:GDMat, jc:GIMat) = GDMat.maxg(a, jc, null, null) 
+  def ming(a:GDMat, jc:GIMat) = GDMat.ming(a, jc, null, null)
+  def maxi2(a:GDMat, dir:Int):(GDMat,GIMat) = GDMat.maxi2(a, null, null, dir)  
+  def mini2(a:GDMat, dir:Int):(GDMat,GIMat) = GDMat.mini2(a, null, null, dir)
+  def maxi2(a:GDMat):(GDMat,GIMat) = GDMat.maxi2(a, null, null, 0)  
+  def mini2(a:GDMat):(GDMat,GIMat) = GDMat.mini2(a, null, null, 0)
      
   def max(a:Mat, b:Mat):Mat = max(a, b, null)
   def min(a:Mat, b:Mat):Mat = min(a, b, null)
@@ -738,6 +755,11 @@ object SciFunctions {
       case (aa:GMat, bb:FMat) => max(aa, GMat(bb), c):GMat
       case (aa:IMat, bb:GMat) => max(GMat(aa), bb, c):GMat
       case (aa:GMat, bb:IMat) => max(aa, GMat(bb), c):GMat
+      case (aa:GDMat, bb:GDMat) => max(aa, bb, c):GDMat
+      case (aa:GDMat, bb:FMat) => max(aa, GDMat(bb), c):GDMat
+      case (aa:FMat, bb:GDMat) => max(GDMat(aa), bb, c):GDMat
+      case (aa:GDMat, bb:IMat) => max(aa, GDMat(bb), c):GDMat
+      case (aa:IMat, bb:GDMat) => max(GDMat(aa), bb, c):GDMat
     }
   }
   
@@ -754,6 +776,11 @@ object SciFunctions {
       case (aa:GMat, bb:FMat) => min(aa, GMat(bb), c):GMat
       case (aa:IMat, bb:GMat) => min(GMat(aa), bb, c):GMat
       case (aa:GMat, bb:IMat) => min(aa, GMat(bb), c):GMat
+      case (aa:GDMat, bb:GDMat) => min(aa, bb, c):GDMat
+      case (aa:GDMat, bb:FMat) => min(aa, GDMat(bb), c):GDMat
+      case (aa:FMat, bb:GDMat) => min(GDMat(aa), bb, c):GDMat
+      case (aa:GDMat, bb:IMat) => min(aa, GDMat(bb), c):GDMat
+      case (aa:IMat, bb:GDMat) => min(GDMat(aa), bb, c):GDMat
     }
   }
    
@@ -764,6 +791,7 @@ object SciFunctions {
       case aa:LMat => maxi(aa, b):LMat
       case aa:DMat => maxi(aa, b):DMat
       case aa:GMat => maxi(aa, b):GMat
+      case aa:GDMat => maxi(aa, b):GDMat
     }
   }
   
@@ -775,6 +803,7 @@ object SciFunctions {
       case aa:LMat => maxi(aa):LMat
       case aa:DMat => maxi(aa):DMat
       case aa:GMat => maxi(aa):GMat
+      case aa:GDMat => maxi(aa):GDMat
     }
   }
   
@@ -785,6 +814,7 @@ object SciFunctions {
       case aa:LMat => mini(aa, b):LMat
       case aa:DMat => mini(aa, b):DMat
       case aa:GMat => mini(aa, b):GMat
+      case aa:GDMat => mini(aa, b):GDMat
     }
   }
   
@@ -795,6 +825,7 @@ object SciFunctions {
       case aa:LMat => mini(aa):LMat
       case aa:DMat => mini(aa):DMat
       case aa:GMat => mini(aa):GMat
+      case aa:GDMat => mini(aa):GDMat
     }
   }
   
@@ -805,6 +836,7 @@ object SciFunctions {
       case aa:LMat => maxi2(aa, b):(LMat,IMat)
       case aa:DMat => maxi2(aa, b):(DMat,IMat)
       case aa:GMat => maxi2(aa, b):(GMat,GIMat)
+      case aa:GDMat => maxi2(aa, b):(GDMat,GIMat)
     }
   }
   
@@ -815,10 +847,9 @@ object SciFunctions {
       case aa:LMat => maxi2(aa):(LMat,IMat)
       case aa:DMat => maxi2(aa):(DMat,IMat)
       case aa:GMat => maxi2(aa):(GMat,GIMat)
+      case aa:GDMat => maxi2(aa):(GDMat,GIMat)
     }
   }
-    
-
   
   def mini2(a:Mat, b:Int):(Mat,Mat) = {
     a match {
@@ -827,6 +858,7 @@ object SciFunctions {
       case aa:LMat => mini2(aa, b):(LMat,IMat)
       case aa:DMat => mini2(aa, b):(DMat,IMat)
       case aa:GMat => mini2(aa, b):(GMat,GIMat)
+      case aa:GDMat => mini2(aa, b):(GDMat,GIMat)
     }
   }
   
@@ -837,6 +869,7 @@ object SciFunctions {
       case aa:LMat => mini2(aa):(LMat,IMat)
       case aa:DMat => mini2(aa):(DMat,IMat)
       case aa:GMat => mini2(aa):(GMat,GIMat)
+      case aa:GDMat => mini2(aa):(GDMat,GIMat)
     }
   } 
   
@@ -849,7 +882,9 @@ object SciFunctions {
       case aa:CMat => sum(aa, b):CMat
       case aa:SMat => sum(aa, b):FMat
       case aa:GMat => sum(aa, b):GMat
+      case aa:GDMat => sum(aa, b):GDMat
       case aa:GSMat => sum(aa, b):GMat
+      case aa:GSDMat => sum(aa, b):GDMat
     }
   }
   
@@ -864,7 +899,9 @@ object SciFunctions {
       case aa:SMat=> sum(aa, b, c):FMat
       case aa:CMat => sum(aa, b, c):CMat
       case aa:GMat => sum(aa, b, c):GMat
+      case aa:GDMat => sum(aa, b, c):GDMat
       case aa:GSMat => sum(aa, b, c):GMat
+      case aa:GSDMat => sum(aa, b, c):GDMat
     }
   }
   
@@ -1995,6 +2032,119 @@ object SciFunctions {
   def atan2(a:GMat, b:GMat):GMat =   applyGfun2(a, b, TransF2.atan2, 10L)
   def pow(a:GMat, b:GMat):GMat =     applyGfun2(a, b, TransF2.pow, 10L)
   
+  def applyGDfun(in:GDMat, omat:Mat, opn:Int, kflops:Long):GDMat = {
+    val out = GDMat.newOrCheckGDMat(in.nrows, in.ncols, omat, in.GUID, opn)
+    CUMATD.applygfun(in.data, out.data, in.nrows*in.ncols, opn)
+    JCuda.cudaDeviceSynchronize()
+    Mat.nflops += kflops*in.length
+    out
+  }
+
+  def applyGDfun(in:GDMat, opn:Int, kflops:Long):GDMat = {
+    val out = GDMat.newOrCheckGDMat(in.nrows, in.ncols, null, in.GUID, opn)
+    CUMATD.applygfun(in.data, out.data, in.nrows*in.ncols, opn)
+    JCuda.cudaDeviceSynchronize()
+    Mat.nflops += kflops*in.length
+    out
+  }
+  
+  def applyGDfun2(a:GDMat, b:GDMat, omat:Mat, opn:Int, kflops:Long):GDMat = {   
+    if (a.nrows == b.nrows && a.ncols == b.ncols) {
+    	val out = GDMat.newOrCheckGDMat(a.nrows, a.ncols, omat, a.GUID, b.GUID, opn)
+      CUMATD.applygfun2(a.data, b.data, out.data, a.nrows*a.ncols, opn)
+      JCuda.cudaDeviceSynchronize()
+      Mat.nflops += kflops*a.length
+      out
+    } else {
+      throw new RuntimeException("Dimensions mismatch")
+    }
+  }
+
+  def applyGDfun2(a:GDMat, b:GDMat, opn:Int, kflops:Long):GDMat = {
+    if  (a.nrows == b.nrows && a.ncols == b.ncols)  {
+	    val out = GDMat.newOrCheckGDMat(a.nrows, a.ncols, null, a.GUID, b.GUID, opn)
+	    CUMATD.applygfun2(a.data, b.data, out.data, a.nrows*a.ncols, opn)
+	    JCuda.cudaDeviceSynchronize()
+	    Mat.nflops += kflops*a.length
+	    out
+    } else {
+      throw new RuntimeException("Dimensions mismatch")
+    }
+  }
+  import GMat.TransF
+
+  def abs(in:GDMat, out:Mat):GDMat =     applyGDfun(in, out, TransF.abs, 1L)
+  def exp(in:GDMat, out:Mat):GDMat =     applyGDfun(in, out, TransF.exp, 10L)
+  def expm1(in:GDMat, out:Mat):GDMat =   applyGDfun(in, out, TransF.expm1, 10L)
+  def sqrt(in:GDMat, out:Mat):GDMat =    applyGDfun(in, out, TransF.sqrt, 10L)
+  def ln(in:GDMat, out:Mat):GDMat =      applyGDfun(in, out, TransF.ln, 10L)
+  def log10(in:GDMat, out:Mat):GDMat =   applyGDfun(in, out, TransF.log10, 10L)
+  def log1p(in:GDMat, out:Mat):GDMat =   applyGDfun(in, out, TransF.log1p, 10L)
+  def cos(in:GDMat, out:Mat):GDMat =     applyGDfun(in, out, TransF.cos, 10L)
+  def sin(in:GDMat, out:Mat):GDMat =     applyGDfun(in, out, TransF.sin, 10L)
+  def tan(in:GDMat, out:Mat):GDMat =     applyGDfun(in, out, TransF.tan, 10L)
+  def cosh(in:GDMat, out:Mat):GDMat =    applyGDfun(in, out, TransF.cosh, 10L)
+  def sinh(in:GDMat, out:Mat):GDMat =    applyGDfun(in, out, TransF.sinh, 10L)
+  def tanh(in:GDMat, out:Mat):GDMat =    applyGDfun(in, out, TransF.tanh, 10L)
+  def acos(in:GDMat, out:Mat):GDMat =    applyGDfun(in, out, TransF.acos, 10L)
+  def asin(in:GDMat, out:Mat):GDMat =    applyGDfun(in, out, TransF.asin, 10L)
+  def atan(in:GDMat, out:Mat):GDMat =    applyGDfun(in, out, TransF.atan, 10L)
+  def acosh(in:GDMat, out:Mat):GDMat =   applyGDfun(in, out, TransF.acosh, 10L)
+  def asinh(in:GDMat, out:Mat):GDMat =   applyGDfun(in, out, TransF.asinh, 10L)
+  def atanh(in:GDMat, out:Mat):GDMat =   applyGDfun(in, out, TransF.atanh, 10L)
+  def erf(in:GDMat, out:Mat):GDMat =     applyGDfun(in, out, TransF.erf, 10L)
+  def erfinv(in:GDMat, out:Mat):GDMat =  applyGDfun(in, out, TransF.erfinv, 10L)
+  def erfc(in:GDMat, out:Mat):GDMat =    applyGDfun(in, out, TransF.erfc, 10L)
+  def ercinv(in:GDMat, out:Mat):GDMat =  applyGDfun(in, out, TransF.erfcinv, 10L)
+  def gammaln(in:GDMat, out:Mat):GDMat = applyGDfun(in, out, TransF.gammaln, 10L)
+  def gamma(in:GDMat, out:Mat):GDMat =   applyGDfun(in, out, TransF.gamma, 10L)
+  def ceil(in:GDMat, out:Mat):GDMat =    applyGDfun(in, out, TransF.ceil, 10L)
+  def floor(in:GDMat, out:Mat):GDMat =   applyGDfun(in, out, TransF.floor, 10L)
+  def round(in:GDMat, out:Mat):GDMat =   applyGDfun(in, out, TransF.round, 10L)
+  def trunc(in:GDMat, out:Mat):GDMat =   applyGDfun(in, out, TransF.trunc, 10L)
+  def sign(in:GDMat, out:Mat):GDMat =    applyGDfun(in, out, TransF.sign, 1L)
+  def exppsi(in:GDMat, out:Mat):GDMat =  applyGDfun(in, out, TransF.exppsi, 1L)
+  
+  import GMat.TransF2
+  
+  def atan2(a:GDMat, b:GDMat, out:Mat):GDMat =   applyGDfun2(a, b, out, TransF2.atan2, 10L)
+  def pow(a:GDMat, b:GDMat, out:Mat):GDMat =     applyGDfun2(a, b, out, TransF2.pow, 10L)
+
+  def abs(in:GDMat):GDMat =     applyGDfun(in, TransF.abs, 10L)
+  def exp(in:GDMat):GDMat =     applyGDfun(in, TransF.exp, 10L)
+  def expm1(in:GDMat):GDMat =   applyGDfun(in, TransF.expm1, 10L)
+  def sqrt(in:GDMat):GDMat =    applyGDfun(in, TransF.sqrt, 10L)
+  def ln(in:GDMat):GDMat =      applyGDfun(in, TransF.ln, 10L)
+  def log10(in:GDMat):GDMat =   applyGDfun(in, TransF.log10, 10L)
+  def log1p(in:GDMat):GDMat =   applyGDfun(in, TransF.log1p, 10L)
+  def cos(in:GDMat):GDMat =     applyGDfun(in, TransF.cos, 10L)
+  def sin(in:GDMat):GDMat =     applyGDfun(in, TransF.sin, 10L)
+  def tan(in:GDMat):GDMat =     applyGDfun(in, TransF.tan, 10L)
+  def cosh(in:GDMat):GDMat =    applyGDfun(in, TransF.cosh, 10L)
+  def sinh(in:GDMat):GDMat =    applyGDfun(in, TransF.sinh, 10L)
+  def tanh(in:GDMat):GDMat =    applyGDfun(in, TransF.tanh, 10L)
+  def acos(in:GDMat):GDMat =    applyGDfun(in, TransF.acos, 10L)
+  def asin(in:GDMat):GDMat =    applyGDfun(in, TransF.asin, 10L)
+  def atan(in:GDMat):GDMat =    applyGDfun(in, TransF.atan, 10L)
+  def acosh(in:GDMat):GDMat =   applyGDfun(in, TransF.acosh, 10L)
+  def asinh(in:GDMat):GDMat =   applyGDfun(in, TransF.asinh, 10L)
+  def atanh(in:GDMat):GDMat =   applyGDfun(in, TransF.atanh, 10L)
+  def erf(in:GDMat):GDMat =     applyGDfun(in, TransF.erf, 10L)
+  def erfinv(in:GDMat):GDMat =  applyGDfun(in, TransF.erfinv, 10L)
+  def erfc(in:GDMat):GDMat =    applyGDfun(in, TransF.erfc, 10L)
+  def ercinv(in:GDMat):GDMat =  applyGDfun(in, TransF.erfcinv, 10L)
+  def gammaln(in:GDMat):GDMat = applyGDfun(in, TransF.gammaln, 10L)
+  def gamma(in:GDMat):GDMat =   applyGDfun(in, TransF.gamma, 10L)
+  def ceil(in:GDMat):GDMat =    applyGDfun(in, TransF.ceil, 10L)
+  def floor(in:GDMat):GDMat =   applyGDfun(in, TransF.floor, 10L)
+  def round(in:GDMat):GDMat =   applyGDfun(in, TransF.round, 10L)
+  def trunc(in:GDMat):GDMat =   applyGDfun(in, TransF.trunc, 10L)
+  def sign(in:GDMat):GDMat =    applyGDfun(in, TransF.sign, 1L)
+  def exppsi(in:GDMat):GDMat =    applyGDfun(in, TransF.exppsi, 1L)
+  
+  def atan2(a:GDMat, b:GDMat):GDMat =   applyGDfun2(a, b, TransF2.atan2, 10L)
+  def pow(a:GDMat, b:GDMat):GDMat =     applyGDfun2(a, b, TransF2.pow, 10L)
+  
   import GMat.BinOp
   def max(a:GMat, b:GMat):GMat    = max(a, b, null)
   def min(a:GMat, b:GMat):GMat    = min(a, b, null)
@@ -2025,6 +2175,36 @@ object SciFunctions {
   def sum(a:GSMat) = a.sum(0, null)
   def sum(a:GSMat, n:Int) = a.sum(n, null)
   def sum(a:GSMat, n:Int, omat:Mat) = a.sum(n, omat)
+  
+  def max(a:GDMat, b:GDMat):GDMat    = max(a, b, null)
+  def min(a:GDMat, b:GDMat):GDMat    = min(a, b, null)
+  def max(a:GDMat, b:FMat):GDMat    = max(a, b, null)
+  def min(a:GDMat, b:FMat):GDMat    = min(a, b, null)
+  def max(a:FMat, b:GDMat):GDMat    = max(a, b, null)
+  def min(a:FMat, b:GDMat):GDMat    = min(a, b, null)
+  def maxi(a:GDMat, dir:Int):GDMat  = a.reduceOp(null, dir, BinOp.op_max)
+  def mini(a:GDMat, dir:Int):GDMat  = a.reduceOp(null, dir, BinOp.op_min)
+  def sum(a:GDMat, dir:Int):GDMat   = a.reduceOp(null, dir, BinOp.op_add)
+  def maxi(a:GDMat):GDMat           = a.reduceOp(null, 0, BinOp.op_max)
+  def mini(a:GDMat):GDMat           = a.reduceOp(null, 0, BinOp.op_min)
+  def sum(a:GDMat):GDMat            = a.reduceOp(null, 0, BinOp.op_add)
+  
+  def max(a:GDMat, b:GDMat, out:Mat):GDMat    = a.gOp(b, out, BinOp.op_max)
+  def min(a:GDMat, b:GDMat, out:Mat):GDMat    = a.gOp(b, out, BinOp.op_min)
+  def max(a:GDMat, b:FMat, out:Mat):GDMat    = a.gOp(GDMat(b), out, BinOp.op_max)
+  def min(a:GDMat, b:FMat, out:Mat):GDMat    = a.gOp(GDMat(b), out, BinOp.op_min)
+  def max(a:FMat, b:GDMat, out:Mat):GDMat    = GDMat(a).gOp(b, out, BinOp.op_max)
+  def min(a:FMat, b:GDMat, out:Mat):GDMat    = GDMat(a).gOp(b, out, BinOp.op_min)
+  def maxi(a:GDMat, dir:Int, out:Mat):GDMat  = a.reduceOp(out, dir, BinOp.op_max)
+  def mini(a:GDMat, dir:Int, out:Mat):GDMat  = a.reduceOp(out, dir, BinOp.op_min)
+  def sum(a:GDMat, dir:Int, out:Mat):GDMat   = a.reduceOp(out, dir, BinOp.op_add)
+  def maxi(a:GDMat, out:Mat):GDMat           = a.reduceOp(out, 0, BinOp.op_max)
+  def mini(a:GDMat, out:Mat):GDMat           = a.reduceOp(out, 0, BinOp.op_min)
+  def sum(a:GDMat, out:Mat):GDMat            = a.reduceOp(out, 0, BinOp.op_add)
+     
+  def sum(a:GSDMat) = a.sum(0, null)
+  def sum(a:GSDMat, n:Int) = a.sum(n, null)
+  def sum(a:GSDMat, n:Int, omat:Mat) = a.sum(n, omat)
   
   def LXdist(a:GMat, b:GMat, omat:GMat, p:Float):GMat = GMat.LXdist(a, b, omat, p)
   

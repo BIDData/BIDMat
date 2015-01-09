@@ -104,17 +104,17 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     out
   }
   
-  def update(i:Int, b:Float):Float = _update(i, b)
+  override def update(i:Int, b:Float):FMat = {_update(i, b); this}
   
-  def update(i:Int, j:Int, b:Float):Float = _update(i, j, b)
+  override def update(i:Int, j:Int, b:Float):FMat = {_update(i, j, b); this}
   
-  def update(i:Int, b:Double):Float = _update(i, b.toFloat)
+  override def update(i:Int, b:Double):FMat = {_update(i, b.toFloat); this}
   
-  def update(i:Int, j:Int, b:Double):Float = _update(i, j, b.toFloat)
+  override def update(i:Int, j:Int, b:Double):FMat = {_update(i, j, b.toFloat); this}
   
-  def update(i:Int, b:Int):Float = _update(i, b.toFloat)
+  override def update(i:Int, b:Int):FMat = {_update(i, b.toFloat); this}
   
-  def update(i:Int, j:Int, b:Int):Float = _update(i, j, b.toFloat)
+  override def update(i:Int, j:Int, b:Int):FMat = {_update(i, j, b.toFloat); this}
   
   
   override def update(iv:IMat, b:Float):FMat = FMat(_update(iv, b))
@@ -260,6 +260,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   	a match {
   	  case out:FMat => copyTo(out):FMat
   	  case aa:GMat => aa.copyFrom(this)
+  	  case aa:GDMat => aa.copyFrom(DMat(this))
   	}
   	a
   }

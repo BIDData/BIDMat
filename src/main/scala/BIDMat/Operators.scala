@@ -18,6 +18,7 @@ trait Mop {
   def op(a:SMat, b:SMat, c:Mat):SMat = {notImplemented(myname, a, b); a}
   def op(a:SDMat, b:SDMat, c:Mat):SDMat = {notImplemented(myname, a, b); a}
   def op(a:GMat, b:GMat, c:Mat):GMat = {notImplemented(myname, a, b); a}
+  def op(a:GDMat, b:GDMat, c:Mat):GDMat = {notImplemented(myname, a, b); a}
   def op(a:GIMat, b:GIMat, c:Mat):GIMat = {notImplemented(myname, a, b); a}
   def op(a:GSMat, b:GSMat, c:Mat):GSMat = {notImplemented(myname, a, b); a}
   def op(a:GSDMat, b:GSDMat, c:Mat):GSDMat = {notImplemented(myname, a, b); a}
@@ -189,6 +190,25 @@ trait Mop {
   }      
   
   /*
+   * Default coercions when first arg is a GDMat
+   */
+  def op(a:GDMat, b:FMat, c:Mat):GDMat = op(a, GDMat(b), c)
+  def op(a:GDMat, b:IMat, c:Mat):GDMat = op(a, GDMat(b), c)
+  def op(a:GDMat, b:DMat, c:Mat):GDMat = op(a, GDMat(b), c)
+  def op(a:GDMat, b:GSDMat, c:Mat):GDMat = op(a, b, c)
+  
+  def op(a:GDMat, b:Mat, c:Mat):Mat = {
+    b match {
+      case bb:FMat => op(a, bb, c)
+      case bb:IMat => op(a, bb, c)
+      case bb:DMat => op(a, bb, c)
+      case bb:GMat => op(a, bb, c)
+      case bb:GDMat => op(a, bb, c)
+      case bb:GSMat => op(a, bb, c)
+      case bb:GSDMat => op(a, bb, c)
+    }
+  }
+  /*
    * Default coercions when first arg is a GSMat
    */
   def op(a:GSMat, b:GMat, c:Mat):GMat = op(a, b, c)
@@ -277,6 +297,7 @@ trait Mop {
   def getSPair(c:Mat, a:SMat):SPair = new SPair(c, a) 
   def getSDPair(c:Mat, a:SDMat):SDPair = new SDPair(c, a)
   def getGPair(c:Mat, a:GMat):GPair = new GPair(c, a) 
+  def getGDPair(c:Mat, a:GDMat):GDPair = new GDPair(c, a)
   def getGIPair(c:Mat, a:GIMat):GIPair = new GIPair(c, a) 
   def getGSPair(c:Mat, a:GSMat):GSPair = new GSPair(c, a)
   def getGSDPair(c:Mat, a:GSDMat):GSDPair = new GSDPair(c, a)
@@ -290,6 +311,7 @@ object Mop_Plus extends Mop { // Plus includes only operations on matching types
   override def op(a:LMat, b:LMat, c:Mat):LMat = getLPair(c, a) + b
   override def op(a:CMat, b:CMat, c:Mat):CMat = getCPair(c, a) + b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) + b
+  override def op(a:GDMat, b:GDMat, c:Mat):GDMat = getGDPair(c, a) + b
   override def op(a:SMat, b:SMat, c:Mat):SMat = getSPair(c, a) + b
   override def sop(a:SMat, b:FMat, c:Mat):SMat = getSPair(c, a) + b
   override def sop(a:GSMat, b:GMat, c:Mat):GSMat = getGSPair(c, a) + b
@@ -304,6 +326,7 @@ object Mop_Minus extends Mop {
   override def op(a:LMat, b:LMat, c:Mat):LMat = getLPair(c, a) - b
   override def op(a:CMat, b:CMat, c:Mat):CMat = getCPair(c, a) - b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) - b
+  override def op(a:GDMat, b:GDMat, c:Mat):GDMat = getGDPair(c, a) - b
   override def op(a:SMat, b:SMat, c:Mat):SMat = getSPair(c, a) - b
   override def sop(a:SMat, b:FMat, c:Mat):SMat = getSPair(c, a) - b
   override def sop(a:GSMat, b:GMat, c:Mat):GSMat = getGSPair(c, a) - b
@@ -324,7 +347,9 @@ object Mop_Times extends Mop { // Times includes dense-sparse combinations
   override def op(a:LMat, b:LMat, c:Mat):LMat = getLPair(c, a) * b
   override def op(a:CMat, b:CMat, c:Mat):CMat = getCPair(c, a) * b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) * b
+  override def op(a:GDMat, b:GDMat, c:Mat):GDMat = getGDPair(c, a) * b
   override def op(a:GMat, b:GSMat, c:Mat):GMat = getGPair(c, a) * b
+  override def op(a:GDMat, b:GSDMat, c:Mat):GDMat = getGDPair(c, a) * b
 }
 
 object Mop_TimesT extends Mop { 
@@ -334,7 +359,9 @@ object Mop_TimesT extends Mop {
   override def op(a:DMat, b:DMat, c:Mat):DMat = getDPair(c, a) *^ b
   override def op(a:DMat, b:SDMat, c:Mat):DMat = getDPair(c, a) *^ b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) *^ b
+  override def op(a:GDMat, b:GDMat, c:Mat):GDMat = getGDPair(c, a) *^ b
   override def op(a:GMat, b:GSMat, c:Mat):GMat = getGPair(c, a) *^ b
+  override def op(a:GDMat, b:GSDMat, c:Mat):GDMat = getGDPair(c, a) *^ b
 }
 
 object Mop_TTimes extends Mop { 
@@ -344,7 +371,9 @@ object Mop_TTimes extends Mop {
   override def op(a:SMat, b:FMat, c:Mat):FMat = getSPair(c, a) Tx b
   override def op(a:SDMat, b:DMat, c:Mat):DMat = getSDPair(c, a) Tx b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) Tx b
+  override def op(a:GDMat, b:GDMat, c:Mat):GDMat = getGDPair(c, a) Tx b
   override def op(a:GSMat, b:GMat, c:Mat):GMat = getGSPair(c, a) Tx b
+  override def op(a:GSDMat, b:GDMat, c:Mat):GDMat = getGSDPair(c, a) Tx b
 }
 
 object Mop_Div extends Mop { 
@@ -369,6 +398,7 @@ object Mop_ETimes extends Mop {
   override def op(a:LMat, b:LMat, c:Mat):LMat = getLPair(c, a) *@ b
   override def op(a:CMat, b:CMat, c:Mat):CMat = getCPair(c, a) *@ b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) *@ b
+  override def op(a:GDMat, b:GDMat, c:Mat):GDMat = getGDPair(c, a) *@ b
   override def op(a:SMat, b:SMat, c:Mat):SMat = getSPair(c, a) *@ b
   override def sop(a:SMat, b:FMat, c:Mat):SMat = getSPair(c, a) *@ b
   override def sop(a:GSMat, b:GMat, c:Mat):GSMat = getGSPair(c, a) *@ b
@@ -391,6 +421,7 @@ object Mop_EDiv extends Mop {
   override def op(a:LMat, b:LMat, c:Mat):LMat = getLPair(c, a) / b
   override def op(a:CMat, b:CMat, c:Mat):CMat = getCPair(c, a) / b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) / b
+  override def op(a:GDMat, b:GDMat, c:Mat):GDMat = getGDPair(c, a) / b
   override def op(a:SMat, b:SMat, c:Mat):SMat = getSPair(c, a) / b
   override def sop(a:SMat, b:FMat, c:Mat):SMat = getSPair(c, a) / b
   override def sop(a:GSMat, b:GMat, c:Mat):GSMat = getGSPair(c, a) / b
@@ -405,6 +436,7 @@ object Mop_Dot extends Mop {
   override def op(a:LMat, b:LMat, c:Mat):LMat = getLPair(c, a) dot b
   override def op(a:CMat, b:CMat, c:Mat):CMat = getCPair(c, a) dot b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) dot b
+  override def op(a:GDMat, b:GDMat, c:Mat):GDMat = getGDPair(c, a) dot b
 }
 
 object Mop_Dotr extends Mop { 
@@ -414,6 +446,7 @@ object Mop_Dotr extends Mop {
   override def op(a:LMat, b:LMat, c:Mat):LMat = getLPair(c, a) dotr b
   override def op(a:DMat, b:DMat, c:Mat):DMat = getDPair(c, a) dotr b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) dotr b
+  override def op(a:GDMat, b:GDMat, c:Mat):GDMat = getGDPair(c, a) dotr b
 }
 
 object Mop_Pow extends Mop {
@@ -421,6 +454,7 @@ object Mop_Pow extends Mop {
   override def op(a:FMat, b:FMat, c:Mat):FMat = getFPair(c, a) ^ b
   override def op(a:DMat, b:DMat, c:Mat):DMat = getDPair(c, a) ^ b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) ^ b
+  override def op(a:GDMat, b:GDMat, c:Mat):GDMat = getGDPair(c, a) ^ b
 }
 
 object Mop_HCat extends Mop { 
@@ -433,6 +467,7 @@ object Mop_HCat extends Mop {
   override def op(a:SDMat, b:SDMat, c:Mat):SDMat = a \ b
   override def op(a:CMat, b:CMat, c:Mat):CMat = a \ b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) \ b
+  override def op(a:GDMat, b:GDMat, c:Mat):GDMat = getGDPair(c, a) \ b
   override def op(a:GIMat, b:GIMat, c:Mat):GIMat = getGIPair(c, a) \ b
 }
 
@@ -446,6 +481,7 @@ object Mop_VCat extends Mop {
   override def op(a:SDMat, b:SDMat, c:Mat):SDMat = a on b
   override def op(a:CMat, b:CMat, c:Mat):CMat = a on b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) on b
+  override def op(a:GDMat, b:GDMat, c:Mat):GDMat = getGDPair(c, a) on b
   override def op(a:GIMat, b:GIMat, c:Mat):GIMat = getGIPair(c, a) on b
 }
 
@@ -456,6 +492,7 @@ object Mop_LT extends Mop {
   override def op(a:IMat, b:IMat, c:Mat):IMat = getIPair(c, a) < b
   override def op(a:LMat, b:LMat, c:Mat):LMat = getLPair(c, a) < b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) < b
+  override def op(a:GDMat, b:GDMat, c:Mat):GDMat = getGDPair(c, a) < b
   override def op(a:GIMat, b:GIMat, c:Mat):GIMat = getGIPair(c, a) < b
   override def sop(a:SMat, b:FMat, c:Mat):SMat = getSPair(c, a) < b
   override def sop(a:GSMat, b:GMat, c:Mat):GSMat = getGSPair(c, a) < b
@@ -469,6 +506,7 @@ object Mop_GT extends Mop {
   override def op(a:IMat, b:IMat, c:Mat):IMat = getIPair(c, a) > b
   override def op(a:LMat, b:LMat, c:Mat):LMat = getLPair(c, a) > b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) > b
+  override def op(a:GDMat, b:GDMat, c:Mat):GDMat = getGDPair(c, a) > b
   override def op(a:GIMat, b:GIMat, c:Mat):GIMat = getGIPair(c, a) > b
   override def sop(a:SMat, b:FMat, c:Mat):SMat = getSPair(c, a) > b
   override def sop(a:GSMat, b:GMat, c:Mat):GSMat = getGSPair(c, a) > b
@@ -483,6 +521,7 @@ object Mop_LE extends Mop {
   override def op(a:IMat, b:IMat, c:Mat):IMat = getIPair(c, a) <= b
   override def op(a:LMat, b:LMat, c:Mat):LMat = getLPair(c, a) <= b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) <= b
+  override def op(a:GDMat, b:GDMat, c:Mat):GDMat = getGDPair(c, a) <= b
   override def op(a:GIMat, b:GIMat, c:Mat):GIMat = getGIPair(c, a) <= b
   override def sop(a:SMat, b:FMat, c:Mat):SMat = getSPair(c, a) <= b
   override def sop(a:GSMat, b:GMat, c:Mat):GSMat = getGSPair(c, a) <= b
@@ -496,6 +535,7 @@ object Mop_GE extends Mop {
   override def op(a:IMat, b:IMat, c:Mat):IMat = getIPair(c, a) >= b
   override def op(a:LMat, b:LMat, c:Mat):LMat = getLPair(c, a) >= b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) >= b
+  override def op(a:GDMat, b:GDMat, c:Mat):GDMat = getGDPair(c, a) >= b
   override def op(a:GIMat, b:GIMat, c:Mat):GIMat = getGIPair(c, a) >= b
   override def sop(a:SMat, b:FMat, c:Mat):SMat = getSPair(c, a) >= b
   override def sop(a:GSMat, b:GMat, c:Mat):GSMat = getGSPair(c, a) >= b
@@ -510,6 +550,7 @@ object Mop_EQ extends Mop {
   override def op(a:LMat, b:LMat, c:Mat):LMat = getLPair(c, a) == b
   override def op(a:CMat, b:CMat, c:Mat):CMat = getCPair(c, a) == b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) == b
+  override def op(a:GDMat, b:GDMat, c:Mat):GDMat = getGDPair(c, a) == b
   override def op(a:GIMat, b:GIMat, c:Mat):GIMat = getGIPair(c, a) == b
   override def sop(a:SMat, b:FMat, c:Mat):SMat = getSPair(c, a) == b
   override def sop(a:GSMat, b:GMat, c:Mat):GSMat = getGSPair(c, a) == b
@@ -524,6 +565,7 @@ object Mop_NE extends Mop {
   override def op(a:LMat, b:LMat, c:Mat):LMat = getLPair(c, a) != b
   override def op(a:CMat, b:CMat, c:Mat):CMat = getCPair(c, a) != b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) != b
+  override def op(a:GDMat, b:GDMat, c:Mat):GDMat = getGDPair(c, a) != b
   override def op(a:GIMat, b:GIMat, c:Mat):GIMat = getGIPair(c, a) != b
   override def sop(a:SMat, b:FMat, c:Mat):SMat = getSPair(c, a) != b
   override def sop(a:GSMat, b:GMat, c:Mat):GSMat = getGSPair(c, a) != b

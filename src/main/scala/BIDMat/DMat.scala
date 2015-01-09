@@ -95,17 +95,17 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   override def rowslice(a:Int, b:Int, out:Mat, c:Int) = DMat(growslice(a, b, out, c))
 
   
-  def update(i:Int, b:Double):Double = _update(i, b)
+  override def update(i:Int, b:Double):DMat = {_update(i, b); this}
   
-  def update(i:Int, j:Int, b:Double):Double = _update(i, j, b)
+  override def update(i:Int, j:Int, b:Double):DMat = {_update(i, j, b); this}
   
-  def update(i:Int, b:Float):Double = _update(i, b.toDouble)
+  override def update(i:Int, b:Float):DMat = {_update(i, b.toDouble); this}
   
-  def update(i:Int, j:Int, b:Float):Double = _update(i, j, b.toDouble)
+  override def update(i:Int, j:Int, b:Float):DMat = {_update(i, j, b.toDouble); this}
   
-  def update(i:Int, b:Int):Double = _update(i, b.toDouble)
+  override def update(i:Int, b:Int):DMat = {_update(i, b.toDouble); this}
   
-  def update(i:Int, j:Int, b:Int):Double = _update(i, j, b.toDouble)
+  override def update(i:Int, j:Int, b:Int):DMat = {_update(i, j, b.toDouble); this}
   
   
   override def update(iv:IMat, b:Double):DMat = DMat(_update(iv, b))
@@ -247,8 +247,13 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   }
   
   override def copyTo(a:Mat) = {
+    if (nrows != a.nrows || ncols != a.ncols) {
+      throw new RuntimeException("DMat copyTo dimensions mismatch")
+    }
   	a match {
   	  case out:DMat => System.arraycopy(data, 0, out.data, 0, length)
+  	  case out:FMat => {Mat.copyToFloatArray(data, 0, out.data, 0, length)}
+  	  case out:IMat => {Mat.copyToIntArray(data, 0, out.data, 0, length)}
   	}
   	a
   }

@@ -91,13 +91,13 @@ case class LMat(nr:Int, nc:Int, data0:Array[Long]) extends DenseMat[Long](nr, nc
   override def rowslice(a:Int, b:Int, out:Mat, c:Int) = LMat(growslice(a, b, out, c))
   
   
-  def update(i:Int, b:Long):Long = _update(i, b)
+  override def update(i:Int, b:Long):LMat = {_update(i, b); this}
   
-  def update(i:Int, j:Int, b:Long):Long = _update(i, j, b)
+  override def update(i:Int, j:Int, b:Long):LMat = {_update(i, j, b); this}
   
-  def update(i:Int, b:Int):Long = _update(i, b.toLong)
+  override def update(i:Int, b:Int):LMat = {_update(i, b.toLong); this}
   
-  def update(i:Int, j:Int, b:Int):Long = _update(i, j, b.toLong)
+  override def update(i:Int, j:Int, b:Int):LMat = {_update(i, j, b.toLong); this}
   
   
   override def update(iv:IMat, b:Long):LMat = LMat(_update(iv, b))

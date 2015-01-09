@@ -220,10 +220,17 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     this
   }
       
-  def update(i:Int, j:Int, v:Int):GIMat = {
+  override def update(i:Int, j:Int, v:Int):GIMat = {
     val tmp = new Array[Int](1)
     tmp(0) = v
     cudaMemcpy(data.withByteOffset(1L*(i + j*nrows)*Sizeof.FLOAT), Pointer.to(tmp), Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+    this
+  }
+  
+  override def update(i:Int, v:Int):GIMat = {
+    val tmp = new Array[Int](1)
+    tmp(0) = v
+    cudaMemcpy(data.withByteOffset(1L*i*Sizeof.FLOAT), Pointer.to(tmp), Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
     this
   }
   

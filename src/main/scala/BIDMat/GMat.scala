@@ -216,10 +216,17 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     this
   }
       
-  def update(i:Int, j:Int, v:Float):GMat = {
+  override def update(i:Int, j:Int, v:Float):GMat = {
     val tmp = new Array[Float](1)
     tmp(0) = v
     cudaMemcpy(data.withByteOffset(1L*(i + j*nrows)*Sizeof.FLOAT), Pointer.to(tmp), Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+    this
+  }
+  
+  override def update(i:Int, v:Float):GMat = {
+    val tmp = new Array[Float](1)
+    tmp(0) = v
+    cudaMemcpy(data.withByteOffset(1L*i*Sizeof.FLOAT), Pointer.to(tmp), Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
     this
   }
   

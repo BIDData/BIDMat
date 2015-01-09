@@ -1330,10 +1330,13 @@ object MatFunctions {
   
   def DDS(a:GMat, b:GMat, c:GMat):GMat = a.t * b
   
+  def DDS(a:GDMat, b:GDMat, c:GDMat):GDMat = a.t * b
+  
   def DDS(a:Mat, b:Mat, c:Mat, omat:Mat=null):Mat = {
     (a, b, c) match {
       case (a:FMat, b:FMat, c:SMat) => DDS(a, b, c, omat):SMat
       case (a:GMat, b:GMat, c:GSMat) => GSMat.DDS(a, b, c, omat):GSMat
+      case (a:GDMat, b:GDMat, c:GSDMat) => GSDMat.DDS(a, b, c, omat):GSDMat
       case (a:GMat, b:GMat, c:GMat) => a.t * b
       case (a:FMat, b:FMat, c:FMat) => a.t * b
     }
