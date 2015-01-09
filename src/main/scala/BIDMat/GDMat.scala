@@ -1088,10 +1088,11 @@ object GDMat {
   
   def apply(a:Mat):GDMat = a match {
     case aa:GDMat => aa
-    case aa:FMat => GDMat(aa)
-    case aa:DMat => GDMat(FMat(aa))
-    case aa:IMat => GDMat(FMat(aa))
+    case aa:GMat => GDMat(aa)
     case aa:GIMat => GDMat(aa)
+    case aa:FMat => GDMat(DMat(aa))
+    case aa:DMat => GDMat(aa)
+    case aa:IMat => GDMat(DMat(aa))
   }
   
   def apply(a:Float):GDMat = {

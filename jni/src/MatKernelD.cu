@@ -374,6 +374,68 @@ int apply_binop(double *A, int Anrows, int Ancols,
   return err;
 }
 
+__global__ void __sdoprow(int nrows, int ncols, int nnz, double *A, int *Aic, double *B, int opn) {
+  optype op = operators[opn];
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = ip; i < nnz; i += blockDim.x * gridDim.x * gridDim.y) {
+    int col = Aic[i];
+    double oldA = A[i];
+    A[i] = op(oldA,B[col]);
+  }
+}
+
+__global__ void __sdopcol(int nrows, int ncols, int nnz, double *A, int *Air, double *B, int opn) {
+  optype op = operators[opn];
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = ip; i < nnz; i += blockDim.x * gridDim.x * gridDim.y) {
+    int row = Air[i];
+    double oldA = A[i];
+    A[i] = op(oldA,B[row]);
+  }
+}
+
+__global__ void __sdopval(int nnz, double *A, double *B, int opn) {
+  optype op = operators[opn];
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  double bval = B[0];
+  for (int i = ip; i < nnz; i += blockDim.x * gridDim.x * gridDim.y) {
+    double oldA = A[i];
+    A[i] = op(oldA,bval);
+  }
+}
+
+
+int sdoprow(int nrows, int ncols, int nnz, double *A, int *Aic,
+            double *B, int len, int opn) {
+  int nthreads;
+  dim3 griddims;
+  setsizes(nnz, &griddims, &nthreads);
+  if (len > 1) {
+    __sdoprow<<<griddims,nthreads>>>(nrows, ncols, nnz, A, Aic, B, opn);
+  } else {
+    __sdopval<<<griddims,nthreads>>>(nnz, A, B, opn);
+  }
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int sdopcol(int nrows, int ncols, int nnz, double *A, int *Air,
+            double *B, int len, int opn) {
+  int nthreads;
+  dim3 griddims;
+  setsizes(nnz, &griddims, &nthreads);
+  if (len > 1) {
+    __sdopcol<<<griddims,nthreads>>>(nrows, ncols, nnz, A, Air, B, opn);
+  } else {
+    __sdopval<<<griddims,nthreads>>>(nnz, A, B, opn);
+  }
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+
 // Implement B[I,J] = A
 // indexed copy: version with one block per column
 #define COPYTOINDS2DA(DFNAME,IEXPR,JEXPR)                             \

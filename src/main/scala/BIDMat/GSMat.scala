@@ -196,58 +196,115 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     out
   }
   
-  def ^*(a:GMat) = SDTMult(a, null)
-  def Tx(a:GMat) = SDTMult(a, null)
+  def GSDop(b:GMat, omat:Mat, op:Int):GSMat = {
+    if (b.nrows > 1 && b.ncols > 1) {
+      throw new RuntimeException("Sorry only edge operators supported for GSMat op GMat")
+    }
+    if (b.nrows != nrows && b.ncols != ncols && b.length > 1) {
+      throw new RuntimeException("GSMat op GMat: dimensions mismatch")
+    }
+    Mat.nflops += nnz;
+    val out = if (omat.asInstanceOf[AnyRef] != null) {
+      omat.asInstanceOf[GSMat]
+    } else {
+      copy;
+    }
+    if (b.ncols > 1) {
+    	CUMAT.sdoprow(nrows, ncols, nnz, out.data, out.ic, b.data, b.length, op);
+    } else {
+      CUMAT.sdopcol(nrows, ncols, nnz, out.data, out.ir, b.data, b.length, op);
+    }
+    out
+  }
   
   def ~ (b: GMat) = new GPair(this, b)
   
-  override def Tx (b : Mat) = Mop_TTimes.op(this, b, null)
-  override def ^* (b : Mat) = Mop_TTimes.op(this, b, null)
+  def ^*(a:GMat) = SDTMult(a, null)
+  def Tx(a:GMat) = SDTMult(a, null)
   
-  override def != (b : Float):GSMat = {
-    val out = copy
-    out.contents ~ out.contents != b;
-    out
-  }
-
-  override def > (b : Float):GSMat = {
-    val out = copy
-    out.contents ~ out.contents > b;
-    out
-  } 
+  // NOTE: GSMat op GMat is an *Edge or Scalar* operation only, and acts only on the non-zeros of the matrix
+   
+  def +  (a:GMat) = GSDop(a, null, BinOp.op_add);
+  def -  (a:GMat) = GSDop(a, null, BinOp.op_sub);
+  def *@ (a:GMat) = GSDop(a, null, BinOp.op_mul);
+  def ∘  (a:GMat) = GSDop(a, null, BinOp.op_mul);
+  def /  (a:GMat) = GSDop(a, null, BinOp.op_div);
   
-  override def < (b : Float):GSMat = {
-    val out = copy
-    out.contents ~ out.contents < b;
-    out
-  } 
+  def != (a : GMat):GSMat = GSDop(a, null, BinOp.op_ne);
+  def >  (a : GMat):GSMat = GSDop(a, null, BinOp.op_gt);
+  def <  (a : GMat):GSMat = GSDop(a, null, BinOp.op_lt);  
+  def <= (a : GMat):GSMat = GSDop(a, null, BinOp.op_le);  
+  def >= (a : GMat):GSMat = GSDop(a, null, BinOp.op_ge);  
+  def == (a : GMat):GSMat = GSDop(a, null, BinOp.op_eq);
   
-  override def <= (b : Float):GSMat = {
-    val out = copy
-    out.contents ~ out.contents <= b;
-    out
-  } 
-    
-  override def >= (b : Float):GSMat = {
-    val out = copy
-    out.contents ~ out.contents >= b;
-    out
-  } 
-      
-  override def == (b : Float):GSMat = {
-    val out = copy
-    out.contents ~ out.contents == b;
-    out
-  } 
+  override def +  (b : Float):GSMat = GSDop(GMat(b), null, BinOp.op_add);
+  override def -  (b : Float):GSMat = GSDop(GMat(b), null, BinOp.op_sub);
+  override def *@ (b : Float):GSMat = GSDop(GMat(b), null, BinOp.op_mul);
+  override def ∘  (b : Float):GSMat = GSDop(GMat(b), null, BinOp.op_mul);
+  override def /  (b : Float):GSMat = GSDop(GMat(b), null, BinOp.op_div);
+  
+  override def != (b : Float):GSMat = GSDop(GMat(b), null, BinOp.op_ne);
+  override def >  (b : Float):GSMat = GSDop(GMat(b), null, BinOp.op_gt);
+  override def <  (b : Float):GSMat = GSDop(GMat(b), null, BinOp.op_lt);  
+  override def <= (b : Float):GSMat = GSDop(GMat(b), null, BinOp.op_le);  
+  override def >= (b : Float):GSMat = GSDop(GMat(b), null, BinOp.op_ge);  
+  override def == (b : Float):GSMat = GSDop(GMat(b), null, BinOp.op_eq);
+  
+  override def *  (b : Mat) = Mop_Times.op(this, b, null)
+  override def *^ (b : Mat) = Mop_TimesT.op(this, b, null)
+  override def xT (b : Mat) = Mop_TimesT.op(this, b, null)
+  override def +  (b : Mat) = Mop_Plus.sop(this, b, null)
+  override def -  (b : Mat) = Mop_Minus.sop(this, b, null)
+  override def *@ (b : Mat) = Mop_ETimes.sop(this, b, null)
+  override def ∘  (b : Mat) = Mop_ETimes.sop(this, b, null)
+  override def /  (b : Mat) = Mop_EDiv.sop(this, b, null)
+  
+  override def >   (b : Mat) = Mop_GT.sop(this, b, null)
+  override def <   (b : Mat) = Mop_LT.sop(this, b, null)
+  override def >=  (b : Mat) = Mop_GE.sop(this, b, null)
+  override def <=  (b : Mat) = Mop_LE.sop(this, b, null)
+  override def ==  (b : Mat) = Mop_EQ.sop(this, b, null)
+  override def === (b : Mat) = Mop_EQ.sop(this, b, null) 
+  override def !=  (b : Mat) = Mop_NE.sop(this, b, null)
   
 }
 
 class GSPair (val omat:Mat, val mat:GSMat) extends Pair {
 	def Tx(a:GMat) = mat.SDTMult(a, omat)
 	def ^*(a:GMat) = mat.SDTMult(a, omat)
+	
+	def +  (a:GMat) = mat.GSDop(a, omat, BinOp.op_add);
+  def -  (a:GMat) = mat.GSDop(a, omat, BinOp.op_sub);
+  def *@ (a:GMat) = mat.GSDop(a, omat, BinOp.op_mul);
+  def ∘  (a:GMat) = mat.GSDop(a, omat, BinOp.op_mul);
+  def /  (a:GMat) = mat.GSDop(a, omat, BinOp.op_div);
+  
+  def != (a : GMat):GSMat = mat.GSDop(a, omat, BinOp.op_ne);
+  def >  (a : GMat):GSMat = mat.GSDop(a, omat, BinOp.op_gt);
+  def <  (a : GMat):GSMat = mat.GSDop(a, omat, BinOp.op_lt);  
+  def <= (a : GMat):GSMat = mat.GSDop(a, omat, BinOp.op_le);  
+  def >= (a : GMat):GSMat = mat.GSDop(a, omat, BinOp.op_ge);  
+  def == (a : GMat):GSMat = mat.GSDop(a, omat, BinOp.op_eq);
 
 	override def ^* (b : Mat):Mat = Mop_TTimes.op(mat, b, omat)
 	override def Tx (b : Mat):Mat = Mop_TTimes.op(mat, b, omat)
+	
+	override def *  (b : Mat) = Mop_Times.op(mat, b, null)
+  override def *^ (b : Mat) = Mop_TimesT.op(mat, b, null)
+  override def xT (b : Mat) = Mop_TimesT.op(mat, b, null)
+  override def +  (b : Mat) = Mop_Plus.sop(mat, b, null)
+  override def -  (b : Mat) = Mop_Minus.sop(mat, b, null)
+  override def *@ (b : Mat) = Mop_ETimes.sop(mat, b, null)
+  override def ∘  (b : Mat) = Mop_ETimes.sop(mat, b, null)
+  override def /  (b : Mat) = Mop_EDiv.sop(mat, b, null)
+  
+  override def >   (b : Mat) = Mop_GT.sop(mat, b, null)
+  override def <   (b : Mat) = Mop_LT.sop(mat, b, null)
+  override def >=  (b : Mat) = Mop_GE.sop(mat, b, null)
+  override def <=  (b : Mat) = Mop_LE.sop(mat, b, null)
+  override def ==  (b : Mat) = Mop_EQ.sop(mat, b, null)
+  override def === (b : Mat) = Mop_EQ.sop(mat, b, null) 
+  override def !=  (b : Mat) = Mop_NE.sop(mat, b, null)
 } 
 
 object GSMat {  

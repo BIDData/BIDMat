@@ -1251,6 +1251,9 @@ object MatFunctions {
   /** Convert from GPU float sparse to GPU float dense. */
   def full(ss:GSMat):GMat = ss.full
   
+  /** Convert from GPU double sparse to GPU double dense. */
+  def full(ss:GSDMat):GDMat = ss.full
+  
   def full(a:Mat):Mat = a match {
     case aa:DMat => a
     case aa:FMat => a
@@ -1258,6 +1261,7 @@ object MatFunctions {
     case aa:SMat => full(aa):FMat
     case aa:SDMat => full(aa):DMat
     case aa:GSMat => aa.full:GMat
+    case aa:GSDMat => aa.full:GDMat
     case aa:GMat => a
   }
   

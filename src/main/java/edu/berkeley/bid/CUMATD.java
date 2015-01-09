@@ -18,6 +18,10 @@ public final class CUMATD {
     public static native int initSeq(Pointer A, int nrows, int ncols);
 
     public static native int applyop(Pointer A, int Anrows, int Ancols, Pointer B, int Bnrows, int Bncols, Pointer C, int opn);
+    
+    public static native int sdoprow(int nr, int nc, int nnz, Pointer A, Pointer Ac, Pointer B, int len, int op);
+    
+    public static native int sdopcol(int nr, int nc, int nnz, Pointer A, Pointer Ar, Pointer B, int len, int op);
 
     public static native int applyiop(Pointer A, int Anrows, int Ancols, Pointer B, int Bnrows, int Bncols, Pointer C, int opn);
     

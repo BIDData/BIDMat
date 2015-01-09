@@ -2,6 +2,10 @@ void setsizes(int N, dim3 *gridp, int *nthreadsp);
 
 int apply_binop(double *nativeA, int Anrows, int Ancols, double *nativeB, int Bnrows, int Bncols, double *nativeC, int opn);
 
+int sdoprow(int nrows, int ncols, int nnz, double *A, int *Aic, double *B, int len, int opn);
+
+int sdopcol(int nrows, int ncols, int nnz, double *A, int *Aic, double *B, int len, int opn);
+
 int copyToInds2D(double *A, int lda, double *B, int ldb, int *I, int nrows, int *J, int ncols);
 
 int copyFromInds2D(double *A, int lda, double *B, int ldb, int *I, int nrows, int *J, int ncols);
