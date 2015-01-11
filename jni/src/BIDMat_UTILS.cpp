@@ -1,8 +1,8 @@
 #include <jni.h>
 #include <string.h>
-#include <omp.h>
 #include <algorithm>
 #include <vector>
+ #include <omp.h>
 
 extern "C" {
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_UTILS_getnumthreads

@@ -7,9 +7,7 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/jhdf5.jar"/>
 	<classpathentry kind="lib" path="lib/ptplot.jar"/>
-	<classpathentry kind="lib" path="lib/commons-math3-3.1.1.jar"/>
 	<classpathentry kind="lib" path="lib/lz4-1.1.2.jar"/>
-	<classpathentry kind="lib" path="lib/jline-2.10.3.jar"/>
 	<classpathentry kind="lib" path="lib/jcublas-0.6.5.jar"/>
 	<classpathentry kind="lib" path="lib/jcuda-0.6.5.jar"/>
 	<classpathentry kind="lib" path="lib/jcufft-0.6.5.jar"/>
@@ -20,5 +18,6 @@
 	<classpathentry kind="lib" path="lib/junit-4.11.jar"/>
 	<classpathentry kind="lib" path="lib/scalacheck_2.11-1.11.6.jar"/>
 	<classpathentry kind="lib" path="lib/scalatest_2.11-2.2.1.jar"/>
+	<classpathentry kind="lib" path="lib/commons-math3-3.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
