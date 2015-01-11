@@ -118,11 +118,11 @@ elif [ "$OS" = "linux" ] ; then
           --machine ${MBITS}  -Xcompiler \"-fPIC -c -O2 -g -DNDEBUG\""
     OBJ="o"
     OUTFLG="-o "
-    CPPFLAGS="-fPIC -c -O2 -fopenmp -DNDEBUG  -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$CUDA_HOME/include" 
-    CFLAGS="-fPIC -c -O2 -fopenmp -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$MKL_ROOT/include -I$MKL_ROOT/include/${ARCHD}${SUBDIR}"
+    CPPFLAGS="-fPIC -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$CUDA_HOME/include" 
+    CFLAGS="-fPIC -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$MKL_ROOT/include -I$MKL_ROOT/include/${ARCHD}${SUBDIR}"
     LB="ar rc"    
     GLD="g++ -shared"
-    LD="icc -shared -static-intel -z noexecstack"
+    LD="g++ -shared -z noexecstack"
     LDFLAGS="$LDFLAGS"
     LIBPREPEND="lib"
     LIBAPPEND="-${OS}-${ARCH}.so"
@@ -131,15 +131,15 @@ elif [ "$OS" = "linux" ] ; then
     LAPACK_INCLUDES=""
     FORTRAN_LIBS="-lgfortran"
     if [ "$PARLIB" = "sequential" ] ; then
-	    MKL_LIBS="-L$JAVA_HOME/lib -L${COMPOSER_ROOT}/lib/${ARCHD} \
-            $MKL_ROOT/lib/${ARCHD}/libmkl_intel${PTYPE}.a -Wl,--start-group  \
-            $MKL_ROOT/lib/${ARCHD}/libmkl_sequential.a $MKL_ROOT/lib/${ARCHD}/libmkl_core.a \
-            -Wl,--end-group -liomp5 -lpthread -lm"
+	    MKL_LIBS="-L$JAVA_HOME/lib -L${BIDMAT_ROOT}/lib \
+            -Wl,--start-group  $MKL_ROOT/lib/${ARCHD}/libmkl_intel${PTYPE}.a \
+            $MKL_ROOT/lib/${ARCHD}/libmkl_core.a $MKL_ROOT/lib/${ARCHD}/libmkl_sequential.a \
+            -Wl,--end-group -lpthread -lm"
     else 
-	    MKL_LIBS="-L$JAVA_HOME/lib -L${COMPOSER_ROOT}/lib/${ARCHD} \
-            $MKL_ROOT/lib/${ARCHD}/libmkl_intel${PTYPE}.a -Wl,--start-group  \
-            $MKL_ROOT/lib/${ARCHD}/libmkl_gnu_thread.a $MKL_ROOT/lib/${ARCHD}/libmkl_core.a \
-            -Wl,--end-group -liomp5 -lpthread -lm"
+	    MKL_LIBS="-L$JAVA_HOME/lib -L${BIDMAT_ROOT}/lib \
+            -Wl,--start-group  $MKL_ROOT/lib/${ARCHD}/libmkl_intel${PTYPE}.a \
+            $MKL_ROOT/lib/${ARCHD}/libmkl_core.a $MKL_ROOT/lib/${ARCHD}/libmkl_intel_thread.a \
+            -Wl,--end-group -liomp5 -ldl -lpthread -lm"
     fi
     if [ "$ARCH" = "x86" ] ; then
         CULIB="lib"
@@ -157,7 +157,7 @@ elif [ "$OS" = "windows" ] ; then
     OBJ="obj"
     OUTFLG="/OUT:"
     CPPFLAGS="/c /MT /DNDEBUG /O2 /EHsc $CPPFLAGS"  
-    CFLAGS="/c /MT /DNDEBUG /O2 /EHsc $CFLAGS"    # /Qstd=c99 /Qopenmp
+    CFLAGS="/c /MT /DNDEBUG /O2 /EHsc $CFLAGS" 
     NVCCFLAGS="-c -use_fast_math  -I$BIDMAT_ROOT/jni/include \
           -gencode arch=compute_20,code=sm_20 \
           -gencode arch=compute_30,code=sm_30 \
