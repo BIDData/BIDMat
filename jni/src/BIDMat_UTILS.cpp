@@ -2,17 +2,17 @@
 #include <string.h>
 #include <algorithm>
 #include <vector>
- #include <omp.h>
+#include <mkl.h>
 
 extern "C" {
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_UTILS_getnumthreads
 (JNIEnv * env, jobject calling_obj) {
-  return omp_get_num_threads();
+  return MKL_Get_Max_Threads();
 }
 
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_setnumthreads
 (JNIEnv * env, jobject calling_obj, jint n) {
-  omp_set_num_threads(n);
+  MKL_Set_Num_Threads(n);
 }
 
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_memcpybi
