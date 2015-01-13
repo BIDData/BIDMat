@@ -15,11 +15,12 @@ trait Mop {
   def op(a:IMat, b:IMat, c:Mat):IMat = {notImplemented(myname, a, b); a}
   def op(a:LMat, b:LMat, c:Mat):LMat = {notImplemented(myname, a, b); a}
   def op(a:CMat, b:CMat, c:Mat):CMat = {notImplemented(myname, a, b); a}
-  def op(a:SMat, b:SMat, c:Mat):SMat = {notImplemented(myname, a, b); a}
-  def op(a:SDMat, b:SDMat, c:Mat):SDMat = {notImplemented(myname, a, b); a}
   def op(a:GMat, b:GMat, c:Mat):GMat = {notImplemented(myname, a, b); a}
   def op(a:GDMat, b:GDMat, c:Mat):GDMat = {notImplemented(myname, a, b); a}
   def op(a:GIMat, b:GIMat, c:Mat):GIMat = {notImplemented(myname, a, b); a}
+
+  def op(a:SMat, b:SMat, c:Mat):SMat = {notImplemented(myname, a, b); a}
+  def op(a:SDMat, b:SDMat, c:Mat):SDMat = {notImplemented(myname, a, b); a}
   def op(a:GSMat, b:GSMat, c:Mat):GSMat = {notImplemented(myname, a, b); a}
   def op(a:GSDMat, b:GSDMat, c:Mat):GSDMat = {notImplemented(myname, a, b); a}
 
@@ -138,7 +139,7 @@ trait Mop {
   
   def op(a:SMat, b:Mat, c:Mat):Mat = {
     b match {
-      case bb:FMat => op(a, bb, c)
+      case bb:FMat => sop(a, bb, c)
       case bb:SMat => op(a, bb, c)
     }
   }
@@ -146,7 +147,7 @@ trait Mop {
   def sop(a:SMat, b:Mat, c:Mat):Mat = {
     b match {
       case bb:FMat => sop(a, bb, c)
-      case bb:SMat => sop(a, bb, c)
+      case bb:SMat => op(a, bb, c)
     }
   }
   
@@ -159,14 +160,14 @@ trait Mop {
   def op(a:SDMat, b:Mat, c:Mat):Mat = {
     b match {
       case bb:DMat => op(a, bb, c)
-      case bb:SDMat => op(a, bb, c)
+      case bb:SDMat => sop(a, bb, c)
     }
   }
   
   def sop(a:SDMat, b:Mat, c:Mat):Mat = {
     b match {
       case bb:DMat => sop(a, bb, c)
-      case bb:SDMat => sop(a, bb, c)
+      case bb:SDMat => op(a, bb, c)
     }
   }
   

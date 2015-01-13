@@ -19,7 +19,7 @@ BIDMAT_ROOT="$( echo ${BIDMAT_ROOT} | sed s+/cygdrive/c+c:+ )"
 JCUDA_LIBDIR=${BIDMAT_ROOT}/lib
 LIBDIR=${BIDMAT_ROOT}/lib
 if [ `uname` = "Darwin" ]; then
-  export DYLD_LIBRARY_PATH="${BIDMAT_ROOT}/lib:/usr/local/cuda/lib:${DYLD_LIBRARY_PATH}" 
+    export DYLD_LIBRARY_PATH="${BIDMAT_ROOT}/lib:/usr/local/cuda/lib:${DYLD_LIBRARY_PATH}"
 else
   export LD_LIBRARY_PATH="${BIDMAT_ROOT}/lib:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}" 
 fi
@@ -41,13 +41,15 @@ ALL_LIBS=";${LIBDIR}/IScala.jar;${BIDMAT_LIBS};${JCUDA_LIBS};${JAVA_HOME}/lib/to
 
 if [ ! "$OS" = "Windows_NT" ]; then
     ALL_LIBS=`echo "${ALL_LIBS}" | sed 's/;/:/g'`
-    JAVA_NATIVE="-Djava.library.path=${LD_LIBRARY_PATH}:${LIBDIR}/cuda:/usr/lib64:/lib64:lib:/usr/lib"
+    JAVA_NATIVE="-Djava.library.path=${LD_LIBRARY_PATH}:/usr/lib64:/lib64:lib:/usr/lib"
 else
     if [ ! "${CUDA_PATH}" = "" ]; then
 	    NEWPATH=`${BIDMAT_ROOT}/shortpath.bat "${CUDA_PATH}"`
 	    NEWPATH=`echo $NEWPATH | sed 's_\\\\_/_g'`/bin
     fi
-    JAVA_NATIVE="-Djava.library.path=${LIBDIR};${LIBDIR}/cuda;${NEWPATH}"
+    JAVA_NATIVE="-Djava.library.path=${LIBDIR};${NEWPATH}"
+fi
+if [ ! `uname` = "Darwin" ]; then
     export JAVA_OPTS="${JAVA_NATIVE} ${JAVA_OPTS}"
 fi
 
