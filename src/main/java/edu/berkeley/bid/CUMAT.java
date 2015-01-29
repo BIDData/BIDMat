@@ -10,6 +10,10 @@ public final class CUMAT {
     }
 
     public static native int toFloat(Pointer A, Pointer B, int N);
+    
+    public static native int longToFloat(Pointer A, Pointer B, int N);
+    
+    public static native int floatToLong(Pointer A, Pointer B, int N);
 
     public static native int toInt(Pointer A, Pointer B, int N);
     
@@ -19,9 +23,15 @@ public final class CUMAT {
 
     public static native int applyiop(Pointer A, int Anrows, int Ancols, Pointer B, int Bnrows, int Bncols, Pointer C, int opn);
     
+    public static native int applylop(Pointer A, int Anrows, int Ancols, Pointer B, int Bnrows, int Bncols, Pointer C, int opn);
+    
     public static native int copyToInds2D(Pointer A, int lda, Pointer B, int ldb, Pointer I, int nrows, Pointer J, int ncols);
+    
+    public static native int copyToInds2DLong(Pointer A, int lda, Pointer B, int ldb, Pointer I, int nrows, Pointer J, int ncols);
 
     public static native int copyFromInds2D(Pointer A, int lda, Pointer B, int ldb, Pointer I, int nrows, Pointer J, int ncols);
+    
+    public static native int copyFromInds2DLong(Pointer A, int lda, Pointer B, int ldb, Pointer I, int nrows, Pointer J, int ncols);
     
     public static native int applygfun(Pointer A, Pointer B, int N, int opn);
     
@@ -30,6 +40,8 @@ public final class CUMAT {
     public static native int setval(Pointer A, float vv, int N);
     
     public static native int setival(Pointer A, int iv, int N);
+    
+    public static native int setlval(Pointer A, long iv, int N);
     
     public static native int applygfun2(Pointer A, Pointer B, Pointer C, int N, int opn);
     
@@ -77,6 +89,18 @@ public final class CUMAT {
     
     public static native int iaccumJV(Pointer I, int J, int V, Pointer S, int m, int nrows);
     
+    public static native int laccum(Pointer I, Pointer J, Pointer V, Pointer S, int m, int nrows);
+    
+    public static native int laccumI(int I, Pointer J, Pointer V, Pointer S, int m, int nrows);
+    
+    public static native int laccumJ(Pointer I, int J, Pointer V, Pointer S, int m, int nrows);
+
+    public static native int laccumV(Pointer I, Pointer J, long V, Pointer S, int m, int nrows);
+    
+    public static native int laccumIV(int I, Pointer J, long V, Pointer S, int m, int nrows);
+    
+    public static native int laccumJV(Pointer I, int J, long V, Pointer S, int m, int nrows);
+    
     public static native int spsum(int nr, int nc, int nnz, Pointer Air, Pointer Aic, Pointer P, Pointer B, int n);
     
     public static native int dds(int nr, int nnz, Pointer A, Pointer B, Pointer Cir, Pointer Cic, Pointer P);
@@ -115,9 +139,13 @@ public final class CUMAT {
     
     public static native int maxii(Pointer in, Pointer out, Pointer outi, int nrows, int ncols, int dir);
     
+    public static native int maxil(Pointer in, Pointer out, Pointer outi, int nrows, int ncols, int dir);
+    
     public static native int maxif(Pointer in, Pointer out, Pointer outi, int nrows, int ncols, int dir);
     
     public static native int minii(Pointer in, Pointer out, Pointer outi, int nrows, int ncols, int dir);
+    
+    public static native int minil(Pointer in, Pointer out, Pointer outi, int nrows, int ncols, int dir);
     
     public static native int minif(Pointer in, Pointer out, Pointer outi, int nrows, int ncols, int dir);
     

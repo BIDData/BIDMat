@@ -8,17 +8,29 @@ int sdopcol(int nrows, int ncols, int nnz, float *A, int *Aic, float *B, int len
 
 int apply_biniop(int *nativeA, int Anrows, int Ancols, int *nativeB, int Bnrows, int Bncols, int *nativeC, int opn);
 
+int apply_binlop(long long *nativeA, int Anrows, int Ancols, long long *nativeB, int Bnrows, int Bncols, long long *nativeC, int opn);
+
 int copyToInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols);
 
+int copyToInds2DLong(long long *A, int lda, long long *B, int ldb, int *I, int nrows, int *J, int ncols);
+
 int copyFromInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols);
+
+int copyFromInds2DLong(long long *A, int lda, long long *B, int ldb, int *I, int nrows, int *J, int ncols);
 
 int set_val(float *A, float val, int length);
 
 int set_ival(float *A, int val, int length);
 
+int set_lval(long long *A, long long val, int length);
+
 int full(int *ir, int *ic, float *data, float *od, int nrows, int ncols, int nnz);
 
 int toFloat(int *A, float *B, int N);
+
+int longToFloat(long long *A, float *B, int N);
+
+int floatToLong(float *A, long long *B, int N);
 
 int toInt(float *A, int *B, int N);
 
@@ -76,6 +88,18 @@ int accum(int *I, int J, int V, int *S, int m, int nrows);
 
 int accum(int I, int *J, int V, int *S, int m, int nrows);
 
+int accum(int *I, int *J, long long *V, long long *S, int m, int nrows);
+
+int accum(int *I, int J, long long *V, long long *S, int m, int nrows);
+
+int accum(int I, int *J, long long *V, long long *S, int m, int nrows);
+
+int accum(int *I, int *J, long long V, long long *S, int m, int nrows);
+
+int accum(int *I, int J, long long V, long long *S, int m, int nrows);
+
+int accum(int I, int *J, long long V, long long *S, int m, int nrows);
+
 int cumsumgf(float *in, float *out, int *jc, int nrows, int ncols, int m);
 
 int cumsumgi(int *in, int *out, int *jc, int nrows, int ncols, int m);
@@ -92,9 +116,13 @@ int maxif(float *in, float *out, int *outi, int nrows, int ncols, int dir);
 
 int maxii(int *in, int *out, int *outi, int nrows, int ncols, int dir);
 
+int maxil(long long *in, long long *out, int *outi, int nrows, int ncols, int dir);
+
 int minif(float *in, float *out, int *outi, int nrows, int ncols, int dir);
 
 int minii(int *in, int *out, int *outi, int nrows, int ncols, int dir);
+
+int minil(long long *in, long long *out, int *outi, int nrows, int ncols, int dir);
 
 int embedmat2d(float *a, long long *b, int nrows, int ncols);
 
