@@ -690,6 +690,15 @@ object SciFunctions {
   
   def sum(a:CMat, n:Int) = a.ccReduceOpv(n, CMat.vecAddFun, null)
   def sum(a:CMat, n:Int, c:Mat) = a.ccReduceOpv(n, CMat.vecAddFun, c)
+     
+  def countnz(a:Mat, n:Int):IMat = countnz(a, n, null)
+  def countnz(a:Mat):IMat = countnz(a, 0, null)
+  def countnz(a:Mat, n:Int, omat:Mat):IMat = {
+    a match {
+      case as:SMat => as.countnz(n, omat)
+      case as:SDMat => as.countnz(n, omat)
+    }
+  }
   
   def cumsumg(a:GMat, jc:GIMat, omat:Mat):GMat = GMat.cumsumg(a, jc, omat) 
   def maxg(a:GMat, jc:GIMat, omat:Mat, omati:Mat):(GMat,GIMat) = GMat.maxg(a, jc, omat, omati) 
@@ -701,16 +710,16 @@ object SciFunctions {
   
   def cumsumg(a:GIMat, jc:GIMat, omat:Mat):GIMat = GIMat.cumsumg(a, jc, omat) 
   def maxg(a:GIMat, jc:GIMat, omat:Mat, omati:Mat):(GIMat,GIMat) = GIMat.maxg(a, jc, omat, omati)
+  def maxi2(a:GIMat, omat:Mat, omati:Mat, dir:Int):(GIMat,GIMat) = GIMat.maxi2(a, omat, omati, dir) 
+  def mini2(a:GIMat, omat:Mat, omati:Mat, dir:Int):(GIMat,GIMat) = GIMat.mini2(a, omat, omati, dir)
+  def maxi2(a:GIMat, omat:Mat, omati:Mat):(GIMat,GIMat) = GIMat.maxi2(a, omat, omati, 0) 
+  def mini2(a:GIMat, omat:Mat, omati:Mat):(GIMat,GIMat) = GIMat.mini2(a, omat, omati, 0)
   
-  def countnz(a:Mat, n:Int):IMat = countnz(a, n, null)
-  def countnz(a:Mat):IMat = countnz(a, 0, null)
-  
-  def countnz(a:Mat, n:Int, omat:Mat):IMat = {
-    a match {
-      case as:SMat => as.countnz(n, omat)
-      case as:SDMat => as.countnz(n, omat)
-    }
-  }
+  def maxi2(a:GLMat, omat:Mat, omati:Mat, dir:Int):(GLMat,GIMat) = GLMat.maxi2(a, omat, omati, dir) 
+  def mini2(a:GLMat, omat:Mat, omati:Mat, dir:Int):(GLMat,GIMat) = GLMat.mini2(a, omat, omati, dir)
+  def maxi2(a:GLMat, omat:Mat, omati:Mat):(GLMat,GIMat) = GLMat.maxi2(a, omat, omati, 0) 
+  def mini2(a:GLMat, omat:Mat, omati:Mat):(GLMat,GIMat) = GLMat.mini2(a, omat, omati, 0)
+
   
   def cumsumg(a:GMat, jc:GIMat):GMat = GMat.cumsumg(a, jc, null)  
   def maxg(a:GMat, jc:GIMat) = GMat.maxg(a, jc, null, null) 

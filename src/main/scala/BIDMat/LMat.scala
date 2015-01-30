@@ -835,6 +835,8 @@ object LMat {
   
   def apply(a:Long) = lelem(a)
   
+  def apply(a:GLMat) = a.toLMat
+  
   def izeros(m:Int, n:Int) = {
     val out = IMat(m,n)
     out.clear
@@ -855,6 +857,7 @@ object LMat {
       case ff:IMat => {out = LMat(x.nrows, x.ncols); Mat.copyToLongArray(ff.data, 0, out.data, 0, ff.length)}
       case ii:LMat => {out = LMat(x.nrows, x.ncols); System.arraycopy(ii.data, 0, out.data, 0, ii.length)}
       case gg:GIMat => out = gg.toLMat
+      case gg:GLMat => out = gg.toLMat
       case _ => throw new RuntimeException("Unsupported source type")
     }
     out
