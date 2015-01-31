@@ -691,6 +691,7 @@ object GLMat {
   
   def collectLVec(keys:GLMat, vals:GIMat, okeys:GLMat, ovals:GIMat):(GLMat, GIMat) = {
     val len = CUMAT.collectLVec(keys.data, vals.data, okeys.data, ovals.data, keys.length);
+//    println("collect %d %d" format (keys.length, len))
     cudaDeviceSynchronize();
     val err = cudaGetLastError;
     if (err != 0) throw new RuntimeException("GLMat.collect error %d: " + cudaGetErrorString(err) format err);
@@ -698,10 +699,20 @@ object GLMat {
   }
   
   def mergeLVecs(akeys:GLMat, avals:GIMat, bkeys:GLMat, bvals:GIMat, okeys:GLMat, ovals:GIMat):(GLMat, GIMat) = {
-    val err = CUMAT.mergeLVecs(akeys.data, avals.data, bkeys.data, bvals.data, okeys.data, ovals.data, akeys.length, bkeys.length);
-    if (err != 0) throw new RuntimeException("GLMat.merge error %d: " + cudaGetErrorString(err) format err);
     val len = akeys.length + bkeys.length
-    (new GLMat(1, len, okeys.data, okeys.realsize), new GIMat(1, len, ovals.data, ovals.realsize)); 
+    val outkeys = new GLMat(1, len, okeys.data, okeys.realsize);
+    val outvals = new GIMat(1, len, ovals.data, ovals.realsize);
+/*    if (akeys.length == 0) { 
+      outkeys <-- bkeys;
+      outvals <-- bvals;
+    } else if (bkeys.length == 0) { 
+      outkeys <-- akeys;
+      outvals <-- avals;
+    } else { */
+      val err = CUMAT.mergeLVecs(akeys.data, avals.data, bkeys.data, bvals.data, okeys.data, ovals.data, akeys.length, bkeys.length);
+      if (err != 0) throw new RuntimeException("GLMat.merge error %d: " + cudaGetErrorString(err) format err);
+//    }
+    (outkeys, outvals);
   }
 
   def newOrCheckGLMat(nr:Int, nc:Int, oldmat:Mat):GLMat = {

@@ -2915,7 +2915,7 @@ int collectLVec(long long *pakeys, unsigned int *pavals, long long *pokeys, unsi
   thrust::pair<thrust::device_ptr<long long>, thrust::device_ptr<unsigned int> > new_end;
 
   new_end = thrust::reduce_by_key(akeys, akeys + n, avals, okeys, ovals);
-  int len = new_end.first - akeys;
+  int len = new_end.first - okeys;
   return len;
 }
 
