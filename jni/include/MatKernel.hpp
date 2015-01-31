@@ -181,3 +181,7 @@ int maxsumx(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int 
 int dmv(float *A, int nr, int nc, float *B, float *C, int trans);
 
 int poissonrnd(int n, float *A, int *B, int nthreads);
+
+int collectLVec(long long *pakeys, unsigned int *pavals, long long *pokeys, unsigned int *povals, n);
+
+int mergeLVecs(long long *pakeys, unsigned int *pavals, long long *pbkeys, unsigned int *pbvals, long long *pokeys, unsigned int *povals, int n1, int n2);

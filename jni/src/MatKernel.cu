@@ -2905,3 +2905,29 @@ int poissonrnd(int n, float *A, int *B, int nthreads) {
   return err;
 }
 
+int collectLVec(long long *pakeys, unsigned int *pavals, long long *pokeys, unsigned int *povals, n) {
+  thrust::device_ptr<long long> akeys(pakeys);
+  thrust::device_ptr<long long> okeys(pokeys);
+  thrust::device_ptr<unsigned int> avals(pavals);
+  thrust::device_ptr<unsigned int> ovals(povals);
+  thrust::pair<thrust::device_ptr<long long>, thrust::device_ptr<unsigned int> > new_end;
+
+  new_end = thrust::reduce_by_key(pkeys, pkeys + n, pvals, okeys, ovals);
+  int len = new_end.first - pkeys;
+  return len;
+}
+
+int mergeLVecs(long long *pakeys, unsigned int *pavals, long long *pbkeys, unsigned int *pbvals, long long *pokeys, unsigned int *povals, int n1, int n2) {
+  thrust::device_ptr<long long> akeys(pakeys);
+  thrust::device_ptr<long long> bkeys(pbkeys);
+  thrust::device_ptr<long long> okeys(pokeys);
+  thrust::device_ptr<unsigned int> avals(pavals);
+  thrust::device_ptr<unsigned int> bvals(pbvals);
+  thrust::device_ptr<unsigned int> ovals(povals);
+
+  thrust::merge_by_key(akeys, akeys+n1, bkeys, bkeys+n2, avals, bvals, okeys, ovals);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
