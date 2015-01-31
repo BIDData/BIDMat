@@ -1561,9 +1561,11 @@ int extractmat(float *a, int *b, long long *c, int n) {
   return err;
 }
 
-#include <thrust/sort.h>
 #include <thrust/device_ptr.h>
+#include <thrust/sort.h>
 #include <thrust/reverse.h>
+#include <thrust/reduce.h>
+#include <thrust/merge.h>
 
 int fsort2d(float *pkeys, unsigned int *pvals, int nrows, int ncols, int asc) {
   for (int i = 0; i < ncols; i++) {
@@ -2913,7 +2915,7 @@ int collectLVec(long long *pakeys, unsigned int *pavals, long long *pokeys, unsi
   thrust::pair<thrust::device_ptr<long long>, thrust::device_ptr<unsigned int> > new_end;
 
   new_end = thrust::reduce_by_key(akeys, akeys + n, avals, okeys, ovals);
-  int len = new_end.first - pkeys;
+  int len = new_end.first - akeys;
   return len;
 }
 
