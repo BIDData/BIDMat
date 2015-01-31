@@ -1155,9 +1155,23 @@ object MatFunctions {
   
   /** Make an integer matrix of zeros in GPU memory. */
   def gizeros(nr:Int, nc:Int):GIMat = GIMat.izeros(nr, nc)
+  
+  /** Make a long matrix of zeros in GPU memory. */
+  def glzeros(nr:Int, nc:Int):GLMat = GLMat.lzeros(nr, nc)
    
+  /** Make a float matrix of ones in GPU memory. */
   def gones(nr:Int, nc:Int):GMat = {
     GMat.ones(nr,nc)
+  }
+  
+  /** Make an integer matrix of ones in GPU memory. */
+  def giones(nr:Int, nc:Int):GIMat = {
+    GIMat.iones(nr,nc)
+  }
+  
+  /** Make a long matrix of ones in GPU memory. */
+  def glones(nr:Int, nc:Int):GLMat = {
+    GLMat.lones(nr,nc)
   }
 
   /** Legacy function to make a placeholder matrix with no storage. */
