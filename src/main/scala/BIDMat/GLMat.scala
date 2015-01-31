@@ -690,12 +690,7 @@ object GLMat {
   }
   
   def collectLVec(keys:GLMat, vals:GIMat, okeys:GLMat, ovals:GIMat):(GLMat, GIMat) = {
-//    val ns = GIMat(1,1);
-//    val err = CUMAT.collectLVec(keys.data, vals.data, okeys.data, ovals.data, ns.data, keys.length);
-//   if (err != 0) throw new RuntimeException("GLMat.collect error %d: " + cudaGetErrorString(err) format err);
-//   val len = ns(0,0);
-//    ns.free
-    val len = CUMAT.collectLVecx(keys.data, vals.data, okeys.data, ovals.data, keys.length);
+    val len = CUMAT.collectLVec(keys.data, vals.data, okeys.data, ovals.data, keys.length);
     cudaDeviceSynchronize();
     val err = cudaGetLastError;
     if (err != 0) throw new RuntimeException("GLMat.collect error %d: " + cudaGetErrorString(err) format err);
