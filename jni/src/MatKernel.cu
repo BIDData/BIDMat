@@ -2905,7 +2905,7 @@ int poissonrnd(int n, float *A, int *B, int nthreads) {
   return err;
 }
 
-int collectLVec(long long *pakeys, unsigned int *pavals, long long *pokeys, unsigned int *povals, n) {
+int collectLVec(long long *pakeys, unsigned int *pavals, long long *pokeys, unsigned int *povals, int n) {
   thrust::device_ptr<long long> akeys(pakeys);
   thrust::device_ptr<long long> okeys(pokeys);
   thrust::device_ptr<unsigned int> avals(pavals);
