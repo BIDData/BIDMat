@@ -811,27 +811,29 @@ extern "C" {
     return poissonrnd(n, A, B, nthreads);
   }
 
-JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_collectLVec
-(JNIEnv *env, jobject obj, jobject jakeys, jobject javals, jobject jokeys, jobject jovals, jint n) 
-{
-  long long *pakeys = (long long *)getPointer(env, jakeys);
-  long long *pokeys = (long long *)getPointer(env, jokeys);
-  unsigned int *pavals = (unsigned int *)getPointer(env, javals);
-  unsigned int *povals = (unsigned int *)getPointer(env, jovals);
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_collectLVec
+  (JNIEnv *env, jobject obj, jobject jakeys, jobject javals, jobject jokeys, jobject jovals, jint n) 
+  {
+    long long *pakeys = (long long *)getPointer(env, jakeys);
+    long long *pokeys = (long long *)getPointer(env, jokeys);
+    unsigned int *pavals = (unsigned int *)getPointer(env, javals);
+    unsigned int *povals = (unsigned int *)getPointer(env, jovals);
 
-  int len = collectLVec(pakeys, pavals, pokeys, povals, n);
-  return len;
-}
+    int len = collectLVec(pakeys, pavals, pokeys, povals, n);
+    return len;
+  }
 
-JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_mergeLVecs
-(JNIEnv *env, jobject obj, jobject jakeys, jobject javals, jobject jbkeys, jobject jbvals, jobject jokeys, jobject jovals, jint n1, jint n2) 
-{
-  long long *pakeys = (long long *)getPointer(env, jakeys);
-  long long *pbkeys = (long long *)getPointer(env, jbkeys);
-  long long *pokeys = (long long *)getPointer(env, jokeys);
-  unsigned int *pavals = (unsigned int *)getPointer(env, javals);
-  unsigned int *pbvals = (unsigned int *)getPointer(env, jbvals);
-  unsigned int *povals = (unsigned int *)getPointer(env, jovals);
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_mergeLVecs
+  (JNIEnv *env, jobject obj, jobject jakeys, jobject javals, jobject jbkeys, jobject jbvals, jobject jokeys, jobject jovals, jint n1, jint n2) 
+  {
+    long long *pakeys = (long long *)getPointer(env, jakeys);
+    long long *pbkeys = (long long *)getPointer(env, jbkeys);
+    long long *pokeys = (long long *)getPointer(env, jokeys);
+    unsigned int *pavals = (unsigned int *)getPointer(env, javals);
+    unsigned int *pbvals = (unsigned int *)getPointer(env, jbvals);
+    unsigned int *povals = (unsigned int *)getPointer(env, jovals);
 
-  mergeLVecs(pakeys, pavals, pbkeys, pbvals, pokeys, povals, n1, n2);
+    mergeLVecs(pakeys, pavals, pbkeys, pbvals, pokeys, povals, n1, n2);
+  }
+
 }
