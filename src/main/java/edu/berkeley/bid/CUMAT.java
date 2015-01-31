@@ -205,8 +205,6 @@ public final class CUMAT {
     
     public static native int collectLVec(Pointer pkeys, Pointer okeys, Pointer pvals, Pointer ovals, Pointer nsegs, int n);
     
-    public static native int collectLVecx(Pointer pkeys, Pointer okeys, Pointer pvals, Pointer ovals, int n);
-    
     public static native int mergeLVecs(Pointer akeys, Pointer avals, Pointer bkeys, Pointer bvals, Pointer okeys, Pointer ovals, int n1, int n2);
 
 }
