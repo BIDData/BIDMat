@@ -833,7 +833,7 @@ extern "C" {
     unsigned int *pbvals = (unsigned int *)getPointer(env, jbvals);
     unsigned int *povals = (unsigned int *)getPointer(env, jovals);
 
-    mergeLVecs(pakeys, pavals, pbkeys, pbvals, pokeys, povals, n1, n2);
+    return mergeLVecs(pakeys, pavals, pbkeys, pbvals, pokeys, povals, n1, n2);
   }
 
 }
