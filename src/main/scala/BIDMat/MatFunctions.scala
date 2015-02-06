@@ -1393,7 +1393,8 @@ object MatFunctions {
     }
   }
   
-  def cat2sparse(c:IMat, ncats:Int):SMat = {
+  def cat2sparse(c:IMat, ncats0:Int = 0):SMat = {
+    val ncats = if (ncats0 > 0) ncats0 else SciFunctions.maxi(c).v + 1
     val out = SMat(ncats, c.length, c.length);
     var i = 0;
     var ioff = Mat.ioneBased;
@@ -1406,6 +1407,9 @@ object MatFunctions {
     }
     out;
   }
+  
+  def oneHot(c:IMat, ncats:Int):SMat = cat2sparse(c, ncats);
+  def oneHot(c:IMat):SMat = cat2sparse(c, 0);
   
   def fsqrt(v:Float):Float = math.sqrt(v).asInstanceOf[Float]
   
@@ -1663,6 +1667,7 @@ object MatFunctions {
   def loadIDX(fname:String, compressed:Int) = HMat.loadIDX(fname, compressed)
   def loadIDX(fname:String) = HMat.loadIDX(fname, 0)
   
+  def loadLibSVM(fname:String, nrows:Int, compressed:Int, oneBased:Int) = HMat.loadLibSVM(fname, nrows, compressed, oneBased)
   def loadLibSVM(fname:String, nrows:Int, compressed:Int) = HMat.loadLibSVM(fname, nrows, compressed)
   def loadLibSVM(fname:String, nrows:Int) = HMat.loadLibSVM(fname, nrows, 0)
   

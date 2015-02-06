@@ -794,7 +794,7 @@ object HMat {
   /** Load a file in ASCII LibSVM format */
   /* Outputs a data matrix first, and then a matrix c of cat labels where c(i) = label of instance i. */
   /* data is an SMat, labels are integer, weights are FMat. */
-  def loadLibSVM(fname:String, nrows:Int, compressed:Int = 0):(SMat, IMat, FMat) = {
+  def loadLibSVM(fname:String, nrows:Int, compressed:Int = 0, oneBased:Int = 0):(SMat, IMat, FMat) = {
     var fin = new BufferedReader(new InputStreamReader (getInputStream(fname, compressed)));
     var firstline = fin.readLine();
     var parts = if (firstline != null) firstline.split("[\t ]+") else null;
@@ -827,7 +827,7 @@ object HMat {
         val pair = parts(i).split(":");
         val indx = pair(0).toInt;
         val vval = pair(1).toFloat;
-        datamat.ir(nnz) = indx + ioneBased;
+        datamat.ir(nnz) = indx - oneBased + ioneBased;
         datamat.data(nnz) = vval;
         i += 1;
         nnz += 1;
