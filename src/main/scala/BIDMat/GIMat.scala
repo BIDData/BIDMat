@@ -367,6 +367,34 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     this
   }
   
+  def getdiag():GIMat = {
+    if (nrows != ncols) throw new RuntimeException("getdiag requires a square matrix, but dims= %d %d" format (nrows, ncols))
+    val out = GIMat.newOrCheckGIMat(nrows, 1, null, GUID, "getdiag".##)
+    cudaMemcpy2D(out.data, Sizeof.INT, data, (nrows+1)*Sizeof.INT, Sizeof.INT, nrows, cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize
+    val err = cudaGetLastError()
+    if (err != 0) {
+    	println("device is %d" format SciFunctions.getGPU)
+    	throw new RuntimeException("Cuda error in getdiag " + cudaGetErrorString(err))
+    }
+    out
+  }
+    
+  def mkdiag():GIMat = {
+    if (math.min(nrows, ncols) != 1) throw new RuntimeException("mkdiag requires a vector argument, but dims= %d %d" format (nrows, ncols))
+    val size = math.max(nrows, ncols)
+    val out = GIMat.newOrCheckGIMat(size, size, null, GUID, "mkdiag".##)
+    out.clear
+    var err = cudaMemcpy2D(out.data, (nrows+1)*Sizeof.INT, data, Sizeof.INT, Sizeof.INT, nrows, cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize
+    if (err == 0) err = cudaGetLastError()
+    if (err != 0) {
+    	println("device is %d" format SciFunctions.getGPU)
+    	throw new RuntimeException("Cuda error in mkdiag " + cudaGetErrorString(err))
+    }
+    out
+  }
+ 
   override def unary_- () = GIop(GIMat(-1), null, 2)
   def + (a : GIMat) = GIop(a, null, op_add)
   def - (a : GIMat) = GIop(a, null, op_sub)

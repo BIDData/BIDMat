@@ -640,7 +640,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   
     
   def mkdiag():GMat = {
-    if (math.max(nrows, ncols) != 1) throw new RuntimeException("mkdiag requires a vector argument, but dims= %d %d" format (nrows, ncols))
+    if (math.min(nrows, ncols) != 1) throw new RuntimeException("mkdiag requires a vector argument, but dims= %d %d" format (nrows, ncols))
     val size = math.max(nrows, ncols)
     val out = GMat.newOrCheckGMat(size, size, null, GUID, "mkdiag".##)
     out.clear
