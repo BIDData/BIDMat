@@ -386,6 +386,8 @@ object Mat {
   
   var debugMem = false             // Debug GPU mem calls
   
+  var debugMemThreshold = 1000;
+  
   var compressType = 1             // For HDF5 I/O, 0=none, 1=zlib, 2=szip
   
   var compressionLevel = 3         // for HDF5 zlib

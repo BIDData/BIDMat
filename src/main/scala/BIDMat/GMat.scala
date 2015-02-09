@@ -1145,7 +1145,10 @@ object GMat {
   
   def apply(nr:Int, nc:Int):GMat = {
     val retv = new GMat(nr, nc, new Pointer(), nr*nc)  
-    if (Mat.debugMem) println("GMat %d %d, %d %f" format (nr, nc, SciFunctions.getGPU, SciFunctions.GPUmem._1))
+    if (Mat.debugMem) {
+      println("GMat %d %d, %d %f" format (nr, nc, SciFunctions.getGPU, SciFunctions.GPUmem._1))
+      if (nr*nc > Mat.debugMemThreshold) throw new RuntimeException("GMat alloc too large");
+    }
     var err = cublasAlloc(nr*nc, Sizeof.FLOAT, retv.data)
     cudaDeviceSynchronize
     if (err == 0) err = cudaGetLastError()

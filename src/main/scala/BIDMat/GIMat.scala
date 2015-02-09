@@ -315,7 +315,21 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     cudaDeviceSynchronize()
     out
   }
-  
+ 
+  def toFMat(omat:Mat):FMat = {
+    val out = FMat.newOrCheckFMat(nrows, ncols, omat, GUID, "toFMat".##)
+    cudaMemcpy(Pointer.to(out.data), data, 1L*nrows*ncols * Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost);
+    cudaDeviceSynchronize()
+    var i = 0;
+    val len = out.length
+    while (i < len) {
+      val ival = java.lang.Float.floatToRawIntBits(out(i));
+      out(i) = ival.toFloat;
+      i += 1;
+    }
+    out
+  }
+    
   def toLMat():LMat = {
     val out = LMat.newOrCheckLMat(nrows/2, ncols, null, GUID, "toLMat".##)
     cudaMemcpy(Pointer.to(out.data), data, 1L*nrows*ncols * Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost);

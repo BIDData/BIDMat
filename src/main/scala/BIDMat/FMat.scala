@@ -1341,6 +1341,7 @@ object FMat {
       case ii:LMat => {Mat.copyToFloatArray(ii.data, 0, out.data, 0, ii.length)}
       case ss:SMat => ss.full(out)
       case gg:GMat => gg.toFMat(out)
+      case gg:GIMat => gg.toFMat(out)
       case _ => throw new RuntimeException("Unsupported source type")
     }
     out
