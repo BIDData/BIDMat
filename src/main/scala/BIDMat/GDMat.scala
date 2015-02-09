@@ -679,7 +679,7 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
   
     
   def mkdiag():GDMat = {
-    if (math.max(nrows, ncols) != 1) throw new RuntimeException("mkdiag requires a vector argument, but dims= %d %d" format (nrows, ncols))
+    if (math.min(nrows, ncols) != 1) throw new RuntimeException("mkdiag requires a vector argument, but dims= %d %d" format (nrows, ncols))
     val size = math.max(nrows, ncols)
     val out = GDMat.newOrCheckGDMat(size, size, null, GUID, "mkdiag".##)
     out.clear

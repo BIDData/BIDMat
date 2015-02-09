@@ -17,7 +17,7 @@ import net.jpountz.lz4._
 // Matrix format key
 // Type = WXYZ00ABC (decimal digits)
 // WXYZ = version number (currently zero)
-// A = matrix type: 1 (dense), 2 (sparse), 3 (sparse, norows), 4 (3-tensor), 5 (4-tensor), 6 (5-tensor)
+// A = matrix type: 1 (dense), 2 (sparse), 3 (sparse, norows), 4 (1-tensor), 5 (2-tensor), 6 (3-tensor),...
 // B = data type: 0 (byte), 1 (int), 2 (long), 3 (float), 4 (double), 5 (complex float), 6 (complex double)
 // C = index type (sparse matrices only): 1 (int), 2 (long)
 
@@ -457,6 +457,39 @@ object HMat {
       writeSomeFloats(gout, m.data, buff, m.nrows*m.ncols)
       gout.close
     }
+  }
+
+  def saveFND(fname:String, m:FND, compressed:Int=0):Unit = {
+    val gout = getOutputStream(fname, compressed);
+    val dims = m.dims;
+    val ndims = dims.length;
+    val hints = new Array[Int](1);
+    val tbuf = ByteBuffer.allocate(dims.length*4).order(byteOrder);
+    hints(0) = 30 + 100 * (ndims + 3);
+    writeSomeInts(gout, hints, tbuf, 1);
+    writeSomeInts(gout, dims.data, tbuf, ndims);
+    hints(0) = 0;
+    writeSomeInts(gout, hints, tbuf, 1);
+    val bsize = 4*m.length;
+    val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder);
+    writeSomeFloats(gout, m.data, buff, m.length);
+    gout.close;
+  }
+
+  def loadFND(fname:String, omat:ND, compressed:Int):FND = {
+    val gin = getInputStream(fname, compressed);
+    val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder);
+    val hints = new Array[Int](1);
+    readSomeInts(gin, hints, buff, 1);
+    if (hints(0) % 100 != 30) throw new RuntimeException("loadFND: bad type code " + hints(0));
+    val ndims = hints(0) / 100 - 3;
+    val dims = new Array[Int](ndims);
+    readSomeInts(gin, dims, buff, ndims);
+    readSomeInts(gin, hints, buff, 1);
+    val out = FND.newOrCheckFND(dims, omat);
+    readSomeFloats(gin, out.data, buff, out.length);
+    gin.close;
+    out;
   }
   
   def saveFMatTxt(fname:String, m:FMat, compressed:Int=0, delim:String="\t"):Unit = {

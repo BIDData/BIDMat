@@ -1442,32 +1442,48 @@ object MatFunctions {
   def mkdiag(a:DMat) = DMat(a.mkdiag)
   def mkdiag(a:FMat) = FMat(a.mkdiag)
   def mkdiag(a:IMat) = IMat(a.mkdiag)
+  def mkdiag(a:LMat) = LMat(a.mkdiag)
   def mkdiag(a:CMat) = CMat(a.mkdiag)
-  def mkdiag(a:GMat) = a.mkdiag
+  def mkdiag(a:GMat) = GMat(a.mkdiag)
+  def mkdiag(a:GDMat) = GDMat(a.mkdiag)
+  def mkdiag(a:GIMat) = GIMat(a.mkdiag)
+  def mkdiag(a:GLMat) = GLMat(a.mkdiag)
   
   def mkdiag(a:Mat):Mat = {
     a match {
       case aa:DMat => mkdiag(aa):DMat
       case aa:FMat => mkdiag(aa):FMat
       case aa:IMat => mkdiag(aa):IMat
-      case aa:CMat => mkdiag(aa):CMat 
+      case aa:LMat => mkdiag(aa):LMat
+      case aa:CMat => mkdiag(aa):CMat
       case aa:GMat => mkdiag(aa):GMat
+      case aa:GDMat => mkdiag(aa):GDMat
+      case aa:GIMat => mkdiag(aa):GIMat
+      case aa:GLMat => mkdiag(aa):GLMat
     }
   }
 
   def getdiag(a:DMat) = DMat(a.getdiag)
   def getdiag(a:FMat) = FMat(a.getdiag)
   def getdiag(a:IMat) = IMat(a.getdiag)
-  def getdiag(a:CMat) = CMat(a.getdiag) 
-  def getdiag(a:GMat) = a.mkdiag
+  def getdiag(a:LMat) = LMat(a.getdiag)
+  def getdiag(a:CMat) = CMat(a.getdiag)
+  def getdiag(a:GMat) = GMat(a.getdiag)
+  def getdiag(a:GDMat) = GDMat(a.getdiag)
+  def getdiag(a:GIMat) = GIMat(a.getdiag)
+  def getdiag(a:GLMat) = GLMat(a.getdiag)
 
   def getdiag(a:Mat):Mat = {
     a match {
       case aa:DMat => getdiag(aa):DMat
       case aa:FMat => getdiag(aa):FMat
       case aa:IMat => getdiag(aa):IMat
+      case aa:LMat => getdiag(aa):LMat
       case aa:CMat => getdiag(aa):CMat 
       case aa:GMat => getdiag(aa):GMat
+      case aa:GDMat => getdiag(aa):GDMat
+      case aa:GIMat => getdiag(aa):GIMat
+      case aa:GLMat => getdiag(aa):GLMat
     }
   }
   
