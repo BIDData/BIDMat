@@ -16,15 +16,16 @@ object MatFunctions {
   
   var lastFlops:Long = 0
 
+  /** Establishes the start of a (seconds) timer, to be timed later at the next call to 'toc'. */
   def tic = { currentTimeWasThen = currentTime }
 
+  /** Returns the elapsed time in milliseconds between now and the previous call to 'tic'. */
   def toc:Float = {(currentTime - currentTimeWasThen)/1000.0f}
   
   /**
    * Reset timer and flop counters. Complement to flop which returns the time and
    * flops since the last flip. 
    */
-  
   def flip = { lastFlops = Mat.nflops ; tic }
   
   /**
@@ -35,7 +36,6 @@ object MatFunctions {
    * around any code you want to profile. 
    * f is a tuple of (flops,time)
    */
-  
   def flop:(Float, Float) = { val t1 = toc; ( (Mat.nflops -lastFlops)/t1, t1 ) }
   
   /**
@@ -46,29 +46,24 @@ object MatFunctions {
    * around any code you want to profile. 
    * g is a tuple of (gflops,time)
    */
-
   def gflop:(Float, Float) = { val t1 = toc; ( (Mat.nflops -lastFlops)/t1/1e9f, t1 ) }
   
-  /**
-   * Return the size of '''a''' as a (rows, columns) tuple
-   */
-  
+  /** Return the size of '''a''' as a (rows, columns) tuple. */
   def size(a:Mat):(Int, Int) = (a.nrows, a.ncols)
   
   /**
    * Retrieve the size of '''a''' along axis '''n'''
- - n=1: Number of rows
- - n=2: Number of columns
+   * - n=1: Number of rows
+   * - n=2: Number of columns
    */
-    
   def size(a:Mat, n:Int):Int = {
-  		if (n == 1) {
-  			a.nrows
-  		} else if (n == 2) {
-  			a.ncols
-  		} else {
-  			throw new RuntimeException("size arg must be 1 or 2")
-  		}
+  	if (n == 1) {
+  	  a.nrows
+  	} else if (n == 2) {
+  	  a.ncols
+  	} else {
+  	  throw new RuntimeException("size arg must be 1 or 2")
+  	}
   }
   
   /** Return the length of '''a''', (number of rows x columns) */  
@@ -79,7 +74,10 @@ object MatFunctions {
   
   /** Return the length of '''a''', (number of rows x columns) */
   def length(a:IMat):Int = a.length
-  
+
+  /** Return the length of '''a''', (number of rows x columns) */
+  def length(a:LMat):Int = a.length 
+
   /** Return the number of non-zeros in '''a''' */  
   def nnz(a:DMat):Int = a.nnz
   
@@ -89,7 +87,7 @@ object MatFunctions {
   /** Return the number of non-zeros in '''a''' */  
   def nnz(a:IMat):Int = a.nnz
   
-    /** Return the number of non-zeros in '''a''' */  
+  /** Return the number of non-zeros in '''a''' */  
   def nnz(a:LMat):Int = a.nnz
    
   /** Return the number of non-zeros in '''a''' */   
@@ -129,6 +127,7 @@ object MatFunctions {
     out
   }
   
+  // TODO Document
   def threadPool(n:Int = Mat.numThreads):scala.concurrent.ExecutionContextExecutor = {
     import scala.concurrent.ExecutionContext
     import java.util.concurrent.Executors
@@ -151,6 +150,7 @@ object MatFunctions {
   
   def recycleTry(a:Mat, nr:Int, nc:Int, b:GSMat, nnz:Int):GSMat = recycleTry(a, nr, nc, b:Mat, nnz).asInstanceOf[GSMat]
   
+  // TODO Documen this and all the other 'recycleTry' methods.
   def recycleTry(a:Mat, nr:Int, nc:Int, b:Mat, nnz:Int):Mat = {
     if (a.asInstanceOf[AnyRef] == null  || (a.nrows == 0 && a.ncols == 0)) {
     	b.zeros(nr, nc, nnz)     
@@ -612,11 +612,12 @@ object MatFunctions {
   /** Accumulate (row, col, ival) tuples from inds (generic version). nr and nc are row and column bounds */
   def accum(inds:Mat, ival:Int, nrows:Int, ncols:Int):Mat = accum(inds, ival, null, nrows, ncols)
     
-  /** sparse matrix-vector multiply in coordinate form. 
-   *  inds should be an nnz x 2 matrix containing row/column indices of the sparse matrix. 
-   *  vals is an nnz x 1 matrix of values of the sparse matrix. 
-   *  in is the input vector, out is the output vector. 
-   *  Note that the bounds of row/col indices are not checked. 
+  /** 
+   * sparse matrix-vector multiply in coordinate form. 
+   * inds should be an nnz x 2 matrix containing row/column indices of the sparse matrix. 
+   * vals is an nnz x 1 matrix of values of the sparse matrix. 
+   * in is the input vector, out is the output vector. 
+   * Note that the bounds of row/col indices are not checked. 
    */
   def coomult(inds:IMat, vals:FMat, in:FMat, out:FMat, transpose:Boolean=true) = {
     if (inds.nrows != vals.nrows) 
@@ -656,7 +657,6 @@ object MatFunctions {
    * Lexicographic sort of a matrix '''mat''' and a set of indices '''inds'''. 
    * Side-effects both matrices, i.e. both '''mat''' and '''inds''' are modified.
    */
-  
   def sortlexInds(mat:IMat, inds:IMat) = _sortlexInds(mat, inds, true) 
   
   def _sortlexInds(mat:IMat, inds:IMat, asc:Boolean) {
@@ -686,7 +686,6 @@ object MatFunctions {
   /**
    * Lexicographic sort of a matrix '''mat'''. Side-effects '''mat'''.
    */
-  
   def sortlex(mat:IMat) = _sortlex(mat, true)
   
   def _sortlex(mat:IMat, asc:Boolean):Unit = {
@@ -708,7 +707,6 @@ object MatFunctions {
   /**
    * Lexicographic sort of a matrix '''mat''' with order '''asc''' (boolean true for ascending order). Side-effects '''mat'''.
    */
-    
   def isortlexfast(mat:IMat, asc:Boolean):IMat = {
   	if (Mat.useGPUsort && Mat.hasCUDA > 0 && {
   	  val (dmy, freebytes, allbytes) = SciFunctions.GPUmem; 
@@ -731,7 +729,6 @@ object MatFunctions {
    * Count distinct elements in a sorted array of rows. Returns (bptrs, iptrs), where bptrs points to a
    * set of distinct rows, and iptrs gives the index in this list for each input row. 
    */
-  
   def countDistinct(a:IMat):(IMat, IMat) = {
   	val iptrs = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "countDistinct".hashCode)
     def compeq(i:Int, j:Int):Boolean = {
@@ -760,6 +757,7 @@ object MatFunctions {
     (bptrs, iptrs)
   }
      
+  /** Copies row '''i''' from '''a''' into row '''j''' of '''b'''. */
   def copyrow(a:IMat, i:Int, b:IMat, j:Int) = {
     var k = 0 
     while (k < a.ncols) {
@@ -774,7 +772,6 @@ object MatFunctions {
  - bptrs are the positions of the distinct rows in the original matrix.
  - output are the positions of each input row in the output row matrix. 
    */
-  
   def uniquerows(a:IMat):(IMat, IMat, IMat) = {
     val iss = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "uniquerows".hashCode)
     val sortv = IMat.newOrCheckIMat(a.nrows, a.ncols, null, a.GUID, "uniquerows_1".hashCode)
@@ -800,7 +797,6 @@ object MatFunctions {
     }    
     (outv, bptrs, outp)    
   }  
- 
 
   /** Make a double row vector from an array of doubles. */
   def drow(x:Array[Double]):DMat = {
@@ -955,7 +951,7 @@ object MatFunctions {
   /** Make a float matrix of zeros of the given size. */
   def zeros(nr:Int, nc:Int):FMat = FMat(nr,nc)
 
- /**  Make a float matrix of ones of the given size. */  
+  /** Make a float matrix of ones of the given size. */  
   def ones(nr:Int, nc:Int):FMat = {
     val out = FMat(nr,nc)
     var i = 0
@@ -991,7 +987,6 @@ object MatFunctions {
   }
   
   /** Make an integer row vector from a List of Ints. */
-
   def irow(x:List[Int]):IMat = {
   	val ahash = if (Mat.useCache) x.## else 0
     val mat = IMat.newOrCheckIMat(1,x.length, null, ahash, "irow_list".##)
@@ -1016,7 +1011,7 @@ object MatFunctions {
   def icol(x:Tuple2[Int,Int]):IMat = icol(x._1 until x._2)
 
   
- /** Make an integer column vector from a List. */
+  /** Make an integer column vector from a List. */
   def icol(x:List[Int]):IMat = {
   	val ahash = if (Mat.useCache) x.## else 0
     val mat = IMat.newOrCheckIMat(x.length,1, null, ahash, "icol_list".##)
@@ -1045,7 +1040,7 @@ object MatFunctions {
     out
   }
   
-    /** Make an integer row vector from a range. */
+  /** Make an integer row vector from a range. */
   def lrow(x:Range):LMat = {
     val mat = LMat.newOrCheckLMat(1,x.length, null, x.##, "irow_range".##)
     for (i <- 0 until x.length)
@@ -1065,7 +1060,6 @@ object MatFunctions {
   }
   
   /** Make an long row vector from a List of Ints. */
-
   def lrow(x:List[Long]):LMat = {
     val ahash = if (Mat.useCache) x.## else 0
     val mat = LMat.newOrCheckLMat(1,x.length, null, ahash, "lrow_list".##)
@@ -1119,7 +1113,6 @@ object MatFunctions {
     out
   }
 
-  
   /** Make a string row vector from a list of strings. */  
   def csrow(x:List[String]):CSMat = {
     val mat = CSMat(1, x.length)
@@ -1411,6 +1404,7 @@ object MatFunctions {
   def oneHot(c:IMat, ncats:Int):SMat = cat2sparse(c, ncats);
   def oneHot(c:IMat):SMat = cat2sparse(c, 0);
   
+  /** Returns the square root of '''v''' as a float, as an alternative to math.sqrt(v)'s double.  */
   def fsqrt(v:Float):Float = math.sqrt(v).asInstanceOf[Float]
   
   def mapfun2x2(fn:(Float, Float)=>(Float, Float), in0:FMat, in1:FMat, out0:FMat, out1:FMat) = {
@@ -1439,16 +1433,45 @@ object MatFunctions {
     }
   }
   
+  /** Creates a diagonal, square DMat matrix with elements of '''a''' in the diagonal. */
   def mkdiag(a:DMat) = DMat(a.mkdiag)
+  /** Creates a diagonal, square FMat matrix with elements of '''a''' in the diagonal. */
   def mkdiag(a:FMat) = FMat(a.mkdiag)
+  /** Creates a diagonal, square IMat matrix with elements of '''a''' in the diagonal. */
   def mkdiag(a:IMat) = IMat(a.mkdiag)
+  /** Creates a diagonal, square LMat matrix with elements of '''a''' in the diagonal. */
   def mkdiag(a:LMat) = LMat(a.mkdiag)
+  /** Creates a diagonal, square CMat matrix with elements of '''a''' in the diagonal. */
   def mkdiag(a:CMat) = CMat(a.mkdiag)
+  /** Creates a diagonal, square GMat matrix with elements of '''a''' in the diagonal. */
   def mkdiag(a:GMat) = GMat(a.mkdiag)
+  /** Creates a diagonal, square GDMat matrix with elements of '''a''' in the diagonal. */
   def mkdiag(a:GDMat) = GDMat(a.mkdiag)
+  /** Creates a diagonal, square GIMat matrix with elements of '''a''' in the diagonal. */
   def mkdiag(a:GIMat) = GIMat(a.mkdiag)
+  /** Creates a diagonal, square GLMat matrix with elements of '''a''' in the diagonal. */
   def mkdiag(a:GLMat) = GLMat(a.mkdiag)
   
+  /**
+   * Creates a diagonal, square matrix with elements of '''a''' in the diagonal. Works on most matrix types.
+   * 
+   * Throws exception if '''a''' is a non-vector matrix.
+   * 
+   * Example, with IMats:
+   * {{{
+   * scala> val a = 1 on 2 on 3
+   * a: BIDMat.IMat =
+   *    1
+   *    2
+   *    3
+   * 
+   * scala> mkdiag(a)
+   * res4: BIDMat.IMat =
+   *    1   0   0
+   *    0   2   0
+   *    0   0   3
+   * }}}
+   */
   def mkdiag(a:Mat):Mat = {
     a match {
       case aa:DMat => mkdiag(aa):DMat
@@ -1463,17 +1486,45 @@ object MatFunctions {
     }
   }
 
+  /** Gets the leading diagonal of DMat '''a''' as a DMat vector. */
   def getdiag(a:DMat) = DMat(a.getdiag)
+  /** Gets the leading diagonal of FMat '''a''' as an FMat vector. */
   def getdiag(a:FMat) = FMat(a.getdiag)
-  def getdiag(a:IMat) = IMat(a.getdiag)
+  /** Gets the leading diagonal of IMat '''a''' as an IMat vector. */
+  private def getdiag(a:IMat) = IMat(a.getdiag)
+  /** Gets the leading diagonal of LMat '''a''' as a LMat vector. */
   def getdiag(a:LMat) = LMat(a.getdiag)
+  /** Gets the leading diagonal of CMat '''a''' as a CMat vector. */
   def getdiag(a:CMat) = CMat(a.getdiag)
+  /** Gets the leading diagonal of GMat '''a''' as a GMat vector. */
   def getdiag(a:GMat) = GMat(a.getdiag)
+  /** Gets the leading diagonal of GDMat '''a''' as a GDMat vector. */
   def getdiag(a:GDMat) = GDMat(a.getdiag)
+  /** Gets the leading diagonal of GIMat '''a''' as a GIMat vector. */
   def getdiag(a:GIMat) = GIMat(a.getdiag)
+  /** Gets the leading diagonal of GLMat '''a''' as a GLMat vector. */
   def getdiag(a:GLMat) = GLMat(a.getdiag)
 
+  /** 
+   * Gets the leading diagonal of '''a''' matrix as a vector. Works on most matrix types.
+   * 
+   * Example, with IMats:
+   * {{{
+   * scala> val a = 1\2\3\4 on 4\5\6\7 on 7\8\9\10
+   * a: BIDMat.IMat =
+   *    1   2   3   4
+   *    4   5   6   7
+   *    7   8   9  10
+   * 
+   * scala> getdiag(a)
+   * res3: BIDMat.IMat =
+   *    1
+   *    5
+   *    9
+   * }}}
+   */
   def getdiag(a:Mat):Mat = {
+    println("Inside getdiag")
     a match {
       case aa:DMat => getdiag(aa):DMat
       case aa:FMat => getdiag(aa):FMat
@@ -1487,6 +1538,18 @@ object MatFunctions {
     }
   }
   
+  /**
+   * Returns a sparse, diagonal n x n matrix with ones in the diagonal.
+   * 
+   * Example:
+   * {{{
+   * scala> spdiag(3)
+   * res10: BIDMat.SMat =
+   * (   0,   0)   1
+   * (   1,   1)   1
+   * (   2,   2)   1 
+   * }}}
+   */
   def spdiag(n:Int):SMat = {
     val a = SMat(n,n,n)
     val ioff = Mat.ioneBased
@@ -1501,7 +1564,7 @@ object MatFunctions {
     a
   }
   
-  /*
+  /**
    * Distribute the data in the vv matrix using indices in the indx matrix into the mats array. 
    * Left and right are the range of the output buffer indices. 
    * Element vv(i) goes into buffer number (indx(i)-left)
@@ -1526,7 +1589,7 @@ object MatFunctions {
     }
   }
   
-  /*
+  /**
    * Distribute the data in the vv matrix using indices in the indx matrix into the mats array. 
    * Left and right are the range of the output buffer indices. 
    * Element vv(i) goes into buffer number (indx(i)-left)
@@ -1551,7 +1614,7 @@ object MatFunctions {
     }
   }
   
-  /*
+  /**
    * Distribute the data in the vv matrix using indices in the indx matrix into the mats array. 
    * Left and right are the range of the output buffer indices. 
    * Element vv(i) goes into buffer number (indx(i)-left)
