@@ -3,6 +3,13 @@
 #include <stdio.h>
 #include <MatKernel.hpp>
 
+#include <thrust/device_ptr.h>
+#include <thrust/sort.h>
+#include <thrust/reverse.h>
+#include <thrust/reduce.h>
+#include <thrust/merge.h>
+#include <thrust/fill.h>
+
 #if __CUDA_ARCH__ > 200
 #define MAXXGRID 2147483647
 #else
@@ -34,6 +41,8 @@ __device__ int iop_eq(int a, int b) {return (a == b) ? 1 : 0;}
 __device__ int iop_ge(int a, int b) {return (a >= b) ? 1 : 0;}
 __device__ int iop_le(int a, int b) {return (a <= b) ? 1 : 0;}
 __device__ int iop_ne(int a, int b) {return (a != b) ? 1 : 0;}
+__device__ int iop_max(int a, int b) {return max(a,b);}
+__device__ int iop_min(int a, int b) {return min(a,b);}
 
 __device__ long long lop_add(long long a, long long b) {return a+b;}
 __device__ long long lop_sub(long long a, long long b) {return a-b;}
@@ -45,11 +54,15 @@ __device__ long long lop_eq(long long a, long long b) {return (a == b) ? 1 : 0;}
 __device__ long long lop_ge(long long a, long long b) {return (a >= b) ? 1 : 0;}
 __device__ long long lop_le(long long a, long long b) {return (a <= b) ? 1 : 0;}
 __device__ long long lop_ne(long long a, long long b) {return (a != b) ? 1 : 0;}
+__device__ long long lop_max(long long a, long long b) {return max(a,b);}
+__device__ long long lop_min(long long a, long long b) {return max(a,b);}
 
 typedef float (*optype)(float,float);
 typedef int (*ioptype)(int,int);
 typedef long long (*loptype)(long long,long long);
 
+
+// Check reducevec if these ever get changed.
 __device__ const optype operators[] = {
     op_add, 
     op_sub, 
@@ -76,7 +89,9 @@ __device__ const ioptype ioperators[] = {
     iop_eq,
     iop_ge,
     iop_le,
-    iop_ne};
+    iop_ne,
+    iop_max,
+    iop_min};
 
 __device__ const loptype loperators[] = {
     lop_add, 
@@ -88,7 +103,9 @@ __device__ const loptype loperators[] = {
     lop_eq,
     lop_ge,
     lop_le,
-    lop_ne};
+    lop_ne,
+    lop_max,
+    lop_min};
 
 __device__ float fn_abs(float a) {return abs(a);}
 __device__ float fn_exp(float a) {return expf(a);}
@@ -1280,12 +1297,37 @@ __global__ void __reduce1op(int nrows, int ncols, float *A, float *B, int opn) {
 }
 #endif
 
+template<typename T>
+void reducevec(int n, T *A, T *B, int opn) {
+  thrust::device_ptr<T> pa(A);
+  thrust::device_ptr<T> pb(B);
+  T v;
+  switch (opn) {
+  case 0 :                         // sum
+    v = thrust::reduce(pa, pa + n);
+    thrust::fill(pb, pb + 1, v);
+    break;
+  case 10 :                        // max
+    v = thrust::reduce(pa, pa + n, std::numeric_limits<T>::min(), thrust::maximum<T>());
+    thrust::fill(pb, pb + 1, v);
+    break;
+  case 11:                         // min
+    v = thrust::reduce(pa, pa + n, std::numeric_limits<T>::max(), thrust::minimum<T>());
+    thrust::fill(pb, pb + 1, v);
+    break;
+  }
+}
+
 int reduce1op(int nrows, int ncols, float *A, float *B, int opn) {
-  int blkx = min(32, nrows);
-  int blky = min(32, ncols);
-  int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));
-  const dim3 blkdims(blkx,blky,1);
-  __reduce1op<<<nblks,blkdims>>>(nrows, ncols, A, B, opn);
+  if (ncols == 1) {
+     reducevec<float>(nrows, A, B, opn);
+  } else {
+    int blkx = min(32, nrows);
+    int blky = min(32, ncols);
+    int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));
+    const dim3 blkdims(blkx,blky,1);
+    __reduce1op<<<nblks,blkdims>>>(nrows, ncols, A, B, opn);
+  }
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
@@ -1419,11 +1461,15 @@ __global__ void __reduce2op(int nrows, int ncols, float *A, float *B, int opn) {
 }
 
 int reduce2op(int nrows, int ncols, float *A, float *B, int opn) {
-  int blkx = min(32, nrows);
-  int blky = min(32, ncols);
-  int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));
-  const dim3 blkdims(blkx,blky,1);
-  __reduce2op<<<nblks,blkdims>>>(nrows, ncols, A, B, opn);
+  if (nrows == 1) {
+    reducevec<float>(ncols, A, B, opn);
+  } else {
+    int blkx = min(32, nrows);
+    int blky = min(32, ncols);
+    int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));
+    const dim3 blkdims(blkx,blky,1);
+    __reduce2op<<<nblks,blkdims>>>(nrows, ncols, A, B, opn);
+  }
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
@@ -1561,11 +1607,6 @@ int extractmat(float *a, int *b, long long *c, int n) {
   return err;
 }
 
-#include <thrust/device_ptr.h>
-#include <thrust/sort.h>
-#include <thrust/reverse.h>
-#include <thrust/reduce.h>
-#include <thrust/merge.h>
 
 int fsort2d(float *pkeys, unsigned int *pvals, int nrows, int ncols, int asc) {
   for (int i = 0; i < ncols; i++) {
