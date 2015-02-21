@@ -14,15 +14,21 @@ else
   done
 fi
 BIDMAT_ROOT=`dirname "$BIDMAT_ROOT"`
-BIDMAT_ROOT=`cd "$BIDMAT_ROOT";pwd`
+pushd "${BIDMAT_ROOT}" > /dev/null
+BIDMACH_ROOT=`pwd`
 BIDMAT_ROOT="$( echo ${BIDMAT_ROOT} | sed s+/cygdrive/c+c:+ )" 
 JCUDA_LIBDIR=${BIDMAT_ROOT}/lib
 LIBDIR=${BIDMAT_ROOT}/lib
 if [ `uname` = "Darwin" ]; then
     export DYLD_LIBRARY_PATH="${BIDMAT_ROOT}/lib:/usr/local/cuda/lib:${DYLD_LIBRARY_PATH}"
 else
-  export LD_LIBRARY_PATH="${BIDMAT_ROOT}/lib:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}" 
+    export LD_LIBRARY_PATH="${BIDMAT_ROOT}/lib:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}" 
 fi
+if [ ! -e java_native_path.txt ]; then
+  java getnativepath > java_native_path.txt
+fi
+export JAVA_NATIVE=`cat java_native_path.txt`
+popd  > /dev/null
 if [ "$OS" = "Windows_NT" ]; then
     if [ ! "${JAVA_HOME}" = "" ]; then
         JAVA_HOME=`${BIDMAT_ROOT}/shortpath.bat "${JAVA_HOME}"`
@@ -39,27 +45,27 @@ ${JCUDA_LIBDIR}/jcusparse-${JCUDA_VERSION}.jar"
 
 ALL_LIBS=";${LIBDIR}/IScala.jar;${BIDMAT_LIBS};${JCUDA_LIBS};${JAVA_HOME}/lib/tools.jar"
 
-if [ ! "$OS" = "Windows_NT" ]; then
-    ALL_LIBS=`echo "${ALL_LIBS}" | sed 's/;/:/g'`
-    JAVA_NATIVE="-Djava.library.path=${LD_LIBRARY_PATH}:/usr/lib64:/lib64:lib:/usr/lib"
-else
+if [ "$OS" = "Windows_NT" ]; then
     if [ ! "${CUDA_PATH}" = "" ]; then
 	    NEWPATH=`${BIDMAT_ROOT}/shortpath.bat "${CUDA_PATH}"`
 	    NEWPATH=`echo $NEWPATH | sed 's_\\\\_/_g'`/bin
     fi
-    JAVA_NATIVE="-Djava.library.path=${LIBDIR};${NEWPATH}"
+    DJAVA_NATIVE="-Djava.library.path=${LIBDIR};${NEWPATH}"
+else
+    ALL_LIBS=`echo "${ALL_LIBS}" | sed 's/;/:/g'`
+    DJAVA_NATIVE="-Djava.library.path=${JAVA_NATIVE}
 fi
 if [ ! `uname` = "Darwin" ]; then
-    export JAVA_OPTS="${JAVA_NATIVE} ${JAVA_OPTS}"
+    export JAVA_OPTS="${DJAVA_NATIVE} ${JAVA_OPTS}"
 fi
 
 if [ "$1" = "notebook" ]; then
     shift 1
     if [ ! -z "$@" ]; then
-        KERNEL_CMD="[\"java\", \"-cp\", \"${ALL_LIBS}\", \"$JAVA_NATIVE\", \"${MEMSIZE}\", \"-Xms128M\", \
+        KERNEL_CMD="[\"java\", \"-cp\", \"${ALL_LIBS}\", \"$DJAVA_NATIVE\", \"${MEMSIZE}\", \"-Xms128M\", \
        \"-Dfile.encoding=UTF-8\", \"org.refptr.iscala.IScala\", \"--profile\", \"{connection_file}\", \"--parent\", \"$@\"]"
     else
-        KERNEL_CMD="[\"java\", \"-cp\", \"${ALL_LIBS}\", \"$JAVA_NATIVE\", \"${MEMSIZE}\", \"-Xms128M\", \
+        KERNEL_CMD="[\"java\", \"-cp\", \"${ALL_LIBS}\", \"$DJAVA_NATIVE\", \"${MEMSIZE}\", \"-Xms128M\", \
        \"-Dfile.encoding=UTF-8\", \"org.refptr.iscala.IScala\", \"--profile\", \"{connection_file}\", \"--parent\"]"
     fi
     ipython notebook --profile scala --KernelManager.kernel_cmd="$KERNEL_CMD"
