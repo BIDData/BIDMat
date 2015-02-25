@@ -2948,6 +2948,90 @@ int poissonrnd(int n, float *A, int *B, int nthreads) {
   return err;
 }
 
+
+__global__ void __binornd(int nvals, float *A, int *C, int *Out, curandState *rstates) {
+  int jstart = ((long long)blockIdx.x) * nvals / gridDim.x;
+  int jend = ((long long)(blockIdx.x + 1)) * nvals / gridDim.x;
+  int id = threadIdx.x + blockDim.x * threadIdx.y;
+  int ib = id + blockIdx.x * blockDim.x * blockDim.y;
+  curandState rstate;
+  float X, Y, V;
+  if (ib < nvals) {
+    rstate = rstates[ib];
+  }
+  const float pi = 3.1415926f;
+  for (int j = jstart + id; j < jend; j += blockDim.x * blockDim.y) {
+    int n = C[j];
+    float p = A[j];
+    float np = n * p;
+    float pvar = np * (1 - p);
+    float delta1 = max(1.0f, floor(sqrt(pvar * log(128 * np / (81 * pi * (1-p))))));
+    float delta2 = max(1.0f, floor(sqrt(pvar * log(128 * n * (1-p) / (pi * p)))));
+    float sigma1 = sqrt(pvar)*(1+delta1/(4*np));
+    float sigma2 = sqrt(pvar)*(1+delta2/(4*n*(1-p)));
+    float c = 2 * delta1 / np;
+    float a1 = 0.5f * exp(c) * sigma1 * sqrt(2*pi);
+    float a2 = 0.5f * sigma2 * sqrt(2*pi);
+    float a3 = exp(delta1/(n*(1-p)) - delta1*delta1/(2*sigma1*sigma1))*2*sigma1*sigma1/delta1;
+    float a4 = exp(-delta2*delta2/(2*sigma2*sigma2))*2*sigma2*sigma2/delta2;
+    float s = a1 + a2 + a3 + a4;
+    int i = 0;
+    while (i < 100) {                            // Give up eventually
+      i += 1;
+      float U = s * curand_uniform(&rstate);
+      float E1 = - log(curand_uniform(&rstate));  // safe since curand_uniform wont return 0
+      if (U <= a1 + a2) {
+	float N = curand_normal(&rstate);
+	if (U <= a1) {
+	  Y = sigma1 * abs(N);
+	  if (Y >= delta1) continue;
+	  X = floor(Y);
+	  V = - E1 - N * N/2 + c;
+	} else {
+	  Y = sigma2 * abs(N);
+	  if (Y >= delta2) continue;
+	  X = floor(-Y);
+	  V = - E1 - N * N/2;
+	}
+      } else {
+	float E2 = - log(curand_uniform(&rstate));
+	if (U <= a1 + a2 + a3) {
+	  Y = delta1 + 2*sigma1*sigma1*E1/delta1;
+	  X = floor(Y);
+	  V = - E2 - delta1*Y/(2*sigma1*sigma1) + delta1/(n*(1-p));
+	} else {
+	  Y = delta2 + 2*sigma2*sigma2*E1/delta2;
+	  X = floor(-Y);
+	  V = - E2 - delta2*Y/(2*sigma2*sigma2);
+	}
+      }
+      if (X < - np || X > n * (1-p)) continue;
+      if (V > lgamma(np + X) - lgamma(np)) continue;
+      break;
+    }
+    Out[j] = (int)X;
+  }
+}
+
+int binornd(int nvals, float *A, int *C, int *Out) {
+  int nthreads = min(nvals, 1024);
+  int nblocks = min(128, 1 + (nvals-1)/nthreads);
+  curandState *rstates;
+  int err = cudaMalloc(( void **)& rstates , nthreads * nblocks * sizeof(curandState));
+  if (err > 0) {
+    fprintf(stderr, "Error in cudaMalloc %d", err);
+    return err;
+  }
+  cudaDeviceSynchronize();
+  __randinit<<<nblocks,nthreads>>>(rstates); 
+  cudaDeviceSynchronize(); 
+  __binornd<<<nblocks,nthreads>>>(nvals, A, C, Out, rstates);
+  cudaDeviceSynchronize();
+  cudaFree(rstates);
+  err = cudaGetLastError();
+  return err;
+}
+
 int collectLVec(long long *pakeys, unsigned int *pavals, long long *pokeys, unsigned int *povals, int n) {
   thrust::device_ptr<long long> akeys(pakeys);
   thrust::device_ptr<long long> okeys(pokeys);
