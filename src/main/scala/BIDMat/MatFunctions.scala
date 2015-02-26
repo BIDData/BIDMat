@@ -150,7 +150,7 @@ object MatFunctions {
   
   def recycleTry(a:Mat, nr:Int, nc:Int, b:GSMat, nnz:Int):GSMat = recycleTry(a, nr, nc, b:Mat, nnz).asInstanceOf[GSMat]
   
-  // TODO Documen this and all the other 'recycleTry' methods.
+  // TODO Document all of these recycleTry methods.
   def recycleTry(a:Mat, nr:Int, nc:Int, b:Mat, nnz:Int):Mat = {
     if (a.asInstanceOf[AnyRef] == null  || (a.nrows == 0 && a.ncols == 0)) {
     	b.zeros(nr, nc, nnz)     
@@ -1524,7 +1524,6 @@ object MatFunctions {
    * }}}
    */
   def getdiag(a:Mat):Mat = {
-    println("Inside getdiag")
     a match {
       case aa:DMat => getdiag(aa):DMat
       case aa:FMat => getdiag(aa):FMat
