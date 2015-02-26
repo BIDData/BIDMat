@@ -836,13 +836,13 @@ extern "C" {
     return mergeLVecs(pakeys, pavals, pbkeys, pbvals, pokeys, povals, n1, n2);
   }
 
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMACH_binorand
-  (JNIEnv *env, jobject obj, jint nvals, jobject jA, jobject jC, jobject jOut)
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_binornd
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jint atype, jobject jC, jint ctype, jobject jOut)
   {
     float *A = (float*)getPointer(env, jA);
     int *C = (int*)getPointer(env, jC);
     int *Out = (int*)getPointer(env, jOut);
 
-    return binornd(nvals, A, C, Out);
+    return binornd(nrows, ncols, A, atype, C, ctype, Out);
   }
 }

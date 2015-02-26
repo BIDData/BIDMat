@@ -203,7 +203,7 @@ public final class CUMAT {
     
     public static native int poissonrnd(int n, Pointer Lambda, Pointer Out, int nthreads);
 
-    public static native int binornd(int n, Pointer prob, Pointer N, Pointer Out);
+    public static native int binornd(int nrows, int ncols, Pointer prob, int atype, Pointer N, int ctype, Pointer Out);
     
     public static native int collectLVec(Pointer pkeys, Pointer okeys, Pointer pvals, Pointer ovals, int n);
     

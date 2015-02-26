@@ -182,7 +182,7 @@ int dmv(float *A, int nr, int nc, float *B, float *C, int trans);
 
 int poissonrnd(int n, float *A, int *B, int nthreads);
 
-int binornd(int nvals, float *A, int *C, int *Out);
+int binornd(int nrows, int ncols, float *A, int atype, int *C, int ctype, int *Out);
 
 int collectLVec(long long *pakeys, unsigned int *pavals, long long *pokeys, unsigned int *povals, int n);
 
