@@ -203,7 +203,7 @@ __global__ void __apply_gfun(float *A, float *B, int N, int opn) {
 
 void setsizes(int N, dim3 *gridp, int *nthreadsp) {
   int nblocks = 1;
-  int nthreads = 1;
+  int nthreads = 32;
   while (nblocks * nthreads < N) {
     if (nblocks < 16) {
       nblocks = 2*nblocks;
@@ -761,7 +761,7 @@ COPYTOINDS2DB(xxl,irow,icol,long long)
 // Implement B[I,J] = A
 int copyToInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols) {
   int len = nrows * ncols;
-  int nthreads = min(len, max(32, min(1024, nrows)));
+  int nthreads = max(32, min(1024, nrows));
   int nblocks = min(ncols, (len-1)/nthreads + 1);
   dim3 griddims;
   griddims.x = 1;
@@ -810,7 +810,7 @@ int copyToInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J
 
 int copyToInds2DLong(long long *A, int lda, long long *B, int ldb, int *I, int nrows, int *J, int ncols) {
   int len = nrows * ncols;
-  int nthreads = min(len, max(32, min(1024, nrows)));
+  int nthreads = max(32, min(1024, nrows));
   int nblocks = min(ncols, (len-1)/nthreads + 1);
   dim3 griddims;
   griddims.x = 1;
@@ -905,7 +905,7 @@ COPYFROMINDS2DB(xxl,irow,icol,long long)
 // Implement B = A[I,J]
 int copyFromInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols) {
   int len = nrows * ncols;
-  int nthreads = min(len, max(32, min(1024, nrows)));
+  int nthreads = max(32, min(1024, nrows));
   int nblocks = min(ncols, (len-1)/nthreads + 1);
   dim3 griddims;
   griddims.x = 1;
@@ -954,7 +954,7 @@ int copyFromInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int 
 
 int copyFromInds2DLong(long long *A, int lda, long long *B, int ldb, int *I, int nrows, int *J, int ncols) {
   int len = nrows * ncols;
-  int nthreads = min(len, max(32, min(1024, nrows)));
+  int nthreads = max(32, min(1024, nrows));
   int nblocks = min(ncols, (len-1)/nthreads + 1);
   dim3 griddims;
   griddims.x = 1;
@@ -1124,7 +1124,7 @@ __global__ void __spsum2(int nrows, int ncols, int nnz, int *Air, int *Aic, floa
 }
 
 int spsum(int nrows, int ncols, int nnz, int *Air, int *Aic, float *P, float *B, int n) {
-  int nthreads = min(128, nnz);
+  int nthreads = max(32,min(128, nnz));
   int nblks = min(65536, max(1, (nnz-1) / 128));
   if (n == 1) {
     __spsum1<<<nblks,nthreads>>>(nrows, ncols, nnz, Air, Aic, P, B);
@@ -1261,8 +1261,10 @@ int dds0(int nrows, int ncols, float *A, float *B, int *Cir, int *Cic, float *P)
 __global__ void __reduce1op(int nrows, int ncols, float *A, float *B, int opn) {
   optype op = operators[opn];
   int basecol = threadIdx.y + blockDim.y * blockIdx.x;
-  for (int icol = basecol; icol < ncols; icol += blockDim.y * gridDim.x) {
-    float v = A[threadIdx.x + icol * nrows];
+  float v;
+  for (int icol = basecol; icol < ncols; icol += blockDim.y * gridDim.x) {      
+    v = 0;
+    if (threadIdx.x < nrows) v = A[threadIdx.x + icol * nrows];
     for (int i = threadIdx.x + blockDim.x; i < nrows; i += blockDim.x) {
       v = op(v, A[i + icol * nrows]);
     }
@@ -1278,8 +1280,10 @@ __global__ void __reduce1op(int nrows, int ncols, float *A, float *B, int opn) {
 __global__ void __reduce1op(int nrows, int ncols, float *A, float *B, int opn) {
   __shared__ float parts[32][33];
   optype op = operators[opn];
+  float v;
   for (int icol = threadIdx.y + blockIdx.y * blockDim.y; icol < ncols; icol += blockDim.y * gridDim.x) {
-    float v = A[threadIdx.x + icol * nrows];
+    v = 0;
+    if (threadIdx.x < nrows) v = A[threadIdx.x + icol * nrows];
     for (int irow = threadIdx.x + blockDim.x; irow < nrows; irow += blockDim.x) {
       v = op(v, A[irow + icol * nrows]);
     }
@@ -1322,7 +1326,7 @@ int reduce1op(int nrows, int ncols, float *A, float *B, int opn) {
   if (ncols == 1) {
      reducevec<float>(nrows, A, B, opn);
   } else {
-    int blkx = min(32, nrows);
+    int blkx = 32;
     int blky = min(32, ncols);
     int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));
     const dim3 blkdims(blkx,blky,1);
@@ -1608,7 +1612,7 @@ int extractmat(float *a, int *b, long long *c, int n) {
 }
 
 
-int fsort2d(float *pkeys, unsigned int *pvals, int nrows, int ncols, int asc) {
+int fsort2dk(float *pkeys, unsigned int *pvals, int nrows, int ncols, int asc) {
   for (int i = 0; i < ncols; i++) {
     thrust::device_ptr<float> keys(pkeys+i*nrows);
     thrust::device_ptr<unsigned int> vals(pvals+i*nrows);
@@ -1616,6 +1620,20 @@ int fsort2d(float *pkeys, unsigned int *pvals, int nrows, int ncols, int asc) {
       thrust::sort_by_key(keys, keys + nrows, vals);
     } else {
       thrust::sort_by_key(keys, keys + nrows, vals, thrust::greater<float>());
+    }
+  }
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int fsort2d(float *pkeys, int nrows, int ncols, int asc) {
+  for (int i = 0; i < ncols; i++) {
+    thrust::device_ptr<float> keys(pkeys+i*nrows);
+    if (asc > 0) {
+      thrust::sort(keys, keys + nrows);
+    } else {
+      thrust::sort(keys, keys + nrows, thrust::greater<float>());
     }
   }
   cudaDeviceSynchronize();
@@ -2669,7 +2687,7 @@ __global__ void __accum(TI, TJ, TV, TS, int m, int nrows) {            \
   }                                                                    \
 }                                                                      \
 int accum(TI, TJ, TV, TS, int m, int nrows) {                          \
-  int nthreads = min(512, m);                                          \
+  int nthreads = max(32, min(512, m));                                 \
   int nblocks = max(1, min(65535, m/nthreads/8));                      \
   __accum<<<nblocks,nthreads>>>(I,J,V,S,m,nrows);                      \
   cudaDeviceSynchronize();                                             \
@@ -3065,7 +3083,7 @@ __global__ void __binornd(int nrows, int ncols, float *A, int atype, int *C, int
 
 int binornd(int nrows, int ncols, float *A, int atype, int *C, int ctype, int *Out) {
   int nvals = nrows * ncols;
-  int nthreads = min(nvals, 1024);
+  int nthreads = min(nvals, 256);
   int nblocks = min(128, 1 + (nvals-1)/nthreads);
   curandState *rstates;
   int err = cudaMalloc(( void **)& rstates , nthreads * nblocks * sizeof(curandState));

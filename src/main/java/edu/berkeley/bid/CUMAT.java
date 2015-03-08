@@ -171,7 +171,9 @@ public final class CUMAT {
     
     public static native int fsorts(Pointer A, Pointer B, int[] jc, int m, int asc);
     
-    public static native int fsort2d(Pointer A, Pointer B, int nrows, int ncols, int asc);
+    public static native int fsort2d(Pointer A, int nrows, int ncols, int asc);
+    
+    public static native int fsort2dk(Pointer A, Pointer B, int nrows, int ncols, int asc);
     
     public static native int i4sort(Pointer A, int ncols, int asc);
     

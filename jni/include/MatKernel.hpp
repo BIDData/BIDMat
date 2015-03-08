@@ -162,7 +162,9 @@ int fsort2dx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tval
 
 int lsortx(long long *pkeys, unsigned int *pvals, long long *tkeys, unsigned int *tvals, int *ispine, bool *bflags, int n, int asc);
 
-int fsort2d(float *pkeys, unsigned int *pvals, int nrows, int ncols, int asc);
+int fsort2d(float *pkeys, int nrows, int ncols, int asc);
+
+int fsort2dk(float *pkeys, unsigned int *pvals, int nrows, int ncols, int asc);
 
 int i4sort(int *pkeys, int ncols, int asc);
 

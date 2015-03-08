@@ -308,7 +308,7 @@ object MatFunctions {
   
   /** Sort a set of keys ascending. */
   def sort(keys:FMat):FMat = FMat(DenseMat.sort(keys, 0, true))
-  
+
   /** Sort a set of keys ascending, and return sorted keys and indices. */
   def sort2(keys:FMat):(FMat, IMat) = {val (d,i) = DenseMat.sort2(keys, true); (FMat(d), i)}
   
@@ -513,9 +513,7 @@ object MatFunctions {
   /** Lexicographically sort rows ascending */
   def isortlexdown(a:CSMat):IMat = DenseMat.isortlex(a, false)
   def uniquerows(a:CSMat):(CSMat, IMat, IMat) = { val (ii, jj) = DenseMat.uniquerows2(a) ; (a(ii,?), ii, jj)}
-  
-  def sort2(a:GMat):(GMat,GIMat) = GMat.sort2(a)
-  def sortdown2(a:GMat):(GMat,GIMat) = GMat.sortdown2(a)
+
   
   /** Find non-zero linear indices */
   def find(a:SDMat) = a.find   
@@ -574,6 +572,15 @@ object MatFunctions {
   def accum(inds:GIMat, fval:Int, nrows:Int, ncols:Int):GIMat = {
     GIMat.accum(inds, fval, null, nrows, ncols):GIMat
   }
+    
+  def sort(keys:GMat):GMat = GMat.sort(keys)
+  
+  def sort2(keys:GMat):(GMat, GIMat) = GMat.sort2(keys)
+  
+  def sortdown(keys:GMat):GMat = GMat.sortdown(keys)
+  
+  def sortdown2(keys:GMat):(GMat, GIMat) = GMat.sortdown2(keys) 
+  
   
   /** Accumulate (row, col, value) tuples from inds \\ vals (generic version) into omat. nr and nc are row and column bounds */
   def accum(inds:Mat, vals:Mat, omat:Mat, nrows:Int, ncols:Int):Mat = {
