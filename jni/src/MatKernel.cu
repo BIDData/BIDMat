@@ -3083,7 +3083,7 @@ __global__ void __binornd(int nrows, int ncols, float *A, int atype, int *C, int
 
 int binornd(int nrows, int ncols, float *A, int atype, int *C, int ctype, int *Out) {
   int nvals = nrows * ncols;
-  int nthreads = min(nvals, 256);
+  int nthreads = min(256, 32*(1+(nvals-1)/32));  // at least nvals, round up to a multiple of 32 l.e. 256
   int nblocks = min(128, 1 + (nvals-1)/nthreads);
   curandState *rstates;
   int err = cudaMalloc(( void **)& rstates , nthreads * nblocks * sizeof(curandState));
