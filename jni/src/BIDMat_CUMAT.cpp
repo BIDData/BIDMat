@@ -836,7 +836,7 @@ extern "C" {
     return mergeLVecs(pakeys, pavals, pbkeys, pbvals, pokeys, povals, n1, n2);
   }
 
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMACH_binorand
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_binornd
   (JNIEnv *env, jobject obj, jint nvals, jobject jA, jobject jC, jobject jOut)
   {
     float *A = (float*)getPointer(env, jA);

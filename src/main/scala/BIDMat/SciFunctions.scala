@@ -308,6 +308,15 @@ object SciFunctions {
   
   def gpoissrnd(mu:Float, out:GIMat):GIMat = gpoissrnd(mu, out, out.nrows, out.ncols)
 
+  def gbinornd(pp:GMat, nn:GIMat):GIMat = {
+    val nr = pp.nrows;
+    val nc = pp.ncols;
+    val out = GIMat(nr, nc)
+    CUMAT.binornd(nr*nc, pp.data, nn.data, out.data);
+    out;
+  }
+
+
   def gamrnd(shape:Float, scale:Float, out:FMat):FMat = {
     vsRngGamma( METHOD, stream, out.length, out.data, shape, 0, scale )
     Mat.nflops += 20L*out.length
@@ -1894,6 +1903,8 @@ object SciFunctions {
     curve
   }
   
+  def roc(score:FMat, vpos:FMat, vneg:FMat, nxvals:Int):DMat = roc(DMat(score), DMat(vpos), DMat(vneg),nxvals)
+  
   /**
    * ROC curve function for multiple scores. Each row of "score" represents an ordering. 
    * A ROC curve is computed for each column. 
@@ -1927,6 +1938,8 @@ object SciFunctions {
     }
     curve
   }
+  
+  def roc2(score:FMat, vpos:FMat, vneg:FMat, nxvals:Int):DMat = roc2(DMat(score), DMat(vpos), DMat(vneg),nxvals)
   
   def applyGfun(in:GMat, omat:Mat, opn:Int, kflops:Long):GMat = {
     val out = GMat.newOrCheckGMat(in.nrows, in.ncols, omat, in.GUID, opn)
