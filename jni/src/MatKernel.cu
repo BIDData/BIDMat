@@ -203,7 +203,7 @@ __global__ void __apply_gfun(float *A, float *B, int N, int opn) {
 
 void setsizes(int N, dim3 *gridp, int *nthreadsp) {
   int nblocks = 1;
-  int nthreads = 1;
+  int nthreads = 32;
   while (nblocks * nthreads < N) {
     if (nblocks < 16) {
       nblocks = 2*nblocks;
@@ -761,7 +761,7 @@ COPYTOINDS2DB(xxl,irow,icol,long long)
 // Implement B[I,J] = A
 int copyToInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols) {
   int len = nrows * ncols;
-  int nthreads = min(len, max(32, min(1024, nrows)));
+  int nthreads = max(32, min(1024, nrows));
   int nblocks = min(ncols, (len-1)/nthreads + 1);
   dim3 griddims;
   griddims.x = 1;
@@ -810,7 +810,7 @@ int copyToInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J
 
 int copyToInds2DLong(long long *A, int lda, long long *B, int ldb, int *I, int nrows, int *J, int ncols) {
   int len = nrows * ncols;
-  int nthreads = min(len, max(32, min(1024, nrows)));
+  int nthreads = max(32, min(1024, nrows));
   int nblocks = min(ncols, (len-1)/nthreads + 1);
   dim3 griddims;
   griddims.x = 1;
@@ -905,7 +905,7 @@ COPYFROMINDS2DB(xxl,irow,icol,long long)
 // Implement B = A[I,J]
 int copyFromInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols) {
   int len = nrows * ncols;
-  int nthreads = min(len, max(32, min(1024, nrows)));
+  int nthreads = max(32, min(1024, nrows));
   int nblocks = min(ncols, (len-1)/nthreads + 1);
   dim3 griddims;
   griddims.x = 1;
@@ -954,7 +954,7 @@ int copyFromInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int 
 
 int copyFromInds2DLong(long long *A, int lda, long long *B, int ldb, int *I, int nrows, int *J, int ncols) {
   int len = nrows * ncols;
-  int nthreads = min(len, max(32, min(1024, nrows)));
+  int nthreads = max(32, min(1024, nrows));
   int nblocks = min(ncols, (len-1)/nthreads + 1);
   dim3 griddims;
   griddims.x = 1;
@@ -1124,7 +1124,7 @@ __global__ void __spsum2(int nrows, int ncols, int nnz, int *Air, int *Aic, floa
 }
 
 int spsum(int nrows, int ncols, int nnz, int *Air, int *Aic, float *P, float *B, int n) {
-  int nthreads = min(128, nnz);
+  int nthreads = max(32,min(128, nnz));
   int nblks = min(65536, max(1, (nnz-1) / 128));
   if (n == 1) {
     __spsum1<<<nblks,nthreads>>>(nrows, ncols, nnz, Air, Aic, P, B);
@@ -1261,8 +1261,10 @@ int dds0(int nrows, int ncols, float *A, float *B, int *Cir, int *Cic, float *P)
 __global__ void __reduce1op(int nrows, int ncols, float *A, float *B, int opn) {
   optype op = operators[opn];
   int basecol = threadIdx.y + blockDim.y * blockIdx.x;
-  for (int icol = basecol; icol < ncols; icol += blockDim.y * gridDim.x) {
-    float v = A[threadIdx.x + icol * nrows];
+  float v;
+  for (int icol = basecol; icol < ncols; icol += blockDim.y * gridDim.x) {      
+    v = 0;
+    if (threadIdx.x < nrows) v = A[threadIdx.x + icol * nrows];
     for (int i = threadIdx.x + blockDim.x; i < nrows; i += blockDim.x) {
       v = op(v, A[i + icol * nrows]);
     }
@@ -1278,8 +1280,10 @@ __global__ void __reduce1op(int nrows, int ncols, float *A, float *B, int opn) {
 __global__ void __reduce1op(int nrows, int ncols, float *A, float *B, int opn) {
   __shared__ float parts[32][33];
   optype op = operators[opn];
+  float v;
   for (int icol = threadIdx.y + blockIdx.y * blockDim.y; icol < ncols; icol += blockDim.y * gridDim.x) {
-    float v = A[threadIdx.x + icol * nrows];
+    v = 0;
+    if (threadIdx.x < nrows) v = A[threadIdx.x + icol * nrows];
     for (int irow = threadIdx.x + blockDim.x; irow < nrows; irow += blockDim.x) {
       v = op(v, A[irow + icol * nrows]);
     }
@@ -1322,7 +1326,7 @@ int reduce1op(int nrows, int ncols, float *A, float *B, int opn) {
   if (ncols == 1) {
      reducevec<float>(nrows, A, B, opn);
   } else {
-    int blkx = min(32, nrows);
+    int blkx = 32;
     int blky = min(32, ncols);
     int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));
     const dim3 blkdims(blkx,blky,1);
@@ -1608,7 +1612,7 @@ int extractmat(float *a, int *b, long long *c, int n) {
 }
 
 
-int fsort2d(float *pkeys, unsigned int *pvals, int nrows, int ncols, int asc) {
+int fsort2dk(float *pkeys, unsigned int *pvals, int nrows, int ncols, int asc) {
   for (int i = 0; i < ncols; i++) {
     thrust::device_ptr<float> keys(pkeys+i*nrows);
     thrust::device_ptr<unsigned int> vals(pvals+i*nrows);
@@ -1616,6 +1620,20 @@ int fsort2d(float *pkeys, unsigned int *pvals, int nrows, int ncols, int asc) {
       thrust::sort_by_key(keys, keys + nrows, vals);
     } else {
       thrust::sort_by_key(keys, keys + nrows, vals, thrust::greater<float>());
+    }
+  }
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int fsort2d(float *pkeys, int nrows, int ncols, int asc) {
+  for (int i = 0; i < ncols; i++) {
+    thrust::device_ptr<float> keys(pkeys+i*nrows);
+    if (asc > 0) {
+      thrust::sort(keys, keys + nrows);
+    } else {
+      thrust::sort(keys, keys + nrows, thrust::greater<float>());
     }
   }
   cudaDeviceSynchronize();
@@ -2669,7 +2687,7 @@ __global__ void __accum(TI, TJ, TV, TS, int m, int nrows) {            \
   }                                                                    \
 }                                                                      \
 int accum(TI, TJ, TV, TS, int m, int nrows) {                          \
-  int nthreads = min(512, m);                                          \
+  int nthreads = max(32, min(512, m));                                 \
   int nblocks = max(1, min(65535, m/nthreads/8));                      \
   __accum<<<nblocks,nthreads>>>(I,J,V,S,m,nrows);                      \
   cudaDeviceSynchronize();                                             \
@@ -2928,6 +2946,20 @@ __global__ void __randinit(curandState *rstates) {
   curand_init(1234, id, 0, &rstates[id]);
 }
 
+__forceinline__ __device__ int __waittime(curandState *prstate, float p, int n) {
+  float q = - log(1-p);
+  float X = 0;
+  float sum = 0;
+  int i = 0;
+  while (i < 100 && sum <= q) {
+    float E = - log(curand_uniform(prstate));  // safe since curand_uniform wont return 0
+    sum += E / (n - X);
+    X += 1;
+    i += 1;
+  }
+  return X - 1;  
+}
+
 int poissonrnd(int n, float *A, int *B, int nthreads) {
   int nblocks = min(1024, max(1,nthreads/1024));
   int nth = min(n, 1024);
@@ -2949,72 +2981,109 @@ int poissonrnd(int n, float *A, int *B, int nthreads) {
 }
 
 
-__global__ void __binornd(int nvals, float *A, int *C, int *Out, curandState *rstates) {
-  int jstart = ((long long)blockIdx.x) * nvals / gridDim.x;
-  int jend = ((long long)(blockIdx.x + 1)) * nvals / gridDim.x;
-  int id = threadIdx.x + blockDim.x * threadIdx.y;
-  int ib = id + blockIdx.x * blockDim.x * blockDim.y;
+// Implements Devroye's rejection method from http://luc.devroye.org/chapter_ten.pdf
+
+__global__ void __binornd(int nrows, int ncols, float *A, int atype, int *C, int ctype, int *Out, curandState *rstates) {
+  int nvals = nrows * ncols;
+  int id = threadIdx.x + blockIdx.x * blockDim.x;
   curandState rstate;
-  float X, Y, V;
-  if (ib < nvals) {
-    rstate = rstates[ib];
+  float X, Y, V, p;
+  int n;
+  bool pflipped;
+  if (id < nvals) {                            // initialize the RNGs
+    rstate = rstates[id];
   }
   const float pi = 3.1415926f;
-  for (int j = jstart + id; j < jend; j += blockDim.x * blockDim.y) {
-    int n = C[j];
-    float p = A[j];
+  for (int j = id; j < nvals; j += blockDim.x * gridDim.x) {
+    int jcol = j / nrows;
+    int jrow = j - jcol * nrows;
+    switch (atype) {                           // atype and ctype determine whether these inputs are elements, rows, columns or matrices.
+    case 0: p = A[0]; break;
+    case 1: p = A[jrow]; break;
+    case 2: p = A[jcol]; break;
+    case 3: p = A[j];
+    }
+    switch (ctype) {
+    case 0: n = C[0]; break;
+    case 1: n = C[jrow]; break;
+    case 2: n = C[jcol]; break;
+    case 3: n = C[j];
+    }
+    if (p > 0.5f) {                            // flip p so that its less than 1/2.
+      pflipped = true;
+      p = 1.0f - p;
+    } else {
+      pflipped = false;
+    }
     float np = n * p;
-    float pvar = np * (1 - p);
-    float delta1 = max(1.0f, floor(sqrt(pvar * log(128 * np / (81 * pi * (1-p))))));
-    float delta2 = max(1.0f, floor(sqrt(pvar * log(128 * n * (1-p) / (pi * p)))));
-    float sigma1 = sqrt(pvar)*(1+delta1/(4*np));
-    float sigma2 = sqrt(pvar)*(1+delta2/(4*n*(1-p)));
-    float c = 2 * delta1 / np;
-    float a1 = 0.5f * exp(c) * sigma1 * sqrt(2*pi);
-    float a2 = 0.5f * sigma2 * sqrt(2*pi);
-    float a3 = exp(delta1/(n*(1-p)) - delta1*delta1/(2*sigma1*sigma1))*2*sigma1*sigma1/delta1;
-    float a4 = exp(-delta2*delta2/(2*sigma2*sigma2))*2*sigma2*sigma2/delta2;
-    float s = a1 + a2 + a3 + a4;
-    int i = 0;
-    while (i < 100) {                            // Give up eventually
-      i += 1;
-      float U = s * curand_uniform(&rstate);
-      float E1 = - log(curand_uniform(&rstate));  // safe since curand_uniform wont return 0
-      if (U <= a1 + a2) {
-	float N = curand_normal(&rstate);
-	if (U <= a1) {
-	  Y = sigma1 * abs(N);
-	  if (Y >= delta1) continue;
-	  X = floor(Y);
-	  V = - E1 - N * N/2 + c;
-	} else {
-	  Y = sigma2 * abs(N);
-	  if (Y >= delta2) continue;
-	  X = floor(-Y);
-	  V = - E1 - N * N/2;
-	}
-      } else {
-	float E2 = - log(curand_uniform(&rstate));
-	if (U <= a1 + a2 + a3) {
-	  Y = delta1 + 2*sigma1*sigma1*E1/delta1;
-	  X = floor(Y);
-	  V = - E2 - delta1*Y/(2*sigma1*sigma1) + delta1/(n*(1-p));
-	} else {
-	  Y = delta2 + 2*sigma2*sigma2*E1/delta2;
-	  X = floor(-Y);
-	  V = - E2 - delta2*Y/(2*sigma2*sigma2);
-	}
+    if (np < 21) {
+      X = __waittime(&rstate, p, n);           // Use a wait time method if small expected output
+    } else {
+      float oldp = p;                   
+      p = floor(np) / n;                       // round np to an integral value for the rejection stage
+      p = max(1e-7f, min(1 - 1e-7f, p));       // prevent divide-by-zeros
+      np = n * p;
+      float n1mp = n * (1-p);
+      float pvar = np * (1-p);
+      float delta1 = max(1.0f, floor(sqrt(pvar * log(128 * np / (81 * pi * (1-p))))));
+      float delta2 = max(1.0f, floor(sqrt(pvar * log(128 * n1mp / (pi * p)))));
+      float sigma1 = sqrt(pvar)*(1+delta1/(4*np));
+      float sigma2 = sqrt(pvar)*(1+delta2/(4*n1mp));
+      float sigma1sq = sigma1 * sigma1;
+      float sigma2sq = sigma2 * sigma2;
+      float c = 2 * delta1 / np;
+      float a1 = 0.5f * exp(c) * sigma1 * sqrt(2*pi);
+      float a2 = 0.5f * sigma2 * sqrt(2*pi);
+      float a3 = exp(delta1/n1mp - delta1*delta1/(2*sigma1sq))*2*sigma1sq/delta1;
+      float a4 = exp(-delta2*delta2/(2*sigma2sq))*2*sigma2sq/delta2;
+      float s = a1 + a2 + a3 + a4;
+      int i = 0;
+      while (i < 100) {                            // Give up eventually
+        i += 1;
+        float U = s * curand_uniform(&rstate);
+        float E1 = - log(curand_uniform(&rstate)); // safe since curand_uniform wont return 0
+        if (U <= a1 + a2) {
+          float N = curand_normal(&rstate);
+          if (U <= a1) {
+            Y = sigma1 * abs(N);
+            if (Y >= delta1) continue;
+            X = floor(Y);
+            V = - E1 - N * N/2 + c;
+          } else {
+            Y = sigma2 * abs(N);
+            if (Y >= delta2) continue;
+            X = floor(-Y);
+            V = - E1 - N * N/2;
+          }
+        } else {
+          float E2 = - log(curand_uniform(&rstate));
+          if (U <= a1 + a2 + a3) {
+            Y = delta1 + 2*sigma1sq*E1/delta1;
+            X = floor(Y);
+            V = - E2 - delta1*Y/(2*sigma1sq) + delta1/n1mp;
+          } else {
+            Y = delta2 + 2*sigma2sq*E1/delta2;
+            X = floor(-Y);
+            V = - E2 - delta2*Y/(2*sigma2sq);
+          }
+        }
+        if (X < - np || X > n1mp) continue;
+        if (V > lgamma(np+1) + lgamma(n1mp+1) - lgamma(np+X+1) - lgamma(n1mp-X+1) + X*log(p/(1-p))) continue;
+        break;
       }
-      if (X < - np || X > n * (1-p)) continue;
-      if (V > lgamma(np + X) - lgamma(np)) continue;
-      break;
+      X += np;
+      X += __waittime(&rstate, (oldp-p)/(1-p), n-X); // Now correct for rounding np to integer
+    }
+    if (pflipped) {                                  // correct for flipped p. 
+      X = n - X;
     }
     Out[j] = (int)X;
   }
 }
 
-int binornd(int nvals, float *A, int *C, int *Out) {
-  int nthreads = min(nvals, 1024);
+int binornd(int nrows, int ncols, float *A, int atype, int *C, int ctype, int *Out) {
+  int nvals = nrows * ncols;
+  int nthreads = min(256, 32*(1+(nvals-1)/32));  // at least nvals, round up to a multiple of 32 l.e. 256
   int nblocks = min(128, 1 + (nvals-1)/nthreads);
   curandState *rstates;
   int err = cudaMalloc(( void **)& rstates , nthreads * nblocks * sizeof(curandState));
@@ -3025,7 +3094,7 @@ int binornd(int nvals, float *A, int *C, int *Out) {
   cudaDeviceSynchronize();
   __randinit<<<nblocks,nthreads>>>(rstates); 
   cudaDeviceSynchronize(); 
-  __binornd<<<nblocks,nthreads>>>(nvals, A, C, Out, rstates);
+  __binornd<<<nblocks,nthreads>>>(nrows, ncols, A, atype,  C, ctype, Out, rstates);
   cudaDeviceSynchronize();
   cudaFree(rstates);
   err = cudaGetLastError();

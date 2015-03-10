@@ -308,14 +308,26 @@ object SciFunctions {
   
   def gpoissrnd(mu:Float, out:GIMat):GIMat = gpoissrnd(mu, out, out.nrows, out.ncols)
 
-  def gbinornd(pp:GMat, nn:GIMat):GIMat = {
-    val nr = pp.nrows;
-    val nc = pp.ncols;
-    val out = GIMat(nr, nc)
-    CUMAT.binornd(nr*nc, pp.data, nn.data, out.data);
-    out;
+  def getMatVecType(m:Mat):Int = { 
+    if (m.nrows == 1) { 
+      if (m.ncols == 1) 0 else 2;
+    } else { 
+      if (m.ncols == 1) 1 else 3;
+    }
   }
 
+  def gbinornd(p:GMat, n:GIMat, out:GIMat):GIMat = { 
+    Mat.nflops += 300L*out.length
+    val atype = getMatVecType(p);
+    val ctype = getMatVecType(n);
+    CUMAT.binornd(out.nrows, out.ncols, p.data, atype, n.data, ctype, out.data);
+    out;
+  } 
+
+  def gbinornd(p:GMat, n:GIMat):GIMat = { 
+    val out = GIMat(p.nrows, p.ncols);
+    gbinornd(p, n, out);
+  } 
 
   def gamrnd(shape:Float, scale:Float, out:FMat):FMat = {
     vsRngGamma( METHOD, stream, out.length, out.data, shape, 0, scale )

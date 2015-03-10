@@ -1535,7 +1535,7 @@ object GMat {
   	  		cudaMemcpy(vv, Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
   	  		cudaDeviceSynchronize
   	  		if (tall) {
-  	  			CUMAT.fsort2d(aa, vv, keys.nrows, colstodo, 0)
+  	  			CUMAT.fsort2dk(aa, vv, keys.nrows, colstodo, 0)
   	  		} else {
   	  			CUMAT.embedmat2d(aa, kk, keys.nrows, colstodo)
   	  			CUMAT.lsortk(kk, vv, todo, 0)
@@ -1574,15 +1574,33 @@ object GMat {
 	 (nkeys, nvals)
   }
   
+  def sort(keys:GMat):(GMat) = {
+	 val nkeys = GMat.newOrCheckGMat(keys.nrows, keys.ncols, null, keys.GUID, "GMat.sort".##)
+	 nkeys <-- keys
+	 sortGPU(nkeys)
+	 (nkeys)
+  }
+  
+  def sortdown(keys:GMat):(GMat) = {
+	 val nkeys = GMat.newOrCheckGMat(keys.nrows, keys.ncols, null, keys.GUID, "GMat.sortdown".##)
+	 nkeys <-- keys
+	 sortdownGPU(nkeys)
+	 nkeys
+  }
+  
   def sortGPU(keys:GMat, vals:GIMat):Unit = _sortGPU(keys, vals, true)
   
   def sortdownGPU(keys:GMat, vals:GIMat):Unit = _sortGPU(keys, vals, false)
+  
+  def sortGPU(keys:GMat):Unit = _sortGPU(keys, true)
+  
+  def sortdownGPU(keys:GMat):Unit = _sortGPU(keys, false)
     
   def _sortGPU(keys:GMat, vals:GIMat, asc:Boolean):Unit = {
   	if (keys.nrows != vals.nrows || keys.ncols != vals.ncols)
       throw new RuntimeException("Dimensions mismatch in GPUsort")
   	if (keys.nrows > 128*1024) {
-  		CUMAT.fsort2d(keys.data,	vals.data, keys.nrows, keys.ncols, if (asc) 1 else 0)
+  		CUMAT.fsort2dk(keys.data,	vals.data, keys.nrows, keys.ncols, if (asc) 1 else 0)
     } else {
     	val maxsize = keys.nrows * math.min(16*1024*1024/keys.nrows, keys.ncols)
     	val nsize = keys.nrows*keys.ncols
@@ -1593,6 +1611,27 @@ object GMat {
     		val colstodo = todo / keys.nrows
     		CUMAT.embedmat2d(keys.data.withByteOffset(ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
     		CUMAT.lsortk(kk, vals.data.withByteOffset(1L*ioff*Sizeof.INT), todo, if (asc) 1 else 0)
+    		CUMAT.extractmat2d(keys.data.withByteOffset(ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
+    		ioff += maxsize
+    	}
+    	cudaFree(kk)
+    } 
+  	Mat.nflops += keys.length
+  }
+  
+  def _sortGPU(keys:GMat, asc:Boolean):Unit = {
+  	if (keys.nrows > 128*1024) {
+  		CUMAT.fsort2d(keys.data,	keys.nrows, keys.ncols, if (asc) 1 else 0)
+    } else {
+    	val maxsize = keys.nrows * math.min(16*1024*1024/keys.nrows, keys.ncols)
+    	val nsize = keys.nrows*keys.ncols
+    	val kk = GMat(maxsize, 2).data
+    	var ioff = 0
+    	while (ioff < nsize) {
+    		val todo = math.min(maxsize, nsize - ioff)
+    		val colstodo = todo / keys.nrows
+    		CUMAT.embedmat2d(keys.data.withByteOffset(ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
+    		CUMAT.lsort(kk, todo, if (asc) 1 else 0)
     		CUMAT.extractmat2d(keys.data.withByteOffset(ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
     		ioff += maxsize
     	}
@@ -1629,7 +1668,7 @@ object GMat {
   
   def _sortyGPU(keys:GMat, vals:GIMat, asc:Boolean):Unit = {
   	if (keys.nrows > 128*1024) {
-    	CUMAT.fsort2d(keys.data,	vals.data, keys.nrows, keys.ncols, 0)
+    	CUMAT.fsort2dk(keys.data,	vals.data, keys.nrows, keys.ncols, 0)
     } else {
     	val maxsize = keys.nrows * math.min(16*1024*1024/keys.nrows, keys.ncols)
     	val nsize = keys.nrows*keys.ncols
