@@ -327,7 +327,7 @@ class GLMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   }
 
   def copyFrom(in:LMat):GLMat = {
-    cudaMemcpy(data, Pointer.to(in.data), nrows*ncols*Sizeof.LONG, cudaMemcpyKind.cudaMemcpyHostToDevice);
+    cudaMemcpy(data, Pointer.to(in.data), 1L*nrows*ncols*Sizeof.LONG, cudaMemcpyKind.cudaMemcpyHostToDevice);
     cudaDeviceSynchronize()
     this
   }
@@ -345,7 +345,7 @@ class GLMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   
   def copyTo(out:GLMat):GLMat = {
     val a = out.recycle(nrows, ncols, 0)
-    cudaMemcpy(a.data, data, length*Sizeof.LONG, cudaMemcpyDeviceToDevice)
+    cudaMemcpy(a.data, data, 1L*length*Sizeof.LONG, cudaMemcpyDeviceToDevice)
     cudaDeviceSynchronize()
     a
   }
@@ -535,7 +535,7 @@ object GLMat {
   def apply(a:LMat):GLMat = {
   	val retv = GLMat.newOrCheckGLMat(a.nrows, a.ncols, null, a.GUID, "GLMat".##);
   	val rsize = a.nrows*a.ncols;
-  	cudaMemcpy(retv.data, Pointer.to(a.data), rsize*Sizeof.LONG, cudaMemcpyKind.cudaMemcpyHostToDevice);
+  	cudaMemcpy(retv.data, Pointer.to(a.data), 1L*rsize*Sizeof.LONG, cudaMemcpyKind.cudaMemcpyHostToDevice);
   	cudaDeviceSynchronize();
   	retv;
   }
@@ -646,7 +646,7 @@ object GLMat {
     val out = GLMat.newOrCheckGLMat(nrows, ncols, omat, IJ.GUID, V.GUID, "GLMat_accumIJ".##)
     out.clear
     if (IJ.ncols == 2) {
-    	CUMAT.laccum(IJ.data, IJ.data.withByteOffset(IJ.nrows*Sizeof.INT), V.data, out.data, V.length, nrows)
+    	CUMAT.laccum(IJ.data, IJ.data.withByteOffset(1L*IJ.nrows*Sizeof.INT), V.data, out.data, V.length, nrows)
     } else {
       CUMAT.laccumJ(IJ.data, 0, V.data, out.data, V.length, nrows)
     }
@@ -661,7 +661,7 @@ object GLMat {
     val out = GLMat.newOrCheckGLMat(nrows, ncols, omat, IJ.GUID, V.hashCode, "GLMat_accumIJV".##)
     out.clear
     if (IJ.ncols == 2) {
-    	CUMAT.iaccumV(IJ.data, IJ.data.withByteOffset(IJ.nrows*Sizeof.INT), V, out.data, IJ.nrows, nrows)
+    	CUMAT.iaccumV(IJ.data, IJ.data.withByteOffset(1L*IJ.nrows*Sizeof.INT), V, out.data, IJ.nrows, nrows)
     } else {
       CUMAT.iaccumJV(IJ.data, 0, V, out.data, IJ.nrows, nrows)
     }

@@ -1159,7 +1159,7 @@ object GMat {
   def apply(a:FMat):GMat = {
   	val rsize = a.nrows*a.ncols
     val retv = GMat.newOrCheckGMat(a.nrows, a.ncols, null, a.GUID, SciFunctions.getGPU, "GMat_FMat".##)
-  	cudaMemcpy(retv.data, Pointer.to(a.data), rsize*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+  	cudaMemcpy(retv.data, Pointer.to(a.data), 1L*rsize*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
   	cudaDeviceSynchronize()
   	val err = cudaGetLastError()
     if (err != 0) {
@@ -1283,7 +1283,7 @@ object GMat {
     val out = GMat.newOrCheckGMat(nrows, ncols, omat, IJ.GUID, V.GUID, "GMat_accumIJ".##)
     out.clear
     if (IJ.ncols == 2) {
-    	CUMAT.accum(IJ.data, IJ.data.withByteOffset(IJ.nrows*Sizeof.INT), V.data, out.data, V.length, nrows)
+    	CUMAT.accum(IJ.data, IJ.data.withByteOffset(1L*IJ.nrows*Sizeof.INT), V.data, out.data, V.length, nrows)
     } else {
       CUMAT.accumJ(IJ.data, 0, V.data, out.data, V.length, nrows)
     }
@@ -1298,7 +1298,7 @@ object GMat {
     val out = GMat.newOrCheckGMat(nrows, ncols, omat, IJ.GUID, V.hashCode, "GMat_accumIJV".##)
     out.clear
     if (IJ.ncols == 2) {
-    	CUMAT.accumV(IJ.data, IJ.data.withByteOffset(IJ.nrows*Sizeof.INT), V, out.data, IJ.nrows, nrows)
+    	CUMAT.accumV(IJ.data, IJ.data.withByteOffset(1L*IJ.nrows*Sizeof.INT), V, out.data, IJ.nrows, nrows)
     } else {
       CUMAT.accumJV(IJ.data, 0, V, out.data, IJ.nrows, nrows)
     }
@@ -1531,8 +1531,8 @@ object GMat {
   	  	while (ioff < nsize) {
   	  		val todo = math.min(maxsize, nsize - ioff)
   	  		val colstodo = todo / keys.nrows
-  	  		cudaMemcpy(aa, Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
-  	  		cudaMemcpy(vv, Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+  	  		cudaMemcpy(aa, Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), 1L*todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+  	  		cudaMemcpy(vv, Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), 1L*todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
   	  		cudaDeviceSynchronize
   	  		if (tall) {
   	  			CUMAT.fsort2dk(aa, vv, keys.nrows, colstodo, 0)
@@ -1541,8 +1541,8 @@ object GMat {
   	  			CUMAT.lsortk(kk, vv, todo, 0)
   	  			CUMAT.extractmat2d(aa, kk, keys.nrows, colstodo)
   	  		}
-  	  		cudaMemcpy(Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), aa, todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
-  	  		cudaMemcpy(Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), vv, todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
+  	  		cudaMemcpy(Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), aa, 1L*todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
+  	  		cudaMemcpy(Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), vv, 1L*todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
   	  		ioff += nthreads * maxsize
   	  	}
   	  	if (!tall) cudaFree(kk)
@@ -1609,9 +1609,9 @@ object GMat {
     	while (ioff < nsize) {
     		val todo = math.min(maxsize, nsize - ioff)
     		val colstodo = todo / keys.nrows
-    		CUMAT.embedmat2d(keys.data.withByteOffset(ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
+    		CUMAT.embedmat2d(keys.data.withByteOffset(1L*ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
     		CUMAT.lsortk(kk, vals.data.withByteOffset(1L*ioff*Sizeof.INT), todo, if (asc) 1 else 0)
-    		CUMAT.extractmat2d(keys.data.withByteOffset(ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
+    		CUMAT.extractmat2d(keys.data.withByteOffset(1L*ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
     		ioff += maxsize
     	}
     	cudaFree(kk)
@@ -1630,9 +1630,9 @@ object GMat {
     	while (ioff < nsize) {
     		val todo = math.min(maxsize, nsize - ioff)
     		val colstodo = todo / keys.nrows
-    		CUMAT.embedmat2d(keys.data.withByteOffset(ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
+    		CUMAT.embedmat2d(keys.data.withByteOffset(1L*ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
     		CUMAT.lsort(kk, todo, if (asc) 1 else 0)
-    		CUMAT.extractmat2d(keys.data.withByteOffset(ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
+    		CUMAT.extractmat2d(keys.data.withByteOffset(1L*ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
     		ioff += maxsize
     	}
     	cudaFree(kk)
@@ -1683,9 +1683,9 @@ object GMat {
     	while (ioff < nsize) {
     		val todo = math.min(maxsize, nsize - ioff)
     		val colstodo = todo / keys.nrows
-    		CUMAT.embedmat2d(keys.data.withByteOffset(ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
+    		CUMAT.embedmat2d(keys.data.withByteOffset(1L*ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
     		CUMAT.lsortx(kk, vals.data.withByteOffset(1L*ioff*Sizeof.INT), tkeys, tvals, tspine, bflags, todo, if (asc) 1 else 0)
-    		CUMAT.extractmat2d(keys.data.withByteOffset(ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
+    		CUMAT.extractmat2d(keys.data.withByteOffset(1L*ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
     		ioff += maxsize
     	}
     	cudaFree(bflags)
@@ -1728,9 +1728,9 @@ object GMat {
   	  	while (ioff < nsize) {
   	  		val todo = math.min(maxsize, nsize - ioff)
   	  		val colstodo = todo / keys.nrows
-  	  		err = cudaMemcpy(aa.data, Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+  	  		err = cudaMemcpy(aa.data, Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), 1L*todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
   	  		if (err != 0) throw new RuntimeException("sortGPU copy a in failed thread %d error %d" format (ithread,err))
-  	  		cudaMemcpy(vv.data, Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+  	  		cudaMemcpy(vv.data, Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), 1L*todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
   	  		if (err != 0) throw new RuntimeException("sortGPU copy v in failed thread %d error %d" format (ithread,err))
   	  		cudaDeviceSynchronize
   	  		if (tall) {
@@ -1744,9 +1744,9 @@ object GMat {
   	  			err = CUMAT.extractmat2d(aa.data, kk.data, keys.nrows, colstodo)
   	  			if (err != 0) throw new RuntimeException("sortGPU extract failed thread %d error %d" format (ithread,err))
   	  		}
-  	  		cudaMemcpy(Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), aa.data, todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
+  	  		cudaMemcpy(Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), aa.data, 1L*todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
   	  		if (err != 0) throw new RuntimeException("sortGPU copy a out failed thread %d error %d" format (ithread,err))
-  	  		cudaMemcpy(Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), vv.data, todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
+  	  		cudaMemcpy(Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), vv.data, 1L*todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
   	  		if (err != 0) throw new RuntimeException("sortGPU copy v out failed thread %d error %d" format (ithread,err))
   	  		ioff += nthreads * maxsize
   	  	}
@@ -1879,11 +1879,11 @@ object GMat {
     		var i = 0; while (i < a.nrows) {outi(i) = i; i += 1}
     		val gv = GMat(a.nrows, 2*a.ncols)
     		val gi = GIMat(outi)
-    		var err = cudaMemcpy(gv.data, Pointer.to(a.data), a.nrows*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyHostToDevice)
+    		var err = cudaMemcpy(gv.data, Pointer.to(a.data), 1L*a.nrows*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyHostToDevice)
     		if (err != 0) throw new RuntimeException("sortGPU copy v error %d" format err)    
     		cudaDeviceSynchronize
     		CUMAT.dsortk(gv.data, gi.data, a.nrows, if (asc) 1 else 0)
-    		err = cudaMemcpy(Pointer.to(outv.data), gv.data, a.nrows*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyDeviceToHost)
+    		err = cudaMemcpy(Pointer.to(outv.data), gv.data, 1L*a.nrows*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyDeviceToHost)
     		if (err != 0) throw new RuntimeException("sortGPU copy v error %d" format err)
     		outi <-- gi
     		gi.free

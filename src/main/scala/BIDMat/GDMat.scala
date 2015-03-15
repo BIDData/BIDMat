@@ -667,7 +667,7 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
   def getdiag():GDMat = {
     if (nrows != ncols) throw new RuntimeException("getdiag requires a square matrix, but dims= %d %d" format (nrows, ncols))
     val out = GDMat.newOrCheckGDMat(nrows, 1, null, GUID, "getdiag".##)
-    cudaMemcpy2D(out.data, Sizeof.DOUBLE, data, (nrows+1)*Sizeof.DOUBLE, Sizeof.DOUBLE, nrows, cudaMemcpyDeviceToDevice)
+    cudaMemcpy2D(out.data, Sizeof.DOUBLE, data, 1L*(nrows+1)*Sizeof.DOUBLE, Sizeof.DOUBLE, nrows, cudaMemcpyDeviceToDevice)
     cudaDeviceSynchronize
     val err = cudaGetLastError()
     if (err != 0) {
@@ -683,7 +683,7 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
     val size = math.max(nrows, ncols)
     val out = GDMat.newOrCheckGDMat(size, size, null, GUID, "mkdiag".##)
     out.clear
-    var err = cudaMemcpy2D(out.data, (nrows+1)*Sizeof.DOUBLE, data, Sizeof.DOUBLE, Sizeof.DOUBLE, nrows, cudaMemcpyDeviceToDevice)
+    var err = cudaMemcpy2D(out.data, 1L*(nrows+1)*Sizeof.DOUBLE, data, Sizeof.DOUBLE, Sizeof.DOUBLE, nrows, cudaMemcpyDeviceToDevice)
     cudaDeviceSynchronize
     if (err == 0) err = cudaGetLastError()
     if (err != 0) {
@@ -1138,7 +1138,7 @@ object GDMat {
   def apply(a:DMat):GDMat = {
   	val rsize = a.nrows*a.ncols
     val retv = GDMat.newOrCheckGDMat(a.nrows, a.ncols, null, a.GUID, SciFunctions.getGPU, "GDMat_DMat".##)
-  	cudaMemcpy(retv.data, Pointer.to(a.data), rsize*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyHostToDevice)
+  	cudaMemcpy(retv.data, Pointer.to(a.data), 1L*rsize*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyHostToDevice)
   	cudaDeviceSynchronize()
   	val err = cudaGetLastError()
     if (err != 0) {
@@ -1276,7 +1276,7 @@ object GDMat {
     val out = GDMat.newOrCheckGDMat(nrows, ncols, omat, IJ.GUID, V.GUID, "GDMat_accumIJ".##)
     out.clear
     if (IJ.ncols == 2) {
-    	CUMATD.accum(IJ.data, IJ.data.withByteOffset(IJ.nrows*Sizeof.INT), V.data, out.data, V.length, nrows)
+    	CUMATD.accum(IJ.data, IJ.data.withByteOffset(1L*IJ.nrows*Sizeof.INT), V.data, out.data, V.length, nrows)
     } else {
       accumJ(IJ.data, 0, V.data, out.data, V.length, nrows)
     }
@@ -1291,7 +1291,7 @@ object GDMat {
     val out = GDMat.newOrCheckGDMat(nrows, ncols, omat, IJ.GUID, V.hashCode, "GDMat_accumIJV".##)
     out.clear
     if (IJ.ncols == 2) {
-    	accumV(IJ.data, IJ.data.withByteOffset(IJ.nrows*Sizeof.INT), V, out.data, IJ.nrows, nrows)
+    	accumV(IJ.data, IJ.data.withByteOffset(1L*IJ.nrows*Sizeof.INT), V, out.data, IJ.nrows, nrows)
     } else {
       accumJV(IJ.data, 0, V, out.data, IJ.nrows, nrows)
     }
@@ -1429,16 +1429,16 @@ object GDMat {
   	    				val nj = math.min(gccols, c.ncols - j)
   	    				var k = 0; while (k < a.ncols) {
   	    					val nk = math.min(gacols, a.ncols - k)
-  	    					err = cudaMemcpy2D(aa, garows*Sizeof.DOUBLE, Pointer.to(a.data).withByteOffset(1L*(i+k*a.nrows)*Sizeof.DOUBLE), 
-  	    							a.nrows*Sizeof.DOUBLE, ni*Sizeof.DOUBLE, nk, cudaMemcpyHostToDevice)
+  	    					err = cudaMemcpy2D(aa, 1L*garows*Sizeof.DOUBLE, Pointer.to(a.data).withByteOffset(1L*(i+k*a.nrows)*Sizeof.DOUBLE), 
+  	    							1L*a.nrows*Sizeof.DOUBLE, 1L*ni*Sizeof.DOUBLE, nk, cudaMemcpyHostToDevice)
   	    					cudaDeviceSynchronize  	  
   	    					if (err != 0) throw new RuntimeException("CUDA copy a failed "+err)
   	    					if (btrans) {
-  	    						err = cudaMemcpy2D(bb, gbrows*Sizeof.DOUBLE, Pointer.to(b.data).withByteOffset(1L*(j+k*b.nrows)*Sizeof.DOUBLE), 
-  	    								b.nrows*Sizeof.DOUBLE, nj*Sizeof.DOUBLE, nk, cudaMemcpyHostToDevice)
+  	    						err = cudaMemcpy2D(bb, 1L*gbrows*Sizeof.DOUBLE, Pointer.to(b.data).withByteOffset(1L*(j+k*b.nrows)*Sizeof.DOUBLE), 
+  	    								1L*b.nrows*Sizeof.DOUBLE, 1L*nj*Sizeof.DOUBLE, nk, cudaMemcpyHostToDevice)
   	    					} else {
-  	    						err = cudaMemcpy2D(bb, gbrows*Sizeof.DOUBLE, Pointer.to(b.data).withByteOffset(1L*(k+j*b.nrows)*Sizeof.DOUBLE), 
-  	    								b.nrows*Sizeof.DOUBLE, nk*Sizeof.DOUBLE, nj, cudaMemcpyHostToDevice) 
+  	    						err = cudaMemcpy2D(bb, 1L*gbrows*Sizeof.DOUBLE, Pointer.to(b.data).withByteOffset(1L*(k+j*b.nrows)*Sizeof.DOUBLE), 
+  	    								1L*b.nrows*Sizeof.DOUBLE, 1L*nk*Sizeof.DOUBLE, nj, cudaMemcpyHostToDevice) 
   	    					}
   	    					cudaDeviceSynchronize
   	    					if (err != 0) throw new RuntimeException("CUDA copy b failed "+err)
@@ -1450,7 +1450,7 @@ object GDMat {
   	    					if (err != 0) throw new RuntimeException("Cublas error in xG, sgemm "+err)
   	    					k += gacols
   	    				}
-  	    				err = cudaMemcpy2D(Pointer.to(c.data).withByteOffset(1L*(i+j*c.nrows)*Sizeof.DOUBLE), c.nrows*Sizeof.DOUBLE, cc, gcrows*Sizeof.DOUBLE, ni*Sizeof.DOUBLE, nj, cudaMemcpyDeviceToHost) 
+  	    				err = cudaMemcpy2D(Pointer.to(c.data).withByteOffset(1L*(i+j*c.nrows)*Sizeof.DOUBLE), 1L*c.nrows*Sizeof.DOUBLE, cc, 1L*gcrows*Sizeof.DOUBLE, 1L*ni*Sizeof.DOUBLE, nj, cudaMemcpyDeviceToHost) 
   	    				cudaDeviceSynchronize
   	    				if (err != 0) throw new RuntimeException("CUDA copy c failed "+err)
   	    				j += cblkk*gccols
@@ -1576,8 +1576,8 @@ object GDMat {
   						}
   						if (takeroot) err = applyop(cc, ni, nj, pinv.data, 1, 1, cc, BinOp.op_pow)
   						if (err != 0) throw new RuntimeException("LXdist scale c failed "+err)
-  						err = cudaMemcpy2D(Pointer.to(c.data).withByteOffset(1L*(i+j*c.nrows)*Sizeof.DOUBLE), c.nrows*Sizeof.DOUBLE, 
-  								cc, gcrows*Sizeof.DOUBLE, ni*Sizeof.DOUBLE, nj, cudaMemcpyDeviceToHost) 
+  						err = cudaMemcpy2D(Pointer.to(c.data).withByteOffset(1L*(i+j*c.nrows)*Sizeof.DOUBLE), 1L*c.nrows*Sizeof.DOUBLE, 
+  								cc, 1L*gcrows*Sizeof.DOUBLE, 1L*ni*Sizeof.DOUBLE, nj, cudaMemcpyDeviceToHost) 
   						cudaDeviceSynchronize
   						if (err != 0) throw new RuntimeException("LXdist copy c failed "+err)
   						j += cblkk*gccols
@@ -1610,11 +1610,11 @@ object GDMat {
     		var i = 0; while (i < a.nrows) {outi(i) = i; i += 1}
     		val gv = GDMat(a.nrows, 2*a.ncols)
     		val gi = GIMat(outi)
-    		var err = cudaMemcpy(gv.data, Pointer.to(a.data), a.nrows*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyHostToDevice)
+    		var err = cudaMemcpy(gv.data, Pointer.to(a.data), 1L*a.nrows*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyHostToDevice)
     		if (err != 0) throw new RuntimeException("sortGPU copy v error %d" format err)    
     		cudaDeviceSynchronize
     		dsortk(gv.data, gi.data, a.nrows, if (asc) 1 else 0)
-    		err = cudaMemcpy(Pointer.to(outv.data), gv.data, a.nrows*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyDeviceToHost)
+    		err = cudaMemcpy(Pointer.to(outv.data), gv.data, 1L*a.nrows*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyDeviceToHost)
     		if (err != 0) throw new RuntimeException("sortGPU copy v error %d" format err)
     		outi <-- gi
     		gi.free
