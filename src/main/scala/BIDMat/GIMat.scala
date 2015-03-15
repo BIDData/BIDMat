@@ -889,7 +889,7 @@ object GIMat {
 
   def p2sortlexGPU(p1:Pointer, p2:Pointer, nrows:Int, asc:Boolean) = {
     val ggrams = GIMat(nrows, 2)
-    var status = cudaMemcpy(ggrams.data, p2, 1L*nrows*Sizeof.INT, cudaMemcpyHostToDevice)
+    var status = cudaMemcpy(ggrams.data, p2, 1L*nrows*Sizeof.INT, cudaMemcpyHostToDevice) 
     if (status != 0) throw new RuntimeException("p3sortlexGPU error1 %d" format (status)) 
     status = cudaMemcpy(ggrams.data.withByteOffset(1L*nrows*Sizeof.INT), p1, 1L*nrows*Sizeof.INT, cudaMemcpyHostToDevice)
     if (status != 0) throw new RuntimeException("p3sortlexGPU error2 %d" format (status))  
