@@ -376,12 +376,12 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   override def <= (b : Float) = iiMatOpScalarv(b.toInt, IMat.vecLEFun, null)
   override def != (b : Float) = iiMatOpScalarv(b.toInt, IMat.vecNEFun, null)
   
-  def > (b : Double) = iiMatOpScalarv(b.toInt, IMat.vecGTFun, null)
-  def < (b : Double) = iiMatOpScalarv(b.toInt, IMat.vecLTFun, null)
-  def == (b : Double) = iiMatOpScalarv(b.toInt, IMat.vecEQFun, null)
-  def >= (b : Double) = iiMatOpScalarv(b.toInt, IMat.vecGEFun, null)
-  def <= (b : Double) = iiMatOpScalarv(b.toInt, IMat.vecLEFun, null)
-  def != (b : Double) = iiMatOpScalarv(b.toInt, IMat.vecNEFun, null)
+  override def > (b : Double) = iiMatOpScalarv(b.toInt, IMat.vecGTFun, null)
+  override def < (b : Double) = iiMatOpScalarv(b.toInt, IMat.vecLTFun, null)
+  override def == (b : Double) = iiMatOpScalarv(b.toInt, IMat.vecEQFun, null)
+  override def >= (b : Double) = iiMatOpScalarv(b.toInt, IMat.vecGEFun, null)
+  override def <= (b : Double) = iiMatOpScalarv(b.toInt, IMat.vecLEFun, null)
+  override def != (b : Double) = iiMatOpScalarv(b.toInt, IMat.vecNEFun, null)
   
 
  /*

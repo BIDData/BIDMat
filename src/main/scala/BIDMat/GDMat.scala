@@ -753,24 +753,20 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
   override def >= (b : Float) = gOp(GDMat(b), null, op_ge)
   override def == (b : Float) = gOp(GDMat(b), null, op_eq)
   override def != (b : Float) = gOp(GDMat(b), null, op_ne)
-  
+
   def < (b : Int) = gOp(GDMat(b), null, op_lt)
-  def < (b : Double) = gOp(GDMat(b), null, op_lt)
-
   def > (b : Int) = gOp(GDMat(b), null, op_gt)
-  def > (b : Double) = gOp(GDMat(b), null, op_gt)
-
   def <= (b : Int) = gOp(GDMat(b), null, op_le)
-  def <= (b : Double) = gOp(GDMat(b), null, op_le)
-
   def >= (b : Int) = gOp(GDMat(b), null, op_ge)
-  def >= (b : Double) = gOp(GDMat(b), null, op_ge)
-
   def == (b : Int) = gOp(GDMat(b), null, op_eq)
-  def == (b : Double) = gOp(GDMat(b), null, op_eq)
-
   def != (b : Int) = gOp(GDMat(b), null, op_ne)
-  def != (b : Double) = gOp(GDMat(b), null, op_ne)
+ 
+  override def < (b : Double) = gOp(GDMat(b), null, op_lt)
+  override def > (b : Double) = gOp(GDMat(b), null, op_gt)
+  override def <= (b : Double) = gOp(GDMat(b), null, op_le)
+  override def >= (b : Double) = gOp(GDMat(b), null, op_ge)
+  override def == (b : Double) = gOp(GDMat(b), null, op_eq)
+  override def != (b : Double) = gOp(GDMat(b), null, op_ne)
   
   def on(a : GDMat) = vertcat(a, null)
   def \ (a : GDMat) = horzcat(a, null)

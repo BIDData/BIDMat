@@ -1135,15 +1135,15 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   override def == (b : Float) = ccMatOp(CMat.celem(b, 0), CMat.eqFun, null)
   override def != (b : Float) = ccMatOp(CMat.celem(b, 0), CMat.neFun, null)
   
-  def *  (b : Double) = ccMatOpScalarv(b.toFloat, 0, CMat.vecMulFun, null)
-  def +  (b : Double) = ccMatOpScalarv(b.toFloat, 0, CMat.vecAddFun, null)
-  def -  (b : Double) = ccMatOpScalarv(b.toFloat, 0, CMat.vecSubFun, null)
-  def *@ (b : Double) = ccMatOpScalarv(b.toFloat, 0, CMat.vecMulFun, null)
-  def ∘  (b : Double) = ccMatOpScalarv(b.toFloat, 0, CMat.vecMulFun, null)
-  def /  (b : Double) = ccMatOpScalarv(b.toFloat, 0, CMat.vecDivFun, null)
+  override def *  (b : Double) = ccMatOpScalarv(b.toFloat, 0, CMat.vecMulFun, null)
+  override def +  (b : Double) = ccMatOpScalarv(b.toFloat, 0, CMat.vecAddFun, null)
+  override def -  (b : Double) = ccMatOpScalarv(b.toFloat, 0, CMat.vecSubFun, null)
+  override def *@ (b : Double) = ccMatOpScalarv(b.toFloat, 0, CMat.vecMulFun, null)
+  override def ∘  (b : Double) = ccMatOpScalarv(b.toFloat, 0, CMat.vecMulFun, null)
+  override def /  (b : Double) = ccMatOpScalarv(b.toFloat, 0, CMat.vecDivFun, null)
   
-  def == (b : Double) = ccMatOp(CMat.celem(b.toFloat, 0), CMat.eqFun, null)
-  def != (b : Double) = ccMatOp(CMat.celem(b.toFloat, 0), CMat.neFun, null)
+  override def == (b : Double) = ccMatOp(CMat.celem(b.toFloat, 0), CMat.eqFun, null)
+  override def != (b : Double) = ccMatOp(CMat.celem(b.toFloat, 0), CMat.neFun, null)
   
   def *  (b : Int) = ccMatOpScalarv(b.toFloat, 0, CMat.vecMulFun, null)
   def +  (b : Int) = ccMatOpScalarv(b.toFloat, 0, CMat.vecAddFun, null)
