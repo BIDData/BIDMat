@@ -696,7 +696,7 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
   /*
    * Basic compute routines on pairs of GDMats
    */
-  override def unary_-() = gOp(GDMat(-1f), null, op_mul)
+  override def unary_-() = gOp(GDMat(-1.0), null, op_mul)
   def * (a : GDMat) = GMult(a, null)
   def * (a : GSDMat) = GSMult(a, null)
   def *^ (a : GDMat) = GMultT(a, null)
