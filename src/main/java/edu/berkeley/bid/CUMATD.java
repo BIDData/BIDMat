@@ -33,7 +33,7 @@ public final class CUMATD {
     
     public static native int full(Pointer ir, Pointer ic, Pointer vv, Pointer dd, int nrows, int ncols, int nnz);
     
-    public static native int setval(Pointer A, Double vv, int N);
+    public static native int setval(Pointer A, double vv, int N);
     
     public static native int setival(Pointer A, int iv, int N);
     
@@ -61,11 +61,11 @@ public final class CUMATD {
     
     public static native int accumJ(Pointer I, int J, Pointer V, Pointer S, int m, int nrows);
 
-    public static native int accumV(Pointer I, Pointer J, Double V, Pointer S, int m, int nrows);
+    public static native int accumV(Pointer I, Pointer J, double V, Pointer S, int m, int nrows);
     
-    public static native int accumIV(int I, Pointer J, Double V, Pointer S, int m, int nrows);
+    public static native int accumIV(int I, Pointer J, double V, Pointer S, int m, int nrows);
     
-    public static native int accumJV(Pointer I, int J, Double V, Pointer S, int m, int nrows); 
+    public static native int accumJV(Pointer I, int J, double V, Pointer S, int m, int nrows); 
     
     public static native int spsum(int nr, int nc, int nnz, Pointer Air, Pointer Aic, Pointer P, Pointer B, int n);
     
@@ -73,7 +73,7 @@ public final class CUMATD {
     
     public static native int dds0(int nr, int nc, Pointer A, Pointer B, Pointer Cir, Pointer Cjc, Pointer P);
     
-    public static native int LDAgibbs(int nr, int nnz, Pointer A, Pointer B, Pointer AN, Pointer BN, Pointer Cir, Pointer Cic, Pointer P, Double nsamps);
+    public static native int LDAgibbs(int nr, int nnz, Pointer A, Pointer B, Pointer AN, Pointer BN, Pointer Cir, Pointer Cic, Pointer P, double nsamps);
 
     public static native int LDAgibbsx(int nr, int nnz, Pointer A, Pointer B, Pointer Cir, Pointer Cic, Pointer P, Pointer Ms, Pointer Us, int k);
     
@@ -127,7 +127,7 @@ public final class CUMATD {
     
     public static native int radixcounts(Pointer a, int n, int digit, Pointer bi);
 
-    public static native int distances(Pointer A, int lda, Pointer B, int ldb, Pointer C, int ldc, int d, int nrows, int ncols, Double p);
+    public static native int distances(Pointer A, int lda, Pointer B, int ldb, Pointer C, int ldc, int d, int nrows, int ncols, double p);
 
     public static native int maxsumx(Pointer A, int lda, Pointer B, int ldb, Pointer C, int ldc, int d, int nrows, int ncols);
     
