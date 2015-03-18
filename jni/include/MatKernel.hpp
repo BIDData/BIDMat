@@ -189,3 +189,5 @@ int binornd(int nrows, int ncols, float *A, int atype, int *C, int ctype, int *O
 int collectLVec(long long *pakeys, unsigned int *pavals, long long *pokeys, unsigned int *povals, int n);
 
 int mergeLVecs(long long *pakeys, unsigned int *pavals, long long *pbkeys, unsigned int *pbvals, long long *pokeys, unsigned int *povals, int n1, int n2);
+
+int cumsumc(int nrows, int ncols, float *A, float *B);

@@ -210,5 +210,6 @@ public final class CUMAT {
     public static native int collectLVec(Pointer pkeys, Pointer okeys, Pointer pvals, Pointer ovals, int n);
     
     public static native int mergeLVecs(Pointer akeys, Pointer avals, Pointer bkeys, Pointer bvals, Pointer okeys, Pointer ovals, int n1, int n2);
-
+    
+    public static native int cumsumc(int nrows, int ncols, Pointer A, Pointer B);
 }

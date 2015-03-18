@@ -853,4 +853,14 @@ extern "C" {
 
     return binornd(nrows, ncols, A, atype, C, ctype, Out);
   }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumsumc
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jint nvals)
+  {
+    float *A = (float*)getPointer(env, jA);
+    float *B = (float*)getPointer(env, jB);
+
+    return cumsumc(nrows, ncols, A, B);
+  }
+
 }

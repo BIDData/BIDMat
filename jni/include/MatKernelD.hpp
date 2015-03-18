@@ -122,3 +122,4 @@ int maxsumx(double *A, int lda, double *B, int ldb, double *C, int ldc, int d, i
 
 int dmv(double *A, int nr, int nc, double *B, double *C, int trans);
 
+int cumsumc(int nrows, int ncols, double *A, double *B);

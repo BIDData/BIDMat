@@ -136,5 +136,7 @@ public final class CUMATD {
     public static native int veccmp(Pointer A, Pointer B, Pointer C);
     
     public static native int hammingdists(Pointer A, Pointer B, Pointer W, Pointer OP, Pointer OW, int n);
+    
+    public static native int cumsumc(int nrows, int ncols, Pointer A, Pointer B);
 
 }

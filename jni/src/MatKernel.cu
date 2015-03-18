@@ -3127,3 +3127,87 @@ int mergeLVecs(long long *pakeys, unsigned int *pavals, long long *pbkeys, unsig
   return err;
 }
 
+// Cumulative sum of columns
+#if __CUDA_ARCH__ >= 300
+__global__ void __cumsumc(int nrows, int ncols, float *A, float *B) {
+  int i, j, k, lim;
+  float v, w, sum;
+  int icol = threadIdx.y + blockDim.y * blockIdx.x;
+  __syncthreads();
+  for (i = icol; i < ncols; i += blockDim.y * gridDim.x) {
+    sum = 0.0f;
+    for (j = 0; j < nrows; j += blockDim.x) {
+      v = 0;
+      if (j + threadIdx.x < nrows) {
+        v = A[j + threadIdx.x + i * nrows];
+      }
+      lim = min(blockDim.x, nrows - j);
+#pragma unroll
+      for (k = 1; k < lim; k = k + k) {
+        w = __shfl_up(v, k);
+        if (threadIdx.x >= k) {
+          v += w;
+        }
+      }
+      v += sum;
+      if (j + threadIdx.x < nrows) {
+        B[j + threadIdx.x + i * nrows] = v;
+      }
+      sum = __shfl(v, blockDim.x - 1);
+    }
+  }
+}
+#else
+__global__ void __cumsumc(int nrows, int ncols, float *A, float *B) {
+  __shared__ float buff[32];
+  int i, j, k, lim;
+  float v, sum;
+  int icol = threadIdx.y + blockDim.y * blockIdx.x;
+  __syncthreads();
+  for (i = icol; i < ncols; i += blockDim.y * gridDim.x) {
+    sum = 0.0f;
+    for (j = 0; j < nrows; j += blockDim.x) {
+      v = 0;
+      if (j + threadIdx.x < nrows) {
+        v = A[j + threadIdx.x + i * nrows];
+      }
+      __syncthreads();
+      buff[threadIdx.x] = v;
+      lim = min(blockDim.x, nrows - j);
+#pragma unroll
+      for (k = 1; k < lim; k = k + k) {
+        __syncthreads();
+        if (threadIdx.x >= k) {
+          v += buff[threadIdx.x - k];
+        }
+        __syncthreads();
+        buff[threadIdx.x] = v;
+      }
+      v += sum;
+      if (j + threadIdx.x < nrows) {
+        B[j + threadIdx.x + i * nrows] = v;
+      }
+      __syncthreads();
+      sum = buff[31];
+      __syncthreads();
+    }
+  }
+}
+#endif
+
+int cumsumc(int nrows, int ncols, float *A, float *B) {
+  if (ncols == 1) {
+    thrust::device_ptr<float> pa(A);
+    thrust::device_ptr<float> pb(B);
+    thrust::inclusive_scan(pa, pa + nrows, pb);
+  } else {
+    dim3 threads;
+    threads.x = 32;
+    threads.y = min(32, ncols);
+    int nblocks = min(64, 1 + (ncols-1)/threads.y);
+    __cumsumc<<<nblocks,threads>>>(nrows, ncols, A, B);
+  }
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}

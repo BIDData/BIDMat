@@ -772,6 +772,11 @@ object SciFunctions {
   def max(a:Mat, b:Mat):Mat = max(a, b, null)
   def min(a:Mat, b:Mat):Mat = min(a, b, null)
   
+  def cumsum(a:GMat, b:Mat, dir:Int) = GMat.cumsum(a, b, dir)
+  def cumsum(a:GMat, b:Mat) = GMat.cumsum(a, b, 0)
+  def cumsum(a:GMat, dir:Int) = GMat.cumsum(a, null, dir)
+  def cumsum(a:GMat) = GMat.cumsum(a, null, 0)
+  
   def max(a:Mat, b:Mat, c:Mat):Mat = {
     (a, b) match {
       case (aa:FMat, bb:FMat) => max(aa, bb, c):FMat

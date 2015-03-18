@@ -553,4 +553,13 @@ extern "C" {
     return ocopy_transpose_min(iptrs, in, out, stride, nrows, ncols);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_cumsumc
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jint nvals)
+  {
+    double *A = (double*)getPointer(env, jA);
+    double *B = (double*)getPointer(env, jB);
+
+    return cumsumc(nrows, ncols, A, B);
+  }
+
 }

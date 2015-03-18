@@ -927,6 +927,8 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
   override def != (b : Float) = mat.gOp(GMat(b), omat, op_ne)
   override def * (b : Float) = mat.gOp(GMat(b), omat, op_mul)
   override def + (b : Float) = mat.gOp(GMat(b), omat, op_add)
+  override def - (b : Float) = mat.gOp(GMat(b), omat, op_sub)
+  override def / (b : Float) = mat.gOp(GMat(b), omat, op_div)
   override def == (b : Int) = mat.gOp(GMat(b), omat, op_eq)
   def == (b : Double) = mat.gOp(GMat(b), omat, op_eq)
   override def != (b : Int) = mat.gOp(GMat(b), omat, op_ne)
@@ -1367,6 +1369,18 @@ object GMat {
     } else {
       throw new RuntimeException("mini2 directions not recognized %d" format dim)
     }      
+  }
+  
+  def cumsum(a:GMat, omat:Mat, dim0:Int):GMat = {
+  	Mat.nflops += 1L * a.length;
+  	val dim = if (a.nrows == 1 && dim0 == 0) 2 else math.max(1, dim0);
+  	if (dim == 1) {
+  		val out = GMat.newOrCheckGMat(a.nrows, a.ncols, omat, a.GUID, "cumsum".##)
+  		CUMAT.cumsumc(a.nrows, a.ncols, a.data, out.data)
+  		out
+  	} else {
+  	  throw new RuntimeException("Cumsum across rows not supported yet")
+  	}
   }
 
   def lexsort2i(a:GIMat, b:GMat, i:GIMat) {
