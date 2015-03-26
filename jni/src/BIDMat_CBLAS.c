@@ -274,6 +274,21 @@ jfloat alpha, jfloatArray jA, jint lda, jfloatArray jB, jint ldb, jfloat beta, j
 	(*env)->ReleasePrimitiveArrayCritical(env, jA, A, 0);
 }
 
+JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_sgemmx 
+(JNIEnv * env, jobject calling_obj, jint order, jint transA, jint transB, jint M, jint N, jint K, 
+ jfloat alpha, jfloatArray jA, jint Aoff, jint lda, jfloatArray jB, jint Boff, jint ldb, jfloat beta, jfloatArray jC, jint Coff, jint ldc){
+	jfloat * A = (*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE);
+	jfloat * B = (*env)->GetPrimitiveArrayCritical(env, jB, JNI_FALSE);
+	jfloat * C = (*env)->GetPrimitiveArrayCritical(env, jC, JNI_FALSE);
+
+	cblas_sgemm((CBLAS_ORDER)order, (CBLAS_TRANSPOSE)transA, (CBLAS_TRANSPOSE)transB, M, N, K, 
+                    alpha, A+Aoff, lda, B+Boff, ldb, beta, C+Coff, ldc);
+
+	(*env)->ReleasePrimitiveArrayCritical(env, jC, C, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, jB, B, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, jA, A, 0);
+}
+
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_somatcopy
 (JNIEnv * env, jobject calling_obj, jstring j_order, jstring j_transA, jint M, jint N,
  jfloat alpha, jfloatArray j_A, jint lda, jfloatArray j_B, jint ldb) {

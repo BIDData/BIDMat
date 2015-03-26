@@ -845,7 +845,7 @@ object HMat {
   
   def saveLibSVM(fname:String, data:SMat, labels:SMat, weights:FMat):Unit = saveLibSVM(fname, data, labels, weights, 0);
    
-  def saveLibSVM(fname:String, data:SMat, labels:SMat, weights:FMat, compressed:Int):Unit = {
+  def saveLibSVM(fname:String, data:SMat, labels:SMat, weights:FMat, compressed:Int, oneBased:Int = 0):Unit = {
     val fout = new BufferedWriter (new OutputStreamWriter (getOutputStream(fname, compressed)));
     val (ilab, jlab) = find2(labels);
     val jc = data.jc;
@@ -859,7 +859,7 @@ object HMat {
       } 
       var j = jc(icol) - ioffset
       while (j < jc(icol+1) - ioffset) {
-        fout.write(" "+(data.ir(j)-ioffset).toString + ":" + data.data(j).toString);
+        fout.write(" "+(data.ir(j)-ioffset+oneBased).toString + ":" + data.data(j).toString);
         j += 1
       }
       fout.write("\n")

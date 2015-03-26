@@ -1756,7 +1756,8 @@ object MatFunctions {
   def loadLibSVM(fname:String, nrows:Int, compressed:Int, oneBased:Int) = HMat.loadLibSVM(fname, nrows, compressed, oneBased)
   def loadLibSVM(fname:String, nrows:Int, compressed:Int) = HMat.loadLibSVM(fname, nrows, compressed)
   def loadLibSVM(fname:String, nrows:Int) = HMat.loadLibSVM(fname, nrows, 0)
-  
+
+  def saveLibSVM(fname:String, data:SMat, cats:SMat, weights:FMat, compressed:Int, oneBased:Int):Unit = HMat.saveLibSVM(fname, data, cats, weights, compressed, oneBased)
   def saveLibSVM(fname:String, data:SMat, cats:SMat, weights:FMat, compressed:Int):Unit = HMat.saveLibSVM(fname, data, cats, weights, compressed)
   def saveLibSVM(fname:String, data:SMat, cats:SMat, weights:FMat):Unit = HMat.saveLibSVM(fname, data, cats, weights, 0)
   def saveLibSVM(fname:String, data:SMat, cats:SMat):Unit = HMat.saveLibSVM(fname, data, cats, null, 0)

@@ -66,6 +66,9 @@ public final class CBLAS {
   		                               float []  X,  int incX,  float beta, float []  Y,  int incY);
   public static native  void sgemm(  int Order,   int TransA,   int TransB,  int M,  int N,  int K,  float alpha,  
   		                               float []  A,  int lda,  float []  B,  int ldb,  float beta, float []  C,  int ldc);
+  public static native  void sgemmx(  int Order,   int TransA,   int TransB,  int M,  int N,  int K,  float alpha,  
+                                      float []  A,  int Aoff, int lda,  float []  B,  int Boff, int ldb,  float beta, 
+                                      float []  C,  int Coff, int ldc);
   public static native  void somatcopy( String Order, String TransA, int M, int N, float alpha, float [] A, int lda, float [] B, int ldb);
   
   public static native  void cdot( int N,  float []  X,  int incX,  float []  Y,  int incY, float [] Z);

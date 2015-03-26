@@ -356,6 +356,20 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   	}	else throw new RuntimeException("dimensions mismatch")
   }
   
+  def tileMult(nr:Int, nc:Int, k:Int, aroff:Int, acoff:Int, b:FMat, broff:Int, bcoff:Int, c:FMat, croff:Int, ccoff:Int) = {
+    sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.NoTrans,
+  					nr, nc, k, 1.0f, data, aroff+acoff*nrows, nrows, b.data, broff+bcoff*b.nrows, b.nrows, 0, 
+  					c.data, croff+ccoff*c.nrows, c.nrows);
+    c
+  }
+  
+  def tileMultT(nr:Int, nc:Int, k:Int, aroff:Int, acoff:Int, b:FMat, broff:Int, bcoff:Int, c:FMat, croff:Int, ccoff:Int) = {
+    sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.Trans,
+  					nr, nc, k, 1.0f, data, aroff+acoff*nrows, nrows, b.data, broff+bcoff*b.nrows, b.nrows, 0, 
+  					c.data, croff+ccoff*c.nrows, c.nrows);
+    c
+  }
+  
   def fSMultHelper(a:SMat, out:FMat, istart:Int, iend:Int, ioff:Int) = {
   	var i = istart
   	while (i < iend) {
@@ -377,6 +391,57 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   		i += 1
   	}
   }
+  
+  def fSMultHelperTile(nr:Int, kk:Int, aoff:Int, b:SMat, broff:Int, bcoff:Int, out:FMat, coff:Int, istart:Int, iend:Int, ioff:Int) = {
+  	var i = istart;
+  	while (i < iend) {
+  		var j = b.jc(i+bcoff) - ioff;
+  		while (j < b.jc(i+bcoff+1)-ioff) {
+  		  val irow0 = b.ir(j) - ioff;
+  		  if (irow0 >= broff && irow0 < broff + kk) {
+  		  	val irow = irow0 - broff;
+  		  	val dval = b.data(j);
+  		  	if (!Mat.useMKL || nrows < 220) {
+  		  		var k = 0;
+  		  		while (k < nr) {
+  		  			out.data(k+coff+i*nrows) += data(k+aoff+irow*nrows)*dval;
+  		  			k += 1;
+  		  		} 			  
+  		  	} else {
+  		  		saxpyxx(nr, dval, data, aoff+irow*nrows, out.data, coff+i*nrows);
+  		  	}
+  		  	j += 1;
+  		  }
+  		}
+  		i += 1;
+  	}
+  }
+  
+  def fSMultHelperTileT(nr:Int, nc:Int, aoff:Int, b:SMat, broff:Int, bcoff:Int, out:FMat, coff:Int, istart:Int, iend:Int, ioff:Int) = {
+  	var i = istart;
+  	while (i < iend) {
+  		var j = b.jc(i+bcoff) - ioff;
+  		while (j < b.jc(i+bcoff+1)-ioff) {
+  		  val irow0 = b.ir(j) - ioff;
+  		  if (irow0 >= broff && irow0 < broff + nc) {
+  		  	val irow = irow0 - broff;
+  		  	val dval = b.data(j);
+  		  	if (!Mat.useMKL || nrows < 220) {
+  		  		var k = 0;
+  		  		while (k < nr) {
+  		  			out.data(k+coff+i*nrows) += data(k+aoff+irow*nrows)*dval;
+  		  			k += 1;
+  		  		} 			  
+  		  	} else {
+  		  		saxpyxx(nr, dval, data, aoff+i*nrows, out.data, coff+irow*nrows);
+  		  	}
+  		  	j += 1;
+  		  }
+  		}
+  		i += 1;
+  	}
+  }
+    
     
   def fSMultHelper2(a:SMat, out:FMat, istart:Int, iend:Int, ioff:Int) = {
   	var i = 0
@@ -429,6 +494,56 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     		}
     	}
     	out
+    }
+  }
+  
+  def fSMultTile(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:SMat, broff:Int, bcoff:Int, c:FMat, croff:Int, ccoff:Int):FMat = {
+    if (ncols != b.nrows) {
+    	throw new RuntimeException("dimensions mismatch")
+    } else {
+    	c.clear;
+    	Mat.nflops += 2L * nr * b.nnz;
+    	val ioff = Mat.ioneBased;
+    	if (1L*nrows*b.nnz > 100000L && Mat.numThreads > 1) {
+    		val done = IMat(1,Mat.numThreads);
+    		for (ithread <- 0 until Mat.numThreads) {
+    			val istart = (1L*ithread*nc/Mat.numThreads).toInt;
+    			val iend = (1L*(ithread+1)*nc/Mat.numThreads).toInt;
+    			Future {
+    				fSMultHelperTile(nr, kk, aroff+acoff*nrows, b, broff, bcoff+istart, c, croff+(ccoff+istart)*c.nrows, istart, iend, ioff);
+    				done(ithread) = 1
+    			}
+    		}
+    		while (SciFunctions.sum(done).v < Mat.numThreads) {Thread.`yield`()}
+    	} else {
+    		fSMultHelperTile(nr, kk, aroff+acoff*nrows, b, broff, bcoff, c, croff+ccoff*c.nrows, 0, nc, ioff);
+    	}
+    	c;
+    }
+  }
+  
+  def fSMultTileT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:SMat, broff:Int, bcoff:Int, c:FMat, croff:Int, ccoff:Int):FMat = {
+    if (ncols != b.nrows) {
+    	throw new RuntimeException("dimensions mismatch")
+    } else {
+    	c.clear;
+    	Mat.nflops += 2L * nr * b.nnz;
+    	val ioff = Mat.ioneBased;
+    	if (1L*nrows*b.nnz > 100000L && Mat.numThreads > 1) {
+    		val done = IMat(1,Mat.numThreads);
+    		for (ithread <- 0 until Mat.numThreads) {
+    			val istart = (1L*ithread*kk/Mat.numThreads).toInt;
+    			val iend = (1L*(ithread+1)*kk/Mat.numThreads).toInt;
+    			Future {
+    				fSMultHelperTileT(nr, nc, aroff+(acoff+istart)*nrows, b, broff, bcoff+istart, c, croff+ccoff*c.nrows, istart, iend, ioff);
+    				done(ithread) = 1
+    			}
+    		}
+    		while (SciFunctions.sum(done).v < Mat.numThreads) {Thread.`yield`()}
+    	} else {
+    		fSMultHelperTileT(nr, nc, aroff+acoff*nrows, b, broff, bcoff, c, croff+ccoff*c.nrows, 0, kk, ioff);
+    	}
+    	c;
     }
   }
   
