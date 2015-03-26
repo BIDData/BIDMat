@@ -356,18 +356,30 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   	}	else throw new RuntimeException("dimensions mismatch")
   }
   
-  def tileMult(nr:Int, nc:Int, k:Int, aroff:Int, acoff:Int, b:FMat, broff:Int, bcoff:Int, c:FMat, croff:Int, ccoff:Int) = {
-    sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.NoTrans,
-  					nr, nc, k, 1.0f, data, aroff+acoff*nrows, nrows, b.data, broff+bcoff*b.nrows, b.nrows, 0, 
-  					c.data, croff+ccoff*c.nrows, c.nrows);
-    c
+  def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:FMat, broff:Int, bcoff:Int, c:FMat, croff:Int, ccoff:Int) = {
+    if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
+    	throw new RuntimeException("fSMultTile: cant have negative offsets or dimensions");
+    } else if (aroff + nr > nrows || acoff + kk > ncols || broff + kk > b.nrows || bcoff + nc > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
+      throw new RuntimeException("fSMultTile: tile strays outside matrix dimensions");
+    } else {
+      sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.NoTrans,
+      		nr, nc, kk, 1.0f, data, aroff+acoff*nrows, nrows, b.data, broff+bcoff*b.nrows, b.nrows, 0, 
+      		c.data, croff+ccoff*c.nrows, c.nrows);
+      c;
+    }
   }
   
-  def tileMultT(nr:Int, nc:Int, k:Int, aroff:Int, acoff:Int, b:FMat, broff:Int, bcoff:Int, c:FMat, croff:Int, ccoff:Int) = {
-    sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.Trans,
-  					nr, nc, k, 1.0f, data, aroff+acoff*nrows, nrows, b.data, broff+bcoff*b.nrows, b.nrows, 0, 
-  					c.data, croff+ccoff*c.nrows, c.nrows);
-    c
+  def tileMultT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:FMat, broff:Int, bcoff:Int, c:FMat, croff:Int, ccoff:Int) = {
+    if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
+    	throw new RuntimeException("fSMultTile: cant have negative offsets or dimensions");
+    } else if (aroff + nr > nrows || acoff + kk > ncols || broff + nc > b.nrows || bcoff + kk > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
+      throw new RuntimeException("fSMultTile: tile strays outside matrix dimensions");
+    } else {
+      sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.Trans,
+      		nr, nc, kk, 1.0f, data, aroff+acoff*nrows, nrows, b.data, broff+bcoff*b.nrows, b.nrows, 0, 
+      		c.data, croff+ccoff*c.nrows, c.nrows);
+      c;
+    }
   }
   
   def fSMultHelper(a:SMat, out:FMat, istart:Int, iend:Int, ioff:Int) = {
@@ -497,9 +509,11 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     }
   }
   
-  def fSMultTile(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:SMat, broff:Int, bcoff:Int, c:FMat, croff:Int, ccoff:Int):FMat = {
-    if (ncols != b.nrows) {
-    	throw new RuntimeException("dimensions mismatch")
+  def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:SMat, broff:Int, bcoff:Int, c:FMat, croff:Int, ccoff:Int):FMat = {
+    if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
+    	throw new RuntimeException("fSMultTile: cant have negative offsets or dimensions");
+    } else if (aroff + nr > nrows || acoff + kk > ncols || broff + kk > b.nrows || bcoff + nc > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
+      throw new RuntimeException("fSMultTile: tile strays outside matrix dimensions");
     } else {
     	c.clear;
     	Mat.nflops += 2L * nr * b.nnz;
@@ -522,9 +536,11 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     }
   }
   
-  def fSMultTileT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:SMat, broff:Int, bcoff:Int, c:FMat, croff:Int, ccoff:Int):FMat = {
-    if (ncols != b.nrows) {
-    	throw new RuntimeException("dimensions mismatch")
+  def tileMultT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:SMat, broff:Int, bcoff:Int, c:FMat, croff:Int, ccoff:Int):FMat = {
+    if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
+    	throw new RuntimeException("fSMultTileT: cant have negative offsets or dimensions");
+    } else if (aroff + nr > nrows || acoff + kk > ncols || broff + nc > b.nrows || bcoff + kk > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
+      throw new RuntimeException("fSMultTileT: tile strays outside matrix dimensions");
     } else {
     	c.clear;
     	Mat.nflops += 2L * nr * b.nnz;
