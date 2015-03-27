@@ -421,9 +421,37 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     }
   }
   
+  def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:GSMat, broff:Int, bcoff:Int, c:GMat, croff:Int, ccoff:Int) = {
+    if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
+    	throw new RuntimeException("tileMul: cant have negative offsets or dimensions");
+    } else if (aroff + nr > nrows || acoff + kk > ncols || broff + kk > b.nrows || bcoff + nc > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
+      throw new RuntimeException("tileMult: tile strays outside matrix dimensions");
+    } else {
+    	CUMAT.dsmultTile(nr, nc, kk, b.nnz,  
+    			data.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
+    	    b.data, b.ir, b.ic, broff, bcoff, 
+      		c.data.withByteOffset(Sizeof.FLOAT.toLong*(croff+ccoff*c.nrows)), c.nrows, 0);
+      c;
+    }
+  }
+  
+  def tileMultT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:GSMat, broff:Int, bcoff:Int, c:GMat, croff:Int, ccoff:Int) = {
+    if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
+    	throw new RuntimeException("tileMul: cant have negative offsets or dimensions");
+    } else if (aroff + nr > nrows || acoff + kk > ncols || broff + nc > b.nrows || bcoff + kk > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
+      throw new RuntimeException("tileMult: tile strays outside matrix dimensions");
+    } else {
+    	CUMAT.dsmultTile(nr, nc, kk, b.nnz,  
+    			data.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
+    	    b.data, b.ir, b.ic, broff, bcoff, 
+      		c.data.withByteOffset(Sizeof.FLOAT.toLong*(croff+ccoff*c.nrows)), c.nrows, 1);
+      c;
+    }
+  }
+  
   override def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):Mat = {
     (b, c) match {
-//      case (sb:SMat, fc:FMat) => tileMult(nr, nc, kk, aroff, acoff, sb, broff, bcoff, fc, croff, ccoff);
+      case (sb:GSMat, fc:GMat) => tileMult(nr, nc, kk, aroff, acoff, sb, broff, bcoff, fc, croff, ccoff);
       case (fb:GMat, fc:GMat) => tileMult(nr, nc, kk, aroff, acoff, fb, broff, bcoff, fc, croff, ccoff);
       case _ => throw new RuntimeException("tileMult couldnt match matrix types")
     }
@@ -431,7 +459,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
   
   override def tileMultT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):Mat = {
     (b, c) match {
-//      case (sb:SMat, fc:FMat) => tileMultT(nr, nc, kk, aroff, acoff, sb, broff, bcoff, fc, croff, ccoff);
+      case (sb:GSMat, fc:GMat) => tileMultT(nr, nc, kk, aroff, acoff, sb, broff, bcoff, fc, croff, ccoff);
       case (fb:GMat, fc:GMat) => tileMultT(nr, nc, kk, aroff, acoff, fb, broff, bcoff, fc, croff, ccoff);
       case _ => throw new RuntimeException("tileMultT couldnt match matrix types")
     }

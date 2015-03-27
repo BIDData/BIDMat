@@ -863,4 +863,20 @@ extern "C" {
     return cumsumc(nrows, ncols, A, B);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_dsmultTile
+  (JNIEnv *env, jobject obj, jint nr, jint nc, jint kk, jint nnz, jobject jA, jint lda, jobject jBdata, jobject jBir, jobject jBic, jint broff, jint bcoff, 
+   jobject jC, jint ldc, jint transpose)
+  {
+    float *A = (float*)getPointer(env, jA);
+    float *Bdata = (float*)getPointer(env, jBdata);
+    int *Bir = (int*)getPointer(env, jBir);
+    int *Bic = (int*)getPointer(env, jBic);
+    float *C = (float*)getPointer(env, jC);
+
+    if (transpose) {
+      return dsmultTileT(nr, nc, kk, nnz, A, lda, Bdata, Bir, Bic, broff, bcoff, C, ldc);
+    } else {
+      return dsmultTile(nr, nc, kk, nnz, A, lda, Bdata, Bir, Bic, broff, bcoff, C, ldc);
+    }
+  }
 }

@@ -59,6 +59,9 @@ public final class CUMAT {
     
     public static native int dsmult(int nr, int nc, int nnz, Pointer A, Pointer Bdata, Pointer Bir, Pointer Bic, Pointer C);
     
+    public static native int dsmultTile(int nr, int nc, int kk, int nnz, Pointer A, int lda, Pointer Bdata, Pointer Bir, Pointer Bic, 
+    		int broff, int bcoff, Pointer C, int ldc, int transpose);
+    
     public static native int dsmulttune(int nr, int nc, int nnz, Pointer A, Pointer Bdata, Pointer Bir, Pointer Bic, Pointer C, int nblocks, int nthreads);
     
     public static native int dsmultxtune(int nr, int nc, int nnz, Pointer A, Pointer Bdata, Pointer Bir, Pointer Bic, Pointer C, int nblocks, int ntx, int nty);

@@ -1048,6 +1048,83 @@ int dsmult(int nrows, int ncols, int nnz, float *A, float *Bdata, int *Bir, int 
   return err;
 }
 
+
+__global__ void __dsmultTile(int nr, int nc, int kk, int nnz, float *A, int lda, float *Bdata, int *Bir, int *Bic, int broff, int bcoff, float *C, int ldc) {
+  int jstart = ((long long)blockIdx.x) * nnz / gridDim.x;
+  int jend = ((long long)(blockIdx.x + 1)) * nnz / gridDim.x;
+  for (int i = threadIdx.x; i < nr; i += blockDim.x) {
+    float sum = 0;
+    int bcold = -1;
+    int jdone = 0;
+    for (int j = jstart; j < jend; j++) {
+      int brow = Bir[j] - broff;
+      int bcol = Bic[j] - bcoff;
+      if (brow >= 0 && brow < kk && bcol >= 0 && bcol < nc) {
+        if (jdone > 0 && bcol != bcold) {
+          atomicAdd(&C[i + ldc * bcold], sum);
+          sum = 0;
+        }
+        jdone++;
+        sum += A[i + lda * brow] * Bdata[j];
+        bcold = bcol;
+      }
+    }
+    if (jdone > 0) atomicAdd(&C[i + ldc * bcold], sum);
+  }
+}
+
+__global__ void __dsmultTileT(int nr, int nc, int kk, int nnz, float *A, int lda, float *Bdata, int *Bir, int *Bic, int broff, int bcoff, float *C, int ldc) {
+  int jstart = ((long long)blockIdx.x) * nnz / gridDim.x;
+  int jend = ((long long)(blockIdx.x + 1)) * nnz / gridDim.x;
+  for (int i = threadIdx.x; i < nr; i += blockDim.x) {
+    float aval = 0;
+    int bcold = -1;
+    for (int j = jstart; j < jend; j++) {
+      int brow = Bir[j] - broff;
+      int bcol = Bic[j] - bcoff;
+      if (brow >= 0 && brow < nc && bcol >= 0 && bcol < nr) {
+        if (bcol != bcold) {
+          aval = A[i + lda * bcol];
+        }
+        atomicAdd(&C[i + ldc * brow], aval * Bdata[j]);
+        bcold = bcol;
+      }
+    }
+  }
+}
+
+int dsmultTile(int nr, int nc, int kk, int nnz, float *A, int lda, float *Bdata, int *Bir, int *Bic, int broff, int bcoff, float *C, int ldc) {
+  if (nr < 128) {
+    int nt = max(1, min(nc/2, 256/nr));
+    dim3 threadDim(nr, nt, 1);
+    int nblocks = min(MAXXGRID, max(1, nc/nt));
+    __dsmultTile<<<nblocks,threadDim>>>(nr, nc, kk, nnz, A, lda,  Bdata, Bir, Bic, broff, bcoff, C, ldc);
+  } else {
+    int nthreads = min(1024, nr);
+    int nblocks = min(MAXXGRID, nc);
+    __dsmultTile<<<nblocks,nthreads>>>(nr, nc, kk, nnz, A, lda,  Bdata, Bir, Bic, broff, bcoff, C, ldc);
+  }
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int dsmultTileT(int nr, int nc, int kk, int nnz, float *A, int lda, float *Bdata, int *Bir, int *Bic, int broff, int bcoff, float *C, int ldc) {
+  if (nr < 128) {
+    int nt = max(1, min(nc/2, 256/nr));
+    dim3 threadDim(nr, nt, 1);
+    int nblocks = min(MAXXGRID, max(1, nc/nt));
+    __dsmultTileT<<<nblocks,threadDim>>>(nr, nc, kk, nnz, A, lda,  Bdata, Bir, Bic, broff, bcoff, C, ldc);
+  } else {
+    int nthreads = min(1024, nr);
+    int nblocks = min(MAXXGRID, nc);
+    __dsmultTileT<<<nblocks,nthreads>>>(nr, nc, kk, nnz, A, lda,  Bdata, Bir, Bic, broff, bcoff, C, ldc);
+  }
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
 int dsmult_tune(int nrows, int ncols, int nnz, float *A, float *Bdata, int *Bir, int *Bic, float *C, int nblocks, int nthreads) {
   __dsmult<<<nblocks,nthreads>>>(nrows, nnz, A, Bdata, Bir, Bic, C);
   cudaDeviceSynchronize();
