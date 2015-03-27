@@ -393,6 +393,15 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     } else throw new RuntimeException("dimensions mismatch")
   }
   
+  /**
+   * Tile multiplication of a(this) * b into c. Tile coordinates are (r,c,height,width):
+   * a: (aroff, acoff, nr, kk)
+   * b: (broff, bcoff, kk, nc)
+   * c: (croff, ccoff, nr, nc)
+   * 
+   * Note: c is not cleared by the kernel, and the result is added to it. 
+   */
+  
   def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:GMat, broff:Int, bcoff:Int, c:GMat, croff:Int, ccoff:Int) = {
     if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
     	throw new RuntimeException("tileMul: cant have negative offsets or dimensions");
