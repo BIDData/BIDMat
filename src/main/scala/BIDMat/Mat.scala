@@ -182,7 +182,11 @@ class Mat(nr:Int, nc:Int) {
   def update(a:Int, b:Int, v:Float):Mat = notImplemented0("update");
   def update(a:Int, b:Int, v:Double):Mat = notImplemented0("update");
   def update(a:Int, b:Int, v:Int):Mat = notImplemented0("update");
-  def update(a:Int, b:Int, v:Long):Mat = notImplemented0("update");
+  def update(a:Int, b:Int, v:Long):Mat = notImplemented0("update");  
+  def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):Mat =
+    notImplemented0("tileMult");
+  def tileMultT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):Mat =
+    notImplemented0("tileMultT");
   
   
   def unary_-():Mat = notImplemented1("-", this)

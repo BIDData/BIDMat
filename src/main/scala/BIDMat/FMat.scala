@@ -403,57 +403,6 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   		i += 1
   	}
   }
-  
-  def fSMultHelperTile(nr:Int, kk:Int, aoff:Int, b:SMat, broff:Int, bcoff:Int, out:FMat, coff:Int, istart:Int, iend:Int, ioff:Int) = {
-  	var i = istart;
-  	while (i < iend) {
-  		var j = b.jc(i+bcoff) - ioff;
-  		while (j < b.jc(i+bcoff+1)-ioff) {
-  		  val irow0 = b.ir(j) - ioff;
-  		  if (irow0 >= broff && irow0 < broff + kk) {
-  		  	val irow = irow0 - broff;
-  		  	val dval = b.data(j);
-  		  	if (!Mat.useMKL || nrows < 220) {
-  		  		var k = 0;
-  		  		while (k < nr) {
-  		  			out.data(k+coff+i*nrows) += data(k+aoff+irow*nrows)*dval;
-  		  			k += 1;
-  		  		} 			  
-  		  	} else {
-  		  		saxpyxx(nr, dval, data, aoff+irow*nrows, out.data, coff+i*nrows);
-  		  	}
-  		  	j += 1;
-  		  }
-  		}
-  		i += 1;
-  	}
-  }
-  
-  def fSMultHelperTileT(nr:Int, nc:Int, aoff:Int, b:SMat, broff:Int, bcoff:Int, out:FMat, coff:Int, istart:Int, iend:Int, ioff:Int) = {
-  	var i = istart;
-  	while (i < iend) {
-  		var j = b.jc(i+bcoff) - ioff;
-  		while (j < b.jc(i+bcoff+1)-ioff) {
-  		  val irow0 = b.ir(j) - ioff;
-  		  if (irow0 >= broff && irow0 < broff + nc) {
-  		  	val irow = irow0 - broff;
-  		  	val dval = b.data(j);
-  		  	if (!Mat.useMKL || nrows < 220) {
-  		  		var k = 0;
-  		  		while (k < nr) {
-  		  			out.data(k+coff+i*nrows) += data(k+aoff+irow*nrows)*dval;
-  		  			k += 1;
-  		  		} 			  
-  		  	} else {
-  		  		saxpyxx(nr, dval, data, aoff+i*nrows, out.data, coff+irow*nrows);
-  		  	}
-  		  	j += 1;
-  		  }
-  		}
-  		i += 1;
-  	}
-  }
-    
     
   def fSMultHelper2(a:SMat, out:FMat, istart:Int, iend:Int, ioff:Int) = {
   	var i = 0
@@ -508,6 +457,57 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     	out
     }
   }
+   
+  def fSMultHelperTile(nr:Int, kk:Int, aoff:Int, b:SMat, broff:Int, bcoff:Int, out:FMat, coff:Int, istart:Int, iend:Int, ioff:Int) = {
+  	var i = istart;
+  	while (i < iend) {
+  		var j = b.jc(i+bcoff) - ioff;
+  		while (j < b.jc(i+bcoff+1)-ioff) {
+  		  val irow0 = b.ir(j) - ioff;
+  		  if (irow0 >= broff && irow0 < broff + kk) {
+  		  	val irow = irow0 - broff;
+  		  	val dval = b.data(j);
+  		  	if (!Mat.useMKL || nrows < 220) {
+  		  		var k = 0;
+  		  		while (k < nr) {
+  		  			out.data(k+coff+i*nrows) += data(k+aoff+irow*nrows)*dval;
+  		  			k += 1;
+  		  		} 			  
+  		  	} else {
+  		  		saxpyxx(nr, dval, data, aoff+irow*nrows, out.data, coff+i*nrows);
+  		  	}
+  		  }
+  		  j += 1;
+  		}
+  		i += 1;
+  	}
+  }
+  
+  def fSMultHelperTileT(nr:Int, nc:Int, aoff:Int, b:SMat, broff:Int, bcoff:Int, out:FMat, coff:Int, istart:Int, iend:Int, ioff:Int) = {
+  	var i = istart;
+  	while (i < iend) {
+  		var j = b.jc(i+bcoff) - ioff;
+  		while (j < b.jc(i+bcoff+1)-ioff) {
+  		  val irow0 = b.ir(j) - ioff;
+  		  if (irow0 >= broff && irow0 < broff + nc) {
+  		  	val irow = irow0 - broff;
+  		  	val dval = b.data(j);
+  		  	if (!Mat.useMKL || nrows < 220) {
+  		  		var k = 0;
+  		  		while (k < nr) {
+  		  			out.data(k+coff+irow*nrows) += data(k+aoff+i*nrows)*dval;
+  		  			k += 1;
+  		  		} 			  
+  		  	} else {
+  		  		saxpyxx(nr, dval, data, aoff+i*nrows, out.data, coff+irow*nrows);
+  		  	}
+  		  }
+  		  j += 1;
+  		}
+  		i += 1;
+  	}
+  }
+    
   
   def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:SMat, broff:Int, bcoff:Int, c:FMat, croff:Int, ccoff:Int):FMat = {
     if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
@@ -515,7 +515,6 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     } else if (aroff + nr > nrows || acoff + kk > ncols || broff + kk > b.nrows || bcoff + nc > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
       throw new RuntimeException("fSMultTile: tile strays outside matrix dimensions");
     } else {
-    	c.clear;
     	Mat.nflops += 2L * nr * b.nnz;
     	val ioff = Mat.ioneBased;
     	if (1L*nrows*b.nnz > 100000L && Mat.numThreads > 1) {
@@ -524,7 +523,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     			val istart = (1L*ithread*nc/Mat.numThreads).toInt;
     			val iend = (1L*(ithread+1)*nc/Mat.numThreads).toInt;
     			Future {
-    				fSMultHelperTile(nr, kk, aroff+acoff*nrows, b, broff, bcoff+istart, c, croff+(ccoff+istart)*c.nrows, istart, iend, ioff);
+    				fSMultHelperTile(nr, kk, aroff+acoff*nrows, b, broff, bcoff, c, croff+ccoff*c.nrows, istart, iend, ioff);
     				done(ithread) = 1
     			}
     		}
@@ -551,7 +550,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     			val istart = (1L*ithread*kk/Mat.numThreads).toInt;
     			val iend = (1L*(ithread+1)*kk/Mat.numThreads).toInt;
     			Future {
-    				fSMultHelperTileT(nr, nc, aroff+(acoff+istart)*nrows, b, broff, bcoff+istart, c, croff+ccoff*c.nrows, istart, iend, ioff);
+    				fSMultHelperTileT(nr, nc, aroff+acoff*nrows, b, broff, bcoff, c, croff+ccoff*c.nrows, istart, iend, ioff);
     				done(ithread) = 1
     			}
     		}
@@ -560,6 +559,22 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     		fSMultHelperTileT(nr, nc, aroff+acoff*nrows, b, broff, bcoff, c, croff+ccoff*c.nrows, 0, kk, ioff);
     	}
     	c;
+    }
+  }
+  
+  override def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):Mat = {
+    (b, c) match {
+      case (sb:SMat, fc:FMat) => tileMult(nr, nc, kk, aroff, acoff, sb, broff, bcoff, fc, croff, ccoff);
+      case (fb:FMat, fc:FMat) => tileMult(nr, nc, kk, aroff, acoff, fb, broff, bcoff, fc, croff, ccoff);
+      case _ => throw new RuntimeException("tileMult couldnt match matrix types")
+    }
+  }
+  
+  override def tileMultT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):Mat = {
+    (b, c) match {
+      case (sb:SMat, fc:FMat) => tileMultT(nr, nc, kk, aroff, acoff, sb, broff, bcoff, fc, croff, ccoff);
+      case (fb:FMat, fc:FMat) => tileMultT(nr, nc, kk, aroff, acoff, fb, broff, bcoff, fc, croff, ccoff);
+      case _ => throw new RuntimeException("tileMultT couldnt match matrix types")
     }
   }
   
