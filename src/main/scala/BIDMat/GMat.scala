@@ -274,6 +274,16 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     this
   }
   
+  override def colslice(a:Int, b:Int, omat:Mat):GMat = {
+    val out = GMat.newOrCheckGMat(nrows, b-a, omat, GUID, a, "colslice".##);
+    cudaMemcpy(out.data, data.withByteOffset(1L*a*nrows*Sizeof.FLOAT), 1L*(b-a)*nrows*Sizeof.FLOAT, cudaMemcpyDeviceToDevice);
+    out
+  }
+  
+  override def colslice(a:Int, b:Int):GMat = {   
+    colslice(a, b, null)
+  }
+  
   val myGPU = SciFunctions.getGPU
   
   override def clear = {
