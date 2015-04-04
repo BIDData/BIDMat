@@ -95,6 +95,14 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     GIMat.izeros(m,n)
   }
   
+  override def zeros(m:Int, n:Int) = {
+    GMat.zeros(m,n)
+  }
+  
+  override def zeros(m:Int, n:Int, nnz:Int) = {
+    new GSMat(m, n, 0, new Pointer, new Pointer, new Pointer, new Pointer, 0);
+  }
+  
   override def iones(m:Int, n:Int) = {
     GIMat.iones(m,n)
   }

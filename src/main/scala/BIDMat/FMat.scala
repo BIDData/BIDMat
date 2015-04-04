@@ -4,6 +4,7 @@ import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.LAPACK._
 import edu.berkeley.bid.SPBLAS._
 import edu.berkeley.bid.UTILS._
+import scala.util.hashing.MurmurHash3
 import java.util.Arrays
 import java.util.concurrent.atomic._
 import scala.concurrent.Future
@@ -272,6 +273,10 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
    
   override def zeros(nr:Int, nc:Int) = {
+    FMat.zeros(nr, nc)
+  }
+  
+  override def zeros(nr:Int, nc:Int, nnz:Int) = {
     FMat.zeros(nr, nc)
   }
   
@@ -840,7 +845,37 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
 	  out
 	}
   
-  def kron(a:FMat):FMat = kron(a, null)
+  def kron(a:FMat):FMat = kron(a, null);
+  
+  def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, reps:Int, aoff:Int, lda:Int, astep:Int, 
+      b:FMat, boff:Int, ldb:Int, bstep:Int, c:FMat, coff:Int, ldc:Int, cstep:Int):FMat = {
+    
+    val ka = if (transa == 0) ncols/reps else nrows;
+    val kb = if (transb == 0) b.nrows else b.ncols/reps;
+    if (ka != kb) throw new RuntimeException("blockGemm dims mismatch %d %d" format (ka, kb));
+
+    val ax = if (transa == 0) nc else nr;
+    if (aoff + ka + lda.toLong * (ax-1) + astep.toLong * (reps-1) > length) 
+    	throw new RuntimeException("blockGemm adims too large %d %d %d %d %d" format (aoff, lda, ax, astep, reps));
+    
+    val bx = if (transb == 0) nc else nr;
+    if (boff + kb + ldb.toLong * (bx-1) + bstep.toLong * (reps-1) > b.length) 
+    	throw new RuntimeException("blockGemm bdims too large %d %d %d %d %d" format (boff, ldb, bx, bstep, reps));
+        
+    if (coff + nc + ldc.toLong * (nc-1) + cstep.toLong * (reps-1) > c.length) 
+    	throw new RuntimeException("blockGemm cdims too large %d %d %d %d %d" format (coff, ldc, nc, cstep, reps));
+    
+    c.clear;
+    Mat.nflops += 2L * nr * nc * ka * reps;
+    blockSgemm(transa, transb, nr, nc, ka, reps, data, aoff, lda, astep, b.data, boff, ldb, bstep, c.data, coff, ldc, cstep);
+    c;
+  }
+  
+  override def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, reps:Int, aoff:Int, lda:Int, astep:Int, 
+      b:Mat, boff:Int, ldb:Int, bstep:Int, c:Mat, coff:Int, ldc:Int, cstep:Int):FMat = {
+  		blockGemm(transa, transb, nr, nc, reps, aoff, lda, astep, b.asInstanceOf[FMat], boff, ldb, bstep, 
+  		    c.asInstanceOf[FMat], coff, ldc, cstep);
+  }
     
   def solvel(a0:Mat):FMat = 
     a0 match {

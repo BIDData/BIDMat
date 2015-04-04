@@ -1,6 +1,7 @@
 
 #include <jni.h>
 #include <cuda_runtime.h>
+#include <cublas.h>
 #include "Logger.hpp"
 #include "JNIUtils.hpp"
 #include "PointerUtils.hpp"
@@ -879,4 +880,26 @@ extern "C" {
       return dsmultTile(nr, nc, kk, nnz, A, lda, Bdata, Bir, Bic, broff, bcoff, C, ldc);
     }
   }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_blockSgemm
+  (JNIEnv *env, jobject obj, jint transA, jint transB, jint nr, jint nc, jint kk, jint reps, jobject jA, jint lda, jint astep, 
+   jobject jB, jint ldb, jint bstep, jobject jC, jint ldc, jint cstep)
+  {
+    char at, bt;
+    at = (transA) ? 't' : 'n';
+    bt = (transB) ? 't' : 'n';
+    float *A = (float*)getPointer(env, jA);
+    float *B = (float*)getPointer(env, jB);
+    float *C = (float*)getPointer(env, jC);
+    for (int i = 0; i < reps; i++) {
+      cublasSgemm(at, bt, nr, nc, kk, 1.0f, A, lda, B, ldb, 0.0f, C, ldc);
+      A += astep;
+      B += bstep;
+      C += cstep;
+    }      
+    cudaDeviceSynchronize();
+    cudaError_t err = cudaGetLastError();
+    return err;
+  }
+
 }

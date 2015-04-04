@@ -188,6 +188,10 @@ class Mat(nr:Int, nc:Int) {
   def tileMultT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):Mat =
     notImplemented0("tileMultT");
   
+  def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, reps:Int, aoff:Int, lda:Int, astep:Int, 
+      b:Mat, boff:Int, ldb:Int, bstep:Int, c:Mat, coff:Int, ldc:Int, cstep:Int):Mat = notImplemented0("blockGemm");
+
+  
   
   def unary_-():Mat = notImplemented1("-", this)
   def +  (b : Mat):Mat = notImplemented1("+", b)
@@ -570,6 +574,7 @@ object Mat {
     	}
     }
     try {
+//      jcuda.LibUtils.loadLibrary("jhdf5")
       System.loadLibrary("jhdf5")
     } catch {
     case _:Throwable => {

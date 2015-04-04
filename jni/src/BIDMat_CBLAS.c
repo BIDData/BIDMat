@@ -560,3 +560,28 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_caxpyxx
 	(*env)->ReleasePrimitiveArrayCritical(env, jY, Y, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, jX, X, 0);
 }
+
+JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_blockSgemm
+(JNIEnv *env, jobject obj, jint transA, jint transB, jint nr, jint nc, jint kk, jint reps, jfloatArray jA, jint aoff, jint lda, jint astep, 
+ jfloatArray jB, jint boff, jint ldb, jint bstep, jfloatArray jC, jint coff, jint ldc, jint cstep)
+  {
+    int i, at, bt;
+	jfloat *A = (*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE);
+	jfloat *B = (*env)->GetPrimitiveArrayCritical(env, jB, JNI_FALSE);
+	jfloat *C = (*env)->GetPrimitiveArrayCritical(env, jC, JNI_FALSE);
+    
+    at = (transA) ? CblasTrans : CblasNoTrans;
+    bt = (transB) ? CblasTrans : CblasNoTrans;
+    A += aoff;
+    B += boff;
+    C += coff;
+    for (i = 0; i < reps; i++) {
+      cblas_sgemm(CblasColMajor, at, bt, nr, nc, kk, 1.0f, A, lda, B, ldb, 0.0f, C, ldc);
+      A += astep;
+      B += bstep;
+      C += cstep;
+    }      
+	(*env)->ReleasePrimitiveArrayCritical(env, jC, C, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, jB, B, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, jA, A, 0);
+  }

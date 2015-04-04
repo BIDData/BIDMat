@@ -10,6 +10,7 @@ import jcuda.jcublas.JCublas._
 import jcuda.jcusparse._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.hashing.MurmurHash3
 import edu.berkeley.bid.CUMAT
 import GSMat._
 
@@ -314,9 +315,11 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     tmpMat.toString
   }
   
-  override def zeros(nr:Int, nc:Int) = GMat.zeros(nr, nc)
+  override def zeros(nr:Int, nc:Int) = GMat.zeros(nr, nc);
   
-  override def ones(nr:Int, nc:Int) = GMat.ones(nr, nc)
+  override def zeros(nr:Int, nc:Int, nnz:Int) = GMat.zeros(nr, nc);
+  
+  override def ones(nr:Int, nc:Int) = GMat.ones(nr, nc);
   
   override def izeros(m:Int, n:Int) = {
     GIMat.izeros(m,n)
@@ -743,6 +746,37 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, n
     	throw new RuntimeException("Cuda error in mkdiag " + cudaGetErrorString(err))
     }
     out
+  }
+  
+  def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, reps:Int, aoff:Int, lda:Int, astep:Int, 
+      b:GMat, boff:Int, ldb:Int, bstep:Int, c:GMat, coff:Int, ldc:Int, cstep:Int):GMat = {
+    
+    val ka = if (transa == 0) ncols/reps else nrows;
+    val kb = if (transb == 0) b.nrows else b.ncols/reps;
+    if (ka != kb) throw new RuntimeException("blockGemm dims mismatch %d %d" format (ka, kb));
+
+    val ax = if (transa == 0) nc else nr;
+    if (aoff + ka + lda.toLong * (ax-1) + astep.toLong * (reps-1) > length) 
+    	throw new RuntimeException("blockGemm adims too large %d %d %d %d %d" format (aoff, lda, ax, astep, reps));
+    
+    val bx = if (transb == 0) nc else nr;
+    if (boff + kb + ldb.toLong * (bx-1) + bstep.toLong * (reps-1) > b.length) 
+    	throw new RuntimeException("blockGemm bdims too large %d %d %d %d %d" format (boff, ldb, bx, bstep, reps));
+        
+    if (coff + nc + ldc.toLong * (nc-1) + cstep.toLong * (reps-1) > c.length) 
+    	throw new RuntimeException("blockGemm cdims too large %d %d %d %d %d" format (coff, ldc, nc, cstep, reps));
+    
+    c.clear;
+    Mat.nflops += 2L * nr * nc * ka * reps;
+    CUMAT.blockSgemm(transa, transb, nr, nc, ka, reps, data.withByteOffset(1L * Sizeof.FLOAT * aoff), lda, astep,
+    		b.data.withByteOffset(1L * Sizeof.FLOAT * boff), ldb, bstep, c.data.withByteOffset(1L * Sizeof.FLOAT * coff), ldc, cstep);
+    c;
+  }
+  
+  override def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, reps:Int, aoff:Int, lda:Int, astep:Int, 
+      b:Mat, boff:Int, ldb:Int, bstep:Int, c:Mat, coff:Int, ldc:Int, cstep:Int):GMat = {
+  		blockGemm(transa, transb, nr, nc, reps, aoff, lda, astep, b.asInstanceOf[GMat], boff, ldb, bstep, 
+  		    c.asInstanceOf[GMat], coff, ldc, cstep);
   }
   
   /*
@@ -1998,7 +2032,6 @@ object GMat {
     }
     (outv, outi)
   }
-
 
   def newOrCheckGMat(nr:Int, nc:Int, outmat:Mat):GMat = {
     if (outmat.asInstanceOf[AnyRef] == null || (outmat.nrows == 0 && outmat.ncols == 0)) {
