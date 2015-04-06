@@ -72,6 +72,7 @@ public final class CBLAS {
   public static native  void somatcopy( String Order, String TransA, int M, int N, float alpha, float [] A, int lda, float [] B, int ldb);
   public static native  void blockSgemm( int transA, int transB, int nr, int nc, int kk, int reps, float [] A, int aoff, int lda, int astep, 
   		float[] B, int boff, int ldb, int bstep, float [] C, int coff, int ldc, int cstep);
+  public static native  void word2vecFwd( int nrows,  int ncols,  int nwa,  int nwb, int [] WA, int [] WB, float [] A, float [] B, float [] C);
   
   public static native  void cdot( int N,  float []  X,  int incX,  float []  Y,  int incY, float [] Z);
   public static native  void cdotxx( int N,  float []  X,  int startX,  float []  Y,  int startY, float [] Z);

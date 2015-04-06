@@ -1,6 +1,7 @@
 #include <jni.h>
 #include <mkl.h>
 #include <mkl_trans.h>
+#include <omp.h>
 
 JNIEXPORT jdouble JNICALL Java_edu_berkeley_bid_CBLAS_ddot 
 (JNIEnv * env, jobject calling_obj, jint N, jdoubleArray jX, jint incX, jdoubleArray jY, jint incY){
@@ -584,4 +585,44 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_blockSgemm
 	(*env)->ReleasePrimitiveArrayCritical(env, jC, C, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, jB, B, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, jA, A, 0);
+  }
+
+  JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_word2vecFwd
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, const jint nwa, const jint nwb, jintArray jWA, jintArray jWB, jfloatArray jA, jfloatArray jB, jfloatArray jC)
+  {
+    int i, j, k, c;
+    float sum;
+    int ia;
+    int ib;
+    float aa;
+    float bb;
+    jint * WA = (jint *)((*env)->GetPrimitiveArrayCritical(env, jWA, JNI_FALSE));
+    jint * WB = (jint *)((*env)->GetPrimitiveArrayCritical(env, jWB, JNI_FALSE));
+    jfloat * A = (jfloat *)((*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE));
+    jfloat * B = (jfloat *)((*env)->GetPrimitiveArrayCritical(env, jB, JNI_FALSE));
+    jfloat * C = (jfloat *)((*env)->GetPrimitiveArrayCritical(env, jC, JNI_FALSE));
+
+#pragma omp parallel for
+    for (i = 0; i < ncols; i++) {
+      for (j = 0; j < nwa; j++) {
+        ia = nrows*WA[j+i*nwa];
+        for (k = 0; k < nwb; k++) {
+          ib = nrows*WB[k+i*nwb];
+          /*          sum = 0;
+          for (c = 0; c < nrows; c++) {
+            aa = A[c + ia];
+            bb = B[c + ib];
+            sum += aa * bb;
+          }*/
+          sum = cblas_sdot(nrows, &A[ia], 1, &B[ib], 1);
+          C[j + nwa * (k + nwb * i)] = sum;
+        }
+      }
+    }
+
+    (*env)->ReleasePrimitiveArrayCritical(env, jC, C, 0);
+    (*env)->ReleasePrimitiveArrayCritical(env, jB, B, 0);
+    (*env)->ReleasePrimitiveArrayCritical(env, jA, A, 0);
+    (*env)->ReleasePrimitiveArrayCritical(env, jWB, WB, 0);
+    (*env)->ReleasePrimitiveArrayCritical(env, jWA, WA, 0);
   }
