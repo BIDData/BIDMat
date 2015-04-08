@@ -87,7 +87,9 @@ public final class CBLAS {
   public static native  void smcsrm( int m, int n, float [] a, int lda, float [] b, int [] ir, int [] jc, float [] c, int ldc);
 
   public static native  void spermute(int d1, int d2, int d3, float [] in, float [] out);
-  public static native  void word2vecFwd( int nrows,  int ncols,  int nwa,  int nwb, int [] WA, int [] WB, float [] A, float [] B, float [] C);
-  public static native  void word2vecBwd( int nrows,  int ncols,  int nwa,  int nwb, int [] WA, int [] WB, float [] A, float [] B, float [] C, float lrate);
-
+  
+  public static native  void word2vecFwd(int nrows, int ncols, int nwa, int nwb, int [] WA, int [] WB, float [] A, float [] B, float [] C);
+  
+  public static native  void word2vecBwd(int nrows, int ncols, int nwa, int nwb, int [] WA, int [] WB, float [] A, float [] B, float [] DA, float [] DB, float [] C, float lrate);
+  
 }

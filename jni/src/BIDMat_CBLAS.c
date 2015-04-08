@@ -606,7 +606,6 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_word2vecFwd
       for (k = 0; k < nwb; k++) {
         ib = nrows*WB[k+i*nwb];
         sum = 0;
-#pragma unroll
         for (c = 0; c < nrows; c++) {
           sum += A[c + ia] * B[c + ib];
         }
@@ -625,7 +624,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_word2vecFwd
 
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_word2vecBwd
 (JNIEnv *env, jobject obj, jint nrows, jint ncols, jint nwa, jint nwb, jintArray jWA, jintArray jWB, 
- jfloatArray jA, jfloatArray jB, jfloatArray jC, jfloat lrate)
+ jfloatArray jA, jfloatArray jB, jfloatArray jDA, jfloatArray jDB, jfloatArray jC, jfloat lrate)
 {
   int i, j, k, c;
   float cv;
@@ -634,38 +633,36 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_word2vecBwd
   jint * WB = (jint *)((*env)->GetPrimitiveArrayCritical(env, jWB, JNI_FALSE));
   jfloat * A = (jfloat *)((*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE));
   jfloat * B = (jfloat *)((*env)->GetPrimitiveArrayCritical(env, jB, JNI_FALSE));
+  jfloat * DA = (jfloat *)((*env)->GetPrimitiveArrayCritical(env, jDA, JNI_FALSE));
+  jfloat * DB = (jfloat *)((*env)->GetPrimitiveArrayCritical(env, jDB, JNI_FALSE));
   jfloat * C = (jfloat *)((*env)->GetPrimitiveArrayCritical(env, jC, JNI_FALSE));
 
 #pragma omp parallel for
   for (i = 0; i < ncols; i++) {
     for (j = 0; j < nwa; j++) {
       ia = nrows*WA[j+i*nwa];
-      for (c = 0; c < nrows; c++) {
-        A[c + ia] = 0;
-      }
       for (k = 0; k < nwb; k++) {
         ib = nrows*WB[k+i*nwb];
         cv = lrate * C[j + nwa * (k + nwb * i)];
         for (c = 0; c < nrows; c++) {
-          A[c + ia] += cv * B[c + ib];
+          A[c + ia] += cv * DB[c + ib];
         }
       }
     }
     for (k = 0; k < nwb; k++) {
       ib = nrows*WB[k+i*nwb];
-      for (c = 0; c < nrows; c++) {
-        B[c + ib] = 0;
-      }
       for (j = 0; j < nwa; j++) {
         ia = nrows*WA[j+i*nwa];
         cv = lrate * C[j + nwa * (k + nwb * i)];
         for (c = 0; c < nrows; c++) {
-          B[c + ib] += cv * A[c + ia];
+          B[c + ib] += cv * DA[c + ia];
         }
       }
     }
   }
   (*env)->ReleasePrimitiveArrayCritical(env, jC, C, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, jDB, DB, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, jDA, DA, 0);
   (*env)->ReleasePrimitiveArrayCritical(env, jB, B, 0);
   (*env)->ReleasePrimitiveArrayCritical(env, jA, A, 0);
   (*env)->ReleasePrimitiveArrayCritical(env, jWB, WB, 0);
