@@ -106,7 +106,7 @@ elif [ "$OS" = "linux" ] ; then
     JAVA_HOME="/usr/java/default"
     fi
     CUDA_HOME="/usr/local/cuda"
-    CC="gcc"
+    CC="icc"
     GCC="g++"
     NVCC="nvcc"
     NVCCFLAGS="-c -use_fast_math  -I$BIDMAT_ROOT/jni/include \
@@ -118,7 +118,7 @@ elif [ "$OS" = "linux" ] ; then
     OBJ="o"
     OUTFLG="-o "
     CPPFLAGS="-fPIC -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$CUDA_HOME/include" 
-    CFLAGS="-fPIC -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$MKL_ROOT/include -I$MKL_ROOT/include/${ARCHD}${SUBDIR}"
+    CFLAGS="-openmp -fPIC -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$MKL_ROOT/include -I$MKL_ROOT/include/${ARCHD}${SUBDIR}"
     LB="ar rc"    
     GLD="g++ -shared"
     LD="g++ -shared -z noexecstack"
@@ -138,7 +138,7 @@ elif [ "$OS" = "linux" ] ; then
 	    MKL_LIBS="-L$JAVA_HOME/lib -L${BIDMAT_ROOT}/lib \
             -Wl,--start-group  $MKL_ROOT/lib/${ARCHD}/libmkl_intel${PTYPE}.a \
             $MKL_ROOT/lib/${ARCHD}/libmkl_core.a $MKL_ROOT/lib/${ARCHD}/libmkl_gnu_thread.a \
-            -Wl,--end-group -lgomp -ldl -lpthread -lm"
+            -Wl,--end-group -liomp5 -ldl -lpthread -lm"
     fi
     if [ "$ARCH" = "x86" ] ; then
         CULIB="lib"
