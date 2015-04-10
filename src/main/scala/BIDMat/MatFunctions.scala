@@ -1153,6 +1153,9 @@ object MatFunctions {
   /** Make a single-precision matrix of zeros in GPU memory. */
   def gzeros(nr:Int, nc:Int):GMat = GMat.zeros(nr, nc)
   
+  /** Make a double-precision matrix of zeros in GPU memory. */
+  def gdzeros(nr:Int, nc:Int):GDMat = GDMat.zeros(nr, nc);
+  
   /** Make an integer matrix of zeros in GPU memory. */
   def gizeros(nr:Int, nc:Int):GIMat = GIMat.izeros(nr, nc)
   
