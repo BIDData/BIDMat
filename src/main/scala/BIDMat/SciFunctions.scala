@@ -222,6 +222,15 @@ object SciFunctions {
     val out = GDMat(nr, nc)
     gdrand(out)
   }
+  
+  def rand(mat:Mat):Mat = {
+    mat match {
+      case a:FMat => rand(a);
+      case d:DMat => drand(d);
+      case g:GMat => grand(g);
+      case gd:GDMat => gdrand(gd);
+    }
+  }
  
   def normrnd(mu:Float, sig:Float, out:FMat):FMat = {
     if (!Mat.useMKL) {
