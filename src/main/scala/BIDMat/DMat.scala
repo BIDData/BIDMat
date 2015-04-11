@@ -1114,7 +1114,7 @@ object DMat {
   }
    
   def vecDiv(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
     while (ci < cend) {
       c(ci) = a(ai) / b(bi);  ai += ainc; bi += binc;  ci += cinc
     }
@@ -1130,7 +1130,7 @@ object DMat {
   }
   
   def vecSub(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
     while (ci < cend) {
       c(ci) = a(ai) - b(bi);  ai += ainc; bi += binc;  ci += cinc
     }
@@ -1138,7 +1138,7 @@ object DMat {
   }
   
   def vecMul(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
     while (ci < cend) {
       c(ci) = a(ai) * b(bi);  ai += ainc; bi += binc;  ci += cinc
     }
@@ -1154,10 +1154,67 @@ object DMat {
   }
   
  def vecMin(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var i = 0
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
     while (i < n) {
       c(ci) = math.min(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc; i += 1
     }
+    0
+  }
+ 
+ 
+ def vecEQ(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
+    while (ci < cend) {
+      c(ci) = if (a(ai) == b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+ 
+  def vecNE(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
+    while (ci < cend) {
+      c(ci) = if (a(ai) != b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+  
+   def vecGT(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
+    while (ci < cend) {
+      c(ci) = if (a(ai) > b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+ 
+  def vecLT(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
+    while (ci < cend) {
+      c(ci) = if (a(ai) < b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+   def vecGE(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
+    while (ci < cend) {
+      c(ci) = if (a(ai) >= b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+ 
+  def vecLE(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
+    while (ci < cend) {
+      c(ci) = if (a(ai) <= b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
+    }
+    0
+  }
+  
+  def vecSum(a:Array[Double], a0:Int, ainc:Int, c:Array[Double], c0:Int, n:Int):Double = {
+    var ai = a0; var aend = a0 + n * ainc; var sum = 0.0;
+    while (ai < aend) {
+      sum += a(ai);  ai += ainc; 
+    }
+    c(c0) = sum;
     0
   }
  
@@ -1167,6 +1224,15 @@ object DMat {
   val vecDivFun = (vecDiv _)
   val vecMaxFun = (vecMax _)
   val vecMinFun = (vecMin _)
+  
+  val vecEQFun = (vecEQ _) 
+  val vecNEFun = (vecNE _) 
+  val vecGTFun = (vecGT _)
+  val vecLTFun = (vecLT _)
+  val vecGEFun = (vecGE _)
+  val vecLEFun = (vecLE _)
+  
+  val vecSumFun = (vecSum _)
   
   def lexcomp(a:DMat, out:IMat):(Int, Int) => Int = {
   	val aa = a.data

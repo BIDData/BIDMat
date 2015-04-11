@@ -1548,7 +1548,7 @@ object FMat {
   }
    
   def vecDiv(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
     while (ci < cend) {
       c(ci) = a(ai) / b(bi);  ai += ainc; bi += binc;  ci += cinc
     }
@@ -1564,7 +1564,7 @@ object FMat {
   }
   
   def vecSub(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
     while (ci < cend) {
       c(ci) = a(ai) - b(bi);  ai += ainc; bi += binc;  ci += cinc
     }
@@ -1572,7 +1572,7 @@ object FMat {
   }
   
   def vecMul(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
     while (ci < cend) {
       c(ci) = a(ai) * b(bi);  ai += ainc; bi += binc;  ci += cinc
     }
@@ -1580,7 +1580,7 @@ object FMat {
   }
   
   def vecPow(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
     while (ci < cend) {
       c(ci) = math.pow(a(ai), b(bi)).toFloat;  ai += ainc; bi += binc;  ci += cinc
     }
@@ -1604,7 +1604,7 @@ object FMat {
   }
  
  def vecEQ(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
     while (ci < cend) {
       c(ci) = if (a(ai) == b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
     }
@@ -1612,7 +1612,7 @@ object FMat {
   }
  
   def vecNE(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
     while (ci < cend) {
       c(ci) = if (a(ai) != b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
     }
@@ -1620,7 +1620,7 @@ object FMat {
   }
   
    def vecGT(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
     while (ci < cend) {
       c(ci) = if (a(ai) > b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
     }
@@ -1628,14 +1628,14 @@ object FMat {
   }
  
   def vecLT(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
     while (ci < cend) {
       c(ci) = if (a(ai) < b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
     }
     0
   }
    def vecGE(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
     while (ci < cend) {
       c(ci) = if (a(ai) >= b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
     }
@@ -1643,10 +1643,19 @@ object FMat {
   }
  
   def vecLE(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
+    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
     while (ci < cend) {
       c(ci) = if (a(ai) <= b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
     }
+    0
+  }
+  
+  def vecSum(a:Array[Float], a0:Int, ainc:Int, c:Array[Float], c0:Int, n:Int):Float = {
+    var ai = a0; var aend = a0 + n * ainc; var sum = 0f
+    while (ai < aend) {
+      sum += a(ai);  ai += ainc; 
+    }
+    c(c0) = sum;
     0
   }
   
@@ -1664,6 +1673,8 @@ object FMat {
   val vecLTFun = (vecLT _)
   val vecGEFun = (vecGE _)
   val vecLEFun = (vecLE _)
+  
+  val vecSumFun = (vecSum _)
   
   def lexcomp(a:FMat, out:IMat):(Int, Int) => Int = {
   	val aa = a.data
