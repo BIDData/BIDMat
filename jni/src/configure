@@ -185,7 +185,7 @@ elif [ "$OS" = "windows" ] ; then
     if [ "$PARLIB" = "sequential" ] ; then
 	    MKL_LIBS="mkl_intel${PTYPE}.lib mkl_sequential.lib mkl_core.lib"   
     else
-	    MKL_LIBS="mkl_intel${PTYPE}.lib mkl_intel_thread.lib mkl_core.lib" 
+	    MKL_LIBS="mkl_intel${PTYPE}.lib mkl_intel_thread.lib mkl_core.lib libiomp5md.lib"
     fi
     INSTALL_DIR="${BIDMAT_ROOT}/lib"
     CUDA_LIBS="cudart.lib cublas.lib"
