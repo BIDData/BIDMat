@@ -9,6 +9,10 @@ CUDA_OBJS=BIDMat_CUMAT.$(OBJ) BIDMat_CUMATD.$(OBJ) MatKernel.$(OBJ) MatKernelD.$
 
 all: $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(LIBPREPEND)bidmatmkl$(LIBAPPEND) 
 
+cudalib: $(LIBPREPEND)bidmatcuda$(LIBAPPEND)
+
+cpulib:	 $(LIBPREPEND)bidmatmkl$(LIBAPPEND) 
+
 BIDMat_UTILS.$(OBJ): BIDMat_UTILS.cpp
 	$(CC) $(CFLAGS) $(LAPACK_INCLUDES) BIDMat_UTILS.cpp
 
@@ -31,6 +35,14 @@ install: all
 	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(INSTALL_DIR)
 	cp $(LIBPREPEND)bidmatmkl$(LIBAPPEND)  $(INSTALL_DIR)
 	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(INSTALL_DIR)/../../BIDMach/lib
+	cp $(LIBPREPEND)bidmatmkl$(LIBAPPEND)  $(INSTALL_DIR)/../../BIDMach/lib
+
+installcudalib: cudalib
+	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(INSTALL_DIR)
+	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(INSTALL_DIR)/../../BIDMach/lib
+
+installcpulib: cpulib
+	cp $(LIBPREPEND)bidmatmkl$(LIBAPPEND)  $(INSTALL_DIR)
 	cp $(LIBPREPEND)bidmatmkl$(LIBAPPEND)  $(INSTALL_DIR)/../../BIDMach/lib
 
 clean:
