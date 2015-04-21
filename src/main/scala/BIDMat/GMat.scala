@@ -1245,7 +1245,7 @@ object GMat {
   
   def zeros(nr:Int, nc:Int) = {
     val out = GMat(nr, nc)
-    cudaMemset(out.data, 0, Sizeof.FLOAT*out.length)
+    cudaMemset(out.data, 0, Sizeof.FLOAT*out.llength)
     cudaDeviceSynchronize()
     val err = cudaGetLastError()
     if (err != 0) {
@@ -1274,7 +1274,7 @@ object GMat {
       if (nr*nc > Mat.debugMemThreshold) throw new RuntimeException("GMat alloc too large");
     }
     var err = if (1L*nr*nc > 0x7fffffffL) {
-      cudaMallocManaged(retv.data, 1L*nr*nc*Sizeof.FLOAT, 0);
+      cudaMallocHost(retv.data, 1L*nr*nc*Sizeof.FLOAT);
     } else {
       cudaMalloc(retv.data, 1L*nr*nc*Sizeof.FLOAT);
     }
