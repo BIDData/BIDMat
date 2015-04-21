@@ -798,14 +798,14 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   override def copyTo(out:Mat) = {
     out match {
-      case cout:CMat => System.arraycopy(data, 0, cout.data, 0, 2*length.toInt)
+      case cout:CMat => System.arraycopy(data, 0, cout.data, 0, 2*length)
     }  	
   	out
   }
   
   override def copy = {
   	val out = CMat.newOrCheckCMat(nrows, ncols, null, GUID, "copy".##)
-  	System.arraycopy(data, 0, out.data, 0, 2*length.toInt)
+  	System.arraycopy(data, 0, out.data, 0, 2*length)
   	out
   }
   

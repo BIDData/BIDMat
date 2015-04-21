@@ -9,6 +9,8 @@ class Mat(nr:Int, nc:Int) {
 
   def length = nr*nc
   
+  def llength = 1L*nr*nc
+  
   private var _GUID = Mat.myrand.nextLong
   
   def setGUID(v:Long):Unit = {_GUID = v}

@@ -14,7 +14,7 @@ import scala.util.hashing.MurmurHash3
 import edu.berkeley.bid.CUMAT
 import GSMat._
 
-class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, nc) {
+class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, nc) {
   import GMat.BinOp._
 
   override def dv:Double =
@@ -1268,15 +1268,19 @@ object GMat {
   }
   
   def apply(nr:Int, nc:Int):GMat = {
-    val retv = new GMat(nr, nc, new Pointer(), nr*nc)  
+    val retv = new GMat(nr, nc, new Pointer(), 1L*nr*nc)  
     if (Mat.debugMem) {
       println("GMat %d %d, %d %f" format (nr, nc, SciFunctions.getGPU, SciFunctions.GPUmem._1))
       if (nr*nc > Mat.debugMemThreshold) throw new RuntimeException("GMat alloc too large");
     }
-    var err = cublasAlloc(nr*nc, Sizeof.FLOAT, retv.data)
-    cudaDeviceSynchronize
-    if (err == 0) err = cudaGetLastError()
-    if (err != 0) throw new RuntimeException("CUDA alloc failed " + cudaGetErrorString(err))
+    var err = if (1L*nr*nc > 0x7fffffffL) {
+      cudaMallocManaged(retv.data, 1L*nr*nc*Sizeof.FLOAT, 0);
+    } else {
+      cudaMalloc(retv.data, 1L*nr*nc*Sizeof.FLOAT);
+    }
+    cudaDeviceSynchronize;
+    if (err == 0) err = cudaGetLastError();
+    if (err != 0) throw new RuntimeException("CUDA alloc failed " + cudaGetErrorString(err));
     retv        
   }   
   
@@ -1590,11 +1594,11 @@ object GMat {
   	    		val aa = new Pointer
   	    		val bb = new Pointer
   	    		val cc = new Pointer
-  	    		var err = cublasAlloc(garows*gacols, Sizeof.FLOAT, aa)
+  	    		var err = cudaMalloc(aa, 1L*garows*gacols*Sizeof.FLOAT);
   	    		if (err != 0) throw new RuntimeException("CUDA alloc failed " + cudaGetErrorString(err))
-  	    		err = cublasAlloc(gbrows*gbcols, Sizeof.FLOAT, bb)
+  	    		err = cudaMalloc(bb, 1L*gbrows*gbcols*Sizeof.FLOAT);
   	    		if (err != 0) throw new RuntimeException("CUDA alloc failed " + cudaGetErrorString(err))
-  	    		err = cublasAlloc(gcrows*gccols, Sizeof.FLOAT, cc)
+  	    		err = cudaMalloc(cc, 1L*gcrows*gccols*Sizeof.FLOAT);
   	    		if (err != 0) throw new RuntimeException("CUDA alloc failed "+err)
 
   	    		var i = ix*gcrows; while (i < c.nrows) {
