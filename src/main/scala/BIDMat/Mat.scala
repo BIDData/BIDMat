@@ -438,6 +438,8 @@ object Mat {
   
   var useGPUsort = true
   
+  var hostAllocSize = 0xffffffffL
+  
   final val MSEED:Int = 1452462553 
 
   final val myrand = new java.util.Random(MSEED)

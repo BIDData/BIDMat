@@ -1273,7 +1273,7 @@ object GMat {
       println("GMat %d %d, %d %f" format (nr, nc, SciFunctions.getGPU, SciFunctions.GPUmem._1))
       if (nr*nc > Mat.debugMemThreshold) throw new RuntimeException("GMat alloc too large");
     }
-    var err = if (1L*nr*nc > 0x7fffffffL) {
+    var err = if (1L*nr*nc*Sizeof.FLOAT > Mat.hostAllocSize) {
       cudaMallocHost(retv.data, 1L*nr*nc*Sizeof.FLOAT);
     } else {
       cudaMalloc(retv.data, 1L*nr*nc*Sizeof.FLOAT);
