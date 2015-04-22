@@ -127,6 +127,37 @@ object MatFunctions {
     out
   }
   
+  /** Convert to the corresponding integral type */
+  def int(a:FMat):IMat = {
+    IMat(a);
+  }
+  
+  def int(a:DMat):IMat = {
+    IMat(a);
+  }
+  
+  def int(a:IMat):IMat = {
+    a
+  }
+  
+  def int(a:GMat):GIMat = {
+    GIMat(a);
+  }
+  
+  def int(a:GIMat):GIMat = {
+    a;
+  }
+  
+  def int(a:Mat):Mat = {
+    a match {
+      case fa:FMat => IMat(fa);
+      case da:DMat => IMat(da);
+      case ia:IMat => ia;
+      case ga:GMat => GIMat(ga);
+      case gi:GIMat => gi;
+    }
+  }
+  
   // TODO Document
   def threadPool(n:Int = Mat.numThreads):scala.concurrent.ExecutionContextExecutor = {
     import scala.concurrent.ExecutionContext
@@ -580,6 +611,46 @@ object MatFunctions {
   def sortdown(keys:GMat):GMat = GMat.sortdown(keys)
   
   def sortdown2(keys:GMat):(GMat, GIMat) = GMat.sortdown2(keys) 
+  
+  def sort(keys:Mat):Mat = {
+    keys match {
+      case a:FMat => sort(a);
+      case a:IMat => sort(a);
+      case a:DMat => sort(a);
+      case a:LMat => sort(a);
+      case a:GMat => sort(a);
+    } 
+  }
+  
+  def sortdown(keys:Mat):Mat = {
+    keys match {
+      case a:FMat => sortdown(a);
+      case a:IMat => sortdown(a);
+      case a:DMat => sortdown(a);
+      case a:LMat => sortdown(a);
+      case a:GMat => sortdown(a);
+    } 
+  }
+  
+  def sort2(keys:Mat):(Mat, Mat) = {
+    keys match {
+      case a:FMat => sort2(a);
+      case a:IMat => sort2(a);
+      case a:DMat => sort2(a);
+      case a:LMat => sort2(a);
+      case a:GMat => sort2(a);
+    } 
+  }
+  
+  def sortdown2(keys:Mat):(Mat, Mat) = {
+    keys match {
+      case a:FMat => sortdown2(a);
+      case a:IMat => sortdown2(a);
+      case a:DMat => sortdown2(a);
+      case a:LMat => sortdown2(a);
+      case a:GMat => sortdown2(a);
+    } 
+  }
   
   
   /** Accumulate (row, col, value) tuples from inds \\ vals (generic version) into omat. nr and nc are row and column bounds */

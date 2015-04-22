@@ -950,6 +950,33 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     }
   }
   
+  def cumsumKeyLinear(v:FMat, out:FMat, istart:Int, iend:Int) = {
+    var i = istart;
+    var sum = 0f;
+    while (i < iend) {
+      sum += v.data(i);
+      out.data(i) = sum;
+      if (i + 1 < iend && data(i) != data(i+1)) sum = 0;
+      i += 1;
+    }    
+  }
+  
+  def cumsumKey(v:FMat):FMat = {
+    if (nrows != v.nrows || ncols != v.ncols) 
+      throw new RuntimeException("cumsumKey dimensions mismatch");
+    val out = FMat.newOrCheckFMat(nrows, ncols, null, GUID, v.GUID, "cumsumKey".##);
+    if (nrows == 1) {
+      cumsumKeyLinear(v, out, 0, length);
+    } else {
+      var i = 0;
+      while (i < ncols) {
+        cumsumKeyLinear(v, out, i*nrows, (i+1)*nrows);
+        i += 1;
+      }
+    }   
+    out
+  }
+  
   override def recycle(nr:Int, nc:Int, nnz:Int):FMat = {
     if (nrows == nr && nc == ncols) {
       this
