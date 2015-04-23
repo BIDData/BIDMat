@@ -67,6 +67,8 @@ class Mat(nr:Int, nc:Int) {
   def clearUpper = notImplemented0("clearUpper");
   def clearLower = notImplemented0("clearLower");
   def free = notImplemented0("free");
+  def view(nr:Int, nc:Int):Mat = notImplemented0("view");
+  def view(nr:Int, nc:Int, setGUID:Boolean):Mat = notImplemented0("view");
     
   def nnz:Int = {notImplemented0("nnz"); 0}
   def clear = notImplemented0("clear");

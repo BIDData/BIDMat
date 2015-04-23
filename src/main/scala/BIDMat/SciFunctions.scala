@@ -969,6 +969,119 @@ object SciFunctions {
     }
   }
   
+  def cumsumByKey(a:FMat, b:FMat):FMat = a.cumsumByKey(b);
+  
+  def cumsumByKey(a:IMat, b:IMat):IMat = a.cumsumByKey(b);
+  
+  def cumsumByKey(a:GMat, b:GMat):GMat = a.cumsumByKey(b);
+  
+  def cumsumByKey(a:GMat, b:GIMat):GMat = a.cumsumByKey(b);
+  
+  def cumsumByKey(a:GIMat, b:GIMat):GIMat = a.cumsumByKey(b);
+  
+  def cumsumByKey(a:GIMat, b:GMat):GIMat = a.cumsumByKey(b);
+  
+  def cumsumByKey(a:GDMat, b:GDMat):GDMat = a.cumsumByKey(b);
+  
+  def cumsumByKey(a:GLMat, b:GLMat):GLMat = a.cumsumByKey(b);
+  
+  def cumsumByKey(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+    case (aa:FMat, bb:FMat) => aa.cumsumByKey(bb);
+//    case (aa:FMat, bb:IMat) => aa.cumsumByKey(bb);
+    case (aa:IMat, bb:IMat) => aa.cumsumByKey(bb);
+//    case (aa:IMat, bb:FMat) => aa.cumsumByKey(bb);
+    case (aa:GMat, bb:GMat) => aa.cumsumByKey(bb);
+    case (aa:GMat, bb:GIMat) => aa.cumsumByKey(bb);
+    case (aa:GIMat, bb:GIMat) => aa.cumsumByKey(bb);
+    case (aa:GIMat, bb:GMat) => aa.cumsumByKey(bb);
+    case (aa:GDMat, bb:GDMat) => aa.cumsumByKey(bb);
+    case (aa:GLMat, bb:GLMat) => aa.cumsumByKey(bb);
+    }
+  }
+  
+    
+  def cumsumByKey(a:FMat, b:FMat, omat:Mat):FMat = a.cumsumByKey(b, omat);
+  
+  def cumsumByKey(a:IMat, b:IMat, omat:Mat):IMat = a.cumsumByKey(b, omat);
+  
+  def cumsumByKey(a:GMat, b:GMat, omat:Mat):GMat = a.cumsumByKey(b, omat);
+  
+  def cumsumByKey(a:GMat, b:GIMat, omat:Mat):GMat = a.cumsumByKey(b, omat);
+  
+  def cumsumByKey(a:GIMat, b:GIMat, omat:Mat):GIMat = a.cumsumByKey(b, omat);
+  
+  def cumsumByKey(a:GIMat, b:GMat, omat:Mat):GIMat = a.cumsumByKey(b, omat);
+  
+  def cumsumByKey(a:GDMat, b:GDMat, omat:Mat):GDMat = a.cumsumByKey(b, omat);
+  
+  def cumsumByKey(a:GLMat, b:GLMat, omat:Mat):GLMat = a.cumsumByKey(b, omat);
+  
+  def cumsumByKey(a:Mat, b:Mat, omat:Mat):Mat = {
+    (a, b) match {
+    case (aa:FMat, bb:FMat) => aa.cumsumByKey(bb, omat);
+//    case (aa:FMat, bb:IMat) => aa.cumsumByKey(bb, omat);
+    case (aa:IMat, bb:IMat) => aa.cumsumByKey(bb, omat);
+//    case (aa:IMat, bb:FMat) => aa.cumsumByKey(bb, omat);
+    case (aa:GMat, bb:GMat) => aa.cumsumByKey(bb, omat);
+    case (aa:GMat, bb:GIMat) => aa.cumsumByKey(bb, omat);
+    case (aa:GIMat, bb:GIMat) => aa.cumsumByKey(bb, omat);
+    case (aa:GIMat, bb:GMat) => aa.cumsumByKey(bb, omat);
+    case (aa:GDMat, bb:GDMat) => aa.cumsumByKey(bb, omat);
+    case (aa:GLMat, bb:GLMat) => aa.cumsumByKey(bb, omat);
+    }
+  }
+  
+  def reverse(a:FMat):FMat = a._reverse(null);
+  
+  def reverse(a:IMat):IMat = a._reverse(null);
+  
+  def reverse(a:DMat):DMat = a._reverse(null);
+  
+  def reverse(a:LMat):LMat = a._reverse(null);
+  
+  def reverse(a:GMat):GMat = a._reverse(null);
+          
+  def reverse(a:GIMat):GIMat = a._reverse(null);
+  
+  def reverse(a:Mat, omat:Mat):Mat = {
+    a match {
+    case aa:FMat => aa._reverse(omat);
+    case aa:IMat => aa._reverse(omat);
+    case aa:DMat => aa._reverse(omat);
+    case aa:LMat => aa._reverse(omat);
+    case aa:GMat => aa._reverse(omat);
+    case aa:GIMat => aa._reverse(omat);
+    case aa:GDMat => aa._reverse(omat);
+    case aa:GLMat => aa._reverse(omat);
+    }
+  }
+  
+  def reverse(a:FMat, omat:Mat):FMat = a._reverse(omat);
+  
+  def reverse(a:IMat, omat:Mat):IMat = a._reverse(omat);
+  
+  def reverse(a:DMat, omat:Mat):DMat = a._reverse(omat);
+  
+  def reverse(a:LMat, omat:Mat):LMat = a._reverse(omat);
+  
+  def reverse(a:GMat, omat:Mat):GMat = a._reverse(omat);
+          
+  def reverse(a:GIMat, omat:Mat):GIMat = a._reverse(omat);
+  
+  def reverse(a:Mat):Mat = {
+    a match {
+    case aa:FMat => aa._reverse(null);
+    case aa:IMat => aa._reverse(null);
+    case aa:DMat => aa._reverse(null);
+    case aa:LMat => aa._reverse(null);
+    case aa:GMat => aa._reverse(null);
+    case aa:GIMat => aa._reverse(null);
+    case aa:GDMat => aa._reverse(null);
+    case aa:GLMat => aa._reverse(null);
+    }
+  }
+  
   def mean(a:FMat, dim0:Int):FMat = {
     _mean(a, dim0).asInstanceOf[FMat]
   }

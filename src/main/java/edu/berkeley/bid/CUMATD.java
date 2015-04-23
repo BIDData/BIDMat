@@ -138,5 +138,11 @@ public final class CUMATD {
     public static native int hammingdists(Pointer A, Pointer B, Pointer W, Pointer OP, Pointer OW, int n);
     
     public static native int cumsumc(int nrows, int ncols, Pointer A, Pointer B);
+    
+    public static native int cumsumByKeyDD(Pointer A, Pointer B, Pointer out, long len);
+    
+    public static native int cumsumByKeyLL(Pointer A, Pointer B, Pointer out, long len);
+    
+    public static native int reverse(Pointer A, Pointer out, long len);
 
 }

@@ -28,7 +28,15 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
       data(0)
     }
   
-  override def mytype = "IMat"
+  override def mytype = "IMat";
+  
+  override def view(nr:Int, nc:Int, sGUID:Boolean):IMat = {
+    val out = new IMat(nr, nc, data);
+    if (sGUID) out.setGUID(GUID);
+    out
+  }
+  
+  override def view(nr:Int, nc:Int):IMat = view(nr, nc, true);
     
   override def set(v:Float):IMat = {
     Arrays.fill(data,0,length,v.asInstanceOf[Int])
@@ -325,7 +333,64 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
 	  out
 	}
   
-  def kron(a:IMat):IMat = kron(a, null)
+  def kron(a:IMat):IMat = kron(a, null);
+  
+  def cumsumKeyLinear(keys:IMat, out:IMat, istart:Int, iend:Int) = {
+    var i = istart;
+    var sum = 0;
+    while (i < iend) {
+      sum += data(i);
+      out.data(i) = sum;
+      if (i + 1 < iend && keys(i) != keys(i+1)) sum = 0;
+      i += 1;
+    }    
+  }
+  
+  def cumsumByKey(keys:IMat, omat:Mat):IMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cumsumKey dimensions mismatch");
+    val out = IMat.newOrCheckIMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumByKey".##);
+    if (nrows == 1) {
+      cumsumKeyLinear(keys, out, 0, length);
+    } else {
+      var i = 0;
+      while (i < ncols) {
+        cumsumKeyLinear(keys, out, i*nrows, (i+1)*nrows);
+        i += 1;
+      }
+    }   
+    out
+  }
+  
+  def cumsumByKey(keys:IMat):IMat = cumsumByKey(keys, null);
+  
+  def reverseLinear(out:IMat, istart:Int, iend:Int) = {
+    var i = istart;
+    var sum = 0f;
+    while (i < iend) {
+      out.data(istart + iend - i - 1) = data(i)
+      i += 1;
+    }    
+  }
+  
+  def _reverse(omat:Mat):IMat = {
+    val out = IMat.newOrCheckIMat(nrows, ncols, omat, GUID,  "reverse".##);
+    if (nrows == 1) {
+      reverseLinear(out, 0, length);
+    } else {
+      var i = 0;
+      while (i < ncols) {
+        reverseLinear(out, i*nrows, (i+1)*nrows);
+        i += 1;
+      }
+    }   
+    out
+  }
+  
+  def reverse:IMat = _reverse(null);
+  
+  def reverse(omat:Mat):IMat = _reverse(omat);
+  
   /*
    * Operators with two IMat args
    */

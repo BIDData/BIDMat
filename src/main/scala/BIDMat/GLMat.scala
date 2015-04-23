@@ -35,7 +35,15 @@ class GLMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
 
   override def mytype = "GLMat"
     
-  override def nnz = length
+  override def nnz = length;
+  
+  override def view(nr:Int, nc:Int, sGUID:Boolean):GLMat = {
+    val out = new GLMat(nr, nc, data, realsize);
+    if (sGUID) out.setGUID(GUID);
+    out
+  }
+  
+  override def view(nr:Int, nc:Int):GLMat = view(nr, nc, true);
   
   override def apply(I:GIMat, J:GIMat):GLMat = applyx(I, J)
      
@@ -357,6 +365,30 @@ class GLMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
       case a:GMat => copyTo(a)
     }
   }
+  
+  def cumsumByKey(keys:GLMat, omat:Mat):GLMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cumsumKey dimensions mismatch");
+    val out = GLMat.newOrCheckGLMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
+    if (nrows == 1 || ncols == 1) {
+      CUMATD.cumsumByKeyLL(data, keys.data, out.data, llength);
+    } else {
+    	throw new RuntimeException("cumsumByKey only implemented for GLMat vectors");
+    }
+    out  
+  }
+  
+  def cumsumByKey(keys:GLMat):GLMat = cumsumByKey(keys, null);
+  
+  def _reverse(omat:Mat):GLMat = {
+    val out = GLMat.newOrCheckGLMat(nrows, ncols, omat, GUID,  "reverse".##);
+    CUMATD.reverse(data, out.data, llength);  
+    out
+  }
+  
+  def reverse:GLMat = _reverse(null);
+  
+  def reverse(omat:Mat):GLMat = _reverse(omat);
   
   override def free() = {
     JCublas.cublasFree(data);

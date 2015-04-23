@@ -218,4 +218,14 @@ public final class CUMAT {
     public static native int mergeLVecs(Pointer akeys, Pointer avals, Pointer bkeys, Pointer bvals, Pointer okeys, Pointer ovals, int n1, int n2);
     
     public static native int cumsumc(int nrows, int ncols, Pointer A, Pointer B);
+    
+    public static native int cumsumByKeyFF(Pointer A, Pointer B, Pointer out, long len);
+    
+    public static native int cumsumByKeyII(Pointer A, Pointer B, Pointer out, long len);
+    
+    public static native int cumsumByKeyFL(Pointer A, Pointer B, Pointer out, long len);
+    
+    public static native int cumsumByKeyIL(Pointer A, Pointer B, Pointer out, long len);
+    
+    public static native int reverse(Pointer A, Pointer out, long len);
 }

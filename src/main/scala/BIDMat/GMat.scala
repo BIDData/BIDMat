@@ -30,7 +30,15 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
   
   override def mytype = "GMat"
     
-  override def nnz = length
+  override def nnz = length;
+  
+  override def view(nr:Int, nc:Int, sGUID:Boolean):GMat = {
+    val out = new GMat(nr, nc, data, realsize);
+    if (sGUID) out.setGUID(GUID);
+    out
+  }
+  
+  override def view(nr:Int, nc:Int):GMat = view(nr, nc, true);
 
   override def apply(I:GIMat, J:GIMat):GMat = applyx(I, J)
      
@@ -778,6 +786,50 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
   		blockGemm(transa, transb, nr, nc, reps, aoff, lda, astep, b.asInstanceOf[GMat], boff, ldb, bstep, 
   		    c.asInstanceOf[GMat], coff, ldc, cstep);
   }
+  
+  def cumsumByKey(keys:GMat, omat:Mat):GMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cumsumKey dimensions mismatch");
+    val out = GMat.newOrCheckGMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
+    if (nrows == 1 || ncols == 1) {
+      CUMAT.cumsumByKeyFF(data, keys.data, out.data, llength);
+    } else {
+      val tmp = GLMat(nrows, ncols);
+      CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+      CUMAT.cumsumByKeyFL(data, tmp.data, out.data, llength);
+      tmp.free;
+    }
+    out  
+  }
+  
+  def cumsumByKey(keys:GIMat, omat:Mat):GMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cumsumKey dimensions mismatch");
+    val out = GMat.newOrCheckGMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
+    if (nrows == 1 || ncols == 1) {
+      CUMAT.cumsumByKeyFF(data, keys.data, out.data, llength);
+    } else {
+    	val tmp = GLMat(nrows, ncols);
+      CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+      CUMAT.cumsumByKeyFL(data, tmp.data, out.data, llength);
+      tmp.free;
+    }
+    out  
+  }
+  
+  def cumsumByKey(keys:GMat):GMat = cumsumByKey(keys, null);
+    
+  def cumsumByKey(keys:GIMat):GMat = cumsumByKey(keys, null);
+  
+  def _reverse(omat:Mat):GMat = {
+    val out = GMat.newOrCheckGMat(nrows, ncols, omat, GUID,  "reverse".##);
+    CUMAT.reverse(data, out.data, llength);  
+    out
+  }
+  
+  def reverse:GMat = _reverse(null);
+  
+  def reverse(omat:Mat):GMat = _reverse(omat);
   
   /*
    * Basic compute routines on pairs of GMats

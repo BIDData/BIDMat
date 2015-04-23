@@ -562,4 +562,42 @@ extern "C" {
     return cumsumc(nrows, ncols, A, B);
   }
 
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_cumsumByKeyDD
+(JNIEnv *env, jobject obj, jobject jvals, jobject jkeys, jobject jout, jlong len) 
+{
+  double * vals = (double *)getPointer(env, jvals);
+  double * keys = (double *)getPointer(env, jkeys);
+  double * out = (double *)getPointer(env, jout);
+
+  inclusive_scan_by_key_dd(vals, keys, out, len);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+  }
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_cumsumByKeyLL
+(JNIEnv *env, jobject obj, jobject jvals, jobject jkeys, jobject jout, jlong len) 
+{
+  long long * vals = (long long *)getPointer(env, jvals);
+  long long * keys = (long long *)getPointer(env, jkeys);
+  long long * out = (long long *)getPointer(env, jout);
+
+  inclusive_scan_by_key_ll(vals, keys, out, len);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+  }
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_reverse
+(JNIEnv *env, jobject obj, jobject jvals, jobject jout, jlong len) 
+{
+  double * vals = (double *)getPointer(env, jvals);
+  double * out = (double *)getPointer(env, jout);
+
+  reverse(vals, out, len);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+  }
+
 }

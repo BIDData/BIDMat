@@ -31,7 +31,15 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
   
   override def mytype = "GDMat"
     
-  override def nnz = length
+  override def nnz = length;
+  
+  override def view(nr:Int, nc:Int, sGUID:Boolean):GDMat = {
+    val out = new GDMat(nr, nc, data, realsize);
+    if (sGUID) out.setGUID(GUID);
+    out
+  }
+  
+  override def view(nr:Int, nc:Int):GDMat = view(nr, nc, true);
 
   override def apply(I:GIMat, J:GIMat):GDMat = applyx(I, J)
      
@@ -642,7 +650,30 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
     val out = GDMat.newOrCheckGDMat(nrows, ncols, null, GUID, "GDMat.copy".##)
     copyTo(out)
   }
+  
+  def cumsumByKey(keys:GDMat, omat:Mat):GDMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cumsumKey dimensions mismatch");
+    val out = GDMat.newOrCheckGDMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
+    if (nrows == 1 || ncols == 1) {
+      CUMATD.cumsumByKeyDD(data, keys.data, out.data, llength);
+    } else {
+    	throw new RuntimeException("cumsumByKey only implemented for GDMat vectors");
+    }
+    out  
+  }
+  
+  def cumsumByKey(keys:GDMat):GDMat = cumsumByKey(keys, null);
 
+  def _reverse(omat:Mat):GDMat = {
+    val out = GDMat.newOrCheckGDMat(nrows, ncols, omat, GUID,  "reverse".##);
+    CUMATD.reverse(data, out.data, llength);  
+    out
+  }
+  
+  def reverse:GDMat = _reverse(null);
+  
+  def reverse(omat:Mat):GDMat = _reverse(omat);
   
   override def recycle(nr:Int, nc:Int, nnz:Int):GDMat = {
     if (nrows == nr && nc == ncols) {

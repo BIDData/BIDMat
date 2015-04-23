@@ -123,3 +123,9 @@ int maxsumx(double *A, int lda, double *B, int ldb, double *C, int ldc, int d, i
 int dmv(double *A, int nr, int nc, double *B, double *C, int trans);
 
 int cumsumc(int nrows, int ncols, double *A, double *B);
+
+int inclusive_scan_by_key_dd(double *fvals, double *fkeys, double *fout, long long len);
+
+int inclusive_scan_by_key_ll(long long *fvals, long long *fkeys, long long *fout, long long len);
+
+int reverse(double *fvals, double *fout, long long len);

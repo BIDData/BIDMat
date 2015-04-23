@@ -9,6 +9,8 @@
 #include <thrust/reduce.h>
 #include <thrust/merge.h>
 #include <thrust/fill.h>
+#include <thrust/iterator/reverse_iterator.h>
+#include <thrust/device_vector.h>
 
 #if __CUDA_ARCH__ > 200
 #define MAXXGRID 2147483647
@@ -3288,3 +3290,47 @@ int cumsumc(int nrows, int ncols, float *A, float *B) {
   cudaError_t err = cudaGetLastError();
   return err;
 }
+
+int inclusive_scan_by_key_ff(float *fvals, float *fkeys, float *fout, long long len) {
+  thrust::device_ptr<float> vals(fvals);
+  thrust::device_ptr<float> keys(fkeys);
+  thrust::device_ptr<float> out(fout);
+
+  thrust::inclusive_scan_by_key(keys, keys+len, vals, out);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int inclusive_scan_by_key_ii(int *fvals, int *fkeys, int *fout, long long len) {
+  thrust::device_ptr<int> vals(fvals);
+  thrust::device_ptr<int> keys(fkeys);
+  thrust::device_ptr<int> out(fout);
+
+  thrust::inclusive_scan_by_key(keys, keys+len, vals, out);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int inclusive_scan_by_key_fl(float *fvals, long long *fkeys, float *fout, long long len) {
+  thrust::device_ptr<float> vals(fvals);
+  thrust::device_ptr<long long> keys(fkeys);
+  thrust::device_ptr<float> out(fout);
+
+  thrust::inclusive_scan_by_key(keys, keys+len, vals, out);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int reverse(float *fvals, float *fout, long long len) {
+  thrust::device_ptr<float> vals(fvals);
+  thrust::device_ptr<float> out(fout);
+
+  thrust::reverse_copy(vals, vals+len, out);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+

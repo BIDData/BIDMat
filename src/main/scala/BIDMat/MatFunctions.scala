@@ -983,6 +983,9 @@ object MatFunctions {
     mat
   }
   
+  /** Make a row vector from a 2-tuple. Supports the syntax 0->5 for ranges. */
+  def row(x:Tuple2[Int,Int]):FMat = row(x._1 until x._2)
+  
   /** Make a float column vector from an array of Floats. */
   def col(x:Array[Float]):FMat = {
   	val ahash = if (Mat.useCache) x.## else 0
@@ -1025,6 +1028,9 @@ object MatFunctions {
       mat.data(i) = x(i)
     mat
   }
+  
+ /** Make a col vector from a 2-tuple. Supports the syntax 0->5 for ranges. */
+  def col(x:Tuple2[Int,Int]):FMat = col(x._1 until x._2)
   
   /** Make a float matrix of zeros of the given size. */
   def zeros(nr:Int, nc:Int):FMat = FMat(nr,nc)

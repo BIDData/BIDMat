@@ -37,7 +37,15 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
       data(0)
     }
 
-  override def mytype = "DMat"
+  override def mytype = "DMat";
+  
+  override def view(nr:Int, nc:Int, sGUID:Boolean):DMat = {
+    val out = new DMat(nr, nc, data);
+    if (sGUID) out.setGUID(GUID);
+    out
+  }
+  
+  override def view(nr:Int, nc:Int):DMat = view(nr, nc, true);
       
   def horzcat(b: DMat) = DMat(ghorzcat(b))
 
@@ -635,6 +643,62 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
     Arrays.fill(this.data,0,length,0)
     this
   }
+  
+  def cumsumKeyLinear(keys:DMat, out:DMat, istart:Int, iend:Int) = {
+    var i = istart;
+    var sum = 0.0;
+    while (i < iend) {
+      sum += data(i);
+      out.data(i) = sum;
+      if (i + 1 < iend && keys(i) != keys(i+1)) sum = 0;
+      i += 1;
+    }    
+  }
+  
+  def cumsumByKey(keys:DMat, omat:Mat):DMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cumsumKey dimensions mismatch");
+    val out = DMat.newOrCheckDMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
+    if (nrows == 1) {
+      cumsumKeyLinear(keys, out, 0, length);
+    } else {
+      var i = 0;
+      while (i < ncols) {
+        cumsumKeyLinear(keys, out, i*nrows, (i+1)*nrows);
+        i += 1;
+      }
+    }   
+    out
+  }
+  
+  def cumsumByKey(keys:DMat):DMat = cumsumByKey(keys, null);
+  
+  def reverseLinear(out:DMat, istart:Int, iend:Int) = {
+    var i = istart;
+    var sum = 0f;
+    while (i < iend) {
+      out.data(istart + iend - i - 1) = data(i)
+      i += 1;
+    }    
+  }
+  
+  def _reverse(omat:Mat):DMat = {
+    val out = DMat.newOrCheckDMat(nrows, ncols, omat, GUID,  "reverse".##);
+    if (nrows == 1) {
+      reverseLinear(out, 0, length);
+    } else {
+      var i = 0;
+      while (i < ncols) {
+        reverseLinear(out, i*nrows, (i+1)*nrows);
+        i += 1;
+      }
+    }   
+    out
+  }
+  
+  def reverse:DMat = _reverse(null);
+  
+  def reverse(omat:Mat):DMat = _reverse(omat);
   
   override def recycle(nr:Int, nc:Int, nnz:Int):DMat = {
     if (nrows == nr && nc == ncols) {

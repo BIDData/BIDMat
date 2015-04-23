@@ -37,6 +37,14 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     }
   
   override def mytype = "FMat"
+    
+  override def view(nr:Int, nc:Int, sGUID:Boolean):FMat = {
+    val out = new FMat(nr, nc, data);
+    if (sGUID) out.setGUID(GUID);
+    out
+  }
+  
+  override def view(nr:Int, nc:Int):FMat = view(nr, nc, true);
   
   def i:CMat = CMat.imag(this)
   
@@ -950,32 +958,61 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     }
   }
   
-  def cumsumKeyLinear(v:FMat, out:FMat, istart:Int, iend:Int) = {
+  def cumsumKeyLinear(keys:FMat, out:FMat, istart:Int, iend:Int) = {
     var i = istart;
     var sum = 0f;
     while (i < iend) {
-      sum += v.data(i);
+      sum += data(i);
       out.data(i) = sum;
-      if (i + 1 < iend && data(i) != data(i+1)) sum = 0;
+      if (i + 1 < iend && keys(i) != keys(i+1)) sum = 0;
       i += 1;
     }    
   }
   
-  def cumsumKey(v:FMat):FMat = {
-    if (nrows != v.nrows || ncols != v.ncols) 
+  def cumsumByKey(keys:FMat, omat:Mat):FMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cumsumKey dimensions mismatch");
-    val out = FMat.newOrCheckFMat(nrows, ncols, null, GUID, v.GUID, "cumsumKey".##);
+    val out = FMat.newOrCheckFMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
     if (nrows == 1) {
-      cumsumKeyLinear(v, out, 0, length);
+      cumsumKeyLinear(keys, out, 0, length);
     } else {
       var i = 0;
       while (i < ncols) {
-        cumsumKeyLinear(v, out, i*nrows, (i+1)*nrows);
+        cumsumKeyLinear(keys, out, i*nrows, (i+1)*nrows);
         i += 1;
       }
     }   
     out
   }
+  
+  def cumsumByKey(keys:FMat):FMat = cumsumByKey(keys, null);
+  
+  def reverseLinear(out:FMat, istart:Int, iend:Int) = {
+    var i = istart;
+    var sum = 0f;
+    while (i < iend) {
+      out.data(istart + iend - i - 1) = data(i)
+      i += 1;
+    }    
+  }
+  
+  def _reverse(omat:Mat):FMat = {
+    val out = FMat.newOrCheckFMat(nrows, ncols, omat, GUID,  "reverse".##);
+    if (nrows == 1) {
+      reverseLinear(out, 0, length);
+    } else {
+      var i = 0;
+      while (i < ncols) {
+        reverseLinear(out, i*nrows, (i+1)*nrows);
+        i += 1;
+      }
+    }   
+    out
+  }
+  
+  def reverse:FMat = _reverse(null);
+  
+  def reverse(omat:Mat):FMat = _reverse(omat);
   
   override def recycle(nr:Int, nc:Int, nnz:Int):FMat = {
     if (nrows == nr && nc == ncols) {

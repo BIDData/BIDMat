@@ -29,6 +29,14 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     } else {
       toIMat().data(0)
     }
+  
+  override def view(nr:Int, nc:Int, sGUID:Boolean):GIMat = {
+    val out = new GIMat(nr, nc, data, realsize);
+    if (sGUID) out.setGUID(GUID);
+    out
+  }
+  
+  override def view(nr:Int, nc:Int):GIMat = view(nr, nc, true);
 
   override def mytype = "GIMat"
     
@@ -408,6 +416,50 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     }
     out
   }
+     
+  def cumsumByKey(keys:GIMat, omat:Mat):GIMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cumsumKey dimensions mismatch");
+    val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
+    if (nrows == 1 || ncols == 1) {
+      CUMAT.cumsumByKeyII(data, keys.data, out.data, llength);
+    } else {
+       val tmp = GLMat(nrows, ncols);
+      CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+      CUMAT.cumsumByKeyFL(data, tmp.data, out.data, llength);
+      tmp.free;
+    }
+    out  
+  }
+  
+  def cumsumByKey(keys:GMat, omat:Mat):GIMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cumsumKey dimensions mismatch");
+    val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
+    if (nrows == 1 || ncols == 1) {
+      CUMAT.cumsumByKeyII(data, keys.data, out.data, llength);
+    } else {
+      val tmp = GLMat(nrows, ncols);
+      CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+      CUMAT.cumsumByKeyIL(data, tmp.data, out.data, llength);
+      tmp.free;
+    }
+    out  
+  }
+  
+  def cumsumByKey(keys:GIMat):GIMat = cumsumByKey(keys, null);
+    
+  def cumsumByKey(keys:GMat):GIMat = cumsumByKey(keys, null);
+  
+  def _reverse(omat:Mat):GIMat = {
+    val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, GUID,  "reverse".##);
+    CUMAT.reverse(data, out.data, llength);  
+    out
+  }
+  
+  def reverse:GIMat = _reverse(null);
+  
+  def reverse(omat:Mat):GIMat = _reverse(omat);
  
   override def unary_- () = GIop(GIMat(-1), null, 2)
   def + (a : GIMat) = GIop(a, null, op_add)

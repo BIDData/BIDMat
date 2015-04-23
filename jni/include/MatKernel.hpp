@@ -195,3 +195,12 @@ int collectLVec(long long *pakeys, unsigned int *pavals, long long *pokeys, unsi
 int mergeLVecs(long long *pakeys, unsigned int *pavals, long long *pbkeys, unsigned int *pbvals, long long *pokeys, unsigned int *povals, int n1, int n2);
 
 int cumsumc(int nrows, int ncols, float *A, float *B);
+
+int inclusive_scan_by_key_ff(float *fvals, float *fkeys, float *fout, long long len);
+
+int inclusive_scan_by_key_ii(int *fvals, int *fkeys, int *fout, long long len);
+
+int inclusive_scan_by_key_fl(float *fvals, long long *fkeys, float *fout, long long len);
+
+int reverse(float *fvals, float *fout, long long len);
+

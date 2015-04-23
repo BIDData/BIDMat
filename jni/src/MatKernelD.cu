@@ -2319,3 +2319,35 @@ int cumsumc(int nrows, int ncols, double *A, double *B) {
   cudaError_t err = cudaGetLastError();
   return err;
 }
+
+int inclusive_scan_by_key_dd(double *fvals, double *fkeys, double *fout, long long len) {
+  thrust::device_ptr<double> vals(fvals);
+  thrust::device_ptr<double> keys(fkeys);
+  thrust::device_ptr<double> out(fout);
+
+  thrust::inclusive_scan_by_key(keys, keys+len, vals, out);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int inclusive_scan_by_key_ll(long long *fvals, long long *fkeys, long long *fout, long long len) {
+  thrust::device_ptr<long long> vals(fvals);
+  thrust::device_ptr<long long> keys(fkeys);
+  thrust::device_ptr<long long> out(fout);
+
+  thrust::inclusive_scan_by_key(keys, keys+len, vals, out);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int reverse(double *fvals, double *fout, long long len) {
+  thrust::device_ptr<double> vals(fvals);
+  thrust::device_ptr<double> out(fout);
+
+  thrust::reverse_copy(vals, vals+len, out);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
