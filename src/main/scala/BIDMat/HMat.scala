@@ -113,40 +113,63 @@ object HMat {
   }
   
   def readSomeInts(din:InputStream, a:Array[Int], buf:ByteBuffer, n:Int) {
+    val lbytes = 2;
+    val mask = (1 << lbytes) - 1;
     var nread = 0
     val ibuff = buf.asIntBuffer
     val bbuff = buf.array
     var readnow = 0
     while (nread < n) {
       val todo = if (n - nread > ibuff.capacity) ibuff.capacity else (n - nread)
-      readnow += din.read(bbuff, readnow, todo*4 - readnow)
-//      println("%d %d %d %d %d" format (nread, readnow, todo, ibuff.capacity, bbuff.length))
-      ibuff.get(a, nread, readnow/4)
+      readnow += din.read(bbuff, readnow, (todo << lbytes) - readnow)
+      ibuff.get(a, nread, readnow >> lbytes)
       ibuff.position(0)
-      nread += readnow/4
-      if (readnow % 4 != 0) {
-        System.arraycopy(bbuff, 4*(readnow/4), bbuff, 0, readnow % 4)
+      nread += readnow >> lbytes
+      if ((readnow & mask) != 0) {
+        System.arraycopy(bbuff, (readnow >> lbytes) << lbytes, bbuff, 0, readnow & mask)
       }
-      readnow = readnow % 4
+      readnow = readnow & mask;
+    }
+  }
+  
+  def readSomeLongs(din:InputStream, a:Array[Long], buf:ByteBuffer, n:Int) {
+    val lbytes = 3;
+    val mask = (1 << lbytes) - 1;
+    var nread = 0
+    val ibuff = buf.asLongBuffer
+    val bbuff = buf.array
+    var readnow = 0
+    while (nread < n) {
+      val todo = if (n - nread > ibuff.capacity) ibuff.capacity else (n - nread)
+      readnow += din.read(bbuff, readnow, (todo << lbytes) - readnow)
+      ibuff.get(a, nread, readnow >> lbytes)
+      ibuff.position(0)
+      nread += readnow >> lbytes
+      if ((readnow & mask) != 0) {
+        System.arraycopy(bbuff, (readnow >> lbytes) << lbytes, bbuff, 0, readnow & mask)
+      }
+      readnow = readnow & mask;
     }
   }
   
   def readSomeFloats(din:InputStream, a:Array[Float], buf:ByteBuffer, n:Int) {
-    var nread = 0
-    val fbuff = buf.asFloatBuffer
-    val bbuff = buf.array
-    var readnow = 0
-    while (nread < n) {
-      val todo = if (n - nread > fbuff.capacity) fbuff.capacity else (n - nread)
-      readnow += din.read(bbuff, readnow, todo*4 - readnow)
-      fbuff.get(a, nread, readnow/4)
-      fbuff.position(0)
-      nread += readnow/4  
-      if (readnow % 4 != 0) {
-        System.arraycopy(bbuff, 4*(readnow/4), bbuff, 0, readnow % 4)
-      }
-      readnow = readnow % 4
-    }
+  	val lbytes = 2;
+  	val mask = (1 << lbytes) - 1;
+  	var nread = 0;
+  	val fbuff = buf.asFloatBuffer;
+  	val bbuff = buf.array;
+  	var readnow = 0;
+  	while (nread < n) {
+  		val todo = if (n - nread > fbuff.capacity) fbuff.capacity else (n - nread);
+  		readnow += din.read(bbuff, readnow, (todo << lbytes) - readnow);
+  		fbuff.get(a, nread, readnow >> lbytes);
+  		fbuff.position(0);
+  		nread += readnow >> lbytes;  
+  	  if ((readnow & mask) != 0) {
+  		  System.arraycopy(bbuff, (readnow >> lbytes) << lbytes, bbuff, 0, readnow & mask);
+  	  }
+  	readnow = readnow & mask;
+  	}
   }
   
   def readSomeDoubles(din:InputStream, a:Array[Double], buf:ByteBuffer, n:Int) {
@@ -176,6 +199,19 @@ object HMat {
       ibuff.put(a, nwritten, todo)
       ibuff.position(0)
       dout.write(bbuff, 0, todo*4)
+      nwritten += todo
+    }
+  }
+  
+  def writeSomeLongs(dout:OutputStream, a:Array[Long], buf:ByteBuffer, n:Int) {
+    var nwritten = 0
+    val ibuff = buf.asLongBuffer
+    val bbuff = buf.array
+    while (nwritten < n) {
+    	val todo = if (n - nwritten > ibuff.capacity) ibuff.capacity else (n - nwritten)
+      ibuff.put(a, nwritten, todo)
+      ibuff.position(0)
+      dout.write(bbuff, 0, todo*8)
       nwritten += todo
     }
   }
@@ -222,7 +258,9 @@ object HMat {
       case 241 => loadSDMat(fname, compressed)
       case 341 => loadSDMat(fname, compressed)
       case 201 => loadSBMat(fname, compressed)
+      case 202 => loadCSMat(fname, compressed)
       case 301 => loadSBMat(fname, compressed)
+      case 302 => loadCSMat(fname, compressed)
     }
   }
   
@@ -238,6 +276,7 @@ object HMat {
       case a:SBMat => saveSBMat(fname, a, compressed)
       case a:SDMat => saveSDMat(fname, a, compressed)
       case a:SMat => saveSMat(fname, a, compressed)
+      case a:CSMat => saveCSMat(fname, a, compressed)
     }
   }
   
@@ -674,6 +713,42 @@ object HMat {
     out
   }
   
+   def loadCSMat(fname:String, compressed:Int=0):CSMat = {
+    val gin = getInputStream(fname, compressed);
+    val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder);
+    val hints = new Array[Int](4);
+    readSomeInts(gin, hints, buff, 4);
+    val ftype = hints(0);
+    val nrows = hints(1);
+    val ncols = hints(2);
+    val nnz = hints(3);
+    val len = nrows * ncols;
+    if (ftype != 202 && ftype != 302) {
+      throw new RuntimeException("loadCSMat expected type field 202 or 302 but was %d" format ftype);
+    }
+    val out = CSMat(nrows, ncols);
+    val jc = new Array[Long](len + 1);
+
+    readSomeLongs(gin, jc, buff, len+1);
+    var i = 0;
+    var maxlen = 0;
+    while (i < len) {
+      val siz = (jc(i+1) - jc(i)).toInt;
+      if (siz > maxlen) maxlen = siz;
+      i += 1;
+    }
+    val chbuf = new Array[Byte](maxlen);
+    i = 0;
+    while (i < len) {
+      val siz = (jc(i+1) - jc(i)).toInt;
+    	readSomeBytes(gin, chbuf, siz);
+    	out.data(i) = new String(chbuf, 0, siz, SBMat.encoding);
+    	i += 1;
+    }
+    gin.close
+    out
+  }
+  
   def saveSMat(fname:String, m:SMat, compressed:Int=0):Unit = {
     val gout = getOutputStream(fname, compressed)
     val hints = new Array[Int](4)
@@ -788,6 +863,44 @@ object HMat {
     }
     MatHDF5.addOne(m.jc)
     if (m.ir != null) MatHDF5.addOne(m.ir)
+    gout.close
+  } 
+   
+  def saveCSMat(fname:String, m:CSMat, compressed:Int=0):Unit = {
+    val gout = getOutputStream(fname, compressed);
+    val jc = new Array[Long](m.length+1);
+    jc(0) = 0;
+    var i = 0;
+    var nnz = 0L;
+    while (i < m.length) {
+      nnz += m.data(i).getBytes(SBMat.encoding).length;
+      jc(i+1) = nnz;
+      i += 1;
+    }
+    val hints = new Array[Int](4)
+    val tbuf = ByteBuffer.allocate(16).order(byteOrder)
+    hints(0) = 302 // 3=sparse:norows, 0=byte, 2=long
+    hints(1) = m.nrows
+    hints(2) = m.ncols
+    hints(3) = math.min(0x7fffffffL, nnz).toInt
+    writeSomeInts(gout, hints, tbuf, 4)
+    val buff = ByteBuffer.allocate(4*math.min(DEFAULT_BUFSIZE/4, math.max(m.ncols+1, nnz)).toInt).order(byteOrder);
+    try {
+    	writeSomeLongs(gout, jc, buff, m.length+1);
+      i = 0;
+      while (i < m.length) {
+        val bytes = m.data(i).getBytes(SBMat.encoding);
+        gout.write(bytes, 0, bytes.length);
+        i +=1;
+      }
+    } catch {
+      case e:Exception => {
+      	throw new RuntimeException("Exception in saveCSMat "+e)
+      }
+      case _:Throwable => {
+      	throw new RuntimeException("Problem in saveCSMat")
+      }
+    }
     gout.close
   } 
    
