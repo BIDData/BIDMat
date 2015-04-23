@@ -262,12 +262,13 @@ object Dict {
     (d, d1d, d2d, d3d, d4d, d5d, d6d)
   }
   
-  def treeAdd(x:Dict, tree:Array[Dict]) = {
+  def treeAdd(x:Dict, tree:Array[Dict], thresh:IMat = null) = {
     if (x != null) {
     	var dd = x
     	var j = 0 
     	while (tree(j) != null) {
-    		dd = union(tree(j), dd)
+    		dd = union(tree(j), dd);
+    		if (thresh.asInstanceOf[AnyRef] != null) dd = Dict(dd.cstr, dd.counts, thresh(j));
     		tree(j) = null
     		j += 1
     	}
