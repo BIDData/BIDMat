@@ -32,8 +32,7 @@ libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.11.6" % "test"
 
 libraryDependencies += "junit" % "junit" % "4.11" % "test"
 
-// Add these some day but for now they're missing native code dedendencies
-//libraryDependencies += "net.jpountz.lz4" % "lz4" % "1.3"
+libraryDependencies += "net.jpountz.lz4" % "lz4" % "1.3"
 
 //libraryDependencies += "org.scala-saddle" % "jhdf5" % "2.9"
 
