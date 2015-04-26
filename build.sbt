@@ -1,7 +1,7 @@
 
 name := "BIDMat"
 
-version := "1.0.1"
+version := "1.0.2"
 
 organization := "edu.berkeley.bid"
 
