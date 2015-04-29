@@ -38,6 +38,9 @@ class GLMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   override def nnz = length;
   
   override def view(nr:Int, nc:Int, sGUID:Boolean):GLMat = {
+    if (1L * nr * nc > realsize) {
+      throw new RuntimeException("view dimensions too large")
+    }
     val out = new GLMat(nr, nc, data, realsize);
     if (sGUID) out.setGUID(GUID);
     out
@@ -84,41 +87,31 @@ class GLMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   	}
   }
   
-  override def update(I:GIMat, J:GIMat, V:Mat) = updatex(I, J, V.asInstanceOf[GLMat])
+  override def apply(I:IMat):GLMat = applyx(GIMat(I))
   
-  override def update(I:GIMat, j:Int, V:Mat) = updatex(I, j, V.asInstanceOf[GLMat])
+  override def apply(I:GIMat):GLMat = applyx(I)
   
-  override def update(i:Int, J:GIMat, V:Mat) = updatex(i, J, V.asInstanceOf[GLMat])
-  
-  override def update(I:IMat, J:IMat, V:Mat) = updatex(GIMat(I), GIMat(J), V.asInstanceOf[GLMat])
-  
-  override def update(I:IMat, j:Int, V:Mat) = updatex(GIMat(I), j, V.asInstanceOf[GLMat])
-
-  override def update(i:Int, J:IMat, V:Mat) = updatex(i, GIMat(J), V.asInstanceOf[GLMat])
-  
-  override def update(I:Mat, J:Mat, V:Mat):GLMat = {
-  	(I, J, V) match {
-  	case (ii:IMat, jj:IMat, vv:GLMat) => update(GIMat(ii), GIMat(jj), vv)
-  	case (ii:GIMat, jj:IMat, vv:GLMat) => update(ii, GIMat(jj), vv)
-  	case (ii:IMat, jj:GIMat, vv:GLMat) => update(GIMat(ii), jj, vv)
-  	case (ii:GIMat, jj:GIMat, vv:GLMat) => update(ii, jj, vv)
+  override def apply(I:Mat):GLMat = {
+  	I match {
+  	case ii:IMat=> applyx(GIMat(ii))
+  	case ii:GIMat => applyx(ii)
   	}
   }
   
-  override def update(I:Mat, j:Int, V:Mat):GLMat = {
-  	(I, V) match {
-  	case (ii:IMat, vv:GLMat) => update(GIMat(ii), j, vv)
-  	case (ii:GIMat, vv:GLMat) => update(ii, j, vv)
+  def applyx(I:GIMat):GLMat = {
+  	I match {
+  	case (ii:MatrixWildcard) => {
+  		val out = GLMat.newOrCheckGLMat(length, 1, null, GUID, 0, 0, "applyXI".##);
+  		cudaMemcpy(out.data, data, 1L * length * Sizeof.DOUBLE, cudaMemcpyDeviceToDevice)
+  		out
+  	}
+  	case _ => {
+  		val out = GLMat.newOrCheckGLMat(I.nrows, I.ncols, null, GUID, I.GUID, "applyI".##);
+  		CUMATD.copyFromInds(data, out.data, I.data, I.llength)
+      out
+    }
   	}
   }
-  
-  override def update(i:Int, J:Mat, V:Mat):GLMat = {
-  	(J, V) match {
-  	case (jj:IMat, vv:GLMat) => update(i, GIMat(jj), vv)
-  	case (jj:GIMat, vv:GLMat) => update(i, jj, vv)
-  	}
-  }
- 
     
   def applyx(I:GIMat, J:GIMat):GLMat = {
     (I, J) match {
@@ -187,6 +180,52 @@ class GLMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     tmp(0)
   }
   
+  override def update(I:GIMat, J:GIMat, V:Mat) = updatex(I, J, V.asInstanceOf[GLMat])
+  
+  override def update(I:GIMat, j:Int, V:Mat) = updatex(I, j, V.asInstanceOf[GLMat])
+  
+  override def update(i:Int, J:GIMat, V:Mat) = updatex(i, J, V.asInstanceOf[GLMat])
+  
+  override def update(I:IMat, J:IMat, V:Mat) = updatex(GIMat(I), GIMat(J), V.asInstanceOf[GLMat])
+  
+  override def update(I:IMat, j:Int, V:Mat) = updatex(GIMat(I), j, V.asInstanceOf[GLMat])
+
+  override def update(i:Int, J:IMat, V:Mat) = updatex(i, GIMat(J), V.asInstanceOf[GLMat])
+  
+  override def update(I:Mat, J:Mat, V:Mat):GLMat = {
+  	(I, J, V) match {
+  	case (ii:IMat, jj:IMat, vv:GLMat) => update(GIMat(ii), GIMat(jj), vv)
+  	case (ii:GIMat, jj:IMat, vv:GLMat) => update(ii, GIMat(jj), vv)
+  	case (ii:IMat, jj:GIMat, vv:GLMat) => update(GIMat(ii), jj, vv)
+  	case (ii:GIMat, jj:GIMat, vv:GLMat) => update(ii, jj, vv)
+  	}
+  }
+  
+  override def update(I:Mat, j:Int, V:Mat):GLMat = {
+  	(I, V) match {
+  	case (ii:IMat, vv:GLMat) => update(GIMat(ii), j, vv)
+  	case (ii:GIMat, vv:GLMat) => update(ii, j, vv)
+  	}
+  }
+  
+  override def update(i:Int, J:Mat, V:Mat):GLMat = {
+  	(J, V) match {
+  	case (jj:IMat, vv:GLMat) => update(i, GIMat(jj), vv)
+  	case (jj:GIMat, vv:GLMat) => update(i, jj, vv)
+  	}
+  }
+  
+  def update(I:GIMat, V:GLMat):GLMat = updatex(I, V)
+  
+  override def update(I:GIMat, V:Mat):GLMat = updatex(I, V.asInstanceOf[GLMat])
+  
+  override def update(I:Mat, V:Mat):GLMat = {
+  	(I, V) match {
+  	case (jj:IMat, vv:GLMat) => updatex(GIMat(jj), vv)
+  	case (jj:GIMat, vv:GLMat) => updatex(jj, vv)
+  	}
+  }
+  
   def updatex(I:GIMat, J:GIMat, V:GLMat):GLMat = {
     (I, J) match {
       case (ii:MatrixWildcard, jj:MatrixWildcard) => {
@@ -229,6 +268,18 @@ class GLMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   	}
   	}
     this
+  }
+  
+  def updatex(I:GIMat, v:GLMat):GLMat = {
+  	I match {
+  	case (ii:MatrixWildcard) => {
+  		cudaMemcpy(data, v.data, 1L * length * Sizeof.DOUBLE, cudaMemcpyDeviceToDevice)
+  	}
+  	case _ => {
+  		CUMATD.copyToInds(data, v.data, I.data, I.llength)
+    }
+  	}
+  	this
   }
       
   override def update(i:Int, j:Int, v:Long):GLMat = {
@@ -446,12 +497,12 @@ class GLMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   override def /  (a : Float) = GIop(GLMat(a.toInt), null, op_div)
   override def ^  (a : Float) = GIop(GLMat(a.toInt), null, op_pow)
   
-  def + (a : Int) = GIop(GLMat(a), null, op_add)
-  def - (a : Int) = GIop(GLMat(a), null, op_sub)
-  def *@ (a : Int) = GIop(GLMat(a), null, op_mul)
-  def ∘  (a : Int) = GIop(GLMat(a), null, op_mul)
-  def /  (a : Int) = GIop(GLMat(a), null, op_div)
-  def ^  (a : Int) = GIop(GLMat(a), null, op_pow)
+  override def + (a : Int) = GIop(GLMat(a), null, op_add)
+  override def - (a : Int) = GIop(GLMat(a), null, op_sub)
+  override def *@ (a : Int) = GIop(GLMat(a), null, op_mul)
+  override def ∘  (a : Int) = GIop(GLMat(a), null, op_mul)
+  override def /  (a : Int) = GIop(GLMat(a), null, op_div)
+  override def ^  (a : Int) = GIop(GLMat(a), null, op_pow)
    
   override def < (b : Float) = GIop(GLMat(b.toInt), null, op_lt);
   override def > (b : Float) = GIop(GLMat(b.toInt), null, op_gt);
@@ -467,12 +518,12 @@ class GLMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   override def == (b : Double) = GIop(GLMat(b.toInt), null, op_eq)  
   override def != (b : Double) = GIop(GLMat(b.toInt), null, op_ne)
   
-  def < (b : Int) = GIop(GLMat(b), null, op_lt)
-  def > (b : Int) = GIop(GLMat(b), null, op_gt)
-  def <= (b : Int) = GIop(GLMat(b), null, op_le)
-  def >= (b : Int) = GIop(GLMat(b), null, op_ge)
-  def == (b : Int) = GIop(GLMat(b), null, op_eq)
-  def != (b : Int) = GIop(GLMat(b), null, op_ne)
+  override def < (b : Int) = GIop(GLMat(b), null, op_lt)
+  override def > (b : Int) = GIop(GLMat(b), null, op_gt)
+  override def <= (b : Int) = GIop(GLMat(b), null, op_le)
+  override def >= (b : Int) = GIop(GLMat(b), null, op_ge)
+  override def == (b : Int) = GIop(GLMat(b), null, op_eq)
+  override def != (b : Int) = GIop(GLMat(b), null, op_ne)
           
   
   def ~ (b: GLMat) = new GLPair(this, b)

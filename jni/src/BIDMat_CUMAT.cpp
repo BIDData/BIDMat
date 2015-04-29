@@ -166,6 +166,26 @@ extern "C" {
     return apply_binlop(nativeA, Anrows, Ancols, nativeB, Bnrows, Bncols, nativeC, opn);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_copyToInds
+  (JNIEnv *env, jobject obj, jobject jA, jobject jB, jobject jI, jlong length) 
+  {
+    float *A = (float*)getPointer(env, jA);
+    float *B = (float*)getPointer(env, jB);
+    int *I = (int*)getPointer(env, jI);
+
+    return copyToInds(A, B, I, length);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_copyFromInds
+  (JNIEnv *env, jobject obj, jobject jA, jobject jB, jobject jI, jlong length) 
+  {
+    float *A = (float*)getPointer(env, jA);
+    float *B = (float*)getPointer(env, jB);
+    int *I = (int*)getPointer(env, jI);
+
+    return copyFromInds(A, B, I, length);
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_copyToInds2D
   (JNIEnv *env, jobject obj, jobject jA, jint lda, jobject jB, jint ldb,
    jobject jI, jint nrows, jobject jJ, jint ncols) 
@@ -177,7 +197,6 @@ extern "C" {
 
     return copyToInds2D(A, lda, B, ldb, I, nrows, J, ncols);
   }
-
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_copyToInds2DLong
   (JNIEnv *env, jobject obj, jobject jA, jint lda, jobject jB, jint ldb,

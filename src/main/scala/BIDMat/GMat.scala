@@ -33,6 +33,9 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
   override def nnz = length;
   
   override def view(nr:Int, nc:Int, sGUID:Boolean):GMat = {
+  	if (1L * nr * nc > realsize) {
+      throw new RuntimeException("view dimensions too large")
+    }
     val out = new GMat(nr, nc, data, realsize);
     if (sGUID) out.setGUID(GUID);
     out
@@ -79,41 +82,17 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
   	}
   }
   
-  override def update(I:GIMat, J:GIMat, V:Mat) = updatex(I, J, V.asInstanceOf[GMat])
+  override def apply(I:IMat):GMat = applyx(GIMat(I))
   
-  override def update(I:GIMat, j:Int, V:Mat) = updatex(I, j, V.asInstanceOf[GMat])
+  override def apply(I:GIMat):GMat = applyx(I)
   
-  override def update(i:Int, J:GIMat, V:Mat) = updatex(i, J, V.asInstanceOf[GMat])
-  
-  override def update(I:IMat, J:IMat, V:Mat) = updatex(GIMat(I), GIMat(J), V.asInstanceOf[GMat])
-  
-  override def update(I:IMat, j:Int, V:Mat) = updatex(GIMat(I), j, V.asInstanceOf[GMat])
-
-  override def update(i:Int, J:IMat, V:Mat) = updatex(i, GIMat(J), V.asInstanceOf[GMat])
-  
-  override def update(I:Mat, J:Mat, V:Mat):GMat = {
-  	(I, J, V) match {
-  	case (ii:IMat, jj:IMat, vv:GMat) => update(GIMat(ii), GIMat(jj), vv)
-  	case (ii:GIMat, jj:IMat, vv:GMat) => update(ii, GIMat(jj), vv)
-  	case (ii:IMat, jj:GIMat, vv:GMat) => update(GIMat(ii), jj, vv)
-  	case (ii:GIMat, jj:GIMat, vv:GMat) => update(ii, jj, vv)
+  override def apply(I:Mat):GMat = {
+  	I match {
+  	case ii:IMat=> applyx(GIMat(ii))
+  	case ii:GIMat => applyx(ii)
   	}
   }
   
-  override def update(I:Mat, j:Int, V:Mat):GMat = {
-  	(I, V) match {
-  	case (ii:IMat, vv:GMat) => update(GIMat(ii), j, vv)
-  	case (ii:GIMat, vv:GMat) => update(ii, j, vv)
-  	}
-  }
-  
-  override def update(i:Int, J:Mat, V:Mat):GMat = {
-  	(J, V) match {
-  	case (jj:IMat, vv:GMat) => update(i, GIMat(jj), vv)
-  	case (jj:GIMat, vv:GMat) => update(i, jj, vv)
-  	}
-  }
-    
   def applyx(I:GIMat, J:GIMat):GMat = {
     (I, J) match {
       case (ii:MatrixWildcard, jj:MatrixWildcard) => {
@@ -138,6 +117,21 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
       }
     }
   } 
+  
+  def applyx(I:GIMat):GMat = {
+  	I match {
+  	case (ii:MatrixWildcard) => {
+  		val out = GMat.newOrCheckGMat(length, 1, null, GUID, 0, 0, "applyXI".##);
+  		cudaMemcpy(out.data, data, 1L * length * Sizeof.FLOAT, cudaMemcpyDeviceToDevice)
+  		out
+  	}
+  	case _ => {
+  		val out = GMat.newOrCheckGMat(I.nrows, I.ncols, null, GUID, I.GUID, "applyI".##);
+  		CUMAT.copyFromInds(data, out.data, I.data, I.llength)
+      out
+    }
+  	}
+  }
   
   def applyx(i:Int, J:GIMat):GMat = {
     val I = GIMat(i)
@@ -179,6 +173,53 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
     val tmp = new Array[Float](1)
     cudaMemcpy(Pointer.to(tmp), data.withByteOffset(1L*(i + j*nrows)*Sizeof.FLOAT), Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
     tmp(0)
+  }
+ 
+  
+  override def update(I:GIMat, J:GIMat, V:Mat) = updatex(I, J, V.asInstanceOf[GMat])
+  
+  override def update(I:GIMat, j:Int, V:Mat) = updatex(I, j, V.asInstanceOf[GMat])
+  
+  override def update(i:Int, J:GIMat, V:Mat) = updatex(i, J, V.asInstanceOf[GMat])
+  
+  override def update(I:IMat, J:IMat, V:Mat) = updatex(GIMat(I), GIMat(J), V.asInstanceOf[GMat])
+  
+  override def update(I:IMat, j:Int, V:Mat) = updatex(GIMat(I), j, V.asInstanceOf[GMat])
+
+  override def update(i:Int, J:IMat, V:Mat) = updatex(i, GIMat(J), V.asInstanceOf[GMat])
+  
+  override def update(I:Mat, J:Mat, V:Mat):GMat = {
+  	(I, J, V) match {
+  	case (ii:IMat, jj:IMat, vv:GMat) => update(GIMat(ii), GIMat(jj), vv)
+  	case (ii:GIMat, jj:IMat, vv:GMat) => update(ii, GIMat(jj), vv)
+  	case (ii:IMat, jj:GIMat, vv:GMat) => update(GIMat(ii), jj, vv)
+  	case (ii:GIMat, jj:GIMat, vv:GMat) => update(ii, jj, vv)
+  	}
+  }
+  
+  override def update(I:Mat, j:Int, V:Mat):GMat = {
+  	(I, V) match {
+  	case (ii:IMat, vv:GMat) => update(GIMat(ii), j, vv)
+  	case (ii:GIMat, vv:GMat) => update(ii, j, vv)
+  	}
+  }
+  
+  override def update(i:Int, J:Mat, V:Mat):GMat = {
+  	(J, V) match {
+  	case (jj:IMat, vv:GMat) => update(i, GIMat(jj), vv)
+  	case (jj:GIMat, vv:GMat) => update(i, jj, vv)
+  	}
+  }
+   
+  def update(I:GIMat, V:GMat):GMat = updatex(I, V)
+  
+  override def update(I:GIMat, V:Mat):GMat = updatex(I, V.asInstanceOf[GMat])
+  
+  override def update(I:Mat, V:Mat):GMat = {
+  	(I, V) match {
+  	case (jj:IMat, vv:GMat) => updatex(GIMat(jj), vv)
+  	case (jj:GIMat, vv:GMat) => updatex(jj, vv)
+  	}
   }
   
   def updatex(I:GIMat, J:GIMat, V:GMat):GMat = {
@@ -223,6 +264,18 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
   	}
   	}
     this
+  }
+  
+  def updatex(I:GIMat, v:GMat):GMat = {
+  	I match {
+  	case (ii:MatrixWildcard) => {
+  		cudaMemcpy(data, v.data, 1L * length * Sizeof.FLOAT, cudaMemcpyDeviceToDevice)
+  	}
+  	case _ => {
+  		CUMAT.copyToInds(data, v.data, I.data, I.llength)
+    }
+  	}
+  	this
   }
       
   override def update(i:Int, j:Int, v:Float):GMat = {
@@ -861,12 +914,13 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
   override def /  (a : Float) = gOp(GMat(a), null, op_div)
   override def ^  (a : Float) = gOp(GMat(a), null, op_pow)
   
-  def + (a : Int) = gOp(GMat(a.toFloat), null, op_add)
-  def - (a : Int) = gOp(GMat(a.toFloat), null, op_sub)
-  def *@ (a : Int) = gOp(GMat(a.toFloat), null, op_mul)
-  def ∘  (a : Int) = gOp(GMat(a.toFloat), null, op_mul)
-  def /  (a : Int) = gOp(GMat(a.toFloat), null, op_div)
-  def ^  (a : Int) = gOp(GMat(a.toFloat), null, op_pow)
+  override def + (a : Int) = gOp(GMat(a.toFloat), null, op_add)
+  override def - (a : Int) = gOp(GMat(a.toFloat), null, op_sub)
+  override def *@ (a : Int) = gOp(GMat(a.toFloat), null, op_mul)
+  override def * (a : Int) = gOp(GMat(a.toFloat), null, op_mul)
+  override def ∘  (a : Int) = gOp(GMat(a.toFloat), null, op_mul)
+  override def /  (a : Int) = gOp(GMat(a.toFloat), null, op_div)
+  override def ^  (a : Int) = gOp(GMat(a.toFloat), null, op_pow)
   
   def > (b : GMat) = gOp(b, null, op_gt)
   def < (b : GMat) = gOp(b, null, op_lt)
@@ -890,12 +944,12 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
   override def == (b : Double) = gOp(GMat(b), null, op_eq)  
   override def != (b : Double) = gOp(GMat(b), null, op_ne)
   
-  def < (b : Int) = gOp(GMat(b), null, op_lt)
-  def > (b : Int) = gOp(GMat(b), null, op_gt)
-  def <= (b : Int) = gOp(GMat(b), null, op_le)
-  def >= (b : Int) = gOp(GMat(b), null, op_ge)
-  def == (b : Int) = gOp(GMat(b), null, op_eq)
-  def != (b : Int) = gOp(GMat(b), null, op_ne)
+  override def < (b : Int) = gOp(GMat(b), null, op_lt)
+  override def > (b : Int) = gOp(GMat(b), null, op_gt)
+  override def <= (b : Int) = gOp(GMat(b), null, op_le)
+  override def >= (b : Int) = gOp(GMat(b), null, op_ge)
+  override def == (b : Int) = gOp(GMat(b), null, op_eq)
+  override def != (b : Int) = gOp(GMat(b), null, op_ne)
 
   
   def on(a : GMat) = vertcat(a, null)

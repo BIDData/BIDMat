@@ -40,6 +40,9 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   override def mytype = "DMat";
   
   override def view(nr:Int, nc:Int, sGUID:Boolean):DMat = {
+  	if (1L * nr * nc > length) {
+      throw new RuntimeException("view dimensions too large")
+    }
     val out = new DMat(nr, nc, data);
     if (sGUID) out.setGUID(GUID);
     out

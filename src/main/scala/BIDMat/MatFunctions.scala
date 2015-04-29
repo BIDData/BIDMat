@@ -158,6 +158,37 @@ object MatFunctions {
     }
   }
   
+   /** Convert to the corresponding float type */
+  def float(a:IMat):FMat = {
+    FMat(a);
+  }
+  
+  def float(a:DMat):FMat = {
+    FMat(a);
+  }
+  
+  def float(a:FMat):FMat = {
+    a
+  }
+  
+  def float(a:GMat):GMat = {
+    a
+  }
+  
+  def float(a:GIMat):GMat = {
+    GMat(a);
+  }
+  
+  def float(a:Mat):Mat = {
+    a match {
+      case fa:FMat => fa;
+      case da:DMat => FMat(da);
+      case ia:IMat => FMat(ia);
+      case ga:GMat => ga;
+      case gi:GIMat => GMat(gi);
+    }
+  }
+  
   // TODO Document
   def threadPool(n:Int = Mat.numThreads):scala.concurrent.ExecutionContextExecutor = {
     import scala.concurrent.ExecutionContext

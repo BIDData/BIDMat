@@ -203,10 +203,10 @@ __global__ void __apply_gfun(float *A, float *B, int N, int opn) {
 }
 
 
-void setsizes(int N, dim3 *gridp, int *nthreadsp) {
+void setsizes(long long N, dim3 *gridp, int *nthreadsp) {
   int nblocks = 1;
   int nthreads = 32;
-  while (nblocks * nthreads < N) {
+  while (1L * nblocks * nthreads < N) {
     if (nblocks < 16) {
       nblocks = 2*nblocks;
     } else if (nthreads < 1024) {
@@ -710,6 +710,45 @@ int apply_binlop(long long *A, int Anrows, int Ancols,
   } else if (Anrows == 1 && Ancols == 1) {
     __apply_left_val_long<<<griddims,nthreads>>>(A, B, C, Bnrows, Bncols, opn);
   }
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+__global__ void __copyToInds(float *A, float *B, int *I, long long len) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  int step = blockDim.x * gridDim.x * gridDim.y;
+  long long i;
+  for (i = tid; i < len; i += step) {
+    B[I[i]] = A[i];
+  }
+}
+
+int copyToInds(float *A, float *B, int *I, long long len) {
+  int nthreads;
+  dim3 griddims;
+  setsizes(len, &griddims, &nthreads);
+  __copyToInds<<<griddims,nthreads>>>(A, B, I, len);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+template<typename T>
+__global__ void __copyFromInds(T *A, T *B, int *I, long long len) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  int step = blockDim.x * gridDim.x * gridDim.y;
+  long long i;
+  for (i = tid; i < len; i += step) {
+    B[i] = A[I[i]];
+  }
+}
+
+int copyFromInds(float *A, float *B, int *I, long long len) {
+  int nthreads;
+  dim3 griddims;
+  setsizes(len, &griddims, &nthreads);
+  __copyFromInds<<<griddims,nthreads>>>(A, B, I, len);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;

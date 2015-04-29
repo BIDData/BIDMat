@@ -31,6 +31,9 @@ case class LMat(nr:Int, nc:Int, data0:Array[Long]) extends DenseMat[Long](nr, nc
   override def mytype = "LMat";
   
   override def view(nr:Int, nc:Int, sGUID:Boolean):LMat = {
+  	if (1L * nr * nc > length) {
+      throw new RuntimeException("view dimensions too large")
+    }
     val out = new LMat(nr, nc, data);
     if (sGUID) out.setGUID(GUID);
     out
@@ -436,11 +439,11 @@ case class LMat(nr:Int, nc:Int, data0:Array[Long]) extends DenseMat[Long](nr, nc
   
   def \ (b: Int) = horzcat(LMat.lelem(b))
   def on (b: Int) = vertcat(LMat.lelem(b)) 
-  def * (b : Int) = iMult(LMat.lelem(b), null)
-  def + (b : Int) = iiMatOpScalarv(b, LMat.vecAddFun, null)
-  def - (b : Int) = iiMatOpScalarv(b, LMat.vecSubFun, null)
-  def *@ (b : Int) = iiMatOpScalarv(b, LMat.vecMulFun, null)
-  def ∘  (b : Int) = iiMatOpScalarv(b, LMat.vecMulFun, null)
+  override def * (b : Int) = iMult(LMat.lelem(b), null)
+  override def + (b : Int) = iiMatOpScalarv(b, LMat.vecAddFun, null)
+  override def - (b : Int) = iiMatOpScalarv(b, LMat.vecSubFun, null)
+  override def *@ (b : Int) = iiMatOpScalarv(b, LMat.vecMulFun, null)
+  override def ∘  (b : Int) = iiMatOpScalarv(b, LMat.vecMulFun, null)
   
   def \ (b: Float) = horzcat(LMat.lelem(b.toLong))
   def on (b: Float) = vertcat(LMat.lelem(b.toLong)) 
@@ -468,12 +471,12 @@ case class LMat(nr:Int, nc:Int, data0:Array[Long]) extends DenseMat[Long](nr, nc
   def <= (b : Long) = iiMatOpScalarv(b, LMat.vecLEFun, null)
   def != (b : Long) = iiMatOpScalarv(b, LMat.vecNEFun, null)
   
-  def > (b : Int) = iiMatOpScalarv(b, LMat.vecGTFun, null)
-  def < (b : Int) = iiMatOpScalarv(b, LMat.vecLTFun, null)
-  def == (b : Int) = iiMatOpScalarv(b, LMat.vecEQFun, null)
-  def >= (b : Int) = iiMatOpScalarv(b, LMat.vecGEFun, null)
-  def <= (b : Int) = iiMatOpScalarv(b, LMat.vecLEFun, null)
-  def != (b : Int) = iiMatOpScalarv(b, LMat.vecNEFun, null)
+  override def > (b : Int) = iiMatOpScalarv(b, LMat.vecGTFun, null)
+  override def < (b : Int) = iiMatOpScalarv(b, LMat.vecLTFun, null)
+  override def == (b : Int) = iiMatOpScalarv(b, LMat.vecEQFun, null)
+  override def >= (b : Int) = iiMatOpScalarv(b, LMat.vecGEFun, null)
+  override def <= (b : Int) = iiMatOpScalarv(b, LMat.vecLEFun, null)
+  override def != (b : Int) = iiMatOpScalarv(b, LMat.vecNEFun, null)
   
   override def > (b : Float) = iiMatOpScalarv(b.toLong, LMat.vecGTFun, null)
   override def < (b : Float) = iiMatOpScalarv(b.toLong, LMat.vecLTFun, null)

@@ -244,6 +244,22 @@ class Mat(nr:Int, nc:Int) {
   def === (b : Float):Mat = notImplemented2("===", b)
   def != (b : Float):Mat = notImplemented2("!=", b)
   
+  def *  (b : Int):Mat = notImplemented2("*", b)
+  def +  (b : Int):Mat = notImplemented2("+", b)
+  def -  (b : Int):Mat = notImplemented2("-", b)
+  def *@ (b : Int):Mat = notImplemented2("*@", b)
+  def ∘  (b : Int):Mat = notImplemented2("∘", b)
+  def / (b : Int):Mat = notImplemented2("/", b)
+  def ^  (b : Int):Mat = notImplemented2("^", b)
+  
+  def >  (b : Int):Mat = notImplemented2(">", b)
+  def <  (b : Int):Mat = notImplemented2("<", b)
+  def >= (b : Int):Mat = notImplemented2(">=", b)
+  def <= (b : Int):Mat = notImplemented2("<=", b)
+  def == (b : Int):Mat = notImplemented2("==", b)
+  def === (b : Int):Mat = notImplemented2("===", b)
+  def != (b : Int):Mat = notImplemented2("!=", b)
+  
     def *  (b : Double):Mat = notImplemented2("*", b)
   def +  (b : Double):Mat = notImplemented2("+", b)
   def -  (b : Double):Mat = notImplemented2("-", b)
@@ -269,9 +285,12 @@ class Mat(nr:Int, nc:Int) {
     case bb:DMat => new DPair(this, bb)
     case bb:IMat => new IPair(this, bb)
     case bb:SMat => new SPair(this, bb)
-//    case bb:SDMat => new SDPair(this, bb)
+    case bb:SDMat => new SDPair(this, bb)
     case bb:CMat => new CPair(this, bb)
     case bb:GMat => new GPair(this, bb)
+    case bb:GIMat => new GIPair(this, bb)
+    case bb:GDMat => new GDPair(this, bb)
+    case bb:GLMat => new GLPair(this, bb)
   }
   
   def ddot (b : Mat):Double = {notImplemented1("ddot", b); 0}
@@ -295,7 +314,7 @@ abstract class Pair {
     throw new RuntimeException("operator "+s+" not implemented for "+this)
   }
   def notImplemented1(s:String,that:Mat):Mat = { 
-    throw new RuntimeException("operator "+s+" not implemented for "+this+" and "+that)
+    throw new RuntimeException("operator "+s+" not implemented for "+this+" and "+that.mytype)
   }
   
   def t = notImplemented0("t")

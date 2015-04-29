@@ -793,6 +793,8 @@ object SciFunctions {
       case (aa:LMat, bb:LMat) => max(aa, bb, c):LMat
       case (aa:DMat, bb:DMat) => max(aa, bb, c):DMat
       case (aa:GMat, bb:GMat) => max(aa, bb, c):GMat
+      case (aa:GIMat, bb:GIMat) => max(aa, bb, c):GIMat
+      case (aa:GLMat, bb:GLMat) => max(aa, bb, c):GLMat
       case (aa:IMat, bb:FMat) => max(FMat(aa), bb, c):FMat
       case (aa:FMat, bb:IMat) => max(aa, FMat(bb), c):FMat
       case (aa:FMat, bb:GMat) => max(GMat(aa), bb, c):GMat
@@ -814,6 +816,8 @@ object SciFunctions {
       case (aa:LMat, bb:LMat) => min(aa, bb, c):LMat
       case (aa:DMat, bb:DMat) => min(aa, bb, c):DMat
       case (aa:GMat, bb:GMat) => min(aa, bb, c):GMat
+      case (aa:GIMat, bb:GIMat) => min(aa, bb, c):GIMat
+      case (aa:GLMat, bb:GLMat) => min(aa, bb, c):GLMat
       case (aa:IMat, bb:FMat) => min(FMat(aa), bb, c):FMat
       case (aa:FMat, bb:IMat) => min(aa, FMat(bb), c):FMat
       case (aa:FMat, bb:GMat) => min(GMat(aa), bb, c):GMat
@@ -2309,6 +2313,10 @@ object SciFunctions {
   import GMat.BinOp
   def max(a:GMat, b:GMat):GMat    = max(a, b, null)
   def min(a:GMat, b:GMat):GMat    = min(a, b, null)
+  def max(a:GIMat, b:GIMat):GIMat    = max(a, b, null)
+  def min(a:GIMat, b:GIMat):GIMat    = min(a, b, null)
+  def max(a:GLMat, b:GLMat):GLMat    = max(a, b, null)
+  def min(a:GLMat, b:GLMat):GLMat    = min(a, b, null)
   def max(a:GMat, b:FMat):GMat    = max(a, b, null)
   def min(a:GMat, b:FMat):GMat    = min(a, b, null)
   def max(a:FMat, b:GMat):GMat    = max(a, b, null)
@@ -2322,6 +2330,10 @@ object SciFunctions {
   
   def max(a:GMat, b:GMat, out:Mat):GMat    = a.gOp(b, out, BinOp.op_max)
   def min(a:GMat, b:GMat, out:Mat):GMat    = a.gOp(b, out, BinOp.op_min)
+  def max(a:GIMat, b:GIMat, out:Mat):GIMat = a.GIop(b, out, BinOp.op_max)
+  def min(a:GIMat, b:GIMat, out:Mat):GIMat = a.GIop(b, out, BinOp.op_min)
+  def max(a:GLMat, b:GLMat, out:Mat):GLMat = a.GIop(b, out, BinOp.op_max)
+  def min(a:GLMat, b:GLMat, out:Mat):GLMat = a.GIop(b, out, BinOp.op_min)
   def max(a:GMat, b:FMat, out:Mat):GMat    = a.gOp(GMat(b), out, BinOp.op_max)
   def min(a:GMat, b:FMat, out:Mat):GMat    = a.gOp(GMat(b), out, BinOp.op_min)
   def max(a:FMat, b:GMat, out:Mat):GMat    = GMat(a).gOp(b, out, BinOp.op_max)

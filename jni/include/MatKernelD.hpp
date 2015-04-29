@@ -1,4 +1,4 @@
-void setsizes(int N, dim3 *gridp, int *nthreadsp);
+void setsizesD(long long N, dim3 *gridp, int *nthreadsp);
 
 int apply_binop(double *nativeA, int Anrows, int Ancols, double *nativeB, int Bnrows, int Bncols, double *nativeC, int opn);
 

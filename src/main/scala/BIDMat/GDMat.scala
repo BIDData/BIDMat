@@ -34,6 +34,9 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
   override def nnz = length;
   
   override def view(nr:Int, nc:Int, sGUID:Boolean):GDMat = {
+    if (1L * nr * nc > realsize) {
+      throw new RuntimeException("view dimensions too large")
+    }
     val out = new GDMat(nr, nc, data, realsize);
     if (sGUID) out.setGUID(GUID);
     out
@@ -77,6 +80,32 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
   	J match {
   	case jj:IMat=> applyx(i, GIMat(jj))
   	case jj:GIMat => applyx(i, jj)
+  	}
+  }
+  
+  override def apply(I:IMat):GDMat = applyx(GIMat(I))
+  
+  override def apply(I:GIMat):GDMat = applyx(I)
+  
+  override def apply(I:Mat):GDMat = {
+  	I match {
+  	case ii:IMat=> applyx(GIMat(ii))
+  	case ii:GIMat => applyx(ii)
+  	}
+  }
+  
+  def applyx(I:GIMat):GDMat = {
+  	I match {
+  	case (ii:MatrixWildcard) => {
+  		val out = GDMat.newOrCheckGDMat(length, 1, null, GUID, 0, 0, "applyXI".##);
+  		cudaMemcpy(out.data, data, 1L * length * Sizeof.DOUBLE, cudaMemcpyDeviceToDevice)
+  		out
+  	}
+  	case _ => {
+  		val out = GDMat.newOrCheckGDMat(I.nrows, I.ncols, null, GUID, I.GUID, "applyI".##);
+  		CUMATD.copyFromInds(data, out.data, I.data, I.llength)
+      out
+    }
   	}
   }
   
@@ -182,6 +211,17 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
     tmp(0)
   }
   
+  def update(I:GIMat, V:GDMat):GDMat = updatex(I, V)
+  
+  override def update(I:GIMat, V:Mat):GDMat = updatex(I, V.asInstanceOf[GDMat])
+  
+  override def update(I:Mat, V:Mat):GDMat = {
+  	(I, V) match {
+  	case (jj:IMat, vv:GDMat) => updatex(GIMat(jj), vv)
+  	case (jj:GIMat, vv:GDMat) => updatex(jj, vv)
+  	}
+  }
+  
   def updatex(I:GIMat, J:GIMat, V:GDMat):GDMat = {
     (I, J) match {
       case (ii:MatrixWildcard, jj:MatrixWildcard) => {
@@ -224,6 +264,18 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
   	}
   	}
     this
+  }
+  
+  def updatex(I:GIMat, v:GDMat):GDMat = {
+  	I match {
+  	case (ii:MatrixWildcard) => {
+  		cudaMemcpy(data, v.data, 1L * length * Sizeof.DOUBLE, cudaMemcpyDeviceToDevice)
+  	}
+  	case _ => {
+  		CUMATD.copyToInds(data, v.data, I.data, I.llength)
+    }
+  	}
+  	this
   }
   
   override def update(I:GIMat, j:Int, v:Double):GDMat = {
@@ -762,13 +814,13 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
   override def /  (a : Double) = gOp(GDMat(a), null, op_div)
   override def ^  (a : Double) = gOp(GDMat(a), null, op_pow)
   
-  def + (a : Int) = gOp(GDMat(a.toDouble), null, op_add)
-  def - (a : Int) = gOp(GDMat(a.toDouble), null, op_sub)
-  def *@ (a : Int) = gOp(GDMat(a.toDouble), null, op_mul)
-  def * (a : Int) = gOp(GDMat(a.toDouble), null, op_mul)
-  def ∘  (a : Int) = gOp(GDMat(a.toDouble), null, op_mul)
-  def /  (a : Int) = gOp(GDMat(a.toDouble), null, op_div)
-  def ^  (a : Int) = gOp(GDMat(a.toDouble), null, op_pow)
+  override def + (a : Int) = gOp(GDMat(a.toDouble), null, op_add)
+  override def - (a : Int) = gOp(GDMat(a.toDouble), null, op_sub)
+  override def *@ (a : Int) = gOp(GDMat(a.toDouble), null, op_mul)
+  override def * (a : Int) = gOp(GDMat(a.toDouble), null, op_mul)
+  override def ∘  (a : Int) = gOp(GDMat(a.toDouble), null, op_mul)
+  override def /  (a : Int) = gOp(GDMat(a.toDouble), null, op_div)
+  override def ^  (a : Int) = gOp(GDMat(a.toDouble), null, op_pow)
   
   def > (b : GDMat) = gOp(b, null, op_gt)
   def < (b : GDMat) = gOp(b, null, op_lt)
@@ -785,12 +837,12 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
   override def == (b : Float) = gOp(GDMat(b), null, op_eq)
   override def != (b : Float) = gOp(GDMat(b), null, op_ne)
 
-  def < (b : Int) = gOp(GDMat(b), null, op_lt)
-  def > (b : Int) = gOp(GDMat(b), null, op_gt)
-  def <= (b : Int) = gOp(GDMat(b), null, op_le)
-  def >= (b : Int) = gOp(GDMat(b), null, op_ge)
-  def == (b : Int) = gOp(GDMat(b), null, op_eq)
-  def != (b : Int) = gOp(GDMat(b), null, op_ne)
+  override def < (b : Int) = gOp(GDMat(b), null, op_lt)
+  override def > (b : Int) = gOp(GDMat(b), null, op_gt)
+  override def <= (b : Int) = gOp(GDMat(b), null, op_le)
+  override def >= (b : Int) = gOp(GDMat(b), null, op_ge)
+  override def == (b : Int) = gOp(GDMat(b), null, op_eq)
+  override def != (b : Int) = gOp(GDMat(b), null, op_ne)
  
   override def < (b : Double) = gOp(GDMat(b), null, op_lt)
   override def > (b : Double) = gOp(GDMat(b), null, op_gt)

@@ -1,6 +1,6 @@
 #include <cuda_runtime.h>
 #include <stdio.h>
-#include <MatKernel.hpp>
+#include <MatKernelD.hpp>
 
 __device__ double atomicAdd(double* address, double val)
 {
@@ -150,10 +150,10 @@ __global__ void __apply_gfun(double *A, double *B, int N, int opn) {
 }
 
 
-void setsizesD(int N, dim3 *gridp, int *nthreadsp) {
+void setsizesD(long long N, dim3 *gridp, int *nthreadsp) {
   int nblocks = 1;
   int nthreads = 32;
-  while (nblocks * nthreads < N) {
+  while (1L * nblocks * nthreads < N) {
     if (nblocks < 16) {
       nblocks = 2*nblocks;
     } else if (nthreads < 1024) {
@@ -409,7 +409,7 @@ int sdoprow(int nrows, int ncols, int nnz, double *A, int *Aic,
             double *B, int len, int opn) {
   int nthreads;
   dim3 griddims;
-  setsizes(nnz, &griddims, &nthreads);
+  setsizesD(nnz, &griddims, &nthreads);
   if (len > 1) {
     __sdoprow<<<griddims,nthreads>>>(nrows, ncols, nnz, A, Aic, B, opn);
   } else {
@@ -424,7 +424,7 @@ int sdopcol(int nrows, int ncols, int nnz, double *A, int *Air,
             double *B, int len, int opn) {
   int nthreads;
   dim3 griddims;
-  setsizes(nnz, &griddims, &nthreads);
+  setsizesD(nnz, &griddims, &nthreads);
   if (len > 1) {
     __sdopcol<<<griddims,nthreads>>>(nrows, ncols, nnz, A, Air, B, opn);
   } else {

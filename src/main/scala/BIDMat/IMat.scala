@@ -31,6 +31,9 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   override def mytype = "IMat";
   
   override def view(nr:Int, nc:Int, sGUID:Boolean):IMat = {
+    if (1L * nr * nc > length) {
+      throw new RuntimeException("view dimensions too large")
+    }
     val out = new IMat(nr, nc, data);
     if (sGUID) out.setGUID(GUID);
     out
@@ -418,21 +421,21 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   def on (b: IMat) = vertcat(b)
   def on (b: Int) = vertcat(IMat.ielem(b))
   
-  def * (b : Int) = iMult(IMat.ielem(b), null)
-  def + (b : Int) = iiMatOpScalarv(b, IMat.vecAddFun, null)
-  def - (b : Int) = iiMatOpScalarv(b, IMat.vecSubFun, null)
-  def *@ (b : Int) = iiMatOpScalarv(b, IMat.vecMulFun, null)
-  def ∘  (b : Int) = iiMatOpScalarv(b, IMat.vecMulFun, null)
+  override def * (b : Int) = iMult(IMat.ielem(b), null)
+  override def + (b : Int) = iiMatOpScalarv(b, IMat.vecAddFun, null)
+  override def - (b : Int) = iiMatOpScalarv(b, IMat.vecSubFun, null)
+  override def *@ (b : Int) = iiMatOpScalarv(b, IMat.vecMulFun, null)
+  override def ∘  (b : Int) = iiMatOpScalarv(b, IMat.vecMulFun, null)
 
 //  def /@ (b : Int) = mat.iiMatOpScalarv(b, IMat.fVecDiv _, null)
 //  def ^ (b : Int) = mat.iiMatOpScalar(b, (x:Float, y:Float) => math.pow(x,y).toFloat, null)
 
-  def > (b : Int) = iiMatOpScalarv(b, IMat.vecGTFun, null)
-  def < (b : Int) = iiMatOpScalarv(b, IMat.vecLTFun, null)
-  def == (b : Int) = iiMatOpScalarv(b, IMat.vecEQFun, null)
-  def >= (b : Int) = iiMatOpScalarv(b, IMat.vecGEFun, null)
-  def <= (b : Int) = iiMatOpScalarv(b, IMat.vecLEFun, null)
-  def != (b : Int) = iiMatOpScalarv(b, IMat.vecNEFun, null)
+  override def > (b : Int) = iiMatOpScalarv(b, IMat.vecGTFun, null)
+  override def < (b : Int) = iiMatOpScalarv(b, IMat.vecLTFun, null)
+  override def == (b : Int) = iiMatOpScalarv(b, IMat.vecEQFun, null)
+  override def >= (b : Int) = iiMatOpScalarv(b, IMat.vecGEFun, null)
+  override def <= (b : Int) = iiMatOpScalarv(b, IMat.vecLEFun, null)
+  override def != (b : Int) = iiMatOpScalarv(b, IMat.vecNEFun, null)
   
   override def > (b : Float) = iiMatOpScalarv(b.toInt, IMat.vecGTFun, null)
   override def < (b : Float) = iiMatOpScalarv(b.toInt, IMat.vecLTFun, null)
@@ -856,9 +859,9 @@ object IMat {
   def apply(x:Mat):IMat = {
     var out:IMat = null
     x match {
-      case dd:DMat => {out = IMat(x.nrows, x.ncols) ; Mat.copyToIntArray(dd.data, 0, out.data, 0, dd.length)}
-      case ff:FMat => {out = IMat(x.nrows, x.ncols); Mat.copyToIntArray(ff.data, 0, out.data, 0, ff.length)}
-      case ii:IMat => {out = IMat(x.nrows, x.ncols); System.arraycopy(ii.data, 0, out.data, 0, ii.length)}
+      case dd:DMat => {out = IMat.newOrCheckIMat(x.nrows, x.ncols, null, x.GUID, "IMat".##) ; Mat.copyToIntArray(dd.data, 0, out.data, 0, dd.length)}
+      case ff:FMat => {out = IMat.newOrCheckIMat(x.nrows, x.ncols, null, x.GUID, "IMat".##); Mat.copyToIntArray(ff.data, 0, out.data, 0, ff.length)}
+      case ii:IMat => {out = IMat.newOrCheckIMat(x.nrows, x.ncols, null, x.GUID, "IMat".##); System.arraycopy(ii.data, 0, out.data, 0, ii.length)}
       case gg:GIMat => out = gg.toIMat
       case _ => throw new RuntimeException("Unsupported source type")
     }
