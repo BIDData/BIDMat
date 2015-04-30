@@ -801,6 +801,8 @@ object SciFunctions {
       case (aa:GMat, bb:FMat) => max(aa, GMat(bb), c):GMat
       case (aa:IMat, bb:GMat) => max(GMat(aa), bb, c):GMat
       case (aa:GMat, bb:IMat) => max(aa, GMat(bb), c):GMat
+      case (aa:IMat, bb:GIMat) => max(GIMat(aa), bb, c):GIMat
+      case (aa:GIMat, bb:IMat) => max(aa, GIMat(bb), c):GIMat
       case (aa:GDMat, bb:GDMat) => max(aa, bb, c):GDMat
       case (aa:GDMat, bb:FMat) => max(aa, GDMat(bb), c):GDMat
       case (aa:FMat, bb:GDMat) => max(GDMat(aa), bb, c):GDMat
@@ -824,6 +826,8 @@ object SciFunctions {
       case (aa:GMat, bb:FMat) => min(aa, GMat(bb), c):GMat
       case (aa:IMat, bb:GMat) => min(GMat(aa), bb, c):GMat
       case (aa:GMat, bb:IMat) => min(aa, GMat(bb), c):GMat
+      case (aa:IMat, bb:GIMat) => min(GIMat(aa), bb, c):GIMat
+      case (aa:GIMat, bb:IMat) => min(aa, GIMat(bb), c):GIMat
       case (aa:GDMat, bb:GDMat) => min(aa, bb, c):GDMat
       case (aa:GDMat, bb:FMat) => min(aa, GDMat(bb), c):GDMat
       case (aa:FMat, bb:GDMat) => min(GDMat(aa), bb, c):GDMat

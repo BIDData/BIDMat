@@ -3,6 +3,7 @@ package BIDMat
 import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.LAPACK._
 import edu.berkeley.bid.SPBLAS._
+import scala.util.hashing.MurmurHash3
 import java.util.Arrays
 
 case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr, nc, data0) {
@@ -39,16 +40,18 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
 
   override def mytype = "DMat";
   
-  override def view(nr:Int, nc:Int, sGUID:Boolean):DMat = {
-  	if (1L * nr * nc > length) {
+  override def view(nr:Int, nc:Int):DMat = {
+    if (1L * nr * nc > data.length) {
       throw new RuntimeException("view dimensions too large")
     }
-    val out = new DMat(nr, nc, data);
-    if (sGUID) out.setGUID(GUID);
-    out
+    if (nr == nrows && nc == ncols) {
+      this
+    } else {
+    	val out = new DMat(nr, nc, data);
+    	out.setGUID(MurmurHash3.mix(MurmurHash3.mix(nr, nc), (GUID*3145341).toInt));
+    	out
+    }
   }
-  
-  override def view(nr:Int, nc:Int):DMat = view(nr, nc, true);
       
   def horzcat(b: DMat) = DMat(ghorzcat(b))
 

@@ -2,6 +2,7 @@ package BIDMat
 
 import java.util.Arrays
 import edu.berkeley.bid.CBLAS._
+import scala.util.hashing.MurmurHash3
 
 case class LMat(nr:Int, nc:Int, data0:Array[Long]) extends DenseMat[Long](nr, nc, data0) { 
   
@@ -30,16 +31,18 @@ case class LMat(nr:Int, nc:Int, data0:Array[Long]) extends DenseMat[Long](nr, nc
   
   override def mytype = "LMat";
   
-  override def view(nr:Int, nc:Int, sGUID:Boolean):LMat = {
-  	if (1L * nr * nc > length) {
+  override def view(nr:Int, nc:Int):LMat = {
+    if (1L * nr * nc > data.length) {
       throw new RuntimeException("view dimensions too large")
     }
-    val out = new LMat(nr, nc, data);
-    if (sGUID) out.setGUID(GUID);
-    out
+    if (nr == nrows && nc == ncols) {
+      this
+    } else {
+    	val out = new LMat(nr, nc, data);
+    	out.setGUID(MurmurHash3.mix(MurmurHash3.mix(nr, nc), (GUID*3145341).toInt));
+    	out
+    }
   }
-  
-  override def view(nr:Int, nc:Int):LMat = view(nr, nc, true);
     
   override def set(v:Float):LMat = {
     Arrays.fill(data,0,length,v.toLong)

@@ -32,16 +32,18 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
     
   override def nnz = length;
   
-  override def view(nr:Int, nc:Int, sGUID:Boolean):GMat = {
-  	if (1L * nr * nc > realsize) {
+  override def view(nr:Int, nc:Int):GMat = {
+    if (1L * nr * nc > realsize) {
       throw new RuntimeException("view dimensions too large")
     }
-    val out = new GMat(nr, nc, data, realsize);
-    if (sGUID) out.setGUID(GUID);
-    out
+    if (nr == nrows && nc == ncols) {
+      this
+    } else {
+    	val out = new GMat(nr, nc, data, realsize);
+    	out.setGUID(MurmurHash3.mix(MurmurHash3.mix(nr, nc), (GUID*3145341).toInt));
+    	out
+    }
   }
-  
-  override def view(nr:Int, nc:Int):GMat = view(nr, nc, true);
 
   override def apply(I:GIMat, J:GIMat):GMat = applyx(I, J)
      
@@ -94,28 +96,33 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
   }
   
   def applyx(I:GIMat, J:GIMat):GMat = {
-    (I, J) match {
+    var err = 0;
+    val omat = (I, J) match {
       case (ii:MatrixWildcard, jj:MatrixWildcard) => {
         val out = GMat.newOrCheckGMat(nrows, ncols, null, GUID, 0, 0, "applyXJ".##)
-        CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, GMat.nullPointer, nrows, GMat.nullPointer, ncols)
+        err = CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, GMat.nullPointer, nrows, GMat.nullPointer, ncols)
         out
       }
       case (ii:MatrixWildcard, jj:GIMat) => {
       	val out = GMat.newOrCheckGMat(nrows, J.length, null, GUID, 0, J.GUID, "applyXJ".##)
-        CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, GMat.nullPointer, nrows, J.data, J.length)
+        err = CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, GMat.nullPointer, nrows, J.data, J.length)
         out
       }
       case (ii:GIMat, jj:MatrixWildcard) => {
         val out = GMat.newOrCheckGMat(I.length, ncols, null, GUID, I.GUID, 0, "applyIX".##)
-        CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, GMat.nullPointer, ncols)
+        err = CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, GMat.nullPointer, ncols)
         out
       }
       case _ => {
       	val out = GMat.newOrCheckGMat(I.length, J.length, null, GUID, I.GUID, J.GUID, "applyIJ".##)
-      	CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, J.length)
+      	err = CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, J.length)
       	out
       }
     }
+    if (err != 0) {
+    	throw new RuntimeException("CUMAT.copyFromInds2D error " + cudaGetErrorString(err))
+    }
+    omat
   } 
   
   def applyx(I:GIMat):GMat = {
@@ -127,7 +134,10 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
   	}
   	case _ => {
   		val out = GMat.newOrCheckGMat(I.nrows, I.ncols, null, GUID, I.GUID, "applyI".##);
-  		CUMAT.copyFromInds(data, out.data, I.data, I.llength)
+  		val err = CUMAT.copyFromInds(data, out.data, I.data, I.llength);
+  		if (err != 0) {
+  			throw new RuntimeException("CUMAT.copyFromInds error " + cudaGetErrorString(err))
+  		}
       out
     }
   	}
@@ -138,13 +148,19 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
     J match {
     case (jj:MatrixWildcard) => {
     	val out = GMat.newOrCheckGMat(1, ncols, null, GUID, i, 0, "applyiX".##)
-    	CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, 1, GMat.nullPointer, ncols)
+    	val err = CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, 1, GMat.nullPointer, ncols)
+    	if (err != 0) {
+    		throw new RuntimeException("CUMAT.copyFromInds2D error " + cudaGetErrorString(err))
+    	}
     	I.free
     	out
     }
     case _ => {
     	val out = GMat.newOrCheckGMat(1, J.length, null, GUID, i, J.GUID, "applyiJ".##)
-    	CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, 1, J.data, J.length)
+    	val err = CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, 1, J.data, J.length);
+    	if (err != 0) {
+    		throw new RuntimeException("CUMAT.copyFromInds2D error " + cudaGetErrorString(err))
+    	}
     	I.free
     	out
     }
@@ -156,13 +172,19 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
     I match {
     case (ii:MatrixWildcard) => {
     	val out = GMat.newOrCheckGMat(nrows, 1, null, GUID, 0, j, "applyXj".##)
-    	CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, GMat.nullPointer, nrows, J.data, 1)
+    	val err = CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, GMat.nullPointer, nrows, J.data, 1);
+    	if (err != 0) {
+    		throw new RuntimeException("CUMAT.copyFromInds2D error " + cudaGetErrorString(err))
+    	}
     	J.free
     	out
     }    
     case _ => {
     	val out = GMat.newOrCheckGMat(I.length, 1, null, GUID, I.GUID, j, "applyIj".##)
-    	CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, 1)
+    	val err = CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, 1);
+    	if (err != 0) {
+    		throw new RuntimeException("CUMAT.copyFromInds2D error " + cudaGetErrorString(err))
+    	}
     	J.free
     	out
     }
@@ -223,7 +245,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
   }
   
   def updatex(I:GIMat, J:GIMat, V:GMat):GMat = {
-    (I, J) match {
+  	val err = (I, J) match {
       case (ii:MatrixWildcard, jj:MatrixWildcard) => {
         CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, GMat.nullPointer, nrows, GMat.nullPointer, ncols)
       }
@@ -237,6 +259,9 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
       	CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, I.length, J.data, J.length)
       }
     }
+  	if (err != 0) {
+  		throw new RuntimeException("CUMAT.copyToInds2D error " + cudaGetErrorString(err))
+  	}
     this
   }
   
@@ -244,10 +269,16 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
   	val I = GIMat(i)
   	J match {
   	case jj:MatrixWildcard => {
-  		CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, 1, GMat.nullPointer, ncols)
+  		val err = CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, 1, GMat.nullPointer, ncols);
+  		if (err != 0) {
+    		throw new RuntimeException("CUMAT.copyToInds2D error " + cudaGetErrorString(err))
+    	}
   	}
   	case _ => {
-  		CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, 1, J.data, J.length)
+  		val err =CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, 1, J.data, J.length);
+  		if (err != 0) {
+    		throw new RuntimeException("CUMAT.copyToInds2D error " + cudaGetErrorString(err))
+    	}
   	}
   	}
     this
@@ -257,10 +288,16 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
   	val J = GIMat(j)
   	I match {
   	case ii:MatrixWildcard => {
-  		CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, GMat.nullPointer, I.length, J.data, 1)
+  		val err = CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, GMat.nullPointer, I.length, J.data, 1);
+  		if (err != 0) {
+    		throw new RuntimeException("CUMAT.copyToInds2D error " + cudaGetErrorString(err))
+    	}
   	}
   	case _ => {
-  		CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, I.length, J.data, 1)
+  		val err = CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, I.length, J.data, 1);
+  		if (err != 0) {
+    		throw new RuntimeException("CUMAT.copyToInds2D error " + cudaGetErrorString(err))
+    	}
   	}
   	}
     this
@@ -272,7 +309,10 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
   		cudaMemcpy(data, v.data, 1L * length * Sizeof.FLOAT, cudaMemcpyDeviceToDevice)
   	}
   	case _ => {
-  		CUMAT.copyToInds(data, v.data, I.data, I.llength)
+  		val err = CUMAT.copyToInds(data, v.data, I.data, I.llength);
+  		if (err != 0) {
+    		throw new RuntimeException("CUMAT.copyToInds error " + cudaGetErrorString(err))
+    	}
     }
   	}
   	this
@@ -295,14 +335,20 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
   override def update(I:GIMat, j:Int, v:Float):GMat = {
     val V = GMat(v)
     val J = GIMat(j)
-    CUMAT.copyToInds2D(V.data, 0, data, nrows, I.data, I.length, J.data, 1)
+    val err = CUMAT.copyToInds2D(V.data, 0, data, nrows, I.data, I.length, J.data, 1);
+    if (err != 0) {
+    	throw new RuntimeException("CUMAT.copyToInds2D error " + cudaGetErrorString(err))
+    }
     this
   }
   
   override def update(i:Int, J:GIMat, v:Float):GMat = {
     val V = GMat(v)
     val I = GIMat(i)
-    CUMAT.copyToInds2D(V.data, 0, data, nrows, I.data, 1, J.data, J.length)
+    val err = CUMAT.copyToInds2D(V.data, 0, data, nrows, I.data, 1, J.data, J.length);
+    if (err != 0) {
+    	throw new RuntimeException("CUMAT.copyToInds2D error " + cudaGetErrorString(err))
+    }
     this
   }
   
@@ -311,11 +357,17 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
     val J = GIMat(j)
     I match {
     case ii:MatrixWildcard => {
-      CUMAT.copyToInds2D(V.data, 0, data, nrows, GMat.nullPointer, I.length, J.data, 1)
+      val err= CUMAT.copyToInds2D(V.data, 0, data, nrows, GMat.nullPointer, I.length, J.data, 1);
+      if (err != 0) {
+    		throw new RuntimeException("CUMAT.copyToInds2D error " + cudaGetErrorString(err));
+    	}
     }
     case _ => {
       val gi = GIMat(I)
-      CUMAT.copyToInds2D(V.data, 0, data, nrows, gi.data, I.length, J.data, 1)
+      val err = CUMAT.copyToInds2D(V.data, 0, data, nrows, gi.data, I.length, J.data, 1);
+      if (err != 0) {
+      	throw new RuntimeException("CUMAT.copyToInds2D error " + cudaGetErrorString(err))
+      }
     }
     }
     this
@@ -324,7 +376,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
   override def update(i:Int, J:IMat, v:Float):GMat = {
     val V = GMat(v)
     val I = GIMat(i)
-    J match {
+    val err = J match {
     case jj:MatrixWildcard => {
       CUMAT.copyToInds2D(V.data, 0, data, nrows, I.data, 1, GMat.nullPointer, ncols)
     }
@@ -332,6 +384,9 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
       val gj = GIMat(J)
       CUMAT.copyToInds2D(V.data, 0, data, nrows, I.data, 1, gj.data, J.length)
     }
+    }
+    if (err != 0) {
+    	throw new RuntimeException("CUMAT.copyToInds2D error " + cudaGetErrorString(err))
     }
     this
   }
@@ -356,8 +411,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
   
   override def t = {
     val out = GMat.newOrCheckGMat(ncols, nrows, null, GUID, "t".##)
-    CUMAT.transpose(this.data, nrows, out.data, ncols, nrows, ncols)
-    cudaDeviceSynchronize()
+    CUMAT.transpose(this.data, nrows, out.data, ncols, nrows, ncols);
     out
   }
   
@@ -510,10 +564,13 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
     } else if (aroff + nr > nrows || acoff + kk > ncols || broff + kk > b.nrows || bcoff + nc > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
       throw new RuntimeException("tileMult: tile strays outside matrix dimensions");
     } else {
-    	CUMAT.dsmultTile(nr, nc, kk, b.nnz,  
+    	val err = CUMAT.dsmultTile(nr, nc, kk, b.nnz,  
     			data.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
     	    b.data, b.ir, b.ic, broff, bcoff, 
       		c.data.withByteOffset(Sizeof.FLOAT.toLong*(croff+ccoff*c.nrows)), c.nrows, 0);
+    	if (err != 0) {
+    		throw new RuntimeException("CUMAT.tileMult error " + cudaGetErrorString(err))
+    	}
       c;
     }
   }
@@ -524,10 +581,13 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
     } else if (aroff + nr > nrows || acoff + kk > ncols || broff + nc > b.nrows || bcoff + kk > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
       throw new RuntimeException("tileMult: tile strays outside matrix dimensions");
     } else {
-    	CUMAT.dsmultTile(nr, nc, kk, b.nnz,  
+    	val err = CUMAT.dsmultTile(nr, nc, kk, b.nnz,  
     			data.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
     	    b.data, b.ir, b.ic, broff, bcoff, 
       		c.data.withByteOffset(Sizeof.FLOAT.toLong*(croff+ccoff*c.nrows)), c.nrows, 1);
+    	if (err != 0) {
+    		throw new RuntimeException("CUMAT.tileMultT error " + cudaGetErrorString(err))
+    	}
       c;
     }
   }
@@ -672,14 +732,14 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
       val out = GMat.newOrCheckGMat(1, ncols, oldmat, GUID, 1, op) 
       out.clear
       val err = CUMAT.reduce1op(nrows, ncols, data, out.data, op)
-      if (err != 0) {throw new RuntimeException("GMult: CUDA kernel error in CUMAT.reduce1op " + cudaGetErrorString(err))}
+      if (err != 0) {throw new RuntimeException("CUDA kernel error in CUMAT.reduce1op " + cudaGetErrorString(err))}
       Mat.nflops += length
       out
     } else if (dir == 2 || dir == 0) {
       val out = GMat.newOrCheckGMat(nrows, 1, oldmat, GUID, 2, op)  
       out.clear
       val err = CUMAT.reduce2op(nrows, ncols, data, out.data, op)
-      if (err != 0) {throw new RuntimeException("GMult: CUDA kernel error in CUMAT.reduce2op " + cudaGetErrorString(err))}
+      if (err != 0) {throw new RuntimeException("CUDA kernel error in CUMAT.reduce2op " + cudaGetErrorString(err))}
       Mat.nflops += length
       out
     } else {
@@ -845,11 +905,17 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
       throw new RuntimeException("cumsumKey dimensions mismatch");
     val out = GMat.newOrCheckGMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
     if (nrows == 1 || ncols == 1) {
-      CUMAT.cumsumByKeyFF(data, keys.data, out.data, llength);
+      val err = CUMAT.cumsumByKeyFF(data, keys.data, out.data, llength);
+      if (err != 0) {
+    		throw new RuntimeException("CUMAT.cumsumByKey error " + cudaGetErrorString(err))
+      }
     } else {
       val tmp = GLMat(nrows, ncols);
-      CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
-      CUMAT.cumsumByKeyFL(data, tmp.data, out.data, llength);
+      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+      if (err == 0) err = CUMAT.cumsumByKeyFL(data, tmp.data, out.data, llength);
+      if (err != 0) {
+    		throw new RuntimeException("CUMAT.cumsumByKey error " + cudaGetErrorString(err))
+      }      
       tmp.free;
     }
     out  
@@ -860,11 +926,17 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
       throw new RuntimeException("cumsumKey dimensions mismatch");
     val out = GMat.newOrCheckGMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
     if (nrows == 1 || ncols == 1) {
-      CUMAT.cumsumByKeyFF(data, keys.data, out.data, llength);
+      val err = CUMAT.cumsumByKeyFF(data, keys.data, out.data, llength);
+      if (err != 0) {
+    		throw new RuntimeException("CUMAT.cumsumByKey error " + cudaGetErrorString(err))
+      }
     } else {
     	val tmp = GLMat(nrows, ncols);
-      CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
-      CUMAT.cumsumByKeyFL(data, tmp.data, out.data, llength);
+      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+      if (err == 0) err = CUMAT.cumsumByKeyFL(data, tmp.data, out.data, llength);
+      if (err != 0) {
+    		throw new RuntimeException("CUMAT.cumsumByKey error " + cudaGetErrorString(err))
+      }
       tmp.free;
     }
     out  
@@ -876,7 +948,10 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
   
   def _reverse(omat:Mat):GMat = {
     val out = GMat.newOrCheckGMat(nrows, ncols, omat, GUID,  "reverse".##);
-    CUMAT.reverse(data, out.data, llength);  
+    val err = CUMAT.reverse(data, out.data, llength);
+    if (err != 0) {
+    	throw new RuntimeException("CUMAT.reverse error " + cudaGetErrorString(err))
+    }
     out
   }
   
@@ -1404,6 +1479,7 @@ object GMat {
   }
   
   def apply(a:GIMat):GMat = {
+ 
     val rsize = a.nrows*a.ncols
     val retv = GMat.newOrCheckGMat(a.nrows, a.ncols, null, a.GUID, SciFunctions.getGPU, "GMat_GIMat".##)
     var err = CUMAT.toFloat(a.data, retv.data, a.length)

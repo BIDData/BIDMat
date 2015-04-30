@@ -12,6 +12,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import edu.berkeley.bid.CUMATD
 import edu.berkeley.bid.CUMATD._
+import scala.util.hashing.MurmurHash3
 import GSDMat._
 import GMat.BinOp
 
@@ -33,16 +34,18 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
     
   override def nnz = length;
   
-  override def view(nr:Int, nc:Int, sGUID:Boolean):GDMat = {
+  override def view(nr:Int, nc:Int):GDMat = {
     if (1L * nr * nc > realsize) {
       throw new RuntimeException("view dimensions too large")
     }
-    val out = new GDMat(nr, nc, data, realsize);
-    if (sGUID) out.setGUID(GUID);
-    out
+    if (nr == nrows && nc == ncols) {
+      this
+    } else {
+    	val out = new GDMat(nr, nc, data, realsize);
+    	out.setGUID(MurmurHash3.mix(MurmurHash3.mix(nr, nc), (GUID*3145341).toInt));
+    	out
+    }
   }
-  
-  override def view(nr:Int, nc:Int):GDMat = view(nr, nc, true);
 
   override def apply(I:GIMat, J:GIMat):GDMat = applyx(I, J)
      

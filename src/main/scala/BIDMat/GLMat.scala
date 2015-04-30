@@ -7,6 +7,7 @@ import jcuda.runtime.cudaMemcpyKind._
 import jcuda.runtime.cudaError._
 import edu.berkeley.bid.CUMAT
 import edu.berkeley.bid.CUMATD
+import scala.util.hashing.MurmurHash3
 
 class GLMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, nc) {
   import GIMat.BinOp._
@@ -37,16 +38,18 @@ class GLMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     
   override def nnz = length;
   
-  override def view(nr:Int, nc:Int, sGUID:Boolean):GLMat = {
+  override def view(nr:Int, nc:Int):GLMat = {
     if (1L * nr * nc > realsize) {
       throw new RuntimeException("view dimensions too large")
     }
-    val out = new GLMat(nr, nc, data, realsize);
-    if (sGUID) out.setGUID(GUID);
-    out
+    if (nr == nrows && nc == ncols) {
+      this
+    } else {
+    	val out = new GLMat(nr, nc, data, realsize);
+    	out.setGUID(MurmurHash3.mix(MurmurHash3.mix(nr, nc), (GUID*3145341).toInt));
+    	out
+    }
   }
-  
-  override def view(nr:Int, nc:Int):GLMat = view(nr, nc, true);
   
   override def apply(I:GIMat, J:GIMat):GLMat = applyx(I, J)
      

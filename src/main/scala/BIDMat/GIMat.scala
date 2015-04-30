@@ -7,6 +7,7 @@ import jcuda.runtime.cudaMemcpyKind._
 import jcuda.runtime.cudaError._
 import jcuda.runtime.cudaMemcpyKind._
 import edu.berkeley.bid.CUMAT;
+import scala.util.hashing.MurmurHash3
 
 class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, nc) {
   import GIMat.BinOp._
@@ -30,16 +31,18 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
       toIMat().data(0)
     }
   
-  override def view(nr:Int, nc:Int, sGUID:Boolean):GIMat = {
+  override def view(nr:Int, nc:Int):GIMat = {
     if (1L * nr * nc > realsize) {
       throw new RuntimeException("view dimensions too large")
     }
-    val out = new GIMat(nr, nc, data, realsize);
-    if (sGUID) out.setGUID(GUID);
-    out
+    if (nr == nrows && nc == ncols) {
+      this
+    } else {
+    	val out = new GIMat(nr, nc, data, realsize);
+    	out.setGUID(MurmurHash3.mix(MurmurHash3.mix(nr, nc), (GUID*3145341).toInt));
+    	out
+    }
   }
-  
-  override def view(nr:Int, nc:Int):GIMat = view(nr, nc, true);
 
   override def mytype = "GIMat"
     
@@ -104,14 +107,18 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   	}
   	case _ => {
   		val out = GIMat.newOrCheckGIMat(I.nrows, I.ncols, null, GUID, I.GUID, "applyI".##);
-  		CUMAT.copyFromInds(data, out.data, I.data, I.llength)
+  		val err = CUMAT.copyFromInds(data, out.data, I.data, I.llength);
+  		if (err != 0) {
+    		throw new RuntimeException("CUMAT.copyFromInds error " + cudaGetErrorString(err))
+    	}
       out
     }
   	}
   } 
     
   def applyx(I:GIMat, J:GIMat):GIMat = {
-    (I, J) match {
+    var err = 0;
+    val omat = (I, J) match {
       case (ii:MatrixWildcard, jj:MatrixWildcard) => {
         val out = GIMat.newOrCheckGIMat(nrows, ncols, null, GUID, 0, 0, "applyXJ".##)
         CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, GMat.nullPointer, nrows, GMat.nullPointer, ncols)
@@ -133,6 +140,10 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
       	out
       }
     }
+    if (err != 0) {
+    	throw new RuntimeException("CUMAT.copyFromInds2D error " + cudaGetErrorString(err))
+    }
+    omat;
   } 
   
   def applyx(i:Int, J:GIMat):GIMat = {
@@ -140,13 +151,19 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     J match {
     case (jj:MatrixWildcard) => {
     	val out = GIMat.newOrCheckGIMat(1, ncols, null, GUID, i, 0, "applyiX".##)
-    	CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, 1, GMat.nullPointer, ncols)
+    	val err = CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, 1, GMat.nullPointer, ncols);
+    	if (err != 0) {
+    		throw new RuntimeException("CUMAT.copyFromInds2D error " + cudaGetErrorString(err))
+    	}
     	I.free
     	out
     }
     case _ => {
     	val out = GIMat.newOrCheckGIMat(1, J.length, null, GUID, i, J.GUID, "applyiJ".##)
-    	CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, 1, J.data, J.length)
+    	val err = CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, 1, J.data, J.length);
+    	if (err != 0) {
+    		throw new RuntimeException("CUMAT.copyFromInds2D error " + cudaGetErrorString(err))
+    	}
     	I.free
     	out
     }
@@ -158,13 +175,19 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     I match {
     case (ii:MatrixWildcard) => {
     	val out = GIMat.newOrCheckGIMat(nrows, 1, null, GUID, 0, j, "applyXj".##)
-    	CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, GMat.nullPointer, nrows, J.data, 1)
+    	val err = CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, GMat.nullPointer, nrows, J.data, 1);
+    	if (err != 0) {
+    		throw new RuntimeException("CUMAT.copyFromInds2D error " + cudaGetErrorString(err));
+    	}
     	J.free
     	out
     }    
     case _ => {
     	val out = GIMat.newOrCheckGIMat(I.length, 1, null, GUID, I.GUID, j, "applyIj".##)
-    	CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, 1)
+    	val err = CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, 1);
+    	if (err != 0) {
+    		throw new RuntimeException("CUMAT.copyFromInds2D error " + cudaGetErrorString(err))
+    	}
     	J.free
     	out
     }
@@ -224,7 +247,7 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   }
   
   def updatex(I:GIMat, J:GIMat, V:GIMat):GIMat = {
-    (I, J) match {
+    val err = (I, J) match {
       case (ii:MatrixWildcard, jj:MatrixWildcard) => {
         CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, GMat.nullPointer, nrows, GMat.nullPointer, ncols)
       }
@@ -238,12 +261,15 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
       	CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, I.length, J.data, J.length)
       }
     }
+    if (err != 0) {
+    	throw new RuntimeException("CUMAT.copyToInds2D error " + cudaGetErrorString(err))
+    }
     this
   }
   
   def updatex(i:Int, J:GIMat, V:GIMat):GIMat = {
   	val I = GIMat(i)
-  	J match {
+  	val err = J match {
   	case jj:MatrixWildcard => {
   		CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, 1, GMat.nullPointer, ncols)
   	}
@@ -251,12 +277,15 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   		CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, 1, J.data, J.length)
   	}
   	}
+  	if (err != 0) {
+    	throw new RuntimeException("CUMAT.copyToInds2D error " + cudaGetErrorString(err));
+    }
     this
   }
     
   def updatex(I:GIMat, j:Int, V:GIMat):GIMat = {
   	val J = GIMat(j)
-  	I match {
+  	val err = I match {
   	case ii:MatrixWildcard => {
   		CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, GMat.nullPointer, I.length, J.data, 1)
   	}
@@ -264,6 +293,9 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   		CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, I.length, J.data, 1)
   	}
   	}
+  	if (err != 0) {
+    	throw new RuntimeException("CUMAT.copyToInds2D error " + cudaGetErrorString(err))
+    }
     this
   }
   
@@ -273,7 +305,10 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   		cudaMemcpy(data, v.data, 1L * length * Sizeof.INT, cudaMemcpyDeviceToDevice)
   	}
   	case _ => {
-  		CUMAT.copyToInds(data, v.data, I.data, I.llength)
+  		val err = CUMAT.copyToInds(data, v.data, I.data, I.llength);
+  		if (err != 0) {
+  			throw new RuntimeException("CUMAT.copyToInds2D error " + cudaGetErrorString(err))
+  		}
     }
   	}
   	this
@@ -350,8 +385,10 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
         (ncols == 1 && nrows == 1)) {
     	val out = GIMat.newOrCheckGIMat(math.max(nrows, a.nrows), math.max(ncols, a.ncols), oldmat, GUID, a.GUID, op)
       Mat.nflops += scala.math.max(length, a.length)
-      CUMAT.applyiop(data, nrows, ncols, a.data, a.nrows, a.ncols, out.data, op)
-      cudaDeviceSynchronize
+      val err = CUMAT.applyiop(data, nrows, ncols, a.data, a.nrows, a.ncols, out.data, op)
+      if (err != 0) {
+      	throw new RuntimeException("CUMAT.applyiop error " + cudaGetErrorString(err));
+      }
       out
     }	else throw new RuntimeException("dimensions mismatch")
   }
@@ -473,12 +510,15 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
       throw new RuntimeException("cumsumKey dimensions mismatch");
     val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
     if (nrows == 1 || ncols == 1) {
-      CUMAT.cumsumByKeyII(data, keys.data, out.data, llength);
+      val err = CUMAT.cumsumByKeyII(data, keys.data, out.data, llength);
+      if (err != 0) throw new RuntimeException("CUMAT.cumsumByKeyII error " + cudaGetErrorString(err));
     } else {
-       val tmp = GLMat(nrows, ncols);
-      CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
-      CUMAT.cumsumByKeyFL(data, tmp.data, out.data, llength);
-      tmp.free;
+    	val tmp = GLMat(nrows, ncols);
+    	var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+    	if (err != 0)	throw new RuntimeException("CUMAT.embedmat2d error " + cudaGetErrorString(err));
+    	if (err == 0) err = CUMAT.cumsumByKeyFL(data, tmp.data, out.data, llength);
+    	if (err != 0)	throw new RuntimeException("CUMAT.cumsumByKeyFL error " + cudaGetErrorString(err));
+    	tmp.free;
     }
     out  
   }
@@ -488,11 +528,14 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
       throw new RuntimeException("cumsumKey dimensions mismatch");
     val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
     if (nrows == 1 || ncols == 1) {
-      CUMAT.cumsumByKeyII(data, keys.data, out.data, llength);
+      val err = CUMAT.cumsumByKeyII(data, keys.data, out.data, llength);
+      if (err != 0) throw new RuntimeException("CUMAT.cumsumByKeyII error " + cudaGetErrorString(err));
     } else {
       val tmp = GLMat(nrows, ncols);
-      CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
-      CUMAT.cumsumByKeyIL(data, tmp.data, out.data, llength);
+      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+      if (err != 0) throw new RuntimeException("CUMAT.embedmat error " + cudaGetErrorString(err));
+      if (err == 0) err = CUMAT.cumsumByKeyIL(data, tmp.data, out.data, llength);
+      if (err != 0) throw new RuntimeException("CUMAT.cumsumByKeyIL error " + cudaGetErrorString(err));
       tmp.free;
     }
     out  
@@ -504,7 +547,8 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   
   def _reverse(omat:Mat):GIMat = {
     val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, GUID,  "reverse".##);
-    CUMAT.reverse(data, out.data, llength);  
+    val err = CUMAT.reverse(data, out.data, llength);  
+    if (err != 0) throw new RuntimeException("CUMAT.reverse error " + cudaGetErrorString(err));
     out
   }
   
@@ -782,7 +826,8 @@ object GIMat {
     if (I.length != J.length || I.length != V.length) {
       throw new RuntimeException("GIMat accum: index lengths dont match")
     }
-    CUMAT.iaccum(I.data, J.data, V.data, out.data, I.length, nrows)
+    val err = CUMAT.iaccum(I.data, J.data, V.data, out.data, I.length, nrows);
+    if (err != 0) throw new RuntimeException("CUMAT.iaccum error " + cudaGetErrorString(err));
     Mat.nflops += I.length
     out
   }
@@ -793,7 +838,8 @@ object GIMat {
     if (J.length != V.length) {
       throw new RuntimeException("GIMat accum: index lengths dont match")
     }
-    CUMAT.iaccumI(I, J.data, V.data, out.data, J.length, nrows)
+    val err = CUMAT.iaccumI(I, J.data, V.data, out.data, J.length, nrows);
+    if (err != 0) throw new RuntimeException("CUMAT.iaccumI error " + cudaGetErrorString(err));
     Mat.nflops += J.length
     out
   }
@@ -804,7 +850,8 @@ object GIMat {
     if (I.length != V.length) {
       throw new RuntimeException("GIMat accum: index lengths dont match")
     }
-    CUMAT.iaccumJ(I.data, J, V.data, out.data, I.length, nrows)
+    val err = CUMAT.iaccumJ(I.data, J, V.data, out.data, I.length, nrows);
+    if (err != 0) throw new RuntimeException("CUMAT.iaccumJ error " + cudaGetErrorString(err));
     Mat.nflops += I.length
     out
   }
@@ -815,7 +862,8 @@ object GIMat {
     if (I.length != J.length) {
       throw new RuntimeException("GIMat accum: index lengths dont match")
     }
-    CUMAT.iaccumV(I.data, J.data, V, out.data, I.length, nrows)
+    val err = CUMAT.iaccumV(I.data, J.data, V, out.data, I.length, nrows);
+    if (err != 0) throw new RuntimeException("CUMAT.iaccumV error " + cudaGetErrorString(err));
     Mat.nflops += I.length
     out
   }
@@ -823,7 +871,8 @@ object GIMat {
   def accumIJ(I:Int, J:GIMat, V:Int, omat:Mat, nrows:Int, ncols:Int):GIMat = {
     val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, I, J.GUID, V.hashCode, "GIMat_accumIV".##)
     out.clear
-    CUMAT.iaccumIV(I, J.data, V, out.data, J.length, nrows)
+    val err = CUMAT.iaccumIV(I, J.data, V, out.data, J.length, nrows);
+    if (err != 0) throw new RuntimeException("CUMAT.iaccumIV error " + cudaGetErrorString(err));
     Mat.nflops += J.length
     out
   }
@@ -831,7 +880,8 @@ object GIMat {
   def accumIJ(I:GIMat, J:Int, V:Int, omat:Mat, nrows:Int, ncols:Int):GIMat = {
     val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, I.GUID, J, V.hashCode, "GIMat_accumJV".##)
     out.clear
-    CUMAT.iaccumJV(I.data, J, V, out.data, I.length, nrows)
+    val err = CUMAT.iaccumJV(I.data, J, V, out.data, I.length, nrows);
+    if (err != 0) throw new RuntimeException("CUMAT.iaccumJV error " + cudaGetErrorString(err));
     Mat.nflops += I.length
     out
   }
@@ -843,9 +893,11 @@ object GIMat {
     val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, IJ.GUID, V.GUID, "GIMat_accumIJ".##)
     out.clear
     if (IJ.ncols == 2) {
-    	CUMAT.iaccum(IJ.data, IJ.data.withByteOffset(1L*IJ.nrows*Sizeof.INT), V.data, out.data, V.length, nrows)
+    	val err = CUMAT.iaccum(IJ.data, IJ.data.withByteOffset(1L*IJ.nrows*Sizeof.INT), V.data, out.data, V.length, nrows);
+    	if (err != 0) throw new RuntimeException("CUMAT.iaccum error " + cudaGetErrorString(err));
     } else {
-      CUMAT.iaccumJ(IJ.data, 0, V.data, out.data, V.length, nrows)
+      val err= CUMAT.iaccumJ(IJ.data, 0, V.data, out.data, V.length, nrows);
+      if (err != 0) throw new RuntimeException("CUMAT.iaccumJ error " + cudaGetErrorString(err));
     }
     Mat.nflops += V.length
     out
@@ -858,9 +910,11 @@ object GIMat {
     val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, IJ.GUID, V.hashCode, "GIMat_accumIJV".##)
     out.clear
     if (IJ.ncols == 2) {
-    	CUMAT.iaccumV(IJ.data, IJ.data.withByteOffset(1L*IJ.nrows*Sizeof.INT), V, out.data, IJ.nrows, nrows)
+    	val err = CUMAT.iaccumV(IJ.data, IJ.data.withByteOffset(1L*IJ.nrows*Sizeof.INT), V, out.data, IJ.nrows, nrows);
+    	if (err != 0) throw new RuntimeException("CUMAT.iaccumV error " + cudaGetErrorString(err));
     } else {
-      CUMAT.iaccumJV(IJ.data, 0, V, out.data, IJ.nrows, nrows)
+      val err = CUMAT.iaccumJV(IJ.data, 0, V, out.data, IJ.nrows, nrows);
+      if (err != 0) throw new RuntimeException("CUMAT.iaccumJV error " + cudaGetErrorString(err));
     }
     Mat.nflops += IJ.nrows
     out

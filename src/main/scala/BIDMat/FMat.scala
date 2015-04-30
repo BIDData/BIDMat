@@ -38,16 +38,19 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   override def mytype = "FMat"
     
-  override def view(nr:Int, nc:Int, sGUID:Boolean):FMat = {
-    if (1L * nr * nc > length) {
+  override def view(nr:Int, nc:Int):FMat = {
+    if (1L * nr * nc > data.length) {
       throw new RuntimeException("view dimensions too large")
     }
-    val out = new FMat(nr, nc, data);
-    if (sGUID) out.setGUID(GUID);
-    out
+    if (nr == nrows && nc == ncols) {
+      this
+    } else {
+    	val out = new FMat(nr, nc, data);
+    	out.setGUID(MurmurHash3.mix(MurmurHash3.mix(nr, nc), (GUID*3145341).toInt));
+    	out
+    }
   }
-  
-  override def view(nr:Int, nc:Int):FMat = view(nr, nc, true);
+
   
   def i:CMat = CMat.imag(this)
   
