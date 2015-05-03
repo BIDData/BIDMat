@@ -773,7 +773,7 @@ object GIMat {
     a match {
     case aa:MatrixWildcard => GIMat.wildcard
     case _ => {
-    	val retv = GIMat.newOrCheckGIMat(a.nrows, a.ncols, null, a.GUID, "GIMat".##)
+    	val retv = GIMat.newOrCheckGIMat(a.nrows, a.ncols, null, a.GUID, SciFunctions.getGPU, "GIMat".##)
     	val rsize = a.nrows*a.ncols
     	cudaMemcpy(retv.data, Pointer.to(a.data), 1L*rsize*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
     	cudaDeviceSynchronize()
@@ -803,7 +803,7 @@ object GIMat {
   }
   
   def apply(a:Int):GIMat = {
-    val out = GIMat.newOrCheckGIMat(1, 1, null, a.##, "GIMat_Int".##)
+    val out = GIMat.newOrCheckGIMat(1, 1, null, a.##, SciFunctions.getGPU, "GIMat_Int".##)
     out.set(a)
     out
   }
