@@ -144,7 +144,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
   }
   
   def applyx(i:Int, J:GIMat):GMat = {
-    val I = GIMat(i)
+    val I = GIMat.elem(i)
     J match {
     case (jj:MatrixWildcard) => {
     	val out = GMat.newOrCheckGMat(1, ncols, null, GUID, i, 0, "applyiX".##)
@@ -168,7 +168,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
   }
   
   def applyx(I:GIMat, j:Int):GMat = {
-    val J = GIMat(j)
+    val J = GIMat.elem(j)
     I match {
     case (ii:MatrixWildcard) => {
     	val out = GMat.newOrCheckGMat(nrows, 1, null, GUID, 0, j, "applyXj".##)
@@ -831,7 +831,8 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
   }
   
   override def free() = {
-    JCublas.cublasFree(data)
+    if (data == null) throw new RuntimeException("attempt to free a free'd matrix");
+    cudaFree(data)
     data = null;
     this
   }
@@ -1511,6 +1512,18 @@ object GMat {
     out.set(a.toFloat)
     out
   }
+
+  def elem(a:Float):GMat = {
+    val out = GMat(1, 1);
+    out.set(a)
+    out
+  }
+  
+  def elem(a:Double):GMat = {
+    val out = GMat(1, 1);
+    out.set(a.toFloat)
+    out
+  }
   
   def toFMat(a:GMat):FMat = a.toFMat(null)  
   
@@ -1728,7 +1741,8 @@ object GMat {
   // This can be used to build SMats from row, column, value arrays.
   def sortInds(ii:IMat, jj:IMat, vals:Mat, asc:Int):Unit = {
     val inds = ii \ jj;
-    val ginds = GIMat(inds);
+    val ginds = GIMat(inds.nrows, inds.ncols);
+    ginds <-- inds;
     val gindst = ginds.t;
     val (gvals, gdata) = vals match {
       case ivals:IMat => {val gd = GIMat(ivals); (gd, gd.data) }
@@ -1818,9 +1832,9 @@ object GMat {
   	    			i += rblkk*gcrows
   	    		}
 
-  	    		cublasFree(cc)
-  	    		cublasFree(bb)
-  	    		cublasFree(aa)
+  	    		cudaFree(cc)
+  	    		cudaFree(bb)
+  	    		cudaFree(aa)
   	    		done(ix+2*iy,0) = 1
   	      }
   	    }
@@ -1977,10 +1991,10 @@ object GMat {
 
     CUMAT.fsort2dx(keys.data, vals.data, tkeys.data, tvals.data, tspine.data, bflags.data, keys.nrows, keys.ncols, if (asc) 1 else 0)
 
-    tkeys.free
-    tvals.free
-    tspine.free
     bflags.free
+    tspine.free
+    tvals.free
+    tkeys.free
     Mat.nflops += keys.length
   }
   

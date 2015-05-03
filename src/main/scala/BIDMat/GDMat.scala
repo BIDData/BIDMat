@@ -173,7 +173,7 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
   } 
   
   def applyx(i:Int, J:GIMat):GDMat = {
-    val I = GIMat(i)
+    val I = GIMat.elem(i)
     J match {
     case (jj:MatrixWildcard) => {
     	val out = GDMat.newOrCheckGDMat(1, ncols, null, GUID, i, 0, "applyiX".##)
@@ -191,7 +191,7 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
   }
   
   def applyx(I:GIMat, j:Int):GDMat = {
-    val J = GIMat(j)
+    val J = GIMat.elem(j)
     I match {
     case (ii:MatrixWildcard) => {
     	val out = GDMat.newOrCheckGDMat(nrows, 1, null, GUID, 0, j, "applyXj".##)
@@ -741,7 +741,8 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
   }
   
   override def free() = {
-    JCublas.cublasFree(data)
+    if (data == null) throw new RuntimeException("Attempt to free an alread free'd GDMat")
+    cudaFree(data)
     data = null;
     this
   }
@@ -1700,8 +1701,9 @@ object GDMat {
     	val (dmy, freebytes, allbytes) = SciFunctions.GPUmem
     	if (a.length*26L < freebytes) {
     		var i = 0; while (i < a.nrows) {outi(i) = i; i += 1}
-    		val gv = GDMat(a.nrows, 2*a.ncols)
-    		val gi = GIMat(outi)
+    		val gv = GDMat(a.nrows, 2*a.ncols);
+    		val gi = GMat(outi.nrows, outi.ncols)
+    		gi <-- outi;
     		var err = cudaMemcpy(gv.data, Pointer.to(a.data), 1L*a.nrows*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyHostToDevice)
     		if (err != 0) throw new RuntimeException("sortGPU copy v error %d" format err)    
     		cudaDeviceSynchronize

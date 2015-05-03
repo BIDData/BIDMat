@@ -142,7 +142,7 @@ class GLMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   } 
   
   def applyx(i:Int, J:GIMat):GLMat = {
-    val I = GIMat(i)
+    val I = GIMat.elem(i)
     J match {
     case (jj:MatrixWildcard) => {
     	val out = GLMat.newOrCheckGLMat(1, ncols, null, GUID, i, 0, "applyiX".##)
@@ -160,7 +160,7 @@ class GLMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   }
   
   def applyx(I:GIMat, j:Int):GLMat = {
-    val J = GIMat(j)
+    val J = GIMat.elem(j)
     I match {
     case (ii:MatrixWildcard) => {
     	val out = GLMat.newOrCheckGLMat(nrows, 1, null, GUID, 0, j, "applyXj".##)
@@ -445,7 +445,8 @@ class GLMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   def reverse(omat:Mat):GLMat = _reverse(omat);
   
   override def free() = {
-    JCublas.cublasFree(data);
+    if (data == null) throw new RuntimeException("Attempt to free an already free'd GLMat")
+    cudaFree(data);
     this
   }
   

@@ -147,7 +147,7 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   } 
   
   def applyx(i:Int, J:GIMat):GIMat = {
-    val I = GIMat(i)
+    val I = GIMat.elem(i)
     J match {
     case (jj:MatrixWildcard) => {
     	val out = GIMat.newOrCheckGIMat(1, ncols, null, GUID, i, 0, "applyiX".##)
@@ -171,7 +171,7 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   }
   
   def applyx(I:GIMat, j:Int):GIMat = {
-    val J = GIMat(j)
+    val J = GIMat.elem(j)
     I match {
     case (ii:MatrixWildcard) => {
     	val out = GIMat.newOrCheckGIMat(nrows, 1, null, GUID, 0, j, "applyXj".##)
@@ -473,7 +473,8 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   }
   
   override def free() = {
-    JCublas.cublasFree(data);
+    if (data == null) throw new RuntimeException("attempt to free an already free'd GIMat")
+    cudaFree(data);
     this
   }
   
@@ -803,6 +804,12 @@ object GIMat {
   
   def apply(a:Int):GIMat = {
     val out = GIMat.newOrCheckGIMat(1, 1, null, a.##, "GIMat_Int".##)
+    out.set(a)
+    out
+  }
+  
+  def elem(a:Int):GIMat = {
+    val out = GIMat(1, 1)
     out.set(a)
     out
   }
