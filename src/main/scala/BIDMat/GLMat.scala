@@ -645,7 +645,7 @@ object GLMat {
   }
   
   def apply(a:Long):GLMat = {
-    val out = GLMat.newOrCheckGLMat(1, 1, null, a.##, "GLMat_Int".##)
+    val out = GLMat.newOrCheckGLMat(1, 1, null, a.##, SciFunctions.getGPU, "GLMat_Int".##)
     out.set(a)
     out
   }
