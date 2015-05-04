@@ -1936,7 +1936,10 @@ object GMat {
   	if (keys.nrows != vals.nrows || keys.ncols != vals.ncols)
       throw new RuntimeException("Dimensions mismatch in GPUsort")
   	if (keys.nrows > 128*1024) {
-  		CUMAT.fsort2dk(keys.data,	vals.data, keys.nrows, keys.ncols, if (asc) 1 else 0)
+  	  val t1 = MatFunctions.toc;
+  		CUMAT.fsort2dk(keys.data,	vals.data, keys.nrows, keys.ncols, if (asc) 1 else 0);
+  		val t2 = MatFunctions.toc;
+  		println("GPU % dsort took %d ms" format (SciFunctions.getGPU, t2 -t1));  		
     } else {
     	val maxsize = keys.nrows * math.min(16*1024*1024/keys.nrows, keys.ncols)
     	val nsize = keys.nrows*keys.ncols
