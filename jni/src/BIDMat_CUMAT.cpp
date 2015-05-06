@@ -681,6 +681,29 @@ extern "C" {
     return lsortsizex(n);
   }
 
+  JNIEXPORT jlong JNICALL Java_edu_berkeley_bid_CUMAT_fsortcubsize
+  (JNIEnv *env, jobject obj, jobject jinkeys, jobject joutkeys, jobject jinvals, jobject joutvals, jint nelems, jint asc) 
+  {
+    float *inkeys = (float *)getPointer(env, jinkeys);
+    float *outkeys = (float *)getPointer(env, joutkeys);
+    unsigned int *invals = (unsigned int *)getPointer(env, jinvals);
+    unsigned int *outvals = (unsigned int *)getPointer(env, joutvals);
+    long long retv = fsortcubsize(inkeys, outkeys, invals, outvals, nelems, asc);
+    return retv;
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_fsortcub
+  (JNIEnv *env, jobject obj, jobject jinkeys, jobject joutkeys, jobject jinvals, jobject joutvals, jobject jtemp, jlong size, jint nelems, jint asc) 
+  {
+    float *inkeys = (float *)getPointer(env, jinkeys);
+    float *outkeys = (float *)getPointer(env, joutkeys);
+    unsigned int *invals = (unsigned int *)getPointer(env, jinvals);
+    unsigned int *outvals = (unsigned int *)getPointer(env, joutvals);
+    int *temp = (int *)getPointer(env, jtemp);
+    int retv = fsortcub(inkeys, outkeys, invals, outvals, temp, size, nelems, asc);
+    return retv;
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_fsort2dx
   (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jobject jtkeys, jobject jtvals, jobject jspine, jobject jflags, jint nrows, jint ncols, jint asc) 
   {

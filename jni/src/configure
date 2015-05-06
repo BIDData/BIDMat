@@ -150,6 +150,7 @@ elif [ "$OS" = "linux" ] ; then
 elif [ "$OS" = "windows" ] ; then
     CUDA_HOME="$CUDA_PATH"
     MKL_ROOT="$MKLROOT"
+    CUB_ROOT=../../../cub
     CC="icl"
     GCC="cl"
     NVCC="nvcc"
@@ -190,7 +191,7 @@ elif [ "$OS" = "windows" ] ; then
     INSTALL_DIR="${BIDMAT_ROOT}/lib"
     CUDA_LIBS="cudart.lib cublas.lib"
     LIB="$MKL_ROOT/lib/${ARCHD};$JAVA_HOME/lib;$CUDA_HOME/lib/${CULIB};${INSTALL_DIR};$LIB"
-    INCLUDE="$JAVA_HOME/include;$JAVA_HOME/include/win32;$MKL_ROOT/include;${BIDMAT_ROOT}/jni/include;$CUDA_HOME/include;$INCLUDE"
+    INCLUDE="$JAVA_HOME/include;$JAVA_HOME/include/win32;$MKL_ROOT/include;${BIDMAT_ROOT}/jni/include;$CUDA_HOME/include;${CUB_ROOT};$INCLUDE"
 else
     echo "OS not supported"
     exit 1

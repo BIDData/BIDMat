@@ -1935,7 +1935,17 @@ object GMat {
   def _sortGPU(keys:GMat, vals:GIMat, asc:Boolean):Unit = {
   	if (keys.nrows != vals.nrows || keys.ncols != vals.ncols)
       throw new RuntimeException("Dimensions mismatch in GPUsort")
-  	if (keys.nrows > 128*1024) {
+  	if (keys.ncols == 1) {
+  	  val tkeys = GMat.newOrCheckGMat(keys.nrows, 1, null, keys.GUID, vals.GUID, "_sortGPU1".##);
+  	  val tvals = GIMat.newOrCheckGIMat(vals.nrows, 1, null, keys.GUID, vals.GUID, "_sortGPU2".##);
+  	  val ntemp = CUMAT.fsortcubsize(keys.data, tkeys.data, vals.data, tvals.data, keys.nrows, if (asc) 1 else 0);
+  	  val temp = GIMat.newOrCheckGIMat((1+(ntemp - 1)/4).toInt, 1, null, keys.GUID, vals.GUID, "_sortGPU3".##);
+  	  val err = CUMAT.fsortcub(keys.data, tkeys.data, vals.data, tvals.data, temp.data, ntemp, keys.nrows, if (asc) 1 else 0);
+  	  if (err != 0) 
+  	    throw new RuntimeException("CUDA error in _sortGPU " + cudaGetErrorString(err));  	
+  	  keys <-- tkeys;
+  	  vals <-- tvals;
+  	} else if (keys.nrows > 128*1024) {
  // 	  val t1 = MatFunctions.toc;
   		CUMAT.fsort2dk(keys.data,	vals.data, keys.nrows, keys.ncols, if (asc) 1 else 0);
 //  		val t2 = MatFunctions.toc;

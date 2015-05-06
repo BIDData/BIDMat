@@ -174,6 +174,10 @@ int fsort2d(float *pkeys, int nrows, int ncols, int asc);
 
 int fsort2dk(float *pkeys, unsigned int *pvals, int nrows, int ncols, int asc);
 
+long long fsortcubsize(float *inkeys, float *outkeys, unsigned int *invals, unsigned int *outvals, int nelems, int asc);
+
+int fsortcub(float *inkeys, float *outkeys, unsigned int *invals, unsigned int *outvals, int *temp, long long size, int nelems, int asc);
+
 int i4sort(int *pkeys, int ncols, int asc);
 
 int i3sortk(int *pkeys, unsigned int *pvals, int n, int asc);

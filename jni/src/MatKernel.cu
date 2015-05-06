@@ -11,6 +11,7 @@
 #include <thrust/fill.h>
 #include <thrust/iterator/reverse_iterator.h>
 #include <thrust/device_vector.h>
+#include <cub/device/device_radix_sort.cuh>
 
 #if __CUDA_ARCH__ > 200
 #define MAXXGRID 2147483647
@@ -1739,6 +1740,33 @@ int fsort2dk(float *pkeys, unsigned int *pvals, int nrows, int ncols, int asc) {
     } else {
       thrust::sort_by_key(keys, keys + nrows, vals, thrust::greater<float>());
     }
+  }
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+long long fsortcubsize(float *inkeys, float *outkeys, unsigned int *invals,unsigned int *outvals, int nelems, int asc) {
+  size_t size = 0;
+  void *temp = NULL;
+  cub::DoubleBuffer<float> d_keys(inkeys, outkeys);
+  cub::DoubleBuffer<unsigned int> d_vals(invals, outvals);
+  if (asc > 0) {
+    cub::DeviceRadixSort::SortPairs(temp, size, d_keys, d_vals, nelems);
+  } else {
+    cub::DeviceRadixSort::SortPairsDescending(temp, size, d_keys, d_vals, nelems);
+  }
+  cudaDeviceSynchronize();
+  return size;
+}
+
+int fsortcub(float *inkeys, float *outkeys, unsigned int *invals, unsigned int *outvals, int *temp, long long size, int nelems, int asc) {
+  cub::DoubleBuffer<float> d_keys(inkeys, outkeys);
+  cub::DoubleBuffer<unsigned int> d_vals(invals, outvals);
+  if (asc > 0) {
+    cub::DeviceRadixSort::SortPairs((void *)temp, (size_t &)size, d_keys, d_vals, nelems);
+  } else {
+    cub::DeviceRadixSort::SortPairsDescending((void *)temp, (size_t &)size, d_keys, d_vals, nelems);
   }
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
