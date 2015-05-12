@@ -146,11 +146,14 @@ object SciFunctions {
   
   def norm(a:GMat) = math.sqrt(JCublas.cublasSdot(a.length, a.data, 1, a.data, 1))
   
+  def norm(a:GDMat) = math.sqrt(JCublas.cublasDdot(a.length, a.data, 1, a.data, 1))
+  
   def norm (a:Mat):Double = {
     a match {
       case aa:FMat => norm(aa)
       case aa:DMat => norm(aa)
       case aa:GMat => norm(aa)
+      case aa:GDMat => norm(aa)
     }
   }
   
@@ -281,6 +284,15 @@ object SciFunctions {
     curandGenerateNormalDouble(cudarng(getGPU), out.data, out.length, mu, sig)
     JCuda.cudaDeviceSynchronize()
     out
+  }
+  
+  def normrnd(mu:Double, sig:Double, out:Mat):Mat = {
+    out match {
+      case a:FMat => normrnd(mu.toFloat, sig.toFloat, a);
+      case a:DMat => dnormrnd(mu, sig, a);
+      case a:GMat => gnormrnd(mu.toFloat, sig.toFloat, a);
+      case a:GDMat => gdnormrnd(mu, sig, a);
+    }
   }
   
   def gdnormrnd(mu:Double, sig:Double, out:GDMat):GDMat = gdnormrnd(mu, sig, out, out.nrows, out.ncols)

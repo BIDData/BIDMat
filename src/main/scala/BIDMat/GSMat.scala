@@ -42,8 +42,10 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     tmpMat.toString
   }
   
-  override def copy:GSMat = {
-    val out = GSMat.newOrCheckGSMat(nrows, ncols, nnz, null, GUID, "GSMat.copy".##)
+  override def copy:GSMat = copy(null, "GSMat.copy".##, 0)
+  
+  def copy(omat:Mat, key1:Long, key2:Int):GSMat = {
+    val out = GSMat.newOrCheckGSMat(nrows, ncols, nnz, realnnz, omat, GUID, key1, key2)
     var err = cudaMemcpy(out.jc, jc, 1L * Sizeof.INT * (ncols+1), cudaMemcpyKind.cudaMemcpyDeviceToDevice)
     cudaDeviceSynchronize()
     if (err == 0) err = cudaMemcpy(out.ir, ir, 1L * Sizeof.INT * nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
@@ -145,7 +147,7 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
   
   def sum(n:Int, oldmat:Mat) = {
     val nn = if (n > 0) n else if (nrows == 1) 2 else 1
-    val out = GMat.newOrCheckGMat(if (nn==1) 1 else nrows, if (nn==1) ncols else 1, oldmat, GUID, 0, "sum".##)
+    val out = GMat.newOrCheckGMat(if (nn==1) 1 else nrows, if (nn==1) ncols else 1, oldmat, GUID, n, "sum".##)
     out.clear
     Mat.nflops += nnz
     val err = CUMAT.spsum(nrows, ncols, nnz, ir, ic, data, out.data, nn)
@@ -212,11 +214,7 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
       throw new RuntimeException("GSMat op GMat: dimensions mismatch")
     }
     Mat.nflops += nnz;
-    val out = if (omat.asInstanceOf[AnyRef] != null) {
-      omat.asInstanceOf[GSMat]
-    } else {
-      copy;
-    }
+    val out = copy(omat, b.GUID, op);
     if (b.ncols > 1) {
     	CUMAT.sdoprow(nrows, ncols, nnz, out.data, out.ic, b.data, b.length, op);
     } else {
@@ -332,15 +330,15 @@ class GSPair (val omat:Mat, val mat:GSMat) extends Pair {
 
 object GSMat {  
 
-  def apply(nr:Int, nc:Int, nnzx:Int):GSMat = { 
+  def apply(nr:Int, nc:Int, nnzx:Int, realnnzx:Int):GSMat = { 
 //  		println("nr, nc, nnz = %d,%d,%d" format (nr,nc,nnz0))
     var err=0
-    val out = new GSMat(nr, nc, nnzx, new Pointer(), new Pointer(), new Pointer(), new Pointer(), nnzx) 
+    val out = new GSMat(nr, nc, nnzx, new Pointer(), new Pointer(), new Pointer(), new Pointer(), realnnzx) 
     if (Mat.debugMem) println("GSMat %d %d %d, %d %f" format (nr, nc, nnzx, SciFunctions.getGPU, SciFunctions.GPUmem._1))
-    err = JCublas.cublasAlloc(out.nnz, Sizeof.INT, out.ir)
-    if (err == 0) err = JCublas.cublasAlloc(out.nnz, Sizeof.INT, out.ic)
+    err = JCublas.cublasAlloc(out.realnnz, Sizeof.INT, out.ir)
+    if (err == 0) err = JCublas.cublasAlloc(out.realnnz, Sizeof.INT, out.ic)
     if (err == 0) err = JCublas.cublasAlloc(out.ncols+1, Sizeof.INT, out.jc)
-    if (err == 0) err = JCublas.cublasAlloc(out.nnz, Sizeof.FLOAT, out.data)
+    if (err == 0) err = JCublas.cublasAlloc(out.realnnz, Sizeof.FLOAT, out.data)
     cudaDeviceSynchronize
     if (err == 0) err = cudaGetLastError
     if (err != 0) {
@@ -349,6 +347,8 @@ object GSMat {
     } 
     out
   }
+  
+  def apply(nr:Int, nc:Int, nnzx:Int):GSMat = apply(nr, nc, nnzx, nnzx)
   
   def apply(a:SMat):GSMat = fromSMat(a, null) 
   
@@ -429,23 +429,23 @@ object GSMat {
   }
  
   def fromSMat(a:SMat, b:GSMat):GSMat = {
-    val out = GSMat.newOrCheckGSMat(a.nrows, a.ncols, a.nnz, b, a.GUID, SciFunctions.getGPU, "fromSMat".##)
-    out.nnz0 = a.nnz
-    var err = 0
-    val handle = GSMat.getHandle
-    cudaMemcpy(out.data, Pointer.to(a.data), 1L*a.nnz*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+    val out = GSMat.newOrCheckGSMat(a.nrows, a.ncols, a.nnz, a.nnz, b, a.GUID, SciFunctions.getGPU, "fromSMat".##);
+    out.nnz0 = a.nnz;
+    var err = 0;
+    val handle = GSMat.getHandle;
+    cudaMemcpy(out.data, Pointer.to(a.data), 1L*a.nnz*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice);
     if (Mat.ioneBased == 1) {
-      cudaMemcpy(out.ir, Pointer.to(SparseMat.decInds(a.ir)), 1L*a.nnz*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
-      cudaMemcpy(out.jc, Pointer.to(SparseMat.decInds(a.jc)), 1L*(a.ncols+1)*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+      cudaMemcpy(out.ir, Pointer.to(SparseMat.decInds(a.ir)), 1L*a.nnz*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice);
+      cudaMemcpy(out.jc, Pointer.to(SparseMat.decInds(a.jc)), 1L*(a.ncols+1)*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice);
     } else {
-      cudaMemcpy(out.ir, Pointer.to(a.ir), 1L*a.nnz*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
-      cudaMemcpy(out.jc, Pointer.to(a.jc), 1L*(a.ncols+1)*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+      cudaMemcpy(out.ir, Pointer.to(a.ir), 1L*a.nnz*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice);
+      cudaMemcpy(out.jc, Pointer.to(a.jc), 1L*(a.ncols+1)*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice);
     }
-    cudaDeviceSynchronize
-    if (err == 0) err = cudaGetLastError
+    cudaDeviceSynchronize;
+    if (err == 0) err = cudaGetLastError;
     if (err != 0) {
-        println("device is %d" format SciFunctions.getGPU)
-        throw new RuntimeException("Cuda copy error in GSMAT.fromSMat " + cudaGetErrorString(err))
+        println("device is %d" format SciFunctions.getGPU);
+        throw new RuntimeException("Cuda copy error in GSMAT.fromSMat " + cudaGetErrorString(err));
     }
     if (err == 0) err = JCusparse.cusparseXcsr2coo(handle, out.jc, out.nnz, out.ncols, out.ic, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO)
     cudaDeviceSynchronize
@@ -462,7 +462,7 @@ object GSMat {
       throw new RuntimeException("dimensions mismatch %d,%d  %d,%d  %d,%d" format (A.nrows, A.ncols, B.nrows, B.ncols, C.nrows, C.ncols))
     }
 //    println("DDS %d %d %d %d %f" format (C.nnz, C.GUID, C.myGPU, SciFunctions.getGPU, SciFunctions.GPUmem._1))
-    val out = GSMat.newOrCheckGSMat(C.nrows, C.ncols, C.nnz, oldmat, A.GUID, B.GUID, C.GUID, "DDS".##)
+    val out = GSMat.newOrCheckGSMat(C.nrows, C.ncols, C.nnz, C.realnnz, oldmat, A.GUID, B.GUID, C.GUID, "DDS".##)
 //    println("DDS1 %d %d %d %d %f" format (out.nnz, out.GUID, out.myGPU, SciFunctions.getGPU, SciFunctions.GPUmem._1))
     var err = cudaMemcpy(out.ir, C.ir, 1L * Sizeof.INT * C.nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
     cudaDeviceSynchronize()
@@ -482,7 +482,7 @@ object GSMat {
       throw new RuntimeException("dimensions mismatch")
     }
 //    println("DDS %d %d %d %d %f" format (C.nnz, C.GUID, C.myGPU, SciFunctions.getGPU, SciFunctions.GPUmem._1))
-    val out = GSMat.newOrCheckGSMat(C.nrows, C.ncols, C.nnz, oldmat, A.GUID, B.GUID, C.GUID, "DDS".##)
+    val out = GSMat.newOrCheckGSMat(C.nrows, C.ncols, C.nnz, C.realnnz, oldmat, A.GUID, B.GUID, C.GUID, "DDS".##)
 //    println("DDS1 %d %d %d %d %f" format (out.nnz, out.GUID, out.myGPU, SciFunctions.getGPU, SciFunctions.GPUmem._1))
     var err = cudaMemcpy(out.ir, C.ir, 1L * Sizeof.INT * C.nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
     cudaDeviceSynchronize()
@@ -494,14 +494,14 @@ object GSMat {
     out    
   }
   
-  def newOrCheckGSMat(nrows:Int, ncols:Int, nnz:Int, oldmat:Mat):GSMat = {
+  def newOrCheckGSMat(nrows:Int, ncols:Int, nnz:Int, realnnz:Int, oldmat:Mat):GSMat = {
   	val m = if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows ==0 && oldmat.ncols == 0)) {
   	  if (Mat.useCache) {
-  	    val m = GSMat(nrows, ncols, (Mat.recycleGrow*nnz).toInt)
-  	    m.nnz0 = nnz
+  	    val size = math.max((Mat.recycleGrow*nnz).toInt, realnnz)
+  	    val m = GSMat(nrows, ncols, nnz, size)
   	    m
   	  } else {
-  	  	GSMat(nrows, ncols, nnz)
+  	  	GSMat(nrows, ncols, nnz, realnnz)
   	  }
   	} else {
   		oldmat match {
@@ -519,13 +519,13 @@ object GSMat {
   	m
   }
   
-   def newOrCheckGSMat(nrows:Int, ncols:Int, nnz:Int, outmat:Mat, guid1:Long, opHash:Int):GSMat = {
+   def newOrCheckGSMat(nrows:Int, ncols:Int, nnz:Int, realnnz:Int, outmat:Mat, guid1:Long, opHash:Int):GSMat = {
     val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
-      newOrCheckGSMat(nrows, ncols, nnz, outmat)
+      newOrCheckGSMat(nrows, ncols, nnz, realnnz, outmat)
     } else {
       val key = (guid1, opHash)
       val res = Mat.cache2(key)
-      val omat = newOrCheckGSMat(nrows, ncols, nnz, res)
+      val omat = newOrCheckGSMat(nrows, ncols, nnz, realnnz, res)
       if (res != omat) Mat.cache2put(key, omat)
       omat
     }
@@ -539,13 +539,13 @@ object GSMat {
     m
   }   
 
-  def newOrCheckGSMat(nrows:Int, ncols:Int, nnz:Int, outmat:Mat, guid1:Long, guid2:Long, opHash:Int):GSMat = {
+  def newOrCheckGSMat(nrows:Int, ncols:Int, nnz:Int, realnnz:Int, outmat:Mat, guid1:Long, guid2:Long, opHash:Int):GSMat = {
     val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
-      newOrCheckGSMat(nrows, ncols, nnz, outmat)
+      newOrCheckGSMat(nrows, ncols, nnz, realnnz, outmat)
     } else {
       val key = (guid1, guid2, opHash)
       val res = Mat.cache3(key)
-      val omat =newOrCheckGSMat(nrows, ncols, nnz, res)
+      val omat =newOrCheckGSMat(nrows, ncols, nnz, realnnz, res)
       if (res != omat) Mat.cache3put(key, omat)
       omat
     }
@@ -560,13 +560,13 @@ object GSMat {
   } 
 
     
-  def newOrCheckGSMat(nrows:Int, ncols:Int, nnz:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):GSMat = {
+  def newOrCheckGSMat(nrows:Int, ncols:Int, nnz:Int, realnnz:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):GSMat = {
     val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
-      newOrCheckGSMat(nrows, ncols, nnz, outmat)
+      newOrCheckGSMat(nrows, ncols, nnz, realnnz, outmat)
     } else {
       val key = (guid1, guid2, guid3, opHash)
       val res = Mat.cache4(key)
-      val omat = newOrCheckGSMat(nrows, ncols, nnz, res)
+      val omat = newOrCheckGSMat(nrows, ncols, nnz, realnnz, res)
       if (res != omat) Mat.cache4put(key, omat)
       omat
     }
