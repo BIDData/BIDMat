@@ -684,6 +684,13 @@ class GIPair (val omat:Mat, val mat:GIMat) extends Pair{
 	override def ∘  (a : Int) = mat.GIop(GIMat(a), omat, op_mul)
 	override def /  (a : Int) = mat.GIop(GIMat(a), omat, op_div)
 	override def ^  (a : Int) = mat.GIop(GIMat(a), omat, op_pow)
+	
+  override def + (a : Double) = mat.GIop(GIMat(a.toInt), omat, op_add)
+	override def - (a : Double) = mat.GIop(GIMat(a.toInt), omat, op_sub)
+	override def *@ (a : Double) = mat.GIop(GIMat(a.toInt), omat, op_mul)
+	override def ∘  (a : Double) = mat.GIop(GIMat(a.toInt), omat, op_mul)
+	override def /  (a : Double) = mat.GIop(GIMat(a.toInt), omat, op_div)
+	override def ^  (a : Double) = mat.GIop(GIMat(a.toInt), omat, op_pow)
 
 	override def < (b : Float) = mat.GIop(GIMat(b.toInt), omat, op_lt)
 	override def > (b : Float) = mat.GIop(GIMat(b.toInt), omat, op_gt)
@@ -699,12 +706,12 @@ class GIPair (val omat:Mat, val mat:GIMat) extends Pair{
 	override def < (b : Int) = mat.GIop(GIMat(b), omat, op_lt)	
 	override def > (b : Int) = mat.GIop(GIMat(b), omat, op_gt)
 	
-	def < (b : Double) = mat.GIop(GIMat(b.toInt), omat, op_lt)	
-	def > (b : Double) = mat.GIop(GIMat(b.toInt), omat, op_gt)
-	def <= (b : Double) = mat.GIop(GIMat(b.toInt), omat, op_le)	
-	def >= (b : Double) = mat.GIop(GIMat(b.toInt), omat, op_ge)	
-	def == (b : Double) = mat.GIop(GIMat(b.toInt), omat, op_eq)	
-	def != (b : Double) = mat.GIop(GIMat(b.toInt), null, op_ne)  
+	override def < (b : Double) = mat.GIop(GIMat(b.toInt), omat, op_lt)	
+	override def > (b : Double) = mat.GIop(GIMat(b.toInt), omat, op_gt)
+	override def <= (b : Double) = mat.GIop(GIMat(b.toInt), omat, op_le)	
+	override def >= (b : Double) = mat.GIop(GIMat(b.toInt), omat, op_ge)	
+	override def == (b : Double) = mat.GIop(GIMat(b.toInt), omat, op_eq)	
+	override def != (b : Double) = mat.GIop(GIMat(b.toInt), null, op_ne)  
 	
 	 /*
    * Generics
