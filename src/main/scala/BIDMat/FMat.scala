@@ -591,7 +591,11 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     (b, c) match {
       case (sb:SMat, fc:FMat) => tileMult(nr, nc, kk, aroff, acoff, sb, broff, bcoff, fc, croff, ccoff);
       case (fb:FMat, fc:FMat) => tileMult(nr, nc, kk, aroff, acoff, fb, broff, bcoff, fc, croff, ccoff);
-      case _ => throw new RuntimeException("tileMult couldnt match matrix types")
+      case (fb:FMat, fc:DenseMat[Float]) => {  // this is horrible: because of the type erasure, Float is not actually checked. Change this immediately
+                     println("debug: expected pattern match : double");
+                     tileMult(nr, nc, kk, aroff, acoff, fb, broff, bcoff, fc.asInstanceOf[FMat], croff, ccoff);
+             }
+      case (bb,cc) => { println("b was: " + b + " and c was: " + c); throw new RuntimeException("tileMult couldnt match matrix types") }
     }
   }
   
