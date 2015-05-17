@@ -23,16 +23,17 @@ import scala.math.Numeric._
  *
  * Does not yet check for overlaps!
  * 
+ * Everything is assumed single precision, so maybe TMat should go back to the original name:
+ * TFMat
  * 
- * tiles(i) is the i-th tile (as an FMat for now - need to change to Mat)
+ * tiles(i) is the i-th tile as a generic Mat, but again, we assume single precision throughout
  * 
  */
 
 
 
-class TMat[@specialized(Double,Float,Int,Byte,Long) T] 
-      (nr: Int, nc: Int, var x : Array[Int], var y : Array[Int], tiles : Array[Mat]) 
-      (implicit manifest:ClassTag[T], numeric:Numeric[T]) extends Mat(nr, nc) {
+class TMat 
+      (nr: Int, nc: Int, var x : Array[Int], var y : Array[Int], tiles : Array[Mat])  extends Mat(nr, nc) {
   require(x.length == y.length, "x.length must equal y.length")
   require(x.length == tiles.length, "x.length must equal tiles.length")
   
@@ -69,8 +70,8 @@ class TMat[@specialized(Double,Float,Int,Byte,Long) T]
        while (rindex < y.length && y(rindex) <= r) {
          while (cindex < x.length && x(cindex) <= c) { 
           tiles(cindex) match {
-	   case denseMat : DenseMat[T] =>           
-                        if ( (x(cindex) + denseMat.ncols > c) && (c-x(cindex) < denseMat.ncols) && (r-y(cindex) < denseMat.nrows) && (y(cindex) <= r) ) {
+	   case fMat : FMat =>           
+                        if ( (x(cindex) + fMat.ncols > c) && (c-x(cindex) < fMat.ncols) && (r-y(cindex) < fMat.nrows) && (y(cindex) <= r) ) {
 	 
                           found = true
                           return ret
@@ -90,25 +91,23 @@ class TMat[@specialized(Double,Float,Int,Byte,Long) T]
     }
   }
 
-  def full()
-  (implicit manifest:Manifest[T], numeric:Numeric[T]) : DenseMat[T] = full(null)
+  def full() : FMat = full(null)
 
-  def full(mat:Mat)
-  (implicit manifest:Manifest[T], numeric:Numeric[T]) : DenseMat[T]  = {
-    val out = DenseMat.newOrCheck[T](nrows, ncols, mat, GUID, "full".hashCode)
+  def full(mat:Mat) : FMat  = {
+    val out = FMat.newOrCheckFMat(nrows, ncols, mat, GUID, "full".hashCode)
     out.clear
 
     var i = 0
 
     while (i < y.length) {
      tiles(i) match {
-       case denseMat : DenseMat[T] =>          
-                val rowInds:IMat = IMat(denseMat.nrows,1,(y(i) to y(i)+denseMat.nrows).toArray)
-                val colInds:IMat = IMat(denseMat.ncols,1,(x(i) to x(i)+denseMat.ncols).toArray)
+       case fMat : FMat =>          
+                val rowInds:IMat = IMat(fMat.nrows,1,(y(i) to y(i)+fMat.nrows).toArray)
+                val colInds:IMat = IMat(fMat.ncols,1,(x(i) to x(i)+fMat.ncols).toArray)
 
-                out._update(rowInds,colInds,denseMat)
+                out._update(rowInds,colInds,fMat)
                 i += 1
-       case _ => println("no match in TMat.full for tiles " + i)
+       case _ => { throw new RuntimeException("no match in TMat.full for tiles " + i); }
         }
 
     }
@@ -121,72 +120,68 @@ class TMat[@specialized(Double,Float,Int,Byte,Long) T]
  * We call tileMult repeatedly
  * tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:FMat, broff:Int, bcoff:Int, c:FMat, croff:Int, ccoff:Int)
  * 
- * Result is a DenseMat[T]
+ * Result is an FMat
  *
  */ 
  
-def tDMult(a:DenseMat[T], outmat:Mat) 
-(implicit manifest:Manifest[T], numeric:Numeric[T]) : DenseMat[T] =  {
+def tMult(a:Mat, outmat:Mat) : FMat =  {
       if (ncols == 1 && nrows == 1){ // left scalar multiply
-  		val out = DenseMat.newOrCheck[T](a.nrows, a.ncols, outmat, GUID, a.GUID, "tDMult".##)
+  		val out = FMat.newOrCheckFMat(a.nrows, a.ncols, outmat, GUID, a.GUID, "tMult".##)
   		Mat.nflops += a.length
  
 		var i = 0
 
-                tiles(0) match { 
-                   case denseMat : DenseMat[T] => 
-                       val dvar = denseMat.data(0)
+/*                tiles(0) match { 
+                   case fMat : FMat => 
+                       val dvar = fMat.data(0)
   		
                        while (i < a.length) {
                                 out.data(i) = numeric.times(dvar,a.data(i))
          	         	i += 1
    	         	}	
                 }
+
+*/
   		out			  
       } else if (a.ncols == 1 && a.nrows == 1){ 
-                val out = DenseMat.newOrCheck[T](nrows, ncols, outmat, GUID, a.GUID, "tDMult".##)
+                val out = FMat.newOrCheckFMat(nrows, ncols, outmat, GUID, a.GUID, "tMult".##)
   		
   		var i = 0
-  		val dvar = a.data(0)
+/*  		val dvar = a.data(0)
 
   		while (i < tiles.length) {
                         tiles(i) match {
-                           case denseMat : DenseMat[T] =>
-		               val rowInds : IMat = IMat(denseMat.nrows,1,(y(i) to y(i)+denseMat.nrows).toArray)
-                               val colInds : IMat = IMat(denseMat.ncols,1,(x(i) to x(i)+denseMat.ncols).toArray)
-  			       out.update(rowInds,colInds,denseMat.fDMult(a,out(rowInds,colInds)))
+                           case fMat : FMat =>
+		               val rowInds : IMat = IMat(fMat.nrows,1,(y(i) to y(i)+fMat.nrows).toArray)
+                               val colInds : IMat = IMat(fMat.ncols,1,(x(i) to x(i)+fMat.ncols).toArray)
+  			       out.update(rowInds,colInds,fMat.fDMult(a,out(rowInds,colInds)))
 
                 	   }
         	      	i += 1
   		}
- 
+ */
   		out
       } else if (ncols == a.nrows) {
-  		var out = DenseMat.newOrCheck[T](nrows, a.ncols, outmat, GUID, a.GUID, "tDMult".##)
-           //     var tmp = DenseMat.newOrCheck[T](nrows, a.ncols, null)
+         	var out = FMat.newOrCheckFMat(nrows, a.ncols, outmat, GUID, a.GUID, "tMult".##)
+                var tmp = FMat.newOrCheckFMat(nrows, a.ncols, null)
 
                 var i = 0
 
                 while (i < tiles.length) {
                   var m = tiles(i)
-//                  tmp.clear
+                  tmp.clear
 
-  		  Mat.nflops += 2L * m.length * a.ncols
+		  Mat.nflops += 2L * m.length * a.ncols
                   if (!Mat.useMKL) {
                     // not sure
                     out 
-		  } else {
-		       m match {
-                       case fMat : FMat =>
-           
-                            fMat.tileMult(fMat.nrows, a.ncols, fMat.ncols, 0, 0, a, x(i), 0, out, y(i), 0)
-
-                       }
-
-  		  }
-                 i+= 1  			 
-		} 
-               out
+		   } else {
+                          m.tileMult(m.nrows, a.ncols, m.ncols, 0, 0, a, x(i), 0, tmp, y(i), 0) 
+                          out += tmp
+  	            }
+                  i+= 1			 
+	         }
+                out
       }	else throw new RuntimeException("dimension mismatch")    
 
   }
