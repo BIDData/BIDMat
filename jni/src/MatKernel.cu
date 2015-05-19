@@ -13,6 +13,10 @@
 #include <thrust/device_vector.h>
 #include <cub/device/device_radix_sort.cuh>
 
+//#include <thrust/system/cuda/detail/cub/util_type.cuh>
+//#include <thrust/system/cuda/detail/cub/device/device_radix_sort.cuh>
+
+
 #if __CUDA_ARCH__ > 200
 #define MAXXGRID 2147483647
 #else
@@ -1746,7 +1750,7 @@ int fsort2dk(float *pkeys, unsigned int *pvals, int nrows, int ncols, int asc) {
   return err;
 }
 
-long long fsortcubsize(float *inkeys, float *outkeys, unsigned int *invals,unsigned int *outvals, int nelems, int asc) {
+long long fisortcubsize(float *inkeys, float *outkeys, unsigned int *invals, unsigned int *outvals, int nelems, int asc) {
   size_t size = 0;
   void *temp = NULL;
   cub::DoubleBuffer<float> d_keys(inkeys, outkeys);
@@ -1760,7 +1764,7 @@ long long fsortcubsize(float *inkeys, float *outkeys, unsigned int *invals,unsig
   return size;
 }
 
-int fsortcub(float *inkeys, float *outkeys, unsigned int *invals, unsigned int *outvals, int *temp, long long size, int nelems, int asc) {
+int fisortcub(float *inkeys, float *outkeys, unsigned int *invals, unsigned int *outvals, int *temp, long long size, int nelems, int asc) {
   cub::DoubleBuffer<float> d_keys(inkeys, outkeys);
   cub::DoubleBuffer<unsigned int> d_vals(invals, outvals);
   if (asc > 0) {
@@ -1770,6 +1774,31 @@ int fsortcub(float *inkeys, float *outkeys, unsigned int *invals, unsigned int *
   }
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+
+int fsort2dx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tvals, 
+             int nrows, int ncols, int asc) {
+  int i;
+  cudaError_t err;
+  long long ntemp;
+  int * temp;
+  ntemp = fisortcubsize(pkeys, tkeys, pvals, tvals, nrows, asc);
+  cudaMalloc(&temp, ntemp * sizeof(int));
+  cudaDeviceSynchronize();
+  for (i = 0; i < ncols; i++) {
+    cub::DoubleBuffer<float> d_keys(pkeys + (nrows * i), tkeys + (nrows * i));
+    cub::DoubleBuffer<unsigned int> d_vals(pvals + (nrows * i), tvals + (nrows * i));
+    if (asc > 0) {
+      cub::DeviceRadixSort::SortPairs((void *)temp, (size_t &)ntemp, d_keys, d_vals, nrows);
+    } else {
+      cub::DeviceRadixSort::SortPairsDescending((void *)temp, (size_t &)ntemp, d_keys, d_vals, nrows);
+    }
+  }
+  cudaDeviceSynchronize();
+  cudaFree(temp);
+  err = cudaGetLastError();
   return err;
 }
 
@@ -1972,93 +2001,6 @@ int i3sortk(int *pkeys0, unsigned int *pvals, int N, int asc) {
   return err;
 }
 
-
-// This path may break. If so look for radixsort_api.h in /usr/local/cuda/include
-// and fix the path below.
-using namespace thrust::system::cuda::detail::detail::b40c_thrust;
-
-int fsortsizex(int N) {
-  RadixSortingEnactor<float,unsigned int> sorter(N);
-  return sorter.SpineElements();
-}
-
-int lsortsizex(int N) {
-  RadixSortingEnactor<long long,unsigned int> sorter(N);
-  return sorter.SpineElements();
-}
-
-
-int fsort2dx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tvals, 
-             int *ispine, bool * bflags, int nrows, int ncols, int asc) {
-  int i;
-  cudaError_t err;
-  RadixSortingEnactor<float,unsigned int> sorter(nrows);
-  RadixSortStorage<float,unsigned int>  storage;
-  storage.d_spine                 = ispine;
-  storage.d_from_alt_storage      = bflags;
-  storage.using_alternate_storage = false;
-
-  for (i = 0; i < ncols; i++) {
-    storage.d_keys             = pkeys+i*nrows;
-    storage.d_values           = pvals+i*nrows;
-    storage.d_alt_keys         = tkeys;
-    storage.d_alt_values       = tvals;
-    if (asc == 0) {
-      thrust::device_ptr<float> keys(storage.d_keys);
-      thrust::device_ptr<unsigned int> vals(storage.d_values);
-      thrust::reverse(keys, keys+nrows);
-      thrust::reverse(vals, vals+nrows);
-    }
-    cudaDeviceSynchronize();
-    sorter.EnactSort(storage);
-    cudaDeviceSynchronize();
-    err = cudaGetLastError();
-    if (err > 0) return err;
-    if (asc == 0) {
-      thrust::device_ptr<float> keys(storage.d_keys);
-      thrust::device_ptr<unsigned int> vals(storage.d_values);
-      thrust::reverse(keys, keys+nrows);
-      thrust::reverse(vals, vals+nrows);
-    }
-    cudaDeviceSynchronize();
-    if (storage.d_keys == tkeys) {
-      cudaMemcpy(pkeys+i*nrows, tkeys, nrows*sizeof(float), cudaMemcpyDeviceToDevice);
-    }
-    if (storage.d_values == tvals) {
-      cudaMemcpy(pvals+i*nrows, tvals, nrows*sizeof(unsigned int), cudaMemcpyDeviceToDevice);
-    }
-  }
-  return err;
-}
-
-
-int lsortx(long long *pkeys, unsigned int *pvals, long long *tkeys, unsigned int *tvals, int *ispine, bool * bflags, int N, int asc) {
-  RadixSortingEnactor<long long,unsigned int> sorter(N);
-  RadixSortStorage<long long,unsigned int>    storage;
-  storage.d_keys             = pkeys;
-  storage.d_values           = pvals;
-  storage.d_alt_keys         = tkeys;
-  storage.d_alt_values       = tvals;
-  storage.d_spine            = ispine;
-  storage.d_from_alt_storage = bflags;
-  if (asc == 0) {
-    thrust::device_ptr<long long> keys(storage.d_keys);
-    thrust::device_ptr<unsigned int> vals(storage.d_values);
-    thrust::reverse(keys, keys+N);
-    thrust::reverse(vals, vals+N);
-  }
-  cudaDeviceSynchronize();
-  sorter.EnactSort(storage);
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  if (asc == 0) {
-    thrust::device_ptr<long long> keys(storage.d_keys);
-    thrust::device_ptr<unsigned int> vals(storage.d_values);
-    thrust::reverse(keys, keys+N);
-    thrust::reverse(vals, vals+N);
-  }
-  return err;
-}
 
 __global__ void __stratify(float *strata, int n, float *a, float *b, unsigned int *bi, int stride) {
   __shared__ float ss[32];

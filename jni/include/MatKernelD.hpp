@@ -106,7 +106,10 @@ int dsortk(double *pkeys, unsigned int *pvals, int n, int asc);
 
 int fsortsizexD(int N);
 
-int fsort2dx(double *pkeys, unsigned int *pvals, double *tkeys, unsigned int *tvals, int *ispine, bool *bflags, int nrows, int ncols, int asc);
+long long disortcubsize(double *inkeys, double *outkeys, unsigned int *invals, unsigned int *outvals, int nelems, int asc);
+int disortcub(double *inkeys, double *outkeys, unsigned int *invals, unsigned int *outvals, int *temp, long long size, int nelems, int asc);
+
+int fsort2dx(double *pkeys, unsigned int *pvals, double *tkeys, unsigned int *tvals, int nrows, int ncols, int asc);
 
 int fsort2d(double *pkeys, unsigned int *pvals, int nrows, int ncols, int asc);
 

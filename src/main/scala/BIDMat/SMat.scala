@@ -56,7 +56,8 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   override def colslice(col1:Int, col2:Int, omat:Mat, there:Int) = {
     val ioff = Mat.ioneBased
     val ms = if (omat.asInstanceOf[AnyRef] != null) {
-      val mms = omat.asInstanceOf[SMat]
+      val mms = omat.asInstanceOf[SMat];
+      val ncc = col2 - col1
     	val newnnz = jc(col2) - jc(col1) + mms.jc(there) - ioff
     	val ms0 = SMat.newOrCheckSMat(nrows, mms.ncols, newnnz, mms)
     	if (ms0 != omat.asInstanceOf[SMat]) {
@@ -603,10 +604,10 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   override def recycle(nr:Int, nc:Int, nnz:Int):SMat = {
   	val jc0 = if (jc.size >= nc+1) jc else new Array[Int](nc+1)
   	val ir0 = if (ir.size >= nnz) ir else {
-  	  if (Mat.useCache) new Array[Int]((Mat.recycleGrow*nnz).toInt) else new Array[Int](nnz)
+  	  if (Mat.useCache) new Array[Int]((Mat.recycleGrow*(1+nnz)).toInt) else new Array[Int](nnz)
   	}
   	val data0 = if (data.size >= nnz) data else {
-  	  if (Mat.useCache) new Array[Float]((Mat.recycleGrow*nnz).toInt) else new Array[Float](nnz) 
+  	  if (Mat.useCache) new Array[Float]((Mat.recycleGrow*(1+nnz)).toInt) else new Array[Float](nnz) 
   	}
   	new SMat(nr, nc, nnz, ir0, jc0, data0)    
   }
@@ -699,7 +700,7 @@ object SMat {
   def newOrCheckSMat(nrows:Int, ncols:Int, nnz:Int, oldmat:Mat):SMat = {
   	if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows == 0 && oldmat.ncols == 0)) {
   		if (Mat.useCache) {
-  		  val m = SMat(nrows, ncols, (Mat.recycleGrow*nnz).toInt)
+  		  val m = SMat(nrows, ncols, (Mat.recycleGrow*(1+nnz)).toInt)
   		  m.nnz0 = nnz
   		  m
   		} else {

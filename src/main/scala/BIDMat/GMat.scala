@@ -1968,9 +1968,9 @@ object GMat {
   	if (keys.ncols == 1) {
   	  val tkeys = GMat.newOrCheckGMat(keys.nrows, 1, null, keys.GUID, vals.GUID, "_sortGPU1".##);
   	  val tvals = GIMat.newOrCheckGIMat(vals.nrows, 1, null, keys.GUID, vals.GUID, "_sortGPU2".##);
-  	  val ntemp = CUMAT.fsortcubsize(keys.data, tkeys.data, vals.data, tvals.data, keys.nrows, if (asc) 1 else 0);
+  	  val ntemp = CUMAT.fisortcubsize(keys.data, tkeys.data, vals.data, tvals.data, keys.nrows, if (asc) 1 else 0);
   	  val temp = GIMat.newOrCheckGIMat((1+(ntemp - 1)/4).toInt, 1, null, keys.GUID, vals.GUID, "_sortGPU3".##);
-  	  val err = CUMAT.fsortcub(keys.data, tkeys.data, vals.data, tvals.data, temp.data, ntemp, keys.nrows, if (asc) 1 else 0);
+  	  val err = CUMAT.fisortcub(keys.data, tkeys.data, vals.data, tvals.data, temp.data, ntemp, keys.nrows, if (asc) 1 else 0);
   	  if (err != 0) 
   	    throw new RuntimeException("CUDA error in _sortGPU " + cudaGetErrorString(err));  	
   	  keys <-- tkeys;
@@ -2026,54 +2026,14 @@ object GMat {
   def _sortxGPU(keys:GMat, vals:GIMat, asc:Boolean):Unit = {
     if (keys.nrows != vals.nrows || keys.ncols != vals.ncols)
       throw new RuntimeException("Dimensions mismatch in sortxGPU")
-    val nspine = CUMAT.fsortsizex(keys.nrows)
     val tkeys = GMat(keys.nrows, 1)
     val tvals = GIMat(keys.nrows, 1)
-    val tspine = GIMat(nspine, 1)
-    val bflags = GIMat(32, 1)
 
-    CUMAT.fsort2dx(keys.data, vals.data, tkeys.data, tvals.data, tspine.data, bflags.data, keys.nrows, keys.ncols, if (asc) 1 else 0)
+    CUMAT.fsort2dx(keys.data, vals.data, tkeys.data, tvals.data, keys.nrows, keys.ncols, if (asc) 1 else 0)
 
-    bflags.free
-    tspine.free
     tvals.free
     tkeys.free
     Mat.nflops += keys.length
-  }
-  
-  def sortyGPU(keys:GMat, vals:GIMat):Unit = _sortyGPU(keys, vals, false)
-  
-  def sortdownyGPU(keys:GMat, vals:GIMat):Unit = _sortyGPU(keys, vals, true)
-  
-  def _sortyGPU(keys:GMat, vals:GIMat, asc:Boolean):Unit = {
-  	if (keys.nrows > 128*1024) {
-    	CUMAT.fsort2dk(keys.data,	vals.data, keys.nrows, keys.ncols, 0)
-    } else {
-    	val maxsize = keys.nrows * math.min(16*1024*1024/keys.nrows, keys.ncols)
-    	val nsize = keys.nrows*keys.ncols
-    	val nspine = CUMAT.lsortsizex(maxsize)
-    	val kk = GMat(maxsize, 2).data
-    	val tkeys = GMat(maxsize, 2).data
-    	val tvals = GIMat(maxsize, 1).data
-    	val tspine = GIMat(nspine, 1).data
-    	val bflags = GIMat(32, 1).data
-
-    	var ioff = 0
-    	while (ioff < nsize) {
-    		val todo = math.min(maxsize, nsize - ioff)
-    		val colstodo = todo / keys.nrows
-    		CUMAT.embedmat2d(keys.data.withByteOffset(1L*ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
-    		CUMAT.lsortx(kk, vals.data.withByteOffset(1L*ioff*Sizeof.INT), tkeys, tvals, tspine, bflags, todo, if (asc) 1 else 0)
-    		CUMAT.extractmat2d(keys.data.withByteOffset(1L*ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
-    		ioff += maxsize
-    	}
-    	cudaFree(bflags)
-    	cudaFree(tspine)
-    	cudaFree(tvals)
-    	cudaFree(tkeys)
-    	cudaFree(kk)
-    	Mat.nflops += keys.length
-    } 
   }
    
   def sortGPU(keys:FMat, vals:IMat):Unit = _sortGPU(keys, vals, false)
@@ -2087,7 +2047,6 @@ object GMat {
   	val nthreads = math.min(8,math.max(0, Mat.hasCUDA))
   	val maxsize = keys.nrows * math.min(32*1024*1024/keys.nrows, math.max(1, keys.ncols/nthreads))
   	val nsize = keys.nrows * keys.ncols
-  	val nspine = CUMAT.lsortsizex(maxsize)
   	val tall = (keys.nrows > 32*1024)
   	val done = IMat(nthreads,1)
   	var err = 0
@@ -2100,8 +2059,6 @@ object GMat {
   	  	val kk = if (!tall) GMat(maxsize, 2) else null
   	  	val tkeys = GMat(maxsize, 2)
   	  	val tvals = GIMat(maxsize, 1)
-  	  	val tspine = GIMat(nspine, 1)
-  	  	val bflags = GIMat(32, 1)
 
   	  	var ioff = ithread * maxsize
   	  	while (ioff < nsize) {
@@ -2113,12 +2070,12 @@ object GMat {
   	  		if (err != 0) throw new RuntimeException("sortGPU copy v in failed thread %d error %d" format (ithread,err))
   	  		cudaDeviceSynchronize
   	  		if (tall) {
-  	  			err = CUMAT.fsort2dx(aa.data, vv.data, tkeys.data, tvals.data, tspine.data, bflags.data, keys.nrows, colstodo, iasc)
+  	  			err = CUMAT.fsort2dx(aa.data, vv.data, tkeys.data, tvals.data, keys.nrows, colstodo, iasc)
   	  			if (err != 0) throw new RuntimeException("sortGPU tall sort failed thread %d error %d" format (ithread,err))
   	  		} else {
   	  			err = CUMAT.embedmat2d(aa.data, kk.data, keys.nrows, colstodo)
   	  			if (err != 0) throw new RuntimeException("sortGPU embed failed thread %d error %d" format (ithread,err))
-  	  			err = CUMAT.lsortx(kk.data, vv.data, tkeys.data, tvals.data, tspine.data, bflags.data, todo, iasc)
+  	  			err = CUMAT.lsortk(kk.data, vv.data, todo, iasc)
   	  			if (err != 0) throw new RuntimeException("sortGPU sort kernel failed thread %d error %d" format (ithread,err))
   	  			err = CUMAT.extractmat2d(aa.data, kk.data, keys.nrows, colstodo)
   	  			if (err != 0) throw new RuntimeException("sortGPU extract failed thread %d error %d" format (ithread,err))
@@ -2129,8 +2086,6 @@ object GMat {
   	  		if (err != 0) throw new RuntimeException("sortGPU copy v out failed thread %d error %d" format (ithread,err))
   	  		ioff += nthreads * maxsize
   	  	}
-  	  	bflags.free
-  	  	tspine.free
   	  	tvals.free
   	  	tkeys.free
   	  	if (!tall) kk.free
