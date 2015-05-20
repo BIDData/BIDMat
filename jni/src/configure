@@ -69,14 +69,14 @@ if [ "$OS" = "apple" ] ; then
           -gencode arch=compute_30,code=sm_30 \
           -gencode arch=compute_35,code=sm_35 \
           -gencode arch=compute_50,code=sm_50 \
-          --machine ${MBITS} -Xcompiler -arch -Xcompiler ${ARCH} -Xcompiler -stdlib=libstdc++"
+          --machine ${MBITS} -Xcompiler -arch -Xcompiler ${ARCH} -Xcompiler -stdlib=libc++"
     OBJ="o"
     OUTFLG="-o "
     CPPFLAGS="-fPIC -c -O2 -g -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/darwin -I$BIDMAT_ROOT/jni/include -I$CUDA_HOME/include"
     CFLAGS="-openmp -fPIC -c -O2 -g -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/darwin -I$BIDMAT_ROOT/jni/include -I$MKL_ROOT/include -I$MKL_ROOT/include/${ARCHD}${SUBDIR}"
     LB="ar rc"    
     LD="icc -dynamiclib"
-    GLD="nvcc -shared -Xlinker -rpath -Xlinker ${CUDA_HOME}/lib -lstdc++"
+    GLD="nvcc -shared -Xlinker -rpath -Xlinker ${CUDA_HOME}/lib -lc++"
     LDFLAGS="$LDFLAGS"
     LIBPREPEND="lib"
     LIBAPPEND="-${OS}-${ARCH}.dylib"
