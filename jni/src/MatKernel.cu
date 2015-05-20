@@ -11,10 +11,12 @@
 #include <thrust/fill.h>
 #include <thrust/iterator/reverse_iterator.h>
 #include <thrust/device_vector.h>
+#include <thrust/sort.h>
 #include <cub/device/device_radix_sort.cuh>
 
 //#include <thrust/system/cuda/detail/cub/util_type.cuh>
 //#include <thrust/system/cuda/detail/cub/device/device_radix_sort.cuh>
+//#include <thrust/system/cuda/detail/cub/cub.cuh>
 
 
 #if __CUDA_ARCH__ > 200
