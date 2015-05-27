@@ -240,6 +240,7 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   override def update(I:GIMat, V:Mat):GIMat = updatex(I, V.asInstanceOf[GIMat])
   
   override def update(I:Mat, V:Mat):GIMat = {
+    println("Inside update(I:Mat, V:Mat):GIMat ...")
   	(I, V) match {
   	case (jj:IMat, vv:GIMat) => updatex(GIMat(jj), vv)
   	case (jj:GIMat, vv:GIMat) => updatex(jj, vv)
@@ -301,15 +302,18 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   
   def updatex(I:GIMat, v:GIMat):GIMat = {
   	I match {
-  	case (ii:MatrixWildcard) => {
-  		cudaMemcpy(data, v.data, 1L * length * Sizeof.INT, cudaMemcpyDeviceToDevice)
-  	}
-  	case _ => {
-  		val err = CUMAT.copyToInds(data, v.data, I.data, I.llength);
-  		if (err != 0) {
-  			throw new RuntimeException("CUMAT.copyToInds2D error " + cudaGetErrorString(err))
-  		}
-    }
+  	  case (ii:MatrixWildcard) => {
+  	  	cudaMemcpy(data, v.data, 1L * length * Sizeof.INT, cudaMemcpyDeviceToDevice)
+  	  }
+  	  case _ => {
+  	    if (I.length != v.length) {
+          throw new RuntimeException("GIMat:updatex error: I and v have unequal lengths " + I.length + " and " + v.length + ", respectively.")
+        }
+  	  	val err = CUMAT.copyToInds(data, v.data, I.data, I.llength);
+  	  	if (err != 0) {
+  	  		throw new RuntimeException("CUMAT.copyToInds error " + cudaGetErrorString(err))
+  	  	}
+      }
   	}
   	this
   }

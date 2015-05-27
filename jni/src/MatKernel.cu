@@ -727,7 +727,7 @@ __global__ void __copyToInds(float *A, float *B, int *I, long long len) {
   int step = blockDim.x * gridDim.x * gridDim.y;
   long long i;
   for (i = tid; i < len; i += step) {
-    B[I[i]] = A[i];
+    A[I[i]] = B[i];
   }
 }
 
