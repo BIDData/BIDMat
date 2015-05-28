@@ -60,11 +60,10 @@ if [ "$OS" = "apple" ] ; then
 	JAVA_HOME=`/usr/libexec/java_home`
     fi
     CUDA_HOME="/usr/local/cuda"
-    CUB_ROOT=../../../cub
     CC="icc"
     GCC="g++"
     NVCC="nvcc"
-    NVCCFLAGS="-c -ccbin=clang -use_fast_math -I$BIDMAT_ROOT/jni/include -I${CUB_ROOT} \
+    NVCCFLAGS="-c -ccbin=clang -use_fast_math -I$BIDMAT_ROOT/jni/include \
           -gencode arch=compute_20,code=sm_20 \
           -gencode arch=compute_30,code=sm_30 \
           -gencode arch=compute_35,code=sm_35 \
@@ -107,11 +106,10 @@ elif [ "$OS" = "linux" ] ; then
     JAVA_HOME="/usr/java/default"
     fi
     CUDA_HOME="/usr/local/cuda"
-    CUB_ROOT="../../../cub"
     CC="icc"
     GCC="g++"
     NVCC="nvcc"
-    NVCCFLAGS="-c -use_fast_math  -I$BIDMAT_ROOT/jni/include -I${CUB_ROOT}\
+    NVCCFLAGS="-c -use_fast_math  -I$BIDMAT_ROOT/jni/include \
           -gencode arch=compute_20,code=sm_20 \
           -gencode arch=compute_30,code=sm_30 \
           -gencode arch=compute_35,code=sm_35 \
@@ -152,7 +150,6 @@ elif [ "$OS" = "linux" ] ; then
 elif [ "$OS" = "windows" ] ; then
     CUDA_HOME="$CUDA_PATH"
     MKL_ROOT="$MKLROOT"
-    CUB_ROOT=../../../cub
     CC="icl"
     GCC="cl"
     NVCC="nvcc"
@@ -193,7 +190,7 @@ elif [ "$OS" = "windows" ] ; then
     INSTALL_DIR="${BIDMAT_ROOT}/lib"
     CUDA_LIBS="cudart.lib cublas.lib"
     LIB="$MKL_ROOT/lib/${ARCHD};$JAVA_HOME/lib;$CUDA_HOME/lib/${CULIB};${INSTALL_DIR};$LIB"
-    INCLUDE="$JAVA_HOME/include;$JAVA_HOME/include/win32;$MKL_ROOT/include;${BIDMAT_ROOT}/jni/include;$CUDA_HOME/include;${CUB_ROOT};$INCLUDE"
+    INCLUDE="$JAVA_HOME/include;$JAVA_HOME/include/win32;$MKL_ROOT/include;${BIDMAT_ROOT}/jni/include;$CUDA_HOME/include;$INCLUDE"
 else
     echo "OS not supported"
     exit 1

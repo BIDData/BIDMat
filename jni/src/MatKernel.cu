@@ -11,13 +11,8 @@
 #include <thrust/fill.h>
 #include <thrust/iterator/reverse_iterator.h>
 #include <thrust/device_vector.h>
-//#include <thrust/sort.h>
-#include <cub/device/device_radix_sort.cuh>
-
-//#include <thrust/system/cuda/detail/cub/util_type.cuh>
-//#include <thrust/system/cuda/detail/cub/device/device_radix_sort.cuh>
-//#include <thrust/system/cuda/detail/cub/cub.cuh>
-
+#include <thrust/sort.h>
+//#include <cub/device/device_radix_sort.cuh>
 
 #if __CUDA_ARCH__ > 200
 #define MAXXGRID 2147483647
@@ -1755,24 +1750,24 @@ int fsort2dk(float *pkeys, unsigned int *pvals, int nrows, int ncols, int asc) {
 long long fisortcubsize(float *inkeys, float *outkeys, unsigned int *invals, unsigned int *outvals, int nelems, int asc) {
   size_t size = 0;
   void *temp = NULL;
-  cub::DoubleBuffer<float> d_keys(inkeys, outkeys);
-  cub::DoubleBuffer<unsigned int> d_vals(invals, outvals);
+  thrust::system::cuda::detail::cub_::DoubleBuffer<float> d_keys(inkeys, outkeys);
+  thrust::system::cuda::detail::cub_::DoubleBuffer<unsigned int> d_vals(invals, outvals);
   if (asc > 0) {
-    cub::DeviceRadixSort::SortPairs(temp, size, d_keys, d_vals, nelems);
+    thrust::system::cuda::detail::cub_::DeviceRadixSort::SortPairs(temp, size, d_keys, d_vals, nelems);
   } else {
-    cub::DeviceRadixSort::SortPairsDescending(temp, size, d_keys, d_vals, nelems);
+    thrust::system::cuda::detail::cub_::DeviceRadixSort::SortPairsDescending(temp, size, d_keys, d_vals, nelems);
   }
   cudaDeviceSynchronize();
   return size;
 }
 
 int fisortcub(float *inkeys, float *outkeys, unsigned int *invals, unsigned int *outvals, int *temp, long long size, int nelems, int asc) {
-  cub::DoubleBuffer<float> d_keys(inkeys, outkeys);
-  cub::DoubleBuffer<unsigned int> d_vals(invals, outvals);
+  thrust::system::cuda::detail::cub_::DoubleBuffer<float> d_keys(inkeys, outkeys);
+  thrust::system::cuda::detail::cub_::DoubleBuffer<unsigned int> d_vals(invals, outvals);
   if (asc > 0) {
-    cub::DeviceRadixSort::SortPairs((void *)temp, (size_t &)size, d_keys, d_vals, nelems);
+    thrust::system::cuda::detail::cub_::DeviceRadixSort::SortPairs((void *)temp, (size_t &)size, d_keys, d_vals, nelems);
   } else {
-    cub::DeviceRadixSort::SortPairsDescending((void *)temp, (size_t &)size, d_keys, d_vals, nelems);
+    thrust::system::cuda::detail::cub_::DeviceRadixSort::SortPairsDescending((void *)temp, (size_t &)size, d_keys, d_vals, nelems);
   }
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -1790,12 +1785,12 @@ int fsort2dx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tval
   cudaMalloc(&temp, ntemp * sizeof(int));
   cudaDeviceSynchronize();
   for (i = 0; i < ncols; i++) {
-    cub::DoubleBuffer<float> d_keys(pkeys + (nrows * i), tkeys + (nrows * i));
-    cub::DoubleBuffer<unsigned int> d_vals(pvals + (nrows * i), tvals + (nrows * i));
+    thrust::system::cuda::detail::cub_::DoubleBuffer<float> d_keys(pkeys + (nrows * i), tkeys + (nrows * i));
+    thrust::system::cuda::detail::cub_::DoubleBuffer<unsigned int> d_vals(pvals + (nrows * i), tvals + (nrows * i));
     if (asc > 0) {
-      cub::DeviceRadixSort::SortPairs((void *)temp, (size_t &)ntemp, d_keys, d_vals, nrows);
+      thrust::system::cuda::detail::cub_::DeviceRadixSort::SortPairs((void *)temp, (size_t &)ntemp, d_keys, d_vals, nrows);
     } else {
-      cub::DeviceRadixSort::SortPairsDescending((void *)temp, (size_t &)ntemp, d_keys, d_vals, nrows);
+      thrust::system::cuda::detail::cub_::DeviceRadixSort::SortPairsDescending((void *)temp, (size_t &)ntemp, d_keys, d_vals, nrows);
     }
   }
   cudaDeviceSynchronize();
