@@ -6,6 +6,10 @@ int sdoprow(int nrows, int ncols, int nnz, double *A, int *Aic, double *B, int l
 
 int sdopcol(int nrows, int ncols, int nnz, double *A, int *Aic, double *B, int len, int opn);
 
+int copyFromInds(double *A, double *B, int *I, long long len);
+
+int copyToInds(double *A, double *B, int *I, long long len);
+
 int copyToInds2D(double *A, int lda, double *B, int ldb, int *I, int nrows, int *J, int ncols);
 
 int copyFromInds2D(double *A, int lda, double *B, int ldb, int *I, int nrows, int *J, int ncols);

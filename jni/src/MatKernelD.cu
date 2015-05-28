@@ -436,6 +436,46 @@ int sdopcol(int nrows, int ncols, int nnz, double *A, int *Air,
   return err;
 }
 
+__global__ void __copyToInds(double *A, double *B, int *I, long long len) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  int step = blockDim.x * gridDim.x * gridDim.y;
+  long long i;
+  for (i = tid; i < len; i += step) {
+    B[I[i]] = A[i];
+  }
+}
+
+int copyToInds(double *A, double *B, int *I, long long len) {
+  int nthreads;
+  dim3 griddims;
+  setsizesD(len, &griddims, &nthreads);
+  __copyToInds<<<griddims,nthreads>>>(A, B, I, len);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+template<typename T>
+__global__ void __copyFromInds(T *A, T *B, int *I, long long len) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  int step = blockDim.x * gridDim.x * gridDim.y;
+  long long i;
+  for (i = tid; i < len; i += step) {
+    B[i] = A[I[i]];
+  }
+}
+
+int copyFromInds(double *A, double *B, int *I, long long len) {
+  int nthreads;
+  dim3 griddims;
+  setsizesD(len, &griddims, &nthreads);
+  __copyFromInds<<<griddims,nthreads>>>(A, B, I, len);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+
 
 // Implement B[I,J] = A
 // indexed copy: version with one block per column
