@@ -506,7 +506,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
     	}
 
     	out 
-    } else throw new RuntimeException("dimensions mismatch")
+    } else throw new RuntimeException("dimensions mismatch (%d %d), (%d %d)" format (nrows, ncols, a.nrows, a.ncols));
   }
   
   def GMultT(a:GMat, oldmat:Mat):GMat = {
