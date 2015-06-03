@@ -980,6 +980,36 @@ object HMat {
     }
     fout.close()
   }
+  
+  def saveVW(fname:String, sdata:SMat, labels:SMat):Unit = saveVW(fname, sdata, labels, 0);
+  
+  def saveVW(fname:String, sdata:SMat, labels:SMat, compressed:Int, oneBased:Int = 0):Unit = {
+    val fout = new BufferedWriter (new OutputStreamWriter (getOutputStream(fname, compressed)));
+    val jc = sdata.jc;
+    val ir = sdata.ir;
+    val data = sdata.data;
+    val jci = labels.jc;
+    val iri = labels.ir;
+    val ioffset = Mat.ioneBased;
+    var i = 0;
+    while (i < sdata.ncols) {
+      var j = jci(i);
+      while (j < jci(i+1)) {
+        if (j > jci(i)) fout.write(",");
+      	fout.write((iri(j - ioffset) - ioffset + oneBased).toString);
+      	j += 1;
+      }
+      fout.write(" |");
+      j = jc(i);
+      while (j < jc(i+1)) {
+      	fout.write(" %d:%f" format (ir(j-ioffset)-ioffset+oneBased, data(j-ioffset)));
+      	j += 1;
+      }
+      fout.write("\n")
+      i += 1
+    }
+    fout.close()
+  }
 
   def testLoad(fname:String, varname:String, n:Int) = {
     val a = new Array[SMat](n)
