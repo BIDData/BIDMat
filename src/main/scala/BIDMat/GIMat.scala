@@ -777,7 +777,7 @@ object GIMat {
   
   def apply(nr:Int, nc:Int):GIMat = {
     val retv = new GIMat(nr, nc, new Pointer(), nr*nc)        
-    if (Mat.debugMem) {
+    if (Mat.debugMem && (nr*nc>1)) {
       println("GIMat %d %d, %d %f" format (nr, nc, SciFunctions.getGPU, SciFunctions.GPUmem._1))
       if (nr*nc > Mat.debugMemThreshold) throw new RuntimeException("GIMat alloc too large");
     } 
