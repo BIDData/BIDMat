@@ -82,6 +82,35 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     out
   }
   
+  def copyTo(out:SMat) = { 
+    if (nrows != out.nrows && ncols != out.ncols && nnz != out.nnz) {
+      throw new RuntimeException("GSMAT.copyTo dimensions mismatch")
+    }
+    val tmpcols = IMat.newOrCheckIMat(nnz, 1, null, GUID, "copyTo_tmp".##).data
+    var err = JCublas.cublasGetVector(nnz, Sizeof.INT, ir, 1, Pointer.to(out.ir), 1)
+    cudaDeviceSynchronize
+    if (err == 0) err = JCublas.cublasGetVector(nnz, Sizeof.FLOAT, data, 1, Pointer.to(out.data), 1)
+    cudaDeviceSynchronize
+    if (err == 0) JCublas.cublasGetVector(nnz, Sizeof.INT, ic, 1, Pointer.to(tmpcols), 1)
+    cudaDeviceSynchronize
+    if (err == 0) err = cublasGetError()
+    if (err != 0) {
+    	println("device is %d" format SciFunctions.getGPU)
+    	throw new RuntimeException("Cuda error in GSMAT.copyTo " + cudaGetErrorString(err))
+    }    
+    SparseMat.compressInds(tmpcols, ncols, out.jc, nnz)
+    if (Mat.ioneBased == 1) {
+      SparseMat.incInds(out.ir, out.ir)
+    }
+    out
+  }
+  
+  override def copyTo(omat:Mat) = {
+    omat match {
+      case out:SMat => copyTo(out);
+    }
+  }
+  
   override def clear = {
   	var err = cudaMemset(data, 0, Sizeof.FLOAT*nnz)
   	cudaDeviceSynchronize  	
@@ -333,7 +362,8 @@ object GSMat {
   def apply(nr:Int, nc:Int, nnzx:Int, realnnzx:Int):GSMat = { 
 //  		println("nr, nc, nnz = %d,%d,%d" format (nr,nc,nnz0))
     var err=0
-    val out = new GSMat(nr, nc, nnzx, new Pointer(), new Pointer(), new Pointer(), new Pointer(), realnnzx) 
+    val realnnzy = math.max(1, realnnzx);
+    val out = new GSMat(nr, nc, nnzx, new Pointer(), new Pointer(), new Pointer(), new Pointer(), realnnzy) 
     if (Mat.debugMem) println("GSMat %d %d %d, %d %f" format (nr, nc, nnzx, SciFunctions.getGPU, SciFunctions.GPUmem._1))
     err = JCublas.cublasAlloc(out.realnnz, Sizeof.INT, out.ir)
     if (err == 0) err = JCublas.cublasAlloc(out.realnnz, Sizeof.INT, out.ic)

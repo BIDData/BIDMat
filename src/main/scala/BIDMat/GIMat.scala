@@ -6,6 +6,9 @@ import jcuda.runtime.JCuda._
 import jcuda.runtime.cudaMemcpyKind._
 import jcuda.runtime.cudaError._
 import jcuda.runtime.cudaMemcpyKind._
+import jcuda.jcublas._
+import jcuda.jcublas.JCublas._
+import jcuda.jcusparse._
 import edu.berkeley.bid.CUMAT;
 import scala.util.hashing.MurmurHash3
 
@@ -301,15 +304,18 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   
   def updatex(I:GIMat, v:GIMat):GIMat = {
   	I match {
-  	case (ii:MatrixWildcard) => {
-  		cudaMemcpy(data, v.data, 1L * length * Sizeof.INT, cudaMemcpyDeviceToDevice)
-  	}
-  	case _ => {
-  		val err = CUMAT.copyToInds(data, v.data, I.data, I.llength);
-  		if (err != 0) {
-  			throw new RuntimeException("CUMAT.copyToInds2D error " + cudaGetErrorString(err))
-  		}
-    }
+  	  case (ii:MatrixWildcard) => {
+  	  	cudaMemcpy(data, v.data, 1L * length * Sizeof.INT, cudaMemcpyDeviceToDevice)
+  	  }
+  	  case _ => {
+  	    if (I.length != v.length) {
+          throw new RuntimeException("GIMat:updatex error: I and v have unequal lengths " + I.length + " and " + v.length + ", respectively.")
+        }
+  	  	val err = CUMAT.copyToInds(data, v.data, I.data, I.llength);
+  	  	if (err != 0) {
+  	  		throw new RuntimeException("CUMAT.copyToInds error " + cudaGetErrorString(err))
+  	  	}
+      }
   	}
   	this
   }
@@ -556,7 +562,8 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   def reverse:GIMat = _reverse(null);
   
   def reverse(omat:Mat):GIMat = _reverse(omat);
- 
+  
+
   override def unary_- () = GIop(GIMat(-1), null, 2)
   def + (a : GIMat) = GIop(a, null, op_add)
   def - (a : GIMat) = GIop(a, null, op_sub)
@@ -770,6 +777,10 @@ object GIMat {
   
   def apply(nr:Int, nc:Int):GIMat = {
     val retv = new GIMat(nr, nc, new Pointer(), nr*nc)        
+    if (Mat.debugMem && (nr*nc>1)) {
+      println("GIMat %d %d, %d %f" format (nr, nc, SciFunctions.getGPU, SciFunctions.GPUmem._1))
+      if (nr*nc > Mat.debugMemThreshold) throw new RuntimeException("GIMat alloc too large");
+    } 
     JCublas.cublasAlloc(nr*nc, Sizeof.INT, retv.data)
     retv        
   }    

@@ -5,6 +5,7 @@ import edu.berkeley.bid.VSL
 import edu.berkeley.bid.VSL._
 import edu.berkeley.bid.CBLAS._
 import jcuda._;
+import jcuda.runtime._;
 import jcuda.jcublas.JCublas;
 import jcuda.runtime.JCuda;
 import jcuda.jcurand.JCurand._;
@@ -57,9 +58,11 @@ object SciFunctions {
   
   def resetGPU = {
     JCuda.cudaDeviceReset
+    JCuda.cudaDeviceSynchronize
     initCUDArng(getGPU)
     GSMat.cusparseContextsInitialized = false
     GSMat.cusparseDescrsInitialized = false
+    JCublas.cublasInit();
     Mat.clearCaches
   }
   

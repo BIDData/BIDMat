@@ -191,15 +191,15 @@ public final class CUMAT {
     
     public static native int fsortsizex(int n);
     
-    public static native long fsortcubsize(Pointer inkeys, Pointer outkeys, Pointer invals, Pointer outvals, int nelems, int asc);
+    public static native long fisortcubsize(Pointer inkeys, Pointer outkeys, Pointer invals, Pointer outvals, int nelems, int asc);
     
-    public static native int fsortcub(Pointer inkeys, Pointer outkeys, Pointer invals, Pointer outvals, Pointer temp, long size, int nelems, int asc);
+    public static native int fisortcub(Pointer inkeys, Pointer outkeys, Pointer invals, Pointer outvals, Pointer temp, long size, int nelems, int asc);
     
     public static native int lsortsizex(int n);
     
     public static native int lsortx(Pointer A, Pointer B, Pointer C, Pointer D, Pointer E, Pointer F, int n, int asc);
     
-    public static native int fsort2dx(Pointer A, Pointer B, Pointer C, Pointer D, Pointer E, Pointer F, int nrows, int ncols, int asc);
+    public static native int fsort2dx(Pointer A, Pointer B, Pointer C, Pointer D, int nrows, int ncols, int asc);
     
     public static native int stratify(Pointer strata, int n, Pointer a,  Pointer b, Pointer bi, int stride);
     

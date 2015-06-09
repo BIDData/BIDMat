@@ -99,6 +99,27 @@ extern "C" {
     return full(ir, ic, data, od, nrows, ncols, nnz);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_copyToInds
+  (JNIEnv *env, jobject obj, jobject jA, jobject jB, jobject jI, jlong length) 
+  {
+    double *A = (double*)getPointer(env, jA);
+    double *B = (double*)getPointer(env, jB);
+    int *I = (int*)getPointer(env, jI);
+
+    return copyToInds(A, B, I, length);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_copyFromInds
+  (JNIEnv *env, jobject obj, jobject jA, jobject jB, jobject jI, jlong length) 
+  {
+    double *A = (double*)getPointer(env, jA);
+    double *B = (double*)getPointer(env, jB);
+    int *I = (int*)getPointer(env, jI);
+
+    return copyFromInds(A, B, I, length);
+  }
+
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_copyToInds2D
   (JNIEnv *env, jobject obj, jobject jA, jint lda, jobject jB, jint ldb,
    jobject jI, jint nrows, jobject jJ, jint ncols) 
@@ -428,23 +449,15 @@ extern "C" {
     return dsortk(pkeys, pvals, n, desc);
   }
 
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_fsortsizex
-  (JNIEnv *env, jobject obj, jint n) 
-  {
-    return fsortsizexD(n);
-  }
-
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_fsort2dx
-  (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jobject jtkeys, jobject jtvals, jobject jspine, jobject jflags, jint nrows, jint ncols, jint asc) 
+  (JNIEnv *env, jobject obj, jobject jpkeys, jobject jpvals, jobject jtkeys, jobject jtvals, jint nrows, jint ncols, jint asc) 
   {
     double *pkeys = (double *)getPointer(env, jpkeys);
     unsigned int *pvals = (unsigned int *)getPointer(env, jpvals);
     double *tkeys = (double *)getPointer(env, jtkeys);
     unsigned int *tvals = (unsigned int *)getPointer(env, jtvals);
-    int *spine = (int *)getPointer(env, jspine);
-    bool *bflags = (bool *)getPointer(env, jflags);
 
-    return fsort2dx(pkeys, pvals, tkeys, tvals, spine, bflags, nrows, ncols, asc);
+    return fsort2dx(pkeys, pvals, tkeys, tvals, nrows, ncols, asc);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_stratify

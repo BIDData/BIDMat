@@ -635,6 +635,10 @@ object GLMat {
   
   def apply(nr:Int, nc:Int):GLMat = {
     val retv = new GLMat(nr, nc, new Pointer(), nr*nc)        
+    if (Mat.debugMem) {
+      println("GLMat %d %d, %d %f" format (nr, nc, SciFunctions.getGPU, SciFunctions.GPUmem._1))
+      if (nr*nc > Mat.debugMemThreshold) throw new RuntimeException("GLMat alloc too large");
+    }
     cudaMalloc(retv.data, 1L*nr*nc*Sizeof.LONG)
     retv        
   }    
