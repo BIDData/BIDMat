@@ -1,4 +1,5 @@
 package BIDMat
+
 import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.LAPACK._
 import edu.berkeley.bid.SPBLAS._
@@ -10,10 +11,12 @@ import java.util.Comparator
 import scala.math._
 import scala.reflect._
 import scala.math.Numeric._
+import scala.collection.mutable.ArrayBuffer
+
 
 /*
- * TMat's are composed of vertical tiles, given as an Array of (Dense)Mats.  
- * This allows us to use a different multiplication strategy than for DenseMats.
+ * TMat's are composed of tiles, given as an Array of Mats and their companion subindices.
+ * This allows us to use a novel multiplication strategy.
  *
  * x(i) is the Mat.oneBased col index of the top left corner of tile i.
  * y(i) is the Mat.oneBased row index of the top left corner of tile i.
@@ -21,7 +24,8 @@ import scala.math.Numeric._
  * y should be passed in sorted, and contiguous x's with the same
  * y value should also be sorted
  *
- * Does not yet check for overlaps!
+ * We will check for this in the future.
+ * Also, there is currently no overlap checking.
  * 
  * Everything is assumed single precision, so maybe TMat should go back to the original name:
  * TFMat
@@ -31,63 +35,103 @@ import scala.math.Numeric._
  */
 
 
-
 class TMat 
-      (nr: Int, nc: Int, var x : Array[Int], var y : Array[Int], tiles : Array[Mat])  extends Mat(nr, nc) {
+      ( nr: Int, 
+        nc: Int, 
+        x : Array[Int], 
+        y : Array[Int], 
+        val tiles : Array[Mat] ) extends Mat(nr, nc) {
+
   require(x.length == y.length, "x.length must equal y.length")
   require(x.length == tiles.length, "x.length must equal tiles.length")
   
 
   override def mytype = "TMat"
 
-  def apply(r0: Int, c0: Int): Float = {
-    val off = Mat.oneBased
-    val r = r0 - off
-    val c = c0 - off
+  /*
+   * Apply a (Mat, scalar) => Mat to a TMat tilewise.
+   *
+   */  
 
-    if (r < 0 || r >= nrows || c < 0 || c >= ncols) {
-	throw new IndexOutOfBoundsException("("+(r+off)+","+(c+off)+") vs ("+nrows+","+ncols+")");
-    } else {
-	
-       var rindex = math.max(Mat.ibinsearch(r,y,0,y.length),0)
+  def ggMatOpScalarF(b : Float, f : (Mat, Float) => Mat, oldmat:TMat) : TMat = {
+    var i = 0
+   
+    var out = TMat.newOrCheckTMat(nrows,ncols,x,y,tiles,oldmat)
 
-       var tmp = rindex
-       while (tmp > 0 && y(tmp) == y(rindex)) 
-          tmp -= 1
+    while (i < tiles.length) {
+      Mat.nflops += tiles(i).length
+      out.tiles(i) = f(tiles(i), b)
+      i += 1
+    }
 
-       rindex = tmp    
+    out
+  }
 
-       var cindex = rindex
-       var ret = 0.0f
-       var found = false
-        
-      /*
-       * similar to saddleback search
-       * review this later
-       * 
-       */
+  /*
+   * Apply a (scalar,scalar) => scalar elementwise within tiles to combine
+   * two TMats.
+   *
+   */
+  
+/*
+  def ggMatOpF(aa : TMat, f : (Float, Float) => Float, oldmat:TMat) : TMat = {
+    var i = 0
+   
+    var out = TMat.newOrCheckTMat(nrows,ncols,x,y,tiles,oldmat)
 
-       while (rindex < y.length && y(rindex) <= r) {
-         while (cindex < x.length && x(cindex) <= c) { 
-          tiles(cindex) match {
-	   case fMat : FMat =>           
-                        if ( (x(cindex) + fMat.ncols > c) && (c-x(cindex) < fMat.ncols) && (r-y(cindex) < fMat.nrows) && (y(cindex) <= r) ) {
-	 
-                          found = true
-                          return ret
-	                }  else {  
-                           cindex += 1 
-                        }
-           }                        
- 	 }
-        cindex = rindex	
-        rindex += 1
-       }
+    while (i < tiles.length) {
+      Mat.nflops += tiles(i).length
 
-       if (found)
-          ret
-       else  
-          throw new IndexOutOfBoundsException("not found");
+      i += 1
+    }
+
+    out
+  }
+*/
+
+  /*
+   * An implementation of slicing
+   * Surprisingly tricky
+   *  
+   */
+
+  def gapply(rowinds:IMat, colinds:IMat): TMat = {
+    var out:TMat = null
+
+    /*
+     * these could all probably be immutable Arrays
+     * and the slicing implemented with a map, but
+     * that seems a bit unnatural given the explicit copying
+     *
+     */
+
+    var xInds = ArrayBuffer.empty[Int]
+    var yInds = ArrayBuffer.empty[Int]
+    val mats = ArrayBuffer.empty[Mat]
+
+    val off = Mat.oneBased 
+    var i = 0
+
+    rowinds match {
+    	case dummy:MatrixWildcard => {
+    	   colinds match {
+  	      case dummy2:MatrixWildcard => {
+		   while (i < tiles.length) {
+		     mats += tiles(i).copy
+                     i += 1
+                   }
+                   
+                    new TMat(nrows,ncols,x,y,mats.toArray)
+		  }
+	   }
+
+	}
+/*        case _ => {
+
+
+
+        }
+*/
     }
   }
 
@@ -99,7 +143,8 @@ class TMat
 
     var i = 0
 
-    while (i < y.length) {
+    while (i < tiles.length) {
+     // use contents to make this generic
      tiles(i) match {
        case fMat : FMat =>          
                 val rowInds:IMat = IMat(fMat.nrows,1,(y(i) to y(i)+fMat.nrows).toArray)
@@ -176,7 +221,12 @@ def tMult(a:Mat, outmat:Mat) : FMat =  {
                     // not sure
                     out 
 		   } else {
-                          m.tileMult(m.nrows, a.ncols, m.ncols, 0, 0, a, x(i), 0, tmp, y(i), 0) 
+                          m.tileMult(m.nrows, a.ncols, m.ncols, 0, 0, a, x(i), 0, tmp, y(i), 0); 
+                          // println("m:   " + m);
+                          // println("a:   " + a);
+                          // println("x(i): " + x(i));
+                          // println("y(i): " + y(i));
+                          // println("tmp: " + tmp);
                           out += tmp
   	            }
                   i+= 1			 
@@ -185,5 +235,107 @@ def tMult(a:Mat, outmat:Mat) : FMat =  {
       }	else throw new RuntimeException("dimension mismatch")    
 
   }
+
+}
+ 
+object TMat {
+
+ def apply( nr:Int, 
+            nc:Int, 
+            xInds:Array[Int], 
+            yInds:Array[Int], 
+            data:Array[Mat] ) = 
+    new TMat(nr, nc, xInds, yInds, data)
+
+
+ /*
+  * This function is very unsafe at the moment.
+  * In the future it should check that outmat is an instance of TMat, safely
+  * then should check that the tile structure matches appropriately.
+  *
+  * Also we should define the recycle function for TMat's to grow them
+  * to the right size if need be.
+  *
+  * The clone function is used because we expect to pass another TMat's tiles
+  * in to this function. This is to deal with the fact that the memory layout 
+  * of TMat is not known apriori ( e.g. without knowing the types and dimensions
+  * of each tile ).
+  *
+  */
+
+ def newOrCheckTMat( nr:Int, 
+                     nc:Int, 
+                     xInds: Array[Int], 
+                     yInds: Array[Int],
+                     data: Array[Mat],
+                     outmat:Mat ) : TMat = {
+    if (outmat.asInstanceOf[AnyRef] == null || (outmat.nrows == 0 && outmat.ncols == 0)) {
+      TMat(nr, nc, xInds, yInds, data.clone()) 
+    } else {
+        outmat.asInstanceOf[TMat]
+      }
+  }
   
+  def newOrCheckTMat( nr:Int, 
+                      nc:Int, 
+                      xInds: Array[Int], 
+                      yInds: Array[Int],
+                      data: Array[Mat],
+                      outmat:Mat, matGuid:Long, opHash:Int ) : TMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheckTMat(nr, nc, xInds, yInds, data, outmat)
+    } else {
+      val key = (matGuid, opHash)
+      val res = Mat.cache2(key)
+      if (res != null) {
+      	newOrCheckTMat(nr, nc, xInds, yInds,data,res)
+      } else {
+        val omat = newOrCheckTMat(nr, nc, xInds, yInds, data, null)
+        Mat.cache2put(key, omat)
+        omat
+      }
+    }
+  }
+  
+  def newOrCheckTMat( nr:Int, 
+                      nc:Int, 
+                      xInds: Array[Int],
+                      yInds: Array[Int],
+                      data: Array[Mat],
+                      outmat:Mat, guid1:Long, guid2:Long, opHash:Int) : TMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheckTMat(nr, nc, xInds, yInds, data, outmat)
+    } else {
+      val key = (guid1, guid2, opHash)
+      val res = Mat.cache3(key)
+      if (res != null) {
+      	newOrCheckTMat(nr, nc, xInds, yInds, data, Mat.cache3(key))
+      } else {
+        val omat = newOrCheckTMat(nr, nc, xInds, yInds, data, null)
+        Mat.cache3put(key, omat)
+        omat
+      }
+    }
+  }
+   
+  def newOrCheckTMat( nr:Int, 
+                      nc:Int, 
+                      xInds: Array[Int],
+                      yInds: Array[Int],
+                      data: Array[Mat],
+                      outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):TMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheckTMat(nr, nc, xInds, yInds, data, outmat)
+    } else {
+      val key = (guid1, guid2, guid3, opHash)
+      val res = Mat.cache4(key)
+      if (res != null) {
+      	newOrCheckTMat(nr, nc, xInds, yInds, data, Mat.cache4(key))
+      } else {
+        val omat = newOrCheckTMat(nr, nc, xInds, yInds, data, null)
+        Mat.cache4put(key, omat)
+        omat
+      }
+    }
+  }
 }
