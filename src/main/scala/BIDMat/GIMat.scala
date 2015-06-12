@@ -331,6 +331,16 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     this
   }
   
+  override def colslice(a:Int, b:Int, omat:Mat):GIMat = {
+    val out = GIMat.newOrCheckGIMat(nrows, b-a, omat, GUID, a, "colslice".##);
+    cudaMemcpy(out.data, data.withByteOffset(1L*a*nrows*Sizeof.FLOAT), 1L*(b-a)*nrows*Sizeof.FLOAT, cudaMemcpyDeviceToDevice);
+    out
+  }
+  
+  override def colslice(a:Int, b:Int):GIMat = {   
+    colslice(a, b, null)
+  }
+  
   override def clear = {
   	cudaMemset(data, 0, Sizeof.INT*length)
   	cudaDeviceSynchronize

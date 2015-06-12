@@ -1507,7 +1507,7 @@ object MatFunctions {
   
   def cat2sparse(c:IMat, ncats0:Int = 0):SMat = {
     val ncats = if (ncats0 > 0) ncats0 else SciFunctions.maxi(c).v + 1
-    val out = SMat(ncats, c.length, c.length);
+    val out = SMat.newOrCheckSMat(ncats, c.length, c.length, null, c.GUID, "cat2sparse".##);
     var i = 0;
     var ioff = Mat.ioneBased;
     out.jc(0) = ioff;
