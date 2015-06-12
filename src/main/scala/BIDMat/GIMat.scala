@@ -6,6 +6,9 @@ import jcuda.runtime.JCuda._
 import jcuda.runtime.cudaMemcpyKind._
 import jcuda.runtime.cudaError._
 import jcuda.runtime.cudaMemcpyKind._
+import jcuda.jcublas._
+import jcuda.jcublas.JCublas._
+import jcuda.jcusparse._
 import edu.berkeley.bid.CUMAT;
 import scala.util.hashing.MurmurHash3
 
@@ -569,7 +572,8 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   def reverse:GIMat = _reverse(null);
   
   def reverse(omat:Mat):GIMat = _reverse(omat);
- 
+  
+
   override def unary_- () = GIop(GIMat(-1), null, 2)
   def + (a : GIMat) = GIop(a, null, op_add)
   def - (a : GIMat) = GIop(a, null, op_sub)
@@ -783,6 +787,10 @@ object GIMat {
   
   def apply(nr:Int, nc:Int):GIMat = {
     val retv = new GIMat(nr, nc, new Pointer(), nr*nc)        
+    if (Mat.debugMem && (nr*nc>1)) {
+      println("GIMat %d %d, %d %f" format (nr, nc, SciFunctions.getGPU, SciFunctions.GPUmem._1))
+      if (nr*nc > Mat.debugMemThreshold) throw new RuntimeException("GIMat alloc too large");
+    } 
     JCublas.cublasAlloc(nr*nc, Sizeof.INT, retv.data)
     retv        
   }    
