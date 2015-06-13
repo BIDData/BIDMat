@@ -670,7 +670,9 @@ object Mat {
     }
   }
   
-  def checkCUDA(verbose:Boolean = false):Unit = {
+  def checkCUDA:Unit = checkCUDA(false)
+  
+  def checkCUDA(verbose:Boolean):Unit = {
     if (hasCUDA == 0) {
     	val os = System.getProperty("os.name")
     	try {
