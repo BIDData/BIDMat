@@ -731,13 +731,13 @@ object Mat {
     	} catch {
     	case e:NoClassDefFoundError => println("Couldn't load the JCUDA driver")
     	case e:Exception => println("Exception while initializing JCUDA driver")
-    	case _:Throwable => println("Something went wrong while loading JCUDA driver")
+    	case z:Throwable => println("Something went wrong while loading JCUDA driver" + z.getMessage)
     	}
     	if (hasCUDA > 0) {
     	  try {
     	    jcuda.LibUtils.loadLibrary("bidmatcuda")
     	  } catch {
-    	  case _:Throwable => println("Something went wrong while loading BIDMat CUDA library")
+    	  case z:Throwable => println("Something went wrong while loading BIDMat CUDA library" + z.getMessage)
     	  }
     	}
     }
