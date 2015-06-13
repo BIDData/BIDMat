@@ -697,14 +697,6 @@ object Mat {
     		if (verbose) {
     			val msg = x.getMessage;
     			if (msg != null) println(msg);
-    		  val st = x.getStackTrace;
-    		  if (st != null) {
-    		  	for (i <- 0 until 20) {
-    		  		println("%s" format (st(i).toString));
-    		  	}
-    		  } else {
-    		  	println("No stacktrace available")
-    		  }
     		}
     		hasCUDA = -1    		
     	}
@@ -718,14 +710,6 @@ object Mat {
     	    if (verbose) {
     	    	val msg = y.getMessage;
     	    	if (msg != null) println(msg);
-    	    	val st = y.getStackTrace;
-    	    	if (st != null) {
-    	    		for (i <- 0 until 20) {
-    	    			println("%s" format (st(i).toString));
-    	    		}
-    	    	} else {
-    	    		println("No stacktrace available")
-    	    	}
     	    }
     	    hasCUDA = -1            
     	  }
