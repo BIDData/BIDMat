@@ -670,7 +670,7 @@ object Mat {
     }
   }
   
-  def checkCUDA:Unit = {
+  def checkCUDA(verbose:Boolean = false):Unit = {
     if (hasCUDA == 0) {
     	val os = System.getProperty("os.name")
     	try {
@@ -690,8 +690,12 @@ object Mat {
     			if (!found) throw new RuntimeException("Couldnt find a cudart lib")
     		}
     	} catch {
-    	case _:Throwable =>  {
-    		println("Couldnt load CUDA runtime")
+    	case x:Throwable =>  {
+    		println("Couldnt load CUDA runtime");
+    		if (verbose) {
+    		  val st = x.getStackTrace;
+    		  println(st);
+    		}
     		hasCUDA = -1    		
     	}
     	}
@@ -699,8 +703,12 @@ object Mat {
     	  try {
     	    jcuda.LibUtils.loadLibrary("JCudaRuntime")
     	  } catch {
-    	  case _:Throwable =>  {
-    	    println("Couldnt load JCuda")
+    	  case y:Throwable =>  {
+    	    println("Couldnt load JCuda");
+    	    if (verbose) {
+    	    	val st = y.getStackTrace;
+    	    	println(st);
+    	    }
     	    hasCUDA = -1            
     	  }
     	  }
