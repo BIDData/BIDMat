@@ -696,7 +696,9 @@ object Mat {
     		println("Couldnt load CUDA runtime");
     		if (verbose) {
     		  val st = x.getStackTrace;
-    		  println(st);
+    		  for (i <- 0 until 20) {
+    		  	println("%s" format (st(i).toString));
+    		  }
     		}
     		hasCUDA = -1    		
     	}
@@ -709,7 +711,9 @@ object Mat {
     	    println("Couldnt load JCuda");
     	    if (verbose) {
     	    	val st = y.getStackTrace;
-    	    	println(st);
+    	    	for (i <- 0 until 20) {
+    	    		println("%s" format (st(i).toString));
+    	    	}
     	    }
     	    hasCUDA = -1            
     	  }
