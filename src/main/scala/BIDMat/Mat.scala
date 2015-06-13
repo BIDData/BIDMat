@@ -695,6 +695,8 @@ object Mat {
     	case x:Throwable =>  {
     		println("Couldnt load CUDA runtime");
     		if (verbose) {
+    			val msg = x.getMessage;
+    			if (msg != null) println(msg);
     		  val st = x.getStackTrace;
     		  if (st != null) {
     		  	for (i <- 0 until 20) {
@@ -714,6 +716,8 @@ object Mat {
     	  case y:Throwable =>  {
     	    println("Couldnt load JCuda");
     	    if (verbose) {
+    	    	val msg = y.getMessage;
+    	    	if (msg != null) println(msg);
     	    	val st = y.getStackTrace;
     	    	if (st != null) {
     	    		for (i <- 0 until 20) {
