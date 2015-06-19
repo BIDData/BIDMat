@@ -49,10 +49,18 @@ public final class CUMAT {
     
     public static native int applygfun2(Pointer A, Pointer B, Pointer C, int N, int opn);
     
-    public static native int reduce1op(int nr, int nc, Pointer A, Pointer B, int opn);
+    public static native int reduce1op(int nr, int nc, Pointer A, Pointer B, float initv, int opn);
     
-    public static native int reduce2op(int nr, int nc, Pointer A, Pointer B, int opn);
+    public static native int reduce2op(int nr, int nc, Pointer A, Pointer B, float initv, int opn);
     
+    public static native int reduce1iop(int nr, int nc, Pointer A, Pointer B, int initv, int opn);
+    
+    public static native int reduce2iop(int nr, int nc, Pointer A, Pointer B, int initv, int opn);
+    
+    public static native int reduce1lop(int nr, int nc, Pointer A, Pointer B, long initv, int opn);
+    
+    public static native int reduce2lop(int nr, int nc, Pointer A, Pointer B, long initv, int opn);
+        
     public static native int reducebin1op(int nr, int nc, Pointer A, Pointer B, Pointer C, int opb, int opr);
     
     public static native int reducebin2op(int nr, int nc, Pointer A, Pointer B, Pointer C, int opb, int opr);

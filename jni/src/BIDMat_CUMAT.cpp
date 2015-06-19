@@ -332,21 +332,56 @@ extern "C" {
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_reduce1op
-  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jint opn)
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jfloat initv, jint opn)
   {
     float *A = (float*)getPointer(env, jA);
     float *B = (float*)getPointer(env, jB);
 
-    return reduce1op(nrows, ncols, A, B, opn);
+    return reduce1op(nrows, ncols, A, B, initv, opn);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_reduce2op
-  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jint opn)
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jfloat initv, jint opn)
   {
     float *A = (float*)getPointer(env, jA);
     float *B = (float*)getPointer(env, jB);
 
-    return reduce2op(nrows, ncols, A, B, opn);
+    return reduce2op(nrows, ncols, A, B, initv, opn);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_reduce1iop
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jint initv, jint opn)
+  {
+    int *A = (int*)getPointer(env, jA);
+    int *B = (int*)getPointer(env, jB);
+
+    return reduce1iop(nrows, ncols, A, B, initv, opn);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_reduce2iop
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jint initv, jint opn)
+  {
+    int *A = (int*)getPointer(env, jA);
+    int *B = (int*)getPointer(env, jB);
+
+    return reduce2iop(nrows, ncols, A, B, initv, opn);
+  }
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_reduce1lop
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jlong initv, jint opn)
+  {
+    long long *A = (long long*)getPointer(env, jA);
+    long long *B = (long long*)getPointer(env, jB);
+
+    return reduce1lop(nrows, ncols, A, B, initv, opn);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_reduce2lop
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jlong initv, jint opn)
+  {
+    long long *A = (long long*)getPointer(env, jA);
+    long long *B = (long long*)getPointer(env, jB);
+
+    return reduce2lop(nrows, ncols, A, B, initv, opn);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_spsum

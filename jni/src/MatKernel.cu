@@ -1549,7 +1549,7 @@ int reduce1lop(int nrows, int ncols, long long *A, long long *B, long long initv
     int blky = min(32, ncols);
     int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));
     const dim3 blkdims(blkx,blky,1);
-    __reduce1lop<int><<<nblks,blkdims>>>(nrows, ncols, A, B, initval, opn);
+    __reduce1lop<<<nblks,blkdims>>>(nrows, ncols, A, B, initval, opn);
   }
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
