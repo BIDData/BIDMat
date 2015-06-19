@@ -48,6 +48,8 @@ ${JCUDA_LIBDIR}/jcusparse-${JCUDA_VERSION}.jar"
 
 ALL_LIBS=";${LIBDIR}/IScala.jar;${BIDMAT_LIBS};${JCUDA_LIBS};${JAVA_HOME}/lib/tools.jar"
 
+echo $ALL_LIBS
+
 if [ "$OS" = "Windows_NT" ]; then
     if [ ! "${CUDA_PATH}" = "" ]; then
 	    NEWPATH=`${BIDMAT_ROOT}/shortpath.bat "${CUDA_PATH}"`
