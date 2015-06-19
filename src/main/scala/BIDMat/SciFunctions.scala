@@ -1054,10 +1054,31 @@ object SciFunctions {
     case (aa:GLMat, bb:GLMat) => aa.cumsumByKey(bb, omat);
     }
   }
- 
-  // TODO Will finish more cases later, mirroring the cumsumByKey thing. Can also normalize here?
+
+  
+  // TODO Will finish more cases later, mirroring the cumsumByKey thing, and clean up comments.
+  // Can also normalize here? NO that probably wouldn't be a good idea due to matrix allocation.
+  // We should make the programmer normalize "a" before doing the multinomial sampling.
   def multinomial(a:FMat, b:FMat, omat1:FMat, omat2:FMat, n:Int):FMat = a.multinomial(b, omat1, omat2, n)
   def multinomial(a:FMat, b:FMat, omat1:FMat, n:Int):FMat = a.multinomial(b, omat1, n)
+
+  def multinomial(a:GMat, b:GMat, omat1:GMat, omat2:GMat, n:Int):GMat = a.multinomial(b, omat1, omat2, n)
+  def multinomial(a:GMat, b:GMat, omat1:GMat, n:Int):GMat = a.multinomial(b, omat1, n)
+
+  def multinomial(a:Mat, b:Mat, omat1:Mat, omat2:Mat, n:Int):Mat = {
+    (a, b, omat1, omat2) match {
+      case (a:FMat, b:FMat, omat1:FMat, omat2:FMat) => a.multinomial(b, omat1, omat2, n)
+      case (a:GMat, b:GMat, omat1:GMat, omat2:GMat) => a.multinomial(b, omat1, omat2, n)
+    }
+  }
+
+  def multinomial(a:Mat, b:Mat, omat1:Mat, n:Int):Mat = {
+    (a, b, omat1) match {
+      case (a:FMat, b:FMat, omat1:FMat) => a.multinomial(b, omat1, n)
+      case (a:GMat, b:GMat, omat1:GMat) => a.multinomial(b, omat1, n)
+    }
+  }
+
   
   def reverse(a:FMat):FMat = a._reverse(null);
   
