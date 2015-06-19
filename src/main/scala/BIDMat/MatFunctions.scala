@@ -1507,7 +1507,7 @@ object MatFunctions {
   
   def cat2sparse(c:IMat, ncats0:Int = 0):SMat = {
     val ncats = if (ncats0 > 0) ncats0 else SciFunctions.maxi(c).v + 1
-    val out = SMat(ncats, c.length, c.length);
+    val out = SMat.newOrCheckSMat(ncats, c.length, c.length, null, c.GUID, "cat2sparse".##);
     var i = 0;
     var ioff = Mat.ioneBased;
     out.jc(0) = ioff;
@@ -1878,6 +1878,9 @@ object MatFunctions {
   def saveLibSVM(fname:String, data:SMat, cats:SMat, weights:FMat, compressed:Int):Unit = HMat.saveLibSVM(fname, data, cats, weights, compressed)
   def saveLibSVM(fname:String, data:SMat, cats:SMat, weights:FMat):Unit = HMat.saveLibSVM(fname, data, cats, weights, 0)
   def saveLibSVM(fname:String, data:SMat, cats:SMat):Unit = HMat.saveLibSVM(fname, data, cats, null, 0)
+  
+  def saveVW(fname:String, sdata:SMat, cats:SMat, compressed:Int, oneBased:Int):Unit = HMat.saveVW(fname, sdata, cats, compressed, oneBased);
+  def saveVW(fname:String, sdata:SMat, cats:SMat):Unit = HMat.saveVW(fname, sdata, cats, 0, 0);
 
   final val ? = new IMatWildcard
 }

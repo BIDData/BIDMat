@@ -305,15 +305,18 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
   
   def updatex(I:GIMat, v:GMat):GMat = {
   	I match {
-  	case (ii:MatrixWildcard) => {
-  		cudaMemcpy(data, v.data, 1L * length * Sizeof.FLOAT, cudaMemcpyDeviceToDevice)
-  	}
-  	case _ => {
-  		val err = CUMAT.copyToInds(data, v.data, I.data, I.llength);
-  		if (err != 0) {
-    		throw new RuntimeException("CUMAT.copyToInds error " + cudaGetErrorString(err))
-    	}
-    }
+  	  case (ii:MatrixWildcard) => {
+  	    cudaMemcpy(data, v.data, 1L * length * Sizeof.FLOAT, cudaMemcpyDeviceToDevice)
+  	  }
+  	  case _ => {
+  	    if (I.length != v.length) {
+  	      throw new RuntimeException("GMat:updatex error: I and v have unequal lengths " + I.length + " and " + v.length + ", respectively.")
+  	    }
+  	    val err = CUMAT.copyToInds(data, v.data, I.data, I.llength);
+  	    if (err != 0) {
+          throw new RuntimeException("CUMAT.copyToInds error " + cudaGetErrorString(err))
+        }
+      }
   	}
   	this
   }
@@ -503,7 +506,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
     	}
 
     	out 
-    } else throw new RuntimeException("dimensions mismatch")
+    } else throw new RuntimeException("dimensions mismatch (%d %d), (%d %d)" format (nrows, ncols, a.nrows, a.ncols));
   }
   
   def GMultT(a:GMat, oldmat:Mat):GMat = {
@@ -964,6 +967,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
    * Basic compute routines on pairs of GMats
    */
   override def unary_-() = gOp(GMat(-1f), null, op_mul)
+  
   def * (a : GMat) = GMult(a, null)
   def * (a : GSMat) = GSMult(a, null)
   def *^ (a : GMat) = GMultT(a, null)

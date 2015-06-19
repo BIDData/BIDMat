@@ -36,6 +36,7 @@ install: all
 	cp $(LIBPREPEND)bidmatmkl$(LIBAPPEND)  $(INSTALL_DIR)
 	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(INSTALL_DIR)/../../BIDMach/lib
 	cp $(LIBPREPEND)bidmatmkl$(LIBAPPEND)  $(INSTALL_DIR)/../../BIDMach/lib
+	cp $(LIBPREPEND)bidmatmkl$(LIBAPPENDLIB)  $(INSTALL_DIR)/../../BIDMach/lib
 
 installcudalib: cudalib
 	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(INSTALL_DIR)
@@ -44,6 +45,7 @@ installcudalib: cudalib
 installcpulib: cpulib
 	cp $(LIBPREPEND)bidmatmkl$(LIBAPPEND)  $(INSTALL_DIR)
 	cp $(LIBPREPEND)bidmatmkl$(LIBAPPEND)  $(INSTALL_DIR)/../../BIDMach/lib
+	cp $(LIBPREPEND)bidmatmkl$(LIBAPPENDLIB)  $(INSTALL_DIR)/../../BIDMach/lib
 
 clean:
 	rm -f *.$(OBJ) *$(LIBAPPEND) *.pdb *.exp *.lib

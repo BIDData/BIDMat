@@ -992,7 +992,59 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
   
   def cumsumByKey(keys:FMat):FMat = cumsumByKey(keys, null);
+
+  /**
+   * A test multinomial sampler for now. Later, we'll generalize this to different types. Note that
+   * this requires the probability matrix (the "this" matrix) to already have normalized probability
+   * vectors as its columns. This iterates through the various columns of the cumulative sums matrix
+   * and performs binary search to locate where a random number should fall.
+   * 
+   * @param keys A matrix of the same dimensions as the probability matrix that is stored for
+   *    consistency with cumsumByKey.
+   * @param omatCumsum The output matrix where the cumsumByKey results are stored. This should NOT
+   *    be null because we perform binary search on the cumulative sums matrix.
+   * @param omatMulti The output matrix where the multinomial samples are stored (can be null)
+   * @param n The number of multinomial samples to perform for each column.
+   */
+  def multinomial(keys:FMat, omatCumsum:FMat, omatMulti:FMat, n:Int) : FMat = {
+    if (nrows != omatCumsum.nrows || ncols != omatCumsum.ncols) {
+      throw new RuntimeException("multinomial dimensions mismatch (with this and omatCumsum)")
+    }
+    val out = FMat.newOrCheckFMat(nrows, ncols, omatMulti, GUID, "multinomial".##)
+    out.clear
+    this.cumsumByKey(keys, omatCumsum)
+    var i = 0
+    var start = 0
+    var end = ncols
+    while (i < ncols) {
+      for (j <- 0 until n) { // We may have multiple samples. Usually this will probably be one.
+        start = i*nrows
+        end = (i+1)*nrows - 1
+        val r = scala.util.Random.nextFloat
+        while (start < end) {
+          var mid = (start + end) / 2
+          val a1 = if (mid == i*nrows) 0 else omatCumsum(mid-1)
+          val a2 = omatCumsum(mid)
+          if (r > a1 && r < a2) { // Done
+            start = mid
+            end = mid
+          } else if (r < a1) { // Must search before/earlier
+            end = mid 
+          } else if (r > a2) { // Must search after/later
+            start = mid + 1
+          }
+        }
+        if (start != end) throw new RuntimeException("Something's wrong: start=" + start + ", end=" + end)
+        out.data(start) += 1
+      }
+      i += 1
+    }
+    return out
+  } 
   
+  /** Uses the same multinomial sampler, but with null as the output. */
+  def multinomial(keys:FMat, omatCumsum:FMat, n:Int):FMat = multinomial(keys, omatCumsum, null, n);
+
   def reverseLinear(out:FMat, istart:Int, iend:Int) = {
     var i = istart;
     var sum = 0f;

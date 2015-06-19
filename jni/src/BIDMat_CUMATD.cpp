@@ -99,6 +99,27 @@ extern "C" {
     return full(ir, ic, data, od, nrows, ncols, nnz);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_copyToInds
+  (JNIEnv *env, jobject obj, jobject jA, jobject jB, jobject jI, jlong length) 
+  {
+    double *A = (double*)getPointer(env, jA);
+    double *B = (double*)getPointer(env, jB);
+    int *I = (int*)getPointer(env, jI);
+
+    return copyToInds(A, B, I, length);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_copyFromInds
+  (JNIEnv *env, jobject obj, jobject jA, jobject jB, jobject jI, jlong length) 
+  {
+    double *A = (double*)getPointer(env, jA);
+    double *B = (double*)getPointer(env, jB);
+    int *I = (int*)getPointer(env, jI);
+
+    return copyFromInds(A, B, I, length);
+  }
+
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_copyToInds2D
   (JNIEnv *env, jobject obj, jobject jA, jint lda, jobject jB, jint ldb,
    jobject jI, jint nrows, jobject jJ, jint ncols) 

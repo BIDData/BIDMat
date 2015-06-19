@@ -1056,6 +1056,10 @@ object SciFunctions {
     case (aa:GLMat, bb:GLMat) => aa.cumsumByKey(bb, omat);
     }
   }
+ 
+  // TODO Will finish more cases later, mirroring the cumsumByKey thing. Can also normalize here?
+  def multinomial(a:FMat, b:FMat, omat1:FMat, omat2:FMat, n:Int):FMat = a.multinomial(b, omat1, omat2, n)
+  def multinomial(a:FMat, b:FMat, omat1:FMat, n:Int):FMat = a.multinomial(b, omat1, n)
   
   def reverse(a:FMat):FMat = a._reverse(null);
   
