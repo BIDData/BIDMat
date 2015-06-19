@@ -858,6 +858,8 @@ object SciFunctions {
       case aa:LMat => maxi(aa, b):LMat
       case aa:DMat => maxi(aa, b):DMat
       case aa:GMat => maxi(aa, b):GMat
+      case aa:GIMat => maxi(aa, b):GIMat
+      case aa:GLMat => maxi(aa, b):GLMat
       case aa:GDMat => maxi(aa, b):GDMat
     }
   }
@@ -870,6 +872,8 @@ object SciFunctions {
       case aa:LMat => maxi(aa):LMat
       case aa:DMat => maxi(aa):DMat
       case aa:GMat => maxi(aa):GMat
+      case aa:GIMat => maxi(aa):GIMat
+      case aa:GLMat => maxi(aa):GLMat
       case aa:GDMat => maxi(aa):GDMat
     }
   }
@@ -881,6 +885,8 @@ object SciFunctions {
       case aa:LMat => mini(aa, b):LMat
       case aa:DMat => mini(aa, b):DMat
       case aa:GMat => mini(aa, b):GMat
+      case aa:GIMat => mini(aa, b):GIMat
+      case aa:GLMat => mini(aa, b):GLMat
       case aa:GDMat => mini(aa, b):GDMat
     }
   }
@@ -892,6 +898,8 @@ object SciFunctions {
       case aa:LMat => mini(aa):LMat
       case aa:DMat => mini(aa):DMat
       case aa:GMat => mini(aa):GMat
+      case aa:GIMat => mini(aa):GIMat
+      case aa:GLMat => mini(aa):GLMat
       case aa:GDMat => mini(aa):GDMat
     }
   }
