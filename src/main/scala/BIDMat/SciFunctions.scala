@@ -748,6 +748,8 @@ object SciFunctions {
   def cumsumg(a:GMat, jc:GIMat, omat:Mat):GMat = GMat.cumsumg(a, jc, omat) 
   def maxg(a:GMat, jc:GIMat, omat:Mat, omati:Mat):(GMat,GIMat) = GMat.maxg(a, jc, omat, omati) 
   def ming(a:GMat, jc:GIMat, omat:Mat, omati:Mat):(GMat,GIMat) = GMat.maxg(a, jc, omat, omati) 
+  def mini(a:GMat, omat:Mat, dir:Int):(GMat) = GMat.mini(a, omat, dir) 
+  def maxi(a:GMat, omat:Mat, dir:Int):(GMat) = GMat.maxi(a, omat, dir)
   def maxi2(a:GMat, omat:Mat, omati:Mat, dir:Int):(GMat,GIMat) = GMat.maxi2(a, omat, omati, dir) 
   def mini2(a:GMat, omat:Mat, omati:Mat, dir:Int):(GMat,GIMat) = GMat.mini2(a, omat, omati, dir)
   def maxi2(a:GMat, omat:Mat, omati:Mat):(GMat,GIMat) = GMat.maxi2(a, omat, omati, 0) 

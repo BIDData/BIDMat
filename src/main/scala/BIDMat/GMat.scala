@@ -1709,20 +1709,56 @@ object GMat {
     Mat.nflops += 1L * a.length
     val dim = if (a.nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
     if (dim == 1) {
-      val out = GMat.newOrCheckGMat(1, a.ncols, omat, a.GUID, "maxi2".##)
-      val outi = GIMat.newOrCheckGIMat(1, a.ncols, omati, a.GUID, "maxi2_1".##)
+      val out = GMat.newOrCheckGMat(1, a.ncols, omat, a.GUID, "mini2".##)
+      val outi = GIMat.newOrCheckGIMat(1, a.ncols, omati, a.GUID, "mini2_1".##)
       val err = CUMAT.minif(a.data, out.data, outi.data, a.nrows, a.ncols, dim)
       if (err != 0) throw new RuntimeException("mini2 error %d: " + cudaGetErrorString(err) format err);
       (out, outi)
     } else if (dim == 2) {
-      val out = GMat.newOrCheckGMat(a.nrows, 1, omat, a.GUID, "maxi2".##)
-      val outi = GIMat.newOrCheckGIMat(a.nrows, 1, omati, a.GUID, "maxi2_1".##)
+      val out = GMat.newOrCheckGMat(a.nrows, 1, omat, a.GUID, "mini2".##)
+      val outi = GIMat.newOrCheckGIMat(a.nrows, 1, omati, a.GUID, "mini2_1".##)
       val err = CUMAT.minif(a.data, out.data, outi.data, a.nrows, a.ncols, dim)
       if (err != 0) throw new RuntimeException("mini2 error %d: " + cudaGetErrorString(err) format err);
       (out, outi)
     } else {
       throw new RuntimeException("mini2 directions not recognized %d" format dim)
     }      
+  }
+  
+  def mini(a:GMat, omat:Mat, dim0:Int):GMat = {
+	  Mat.nflops += 1L * a.length;
+    val dim = if (a.nrows == 1 && dim0 == 0) 2 else math.max(1, dim0);
+    if (dim == 1) {
+      val out = GMat.newOrCheckGMat(1, a.ncols, omat, a.GUID, "mini".##);
+      val err = CUMAT.reduce1op(a.nrows, a.ncols, a.data, out.data, BinOp.op_min);
+      if (err != 0) throw new RuntimeException("mini error %d: " + cudaGetErrorString(err) format err);
+      out
+    } else if (dim == 2) {
+      val out = GMat.newOrCheckGMat(a.nrows, 1, omat, a.GUID, "mini".##);
+      val err = CUMAT.reduce2op(a.nrows, a.ncols, a.data, out.data, BinOp.op_min);
+      if (err != 0) throw new RuntimeException("mini error %d: " + cudaGetErrorString(err) format err);
+      out
+    } else {
+      throw new RuntimeException("mini directions not recognized %d" format dim)
+    } 
+  }
+  
+  def maxi(a:GMat, omat:Mat, dim0:Int):GMat = {
+    Mat.nflops += 1L * a.length;
+    val dim = if (a.nrows == 1 && dim0 == 0) 2 else math.max(1, dim0);
+    if (dim == 1) {
+      val out = GMat.newOrCheckGMat(1, a.ncols, omat, a.GUID, "maxi".##);
+      val err = CUMAT.reduce1op(a.nrows, a.ncols, a.data, out.data, BinOp.op_max);
+      if (err != 0) throw new RuntimeException("maxi error %d: " + cudaGetErrorString(err) format err);
+      out
+    } else if (dim == 2) {
+      val out = GMat.newOrCheckGMat(a.nrows, 1, omat, a.GUID, "maxi".##);
+      val err = CUMAT.reduce2op(a.nrows, a.ncols, a.data, out.data, BinOp.op_max);
+      if (err != 0) throw new RuntimeException("maxi error %d: " + cudaGetErrorString(err) format err);
+      out
+    } else {
+      throw new RuntimeException("maxi directions not recognized %d" format dim)
+    } 
   }
   
   def cumsum(a:GMat, omat:Mat, dim0:Int):GMat = {
