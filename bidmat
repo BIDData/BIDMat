@@ -30,7 +30,7 @@ if [ `uname` = "Darwin" ]; then
 else
     export LD_LIBRARY_PATH="${BIDMAT_ROOT}/lib:${BIDMAT_ROOT}/lib/cuda:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}" 
 fi
-export JAVA_NATIVE=${JAVA_NATIVE}:${LD_LIBRARY_PATH}:${DYLD_LIBRARY_PATH}:
+export JAVA_NATIVE=${LD_LIBRARY_PATH}:${DYLD_LIBRARY_PATH}:${JAVA_NATIVE}:
 popd  > /dev/null
 if [ "$OS" = "Windows_NT" ]; then
     if [ ! "${JAVA_HOME}" = "" ]; then
@@ -47,8 +47,6 @@ ${JCUDA_LIBDIR}/jcufft-${JCUDA_VERSION}.jar;${JCUDA_LIBDIR}/jcurand-${JCUDA_VERS
 ${JCUDA_LIBDIR}/jcusparse-${JCUDA_VERSION}.jar"
 
 ALL_LIBS=";${LIBDIR}/IScala.jar;${BIDMAT_LIBS};${JCUDA_LIBS};${JAVA_HOME}/lib/tools.jar"
-
-echo $ALL_LIBS
 
 if [ "$OS" = "Windows_NT" ]; then
     if [ ! "${CUDA_PATH}" = "" ]; then
