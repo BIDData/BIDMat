@@ -1069,6 +1069,7 @@ object SciFunctions {
     (a, b, omat1, omat2) match {
       case (a:FMat, b:FMat, omat1:FMat, omat2:FMat) => a.multinomial(b, omat1, omat2, n)
       case (a:GMat, b:GMat, omat1:GMat, omat2:GMat) => a.multinomial(b, omat1, omat2, n)
+      case (a:GMat, b:GMat, omat1:GMat, omat2:GIMat) => a.multinomial(b, omat1, float(omat2), n)
     }
   }
 
