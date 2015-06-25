@@ -524,6 +524,24 @@ object GSMat {
     out    
   }
   
+  def oneHot(c:GIMat, ncats0:Int):GSMat = {
+      val ncats = if (ncats0 == 0) (SciFunctions.maxi(c).dv.toInt + 1) else ncats0;
+		  val out = GSMat.newOrCheckGSMat(ncats, c.length, c.length, c.length, null, c.GUID, ncats, "oneHot".##);
+		  var err = cudaMemcpy(out.ir, c.data, 1L * Sizeof.INT * c.length, cudaMemcpyKind.cudaMemcpyDeviceToDevice);
+		  cudaDeviceSynchronize();
+		  if (err == 0) err = cudaGetLastError();
+		  if (err != 0) throw new RuntimeException(("GPU %d oneHot row copy error "+cudaGetErrorString(err)) format SciFunctions.getGPU);
+		  err = CUMAT.setval(out.data, 1f, c.length);
+      if (err != 0) throw new RuntimeException(("GPU %d oneHot set error "+cudaGetErrorString(err)) format SciFunctions.getGPU);
+      err = CUMAT.initSeq(out.ic, c.length, 1);
+      if (err != 0) throw new RuntimeException(("GPU %d oneHot col set error "+cudaGetErrorString(err)) format SciFunctions.getGPU);
+      val handle = GSMat.getHandle;
+      if (err == 0) err = JCusparse.cusparseXcoo2csr(handle, out.ic, out.nnz, out.ncols, out.jc, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO);
+      cudaDeviceSynchronize;
+      if (err == 0) err = cudaGetLastError;
+      out
+  }
+  
   def newOrCheckGSMat(nrows:Int, ncols:Int, nnz:Int, realnnz:Int, oldmat:Mat):GSMat = {
   	val m = if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows ==0 && oldmat.ncols == 0)) {
   	  if (Mat.useCache) {

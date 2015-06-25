@@ -62,9 +62,17 @@ int dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P);
 
 int dds0(int nrows, int ncols, float *A, float *B, int *Cir, int *Cic, float *P);
 
-int reduce1op(int nrows, int ncols, float *A, float *B, int opn);
+int reduce1op(int nrows, int ncols, float *A, float *B, float initval, int opn);
 
-int reduce2op(int nrows, int ncols, float *A, float *B, int opn);
+int reduce2op(int nrows, int ncols, float *A, float *B, float initval, int opn);
+
+int reduce1iop(int nrows, int ncols, int *A, int *B, int initval, int opn);
+
+int reduce2iop(int nrows, int ncols, int *A, int *B, int initval, int opn);
+
+int reduce1lop(int nrows, int ncols, long long *A, long long *B, long long initval, int opn);
+
+int reduce2lop(int nrows, int ncols, long long *A, long long *B, long long initval, int opn);
 
 int reducebin1op(int nrows, int ncols, float *A, float *B, float *C, int opb, int opr);
 

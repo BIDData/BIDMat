@@ -371,6 +371,26 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     this
   }
   
+   def reduceOp(oldmat:Mat, dir:Int, initval:Int, op:Int):GIMat = {
+    if (dir == 1 || (dir == 0 && nrows > 1)) {
+      val out = GIMat.newOrCheckGIMat(1, ncols, oldmat, GUID, 1, op) 
+      out.clear
+      val err = CUMAT.reduce1iop(nrows, ncols, data, out.data, initval, op)
+      if (err != 0) {throw new RuntimeException("CUDA kernel error in CUMAT.reduce1op " + cudaGetErrorString(err))}
+      Mat.nflops += length
+      out
+    } else if (dir == 2 || dir == 0) {
+      val out = GIMat.newOrCheckGIMat(nrows, 1, oldmat, GUID, 2, op)  
+      out.clear
+      val err = CUMAT.reduce2iop(nrows, ncols, data, out.data, initval, op)
+      if (err != 0) {throw new RuntimeException("CUDA kernel error in CUMAT.reduce2op " + cudaGetErrorString(err))}
+      Mat.nflops += length
+      out
+    } else {
+      throw new RuntimeException("dimension must be 1 or 2");
+    }
+  }
+  
   def horzcat(a:GIMat, omat:Mat) = {
     if (nrows != a.nrows)
       throw new RuntimeException("GMat \\ row dims not equal")

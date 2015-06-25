@@ -730,18 +730,18 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
   	  }
   	}
   
-  def reduceOp(oldmat:Mat, dir:Int, op:Int):GMat = {
+  def reduceOp(oldmat:Mat, dir:Int, initval:Float, op:Int):GMat = {
     if (dir == 1 || (dir == 0 && nrows > 1)) {
       val out = GMat.newOrCheckGMat(1, ncols, oldmat, GUID, 1, op) 
       out.clear
-      val err = CUMAT.reduce1op(nrows, ncols, data, out.data, op)
+      val err = CUMAT.reduce1op(nrows, ncols, data, out.data, initval, op)
       if (err != 0) {throw new RuntimeException("CUDA kernel error in CUMAT.reduce1op " + cudaGetErrorString(err))}
       Mat.nflops += length
       out
     } else if (dir == 2 || dir == 0) {
       val out = GMat.newOrCheckGMat(nrows, 1, oldmat, GUID, 2, op)  
       out.clear
-      val err = CUMAT.reduce2op(nrows, ncols, data, out.data, op)
+      val err = CUMAT.reduce2op(nrows, ncols, data, out.data, initval, op)
       if (err != 0) {throw new RuntimeException("CUDA kernel error in CUMAT.reduce2op " + cudaGetErrorString(err))}
       Mat.nflops += length
       out
@@ -1765,14 +1765,14 @@ object GMat {
     Mat.nflops += 1L * a.length
     val dim = if (a.nrows == 1 && dim0 == 0) 2 else math.max(1, dim0)
     if (dim == 1) {
-      val out = GMat.newOrCheckGMat(1, a.ncols, omat, a.GUID, "maxi2".##)
-      val outi = GIMat.newOrCheckGIMat(1, a.ncols, omati, a.GUID, "maxi2_1".##)
+      val out = GMat.newOrCheckGMat(1, a.ncols, omat, a.GUID, "mini2".##)
+      val outi = GIMat.newOrCheckGIMat(1, a.ncols, omati, a.GUID, "mini2_1".##)
       val err = CUMAT.minif(a.data, out.data, outi.data, a.nrows, a.ncols, dim)
       if (err != 0) throw new RuntimeException("mini2 error %d: " + cudaGetErrorString(err) format err);
       (out, outi)
     } else if (dim == 2) {
-      val out = GMat.newOrCheckGMat(a.nrows, 1, omat, a.GUID, "maxi2".##)
-      val outi = GIMat.newOrCheckGIMat(a.nrows, 1, omati, a.GUID, "maxi2_1".##)
+      val out = GMat.newOrCheckGMat(a.nrows, 1, omat, a.GUID, "mini2".##)
+      val outi = GIMat.newOrCheckGIMat(a.nrows, 1, omati, a.GUID, "mini2_1".##)
       val err = CUMAT.minif(a.data, out.data, outi.data, a.nrows, a.ncols, dim)
       if (err != 0) throw new RuntimeException("mini2 error %d: " + cudaGetErrorString(err) format err);
       (out, outi)
@@ -1780,6 +1780,7 @@ object GMat {
       throw new RuntimeException("mini2 directions not recognized %d" format dim)
     }      
   }
+
   
   def cumsum(a:GMat, omat:Mat, dim0:Int):GMat = {
   	Mat.nflops += 1L * a.length;
