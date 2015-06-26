@@ -994,19 +994,28 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def cumsumByKey(keys:FMat):FMat = cumsumByKey(keys, null);
 
   /**
-   * A test multinomial sampler for now. Later, we'll generalize this to different types. Note that
-   * this requires the probability matrix (the "this" matrix) to already have normalized probability
-   * vectors as its columns. This iterates through the various columns of the cumulative sums matrix
-   * and performs binary search to locate where a random number should fall.
+   * A test multinomial sampler for now. (Later, we'll generalize this to different types.) This is
+   * perpetually in a work in progress until further notice.
    * 
-   * @param keys A matrix of the same dimensions as the probability matrix that is stored for
-   *    consistency with cumsumByKey.
-   * @param omatCumsum The output matrix where the cumsumByKey results are stored. This should NOT
-   *    be null because we perform binary search on the cumulative sums matrix.
-   * @param omatMulti The output matrix where the multinomial samples are stored (can be null)
-   * @param n The number of multinomial samples to perform for each column.
+   * Requires a matrix of probabilities and a keys matrix to indicate where intervals start/end.
+   * By default, columns are assumed to be probability vectors. Use the keys matrix to over-ride
+   * default intervals. E.g. the probability matrix can have multiple probability vectors per
+   * columns if the keys matrix has columns like [ 000110001111000 ].t.
+   * 
+   * As it's the CPU version, we'll use a straightforward, iterative implementation.
+   * 
+   * @param keys A matrix of the same dimensions as the probability matrix, stored for consistency
+   *    with cumsumByKey. It indicates where intervals start and end by changes in values. To use
+   *    the default columns as probability vectors, set all elements to be the same.
+   * @param omatCumsum The output matrix where the cumsumByKey results are stored. We then do
+   *    binary search on column segments of this matrix.
+   * @param randMatrix A matrix of random values that we use as the basis for the value to search
+   *    in a binary fashion. Not currently used; we'll switch over soon!
+   * @param omatMulti The output matrix where the multinomial samples are stored (can be null).
+   *    This matrix and randMatrix should be the same size.
+   * @param n The number of multinomial samples to draw (we'll probably force this to be 1).
    */
-  def multinomial(keys:FMat, omatCumsum:FMat, omatMulti:FMat, n:Int) : FMat = {
+  def multinomial(keys:FMat, omatCumsum:FMat, randMatrix:FMat, omatMulti:FMat, n:Int) : FMat = {
     if (nrows != omatCumsum.nrows || ncols != omatCumsum.ncols) {
       throw new RuntimeException("multinomial dimensions mismatch (with this and omatCumsum)")
     }
@@ -1014,16 +1023,45 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     out.clear
     this.cumsumByKey(keys, omatCumsum)
     var i = 0
-    var start = 0
-    var end = ncols
     while (i < ncols) {
+      multinomialColumns(keys, omatCumsum, randMatrix, out, i*nrows, (i+1)*nrows, n)
+      i += 1
+    }
+    return out
+  }
+  
+  /** 
+   * Performs multinomial sampling corresponding to the various intervals in the COLUMNS of the
+   * probability matrix. One call here corresponds to ONE column, but each column may have multiple
+   * intervals, based on the keys matrix. trueStart, trueEnd contain the starting and ending (not
+   * inclusive for the end) indices for this column.
+   * 
+   * @param keys
+   * @param omatCumsum
+   * @param randMatrix
+   * @param out
+   * @param trueStart
+   * @param trueEnd
+   * @param n
+   */
+  def multinomialColumns(keys:FMat, omatCumsum:FMat, randMatrix:FMat, out:FMat, trueStart:Int, trueEnd:Int, n:Int) = {
+    var start = trueStart   // inclusive
+    var end = trueStart     // inclusive
+    var currentKey = keys(start)
+    var oldStart = start
+    var oldEnd = end
+    while (end+1 < trueEnd) {
+      while (end+1 < trueEnd && keys(end) == keys(end+1)) {
+        end += 1
+      }
+
+      // Perform binary search with (oldStart,oldEnd) indices. The "end" is an inclusive index.
+      oldEnd = end
       for (j <- 0 until n) { // We may have multiple samples. Usually this will probably be one.
-        start = i*nrows
-        end = (i+1)*nrows - 1
         val r = scala.util.Random.nextFloat
         while (start < end) {
           var mid = (start + end) / 2
-          val a1 = if (mid == i*nrows) 0 else omatCumsum(mid-1)
+          val a1 = if (mid == oldStart) 0 else omatCumsum(mid-1)
           val a2 = omatCumsum(mid)
           if (r > a1 && r < a2) { // Done
             start = mid
@@ -1036,14 +1074,29 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
         }
         if (start != end) throw new RuntimeException("Something's wrong: start=" + start + ", end=" + end)
         out.data(start) += 1
-      }
-      i += 1
+        start = oldStart
+        end = oldEnd
+      }   
+
+      // Now advance (start,end) pair to the next range. The while loop will recalibrate "end" if needed.
+      end = oldEnd + 1
+      start = end
+      oldStart = start
     }
-    return out
-  } 
-  
+  }
+
+  /** A debugging method to print matrices, without being constrained by the command line's cropping. */
+  def printMatrix(mat: Mat) = {
+    for(i <- 0 until mat.nrows) {
+      for (j <- 0 until mat.ncols) {
+        print(mat(IMat(i),IMat(j)) + " ")
+      }
+      println()
+    }
+  }  
+
   /** Uses the same multinomial sampler, but with null as the output. */
-  def multinomial(keys:FMat, omatCumsum:FMat, n:Int):FMat = multinomial(keys, omatCumsum, null, n);
+  def multinomial(keys:FMat, omatCumsum:FMat, rand:FMat, n:Int):FMat = multinomial(keys, omatCumsum, rand:FMat, null, n);
 
   def reverseLinear(out:FMat, istart:Int, iend:Int) = {
     var i = istart;
