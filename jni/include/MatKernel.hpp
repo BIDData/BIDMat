@@ -216,5 +216,17 @@ int inclusive_scan_by_key_ii(int *fvals, int *fkeys, int *fout, long long len);
 
 int inclusive_scan_by_key_fl(float *fvals, long long *fkeys, float *fout, long long len);
 
+int inclusive_scan_by_key_ff_max(float *fvals, float *fkeys, float *fout, long long len);
+
+int inclusive_scan_by_key_ii_max(int *fvals, int *fkeys, int *fout, long long len);
+
+int inclusive_scan_by_key_fl_max(float *fvals, long long *fkeys, float *fout, long long len);
+
+int inclusive_scan_by_key_ff_min(float *fvals, float *fkeys, float *fout, long long len);
+
+int inclusive_scan_by_key_ii_min(int *fvals, int *fkeys, int *fout, long long len);
+
+int inclusive_scan_by_key_fl_min(float *fvals, long long *fkeys, float *fout, long long len);
+
 int reverse(float *fvals, float *fout, long long len);
 

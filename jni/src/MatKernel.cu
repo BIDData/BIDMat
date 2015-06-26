@@ -3509,6 +3509,84 @@ int inclusive_scan_by_key_fl(float *fvals, long long *fkeys, float *fout, long l
   return err;
 }
 
+int inclusive_scan_by_key_ff_max(float *fvals, float *fkeys, float *fout, long long len) {
+  thrust::device_ptr<float> vals(fvals);
+  thrust::device_ptr<float> keys(fkeys);
+  thrust::device_ptr<float> out(fout);
+  thrust::equal_to<float> binary_pred;
+  thrust::maximum<float> binary_op;
+
+  thrust::inclusive_scan_by_key(keys, keys+len, vals, out, binary_pred, binary_op);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int inclusive_scan_by_key_ii_max(int *fvals, int *fkeys, int *fout, long long len) {
+  thrust::device_ptr<int> vals(fvals);
+  thrust::device_ptr<int> keys(fkeys);
+  thrust::device_ptr<int> out(fout);
+  thrust::equal_to<int> binary_pred;
+  thrust::maximum<int> binary_op;
+
+  thrust::inclusive_scan_by_key(keys, keys+len, vals, out, binary_pred, binary_op);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int inclusive_scan_by_key_fl_max(float *fvals, long long *fkeys, float *fout, long long len) {
+  thrust::device_ptr<float> vals(fvals);
+  thrust::device_ptr<long long> keys(fkeys);
+  thrust::device_ptr<float> out(fout);
+  thrust::equal_to<long long> binary_pred;
+  thrust::maximum<float> binary_op;
+
+  thrust::inclusive_scan_by_key(keys, keys+len, vals, out, binary_pred, binary_op);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int inclusive_scan_by_key_ff_min(float *fvals, float *fkeys, float *fout, long long len) {
+  thrust::device_ptr<float> vals(fvals);
+  thrust::device_ptr<float> keys(fkeys);
+  thrust::device_ptr<float> out(fout);
+  thrust::equal_to<float> binary_pred;
+  thrust::minimum<float> binary_op;
+
+  thrust::inclusive_scan_by_key(keys, keys+len, vals, out, binary_pred, binary_op);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int inclusive_scan_by_key_ii_min(int *fvals, int *fkeys, int *fout, long long len) {
+  thrust::device_ptr<int> vals(fvals);
+  thrust::device_ptr<int> keys(fkeys);
+  thrust::device_ptr<int> out(fout);
+  thrust::equal_to<int> binary_pred;
+  thrust::minimum<int> binary_op;
+
+  thrust::inclusive_scan_by_key(keys, keys+len, vals, out, binary_pred, binary_op);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int inclusive_scan_by_key_fl_min(float *fvals, long long *fkeys, float *fout, long long len) {
+  thrust::device_ptr<float> vals(fvals);
+  thrust::device_ptr<long long> keys(fkeys);
+  thrust::device_ptr<float> out(fout);
+  thrust::equal_to<long long> binary_pred;
+  thrust::minimum<float> binary_op;
+
+  thrust::inclusive_scan_by_key(keys, keys+len, vals, out, binary_pred, binary_op);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
 int reverse(float *fvals, float *fout, long long len) {
   thrust::device_ptr<float> vals(fvals);
   thrust::device_ptr<float> out(fout);

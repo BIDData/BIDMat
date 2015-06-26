@@ -992,6 +992,65 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
   
   def cumsumByKey(keys:FMat):FMat = cumsumByKey(keys, null);
+  
+  def cummaxKeyLinear(keys:FMat, out:FMat, istart:Int, iend:Int) = {
+    var i = istart;
+    var sum = Float.MinValue;
+    while (i < iend) {
+      sum = math.max(sum, data(i));
+      out.data(i) = sum;
+      if (i + 1 < iend && keys(i) != keys(i+1)) sum = Float.MinValue;
+      i += 1;
+    }    
+  }
+  
+  def cummaxByKey(keys:FMat, omat:Mat):FMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cummaxKey dimensions mismatch");
+    val out = FMat.newOrCheckFMat(nrows, ncols, omat, GUID, keys.GUID, "cummaxKey".##);
+    if (nrows == 1) {
+      cummaxKeyLinear(keys, out, 0, length);
+    } else {
+      var i = 0;
+      while (i < ncols) {
+        cummaxKeyLinear(keys, out, i*nrows, (i+1)*nrows);
+        i += 1;
+      }
+    }   
+    out
+  }
+  
+  def cummaxByKey(keys:FMat):FMat = cummaxByKey(keys, null);
+  
+  def cumminKeyLinear(keys:FMat, out:FMat, istart:Int, iend:Int) = {
+    var i = istart;
+    var sum = Float.MaxValue;
+    while (i < iend) {
+      sum = math.min(sum, data(i));
+      out.data(i) = sum;
+      if (i + 1 < iend && keys(i) != keys(i+1)) sum = Float.MaxValue;
+      i += 1;
+    }    
+  }
+  
+  def cumminByKey(keys:FMat, omat:Mat):FMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cumminKey dimensions mismatch");
+    val out = FMat.newOrCheckFMat(nrows, ncols, omat, GUID, keys.GUID, "cumminKey".##);
+    if (nrows == 1) {
+      cumminKeyLinear(keys, out, 0, length);
+    } else {
+      var i = 0;
+      while (i < ncols) {
+        cumminKeyLinear(keys, out, i*nrows, (i+1)*nrows);
+        i += 1;
+      }
+    }   
+    out
+  }
+  
+  def cumminByKey(keys:FMat):FMat = cumminByKey(keys, null);
+
 
   /**
    * A test multinomial sampler for now. (Later, we'll generalize this to different types.) This is

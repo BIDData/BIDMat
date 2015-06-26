@@ -582,6 +582,99 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     
   def cumsumByKey(keys:GMat):GIMat = cumsumByKey(keys, null);
   
+  def cummaxByKey(keys:GIMat, omat:Mat):GIMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cummaxKey dimensions mismatch");
+    val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, GUID, keys.GUID, "cummaxKey".##);
+    if (nrows == 1 || ncols == 1) {
+      val err = CUMAT.cummaxByKeyII(data, keys.data, out.data, llength);
+      if (err != 0) {
+        throw new RuntimeException("CUMAT.cummaxByKey error " + cudaGetErrorString(err))
+      }
+    } else {
+      val tmp = GLMat(nrows, ncols);
+      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+      if (err == 0) err = CUMAT.cummaxByKeyIL(data, tmp.data, out.data, llength);
+      if (err != 0) {
+        throw new RuntimeException("CUMAT.cummaxByKey error " + cudaGetErrorString(err))
+      }      
+      tmp.free;
+    }
+    out  
+  }
+  
+  def cummaxByKey(keys:GMat, omat:Mat):GIMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cummaxKey dimensions mismatch");
+    val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, GUID, keys.GUID, "cummaxKey".##);
+    if (nrows == 1 || ncols == 1) {
+      val err = CUMAT.cummaxByKeyII(data, keys.data, out.data, llength);
+      if (err != 0) {
+        throw new RuntimeException("CUMAT.cummaxByKey error " + cudaGetErrorString(err))
+      }
+    } else {
+      val tmp = GLMat(nrows, ncols);
+      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+      if (err == 0) err = CUMAT.cummaxByKeyFL(data, tmp.data, out.data, llength);
+      if (err != 0) {
+        throw new RuntimeException("CUMAT.cummaxByKey error " + cudaGetErrorString(err))
+      }
+      tmp.free;
+    }
+    out  
+  }
+  
+  def cummaxByKey(keys:GMat):GIMat = cummaxByKey(keys, null);
+    
+  def cummaxByKey(keys:GIMat):GIMat = cummaxByKey(keys, null);
+  
+  def cumminByKey(keys:GMat, omat:Mat):GIMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cumminKey dimensions mismatch");
+    val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, GUID, keys.GUID, "cumminKey".##);
+    if (nrows == 1 || ncols == 1) {
+      val err = CUMAT.cumminByKeyII(data, keys.data, out.data, llength);
+      if (err != 0) {
+        throw new RuntimeException("CUMAT.cumminByKey error " + cudaGetErrorString(err))
+      }
+    } else {
+      val tmp = GLMat(nrows, ncols);
+      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+      if (err == 0) err = CUMAT.cumminByKeyIL(data, tmp.data, out.data, llength);
+      if (err != 0) {
+        throw new RuntimeException("CUMAT.cumminByKey error " + cudaGetErrorString(err))
+      }      
+      tmp.free;
+    }
+    out  
+  }
+  
+  def cumminByKey(keys:GIMat, omat:Mat):GIMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cumminKey dimensions mismatch");
+    val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, GUID, keys.GUID, "cumminKey".##);
+    if (nrows == 1 || ncols == 1) {
+      val err = CUMAT.cumminByKeyII(data, keys.data, out.data, llength);
+      if (err != 0) {
+        throw new RuntimeException("CUMAT.cumminByKey error " + cudaGetErrorString(err))
+      }
+    } else {
+      val tmp = GLMat(nrows, ncols);
+      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+      if (err == 0) err = CUMAT.cumminByKeyIL(data, tmp.data, out.data, llength);
+      if (err != 0) {
+        throw new RuntimeException("CUMAT.cumminByKey error " + cudaGetErrorString(err))
+      }
+      tmp.free;
+    }
+    out  
+  }
+  
+  def cumminByKey(keys:GMat):GIMat = cumminByKey(keys, null);
+    
+  def cumminByKey(keys:GIMat):GIMat = cumminByKey(keys, null);
+
+  
   def _reverse(omat:Mat):GIMat = {
     val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, GUID,  "reverse".##);
     val err = CUMAT.reverse(data, out.data, llength);  

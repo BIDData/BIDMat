@@ -380,6 +380,65 @@ case class LMat(nr:Int, nc:Int, data0:Array[Long]) extends DenseMat[Long](nr, nc
   
   def cumsumByKey(keys:LMat):LMat = cumsumByKey(keys, null);
   
+  def cummaxKeyLinear(keys:LMat, out:LMat, istart:Int, iend:Int) = {
+    var i = istart;
+    var sum = Long.MinValue;
+    while (i < iend) {
+      sum = math.max(sum, data(i));
+      out.data(i) = sum;
+      if (i + 1 < iend && keys(i) != keys(i+1)) sum = Long.MinValue;
+      i += 1;
+    }    
+  }
+  
+  def cummaxByKey(keys:LMat, omat:Mat):LMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cummaxKey dimensions mismatch");
+    val out = LMat.newOrCheckLMat(nrows, ncols, omat, GUID, keys.GUID, "cummaxKey".##);
+    if (nrows == 1) {
+      cummaxKeyLinear(keys, out, 0, length);
+    } else {
+      var i = 0;
+      while (i < ncols) {
+        cummaxKeyLinear(keys, out, i*nrows, (i+1)*nrows);
+        i += 1;
+      }
+    }   
+    out
+  }
+  
+  def cummaxByKey(keys:LMat):LMat = cummaxByKey(keys, null);
+  
+  def cumminKeyLinear(keys:LMat, out:LMat, istart:Int, iend:Int) = {
+    var i = istart;
+    var sum = Long.MaxValue;
+    while (i < iend) {
+      sum = math.min(sum, data(i));
+      out.data(i) = sum;
+      if (i + 1 < iend && keys(i) != keys(i+1)) sum = Long.MaxValue;
+      i += 1;
+    }    
+  }
+  
+  def cumminByKey(keys:LMat, omat:Mat):LMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cumminKey dimensions mismatch");
+    val out = LMat.newOrCheckLMat(nrows, ncols, omat, GUID, keys.GUID, "cumminKey".##);
+    if (nrows == 1) {
+      cumminKeyLinear(keys, out, 0, length);
+    } else {
+      var i = 0;
+      while (i < ncols) {
+        cumminKeyLinear(keys, out, i*nrows, (i+1)*nrows);
+        i += 1;
+      }
+    }   
+    out
+  }
+  
+  def cumminByKey(keys:LMat):LMat = cumminByKey(keys, null);
+
+  
   def reverseLinear(out:LMat, istart:Int, iend:Int) = {
     var i = istart;
     var sum = 0f;

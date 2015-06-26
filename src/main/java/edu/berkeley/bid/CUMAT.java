@@ -243,5 +243,21 @@ public final class CUMAT {
     
     public static native int cumsumByKeyIL(Pointer A, Pointer B, Pointer out, long len);
     
+    public static native int cummaxByKeyFF(Pointer A, Pointer B, Pointer out, long len);
+    
+    public static native int cummaxByKeyII(Pointer A, Pointer B, Pointer out, long len);
+    
+    public static native int cummaxByKeyFL(Pointer A, Pointer B, Pointer out, long len);
+    
+    public static native int cummaxByKeyIL(Pointer A, Pointer B, Pointer out, long len);
+    
+    public static native int cumminByKeyFF(Pointer A, Pointer B, Pointer out, long len);
+    
+    public static native int cumminByKeyII(Pointer A, Pointer B, Pointer out, long len);
+    
+    public static native int cumminByKeyFL(Pointer A, Pointer B, Pointer out, long len);
+    
+    public static native int cumminByKeyIL(Pointer A, Pointer B, Pointer out, long len);
+    
     public static native int reverse(Pointer A, Pointer out, long len);
 }

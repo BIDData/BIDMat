@@ -1062,6 +1062,133 @@ object SciFunctions {
     case (aa:GLMat, bb:GLMat) => aa.cumsumByKey(bb, omat);
     }
   }
+    
+  def cummaxByKey(a:FMat, b:FMat):FMat = a.cummaxByKey(b);
+  
+  def cummaxByKey(a:IMat, b:IMat):IMat = a.cummaxByKey(b);
+  
+  def cummaxByKey(a:GMat, b:GMat):GMat = a.cummaxByKey(b);
+  
+  def cummaxByKey(a:GMat, b:GIMat):GMat = a.cummaxByKey(b);
+  
+  def cummaxByKey(a:GIMat, b:GIMat):GIMat = a.cummaxByKey(b);
+  
+  def cummaxByKey(a:GIMat, b:GMat):GIMat = a.cummaxByKey(b);
+  
+  def cummaxByKey(a:GDMat, b:GDMat):GDMat = a.cummaxByKey(b);
+  
+  def cummaxByKey(a:GLMat, b:GLMat):GLMat = a.cummaxByKey(b);
+  
+  def cummaxByKey(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+    case (aa:FMat, bb:FMat) => aa.cummaxByKey(bb);
+//    case (aa:FMat, bb:IMat) => aa.cummaxByKey(bb);
+    case (aa:IMat, bb:IMat) => aa.cummaxByKey(bb);
+//    case (aa:IMat, bb:FMat) => aa.cummaxByKey(bb);
+    case (aa:GMat, bb:GMat) => aa.cummaxByKey(bb);
+    case (aa:GMat, bb:GIMat) => aa.cummaxByKey(bb);
+    case (aa:GIMat, bb:GIMat) => aa.cummaxByKey(bb);
+    case (aa:GIMat, bb:GMat) => aa.cummaxByKey(bb);
+    case (aa:GDMat, bb:GDMat) => aa.cummaxByKey(bb);
+    case (aa:GLMat, bb:GLMat) => aa.cummaxByKey(bb);
+    }
+  }
+  
+    
+  def cummaxByKey(a:FMat, b:FMat, omat:Mat):FMat = a.cummaxByKey(b, omat);
+  
+  def cummaxByKey(a:IMat, b:IMat, omat:Mat):IMat = a.cummaxByKey(b, omat);
+  
+  def cummaxByKey(a:GMat, b:GMat, omat:Mat):GMat = a.cummaxByKey(b, omat);
+  
+  def cummaxByKey(a:GMat, b:GIMat, omat:Mat):GMat = a.cummaxByKey(b, omat);
+  
+  def cummaxByKey(a:GIMat, b:GIMat, omat:Mat):GIMat = a.cummaxByKey(b, omat);
+  
+  def cummaxByKey(a:GIMat, b:GMat, omat:Mat):GIMat = a.cummaxByKey(b, omat);
+  
+  def cummaxByKey(a:GDMat, b:GDMat, omat:Mat):GDMat = a.cummaxByKey(b, omat);
+  
+  def cummaxByKey(a:GLMat, b:GLMat, omat:Mat):GLMat = a.cummaxByKey(b, omat);
+  
+  def cummaxByKey(a:Mat, b:Mat, omat:Mat):Mat = {
+    (a, b) match {
+    case (aa:FMat, bb:FMat) => aa.cummaxByKey(bb, omat);
+//    case (aa:FMat, bb:IMat) => aa.cummaxByKey(bb, omat);
+    case (aa:IMat, bb:IMat) => aa.cummaxByKey(bb, omat);
+//    case (aa:IMat, bb:FMat) => aa.cummaxByKey(bb, omat);
+    case (aa:GMat, bb:GMat) => aa.cummaxByKey(bb, omat);
+    case (aa:GMat, bb:GIMat) => aa.cummaxByKey(bb, omat);
+    case (aa:GIMat, bb:GIMat) => aa.cummaxByKey(bb, omat);
+    case (aa:GIMat, bb:GMat) => aa.cummaxByKey(bb, omat);
+    case (aa:GDMat, bb:GDMat) => aa.cummaxByKey(bb, omat);
+    case (aa:GLMat, bb:GLMat) => aa.cummaxByKey(bb, omat);
+    }
+  }
+
+    
+  def cumminByKey(a:FMat, b:FMat):FMat = a.cumminByKey(b);
+  
+  def cumminByKey(a:IMat, b:IMat):IMat = a.cumminByKey(b);
+  
+  def cumminByKey(a:GMat, b:GMat):GMat = a.cumminByKey(b);
+  
+  def cumminByKey(a:GMat, b:GIMat):GMat = a.cumminByKey(b);
+  
+  def cumminByKey(a:GIMat, b:GIMat):GIMat = a.cumminByKey(b);
+  
+  def cumminByKey(a:GIMat, b:GMat):GIMat = a.cumminByKey(b);
+  
+  def cumminByKey(a:GDMat, b:GDMat):GDMat = a.cumminByKey(b);
+  
+  def cumminByKey(a:GLMat, b:GLMat):GLMat = a.cumminByKey(b);
+  
+  def cumminByKey(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+    case (aa:FMat, bb:FMat) => aa.cumminByKey(bb);
+//    case (aa:FMat, bb:IMat) => aa.cumminByKey(bb);
+    case (aa:IMat, bb:IMat) => aa.cumminByKey(bb);
+//    case (aa:IMat, bb:FMat) => aa.cumminByKey(bb);
+    case (aa:GMat, bb:GMat) => aa.cumminByKey(bb);
+    case (aa:GMat, bb:GIMat) => aa.cumminByKey(bb);
+    case (aa:GIMat, bb:GIMat) => aa.cumminByKey(bb);
+    case (aa:GIMat, bb:GMat) => aa.cumminByKey(bb);
+    case (aa:GDMat, bb:GDMat) => aa.cumminByKey(bb);
+    case (aa:GLMat, bb:GLMat) => aa.cumminByKey(bb);
+    }
+  }
+  
+    
+  def cumminByKey(a:FMat, b:FMat, omat:Mat):FMat = a.cumminByKey(b, omat);
+  
+  def cumminByKey(a:IMat, b:IMat, omat:Mat):IMat = a.cumminByKey(b, omat);
+  
+  def cumminByKey(a:GMat, b:GMat, omat:Mat):GMat = a.cumminByKey(b, omat);
+  
+  def cumminByKey(a:GMat, b:GIMat, omat:Mat):GMat = a.cumminByKey(b, omat);
+  
+  def cumminByKey(a:GIMat, b:GIMat, omat:Mat):GIMat = a.cumminByKey(b, omat);
+  
+  def cumminByKey(a:GIMat, b:GMat, omat:Mat):GIMat = a.cumminByKey(b, omat);
+  
+  def cumminByKey(a:GDMat, b:GDMat, omat:Mat):GDMat = a.cumminByKey(b, omat);
+  
+  def cumminByKey(a:GLMat, b:GLMat, omat:Mat):GLMat = a.cumminByKey(b, omat);
+  
+  def cumminByKey(a:Mat, b:Mat, omat:Mat):Mat = {
+    (a, b) match {
+    case (aa:FMat, bb:FMat) => aa.cumminByKey(bb, omat);
+//    case (aa:FMat, bb:IMat) => aa.cumminByKey(bb, omat);
+    case (aa:IMat, bb:IMat) => aa.cumminByKey(bb, omat);
+//    case (aa:IMat, bb:FMat) => aa.cumminByKey(bb, omat);
+    case (aa:GMat, bb:GMat) => aa.cumminByKey(bb, omat);
+    case (aa:GMat, bb:GIMat) => aa.cumminByKey(bb, omat);
+    case (aa:GIMat, bb:GIMat) => aa.cumminByKey(bb, omat);
+    case (aa:GIMat, bb:GMat) => aa.cumminByKey(bb, omat);
+    case (aa:GDMat, bb:GDMat) => aa.cumminByKey(bb, omat);
+    case (aa:GLMat, bb:GLMat) => aa.cumminByKey(bb, omat);
+    }
+  }
 
   
   // TODO Will finish more cases later, mirroring the cumsumByKey thing, and clean up comments.

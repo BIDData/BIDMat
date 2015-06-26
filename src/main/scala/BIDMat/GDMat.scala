@@ -719,6 +719,34 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
   }
   
   def cumsumByKey(keys:GDMat):GDMat = cumsumByKey(keys, null);
+  
+  def cummaxByKey(keys:GDMat, omat:Mat):GDMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cummaxKey dimensions mismatch");
+    val out = GDMat.newOrCheckGDMat(nrows, ncols, omat, GUID, keys.GUID, "cummaxKey".##);
+    if (nrows == 1 || ncols == 1) {
+      CUMATD.cummaxByKeyDD(data, keys.data, out.data, llength);
+    } else {
+      throw new RuntimeException("cummaxByKey only implemented for GDMat vectors");
+    }
+    out  
+  }
+  
+  def cummaxByKey(keys:GDMat):GDMat = cummaxByKey(keys, null);
+  
+  def cumminByKey(keys:GDMat, omat:Mat):GDMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cumminKey dimensions mismatch");
+    val out = GDMat.newOrCheckGDMat(nrows, ncols, omat, GUID, keys.GUID, "cumminKey".##);
+    if (nrows == 1 || ncols == 1) {
+      CUMATD.cumminByKeyDD(data, keys.data, out.data, llength);
+    } else {
+      throw new RuntimeException("cumminByKey only implemented for GDMat vectors");
+    }
+    out  
+  }
+  
+  def cumminByKey(keys:GDMat):GDMat = cumminByKey(keys, null);
 
   def _reverse(omat:Mat):GDMat = {
     val out = GDMat.newOrCheckGDMat(nrows, ncols, omat, GUID,  "reverse".##);

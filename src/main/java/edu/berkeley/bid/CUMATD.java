@@ -147,6 +147,14 @@ public final class CUMATD {
     
     public static native int cumsumByKeyLL(Pointer A, Pointer B, Pointer out, long len);
     
+    public static native int cummaxByKeyDD(Pointer A, Pointer B, Pointer out, long len);
+    
+    public static native int cummaxByKeyLL(Pointer A, Pointer B, Pointer out, long len);
+    
+    public static native int cumminByKeyDD(Pointer A, Pointer B, Pointer out, long len);
+    
+    public static native int cumminByKeyLL(Pointer A, Pointer B, Pointer out, long len);
+    
     public static native int reverse(Pointer A, Pointer out, long len);
 
 }
