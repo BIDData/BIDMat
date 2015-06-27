@@ -209,6 +209,28 @@ extern "C" {
     return copyToInds2DLong(A, lda, B, ldb, I, nrows, J, ncols);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_fillToInds2D
+  (JNIEnv *env, jobject obj, jfloat A, jobject jB, jint ldb,
+   jobject jI, jint nrows, jobject jJ, jint ncols) 
+  {
+    float *B = (float*)getPointer(env, jB);
+    int *I = (int*)getPointer(env, jI);
+    int *J = (int*)getPointer(env, jJ);
+
+    return fillToInds2D(A, B, ldb, I, nrows, J, ncols);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_fillToInds2DLong
+  (JNIEnv *env, jobject obj, jfloat A, jobject jB, jint ldb,
+   jobject jI, jint nrows, jobject jJ, jint ncols) 
+  {
+    long long *B = (long long*)getPointer(env, jB);
+    int *I = (int*)getPointer(env, jI);
+    int *J = (int*)getPointer(env, jJ);
+
+    return fillToInds2DLong(A, B, ldb, I, nrows, J, ncols);
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_copyFromInds2D
   (JNIEnv *env, jobject obj, jobject jA, jint lda, jobject jB, jint ldb,
    jobject jI, jint nrows, jobject jJ, jint ncols) 

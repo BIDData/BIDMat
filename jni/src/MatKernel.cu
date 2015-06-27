@@ -1044,6 +1044,148 @@ int copyFromInds2DLong(long long *A, int lda, long long *B, int ldb, int *I, int
   return err;
 }
 
+// Implement B[I,J] = c
+// indexed copy: version with one block per column
+#define FILLTOINDS2DA(DFNAME,IEXPR,JEXPR,ETYPE)                             \
+__global__ void __fillToInds2D##DFNAME(ETYPE A, ETYPE *B, int ldb, int *I, int nrows, int *J, int ncols) {  \
+  int iblock = blockIdx.x + blockIdx.y * gridDim.x;                                                                   \
+  if (iblock < ncols) {                                                                                               \
+    int icol = JEXPR;                                                                                                 \
+    for (int i = threadIdx.x; i < nrows; i += blockDim.x) {                                                           \
+      B[IEXPR + icol * ldb] = A;                                                                                      \
+    }                                                                                                                 \
+  }                                                                                                                   \
+}
+
+FILLTOINDS2DA(nn,I[i],J[iblock],float)
+FILLTOINDS2DA(xn,i,J[iblock],float)
+FILLTOINDS2DA(nx,I[i],iblock,float)
+FILLTOINDS2DA(xx,i,iblock,float) 
+
+FILLTOINDS2DA(nnl,I[i],J[iblock],long long)
+FILLTOINDS2DA(xnl,i,J[iblock],long long)
+FILLTOINDS2DA(nxl,I[i],iblock,long long)
+FILLTOINDS2DA(xxl,i,iblock,long long) 
+
+// Implement B[I,J] = A
+// indexed copy: version with one thread per element
+#define FILLTOINDS2DB(DFNAME,IEXPR,JEXPR,ETYPE)                                                                       \
+__global__ void __fillToInds2DB##DFNAME(ETYPE A, ETYPE *B, int ldb, int *I, int nrows, int *J, int ncols) { \
+  int indx = threadIdx.x + blockDim.x * (blockIdx.x + blockIdx.y * gridDim.x);                                        \
+  if (indx < nrows * ncols) {                                                                                         \
+    int irow = indx % nrows;                                                                                          \
+    int icol = indx / nrows;                                                                                          \
+    B[IEXPR + JEXPR * ldb] = A;											      \
+  }                                                                                                                   \
+}
+
+FILLTOINDS2DB(nn,I[irow],J[icol],float)
+FILLTOINDS2DB(xn,irow,J[icol],float)
+FILLTOINDS2DB(nx,I[irow],icol,float)
+FILLTOINDS2DB(xx,irow,icol,float)
+
+FILLTOINDS2DB(nnl,I[irow],J[icol],long long)
+FILLTOINDS2DB(xnl,irow,J[icol],long long)
+FILLTOINDS2DB(nxl,I[irow],icol,long long)
+FILLTOINDS2DB(xxl,irow,icol,long long)
+ 
+int fillToInds2D(float A, float *B, int ldb, int *I, int nrows, int *J, int ncols) {
+  int len = nrows * ncols;
+  int nthreads = max(32, min(1024, nrows));
+  int nblocks = min(ncols, (len-1)/nthreads + 1);
+  dim3 griddims;
+  griddims.x = 1;
+  griddims.y = 1;
+  griddims.z = 1;
+  if (nblocks < 65536) {
+    griddims.x = nblocks;
+  } else {
+    int vs = (int)sqrt((float)nblocks);
+    griddims.x = vs;
+    griddims.y = (nblocks-1)/vs + 1;
+  }
+  if (nblocks == ncols) {
+    if (I == NULL) {
+      if (J == NULL) {
+        __fillToInds2Dxx<<<griddims,nthreads>>>(A, B, ldb, I, nrows, J, ncols);
+      } else {
+        __fillToInds2Dxn<<<griddims,nthreads>>>(A, B, ldb, I, nrows, J, ncols);
+      }
+    } else {
+      if (J == NULL) {
+        __fillToInds2Dnx<<<griddims,nthreads>>>(A, B, ldb, I, nrows, J, ncols);
+      } else {
+        __fillToInds2Dnn<<<griddims,nthreads>>>(A, B, ldb, I, nrows, J, ncols);
+      }
+    }
+  } else {
+    if (I == NULL) {
+      if (J == NULL) {
+        __fillToInds2DBxx<<<griddims,nthreads>>>(A, B, ldb, I, nrows, J, ncols);
+      } else {
+        __fillToInds2DBxn<<<griddims,nthreads>>>(A, B, ldb, I, nrows, J, ncols);
+      }
+    } else {
+      if (J == NULL) {
+        __fillToInds2DBnx<<<griddims,nthreads>>>(A, B, ldb, I, nrows, J, ncols);
+      } else {
+        __fillToInds2DBnn<<<griddims,nthreads>>>(A, B, ldb, I, nrows, J, ncols);
+      }
+    }
+  }
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int fillToInds2DLong(long long A, long long *B, int ldb, int *I, int nrows, int *J, int ncols) {
+  int len = nrows * ncols;
+  int nthreads = max(32, min(1024, nrows));
+  int nblocks = min(ncols, (len-1)/nthreads + 1);
+  dim3 griddims;
+  griddims.x = 1;
+  griddims.y = 1;
+  griddims.z = 1;
+  if (nblocks < 65536) {
+    griddims.x = nblocks;
+  } else {
+    int vs = (int)sqrt((float)nblocks);
+    griddims.x = vs;
+    griddims.y = (nblocks-1)/vs + 1;
+  }
+  if (nblocks == ncols) {
+    if (I == NULL) {
+      if (J == NULL) {
+        __fillToInds2Dxxl<<<griddims,nthreads>>>(A, B, ldb, I, nrows, J, ncols);
+      } else {
+        __fillToInds2Dxnl<<<griddims,nthreads>>>(A, B, ldb, I, nrows, J, ncols);
+      }
+    } else {
+      if (J == NULL) {
+        __fillToInds2Dnxl<<<griddims,nthreads>>>(A, B, ldb, I, nrows, J, ncols);
+      } else {
+        __fillToInds2Dnnl<<<griddims,nthreads>>>(A, B, ldb, I, nrows, J, ncols);
+      }
+    }
+  } else {
+    if (I == NULL) {
+      if (J == NULL) {
+        __fillToInds2DBxxl<<<griddims,nthreads>>>(A, B, ldb, I, nrows, J, ncols);
+      } else {
+        __fillToInds2DBxnl<<<griddims,nthreads>>>(A, B, ldb, I, nrows, J, ncols);
+      }
+    } else {
+      if (J == NULL) {
+        __fillToInds2DBnxl<<<griddims,nthreads>>>(A, B, ldb, I, nrows, J, ncols);
+      } else {
+        __fillToInds2DBnnl<<<griddims,nthreads>>>(A, B, ldb, I, nrows, J, ncols);
+      }
+    }
+  }
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
 
 __global__ void __dsmult(int nrows, int nnz, float *A, float *Bdata, int *Bir, int *Bic, float *C) {
   int jstart = ((long long)blockIdx.x) * nnz / gridDim.x;

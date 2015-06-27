@@ -1,3 +1,13 @@
+#if __CUDA_ARCH__ > 200
+#define MAXXGRID 2147483647
+#else
+#define MAXXGRID 65535
+#endif
+
+typedef float (*optype)(float,float);
+typedef int (*ioptype)(int,int);
+typedef long long (*loptype)(long long,long long);
+
 void setsizes(long long N, dim3 *gridp, int *nthreadsp);
 
 int apply_binop(float *nativeA, int Anrows, int Ancols, float *nativeB, int Bnrows, int Bncols, float *nativeC, int opn);
@@ -17,6 +27,10 @@ int copyFromInds(float *A, float *B, int *I, long long len);
 int copyToInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols);
 
 int copyToInds2DLong(long long *A, int lda, long long *B, int ldb, int *I, int nrows, int *J, int ncols);
+
+int fillToInds2D(float A, float *B, int ldb, int *I, int nrows, int *J, int ncols);
+
+int fillToInds2DLong(long long A, long long *B, int ldb, int *I, int nrows, int *J, int ncols);
 
 int copyFromInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols);
 

@@ -219,6 +219,15 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
   	}
   }
   
+  override def update(I:Mat, J:Mat, vv:Float):GMat = {
+    (I, J) match {
+    case (ii:IMat, jj:IMat) => update(GIMat(ii), GIMat(jj), vv)
+    case (ii:GIMat, jj:IMat) => update(ii, GIMat(jj), vv)
+    case (ii:IMat, jj:GIMat) => update(GIMat(ii), jj, vv)
+    case (ii:GIMat, jj:GIMat) => update(ii, jj, vv)
+    }
+  }
+  
   override def update(I:Mat, j:Int, V:Mat):GMat = {
   	(I, V) match {
   	case (ii:IMat, vv:GMat) => update(GIMat(ii), j, vv)
