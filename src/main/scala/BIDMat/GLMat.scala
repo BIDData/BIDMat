@@ -444,6 +444,7 @@ class GLMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cumsumKey dimensions mismatch");
     val out = GLMat.newOrCheckGLMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
+    Mat.nflops += 2L*length;
     if (nrows == 1 || ncols == 1) {
       CUMATD.cumsumByKeyLL(data, keys.data, out.data, llength);
     } else {
@@ -458,6 +459,7 @@ class GLMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cummaxKey dimensions mismatch");
     val out = GLMat.newOrCheckGLMat(nrows, ncols, omat, GUID, keys.GUID, "cummaxKey".##);
+    Mat.nflops += 2L*length;
     if (nrows == 1 || ncols == 1) {
       CUMATD.cummaxByKeyLL(data, keys.data, out.data, llength);
     } else {
@@ -472,6 +474,7 @@ class GLMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cumminKey dimensions mismatch");
     val out = GLMat.newOrCheckGLMat(nrows, ncols, omat, GUID, keys.GUID, "cumminKey".##);
+    Mat.nflops += 2L*length;
     if (nrows == 1 || ncols == 1) {
       CUMATD.cumminByKeyLL(data, keys.data, out.data, llength);
     } else {

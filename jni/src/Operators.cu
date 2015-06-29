@@ -1,3 +1,10 @@
+
+
+/*
+ * Functions mapped over matrices and reductions using function tables. Unfortunately, it doesnt seem to be possible to 
+ * use templates for this. Function pointers have to be stored as device const arrays, but there doesnt seem to be a way
+ * to use templated static class fields on the device to do this. 
+ */
 #include <cuda_runtime.h>
 #include <curand_kernel.h>
 #include <stdio.h>
@@ -12,7 +19,6 @@
 #include <thrust/iterator/reverse_iterator.h>
 #include <thrust/device_vector.h>
 #include <thrust/sort.h>
-//#include <cub/device/device_radix_sort.cuh>
 
 #if __CUDA_ARCH__ > 200
 #define MAXXGRID 2147483647
@@ -61,6 +67,20 @@ __device__ long long lop_ne(long long a, long long b) {return (a != b) ? 1 : 0;}
 __device__ long long lop_max(long long a, long long b) {return max(a,b);}
 __device__ long long lop_min(long long a, long long b) {return max(a,b);}
 
+__device__ double dop_add(double a, double b) {return a+b;}
+__device__ double dop_sub(double a, double b) {return a-b;}
+__device__ double dop_mul(double a, double b) {return a*b;}
+__device__ double dop_div(double a, double b) {return a/b;}
+__device__ double dop_gt(double a, double b) {return (a > b)  ? 1.0 : 0;}
+__device__ double dop_lt(double a, double b) {return (a < b)  ? 1.0 : 0;}
+__device__ double dop_eq(double a, double b) {return (a == b) ? 1.0 : 0;}
+__device__ double dop_ge(double a, double b) {return (a >= b) ? 1.0 : 0;}
+__device__ double dop_le(double a, double b) {return (a <= b) ? 1.0 : 0;}
+__device__ double dop_ne(double a, double b) {return (a != b) ? 1.0 : 0;}
+__device__ double dop_max(double a, double b) {return max(a,b);}
+__device__ double dop_min(double a, double b) {return min(a,b);}
+__device__ double dop_atan2(double a, double b) {return atan2(a, b);}
+__device__ double dop_pow(double a, double b) {return pow(a, b);}
 
 // Check reducevec if these ever get changed.
 __device__ const optype operators[] = {
@@ -107,6 +127,22 @@ __device__ const loptype loperators[] = {
     lop_max,
     lop_min};
 
+__device__ const doptype doperators[] = {
+    dop_add, 
+    dop_sub, 
+    dop_mul,
+    dop_div,
+    dop_gt,
+    dop_lt,
+    dop_eq,
+    dop_ge,
+    dop_le,
+    dop_ne,
+    dop_max,
+    dop_min,
+    dop_atan2,
+    dop_pow};
+
 __device__ float fn_abs(float a) {return abs(a);}
 __device__ float fn_exp(float a) {return expf(a);}
 __device__ float fn_log(float a) {return logf(a);}
@@ -149,8 +185,6 @@ __device__ float fn_exppsi(float a) {return (a<1.0f) ? 0.5f*a*a : a-0.5f;}
 __device__ float fn_atan2(float a, float b) {return atan2f(a, b);}
 __device__ float fn_pow(float a, float b) {return powf(a, b);}
 
-typedef float (*fntype)(float);
-
 __device__ const fntype fctns[35] = {
     fn_abs,
     fn_exp,
@@ -192,14 +226,88 @@ __device__ const optype fctns2[2] = {
     fn_atan2,
     fn_pow};
 
-__global__ void __apply_gfun(float *A, float *B, int N, int opn) {
-  fntype fn = fctns[opn];
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {
-    B[i] = fn(A[i]);
-  }
-}
+__device__ double dfn_abs(double a) {return abs(a);}
+__device__ double dfn_exp(double a) {return exp(a);}
+__device__ double dfn_log(double a) {return log(a);}
+__device__ double dfn_expm1(double a) {return expm1(a);}
+__device__ double dfn_sqrt(double a) {return sqrt(a);}
+__device__ double dfn_ln(double a) {return log(a);}
+__device__ double dfn_log10(double a) {return log10(a);}
+__device__ double dfn_log1p(double a) {return log1p(a);}
+__device__ double dfn_cos(double a) {return cos(a);}
+__device__ double dfn_sin(double a) {return sin(a);}
+__device__ double dfn_tan(double a) {return tan(a);}
+__device__ double dfn_cosh(double a) {return cosh(a);}
+__device__ double dfn_sinh(double a) {return sinh(a);}
+__device__ double dfn_tanh(double a) {return tanh(a);}
+__device__ double dfn_acos(double a) {return acos(a);}
+__device__ double dfn_asin(double a) {return asin(a);}
+__device__ double dfn_atan(double a) {return atan(a);}
+__device__ double dfn_acosh(double a) {return acosh(a);}
+__device__ double dfn_asinh(double a) {return asinh(a);}
+__device__ double dfn_atanh(double a) {return atanh(a);}
+__device__ double dfn_erf(double a) {return erf(a);}
+__device__ double dfn_erfinv(double a) {return erfinv(a);}
+__device__ double dfn_erfc(double a) {return erfc(a);}
+__device__ double dfn_erfcinv(double a) {return erfcinv(a);}
+__device__ double dfn_gammaln(double a) {return lgamma(a);}
+__device__ double dfn_gamma(double a) {return tgamma(a);}
+__device__ double dfn_ceil(double a) {return ceil(a);}
+__device__ double dfn_floor(double a) {return floor(a);}
+__device__ double dfn_round(double a) {return round(a);}
+__device__ double dfn_trunc(double a) {return trunc(a);}
+__device__ double dfn_sign(double a) {return (a>0) ? 1.0 : ((a<0) ? -1.0 : 0);}
+__device__ double dfn_j0(double a) {return j0(a);}
+__device__ double dfn_j1(double a) {return j1(a);}
+//__device__ double dfn_jn(double a) {return jnf(a);}
+__device__ double dfn_y0(double a) {return y0(a);}
+__device__ double dfn_y1(double a) {return y1(a);}
+//__device__ double dfn_yn(double a) {return ynf(a);}
+__device__ double dfn_exppsi(double a) {return (a<1.0) ? 0.5*a*a : a-0.5;}
 
+__device__ double dfn_atan2(double a, double b) {return atan2(a, b);}
+__device__ double dfn_pow(double a, double b) {return pow(a, b);}
+
+__device__ const dfntype dfctns[35] = {
+    dfn_abs,
+    dfn_exp,
+    dfn_expm1,
+    dfn_sqrt,
+    dfn_ln,
+    dfn_log10,
+    dfn_log1p,
+    dfn_cos,
+    dfn_sin,
+    dfn_tan,
+    dfn_cosh,
+    dfn_sinh,
+    dfn_tanh,
+    dfn_acos,
+    dfn_asin,
+    dfn_atan,
+    dfn_acosh,
+    dfn_asinh,
+    dfn_atanh,
+    dfn_erf,
+    dfn_erfinv,
+    dfn_erfc,
+    dfn_erfcinv,
+    dfn_gammaln,
+    dfn_gamma,
+    dfn_ceil,
+    dfn_floor,
+    dfn_round,
+    dfn_trunc,
+    dfn_sign,
+    dfn_j0,
+    dfn_j1,
+    dfn_y0,
+    dfn_y1,
+    dfn_exppsi};
+
+__device__ const doptype dfctns2[2] = {
+    dfn_atan2,
+    dfn_pow};
 
 void setsizes(long long N, dim3 *gridp, int *nthreadsp) {
   int nblocks = 1;
@@ -219,460 +327,262 @@ void setsizes(long long N, dim3 *gridp, int *nthreadsp) {
   *nthreadsp = nthreads;
 }
 
-int apply_gfun(float *A, float *B, int N, int opn) {
-  int nthreads;
-  dim3 griddims;
-  setsizes(N, &griddims, &nthreads);
-  __apply_gfun<<<griddims,nthreads>>>(A, B, N, opn);
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  return err;
+#define GENGFUN(ATYPE,FNTYPE,FUNCARRAY)								    \
+__global__ void __apply_gfun_##ATYPE(ATYPE *A, ATYPE *B, int N, int opn) {			    \
+  FNTYPE fn = FUNCARRAY[opn];									    \
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);			    \
+  for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {				    \
+    B[i] = fn(A[i]);										    \
+  }												    \
+}												    \
+												    \
+int apply_gfun(ATYPE *A, ATYPE *B, int N, int opn) {						    \
+  int nthreads;											    \
+  dim3 griddims;										    \
+  setsizes(N, &griddims, &nthreads);								    \
+  __apply_gfun_##ATYPE<<<griddims,nthreads>>>(A, B, N, opn);					    \
+  cudaDeviceSynchronize();									    \
+  cudaError_t err = cudaGetLastError();								    \
+  return err;											    \
 }
 
-__global__ void __apply_gfun2(float *A, float *B, float *C, int N, int opn) {
-  optype fn = fctns2[opn];
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {
-    C[i] = fn(A[i], B[i]);
-  }
+GENGFUN(float,fntype,fctns)
+GENGFUN(double,dfntype,dfctns)
+
+#define GENGFUN2(ATYPE,FNTYPE,FUNCARRAY)							    \
+__global__ void __apply_gfun2_##ATYPE(ATYPE *A, ATYPE *B, ATYPE *C, int N, int opn) {		    \
+  FNTYPE fn = FUNCARRAY[opn];									    \
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);			    \
+  for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {				    \
+    C[i] = fn(A[i], B[i]);									    \
+  }												    \
+}												    \
+												    \
+int apply_gfun2(ATYPE *A, ATYPE *B, ATYPE *C, int N, int opn) {					    \
+  int nthreads;											    \
+  dim3 griddims;										    \
+  setsizes(N, &griddims, &nthreads);								    \
+  __apply_gfun2_##ATYPE<<<griddims,nthreads>>>(A, B, C, N, opn);				    \
+  cudaDeviceSynchronize();									    \
+  cudaError_t err = cudaGetLastError();								    \
+  return err;											    \
 }
 
-int apply_gfun2(float *A, float *B, float *C, int N, int opn) {
-  int nthreads;
-  dim3 griddims;
-  setsizes(N, &griddims, &nthreads);
-  __apply_gfun2<<<griddims,nthreads>>>(A, B, C, N, opn);
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  return err;
+GENGFUN2(float,optype,fctns2)
+GENGFUN2(double,doptype,dfctns2)
+
+#define GENAPPLY(ATYPE,OPTYPE,OPARRAY)								    \
+__global__ void __apply_full(ATYPE *A, ATYPE *B, ATYPE *C, int N, int opn) {			    \
+  OPTYPE op = OPARRAY[opn];									    \
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);			    \
+  for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {				    \
+    C[i] = op(A[i],B[i]);									    \
+  }												    \
+}												    \
+												    \
+__global__ void __apply_right_col(ATYPE *A, ATYPE *B, ATYPE *C, int nrows, int ncols, int opn) {    \
+  OPTYPE op = OPARRAY[opn];									    \
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);			    \
+  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {			    \
+    C[i] = op(A[i],B[i % nrows]);								    \
+  }												    \
+}												    \
+												    \
+__global__ void __apply_right_row(ATYPE *A, ATYPE *B, ATYPE *C, int nrows, int ncols, int opn) {    \
+  OPTYPE op = OPARRAY[opn];									    \
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);			    \
+  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {			    \
+    C[i] = op(A[i],B[i / nrows]);								    \
+  }												    \
+}												    \
+												    \
+__global__ void __apply_left_col(ATYPE *A, ATYPE *B, ATYPE *C, int nrows, int ncols, int opn) {	    \
+  OPTYPE op = OPARRAY[opn];									    \
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);			    \
+  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {			    \
+    C[i] = op(A[i % nrows],B[i]);								    \
+  }												    \
+}												    \
+												    \
+__global__ void __apply_left_row(ATYPE *A, ATYPE *B, ATYPE *C, int nrows, int ncols, int opn) {	    \
+  OPTYPE op = OPARRAY[opn];									    \
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);			    \
+  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {			    \
+    C[i] = op(A[i / nrows],B[i]);								    \
+  }												    \
+}												    \
+												    \
+__global__ void __apply_right_val(ATYPE *A, ATYPE *B, ATYPE *C, int nrows, int ncols, int opn) {    \
+  OPTYPE op = OPARRAY[opn];									    \
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);			    \
+  ATYPE val = B[0];										    \
+  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {			    \
+    C[i] = op(A[i],val);									    \
+  }												    \
+}												    \
+												    \
+__global__ void __apply_left_val(ATYPE *A, ATYPE *B, ATYPE *C, int nrows, int ncols, int opn) {	    \
+  OPTYPE op = OPARRAY[opn];									    \
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);			    \
+  ATYPE val = A[0];										    \
+  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {			    \
+    C[i] = op(val,B[i]);									    \
+  }												    \
+}												    \
+												    \
+int apply_binop(ATYPE *A, int Anrows, int Ancols,						    \
+     ATYPE *B, int Bnrows, int Bncols, ATYPE *C, int opn) {					    \
+  int N = max(Anrows, Bnrows)*max(Ancols, Bncols);						    \
+  int nthreads;											    \
+  dim3 griddims;										    \
+  setsizes(N, &griddims, &nthreads);								    \
+  if (Anrows == Bnrows && Ancols == Bncols) {							    \
+    __apply_full<<<griddims,nthreads>>>(A, B, C, N, opn);					    \
+  } else if (Anrows == Bnrows && Bncols == 1) {							    \
+    __apply_right_col<<<griddims,nthreads>>>(A, B, C, Anrows, Ancols, opn);			    \
+  } else if (Ancols == Bncols && Bnrows == 1) {							    \
+    __apply_right_row<<<griddims,nthreads>>>(A, B, C, Anrows, Ancols, opn);			    \
+  } else if (Anrows == Bnrows && Ancols == 1) {							    \
+    __apply_left_col<<<griddims,nthreads>>>(A, B, C, Bnrows, Bncols, opn);			    \
+  } else if (Ancols == Bncols && Anrows == 1) {							    \
+    __apply_left_row<<<griddims,nthreads>>>(A, B, C, Bnrows, Bncols, opn);			    \
+  } else if (Bnrows == 1 && Bncols == 1) {							    \
+    __apply_right_val<<<griddims,nthreads>>>(A, B, C, Anrows, Ancols, opn);			    \
+  } else if (Anrows == 1 && Ancols == 1) {							    \
+    __apply_left_val<<<griddims,nthreads>>>(A, B, C, Bnrows, Bncols, opn);			    \
+  }												    \
+  cudaDeviceSynchronize();									    \
+  cudaError_t err = cudaGetLastError();								    \
+  return err;                                                                                       \
 }
 
-__global__ void __apply_full(float *A, float *B, float *C, int N, int opn) {
-  optype op = operators[opn];
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {
-    C[i] = op(A[i],B[i]);
-  }
+GENAPPLY(float,optype,operators)
+GENAPPLY(int,ioptype,ioperators)
+GENAPPLY(long long,loptype,loperators)
+GENAPPLY(double,doptype,doperators)
+
+#define GENSPOPERATION(ATYPE,OPTYPE,OPARRAY)							    \
+__global__ void __sdoprow(int nrows, int ncols, int nnz, ATYPE *A, int *Aic, ATYPE *B, int opn) {   \
+  OPTYPE op = OPARRAY[opn];									    \
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);			    \
+  for (int i = ip; i < nnz; i += blockDim.x * gridDim.x * gridDim.y) {				    \
+    int col = Aic[i];										    \
+    ATYPE oldA = A[i];										    \
+    A[i] = op(oldA,B[col]);									    \
+  }												    \
+}												    \
+												    \
+__global__ void __sdopcol(int nrows, int ncols, int nnz, ATYPE *A, int *Air, ATYPE *B, int opn) {   \
+  OPTYPE op = OPARRAY[opn];									    \
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);			    \
+  for (int i = ip; i < nnz; i += blockDim.x * gridDim.x * gridDim.y) {				    \
+    int row = Air[i];										    \
+    ATYPE oldA = A[i];										    \
+    A[i] = op(oldA,B[row]);									    \
+  }												    \
+}												    \
+												    \
+__global__ void __sdopval(int nnz, ATYPE *A, ATYPE *B, int opn) {				    \
+  OPTYPE op = OPARRAY[opn];									    \
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);			    \
+  ATYPE bval = B[0];										    \
+  for (int i = ip; i < nnz; i += blockDim.x * gridDim.x * gridDim.y) {				    \
+    ATYPE oldA = A[i];										    \
+    A[i] = op(oldA,bval);									    \
+  }												    \
+}												    \
+												    \
+int sdoprow(int nrows, int ncols, int nnz, ATYPE *A, int *Aic,					    \
+            ATYPE *B, int len, int opn) {							    \
+  int nthreads;											    \
+  dim3 griddims;										    \
+  setsizes(nnz, &griddims, &nthreads);								    \
+  if (len > 1) {										    \
+    __sdoprow<<<griddims,nthreads>>>(nrows, ncols, nnz, A, Aic, B, opn);			    \
+  } else {											    \
+    __sdopval<<<griddims,nthreads>>>(nnz, A, B, opn);						    \
+  }												    \
+  cudaDeviceSynchronize();									    \
+  cudaError_t err = cudaGetLastError();								    \
+  return err;											    \
+}												    \
+												    \
+int sdopcol(int nrows, int ncols, int nnz, ATYPE *A, int *Air,					    \
+            ATYPE *B, int len, int opn) {							    \
+  int nthreads;											    \
+  dim3 griddims;										    \
+  setsizes(nnz, &griddims, &nthreads);								    \
+  if (len > 1) {										    \
+    __sdopcol<<<griddims,nthreads>>>(nrows, ncols, nnz, A, Air, B, opn);			    \
+  } else {											    \
+    __sdopval<<<griddims,nthreads>>>(nnz, A, B, opn);						    \
+  }												    \
+  cudaDeviceSynchronize();									    \
+  cudaError_t err = cudaGetLastError();								    \
+  return err;											    \
 }
 
-__global__ void __apply_right_col(float *A, float *B, float *C, int nrows, int ncols, int opn) {
-  optype op = operators[opn];
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
-    C[i] = op(A[i],B[i % nrows]);
-  }
+GENSPOPERATION(float,optype,operators)
+GENSPOPERATION(double,doptype,doperators)
+
+#define GENREDUCE1OP(ATYPE,OPTYPE,OPARRAY)							    \
+__global__ void __reduce1op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE initval, int opn) {	    \
+  OPTYPE op = OPARRAY[opn];									    \
+  int basecol = threadIdx.y + blockDim.y * blockIdx.x;						    \
+  ATYPE v;											    \
+  for (int icol = basecol; icol < ncols; icol += blockDim.y * gridDim.x) {			    \
+    v = initval;										    \
+    if (threadIdx.x < nrows) v = A[threadIdx.x + icol * nrows];					    \
+    for (int i = threadIdx.x + blockDim.x; i < nrows; i += blockDim.x) {			    \
+      v = op(v, A[i + icol * nrows]);								    \
+    }												    \
+    for (int i = 1; i < blockDim.x; i *= 2) {							    \
+      v = op(v, __shfl_down(v, i));								    \
+    }												    \
+    if (threadIdx.x == 0) {									    \
+      B[icol] = v;										    \
+    }												    \
+  }												    \
 }
 
-__global__ void __apply_right_row(float *A, float *B, float *C, int nrows, int ncols, int opn) {
-  optype op = operators[opn];
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
-    C[i] = op(A[i],B[i / nrows]);
-  }
+#define GENREDUCE1OPX(ATYPE,OPTYPE,OPARRAY)							    \
+__global__ void __reduce1op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE initval, int opn) {	    \
+  __shared__ ATYPE parts[32][33];								    \
+  OPTYPE op = OPARRAY[opn];									    \
+  ATYPE v;											    \
+  for (int icol = threadIdx.y + blockIdx.y * blockDim.y; icol < ncols; icol += blockDim.y * gridDim.x) { \
+    v = initval;										    \
+    if (threadIdx.x < nrows) v = A[threadIdx.x + icol * nrows];					    \
+    for (int irow = threadIdx.x + blockDim.x; irow < nrows; irow += blockDim.x) {		    \
+      v = op(v, A[irow + icol * nrows]);							    \
+    }												    \
+    parts[threadIdx.x][threadIdx.y] = v;							    \
+    for (int i = 1; i < blockDim.x; i *= 2) {							    \
+      if (i + threadIdx.x < blockDim.x) {							    \
+        parts[threadIdx.x][threadIdx.y] = op(parts[threadIdx.x][threadIdx.y], parts[i + threadIdx.x][threadIdx.y]); \
+      }												    \
+    }												    \
+    if (threadIdx.x == 0) {									    \
+      B[icol] = parts[0][threadIdx.y];								    \
+    }												    \
+    __syncthreads();										    \
+  }												    \
 }
 
-__global__ void __apply_left_col(float *A, float *B, float *C, int nrows, int ncols, int opn) {
-  optype op = operators[opn];
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
-    C[i] = op(A[i % nrows],B[i]);
-  }
-}
-
-__global__ void __apply_left_row(float *A, float *B, float *C, int nrows, int ncols, int opn) {
-  optype op = operators[opn];
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
-    C[i] = op(A[i / nrows],B[i]);
-  }
-}
-
-__global__ void __apply_right_val(float *A, float *B, float *C, int nrows, int ncols, int opn) {
-  optype op = operators[opn];
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  float val = B[0];
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
-    C[i] = op(A[i],val);
-  }
-}
-
-__global__ void __apply_left_val(float *A, float *B, float *C, int nrows, int ncols, int opn) {
-  optype op = operators[opn];
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  float val = A[0];
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
-    C[i] = op(val,B[i]);
-  }
-}
-
-int apply_binop(float *A, int Anrows, int Ancols, 
-     float *B, int Bnrows, int Bncols, float *C, int opn) {
-  int N = max(Anrows, Bnrows)*max(Ancols, Bncols);
-  int nthreads;
-  dim3 griddims;
-  setsizes(N, &griddims, &nthreads);
-  if (Anrows == Bnrows && Ancols == Bncols) {
-    __apply_full<<<griddims,nthreads>>>(A, B, C, N, opn);
-  } else if (Anrows == Bnrows && Bncols == 1) {
-    __apply_right_col<<<griddims,nthreads>>>(A, B, C, Anrows, Ancols, opn);
-  } else if (Ancols == Bncols && Bnrows == 1) {
-    __apply_right_row<<<griddims,nthreads>>>(A, B, C, Anrows, Ancols, opn);
-  } else if (Anrows == Bnrows && Ancols == 1) {
-    __apply_left_col<<<griddims,nthreads>>>(A, B, C, Bnrows, Bncols, opn);
-  } else if (Ancols == Bncols && Anrows == 1) {
-    __apply_left_row<<<griddims,nthreads>>>(A, B, C, Bnrows, Bncols, opn);
-  } else if (Bnrows == 1 && Bncols == 1) {
-    __apply_right_val<<<griddims,nthreads>>>(A, B, C, Anrows, Ancols, opn);
-  } else if (Anrows == 1 && Ancols == 1) {
-    __apply_left_val<<<griddims,nthreads>>>(A, B, C, Bnrows, Bncols, opn);
-  }
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  return err;
-}
-
-__global__ void __sdoprow(int nrows, int ncols, int nnz, float *A, int *Aic, float *B, int opn) {
-  optype op = operators[opn];
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  for (int i = ip; i < nnz; i += blockDim.x * gridDim.x * gridDim.y) {
-    int col = Aic[i];
-    float oldA = A[i];
-    A[i] = op(oldA,B[col]);
-  }
-}
-
-__global__ void __sdopcol(int nrows, int ncols, int nnz, float *A, int *Air, float *B, int opn) {
-  optype op = operators[opn];
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  for (int i = ip; i < nnz; i += blockDim.x * gridDim.x * gridDim.y) {
-    int row = Air[i];
-    float oldA = A[i];
-    A[i] = op(oldA,B[row]);
-  }
-}
-
-__global__ void __sdopval(int nnz, float *A, float *B, int opn) {
-  optype op = operators[opn];
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  float bval = B[0];
-  for (int i = ip; i < nnz; i += blockDim.x * gridDim.x * gridDim.y) {
-    float oldA = A[i];
-    A[i] = op(oldA,bval);
-  }
-}
-
-
-int sdoprow(int nrows, int ncols, int nnz, float *A, int *Aic,
-            float *B, int len, int opn) {
-  int nthreads;
-  dim3 griddims;
-  setsizes(nnz, &griddims, &nthreads);
-  if (len > 1) {
-    __sdoprow<<<griddims,nthreads>>>(nrows, ncols, nnz, A, Aic, B, opn);
-  } else {
-    __sdopval<<<griddims,nthreads>>>(nnz, A, B, opn);
-  }
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  return err;
-}
-
-int sdopcol(int nrows, int ncols, int nnz, float *A, int *Air,
-            float *B, int len, int opn) {
-  int nthreads;
-  dim3 griddims;
-  setsizes(nnz, &griddims, &nthreads);
-  if (len > 1) {
-    __sdopcol<<<griddims,nthreads>>>(nrows, ncols, nnz, A, Air, B, opn);
-  } else {
-    __sdopval<<<griddims,nthreads>>>(nnz, A, B, opn);
-  }
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  return err;
-}
-
-__global__ void __apply_full_int(int *A, int *B, int *C, int N, int opn) {
-  ioptype op = ioperators[opn];
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {
-    C[i] = op(A[i],B[i]);
-  }
-}
-
-__global__ void __apply_right_col_int(int *A, int *B, int *C, int nrows, int ncols, int opn) {
-  ioptype op = ioperators[opn];
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
-    C[i] = op(A[i],B[i % nrows]);
-  }
-}
-
-__global__ void __apply_right_row_int(int *A, int *B, int *C, int nrows, int ncols, int opn) {
-  ioptype op = ioperators[opn];
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
-    C[i] = op(A[i],B[i / nrows]);
-  }
-}
-
-__global__ void __apply_left_col_int(int *A, int *B, int *C, int nrows, int ncols, int opn) {
-  ioptype op = ioperators[opn];
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
-    C[i] = op(A[i % nrows],B[i]);
-  }
-}
-
-__global__ void __apply_left_row_int(int *A, int *B, int *C, int nrows, int ncols, int opn) {
-  ioptype op = ioperators[opn];
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
-    C[i] = op(A[i / nrows],B[i]);
-  }
-}
-
-__global__ void __apply_right_val_int(int *A, int *B, int *C, int nrows, int ncols, int opn) {
-  ioptype op = ioperators[opn];
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  int val = B[0];
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
-    C[i] = op(A[i],val);
-  }
-}
-
-__global__ void __apply_left_val_int(int *A, int *B, int *C, int nrows, int ncols, int opn) {
-  ioptype op = ioperators[opn];
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  int val = A[0];
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
-    C[i] = op(val,B[i]);
-  }
-}
-
-__global__ void __apply_full_long(long long *A, long long *B, long long *C, int N, int opn) {
-  loptype op = loperators[opn];
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {
-    C[i] = op(A[i],B[i]);
-  }
-}
-
-__global__ void __apply_right_col_long(long long *A, long long *B, long long *C, int nrows, int ncols, int opn) {
-  loptype op = loperators[opn];
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
-    C[i] = op(A[i],B[i % nrows]);
-  }
-}
-
-__global__ void __apply_right_row_long(long long *A, long long *B, long long *C, int nrows, int ncols, int opn) {
-  loptype op = loperators[opn];
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
-    C[i] = op(A[i],B[i / nrows]);
-  }
-}
-
-__global__ void __apply_left_col_long(long long *A, long long *B, long long *C, int nrows, int ncols, int opn) {
-  loptype op = loperators[opn];
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
-    C[i] = op(A[i % nrows],B[i]);
-  }
-}
-
-__global__ void __apply_left_row_long(long long *A, long long *B, long long *C, int nrows, int ncols, int opn) {
-  loptype op = loperators[opn];
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
-    C[i] = op(A[i / nrows],B[i]);
-  }
-}
-
-__global__ void __apply_right_val_long(long long *A, long long *B, long long *C, int nrows, int ncols, int opn) {
-  loptype op = loperators[opn];
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  int val = B[0];
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
-    C[i] = op(A[i],val);
-  }
-}
-
-__global__ void __apply_left_val_long(long long *A, long long *B, long long *C, int nrows, int ncols, int opn) {
-  loptype op = loperators[opn];
-  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
-  int val = A[0];
-  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
-    C[i] = op(val,B[i]);
-  }
-}
-
-int apply_biniop(int *A, int Anrows, int Ancols, 
-     int *B, int Bnrows, int Bncols, 
-     int *C, int opn) {
-  int N = max(Anrows, Bnrows)*max(Ancols, Bncols);
-  int nthreads;
-  dim3 griddims;
-  setsizes(N, &griddims, &nthreads);
-  if (Anrows == Bnrows && Ancols == Bncols) {
-    __apply_full_int<<<griddims,nthreads>>>(A, B, C, N, opn);
-  } else if (Anrows == Bnrows && Bncols == 1) {
-    __apply_right_col_int<<<griddims,nthreads>>>(A, B, C, Anrows, Ancols, opn);
-  } else if (Ancols == Bncols && Bnrows == 1) {
-    __apply_right_row_int<<<griddims,nthreads>>>(A, B, C, Anrows, Ancols, opn);
-  } else if (Anrows == Bnrows && Ancols == 1) {
-    __apply_left_col_int<<<griddims,nthreads>>>(A, B, C, Bnrows, Bncols, opn);
-  } else if (Ancols == Bncols && Anrows == 1) {
-    __apply_left_row_int<<<griddims,nthreads>>>(A, B, C, Bnrows, Bncols, opn);
-  } else if (Bnrows == 1 && Bncols == 1) {
-    __apply_right_val_int<<<griddims,nthreads>>>(A, B, C, Anrows, Ancols, opn);
-  } else if (Anrows == 1 && Ancols == 1) {
-    __apply_left_val_int<<<griddims,nthreads>>>(A, B, C, Bnrows, Bncols, opn);
-  }
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  return err;
-}
-
-int apply_binlop(long long *A, int Anrows, int Ancols, 
-     long long *B, int Bnrows, int Bncols, 
-     long long *C, int opn) {
-  int N = max(Anrows, Bnrows)*max(Ancols, Bncols);
-  int nthreads;
-  dim3 griddims;
-  setsizes(N, &griddims, &nthreads);
-  if (Anrows == Bnrows && Ancols == Bncols) {
-    __apply_full_long<<<griddims,nthreads>>>(A, B, C, N, opn);
-  } else if (Anrows == Bnrows && Bncols == 1) {
-    __apply_right_col_long<<<griddims,nthreads>>>(A, B, C, Anrows, Ancols, opn);
-  } else if (Ancols == Bncols && Bnrows == 1) {
-    __apply_right_row_long<<<griddims,nthreads>>>(A, B, C, Anrows, Ancols, opn);
-  } else if (Anrows == Bnrows && Ancols == 1) {
-    __apply_left_col_long<<<griddims,nthreads>>>(A, B, C, Bnrows, Bncols, opn);
-  } else if (Ancols == Bncols && Anrows == 1) {
-    __apply_left_row_long<<<griddims,nthreads>>>(A, B, C, Bnrows, Bncols, opn);
-  } else if (Bnrows == 1 && Bncols == 1) {
-    __apply_right_val_long<<<griddims,nthreads>>>(A, B, C, Anrows, Ancols, opn);
-  } else if (Anrows == 1 && Ancols == 1) {
-    __apply_left_val_long<<<griddims,nthreads>>>(A, B, C, Bnrows, Bncols, opn);
-  }
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  return err;
-}
- 
 #if __CUDA_ARCH__ > 200
 
-__global__ void __reduce1op(int nrows, int ncols, float *A, float *B, float initval, int opn) {
-  optype op = operators[opn];
-  int basecol = threadIdx.y + blockDim.y * blockIdx.x;
-  float v;
-  for (int icol = basecol; icol < ncols; icol += blockDim.y * gridDim.x) {      
-    v = initval;
-    if (threadIdx.x < nrows) v = A[threadIdx.x + icol * nrows];
-    for (int i = threadIdx.x + blockDim.x; i < nrows; i += blockDim.x) {
-      v = op(v, A[i + icol * nrows]);
-    }
-    for (int i = 1; i < blockDim.x; i *= 2) {
-      v = op(v, __shfl_down(v, i));
-    }
-    if (threadIdx.x == 0) {
-      B[icol] = v;
-    }
-  }
-}
+GENREDUCE1OP(float,optype,operators)
+GENREDUCE1OP(int,ioptype,ioperators)
 
-__global__ void __reduce1iop(int nrows, int ncols, int *A, int *B, int initval, int opn) {
-  ioptype op = ioperators[opn];
-  int basecol = threadIdx.y + blockDim.y * blockIdx.x;
-  int v;
-  for (int icol = basecol; icol < ncols; icol += blockDim.y * gridDim.x) {      
-    v = initval;
-    if (threadIdx.x < nrows) v = A[threadIdx.x + icol * nrows];
-    for (int i = threadIdx.x + blockDim.x; i < nrows; i += blockDim.x) {
-      v = op(v, A[i + icol * nrows]);
-    }
-    for (int i = 1; i < blockDim.x; i *= 2) {
-      v = op(v, __shfl_down(v, i));
-    }
-    if (threadIdx.x == 0) {
-      B[icol] = v;
-    }
-  }
-}
+#else 
 
-#else
-__global__ void __reduce1op(int nrows, int ncols, float *A, float *B, float initval, int opn) {
-  __shared__ float parts[32][33];
-  optype op = operators[opn];
-  float v;
-  for (int icol = threadIdx.y + blockIdx.y * blockDim.y; icol < ncols; icol += blockDim.y * gridDim.x) {
-    v = initval;
-    if (threadIdx.x < nrows) v = A[threadIdx.x + icol * nrows];
-    for (int irow = threadIdx.x + blockDim.x; irow < nrows; irow += blockDim.x) {
-      v = op(v, A[irow + icol * nrows]);
-    }
-    parts[threadIdx.x][threadIdx.y] = v;
-    for (int i = 1; i < blockDim.x; i *= 2) {
-      if (i + threadIdx.x < blockDim.x) {
-        parts[threadIdx.x][threadIdx.y] = op(parts[threadIdx.x][threadIdx.y], parts[i + threadIdx.x][threadIdx.y]);
-      }
-    }
-    if (threadIdx.x == 0) {
-      B[icol] = parts[0][threadIdx.y];
-    }
-    __syncthreads();
-  }
-}
+GENREDUCE1OPX(float,optype,operators)
+GENREDUCE1OPX(int,ioptype,ioperators)
 
-__global__ void __reduce1iop(int nrows, int ncols, int *A, int *B, int initval, int opn) {
-  __shared__ int parts[32][33];
-  ioptype op = ioperators[opn];
-  int v;
-  for (int icol = threadIdx.y + blockIdx.y * blockDim.y; icol < ncols; icol += blockDim.y * gridDim.x) {
-    v = initval;
-    if (threadIdx.x < nrows) v = A[threadIdx.x + icol * nrows];
-    for (int irow = threadIdx.x + blockDim.x; irow < nrows; irow += blockDim.x) {
-      v = op(v, A[irow + icol * nrows]);
-    }
-    parts[threadIdx.x][threadIdx.y] = v;
-    for (int i = 1; i < blockDim.x; i *= 2) {
-      if (i + threadIdx.x < blockDim.x) {
-        parts[threadIdx.x][threadIdx.y] = op(parts[threadIdx.x][threadIdx.y], parts[i + threadIdx.x][threadIdx.y]);
-      }
-    }
-    if (threadIdx.x == 0) {
-      B[icol] = parts[0][threadIdx.y];
-    }
-    __syncthreads();
-  }
-}
 #endif
 
-__global__ void __reduce1lop(int nrows, int ncols, long long *A, long long *B, long long initval, int opn) {
-  __shared__ long long parts[32][33];
-  loptype op = loperators[opn];
-  long long v;
-  for (int icol = threadIdx.y + blockIdx.y * blockDim.y; icol < ncols; icol += blockDim.y * gridDim.x) {
-    v = initval;
-    if (threadIdx.x < nrows) v = A[threadIdx.x + icol * nrows];
-    for (int irow = threadIdx.x + blockDim.x; irow < nrows; irow += blockDim.x) {
-      v = op(v, A[irow + icol * nrows]);
-    }
-    parts[threadIdx.x][threadIdx.y] = v;
-    for (int i = 1; i < blockDim.x; i *= 2) {
-      if (i + threadIdx.x < blockDim.x) {
-        parts[threadIdx.x][threadIdx.y] = op(parts[threadIdx.x][threadIdx.y], parts[i + threadIdx.x][threadIdx.y]);
-      }
-    }
-    if (threadIdx.x == 0) {
-      B[icol] = parts[0][threadIdx.y];
-    }
-    __syncthreads();
-  }
-}
-
+GENREDUCE1OPX(long long,loptype,loperators)
+GENREDUCE1OPX(double,loptype,loperators)
 
 template<typename T>
 void reducevec(int n, T *A, T *B, int opn) {
@@ -695,261 +605,179 @@ void reducevec(int n, T *A, T *B, int opn) {
   }
 }
 
-int reduce1op(int nrows, int ncols, float *A, float *B, float initval, int opn) {
-  if (ncols == 1) {
-     reducevec<float>(nrows, A, B, opn);
-  } else {
-    int blkx = 32;
-    int blky = min(32, ncols);
-    int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));
-    const dim3 blkdims(blkx,blky,1);
-    __reduce1op<<<nblks,blkdims>>>(nrows, ncols, A, B, initval, opn);
-  }
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  return err;
+#define GENREDUCE1OPY(ATYPE)									    \
+int reduce1op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE initval, int opn) {		    \
+  if (ncols == 1) {										    \
+     reducevec<ATYPE>(nrows, A, B, opn);							    \
+  } else {											    \
+    int blkx = 32;										    \
+    int blky = min(32, ncols);									    \
+    int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));	    \
+    const dim3 blkdims(blkx,blky,1);								    \
+    __reduce1op<<<nblks,blkdims>>>(nrows, ncols, A, B, initval, opn);				    \
+  }												    \
+  cudaDeviceSynchronize();									    \
+  cudaError_t err = cudaGetLastError();								    \
+  return err;											    \
 }
 
-int reduce1iop(int nrows, int ncols, int *A, int *B, int initval, int opn) {
-  if (ncols == 1) {
-     reducevec<int>(nrows, A, B, opn);
-  } else {
-    int blkx = 32;
-    int blky = min(32, ncols);
-    int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));
-    const dim3 blkdims(blkx,blky,1);
-    __reduce1iop<<<nblks,blkdims>>>(nrows, ncols, A, B, initval, opn);
-  }
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  return err;
+GENREDUCE1OPY(float)
+GENREDUCE1OPY(int)
+GENREDUCE1OPY(long long)
+GENREDUCE1OPY(double)
+
+#define GENREDUCEBIN1OP(ATYPE,OPTYPE,OPARRAY)							    \
+__global__ void __reducebin1op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE *C, int opb, int opr) { \
+  OPTYPE opbf = OPARRAY[opb];									    \
+  OPTYPE oprf = OPARRAY[opr];									    \
+  int basecol = threadIdx.y + blockDim.y * blockIdx.x;						    \
+  for (int icol = basecol; icol < ncols; icol += blockDim.y * gridDim.x) {			    \
+    ATYPE v = 0;										    \
+    for (int i = threadIdx.x; i < nrows; i += blockDim.x) {					    \
+      v = oprf(v, opbf(A[i + icol * nrows], B[i + icol * nrows]));				    \
+    }												    \
+    for (int i = 1; i < blockDim.x; i *= 2) {							    \
+      v = oprf(v, __shfl_down(v, i));								    \
+    }												    \
+    if (threadIdx.x == 0) {									    \
+      C[icol] = v;										    \
+    }												    \
+  }												    \
 }
 
-int reduce1lop(int nrows, int ncols, long long *A, long long *B, long long initval, int opn) {
-  if (ncols == 1) {
-     reducevec<long long>(nrows, A, B, opn);
-  } else {
-    int blkx = 32;
-    int blky = min(32, ncols);
-    int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));
-    const dim3 blkdims(blkx,blky,1);
-    __reduce1lop<<<nblks,blkdims>>>(nrows, ncols, A, B, initval, opn);
-  }
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  return err;
+#define GENREDUCEBIN1OPX(ATYPE,OPTYPE,OPARRAY)							    \
+__global__ void __reducebin1op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE *C, int opb, int opr) { \
+  __shared__ ATYPE parts[32][33];								    \
+  OPTYPE opbf = OPARRAY[opb];									    \
+  OPTYPE oprf = OPARRAY[opr];									    \
+  for (int icol = threadIdx.y + blockIdx.y * blockDim.y; icol < ncols; icol += blockDim.y * gridDim.x) { \
+    ATYPE v = 0;										    \
+    for (int irow = threadIdx.x; irow < nrows; irow += blockDim.x) {				    \
+      v = oprf(v, opbf(A[irow + icol * nrows], B[irow + icol * nrows]));			    \
+    }												    \
+    parts[threadIdx.x][threadIdx.y] = v;							    \
+    for (int i = 1; i < blockDim.x; i *= 2) {							    \
+      if (i + threadIdx.x < blockDim.x) {							    \
+        parts[threadIdx.x][threadIdx.y] = oprf(parts[threadIdx.x][threadIdx.y], parts[i + threadIdx.x][threadIdx.y]); \
+      }												    \
+    }												    \
+    if (threadIdx.x == 0) {									    \
+      C[icol] = parts[0][threadIdx.y];								    \
+    }												    \
+    __syncthreads();										    \
+  }												    \
 }
-
 
 #if __CUDA_ARCH__ > 200
 
-__global__ void __reducebin1op(int nrows, int ncols, float *A, float *B, float *C, int opb, int opr) {
-  optype opbf = operators[opb];
-  optype oprf = operators[opr];
-  int basecol = threadIdx.y + blockDim.y * blockIdx.x;
-  for (int icol = basecol; icol < ncols; icol += blockDim.y * gridDim.x) {
-    float v = 0;
-    for (int i = threadIdx.x; i < nrows; i += blockDim.x) {
-      v = oprf(v, opbf(A[i + icol * nrows], B[i + icol * nrows]));
-    }
-    for (int i = 1; i < blockDim.x; i *= 2) {
-      v = oprf(v, __shfl_down(v, i));
-    }
-    if (threadIdx.x == 0) {
-      C[icol] = v;
-    }
-  }
-}
+GENREDUCEBIN1OP(float,optype,operators)
+
 #else
-__global__ void __reducebin1op(int nrows, int ncols, float *A, float *B, float *C, int opb, int opr) {
-  __shared__ float parts[32][33];
-  optype opbf = operators[opb];
-  optype oprf = operators[opr];
-  for (int icol = threadIdx.y + blockIdx.y * blockDim.y; icol < ncols; icol += blockDim.y * gridDim.x) {
-    float v = 0;
-    for (int irow = threadIdx.x; irow < nrows; irow += blockDim.x) {
-      v = oprf(v, opbf(A[irow + icol * nrows], B[irow + icol * nrows]));
-    }
-    parts[threadIdx.x][threadIdx.y] = v;
-    for (int i = 1; i < blockDim.x; i *= 2) {
-      if (i + threadIdx.x < blockDim.x) {
-        parts[threadIdx.x][threadIdx.y] = oprf(parts[threadIdx.x][threadIdx.y], parts[i + threadIdx.x][threadIdx.y]);
-      }
-    }
-    if (threadIdx.x == 0) {
-      C[icol] = parts[0][threadIdx.y];
-    }
-    __syncthreads();
-  }
-}
+
+GENREDUCEBIN1OPX(float,optype,operators)
+
 #endif
 
-int reducebin1op(int nrows, int ncols, float *A, float *B, float *C, int opb, int opr) {
-  int blkx = min(32, nrows);
-  int blky = min(32, ncols);
-  int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));
-  const dim3 blkdims(blkx,blky,1);
-  __reducebin1op<<<nblks,blkdims>>>(nrows, ncols, A, B, C, opb, opr);
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  return err;
+GENREDUCEBIN1OPX(double,doptype,doperators)
+
+#define GENREDUCEBIN1OPY(ATYPE)									    \
+int reducebin1op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE *C, int opb, int opr) {	    \
+  int blkx = min(32, nrows);									    \
+  int blky = min(32, ncols);									    \
+  int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));	    \
+  const dim3 blkdims(blkx,blky,1);								    \
+  __reducebin1op<<<nblks,blkdims>>>(nrows, ncols, A, B, C, opb, opr);				    \
+  cudaDeviceSynchronize();									    \
+  cudaError_t err = cudaGetLastError();								    \
+  return err;											    \
 }
 
+GENREDUCEBIN1OPY(float)
+GENREDUCEBIN1OPY(double)
 
-__global__ void __reduce2op(int nrows, int ncols, float *A, float *B, float initval, int opn) {
-  __shared__ float parts[32][33];
-  optype op = operators[opn];
-  int baserow = threadIdx.x + blockDim.x * blockIdx.x;
-  for (int irow = baserow; irow < nrows; irow += blockDim.x * gridDim.x) {
-    float v = A[irow + threadIdx.y * nrows];
-    for (int icol = threadIdx.y + blockDim.y; icol < ncols; icol += blockDim.y) {
-      v = op(v, A[irow + icol * nrows]);
-    }
-    parts[threadIdx.x][threadIdx.y] = v;
-    __syncthreads();
-    float newv = initval;
-    for (int i = 1; i < blockDim.y; i *= 2) {
-      if (i + threadIdx.y < blockDim.y) newv = parts[threadIdx.x][i+threadIdx.y];
-      __syncthreads();
-      if (i + threadIdx.y < blockDim.y) parts[threadIdx.x][threadIdx.y] = op(parts[threadIdx.x][threadIdx.y], newv);
-      __syncthreads();
-    }
-    if (threadIdx.y == 0) {
-      B[irow] = parts[threadIdx.x][0];
-    }
-    __syncthreads();
-  }
+#define GENREDUCE2OP(ATYPE,OPTYPE,OPARRAY)							    \
+__global__ void __reduce2op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE initval, int opn) {	    \
+  __shared__ ATYPE parts[32][33];								    \
+  OPTYPE op = OPARRAY[opn];									    \
+  int baserow = threadIdx.x + blockDim.x * blockIdx.x;						    \
+  for (int irow = baserow; irow < nrows; irow += blockDim.x * gridDim.x) {			    \
+    ATYPE v = A[irow + threadIdx.y * nrows];							    \
+    for (int icol = threadIdx.y + blockDim.y; icol < ncols; icol += blockDim.y) {		    \
+      v = op(v, A[irow + icol * nrows]);							    \
+    }												    \
+    parts[threadIdx.x][threadIdx.y] = v;							    \
+    __syncthreads();										    \
+    ATYPE newv = initval;									    \
+    for (int i = 1; i < blockDim.y; i *= 2) {							    \
+      if (i + threadIdx.y < blockDim.y) newv = parts[threadIdx.x][i+threadIdx.y];		    \
+      __syncthreads();										    \
+      if (i + threadIdx.y < blockDim.y) parts[threadIdx.x][threadIdx.y] = op(parts[threadIdx.x][threadIdx.y], newv); \
+      __syncthreads();										    \
+    }												    \
+    if (threadIdx.y == 0) {									    \
+      B[irow] = parts[threadIdx.x][0];								    \
+    }												    \
+    __syncthreads();										    \
+  }												    \
+}												    \
+												    \
+int reduce2op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE initval, int opn) {		    \
+  if (nrows == 1) {										    \
+    reducevec<ATYPE>(ncols, A, B, opn);								    \
+  } else {											    \
+    int blkx = min(32, nrows);									    \
+    int blky = min(32, ncols);									    \
+    int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));	    \
+    const dim3 blkdims(blkx,blky,1);								    \
+    __reduce2op<<<nblks,blkdims>>>(nrows, ncols, A, B, initval, opn);				    \
+  }												    \
+  cudaDeviceSynchronize();									    \
+  cudaError_t err = cudaGetLastError();								    \
+  return err;											    \
 }
 
-int reduce2op(int nrows, int ncols, float *A, float *B, float initval, int opn) {
-  if (nrows == 1) {
-    reducevec<float>(ncols, A, B, opn);
-  } else {
-    int blkx = min(32, nrows);
-    int blky = min(32, ncols);
-    int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));
-    const dim3 blkdims(blkx,blky,1);
-    __reduce2op<<<nblks,blkdims>>>(nrows, ncols, A, B, initval, opn);
-  }
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  return err;
+GENREDUCE2OP(float,optype,operators)
+GENREDUCE2OP(int,ioptype,ioperators)
+GENREDUCE2OP(long long,loptype,loperators)
+GENREDUCE2OP(double,doptype,doperators)
+
+#define GENREDUCEBIN2OP(ATYPE,OPTYPE,OPARRAY)							    \
+__global__ void __reducebin2op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE *C, int opb, int opr) { \
+  __shared__ ATYPE parts[32][33];								    \
+  OPTYPE opbf = OPARRAY[opb];									    \
+  OPTYPE oprf = OPARRAY[opr];									    \
+  int baserow = threadIdx.x + blockDim.x * blockIdx.x;						    \
+  for (int irow = baserow; irow < nrows; irow += blockDim.x * gridDim.x) {			    \
+    float v = opbf(A[irow + threadIdx.y * nrows], B[irow + threadIdx.y * nrows]);		    \
+    for (int icol = threadIdx.y + blockDim.y; icol < ncols; icol += blockDim.y) {		    \
+      v = oprf(v, opbf(A[irow + icol * nrows], B[irow + icol * nrows]));			    \
+    }												    \
+    parts[threadIdx.x][threadIdx.y] = v;							    \
+    __syncthreads();										    \
+    float newv = 0;										    \
+    for (int i = 1; i < blockDim.y; i *= 2) {							    \
+      if (i + threadIdx.y < blockDim.y) newv = parts[threadIdx.x][i+threadIdx.y];		    \
+      __syncthreads();										    \
+      if (i + threadIdx.y < blockDim.y) parts[threadIdx.x][threadIdx.y] = oprf(parts[threadIdx.x][threadIdx.y], newv); \
+      __syncthreads();										    \
+    }												    \
+    if (threadIdx.y == 0) {									    \
+      C[irow] = parts[threadIdx.x][0];								    \
+    }												    \
+    __syncthreads();										    \
+  }												    \
+}												    \
+												    \
+int reducebin2op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE *C, int opb, int opr) {	    \
+  int blkx = min(32, nrows);									    \
+  int blky = min(32, ncols);									    \
+  int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));	    \
+  const dim3 blkdims(blkx,blky,1);								    \
+  __reducebin2op<<<nblks,blkdims>>>(nrows, ncols, A, B, C, opb, opr);				    \
+  cudaDeviceSynchronize();									    \
+  cudaError_t err = cudaGetLastError();								    \
+  return err;											    \
 }
 
-__global__ void __reduce2iop(int nrows, int ncols, int *A, int *B, int initval, int opn) {
-  __shared__ float parts[32][33];
-  optype op = operators[opn];
-  int baserow = threadIdx.x + blockDim.x * blockIdx.x;
-  for (int irow = baserow; irow < nrows; irow += blockDim.x * gridDim.x) {
-    float v = A[irow + threadIdx.y * nrows];
-    for (int icol = threadIdx.y + blockDim.y; icol < ncols; icol += blockDim.y) {
-      v = op(v, A[irow + icol * nrows]);
-    }
-    parts[threadIdx.x][threadIdx.y] = v;
-    __syncthreads();
-    float newv = initval;
-    for (int i = 1; i < blockDim.y; i *= 2) {
-      if (i + threadIdx.y < blockDim.y) newv = parts[threadIdx.x][i+threadIdx.y];
-      __syncthreads();
-      if (i + threadIdx.y < blockDim.y) parts[threadIdx.x][threadIdx.y] = op(parts[threadIdx.x][threadIdx.y], newv);
-      __syncthreads();
-    }
-    if (threadIdx.y == 0) {
-      B[irow] = parts[threadIdx.x][0];
-    }
-    __syncthreads();
-  }
-}
-
-int reduce2iop(int nrows, int ncols, int *A, int *B, int initval, int opn) {
-  if (nrows == 1) {
-    reducevec<int>(ncols, A, B, opn);
-  } else {
-    int blkx = min(32, nrows);
-    int blky = min(32, ncols);
-    int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));
-    const dim3 blkdims(blkx,blky,1);
-    __reduce2iop<<<nblks,blkdims>>>(nrows, ncols, A, B, initval, opn);
-  }
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  return err;
-}
-
-__global__ void __reduce2lop(int nrows, int ncols, long long *A, long long *B, long long initval, int opn) {
-  __shared__ long long parts[32][33];
-  loptype op = loperators[opn];
-  int baserow = threadIdx.x + blockDim.x * blockIdx.x;
-  for (int irow = baserow; irow < nrows; irow += blockDim.x * gridDim.x) {
-    long long v = A[irow + threadIdx.y * nrows];
-    for (int icol = threadIdx.y + blockDim.y; icol < ncols; icol += blockDim.y) {
-      v = op(v, A[irow + icol * nrows]);
-    }
-    parts[threadIdx.x][threadIdx.y] = v;
-    __syncthreads();
-    long long newv = initval;
-    for (int i = 1; i < blockDim.y; i *= 2) {
-      if (i + threadIdx.y < blockDim.y) newv = parts[threadIdx.x][i+threadIdx.y];
-      __syncthreads();
-      if (i + threadIdx.y < blockDim.y) parts[threadIdx.x][threadIdx.y] = op(parts[threadIdx.x][threadIdx.y], newv);
-      __syncthreads();
-    }
-    if (threadIdx.y == 0) {
-      B[irow] = parts[threadIdx.x][0];
-    }
-    __syncthreads();
-  }
-}
-
-int reduce2lop(int nrows, int ncols, long long *A, long long *B, long long initval, int opn) {
-  if (nrows == 1) {
-    reducevec<long long>(ncols, A, B, opn);
-  } else {
-    int blkx = min(32, nrows);
-    int blky = min(32, ncols);
-    int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));
-    const dim3 blkdims(blkx,blky,1);
-    __reduce2lop<<<nblks,blkdims>>>(nrows, ncols, A, B, initval, opn);
-  }
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  return err;
-}
-
-__global__ void __reducebin2op(int nrows, int ncols, float *A, float *B, float *C, int opb, int opr) {
-  __shared__ float parts[32][33];
-  optype opbf = operators[opb];
-  optype oprf = operators[opr];
-  int baserow = threadIdx.x + blockDim.x * blockIdx.x;
-  for (int irow = baserow; irow < nrows; irow += blockDim.x * gridDim.x) {
-    float v = opbf(A[irow + threadIdx.y * nrows], B[irow + threadIdx.y * nrows]);
-    for (int icol = threadIdx.y + blockDim.y; icol < ncols; icol += blockDim.y) {
-      v = oprf(v, opbf(A[irow + icol * nrows], B[irow + icol * nrows]));
-    }
-    parts[threadIdx.x][threadIdx.y] = v;
-    __syncthreads();
-    float newv = 0;
-    for (int i = 1; i < blockDim.y; i *= 2) {
-      if (i + threadIdx.y < blockDim.y) newv = parts[threadIdx.x][i+threadIdx.y];
-      __syncthreads();
-      if (i + threadIdx.y < blockDim.y) parts[threadIdx.x][threadIdx.y] = oprf(parts[threadIdx.x][threadIdx.y], newv);
-      __syncthreads();
-    }
-    if (threadIdx.y == 0) {
-      C[irow] = parts[threadIdx.x][0];
-    }
-    __syncthreads();
-  }
-}
-
-int reducebin2op(int nrows, int ncols, float *A, float *B, float *C, int opb, int opr) {
-  int blkx = min(32, nrows);
-  int blky = min(32, ncols);
-  int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));
-  const dim3 blkdims(blkx,blky,1);
-  __reducebin2op<<<nblks,blkdims>>>(nrows, ncols, A, B, C, opb, opr);
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  return err;
-}
-
+GENREDUCEBIN2OP(float,optype,operators)
+GENREDUCEBIN2OP(double,doptype,doperators)

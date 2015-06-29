@@ -241,24 +241,6 @@ extern "C" {
     return dds0(nrows, ncols, A, B, Cir, Cic, P);
   }
 
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_reduce1op
-  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jint opn)
-  {
-    double *A = (double*)getPointer(env, jA);
-    double *B = (double*)getPointer(env, jB);
-
-    return reduce1op(nrows, ncols, A, B, opn);
-  }
-
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_reduce2op
-  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jint opn)
-  {
-    double *A = (double*)getPointer(env, jA);
-    double *B = (double*)getPointer(env, jB);
-
-    return reduce2op(nrows, ncols, A, B, opn);
-  }
-
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_spsum
   (JNIEnv *env, jobject obj, jint nrows, jint ncols, jint nnz, jobject jAir, jobject jAic, jobject jP, jobject jB, jint n)
   {
@@ -268,26 +250,6 @@ extern "C" {
     double *B = (double*)getPointer(env, jB);
 
     return spsum(nrows, ncols, nnz, Air, Aic, P, B, n);
-  }
-
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_reducebin1op
-  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jobject jC, jint opb, jint opr)
-  {
-    double *A = (double*)getPointer(env, jA);
-    double *B = (double*)getPointer(env, jB);
-    double *C = (double*)getPointer(env, jC);
-
-    return reducebin1op(nrows, ncols, A, B, C, opb, opr);
-  }
-
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_reducebin2op
-  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jobject jC, jint opb, jint opr)
-  {
-    double *A = (double*)getPointer(env, jA);
-    double *B = (double*)getPointer(env, jB);
-    double *C = (double*)getPointer(env, jC);
-
-    return reducebin2op(nrows, ncols, A, B, C, opb, opr);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_transpose

@@ -356,6 +356,7 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cumsumKey dimensions mismatch");
     val out = IMat.newOrCheckIMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumByKey".##);
+    Mat.nflops += 2L*length;
     if (nrows == 1) {
       cumsumKeyLinear(keys, out, 0, length);
     } else {
@@ -386,6 +387,7 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cummaxKey dimensions mismatch");
     val out = IMat.newOrCheckIMat(nrows, ncols, omat, GUID, keys.GUID, "cummaxKey".##);
+    Mat.nflops += 2L*length;
     if (nrows == 1) {
       cummaxKeyLinear(keys, out, 0, length);
     } else {
@@ -415,6 +417,7 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cumminKey dimensions mismatch");
     val out = IMat.newOrCheckIMat(nrows, ncols, omat, GUID, keys.GUID, "cumminKey".##);
+    Mat.nflops += 2L*length;
     if (nrows == 1) {
       cumminKeyLinear(keys, out, 0, length);
     } else {

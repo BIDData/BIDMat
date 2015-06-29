@@ -17,12 +17,6 @@ public final class CUMATD {
     
     public static native int initSeq(Pointer A, int nrows, int ncols);
 
-    public static native int applyop(Pointer A, int Anrows, int Ancols, Pointer B, int Bnrows, int Bncols, Pointer C, int opn);
-    
-    public static native int sdoprow(int nr, int nc, int nnz, Pointer A, Pointer Ac, Pointer B, int len, int op);
-    
-    public static native int sdopcol(int nr, int nc, int nnz, Pointer A, Pointer Ar, Pointer B, int len, int op);
-
     public static native int applyiop(Pointer A, int Anrows, int Ancols, Pointer B, int Bnrows, int Bncols, Pointer C, int opn);
     
     public static native int copyToInds(Pointer A, Pointer B, Pointer I, long len);
@@ -32,25 +26,13 @@ public final class CUMATD {
     public static native int copyToInds2D(Pointer A, int lda, Pointer B, int ldb, Pointer I, int nrows, Pointer J, int ncols);
 
     public static native int copyFromInds2D(Pointer A, int lda, Pointer B, int ldb, Pointer I, int nrows, Pointer J, int ncols);
-    
-    public static native int applygfun(Pointer A, Pointer B, int N, int opn);
-    
+      
     public static native int full(Pointer ir, Pointer ic, Pointer vv, Pointer dd, int nrows, int ncols, int nnz);
     
     public static native int setval(Pointer A, double vv, int N);
     
     public static native int setival(Pointer A, int iv, int N);
-    
-    public static native int applygfun2(Pointer A, Pointer B, Pointer C, int N, int opn);
-    
-    public static native int reduce1op(int nr, int nc, Pointer A, Pointer B, int opn);
-    
-    public static native int reduce2op(int nr, int nc, Pointer A, Pointer B, int opn);
-    
-    public static native int reducebin1op(int nr, int nc, Pointer A, Pointer B, Pointer C, int opb, int opr);
-    
-    public static native int reducebin2op(int nr, int nc, Pointer A, Pointer B, Pointer C, int opb, int opr);
-    
+       
     public static native int dsmult(int nr, int nc, int nnz, Pointer A, Pointer Bdata, Pointer Bir, Pointer Bic, Pointer C);
     
     public static native int dsmulttune(int nr, int nc, int nnz, Pointer A, Pointer Bdata, Pointer Bir, Pointer Bic, Pointer C, int nblocks, int nthreads);

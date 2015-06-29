@@ -917,6 +917,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cumsumKey dimensions mismatch");
     val out = GMat.newOrCheckGMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
+    Mat.nflops += 2L*length;
     if (nrows == 1 || ncols == 1) {
       val err = CUMAT.cumsumByKeyFF(data, keys.data, out.data, llength);
       if (err != 0) {
@@ -938,8 +939,9 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cumsumKey dimensions mismatch");
     val out = GMat.newOrCheckGMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
+    Mat.nflops += 2L*length;
     if (nrows == 1 || ncols == 1) {
-      val err = CUMAT.cumsumByKeyFF(data, keys.data, out.data, llength);
+      val err = CUMAT.cumsumByKeyFI(data, keys.data, out.data, llength);
       if (err != 0) {
     		throw new RuntimeException("CUMAT.cumsumByKey error " + cudaGetErrorString(err))
       }
@@ -963,6 +965,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cummaxKey dimensions mismatch");
     val out = GMat.newOrCheckGMat(nrows, ncols, omat, GUID, keys.GUID, "cummaxKey".##);
+    Mat.nflops += 2L*length;
     if (nrows == 1 || ncols == 1) {
       val err = CUMAT.cummaxByKeyFF(data, keys.data, out.data, llength);
       if (err != 0) {
@@ -984,8 +987,9 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cummaxKey dimensions mismatch");
     val out = GMat.newOrCheckGMat(nrows, ncols, omat, GUID, keys.GUID, "cummaxKey".##);
+    Mat.nflops += 2L*length;
     if (nrows == 1 || ncols == 1) {
-      val err = CUMAT.cummaxByKeyFF(data, keys.data, out.data, llength);
+      val err = CUMAT.cummaxByKeyFI(data, keys.data, out.data, llength);
       if (err != 0) {
         throw new RuntimeException("CUMAT.cummaxByKey error " + cudaGetErrorString(err))
       }
@@ -1009,6 +1013,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cumminKey dimensions mismatch");
     val out = GMat.newOrCheckGMat(nrows, ncols, omat, GUID, keys.GUID, "cumminKey".##);
+    Mat.nflops += 2L*length;
     if (nrows == 1 || ncols == 1) {
       val err = CUMAT.cumminByKeyFF(data, keys.data, out.data, llength);
       if (err != 0) {
@@ -1030,8 +1035,9 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cumminKey dimensions mismatch");
     val out = GMat.newOrCheckGMat(nrows, ncols, omat, GUID, keys.GUID, "cumminKey".##);
+    Mat.nflops += 2L*length;
     if (nrows == 1 || ncols == 1) {
-      val err = CUMAT.cumminByKeyFF(data, keys.data, out.data, llength);
+      val err = CUMAT.cumminByKeyFI(data, keys.data, out.data, llength);
       if (err != 0) {
         throw new RuntimeException("CUMAT.cumminByKey error " + cudaGetErrorString(err))
       }

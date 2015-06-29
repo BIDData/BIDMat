@@ -979,6 +979,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cumsumKey dimensions mismatch");
     val out = FMat.newOrCheckFMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
+    Mat.nflops += 2L*length;
     if (nrows == 1) {
       cumsumKeyLinear(keys, out, 0, length);
     } else {
@@ -992,7 +993,37 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
   
   def cumsumByKey(keys:FMat):FMat = cumsumByKey(keys, null);
+
+  def cumsumKeyLinear(keys:IMat, out:FMat, istart:Int, iend:Int) = {
+    var i = istart;
+    var sum = 0f;
+    while (i < iend) {
+      sum += data(i);
+      out.data(i) = sum;
+      if (i + 1 < iend && keys(i) != keys(i+1)) sum = 0;
+      i += 1;
+    }    
+  }
   
+  def cumsumByKey(keys:IMat, omat:Mat):FMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cumsumKey dimensions mismatch");
+    val out = FMat.newOrCheckFMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
+    Mat.nflops += 2L*length;
+    if (nrows == 1) {
+      cumsumKeyLinear(keys, out, 0, length);
+    } else {
+      var i = 0;
+      while (i < ncols) {
+        cumsumKeyLinear(keys, out, i*nrows, (i+1)*nrows);
+        i += 1;
+      }
+    }   
+    out
+  }
+  
+  def cumsumByKey(keys:IMat):FMat = cumsumByKey(keys, null);
+
   def cummaxKeyLinear(keys:FMat, out:FMat, istart:Int, iend:Int) = {
     var i = istart;
     var sum = Float.MinValue;
@@ -1008,6 +1039,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cummaxKey dimensions mismatch");
     val out = FMat.newOrCheckFMat(nrows, ncols, omat, GUID, keys.GUID, "cummaxKey".##);
+    Mat.nflops += 2L*length;
     if (nrows == 1) {
       cummaxKeyLinear(keys, out, 0, length);
     } else {
@@ -1022,6 +1054,36 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   def cummaxByKey(keys:FMat):FMat = cummaxByKey(keys, null);
   
+  def cummaxKeyLinear(keys:IMat, out:FMat, istart:Int, iend:Int) = {
+    var i = istart;
+    var sum = Float.MinValue;
+    while (i < iend) {
+      sum = math.max(sum, data(i));
+      out.data(i) = sum;
+      if (i + 1 < iend && keys(i) != keys(i+1)) sum = Float.MinValue;
+      i += 1;
+    }    
+  }
+  
+  def cummaxByKey(keys:IMat, omat:Mat):FMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cummaxKey dimensions mismatch");
+    val out = FMat.newOrCheckFMat(nrows, ncols, omat, GUID, keys.GUID, "cummaxKey".##);
+    Mat.nflops += 2L*length;
+    if (nrows == 1) {
+      cummaxKeyLinear(keys, out, 0, length);
+    } else {
+      var i = 0;
+      while (i < ncols) {
+        cummaxKeyLinear(keys, out, i*nrows, (i+1)*nrows);
+        i += 1;
+      }
+    }   
+    out
+  }
+  
+  def cummaxByKey(keys:IMat):FMat = cummaxByKey(keys, null);
+
   def cumminKeyLinear(keys:FMat, out:FMat, istart:Int, iend:Int) = {
     var i = istart;
     var sum = Float.MaxValue;
@@ -1037,6 +1099,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cumminKey dimensions mismatch");
     val out = FMat.newOrCheckFMat(nrows, ncols, omat, GUID, keys.GUID, "cumminKey".##);
+    Mat.nflops += 2L*length;
     if (nrows == 1) {
       cumminKeyLinear(keys, out, 0, length);
     } else {
@@ -1050,6 +1113,36 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
   
   def cumminByKey(keys:FMat):FMat = cumminByKey(keys, null);
+
+  def cumminKeyLinear(keys:IMat, out:FMat, istart:Int, iend:Int) = {
+    var i = istart;
+    var sum = Float.MaxValue;
+    while (i < iend) {
+      sum = math.min(sum, data(i));
+      out.data(i) = sum;
+      if (i + 1 < iend && keys(i) != keys(i+1)) sum = Float.MaxValue;
+      i += 1;
+    }    
+  }
+  
+  def cumminByKey(keys:IMat, omat:Mat):FMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cumminKey dimensions mismatch");
+    val out = FMat.newOrCheckFMat(nrows, ncols, omat, GUID, keys.GUID, "cumminKey".##);
+    Mat.nflops += 2L*length;
+    if (nrows == 1) {
+      cumminKeyLinear(keys, out, 0, length);
+    } else {
+      var i = 0;
+      while (i < ncols) {
+        cumminKeyLinear(keys, out, i*nrows, (i+1)*nrows);
+        i += 1;
+      }
+    }   
+    out
+  }
+  
+  def cumminByKey(keys:IMat):FMat = cumminByKey(keys, null);
 
 
   /**

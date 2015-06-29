@@ -7,6 +7,7 @@ import jcuda.jcusparse._
 import jcuda.runtime.JCuda._
 import jcuda.runtime.cudaError._
 import jcuda.runtime._
+import edu.berkeley.bid.CUMAT
 import edu.berkeley.bid.CUMATD
 import GDMat._
 import GMat.BinOp
@@ -206,9 +207,9 @@ case class GSDMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, 
       copy;
     }
     if (b.ncols > 1) {
-    	CUMATD.sdoprow(nrows, ncols, nnz, out.data, out.ic, b.data, b.length, op);
+    	CUMAT.sdopdrow(nrows, ncols, nnz, out.data, out.ic, b.data, b.length, op);
     } else {
-      CUMATD.sdopcol(nrows, ncols, nnz, out.data, out.ir, b.data, b.length, op);
+      CUMAT.sdopdcol(nrows, ncols, nnz, out.data, out.ir, b.data, b.length, op);
     }
     out
   }

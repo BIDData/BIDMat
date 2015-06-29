@@ -25,6 +25,8 @@ public final class CUMAT {
     
     public static native int applylop(Pointer A, int Anrows, int Ancols, Pointer B, int Bnrows, int Bncols, Pointer C, int opn);
     
+    public static native int applydop(Pointer A, int Anrows, int Ancols, Pointer B, int Bnrows, int Bncols, Pointer C, int opn);
+    
     public static native int copyToInds(Pointer A, Pointer B, Pointer I, long len);
     
     public static native int copyFromInds(Pointer A, Pointer B, Pointer I, long len);
@@ -37,7 +39,13 @@ public final class CUMAT {
     
     public static native int copyFromInds2DLong(Pointer A, int lda, Pointer B, int ldb, Pointer I, int nrows, Pointer J, int ncols);
     
-    public static native int applygfun(Pointer A, Pointer B, int N, int opn);
+    public static native int applygfun(Pointer A, Pointer B, int N, int opn);  
+    
+    public static native int applygdfun(Pointer A, Pointer B, int N, int opn);
+    
+    public static native int applygfun2(Pointer A, Pointer B, Pointer C, int N, int opn);
+    
+    public static native int applygdfun2(Pointer A, Pointer B, Pointer C, int N, int opn);
     
     public static native int full(Pointer ir, Pointer ic, Pointer vv, Pointer dd, int nrows, int ncols, int nnz);
     
@@ -47,27 +55,37 @@ public final class CUMAT {
     
     public static native int setlval(Pointer A, long iv, int N);
     
-    public static native int applygfun2(Pointer A, Pointer B, Pointer C, int N, int opn);
-    
     public static native int reduce1op(int nr, int nc, Pointer A, Pointer B, float initv, int opn);
-    
-    public static native int reduce2op(int nr, int nc, Pointer A, Pointer B, float initv, int opn);
     
     public static native int reduce1iop(int nr, int nc, Pointer A, Pointer B, int initv, int opn);
     
-    public static native int reduce2iop(int nr, int nc, Pointer A, Pointer B, int initv, int opn);
-    
     public static native int reduce1lop(int nr, int nc, Pointer A, Pointer B, long initv, int opn);
     
+    public static native int reduce1dop(int nr, int nc, Pointer A, Pointer B, double initv, int opn);
+ 
+    public static native int reduce2op(int nr, int nc, Pointer A, Pointer B, float initv, int opn);
+    
+    public static native int reduce2iop(int nr, int nc, Pointer A, Pointer B, int initv, int opn);
+    
     public static native int reduce2lop(int nr, int nc, Pointer A, Pointer B, long initv, int opn);
+    
+    public static native int reduce2dop(int nr, int nc, Pointer A, Pointer B, double initv, int opn);
         
     public static native int reducebin1op(int nr, int nc, Pointer A, Pointer B, Pointer C, int opb, int opr);
     
+    public static native int reducebin1dop(int nr, int nc, Pointer A, Pointer B, Pointer C, int opb, int opr);
+    
     public static native int reducebin2op(int nr, int nc, Pointer A, Pointer B, Pointer C, int opb, int opr);
+    
+    public static native int reducebin2dop(int nr, int nc, Pointer A, Pointer B, Pointer C, int opb, int opr);
     
     public static native int sdoprow(int nr, int nc, int nnz, Pointer A, Pointer Ac, Pointer B, int len, int op);
     
+    public static native int sdopdrow(int nr, int nc, int nnz, Pointer A, Pointer Ac, Pointer B, int len, int op);
+    
     public static native int sdopcol(int nr, int nc, int nnz, Pointer A, Pointer Ar, Pointer B, int len, int op);
+    
+    public static native int sdopdcol(int nr, int nc, int nnz, Pointer A, Pointer Ar, Pointer B, int len, int op);
     
     public static native int dsmult(int nr, int nc, int nnz, Pointer A, Pointer Bdata, Pointer Bir, Pointer Bic, Pointer C);
     
@@ -237,6 +255,8 @@ public final class CUMAT {
     
     public static native int cumsumByKeyFF(Pointer A, Pointer B, Pointer out, long len);
     
+    public static native int cumsumByKeyFI(Pointer A, Pointer B, Pointer out, long len);
+    
     public static native int cumsumByKeyII(Pointer A, Pointer B, Pointer out, long len);
     
     public static native int cumsumByKeyFL(Pointer A, Pointer B, Pointer out, long len);
@@ -245,6 +265,8 @@ public final class CUMAT {
     
     public static native int cummaxByKeyFF(Pointer A, Pointer B, Pointer out, long len);
     
+    public static native int cummaxByKeyFI(Pointer A, Pointer B, Pointer out, long len);
+    
     public static native int cummaxByKeyII(Pointer A, Pointer B, Pointer out, long len);
     
     public static native int cummaxByKeyFL(Pointer A, Pointer B, Pointer out, long len);
@@ -252,6 +274,8 @@ public final class CUMAT {
     public static native int cummaxByKeyIL(Pointer A, Pointer B, Pointer out, long len);
     
     public static native int cumminByKeyFF(Pointer A, Pointer B, Pointer out, long len);
+    
+    public static native int cumminByKeyFI(Pointer A, Pointer B, Pointer out, long len);
     
     public static native int cumminByKeyII(Pointer A, Pointer B, Pointer out, long len);
     

@@ -10,6 +10,7 @@ import jcuda.jcublas.JCublas._
 import jcuda.jcusparse._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import edu.berkeley.bid.CUMAT
 import edu.berkeley.bid.CUMATD
 import edu.berkeley.bid.CUMATD._
 import scala.util.hashing.MurmurHash3
@@ -421,13 +422,13 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
     if (ncols == 1 && nrows == 1) {
       val out = GDMat.newOrCheckGDMat(a.nrows, a.ncols, oldmat, GUID, a.GUID, "GMult1".##)
       Mat.nflops += 1L * a.length
-      val err = applyop(data, nrows, ncols, a.data, a.nrows, a.ncols, out.data, GMat.BinOp.op_mul)
+      val err = CUMAT.applydop(data, nrows, ncols, a.data, a.nrows, a.ncols, out.data, GMat.BinOp.op_mul)
       if (err != 0) {throw new RuntimeException("GMult: CUDA kernel error in applyop " + cudaGetErrorString(err))}
       out
     } else if (a.ncols == 1 && a.nrows == 1) {
       val out = GDMat.newOrCheckGDMat(nrows, ncols, oldmat, GUID, a.GUID, "GMult2".##)
       Mat.nflops += 1L * length
-      val err = applyop(data, nrows, ncols, a.data, a.nrows, a.ncols, out.data, GMat.BinOp.op_mul)
+      val err = CUMAT.applydop(data, nrows, ncols, a.data, a.nrows, a.ncols, out.data, GMat.BinOp.op_mul)
       if (err != 0) {throw new RuntimeException("GMult: CUDA kernel error in CUMAT.applyop " + cudaGetErrorString(err))}
       out
     } else if (ncols == a.nrows) {
@@ -541,7 +542,7 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
         (ncols == 1 && nrows == 1)) {
     	val out = GDMat.newOrCheckGDMat(math.max(nrows, a.nrows), math.max(ncols, a.ncols), oldmat, GUID, a.GUID, op)
       Mat.nflops += scala.math.max(length, a.length)
-      val err = applyop(data, nrows, ncols, a.data, a.nrows, a.ncols, out.data, op)
+      val err = CUMAT.applydop(data, nrows, ncols, a.data, a.nrows, a.ncols, out.data, op)
       if (err != 0) {throw new RuntimeException("GMult: CUDA kernel error in CUMAT.applyop")}
       out
     }	else throw new RuntimeException("dimensions mismatch")
@@ -553,7 +554,7 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
   	} else {
   		val out = GDMat.newOrCheckGDMat(1, ncols, oldmat, GUID, a.GUID, "dot".##) 
   		Mat.nflops += 2L * length
-  	  val err = reducebin1op(nrows, ncols, data, a.data, out.data, op_mul, op_add)
+  	  val err = CUMAT.reducebin1dop(nrows, ncols, data, a.data, out.data, op_mul, op_add)
   	  if (err != 0) {throw new RuntimeException("GMult: CUDA kernel error in CUMAT.reducebin1op " + cudaGetErrorString(err))}
   	  out
   	}
@@ -566,7 +567,7 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
   	} else {
   		val out = GDMat.newOrCheckGDMat(nrows, 1, oldmat, GUID, a.GUID, "dotr".##) 
   		Mat.nflops += 2L * length
-  	  val err = reducebin2op(nrows, ncols, data, a.data, out.data, op_mul, op_add)
+  	  val err = CUMAT.reducebin2dop(nrows, ncols, data, a.data, out.data, op_mul, op_add)
   	  if (err != 0) {throw new RuntimeException("GMult: CUDA kernel error in CUMAT.reducebin2op " + cudaGetErrorString(err))}
   	  out
   	}
@@ -591,18 +592,18 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
   	  }
   	}
   
-  def reduceOp(oldmat:Mat, dir:Int, op:Int):GDMat = {
+  def reduceOp(oldmat:Mat, dir:Int, initval:Double, op:Int):GDMat = {
     if (dir == 1 || (dir == 0 && nrows > 1)) {
       val out = GDMat.newOrCheckGDMat(1, ncols, oldmat, GUID, 1, op) 
       out.clear
-      val err = reduce1op(nrows, ncols, data, out.data, op)
+      val err = CUMAT.reduce1dop(nrows, ncols, data, out.data, initval, op)
       if (err != 0) {throw new RuntimeException("GMult: CUDA kernel error in CUMAT.reduce1op " + cudaGetErrorString(err))}
       Mat.nflops += length
       out
     } else if (dir == 2 || dir == 0) {
       val out = GDMat.newOrCheckGDMat(nrows, 1, oldmat, GUID, 2, op)  
       out.clear
-      val err = reduce2op(nrows, ncols, data, out.data, op)
+      val err = CUMAT.reduce2dop(nrows, ncols, data, out.data, initval, op)
       if (err != 0) {throw new RuntimeException("GMult: CUDA kernel error in CUMAT.reduce2op " + cudaGetErrorString(err))}
       Mat.nflops += length
       out
@@ -710,6 +711,7 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cumsumKey dimensions mismatch");
     val out = GDMat.newOrCheckGDMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
+    Mat.nflops += 2L*length;
     if (nrows == 1 || ncols == 1) {
       CUMATD.cumsumByKeyDD(data, keys.data, out.data, llength);
     } else {
@@ -724,6 +726,7 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cummaxKey dimensions mismatch");
     val out = GDMat.newOrCheckGDMat(nrows, ncols, omat, GUID, keys.GUID, "cummaxKey".##);
+    Mat.nflops += 2L*length;
     if (nrows == 1 || ncols == 1) {
       CUMATD.cummaxByKeyDD(data, keys.data, out.data, llength);
     } else {
@@ -738,6 +741,7 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cumminKey dimensions mismatch");
     val out = GDMat.newOrCheckGDMat(nrows, ncols, omat, GUID, keys.GUID, "cumminKey".##);
+    Mat.nflops += 2L*length;
     if (nrows == 1 || ncols == 1) {
       CUMATD.cumminByKeyDD(data, keys.data, out.data, llength);
     } else {
@@ -1661,7 +1665,7 @@ object GDMat {
     val easyp = (p == 0f || p == 1f || p == 2f)
     if (!easyp) { 
       val pinv = GDMat(1/p)
-      err = applyop(c.data, c.nrows, c.ncols, pinv.data, 1, 1, c.data, BinOp.op_pow)
+      err = CUMAT.applydop(c.data, c.nrows, c.ncols, pinv.data, 1, 1, c.data, BinOp.op_pow)
     }
     if (err != 0) throw new RuntimeException("LXdist scaling error "+err)
     c
@@ -1728,7 +1732,7 @@ object GDMat {
   							if (err != 0) println("CUDA error in LXdist %d thread %d %d %d %d" format (err, ithread, nk, ni, nj))
   							k += gacols
   						}
-  						if (takeroot) err = applyop(cc, ni, nj, pinv.data, 1, 1, cc, BinOp.op_pow)
+  						if (takeroot) err = CUMAT.applydop(cc, ni, nj, pinv.data, 1, 1, cc, BinOp.op_pow)
   						if (err != 0) throw new RuntimeException("LXdist scale c failed "+err)
   						err = cudaMemcpy2D(Pointer.to(c.data).withByteOffset(1L*(i+j*c.nrows)*Sizeof.DOUBLE), 1L*c.nrows*Sizeof.DOUBLE, 
   								cc, 1L*gcrows*Sizeof.DOUBLE, 1L*ni*Sizeof.DOUBLE, nj, cudaMemcpyDeviceToHost) 
