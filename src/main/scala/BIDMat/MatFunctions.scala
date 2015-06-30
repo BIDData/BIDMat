@@ -1507,7 +1507,7 @@ object MatFunctions {
   
   def cat2sparse(c:IMat, ncats0:Int = 0):SMat = {
     val ncats = if (ncats0 > 0) ncats0 else SciFunctions.maxi(c).v + 1
-    val out = SMat(ncats, c.length, c.length);
+    val out = SMat.newOrCheckSMat(ncats, c.length, c.length, null, c.GUID, "cat2sparse".##);
     var i = 0;
     var ioff = Mat.ioneBased;
     out.jc(0) = ioff;
@@ -1522,6 +1522,18 @@ object MatFunctions {
   
   def oneHot(c:IMat, ncats:Int):SMat = cat2sparse(c, ncats);
   def oneHot(c:IMat):SMat = cat2sparse(c, 0);
+  
+  def oneHot(c:GIMat, ncats:Int):GSMat = GSMat.oneHot(c, ncats);
+  def oneHot(c:GIMat):GSMat = GSMat.oneHot(c, 0);
+  
+  def oneHot(c:Mat, ncats:Int):Mat = {
+    c match {
+      case cc:IMat => oneHot(cc, ncats);
+      case cc:GIMat => oneHot(cc, ncats);
+    }
+  }
+  def oneHot(c:Mat):Mat = oneHot(c, 0);
+  
   
   /** Returns the square root of '''v''' as a float, as an alternative to math.sqrt(v)'s double.  */
   def fsqrt(v:Float):Float = math.sqrt(v).asInstanceOf[Float]

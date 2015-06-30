@@ -1,14 +1,34 @@
+#if __CUDA_ARCH__ > 200
+#define MAXXGRID 2147483647
+#else
+#define MAXXGRID 65535
+#endif
+
+typedef float (*optype)(float,float);
+typedef int (*ioptype)(int,int);
+typedef long long (*loptype)(long long,long long);
+typedef double (*doptype)(double,double);
+
+typedef float (*fntype)(float);
+typedef double (*dfntype)(double);
+
 void setsizes(long long N, dim3 *gridp, int *nthreadsp);
 
 int apply_binop(float *nativeA, int Anrows, int Ancols, float *nativeB, int Bnrows, int Bncols, float *nativeC, int opn);
 
+int apply_binop(int *nativeA, int Anrows, int Ancols, int *nativeB, int Bnrows, int Bncols, int *nativeC, int opn);
+
+int apply_binop(long long *nativeA, int Anrows, int Ancols, long long *nativeB, int Bnrows, int Bncols, long long *nativeC, int opn);
+
+int apply_binop(double *nativeA, int Anrows, int Ancols, double *nativeB, int Bnrows, int Bncols, double *nativeC, int opn);
+
 int sdoprow(int nrows, int ncols, int nnz, float *A, int *Aic, float *B, int len, int opn);
+
+int sdoprow(int nrows, int ncols, int nnz, double *A, int *Aic, double *B, int len, int opn);
 
 int sdopcol(int nrows, int ncols, int nnz, float *A, int *Aic, float *B, int len, int opn);
 
-int apply_biniop(int *nativeA, int Anrows, int Ancols, int *nativeB, int Bnrows, int Bncols, int *nativeC, int opn);
-
-int apply_binlop(long long *nativeA, int Anrows, int Ancols, long long *nativeB, int Bnrows, int Bncols, long long *nativeC, int opn);
+int sdopcol(int nrows, int ncols, int nnz, double *A, int *Aic, double *B, int len, int opn);
 
 int copyToInds(float *A, float *B, int *I, long long len);
 
@@ -17,6 +37,10 @@ int copyFromInds(float *A, float *B, int *I, long long len);
 int copyToInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols);
 
 int copyToInds2DLong(long long *A, int lda, long long *B, int ldb, int *I, int nrows, int *J, int ncols);
+
+int fillToInds2D(float A, float *B, int ldb, int *I, int nrows, int *J, int ncols);
+
+int fillToInds2DLong(long long A, long long *B, int ldb, int *I, int nrows, int *J, int ncols);
 
 int copyFromInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols);
 
@@ -42,7 +66,11 @@ int initSeq(int *A, int nrows, int ncols);
 
 int apply_gfun(float *nativeA, float *nativeB, int N, int opn);
 
+int apply_gfun(double *nativeA, double *nativeB, int N, int opn);
+
 int apply_gfun2(float *nativeA, float *nativeB, float *nativeC, int N, int opn);
+
+int apply_gfun2(double *nativeA, double *nativeB, double *nativeC, int N, int opn);
 
 int dsmult(int nrows, int ncols, int nnz, float *A, float *Bdata, int *Bir, int *Bic, float *C);
 
@@ -62,13 +90,29 @@ int dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P);
 
 int dds0(int nrows, int ncols, float *A, float *B, int *Cir, int *Cic, float *P);
 
-int reduce1op(int nrows, int ncols, float *A, float *B, int opn);
+int reduce1op(int nrows, int ncols, float *A, float *B, float initval, int opn);
 
-int reduce2op(int nrows, int ncols, float *A, float *B, int opn);
+int reduce1op(int nrows, int ncols, int *A, int *B, int initval, int opn);
+
+int reduce1op(int nrows, int ncols, long long *A, long long *B, long long initval, int opn);
+
+int reduce1op(int nrows, int ncols, double *A, double *B, double initval, int opn);
+
+int reduce2op(int nrows, int ncols, float *A, float *B, float initval, int opn);
+
+int reduce2op(int nrows, int ncols, int *A, int *B, int initval, int opn);
+
+int reduce2op(int nrows, int ncols, long long *A, long long *B, long long initval, int opn);
+
+int reduce2op(int nrows, int ncols, double *A, double *B, double initval, int opn);
 
 int reducebin1op(int nrows, int ncols, float *A, float *B, float *C, int opb, int opr);
 
+int reducebin1op(int nrows, int ncols, double *A, double *B, double *C, int opb, int opr);
+
 int reducebin2op(int nrows, int ncols, float *A, float *B, float *C, int opb, int opr);
+
+int reducebin2op(int nrows, int ncols, double *A, double *B, double *C, int opb, int opr);
 
 int transpose(float *in, int instride, float *out, int outstride, int nrows, int ncols);
 
@@ -204,9 +248,27 @@ int cumsumc(int nrows, int ncols, float *A, float *B);
 
 int inclusive_scan_by_key_ff(float *fvals, float *fkeys, float *fout, long long len);
 
+int inclusive_scan_by_key_fi(float *fvals, int *fkeys, float *fout, long long len);
+
 int inclusive_scan_by_key_ii(int *fvals, int *fkeys, int *fout, long long len);
 
 int inclusive_scan_by_key_fl(float *fvals, long long *fkeys, float *fout, long long len);
+
+int inclusive_scan_by_key_ff_max(float *fvals, float *fkeys, float *fout, long long len);
+
+int inclusive_scan_by_key_fi_max(float *fvals, int *fkeys, float *fout, long long len);
+
+int inclusive_scan_by_key_ii_max(int *fvals, int *fkeys, int *fout, long long len);
+
+int inclusive_scan_by_key_fl_max(float *fvals, long long *fkeys, float *fout, long long len);
+
+int inclusive_scan_by_key_ff_min(float *fvals, float *fkeys, float *fout, long long len);
+
+int inclusive_scan_by_key_fi_min(float *fvals, int *fkeys, float *fout, long long len);
+
+int inclusive_scan_by_key_ii_min(int *fvals, int *fkeys, int *fout, long long len);
+
+int inclusive_scan_by_key_fl_min(float *fvals, long long *fkeys, float *fout, long long len);
 
 int reverse(float *fvals, float *fout, long long len);
 

@@ -109,6 +109,39 @@ extern "C" {
     return apply_binop(nativeA, Anrows, Ancols, nativeB, Bnrows, Bncols, nativeC, opn);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_applyiop 
+  (JNIEnv *env, jobject obj, jobject jA, jint Anrows, jint Ancols, 
+   jobject jB, jint Bnrows, jint Bncols, jobject jC, jint opn) 
+  {
+    int *nativeA = (int*)getPointer(env, jA);
+    int *nativeB = (int*)getPointer(env, jB);
+    int *nativeC = (int*)getPointer(env, jC);
+
+    return apply_binop(nativeA, Anrows, Ancols, nativeB, Bnrows, Bncols, nativeC, opn);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_applylop 
+  (JNIEnv *env, jobject obj, jobject jA, jint Anrows, jint Ancols, 
+   jobject jB, jint Bnrows, jint Bncols, jobject jC, jint opn) 
+  {
+    long long *nativeA = (long long*)getPointer(env, jA);
+    long long *nativeB = (long long*)getPointer(env, jB);
+    long long *nativeC = (long long*)getPointer(env, jC);
+
+    return apply_binop(nativeA, Anrows, Ancols, nativeB, Bnrows, Bncols, nativeC, opn);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_applydop
+  (JNIEnv *env, jobject obj, jobject jA, jint Anrows, jint Ancols, 
+   jobject jB, jint Bnrows, jint Bncols, jobject jC, jint opn) 
+  {
+    double *nativeA = (double*)getPointer(env, jA);
+    double *nativeB = (double*)getPointer(env, jB);
+    double *nativeC = (double*)getPointer(env, jC);
+
+    return apply_binop(nativeA, Anrows, Ancols, nativeB, Bnrows, Bncols, nativeC, opn);
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_sdopcol
   (JNIEnv *env, jobject obj, jint nrows, jint ncols, jint nnz, jobject jA, jobject jAir,
    jobject jB, jint len, jint opn) 
@@ -116,6 +149,17 @@ extern "C" {
     float *A = (float*)getPointer(env, jA);
     int *Air = (int*)getPointer(env, jAir);
     float *B = (float*)getPointer(env, jB);
+
+    return sdopcol(nrows, ncols, nnz, A, Air, B, len, opn);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_sdopdcol
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jint nnz, jobject jA, jobject jAir,
+   jobject jB, jint len, jint opn) 
+  {
+    double *A = (double*)getPointer(env, jA);
+    int *Air = (int*)getPointer(env, jAir);
+    double *B = (double*)getPointer(env, jB);
 
     return sdopcol(nrows, ncols, nnz, A, Air, B, len, opn);
   }
@@ -131,6 +175,17 @@ extern "C" {
     return sdoprow(nrows, ncols, nnz, A, Aic, B, len, opn);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_sdopdrow
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jint nnz, jobject jA, jobject jAic,
+   jobject jB, jint len, jint opn) 
+  {
+    double *A = (double*)getPointer(env, jA);
+    int *Aic = (int*)getPointer(env, jAic);
+    double *B = (double*)getPointer(env, jB);
+
+    return sdoprow(nrows, ncols, nnz, A, Aic, B, len, opn);
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_full
   (JNIEnv *env, jobject obj, jobject jir, jobject jic, jobject jdata, jobject jod,
    jint nrows, jint ncols, jint nnz)
@@ -141,28 +196,6 @@ extern "C" {
     float *od = (float*)getPointer(env, jod);
 
     return full(ir, ic, data, od, nrows, ncols, nnz);
-  }
-
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_applyiop 
-  (JNIEnv *env, jobject obj, jobject jA, jint Anrows, jint Ancols, 
-   jobject jB, jint Bnrows, jint Bncols, jobject jC, jint opn) 
-  {
-    int *nativeA = (int*)getPointer(env, jA);
-    int *nativeB = (int*)getPointer(env, jB);
-    int *nativeC = (int*)getPointer(env, jC);
-
-    return apply_biniop(nativeA, Anrows, Ancols, nativeB, Bnrows, Bncols, nativeC, opn);
-  }
-
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_applylop 
-  (JNIEnv *env, jobject obj, jobject jA, jint Anrows, jint Ancols, 
-   jobject jB, jint Bnrows, jint Bncols, jobject jC, jint opn) 
-  {
-    long long *nativeA = (long long*)getPointer(env, jA);
-    long long *nativeB = (long long*)getPointer(env, jB);
-    long long *nativeC = (long long*)getPointer(env, jC);
-
-    return apply_binlop(nativeA, Anrows, Ancols, nativeB, Bnrows, Bncols, nativeC, opn);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_copyToInds
@@ -209,6 +242,28 @@ extern "C" {
     return copyToInds2DLong(A, lda, B, ldb, I, nrows, J, ncols);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_fillToInds2D
+  (JNIEnv *env, jobject obj, jfloat A, jobject jB, jint ldb,
+   jobject jI, jint nrows, jobject jJ, jint ncols) 
+  {
+    float *B = (float*)getPointer(env, jB);
+    int *I = (int*)getPointer(env, jI);
+    int *J = (int*)getPointer(env, jJ);
+
+    return fillToInds2D(A, B, ldb, I, nrows, J, ncols);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_fillToInds2DLong
+  (JNIEnv *env, jobject obj, jfloat A, jobject jB, jint ldb,
+   jobject jI, jint nrows, jobject jJ, jint ncols) 
+  {
+    long long *B = (long long*)getPointer(env, jB);
+    int *I = (int*)getPointer(env, jI);
+    int *J = (int*)getPointer(env, jJ);
+
+    return fillToInds2DLong(A, B, ldb, I, nrows, J, ncols);
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_copyFromInds2D
   (JNIEnv *env, jobject obj, jobject jA, jint lda, jobject jB, jint ldb,
    jobject jI, jint nrows, jobject jJ, jint ncols) 
@@ -243,12 +298,31 @@ extern "C" {
     return apply_gfun(nativeA, nativeB, N, opn);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_applygdfun
+  (JNIEnv *env, jobject obj, jobject jA, jobject jB, jint N, jint opn) 
+  {
+    double *nativeA = (double*)getPointer(env, jA);
+    double *nativeB = (double*)getPointer(env, jB);
+
+    return apply_gfun(nativeA, nativeB, N, opn);
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_applygfun2
   (JNIEnv *env, jobject obj, jobject jA, jobject jB, jobject jC, jint N, jint opn) 
   {
     float *nativeA = (float*)getPointer(env, jA);
     float *nativeB = (float*)getPointer(env, jB);
     float *nativeC = (float*)getPointer(env, jC);
+
+    return apply_gfun2(nativeA, nativeB, nativeC, N, opn);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_applygdfun2
+  (JNIEnv *env, jobject obj, jobject jA, jobject jB, jobject jC, jint N, jint opn) 
+  {
+    double *nativeA = (double*)getPointer(env, jA);
+    double *nativeB = (double*)getPointer(env, jB);
+    double *nativeC = (double*)getPointer(env, jC);
 
     return apply_gfun2(nativeA, nativeB, nativeC, N, opn);
   }
@@ -332,21 +406,76 @@ extern "C" {
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_reduce1op
-  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jint opn)
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jfloat initv, jint opn)
   {
     float *A = (float*)getPointer(env, jA);
     float *B = (float*)getPointer(env, jB);
 
-    return reduce1op(nrows, ncols, A, B, opn);
+    return reduce1op(nrows, ncols, A, B, initv, opn);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_reduce1iop
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jint initv, jint opn)
+  {
+    int *A = (int*)getPointer(env, jA);
+    int *B = (int*)getPointer(env, jB);
+
+    return reduce1op(nrows, ncols, A, B, initv, opn);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_reduce1lop
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jlong initv, jint opn)
+  {
+    long long *A = (long long*)getPointer(env, jA);
+    long long *B = (long long*)getPointer(env, jB);
+
+    return reduce1op(nrows, ncols, A, B, initv, opn);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_reduce1dop
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jdouble initv, jint opn)
+  {
+    double *A = (double*)getPointer(env, jA);
+    double *B = (double*)getPointer(env, jB);
+
+    return reduce1op(nrows, ncols, A, B, initv, opn);
+  }
+
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_reduce2op
-  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jint opn)
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jfloat initv, jint opn)
   {
     float *A = (float*)getPointer(env, jA);
     float *B = (float*)getPointer(env, jB);
 
-    return reduce2op(nrows, ncols, A, B, opn);
+    return reduce2op(nrows, ncols, A, B, initv, opn);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_reduce2iop
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jint initv, jint opn)
+  {
+    int *A = (int*)getPointer(env, jA);
+    int *B = (int*)getPointer(env, jB);
+
+    return reduce2op(nrows, ncols, A, B, initv, opn);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_reduce2lop
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jlong initv, jint opn)
+  {
+    long long *A = (long long*)getPointer(env, jA);
+    long long *B = (long long*)getPointer(env, jB);
+
+    return reduce2op(nrows, ncols, A, B, initv, opn);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_reduce2dop
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jdouble initv, jint opn)
+  {
+    double *A = (double*)getPointer(env, jA);
+    double *B = (double*)getPointer(env, jB);
+
+    return reduce2op(nrows, ncols, A, B, initv, opn);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_spsum
@@ -370,12 +499,32 @@ extern "C" {
     return reducebin1op(nrows, ncols, A, B, C, opb, opr);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_reducebin1dop
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jobject jC, jint opb, jint opr)
+  {
+    double *A = (double*)getPointer(env, jA);
+    double *B = (double*)getPointer(env, jB);
+    double *C = (double*)getPointer(env, jC);
+
+    return reducebin1op(nrows, ncols, A, B, C, opb, opr);
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_reducebin2op
   (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jobject jC, jint opb, jint opr)
   {
     float *A = (float*)getPointer(env, jA);
     float *B = (float*)getPointer(env, jB);
     float *C = (float*)getPointer(env, jC);
+
+    return reducebin2op(nrows, ncols, A, B, C, opb, opr);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_reducebin2dop
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jobject jC, jint opb, jint opr)
+  {
+    double *A = (double*)getPointer(env, jA);
+    double *B = (double*)getPointer(env, jB);
+    double *C = (double*)getPointer(env, jC);
 
     return reducebin2op(nrows, ncols, A, B, C, opb, opr);
   }
@@ -929,6 +1078,19 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumsumByKeyFF
   return err;
   }
 
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumsumByKeyFI
+(JNIEnv *env, jobject obj, jobject jvals, jobject jkeys, jobject jout, jlong len) 
+{
+  float * vals = (float *)getPointer(env, jvals);
+  int * keys = (int *)getPointer(env, jkeys);
+  float * out = (float *)getPointer(env, jout);
+
+  inclusive_scan_by_key_fi(vals, keys, out, len);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+  }
+
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumsumByKeyII
 (JNIEnv *env, jobject obj, jobject jvals, jobject jkeys, jobject jout, jlong len) 
 {
@@ -950,6 +1112,112 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumsumByKeyFL
   float * out = (float *)getPointer(env, jout);
 
   inclusive_scan_by_key_fl(vals, keys, out, len);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+  }
+
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cummaxByKeyFF
+(JNIEnv *env, jobject obj, jobject jvals, jobject jkeys, jobject jout, jlong len) 
+{
+  float * vals = (float *)getPointer(env, jvals);
+  float * keys = (float *)getPointer(env, jkeys);
+  float * out = (float *)getPointer(env, jout);
+
+  inclusive_scan_by_key_ff_max(vals, keys, out, len);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+  }
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cummaxByKeyFI
+(JNIEnv *env, jobject obj, jobject jvals, jobject jkeys, jobject jout, jlong len) 
+{
+  float * vals = (float *)getPointer(env, jvals);
+  int * keys = (int *)getPointer(env, jkeys);
+  float * out = (float *)getPointer(env, jout);
+
+  inclusive_scan_by_key_fi_max(vals, keys, out, len);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+  }
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cummaxByKeyII
+(JNIEnv *env, jobject obj, jobject jvals, jobject jkeys, jobject jout, jlong len) 
+{
+  int * vals = (int *)getPointer(env, jvals);
+  int * keys = (int *)getPointer(env, jkeys);
+  int * out = (int *)getPointer(env, jout);
+
+  inclusive_scan_by_key_ii_max(vals, keys, out, len);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+  }
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cummaxByKeyFL
+(JNIEnv *env, jobject obj, jobject jvals, jobject jkeys, jobject jout, jlong len) 
+{
+  float * vals = (float *)getPointer(env, jvals);
+  long long * keys = (long long *)getPointer(env, jkeys);
+  float * out = (float *)getPointer(env, jout);
+
+  inclusive_scan_by_key_fl_max(vals, keys, out, len);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+  }
+
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumminByKeyFF
+(JNIEnv *env, jobject obj, jobject jvals, jobject jkeys, jobject jout, jlong len) 
+{
+  float * vals = (float *)getPointer(env, jvals);
+  float * keys = (float *)getPointer(env, jkeys);
+  float * out = (float *)getPointer(env, jout);
+
+  inclusive_scan_by_key_ff_min(vals, keys, out, len);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+  }
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumminByKeyFI
+(JNIEnv *env, jobject obj, jobject jvals, jobject jkeys, jobject jout, jlong len) 
+{
+  float * vals = (float *)getPointer(env, jvals);
+  int * keys = (int *)getPointer(env, jkeys);
+  float * out = (float *)getPointer(env, jout);
+
+  inclusive_scan_by_key_fi_min(vals, keys, out, len);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+  }
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumminByKeyII
+(JNIEnv *env, jobject obj, jobject jvals, jobject jkeys, jobject jout, jlong len) 
+{
+  int * vals = (int *)getPointer(env, jvals);
+  int * keys = (int *)getPointer(env, jkeys);
+  int * out = (int *)getPointer(env, jout);
+
+  inclusive_scan_by_key_ii_min(vals, keys, out, len);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+  }
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumminByKeyFL
+(JNIEnv *env, jobject obj, jobject jvals, jobject jkeys, jobject jout, jlong len) 
+{
+  float * vals = (float *)getPointer(env, jvals);
+  long long * keys = (long long *)getPointer(env, jkeys);
+  float * out = (float *)getPointer(env, jout);
+
+  inclusive_scan_by_key_fl_min(vals, keys, out, len);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;

@@ -983,6 +983,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cumsumKey dimensions mismatch");
     val out = FMat.newOrCheckFMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
+    Mat.nflops += 2L*length;
     if (nrows == 1) {
       cumsumKeyLinear(keys, out, 0, length);
     } else {
@@ -996,7 +997,263 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
   
   def cumsumByKey(keys:FMat):FMat = cumsumByKey(keys, null);
+
+  def cumsumKeyLinear(keys:IMat, out:FMat, istart:Int, iend:Int) = {
+    var i = istart;
+    var sum = 0f;
+    while (i < iend) {
+      sum += data(i);
+      out.data(i) = sum;
+      if (i + 1 < iend && keys(i) != keys(i+1)) sum = 0;
+      i += 1;
+    }    
+  }
   
+  def cumsumByKey(keys:IMat, omat:Mat):FMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cumsumKey dimensions mismatch");
+    val out = FMat.newOrCheckFMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
+    Mat.nflops += 2L*length;
+    if (nrows == 1) {
+      cumsumKeyLinear(keys, out, 0, length);
+    } else {
+      var i = 0;
+      while (i < ncols) {
+        cumsumKeyLinear(keys, out, i*nrows, (i+1)*nrows);
+        i += 1;
+      }
+    }   
+    out
+  }
+  
+  def cumsumByKey(keys:IMat):FMat = cumsumByKey(keys, null);
+
+  def cummaxKeyLinear(keys:FMat, out:FMat, istart:Int, iend:Int) = {
+    var i = istart;
+    var sum = Float.MinValue;
+    while (i < iend) {
+      sum = math.max(sum, data(i));
+      out.data(i) = sum;
+      if (i + 1 < iend && keys(i) != keys(i+1)) sum = Float.MinValue;
+      i += 1;
+    }    
+  }
+  
+  def cummaxByKey(keys:FMat, omat:Mat):FMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cummaxKey dimensions mismatch");
+    val out = FMat.newOrCheckFMat(nrows, ncols, omat, GUID, keys.GUID, "cummaxKey".##);
+    Mat.nflops += 2L*length;
+    if (nrows == 1) {
+      cummaxKeyLinear(keys, out, 0, length);
+    } else {
+      var i = 0;
+      while (i < ncols) {
+        cummaxKeyLinear(keys, out, i*nrows, (i+1)*nrows);
+        i += 1;
+      }
+    }   
+    out
+  }
+  
+  def cummaxByKey(keys:FMat):FMat = cummaxByKey(keys, null);
+  
+  def cummaxKeyLinear(keys:IMat, out:FMat, istart:Int, iend:Int) = {
+    var i = istart;
+    var sum = Float.MinValue;
+    while (i < iend) {
+      sum = math.max(sum, data(i));
+      out.data(i) = sum;
+      if (i + 1 < iend && keys(i) != keys(i+1)) sum = Float.MinValue;
+      i += 1;
+    }    
+  }
+  
+  def cummaxByKey(keys:IMat, omat:Mat):FMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cummaxKey dimensions mismatch");
+    val out = FMat.newOrCheckFMat(nrows, ncols, omat, GUID, keys.GUID, "cummaxKey".##);
+    Mat.nflops += 2L*length;
+    if (nrows == 1) {
+      cummaxKeyLinear(keys, out, 0, length);
+    } else {
+      var i = 0;
+      while (i < ncols) {
+        cummaxKeyLinear(keys, out, i*nrows, (i+1)*nrows);
+        i += 1;
+      }
+    }   
+    out
+  }
+  
+  def cummaxByKey(keys:IMat):FMat = cummaxByKey(keys, null);
+
+  def cumminKeyLinear(keys:FMat, out:FMat, istart:Int, iend:Int) = {
+    var i = istart;
+    var sum = Float.MaxValue;
+    while (i < iend) {
+      sum = math.min(sum, data(i));
+      out.data(i) = sum;
+      if (i + 1 < iend && keys(i) != keys(i+1)) sum = Float.MaxValue;
+      i += 1;
+    }    
+  }
+  
+  def cumminByKey(keys:FMat, omat:Mat):FMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cumminKey dimensions mismatch");
+    val out = FMat.newOrCheckFMat(nrows, ncols, omat, GUID, keys.GUID, "cumminKey".##);
+    Mat.nflops += 2L*length;
+    if (nrows == 1) {
+      cumminKeyLinear(keys, out, 0, length);
+    } else {
+      var i = 0;
+      while (i < ncols) {
+        cumminKeyLinear(keys, out, i*nrows, (i+1)*nrows);
+        i += 1;
+      }
+    }   
+    out
+  }
+  
+  def cumminByKey(keys:FMat):FMat = cumminByKey(keys, null);
+
+  def cumminKeyLinear(keys:IMat, out:FMat, istart:Int, iend:Int) = {
+    var i = istart;
+    var sum = Float.MaxValue;
+    while (i < iend) {
+      sum = math.min(sum, data(i));
+      out.data(i) = sum;
+      if (i + 1 < iend && keys(i) != keys(i+1)) sum = Float.MaxValue;
+      i += 1;
+    }    
+  }
+  
+  def cumminByKey(keys:IMat, omat:Mat):FMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cumminKey dimensions mismatch");
+    val out = FMat.newOrCheckFMat(nrows, ncols, omat, GUID, keys.GUID, "cumminKey".##);
+    Mat.nflops += 2L*length;
+    if (nrows == 1) {
+      cumminKeyLinear(keys, out, 0, length);
+    } else {
+      var i = 0;
+      while (i < ncols) {
+        cumminKeyLinear(keys, out, i*nrows, (i+1)*nrows);
+        i += 1;
+      }
+    }   
+    out
+  }
+  
+  def cumminByKey(keys:IMat):FMat = cumminByKey(keys, null);
+
+
+  /**
+   * A test multinomial sampler for now. (Later, we'll generalize this to different types.) This is
+   * perpetually in a work in progress until further notice.
+   * 
+   * Requires a matrix of probabilities and a keys matrix to indicate where intervals start/end.
+   * By default, columns are assumed to be probability vectors. Use the keys matrix to over-ride
+   * default intervals. E.g. the probability matrix can have multiple probability vectors per
+   * columns if the keys matrix has columns like [ 000110001111000 ].t.
+   * 
+   * As it's the CPU version, we'll use a straightforward, iterative implementation.
+   * 
+   * @param keys A matrix of the same dimensions as the probability matrix, stored for consistency
+   *    with cumsumByKey. It indicates where intervals start and end by changes in values. To use
+   *    the default columns as probability vectors, set all elements to be the same.
+   * @param omatCumsum The output matrix where the cumsumByKey results are stored. We then do
+   *    binary search on column segments of this matrix.
+   * @param randMatrix A matrix of random values that we use as the basis for the value to search
+   *    in a binary fashion. Not currently used; we'll switch over soon!
+   * @param omatMulti The output matrix where the multinomial samples are stored (can be null).
+   *    This matrix and randMatrix should be the same size.
+   * @param n The number of multinomial samples to draw (we'll probably force this to be 1).
+   */
+  def multinomial(keys:FMat, omatCumsum:FMat, randMatrix:FMat, omatMulti:FMat, n:Int) : FMat = {
+    if (nrows != omatCumsum.nrows || ncols != omatCumsum.ncols) {
+      throw new RuntimeException("multinomial dimensions mismatch (with this and omatCumsum)")
+    }
+    val out = FMat.newOrCheckFMat(nrows, ncols, omatMulti, GUID, "multinomial".##)
+    out.clear
+    this.cumsumByKey(keys, omatCumsum)
+    var i = 0
+    while (i < ncols) {
+      multinomialColumns(keys, omatCumsum, randMatrix, out, i*nrows, (i+1)*nrows, n)
+      i += 1
+    }
+    return out
+  }
+  
+  /** 
+   * Performs multinomial sampling corresponding to the various intervals in the COLUMNS of the
+   * probability matrix. One call here corresponds to ONE column, but each column may have multiple
+   * intervals, based on the keys matrix. trueStart, trueEnd contain the starting and ending (not
+   * inclusive for the end) indices for this column.
+   * 
+   * @param keys
+   * @param omatCumsum
+   * @param randMatrix
+   * @param out
+   * @param trueStart
+   * @param trueEnd
+   * @param n
+   */
+  def multinomialColumns(keys:FMat, omatCumsum:FMat, randMatrix:FMat, out:FMat, trueStart:Int, trueEnd:Int, n:Int) = {
+    var start = trueStart   // inclusive
+    var end = trueStart     // inclusive
+    var currentKey = keys(start)
+    var oldStart = start
+    var oldEnd = end
+    while (end+1 < trueEnd) {
+      while (end+1 < trueEnd && keys(end) == keys(end+1)) {
+        end += 1
+      }
+
+      // Perform binary search with (oldStart,oldEnd) indices. The "end" is an inclusive index.
+      oldEnd = end
+      for (j <- 0 until n) { // We may have multiple samples. Usually this will probably be one.
+        val r = scala.util.Random.nextFloat
+        while (start < end) {
+          var mid = (start + end) / 2
+          val a1 = if (mid == oldStart) 0 else omatCumsum(mid-1)
+          val a2 = omatCumsum(mid)
+          if (r > a1 && r < a2) { // Done
+            start = mid
+            end = mid
+          } else if (r < a1) { // Must search before/earlier
+            end = mid 
+          } else if (r > a2) { // Must search after/later
+            start = mid + 1
+          }
+        }
+        if (start != end) throw new RuntimeException("Something's wrong: start=" + start + ", end=" + end)
+        out.data(start) += 1
+        start = oldStart
+        end = oldEnd
+      }   
+
+      // Now advance (start,end) pair to the next range. The while loop will recalibrate "end" if needed.
+      end = oldEnd + 1
+      start = end
+      oldStart = start
+    }
+  }
+
+  /** A debugging method to print matrices, without being constrained by the command line's cropping. */
+  def printMatrix(mat: Mat) = {
+    for(i <- 0 until mat.nrows) {
+      for (j <- 0 until mat.ncols) {
+        print(mat(IMat(i),IMat(j)) + " ")
+      }
+      println()
+    }
+  }  
+
+  /** Uses the same multinomial sampler, but with null as the output. */
+  def multinomial(keys:FMat, omatCumsum:FMat, rand:FMat, n:Int):FMat = multinomial(keys, omatCumsum, rand:FMat, null, n);
+
   def reverseLinear(out:FMat, istart:Int, iend:Int) = {
     var i = istart;
     var sum = 0f;

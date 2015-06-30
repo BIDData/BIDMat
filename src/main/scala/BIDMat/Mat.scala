@@ -670,7 +670,9 @@ object Mat {
     }
   }
   
-  def checkCUDA:Unit = {
+  def checkCUDA:Unit = checkCUDA(false)
+  
+  def checkCUDA(verbose:Boolean):Unit = {
     if (hasCUDA == 0) {
     	val os = System.getProperty("os.name")
     	try {
@@ -690,8 +692,12 @@ object Mat {
     			if (!found) throw new RuntimeException("Couldnt find a cudart lib")
     		}
     	} catch {
-    	case _:Throwable =>  {
-    		println("Couldnt load CUDA runtime")
+    	case x:Throwable =>  {
+    		println("Couldnt load CUDA runtime");
+    		if (verbose) {
+    			val msg = x.getMessage;
+    			if (msg != null) println(msg);
+    		}
     		hasCUDA = -1    		
     	}
     	}
@@ -699,8 +705,12 @@ object Mat {
     	  try {
     	    jcuda.LibUtils.loadLibrary("JCudaRuntime")
     	  } catch {
-    	  case _:Throwable =>  {
-    	    println("Couldnt load JCuda")
+    	  case y:Throwable =>  {
+    	    println("Couldnt load JCuda");
+    	    if (verbose) {
+    	    	val msg = y.getMessage;
+    	    	if (msg != null) println(msg);
+    	    }
     	    hasCUDA = -1            
     	  }
     	  }
@@ -721,13 +731,13 @@ object Mat {
     	} catch {
     	case e:NoClassDefFoundError => println("Couldn't load the JCUDA driver")
     	case e:Exception => println("Exception while initializing JCUDA driver")
-    	case _:Throwable => println("Something went wrong while loading JCUDA driver")
+    	case z:Throwable => println("Something went wrong while loading JCUDA driver" + z.getMessage)
     	}
     	if (hasCUDA > 0) {
     	  try {
     	    jcuda.LibUtils.loadLibrary("bidmatcuda")
     	  } catch {
-    	  case _:Throwable => println("Something went wrong while loading BIDMat CUDA library")
+    	  case z:Throwable => println("Something went wrong while loading BIDMat CUDA library" + z.getMessage)
     	  }
     	}
     }

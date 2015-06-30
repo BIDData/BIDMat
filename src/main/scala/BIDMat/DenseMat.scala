@@ -1773,6 +1773,7 @@ object DenseMat {
   	  val nr = if (!colvec) 1 else if (nr0 > 0) nr0 else maxelem(inds);
   	  val nc = if (colvec) 1 else if (nc0 > 0) nc0 else maxelem(inds);
   	  val out = DenseMat.newOrCheck(nr, nc, null, inds.GUID, vals.GUID, "accum".hashCode)
+  	  out.clear
   	  		Mat.nflops += inds.length
   	  		var i = 0;
   	  if (vals.length > 1) {
@@ -1793,6 +1794,7 @@ object DenseMat {
   		val nr = if (nr0 > 0) nr0 else maxcol(inds, 0);
   		val nc = if (nc0 > 0) nc0 else maxcol(inds, 1);
   		val out = DenseMat.newOrCheck(nr, nc, null, inds.GUID, vals.GUID, "accum".hashCode); 
+  		out.clear
   		var i = 0;
   		if (vals.length > 1) {      // Non-scalar case
   			if (inds.nrows != vals.nrows) {

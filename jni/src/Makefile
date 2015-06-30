@@ -3,7 +3,10 @@ include Makefile.incl
 MKL_OBJS=BIDMat_CBLAS.$(OBJ) BIDMat_UTILS.$(OBJ) BIDMat_SPBLAS.$(OBJ) BIDMat_LAPACK.$(OBJ) \
          BIDMat_VML.$(OBJ) BIDMat_VSL.$(OBJ)
 
-CUDA_OBJS=BIDMat_CUMAT.$(OBJ) BIDMat_CUMATD.$(OBJ) MatKernel.$(OBJ) MatKernelD.$(OBJ) Logger.$(OBJ) JNIUtils.$(OBJ) PointerUtils.$(OBJ)
+KERNEL_OBJS=Arith.$(OBJ) CopyFill.$(OBJ) Operators.$(OBJ) Random.$(OBJ) Reducers.$(OBJ) Sorting.$(OBJ)
+CUDA_OBJS=BIDMat_CUMAT.$(OBJ) BIDMat_CUMATD.$(OBJ) $(KERNEL_OBJS) MatKernelD.$(OBJ) Logger.$(OBJ) JNIUtils.$(OBJ) PointerUtils.$(OBJ)
+
+#CUDA_OBJS=BIDMat_CUMAT.$(OBJ) BIDMat_CUMATD.$(OBJ) MatKernel.$(OBJ) MatKernelD.$(OBJ) Logger.$(OBJ) JNIUtils.$(OBJ) PointerUtils.$(OBJ)
 
 .SUFFIXES: .$(OBJ) .c .cpp .cu
 

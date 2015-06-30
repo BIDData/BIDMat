@@ -858,6 +858,8 @@ object SciFunctions {
       case aa:LMat => maxi(aa, b):LMat
       case aa:DMat => maxi(aa, b):DMat
       case aa:GMat => maxi(aa, b):GMat
+      case aa:GIMat => maxi(aa, b):GIMat
+      case aa:GLMat => maxi(aa, b):GLMat
       case aa:GDMat => maxi(aa, b):GDMat
     }
   }
@@ -870,6 +872,8 @@ object SciFunctions {
       case aa:LMat => maxi(aa):LMat
       case aa:DMat => maxi(aa):DMat
       case aa:GMat => maxi(aa):GMat
+      case aa:GIMat => maxi(aa):GIMat
+      case aa:GLMat => maxi(aa):GLMat
       case aa:GDMat => maxi(aa):GDMat
     }
   }
@@ -881,6 +885,8 @@ object SciFunctions {
       case aa:LMat => mini(aa, b):LMat
       case aa:DMat => mini(aa, b):DMat
       case aa:GMat => mini(aa, b):GMat
+      case aa:GIMat => mini(aa, b):GIMat
+      case aa:GLMat => mini(aa, b):GLMat
       case aa:GDMat => mini(aa, b):GDMat
     }
   }
@@ -892,6 +898,8 @@ object SciFunctions {
       case aa:LMat => mini(aa):LMat
       case aa:DMat => mini(aa):DMat
       case aa:GMat => mini(aa):GMat
+      case aa:GIMat => mini(aa):GIMat
+      case aa:GLMat => mini(aa):GLMat
       case aa:GDMat => mini(aa):GDMat
     }
   }
@@ -996,6 +1004,8 @@ object SciFunctions {
   
   def cumsumByKey(a:IMat, b:IMat):IMat = a.cumsumByKey(b);
   
+  def cumsumByKey(a:FMat, b:IMat):FMat = a.cumsumByKey(b);
+  
   def cumsumByKey(a:GMat, b:GMat):GMat = a.cumsumByKey(b);
   
   def cumsumByKey(a:GMat, b:GIMat):GMat = a.cumsumByKey(b);
@@ -1011,7 +1021,7 @@ object SciFunctions {
   def cumsumByKey(a:Mat, b:Mat):Mat = {
     (a, b) match {
     case (aa:FMat, bb:FMat) => aa.cumsumByKey(bb);
-//    case (aa:FMat, bb:IMat) => aa.cumsumByKey(bb);
+    case (aa:FMat, bb:IMat) => aa.cumsumByKey(bb);
     case (aa:IMat, bb:IMat) => aa.cumsumByKey(bb);
 //    case (aa:IMat, bb:FMat) => aa.cumsumByKey(bb);
     case (aa:GMat, bb:GMat) => aa.cumsumByKey(bb);
@@ -1028,6 +1038,8 @@ object SciFunctions {
   
   def cumsumByKey(a:IMat, b:IMat, omat:Mat):IMat = a.cumsumByKey(b, omat);
   
+  def cumsumByKey(a:FMat, b:IMat, omat:Mat):FMat = a.cumsumByKey(b, omat);
+  
   def cumsumByKey(a:GMat, b:GMat, omat:Mat):GMat = a.cumsumByKey(b, omat);
   
   def cumsumByKey(a:GMat, b:GIMat, omat:Mat):GMat = a.cumsumByKey(b, omat);
@@ -1043,7 +1055,7 @@ object SciFunctions {
   def cumsumByKey(a:Mat, b:Mat, omat:Mat):Mat = {
     (a, b) match {
     case (aa:FMat, bb:FMat) => aa.cumsumByKey(bb, omat);
-//    case (aa:FMat, bb:IMat) => aa.cumsumByKey(bb, omat);
+    case (aa:FMat, bb:IMat) => aa.cumsumByKey(bb, omat);
     case (aa:IMat, bb:IMat) => aa.cumsumByKey(bb, omat);
 //    case (aa:IMat, bb:FMat) => aa.cumsumByKey(bb, omat);
     case (aa:GMat, bb:GMat) => aa.cumsumByKey(bb, omat);
@@ -1054,6 +1066,168 @@ object SciFunctions {
     case (aa:GLMat, bb:GLMat) => aa.cumsumByKey(bb, omat);
     }
   }
+    
+  def cummaxByKey(a:FMat, b:FMat):FMat = a.cummaxByKey(b);
+  
+  def cummaxByKey(a:FMat, b:IMat):FMat = a.cummaxByKey(b);
+  
+  def cummaxByKey(a:IMat, b:IMat):IMat = a.cummaxByKey(b);
+  
+  def cummaxByKey(a:GMat, b:GMat):GMat = a.cummaxByKey(b);
+  
+  def cummaxByKey(a:GMat, b:GIMat):GMat = a.cummaxByKey(b);
+  
+  def cummaxByKey(a:GIMat, b:GIMat):GIMat = a.cummaxByKey(b);
+  
+  def cummaxByKey(a:GIMat, b:GMat):GIMat = a.cummaxByKey(b);
+  
+  def cummaxByKey(a:GDMat, b:GDMat):GDMat = a.cummaxByKey(b);
+  
+  def cummaxByKey(a:GLMat, b:GLMat):GLMat = a.cummaxByKey(b);
+  
+  def cummaxByKey(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+    case (aa:FMat, bb:FMat) => aa.cummaxByKey(bb);
+    case (aa:FMat, bb:IMat) => aa.cummaxByKey(bb);
+    case (aa:IMat, bb:IMat) => aa.cummaxByKey(bb);
+//    case (aa:IMat, bb:FMat) => aa.cummaxByKey(bb);
+    case (aa:GMat, bb:GMat) => aa.cummaxByKey(bb);
+    case (aa:GMat, bb:GIMat) => aa.cummaxByKey(bb);
+    case (aa:GIMat, bb:GIMat) => aa.cummaxByKey(bb);
+    case (aa:GIMat, bb:GMat) => aa.cummaxByKey(bb);
+    case (aa:GDMat, bb:GDMat) => aa.cummaxByKey(bb);
+    case (aa:GLMat, bb:GLMat) => aa.cummaxByKey(bb);
+    }
+  }
+  
+    
+  def cummaxByKey(a:FMat, b:FMat, omat:Mat):FMat = a.cummaxByKey(b, omat);
+  
+  def cummaxByKey(a:FMat, b:IMat, omat:Mat):FMat = a.cummaxByKey(b, omat);
+  
+  def cummaxByKey(a:IMat, b:IMat, omat:Mat):IMat = a.cummaxByKey(b, omat);
+  
+  def cummaxByKey(a:GMat, b:GMat, omat:Mat):GMat = a.cummaxByKey(b, omat);
+  
+  def cummaxByKey(a:GMat, b:GIMat, omat:Mat):GMat = a.cummaxByKey(b, omat);
+  
+  def cummaxByKey(a:GIMat, b:GIMat, omat:Mat):GIMat = a.cummaxByKey(b, omat);
+  
+  def cummaxByKey(a:GIMat, b:GMat, omat:Mat):GIMat = a.cummaxByKey(b, omat);
+  
+  def cummaxByKey(a:GDMat, b:GDMat, omat:Mat):GDMat = a.cummaxByKey(b, omat);
+  
+  def cummaxByKey(a:GLMat, b:GLMat, omat:Mat):GLMat = a.cummaxByKey(b, omat);
+  
+  def cummaxByKey(a:Mat, b:Mat, omat:Mat):Mat = {
+    (a, b) match {
+    case (aa:FMat, bb:FMat) => aa.cummaxByKey(bb, omat);
+    case (aa:FMat, bb:IMat) => aa.cummaxByKey(bb, omat);
+    case (aa:IMat, bb:IMat) => aa.cummaxByKey(bb, omat);
+//    case (aa:IMat, bb:FMat) => aa.cummaxByKey(bb, omat);
+    case (aa:GMat, bb:GMat) => aa.cummaxByKey(bb, omat);
+    case (aa:GMat, bb:GIMat) => aa.cummaxByKey(bb, omat);
+    case (aa:GIMat, bb:GIMat) => aa.cummaxByKey(bb, omat);
+    case (aa:GIMat, bb:GMat) => aa.cummaxByKey(bb, omat);
+    case (aa:GDMat, bb:GDMat) => aa.cummaxByKey(bb, omat);
+    case (aa:GLMat, bb:GLMat) => aa.cummaxByKey(bb, omat);
+    }
+  }
+
+    
+  def cumminByKey(a:FMat, b:FMat):FMat = a.cumminByKey(b);
+  
+  def cumminByKey(a:FMat, b:IMat):FMat = a.cumminByKey(b);
+  
+  def cumminByKey(a:IMat, b:IMat):IMat = a.cumminByKey(b);
+  
+  def cumminByKey(a:GMat, b:GMat):GMat = a.cumminByKey(b);
+  
+  def cumminByKey(a:GMat, b:GIMat):GMat = a.cumminByKey(b);
+  
+  def cumminByKey(a:GIMat, b:GIMat):GIMat = a.cumminByKey(b);
+  
+  def cumminByKey(a:GIMat, b:GMat):GIMat = a.cumminByKey(b);
+  
+  def cumminByKey(a:GDMat, b:GDMat):GDMat = a.cumminByKey(b);
+  
+  def cumminByKey(a:GLMat, b:GLMat):GLMat = a.cumminByKey(b);
+  
+  def cumminByKey(a:Mat, b:Mat):Mat = {
+    (a, b) match {
+    case (aa:FMat, bb:FMat) => aa.cumminByKey(bb);
+    case (aa:FMat, bb:IMat) => aa.cumminByKey(bb);
+    case (aa:IMat, bb:IMat) => aa.cumminByKey(bb);
+//    case (aa:IMat, bb:FMat) => aa.cumminByKey(bb);
+    case (aa:GMat, bb:GMat) => aa.cumminByKey(bb);
+    case (aa:GMat, bb:GIMat) => aa.cumminByKey(bb);
+    case (aa:GIMat, bb:GIMat) => aa.cumminByKey(bb);
+    case (aa:GIMat, bb:GMat) => aa.cumminByKey(bb);
+    case (aa:GDMat, bb:GDMat) => aa.cumminByKey(bb);
+    case (aa:GLMat, bb:GLMat) => aa.cumminByKey(bb);
+    }
+  }
+  
+    
+  def cumminByKey(a:FMat, b:FMat, omat:Mat):FMat = a.cumminByKey(b, omat);
+  
+  def cumminByKey(a:FMat, b:IMat, omat:Mat):FMat = a.cumminByKey(b, omat);
+  
+  def cumminByKey(a:IMat, b:IMat, omat:Mat):IMat = a.cumminByKey(b, omat);
+  
+  def cumminByKey(a:GMat, b:GMat, omat:Mat):GMat = a.cumminByKey(b, omat);
+  
+  def cumminByKey(a:GMat, b:GIMat, omat:Mat):GMat = a.cumminByKey(b, omat);
+  
+  def cumminByKey(a:GIMat, b:GIMat, omat:Mat):GIMat = a.cumminByKey(b, omat);
+  
+  def cumminByKey(a:GIMat, b:GMat, omat:Mat):GIMat = a.cumminByKey(b, omat);
+  
+  def cumminByKey(a:GDMat, b:GDMat, omat:Mat):GDMat = a.cumminByKey(b, omat);
+  
+  def cumminByKey(a:GLMat, b:GLMat, omat:Mat):GLMat = a.cumminByKey(b, omat);
+  
+  def cumminByKey(a:Mat, b:Mat, omat:Mat):Mat = {
+    (a, b) match {
+    case (aa:FMat, bb:FMat) => aa.cumminByKey(bb, omat);
+    case (aa:FMat, bb:IMat) => aa.cumminByKey(bb, omat);
+    case (aa:IMat, bb:IMat) => aa.cumminByKey(bb, omat);
+//    case (aa:IMat, bb:FMat) => aa.cumminByKey(bb, omat);
+    case (aa:GMat, bb:GMat) => aa.cumminByKey(bb, omat);
+    case (aa:GMat, bb:GIMat) => aa.cumminByKey(bb, omat);
+    case (aa:GIMat, bb:GIMat) => aa.cumminByKey(bb, omat);
+    case (aa:GIMat, bb:GMat) => aa.cumminByKey(bb, omat);
+    case (aa:GDMat, bb:GDMat) => aa.cumminByKey(bb, omat);
+    case (aa:GLMat, bb:GLMat) => aa.cumminByKey(bb, omat);
+    }
+  }
+
+  
+  // TODO Will finish more cases later, mirroring the cumsumByKey thing, and clean up comments.
+  // Can also normalize here? NO that probably wouldn't be a good idea due to matrix allocation.
+  // We should make the programmer normalize "a" before doing the multinomial sampling.
+  def multinomial(a:FMat, keys:FMat, out1:FMat, rand:FMat, out2:FMat, n:Int):FMat = a.multinomial(keys, out1, rand, out2, n)
+  def multinomial(a:FMat, keys:FMat, out1:FMat, rand:FMat, n:Int):FMat = a.multinomial(keys, out1, rand, n)
+
+  def multinomial(a:GMat, b:GMat, omat1:GMat, omat2:GMat, n:Int):GMat = a.multinomial(b, omat1, omat2, n)
+  def multinomial(a:GMat, b:GMat, omat1:GMat, n:Int):GMat = a.multinomial(b, omat1, n)
+
+  /*
+  def multinomial(a:Mat, b:Mat, omat1:Mat, omat2:Mat, n:Int):Mat = {
+    (a, b, omat1, omat2) match {
+      case (a:FMat, b:FMat, omat1:FMat, omat2:FMat) => a.multinomial(b, omat1, omat2, n)
+      case (a:GMat, b:GMat, omat1:GMat, omat2:GMat) => a.multinomial(b, omat1, omat2, n)
+      case (a:GMat, b:GMat, omat1:GMat, omat2:GIMat) => a.multinomial(b, omat1, float(omat2), n)
+    }
+  }
+
+  def multinomial(a:Mat, b:Mat, omat1:Mat, n:Int):Mat = {
+    (a, b, omat1) match {
+      case (a:FMat, b:FMat, omat1:FMat) => a.multinomial(b, omat1, n)
+      case (a:GMat, b:GMat, omat1:GMat) => a.multinomial(b, omat1, n)
+    }
+  } */
+
   
   def reverse(a:FMat):FMat = a._reverse(null);
   
@@ -2218,7 +2392,7 @@ object SciFunctions {
   
   def applyGDfun(in:GDMat, omat:Mat, opn:Int, kflops:Long):GDMat = {
     val out = GDMat.newOrCheckGDMat(in.nrows, in.ncols, omat, in.GUID, opn)
-    CUMATD.applygfun(in.data, out.data, in.nrows*in.ncols, opn)
+    CUMAT.applygdfun(in.data, out.data, in.nrows*in.ncols, opn)
     JCuda.cudaDeviceSynchronize()
     Mat.nflops += kflops*in.length
     out
@@ -2226,7 +2400,7 @@ object SciFunctions {
 
   def applyGDfun(in:GDMat, opn:Int, kflops:Long):GDMat = {
     val out = GDMat.newOrCheckGDMat(in.nrows, in.ncols, null, in.GUID, opn)
-    CUMATD.applygfun(in.data, out.data, in.nrows*in.ncols, opn)
+    CUMAT.applygdfun(in.data, out.data, in.nrows*in.ncols, opn)
     JCuda.cudaDeviceSynchronize()
     Mat.nflops += kflops*in.length
     out
@@ -2235,7 +2409,7 @@ object SciFunctions {
   def applyGDfun2(a:GDMat, b:GDMat, omat:Mat, opn:Int, kflops:Long):GDMat = {   
     if (a.nrows == b.nrows && a.ncols == b.ncols) {
     	val out = GDMat.newOrCheckGDMat(a.nrows, a.ncols, omat, a.GUID, b.GUID, opn)
-      CUMATD.applygfun2(a.data, b.data, out.data, a.nrows*a.ncols, opn)
+      CUMAT.applygdfun2(a.data, b.data, out.data, a.nrows*a.ncols, opn)
       JCuda.cudaDeviceSynchronize()
       Mat.nflops += kflops*a.length
       out
@@ -2247,7 +2421,7 @@ object SciFunctions {
   def applyGDfun2(a:GDMat, b:GDMat, opn:Int, kflops:Long):GDMat = {
     if  (a.nrows == b.nrows && a.ncols == b.ncols)  {
 	    val out = GDMat.newOrCheckGDMat(a.nrows, a.ncols, null, a.GUID, b.GUID, opn)
-	    CUMATD.applygfun2(a.data, b.data, out.data, a.nrows*a.ncols, opn)
+	    CUMAT.applygdfun2(a.data, b.data, out.data, a.nrows*a.ncols, opn)
 	    JCuda.cudaDeviceSynchronize()
 	    Mat.nflops += kflops*a.length
 	    out
@@ -2340,12 +2514,13 @@ object SciFunctions {
   def min(a:GMat, b:FMat):GMat    = min(a, b, null)
   def max(a:FMat, b:GMat):GMat    = max(a, b, null)
   def min(a:FMat, b:GMat):GMat    = min(a, b, null)
-  def maxi(a:GMat, dir:Int):GMat  = a.reduceOp(null, dir, BinOp.op_max)
-  def mini(a:GMat, dir:Int):GMat  = a.reduceOp(null, dir, BinOp.op_min)
-  def sum(a:GMat, dir:Int):GMat   = a.reduceOp(null, dir, BinOp.op_add)
-  def maxi(a:GMat):GMat           = a.reduceOp(null, 0, BinOp.op_max)
-  def mini(a:GMat):GMat           = a.reduceOp(null, 0, BinOp.op_min)
-  def sum(a:GMat):GMat            = a.reduceOp(null, 0, BinOp.op_add)
+    
+  def maxi(a:GMat, dir:Int):GMat  = a.reduceOp(null, dir, Float.MinValue, BinOp.op_max)
+  def mini(a:GMat, dir:Int):GMat  = a.reduceOp(null, dir, Float.MaxValue, BinOp.op_min)
+  def sum(a:GMat, dir:Int):GMat   = a.reduceOp(null, dir, 0f, BinOp.op_add)
+  def maxi(a:GMat):GMat           = a.reduceOp(null, 0, Float.MinValue, BinOp.op_max)
+  def mini(a:GMat):GMat           = a.reduceOp(null, 0, Float.MaxValue, BinOp.op_min)
+  def sum(a:GMat):GMat            = a.reduceOp(null, 0, 0f, BinOp.op_add)
   
   def max(a:GMat, b:GMat, out:Mat):GMat    = a.gOp(b, out, BinOp.op_max)
   def min(a:GMat, b:GMat, out:Mat):GMat    = a.gOp(b, out, BinOp.op_min)
@@ -2357,12 +2532,26 @@ object SciFunctions {
   def min(a:GMat, b:FMat, out:Mat):GMat    = a.gOp(GMat(b), out, BinOp.op_min)
   def max(a:FMat, b:GMat, out:Mat):GMat    = GMat(a).gOp(b, out, BinOp.op_max)
   def min(a:FMat, b:GMat, out:Mat):GMat    = GMat(a).gOp(b, out, BinOp.op_min)
-  def maxi(a:GMat, dir:Int, out:Mat):GMat  = a.reduceOp(out, dir, BinOp.op_max)
-  def mini(a:GMat, dir:Int, out:Mat):GMat  = a.reduceOp(out, dir, BinOp.op_min)
-  def sum(a:GMat, dir:Int, out:Mat):GMat   = a.reduceOp(out, dir, BinOp.op_add)
-  def maxi(a:GMat, out:Mat):GMat           = a.reduceOp(out, 0, BinOp.op_max)
-  def mini(a:GMat, out:Mat):GMat           = a.reduceOp(out, 0, BinOp.op_min)
-  def sum(a:GMat, out:Mat):GMat            = a.reduceOp(out, 0, BinOp.op_add)
+  def maxi(a:GMat, dir:Int, out:Mat):GMat  = a.reduceOp(out, dir, Float.MinValue, BinOp.op_max)
+  def mini(a:GMat, dir:Int, out:Mat):GMat  = a.reduceOp(out, dir, Float.MaxValue, BinOp.op_min)
+  def sum(a:GMat, dir:Int, out:Mat):GMat   = a.reduceOp(out, dir, 0f, BinOp.op_add)
+  def maxi(a:GMat, out:Mat):GMat           = a.reduceOp(out, 0, Float.MinValue, BinOp.op_max)
+  def mini(a:GMat, out:Mat):GMat           = a.reduceOp(out, 0, Float.MaxValue, BinOp.op_min)
+  def sum(a:GMat, out:Mat):GMat            = a.reduceOp(out, 0, 0f, BinOp.op_add)
+  
+  def maxi(a:GIMat, dir:Int):GIMat  = a.reduceOp(null, dir, Int.MinValue, BinOp.op_max)
+  def mini(a:GIMat, dir:Int):GIMat  = a.reduceOp(null, dir, Int.MaxValue, BinOp.op_min)
+  def sum(a:GIMat, dir:Int):GIMat   = a.reduceOp(null, dir, 0, BinOp.op_add)
+  def maxi(a:GIMat):GIMat           = a.reduceOp(null, 0, Int.MinValue, BinOp.op_max)
+  def mini(a:GIMat):GIMat           = a.reduceOp(null, 0, Int.MaxValue, BinOp.op_min)
+  def sum(a:GIMat):GIMat            = a.reduceOp(null, 0, 0, BinOp.op_add)
+  
+  def maxi(a:GLMat, dir:Int):GLMat  = a.reduceOp(null, dir, Long.MinValue, BinOp.op_max)
+  def mini(a:GLMat, dir:Int):GLMat  = a.reduceOp(null, dir, Long.MaxValue, BinOp.op_min)
+  def sum(a:GLMat, dir:Int):GLMat   = a.reduceOp(null, dir, 0, BinOp.op_add)
+  def maxi(a:GLMat):GLMat           = a.reduceOp(null, 0, Long.MinValue, BinOp.op_max)
+  def mini(a:GLMat):GLMat           = a.reduceOp(null, 0, Long.MaxValue, BinOp.op_min)
+  def sum(a:GLMat):GLMat            = a.reduceOp(null, 0, 0, BinOp.op_add)
      
   def sum(a:GSMat) = a.sum(0, null)
   def sum(a:GSMat, n:Int) = a.sum(n, null)
@@ -2374,12 +2563,12 @@ object SciFunctions {
   def min(a:GDMat, b:FMat):GDMat    = min(a, b, null)
   def max(a:FMat, b:GDMat):GDMat    = max(a, b, null)
   def min(a:FMat, b:GDMat):GDMat    = min(a, b, null)
-  def maxi(a:GDMat, dir:Int):GDMat  = a.reduceOp(null, dir, BinOp.op_max)
-  def mini(a:GDMat, dir:Int):GDMat  = a.reduceOp(null, dir, BinOp.op_min)
-  def sum(a:GDMat, dir:Int):GDMat   = a.reduceOp(null, dir, BinOp.op_add)
-  def maxi(a:GDMat):GDMat           = a.reduceOp(null, 0, BinOp.op_max)
-  def mini(a:GDMat):GDMat           = a.reduceOp(null, 0, BinOp.op_min)
-  def sum(a:GDMat):GDMat            = a.reduceOp(null, 0, BinOp.op_add)
+  def maxi(a:GDMat, dir:Int):GDMat  = a.reduceOp(null, dir, Double.MinValue, BinOp.op_max)
+  def mini(a:GDMat, dir:Int):GDMat  = a.reduceOp(null, dir, Double.MaxValue, BinOp.op_min)
+  def sum(a:GDMat, dir:Int):GDMat   = a.reduceOp(null, dir, 0.0, BinOp.op_add)
+  def maxi(a:GDMat):GDMat           = a.reduceOp(null, 0, Double.MinValue, BinOp.op_max)
+  def mini(a:GDMat):GDMat           = a.reduceOp(null, 0, Double.MaxValue, BinOp.op_min)
+  def sum(a:GDMat):GDMat            = a.reduceOp(null, 0, 0.0, BinOp.op_add)
   
   def max(a:GDMat, b:GDMat, out:Mat):GDMat    = a.gOp(b, out, BinOp.op_max)
   def min(a:GDMat, b:GDMat, out:Mat):GDMat    = a.gOp(b, out, BinOp.op_min)
@@ -2387,12 +2576,12 @@ object SciFunctions {
   def min(a:GDMat, b:FMat, out:Mat):GDMat    = a.gOp(GDMat(b), out, BinOp.op_min)
   def max(a:FMat, b:GDMat, out:Mat):GDMat    = GDMat(a).gOp(b, out, BinOp.op_max)
   def min(a:FMat, b:GDMat, out:Mat):GDMat    = GDMat(a).gOp(b, out, BinOp.op_min)
-  def maxi(a:GDMat, dir:Int, out:Mat):GDMat  = a.reduceOp(out, dir, BinOp.op_max)
-  def mini(a:GDMat, dir:Int, out:Mat):GDMat  = a.reduceOp(out, dir, BinOp.op_min)
-  def sum(a:GDMat, dir:Int, out:Mat):GDMat   = a.reduceOp(out, dir, BinOp.op_add)
-  def maxi(a:GDMat, out:Mat):GDMat           = a.reduceOp(out, 0, BinOp.op_max)
-  def mini(a:GDMat, out:Mat):GDMat           = a.reduceOp(out, 0, BinOp.op_min)
-  def sum(a:GDMat, out:Mat):GDMat            = a.reduceOp(out, 0, BinOp.op_add)
+  def maxi(a:GDMat, dir:Int, out:Mat):GDMat  = a.reduceOp(out, dir, Double.MinValue, BinOp.op_max)
+  def mini(a:GDMat, dir:Int, out:Mat):GDMat  = a.reduceOp(out, dir, Double.MaxValue, BinOp.op_min)
+  def sum(a:GDMat, dir:Int, out:Mat):GDMat   = a.reduceOp(out, dir, 0.0, BinOp.op_add)
+  def maxi(a:GDMat, out:Mat):GDMat           = a.reduceOp(out, 0, Double.MinValue, BinOp.op_max)
+  def mini(a:GDMat, out:Mat):GDMat           = a.reduceOp(out, 0, Double.MaxValue, BinOp.op_min)
+  def sum(a:GDMat, out:Mat):GDMat            = a.reduceOp(out, 0, 0.0, BinOp.op_add)
      
   def sum(a:GSDMat) = a.sum(0, null)
   def sum(a:GSDMat, n:Int) = a.sum(n, null)

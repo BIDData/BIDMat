@@ -334,6 +334,16 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     this
   }
   
+  override def colslice(a:Int, b:Int, omat:Mat):GIMat = {
+    val out = GIMat.newOrCheckGIMat(nrows, b-a, omat, GUID, a, "colslice".##);
+    cudaMemcpy(out.data, data.withByteOffset(1L*a*nrows*Sizeof.FLOAT), 1L*(b-a)*nrows*Sizeof.FLOAT, cudaMemcpyDeviceToDevice);
+    out
+  }
+  
+  override def colslice(a:Int, b:Int):GIMat = {   
+    colslice(a, b, null)
+  }
+  
   override def clear = {
   	cudaMemset(data, 0, Sizeof.INT*length)
   	cudaDeviceSynchronize
@@ -359,6 +369,26 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     CUMAT.setival(data, v, length)
     cudaDeviceSynchronize
     this
+  }
+  
+   def reduceOp(oldmat:Mat, dir:Int, initval:Int, op:Int):GIMat = {
+    if (dir == 1 || (dir == 0 && nrows > 1)) {
+      val out = GIMat.newOrCheckGIMat(1, ncols, oldmat, GUID, 1, op) 
+      out.clear
+      val err = CUMAT.reduce1iop(nrows, ncols, data, out.data, initval, op)
+      if (err != 0) {throw new RuntimeException("CUDA kernel error in CUMAT.reduce1op " + cudaGetErrorString(err))}
+      Mat.nflops += length
+      out
+    } else if (dir == 2 || dir == 0) {
+      val out = GIMat.newOrCheckGIMat(nrows, 1, oldmat, GUID, 2, op)  
+      out.clear
+      val err = CUMAT.reduce2iop(nrows, ncols, data, out.data, initval, op)
+      if (err != 0) {throw new RuntimeException("CUDA kernel error in CUMAT.reduce2op " + cudaGetErrorString(err))}
+      Mat.nflops += length
+      out
+    } else {
+      throw new RuntimeException("dimension must be 1 or 2");
+    }
   }
   
   def horzcat(a:GIMat, omat:Mat) = {
@@ -516,6 +546,7 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cumsumKey dimensions mismatch");
     val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
+    Mat.nflops += 2L*length;
     if (nrows == 1 || ncols == 1) {
       val err = CUMAT.cumsumByKeyII(data, keys.data, out.data, llength);
       if (err != 0) throw new RuntimeException("CUMAT.cumsumByKeyII error " + cudaGetErrorString(err));
@@ -534,6 +565,7 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cumsumKey dimensions mismatch");
     val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
+    Mat.nflops += 2L*length;
     if (nrows == 1 || ncols == 1) {
       val err = CUMAT.cumsumByKeyII(data, keys.data, out.data, llength);
       if (err != 0) throw new RuntimeException("CUMAT.cumsumByKeyII error " + cudaGetErrorString(err));
@@ -551,6 +583,103 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   def cumsumByKey(keys:GIMat):GIMat = cumsumByKey(keys, null);
     
   def cumsumByKey(keys:GMat):GIMat = cumsumByKey(keys, null);
+  
+  def cummaxByKey(keys:GIMat, omat:Mat):GIMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cummaxKey dimensions mismatch");
+    val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, GUID, keys.GUID, "cummaxKey".##);
+    Mat.nflops += 2L*length;
+    if (nrows == 1 || ncols == 1) {
+      val err = CUMAT.cummaxByKeyII(data, keys.data, out.data, llength);
+      if (err != 0) {
+        throw new RuntimeException("CUMAT.cummaxByKey error " + cudaGetErrorString(err))
+      }
+    } else {
+      val tmp = GLMat(nrows, ncols);
+      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+      if (err == 0) err = CUMAT.cummaxByKeyIL(data, tmp.data, out.data, llength);
+      if (err != 0) {
+        throw new RuntimeException("CUMAT.cummaxByKey error " + cudaGetErrorString(err))
+      }      
+      tmp.free;
+    }
+    out  
+  }
+  
+  def cummaxByKey(keys:GMat, omat:Mat):GIMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cummaxKey dimensions mismatch");
+    val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, GUID, keys.GUID, "cummaxKey".##);
+    Mat.nflops += 2L*length;
+    if (nrows == 1 || ncols == 1) {
+      val err = CUMAT.cummaxByKeyII(data, keys.data, out.data, llength);
+      if (err != 0) {
+        throw new RuntimeException("CUMAT.cummaxByKey error " + cudaGetErrorString(err))
+      }
+    } else {
+      val tmp = GLMat(nrows, ncols);
+      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+      if (err == 0) err = CUMAT.cummaxByKeyFL(data, tmp.data, out.data, llength);
+      if (err != 0) {
+        throw new RuntimeException("CUMAT.cummaxByKey error " + cudaGetErrorString(err))
+      }
+      tmp.free;
+    }
+    out  
+  }
+  
+  def cummaxByKey(keys:GMat):GIMat = cummaxByKey(keys, null);
+    
+  def cummaxByKey(keys:GIMat):GIMat = cummaxByKey(keys, null);
+  
+  def cumminByKey(keys:GMat, omat:Mat):GIMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cumminKey dimensions mismatch");
+    val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, GUID, keys.GUID, "cumminKey".##);
+    Mat.nflops += 2L*length;
+    if (nrows == 1 || ncols == 1) {
+      val err = CUMAT.cumminByKeyII(data, keys.data, out.data, llength);
+      if (err != 0) {
+        throw new RuntimeException("CUMAT.cumminByKey error " + cudaGetErrorString(err))
+      }
+    } else {
+      val tmp = GLMat(nrows, ncols);
+      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+      if (err == 0) err = CUMAT.cumminByKeyIL(data, tmp.data, out.data, llength);
+      if (err != 0) {
+        throw new RuntimeException("CUMAT.cumminByKey error " + cudaGetErrorString(err))
+      }      
+      tmp.free;
+    }
+    out  
+  }
+  
+  def cumminByKey(keys:GIMat, omat:Mat):GIMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cumminKey dimensions mismatch");
+    val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, GUID, keys.GUID, "cumminKey".##);
+    Mat.nflops += 2L*length;
+    if (nrows == 1 || ncols == 1) {
+      val err = CUMAT.cumminByKeyII(data, keys.data, out.data, llength);
+      if (err != 0) {
+        throw new RuntimeException("CUMAT.cumminByKey error " + cudaGetErrorString(err))
+      }
+    } else {
+      val tmp = GLMat(nrows, ncols);
+      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+      if (err == 0) err = CUMAT.cumminByKeyIL(data, tmp.data, out.data, llength);
+      if (err != 0) {
+        throw new RuntimeException("CUMAT.cumminByKey error " + cudaGetErrorString(err))
+      }
+      tmp.free;
+    }
+    out  
+  }
+  
+  def cumminByKey(keys:GMat):GIMat = cumminByKey(keys, null);
+    
+  def cumminByKey(keys:GIMat):GIMat = cumminByKey(keys, null);
+
   
   def _reverse(omat:Mat):GIMat = {
     val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, GUID,  "reverse".##);

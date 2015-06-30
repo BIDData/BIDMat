@@ -1,11 +1,5 @@
 void setsizesD(long long N, dim3 *gridp, int *nthreadsp);
 
-int apply_binop(double *nativeA, int Anrows, int Ancols, double *nativeB, int Bnrows, int Bncols, double *nativeC, int opn);
-
-int sdoprow(int nrows, int ncols, int nnz, double *A, int *Aic, double *B, int len, int opn);
-
-int sdopcol(int nrows, int ncols, int nnz, double *A, int *Aic, double *B, int len, int opn);
-
 int copyFromInds(double *A, double *B, int *I, long long len);
 
 int copyToInds(double *A, double *B, int *I, long long len);
@@ -26,10 +20,6 @@ int toInt(double *A, int *B, int N);
 
 int initSeq(int *A, int nrows, int ncols);
 
-int apply_gfun(double *nativeA, double *nativeB, int N, int opn);
-
-int apply_gfun2(double *nativeA, double *nativeB, double *nativeC, int N, int opn);
-
 int dsmult(int nrows, int ncols, int nnz, double *A, double *Bdata, int *Bir, int *Bic, double *C);
 
 int dsmult_tune(int nrows, int ncols, int nnz, double *A, double *Bdata, int *Bir, int *Bic, double *C, int nblocks, int nthreads);
@@ -43,14 +33,6 @@ int spsum(int nrows, int ncols, int nnz, int *Air, int *Aic, double *P, double *
 int dds(int nrows, int nnz, double *A, double *B, int *Cir, int *Cic, double *P);
 
 int dds0(int nrows, int ncols, double *A, double *B, int *Cir, int *Cic, double *P);
-
-int reduce1op(int nrows, int ncols, double *A, double *B, int opn);
-
-int reduce2op(int nrows, int ncols, double *A, double *B, int opn);
-
-int reducebin1op(int nrows, int ncols, double *A, double *B, double *C, int opb, int opr);
-
-int reducebin2op(int nrows, int ncols, double *A, double *B, double *C, int opb, int opr);
 
 int transpose(double *in, int instride, double *out, int outstride, int nrows, int ncols);
 

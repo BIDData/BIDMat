@@ -5,5 +5,5 @@ import BIDMat.Solvers._
 import BIDMat.Plotting._
 
 Mat.checkMKL
-Mat.checkCUDA
+Mat.checkCUDA(true)
 

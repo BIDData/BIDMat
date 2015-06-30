@@ -326,6 +326,26 @@ class GLMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     this
   }
   
+  def reduceOp(oldmat:Mat, dir:Int, initval:Long, op:Int):GLMat = {
+    if (dir == 1 || (dir == 0 && nrows > 1)) {
+      val out = GLMat.newOrCheckGLMat(1, ncols, oldmat, GUID, 1, op) 
+      out.clear
+      val err = CUMAT.reduce1lop(nrows, ncols, data, out.data, initval, op)
+      if (err != 0) {throw new RuntimeException("CUDA kernel error in CUMAT.reduce1op " + cudaGetErrorString(err))}
+      Mat.nflops += length
+      out
+    } else if (dir == 2 || dir == 0) {
+      val out = GLMat.newOrCheckGLMat(nrows, 1, oldmat, GUID, 2, op)  
+      out.clear
+      val err = CUMAT.reduce2lop(nrows, ncols, data, out.data, initval, op)
+      if (err != 0) {throw new RuntimeException("CUDA kernel error in CUMAT.reduce2op " + cudaGetErrorString(err))}
+      Mat.nflops += length
+      out
+    } else {
+      throw new RuntimeException("dimension must be 1 or 2")
+    }
+  }
+  
   def horzcat(a:GLMat, omat:Mat) = {
     if (nrows != a.nrows)
       throw new RuntimeException("GMat \\ row dims not equal")
@@ -424,6 +444,7 @@ class GLMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cumsumKey dimensions mismatch");
     val out = GLMat.newOrCheckGLMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
+    Mat.nflops += 2L*length;
     if (nrows == 1 || ncols == 1) {
       CUMATD.cumsumByKeyLL(data, keys.data, out.data, llength);
     } else {
@@ -433,6 +454,36 @@ class GLMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   }
   
   def cumsumByKey(keys:GLMat):GLMat = cumsumByKey(keys, null);
+    
+  def cummaxByKey(keys:GLMat, omat:Mat):GLMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cummaxKey dimensions mismatch");
+    val out = GLMat.newOrCheckGLMat(nrows, ncols, omat, GUID, keys.GUID, "cummaxKey".##);
+    Mat.nflops += 2L*length;
+    if (nrows == 1 || ncols == 1) {
+      CUMATD.cummaxByKeyLL(data, keys.data, out.data, llength);
+    } else {
+      throw new RuntimeException("cummaxByKey only implemented for GLMat vectors");
+    }
+    out  
+  }
+  
+  def cummaxByKey(keys:GLMat):GLMat = cummaxByKey(keys, null);
+   
+  def cumminByKey(keys:GLMat, omat:Mat):GLMat = {
+    if (nrows != keys.nrows || ncols != keys.ncols) 
+      throw new RuntimeException("cumminKey dimensions mismatch");
+    val out = GLMat.newOrCheckGLMat(nrows, ncols, omat, GUID, keys.GUID, "cumminKey".##);
+    Mat.nflops += 2L*length;
+    if (nrows == 1 || ncols == 1) {
+      CUMATD.cumminByKeyLL(data, keys.data, out.data, llength);
+    } else {
+      throw new RuntimeException("cumminByKey only implemented for GLMat vectors");
+    }
+    out  
+  }
+  
+  def cumminByKey(keys:GLMat):GLMat = cumminByKey(keys, null);
   
   def _reverse(omat:Mat):GLMat = {
     val out = GLMat.newOrCheckGLMat(nrows, ncols, omat, GUID,  "reverse".##);
