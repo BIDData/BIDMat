@@ -1,0 +1,32 @@
+
+import BIDMat.TMat
+
+
+val a = rand(4,4);
+println(a);
+
+val b = TMat(4,4,Array(0,1,0,1),Array(0,0,1,1),Array(a(0 to 1,0 to 1), 
+                                                       a(0 to 1,1 to 3),
+                                                       a(1 to 3,0 to 1),
+                                                       a(1 to 3,1 to 3)));
+
+println(b.full);
+
+val elt = a *@ a;
+println(elt);
+
+val elt2 = b *@ b;
+println(elt2);
+
+val sqrt = c ^ (0.5);
+println(sqrt);
+
+val sqrt2 = b ^ (0.5);
+println(sqrt2);
+
+val d = a.copy;
+val e = b.copy;
+
+println(d);
+println(e.full);
+
