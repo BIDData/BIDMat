@@ -742,6 +742,7 @@ class SparseMat[@specialized(Double,Float) T]
 
   def full(mat:Mat):DenseMat[T] = { 
     val out = DenseMat.newOrCheck(nrows, ncols, mat, GUID, "full".hashCode)
+    out.clear
     val ioff = Mat.ioneBased
     if (ir != null) {
     	val cols = SparseMat.uncompressInds(jc, ncols, ir)

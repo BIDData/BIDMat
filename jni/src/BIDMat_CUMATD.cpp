@@ -52,41 +52,6 @@ extern "C" {
     return initSeq(A, nrows, ncols);
   }
 
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_applyop 
-  (JNIEnv *env, jobject obj, jobject jA, jint Anrows, jint Ancols, 
-   jobject jB, jint Bnrows, jint Bncols, jobject jC, jint opn) 
-  {
-    double *nativeA = (double*)getPointer(env, jA);
-    double *nativeB = (double*)getPointer(env, jB);
-    double *nativeC = (double*)getPointer(env, jC);
-
-    return apply_binop(nativeA, Anrows, Ancols, nativeB, Bnrows, Bncols, nativeC, opn);
-  }
-
-
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_sdopcol
-  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jint nnz, jobject jA, jobject jAir,
-   jobject jB, jint len, jint opn) 
-  {
-    double *A = (double*)getPointer(env, jA);
-    int *Air = (int*)getPointer(env, jAir);
-    double *B = (double*)getPointer(env, jB);
-
-    return sdopcol(nrows, ncols, nnz, A, Air, B, len, opn);
-  }
-
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_sdoprow
-  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jint nnz, jobject jA, jobject jAic,
-   jobject jB, jint len, jint opn) 
-  {
-    double *A = (double*)getPointer(env, jA);
-    int *Aic = (int*)getPointer(env, jAic);
-    double *B = (double*)getPointer(env, jB);
-
-    return sdoprow(nrows, ncols, nnz, A, Aic, B, len, opn);
-  }
-
-
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_full
   (JNIEnv *env, jobject obj, jobject jir, jobject jic, jobject jdata, jobject jod,
    jint nrows, jint ncols, jint nnz)
@@ -142,25 +107,6 @@ extern "C" {
     int *J = (int*)getPointer(env, jJ);
 
     return copyFromInds2D(A, lda, B, ldb, I, nrows, J, ncols);
-  }
-
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_applygfun
-  (JNIEnv *env, jobject obj, jobject jA, jobject jB, jint N, jint opn) 
-  {
-    double *nativeA = (double*)getPointer(env, jA);
-    double *nativeB = (double*)getPointer(env, jB);
-
-    return apply_gfun(nativeA, nativeB, N, opn);
-  }
-
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_applygfun2
-  (JNIEnv *env, jobject obj, jobject jA, jobject jB, jobject jC, jint N, jint opn) 
-  {
-    double *nativeA = (double*)getPointer(env, jA);
-    double *nativeB = (double*)getPointer(env, jB);
-    double *nativeC = (double*)getPointer(env, jC);
-
-    return apply_gfun2(nativeA, nativeB, nativeC, N, opn);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_dsmult
