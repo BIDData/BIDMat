@@ -692,7 +692,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
       val err = CUMAT.applyop(data, nrows, ncols, a.data, a.nrows, a.ncols, out.data, op)
       if (err != 0) {throw new RuntimeException("GMult: CUDA kernel error in CUMAT.applyop")}
       out
-    }	else throw new RuntimeException("dimensions mismatch")
+    }	else throw new RuntimeException("dimensions mismatch (%d, %d) (%d, %d)" format (nrows, ncols, a.nrows, a.ncols))
   }
   
   def dot (a:GMat, oldmat:Mat):GMat = 

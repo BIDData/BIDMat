@@ -6,6 +6,8 @@ import jcuda.NativePointerObject
 class Mat(nr:Int, nc:Int) {
   val nrows = nr
   val ncols = nc
+  
+  def dims:(Int, Int) = (nr, nc)
 
   def length = nr*nc
   
