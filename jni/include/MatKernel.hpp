@@ -62,6 +62,9 @@ int floatToLong(float *A, long long *B, int N);
 
 int toInt(float *A, int *B, int N);
 
+template <typename T>
+int kron(T *A, T *B, T *C, int nrA, int ncA, int nrB, int ncB);
+
 int initSeq(int *A, int nrows, int ncols);
 
 int apply_gfun(float *nativeA, float *nativeB, int N, int opn);
@@ -151,6 +154,10 @@ int accum(int *I, int *J, long long V, long long *S, int m, int nrows);
 int accum(int *I, int J, long long V, long long *S, int m, int nrows);
 
 int accum(int I, int *J, long long V, long long *S, int m, int nrows);
+
+int cumsumByKey(float *V, float *K, float *OUT, int nrows, int ncols);
+
+int cumsum2ByKey(float *V, float *K, float *OUT, int nrows, int ncols);
 
 int cumsumgf(float *in, float *out, int *jc, int nrows, int ncols, int m);
 

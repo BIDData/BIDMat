@@ -1269,6 +1269,7 @@ object DMat {
       case ii:LMat => {Mat.copyToDoubleArray(ii.data, 0, out.data, 0, ii.length)}
       case ss:SDMat => ss.full(out)
       case gg:GMat => {val ff = gg.toFMat(null); Mat.copyToDoubleArray(ff.data, 0, out.data, 0, ff.length)}
+      case gg:GDMat => gg.toDMat(out)
       case _ => throw new RuntimeException("Unsupported source type")
     }
     out

@@ -55,6 +55,10 @@ public final class CUMAT {
     
     public static native int setlval(Pointer A, long iv, int N);
     
+    public static native int kron(Pointer A, Pointer B, Pointer C, int nrA, int ncA, int nrB, int ncB);
+    
+    public static native int kroni(Pointer A, Pointer B, Pointer C, int nrA, int ncA, int nrB, int ncB);
+    
     public static native int reduce1op(int nr, int nc, Pointer A, Pointer B, float initv, int opn);
     
     public static native int reduce1iop(int nr, int nc, Pointer A, Pointer B, int initv, int opn);
@@ -282,6 +286,10 @@ public final class CUMAT {
     public static native int cumminByKeyFL(Pointer A, Pointer B, Pointer out, long len);
     
     public static native int cumminByKeyIL(Pointer A, Pointer B, Pointer out, long len);
+    
+    public static native int cumsumByKeyFFx(Pointer A, Pointer B, Pointer out, int nrows, int ncols);
+    
+    public static native int cumsum2ByKeyFF(Pointer A, Pointer B, Pointer out, int nrows, int ncols);
     
     public static native int reverse(Pointer A, Pointer out, long len);
 }

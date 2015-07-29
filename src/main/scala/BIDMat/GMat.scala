@@ -681,6 +681,14 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
     }	else throw new RuntimeException("dimensions mismatch")
   }
   
+  def kron(a:GMat, oldmat:Mat):GMat = {
+    val out = GMat.newOrCheckGMat(nrows * a.nrows, ncols * a.ncols, oldmat, GUID, a.GUID, "kron".##);
+    Mat.nflops += 1L * out.nrows * out.ncols;
+    val err = CUMAT.kron(data, a.data, out.data, nrows, ncols, a.nrows, a.ncols);
+    if (err != 0) throw new RuntimeException("kron: CUDA kernel error in CUMAT.kron " + cudaGetErrorString(err));
+    out;
+  }
+  
   def gOp(a:GMat, oldmat:Mat, op:Int):GMat = {
     if ((nrows == a.nrows && ncols == a.ncols) ||
         (nrows == a.nrows && (a.ncols == 1 || ncols == 1)) ||
@@ -1084,6 +1092,8 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
   def ^* (a : GMat) = GTMult(a, null)
   def *+^ (a : GMat) = GMST(a, null)
   def Tx (a : GMat) = GTMult(a, null)
+  def kron(a: GMat):GMat = kron(a, null)
+  def ⊗  (b : GMat) = kron(b, null)
   def + (a : GMat) = gOp(a, null, op_add)
   def - (a : GMat) = gOp(a, null, op_sub)
   def *@ (a : GMat) = gOp(a, null, op_mul)
@@ -1320,6 +1330,8 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
   def ^* (a : GMat) = mat.GTMult(a, omat)
   def *+^ (a : GMat) = mat.GMST(a, omat)
   def Tx (a : GMat) = mat.GTMult(a, omat)
+  def kron(a: GMat):GMat = mat.kron(a, omat)
+  def ⊗  (b : GMat) = mat.kron(b, omat)
 	def +  (a : GMat) = mat.gOp(a, omat, op_add)
 	def -  (a : GMat) = mat.gOp(a, omat, op_sub)
 	def *@ (a : GMat) = mat.gOp(a, omat, op_mul)

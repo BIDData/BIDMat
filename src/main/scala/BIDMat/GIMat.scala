@@ -371,6 +371,14 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     this
   }
   
+  def kron(a:GIMat, oldmat:Mat):GIMat = {
+    val out = GIMat.newOrCheckGIMat(nrows * a.nrows, ncols * a.ncols, oldmat, GUID, a.GUID, "kron".##);
+    Mat.nflops += 1L * out.nrows * out.ncols;
+    val err = CUMAT.kroni(data, a.data, out.data, nrows, ncols, a.nrows, a.ncols);
+    if (err != 0) throw new RuntimeException("kron: CUDA kernel error in CUMAT.kron " + cudaGetErrorString(err));
+    out;
+  }
+  
    def reduceOp(oldmat:Mat, dir:Int, initval:Int, op:Int):GIMat = {
     if (dir == 1 || (dir == 0 && nrows > 1)) {
       val out = GIMat.newOrCheckGIMat(1, ncols, oldmat, GUID, 1, op) 
@@ -699,6 +707,8 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   def *@ (a : GIMat) = GIop(a, null, op_mul)
   def ∘ (a : GIMat) = GIop(a, null, op_mul)
   def / (a : GIMat) = GIop(a, null, op_div)
+  def kron (a : GIMat):GIMat = kron(a, null)
+  def ⊗  (b : GIMat) = kron(b, null)
   def > (b : GIMat) = GIop(b, null, op_gt)
   def < (b : GIMat) = GIop(b, null, op_lt)
   def == (b : GIMat) = GIop(b, null, op_eq)
@@ -796,6 +806,8 @@ class GIPair (val omat:Mat, val mat:GIMat) extends Pair{
 	def *@ (a : GIMat) = mat.GIop(a, omat, op_mul)
   def ∘ (a : GIMat) = mat.GIop(a, omat, op_mul)
 	def / (a : GIMat) = mat.GIop(a, omat, op_div)
+	def kron (a : GIMat) = mat.kron(a, omat)
+	def ⊗  (b : GIMat) = mat.kron(b, omat)
 	def > (b : GIMat) = mat.GIop(b, omat, op_gt)
 	def < (b : GIMat) = mat.GIop(b, omat, op_lt)
 	def == (b : GIMat) = mat.GIop(b, omat, op_eq)

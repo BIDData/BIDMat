@@ -441,6 +441,143 @@ ACCUM_KERNEL(int*I, int*J, unsigned long long V, unsigned long long*S, I[i], J[i
 ACCUM_KERNEL(int*I, int J, unsigned long long V, unsigned long long*S, I[i], J,    V)
 ACCUM_KERNEL(int I, int*J, unsigned long long V, unsigned long long*S, I,    J[i], V)
 
+#define sum(A,B) ((A) + (B))
+
+#if __CUDA_ARCH__ >= 300 
+
+#define CUMOP_GPU_KERNEL(TVAL,TKEY,OPER)                                                       \
+__global__ void __cum##OPER##ByKey(TVAL *vals, TKEY *keys, TVAL *ovals, int nrows, int ncols) {\
+  int bid = threadIdx.y + blockDim.y * blockIdx.x;                                             \
+  int nb = blockDim.y * gridDim.x;                                                             \
+  int istart = ((int)(((long long)bid) * ncols / nb));                                         \
+  int iend = ((int)(((long long)bid + 1) * ncols / nb));                                       \
+  TVAL sum, v, lastv;								               \
+  TKEY key, lastk, oldkey;							               \
+  for (int i = istart; i < iend; i++) {                                                        \
+     sum = 0;                                                                                  \
+     int icol = i * nrows;                                                                     \
+     for (int j = 0; j < nrows; j += blockDim.x) {                                             \
+       if (threadIdx.x + j < nrows) {                                                          \
+	 v = vals[threadIdx.x + j + icol];                                                     \
+         key = keys[threadIdx.x + j + icol];                                                   \
+       }                                                                                       \
+       if (j == 0) oldkey = key - 1;                                                           \
+       lastk = __shfl_up(key, 1);	                                                       \
+       lastv = __shfl_up(v, 1);						                       \
+       if (threadIdx.x == 0) {                                                                 \
+	 lastv = sum;                                                                          \
+	 lastk = oldkey;                                                                       \
+       }                                                                                       \
+       if (key == lastk) {		                         			       \
+	 v = OPER(v, lastv);	                                                               \
+       }								                       \
+       for (int k = 2; k < 32; k += k) {                                                       \
+	 lastk = __shfl_up(key, k);                                                            \
+	 lastv = __shfl_up(v, k);                                                              \
+	 if (threadIdx.x >= k) {                                                               \
+           if (key == lastk) {                                                                 \
+	     v = OPER(v, lastv);                                                               \
+	   }                                                                                   \
+	 }                                                                                     \
+       }                                                                                       \
+       if (threadIdx.x + j < nrows) {                                                          \
+	 ovals[threadIdx.x + j + icol] = v;                                                    \
+       }                                                                                       \
+       sum = __shfl(v, 31);                                                                    \
+       oldkey = __shfl(key, 31);                                                               \
+     }                                                                                         \
+  }                                                                                            \
+}                                                                                              
+
+#else 
+#define CUMOP_GPU_KERNEL(TVAL,TKEY,OPER)                                                       \
+__global__ void __cum##OPER##ByKey(TVAL *vals, TKEY * keys, TVAL *ovals, int nrows, int ncols) {\
+  if (threadIdx.x == 0 && blockIdx.x == 0)                                                     \
+     printf("cumop not implemented on pre-300 architectures");                                 \
+ }
+
+#endif
+
+#define CUMOP_HOST_KERNEL(TVAL,TKEY,OPER)                                                      \
+int cum##OPER##ByKey(TVAL *vals, TKEY * keys, TVAL *ovals, int nrows, int ncols) {             \
+  int nthreads = 32;                                                                           \
+  int nblocks = max(1, min(4096, ncols));                                                      \
+  __cum##OPER##ByKey<<<nblocks,nthreads>>>(vals, keys, ovals, nrows, ncols);                   \
+  cudaDeviceSynchronize();                                                                     \
+  cudaError_t err = cudaGetLastError();                                                        \
+  return err;                                                                                  \
+}
+
+CUMOP_GPU_KERNEL(float, float, sum)
+CUMOP_GPU_KERNEL(float, int, sum)
+CUMOP_GPU_KERNEL(float, long long, sum)
+CUMOP_GPU_KERNEL(int, int, sum)
+
+CUMOP_GPU_KERNEL(float, float, max)
+CUMOP_GPU_KERNEL(float, int, max)
+CUMOP_GPU_KERNEL(float, long long, max)
+CUMOP_GPU_KERNEL(int, int, max)
+
+CUMOP_GPU_KERNEL(float, float, min)
+CUMOP_GPU_KERNEL(float, int, min)
+CUMOP_GPU_KERNEL(float, long long, min)
+CUMOP_GPU_KERNEL(int, int, min)
+
+CUMOP_HOST_KERNEL(float, float, sum)
+CUMOP_HOST_KERNEL(float, int, sum)
+CUMOP_HOST_KERNEL(float, long long, sum)
+CUMOP_HOST_KERNEL(int, int, sum)
+
+CUMOP_HOST_KERNEL(float, float, max)
+CUMOP_HOST_KERNEL(float, int, max)
+CUMOP_HOST_KERNEL(float, long long, max)
+CUMOP_HOST_KERNEL(int, int, max)
+
+CUMOP_HOST_KERNEL(float, float, min)
+CUMOP_HOST_KERNEL(float, int, min)
+CUMOP_HOST_KERNEL(float, long long, min)
+CUMOP_HOST_KERNEL(int, int, min)
+
+#define CUMOP2_KERNEL(TVAL,TKEY,OPER)								    \
+__global__ void __cum##OPER##2ByKey(TVAL *vals, TKEY *keys, TVAL *ovals, int nrows, int ncols) {    \
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);			    \
+  int nb = blockDim.x * gridDim.x * gridDim.y;							    \
+  TVAL sum, v;											    \
+  TKEY key, oldkey;										    \
+  for (int i = 0; i < nrows; i += nb) {								    \
+    for (int j = 0; j < ncols; j++) {								    \
+      int jcol = j * nrows;									    \
+      if (tid < nrows) {									    \
+	v = vals[tid + jcol];									    \
+	key = keys[tid + jcol];									    \
+	if (j == 0) {										    \
+	  oldkey = key - 1;									    \
+	  sum = 0;										    \
+	}											    \
+	if (oldkey == key) {									    \
+	  sum = OPER(sum, v);     								    \
+	} else {										    \
+	  sum = v;										    \
+	}											    \
+	ovals[tid + jcol] = sum;								    \
+	oldkey = key;            								    \
+      }												    \
+    }												    \
+  }												    \
+}                                                                                                   \
+int cum##OPER##2ByKey(TVAL *vals, TKEY *keys, TVAL *ovals, int nrows, int ncols) {		    \
+  int nthreads = min(1024, ((nrows-1)/32+1) * 32);						    \
+  int nblocks = min(32768, 1 + (nrows-1)/nthreads);						    \
+  __cum##OPER##2ByKey<<<nblocks,nthreads>>>(vals, keys, ovals, nrows, ncols);			    \
+  cudaDeviceSynchronize();									    \
+  cudaError_t err = cudaGetLastError();								    \
+  return err;											    \
+}
+
+CUMOP2_KERNEL(float,float,sum);
+
+    
+  
 
 int collectLVec(long long *pakeys, unsigned int *pavals, long long *pokeys, unsigned int *povals, int n) {
   thrust::device_ptr<long long> akeys(pakeys);
