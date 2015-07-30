@@ -170,7 +170,7 @@ __global__ void __binornd(int nrows, int ncols, float *A, int atype, int *C, int
     Out[j] = (int)X;
   }
 }
-
+ 
 int binornd(int nrows, int ncols, float *A, int atype, int *C, int ctype, int *Out) {
   int nvals = nrows * ncols;
   int nthreads = min(256, 32*(1+(nvals-1)/32));  // at least nvals, round up to a multiple of 32 l.e. 256
@@ -185,6 +185,87 @@ int binornd(int nrows, int ncols, float *A, int atype, int *C, int ctype, int *O
   __randinit<<<nblocks,nthreads>>>(rstates); 
   cudaDeviceSynchronize(); 
   __binornd<<<nblocks,nthreads>>>(nrows, ncols, A, atype,  C, ctype, Out, rstates);
+  cudaDeviceSynchronize();
+  cudaFree(rstates);
+  err = cudaGetLastError();
+  return err;
+}
+
+
+__forceinline__ __device__ float __gamrnd1(float a, curandState *prstate) {
+  int small = 0;
+  if (a < 1.0f) {
+    small = 1;
+    a += 1;
+  }
+  float x = 0;
+  float d = a - 0.33333333f;
+  float c = 0.33333333f / sqrt(d);
+  while (1) {
+    float z = curand_normal(prstate);
+    float v = 1 + c * z;
+    x += 1;
+    if (v <= 0) continue;
+    x += 100;
+    float u = curand_uniform(prstate);
+    v = v*v*v;
+    //    x = d * v;
+    if (u < 1 - 0.0331f*z*z*z*z) break;
+    if (log(u) < 0.5f*z*z + d - x + d*log(v)) break;
+  }
+  if (small) {
+    a -= 1;
+    float u = curand_uniform(prstate);
+    //    x *= pow(u, 1/a);
+  }
+  return x;
+}
+
+__global__ void __gamrnd(int nrows, int ncols, float *A, int atype, float *B, int btype, float *Out, curandState *rstates) {
+  int nvals = nrows * ncols;
+  int id = threadIdx.x + blockIdx.x * blockDim.x;
+  float a, b, x;
+  curandState *rstate;
+  if (id < nvals) {                            // initialize the RNGs
+    rstate = &rstates[id];
+  }
+  x = 0;
+  for (int j = id; j < nvals; j += blockDim.x * gridDim.x) {
+    int jcol = j / nrows;
+    int jrow = j - jcol * nrows;
+    switch (atype) {                           // atype and ctype determine whether these inputs are elements, rows, columns or matrices.
+    case 0: a = A[0]; break;
+    case 1: a = A[jrow]; break;
+    case 2: a = A[jcol]; break;
+    case 3: a = A[j];
+    }
+    switch (btype) {
+    case 0: b = B[0]; break;
+    case 1: b = B[jrow]; break;
+    case 2: b = B[jcol]; break;
+    case 3: b = B[j];
+    }
+    x = __gamrnd1(a, rstate);
+    Out[j] = x * b;
+  }
+}
+
+
+
+int gamrnd(int nrows, int ncols, float *A, int atype, float *B, int btype, float *Out) {
+  int nvals = nrows * ncols;
+  int nthreads = min(256, 32*(1+(nvals-1)/32));  // at least nvals, round up to a multiple of 32 l.e. 256
+  int nblocks = min(128, 1 + (nvals-1)/nthreads/256);
+  curandState *rstates;
+  int err = cudaMalloc(( void **)& rstates , nthreads * nblocks * sizeof(curandState));
+  if (err > 0) {
+    fprintf(stderr, "Error in cudaMalloc %d", err);
+    return err;
+  }
+  cudaDeviceSynchronize();
+  __randinit<<<nblocks,nthreads>>>(rstates); 
+  cudaDeviceSynchronize(); 
+  __gamrnd<<<nblocks,nthreads>>>(nrows, ncols, A, atype,  B, btype, Out, rstates);
   cudaDeviceSynchronize();
   cudaFree(rstates);
   err = cudaGetLastError();

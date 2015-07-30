@@ -348,10 +348,27 @@ object SciFunctions {
     out;
   } 
 
-  def gbinornd(p:GMat, n:GIMat):GIMat = { 
-    val out = GIMat(p.nrows, p.ncols);
+  def gbinornd(p:GMat, n:GIMat):GIMat = {
+    val nrows = math.max(p.nrows, n.nrows);
+    val ncols = math.max(p.ncols, n.ncols);
+    val out = GIMat(nrows, ncols);
     gbinornd(p, n, out);
   } 
+  
+  def ggamrnd(a:GMat, b:GMat, out:GMat):GMat = { 
+    Mat.nflops += 100L*out.length;
+    val atype = getMatVecType(a);
+    val btype = getMatVecType(b);
+    CUMAT.gamrnd(out.nrows, out.ncols, a.data, atype, b.data, btype, out.data);
+    out;
+  } 
+
+  def ggamrnd(a:GMat, b:GMat):GMat = { 
+    val nrows = math.max(a.nrows, b.nrows);
+    val ncols = math.max(a.ncols, b.ncols);
+    val out = GMat(nrows, ncols);
+    ggamrnd(a, b, out);
+  }
 
   def gamrnd(shape:Float, scale:Float, out:FMat):FMat = {
     vsRngGamma( METHOD, stream, out.length, out.data, shape, 0, scale )

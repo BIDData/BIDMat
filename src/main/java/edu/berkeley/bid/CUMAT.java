@@ -251,6 +251,8 @@ public final class CUMAT {
 
     public static native int binornd(int nrows, int ncols, Pointer prob, int atype, Pointer N, int ctype, Pointer Out);
     
+    public static native int gamrnd(int nrows, int ncols, Pointer prob, int atype, Pointer B, int btype, Pointer Out);
+    
     public static native int collectLVec(Pointer pkeys, Pointer okeys, Pointer pvals, Pointer ovals, int n);
     
     public static native int mergeLVecs(Pointer akeys, Pointer avals, Pointer bkeys, Pointer bvals, Pointer okeys, Pointer ovals, int n1, int n2);

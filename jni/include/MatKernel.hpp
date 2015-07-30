@@ -247,6 +247,8 @@ int poissonrnd(int n, float *A, int *B, int nthreads);
 
 int binornd(int nrows, int ncols, float *A, int atype, int *C, int ctype, int *Out);
 
+int gamrnd(int nrows, int ncols, float *A, int atype, float *B, int btype, float *Out);
+
 int collectLVec(long long *pakeys, unsigned int *pavals, long long *pokeys, unsigned int *povals, int n);
 
 int mergeLVecs(long long *pakeys, unsigned int *pavals, long long *pbkeys, unsigned int *pbvals, long long *pokeys, unsigned int *povals, int n1, int n2);

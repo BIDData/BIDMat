@@ -1040,6 +1040,16 @@ extern "C" {
     return binornd(nrows, ncols, A, atype, C, ctype, Out);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_gamrnd
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jint atype, jobject jB, jint btype, jobject jOut)
+  {
+    float *A = (float*)getPointer(env, jA);
+    float *B = (float*)getPointer(env, jB);
+    float *Out = (float*)getPointer(env, jOut);
+
+    return gamrnd(nrows, ncols, A, atype, B, btype, Out);
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumsumc
   (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jobject jB, jint nvals)
   {
