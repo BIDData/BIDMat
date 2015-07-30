@@ -204,19 +204,17 @@ __forceinline__ __device__ float __gamrnd1(float a, curandState *prstate) {
   while (1) {
     float z = curand_normal(prstate);
     float v = 1 + c * z;
-    x += 1;
     if (v <= 0) continue;
-    x += 100;
     float u = curand_uniform(prstate);
     v = v*v*v;
-    //    x = d * v;
+    x = d * v;
     if (u < 1 - 0.0331f*z*z*z*z) break;
     if (log(u) < 0.5f*z*z + d - x + d*log(v)) break;
   }
   if (small) {
     a -= 1;
     float u = curand_uniform(prstate);
-    //    x *= pow(u, 1/a);
+    x *= pow(u, 1/a);
   }
   return x;
 }
