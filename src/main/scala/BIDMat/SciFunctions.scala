@@ -355,6 +355,21 @@ object SciFunctions {
     gbinornd(p, n, out);
   } 
   
+  def genericGammaRand(a:Mat, b:Mat, out:Mat):Mat = {
+    (a,b,out) match {
+      case (a:GMat, b:GMat, out:GMat) => ggamrnd(a,b,out)
+      case (a:FMat, b:FMat, out:FMat) => {
+        for (i <- 0 until a.nrows) {
+          for (j <- 0 until a.ncols) {
+            out(IMat(i),j) = gamrnd(a(i,j), b(i,j), out(i,j))
+          }
+        }
+        out
+      }
+      case _ => throw new RuntimeException("Error in genericGammaRand, arguments do not match any of the cases")
+    }
+  }
+  
   def ggamrnd(a:GMat, b:GMat, out:GMat):GMat = { 
     Mat.nflops += 100L*out.length;
     val atype = getMatVecType(a);
