@@ -842,3 +842,37 @@ int set_lval(long long *A, long long val, int length) {
   return err;
 }
 
+template <typename T>
+__global__ void __kron(T *A, T *B, T *C, int nrA, int ncA, int nrB, int ncB, int nr, int nc) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  int step = blockDim.x * gridDim.x * gridDim.y;
+  int r, rA, rB, c, cA, cB, i;
+  long long len = ((long long)nr) * nc;
+  for (i = tid; i < len; i += step) {
+    c = i / nr;
+    r = i - c * nr;
+    rA = r / nrB;
+    rB = r - rA * nrB;
+    cA = c / ncB;
+    cB = c - cA * ncB;
+    C[i] = A[rA + cA * nrA] * B[rB + cB * nrB];
+  }
+}
+
+template <typename T>
+int kron(T *A, T *B, T *C, int nrA, int ncA, int nrB, int ncB) {
+  int nr = nrA * nrB;
+  int nc = ncA * ncB;
+  long long len = ((long long)nr) * nc;
+  int nthreads;
+  dim3 griddims;
+  setsizes(len, &griddims, &nthreads);
+  __kron<<<griddims,nthreads>>>(A, B, C, nrA, ncA, nrB, ncB, nr, nc);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+template int kron<float>(float *A, float *B, float *C, int nrA, int ncA, int nrB, int ncB);
+
+template int kron<int>(int *A, int *B, int *C, int nrA, int ncA, int nrB, int ncB);

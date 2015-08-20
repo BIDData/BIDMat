@@ -410,21 +410,22 @@ class SparseMat[@specialized(Double,Float) T]
     var icol = 0
     while (innz < math.min(nnz, maxRows)) {
       while (innz >= jc(icol+1)-ioff) icol += 1
-      fieldWidth = math.max(fieldWidth, 2+printOne(ir(innz)).length)
+      fieldWidth = math.max(fieldWidth, if (ir != null) 2+printOne(ir(innz)).length else 2+printOne(jc(icol+1)-jc(icol)).length)
       fieldWidth = math.max(fieldWidth, 2+printOne(icol).length)
       fieldWidth = math.max(fieldWidth, 2+printOne(data(innz)).length)
       innz += 1
     }
-    innz = 0
-    icol = 0
+    innz = 0;
+    var innz0 = 0;
+    icol = 0;
     while (innz < math.min(nnz, maxRows)) {
-      while (innz >= jc(icol+1)-ioff) icol += 1
-      var str = printOne(ir(innz)-ioff)
-      sb.append("("+somespaces.substring(0,fieldWidth-str.length)+str)
-      str = printOne(icol)
-      sb.append(","+somespaces.substring(0,fieldWidth-str.length)+str)
-      str = printOne(data(innz))
-      sb.append(")"+somespaces.substring(0,fieldWidth-str.length)+str+"\n")
+      while (innz >= jc(icol+1)-ioff) {icol += 1; innz0 = innz}
+      var str = if (ir != null) printOne(ir(innz)-ioff) else printOne(innz-innz0);
+      sb.append("("+somespaces.substring(0,fieldWidth-str.length)+str);
+      str = printOne(icol);
+      sb.append(","+somespaces.substring(0,fieldWidth-str.length)+str);
+      str = printOne(data(innz));
+      sb.append(")"+somespaces.substring(0,fieldWidth-str.length)+str+"\n");
       innz += 1
     }
     if (nnz > maxRows) {

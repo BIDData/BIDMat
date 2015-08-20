@@ -7,7 +7,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/jhdf5.jar"/>
 	<classpathentry kind="lib" path="lib/ptplot.jar"/>
-	<classpathentry kind="lib" path="lib/jline-2.11.jar"/>
 	<classpathentry kind="lib" path="lib/scala-parser-combinators_2.11-1.0.2.jar"/>
 	<classpathentry kind="lib" path="lib/junit-4.11.jar"/>
 	<classpathentry kind="lib" path="lib/scalacheck_2.11-1.11.6.jar"/>
@@ -20,5 +19,6 @@
 	<classpathentry kind="lib" path="lib/jcurand-0.7.0a.jar"/>
 	<classpathentry kind="lib" path="lib/jcusolver-0.7.0a.jar"/>
 	<classpathentry kind="lib" path="lib/jcusparse-0.7.0a.jar"/>
+	<classpathentry kind="lib" path="lib/jline-2.12.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

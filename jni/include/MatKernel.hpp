@@ -62,6 +62,9 @@ int floatToLong(float *A, long long *B, int N);
 
 int toInt(float *A, int *B, int N);
 
+template <typename T>
+int kron(T *A, T *B, T *C, int nrA, int ncA, int nrB, int ncB);
+
 int initSeq(int *A, int nrows, int ncols);
 
 int apply_gfun(float *nativeA, float *nativeB, int N, int opn);
@@ -152,6 +155,10 @@ int accum(int *I, int J, long long V, long long *S, int m, int nrows);
 
 int accum(int I, int *J, long long V, long long *S, int m, int nrows);
 
+int cumsumByKey(float *V, float *K, float *OUT, int nrows, int ncols);
+
+int cumsum2ByKey(float *V, float *K, float *OUT, int nrows, int ncols);
+
 int cumsumgf(float *in, float *out, int *jc, int nrows, int ncols, int m);
 
 int cumsumgi(int *in, int *out, int *jc, int nrows, int ncols, int m);
@@ -239,6 +246,8 @@ int dmv(float *A, int nr, int nc, float *B, float *C, int trans);
 int poissonrnd(int n, float *A, int *B, int nthreads);
 
 int binornd(int nrows, int ncols, float *A, int atype, int *C, int ctype, int *Out);
+
+int gamrnd(int nrows, int ncols, float *A, int atype, float *B, int btype, float *Out);
 
 int collectLVec(long long *pakeys, unsigned int *pavals, long long *pokeys, unsigned int *povals, int n);
 
