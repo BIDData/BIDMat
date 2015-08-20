@@ -22,7 +22,7 @@ import scala.collection.mutable.ArrayBuffer
  * y(i) is the Mat.oneBased row index of the top left corner of tile i.
  *
  * y should be passed in sorted, and contiguous x's with the same
- * y value should also be sorted
+ * y value should also be sorted (thus the order is lexicographic with priority on y)
  *
  * We will check for this in the future.
  * Also, there is currently no overlap checking.
@@ -135,10 +135,14 @@ class TMat
     }
   }
 
-  def full() : FMat = full(null)
+  def full() : Mat = full(null)
 
-  def full(mat:Mat) : FMat  = {
-    val out = FMat.newOrCheckFMat(nrows, ncols, mat, GUID, "full".hashCode)
+  def full(mat:Mat) : Mat  = {
+
+    val out = tiles(0) match {
+      case t0 : FMat => FMat.newOrCheckFMat(nrows, ncols, mat, GUID, "full".hashCode)
+      case t0 : GMat => GMat.newOrCheckGMat(nrows, ncols, mat, GUID, "full".hashCode)
+    }
     out.clear
 
     var i = 0
@@ -150,7 +154,13 @@ class TMat
                 val rowInds:IMat = IMat(fMat.nrows,1,(y(i) to y(i)+fMat.nrows).toArray)
                 val colInds:IMat = IMat(fMat.ncols,1,(x(i) to x(i)+fMat.ncols).toArray)
 
-                out._update(rowInds,colInds,fMat)
+                out(rowInds,colInds) = fMat
+                i += 1
+       case gMat : GMat =>          
+                val rowInds:IMat = IMat(gMat.nrows,1,(y(i) to y(i)+gMat.nrows).toArray)
+                val colInds:IMat = IMat(gMat.ncols,1,(x(i) to x(i)+gMat.ncols).toArray)
+
+                out(rowInds,colInds) = gMat
                 i += 1
        case _ => { throw new RuntimeException("no match in TMat.full for tiles " + i); }
         }
@@ -165,11 +175,14 @@ class TMat
  * We call tileMult repeatedly
  * tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:FMat, broff:Int, bcoff:Int, c:FMat, croff:Int, ccoff:Int)
  * 
- * Result is an FMat
+ * Result is a Mat
+ *
+ * I couldn't figure out how to do tMult in place, so we need to use a tmp matrix.
+ * This makes the caching a bit more complicated than in the other mults
  *
  */ 
  
-def tMult(a:Mat, outmat:Mat) : FMat =  {
+def tMult(a:Mat, outmat:Mat, tmpmat: Mat) : Mat =  {
       if (ncols == 1 && nrows == 1){ // left scalar multiply
   		val out = FMat.newOrCheckFMat(a.nrows, a.ncols, outmat, GUID, a.GUID, "tMult".##)
   		Mat.nflops += a.length
@@ -207,34 +220,91 @@ def tMult(a:Mat, outmat:Mat) : FMat =  {
  */
   		out
       } else if (ncols == a.nrows) {
-         	var out = FMat.newOrCheckFMat(nrows, a.ncols, outmat, GUID, a.GUID, "tMult".##)
-                var tmp = FMat.newOrCheckFMat(nrows, a.ncols, null)
+               a match { 
+                  case aa : FMat => { 
+                     
+                     var (out,tmp) = 
+                       	(FMat.newOrCheckFMat(nrows, a.ncols, outmat, GUID, a.GUID, "tMult".##), FMat.newOrCheckFMat(nrows, a.ncols, tmpmat, GUID, a.GUID, "tMult".##));
+                                       
+                     var i = 0
+               
+                     while (i < tiles.length) {
+                          var m = tiles(i)
+                          tmp.clear
 
-                var i = 0
+            	 	  Mat.nflops += 2L * m.length * a.ncols
+                          if (!Mat.useMKL) {
+                            out  // not sure
+              		  } else {
+                            m.tileMult(m.nrows, a.ncols, m.ncols, 0, 0, a, x(i), 0, tmp, y(i), 0); 
+                            out += tmp
+        	          }
+                        i+= 1			 
+  	             }
+                     out
+                   }
+                  case aa : GMat => { 
 
-                while (i < tiles.length) {
-                  var m = tiles(i)
-                  tmp.clear
+                     var (out,tmp) = 
+                       	(GMat.newOrCheckGMat(nrows, a.ncols, outmat, GUID, a.GUID, "tMult".##), GMat.newOrCheckGMat(nrows, a.ncols, tmpmat, GUID, a.GUID, "tMult".##));
+                                       
+                     var i = 0
+                     out.clear
 
-		  Mat.nflops += 2L * m.length * a.ncols
-                  if (!Mat.useMKL) {
-                    // not sure
-                    out 
-		   } else {
-                          m.tileMult(m.nrows, a.ncols, m.ncols, 0, 0, a, x(i), 0, tmp, y(i), 0); 
-                          // println("m:   " + m);
-                          // println("a:   " + a);
-                          // println("x(i): " + x(i));
-                          // println("y(i): " + y(i));
-                          // println("tmp: " + tmp);
-                          out += tmp
-  	            }
-                  i+= 1			 
-	         }
-                out
+                     while (i < tiles.length) {
+                          var m = tiles(i)
+                          tmp.clear
+
+            	 	  Mat.nflops += 2L * m.length * a.ncols
+                          if (!Mat.useMKL) {
+                            out  // not sure
+              		  } else {
+                            m.tileMult(m.nrows, a.ncols, m.ncols, 0, 0, a, x(i), 0, tmp, y(i), 0); 
+                            out += tmp
+        	          }
+                        i+= 1			 
+  	             }
+                     out
+                   }
+                 }
       }	else throw new RuntimeException("dimension mismatch")    
-
+  
   }
+
+  def ~ (b: GMat) = new TGPair(this,b);
+  def ~ (b: FMat) = new TFPair(this,b);
+  def ~ (b: GSMat) = new TGSPair(this,b);
+  def ~ (b: SMat) = new TSPair(this,b);
+
+  override def ~ (b : Mat) : Pair = b match {
+    case bb:GMat => new TGPair(this,bb);
+    case bb:FMat => new TFPair(this,bb);
+    case bb:GSMat => new TGSPair(this,bb);
+    case bb:SMat => new TSPair(this,bb);
+  }
+
+  override def *@ (b : Mat) = Mop_ETimes.op(this, b, null)
+
+  def * (a : FMat) = tMult(a,null,null);
+  def * (a : GMat) = tMult(a,null,null);
+  def * (a : SMat) = tMult(a,null,null);
+  def * (a : GSMat) = tMult(a,null,null);
+
+}
+
+class TGPair(val left:TMat, val right:GMat) extends Pair {
+
+}
+
+class TFPair(val left:TMat, val right:FMat) extends Pair {
+
+}
+
+class TGSPair(val left:TMat, val right:GSMat) extends Pair {
+
+}
+
+class TSPair(val left:TMat, val right:SMat) extends Pair {
 
 }
  

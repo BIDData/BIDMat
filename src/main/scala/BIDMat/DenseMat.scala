@@ -499,7 +499,6 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
   /** Implement sliced assignment, a(iv,jv) = b where iv and jv are vectors, using ? as wildcard. */ 
   def _update(rowinds:IMat, colinds:IMat, b:DenseMat[T]):DenseMat[T] = {
   	val off = Mat.oneBased
-
   	rowinds match {
   	case dummy:MatrixWildcard => {
   		colinds match {
@@ -514,7 +513,6 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
   				throw new RuntimeException("dims mismatch in assignment")
   			}
   			var i = 0 
-
     		while (i < colinds.length) {
     			val c = colinds.data(i) - off
     		  if (c >= ncols) throw new RuntimeException("col index out of range %d %d" format (c, ncols))
@@ -572,7 +570,6 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
       case (me:DMat, bb:DMat) => me.update(iv, jv, bb):DMat
       case (me:IMat, bb:IMat) => me.update(iv, jv, bb):IMat
       case (me:CMat, bb:CMat) => me.update(iv, jv, bb):CMat
-      case (me,bb) => { println("no match for update: " + this + " with " + bb); this }
     }
   }
   
@@ -1228,22 +1225,6 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
    * 
    * @param a A matrix with the same dimensions and compatible type as this matrix.
    */
-
-  /*
-   *
-   * Below are attempts to make certain operations generic over DenseMats
-   * I am not sure that this is the right choice 
-   * @jcanny, please comment or fix. Can create an 
-   * issue if need be. 
-   */
-
-  override def notImplemented0(s:String):DenseMat[T] = { 
-    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
-  }
-  
-  def + (b : DenseMat[T]) = notImplemented0("+"); 
-  def fDMult(aa:DenseMat[T], outmat:Mat):DenseMat[T] = notImplemented0("full dense multiply");
-
   def ddot (a : DenseMat[T])(implicit numeric:Numeric[T]):Double = 
   	if (nrows != a.nrows || ncols != a.ncols) {
   		throw new RuntimeException("dot dims not compatible")
