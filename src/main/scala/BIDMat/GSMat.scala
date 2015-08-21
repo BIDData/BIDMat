@@ -65,6 +65,37 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     }
     out    
   }
+  
+  override def colslice(col1:Int, col2:Int, omat:Mat):GSMat = {
+    val locs = IMat(2,1);
+    cudaMemcpy(Pointer.to(locs.data), jc.withByteOffset(col1 * Sizeof.INT), Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost);
+    cudaMemcpy(Pointer.to(locs.data).withByteOffset(Sizeof.INT), jc.withByteOffset(col2 * Sizeof.INT), Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost);
+    cudaDeviceSynchronize();
+    val starti = locs(0);
+    val endi = locs(1);
+    val newnnz = endi - starti;
+    val newncols = col2 - col1;
+    val out = GSMat.newOrCheckGSMat(nrows, newncols, newnnz, newnnz, omat, GUID, col1, col2, "colslice".##);
+    var err = cudaMemcpy(out.jc, jc.withByteOffset(col1 * Sizeof.INT), 1L * Sizeof.INT * (newncols+1), cudaMemcpyKind.cudaMemcpyDeviceToDevice);
+    cudaDeviceSynchronize();
+    if (err == 0) err = cudaMemcpy(out.ir, ir.withByteOffset(starti*Sizeof.INT), 1L * Sizeof.INT * newnnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize();
+    if (err == 0) err = cudaMemcpy(out.ic, ic.withByteOffset(starti*Sizeof.INT), 1L * Sizeof.INT * newnnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize();
+    if (err == 0) err = cudaMemcpy(out.data, data.withByteOffset(starti*Sizeof.FLOAT), 1L * Sizeof.FLOAT * newnnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize();
+    val tjc = new GIMat(newncols+1, 1, out.jc, newncols + 1);
+    tjc ~ tjc - starti;
+    val cc = new GIMat(newnnz, 1, out.ic, newnnz);
+    cc ~ cc - col1;
+    if (err != 0) {
+        println("device is %d" format SciFunctions.getGPU)
+        throw new RuntimeException("Cuda error in GSMAT.colslice " + cudaGetErrorString(err))
+    }
+    out    
+  }
+  
+  override def colslice(col1:Int, col2:Int):GSMat = colslice(col1, col2, null);
       
   def toSMat():SMat = { 
     val out = SMat.newOrCheckSMat(nrows, ncols, nnz, null, GUID, "toSMat".##)
