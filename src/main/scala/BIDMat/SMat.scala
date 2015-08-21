@@ -45,20 +45,22 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   }
   
   override def ones(nr:Int, nc:Int) = {
-  	FMat.ones(nr, nc)
+  	FMat.ones(nr, nc);
   }
   
   override def izeros(m:Int, n:Int) = {
-    IMat.izeros(m,n)
+    IMat.izeros(m,n);
   }
   
   override def iones(m:Int, n:Int) = {
-    IMat.iones(m,n)
+    IMat.iones(m,n);
   }
   
-  override def colslice(a:Int, b:Int, out:Mat) = colslice(a, b, out, 0)
+  override def colslice(a:Int, b:Int, out:Mat):SMat = colslice(a, b, out, 0);
+  
+  override def colslice(a:Int, b:Int):SMat = colslice(a, b, null, 0);
      
-  override def colslice(col1:Int, col2:Int, omat:Mat, there:Int) = {
+  override def colslice(col1:Int, col2:Int, omat:Mat, there:Int):SMat = {
     val ioff = Mat.ioneBased
     val ms = if (omat.asInstanceOf[AnyRef] != null) {
       val mms = omat.asInstanceOf[SMat];

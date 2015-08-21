@@ -21,19 +21,21 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
   
   def find3:(IMat, IMat, DMat) = { val (ii, jj, vv) = gfind3 ; (IMat(ii), IMat(jj), DMat(vv)) }	
 
-  override def apply(a:IMat, b:IMat):SDMat = SDMat(gapply(a, b))	
+  override def apply(a:IMat, b:IMat):SDMat = SDMat(gapply(a, b));
 
-  override def apply(a:IMat, b:Int):SDMat = SDMat(gapply(a, b))	
+  override def apply(a:IMat, b:Int):SDMat = SDMat(gapply(a, b));
 
-  override def apply(a:Int, b:IMat):SDMat = SDMat(gapply(a, b))
+  override def apply(a:Int, b:IMat):SDMat = SDMat(gapply(a, b));
   
-  override def apply(a:Mat, b:Mat):SDMat = SDMat(gapply(a.asInstanceOf[IMat], b.asInstanceOf[IMat]))
+  override def apply(a:Mat, b:Mat):SDMat = SDMat(gapply(a.asInstanceOf[IMat], b.asInstanceOf[IMat]));
   
-  override def apply(a:Mat, b:Int):SDMat = SDMat(gapply(a.asInstanceOf[IMat], b))
+  override def apply(a:Mat, b:Int):SDMat = SDMat(gapply(a.asInstanceOf[IMat], b));
   
-  override def apply(a:Int, b:Mat):SDMat = SDMat(gapply(a, b.asInstanceOf[IMat]))
+  override def apply(a:Int, b:Mat):SDMat = SDMat(gapply(a, b.asInstanceOf[IMat]));
   
-  override def colslice(a:Int, b:Int, out:Mat) = SDMat(gcolslice(a, b, out))
+  override def colslice(a:Int, b:Int, out:Mat):SDMat = SDMat(gcolslice(a, b, out));
+  
+  override def colslice(a:Int, b:Int):SDMat = SDMat(gcolslice(a, b, null));
   
   override def contents:DMat = {
     val out = DMat(nnz, 1, this.data);
