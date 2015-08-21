@@ -59,7 +59,9 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def vertcat(b: FMat) = FMat(gvertcat(b))
   
   override def contents():FMat = {
-    new FMat(length, 1, data)
+    val out = new FMat(length, 1, data);
+    out.setGUID(MurmurHash3.mix(MurmurHash3.mix(length, 1), (GUID*7897889).toInt));
+    out
   }
   
   override def nnz:Int = {

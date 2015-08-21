@@ -2,6 +2,7 @@ package BIDMat
 
 import edu.berkeley.bid.SPBLAS._
 import edu.berkeley.bid.UTILS._
+import scala.util.hashing.MurmurHash3
 
 case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:Array[Float]) extends SparseMat[Float](nr, nc, nnz1, ir0, jc0, data0) {
 
@@ -21,7 +22,11 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   
   def find3:(IMat, IMat, FMat) = { val (ii, jj, vv) = gfind3 ; (IMat(ii), IMat(jj), FMat(vv)) }	
   
-  override def contents:FMat = FMat(nnz, 1, this.data)
+  override def contents:FMat = {
+    val out = FMat(nnz, 1, this.data);
+    out.setGUID(MurmurHash3.mix(MurmurHash3.mix(nnz, 1), (GUID*7897889).toInt));
+    out  
+  }
 
   override def apply(a:IMat, b:IMat):SMat = SMat(gapply(a, b))	
 

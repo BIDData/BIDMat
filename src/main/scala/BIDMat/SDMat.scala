@@ -1,6 +1,7 @@
 package BIDMat
 
 import edu.berkeley.bid.SPBLAS._
+import scala.util.hashing.MurmurHash3
 
 case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:Array[Double]) extends SparseMat[Double](nr, nc, nnz1, ir0, jc0, data0) {
 
@@ -34,7 +35,11 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
   
   override def colslice(a:Int, b:Int, out:Mat) = SDMat(gcolslice(a, b, out))
   
-  override def contents:DMat = DMat(nnz, 1, this.data)
+  override def contents:DMat = {
+    val out = DMat(nnz, 1, this.data);
+    out.setGUID(MurmurHash3.mix(MurmurHash3.mix(nnz, 1), (GUID*7897889).toInt));
+    out  
+  }
   
   def countnz(n:Int, omat:Mat) = gcountnz(n, omat)
   

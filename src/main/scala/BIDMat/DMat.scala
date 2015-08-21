@@ -52,6 +52,12 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
     	out
     }
   }
+  
+  override def contents():DMat = {
+    val out = new DMat(length, 1, data);
+    out.setGUID(MurmurHash3.mix(MurmurHash3.mix(length, 1), (GUID*7897889).toInt));
+    out
+  }
       
   def horzcat(b: DMat) = DMat(ghorzcat(b))
 

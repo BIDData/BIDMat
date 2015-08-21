@@ -25,7 +25,9 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
     }
   
   override def contents() = {
-    new GMat(length, 1, data, realsize)
+    val out = new GMat(length, 1, data, realsize);
+    out.setGUID(MurmurHash3.mix(MurmurHash3.mix(length, 1), (GUID*7897889).toInt));
+    out
   }
   
   override def mytype = "GMat"

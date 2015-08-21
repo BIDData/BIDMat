@@ -7,6 +7,7 @@ import jcuda.runtime.JCuda._
 import jcuda.runtime.cudaError._
 import jcuda.runtime._
 import edu.berkeley.bid.CUMAT
+import scala.util.hashing.MurmurHash3
 import GMat._
 
 case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, val jc:Pointer, val data:Pointer, val realnnz:Int) extends Mat(nr, nc) {
@@ -17,7 +18,11 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     
   override def nnz = nnz0
   
-  override def contents:GMat = new GMat(nnz, 1, data, realnnz)
+  override def contents:GMat = {
+    val out = new GMat(nnz, 1, data, realnnz);
+    out.setGUID(MurmurHash3.mix(MurmurHash3.mix(nnz, 1), (GUID*7897889).toInt));
+    out
+  }
   
   val myGPU = SciFunctions.getGPU
     
