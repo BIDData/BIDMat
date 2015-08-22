@@ -243,7 +243,54 @@ def tMult(a:Mat, outmat:Mat, tmpmat: Mat) : Mat =  {
   	             }
                      out
                    }
+                  case aa : SMat => { 
+                     
+                     var (out,tmp) = 
+                       	(FMat.newOrCheckFMat(nrows, a.ncols, outmat, GUID, a.GUID, "tMult".##), FMat.newOrCheckFMat(nrows, a.ncols, tmpmat, GUID, a.GUID, "tMult".##));
+                                       
+                     var i = 0
+               
+                     while (i < tiles.length) {
+                          var m = tiles(i)
+                          tmp.clear
+
+            	 	  Mat.nflops += 2L * m.length * a.ncols
+                          if (!Mat.useMKL) {
+                            out  // not sure
+              		  } else {
+                            m.tileMult(m.nrows, a.ncols, m.ncols, 0, 0, a, x(i), 0, tmp, y(i), 0); 
+                            out += tmp
+        	          }
+                        i+= 1			 
+  	             }
+                     out
+                   }
+
                   case aa : GMat => { 
+
+                     var (out,tmp) = 
+                       	(GMat.newOrCheckGMat(nrows, a.ncols, outmat, GUID, a.GUID, "tMult".##), GMat.newOrCheckGMat(nrows, a.ncols, tmpmat, GUID, a.GUID, "tMult".##));
+                                       
+                     var i = 0
+                     out.clear
+
+                     while (i < tiles.length) {
+                          var m = tiles(i)
+                          tmp.clear
+
+            	 	  Mat.nflops += 2L * m.length * a.ncols
+                          if (!Mat.useMKL) {
+                            out  // not sure
+              		  } else {
+                            m.tileMult(m.nrows, a.ncols, m.ncols, 0, 0, a, x(i), 0, tmp, y(i), 0); 
+                            out += tmp
+        	          }
+                        i+= 1			 
+  	             }
+                     out
+                   }
+
+                  case aa : GSMat => { 
 
                      var (out,tmp) = 
                        	(GMat.newOrCheckGMat(nrows, a.ncols, outmat, GUID, a.GUID, "tMult".##), GMat.newOrCheckGMat(nrows, a.ncols, tmpmat, GUID, a.GUID, "tMult".##));
@@ -282,8 +329,6 @@ def tMult(a:Mat, outmat:Mat, tmpmat: Mat) : Mat =  {
     case bb:GSMat => new TGSPair(this,bb);
     case bb:SMat => new TSPair(this,bb);
   }
-
-  override def *@ (b : Mat) = Mop_ETimes.op(this, b, null)
 
   def * (a : FMat) = tMult(a,null,null);
   def * (a : GMat) = tMult(a,null,null);
