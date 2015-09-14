@@ -16,7 +16,7 @@ val elt = a *@ a;
 println(elt);
 
 val elt2 = b *@ b;
-println(elt2);
+println(elt2.full);
 
 val sqrt = c ^ (0.5);
 println(sqrt);

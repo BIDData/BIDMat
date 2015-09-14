@@ -73,21 +73,45 @@ class TMat
    *
    */
   
-/*
-  def ggMatOpF(aa : TMat, f : (Float, Float) => Float, oldmat:TMat) : TMat = {
+  def tMatOpF(aa : TMat, f : (Float, Float) => Float) : TMat = tMatOpF(aa,f,null)
+
+  def tMatOpF(aa : TMat, f : (Float, Float) => Float, oldmat:TMat) : TMat = {
+  
     var i = 0
-   
     var out = TMat.newOrCheckTMat(nrows,ncols,x,y,tiles,oldmat)
 
     while (i < tiles.length) {
       Mat.nflops += tiles(i).length
+
+      tiles(i) match {
+        case fMat : FMat => {   
+          // no cacheing for the moment
+          out.tiles(i) = fMat.ffMatOp(aa.tiles(i), f, null) 
+        }
+
+        case sMat : SMat => {
+          // there must be a better way than unsafe type coercions..
+          // reflection is a nightmare
+
+          out.tiles(i) = sMat.ssMatOp((aa.tiles(i)).asInstanceOf[SMat], f, oldmat.tiles(i))    
+        }
+
+        case gMat : GMat => { 
+          throw new RuntimeException("GSMat not yet supported")
+//          out.tiles(i) = gMat.gOp((aa.tiles(i)).asInstanceOf[GMat], oldmat.tiles(i), f)
+        }
+
+        case gSMat : GSMat => { 
+          throw new RuntimeException("GSMat not yet supported")
+        }
+      }
 
       i += 1
     }
 
     out
   }
-*/
+
 
   /*
    * An implementation of slicing
@@ -168,6 +192,69 @@ class TMat
     }
     out
   }
+
+
+ /* colslice: 
+  *
+  * tiles completely to the left of the slice range are unaffected 
+  *
+  * tiles to the right of the slice range get their x coordinate reset only
+  *
+  * tiles in the slice range are sliced and their x coordinate is reset
+  *
+  */ 
+
+/*
+  override def colslice(left:Int, right:Int, omat:Mat) : TMat = {
+    val ioff = Mat.ioneBased
+
+    /* 
+     * calculate new yInds, xInds
+     */ 
+
+    var i = 0
+    var j = 0
+
+    // should be logarithmically many indices, so no cacheing necessary
+
+    var newXinds = new Array(tiles.length)
+    var newYinds = new Array(tiles.length) 
+    var used = new Array(tiles.length)
+
+    while (i < tiles.length) { 
+      if (xInds[i]+data[i].ncols < left) {
+     // not present at all
+    
+      } else if (xInds[i] < left) {
+     // do slice
+
+       newXinds[j] = xInds[i]+data[i].ncols-left
+       newYinds[j] = Yinds[i]
+
+       used[i] = true
+       j++
+      } else if (xInds[i] >  right) {
+
+      // also do nothing. case analysis just for clarity
+      }
+
+      i++
+    }   
+
+    /*
+     * try to use cacheing, copy and return
+     */ 
+
+     var newData = omata.data.zipWithIndex.collect {
+       case (x,i) if i % 3 == 0 => x
+     }
+
+     var out = TMat.newOrCheckTMat(right-left+1, ncols, newXinds, newYinds, omat.data)
+
+      
+  } 
+*/
+
 
 /*
  * tMult takes advantage of the tiled structure of TMat
@@ -335,6 +422,10 @@ def tMult(a:Mat, outmat:Mat, tmpmat: Mat) : Mat =  {
   def * (a : SMat) = tMult(a,null,null);
   def * (a : GSMat) = tMult(a,null,null);
 
+
+  def *@ (b : TMat) = tMatOpF(b, (x,y) => x*y, null)
+  def / (b : TMat) = tMatOpF(b, (x,y) => x/y, null)
+  
 }
 
 class TGPair(val left:TMat, val right:GMat) extends Pair {
@@ -376,8 +467,7 @@ object TMat {
   * of TMat is not known apriori ( e.g. without knowing the types and dimensions
   * of each tile ).
   *
-  */
-
+  */ 
  def newOrCheckTMat( nr:Int, 
                      nc:Int, 
                      xInds: Array[Int], 
