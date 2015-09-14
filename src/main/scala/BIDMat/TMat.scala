@@ -53,7 +53,7 @@ class TMat
    *
    */  
 
-  def ggMatOpScalarF(b : Float, f : (Mat, Float) => Mat, oldmat:TMat) : TMat = {
+  def tMatOpScalarF(b : Float, f : (Mat, Float) => Mat, oldmat:TMat) : TMat = {
     var i = 0
    
     var out = TMat.newOrCheckTMat(nrows,ncols,x,y,tiles,oldmat)
@@ -108,7 +108,6 @@ class TMat
 
       i += 1
     }
-
     out
   }
 
@@ -425,6 +424,7 @@ def tMult(a:Mat, outmat:Mat, tmpmat: Mat) : Mat =  {
 
   def *@ (b : TMat) = tMatOpF(b, (x,y) => x*y, null)
   def / (b : TMat) = tMatOpF(b, (x,y) => x/y, null)
+  override def ^ (b : Float) = tMatOpScalarF(b, (x,y) => x^y, null)
   
 }
 

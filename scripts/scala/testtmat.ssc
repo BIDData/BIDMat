@@ -18,11 +18,11 @@ println(elt);
 val elt2 = b *@ b;
 println(elt2.full);
 
-val sqrt = c ^ (0.5);
+val sqrt = a ^ (0.5);
 println(sqrt);
 
-val sqrt2 = b ^ (0.5);
-println(sqrt2);
+val sqrt2 = b ^ (0.5f);
+println(sqrt2.full);
 
 val d = a.copy;
 val e = b.copy;
