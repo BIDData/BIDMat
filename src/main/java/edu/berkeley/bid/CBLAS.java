@@ -5,7 +5,7 @@ public final class CBLAS {
     private CBLAS() {}
 
     static {
-      jcuda.LibUtils.loadLibrary("bidmatmkl");
+      LibUtils.loadLibrary("bidmatmkl");
     }
 
     public final static class ORDER {

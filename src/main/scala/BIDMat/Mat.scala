@@ -654,7 +654,7 @@ object Mat {
   def checkMKL:Unit = {
     if (useMKL) {
     	try {
-    		jcuda.LibUtils.loadLibrary("bidmatmkl")
+    		edu.berkeley.bid.LibUtils.loadLibrary("bidmatmkl")
     	} catch {
     	case _:Throwable => {
     		println("Cant find native CPU libraries")

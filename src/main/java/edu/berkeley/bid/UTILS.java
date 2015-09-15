@@ -7,7 +7,7 @@ public final class UTILS {
     private UTILS() {}
 
     static {
-      jcuda.LibUtils.loadLibrary("bidmatmkl");
+      LibUtils.loadLibrary("bidmatmkl");
     }
     
     public static native  int  getnumthreads( );
