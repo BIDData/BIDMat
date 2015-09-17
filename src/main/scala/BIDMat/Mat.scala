@@ -654,7 +654,7 @@ object Mat {
   def checkMKL:Unit = {
     if (useMKL) {
     	try {
-    		edu.berkeley.bid.LibUtils.loadLibrary("bidmatmkl")
+    		edu.berkeley.bid.LibUtils.loadLibrary("bidmatcpu")
     	} catch {
     	case _:Throwable => {
     		println("Cant find native CPU libraries")

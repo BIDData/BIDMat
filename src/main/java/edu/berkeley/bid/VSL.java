@@ -3,7 +3,7 @@ package edu.berkeley.bid;
 public final class VSL {
 
     static { 
-      LibUtils.loadLibrary("bidmatmkl");
+      LibUtils.loadLibrary("bidmatcpu");
     }
 
     private long handle = 0;

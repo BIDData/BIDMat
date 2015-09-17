@@ -7,7 +7,7 @@ public final class UTILS {
     private UTILS() {}
 
     static {
-      LibUtils.loadLibrary("bidmatmkl");
+      LibUtils.loadLibrary("bidmatcpu");
     }
     
     public static native  int  getnumthreads( );

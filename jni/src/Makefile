@@ -1,6 +1,6 @@
 include Makefile.incl
 
-MKL_OBJS=BIDMat_CBLAS.$(OBJ) BIDMat_UTILS.$(OBJ) BIDMat_SPBLAS.$(OBJ) BIDMat_LAPACK.$(OBJ) \
+CPU_OBJS=BIDMat_CBLAS.$(OBJ) BIDMat_UTILS.$(OBJ) BIDMat_SPBLAS.$(OBJ) BIDMat_LAPACK.$(OBJ) \
          BIDMat_VML.$(OBJ) BIDMat_VSL.$(OBJ)
 
 KERNEL_OBJS=Arith.$(OBJ) CopyFill.$(OBJ) Operators.$(OBJ) Random.$(OBJ) Reducers.$(OBJ) Sorting.$(OBJ)
@@ -10,17 +10,17 @@ CUDA_OBJS=BIDMat_CUMAT.$(OBJ) BIDMat_CUMATD.$(OBJ) $(KERNEL_OBJS) MatKernelD.$(O
 
 .SUFFIXES: .$(OBJ) .c .cpp .cu
 
-all: $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(LIBPREPEND)bidmatmkl$(LIBAPPEND) 
+all: $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(LIBPREPEND)bidmatcpu$(LIBAPPEND) 
 
 cudalib: $(LIBPREPEND)bidmatcuda$(LIBAPPEND)
 
-cpulib:	 $(LIBPREPEND)bidmatmkl$(LIBAPPEND) 
+cpulib:	 $(LIBPREPEND)bidmatcpu$(LIBAPPEND) 
 
 BIDMat_UTILS.$(OBJ): BIDMat_UTILS.cpp
 	$(CC) $(CFLAGS) $(LAPACK_INCLUDES) BIDMat_UTILS.cpp
 
-$(LIBPREPEND)bidmatmkl$(LIBAPPEND): $(MKL_OBJS)
-	$(LD) $(LDFLAGS) $(MKL_OBJS) $(MKL_LIBS) $(OUTFLG)$@
+$(LIBPREPEND)bidmatcpu$(LIBAPPEND): $(CPU_OBJS)
+	$(LD) $(LDFLAGS) $(CPU_OBJS) $(MKL_LIBS) $(OUTFLG)$@
 
 $(LIBPREPEND)bidmatcuda$(LIBAPPEND): $(CUDA_OBJS)
 	$(GLD) $(LDFLAGS) $(CUDA_OBJS) $(CUDA_LIBS) $(OUTFLG)$@
@@ -36,19 +36,25 @@ $(LIBPREPEND)bidmatcuda$(LIBAPPEND): $(CUDA_OBJS)
 
 install: all
 	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(INSTALL_DIR)
-	cp $(LIBPREPEND)bidmatmkl$(LIBAPPEND)  $(INSTALL_DIR)
+	cp $(LIBPREPEND)bidmatcpu$(LIBAPPEND)  $(INSTALL_DIR)
 	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(INSTALL_DIR)/../../BIDMach/lib
-	cp $(LIBPREPEND)bidmatmkl$(LIBAPPEND)  $(INSTALL_DIR)/../../BIDMach/lib
-	cp $(LIBPREPEND)bidmatmkl$(LIBAPPENDLIB)  $(INSTALL_DIR)/../../BIDMach/lib
+	cp $(LIBPREPEND)bidmatcpu$(LIBAPPEND)  $(INSTALL_DIR)/../../BIDMach/lib
+	cp $(LIBPREPEND)bidmatcpu$(LIBAPPENDLIB)  $(INSTALL_DIR)/../../BIDMach/lib
 
 installcudalib: cudalib
 	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(INSTALL_DIR)
 	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(INSTALL_DIR)/../../BIDMach/lib
 
 installcpulib: cpulib
-	cp $(LIBPREPEND)bidmatmkl$(LIBAPPEND)  $(INSTALL_DIR)
-	cp $(LIBPREPEND)bidmatmkl$(LIBAPPEND)  $(INSTALL_DIR)/../../BIDMach/lib
-	cp $(LIBPREPEND)bidmatmkl$(LIBAPPENDLIB)  $(INSTALL_DIR)/../../BIDMach/lib
+	cp $(LIBPREPEND)bidmatcpu$(LIBAPPEND)  $(INSTALL_DIR)
+	cp $(LIBPREPEND)bidmatcpu$(LIBAPPEND)  $(INSTALL_DIR)/../../BIDMach/lib
+	cp $(LIBPREPEND)bidmatcpu$(LIBAPPENDLIB)  $(INSTALL_DIR)/../../BIDMach/lib
+
+upload: all
+	if [ -d /biddata/lib ]; then \
+	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) /biddata/lib ; \
+	cp $(LIBPREPEND)bidmatcpu$(LIBAPPEND)  /biddata/lib ; else \
+	scp $(LIBPREPEND)bidmat*$(LIBAPPEND) bid01.ist.berkeley.edu:biddata/lib ; fi
 
 clean:
 	rm -f *.$(OBJ) *$(LIBAPPEND) *.pdb *.exp *.lib
