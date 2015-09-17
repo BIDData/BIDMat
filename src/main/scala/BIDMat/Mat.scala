@@ -197,7 +197,8 @@ class Mat(nr:Int, nc:Int) {
   def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, reps:Int, aoff:Int, lda:Int, astep:Int, 
       b:Mat, boff:Int, ldb:Int, bstep:Int, c:Mat, coff:Int, ldc:Int, cstep:Int):Mat = notImplemented0("blockGemm");
 
-  
+  def madd(a:Mat, b:Mat, at:Boolean, bt:Boolean):Mat = notImplemented1("update", a);
+  def madd(a:Mat, b:Mat):Mat = notImplemented1("update", a);
   
   def unary_-():Mat = notImplemented1("-", this)
   def +  (b : Mat):Mat = notImplemented1("+", b)

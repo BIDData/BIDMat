@@ -456,6 +456,27 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
     }
   }
   
+  def madd(b:DMat, c:DMat, at:Boolean, bt:Boolean):DMat = {
+  	val (arows, acols, atrans) = if (at) (ncols, nrows, TRANSPOSE.Trans) else (nrows, ncols, TRANSPOSE.NoTrans);
+    val (brows, bcols, btrans) = if (bt) (b.ncols, b.nrows, TRANSPOSE.Trans) else (b.nrows, b.ncols, TRANSPOSE.NoTrans);
+    if (acols != brows || arows != c.nrows || bcols != c.ncols) {
+      throw new RuntimeException("madd bad dimensions (%d %d) (%d %d) (%d %d)" format (arows, acols, brows, bcols, c.nrows, c.ncols));
+    }
+    dgemm(ORDER.ColMajor, atrans, btrans,	arows, bcols, acols, 1.0, data, nrows, b.data, b.nrows, 1.0, c.data, c.nrows);
+    c
+  }
+  
+  def madd(b:DMat, c:DMat):DMat = madd(b, c, false, false);
+    
+  override def madd(b:Mat, c:Mat, at:Boolean, bt:Boolean):Mat = {
+    (b, c) match {
+      case (bb:DMat, cc:DMat) => madd(bb, cc, at, bt)
+    }
+    c
+  }
+  
+  override def madd(b:Mat, c:Mat):Mat = madd(b, c, false, false);
+  
   /*
    * Very slow, row-and-column multiply
    */

@@ -27,6 +27,8 @@ fi
 source="http://bid2.berkeley.edu/bid-data-project"
 
 cd ${BIDMAT_ROOT}/lib
+wget ${source}/lib/*.txt
+wget ${source}/lib/*.html
 wget ${source}/lib/*.jar
 wget ${source}/lib/${binnames}
 

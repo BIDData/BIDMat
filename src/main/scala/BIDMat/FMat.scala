@@ -383,6 +383,27 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   	}	else throw new RuntimeException("dimensions mismatch")
   }
   
+  def madd(b:FMat, c:FMat, at:Boolean, bt:Boolean):FMat = {
+  	val (arows, acols, atrans) = if (at) (ncols, nrows, TRANSPOSE.Trans) else (nrows, ncols, TRANSPOSE.NoTrans);
+    val (brows, bcols, btrans) = if (bt) (b.ncols, b.nrows, TRANSPOSE.Trans) else (b.nrows, b.ncols, TRANSPOSE.NoTrans);
+    if (acols != brows || arows != c.nrows || bcols != c.ncols) {
+      throw new RuntimeException("madd bad dimensions (%d %d) (%d %d) (%d %d)" format (arows, acols, brows, bcols, c.nrows, c.ncols));
+    }
+    sgemm(ORDER.ColMajor, atrans, btrans,	arows, bcols, acols, 1.0f, data, nrows, b.data, b.nrows, 1.0f, c.data, c.nrows);
+    c
+  }
+  
+  def madd(b:FMat, c:FMat):FMat = madd(b, c, false, false);
+   
+  override def madd(b:Mat, c:Mat, at:Boolean, bt:Boolean):Mat = {
+    (b, c) match {
+      case (bb:FMat, cc:FMat) => madd(bb, cc, at, bt)
+    }
+    c
+  }
+  
+  override def madd(b:Mat, c:Mat):Mat = madd(b, c, false, false);
+  
   def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:FMat, broff:Int, bcoff:Int, c:FMat, croff:Int, ccoff:Int) = {
     if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
     	throw new RuntimeException("fSMultTile: cant have negative offsets or dimensions");
