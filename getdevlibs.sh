@@ -14,23 +14,21 @@ BIDMAT_ROOT=`pwd`
 BIDMAT_ROOT="$( echo ${BIDMAT_ROOT} | sed s+/cygdrive/c+c:+ )" 
 
 if [ `uname` = "Darwin" ]; then
-    binnames="\{*.dylib,*.jnilib\}"
+    binnames=".dylib,.jnilib"
     cdir="osx"
 elif [ "$OS" = "Windows_NT" ]; then
-    binnames="*.dll"
+    binnames=".dll"
     cdir="win"
 else 
-    binnames="*.so"
+    binnames=".so"
     cdir="linux"
 fi
 
 source="http://bid2.berkeley.edu/bid-data-project"
 
 cd ${BIDMAT_ROOT}/lib
-wget ${source}/lib/*.txt
-wget ${source}/lib/*.html
-wget ${source}/lib/*.jar
-wget ${source}/lib/${binnames}
+wget -r -A.txt,.html,.jar ${source}/lib/
+wget -r -A${binnames} ${source}/lib/
 
 mv ${BIDMAT_ROOT}/lib/BIDMat.jar ${BIDMAT_ROOT}
 
