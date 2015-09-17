@@ -462,6 +462,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
     if (acols != brows || arows != c.nrows || bcols != c.ncols) {
       throw new RuntimeException("madd bad dimensions (%d %d) (%d %d) (%d %d)" format (arows, acols, brows, bcols, c.nrows, c.ncols));
     }
+    Mat.nflops += 2L * arows * bcols * acols;
     dgemm(ORDER.ColMajor, atrans, btrans,	arows, bcols, acols, 1.0, data, nrows, b.data, b.nrows, 1.0, c.data, c.nrows);
     c
   }

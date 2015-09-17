@@ -389,6 +389,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     if (acols != brows || arows != c.nrows || bcols != c.ncols) {
       throw new RuntimeException("madd bad dimensions (%d %d) (%d %d) (%d %d)" format (arows, acols, brows, bcols, c.nrows, c.ncols));
     }
+    Mat.nflops += 2L * arows * bcols * acols;
     sgemm(ORDER.ColMajor, atrans, btrans,	arows, bcols, acols, 1.0f, data, nrows, b.data, b.nrows, 1.0f, c.data, c.nrows);
     c
   }
