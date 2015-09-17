@@ -13,22 +13,26 @@ pushd "${BIDMAT_ROOT}"  > /dev/null
 BIDMAT_ROOT=`pwd`
 BIDMAT_ROOT="$( echo ${BIDMAT_ROOT} | sed s+/cygdrive/c+c:+ )" 
 
-if [ `uname` = "Darwin" ]; then
-    binnames=".dylib,.jnilib"
-    cdir="osx"
-elif [ "$OS" = "Windows_NT" ]; then
-    binnames=".dll"
-    cdir="win"
-else 
-    binnames=".so"
-    cdir="linux"
-fi
-
 source="http://www.cs.berkeley.edu/~jfc/biddata"
-
 cd ${BIDMAT_ROOT}/lib
-wget -r -A.txt,.html,.jar ${source}/lib/
-wget -r -A${binnames} ${source}/lib/
+
+if [ `uname` = "Darwin" ]; then
+    subdir="osx"
+    curl -o liblist.txt ${source}/lib/liblist_osx.txt 
+elif [ "$OS" = "Windows_NT" ]; then
+    subdir="win"
+    curl -o liblist.txt ${source}/lib/liblist_win.txt
+else
+    subdir="linux"
+    curl -o liblist.txt ${source}/lib/liblist_linux.txt
+fi
+curl -o exelist.txt ${source}/lib/exelist.txt
+
+while read fname; do
+    echo -e "\nDownloading ${fname}"
+    curl --retry 2 -O ${source}/lib/${fname}
+done < liblist.txt
 
 mv ${BIDMAT_ROOT}/lib/BIDMat.jar ${BIDMAT_ROOT}
+rm ${BIDMAT_ROOT}/lib/BIDMach.jar 
 
