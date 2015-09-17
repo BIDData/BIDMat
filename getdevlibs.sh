@@ -16,7 +16,7 @@ BIDMAT_ROOT="$( echo ${BIDMAT_ROOT} | sed s+/cygdrive/c+c:+ )"
 if [ `uname` = "Darwin" ]; then
     binnames="\{*.dylib,*.jnilib\}"
     cdir="osx"
-else if [ "$OS" = "Windows_NT" ]; then
+elif [ "$OS" = "Windows_NT" ]; then
     binnames="*.dll"
     cdir="win"
 else 
