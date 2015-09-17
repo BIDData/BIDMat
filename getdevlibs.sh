@@ -24,7 +24,7 @@ else
     cdir="linux"
 fi
 
-source="http://www.berkeley.edu/~jfc/biddata"
+source="http://www.cs.berkeley.edu/~jfc/biddata"
 
 cd ${BIDMAT_ROOT}/lib
 wget -r -A.txt,.html,.jar ${source}/lib/
