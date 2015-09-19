@@ -44,14 +44,6 @@ extern "C" {
     return toInt(A, B, N);
   }
 
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_initSeq
-  (JNIEnv *env, jobject obj, jobject jA, jint nrows, jint ncols)
-  {
-    int *A = (int*)getPointer(env, jA);
-
-    return initSeq(A, nrows, ncols);
-  }
-
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_full
   (JNIEnv *env, jobject obj, jobject jir, jobject jic, jobject jdata, jobject jod,
    jint nrows, jint ncols, jint nnz)
