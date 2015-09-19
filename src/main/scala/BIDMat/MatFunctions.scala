@@ -1534,6 +1534,39 @@ object MatFunctions {
   }
   def oneHot(c:Mat):Mat = oneHot(c, 0);
   
+  def nHot(c:IMat, ncats0:Int):SMat = {
+    val ncats = if (ncats0 > 0) ncats0 else SciFunctions.maxi(c.contents).v + 1
+    val out = SMat.newOrCheckSMat(ncats, c.ncols, c.length, null, c.GUID, "nHot".##);
+    val nrows = c.nrows;
+    var ioff = Mat.ioneBased;
+    out.jc(0) = ioff;
+    var i = 0;
+    while (i < c.ncols) {
+      var ibase = i * nrows;
+      var j = 0;
+      while (j < nrows) {
+      	out.ir(j + ibase) = c.data(j + ibase) + ioff;
+      	out.data(j + ibase) = 1f;
+      	j += 1;
+      }
+      out.jc(i + 1) = ibase + nrows + ioff;
+      i += 1;
+    }
+    out;
+  }
+  
+  def nHot(c:IMat):SMat = nHot(c, 0);
+  
+  def nHot(c:GIMat, ncats:Int):GSMat = GSMat.nHot(c, ncats);
+  def nHot(c:GIMat):GSMat = GSMat.nHot(c, 0);
+  
+  def nHot(c:Mat, ncats:Int):Mat = {
+    c match {
+      case cc:IMat => nHot(cc, ncats);
+      case cc:GIMat => nHot(cc, ncats);
+    }
+  }
+  def nHot(c:Mat):Mat = nHot(c, 0);
   
   /** Returns the square root of '''v''' as a float, as an alternative to math.sqrt(v)'s double.  */
   def fsqrt(v:Float):Float = math.sqrt(v).asInstanceOf[Float]
