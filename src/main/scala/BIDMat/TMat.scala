@@ -93,7 +93,8 @@ class TMat
           // there must be a better way than unsafe type coercions..
           // reflection is a nightmare
 
-          out.tiles(i) = sMat.ssMatOp((aa.tiles(i)).asInstanceOf[SMat], f, oldmat.tiles(i))    
+          out.tiles(i) = sMat.ssMatOp((aa.tiles(i)).asInstanceOf[SMat], f, oldmat.tiles(i))
+                                                                           // ^^ can cause null pointer excp    
         }
 
         case gMat : GMat => { 
@@ -111,52 +112,6 @@ class TMat
     out
   }
 
-
-  /*
-   * An implementation of slicing
-   * Surprisingly tricky
-   *  
-   */
-
-  def gapply(rowinds:IMat, colinds:IMat): TMat = {
-    var out:TMat = null
-
-    /*
-     * these could all probably be immutable Arrays
-     * and the slicing implemented with a map, but
-     * that seems a bit unnatural given the explicit copying
-     *
-     */
-
-    var xInds = ArrayBuffer.empty[Int]
-    var yInds = ArrayBuffer.empty[Int]
-    val mats = ArrayBuffer.empty[Mat]
-
-    val off = Mat.oneBased 
-    var i = 0
-
-    rowinds match {
-    	case dummy:MatrixWildcard => {
-    	   colinds match {
-  	      case dummy2:MatrixWildcard => {
-		   while (i < tiles.length) {
-		     mats += tiles(i).copy
-                     i += 1
-                   }
-                   
-                    new TMat(nrows,ncols,x,y,mats.toArray)
-		  }
-	   }
-
-	}
-/*        case _ => {
-
-
-
-        }
-*/
-    }
-  }
 
   def full() : Mat = full(null)
 
@@ -192,19 +147,11 @@ class TMat
     out
   }
 
+def theta(x : Int) = {
+    if (x < 0) 0 else 1 
+}
 
- /* colslice: 
-  *
-  * tiles completely to the left of the slice range are unaffected 
-  *
-  * tiles to the right of the slice range get their x coordinate reset only
-  *
-  * tiles in the slice range are sliced and their x coordinate is reset
-  *
-  */ 
-
-/*
-  override def colslice(left:Int, right:Int, omat:Mat) : TMat = {
+override def colslice(left:Int, right:Int, omat:Mat) : TMat = {
     val ioff = Mat.ioneBased
 
     /* 
@@ -216,43 +163,62 @@ class TMat
 
     // should be logarithmically many indices, so no cacheing necessary
 
-    var newXinds = new Array(tiles.length)
-    var newYinds = new Array(tiles.length) 
-    var used = new Array(tiles.length)
+    var newXinds = Array.ofDim[Int](tiles.length)
+    var newYinds = Array.ofDim[Int](tiles.length)
+    var newTiles = Array.ofDim[Mat](tiles.length)
 
     while (i < tiles.length) { 
-      if (xInds[i]+data[i].ncols < left) {
+      if (x(i)+tiles(i).ncols < left) {
+
      // not present at all
-    
-      } else if (xInds[i] < left) {
+     // maybe feed these discarded matrices into cache later?
+           
+      } else if (x(i) < right) {
      // do slice
 
-       newXinds[j] = xInds[i]+data[i].ncols-left
-       newYinds[j] = Yinds[i]
 
-       used[i] = true
-       j++
-      } else if (xInds[i] >  right) {
+//       println("left: " + left)
+//       println("right: " + right)
 
-      // also do nothing. case analysis just for clarity
+       newXinds(j) = (x(i)-left)*theta(x(i)-left)
+       newYinds(j) = y(i)
+
+//       println("j: " + j)
+//       println("x(j): " + x(j))
+//       println("newXinds(j): " + newXinds(j))
+//       println("newYinds(j): " + newYinds(j))
+//       println("tiles(i):\n" + tiles(i))
+
+       val localLeftSlice =  (left - x(i))*theta(left-x(i))
+       val localRightSlice = (right - x(i))+(x(i)+tiles(i).ncols-right)*theta(right -x(i)- tiles(i).ncols)
+
+//       println("localLeftSlice: " + localLeftSlice)
+//       println("localRightSlice: " + localRightSlice)
+//       println("tiles(i).ncols: " + tiles(i).ncols)
+
+       newTiles(j) = tiles(i).colslice(localLeftSlice,localRightSlice,null)  // could cache here too ?
+
+ //      println("newTiles(j):\n" + newTiles(j))
+
+       j += 1
+      } else if (x(i) >= right) {
+
+      // also not present. case analysis just for clarity
       }
 
-      i++
+      i += 1
     }   
 
     /*
-     * try to use cacheing, copy and return
+     * todo: correct Cacheing
+     *  not sure what the following will do
+     *
      */ 
 
-     var newData = omata.data.zipWithIndex.collect {
-       case (x,i) if i % 3 == 0 => x
-     }
-
-     var out = TMat.newOrCheckTMat(right-left+1, ncols, newXinds, newYinds, omat.data)
-
+    var out = TMat.newOrCheckTMat(nrows, right-left, newXinds, newYinds, newTiles,null) // omat cache later 
+    out
       
   } 
-*/
 
 
 /*
