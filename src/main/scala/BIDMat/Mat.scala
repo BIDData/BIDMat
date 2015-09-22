@@ -79,6 +79,7 @@ class Mat(nr:Int, nc:Int) {
   def contents:Mat = notImplemented0("contents");
   def colslice(a:Int, b:Int, out:Mat):Mat = notImplemented0("colslice");
   def colslice(a:Int, b:Int, out:Mat, c:Int):Mat = notImplemented0("colslice");
+  def colslice(a:Int, b:Int, out:Mat, c:Int, pb:Boolean):Mat = colslice(a, b, out, c);
   def rowslice(a:Int, b:Int, out:Mat):Mat = notImplemented0("rowslice");
   def rowslice(a:Int, b:Int, out:Mat, c:Int):Mat = notImplemented0("rowslice");
   def colslice(a:Int, b:Int):Mat = notImplemented0("colslice");
