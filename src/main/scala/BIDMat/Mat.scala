@@ -486,11 +486,20 @@ abstract class Pair {
 
 object Mat {
   import Ordered._
-  import jline.TerminalFactory;
-
-  var terminal = TerminalFactory.create;
   
-  def terminalWidth = math.max(terminal.getWidth,80);
+  var termWidth = 80;
+  
+  def terminalWidth:Int = {
+    try {
+    	math.max(jline.TerminalFactory.create.getWidth, termWidth);
+    }
+    catch {
+    	case _:Throwable => {
+    	  println("Couldnt get terminal width via JLine, using %d" format termWidth);
+    	  termWidth;
+    	}
+    }
+  }
   
   var useCache = false						 // Use matrix caching
   
