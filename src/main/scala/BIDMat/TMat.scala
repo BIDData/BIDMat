@@ -170,35 +170,19 @@ override def colslice(left:Int, right:Int, omat:Mat) : TMat = {
     while (i < tiles.length) { 
       if (x(i)+tiles(i).ncols < left) {
 
-     // not present at all
+     // tile not present in result TMat
      // maybe feed these discarded matrices into cache later?
            
       } else if (x(i) < right) {
      // do slice
 
-
-//       println("left: " + left)
-//       println("right: " + right)
-
        newXinds(j) = (x(i)-left)*theta(x(i)-left)
        newYinds(j) = y(i)
-
-//       println("j: " + j)
-//       println("x(j): " + x(j))
-//       println("newXinds(j): " + newXinds(j))
-//       println("newYinds(j): " + newYinds(j))
-//       println("tiles(i):\n" + tiles(i))
 
        val localLeftSlice =  (left - x(i))*theta(left-x(i))
        val localRightSlice = (right - x(i))+(x(i)+tiles(i).ncols-right)*theta(right -x(i)- tiles(i).ncols)
 
-//       println("localLeftSlice: " + localLeftSlice)
-//       println("localRightSlice: " + localRightSlice)
-//       println("tiles(i).ncols: " + tiles(i).ncols)
-
        newTiles(j) = tiles(i).colslice(localLeftSlice,localRightSlice,null)  // could cache here too ?
-
- //      println("newTiles(j):\n" + newTiles(j))
 
        j += 1
       } else if (x(i) >= right) {
@@ -368,6 +352,66 @@ def tMult(a:Mat, outmat:Mat, tmpmat: Mat) : Mat =  {
                  }
       }	else throw new RuntimeException("dimension mismatch")    
   
+  }
+
+  def sum(n: Int, oldmat: Mat) : Mat = {
+  // check if it's GPU or CPU, then iterate over tiles
+  // calling sum on each, then aggregating
+    val ioff = Mat.ioneBased
+
+    val nn = if (n > 0) n else if (nrows == 1) 2 else 1
+    
+    var (out,tmp) = 
+      tiles(0) match {
+        case b:GMat => {
+          ( GMat.newOrCheckGMat(if (nn==1) 1 else nrows, if (nn==1) ncols else 1, oldmat, GUID, n, "sum".##),
+            GMat.newOrCheckGMat(if (nn==1) 1 else nrows, if (nn==1) ncols else 1, null) // <-- FIXME
+          )
+        }
+        case b:GSMat => { 
+          ( GMat.newOrCheckGMat(if (nn==1) 1 else nrows, if (nn==1) ncols else 1, oldmat, GUID, n, "sum".##),
+            GMat.newOrCheckGMat(if (nn==1) 1 else nrows, if (nn==1) ncols else 1, null)
+          )
+        }
+        case b:FMat => { 
+         ( FMat.newOrCheckFMat(if (nn==1) 1 else nrows, if (nn==1) ncols else 1, oldmat, GUID, n, "sum".##),
+           FMat.newOrCheckFMat(if (nn==1) 1 else nrows, if (nn==1) ncols else 1, null)
+         )
+        }
+        case b:SMat => { 
+         ( FMat.newOrCheckFMat(if (nn==1) 1 else nrows, if (nn==1) ncols else 1, oldmat, GUID, n, "sum".##),
+           FMat.newOrCheckFMat(if (nn==1) 1 else nrows, if (nn==1) ncols else 1, null)
+         )
+        }
+    }
+
+    var i = 0
+    while (i < tiles.length) {
+       tmp <-- SciFunctions.sum(tiles(i),n)    // should pass tmp as "oldmat" here, I think, for caching
+       // println("tiles(i): " + tiles(i))
+       // println("tmp: " + tmp)
+
+       val indexTuple = nn match {
+         case 1 => (0,x(i))
+         case _ => (y(i),0)
+       }
+
+       val offsetTuple = nn match {
+         case 1 => (0,tiles(i).ncols-1)
+         case _ => (tiles(i).nrows-1,0)
+       }
+
+       // println("index tuple: " + indexTuple)
+       // println("offset tuple: " + offsetTuple)
+
+       out(MatFunctions.irow(indexTuple._1 to (indexTuple._1 + offsetTuple._1)), 
+           MatFunctions.irow(indexTuple._2 to (indexTuple._2 + offsetTuple._2))) += 
+            tmp(MatFunctions.irow(0 to offsetTuple._1), MatFunctions.irow(0 to offsetTuple._2))
+       i += 1
+
+       // println("out:          " + out)
+    }
+    out
   }
 
   def ~ (b: GMat) = new TGPair(this,b);

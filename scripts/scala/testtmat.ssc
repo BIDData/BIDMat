@@ -33,6 +33,23 @@ val col = a.colslice(1,3)
 val col2 = b.colslice(1,3,null)
 println(col2.full)
 
+println("-------- colslice2 ---------")
+
+val col3 = a.colslice(2,4)
+
+val col4 = b.colslice(2,4,null)
+println(col4.full)
+
+println("-------- sum 1 ---------")
+
+sum(a,1)
+sum(b,1)
+
+println("-------- sum 2 ---------")
+
+sum(a,2)
+sum(b,2)
+
 val d = a.copy;
 val e = b.copy;
 
