@@ -1695,6 +1695,27 @@ object MatFunctions {
   }
   
   /**
+   * Makes the kron method generic, with two matrices and an output (which may be null). There are
+   * more combinations we could put here, but I am only putting enough for BayesNet.scala to work.
+   * Note that this means we should just call kron(a,b) or (preferably) kron(a,b,c), not a.kron(b).
+   */
+  def kron(a:Mat, b:Mat, omat:Mat) : Mat = {
+    (a, b) match {
+      case (a:FMat,b:FMat) => a.kron(b, omat)
+      case (a:FMat,b:SMat) => a.kron(full(b), omat)
+      case (a:IMat,b:FMat) => a.kron(b, omat)
+      case (a:IMat,b:SMat) => a.kron(full(b), omat)
+      case (a:GMat,b:GMat) => a.kron(b, omat)
+      case (a:GMat,b:GSMat) => a.kron(full(b), omat)
+      case (a:GIMat,b:GMat) => GMat(a).kron(b, omat)
+      case (a:GIMat,b:GSMat) => GMat(a).kron(full(b), omat)
+    }
+  }
+  
+  /** Makes the kron method generic. This is the case with no output matrices. */
+  def kron(a:Mat, b:Mat) : Mat = kron(a,b,null) 
+  
+  /**
    * Distribute the data in the vv matrix using indices in the indx matrix into the mats array. 
    * Left and right are the range of the output buffer indices. 
    * Element vv(i) goes into buffer number (indx(i)-left)
