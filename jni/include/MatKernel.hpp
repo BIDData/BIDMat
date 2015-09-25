@@ -65,7 +65,7 @@ int toInt(float *A, int *B, int N);
 template <typename T>
 int kron(T *A, T *B, T *C, int nrA, int ncA, int nrB, int ncB);
 
-int initSeq(int *A, int nrows, int ncols);
+int initSeq(int *A, int nrows, int ncols, int dorows);
 
 int apply_gfun(float *nativeA, float *nativeB, int N, int opn);
 

@@ -59,15 +59,21 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   override def colslice(a:Int, b:Int, out:Mat):SMat = colslice(a, b, out, 0);
   
   override def colslice(a:Int, b:Int):SMat = colslice(a, b, null, 0);
+  
+  override def colslice(col1:Int, col2:Int, omat:Mat, there:Int):SMat = colslice(col1, col2, omat, there, false);
      
-  override def colslice(col1:Int, col2:Int, omat:Mat, there:Int):SMat = {
+  override def colslice(col1:Int, col2:Int, omat:Mat, there:Int, putback:Boolean):SMat = {
     val ioff = Mat.ioneBased
     val ms = if (omat.asInstanceOf[AnyRef] != null) {
       val mms = omat.asInstanceOf[SMat];
-      val ncc = col2 - col1
-    	val newnnz = jc(col2) - jc(col1) + mms.jc(there) - ioff
-    	val ms0 = SMat.newOrCheckSMat(nrows, mms.ncols, newnnz, mms)
-    	if (ms0 != omat.asInstanceOf[SMat]) {
+      val ncc = col2 - col1;
+    	val newnnz = if (!putback) {
+        jc(col2) - jc(col1) + mms.jc(there) - ioff; 
+      } else {
+        mms.nnz + jc(col2) - jc(col1) - mms.jc(there + ncc) + mms.jc(there); 
+      }
+      val ms0 = if (putback) mms else SMat.newOrCheckSMat(nrows, mms.ncols, newnnz, mms);
+    	if (ms0.asInstanceOf[AnyRef] != mms.asInstanceOf[AnyRef]) {
     		omat.asInstanceOf[SMat].colslice(0, there, ms0)
     	}
       ms0
@@ -78,20 +84,23 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
     	val newnnz = jc(col2) - jc(col1)
       SMat.newOrCheckSMat(nrows, col2-col1, newnnz, null, GUID, col1, "colslice".##)
     }
-    if (there == 0) ms.jc(0) = ioff
-    val todo = jc(col2) - jc(col1)
+ 
+    if (there == 0) ms.jc(0) = ioff;
+    val todo = jc(col2) - jc(col1);
     var i = col1
     while (i < col2) {
     	ms.jc(i+there-col1+1) = ms.jc(i+there-col1) + jc(i+1) - jc(i)
     	i += 1
     }
-    val ibase = there + col2 - col1
-    i = ibase
-    while (i < ms.ncols) {
-    	ms.jc(i+1) = ms.jc(ibase)
-    	i += 1
+    if (!putback) {
+    	val ibase = there + col2 - col1;
+    	i = ibase;
+    	while (i < ms.ncols) {
+    		ms.jc(i+1) = ms.jc(ibase);
+    		i += 1;
+    	}
+    	ms.nnz0 = ms.jc(ibase)-ioff;
     }
-    ms.nnz0 = ms.jc(ibase)-ioff
     System.arraycopy(data, jc(col1) - ioff, ms.data, ms.jc(there) - ioff, todo)
     System.arraycopy(ir, jc(col1) - ioff, ms.ir, ms.jc(there) - ioff, todo)
     ms

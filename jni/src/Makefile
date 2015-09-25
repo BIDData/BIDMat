@@ -54,7 +54,7 @@ upload: all
 	if [ -d /biddata/lib ]; then \
 	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) /biddata/lib ; \
 	cp $(LIBPREPEND)bidmatcpu$(LIBAPPEND)  /biddata/lib ; else \
-	scp $(LIBPREPEND)bidmat*$(LIBAPPEND) bid01.ist.berkeley.edu:biddata/lib ; fi
+	scp $(LIBPREPEND)bidmat*$(LIBAPPEND) login.eecs.berkeley.edu:biddata/lib ; fi
 
 clean:
 	rm -f *.$(OBJ) *$(LIBAPPEND) *.pdb *.exp *.lib

@@ -91,11 +91,11 @@ extern "C" {
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_initSeq
-  (JNIEnv *env, jobject obj, jobject jA, jint nrows, jint ncols)
+  (JNIEnv *env, jobject obj, jobject jA, jint nrows, jint ncols, jint dorows)
   {
     int *A = (int*)getPointer(env, jA);
 
-    return initSeq(A, nrows, ncols);
+    return initSeq(A, nrows, ncols, dorows);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_applyop 

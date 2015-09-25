@@ -79,6 +79,7 @@ class Mat(nr:Int, nc:Int) {
   def contents:Mat = notImplemented0("contents");
   def colslice(a:Int, b:Int, out:Mat):Mat = notImplemented0("colslice");
   def colslice(a:Int, b:Int, out:Mat, c:Int):Mat = notImplemented0("colslice");
+  def colslice(a:Int, b:Int, out:Mat, c:Int, pb:Boolean):Mat = colslice(a, b, out, c);
   def rowslice(a:Int, b:Int, out:Mat):Mat = notImplemented0("rowslice");
   def rowslice(a:Int, b:Int, out:Mat, c:Int):Mat = notImplemented0("rowslice");
   def colslice(a:Int, b:Int):Mat = notImplemented0("colslice");
@@ -486,11 +487,20 @@ abstract class Pair {
 
 object Mat {
   import Ordered._
-  import jline.TerminalFactory;
-
-  var terminal = TerminalFactory.create;
   
-  def terminalWidth = math.max(terminal.getWidth,80);
+  var termWidth = 80;
+  
+  def terminalWidth:Int = {
+    try {
+    	math.max(jline.TerminalFactory.create.getWidth, termWidth);
+    }
+    catch {
+    	case _:Throwable => {
+    	  println("Couldnt get terminal width via JLine, using %d" format termWidth);
+    	  termWidth;
+    	}
+    }
+  }
   
   var useCache = false						 // Use matrix caching
   
