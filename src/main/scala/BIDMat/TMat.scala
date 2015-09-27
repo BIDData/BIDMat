@@ -38,8 +38,8 @@ import scala.collection.mutable.ArrayBuffer
 class TMat 
       ( nr: Int, 
         nc: Int, 
-        x : Array[Int], 
-        y : Array[Int], 
+        val x : Array[Int], 
+        val y : Array[Int], 
         val tiles : Array[Mat] ) extends Mat(nr, nc) {
 
   require(x.length == y.length, "x.length must equal y.length")
@@ -463,6 +463,23 @@ object TMat {
             data:Array[Mat] ) = 
     new TMat(nr, nc, xInds, yInds, data)
 
+  def TMatGPU ( tmat : TMat, omat : Mat ) : TMat = { 
+   var i = 0
+   val out = newOrCheckTMat(tmat.nrows, tmat.ncols, tmat.x, tmat.y, tmat.tiles, omat);
+     
+
+   while (i < tmat.tiles.length) {
+    var tmp = tmat.tiles(i) match {
+       case aa:FMat => GMat(aa)
+       case aa:SMat => GSMat(aa)
+       case aa:GMat => aa
+       case aa:GSMat => aa
+     }
+    out.tiles(i) = tmp
+    i +=1 
+   }
+   out
+  }
 
  /*
   * This function is very unsafe at the moment.
