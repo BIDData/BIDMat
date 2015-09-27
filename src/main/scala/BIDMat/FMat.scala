@@ -59,7 +59,9 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def vertcat(b: FMat) = FMat(gvertcat(b))
   
   override def contents():FMat = {
-    new FMat(length, 1, data)
+    val out = new FMat(length, 1, data);
+    out.setGUID(MurmurHash3.mix(MurmurHash3.mix(length, 1), (GUID*7897889).toInt));
+    out
   }
   
   override def nnz:Int = {
@@ -381,6 +383,38 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   	}	else throw new RuntimeException("dimensions mismatch")
   }
   
+  def madd(b:FMat, c:FMat, at:Boolean, bt:Boolean):FMat = {
+  	val (arows, acols, atrans) = if (at) (ncols, nrows, TRANSPOSE.Trans) else (nrows, ncols, TRANSPOSE.NoTrans);
+    val (brows, bcols, btrans) = if (bt) (b.ncols, b.nrows, TRANSPOSE.Trans) else (b.nrows, b.ncols, TRANSPOSE.NoTrans);
+    if (acols != brows || arows != c.nrows || bcols != c.ncols) {
+      throw new RuntimeException("madd bad dimensions (%d %d) (%d %d) (%d %d)" format (arows, acols, brows, bcols, c.nrows, c.ncols));
+    }
+    Mat.nflops += 2L * arows * bcols * acols;
+    sgemm(ORDER.ColMajor, atrans, btrans,	arows, bcols, acols, 1.0f, data, nrows, b.data, b.nrows, 1.0f, c.data, c.nrows);
+    c
+  }
+  
+  def madd(b:FMat, c:FMat):FMat = madd(b, c, false, false);
+  
+  def madd(b:SMat, c:FMat, bt:Boolean, ct:Boolean):FMat = {
+    (bt, ct) match {
+      case (false, false) => madd(b, c);
+      case (false, true) => maddT(b, c);
+      case _ => throw new RuntimeException("madd unsupported options SMat, FMat %b %b" format (bt, ct));            
+    }
+  }
+   
+  override def madd(b:Mat, c:Mat, at:Boolean, bt:Boolean):Mat = {
+    (b, c) match {
+      case (bb:FMat, cc:FMat) => madd(bb, cc, at, bt);
+      case (bb:SMat, cc:FMat) => madd(bb, cc, at, bt);
+      case _ => throw new RuntimeException("madd unsupported types %s %s" format (b.mytype, c.mytype));
+    }
+    c
+  }
+  
+  override def madd(b:Mat, c:Mat):Mat = madd(b, c, false, false);
+  
   def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:FMat, broff:Int, bcoff:Int, c:FMat, croff:Int, ccoff:Int) = {
     if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
     	throw new RuntimeException("fSMultTile: cant have negative offsets or dimensions");
@@ -449,10 +483,17 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   def fSMult(a:SMat, outmat:Mat):FMat = {
     if (ncols != a.nrows) {
-    	throw new RuntimeException("dimensions mismatch")
+    	throw new RuntimeException("fSMult dimensions mismatch")
+    }
+    val out = FMat.newOrCheckFMat(nrows, a.ncols, outmat, GUID, a.GUID, "fSMult".##);
+    out.clear
+    madd(a, out);
+  }
+    	
+  def madd(a:SMat, out:FMat):FMat = {
+    if (ncols != a.nrows || nrows != out.nrows || a.ncols != out.ncols) {
+    	throw new RuntimeException("SMadd dimensions mismatch (%d %d) (%d %d) (%d %d)" format (nrows, ncols, a.nrows, a.ncols, out.nrows, out.ncols))
     } else {
-    	val out = FMat.newOrCheckFMat(nrows, a.ncols, outmat, GUID, a.GUID, "fsMult".##)
-    	out.clear
     	Mat.nflops += 2L * nrows * a.nnz
     	val ioff = Mat.ioneBased;
     	if (!Mat.useMKL) {
@@ -647,41 +688,48 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     }
   }
 
-  
   def multT(a:SMat, outmat:Mat):FMat = {
     if (ncols == a.ncols) {
-    	val out = FMat.newOrCheckFMat(nrows, a.nrows, outmat, GUID, a.GUID, "multT".##)
-    	out.clear
-    	Mat.nflops += 2L * a.nnz * nrows
-    	if (!Mat.useMKL || nrows < 100) {
-    	  val ioff = Mat.ioneBased
-    	  if (nrows >= 64 && Mat.numThreads > 1) {
-    	    val nthreads = math.min(Mat.numThreads, nrows/32)
-    	    val done = IMat(1, nthreads)
-    	    for (ithread <- 0 until nthreads) {
-    	      Future {
-    	        fSMultTHelper2(a, out, (1L*nrows*ithread/nthreads).toInt, (1L*nrows*(ithread+1)/nthreads).toInt, ioff)
-    	        done(ithread) = 1
-    	      }
-    	    }  
-    	    while (SciFunctions.sum(done).v < nthreads) {Thread.`yield`()}
-    	  } else {
-    	    fSMultTHelper2(a, out, 0, nrows, ioff)
-    	  }
-    	} else { 
-    		if (nrows == 1) {
-    			setnumthreads(1)  // Otherwise crashes 
-    			scscmv("N", a.nrows, a.ncols, 1.0f, "GLNF", a.data, a.ir, a.jc, data, 0f, out.data) 
-    			setnumthreads(Mat.numOMPthreads)
-    		} else {
-    			smcsrm(nrows, a.ncols, data, nrows, a.data, a.ir, a.jc, out.data, nrows)
-    		}
-    	}
-    	out
-    } else {
-      throw new RuntimeException("xT dimensions mismatch")
+      throw new RuntimeException("xT dimensions mismatch (%d %d) (%d %d)" format (nrows, ncols, a.ncols, a.nrows))
     }
+    val out = FMat.newOrCheckFMat(nrows, a.nrows, outmat, GUID, a.GUID, "multT".##)
+    out.clear
+    maddT(a, out)
   }
+    	
+  
+  def maddT(a:SMat, out:FMat):FMat = {
+    if (ncols == a.ncols || nrows != out.nrows || a.nrows != out.ncols) {
+    	throw new RuntimeException("xT dimensions mismatch (%d %d) (%d %d) (%d %d)" format (nrows, ncols, a.ncols, a.nrows, out.nrows, out.ncols))
+    }
+    Mat.nflops += 2L * a.nnz * nrows;
+    if (!Mat.useMKL || nrows < 100) {
+    	val ioff = Mat.ioneBased;
+    	if (nrows >= 64 && Mat.numThreads > 1) {
+    		val nthreads = math.min(Mat.numThreads, nrows/32);
+    		val done = IMat(1, nthreads);
+    		for (ithread <- 0 until nthreads) {
+    			Future {
+    				fSMultTHelper2(a, out, (1L*nrows*ithread/nthreads).toInt, (1L*nrows*(ithread+1)/nthreads).toInt, ioff);
+    				done(ithread) = 1;
+    			}
+    		}  
+    		while (SciFunctions.sum(done).v < nthreads) {Thread.`yield`()}
+    	} else {
+    		fSMultTHelper2(a, out, 0, nrows, ioff);
+    	}
+    } else { 
+    	if (nrows == 1) {
+    		setnumthreads(1) ; // Otherwise crashes 
+    		scscmv("N", a.nrows, a.ncols, 1.0f, "GLNF", a.data, a.ir, a.jc, data, 0f, out.data) ;
+    		setnumthreads(Mat.numOMPthreads);
+    	} else {
+    		smcsrm(nrows, a.ncols, data, nrows, a.data, a.ir, a.jc, out.data, nrows)
+    	}
+    }
+    out
+    } 
+
   
   def fDMultTHelper(a:FMat, out:FMat, istart:Int, iend:Int) = {
     var i = istart

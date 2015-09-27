@@ -1,5 +1,5 @@
 package edu.berkeley.bid;
-import jcuda.*;
+import jcuda.Pointer;
 
 public final class CUMATD {
 
@@ -14,8 +14,6 @@ public final class CUMATD {
     public static native int FloatToDouble(Pointer A, Pointer B, int N);
 
     public static native int toInt(Pointer A, Pointer B, int N);
-    
-    public static native int initSeq(Pointer A, int nrows, int ncols);
 
     public static native int applyiop(Pointer A, int Anrows, int Ancols, Pointer B, int Bnrows, int Bncols, Pointer C, int opn);
     

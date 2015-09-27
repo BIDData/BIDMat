@@ -43,6 +43,12 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
     	out
     }
   }
+   
+  override def contents():IMat = {
+    val out = new IMat(length, 1, data);
+    out.setGUID(MurmurHash3.mix(MurmurHash3.mix(length, 1), (GUID*7897889).toInt));
+    out
+  }
     
   override def set(v:Float):IMat = {
     Arrays.fill(data,0,length,v.asInstanceOf[Int])

@@ -1534,6 +1534,39 @@ object MatFunctions {
   }
   def oneHot(c:Mat):Mat = oneHot(c, 0);
   
+  def nHot(c:IMat, ncats0:Int):SMat = {
+    val ncats = if (ncats0 > 0) ncats0 else SciFunctions.maxi(c.contents).v + 1
+    val out = SMat.newOrCheckSMat(ncats, c.ncols, c.length, null, c.GUID, "nHot".##);
+    val nrows = c.nrows;
+    var ioff = Mat.ioneBased;
+    out.jc(0) = ioff;
+    var i = 0;
+    while (i < c.ncols) {
+      var ibase = i * nrows;
+      var j = 0;
+      while (j < nrows) {
+      	out.ir(j + ibase) = c.data(j + ibase) + ioff;
+      	out.data(j + ibase) = 1f;
+      	j += 1;
+      }
+      out.jc(i + 1) = ibase + nrows + ioff;
+      i += 1;
+    }
+    out;
+  }
+  
+  def nHot(c:IMat):SMat = nHot(c, 0);
+  
+  def nHot(c:GIMat, ncats:Int):GSMat = GSMat.nHot(c, ncats);
+  def nHot(c:GIMat):GSMat = GSMat.nHot(c, 0);
+  
+  def nHot(c:Mat, ncats:Int):Mat = {
+    c match {
+      case cc:IMat => nHot(cc, ncats);
+      case cc:GIMat => nHot(cc, ncats);
+    }
+  }
+  def nHot(c:Mat):Mat = nHot(c, 0);
   
   /** Returns the square root of '''v''' as a float, as an alternative to math.sqrt(v)'s double.  */
   def fsqrt(v:Float):Float = math.sqrt(v).asInstanceOf[Float]
@@ -1693,6 +1726,27 @@ object MatFunctions {
     a.jc(n) = n+ioff
     a
   }
+  
+  /**
+   * Makes the kron method generic, with two matrices and an output (which may be null). There are
+   * more combinations we could put here, but I am only putting enough for BayesNet.scala to work.
+   * Note that this means we should just call kron(a,b) or (preferably) kron(a,b,c), not a.kron(b).
+   */
+  def kron(a:Mat, b:Mat, omat:Mat) : Mat = {
+    (a, b) match {
+      case (a:FMat,b:FMat) => a.kron(b, omat)
+      case (a:FMat,b:SMat) => a.kron(full(b), omat)
+      case (a:IMat,b:FMat) => a.kron(b, omat)
+      case (a:IMat,b:SMat) => a.kron(full(b), omat)
+      case (a:GMat,b:GMat) => a.kron(b, omat)
+      case (a:GMat,b:GSMat) => a.kron(full(b), omat)
+      case (a:GIMat,b:GMat) => GMat(a).kron(b, omat)
+      case (a:GIMat,b:GSMat) => GMat(a).kron(full(b), omat)
+    }
+  }
+  
+  /** Makes the kron method generic. This is the case with no output matrices. */
+  def kron(a:Mat, b:Mat) : Mat = kron(a,b,null) 
   
   /**
    * Distribute the data in the vv matrix using indices in the indx matrix into the mats array. 

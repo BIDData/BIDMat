@@ -488,6 +488,28 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
     } else throw new RuntimeException("dimensions mismatch")
   }
   
+  def madd(b:GDMat, c:GDMat, at:Boolean, bt:Boolean):GDMat = {
+  	val (arows, acols, atrans) = if (at) (ncols, nrows, 't') else (nrows, ncols, 'n');
+    val (brows, bcols, btrans) = if (bt) (b.ncols, b.nrows, 't') else (b.nrows, b.ncols, 'n');
+    if (acols != brows || arows != c.nrows || bcols != c.ncols) {
+      throw new RuntimeException("madd bad dimensions (%d %d) (%d %d) (%d %d)" format (arows, acols, brows, bcols, c.nrows, c.ncols));
+    }
+    Mat.nflops += 2L * arows * bcols * acols;
+    cublasDgemm(atrans, btrans,	arows, bcols, acols, 1.0, data, nrows, b.data, b.nrows, 1.0, c.data, c.nrows);
+    c
+  }
+  
+  def madd(b:GDMat, c:GDMat):GDMat = madd(b, c, false, false);
+  
+  override def madd(b:Mat, c:Mat, at:Boolean, bt:Boolean):Mat = {
+    (b, c) match {
+      case (bb:GDMat, cc:GDMat) => madd(bb, cc, at, bt)
+    }
+    c
+  }
+  
+  override def madd(b:Mat, c:Mat):Mat = madd(b, c, false, false);
+  
   def GSMult(a:GSDMat, oldmat:Mat):GDMat = {
     if (ncols == a.nrows) {
       val out = GDMat.newOrCheckGDMat(nrows, a.ncols, oldmat, GUID, a.GUID, "GSMult".##)

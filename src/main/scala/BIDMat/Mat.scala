@@ -79,6 +79,7 @@ class Mat(nr:Int, nc:Int) {
   def contents:Mat = notImplemented0("contents");
   def colslice(a:Int, b:Int, out:Mat):Mat = notImplemented0("colslice");
   def colslice(a:Int, b:Int, out:Mat, c:Int):Mat = notImplemented0("colslice");
+  def colslice(a:Int, b:Int, out:Mat, c:Int, pb:Boolean):Mat = colslice(a, b, out, c);
   def rowslice(a:Int, b:Int, out:Mat):Mat = notImplemented0("rowslice");
   def rowslice(a:Int, b:Int, out:Mat, c:Int):Mat = notImplemented0("rowslice");
   def colslice(a:Int, b:Int):Mat = notImplemented0("colslice");
@@ -197,7 +198,8 @@ class Mat(nr:Int, nc:Int) {
   def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, reps:Int, aoff:Int, lda:Int, astep:Int, 
       b:Mat, boff:Int, ldb:Int, bstep:Int, c:Mat, coff:Int, ldc:Int, cstep:Int):Mat = notImplemented0("blockGemm");
 
-  
+  def madd(a:Mat, b:Mat, at:Boolean, bt:Boolean):Mat = notImplemented1("update", a);
+  def madd(a:Mat, b:Mat):Mat = notImplemented1("update", a);
   
   def unary_-():Mat = notImplemented1("-", this)
   def +  (b : Mat):Mat = notImplemented1("+", b)
@@ -485,11 +487,20 @@ abstract class Pair {
 
 object Mat {
   import Ordered._
-  import jline.TerminalFactory;
-
-  var terminal = TerminalFactory.create;
   
-  def terminalWidth = math.max(terminal.getWidth,80);
+  var termWidth = 80;
+  
+  def terminalWidth:Int = {
+    try {
+    	math.max(jline.TerminalFactory.create.getWidth, termWidth);
+    }
+    catch {
+    	case _:Throwable => {
+    	  println("Couldnt get terminal width via JLine, using %d" format termWidth);
+    	  termWidth;
+    	}
+    }
+  }
   
   var useCache = false						 // Use matrix caching
   
@@ -654,7 +665,7 @@ object Mat {
   def checkMKL:Unit = {
     if (useMKL) {
     	try {
-    		jcuda.LibUtils.loadLibrary("bidmatmkl")
+    		edu.berkeley.bid.LibUtils.loadLibrary("bidmatcpu")
     	} catch {
     	case _:Throwable => {
     		println("Cant find native CPU libraries")

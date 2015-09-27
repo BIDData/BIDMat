@@ -3,13 +3,15 @@ import ptolemy.plot._
 
 object Plotting { 
   var ifigure:Int = 1
+  val marksmat = Array("points","dots","various")
   
-  def _plot(mats:Mat*)(xlog:Boolean=false, ylog:Boolean=false, isconnected:Boolean=true, bars:Boolean=false):Plot = {
+  def _plot(mats:Mat*)(xlog:Boolean=false, ylog:Boolean=false, isconnected:Boolean=true, bars:Boolean=false, marks:Int = 0):Plot = {
     var p:Plot = new Plot
     p.setXLog(xlog)
     p.setYLog(ylog)
     p.setBars(bars)
     p.setConnected(isconnected)
+    p.setMarksStyle(marksmat(marks))
     val dataset = 0
     if (mats.length == 1) {
       val m = mats(0)
@@ -51,7 +53,9 @@ object Plotting {
     p
   }
   
-  def plot(mats:Mat*) = _plot(mats: _*)()
+  def plot(mats:Mat*) = _plot(mats: _*)();
+  
+  def scatter(mats:Mat*) = _plot(mats: _*)(marks=1, isconnected=false);
   
   def loglog(mats:Mat*) = _plot(mats: _*)(xlog=true, ylog=true)
   

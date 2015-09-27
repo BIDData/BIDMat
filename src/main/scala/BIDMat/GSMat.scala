@@ -7,6 +7,7 @@ import jcuda.runtime.JCuda._
 import jcuda.runtime.cudaError._
 import jcuda.runtime._
 import edu.berkeley.bid.CUMAT
+import scala.util.hashing.MurmurHash3
 import GMat._
 
 case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, val jc:Pointer, val data:Pointer, val realnnz:Int) extends Mat(nr, nc) {
@@ -17,7 +18,11 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     
   override def nnz = nnz0
   
-  override def contents:GMat = new GMat(nnz, 1, data, realnnz)
+  override def contents:GMat = {
+    val out = new GMat(nnz, 1, data, realnnz);
+    out.setGUID(MurmurHash3.mix(MurmurHash3.mix(nnz, 1), (GUID*7897889).toInt));
+    out
+  }
   
   val myGPU = SciFunctions.getGPU
     
@@ -60,6 +65,37 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     }
     out    
   }
+  
+  override def colslice(col1:Int, col2:Int, omat:Mat):GSMat = {
+    val locs = IMat(2,1);
+    cudaMemcpy(Pointer.to(locs.data), jc.withByteOffset(col1 * Sizeof.INT), Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost);
+    cudaMemcpy(Pointer.to(locs.data).withByteOffset(Sizeof.INT), jc.withByteOffset(col2 * Sizeof.INT), Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost);
+    cudaDeviceSynchronize();
+    val starti = locs(0);
+    val endi = locs(1);
+    val newnnz = endi - starti;
+    val newncols = col2 - col1;
+    val out = GSMat.newOrCheckGSMat(nrows, newncols, newnnz, newnnz, omat, GUID, col1, col2, "colslice".##);
+    var err = cudaMemcpy(out.jc, jc.withByteOffset(col1 * Sizeof.INT), 1L * Sizeof.INT * (newncols+1), cudaMemcpyKind.cudaMemcpyDeviceToDevice);
+    cudaDeviceSynchronize();
+    if (err == 0) err = cudaMemcpy(out.ir, ir.withByteOffset(starti*Sizeof.INT), 1L * Sizeof.INT * newnnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize();
+    if (err == 0) err = cudaMemcpy(out.ic, ic.withByteOffset(starti*Sizeof.INT), 1L * Sizeof.INT * newnnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize();
+    if (err == 0) err = cudaMemcpy(out.data, data.withByteOffset(starti*Sizeof.FLOAT), 1L * Sizeof.FLOAT * newnnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize();
+    val tjc = new GIMat(newncols+1, 1, out.jc, newncols + 1);
+    tjc ~ tjc - starti;
+    val cc = new GIMat(newnnz, 1, out.ic, newnnz);
+    cc ~ cc - col1;
+    if (err != 0) {
+        println("device is %d" format SciFunctions.getGPU)
+        throw new RuntimeException("Cuda error in GSMAT.colslice " + cudaGetErrorString(err))
+    }
+    out    
+  }
+  
+  override def colslice(col1:Int, col2:Int):GSMat = colslice(col1, col2, null);
       
   def toSMat():SMat = { 
     val out = SMat.newOrCheckSMat(nrows, ncols, nnz, null, GUID, "toSMat".##)
@@ -533,8 +569,26 @@ object GSMat {
 		  if (err != 0) throw new RuntimeException(("GPU %d oneHot row copy error "+cudaGetErrorString(err)) format SciFunctions.getGPU);
 		  err = CUMAT.setval(out.data, 1f, c.length);
       if (err != 0) throw new RuntimeException(("GPU %d oneHot set error "+cudaGetErrorString(err)) format SciFunctions.getGPU);
-      err = CUMAT.initSeq(out.ic, c.length, 1);
+      err = CUMAT.initSeq(out.ic, 1, c.length, 0);
       if (err != 0) throw new RuntimeException(("GPU %d oneHot col set error "+cudaGetErrorString(err)) format SciFunctions.getGPU);
+      val handle = GSMat.getHandle;
+      if (err == 0) err = JCusparse.cusparseXcoo2csr(handle, out.ic, out.nnz, out.ncols, out.jc, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO);
+      cudaDeviceSynchronize;
+      if (err == 0) err = cudaGetLastError;
+      out
+  }
+  
+  def nHot(c:GIMat, ncats0:Int):GSMat = {
+      val ncats = if (ncats0 == 0) (SciFunctions.maxi(c.contents).dv.toInt + 1) else ncats0;
+		  val out = GSMat.newOrCheckGSMat(ncats, c.ncols, c.length, c.length, null, c.GUID, ncats, "nHot".##);
+		  var err = cudaMemcpy(out.ir, c.data, 1L * Sizeof.INT * c.length, cudaMemcpyKind.cudaMemcpyDeviceToDevice);
+		  cudaDeviceSynchronize();
+		  if (err == 0) err = cudaGetLastError();
+		  if (err != 0) throw new RuntimeException(("GPU %d nHot row copy error "+cudaGetErrorString(err)) format SciFunctions.getGPU);
+		  err = CUMAT.setval(out.data, 1f, c.length);
+      if (err != 0) throw new RuntimeException(("GPU %d nHot set error "+cudaGetErrorString(err)) format SciFunctions.getGPU);
+      err = CUMAT.initSeq(out.ic, c.nrows, c.ncols, 0);
+      if (err != 0) throw new RuntimeException(("GPU %d nHot col set error "+cudaGetErrorString(err)) format SciFunctions.getGPU);
       val handle = GSMat.getHandle;
       if (err == 0) err = JCusparse.cusparseXcoo2csr(handle, out.ic, out.nnz, out.ncols, out.jc, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO);
       cudaDeviceSynchronize;

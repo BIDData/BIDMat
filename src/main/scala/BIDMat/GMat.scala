@@ -3,7 +3,6 @@ package BIDMat
 import jcuda._
 import jcuda.runtime._
 import jcuda.runtime.JCuda._
-import jcuda.runtime.cudaError._
 import jcuda.runtime.cudaMemcpyKind._
 import jcuda.jcublas._
 import jcuda.jcublas.JCublas._
@@ -25,7 +24,9 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
     }
   
   override def contents() = {
-    new GMat(length, 1, data, realsize)
+    val out = new GMat(length, 1, data, realsize);
+    out.setGUID(MurmurHash3.mix(MurmurHash3.mix(length, 1), (GUID*7897889).toInt));
+    out
   }
   
   override def mytype = "GMat"
@@ -518,6 +519,38 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
     } else throw new RuntimeException("dimensions mismatch (%d %d), (%d %d)" format (nrows, ncols, a.nrows, a.ncols));
   }
   
+  def madd(b:GMat, c:GMat, at:Boolean, bt:Boolean):GMat = {
+  	val (arows, acols, atrans) = if (at) (ncols, nrows, 't') else (nrows, ncols, 'n');
+    val (brows, bcols, btrans) = if (bt) (b.ncols, b.nrows, 't') else (b.nrows, b.ncols, 'n');
+    if (acols != brows || arows != c.nrows || bcols != c.ncols) {
+      throw new RuntimeException("madd bad dimensions (%d %d) (%d %d) (%d %d)" format (arows, acols, brows, bcols, c.nrows, c.ncols));
+    }
+    Mat.nflops += 2L * arows * bcols * acols;
+    cublasSgemm(atrans, btrans,	arows, bcols, acols, 1.0f, data, nrows, b.data, b.nrows, 1.0f, c.data, c.nrows);
+    c
+  }
+  
+  def madd(b:GMat, c:GMat):GMat = madd(b, c, false, false);
+  
+  def madd(b:GSMat, c:GMat, bt:Boolean, ct:Boolean):GMat = {
+    (bt, ct) match {
+      case (false, false) => madd(b, c);
+      case (false, true) => maddT(b, c);
+      case _ => throw new RuntimeException("madd unsupported options GSMat, GMat %b %b" format (bt, ct));
+    }
+  }
+  
+  override def madd(b:Mat, c:Mat, at:Boolean, bt:Boolean):Mat = {
+  	(b, c) match {
+  	case (bb:GMat, cc:GMat) => madd(bb, cc, at, bt);
+  	case (bb:GSMat, cc:GMat) => madd(bb, cc, at, bt);
+  	case _ => throw new RuntimeException("madd unsupported types %s %s" format (b.mytype, c.mytype));
+  	}
+  	c
+  }
+  
+  override def madd(b:Mat, c:Mat):Mat = madd(b, c, false, false);
+  
   def GMultT(a:GMat, oldmat:Mat):GMat = {
     if (ncols == a.ncols) {
       val out = GMat.newOrCheckGMat(nrows, a.nrows, oldmat, GUID, a.GUID, "GMultT".##)
@@ -636,9 +669,19 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
   }
   
   def GSMult(a:GSMat, oldmat:Mat):GMat = {
-    if (ncols == a.nrows) {
-      val out = GMat.newOrCheckGMat(nrows, a.ncols, oldmat, GUID, a.GUID, "GSMult".##)
-      Mat.nflops += 2L * nrows * a.nnz    
+    if (ncols != a.nrows) {
+      throw new RuntimeException("GSMult dimensions mismatch (%d %d) (%d %d)" format (nrows, ncols, a.nrows, a.ncols))
+    }
+    val out = GMat.newOrCheckGMat(nrows, a.ncols, oldmat, GUID, a.GUID, "GSMult".##);
+    out.clear;
+    madd(a, out);
+  }
+  
+  def madd(a:GSMat, out:GMat):GMat = {
+    if (ncols != a.nrows || nrows != out.nrows || a.ncols != out.ncols) {
+      throw new RuntimeException("GSMadd dimensions mismatch (%d %d) (%d %d) (%d %d)" format (nrows, ncols, a.nrows, a.ncols, out.nrows, out.ncols))
+    }
+    Mat.nflops += 2L * nrows * a.nnz;  
 /*      if (nrows == 1) {                    // Alas, throws "too many resources requested for launch" with large a.nrows
       	val handle = GSMat.getHandle       // Also gives erroneous values
       	val descra = GSMat.getDescr
@@ -651,23 +694,29 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
         	throw new RuntimeException("Cuda error in GSMult " + cudaGetErrorString(err))
         }
       } else { */
-      	out.clear
-      	val err = CUMAT.dsmult(nrows, a.ncols, a.nnz, data, a.data, a.ir, a.ic, out.data)
-      	if (err != 0) throw new RuntimeException("GMult: CUDA kernel error in CUMAT.dsmult " + cudaGetErrorString(err))
-//      }
-      out
-    }	else throw new RuntimeException("dimensions mismatch")
+    val err = CUMAT.dsmult(nrows, a.ncols, a.nnz, data, a.data, a.ir, a.ic, out.data);
+    if (err != 0) throw new RuntimeException("GMult: CUDA kernel error in CUMAT.dsmult " + cudaGetErrorString(err));
+    //      }
+    out;
   }
   
   def GSMultT(a:GSMat, oldmat:Mat):GMat = {
-    if (ncols == a.ncols) {
-      val out = GMat.newOrCheckGMat(nrows, a.nrows, oldmat, GUID, a.GUID, "GSMultT".##)
-      Mat.nflops += 2L * nrows * a.nnz
-      out.clear
-      val err = CUMAT.dsmultT(nrows, a.ncols, a.nnz, data, a.data, a.ir, a.ic, out.data)
-      if (err != 0) throw new RuntimeException("GMult: CUDA kernel error in CUMAT.dsmultT " + cudaGetErrorString(err))
-      out
-    }	else throw new RuntimeException("dimensions mismatch")
+  	if (ncols != a.ncols) { 
+  		throw new RuntimeException("GSMult dimensions mismatch (%d %d) (%d %d)" format (nrows, ncols, a.ncols, a.nrows))
+  	}
+  	val out = GMat.newOrCheckGMat(nrows, a.nrows, oldmat, GUID, a.GUID, "GSMultT".##);
+  	out.clear;
+  	maddT(a, out);
+  }
+  
+  def maddT(a:GSMat, out:GMat):GMat = {
+    if (ncols != a.ncols || nrows != out.nrows || a.nrows != out.ncols) {
+      throw new RuntimeException("GSMadd dimensions mismatch (%d %d) (%d %d) (%d %d)" format (nrows, ncols, a.nrows, a.ncols, out.nrows, out.ncols))
+    }
+    Mat.nflops += 2L * nrows * a.nnz;
+    val err = CUMAT.dsmultT(nrows, a.ncols, a.nnz, data, a.data, a.ir, a.ic, out.data);
+    if (err != 0) throw new RuntimeException("GMult: CUDA kernel error in CUMAT.dsmultT " + cudaGetErrorString(err));
+    out
   }
   
   def GMST(a:GMat, oldmat:Mat):GMat = {
@@ -1999,6 +2048,8 @@ object GMat {
   		c
   	}
   }
+  
+
    
   def GPUsort_old(keys:FMat, vals:IMat):Unit = {
     if (keys.nrows != vals.nrows || keys.ncols != vals.ncols)
@@ -2049,7 +2100,7 @@ object GMat {
   def sort2(keys:GMat):(GMat,GIMat) = {
 	 val nkeys = GMat.newOrCheckGMat(keys.nrows, keys.ncols, null, keys.GUID, "GMat.sort2".##)
 	 val nvals = GIMat.newOrCheckGIMat(keys.nrows, keys.ncols, null, keys.GUID, "GMat.sort2i".##)
-	 CUMAT.initSeq(nvals.data, keys.nrows, keys.ncols)
+	 CUMAT.initSeq(nvals.data, keys.nrows, keys.ncols, 1)
 	 nkeys <-- keys
 	 sortGPU(nkeys, nvals)
 	 (nkeys, nvals)
@@ -2058,7 +2109,7 @@ object GMat {
   def sortdown2(keys:GMat):(GMat,GIMat) = {
 	 val nkeys = GMat.newOrCheckGMat(keys.nrows, keys.ncols, null, keys.GUID, "GMat.sortdown2".##)
 	 val nvals = GIMat.newOrCheckGIMat(keys.nrows, keys.ncols, null, keys.GUID, "GMat.sortdown2i".##)
-	 CUMAT.initSeq(nvals.data, keys.nrows, keys.ncols)
+	 CUMAT.initSeq(nvals.data, keys.nrows, keys.ncols, 1)
 	 nkeys <-- keys
 	 sortdownGPU(nkeys, nvals)
 	 (nkeys, nvals)

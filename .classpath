@@ -19,6 +19,6 @@
 	<classpathentry kind="lib" path="lib/jcurand-0.7.0a.jar"/>
 	<classpathentry kind="lib" path="lib/jcusolver-0.7.0a.jar"/>
 	<classpathentry kind="lib" path="lib/jcusparse-0.7.0a.jar"/>
-	<classpathentry kind="lib" path="lib/jline-2.12.jar"/>
+	<classpathentry kind="lib" path="lib/jline-2.11.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

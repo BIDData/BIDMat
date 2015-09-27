@@ -52,6 +52,12 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
     	out
     }
   }
+  
+  override def contents():DMat = {
+    val out = new DMat(length, 1, data);
+    out.setGUID(MurmurHash3.mix(MurmurHash3.mix(length, 1), (GUID*7897889).toInt));
+    out
+  }
       
   def horzcat(b: DMat) = DMat(ghorzcat(b))
 
@@ -449,6 +455,28 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
       throw new RuntimeException("Tx dimensions mismatch")
     }
   }
+  
+  def madd(b:DMat, c:DMat, at:Boolean, bt:Boolean):DMat = {
+  	val (arows, acols, atrans) = if (at) (ncols, nrows, TRANSPOSE.Trans) else (nrows, ncols, TRANSPOSE.NoTrans);
+    val (brows, bcols, btrans) = if (bt) (b.ncols, b.nrows, TRANSPOSE.Trans) else (b.nrows, b.ncols, TRANSPOSE.NoTrans);
+    if (acols != brows || arows != c.nrows || bcols != c.ncols) {
+      throw new RuntimeException("madd bad dimensions (%d %d) (%d %d) (%d %d)" format (arows, acols, brows, bcols, c.nrows, c.ncols));
+    }
+    Mat.nflops += 2L * arows * bcols * acols;
+    dgemm(ORDER.ColMajor, atrans, btrans,	arows, bcols, acols, 1.0, data, nrows, b.data, b.nrows, 1.0, c.data, c.nrows);
+    c
+  }
+  
+  def madd(b:DMat, c:DMat):DMat = madd(b, c, false, false);
+    
+  override def madd(b:Mat, c:Mat, at:Boolean, bt:Boolean):Mat = {
+    (b, c) match {
+      case (bb:DMat, cc:DMat) => madd(bb, cc, at, bt)
+    }
+    c
+  }
+  
+  override def madd(b:Mat, c:Mat):Mat = madd(b, c, false, false);
   
   /*
    * Very slow, row-and-column multiply

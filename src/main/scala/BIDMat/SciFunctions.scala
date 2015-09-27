@@ -123,8 +123,9 @@ object SciFunctions {
   def setseed(seed:Int):Unit = {
     myrand.setSeed(seed)
     if (stream != null) {
-      vslDeleteStream(stream)
-      vslNewStream(stream, BRNG, seed)
+      vslDeleteStream(stream);
+      vslNewStream(stream, BRNG, seed);
+      rand(1,10);
     }
     if (Mat.hasCUDA > 0) {
       val thisGPU = getGPU

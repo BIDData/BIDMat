@@ -5,7 +5,7 @@ public final class LAPACK {
     private LAPACK() {}
 
     static {
-      jcuda.LibUtils.loadLibrary("bidmatmkl");
+      jcuda.LibUtils.loadLibrary("bidmatcpu");
     }
 
 /*    public final static class ORDER {
