@@ -422,7 +422,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
       throw new RuntimeException("fSMultTile: tile strays outside matrix dimensions");
     } else {
       sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.NoTrans,
-      		nr, nc, kk, 1.0f, data, aroff+acoff*nrows, nrows, b.data, broff+bcoff*b.nrows, b.nrows, 0, 
+      		nr, nc, kk, 1.0f, data, aroff+acoff*nrows, nrows, b.data, broff+bcoff*b.nrows, b.nrows, 1.0f, 
       		c.data, croff+ccoff*c.nrows, c.nrows);
       c;
     }
@@ -435,7 +435,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
       throw new RuntimeException("fSMultTile: tile strays outside matrix dimensions");
     } else {
       sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.Trans,
-      		nr, nc, kk, 1.0f, data, aroff+acoff*nrows, nrows, b.data, broff+bcoff*b.nrows, b.nrows, 0, 
+      		nr, nc, kk, 1.0f, data, aroff+acoff*nrows, nrows, b.data, broff+bcoff*b.nrows, b.nrows, 1.0f, 
       		c.data, croff+ccoff*c.nrows, c.nrows);
       c;
     }
@@ -607,7 +607,6 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     } else if (aroff + nr > nrows || acoff + kk > ncols || broff + nc > b.nrows || bcoff + kk > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
       throw new RuntimeException("fSMultTileT: tile strays outside matrix dimensions");
     } else {
-    	c.clear;
     	Mat.nflops += 2L * nr * b.nnz;
     	val ioff = Mat.ioneBased;
     	if (1L*nrows*b.nnz > 100000L && Mat.numThreads > 1) {
