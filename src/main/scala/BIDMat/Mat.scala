@@ -492,16 +492,20 @@ object Mat {
   var youHaveBeenWarned = false;
   
   def terminalWidth:Int = {
-    try {
-    	math.max(jline.TerminalFactory.create.getWidth, termWidth);
-    }
-    catch {
-    	case _:Throwable => {
-    	  if (!youHaveBeenWarned) println("Couldnt get terminal width via JLine, using %d" format termWidth);
-    	  youHaveBeenWarned = true;
-    	  termWidth;
-    	}
-    }
+  		if (!youHaveBeenWarned) {
+  			try {
+  				math.max(jline.TerminalFactory.create.getWidth, termWidth);
+  			}
+  			catch {
+  			case _:Throwable => {
+  				println("Couldnt get terminal width via JLine, using %d" format termWidth);
+  				youHaveBeenWarned = true;
+  				termWidth;
+  			}
+  			}
+  		} else {
+  			termWidth;
+  		}
   }
   
   var useCache = false						 // Use matrix caching
