@@ -489,6 +489,7 @@ object Mat {
   import Ordered._
   
   var termWidth = 80;
+  var youHaveBeenWarned = false;
   
   def terminalWidth:Int = {
     try {
@@ -496,7 +497,8 @@ object Mat {
     }
     catch {
     	case _:Throwable => {
-    	  println("Couldnt get terminal width via JLine, using %d" format termWidth);
+    	  if (!youHaveBeenWarned) println("Couldnt get terminal width via JLine, using %d" format termWidth);
+    	  youHaveBeenWarned = true;
     	  termWidth;
     	}
     }
