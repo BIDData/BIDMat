@@ -414,22 +414,14 @@ def tMult(a:Mat, outmat:Mat, tmpmat: Mat) : Mat =  {
     out
   }
 
-  def ~ (b: GMat) = new TGPair(this,b);
-  def ~ (b: FMat) = new TFPair(this,b);
-  def ~ (b: GSMat) = new TGSPair(this,b);
-  def ~ (b: SMat) = new TSPair(this,b);
-
-  override def ~ (b : Mat) : Pair = b match {
-    case bb:GMat => new TGPair(this,bb);
-    case bb:FMat => new TFPair(this,bb);
-    case bb:GSMat => new TGSPair(this,bb);
-    case bb:SMat => new TSPair(this,bb);
+  override def ~ (b: Mat) = b match { 
+    case bb:TMat => new TPair(this,bb);
   }
 
-  def * (a : FMat) = tMult(a,null,null);
-  def * (a : GMat) = tMult(a,null,null);
-  def * (a : SMat) = tMult(a,null,null);
-  def * (a : GSMat) = tMult(a,null,null);
+  def * (a : FMat) = this.tMult(a,null,null);
+  def * (a : GMat) = this.tMult(a,null,null);
+  def * (a : SMat) = this.tMult(a,null,null);
+  def * (a : GSMat) = this.tMult(a,null,null);
 
 
   def *@ (b : TMat) = tMatOpF(b, (x,y) => x*y, null)
@@ -438,20 +430,8 @@ def tMult(a:Mat, outmat:Mat, tmpmat: Mat) : Mat =  {
   
 }
 
-class TGPair(val left:TMat, val right:GMat) extends Pair {
-
-}
-
-class TFPair(val left:TMat, val right:FMat) extends Pair {
-
-}
-
-class TGSPair(val left:TMat, val right:GSMat) extends Pair {
-
-}
-
-class TSPair(val left:TMat, val right:SMat) extends Pair {
-
+class TPair(val omat:Mat, val mat:TMat) extends Pair {
+  override def * (a : Mat) = mat.tMult(a,null,null) // fix caching 
 }
  
 object TMat {
