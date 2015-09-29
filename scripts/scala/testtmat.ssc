@@ -9,6 +9,11 @@ val b = TMat(4,4,Array(0,2,0,2),Array(0,0,2,2),Array(a(0 to 1,0 to 1),
                                                        a(2 to 3,0 to 1),
                                                        a(2 to 3,2 to 3)));
 
+val bb = TMat(8,8,Array(0,4,0,4),Array(0,0,4,4),Array(a(0 to 1,0 to 1), 
+                                                       a(0 to 1,2 to 3),
+                                                       a(2 to 3,0 to 1),
+                                                       a(2 to 3,2 to 3)));
+
 println("-------- full ---------")
 println(b.full);
 
@@ -56,4 +61,6 @@ val e = b.copy;
 println(d);
 println(e.full);
 
-
+val ee = rand(8,8);
+val ff = TMat.tMult(ee,ee,bb).full
+ee*ee

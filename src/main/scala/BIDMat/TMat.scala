@@ -550,4 +550,39 @@ object TMat {
       }
     }
   }
+
+  def zeros ( nr: Int,
+              nc: Int,
+              xInds: Array[Int],
+              yInds: Array[Int],
+              data: Array[Mat] ) = {
+
+    var i = 0
+    while (i < data.length) {
+      data(i).clear
+      i += 1
+    }
+
+    new TMat( nr, nc, xInds, yInds, data)
+  }
+
+
+  def tMult ( left: Mat, right: Mat, omat : TMat) = {
+    var i = 0
+    while (i < omat.tiles.length) {
+      left.tileMult( omat.tiles(i).nrows, 
+                     omat.tiles(i).ncols, 
+                     left.ncols, 
+                     omat.y(i), 
+                     0, 
+                     right, 
+                     0,
+                     omat.x(i), 
+                     omat.tiles(i), 
+                     0,
+                     0 )
+      i += 1
+    }
+    omat
+  }
 }
