@@ -583,7 +583,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
     } else {
     	cublasSgemm('n', 'n',	nr, nc, kk, 1.0f, 
     	    data.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
-    	    b.data.withByteOffset(Sizeof.FLOAT.toLong*(broff+bcoff*b.nrows)), b.nrows, 0, 
+    	    b.data.withByteOffset(Sizeof.FLOAT.toLong*(broff+bcoff*b.nrows)), b.nrows, 1.0f, 
       		c.data.withByteOffset(Sizeof.FLOAT.toLong*(croff+ccoff*c.nrows)), c.nrows);
       c;
     }
@@ -597,7 +597,7 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
     } else {
     	cublasSgemm('n', 't',	nr, nc, kk, 1.0f, 
     	    data.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
-    	    b.data.withByteOffset(Sizeof.FLOAT.toLong*(broff+bcoff*b.nrows)), b.nrows, 0, 
+    	    b.data.withByteOffset(Sizeof.FLOAT.toLong*(broff+bcoff*b.nrows)), b.nrows, 1.0f, 
       		c.data.withByteOffset(Sizeof.FLOAT.toLong*(croff+ccoff*c.nrows)), c.nrows);
       c;
     }

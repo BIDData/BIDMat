@@ -269,6 +269,7 @@ object HMat {
     ftype match {
       case 130 => loadFMat(fname, omat, compressed)
       case 110 => loadIMat(fname, omat, compressed)
+      case 120 => loadLMat(fname, omat, compressed)
       case 140 => loadDMat(fname, omat, compressed)
       case 231 => loadSMat(fname, compressed)
       case 331 => loadSMat(fname, compressed)
@@ -290,6 +291,7 @@ object HMat {
       case a:FMat => saveFMat(fname, a, compressed)
       case a:DMat => saveDMat(fname, a, compressed)
       case a:IMat => saveIMat(fname, a, compressed)
+      case a:LMat => saveLMat(fname, a, compressed)
       case a:SBMat => saveSBMat(fname, a, compressed)
       case a:SDMat => saveSDMat(fname, a, compressed)
       case a:SMat => saveSMat(fname, a, compressed)
@@ -412,6 +414,58 @@ object HMat {
   def loadIMat(fname:String):IMat = loadIMat(fname, null, 0)
   
   def loadIMat(fname:String, omat:Mat):IMat = loadIMat(fname, omat, 0)
+  
+  def loadLMatTxt(fname:String, omat:Mat, compressed:Int):LMat = {
+    val fin = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed).asInstanceOf[DataInputStream]))
+    var nrows = 0
+    var firstline = fin.readLine()
+    val parts = firstline.split("[\t ,:]+")
+    while (firstline != null && firstline.length > 0) {
+      firstline = fin.readLine()
+      nrows += 1  
+    }
+    fin.close
+    val din = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed).asInstanceOf[DataInputStream]))
+    val ncols = parts.length
+    val out = LMat.newOrCheckLMat(nrows, ncols, omat)
+    var irow = 0
+    while (irow < nrows) {
+      val parts = din.readLine().split("[\t ,:]+")
+      var icol = 0
+      while (icol < ncols) {
+        out.data(irow + icol*out.nrows) = parts(icol).toLong
+        icol += 1
+      }     
+      irow += 1
+    } 
+    din.close
+    out    
+  }
+  
+  def loadLMat(fname:String, omat:Mat, compressed:Int):LMat = {
+    if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
+      loadLMatTxt(fname, omat, compressed)
+    } else {
+      val gin = getInputStream(fname, compressed)
+      val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
+      val hints = new Array[Int](4)
+      readSomeInts(gin, hints, buff, 4)
+      val ftype = hints(0)
+      val nrows = hints(1)
+      val ncols = hints(2)
+      if (ftype != 120) {
+        throw new RuntimeException("loadLMat expected type field 120 but was %d" format ftype)
+      }
+      val out = LMat.newOrCheckLMat(nrows, ncols, omat)
+      readSomeLongs(gin, out.data, buff, ncols*nrows)
+      closeInput(gin)
+      out
+    }
+  }  
+    
+  def loadLMat(fname:String):LMat = loadLMat(fname, null, 0)
+  
+  def loadLMat(fname:String, omat:Mat):LMat = loadLMat(fname, omat, 0)
    
   def loadDMatTxt(fname:String, omat:Mat, compressed:Int):DMat = {
     val fin = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed).asInstanceOf[DataInputStream]))
@@ -613,6 +667,44 @@ object HMat {
   }
   
   def saveIMatTxt(fname:String, m:IMat, compressed:Int=0, delim:String="\t"):Unit = {
+    val gout = getOutputStream(fname, compressed)
+    val fout = new BufferedWriter(new OutputStreamWriter(gout.asInstanceOf[DataOutputStream]))
+    var i = 0
+    while (i < m.nrows) {
+      if (m.ncols > 0) {
+        fout.write(m(i,0).toString)
+      }
+      var j = 1
+      while (j < m.ncols) {
+        fout.write(delim + m(i,j).toString)
+        j += 1
+      }
+      fout.write("\n")
+      i += 1
+    }
+    fout.close
+  }
+  
+  def saveLMat(fname:String, m:LMat, compressed:Int=0):Unit = {
+    if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
+      saveLMatTxt(fname, m, compressed)
+    } else {
+      val gout = getOutputStream(fname, compressed)
+      val hints = new Array[Int](4)
+      val tbuf = ByteBuffer.allocate(16).order(byteOrder)
+      hints(0) = 110 // 1=dense, 1=int
+      hints(1) = m.nrows
+      hints(2) = m.ncols
+      hints(3) = 0
+      writeSomeInts(gout, hints, tbuf, 4)
+      val bsize = 4*m.ncols*m.nrows
+      val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder)
+      writeSomeLongs(gout, m.data, buff, m.nrows*m.ncols)
+      closeOutput(gout)
+    }
+  }
+  
+  def saveLMatTxt(fname:String, m:LMat, compressed:Int=0, delim:String="\t"):Unit = {
     val gout = getOutputStream(fname, compressed)
     val fout = new BufferedWriter(new OutputStreamWriter(gout.asInstanceOf[DataOutputStream]))
     var i = 0

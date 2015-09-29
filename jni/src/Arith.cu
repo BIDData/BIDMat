@@ -84,6 +84,33 @@ __global__ void __dsmultTile(int nr, int nc, int kk, int nnz, float *A, int lda,
   }
 }
 
+__global__ void __dsmultTilex(int nr, int nc, int kk, int nnz, float *A, int lda, float *Bdata, int *Bir, int *Bic, int broff, int bcoff, float *C, int ldc) {
+  int bid = threadIdx.y + blockDim.y * blockIdx.x;
+  int nb = blockDim.y * gridDim.x;
+  int jstart = ((long long)bid) * nnz / nb;
+  int jend = ((long long)(bid + 1)) * nnz / nb;
+  float sum = 0;
+  int bcold = -1;
+  int jdone = 0;
+  if (threadIdx.x < nr) {
+    for (int j = jstart; j < jend ; j++) {
+      int brow = Bir[j] - broff;
+      int bcol = Bic[j] - bcoff;
+      if (brow >= 0 && brow < kk && bcol >= 0 && bcol < nc) {
+        if (jdone > 0 && bcol != bcold) {
+          atomicAdd(&C[threadIdx.x + ldc * bcold], sum);
+          sum = 0;
+        }
+        jdone++;
+        sum += A[threadIdx.x + lda * brow] * Bdata[j];
+        bcold = bcol;
+      }
+    }
+    if (jdone > 0) atomicAdd(&C[threadIdx.x + ldc * bcold], sum);
+  }
+}
+
+
 __global__ void __dsmultTileT(int nr, int nc, int kk, int nnz, float *A, int lda, float *Bdata, int *Bir, int *Bic, int broff, int bcoff, float *C, int ldc) {
   int jstart = ((long long)blockIdx.x) * nnz / gridDim.x;
   int jend = ((long long)(blockIdx.x + 1)) * nnz / gridDim.x;
@@ -104,12 +131,34 @@ __global__ void __dsmultTileT(int nr, int nc, int kk, int nnz, float *A, int lda
   }
 }
 
+__global__ void __dsmultTileTx(int nr, int nc, int kk, int nnz, float *A, int lda, float *Bdata, int *Bir, int *Bic, int broff, int bcoff, float *C, int ldc) {
+  int bid = threadIdx.y + blockDim.y * blockIdx.x;
+  int nb = blockDim.y * gridDim.x;
+  int jstart = ((long long)bid) * nnz / nb;
+  int jend = ((long long)(bid + 1)) * nnz / nb;
+  float aval = 0;
+  int bcold = -1;
+  if (threadIdx.x < nr) {
+    for (int j = jstart; j < jend ; j++) {
+      int brow = Bir[j] - broff;
+      int bcol = Bic[j] - bcoff;
+      if (brow >= 0 && brow < nc && bcol >= 0 && bcol < nr) {
+        if (bcol != bcold) {
+          aval = A[threadIdx.x + lda * bcol];
+        }
+        atomicAdd(&C[threadIdx.x + ldc * brow], aval * Bdata[j]);
+        bcold = bcol;
+      }
+    }
+  }
+}
+
 int dsmultTile(int nr, int nc, int kk, int nnz, float *A, int lda, float *Bdata, int *Bir, int *Bic, int broff, int bcoff, float *C, int ldc) {
   if (nr < 128) {
     int nt = max(1, min(nc/2, 256/nr));
     dim3 threadDim(nr, nt, 1);
     int nblocks = min(MAXXGRID, max(1, nc/nt));
-    __dsmultTile<<<nblocks,threadDim>>>(nr, nc, kk, nnz, A, lda,  Bdata, Bir, Bic, broff, bcoff, C, ldc);
+    __dsmultTilex<<<nblocks,threadDim>>>(nr, nc, kk, nnz, A, lda,  Bdata, Bir, Bic, broff, bcoff, C, ldc);
   } else {
     int nthreads = min(1024, nr);
     int nblocks = min(MAXXGRID, nc);
@@ -125,7 +174,7 @@ int dsmultTileT(int nr, int nc, int kk, int nnz, float *A, int lda, float *Bdata
     int nt = max(1, min(nc/2, 256/nr));
     dim3 threadDim(nr, nt, 1);
     int nblocks = min(MAXXGRID, max(1, nc/nt));
-    __dsmultTileT<<<nblocks,threadDim>>>(nr, nc, kk, nnz, A, lda,  Bdata, Bir, Bic, broff, bcoff, C, ldc);
+    __dsmultTileTx<<<nblocks,threadDim>>>(nr, nc, kk, nnz, A, lda,  Bdata, Bir, Bic, broff, bcoff, C, ldc);
   } else {
     int nthreads = min(1024, nr);
     int nblocks = min(MAXXGRID, nc);
