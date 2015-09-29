@@ -14,12 +14,20 @@ import edu.berkeley.bid.UTILS._
 import net.jpountz.lz4._
 
 
-// Matrix format key
-// Type = WXYZ00ABC (decimal digits)
-// WXYZ = version number (currently zero)
-// A = matrix type: 1 (dense), 2 (sparse), 3 (sparse, norows), 4 (1-tensor), 5 (2-tensor), 6 (3-tensor),...
-// B = data type: 0 (byte), 1 (int), 2 (long), 3 (float), 4 (double), 5 (complex float), 6 (complex double)
-// C = index type (sparse matrices only): 1 (int), 2 (long)
+/**
+ *  
+ * Matrix format key
+ * Type = WXYZ00ABC (decimal digits)
+ * WXYZ = version number (currently zero)
+ * A = matrix type: 1 (dense), 2 (sparse), 3 (sparse, norows), 4 (1-tensor), 5 (2-tensor), 6 (3-tensor),...
+ * B = data type: 0 (byte), 1 (int), 2 (long), 3 (float), 4 (double), 5 (complex float), 6 (complex double)
+ * C = index type (sparse matrices only): 1 (int), 2 (long)
+ * 
+ */
+
+/**
+ * Notes: Matrix I/O routines are now based on DataInput and DataOutput classes to provide direct support for HDFS. 
+ */
 
 case class HMat(nr:Int, nc:Int, fileList:List[String], varname:String, blkinds:Array[Int], catdim:Int) extends Mat(nr, nc) {
 
@@ -74,123 +82,132 @@ object HMat {
   
   val byteOrder = ByteOrder.LITTLE_ENDIAN
   
-  var DEFAULT_BUFSIZE = 64*1024
+  var DEFAULT_BUFSIZE = 64*1024;
   
-  def getInputStream(fname:String, compressed:Int):InputStream = {
-    val fin = new FileInputStream(fname)
-    if (compressed == 2 || (compressed == 0 && fname.endsWith(".gz"))) {
-      new BufferedInputStream (new GZIPInputStream(fin, DEFAULT_BUFSIZE))      
-    } else  if (compressed == 3 || (compressed == 0 && fname.endsWith(".lz4"))) {
-      new LZ4BlockInputStream(new BufferedInputStream(fin, DEFAULT_BUFSIZE))   
-    } else {
-      new BufferedInputStream(fin, DEFAULT_BUFSIZE)
-    } 
+  val classLoader = HMat.getClass.getClassLoader();
+  var HDFS_IO_Class:Class[_] = null; 
+  var writeMatMethod:java.lang.reflect.Method = null;
+  var writeNDMethod:java.lang.reflect.Method = null;
+  var readMatMethod:java.lang.reflect.Method = null;
+  var readNDMethod:java.lang.reflect.Method = null;
+  
+  def checkHDFSloaded = {
+    if (HDFS_IO_Class == null) {
+    	HDFS_IO_Class = classLoader.loadClass("BIDMat.HDFS_IO");
+    	writeMatMethod = HDFS_IO_Class.getMethod("writeMat", classOf[String], Mat.getClass);
+    	writeNDMethod = HDFS_IO_Class.getMethod("writeND", classOf[String], ND.getClass);
+    	readMatMethod = HDFS_IO_Class.getMethod("readMat", classOf[String]);
+    	readNDMethod = HDFS_IO_Class.getMethod("readND", classOf[String]);
+    }
   }
   
-  def getOutputStream(fname:String, compressed:Int):OutputStream = {
+  
+  def HDFSwriteMat(fname:String, m:Mat) = {
+    checkHDFSloaded;
+    writeMatMethod.invoke(null, fname, m);    
+  }
+  
+  def HDFSwriteND(fname:String, m:ND) = {
+  	checkHDFSloaded;
+    writeNDMethod.invoke(null, fname, m);    
+  }
+  
+  def HDFSreadMat(fname:String):Mat = {
+  	checkHDFSloaded;
+    readMatMethod.invoke(null, fname).asInstanceOf[Mat];    
+  }
+  
+  def getInputStream(fname:String, compressed:Int):DataInputStream = {
+  	val fin = new FileInputStream(fname)
+  	if (compressed == 2 || (compressed == 0 && fname.endsWith(".gz"))) {
+  		new DataInputStream(new BufferedInputStream (new GZIPInputStream(fin, DEFAULT_BUFSIZE)));      
+  	} else  if (compressed == 3 || (compressed == 0 && fname.endsWith(".lz4"))) {
+  		new DataInputStream(new LZ4BlockInputStream(new BufferedInputStream(fin, DEFAULT_BUFSIZE))); 
+  	} else {
+  		new DataInputStream(new BufferedInputStream(fin, DEFAULT_BUFSIZE));
+  	} 
+  }
+  
+  def getOutputStream(fname:String, compressed:Int):DataOutputStream = {
     if (compressed == 2 || (compressed == 0 && fname.endsWith(".gz"))) {
       import edu.berkeley.bid.UTILS._
-      _getOutputStream(fname, Mat.compressionLevel)
+      new DataOutputStream(_getOutputStream(fname, Mat.compressionLevel));
     } else  if (compressed == 3 || (compressed == 0 && fname.endsWith(".lz4"))) {
       val fout = new FileOutputStream(fname)
       if (Mat.compressionLevel >= 6) {
         val hc = LZ4Factory.fastestInstance.highCompressor
-        new BufferedOutputStream(new LZ4BlockOutputStream(fout, 1 << 16, hc), DEFAULT_BUFSIZE)
+        new DataOutputStream(new BufferedOutputStream(new LZ4BlockOutputStream(fout, 1 << 16, hc), DEFAULT_BUFSIZE));
       } else {
-        new BufferedOutputStream(new LZ4BlockOutputStream(fout), DEFAULT_BUFSIZE)   
+        new DataOutputStream(new BufferedOutputStream(new LZ4BlockOutputStream(fout), DEFAULT_BUFSIZE));
       }
     } else {
       val fout = new FileOutputStream(fname)
-      new BufferedOutputStream(fout, DEFAULT_BUFSIZE)
+      new DataOutputStream(new BufferedOutputStream(fout, DEFAULT_BUFSIZE));
     }
   }
   
-  def readSomeBytes(din:InputStream, a:Array[Byte], n:Int) {
-    var nread = 0
-    while (nread < n) {
-      nread += din.read(a, nread, n - nread)
-    }
+  def readSomeBytes(din:DataInput, a:Array[Byte], n:Int) {
+  	din.readFully(a, 0, n);
   }
   
-  def readSomeInts(din:InputStream, a:Array[Int], buf:ByteBuffer, n:Int) {
+  def readSomeInts(din:DataInput, a:Array[Int], buf:ByteBuffer, n:Int) {
     val lbytes = 2;
     val mask = (1 << lbytes) - 1;
-    var nread = 0
-    val ibuff = buf.asIntBuffer
-    val bbuff = buf.array
-    var readnow = 0
+    var nread = 0;
+    val ibuff = buf.asIntBuffer;
+    val bbuff = buf.array;
     while (nread < n) {
-      val todo = if (n - nread > ibuff.capacity) ibuff.capacity else (n - nread)
-      readnow += din.read(bbuff, readnow, (todo << lbytes) - readnow)
-      ibuff.get(a, nread, readnow >> lbytes)
+      val todo = math.min(ibuff.capacity, n - nread);
+      din.readFully(bbuff, 0, (todo << lbytes));
+      ibuff.get(a, nread, todo);
       ibuff.position(0)
-      nread += readnow >> lbytes
-      if ((readnow & mask) != 0) {
-        System.arraycopy(bbuff, (readnow >> lbytes) << lbytes, bbuff, 0, readnow & mask)
-      }
-      readnow = readnow & mask;
+      nread += todo;
     }
   }
   
-  def readSomeLongs(din:InputStream, a:Array[Long], buf:ByteBuffer, n:Int) {
+  def readSomeLongs(din:DataInput, a:Array[Long], buf:ByteBuffer, n:Int) {
     val lbytes = 3;
-    val mask = (1 << lbytes) - 1;
-    var nread = 0
-    val ibuff = buf.asLongBuffer
-    val bbuff = buf.array
-    var readnow = 0
-    while (nread < n) {
-      val todo = if (n - nread > ibuff.capacity) ibuff.capacity else (n - nread)
-      readnow += din.read(bbuff, readnow, (todo << lbytes) - readnow)
-      ibuff.get(a, nread, readnow >> lbytes)
-      ibuff.position(0)
-      nread += readnow >> lbytes
-      if ((readnow & mask) != 0) {
-        System.arraycopy(bbuff, (readnow >> lbytes) << lbytes, bbuff, 0, readnow & mask)
-      }
-      readnow = readnow & mask;
+    var nread = 0;
+    val lbuff = buf.asLongBuffer;
+    val bbuff = buf.array;
+    while (nread < n)  {
+      val todo = math.min(lbuff.capacity, n - nread);
+      din.readFully(bbuff, 0, (todo << lbytes));
+      lbuff.get(a, nread, todo);
+      lbuff.position(0);
+      nread += todo;
     }
   }
   
-  def readSomeFloats(din:InputStream, a:Array[Float], buf:ByteBuffer, n:Int) {
+  def readSomeFloats(din:DataInput, a:Array[Float], buf:ByteBuffer, n:Int) {
   	val lbytes = 2;
-  	val mask = (1 << lbytes) - 1;
   	var nread = 0;
   	val fbuff = buf.asFloatBuffer;
   	val bbuff = buf.array;
-  	var readnow = 0;
-  	while (nread < n) {
-  		val todo = if (n - nread > fbuff.capacity) fbuff.capacity else (n - nread);
-  		readnow += din.read(bbuff, readnow, (todo << lbytes) - readnow);
-  		fbuff.get(a, nread, readnow >> lbytes);
-  		fbuff.position(0);
-  		nread += readnow >> lbytes;  
-  	  if ((readnow & mask) != 0) {
-  		  System.arraycopy(bbuff, (readnow >> lbytes) << lbytes, bbuff, 0, readnow & mask);
-  	  }
-  	readnow = readnow & mask;
-  	}
-  }
-  
-  def readSomeDoubles(din:InputStream, a:Array[Double], buf:ByteBuffer, n:Int) {
-    var nread = 0
-    val dbuff = buf.asDoubleBuffer
-    val bbuff = buf.array
-    var readnow = 0
-    while (nread < n) {
-      val todo = if (n - nread > dbuff.capacity) dbuff.capacity else (n - nread)
-      readnow += din.read(bbuff, readnow, todo*8 - readnow)
-      dbuff.get(a, nread, readnow/8)
-      dbuff.position(0)
-      nread += readnow/8 
-      if (readnow % 8 != 0) {
-        System.arraycopy(bbuff, 8*(readnow/8), bbuff, 0, readnow % 8)
-      }
-      readnow = readnow % 8
+  	while (nread < n)  {
+      val todo = math.min(fbuff.capacity, n - nread);
+      din.readFully(bbuff, 0, (todo << lbytes));
+      fbuff.get(a, nread, todo);
+      fbuff.position(0);
+      nread += todo;
     }
   }
   
-  def writeSomeInts(dout:OutputStream, a:Array[Int], buf:ByteBuffer, n:Int) {
+  def readSomeDoubles(din:DataInput, a:Array[Double], buf:ByteBuffer, n:Int) {
+    val lbytes = 3;
+    var nread = 0;
+    val dbuff = buf.asDoubleBuffer;
+    val bbuff = buf.array;
+    while (nread < n)  {
+      val todo = math.min(dbuff.capacity, n - nread);
+      din.readFully(bbuff, 0, (todo << lbytes));
+      dbuff.get(a, nread, todo);
+      dbuff.position(0);
+      nread += todo;
+    }
+  }
+  
+  def writeSomeInts(dout:DataOutput, a:Array[Int], buf:ByteBuffer, n:Int) {
     var nwritten = 0
     val ibuff = buf.asIntBuffer
     val bbuff = buf.array
@@ -203,7 +220,7 @@ object HMat {
     }
   }
   
-  def writeSomeLongs(dout:OutputStream, a:Array[Long], buf:ByteBuffer, n:Int) {
+  def writeSomeLongs(dout:DataOutput, a:Array[Long], buf:ByteBuffer, n:Int) {
     var nwritten = 0
     val ibuff = buf.asLongBuffer
     val bbuff = buf.array
@@ -216,7 +233,7 @@ object HMat {
     }
   }
   
-  def writeSomeFloats(dout:OutputStream, a:Array[Float], buf:ByteBuffer, n:Int) {
+  def writeSomeFloats(dout:DataOutput, a:Array[Float], buf:ByteBuffer, n:Int) {
     var nwritten = 0
     val fbuff = buf.asFloatBuffer
     val bbuff = buf.array
@@ -229,7 +246,7 @@ object HMat {
     }
   }
   
-  def writeSomeDoubles(dout:OutputStream, a:Array[Double], buf:ByteBuffer, n:Int) {
+  def writeSomeDoubles(dout:DataOutput, a:Array[Double], buf:ByteBuffer, n:Int) {
     var nwritten = 0
     val dbuff = buf.asDoubleBuffer
     val bbuff = buf.array
@@ -248,10 +265,11 @@ object HMat {
     val hints = new Array[Int](4)
     readSomeInts(gin, hints, buff, 4)
     val ftype = hints(0)
-    gin.close
+    closeInput(gin)
     ftype match {
       case 130 => loadFMat(fname, omat, compressed)
       case 110 => loadIMat(fname, omat, compressed)
+      case 120 => loadLMat(fname, omat, compressed)
       case 140 => loadDMat(fname, omat, compressed)
       case 231 => loadSMat(fname, compressed)
       case 331 => loadSMat(fname, compressed)
@@ -273,6 +291,7 @@ object HMat {
       case a:FMat => saveFMat(fname, a, compressed)
       case a:DMat => saveDMat(fname, a, compressed)
       case a:IMat => saveIMat(fname, a, compressed)
+      case a:LMat => saveLMat(fname, a, compressed)
       case a:SBMat => saveSBMat(fname, a, compressed)
       case a:SDMat => saveSDMat(fname, a, compressed)
       case a:SMat => saveSMat(fname, a, compressed)
@@ -281,7 +300,7 @@ object HMat {
   }
   
   def loadFMatTxt(fname:String, omat:Mat, compressed:Int):FMat = {
-    val fin = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed)))
+    val fin = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed).asInstanceOf[DataInputStream]))
     var nrows = 0
     var firstline = fin.readLine()
     val parts = firstline.split("[\t ,:]+")
@@ -290,7 +309,7 @@ object HMat {
       nrows += 1  
     }
     fin.close
-    val din = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed)))
+    val din = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed).asInstanceOf[DataInputStream]))
     val ncols = parts.length
     val out = FMat.newOrCheckFMat(nrows, ncols, omat)
     var irow = 0
@@ -307,6 +326,18 @@ object HMat {
     out    
   }
   
+  def closeInput(gin:DataInput) = {
+    gin match {
+      case ss:InputStream => ss.close
+    }
+  }
+  
+  def closeOutput(gout:DataOutput) = {
+    gout match {
+      case ss:OutputStream => ss.close
+    }
+  }
+  
   def loadFMat(fname:String, omat:Mat, compressed:Int):FMat = {
     if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
       loadFMatTxt(fname, omat, compressed)
@@ -321,9 +352,9 @@ object HMat {
       if (ftype != 130) {
         throw new RuntimeException("loadFMat expected type field 130 but was %d" format ftype)
       }
-      val out = FMat.newOrCheckFMat(nrows, ncols, omat)
-      readSomeFloats(gin, out.data, buff, ncols*nrows)
-      gin.close
+      val out = FMat.newOrCheckFMat(nrows, ncols, omat);
+      readSomeFloats(gin, out.data, buff, ncols*nrows);
+      closeInput(gin)
       out
     }
   }
@@ -333,7 +364,7 @@ object HMat {
   def loadFMat(fname:String, omat:Mat):FMat = loadFMat(fname, omat, 0)
    
   def loadIMatTxt(fname:String, omat:Mat, compressed:Int):IMat = {
-    val fin = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed)))
+    val fin = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed).asInstanceOf[DataInputStream]))
     var nrows = 0
     var firstline = fin.readLine()
     val parts = firstline.split("[\t ,:]+")
@@ -342,7 +373,7 @@ object HMat {
       nrows += 1  
     }
     fin.close
-    val din = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed)))
+    val din = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed).asInstanceOf[DataInputStream]))
     val ncols = parts.length
     val out = IMat.newOrCheckIMat(nrows, ncols, omat)
     var irow = 0
@@ -375,7 +406,7 @@ object HMat {
       }
       val out = IMat.newOrCheckIMat(nrows, ncols, omat)
       readSomeInts(gin, out.data, buff, ncols*nrows)
-      gin.close
+      closeInput(gin)
       out
     }
   }  
@@ -383,9 +414,9 @@ object HMat {
   def loadIMat(fname:String):IMat = loadIMat(fname, null, 0)
   
   def loadIMat(fname:String, omat:Mat):IMat = loadIMat(fname, omat, 0)
-   
-  def loadDMatTxt(fname:String, omat:Mat, compressed:Int):DMat = {
-    val fin = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed)))
+  
+  def loadLMatTxt(fname:String, omat:Mat, compressed:Int):LMat = {
+    val fin = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed).asInstanceOf[DataInputStream]))
     var nrows = 0
     var firstline = fin.readLine()
     val parts = firstline.split("[\t ,:]+")
@@ -394,7 +425,59 @@ object HMat {
       nrows += 1  
     }
     fin.close
-    val din = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed)))
+    val din = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed).asInstanceOf[DataInputStream]))
+    val ncols = parts.length
+    val out = LMat.newOrCheckLMat(nrows, ncols, omat)
+    var irow = 0
+    while (irow < nrows) {
+      val parts = din.readLine().split("[\t ,:]+")
+      var icol = 0
+      while (icol < ncols) {
+        out.data(irow + icol*out.nrows) = parts(icol).toLong
+        icol += 1
+      }     
+      irow += 1
+    } 
+    din.close
+    out    
+  }
+  
+  def loadLMat(fname:String, omat:Mat, compressed:Int):LMat = {
+    if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
+      loadLMatTxt(fname, omat, compressed)
+    } else {
+      val gin = getInputStream(fname, compressed)
+      val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
+      val hints = new Array[Int](4)
+      readSomeInts(gin, hints, buff, 4)
+      val ftype = hints(0)
+      val nrows = hints(1)
+      val ncols = hints(2)
+      if (ftype != 120) {
+        throw new RuntimeException("loadLMat expected type field 120 but was %d" format ftype)
+      }
+      val out = LMat.newOrCheckLMat(nrows, ncols, omat)
+      readSomeLongs(gin, out.data, buff, ncols*nrows)
+      closeInput(gin)
+      out
+    }
+  }  
+    
+  def loadLMat(fname:String):LMat = loadLMat(fname, null, 0)
+  
+  def loadLMat(fname:String, omat:Mat):LMat = loadLMat(fname, omat, 0)
+   
+  def loadDMatTxt(fname:String, omat:Mat, compressed:Int):DMat = {
+    val fin = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed).asInstanceOf[DataInputStream]))
+    var nrows = 0
+    var firstline = fin.readLine()
+    val parts = firstline.split("[\t ,:]+")
+    while (firstline != null && firstline.length > 0) {
+      firstline = fin.readLine()
+      nrows += 1  
+    }
+    fin.close
+    val din = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed).asInstanceOf[DataInputStream]))
     val ncols = parts.length
     val out = DMat.newOrCheckDMat(nrows, ncols, omat)
     var irow = 0
@@ -427,7 +510,7 @@ object HMat {
       }
       val out = DMat.newOrCheckDMat(nrows, ncols, omat)
       readSomeDoubles(gin, out.data, bytebuff, ncols*nrows)
-      gin.close
+      closeInput(gin)
       out
     }
   } 
@@ -471,7 +554,7 @@ object HMat {
         out;
       }
     }
-    gin.close;
+    closeInput(gin);
     result;
   } 
     
@@ -480,26 +563,41 @@ object HMat {
   def loadDMat(fname:String, omat:Mat):DMat = loadDMat(fname, omat, 0)
   
   def saveFMat(fname:String, m:FMat, compressed:Int=0):Unit = {
-    if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
+    if (fname.startsWith("hdfs:")) {
+      HDFSwriteMat(fname, m);
+    } else if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
       saveFMatTxt(fname, m, compressed)
     } else {
-      val gout = getOutputStream(fname, compressed)
-      val hints = new Array[Int](4)
-      val tbuf = ByteBuffer.allocate(16).order(byteOrder)
-      hints(0) = 130 // 1=dense, 3=float
-      hints(1) = m.nrows
-      hints(2) = m.ncols
-      hints(3) = 0
-      writeSomeInts(gout, hints, tbuf, 4)
-      val bsize = 4*m.ncols*m.nrows
-      val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder)
-      writeSomeFloats(gout, m.data, buff, m.nrows*m.ncols)
-      gout.close
+      val gout = getOutputStream(fname, compressed);
+      saveFMat(gout, m);
+      gout.close;
     }
+  }
+  
+  def saveFMat(gout:DataOutput, m:FMat) = {
+  	val hints = new Array[Int](4);
+  	val tbuf = ByteBuffer.allocate(16).order(byteOrder);
+  	hints(0) = 130; // 1=dense, 3=float
+  	hints(1) = m.nrows;
+  	hints(2) = m.ncols;
+  	hints(3) = 0;
+  	writeSomeInts(gout, hints, tbuf, 4);
+  	val bsize = 4*m.ncols*m.nrows;
+  	val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder);
+  	writeSomeFloats(gout, m.data, buff, m.nrows*m.ncols);
   }
 
   def saveFND(fname:String, m:FND, compressed:Int=0):Unit = {
-    val gout = getOutputStream(fname, compressed);
+    if (fname.startsWith("hdfs:")) {
+      HDFSwriteND(fname, m)
+    } else {
+    	val gout = getOutputStream(fname, compressed);
+    	saveFND(gout, m);
+    	gout.close;
+    }
+  }
+    
+  def saveFND(gout:DataOutput, m:FND):Unit = {
     val dims = m.dims;
     val ndims = dims.length;
     val hints = new Array[Int](1);
@@ -512,7 +610,6 @@ object HMat {
     val bsize = 4*m.length;
     val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder);
     writeSomeFloats(gout, m.data, buff, m.length);
-    gout.close;
   }
 
   def loadFND(fname:String, omat:ND, compressed:Int):FND = {
@@ -527,13 +624,13 @@ object HMat {
     readSomeInts(gin, hints, buff, 1);
     val out = FND.newOrCheckFND(dims, omat);
     readSomeFloats(gin, out.data, buff, out.length);
-    gin.close;
+    closeInput(gin);
     out;
   }
   
   def saveFMatTxt(fname:String, m:FMat, compressed:Int=0, delim:String="\t"):Unit = {
     val gout = getOutputStream(fname, compressed)
-    val fout = new BufferedWriter(new OutputStreamWriter(gout))
+    val fout = new BufferedWriter(new OutputStreamWriter(gout.asInstanceOf[DataOutputStream]))
     var i = 0
     while (i < m.nrows) {
       if (m.ncols > 0) {
@@ -565,13 +662,51 @@ object HMat {
       val bsize = 4*m.ncols*m.nrows
       val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder)
       writeSomeInts(gout, m.data, buff, m.nrows*m.ncols)
-      gout.close
+      closeOutput(gout)
     }
   }
   
   def saveIMatTxt(fname:String, m:IMat, compressed:Int=0, delim:String="\t"):Unit = {
     val gout = getOutputStream(fname, compressed)
-    val fout = new BufferedWriter(new OutputStreamWriter(gout))
+    val fout = new BufferedWriter(new OutputStreamWriter(gout.asInstanceOf[DataOutputStream]))
+    var i = 0
+    while (i < m.nrows) {
+      if (m.ncols > 0) {
+        fout.write(m(i,0).toString)
+      }
+      var j = 1
+      while (j < m.ncols) {
+        fout.write(delim + m(i,j).toString)
+        j += 1
+      }
+      fout.write("\n")
+      i += 1
+    }
+    fout.close
+  }
+  
+  def saveLMat(fname:String, m:LMat, compressed:Int=0):Unit = {
+    if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
+      saveLMatTxt(fname, m, compressed)
+    } else {
+      val gout = getOutputStream(fname, compressed)
+      val hints = new Array[Int](4)
+      val tbuf = ByteBuffer.allocate(16).order(byteOrder)
+      hints(0) = 110 // 1=dense, 1=int
+      hints(1) = m.nrows
+      hints(2) = m.ncols
+      hints(3) = 0
+      writeSomeInts(gout, hints, tbuf, 4)
+      val bsize = 4*m.ncols*m.nrows
+      val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder)
+      writeSomeLongs(gout, m.data, buff, m.nrows*m.ncols)
+      closeOutput(gout)
+    }
+  }
+  
+  def saveLMatTxt(fname:String, m:LMat, compressed:Int=0, delim:String="\t"):Unit = {
+    val gout = getOutputStream(fname, compressed)
+    val fout = new BufferedWriter(new OutputStreamWriter(gout.asInstanceOf[DataOutputStream]))
     var i = 0
     while (i < m.nrows) {
       if (m.ncols > 0) {
@@ -603,13 +738,13 @@ object HMat {
       val bsize = 8*m.ncols*m.nrows
       val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder)
       writeSomeDoubles(gout, m.data, buff, m.nrows*m.ncols)
-      gout.close
+      closeOutput(gout)
     }
   }
   
   def saveDMatTxt(fname:String, m:DMat, compressed:Int=0, delim:String="\t"):Unit = {
     val gout = getOutputStream(fname, compressed)
-    val fout = new BufferedWriter(new OutputStreamWriter(gout))
+    val fout = new BufferedWriter(new OutputStreamWriter(gout.asInstanceOf[DataOutputStream]))
     var i = 0
     while (i < m.nrows) {
       if (m.ncols > 0) {
@@ -651,7 +786,7 @@ object HMat {
       MatHDF5.addOne(out.jc)
       if (!norows) MatHDF5.addOne(out.ir)
     }
-    gin.close
+    closeInput(gin)
     out
   }
   
@@ -680,7 +815,7 @@ object HMat {
       MatHDF5.addOne(out.jc)
       if (!norows) MatHDF5.addOne(out.ir)
     }
-    gin.close
+    closeInput(gin)
     out
   }
   
@@ -709,7 +844,7 @@ object HMat {
       MatHDF5.addOne(out.jc)
       if (!norows) MatHDF5.addOne(out.ir)
     }
-    gin.close
+    closeInput(gin)
     out
   }
   
@@ -745,7 +880,7 @@ object HMat {
     	out.data(i) = new String(chbuf, 0, siz, SBMat.encoding);
     	i += 1;
     }
-    gin.close
+    closeInput(gin)
     out
   }
   
@@ -785,7 +920,7 @@ object HMat {
     }
     MatHDF5.addOne(m.jc)
     if (m.ir != null) MatHDF5.addOne(m.ir)
-    gout.close
+    closeOutput(gout)
   } 
   
    def saveSDMat(fname:String, m:SDMat, compressed:Int=0):Unit = {
@@ -824,7 +959,7 @@ object HMat {
     }
     MatHDF5.addOne(m.jc)
     if (m.ir != null) MatHDF5.addOne(m.ir)
-    gout.close
+    closeOutput(gout)
   } 
   
    def saveSBMat(fname:String, m:SBMat, compressed:Int=0):Unit = {
@@ -863,7 +998,7 @@ object HMat {
     }
     MatHDF5.addOne(m.jc)
     if (m.ir != null) MatHDF5.addOne(m.ir)
-    gout.close
+    closeOutput(gout)
   } 
    
   def saveCSMat(fname:String, m:CSMat, compressed:Int=0):Unit = {
@@ -901,14 +1036,14 @@ object HMat {
       	throw new RuntimeException("Problem in saveCSMat")
       }
     }
-    gout.close
+    closeOutput(gout)
   } 
    
   /** Load a file in ASCII LibSVM format */
   /* Outputs a data matrix first, and then a matrix c of cat labels where c(i) = label of instance i. */
   /* data is an SMat, labels are integer, weights are FMat. */
   def loadLibSVM(fname:String, nrows:Int, compressed:Int = 0, oneBased:Int = 0):(SMat, IMat, FMat) = {
-    var fin = new BufferedReader(new InputStreamReader (getInputStream(fname, compressed)));
+    var fin = new BufferedReader(new InputStreamReader (getInputStream(fname, compressed).asInstanceOf[DataInputStream]));
     var firstline = fin.readLine();
     var parts = if (firstline != null) firstline.split("[\t ]+") else null;
     var ncols = 0;
@@ -924,7 +1059,7 @@ object HMat {
     var cmat = IMat(1, ncols);
     var wmat = ones(1, ncols);
     fin.close();
-    fin = new BufferedReader(new InputStreamReader (getInputStream(fname, compressed)));
+    fin = new BufferedReader(new InputStreamReader (getInputStream(fname, compressed).asInstanceOf[DataInputStream]));
     firstline = fin.readLine();
     if (firstline != null) parts = firstline.split("[\t ]+");
     ncols = 0;
@@ -959,7 +1094,7 @@ object HMat {
   def saveLibSVM(fname:String, data:SMat, labels:SMat, weights:FMat):Unit = saveLibSVM(fname, data, labels, weights, 0);
    
   def saveLibSVM(fname:String, data:SMat, labels:SMat, weights:FMat, compressed:Int, oneBased:Int = 0):Unit = {
-    val fout = new BufferedWriter (new OutputStreamWriter (getOutputStream(fname, compressed)));
+    val fout = new BufferedWriter (new OutputStreamWriter (getOutputStream(fname, compressed).asInstanceOf[DataOutputStream]));
     val (ilab, jlab) = find2(labels);
     val jc = data.jc;
     val ioffset = Mat.ioneBased;
@@ -984,7 +1119,7 @@ object HMat {
   def saveVW(fname:String, sdata:SMat, labels:SMat):Unit = saveVW(fname, sdata, labels, 0);
   
   def saveVW(fname:String, sdata:SMat, labels:SMat, compressed:Int, oneBased:Int = 0):Unit = {
-    val fout = new BufferedWriter (new OutputStreamWriter (getOutputStream(fname, compressed)));
+    val fout = new BufferedWriter (new OutputStreamWriter (getOutputStream(fname, compressed).asInstanceOf[DataOutputStream]));
     val jc = sdata.jc;
     val ir = sdata.ir;
     val data = sdata.data;

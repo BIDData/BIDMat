@@ -383,7 +383,7 @@ object Mop_Times extends Mop { // Times includes dense-sparse combinations
   override def myname = "*"
   override def op(a:FMat, b:FMat, c:Mat):FMat = getFPair(c, a) * b
   override def op(a:FMat, b:SMat, c:Mat):FMat = getFPair(c, a) * b
-  override def op(a:SMat, b:FMat, c:Mat):FMat = getSPair(c, a) * b 
+  override def op(a:SMat, b:FMat, c:Mat):FMat = getSPair(c, a) * b
   override def op(a:SMat, b:SMat, c:Mat):SMat = getSPair(c, a) * b 
   override def op(a:DMat, b:DMat, c:Mat):DMat = getDPair(c, a) * b
   override def op(a:DMat, b:SDMat, c:Mat):DMat = getDPair(c, a) * b

@@ -6,7 +6,6 @@ version := "1.0.3"
 organization := "edu.berkeley.bid"
 
 scalaVersion := "2.11.2"
-//scalaVersion := "2.10.4"
 
 artifactName := { (sv: ScalaVersion, module: ModuleID, artifact: Artifact) =>
   "../../BIDMat.jar"
@@ -22,7 +21,7 @@ libraryDependencies <<= (scalaVersion, libraryDependencies) { (sv, deps) =>
 }
 
 //libraryDependencies += "jline" % "jline" % "2.11"
-//libraryDependencies += "jline" % "jline" % "2.10"
+libraryDependencies += "jline" % "jline" % "2.10"
 
 libraryDependencies += "org.apache.commons" % "commons-math3" % "3.2"
 
