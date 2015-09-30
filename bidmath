@@ -1,0 +1,83 @@
+#!/bin/bash
+# export JAVA_HOME="" # Set here if not set in environment
+# export CUDA_PATH="" # Set here if not set in environment
+# Fix these if needed
+JCUDA_VERSION="0.7.0a"
+MEMSIZE="-Xmx14G"
+export JAVA_OPTS="${MEMSIZE} -Xms128M -Dfile.encoding=UTF-8" # Set as much memory as possible
+BIDMAT_ROOT="${BASH_SOURCE[0]}"
+if [ ! `uname` = "Darwin" ]; then
+  BIDMAT_ROOT=`readlink -f "${BIDMAT_ROOT}"`
+else 
+  while [ -L "${BIDMAT_ROOT}" ]; do
+    BIDMAT_ROOT=`readlink "${BIDMAT_ROOT}"`
+  done
+fi
+BIDMAT_ROOT=`dirname "$BIDMAT_ROOT"`
+pushd "${BIDMAT_ROOT}" > /dev/null
+BIDMAT_ROOT=`pwd`
+BIDMAT_ROOT="$( echo ${BIDMAT_ROOT} | sed s+/cygdrive/c+c:+ )" 
+JCUDA_LIBDIR=${BIDMAT_ROOT}/lib
+LIBDIR=${BIDMAT_ROOT}/lib
+if [ -e java_native_path.txt ]; then
+  JAVA_NATIVE=`cat java_native_path.txt`
+else 
+  JAVA_NATIVE=`java getnativepath`
+  echo ${JAVA_NATIVE} > java_native_path.txt
+fi
+if [ `uname` = "Darwin" ]; then
+    export DYLD_LIBRARY_PATH="${BIDMAT_ROOT}/lib:/usr/local/cuda/lib:${DYLD_LIBRARY_PATH}"
+else
+    export LD_LIBRARY_PATH="${BIDMAT_ROOT}/lib:${BIDMAT_ROOT}/lib/cuda:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}" 
+fi
+export JAVA_NATIVE=${LD_LIBRARY_PATH}:${DYLD_LIBRARY_PATH}:${JAVA_NATIVE}:
+popd  > /dev/null
+if [ "$OS" = "Windows_NT" ]; then
+    if [ ! "${JAVA_HOME}" = "" ]; then
+        JAVA_HOME=`${BIDMAT_ROOT}/shortpath.bat "${JAVA_HOME}"`
+	    export JAVA_HOME=`echo ${JAVA_HOME} | sed 's_\\\\_/_g'`/bin
+    fi
+fi
+
+BIDMAT_LIBS="${BIDMAT_ROOT}/BIDMat.jar;${LIBDIR}/ptplot.jar;${LIBDIR}/ptplotapplication.jar;\
+${LIBDIR}/jhdf5.jar;${LIBDIR}/commons-math3-3.2.jar;${LIBDIR}/lz4-1.3.jar;${LIBDIR}/BIDMatHDFS.jar"
+
+
+HROOT=${HADOOP_HOME}/share/hadoop
+HADOOP_LIBS=`echo ${HROOT}/common/hadoop-common-[0-9]*[0-9].jar`
+HADOOP_LIBS="${HADOOP_LIBS};"`echo ${HROOT}/hdfs/hadoop-hdfs-[0-9]*[0-9].jar`
+HADOOP_LIBS="${HADOOP_LIBS};"`echo ${HROOT}/common/lib/*.jar | sed 's/ /;/g'`
+
+JCUDA_LIBS="${JCUDA_LIBDIR}/jcuda-${JCUDA_VERSION}.jar;${JCUDA_LIBDIR}/jcublas-${JCUDA_VERSION}.jar;\
+${JCUDA_LIBDIR}/jcufft-${JCUDA_VERSION}.jar;${JCUDA_LIBDIR}/jcurand-${JCUDA_VERSION}.jar;\
+${JCUDA_LIBDIR}/jcusparse-${JCUDA_VERSION}.jar"
+
+ALL_LIBS=";${LIBDIR}/IScala.jar;${BIDMAT_LIBS};${HADOOP_LIBS};${JCUDA_LIBS};${JAVA_HOME}/lib/tools.jar"
+
+if [ "$OS" = "Windows_NT" ]; then
+    if [ ! "${CUDA_PATH}" = "" ]; then
+	    NEWPATH=`${BIDMAT_ROOT}/shortpath.bat "${CUDA_PATH}"`
+	    NEWPATH=`echo $NEWPATH | sed 's_\\\\_/_g'`/bin
+    fi
+    DJAVA_NATIVE="-Djava.library.path=${LIBDIR};${NEWPATH}"
+else
+    ALL_LIBS=`echo "${ALL_LIBS}" | sed 's/;/:/g'`
+    DJAVA_NATIVE="-Djava.library.path=${JAVA_NATIVE}"
+fi
+if [ ! `uname` = "Darwin" ]; then
+    export JAVA_OPTS="${DJAVA_NATIVE} ${JAVA_OPTS}"
+fi
+
+if [ "$1" = "notebook" ]; then
+    shift 1
+    if [ ! -z "$@" ]; then
+        KERNEL_CMD="[\"java\", \"-cp\", \"${ALL_LIBS}\", \"$DJAVA_NATIVE\", \"${MEMSIZE}\", \"-Xms128M\", \
+       \"-Dfile.encoding=UTF-8\", \"org.refptr.iscala.IScala\", \"--profile\", \"{connection_file}\", \"--parent\", \"$@\"]"
+    else
+        KERNEL_CMD="[\"java\", \"-cp\", \"${ALL_LIBS}\", \"$DJAVA_NATIVE\", \"${MEMSIZE}\", \"-Xms128M\", \
+       \"-Dfile.encoding=UTF-8\", \"org.refptr.iscala.IScala\", \"--profile\", \"{connection_file}\", \"--parent\"]"
+    fi
+    ipython notebook --profile scala --KernelManager.kernel_cmd="$KERNEL_CMD"
+else
+    ${BIDMAT_ROOT}/scripts/scala/scala -nobootcp -toolcp "${ALL_LIBS}" -cp "${ALL_LIBS}" -Yrepl-sync -i ${LIBDIR}/bidmat_init.scala "$@"
+fi
