@@ -1736,11 +1736,15 @@ object MatFunctions {
     (a, b) match {
       case (a:FMat,b:FMat) => a.kron(b, omat)
       case (a:FMat,b:SMat) => a.kron(full(b), omat)
+      case (a:FMat,b:GMat) => GMat(a).kron(b, omat)
+      case (a:FMat,b:GIMat) => GMat(a).kron(GMat(b), omat)
       case (a:IMat,b:FMat) => a.kron(b, omat)
       case (a:IMat,b:SMat) => a.kron(full(b), omat)
+      case (a:GMat,b:IMat) => a.kron(GMat(b), omat)
       case (a:GMat,b:GMat) => a.kron(b, omat)
       case (a:GMat,b:GSMat) => a.kron(full(b), omat)
       case (a:GIMat,b:GMat) => GMat(a).kron(b, omat)
+      case (a:GIMat,b:GIMat) => a.kron(b, omat)
       case (a:GIMat,b:GSMat) => GMat(a).kron(full(b), omat)
     }
   }

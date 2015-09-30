@@ -109,7 +109,7 @@ elif [ "$OS" = "linux" ] ; then
     CUDA_HOME="/usr/local/cuda"
     CC="icc"
     GCC="g++"
-    NVCC="nvcc"
+    NVCC="nvcc" 
     NVCCFLAGS="-c -use_fast_math  -I$BIDMAT_ROOT/jni/include \
           -gencode arch=compute_20,code=sm_20 \
           -gencode arch=compute_30,code=sm_30 \
