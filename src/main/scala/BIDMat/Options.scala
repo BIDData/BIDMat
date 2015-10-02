@@ -31,8 +31,7 @@ trait Opts {
   
   def copyFrom(that:Opts) {
     val ignore = List("what", "wait", "equals", "toString", "hashCode", "getClass", "notify", "notifyAll", "ignore", "copyFrom");
-    val methods = for (meth <- this.getClass.getMethods if (meth.getName.contains("$eq") && !ignore.contains(meth.getName))) yield meth;
-    for (setter <- methods) {
+    for (setter <- this.getClass.getMethods if (setter.getName.contains("$eq") && !ignore.contains(setter.getName))) {
       val setname = setter.getName;
       val getname = setname.substring(0, setname.length - 4);  // getter name = remove _= suffix from a setter method
       try {
