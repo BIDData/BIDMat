@@ -538,17 +538,31 @@ object Mat {
   
   var ioneBased = 1                // Whether sparse matrix *internal* indices are zero 0: or one-based 1:
   
-  var useGPUsort = true
+  var useGPUsort = true;
   
-  var hostAllocSize = 0xffffffffL
+  var hostAllocSize = 0xffffffffL;
   
-  final val MSEED:Int = 1452462553 
+  final val MSEED:Int = 1452462553;
 
-  final val myrand = new java.util.Random(MSEED)
+  final val myrand = new java.util.Random(MSEED);
   
-  val opcodes = HashMap.empty[String, Int]
+  val opcodes = HashMap.empty[String, Int];
   
-  val _opcode = 1
+  val _opcode = 1;
+  
+  final val OS_WINDOWS = 0;
+  final val OS_LINUX = 1;
+  final val OS_OSX = 2;
+  final val OS_ANDROID = 3;
+  
+  def getOS:Int = {
+    val osname = System.getProperty("os.name");
+    if (osname.startsWith("Windows")) OS_WINDOWS
+    else if (osname.startsWith("Linux")) OS_LINUX
+    else if (osname.startsWith("OSX")) OS_OSX
+    else OS_ANDROID    
+  }
+  
   
   var useStdio = (! System.getProperty("os.name").startsWith("Windows"))  // HDF5 directive
   

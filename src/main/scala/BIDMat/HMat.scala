@@ -92,6 +92,8 @@ object HMat {
   var readMatMethod:java.lang.reflect.Method = null;
   var readNDMethod:java.lang.reflect.Method = null;
   
+  val highCompressor = LZ4Factory.fastestInstance.highCompressor
+  
   def checkHDFSloaded = {
     if (HDFSIOclass == null) {
     	HDFSIOclass = classLoader.loadClass("BIDMat.HDFSIO");
