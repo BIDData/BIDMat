@@ -30,7 +30,7 @@ if [ `uname` = "Darwin" ]; then
 else
     export LD_LIBRARY_PATH="${BIDMAT_ROOT}/lib:${BIDMAT_ROOT}/lib/cuda:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}" 
 fi
-export JAVA_NATIVE="${LD_LIBRARY_PATH}:${DYLD_LIBRARY_PATH}:${JAVA_NATIVE}:${HADOOP_HOME}/lib:"
+export JAVA_NATIVE="${LD_LIBRARY_PATH}:${DYLD_LIBRARY_PATH}:${JAVA_NATIVE}:${HADOOP_HOME}/lib/native:"
 popd  > /dev/null
 if [ "$OS" = "Windows_NT" ]; then
     if [ ! "${JAVA_HOME}" = "" ]; then
@@ -47,8 +47,6 @@ HROOT="${HADOOP_HOME}/share/hadoop"
 HADOOP_LIBS=`echo ${HROOT}/common/hadoop-common-[0-9]*[0-9].jar`
 HADOOP_LIBS="${HADOOP_LIBS};"`echo ${HROOT}/hdfs/hadoop-hdfs-[0-9]*[0-9].jar`
 HADOOP_LIBS="${HADOOP_LIBS};"`echo ${HROOT}/common/lib/*.jar | sed 's/ /;/g'`
-
-echo "${HADOOP_LIBS}"
 
 JCUDA_LIBS="${JCUDA_LIBDIR}/jcuda-${JCUDA_VERSION}.jar;${JCUDA_LIBDIR}/jcublas-${JCUDA_VERSION}.jar;\
 ${JCUDA_LIBDIR}/jcufft-${JCUDA_VERSION}.jar;${JCUDA_LIBDIR}/jcurand-${JCUDA_VERSION}.jar;\
