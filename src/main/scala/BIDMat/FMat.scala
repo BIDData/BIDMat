@@ -688,7 +688,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
 
   def multT(a:SMat, outmat:Mat):FMat = {
-    if (ncols == a.ncols) {
+    if (ncols != a.ncols) {
       throw new RuntimeException("xT dimensions mismatch (%d %d) (%d %d)" format (nrows, ncols, a.ncols, a.nrows))
     }
     val out = FMat.newOrCheckFMat(nrows, a.nrows, outmat, GUID, a.GUID, "multT".##)
@@ -698,7 +698,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     	
   
   def maddT(a:SMat, out:FMat):FMat = {
-    if (ncols == a.ncols || nrows != out.nrows || a.nrows != out.ncols) {
+    if (ncols != a.ncols || nrows != out.nrows || a.nrows != out.ncols) {
     	throw new RuntimeException("xT dimensions mismatch (%d %d) (%d %d) (%d %d)" format (nrows, ncols, a.ncols, a.nrows, out.nrows, out.ncols))
     }
     Mat.nflops += 2L * a.nnz * nrows;
