@@ -189,6 +189,44 @@ object MatFunctions {
     }
   }
   
+  /** Convert to a CPU matrix */
+  def cpu(a:Mat):Mat = {
+    a match {
+      case b:FMat => b;
+      case b:DMat => b;
+      case b:IMat => b;
+      case b:LMat => b;
+      case b:SMat => b;
+      case b:SDMat => b;
+      case b:SBMat => b;
+      case b:CSMat => b;
+      case b:GMat => FMat(b);
+      case b:GDMat => DMat(b);
+      case b:GIMat => IMat(b);
+      case b:GLMat => LMat(b);
+      case b:GSMat => SMat(b);
+      case b:GSDMat => SDMat(b);
+    }
+  }
+    
+      /** Convert to a GPU matrix */
+  def gpu(a:Mat):Mat = {
+    a match {
+      case b:FMat => GMat(b);
+      case b:DMat => GDMat(b);
+      case b:IMat => GIMat(b);
+      case b:LMat => GLMat(b);
+      case b:SMat => GSMat(b);
+      case b:SDMat => GSDMat(b);
+      case b:GMat => b;
+      case b:GDMat => b;
+      case b:GIMat => b;
+      case b:GLMat => b;
+      case b:GSMat => b;
+      case b:GSDMat => b;
+    }
+  }
+  
   // TODO Document
   def threadPool(n:Int = Mat.numThreads):scala.concurrent.ExecutionContextExecutor = {
     import scala.concurrent.ExecutionContext
