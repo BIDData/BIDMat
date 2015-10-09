@@ -559,12 +559,13 @@ object Mat {
     val osname = System.getProperty("os.name");
     if (osname.startsWith("Windows")) OS_WINDOWS
     else if (osname.startsWith("Linux")) OS_LINUX
-    else if (osname.startsWith("OSX")) OS_OSX
+    else if (osname.startsWith("Mac")) OS_OSX
     else OS_ANDROID    
   }
   
+  val ostype = getOS  
   
-  var useStdio = (! System.getProperty("os.name").startsWith("Windows"))  // HDF5 directive
+  var useStdio = (! (ostype == OS_WINDOWS))  // HDF5 directive
   
   private val _cache2 = HashMap.empty[Tuple2[Long,Int], Mat]              // Matrix caches
   

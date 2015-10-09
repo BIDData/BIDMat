@@ -92,7 +92,24 @@ object HMat {
   var readMatMethod:java.lang.reflect.Method = null;
   var readNDMethod:java.lang.reflect.Method = null;
   
-  val highCompressor = LZ4Factory.fastestInstance.highCompressor
+  var highCompressor:AnyRef = null;
+  var fastCompressor:AnyRef = null;
+  
+  def initLZ4 = {
+    if (highCompressor == null) {
+    	highCompressor = if (Mat.ostype == Mat.OS_ANDROID) {
+    		LZ4Factory.safeInstance.highCompressor
+    	} else {
+    		LZ4Factory.fastestInstance.highCompressor
+    	}
+    	fastCompressor = if (Mat.ostype == Mat.OS_ANDROID) {
+    		LZ4Factory.safeInstance.fastCompressor
+    	} else {
+    		LZ4Factory.fastestInstance.fastCompressor
+    	}
+    }
+  }
+    	
   
   def checkHDFSloaded = {
     if (HDFSIOclass == null) {
@@ -142,11 +159,11 @@ object HMat {
       new DataOutputStream(_getOutputStream(fname, Mat.compressionLevel));
     } else  if (compressed == 3 || (compressed == 0 && fname.endsWith(".lz4"))) {
       val fout = new FileOutputStream(fname)
+      initLZ4
       if (Mat.compressionLevel >= 6) {
-        val hc = LZ4Factory.fastestInstance.highCompressor
-        new DataOutputStream(new BufferedOutputStream(new LZ4BlockOutputStream(fout, 1 << 16, hc), DEFAULT_BUFSIZE));
+        new DataOutputStream(new BufferedOutputStream(new LZ4BlockOutputStream(fout, 1 << 16, highCompressor.asInstanceOf[net.jpountz.lz4.LZ4Compressor]), DEFAULT_BUFSIZE));
       } else {
-        new DataOutputStream(new BufferedOutputStream(new LZ4BlockOutputStream(fout), DEFAULT_BUFSIZE));
+        new DataOutputStream(new BufferedOutputStream(new LZ4BlockOutputStream(fout, 1<< 16, fastCompressor.asInstanceOf[net.jpountz.lz4.LZ4Compressor]), DEFAULT_BUFSIZE));
       }
     } else {
       val fout = new FileOutputStream(fname)
