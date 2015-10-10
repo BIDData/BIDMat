@@ -4,13 +4,6 @@ import edu.berkeley.bid.VML._
 import edu.berkeley.bid.VSL
 import edu.berkeley.bid.VSL._
 import edu.berkeley.bid.CBLAS._
-import jcuda._;
-import jcuda.runtime._;
-import jcuda.jcublas.JCublas;
-import jcuda.runtime.JCuda;
-import jcuda.jcurand.JCurand._;
-import jcuda.jcurand.curandGenerator;
-import jcuda.jcurand.curandRngType._;
 import edu.berkeley.bid.CUMAT;
 import edu.berkeley.bid.CUMATD;
 import java.util.Random._;
@@ -31,15 +24,16 @@ object SciFunctions {
   final val VMLfast =    if (!Mat.useMKL) 0 else VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_LA   // Faster, Low accuracy, default error handling
   final val VMLturbo =   if (!Mat.useMKL) 0 else VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_EP   // Fastest, Lower accuracy, default error handling
   // Curand initialization
-  var cudarng:Array[curandGenerator] = null
+//  var cudarng:Array[curandGenerator] = null;
+  var cudarng:Array[AnyRef] = null; 
   if (Mat.hasCUDA > 0) {
-  	JCuda.initialize
+  	jcuda.runtime.JCuda.initialize
   	initCUDArngs
   }
   
   def initCUDArngs = {
     val thisGPU = getGPU
-    cudarng = new Array[curandGenerator](Mat.hasCUDA)
+    cudarng = new Array[AnyRef](Mat.hasCUDA)
     for (i <- 0 until Mat.hasCUDA) {
       setGPU(i)
     	initCUDArng(i)
@@ -48,25 +42,30 @@ object SciFunctions {
   }
   
   def initCUDArng(igpu:Int) = {
+    import jcuda.jcurand.curandGenerator;
+    import jcuda.jcurand.JCurand._;
+    import jcuda.jcurand.curandRngType._;
     val thisGPU = getGPU
     setGPU(igpu)
     cudarng(igpu) = new curandGenerator
-    curandCreateGenerator(cudarng(igpu), CURAND_RNG_PSEUDO_DEFAULT) 
-    curandSetPseudoRandomGeneratorSeed(cudarng(igpu), SEED)
+    curandCreateGenerator(cudarng(igpu).asInstanceOf[curandGenerator], CURAND_RNG_PSEUDO_DEFAULT) 
+    curandSetPseudoRandomGeneratorSeed(cudarng(igpu).asInstanceOf[curandGenerator], SEED)
     setGPU(thisGPU)
   }
   
   def resetGPU = {
+    import jcuda.runtime._;
     JCuda.cudaDeviceReset
     JCuda.cudaDeviceSynchronize
     initCUDArng(getGPU)
     GSMat.cusparseContextsInitialized = false
     GSMat.cusparseDescrsInitialized = false
-    JCublas.cublasInit();
+    jcuda.jcublas.JCublas.cublasInit();
     Mat.clearCaches
   }
   
   def resetGPUs = {
+	  import jcuda.runtime._;
     val oldi = getGPU
     for (i <- 0 until Mat.hasCUDA) {
       JCuda.cudaSetDevice(i)
@@ -75,30 +74,30 @@ object SciFunctions {
     JCuda.cudaSetDevice(oldi)
   }
   
-  def initJCUDA = JCuda.initialize
+  def initJCUDA = jcuda.runtime.JCuda.initialize
   
-  def setGPU(i:Int) = JCuda.cudaSetDevice(i)
+  def setGPU(i:Int) = jcuda.runtime.JCuda.cudaSetDevice(i)
   
   def getGPU:Int = {
     val ar = Array[Int](1)
-    JCuda.cudaGetDevice(ar)
+    jcuda.runtime.JCuda.cudaGetDevice(ar)
     ar(0)
   }
   
   def connect(i:Int) = {
-  	val v0 = JCuda.cudaDeviceEnablePeerAccess(i,0)
+  	val v0 = jcuda.runtime.JCuda.cudaDeviceEnablePeerAccess(i,0)
     val j = getGPU
     setGPU(i)
-    val v1 = JCuda.cudaDeviceEnablePeerAccess(j,0)
+    val v1 = jcuda.runtime.JCuda.cudaDeviceEnablePeerAccess(j,0)
     setGPU(j)
     (v0, v1)
   }
   
   def disconnect(i:Int) = {
-  	val v0 = JCuda.cudaDeviceDisablePeerAccess(i)
+  	val v0 = jcuda.runtime.JCuda.cudaDeviceDisablePeerAccess(i)
     val j = getGPU
     setGPU(i)
-    val v1 = JCuda.cudaDeviceDisablePeerAccess(j)
+    val v1 = jcuda.runtime.JCuda.cudaDeviceDisablePeerAccess(j)
     setGPU(j)
     (v0, v1)
   }
@@ -106,9 +105,9 @@ object SciFunctions {
   def canconnect(i:Int) = {
   	val ar = Array[Int](1)
   	val j = getGPU
-  	JCuda.cudaDeviceCanAccessPeer(ar, i, j)
+  	jcuda.runtime.JCuda.cudaDeviceCanAccessPeer(ar, i, j)
   	val v0 = ar(0) 
-  	JCuda.cudaDeviceCanAccessPeer(ar, j, i)
+  	jcuda.runtime.JCuda.cudaDeviceCanAccessPeer(ar, j, i)
   	(v0, ar(0))
   }
   
@@ -116,7 +115,7 @@ object SciFunctions {
   val totalMemArray = new Array[Long](1)
   
   def GPUmem:(Float, Long, Long) = {
-    JCuda.cudaMemGetInfo(freeMemArray, totalMemArray)
+    jcuda.runtime.JCuda.cudaMemGetInfo(freeMemArray, totalMemArray)
     (freeMemArray(0).toFloat/ totalMemArray(0), freeMemArray(0), totalMemArray(0))
   }
   
@@ -127,20 +126,20 @@ object SciFunctions {
       vslNewStream(stream, BRNG, seed);
       rand(1,10);
     }
-    if (Mat.hasCUDA > 0) {
+    if (Mat.hasCUDA > 0) {      
       val thisGPU = getGPU
       for (i <- 0 until Mat.hasCUDA) {
-        setGPU(i)
-      	curandSetPseudoRandomGeneratorSeed(cudarng(i), seed)
+        setseed(seed, i);
       }
       setGPU(thisGPU)
     }
   }
   
   def setseed(seed:Int, igpu:Int):Unit = {
+    import jcuda.jcurand._
   	val thisGPU = getGPU
   	setGPU(igpu)
-  	curandSetPseudoRandomGeneratorSeed(cudarng(igpu), seed)
+  	JCurand.curandSetPseudoRandomGeneratorSeed(cudarng(igpu).asInstanceOf[curandGenerator], seed)
   	setGPU(thisGPU)
   }
     
@@ -148,9 +147,9 @@ object SciFunctions {
   
   def norm(a:DMat) = math.sqrt(ddot(a.length, a.data, 1, a.data, 1))
   
-  def norm(a:GMat) = math.sqrt(JCublas.cublasSdot(a.length, a.data, 1, a.data, 1))
+  def norm(a:GMat) = math.sqrt(jcuda.jcublas.JCublas.cublasSdot(a.length, a.data, 1, a.data, 1))
   
-  def norm(a:GDMat) = math.sqrt(JCublas.cublasDdot(a.length, a.data, 1, a.data, 1))
+  def norm(a:GDMat) = math.sqrt(jcuda.jcublas.JCublas.cublasDdot(a.length, a.data, 1, a.data, 1))
   
   def norm (a:Mat):Double = {
     a match {
@@ -203,9 +202,10 @@ object SciFunctions {
   def rand(out:FMat):FMat = rand(0.0f, 1.0f, out)
 
   def grand(nr:Int, nc:Int, out:GMat):GMat = {
+	  import jcuda.jcurand._
     Mat.nflops += 10L*out.length
-    curandGenerateUniform(cudarng(getGPU), out.data, out.length)
-    JCuda.cudaDeviceSynchronize()
+    JCurand.curandGenerateUniform(cudarng(getGPU).asInstanceOf[curandGenerator], out.data, out.length)
+    jcuda.runtime.JCuda.cudaDeviceSynchronize()
     out
   }
   
@@ -217,9 +217,10 @@ object SciFunctions {
   }  
     
   def gdrand(nr:Int, nc:Int, out:GDMat):GDMat = {
+	  import jcuda.jcurand._
     Mat.nflops += 10L*out.length
-    curandGenerateUniformDouble(cudarng(getGPU), out.data, out.length)
-    JCuda.cudaDeviceSynchronize()
+    JCurand.curandGenerateUniformDouble(cudarng(getGPU).asInstanceOf[curandGenerator], out.data, out.length)
+    jcuda.runtime.JCuda.cudaDeviceSynchronize()
     out
   }
   
@@ -270,9 +271,10 @@ object SciFunctions {
   }
   
   def gnormrnd(mu:Float, sig:Float, out:GMat, nr:Int, nc:Int):GMat = {
+	  import jcuda.jcurand._
     Mat.nflops += 10L*out.length
-    curandGenerateNormal(cudarng(getGPU), out.data, out.length, mu, sig)
-    JCuda.cudaDeviceSynchronize()
+    JCurand.curandGenerateNormal(cudarng(getGPU).asInstanceOf[curandGenerator], out.data, out.length, mu, sig)
+    jcuda.runtime.JCuda.cudaDeviceSynchronize()
     out
   }
   
@@ -284,9 +286,10 @@ object SciFunctions {
   }
   
   def gdnormrnd(mu:Double, sig:Double, out:GDMat, nr:Int, nc:Int):GDMat = {
+	  import jcuda.jcurand._
     Mat.nflops += 10L*out.length
-    curandGenerateNormalDouble(cudarng(getGPU), out.data, out.length, mu, sig)
-    JCuda.cudaDeviceSynchronize()
+    JCurand.curandGenerateNormalDouble(cudarng(getGPU).asInstanceOf[curandGenerator], out.data, out.length, mu, sig)
+    jcuda.runtime.JCuda.cudaDeviceSynchronize()
     out
   }
   
@@ -312,9 +315,10 @@ object SciFunctions {
   }
   
   def gpoissrnd(mu:Float, out:GIMat, nr:Int, nc:Int):GIMat = {
+	  import jcuda.jcurand._
     Mat.nflops += 10L*out.length
-    curandGeneratePoisson(cudarng(getGPU), out.data, out.length, mu)
-    JCuda.cudaDeviceSynchronize()
+    JCurand.curandGeneratePoisson(cudarng(getGPU).asInstanceOf[curandGenerator], out.data, out.length, mu)
+    jcuda.runtime.JCuda.cudaDeviceSynchronize()
     out
   }
   
@@ -322,7 +326,7 @@ object SciFunctions {
     Mat.nflops += 10L*out.length
     val nthreads = math.max(1, mu.length / 1024);
     CUMAT.poissonrnd(out.length, mu.data, out.data, nthreads)
-    JCuda.cudaDeviceSynchronize()
+    jcuda.runtime.JCuda.cudaDeviceSynchronize()
     out
   }
   
@@ -2287,7 +2291,7 @@ object SciFunctions {
   def applyGfun(in:GMat, omat:Mat, opn:Int, kflops:Long):GMat = {
     val out = GMat.newOrCheckGMat(in.nrows, in.ncols, omat, in.GUID, opn)
     CUMAT.applygfun(in.data, out.data, in.nrows*in.ncols, opn)
-    JCuda.cudaDeviceSynchronize()
+    jcuda.runtime.JCuda.cudaDeviceSynchronize()
     Mat.nflops += kflops*in.length
     out
   }
@@ -2295,7 +2299,7 @@ object SciFunctions {
   def applyGfun(in:GMat, opn:Int, kflops:Long):GMat = {
     val out = GMat.newOrCheckGMat(in.nrows, in.ncols, null, in.GUID, opn)
     CUMAT.applygfun(in.data, out.data, in.nrows*in.ncols, opn)
-    JCuda.cudaDeviceSynchronize()
+    jcuda.runtime.JCuda.cudaDeviceSynchronize()
     Mat.nflops += kflops*in.length
     out
   }
@@ -2304,7 +2308,7 @@ object SciFunctions {
     if (a.nrows == b.nrows && a.ncols == b.ncols) {
     	val out = GMat.newOrCheckGMat(a.nrows, a.ncols, omat, a.GUID, b.GUID, opn)
       CUMAT.applygfun2(a.data, b.data, out.data, a.nrows*a.ncols, opn)
-      JCuda.cudaDeviceSynchronize()
+      jcuda.runtime.JCuda.cudaDeviceSynchronize()
       Mat.nflops += kflops*a.length
       out
     } else {
@@ -2316,7 +2320,7 @@ object SciFunctions {
     if  (a.nrows == b.nrows && a.ncols == b.ncols)  {
 	    val out = GMat.newOrCheckGMat(a.nrows, a.ncols, null, a.GUID, b.GUID, opn)
 	    CUMAT.applygfun2(a.data, b.data, out.data, a.nrows*a.ncols, opn)
-	    JCuda.cudaDeviceSynchronize()
+	    jcuda.runtime.JCuda.cudaDeviceSynchronize()
 	    Mat.nflops += kflops*a.length
 	    out
     } else {
@@ -2400,7 +2404,7 @@ object SciFunctions {
   def applyGDfun(in:GDMat, omat:Mat, opn:Int, kflops:Long):GDMat = {
     val out = GDMat.newOrCheckGDMat(in.nrows, in.ncols, omat, in.GUID, opn)
     CUMAT.applygdfun(in.data, out.data, in.nrows*in.ncols, opn)
-    JCuda.cudaDeviceSynchronize()
+    jcuda.runtime.JCuda.cudaDeviceSynchronize()
     Mat.nflops += kflops*in.length
     out
   }
@@ -2408,7 +2412,7 @@ object SciFunctions {
   def applyGDfun(in:GDMat, opn:Int, kflops:Long):GDMat = {
     val out = GDMat.newOrCheckGDMat(in.nrows, in.ncols, null, in.GUID, opn)
     CUMAT.applygdfun(in.data, out.data, in.nrows*in.ncols, opn)
-    JCuda.cudaDeviceSynchronize()
+    jcuda.runtime.JCuda.cudaDeviceSynchronize()
     Mat.nflops += kflops*in.length
     out
   }
@@ -2417,7 +2421,7 @@ object SciFunctions {
     if (a.nrows == b.nrows && a.ncols == b.ncols) {
     	val out = GDMat.newOrCheckGDMat(a.nrows, a.ncols, omat, a.GUID, b.GUID, opn)
       CUMAT.applygdfun2(a.data, b.data, out.data, a.nrows*a.ncols, opn)
-      JCuda.cudaDeviceSynchronize()
+      jcuda.runtime.JCuda.cudaDeviceSynchronize()
       Mat.nflops += kflops*a.length
       out
     } else {
@@ -2429,7 +2433,7 @@ object SciFunctions {
     if  (a.nrows == b.nrows && a.ncols == b.ncols)  {
 	    val out = GDMat.newOrCheckGDMat(a.nrows, a.ncols, null, a.GUID, b.GUID, opn)
 	    CUMAT.applygdfun2(a.data, b.data, out.data, a.nrows*a.ncols, opn)
-	    JCuda.cudaDeviceSynchronize()
+	    jcuda.runtime.JCuda.cudaDeviceSynchronize()
 	    Mat.nflops += kflops*a.length
 	    out
     } else {

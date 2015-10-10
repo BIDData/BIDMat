@@ -489,17 +489,23 @@ object Mat {
   import Ordered._
   
   var termWidth = 80;
+  var youHaveBeenWarned = false;
   
   def terminalWidth:Int = {
-    try {
-    	math.max(jline.TerminalFactory.create.getWidth, termWidth);
-    }
-    catch {
-    	case _:Throwable => {
-    	  println("Couldnt get terminal width via JLine, using %d" format termWidth);
-    	  termWidth;
-    	}
-    }
+  		if (!youHaveBeenWarned) {
+  			try {
+  				math.max(jline.TerminalFactory.create.getWidth, termWidth);
+  			}
+  			catch {
+  			case _:Throwable => {
+  				println("Couldnt get terminal width via JLine, using %d" format termWidth);
+  				youHaveBeenWarned = true;
+  				termWidth;
+  			}
+  			}
+  		} else {
+  			termWidth;
+  		}
   }
   
   var useCache = false						 // Use matrix caching
@@ -532,19 +538,34 @@ object Mat {
   
   var ioneBased = 1                // Whether sparse matrix *internal* indices are zero 0: or one-based 1:
   
-  var useGPUsort = true
+  var useGPUsort = true;
   
-  var hostAllocSize = 0xffffffffL
+  var hostAllocSize = 0xffffffffL;
   
-  final val MSEED:Int = 1452462553 
+  final val MSEED:Int = 1452462553;
 
-  final val myrand = new java.util.Random(MSEED)
+  final val myrand = new java.util.Random(MSEED);
   
-  val opcodes = HashMap.empty[String, Int]
+  val opcodes = HashMap.empty[String, Int];
   
-  val _opcode = 1
+  val _opcode = 1;
   
-  var useStdio = (! System.getProperty("os.name").startsWith("Windows"))  // HDF5 directive
+  final val OS_WINDOWS = 0;
+  final val OS_LINUX = 1;
+  final val OS_OSX = 2;
+  final val OS_ANDROID = 3;
+  
+  def getOS:Int = {
+    val osname = System.getProperty("os.name");
+    if (osname.startsWith("Windows")) OS_WINDOWS
+    else if (osname.startsWith("Linux")) OS_LINUX
+    else if (osname.startsWith("Mac")) OS_OSX
+    else OS_ANDROID    
+  }
+  
+  val ostype = getOS  
+  
+  var useStdio = (! (ostype == OS_WINDOWS))  // HDF5 directive
   
   private val _cache2 = HashMap.empty[Tuple2[Long,Int], Mat]              // Matrix caches
   

@@ -189,6 +189,44 @@ object MatFunctions {
     }
   }
   
+  /** Convert to a CPU matrix */
+  def cpu(a:Mat):Mat = {
+    a match {
+      case b:FMat => b;
+      case b:DMat => b;
+      case b:IMat => b;
+      case b:LMat => b;
+      case b:SMat => b;
+      case b:SDMat => b;
+      case b:SBMat => b;
+      case b:CSMat => b;
+      case b:GMat => FMat(b);
+      case b:GDMat => DMat(b);
+      case b:GIMat => IMat(b);
+      case b:GLMat => LMat(b);
+      case b:GSMat => SMat(b);
+      case b:GSDMat => SDMat(b);
+    }
+  }
+    
+      /** Convert to a GPU matrix */
+  def gpu(a:Mat):Mat = {
+    a match {
+      case b:FMat => GMat(b);
+      case b:DMat => GDMat(b);
+      case b:IMat => GIMat(b);
+      case b:LMat => GLMat(b);
+      case b:SMat => GSMat(b);
+      case b:SDMat => GSDMat(b);
+      case b:GMat => b;
+      case b:GDMat => b;
+      case b:GIMat => b;
+      case b:GLMat => b;
+      case b:GSMat => b;
+      case b:GSDMat => b;
+    }
+  }
+  
   // TODO Document
   def threadPool(n:Int = Mat.numThreads):scala.concurrent.ExecutionContextExecutor = {
     import scala.concurrent.ExecutionContext
@@ -1737,11 +1775,17 @@ object MatFunctions {
     (a, b) match {
       case (a:FMat,b:FMat) => a.kron(b, omat)
       case (a:FMat,b:SMat) => a.kron(full(b), omat)
+      case (a:FMat,b:GMat) => GMat(a).kron(b, omat)
+      case (a:FMat,b:GIMat) => GMat(a).kron(GMat(b), omat)
       case (a:IMat,b:FMat) => a.kron(b, omat)
       case (a:IMat,b:SMat) => a.kron(full(b), omat)
+      case (a:GMat,b:IMat) => a.kron(GMat(b), omat)
+      case (a:GMat,b:GIMat) => a.kron(GMat(b), omat)
       case (a:GMat,b:GMat) => a.kron(b, omat)
       case (a:GMat,b:GSMat) => a.kron(full(b), omat)
+      case (a:GIMat,b:IMat) => a.kron(GIMat(b), omat)
       case (a:GIMat,b:GMat) => GMat(a).kron(b, omat)
+      case (a:GIMat,b:GIMat) => a.kron(b, omat)
       case (a:GIMat,b:GSMat) => GMat(a).kron(full(b), omat)
     }
   }
@@ -1903,6 +1947,10 @@ object MatFunctions {
   def loadIMat(fname:String) = HMat.loadIMat(fname)  
   def loadIMat(fname:String, omat:Mat) = HMat.loadIMat(fname, omat)  
   def loadIMat(fname:String, omat:Mat, compressed:Int) = HMat.loadIMat(fname, omat, compressed)
+  
+  def loadLMat(fname:String) = HMat.loadLMat(fname)  
+  def loadLMat(fname:String, omat:Mat) = HMat.loadLMat(fname, omat)  
+  def loadLMat(fname:String, omat:Mat, compressed:Int) = HMat.loadLMat(fname, omat, compressed)
       
   def loadSBMat(fname:String) = HMat.loadSBMat(fname)   
   def loadSBMat(fname:String, compressed:Int) = HMat.loadSBMat(fname, compressed)
@@ -1924,6 +1972,9 @@ object MatFunctions {
   
   def saveIMat(fname:String, m:IMat) = HMat.saveIMat(fname, m)    
   def saveIMat(fname:String, m:IMat, compressed:Int) = HMat.saveIMat(fname, m, compressed)
+  
+  def saveLMat(fname:String, m:LMat) = HMat.saveLMat(fname, m)    
+  def saveLMat(fname:String, m:LMat, compressed:Int) = HMat.saveLMat(fname, m, compressed) 
   
   def saveSMat(fname:String, m:SMat) = HMat.saveSMat(fname, m)    
   def saveSMat(fname:String, m:SMat, compressed:Int) = HMat.saveSMat(fname, m, compressed)
