@@ -1,6 +1,8 @@
 
 import BIDMat.TMat
 
+println("------- TMat tests: results should match ------ ")
+println("------- control appears first after lines -- TMat result appears second ----")
 
 val a = rand(4,4);
 
@@ -14,53 +16,100 @@ val bb = TMat(8,8,Array(0,4,0,4),Array(0,0,4,4),Array(a(0 to 1,0 to 1),
                                                        a(2 to 3,0 to 1),
                                                        a(2 to 3,2 to 3)));
 
-println("-------- full ---------")
-println(b.full);
+val g = TMat(4,4,Array(0,2,0,2),Array(0,0,2,2),Array(GMat(a(0 to 1,0 to 1)), 
+                                                       GMat(a(0 to 1,2 to 3)),
+                                                       GMat(a(2 to 3,0 to 1)),
+                                                       GMat(a(2 to 3,2 to 3))));
 
-val elt = a *@ a;
+val gg = TMat(8,8,Array(0,4,0,4),Array(0,0,4,4),Array(GMat(a(0 to 1,0 to 1)), 
+                                                       GMat(a(0 to 1,2 to 3)),
+                                                       GMat(a(2 to 3,0 to 1)),
+                                                       GMat(a(2 to 3,2 to 3))));
 
-println("-------- eltwise mult ---------")
+val c  = sparse(bernrnd(0.35,8,8))
+val ee = rand(8,8)
 
-val elt2 = b *@ b;
-println(elt2.full);
+println("-------- full FMat ---------")
 
+val origFMat = a
+val theTMat = b.full
+
+println("-------- tMult :: TMat * FMat -------- ")
+
+val fmatTimesFMat = a * a
+val tmatTimesFMat = b * a
+
+println("-------- tMult :: TMat * SMat -------- ")
+
+val fmatTimesSMat = bb.full * c
+val tmatTimesSMat = bb * c
+
+println("-------- tMult :: TMat * GMat -------- ")
+
+val gmatTimesGMat = GMat(a) * GMat(a)
+val tmatTimesGMat = g * GMat(a)
+
+println("-------- tMult :: TMat * GSMat -------- ")
+
+val gmatTimesGSMat = gg.full * GSMat(c)
+val tmatTimesGSMat = gg * GSMat(c)
+
+println("-------- tMult :: TMat = FMat * FMat -------- ")
+
+val fmatTimesFMat =  ee*ee
+val tmatEqualsFMatTimesFMat = TMat.tMult(ee,ee,bb).full
+
+println("-------- tMult :: TMat = FMat * SMat -------- ")
+
+val fmatTimesSMat = ee*c
+val tmatEqualsFmatTimesSMat = TMat.tMult(ee,c,bb).full
+
+println("-------- tMult :: TMat = GMat * GMat -------- ")
+
+val gmatTimesGMat = GMat(ee)*GMat(ee)
+val tmatEqualsGMatTimesGMat = TMat.tMult(GMat(ee),GMat(ee),bb).full
+
+println("-------- tMult :: TMat = GMat * GSMat -------- ")
+
+val gmatTimesGSMat = GMat(ee)*GSMat(c)
+val tmatEqualsGMatTimesGSMat = TMat.tMult(GMat(ee),GSMat(c),bb).full
+
+println("-------- eltwise mult FMat ---------")
+
+val eltFMat = a *@ a;
+val eltTMat = (b *@ b).full;
+
+println("-------- eltwise mult GMat ---------")
+
+val eltGMat = GMat(a) *@ GMat(a);
+val eltTMat = (g *@ g).full;
 
 println("-------- eltwise sqrt ---------")
 val sqrt = a ^ (0.5);
+val sqrt2 = (b ^ (0.5f)).full;
 
-val sqrt2 = b ^ (0.5f);
-println(sqrt2.full);
+println("-------- colslice FMat ---------")
 
-println("-------- colslice ---------")
+val colFMat = a.colslice(1,3)
+val colTMat = (b.colslice(1,3,null)).full
 
-val col = a.colslice(1,3)
+println("-------- colslice2 FMat ---------")
 
-val col2 = b.colslice(1,3,null)
-println(col2.full)
-
-println("-------- colslice2 ---------")
-
-val col3 = a.colslice(2,4)
-
-val col4 = b.colslice(2,4,null)
-println(col4.full)
+val colFMat2 = a.colslice(2,4)
+val colTMat2 = (b.colslice(2,4,null)).full
 
 println("-------- sum 1 ---------")
 
-sum(a,1)
-sum(b,1)
+val sumFMat1 = sum(a,1)
+val sumTMat1 = sum(b,1)
 
 println("-------- sum 2 ---------")
 
-sum(a,2)
-sum(b,2)
+val sumFMat2 = sum(a,2)
+val sumTMat2 = sum(b,2)
 
-val d = a.copy;
-val e = b.copy;
+println("-------- copy ---------") 
+val fmatCopy = a.copy
+val tmatCopy = b.copy
 
-println(d);
-println(e.full);
 
-val ee = rand(8,8);
-val ff = TMat.tMult(ee,ee,bb).full
-ee*ee
