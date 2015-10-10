@@ -22,7 +22,7 @@ import scala.collection.mutable.ArrayBuffer
  * y(i) is the Mat.oneBased row index of the top left corner of tile i.
  *
  * y should be passed in sorted, and contiguous x's with the same
- * y value should also be sorted (thus the order is lexicographic with priority on y)
+ * y values should also be sorted (thus the order is lexicographic with priority on y)
  *
  * We will check for this in the future.
  * Also, there is currently no overlap checking.
@@ -68,9 +68,11 @@ class TMat
   }
 
   /*
+   * tMatOpF 
    * Apply a (scalar,scalar) => scalar elementwise within tiles to combine
    * two TMats.
-   *
+   * 
+   * Need to implement cacheing
    */
   
   def tMatOpF(aa : TMat, f : (Float, Float) => Float) : TMat = tMatOpF(aa,f,null)
@@ -85,20 +87,16 @@ class TMat
 
       tiles(i) match {
         case fMat : FMat => {   
-          // no cacheing for the moment
           out.tiles(i) = fMat.ffMatOp(aa.tiles(i), f, null) 
         }
 
         case sMat : SMat => {
-          // there must be a better way than unsafe type coercions..
-          // reflection is a nightmare
-
           out.tiles(i) = sMat.ssMatOp((aa.tiles(i)).asInstanceOf[SMat], f, oldmat.tiles(i))
                                                                            // ^^ can cause null pointer excp    
         }
 
         case gMat : GMat => { 
-          throw new RuntimeException("GSMat not yet supported")
+          throw new RuntimeException("GMat not yet supported")
 //          out.tiles(i) = gMat.gOp((aa.tiles(i)).asInstanceOf[GMat], oldmat.tiles(i), f)
         }
 
@@ -126,7 +124,6 @@ class TMat
     var i = 0
 
     while (i < tiles.length) {
-     // use contents to make this generic
      tiles(i) match {
        case fMat : FMat =>          
                 val rowInds:IMat = IMat(fMat.nrows,1,(y(i) to y(i)+fMat.nrows).toArray)
@@ -142,7 +139,6 @@ class TMat
                 i += 1
        case _ => { throw new RuntimeException("no match in TMat.full for tiles " + i); }
         }
-
     }
     out
   }
@@ -150,6 +146,11 @@ class TMat
 def theta(x : Int) = {
     if (x < 0) 0 else 1 
 }
+
+/* 
+ * Colslice implementation. Needs cacheing review
+ *
+ */
 
 override def colslice(left:Int, right:Int, omat:Mat) : TMat = {
     val ioff = Mat.ioneBased
@@ -161,7 +162,9 @@ override def colslice(left:Int, right:Int, omat:Mat) : TMat = {
     var i = 0
     var j = 0
 
-    // should be logarithmically many indices, so no cacheing necessary
+    /*
+     * Haven't worried about cacheing these because there shouldn't be too many
+     */ 
 
     var newXinds = Array.ofDim[Int](tiles.length)
     var newYinds = Array.ofDim[Int](tiles.length)
@@ -170,7 +173,7 @@ override def colslice(left:Int, right:Int, omat:Mat) : TMat = {
     while (i < tiles.length) { 
       if (x(i)+tiles(i).ncols < left) {
 
-     // tile not present in result TMat
+     // these are tiles not present in result TMat
      // maybe feed these discarded matrices into cache later?
            
       } else if (x(i) < right) {
@@ -187,115 +190,62 @@ override def colslice(left:Int, right:Int, omat:Mat) : TMat = {
        j += 1
       } else if (x(i) >= right) {
 
-      // also not present. case analysis just for clarity
+      // these tiles are also not present. case analysis just for clarity
       }
 
       i += 1
     }   
 
-    /*
-     * todo: correct Cacheing
-     *  not sure what the following will do
-     *
-     */ 
-
-    var out = TMat.newOrCheckTMat(nrows, right-left, newXinds, newYinds, newTiles,null) // omat cache later 
-    out
-      
+    TMat.newOrCheckTMat(nrows, right-left, newXinds, newYinds, newTiles,null) // <-- note cache omitted
   } 
 
-
 /*
- * tMult takes advantage of the tiled structure of TMat
- * 
+ * tMult is the method that the TMat container exists to implement. It's a fast matrix multiplication
+ * filling in a subset of hypothetical dense matrix resulting in a Mat. 
+ *
  * We call tileMult repeatedly
  * tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:FMat, broff:Int, bcoff:Int, c:FMat, croff:Int, ccoff:Int)
  * 
- * Result is a Mat
- *
- * I couldn't figure out how to do tMult in place, so we need to use a tmp matrix.
- * This makes the caching a bit more complicated than in the other mults
- *
+ * This is the TMat * FMat, TMat * SMat version
+ * TMat = Mat * Mat is a static method below
+ * 
  */ 
  
-def tMult(a:Mat, outmat:Mat, tmpmat: Mat) : Mat =  {
-      if (ncols == 1 && nrows == 1){ // left scalar multiply
-  		val out = FMat.newOrCheckFMat(a.nrows, a.ncols, outmat, GUID, a.GUID, "tMult".##)
-  		Mat.nflops += a.length
- 
-		var i = 0
-
-/*                tiles(0) match { 
-                   case fMat : FMat => 
-                       val dvar = fMat.data(0)
-  		
-                       while (i < a.length) {
-                                out.data(i) = numeric.times(dvar,a.data(i))
-         	         	i += 1
-   	         	}	
-                }
-
-*/
-  		out			  
-      } else if (a.ncols == 1 && a.nrows == 1){ 
-                val out = FMat.newOrCheckFMat(nrows, ncols, outmat, GUID, a.GUID, "tMult".##)
-  		
-  		var i = 0
-/*  		val dvar = a.data(0)
-
-  		while (i < tiles.length) {
-                        tiles(i) match {
-                           case fMat : FMat =>
-		               val rowInds : IMat = IMat(fMat.nrows,1,(y(i) to y(i)+fMat.nrows).toArray)
-                               val colInds : IMat = IMat(fMat.ncols,1,(x(i) to x(i)+fMat.ncols).toArray)
-  			       out.update(rowInds,colInds,fMat.fDMult(a,out(rowInds,colInds)))
-
-                	   }
-        	      	i += 1
-  		}
- */
-  		out
-      } else if (ncols == a.nrows) {
+def tMult(a:Mat, outmat:Mat) : Mat =  {
+   if (ncols == a.nrows) {
                a match { 
                   case aa : FMat => { 
-                     
-                     var (out,tmp) = 
-                       	(FMat.newOrCheckFMat(nrows, a.ncols, outmat, GUID, a.GUID, "tMult".##), FMat.newOrCheckFMat(nrows, a.ncols, tmpmat, GUID, a.GUID, "tMult".##));
-                                       
+                     var out = FMat.newOrCheckFMat(nrows, a.ncols, outmat, GUID, a.GUID, "tMult".##)
                      var i = 0
                
+                     out.clear 
+
                      while (i < tiles.length) {
                           var m = tiles(i)
-                          tmp.clear
-
             	 	  Mat.nflops += 2L * m.length * a.ncols
                           if (!Mat.useMKL) {
                             out  // not sure
               		  } else {
-                            m.tileMult(m.nrows, a.ncols, m.ncols, 0, 0, a, x(i), 0, tmp, y(i), 0); 
-                            out += tmp
+                            m.tileMult(m.nrows, a.ncols, m.ncols, 0, 0, a, x(i), 0, out, y(i), 0)
         	          }
                         i+= 1			 
   	             }
                      out
                    }
                   case aa : SMat => { 
-                     
-                     var (out,tmp) = 
-                       	(FMat.newOrCheckFMat(nrows, a.ncols, outmat, GUID, a.GUID, "tMult".##), FMat.newOrCheckFMat(nrows, a.ncols, tmpmat, GUID, a.GUID, "tMult".##));
-                                       
+                     var out = FMat.newOrCheckFMat(nrows, a.ncols, outmat, GUID, a.GUID, "tMult".##)         
                      var i = 0
+
+                     out.clear
                
                      while (i < tiles.length) {
                           var m = tiles(i)
-                          tmp.clear
 
             	 	  Mat.nflops += 2L * m.length * a.ncols
                           if (!Mat.useMKL) {
                             out  // not sure
               		  } else {
-                            m.tileMult(m.nrows, a.ncols, m.ncols, 0, 0, a, x(i), 0, tmp, y(i), 0); 
-                            out += tmp
+                            m.tileMult(m.nrows, a.ncols, m.ncols, 0, 0, a, x(i), 0, out, y(i), 0); 
         	          }
                         i+= 1			 
   	             }
@@ -303,23 +253,19 @@ def tMult(a:Mat, outmat:Mat, tmpmat: Mat) : Mat =  {
                    }
 
                   case aa : GMat => { 
-
-                     var (out,tmp) = 
-                       	(GMat.newOrCheckGMat(nrows, a.ncols, outmat, GUID, a.GUID, "tMult".##), GMat.newOrCheckGMat(nrows, a.ncols, tmpmat, GUID, a.GUID, "tMult".##));
-                                       
+                     var out = GMat.newOrCheckGMat(nrows, a.ncols, outmat, GUID, a.GUID, "tMult".##)         
                      var i = 0
+
                      out.clear
 
                      while (i < tiles.length) {
                           var m = tiles(i)
-                          tmp.clear
 
             	 	  Mat.nflops += 2L * m.length * a.ncols
                           if (!Mat.useMKL) {
                             out  // not sure
               		  } else {
-                            m.tileMult(m.nrows, a.ncols, m.ncols, 0, 0, a, x(i), 0, tmp, y(i), 0); 
-                            out += tmp
+                            m.tileMult(m.nrows, a.ncols, m.ncols, 0, 0, a, x(i), 0, out, y(i), 0); 
         	          }
                         i+= 1			 
   	             }
@@ -327,32 +273,32 @@ def tMult(a:Mat, outmat:Mat, tmpmat: Mat) : Mat =  {
                    }
 
                   case aa : GSMat => { 
-
-                     var (out,tmp) = 
-                       	(GMat.newOrCheckGMat(nrows, a.ncols, outmat, GUID, a.GUID, "tMult".##), GMat.newOrCheckGMat(nrows, a.ncols, tmpmat, GUID, a.GUID, "tMult".##));
-                                       
+                     var out = GMat.newOrCheckGMat(nrows, a.ncols, outmat, GUID, a.GUID, "tMult".##)    
                      var i = 0
+
                      out.clear
 
                      while (i < tiles.length) {
                           var m = tiles(i)
-                          tmp.clear
 
             	 	  Mat.nflops += 2L * m.length * a.ncols
                           if (!Mat.useMKL) {
                             out  // not sure
               		  } else {
-                            m.tileMult(m.nrows, a.ncols, m.ncols, 0, 0, a, x(i), 0, tmp, y(i), 0); 
-                            out += tmp
+                            m.tileMult(m.nrows, a.ncols, m.ncols, 0, 0, a, x(i), 0, out, y(i), 0); 
         	          }
                         i+= 1			 
   	             }
                      out
                    }
                  }
-      }	else throw new RuntimeException("dimension mismatch")    
-  
+      }	else throw new RuntimeException("dimension mismatch")      
   }
+
+  /*
+   * The sum method for TMats
+   *
+   */
 
   def sum(n: Int, oldmat: Mat) : Mat = {
   // check if it's GPU or CPU, then iterate over tiles
@@ -408,8 +354,6 @@ def tMult(a:Mat, outmat:Mat, tmpmat: Mat) : Mat =  {
            MatFunctions.irow(indexTuple._2 to (indexTuple._2 + offsetTuple._2))) += 
             tmp(MatFunctions.irow(0 to offsetTuple._1), MatFunctions.irow(0 to offsetTuple._2))
        i += 1
-
-       // println("out:          " + out)
     }
     out
   }
@@ -418,10 +362,10 @@ def tMult(a:Mat, outmat:Mat, tmpmat: Mat) : Mat =  {
     case bb:TMat => new TPair(this,bb);
   }
 
-  def * (a : FMat) = this.tMult(a,null,null);
-  def * (a : GMat) = this.tMult(a,null,null);
-  def * (a : SMat) = this.tMult(a,null,null);
-  def * (a : GSMat) = this.tMult(a,null,null);
+  def * (a : FMat) = this.tMult(a,null);
+  def * (a : GMat) = this.tMult(a,null);
+  def * (a : SMat) = this.tMult(a,null);
+  def * (a : GSMat) = this.tMult(a,null);
 
 
   def *@ (b : TMat) = tMatOpF(b, (x,y) => x*y, null)
@@ -431,7 +375,7 @@ def tMult(a:Mat, outmat:Mat, tmpmat: Mat) : Mat =  {
 }
 
 class TPair(val omat:Mat, val mat:TMat) extends Pair {
-  override def * (a : Mat) = mat.tMult(a,null,null) // fix caching 
+  override def * (a : Mat) = mat.tMult(a,null) // fix caching 
 }
  
 object TMat {
