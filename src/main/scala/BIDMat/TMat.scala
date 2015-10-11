@@ -143,9 +143,9 @@ class TMat
     out
   }
 
-def theta(x : Int) = {
+  def theta(x : Int) = {
     if (x < 0) 0 else 1 
-}
+  }
 
 /* 
  * Colslice implementation. Needs cacheing review
@@ -163,7 +163,7 @@ override def colslice(left:Int, right:Int, omat:Mat) : TMat = {
     var j = 0
 
     /*
-     * Haven't worried about cacheing these because there shouldn't be too many
+     * Haven't worried about cacheing here because there shouldn't be too many indices
      */ 
 
     var newXinds = Array.ofDim[Int](tiles.length)
@@ -391,7 +391,6 @@ object TMat {
    var i = 0
    val out = newOrCheckTMat(tmat.nrows, tmat.ncols, tmat.x, tmat.y, tmat.tiles, omat);
      
-
    while (i < tmat.tiles.length) {
     var tmp = tmat.tiles(i) match {
        case aa:FMat => GMat(aa)
@@ -514,15 +513,16 @@ object TMat {
   def tMult ( left: Mat, right: Mat, omat : TMat) = {
     var i = 0
     while (i < omat.tiles.length) {
-      left.tileMult( omat.tiles(i).nrows, 
-                     omat.tiles(i).ncols, 
-                     left.ncols, 
-                     omat.y(i), 
+      omat.tiles(i).clear
+      left.tileMult( omat.tiles(i).nrows,    // result rows
+                     omat.tiles(i).ncols,    // result cols
+                     left.ncols,             // inner dimension left * right = result
+                     omat.y(i),              // row offset in left (?)
                      0, 
                      right, 
                      0,
-                     omat.x(i), 
-                     omat.tiles(i), 
+                     omat.x(i),              // column offset in right (?)
+                     omat.tiles(i),          // destination matrix
                      0,
                      0 )
       i += 1

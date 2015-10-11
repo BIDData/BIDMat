@@ -57,7 +57,14 @@ val tmatTimesGSMat = gg * GSMat(c)
 println("-------- tMult :: TMat = FMat * FMat -------- ")
 
 val fmatTimesFMat =  ee*ee
-val tmatEqualsFMatTimesFMat = TMat.tMult(ee,ee,bb).full
+
+val tilesBefore = bb.tiles
+val tmatEqualsFMatTimesFMat = TMat.tMult(ee,ee,bb)
+val tmatTiles = tmatEqualsFMatTimesFMat.tiles
+val tmatXs = tmatEqualsFMatTimesFMat.x
+val tmatYs = tmatEqualsFMatTimesFMat.y
+
+val tmatEQFMatTimesFMat = tmatEqualsFMatTimesFMat.full
 
 println("-------- tMult :: TMat = FMat * SMat -------- ")
 
@@ -67,12 +74,12 @@ val tmatEqualsFmatTimesSMat = TMat.tMult(ee,c,bb).full
 println("-------- tMult :: TMat = GMat * GMat -------- ")
 
 val gmatTimesGMat = GMat(ee)*GMat(ee)
-val tmatEqualsGMatTimesGMat = TMat.tMult(GMat(ee),GMat(ee),bb).full
+val tmatEqualsGMatTimesGMat = TMat.tMult(GMat(ee),GMat(ee),gg).full
 
 println("-------- tMult :: TMat = GMat * GSMat -------- ")
 
 val gmatTimesGSMat = GMat(ee)*GSMat(c)
-val tmatEqualsGMatTimesGSMat = TMat.tMult(GMat(ee),GSMat(c),bb).full
+val tmatEqualsGMatTimesGSMat = TMat.tMult(GMat(ee),GSMat(c),gg).full
 
 println("-------- eltwise mult FMat ---------")
 
