@@ -350,7 +350,6 @@ object HMat {
     din.close
     out    
   }
-  
  
   def loadFMat(fname:String, omat:Mat, compressed:Int):FMat = {
     if (fname.startsWith("hdfs:")) {
@@ -364,7 +363,6 @@ object HMat {
 		  out
 	  }
   }
-
 
   def loadFMat(gin:DataInput, omat:Mat):FMat = {
 	  val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder);
@@ -415,25 +413,33 @@ object HMat {
   }
   
   def loadIMat(fname:String, omat:Mat, compressed:Int):IMat = {
-    if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
+    if (fname.startsWith("hdfs:")) {
+       HDFSreadMat(fname, omat).asInstanceOf[IMat];
+    } 
+    else if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
       loadIMatTxt(fname, omat, compressed)
     } else {
       val gin = getInputStream(fname, compressed)
-      val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
-      val hints = new Array[Int](4)
-      readSomeInts(gin, hints, buff, 4)
-      val ftype = hints(0)
-      val nrows = hints(1)
-      val ncols = hints(2)
-      if (ftype != 110) {
-        throw new RuntimeException("loadIMat expected type field 110 but was %d" format ftype)
-      }
-      val out = IMat.newOrCheckIMat(nrows, ncols, omat)
-      readSomeInts(gin, out.data, buff, ncols*nrows)
+      val out = loadIMat(gin, omat)
       gin.close
       out
     }
-  }  
+  }
+
+  def loadIMat(gin:DataInput, omat:Mat):IMat = {
+    val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
+    val hints = new Array[Int](4)
+    readSomeInts(gin, hints, buff, 4)
+    val ftype = hints(0)
+    val nrows = hints(1)
+    val ncols = hints(2)
+    if (ftype != 110) {
+      throw new RuntimeException("loadIMat expected type field 110 but was %d" format ftype)
+    }
+    val out = IMat.newOrCheckIMat(nrows, ncols, omat)
+    readSomeInts(gin, out.data, buff, ncols*nrows)
+    out
+  }
     
   def loadIMat(fname:String):IMat = loadIMat(fname, null, 0)
   
@@ -467,24 +473,32 @@ object HMat {
   }
   
   def loadLMat(fname:String, omat:Mat, compressed:Int):LMat = {
-    if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
+    if (fname.startsWith("hdfs:")) {
+       HDFSreadMat(fname, omat).asInstanceOf[LMat];
+    } 
+    else if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
       loadLMatTxt(fname, omat, compressed)
     } else {
       val gin = getInputStream(fname, compressed)
-      val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
-      val hints = new Array[Int](4)
-      readSomeInts(gin, hints, buff, 4)
-      val ftype = hints(0)
-      val nrows = hints(1)
-      val ncols = hints(2)
-      if (ftype != 120) {
-        throw new RuntimeException("loadLMat expected type field 120 but was %d" format ftype)
-      }
-      val out = LMat.newOrCheckLMat(nrows, ncols, omat)
-      readSomeLongs(gin, out.data, buff, ncols*nrows)
+      val out = loadLMat(gin, omat)
       gin.close
       out
     }
+  }
+
+  def loadLMat(gin:DataInput, omat:Mat):LMat = {
+    val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
+    val hints = new Array[Int](4)
+    readSomeInts(gin, hints, buff, 4)
+    val ftype = hints(0)
+    val nrows = hints(1)
+    val ncols = hints(2)
+    if (ftype != 120) {
+      throw new RuntimeException("loadLMat expected type field 120 but was %d" format ftype)
+    }
+    val out = LMat.newOrCheckLMat(nrows, ncols, omat)
+    readSomeLongs(gin, out.data, buff, ncols*nrows)
+    out
   }  
     
   def loadLMat(fname:String):LMat = loadLMat(fname, null, 0)
@@ -519,24 +533,32 @@ object HMat {
   }
   
   def loadDMat(fname:String, omat:Mat, compressed:Int):DMat = {
-    if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
+    if (fname.startsWith("hdfs:")) {
+       HDFSreadMat(fname, omat).asInstanceOf[DMat];
+    } 
+    else if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
       loadDMatTxt(fname, omat, compressed)
     } else {
       val gin = getInputStream(fname, compressed)
-      val bytebuff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
-      val hints = new Array[Int](4)
-      readSomeInts(gin, hints, bytebuff, 4)
-      val ftype = hints(0)
-      val nrows = hints(1)
-      val ncols = hints(2)
-      if (ftype != 140) {
-        throw new RuntimeException("loadDMat expected type field 140 but was %d" format ftype)
-      }
-      val out = DMat.newOrCheckDMat(nrows, ncols, omat)
-      readSomeDoubles(gin, out.data, bytebuff, ncols*nrows)
+      val out = loadDMat(gin, omat)
       gin.close
       out
     }
+  }
+
+  def loadDMat(gin:DataInput, omat:Mat):DMat = {
+    val bytebuff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
+    val hints = new Array[Int](4)
+    readSomeInts(gin, hints, bytebuff, 4)
+    val ftype = hints(0)
+    val nrows = hints(1)
+    val ncols = hints(2)
+    if (ftype != 140) {
+      throw new RuntimeException("loadDMat expected type field 140 but was %d" format ftype)
+    }
+    val out = DMat.newOrCheckDMat(nrows, ncols, omat)
+    readSomeDoubles(gin, out.data, bytebuff, ncols*nrows)
+    out
   } 
   
   def loadIDX(fname:String):FND = loadIDX(fname, 0);
@@ -672,22 +694,29 @@ object HMat {
   }
   
   def saveIMat(fname:String, m:IMat, compressed:Int=0):Unit = {
-    if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
+    if (fname.startsWith("hdfs:")) {
+      HDFSwriteMat(fname, m, compressed);
+    }
+    else if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
       saveIMatTxt(fname, m, compressed)
     } else {
       val gout = getOutputStream(fname, compressed)
-      val hints = new Array[Int](4)
-      val tbuf = ByteBuffer.allocate(16).order(byteOrder)
-      hints(0) = 110 // 1=dense, 1=int
-      hints(1) = m.nrows
-      hints(2) = m.ncols
-      hints(3) = 0
-      writeSomeInts(gout, hints, tbuf, 4)
-      val bsize = 4*m.ncols*m.nrows
-      val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder)
-      writeSomeInts(gout, m.data, buff, m.nrows*m.ncols)
+      saveIMat(gout, m);
       gout.close
     }
+  }
+
+  def saveIMat(gout:DataOutput, m:IMat):Unit = {
+    val hints = new Array[Int](4)
+    val tbuf = ByteBuffer.allocate(16).order(byteOrder)
+    hints(0) = 110 // 1=dense, 1=int
+    hints(1) = m.nrows
+    hints(2) = m.ncols
+    hints(3) = 0
+    writeSomeInts(gout, hints, tbuf, 4)
+    val bsize = 4*m.ncols*m.nrows
+    val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder)
+    writeSomeInts(gout, m.data, buff, m.nrows*m.ncols)
   }
   
   def saveIMatTxt(fname:String, m:IMat, compressed:Int=0, delim:String="\t"):Unit = {
@@ -710,22 +739,29 @@ object HMat {
   }
   
   def saveLMat(fname:String, m:LMat, compressed:Int=0):Unit = {
-    if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
+    if (fname.startsWith("hdfs:")) {
+      HDFSwriteMat(fname, m, compressed);
+    }
+    else if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
       saveLMatTxt(fname, m, compressed)
     } else {
       val gout = getOutputStream(fname, compressed)
-      val hints = new Array[Int](4)
-      val tbuf = ByteBuffer.allocate(16).order(byteOrder)
-      hints(0) = 110 // 1=dense, 1=int
-      hints(1) = m.nrows
-      hints(2) = m.ncols
-      hints(3) = 0
-      writeSomeInts(gout, hints, tbuf, 4)
-      val bsize = 4*m.ncols*m.nrows
-      val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder)
-      writeSomeLongs(gout, m.data, buff, m.nrows*m.ncols)
+      saveLMat(gout, m)
       gout.close
     }
+  }
+
+  def saveLMat(gout:DataOutput, m:LMat):Unit = {
+    val hints = new Array[Int](4)
+    val tbuf = ByteBuffer.allocate(16).order(byteOrder)
+    hints(0) = 120 // 1=dense, 2=long
+    hints(1) = m.nrows
+    hints(2) = m.ncols
+    hints(3) = 0
+    writeSomeInts(gout, hints, tbuf, 4)
+    val bsize = 4*m.ncols*m.nrows
+    val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder)
+    writeSomeLongs(gout, m.data, buff, m.nrows*m.ncols)
   }
   
   def saveLMatTxt(fname:String, m:LMat, compressed:Int=0, delim:String="\t"):Unit = {
@@ -748,22 +784,29 @@ object HMat {
   }
   
   def saveDMat(fname:String, m:DMat, compressed:Int=0):Unit = {
-    if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
+    if (fname.startsWith("hdfs:")) {
+      HDFSwriteMat(fname, m, compressed);
+    }
+    else if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
       saveDMatTxt(fname, m, compressed)
     } else {
       val gout = getOutputStream(fname, compressed)
-      val hints = new Array[Int](4)
-      val tbuf = ByteBuffer.allocate(16).order(byteOrder)
-      hints(0) = 140 // 1=dense, 4=double
-      hints(1) = m.nrows
-      hints(2) = m.ncols
-      hints(3) = 0
-      writeSomeInts(gout, hints, tbuf, 4)
-      val bsize = 8*m.ncols*m.nrows
-      val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder)
-      writeSomeDoubles(gout, m.data, buff, m.nrows*m.ncols)
+      saveDMat(gout, m)
       gout.close
     }
+  }
+
+  def saveDMat(gout:DataOutput, m:DMat):Unit = {
+    val hints = new Array[Int](4)
+    val tbuf = ByteBuffer.allocate(16).order(byteOrder)
+    hints(0) = 140 // 1=dense, 4=double
+    hints(1) = m.nrows
+    hints(2) = m.ncols
+    hints(3) = 0
+    writeSomeInts(gout, hints, tbuf, 4)
+    val bsize = 8*m.ncols*m.nrows
+    val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder)
+    writeSomeDoubles(gout, m.data, buff, m.nrows*m.ncols)
   }
   
   def saveDMatTxt(fname:String, m:DMat, compressed:Int=0, delim:String="\t"):Unit = {
