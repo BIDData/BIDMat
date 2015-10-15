@@ -509,6 +509,20 @@ object MatHDF5 {
   	case _ => throw new RuntimeException("unsupported matrix type to save")
   	}
   }
+  
+  def h5list(fname:String):CSMat = {
+	  val fapl = H5Pcreate(H5P_FILE_ACCESS);
+	  val fid = H5Fopen(fname,H5F_ACC_RDONLY,fapl);
+    val info = H5Gget_info_by_name(fid, "/", H5P_DEFAULT);
+    val n = info.nlinks.toInt;
+    val cs = CSMat(n, 1);
+    for (i <- 0 until n) {
+      cs(i) = H5Lget_name_by_idx(fid, "/", H5_INDEX_NAME, H5_ITER_INC, i, H5P_DEFAULT)
+    } 
+	  H5Fclose(fid);
+	  H5Pclose(fapl);
+    cs
+  }
 
   def hload(fname:String, vname:String):AnyRef = {
   	val fapl = H5Pcreate(H5P_FILE_ACCESS);
