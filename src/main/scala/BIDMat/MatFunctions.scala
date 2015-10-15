@@ -1916,10 +1916,12 @@ object MatFunctions {
   
   def cols2sparse(rows:IMat, cols:IMat, values:FMat):SMat = cols2sparse(rows, cols, values, true, 0)
   
-  def union(dd:Dict*) = Dict._union(dd:_*)
+  def union(dd:Dict*) = Dict._union(dd:_*);
+  
+  def h5list(fname:String) = MatHDF5.h5list(fname)
   
   def load[T](fname:String, vname:String):T = MatHDF5.hload(fname, vname).asInstanceOf[T]
-
+  
   def load[A,B](fname:String, v1:String, v2:String):(A,B) = {
     val a = MatHDF5.hload(fname, List(v1, v2));
     (a(0).asInstanceOf[A], a(1).asInstanceOf[B])
