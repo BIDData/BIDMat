@@ -296,10 +296,10 @@ def tMult(a:Mat, outmat:Mat) : Mat =  {
   }
 
 def tMultT(a:Mat, outmat:Mat) : Mat =  {
-   if (ncols == a.nrows) {
+   if (ncols == a.ncols) {
                a match { 
                   case aa : FMat => { 
-                     var out = FMat.newOrCheckFMat(nrows, a.ncols, outmat, GUID, a.GUID, "tMult".##)
+                     var out = FMat.newOrCheckFMat(nrows, a.nrows, outmat, GUID, a.GUID, "tMult".##)
                      var i = 0
                
                      out.clear 
@@ -310,14 +310,14 @@ def tMultT(a:Mat, outmat:Mat) : Mat =  {
                           if (!Mat.useMKL) {
                             out  // not sure
               		  } else {
-                            m.tileMultT(m.nrows, a.ncols, m.ncols, 0, 0, a, x(i), 0, out, y(i), 0)
+                            m.tileMultT(m.nrows, a.nrows, m.ncols, 0, 0, a, x(i), 0, out, y(i), 0)
         	          }
                         i+= 1			 
   	             }
                      out
                    }
                   case aa : SMat => { 
-                     var out = FMat.newOrCheckFMat(nrows, a.ncols, outmat, GUID, a.GUID, "tMult".##)         
+                     var out = FMat.newOrCheckFMat(nrows, a.nrows, outmat, GUID, a.GUID, "tMult".##)         
                      var i = 0
 
                      out.clear
@@ -329,7 +329,7 @@ def tMultT(a:Mat, outmat:Mat) : Mat =  {
                           if (!Mat.useMKL) {
                             out  // not sure
               		  } else {
-                            m.tileMultT(m.nrows, a.ncols, m.ncols, 0, 0, a, x(i), 0, out, y(i), 0); 
+                            m.tileMultT(m.nrows, a.nrows, m.ncols, 0, 0, a, x(i), 0, out, y(i), 0); 
         	          }
                         i+= 1			 
   	             }
@@ -337,7 +337,7 @@ def tMultT(a:Mat, outmat:Mat) : Mat =  {
                    }
 
                   case aa : GMat => { 
-                     var out = GMat.newOrCheckGMat(nrows, a.ncols, outmat, GUID, a.GUID, "tMult".##)         
+                     var out = GMat.newOrCheckGMat(nrows, a.nrows, outmat, GUID, a.GUID, "tMult".##)         
                      var i = 0
 
                      out.clear
@@ -369,7 +369,7 @@ def tMultT(a:Mat, outmat:Mat) : Mat =  {
                           if (!Mat.useMKL) {
                             out  // not sure
               		  } else {
-                            m.tileMultT(m.nrows, a.ncols, m.ncols, 0, 0, a, x(i), 0, out, y(i), 0); 
+                            m.tileMultT(m.nrows, a.nrows, m.ncols, 0, 0, a, x(i), 0, out, y(i), 0); 
         	          }
                         i+= 1			 
   	             }
@@ -444,6 +444,7 @@ def tMultT(a:Mat, outmat:Mat) : Mat =  {
 
   override def ~ (b: Mat) = b match { 
     case bb:TMat => new TPair(this,bb);
+    case bb:Mat => new TTPair(this,bb);
   }
 
   override def zeros(nr: Int, nc: Int) = {
@@ -497,6 +498,11 @@ def tMultT(a:Mat, outmat:Mat) : Mat =  {
 
 class TPair(val omat:Mat, val mat:TMat) extends Pair {
   override def * (a : Mat) = mat.tMult(a,null) // fix caching 
+}
+
+class TTPair(val omat:Mat, val mat:Mat) extends Pair {
+  override def * (a : Mat) = TMat.tMult(mat,a,null) 
+  override def *^ (a : Mat) = TMat.tMultT(mat,a,null) 
 }
  
 object TMat {
@@ -650,19 +656,39 @@ object TMat {
     var i = 0
     while (i < omat.tiles.length) {
       omat.tiles(i).clear
-      left.tileMult( omat.tiles(i).nrows,    // result rows
-                     omat.tiles(i).ncols,    // result cols
-                     left.ncols,             // inner dimension left * right = result
-                     omat.y(i),              // row offset in left (?)
+      left.tileMult( omat.tiles(i).nrows,   
+                     omat.tiles(i).ncols,   
+                     left.ncols,            
+                     omat.y(i),             
                      0, 
                      right, 
                      0,
-                     omat.x(i),              // column offset in right (?)
-                     omat.tiles(i),          // destination matrix
+                     omat.x(i),             
+                     omat.tiles(i),         
                      0,
                      0 )
       i += 1
     }
     omat
   }
+
+  def tMultT ( left: Mat, right: Mat, omat : TMat) : TMat = {
+    var i = 0
+    while (i < omat.tiles.length) {
+      omat.tiles(i).clear
+      left.tileMultT( omat.tiles(i).nrows,  
+                      omat.tiles(i).ncols,  
+                      left.ncols,  
+                      omat.y(i),   
+                      0, 
+                      right, 
+                      0,
+                      omat.x(i),   
+                      omat.tiles(i),
+                      0,
+                      0 )
+      i += 1
+     }
+     omat
+   }
 }

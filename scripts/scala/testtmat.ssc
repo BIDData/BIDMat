@@ -54,6 +54,12 @@ println("-------- tMult :: TMat * GSMat -------- ")
 val gmatTimesGSMat = gg.full * GSMat(c)
 val tmatTimesGSMat = gg * GSMat(c)
 
+println("-------- tMultT :: TMat * FMat -------- ")
+
+val fmatTimesFMatT = a *^ a
+val tmatTimesFMatT = b *^ a
+
+
 println("-------- tMult :: TMat = FMat * FMat -------- ")
 
 val fmatTimesFMat =  ee*ee
