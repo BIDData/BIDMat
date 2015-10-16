@@ -284,6 +284,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   	  case out:FMat => copyTo(out):FMat
   	  case aa:GMat => aa.copyFrom(this)
   	  case aa:GDMat => aa.copyFrom(DMat(this))
+          case aa:TMat =>TMat(nrows,ncols,Array(0),Array(0),Array(this))
   	}
   	a
   }

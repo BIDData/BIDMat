@@ -295,6 +295,90 @@ def tMult(a:Mat, outmat:Mat) : Mat =  {
       }	else throw new RuntimeException("dimension mismatch")      
   }
 
+def tMultT(a:Mat, outmat:Mat) : Mat =  {
+   if (ncols == a.nrows) {
+               a match { 
+                  case aa : FMat => { 
+                     var out = FMat.newOrCheckFMat(nrows, a.ncols, outmat, GUID, a.GUID, "tMult".##)
+                     var i = 0
+               
+                     out.clear 
+
+                     while (i < tiles.length) {
+                          var m = tiles(i)
+            	 	  Mat.nflops += 2L * m.length * a.ncols
+                          if (!Mat.useMKL) {
+                            out  // not sure
+              		  } else {
+                            m.tileMultT(m.nrows, a.ncols, m.ncols, 0, 0, a, x(i), 0, out, y(i), 0)
+        	          }
+                        i+= 1			 
+  	             }
+                     out
+                   }
+                  case aa : SMat => { 
+                     var out = FMat.newOrCheckFMat(nrows, a.ncols, outmat, GUID, a.GUID, "tMult".##)         
+                     var i = 0
+
+                     out.clear
+               
+                     while (i < tiles.length) {
+                          var m = tiles(i)
+
+            	 	  Mat.nflops += 2L * m.length * a.ncols
+                          if (!Mat.useMKL) {
+                            out  // not sure
+              		  } else {
+                            m.tileMultT(m.nrows, a.ncols, m.ncols, 0, 0, a, x(i), 0, out, y(i), 0); 
+        	          }
+                        i+= 1			 
+  	             }
+                     out
+                   }
+
+                  case aa : GMat => { 
+                     var out = GMat.newOrCheckGMat(nrows, a.ncols, outmat, GUID, a.GUID, "tMult".##)         
+                     var i = 0
+
+                     out.clear
+
+                     while (i < tiles.length) {
+                          var m = tiles(i)
+
+            	 	  Mat.nflops += 2L * m.length * a.ncols
+                          if (!Mat.useMKL) {
+                            out  // not sure
+              		  } else {
+                            m.tileMultT(m.nrows, a.ncols, m.ncols, 0, 0, a, x(i), 0, out, y(i), 0); 
+        	          }
+                        i+= 1			 
+  	             }
+                     out
+                   }
+
+                  case aa : GSMat => { 
+                     var out = GMat.newOrCheckGMat(nrows, a.ncols, outmat, GUID, a.GUID, "tMult".##)    
+                     var i = 0
+
+                     out.clear
+
+                     while (i < tiles.length) {
+                          var m = tiles(i)
+
+            	 	  Mat.nflops += 2L * m.length * a.ncols
+                          if (!Mat.useMKL) {
+                            out  // not sure
+              		  } else {
+                            m.tileMultT(m.nrows, a.ncols, m.ncols, 0, 0, a, x(i), 0, out, y(i), 0); 
+        	          }
+                        i+= 1			 
+  	             }
+                     out
+                   }
+                 }
+      }	else throw new RuntimeException("dimension mismatch")      
+  }
+
   /*
    * The sum method for TMats
    *
@@ -362,16 +446,53 @@ def tMult(a:Mat, outmat:Mat) : Mat =  {
     case bb:TMat => new TPair(this,bb);
   }
 
+  override def zeros(nr: Int, nc: Int) = {
+     TMat.zeros( nr,
+                 nc,
+                 x,
+                 y,
+                 tiles.clone() )
+  }
+
+  override def ones(nr: Int, nc: Int) = {
+     TMat.ones ( nr,
+                 nc,
+                 x,
+                 y,
+                 tiles.clone() )
+  }
+
   def * (a : FMat) = this.tMult(a,null);
   def * (a : GMat) = this.tMult(a,null);
   def * (a : SMat) = this.tMult(a,null);
   def * (a : GSMat) = this.tMult(a,null);
 
+  def *^ (a : FMat) = this.tMultT(a,null);
+  def *^ (a : GMat) = this.tMultT(a,null);
+  def *^ (a : SMat) = this.tMultT(a,null);
+  def *^ (a : GSMat) = this.tMultT(a,null);
 
+  override def * (a : Mat) = a match {
+    case aa:FMat => this.tMult(a,null);
+    case aa:GMat => this.tMult(a,null);
+    case aa:SMat => this.tMult(a,null);
+    case aa:GSMat => this.tMult(a,null); 
+    case _ => throw new RuntimeException("no match in tMult");
+  } 
+
+  override def *^ (a : Mat) = a match {
+    case aa:FMat => this.tMultT(a,null);
+    case aa:GMat => this.tMultT(a,null);
+    case aa:SMat => this.tMultT(a,null);
+    case aa:GSMat => this.tMultT(a,null); 
+    case _ => throw new RuntimeException("no match in tMultT");
+  } 
   def *@ (b : TMat) = tMatOpF(b, (x,y) => x*y, null)
   def / (b : TMat) = tMatOpF(b, (x,y) => x/y, null)
+
+
   override def ^ (b : Float) = tMatOpScalarF(b, (x,y) => x^y, null)
-  
+  override def *@ (b : Float) = tMatOpScalarF(b, (x,y) => x*y, null)
 }
 
 class TPair(val omat:Mat, val mat:TMat) extends Pair {
@@ -509,8 +630,23 @@ object TMat {
     new TMat( nr, nc, xInds, yInds, data)
   }
 
+  def ones (  nr: Int,
+              nc: Int,
+              xInds: Array[Int],
+              yInds: Array[Int],
+              data: Array[Mat] ) = {
 
-  def tMult ( left: Mat, right: Mat, omat : TMat) = {
+    var i = 0
+    while (i < data.length) {
+      data(i) = data(i).ones(data(i).nrows,data(i).ncols)
+      i += 1
+    }
+
+    new TMat( nr, nc, xInds, yInds, data)
+  }
+
+
+  def tMult ( left: Mat, right: Mat, omat : TMat) : TMat = {
     var i = 0
     while (i < omat.tiles.length) {
       omat.tiles(i).clear
