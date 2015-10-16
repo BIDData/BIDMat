@@ -299,7 +299,7 @@ def tMultT(a:Mat, outmat:Mat) : Mat =  {
    if (ncols == a.ncols) {
                a match { 
                   case aa : FMat => { 
-                     var out = FMat.newOrCheckFMat(nrows, a.nrows, outmat, GUID, a.GUID, "tMult".##)
+                     var out = FMat.newOrCheckFMat(nrows, a.nrows, outmat, GUID, a.GUID, "tMultT".##)
                      var i = 0
                
                      out.clear 
@@ -310,14 +310,14 @@ def tMultT(a:Mat, outmat:Mat) : Mat =  {
                           if (!Mat.useMKL) {
                             out  // not sure
               		  } else {
-                            m.tileMultT(m.nrows, a.nrows, m.ncols, 0, 0, a, x(i), 0, out, y(i), 0)
+                            m.tileMultT(m.nrows, a.nrows, m.ncols, 0, 0, a, 0, x(i), out, y(i), 0)
         	          }
                         i+= 1			 
   	             }
                      out
                    }
                   case aa : SMat => { 
-                     var out = FMat.newOrCheckFMat(nrows, a.nrows, outmat, GUID, a.GUID, "tMult".##)         
+                     var out = FMat.newOrCheckFMat(nrows, a.nrows, outmat, GUID, a.GUID, "tMultT".##)         
                      var i = 0
 
                      out.clear
@@ -329,7 +329,7 @@ def tMultT(a:Mat, outmat:Mat) : Mat =  {
                           if (!Mat.useMKL) {
                             out  // not sure
               		  } else {
-                            m.tileMultT(m.nrows, a.nrows, m.ncols, 0, 0, a, x(i), 0, out, y(i), 0); 
+                            m.tileMultT(m.nrows, a.nrows, m.ncols, 0, 0, a, 0, x(i), out, y(i), 0); 
         	          }
                         i+= 1			 
   	             }
@@ -337,7 +337,7 @@ def tMultT(a:Mat, outmat:Mat) : Mat =  {
                    }
 
                   case aa : GMat => { 
-                     var out = GMat.newOrCheckGMat(nrows, a.nrows, outmat, GUID, a.GUID, "tMult".##)         
+                     var out = GMat.newOrCheckGMat(nrows, a.nrows, outmat, GUID, a.GUID, "tMultT".##)         
                      var i = 0
 
                      out.clear
@@ -349,7 +349,7 @@ def tMultT(a:Mat, outmat:Mat) : Mat =  {
                           if (!Mat.useMKL) {
                             out  // not sure
               		  } else {
-                            m.tileMultT(m.nrows, a.ncols, m.ncols, 0, 0, a, x(i), 0, out, y(i), 0); 
+                            m.tileMultT(m.nrows, a.ncols, m.ncols, 0, 0, a, 0, x(i), out, y(i), 0); 
         	          }
                         i+= 1			 
   	             }
@@ -357,7 +357,7 @@ def tMultT(a:Mat, outmat:Mat) : Mat =  {
                    }
 
                   case aa : GSMat => { 
-                     var out = GMat.newOrCheckGMat(nrows, a.ncols, outmat, GUID, a.GUID, "tMult".##)    
+                     var out = GMat.newOrCheckGMat(nrows, a.ncols, outmat, GUID, a.GUID, "tMultT".##)    
                      var i = 0
 
                      out.clear
@@ -369,7 +369,7 @@ def tMultT(a:Mat, outmat:Mat) : Mat =  {
                           if (!Mat.useMKL) {
                             out  // not sure
               		  } else {
-                            m.tileMultT(m.nrows, a.nrows, m.ncols, 0, 0, a, x(i), 0, out, y(i), 0); 
+                            m.tileMultT(m.nrows, a.ncols, m.ncols, 0, 0, a, 0, x(i), out, y(i), 0); 
         	          }
                         i+= 1			 
   	             }

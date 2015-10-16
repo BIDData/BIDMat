@@ -54,10 +54,25 @@ println("-------- tMult :: TMat * GSMat -------- ")
 val gmatTimesGSMat = gg.full * GSMat(c)
 val tmatTimesGSMat = gg * GSMat(c)
 
-println("-------- tMultT :: TMat * FMat -------- ")
+println("-------- tMultT :: TMat *^ FMat -------- ")
 
 val fmatTimesFMatT = a *^ a
 val tmatTimesFMatT = b *^ a
+
+println("-------- tMultT :: TMat *^ SMat -------- ")
+
+val fmatTimesSMatT = bb.full *^ c
+val tmatTimesSMatT = bb *^ c
+
+println("-------- tMultT :: TMat *^ GMat -------- ")
+
+val gmatTimesGMatT = GMat(a) *^ GMat(a)
+val tmatTimesGMatT = g *^ GMat(a)
+
+println("-------- tMultT :: TMat *^ GSMat -------- ")
+
+val gmatTimesGSMatT = gg.full *^ GSMat(c)
+val tmatTimesGSMatT = gg *^ GSMat(c)
 
 
 println("-------- tMult :: TMat = FMat * FMat -------- ")
