@@ -79,50 +79,50 @@ println("-------- tMult :: TMat = FMat * FMat -------- ")
 
 val fmatTimesFMat =  ee*ee
 
-val tilesBefore = bb.tiles
-val tmatEqualsFMatTimesFMat = TMat.tMult(ee,ee,bb)
-val tmatTiles = tmatEqualsFMatTimesFMat.tiles
-val tmatXs = tmatEqualsFMatTimesFMat.x
-val tmatYs = tmatEqualsFMatTimesFMat.y
-
-val tmatEQFMatTimesFMat = tmatEqualsFMatTimesFMat.full
+bb  ~ ee*ee
+val tmatEQFMatTimesFMat = bb.full
 
 println("-------- tMult :: TMat = FMat * SMat -------- ")
 
 val fmatTimesSMat = ee*c
-val tmatEqualsFmatTimesSMat = TMat.tMult(ee,c,bb).full
+bb ~ ee*c
+val tmatEqualsFmatTimesSMat = bb.full
 
 println("-------- tMult :: TMat = GMat * GMat -------- ")
 
 val gmatTimesGMat = GMat(ee)*GMat(ee)
-val tmatEqualsGMatTimesGMat = TMat.tMult(GMat(ee),GMat(ee),gg).full
+gg ~ GMat(ee)*GMat(ee)
+val tmatEqualsGMatTimesGMat = gg.full
 
 println("-------- tMult :: TMat = GMat * GSMat -------- ")
 
 val gmatTimesGSMat = GMat(ee)*GSMat(c)
-val tmatEqualsGMatTimesGSMat = TMat.tMult(GMat(ee),GSMat(c),gg).full
+gg ~ GMat(ee)*GSMat(c)
+val tmatEqualsGMatTimesGSMat = gg.full
 
 println("-------- tMultT :: TMat = FMat *^ FMat -------- ")
 
 val fmatTimesFMatT =  ee*^ee
-val tmatEqualsFMatTimesFMatT = TMat.tMultT(ee,ee,bb)
-
-val tmatEQFMatTimesFMat = tmatEqualsFMatTimesFMatT.full
+bb ~ ee *^ ee
+val tmatEQFMatTimesFMatT = bb.full
 
 println("-------- tMultT :: TMat = FMat *^ SMat -------- ")
 
 val fmatTimesSMat = ee *^ c
-val tmatEqualsFmatTimesSMatT = TMat.tMultT(ee,c,bb).full
+bb ~ ee *^ c
+val tmatEqualsFmatTimesSMatT = bb.full
 
 println("-------- tMultT :: TMat = GMat *^ GMat -------- ")
 
 val gmatTimesGMat = GMat(ee) *^ GMat(ee)
-val tmatEqualsGMatTimesGMat = TMat.tMultT(GMat(ee),GMat(ee),gg).full
+gg ~ GMat(ee) *^ GMat(ee)
+val tmatEqualsGMatTimesGMatT = gg.full
 
 println("-------- tMultT :: TMat = GMat *^ GSMat -------- ")
 
 val gmatTimesGSMat = GMat(ee)*^GSMat(c)
-val tmatEqualsGMatTimesGSMat = TMat.tMultT(GMat(ee),GSMat(c),gg).full
+gg ~ GMat(ee) *^ GSMat(c)
+val tmatEqualsGMatTimesGSMatT = gg.full
 
 println("-------- eltwise mult FMat ---------")
 

@@ -501,8 +501,8 @@ class TPair(val omat:Mat, val mat:TMat) extends Pair {
 }
 
 class TTPair(val omat:Mat, val mat:Mat) extends Pair {
-  override def * (a : Mat) = TMat.tMult(mat,a,null) 
-  override def *^ (a : Mat) = TMat.tMultT(mat,a,null) 
+  override def * (a : Mat) = TMat.tMult(mat,a,omat.asInstanceOf[TMat]) 
+  override def *^ (a : Mat) = TMat.tMultT(mat,a,omat.asInstanceOf[TMat]) 
 }
  
 object TMat {
