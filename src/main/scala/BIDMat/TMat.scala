@@ -682,8 +682,7 @@ object TMat {
                       omat.y(i),   
                       0, 
                       right, 
-                      0,
-                      omat.x(i),   
+                      omat.x(i),                         0,
                       omat.tiles(i),
                       0,
                       0 )

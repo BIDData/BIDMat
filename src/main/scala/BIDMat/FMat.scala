@@ -433,6 +433,25 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
     	throw new RuntimeException("fSMultTile: cant have negative offsets or dimensions");
     } else if (aroff + nr > nrows || acoff + kk > ncols || broff + nc > b.nrows || bcoff + kk > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
+
+      println("aroff + nr: " + (aroff+nr));
+      println("nrows: " + nrows);
+
+      println("acoff + kk: " + (aroff+kk));
+      println("ncols: " + ncols);
+
+      println("broff + nc: " + (broff+nc));
+      println("b.nrows: " + b.nrows);
+
+      println("bcoff + kk: " + (bcoff+kk));
+      println("b.ncols: " + b.ncols);
+
+      println("croff + nr: " + (croff+nr));
+      println("c.nrows: " + c.nrows);
+
+      println("ccoff + nc: " + (ccoff+nc));
+      println("c.ncols: " + c.ncols);
+
       throw new RuntimeException("fSMultTile: tile strays outside matrix dimensions");
     } else {
       sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.Trans,

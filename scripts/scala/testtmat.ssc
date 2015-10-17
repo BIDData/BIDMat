@@ -102,6 +102,28 @@ println("-------- tMult :: TMat = GMat * GSMat -------- ")
 val gmatTimesGSMat = GMat(ee)*GSMat(c)
 val tmatEqualsGMatTimesGSMat = TMat.tMult(GMat(ee),GSMat(c),gg).full
 
+println("-------- tMultT :: TMat = FMat *^ FMat -------- ")
+
+val fmatTimesFMatT =  ee*^ee
+val tmatEqualsFMatTimesFMatT = TMat.tMultT(ee,ee,bb)
+
+val tmatEQFMatTimesFMat = tmatEqualsFMatTimesFMatT.full
+
+println("-------- tMultT :: TMat = FMat *^ SMat -------- ")
+
+val fmatTimesSMat = ee *^ c
+val tmatEqualsFmatTimesSMatT = TMat.tMultT(ee,c,bb).full
+
+println("-------- tMultT :: TMat = GMat *^ GMat -------- ")
+
+val gmatTimesGMat = GMat(ee) *^ GMat(ee)
+val tmatEqualsGMatTimesGMat = TMat.tMultT(GMat(ee),GMat(ee),gg).full
+
+println("-------- tMultT :: TMat = GMat *^ GSMat -------- ")
+
+val gmatTimesGSMat = GMat(ee)*^GSMat(c)
+val tmatEqualsGMatTimesGSMat = TMat.tMultT(GMat(ee),GSMat(c),gg).full
+
 println("-------- eltwise mult FMat ---------")
 
 val eltFMat = a *@ a;
