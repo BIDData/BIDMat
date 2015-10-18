@@ -20,7 +20,8 @@
 	<classpathentry kind="lib" path="lib/jcusolver-0.7.0a.jar"/>
 	<classpathentry kind="lib" path="lib/jcusparse-0.7.0a.jar"/>
 	<classpathentry kind="lib" path="lib/jline-2.11.jar"/>
-	<classpathentry kind="lib" path="lib/javax.json-1.0.4.jar"/>
 	<classpathentry kind="lib" path="lib/json-io-4.1.6.jar"/>
+	<classpathentry kind="lib" path="lib/jfreechart-1.0.19.jar"/>
+	<classpathentry kind="lib" path="lib/jcommon-1.0.23.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

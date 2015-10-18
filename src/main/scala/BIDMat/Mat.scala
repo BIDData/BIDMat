@@ -542,6 +542,8 @@ object Mat {
   
   var hostAllocSize = 0xffffffffL;
   
+  var plotInline = false;
+  
   final val MSEED:Int = 1452462553;
 
   final val myrand = new java.util.Random(MSEED);
