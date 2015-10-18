@@ -240,50 +240,85 @@ object MatHDF5 {
   }
 
   def getMat(fid:Int, varname:String):AnyRef = {
-  	if (fid > 0 && H5Aexists_by_name(fid, varname, "MATLAB_class", H5P_DEFAULT)) {
-  		val attr_class = getStringAttr(fid, varname, "MATLAB_class");
-  		if (attr_class.equals("double")) {
-  			if (H5Aexists_by_name(fid, varname, "MATLAB_sparse", H5P_DEFAULT)) {
-  				SDMat(getSparseMat[Double](fid, varname));
-  			} else {
-  				DMat(getDenseMat[Double](fid, varname, H5T_FLOAT, 8));
-  			}
-  		} else if (attr_class.equals("single")) {
-  			if (H5Aexists_by_name(fid, varname, "MATLAB_sparse", H5P_DEFAULT)) {
-  				SMat(getSparseMat[Float](fid, varname));
-  			} else {
-  				if (readMatDims(fid, varname).length <= 2) {
-  					FMat(getDenseMat[Float](fid, varname, H5T_FLOAT, 4));
+  	if (fid > 0) {
+  		if (H5Aexists_by_name(fid, varname, "MATLAB_class", H5P_DEFAULT)) {
+  			val attr_class = getStringAttr(fid, varname, "MATLAB_class");
+  			if (attr_class.equals("double")) {
+  				if (H5Aexists_by_name(fid, varname, "MATLAB_sparse", H5P_DEFAULT)) {
+  					SDMat(getSparseMat[Double](fid, varname));
   				} else {
-  					getFND(fid, varname, H5T_FLOAT, 4);
+  					DMat(getDenseMat[Double](fid, varname, H5T_FLOAT, 8));
   				}
-  			}
-  		} else if (attr_class.equals("int32")) {
-  			if (H5Aexists_by_name(fid, varname, "MATLAB_sparse", H5P_DEFAULT)) {
-  				throw new RuntimeException("Sparse arrays of ints unsupported");
-  			} else {
-  				IMat(getDenseMat[Int](fid, varname, H5T_INTEGER, 4));
-  			}
-  		} else if (attr_class.equals("int8")) {
-  			if (H5Aexists_by_name(fid, varname, "MATLAB_sparse", H5P_DEFAULT)) {
-  				SBMat(getSparseMat[Byte](fid, varname));
-  			} else {
-  				throw new RuntimeException("Dense arrays of bytes unsupported");
-  			}
-  		} else if (attr_class.equals("char")) {
-  			if (H5Aexists_by_name(fid, varname, "MATLAB_sparse", H5P_DEFAULT)) {
-  				throw new RuntimeException("Sparse arrays of char unsupported");
-  			} else {
-  				getMatString(fid, varname);
-  			}
-  		} else if (attr_class.equals("cell")) {
-  			if (H5Aexists_by_name(fid, varname, "MATLAB_sparse", H5P_DEFAULT)) {
-  				throw new RuntimeException("Sparse cell arrays unsupported");
-  			} else {
-  				getCellMat(fid, varname);
-  			}
-  		} else throw new RuntimeException("Couldnt read storage class "+attr_class);
-  	} else throw new RuntimeException("Couldnt find matlab var named "+varname);
+  			} else if (attr_class.equals("single")) {
+  				if (H5Aexists_by_name(fid, varname, "MATLAB_sparse", H5P_DEFAULT)) {
+  					SMat(getSparseMat[Float](fid, varname));
+  				} else {
+  					if (readMatDims(fid, varname).length <= 2) {
+  						FMat(getDenseMat[Float](fid, varname, H5T_FLOAT, 4));
+  					} else {
+  						getFND(fid, varname, H5T_FLOAT, 4);
+  					}
+  				}
+  			} else if (attr_class.equals("int32")) {
+  				if (H5Aexists_by_name(fid, varname, "MATLAB_sparse", H5P_DEFAULT)) {
+  					throw new RuntimeException("Sparse arrays of ints unsupported");
+  				} else {
+  					IMat(getDenseMat[Int](fid, varname, H5T_INTEGER, 4));
+  				}
+  			} else if (attr_class.equals("int8")) {
+  				if (H5Aexists_by_name(fid, varname, "MATLAB_sparse", H5P_DEFAULT)) {
+  					SBMat(getSparseMat[Byte](fid, varname));
+  				} else {
+  					throw new RuntimeException("Dense arrays of bytes unsupported");
+  				}
+  			} else if (attr_class.equals("char")) {
+  				if (H5Aexists_by_name(fid, varname, "MATLAB_sparse", H5P_DEFAULT)) {
+  					throw new RuntimeException("Sparse arrays of char unsupported");
+  				} else {
+  					getMatString(fid, varname);
+  				}
+  			} else if (attr_class.equals("cell")) {
+  				if (H5Aexists_by_name(fid, varname, "MATLAB_sparse", H5P_DEFAULT)) {
+  					throw new RuntimeException("Sparse cell arrays unsupported");
+  				} else {
+  					getCellMat(fid, varname);
+  				}
+  			} else throw new RuntimeException("Couldnt read MATLAB storage class "+attr_class);
+  		} else {                                                     // Its a non-matlab HDF5 file
+        val did = H5Dopen(fid, varname, H5P_DEFAULT);
+        val tid = H5Dget_type(did);
+        val data_type = H5Tget_class(tid);
+        val data_size = H5Tget_size(tid);
+        H5Tclose(tid);
+        H5Dclose(did);
+        data_type match {
+          case H5T_FLOAT => 
+          if (data_size == 4) {
+        	  if (readMatDims(fid, varname).length <= 2) {
+        		  FMat(getDenseMat[Float](fid, varname, H5T_FLOAT, 4));
+        	  } else {
+        		  getFND(fid, varname, H5T_FLOAT, 4);
+        	  }
+          } else if (data_size == 8) {
+        	  DMat(getDenseMat[Double](fid, varname, H5T_FLOAT, 8));              
+          } else {
+            throw new RuntimeException("load: HDF5 %d-byte float type not supported" format data_size)
+          }
+          case H5T_INTEGER => 
+          if (data_size == 4) {
+        	  IMat(getDenseMat[Int](fid, varname, H5T_INTEGER, 4));
+          } else if (data_size == 8) {
+            LMat(getDenseMat[Long](fid, varname, H5T_INTEGER, 8));              
+          } else {
+            throw new RuntimeException("load: HDF5 %d-byte int type not supported" format data_size)
+          }
+          case H5T_STRING => getMatString(fid, varname);
+          }
+      }
+    } else {
+      throw new RuntimeException("getMat couldnt open file");
+    }
+    
   }
 
   def writeMatHeader(fname:String) = {
@@ -473,6 +508,20 @@ object MatHDF5 {
   	case aa:FND => putFND(fid, aa, aname, H5T_NATIVE_FLOAT, "single")
   	case _ => throw new RuntimeException("unsupported matrix type to save")
   	}
+  }
+  
+  def h5list(fname:String):CSMat = {
+	  val fapl = H5Pcreate(H5P_FILE_ACCESS);
+	  val fid = H5Fopen(fname,H5F_ACC_RDONLY,fapl);
+    val info = H5Gget_info_by_name(fid, "/", H5P_DEFAULT);
+    val n = info.nlinks.toInt;
+    val cs = CSMat(n, 1);
+    for (i <- 0 until n) {
+      cs(i) = H5Lget_name_by_idx(fid, "/", H5_INDEX_NAME, H5_ITER_INC, i, H5P_DEFAULT)
+    } 
+	  H5Fclose(fid);
+	  H5Pclose(fapl);
+    cs
   }
 
   def hload(fname:String, vname:String):AnyRef = {
