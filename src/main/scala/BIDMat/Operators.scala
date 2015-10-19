@@ -527,6 +527,7 @@ object Mop_Pow extends Mop {
   override def op(a:DMat, b:DMat, c:Mat):DMat = getDPair(c, a) ^ b
   override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) ^ b
   override def op(a:GDMat, b:GDMat, c:Mat):GDMat = getGDPair(c, a) ^ b
+//  override def op(a:TMat, b:TMat, c:Mat):TMat = getTPair(c, a) ^ b
 }
 
 object Mop_HCat extends Mop { 

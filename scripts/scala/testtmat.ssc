@@ -79,7 +79,7 @@ println("-------- tMult :: TMat = FMat * FMat -------- ")
 
 val fmatTimesFMat =  ee*ee
 
-bb  ~ ee*ee
+bb ~ ee*ee
 val tmatEQFMatTimesFMat = bb.full
 
 println("-------- tMult :: TMat = FMat * SMat -------- ")
@@ -157,6 +157,80 @@ println("-------- sum 2 ---------")
 
 val sumFMat2 = sum(a,2)
 val sumTMat2 = sum(b,2)
+
+println("-------- tilewise power FMat ---------")
+val powFMat = a ^ a;
+val powTMat = (b ^ b).asInstanceOf[TMat].full;
+
+println("-------- tilewise power GMat ---------")
+val powGMat = GMat(a) ^ GMat(a);
+val powTMat = (g ^ g).asInstanceOf[TMat].full;
+
+
+println("-------- pair tests               ---------")
+
+println("-------- tMult :: (F)Mat ~ TMat * FMat -------- ")
+
+val containerFMat = FMat.zeros(4,4)
+containerFMat ~ a * a
+containerFMat ~ b * a
+
+println("-------- tMult :: (F)Mat ~ TMat * SMat -------- ")
+
+val containerFMat = FMat.zeros(8,8)
+containerFMat ~ bb.full * c
+containerFMat ~ bb * c
+
+println("-------- tMult :: (G)Mat ~ TMat * GMat -------- ")
+
+val containerGMat = GMat(FMat.zeros(4,4))
+containerGMat ~ GMat(a) * GMat(a)
+containerGMat ~ g * GMat(a)
+
+println("-------- tMult :: (G)Mat ~ TMat * GSMat -------- ")
+
+val containerGMat = GMat(FMat.zeros(8,8))
+containerGMat ~ gg.full * GSMat(c)
+containerGMat ~ gg * GSMat(c)
+
+println("-------- tMultT :: (F)Mat ~ TMat *^ FMat -------- ")
+
+val containerFMat = FMat.zeros(4,4)
+containerFMat ~ a *^ a
+containerFMat ~ b *^ a
+
+println("-------- tMultT :: (F)Mat ~ TMat *^ SMat -------- ")
+
+val containerFMat = FMat.zeros(8,8)
+containerFMat ~ bb.full *^ c
+containerFMat ~ bb *^ c
+
+println("-------- tMultT :: (G)Mat ~ TMat *^ GMat -------- ")
+
+val containerGMat = GMat(FMat.zeros(4,4))
+containerGMat ~ GMat(a) *^ GMat(a)
+containerGMat ~ g *^ GMat(a)
+
+println("-------- tMultT :: (G)Mat ~ TMat *^ GSMat -------- ")
+
+val containerGMat = GMat(FMat.zeros(8,8))
+containerGMat ~ gg.full *^ GSMat(c)
+containerGMat ~ gg *^ GSMat(c)
+
+
+println("-------- tilewise power pair FMat (TMat ~ TMat ^ TMat ----")
+
+val powFMat = a ^ a;
+val containerTMat = TMat(4,4,Array(0),Array(0),Array(FMat.zeros(4,4)))
+containerTMat ~ (b ^ b);
+containerTMat.full
+
+println("-------- tilewise power pair GMat (TMat ~ TMat ^ TMat  ----")
+
+val powGMat = GMat(a) ^ GMat(a);
+val containerTMat = GMat(FMat.zeros(4,4))
+containerTMat ~ (g ^ g);
+containerTMat.full
 
 println("-------- copy ---------") 
 val fmatCopy = a.copy

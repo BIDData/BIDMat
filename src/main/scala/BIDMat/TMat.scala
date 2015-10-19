@@ -67,6 +67,54 @@ class TMat
     out
   }
 
+
+  /*
+   *  tOp 
+   *  
+   *  Map over the tiles, applying a type specialized, ideally fast, Op
+   *  This is more for the GPU types which can't take arbitrary lambdas
+   *  but have ops denoted by number.
+   *
+   */ 
+
+  def tOp(a : TMat, omat : Mat, op : Int) = {
+
+  }
+
+  /*
+   * Apply a generate elementwise op on the tile level
+   * probably slow.
+   *
+   * In most cases this can be applied only to CPU mats. 
+   */
+ 
+  def tOp(a : TMat, omat : Mat, op : (Mat,Mat) => Mat) : TMat = {
+    var (newTiles,newXInds,newYInds) = if (omat.asInstanceOf[AnyRef] == null)
+                                     {
+                                       (Array.ofDim[Mat](tiles.length), 
+                                        Array.ofDim[Int](tiles.length),
+                                        Array.ofDim[Int](tiles.length))
+                                     } else {
+                                        (omat.asInstanceOf[TMat].tiles,
+                                         omat.asInstanceOf[TMat].x,
+                                         omat.asInstanceOf[TMat].y)
+                                     }
+   
+    for (i <- 0 to (tiles.length-1)) {
+       newTiles(i) = op(tiles(i), a.tiles(i))
+       newXInds(i) = x(i)                                    // TODO add shape checking
+       newYInds(i) = y(i)      
+    }
+
+    TMat(nr,nc,newXInds,newYInds,newTiles)
+  }
+
+  def tOp(a : Mat, omat : Mat, op : (Mat,Mat) => Mat) : Mat = {
+    a match {
+      case aa : TMat => tOp(aa,omat,op)
+    }
+  }
+
   /*
    * tMatOpF 
    * Apply a (scalar,scalar) => scalar elementwise within tiles to combine
@@ -110,6 +158,12 @@ class TMat
     out
   }
 
+  override def set(f:Float) = {
+    for (i <- 0 to (tiles.length-1)) {
+      tiles(i).set(f)
+    }
+    this
+  }
 
   def full() : Mat = full(null)
 
@@ -488,16 +542,19 @@ def tMultT(a:Mat, outmat:Mat) : Mat =  {
     case aa:GSMat => this.tMultT(a,null); 
     case _ => throw new RuntimeException("no match in tMultT");
   } 
-  def *@ (b : TMat) = tMatOpF(b, (x,y) => x*y, null)
+
+  def *@ (b : TMat) = tMatOpF(b, (x,y) => x*y, null)     // will need to specialize all of these for speed
   def / (b : TMat) = tMatOpF(b, (x,y) => x/y, null)
 
-
-  override def ^ (b : Float) = tMatOpScalarF(b, (x,y) => x^y, null)
+  override def ^ (b : Float) = tMatOpScalarF(b, (x,y) => x^y, null) // and these too
   override def *@ (b : Float) = tMatOpScalarF(b, (x,y) => x*y, null)
+
+  override def ^ (a : Mat) = tOp(a, null, (x:Mat,y:Mat) => x^y) 
 }
 
 class TPair(val omat:Mat, val mat:TMat) extends Pair {
   override def * (a : Mat) = mat.tMult(a,null) // fix caching 
+  override def ^ (a : Mat) = mat.tOp(a, omat, (x:Mat,y:Mat) => x^y) 
 }
 
 class TTPair(val omat:Mat, val mat:Mat) extends Pair {
