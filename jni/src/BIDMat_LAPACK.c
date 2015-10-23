@@ -1271,7 +1271,8 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_cgesvd
     jfloat * vt = (*env)->GetPrimitiveArrayCritical(env, j_vt, JNI_FALSE);
     jfloat * superb = (*env)->GetPrimitiveArrayCritical(env, j_superb, JNI_FALSE);
 
-    jint retval = LAPACKE_cgesvd(matrix_order, 'A', 'A', m, n, a, lda, s, u, ldu, vt, ldvt, superb);
+    jint retval = LAPACKE_cgesvd(matrix_order, 'A', 'A', m, n, (MKL_Complex8 *)a, lda, s, (MKL_Complex8 *)u, ldu, 
+                                 (MKL_Complex8 *)vt, ldvt, superb);
 
     (*env)->ReleasePrimitiveArrayCritical(env, j_superb, superb, 0);
     (*env)->ReleasePrimitiveArrayCritical(env, j_vt, vt, 0);
@@ -1291,8 +1292,8 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_zgesvd
     jdouble * vt = (*env)->GetPrimitiveArrayCritical(env, j_vt, JNI_FALSE);
     jdouble * superb = (*env)->GetPrimitiveArrayCritical(env, j_superb, JNI_FALSE);
 
-    jint retval = LAPACKE_zgesvd(matrix_order, 'A', 'A', m, n, (MKL_Complex16 *)a, lda, (MKL_Complex16 *)s, (MKL_Complex16 *)u, ldu,
-				 (MKL_Complex16 *)vt, ldvt, (MKL_Complex16 *)superb);
+    jint retval = LAPACKE_zgesvd(matrix_order, 'A', 'A', m, n, (MKL_Complex16 *)a, lda, s, (MKL_Complex16 *)u, ldu,
+				 (MKL_Complex16 *)vt, ldvt, superb);
 
     (*env)->ReleasePrimitiveArrayCritical(env, j_superb, superb, 0);
     (*env)->ReleasePrimitiveArrayCritical(env, j_vt, vt, 0);
