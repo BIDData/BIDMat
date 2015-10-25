@@ -872,40 +872,57 @@ object HMat {
     out
   }
   
-   def loadCSMat(fname:String, compressed:Int=0):CSMat = {
-    val gin = getInputStream(fname, compressed);
-    val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder);
-    val hints = new Array[Int](4);
-    readSomeInts(gin, hints, buff, 4);
-    val ftype = hints(0);
-    val nrows = hints(1);
-    val ncols = hints(2);
-    val nnz = hints(3);
-    val len = nrows * ncols;
-    if (ftype != 202 && ftype != 302) {
-      throw new RuntimeException("loadCSMat expected type field 202 or 302 but was %d" format ftype);
-    }
-    val out = CSMat(nrows, ncols);
-    val jc = new Array[Long](len + 1);
+  def loadCSMatTxt(fname:String, compressed:Int=0):CSMat = {
+  	val gin = getInputStream(fname, compressed);
+  	val buf = new ArrayBuffer[String];
+  	val istream = new BufferedReader(new InputStreamReader(gin));
+  	var r:String = null;
+  	while ({r = istream.readLine(); r != null}) {
+  	  buf.append(r);
+  	}
+  	val cs = new CSMat(buf.length, 1, buf.toArray);
+  	cs
+  }
+  
+  
+  def loadCSMat(fname:String, compressed:Int=0):CSMat = {
+  	if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
+  		loadCSMatTxt(fname, compressed)
+    } else {
+    	val gin = getInputStream(fname, compressed);
+    	val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder);
+    	val hints = new Array[Int](4);
+    	readSomeInts(gin, hints, buff, 4);
+    	val ftype = hints(0);
+    	val nrows = hints(1);
+    	val ncols = hints(2);
+    	val nnz = hints(3);
+    	val len = nrows * ncols;
+    	if (ftype != 202 && ftype != 302) {
+    		throw new RuntimeException("loadCSMat expected type field 202 or 302 but was %d" format ftype);
+    	}
+    	val out = CSMat(nrows, ncols);
+    	val jc = new Array[Long](len + 1);
 
-    readSomeLongs(gin, jc, buff, len+1);
-    var i = 0;
-    var maxlen = 0;
-    while (i < len) {
-      val siz = (jc(i+1) - jc(i)).toInt;
-      if (siz > maxlen) maxlen = siz;
-      i += 1;
+    	readSomeLongs(gin, jc, buff, len+1);
+    	var i = 0;
+    	var maxlen = 0;
+    	while (i < len) {
+    		val siz = (jc(i+1) - jc(i)).toInt;
+    		if (siz > maxlen) maxlen = siz;
+    		i += 1;
+    	}
+    	val chbuf = new Array[Byte](maxlen);
+    	i = 0;
+    	while (i < len) {
+    		val siz = (jc(i+1) - jc(i)).toInt;
+    		readSomeBytes(gin, chbuf, siz);
+    		out.data(i) = new String(chbuf, 0, siz, SBMat.encoding);
+    		i += 1;
+    	}
+    	gin.close
+    	out
     }
-    val chbuf = new Array[Byte](maxlen);
-    i = 0;
-    while (i < len) {
-      val siz = (jc(i+1) - jc(i)).toInt;
-    	readSomeBytes(gin, chbuf, siz);
-    	out.data(i) = new String(chbuf, 0, siz, SBMat.encoding);
-    	i += 1;
-    }
-    gin.close
-    out
   }
   
   def saveSMat(fname:String, m:SMat, compressed:Int=0):Unit = {
