@@ -392,7 +392,7 @@ object Solvers {
     val r = GDMat.newOrCheckGDMat(a.ncols, a.ncols, rin, a.GUID, "QRdecompt_r".##);
     Mat.nflops += 2L*a.ncols*a.ncols*a.nrows
     cublasDgemm('T', 'N', n, n, m, 1, a.data, m, a.data, m, 0, r.data, n);
-    val fr = FMat(r);
+    val fr = DMat(r);
     chol(fr, fr);
     r <-- fr;
     q <-- a
