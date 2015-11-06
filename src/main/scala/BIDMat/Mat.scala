@@ -628,9 +628,9 @@ object Mat {
     _cache2.synchronized {
       val keys = _cache2.keySet
       keys.foreach((key: Tuple2[Long, Int]) => {
-        val toremove: Boolean = _cache2.get(key).get match {
-          case aa: GMat => (aa.myGPU == ithread)
-          case aa: GSMat => (aa.myGPU == ithread)
+        val toremove: Boolean = _cache2.get(key) match {
+          case Some(aa: GMat) => (aa.myGPU == ithread)
+          case SOme(aa: GSMat) => (aa.myGPU == ithread)
           case _ => false
         }
         if (toremove) _cache2.remove(key)
@@ -642,9 +642,9 @@ object Mat {
     _cache3.synchronized {
       val keys = _cache3.keySet
       keys.foreach((key: Tuple3[Long, Long, Int]) => {
-        val toremove: Boolean = _cache3.get(key).get match {
-          case aa: GMat => (aa.myGPU == ithread)
-          case aa: GSMat => (aa.myGPU == ithread)
+        val toremove: Boolean = _cache3.get(key) match {
+          case Some(aa: GMat) => (aa.myGPU == ithread)
+          case Some(aa: GSMat) => (aa.myGPU == ithread)
           case _ => false
         }
         if (toremove) _cache3.remove(key)
@@ -656,9 +656,9 @@ object Mat {
     _cache3.synchronized {
       val keys = _cache4.keySet
       keys.foreach((key: Tuple4[Long, Long, Long, Int]) => {
-        val toremove: Boolean = _cache4.get(key).get match {
-          case aa: GMat => (aa.myGPU == ithread)
-          case aa: GSMat => (aa.myGPU == ithread)
+        val toremove: Boolean = _cache4.get(key) match {
+          case Some(aa: GMat) => (aa.myGPU == ithread)
+          case Some(aa: GSMat) => (aa.myGPU == ithread)
           case _ => false
         }
         if (toremove) _cache4.remove(key)

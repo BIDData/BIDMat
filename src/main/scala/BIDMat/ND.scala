@@ -12,7 +12,7 @@ import edu.berkeley.bid.MurmurHash3
 
 abstract class ND(protected val _dims: Array[Int]) {
 
-  final val length = _dims.reduce(_ * _)
+  final val length = _dims.product
 
   def dims = new IMat(1, _dims.length, _dims.clone)
 
@@ -165,8 +165,8 @@ object ND {
   }
 
   def compatibleDims(dims1: Array[Int], dims2: Array[Int], opname: String): (Int, Int, Int, Int) = {
-    val len = dims1.reduce(_ * _)
-    if (len == dims2.reduce(_ * _)) {
+    val len = dims1.product
+    if (len == dims2.product) {
       ND.checkDims(opname, dims1, dims2);
       (len, 1, len, 1)
     } else {
@@ -320,4 +320,3 @@ object ND {
   }
 
 }
-

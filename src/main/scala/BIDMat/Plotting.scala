@@ -98,7 +98,7 @@ object Plotting {
           for (i <- 0 until m.length) p.addPoint(dataset, md(i))
         }
         case mi: IMat => {
-          var vmax = maxi(mi, 0).v.asInstanceOf[Double]
+          var vmax = maxi(mi, 0).v.toDouble
           var vmin = mini(mi, 0).v
           p.setBinWidth((vmax - vmin) / nbars)
           for (i <- 0 until m.length) p.addPoint(dataset, mi(i))

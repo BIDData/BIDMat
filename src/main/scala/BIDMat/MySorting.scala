@@ -60,9 +60,9 @@ object Sorting {
 
   def med3(a: Array[Float], ii: Array[Int], lo: Int, hi: Int, stride: Int): Int = {
     val nv = (hi - lo) / stride
-    val i1 = lo + stride * (math.floor(nv * java.lang.Math.random()).asInstanceOf[Int])
-    val i2 = lo + stride * (math.floor(nv * java.lang.Math.random()).asInstanceOf[Int])
-    val i3 = lo + stride * (math.floor(nv * java.lang.Math.random()).asInstanceOf[Int])
+    val i1 = lo + stride * (math.floor(nv * java.lang.Math.random()).toInt)
+    val i2 = lo + stride * (math.floor(nv * java.lang.Math.random()).toInt)
+    val i3 = lo + stride * (math.floor(nv * java.lang.Math.random()).toInt)
     val v1 = a(i1)
     val v2 = a(i2)
     val v3 = a(i3)
@@ -109,7 +109,7 @@ object Sorting {
     } else if (nvals > 100) {
       med3(a, ii, lo, hi, stride)
     } else {
-      lo + stride * (math.floor(nvals * java.lang.Math.random()).asInstanceOf[Int])
+      lo + stride * (math.floor(nvals * java.lang.Math.random()).toInt)
     }
     var v = a(im)
     var iv = ii(im)
@@ -179,9 +179,9 @@ object Sorting {
 
   def med3(a: Array[Long], ii: Array[Int], lo: Int, hi: Int, stride: Int): Int = {
     val nv = (hi - lo) / stride
-    val i1 = lo + stride * (math.floor(nv * java.lang.Math.random()).asInstanceOf[Int])
-    val i2 = lo + stride * (math.floor(nv * java.lang.Math.random()).asInstanceOf[Int])
-    val i3 = lo + stride * (math.floor(nv * java.lang.Math.random()).asInstanceOf[Int])
+    val i1 = lo + stride * (math.floor(nv * java.lang.Math.random()).toInt)
+    val i2 = lo + stride * (math.floor(nv * java.lang.Math.random()).toInt)
+    val i3 = lo + stride * (math.floor(nv * java.lang.Math.random()).toInt)
     val v1 = a(i1)
     val v2 = a(i2)
     val v3 = a(i3)
@@ -228,7 +228,7 @@ object Sorting {
     } else if (nvals > 100) {
       med3(a, ii, lo, hi, stride)
     } else {
-      lo + stride * (math.floor(nvals * java.lang.Math.random()).asInstanceOf[Int])
+      lo + stride * (math.floor(nvals * java.lang.Math.random()).toInt)
     }
     var v = a(im)
     var iv = ii(im)
@@ -298,9 +298,9 @@ object Sorting {
 
   def med3(a: Array[Double], ii: Array[Int], lo: Int, hi: Int, stride: Int): Int = {
     val nv = (hi - lo) / stride
-    val i1 = lo + stride * (math.floor(nv * java.lang.Math.random()).asInstanceOf[Int])
-    val i2 = lo + stride * (math.floor(nv * java.lang.Math.random()).asInstanceOf[Int])
-    val i3 = lo + stride * (math.floor(nv * java.lang.Math.random()).asInstanceOf[Int])
+    val i1 = lo + stride * (math.floor(nv * java.lang.Math.random()).toInt)
+    val i2 = lo + stride * (math.floor(nv * java.lang.Math.random()).toInt)
+    val i3 = lo + stride * (math.floor(nv * java.lang.Math.random()).toInt)
     val v1 = a(i1)
     val v2 = a(i2)
     val v3 = a(i3)
@@ -347,7 +347,7 @@ object Sorting {
     } else if (nvals > 100) {
       med3(a, ii, lo, hi, stride)
     } else {
-      lo + stride * (math.floor(nvals * java.lang.Math.random()).asInstanceOf[Int])
+      lo + stride * (math.floor(nvals * java.lang.Math.random()).toInt)
     }
     var v = a(im)
     var iv = ii(im)
@@ -417,9 +417,9 @@ object Sorting {
 
   def med3(a: Array[Int], ii: Array[Int], lo: Int, hi: Int, stride: Int): Int = {
     val nv = (hi - lo) / stride
-    val i1 = lo + stride * (math.floor(nv * java.lang.Math.random()).asInstanceOf[Int])
-    val i2 = lo + stride * (math.floor(nv * java.lang.Math.random()).asInstanceOf[Int])
-    val i3 = lo + stride * (math.floor(nv * java.lang.Math.random()).asInstanceOf[Int])
+    val i1 = lo + stride * (math.floor(nv * java.lang.Math.random()).toInt)
+    val i2 = lo + stride * (math.floor(nv * java.lang.Math.random()).toInt)
+    val i3 = lo + stride * (math.floor(nv * java.lang.Math.random()).toInt)
     val v1 = a(i1)
     val v2 = a(i2)
     val v3 = a(i3)
@@ -466,7 +466,7 @@ object Sorting {
     } else if (nvals > 100) {
       med3(a, ii, lo, hi, stride)
     } else {
-      lo + stride * (math.floor(nvals * java.lang.Math.random()).asInstanceOf[Int])
+      lo + stride * (math.floor(nvals * java.lang.Math.random()).toInt)
     }
     var v = a(im)
     var iv = ii(im)

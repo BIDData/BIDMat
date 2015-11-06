@@ -42,7 +42,7 @@ object AllReduce {
   }
 
   def makeSim(a: SMat, b: FMat, allks: IMat, trace: Int, replicate: Int, deadnodes: IMat) = {
-    val M = allks.data.reduceLeft(_ * _)
+    val M = allks.data.product
     val bufsize = 5 * (a.nnz / M)
     val ioff = Mat.ioneBased
     val network = new AllReduceX(M * replicate)
@@ -78,8 +78,8 @@ object AllReduce {
     }
     var totvals = 0L
     for (i <- 0 until M) {
-      val s = new SMat(a.nrows, a.ncols, rowvecs(i).length.toInt, SparseMat.incInds(rowvecs(i).data),
-        SparseMat.compressInds(colvecs(i).data, a.ncols, new Array[Int](a.ncols + 1), rowvecs(i).length.toInt), vvecs(i).data)
+      val s = new SMat(a.nrows, a.ncols, rowvecs(i).length, SparseMat.incInds(rowvecs(i).data),
+        SparseMat.compressInds(colvecs(i).data, a.ncols, new Array[Int](a.ncols + 1), rowvecs(i).length), vvecs(i).data)
       val (ii1, jj1, vv1) = find3(sum(s, 2))
       irows(i) = new IVec(ii1.data)
       ivals(i) = new Vec(vv1.data)

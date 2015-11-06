@@ -291,7 +291,7 @@ case class CMat(nr: Int, nc: Int, data0: Array[Float]) extends DenseMat[Float](n
             }
           } else throw new RuntimeException("dims mismatch")
         } else {
-          System.arraycopy(b.data, 0, data, 0, (2 * length).toInt)
+          System.arraycopy(b.data, 0, data, 0, (2 * length))
         }
       }
       case _ => {
@@ -1406,4 +1406,3 @@ object CMat {
     }
   }
 }
-

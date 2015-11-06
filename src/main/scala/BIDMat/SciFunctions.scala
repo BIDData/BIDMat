@@ -1805,7 +1805,7 @@ object SciFunctions {
    * The MKL implementation is used unless !Mat.useMKL = true.
    */
 
-  val signumFun = (x: Float) => math.signum(x).toFloat
+  val signumFun = (x: Float) => math.signum(x)
   def sign(a: FMat, out: Mat) = applySFun(a, out, null, signumFun, 1L)
   def sign(a: FMat): FMat = sign(a, null)
 

@@ -290,18 +290,8 @@ object HMat {
     val ftype = hints(0)
     gin.close
     ftype match {
-      case 130 => loadFMat(fname, omat, compressed)
-      case 110 => loadIMat(fname, omat, compressed)
-      case 120 => loadLMat(fname, omat, compressed)
-      case 140 => loadDMat(fname, omat, compressed)
-      case 231 => loadSMat(fname, compressed)
-      case 331 => loadSMat(fname, compressed)
-      case 241 => loadSDMat(fname, compressed)
-      case 341 => loadSDMat(fname, compressed)
-      case 201 => loadSBMat(fname, compressed)
-      case 202 => loadCSMat(fname, compressed)
-      case 301 => loadSBMat(fname, compressed)
-      case 302 => loadCSMat(fname, compressed)
+      case 110 | 120 | 130 | 140 => loadFMat(fname, omat, compressed)
+      case 201 | 202 | 231 | 241 | 301 | 302 | 331 | 341 => loadSMat(fname, compressed)
     }
   }
 
@@ -556,47 +546,47 @@ object HMat {
     out
   }
 
-  def loadIDX(fname: String): FND = loadIDX(fname, 0);
+  def loadIDX(fname: String): FND = loadIDX(fname, 0)
 
   def loadIDX(fname: String, compressed: Int, byteOrder: ByteOrder = ByteOrder.BIG_ENDIAN): FND = {
-    val gin = getInputStream(fname, compressed);
-    val bytebuff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder);
-    val magicnum = new Array[Int](1);
-    readSomeInts(gin, magicnum, bytebuff, 1);
-    val mnum = magicnum(0);
-    val mtype = (mnum >>> 8) & 0xff;
-    val ndims = mnum & 0xff;
-    val idims = new Array[Int](ndims);
-    readSomeInts(gin, idims, bytebuff, ndims);
+    val gin = getInputStream(fname, compressed)
+    val bytebuff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
+    val magicnum = new Array[Int](1)
+    readSomeInts(gin, magicnum, bytebuff, 1)
+    val mnum = magicnum(0)
+    val mtype = (mnum >>> 8) & 0xff
+    val ndims = mnum & 0xff
+    val idims = new Array[Int](ndims)
+    readSomeInts(gin, idims, bytebuff, ndims)
     val dims = idims.reverse
-    val length = dims.reduce(_ * _);
+    val length = dims.product
     val result = mtype match {
       case 0xD => {
-        val out = FND(dims);
-        readSomeFloats(gin, out.data, bytebuff, length);
-        out;
+        val out = FND(dims)
+        readSomeFloats(gin, out.data, bytebuff, length)
+        out
       }
       case 0x8 => {
-        val out = FND(dims);
-        val btmp = new Array[Byte](length);
-        readSomeBytes(gin, btmp, length);
-        var i = 0;
+        val out = FND(dims)
+        val btmp = new Array[Byte](length)
+        readSomeBytes(gin, btmp, length)
+        var i = 0
         while (i < length) {
-          out.data(i) = (btmp(i).toInt & 0xff).toFloat;
-          i += 1;
+          out.data(i) = (btmp(i).toInt & 0xff).toFloat
+          i += 1
         }
-        out;
+        out
       }
       case 0x9 => {
-        val out = FND(dims);
-        val btmp = new Array[Byte](length);
-        readSomeBytes(gin, btmp, length);
-        Mat.copyToFloatArray(btmp, 0, out.data, 0, length);
-        out;
+        val out = FND(dims)
+        val btmp = new Array[Byte](length)
+        readSomeBytes(gin, btmp, length)
+        Mat.copyToFloatArray(btmp, 0, out.data, 0, length)
+        out
       }
     }
-    gin.close;
-    result;
+    gin.close
+    result
   }
 
   def loadDMat(fname: String): DMat = loadDMat(fname, null, 0)
@@ -605,68 +595,68 @@ object HMat {
 
   def saveFMat(fname: String, m: FMat, compressed: Int = 0): Unit = {
     if (fname.startsWith("hdfs:")) {
-      HDFSwriteMat(fname, m, compressed);
+      HDFSwriteMat(fname, m, compressed)
     } else if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
       saveFMatTxt(fname, m, compressed)
     } else {
-      val gout = getOutputStream(fname, compressed);
-      saveFMat(gout, m);
-      gout.close;
+      val gout = getOutputStream(fname, compressed)
+      saveFMat(gout, m)
+      gout.close
     }
   }
 
   def saveFMat(gout: DataOutput, m: FMat) = {
-    val hints = new Array[Int](4);
-    val tbuf = ByteBuffer.allocate(16).order(byteOrder);
+    val hints = new Array[Int](4)
+    val tbuf = ByteBuffer.allocate(16).order(byteOrder)
     hints(0) = 130; // 1=dense, 3=float
-    hints(1) = m.nrows;
-    hints(2) = m.ncols;
-    hints(3) = 0;
-    writeSomeInts(gout, hints, tbuf, 4);
-    val bsize = 4 * m.ncols * m.nrows;
-    val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder);
-    writeSomeFloats(gout, m.data, buff, m.nrows * m.ncols);
+    hints(1) = m.nrows
+    hints(2) = m.ncols
+    hints(3) = 0
+    writeSomeInts(gout, hints, tbuf, 4)
+    val bsize = 4 * m.ncols * m.nrows
+    val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder)
+    writeSomeFloats(gout, m.data, buff, m.nrows * m.ncols)
   }
 
   def saveFND(fname: String, m: FND, compressed: Int = 0): Unit = {
     if (fname.startsWith("hdfs:")) {
       HDFSwriteND(fname, m, compressed)
     } else {
-      val gout = getOutputStream(fname, compressed);
-      saveFND(gout, m);
-      gout.close;
+      val gout = getOutputStream(fname, compressed)
+      saveFND(gout, m)
+      gout.close
     }
   }
 
   def saveFND(gout: DataOutput, m: FND): Unit = {
-    val dims = m.dims;
-    val ndims = dims.length;
-    val hints = new Array[Int](1);
-    val tbuf = ByteBuffer.allocate(dims.length * 4).order(byteOrder);
-    hints(0) = 30 + 100 * (ndims + 3);
-    writeSomeInts(gout, hints, tbuf, 1);
-    writeSomeInts(gout, dims.data, tbuf, ndims);
-    hints(0) = 0;
-    writeSomeInts(gout, hints, tbuf, 1);
-    val bsize = 4 * m.length;
-    val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder);
-    writeSomeFloats(gout, m.data, buff, m.length);
+    val dims = m.dims
+    val ndims = dims.length
+    val hints = new Array[Int](1)
+    val tbuf = ByteBuffer.allocate(dims.length * 4).order(byteOrder)
+    hints(0) = 30 + 100 * (ndims + 3)
+    writeSomeInts(gout, hints, tbuf, 1)
+    writeSomeInts(gout, dims.data, tbuf, ndims)
+    hints(0) = 0
+    writeSomeInts(gout, hints, tbuf, 1)
+    val bsize = 4 * m.length
+    val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder)
+    writeSomeFloats(gout, m.data, buff, m.length)
   }
 
   def loadFND(fname: String, omat: ND, compressed: Int): FND = {
-    val gin = getInputStream(fname, compressed);
-    val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder);
-    val hints = new Array[Int](1);
-    readSomeInts(gin, hints, buff, 1);
-    if (hints(0) % 100 != 30) throw new RuntimeException("loadFND: bad type code " + hints(0));
-    val ndims = hints(0) / 100 - 3;
-    val dims = new Array[Int](ndims);
-    readSomeInts(gin, dims, buff, ndims);
-    readSomeInts(gin, hints, buff, 1);
-    val out = FND.newOrCheckFND(dims, omat);
-    readSomeFloats(gin, out.data, buff, out.length);
-    gin.close;
-    out;
+    val gin = getInputStream(fname, compressed)
+    val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
+    val hints = new Array[Int](1)
+    readSomeInts(gin, hints, buff, 1)
+    if (hints(0) % 100 != 30) throw new RuntimeException("loadFND: bad type code " + hints(0))
+    val ndims = hints(0) / 100 - 3
+    val dims = new Array[Int](ndims)
+    readSomeInts(gin, dims, buff, ndims)
+    readSomeInts(gin, hints, buff, 1)
+    val out = FND.newOrCheckFND(dims, omat)
+    readSomeFloats(gin, out.data, buff, out.length)
+    gin.close
+    out
   }
 
   def saveFMatTxt(fname: String, m: FMat, compressed: Int = 0, delim: String = "\t"): Unit = {
@@ -690,12 +680,12 @@ object HMat {
 
   def saveIMat(fname: String, m: IMat, compressed: Int = 0): Unit = {
     if (fname.startsWith("hdfs:")) {
-      HDFSwriteMat(fname, m, compressed);
+      HDFSwriteMat(fname, m, compressed)
     } else if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
       saveIMatTxt(fname, m, compressed)
     } else {
       val gout = getOutputStream(fname, compressed)
-      saveIMat(gout, m);
+      saveIMat(gout, m)
       gout.close
     }
   }
@@ -734,7 +724,7 @@ object HMat {
 
   def saveLMat(fname: String, m: LMat, compressed: Int = 0): Unit = {
     if (fname.startsWith("hdfs:")) {
-      HDFSwriteMat(fname, m, compressed);
+      HDFSwriteMat(fname, m, compressed)
     } else if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
       saveLMatTxt(fname, m, compressed)
     } else {
@@ -778,7 +768,7 @@ object HMat {
 
   def saveDMat(fname: String, m: DMat, compressed: Int = 0): Unit = {
     if (fname.startsWith("hdfs:")) {
-      HDFSwriteMat(fname, m, compressed);
+      HDFSwriteMat(fname, m, compressed)
     } else if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
       saveDMatTxt(fname, m, compressed)
     } else {
@@ -822,11 +812,11 @@ object HMat {
 
   def loadSMat(fname: String, compressed: Int = 0): SMat = {
     if (fname.startsWith("hdfs:")) {
-      HDFSreadMat(fname, null).asInstanceOf[SMat];
+      HDFSreadMat(fname, null).asInstanceOf[SMat]
     } else {
-      val gin = getInputStream(fname, compressed);
-      val out = loadSMat(gin, null);
-      gin.close;
+      val gin = getInputStream(fname, compressed)
+      val out = loadSMat(gin, null)
+      gin.close
       out
     }
   }
@@ -860,10 +850,10 @@ object HMat {
 
   def loadSDMat(fname: String, compressed: Int = 0): SDMat = {
     if (fname.startsWith("hdfs:")) {
-      HDFSreadMat(fname, null).asInstanceOf[SDMat];
+      HDFSreadMat(fname, null).asInstanceOf[SDMat]
     } else {
       val gin = getInputStream(fname, compressed)
-      val out = loadSDMat(gin, null);
+      val out = loadSDMat(gin, null)
       gin.close
       out
     }
@@ -898,10 +888,10 @@ object HMat {
 
   def loadSBMat(fname: String, compressed: Int = 0): SBMat = {
     if (fname.startsWith("hdfs:")) {
-      HDFSreadMat(fname, null).asInstanceOf[SBMat];
+      HDFSreadMat(fname, null).asInstanceOf[SBMat]
     } else {
       val gin = getInputStream(fname, compressed)
-      val out = loadSBMat(gin, null);
+      val out = loadSBMat(gin, null)
       gin.close
       out
     }
@@ -935,60 +925,60 @@ object HMat {
   }
 
   def loadCSMatTxt(fname: String, compressed: Int = 0): CSMat = {
-    val gin = getInputStream(fname, compressed);
-    val buf = new ArrayBuffer[String];
-    val istream = new BufferedReader(new InputStreamReader(gin));
-    var r: String = null;
+    val gin = getInputStream(fname, compressed)
+    val buf = new ArrayBuffer[String]
+    val istream = new BufferedReader(new InputStreamReader(gin))
+    var r: String = null
     while ({ r = istream.readLine(); r != null }) {
-      buf.append(r);
+      buf.append(r)
     }
-    val cs = new CSMat(buf.length, 1, buf.toArray);
+    val cs = new CSMat(buf.length, 1, buf.toArray)
     cs
   }
 
   def loadCSMat(fname: String, compressed: Int = 0): CSMat = {
     if (fname.startsWith("hdfs:")) {
-      HDFSreadMat(fname, null).asInstanceOf[CSMat];
+      HDFSreadMat(fname, null).asInstanceOf[CSMat]
     } else if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
-      loadCSMatTxt(fname, compressed);
+      loadCSMatTxt(fname, compressed)
     } else {
-      val gin = getInputStream(fname, compressed);
-      val out = loadCSMat(gin, null);
+      val gin = getInputStream(fname, compressed)
+      val out = loadCSMat(gin, null)
       gin.close
       out
     }
   }
 
   def loadCSMat(gin: DataInput, omat: Mat): CSMat = {
-    val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder);
-    val hints = new Array[Int](4);
-    readSomeInts(gin, hints, buff, 4);
-    val ftype = hints(0);
-    val nrows = hints(1);
-    val ncols = hints(2);
-    val nnz = hints(3);
-    val len = nrows * ncols;
+    val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
+    val hints = new Array[Int](4)
+    readSomeInts(gin, hints, buff, 4)
+    val ftype = hints(0)
+    val nrows = hints(1)
+    val ncols = hints(2)
+    val nnz = hints(3)
+    val len = nrows * ncols
     if (ftype != 202 && ftype != 302) {
-      throw new RuntimeException("loadCSMat expected type field 202 or 302 but was %d" format ftype);
+      throw new RuntimeException("loadCSMat expected type field 202 or 302 but was %d" format ftype)
     }
-    val out = CSMat(nrows, ncols);
-    val jc = new Array[Long](len + 1);
+    val out = CSMat(nrows, ncols)
+    val jc = new Array[Long](len + 1)
 
-    readSomeLongs(gin, jc, buff, len + 1);
-    var i = 0;
-    var maxlen = 0;
+    readSomeLongs(gin, jc, buff, len + 1)
+    var i = 0
+    var maxlen = 0
     while (i < len) {
-      val siz = (jc(i + 1) - jc(i)).toInt;
-      if (siz > maxlen) maxlen = siz;
-      i += 1;
+      val siz = (jc(i + 1) - jc(i)).toInt
+      if (siz > maxlen) maxlen = siz
+      i += 1
     }
-    val chbuf = new Array[Byte](maxlen);
-    i = 0;
+    val chbuf = new Array[Byte](maxlen)
+    i = 0
     while (i < len) {
-      val siz = (jc(i + 1) - jc(i)).toInt;
-      readSomeBytes(gin, chbuf, siz);
-      out.data(i) = new String(chbuf, 0, siz, SBMat.encoding);
-      i += 1;
+      val siz = (jc(i + 1) - jc(i)).toInt
+      readSomeBytes(gin, chbuf, siz)
+      out.data(i) = new String(chbuf, 0, siz, SBMat.encoding)
+      i += 1
     }
     out
   }
@@ -1045,7 +1035,7 @@ object HMat {
       HDFSwriteMat(fname, m, compressed)
     } else {
       val gout = getOutputStream(fname, compressed)
-      saveSDMat(gout, m);
+      saveSDMat(gout, m)
       gout.close
     }
   }
@@ -1139,21 +1129,21 @@ object HMat {
     if (fname.startsWith("hdfs:")) {
       HDFSwriteMat(fname, m, compressed)
     } else {
-      val gout = getOutputStream(fname, compressed);
+      val gout = getOutputStream(fname, compressed)
       saveCSMat(gout, m)
       gout.close
     }
   }
 
   def saveCSMat(gout: DataOutput, m: CSMat): Unit = {
-    val jc = new Array[Long](m.length + 1);
-    jc(0) = 0;
-    var i = 0;
-    var nnz = 0L;
+    val jc = new Array[Long](m.length + 1)
+    jc(0) = 0
+    var i = 0
+    var nnz = 0L
     while (i < m.length) {
-      nnz += m.data(i).getBytes(SBMat.encoding).length;
-      jc(i + 1) = nnz;
-      i += 1;
+      nnz += m.data(i).getBytes(SBMat.encoding).length
+      jc(i + 1) = nnz
+      i += 1
     }
     val hints = new Array[Int](4)
     val tbuf = ByteBuffer.allocate(16).order(byteOrder)
@@ -1162,14 +1152,14 @@ object HMat {
     hints(2) = m.ncols
     hints(3) = math.min(0x7fffffffL, nnz).toInt
     writeSomeInts(gout, hints, tbuf, 4)
-    val buff = ByteBuffer.allocate(4 * math.min(DEFAULT_BUFSIZE / 4, math.max(m.ncols + 1, nnz)).toInt).order(byteOrder);
+    val buff = ByteBuffer.allocate(4 * math.min(DEFAULT_BUFSIZE / 4, math.max(m.ncols + 1, nnz)).toInt).order(byteOrder)
     try {
-      writeSomeLongs(gout, jc, buff, m.length + 1);
-      i = 0;
+      writeSomeLongs(gout, jc, buff, m.length + 1)
+      i = 0
       while (i < m.length) {
-        val bytes = m.data(i).getBytes(SBMat.encoding);
-        gout.write(bytes, 0, bytes.length);
-        i += 1;
+        val bytes = m.data(i).getBytes(SBMat.encoding)
+        gout.write(bytes, 0, bytes.length)
+        i += 1
       }
     } catch {
       case e: Exception => {
@@ -1185,71 +1175,71 @@ object HMat {
   /* Outputs a data matrix first, and then a matrix c of cat labels where c(i) = label of instance i. */
   /* data is an SMat, labels are integer, weights are FMat. */
   def loadLibSVM(fname: String, nrows: Int, compressed: Int = 0, oneBased: Int = 0): (SMat, IMat, FMat) = {
-    var fin = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed).asInstanceOf[DataInputStream]));
-    var firstline = fin.readLine();
-    var parts = if (firstline != null) firstline.split("[\t ]+") else null;
-    var ncols = 0;
-    var nnz = 0;
-    var maxindx = 0;
+    var fin = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed).asInstanceOf[DataInputStream]))
+    var firstline = fin.readLine()
+    var parts = if (firstline != null) firstline.split("[\t ]+") else null
+    var ncols = 0
+    var nnz = 0
+    var maxindx = 0
     while (firstline != null && parts.length > 0) {
-      nnz += parts.length - 1;
-      firstline = fin.readLine();
-      if (firstline != null) parts = firstline.split("[\t ]+");
-      ncols += 1;
+      nnz += parts.length - 1
+      firstline = fin.readLine()
+      if (firstline != null) parts = firstline.split("[\t ]+")
+      ncols += 1
     }
-    var datamat = SMat(nrows, ncols, nnz);
-    var cmat = IMat(1, ncols);
-    var wmat = ones(1, ncols);
-    fin.close();
-    fin = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed).asInstanceOf[DataInputStream]));
-    firstline = fin.readLine();
-    if (firstline != null) parts = firstline.split("[\t ]+");
-    ncols = 0;
-    nnz = 0;
-    val ioneBased = Mat.ioneBased;
-    datamat.jc(0) = ioneBased;
+    var datamat = SMat(nrows, ncols, nnz)
+    var cmat = IMat(1, ncols)
+    var wmat = ones(1, ncols)
+    fin.close()
+    fin = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed).asInstanceOf[DataInputStream]))
+    firstline = fin.readLine()
+    if (firstline != null) parts = firstline.split("[\t ]+")
+    ncols = 0
+    nnz = 0
+    val ioneBased = Mat.ioneBased
+    datamat.jc(0) = ioneBased
     while (firstline != null && parts.length > 0) {
-      val parts0 = parts(0).split(":");
-      cmat.data(ncols) = parts0(0).toInt;
-      if (parts0.length > 1) wmat.data(ncols) = parts0(1).toFloat;
-      var i = 1;
+      val parts0 = parts(0).split(":")
+      cmat.data(ncols) = parts0(0).toInt
+      if (parts0.length > 1) wmat.data(ncols) = parts0(1).toFloat
+      var i = 1
       while (i < parts.length) {
-        val pair = parts(i).split(":");
-        val indx = pair(0).toInt;
-        val vval = pair(1).toFloat;
-        datamat.ir(nnz) = indx - oneBased + ioneBased;
-        datamat.data(nnz) = vval;
-        i += 1;
-        nnz += 1;
+        val pair = parts(i).split(":")
+        val indx = pair(0).toInt
+        val vval = pair(1).toFloat
+        datamat.ir(nnz) = indx - oneBased + ioneBased
+        datamat.data(nnz) = vval
+        i += 1
+        nnz += 1
       }
-      firstline = fin.readLine();
-      if (firstline != null) parts = firstline.split("[\t ]+");
-      ncols += 1;
-      datamat.jc(ncols) = nnz + ioneBased;
+      firstline = fin.readLine()
+      if (firstline != null) parts = firstline.split("[\t ]+")
+      ncols += 1
+      datamat.jc(ncols) = nnz + ioneBased
     }
-    fin.close();
-    (datamat, cmat, wmat);
+    fin.close()
+    (datamat, cmat, wmat)
   }
 
-  def saveLibSVM(fname: String, data: SMat, labels: SMat): Unit = saveLibSVM(fname, data, labels, null, 0);
+  def saveLibSVM(fname: String, data: SMat, labels: SMat): Unit = saveLibSVM(fname, data, labels, null, 0)
 
-  def saveLibSVM(fname: String, data: SMat, labels: SMat, weights: FMat): Unit = saveLibSVM(fname, data, labels, weights, 0);
+  def saveLibSVM(fname: String, data: SMat, labels: SMat, weights: FMat): Unit = saveLibSVM(fname, data, labels, weights, 0)
 
   def saveLibSVM(fname: String, data: SMat, labels: SMat, weights: FMat, compressed: Int, oneBased: Int = 0): Unit = {
-    val fout = new BufferedWriter(new OutputStreamWriter(getOutputStream(fname, compressed).asInstanceOf[DataOutputStream]));
-    val (ilab, jlab) = find2(labels);
-    val jc = data.jc;
-    val ioffset = Mat.ioneBased;
-    var i = 0;
+    val fout = new BufferedWriter(new OutputStreamWriter(getOutputStream(fname, compressed).asInstanceOf[DataOutputStream]))
+    val (ilab, jlab) = find2(labels)
+    val jc = data.jc
+    val ioffset = Mat.ioneBased
+    var i = 0
     while (i < ilab.length) {
-      fout.write(ilab.data(i).toString);
-      val icol = jlab.data(i);
+      fout.write(ilab.data(i).toString)
+      val icol = jlab.data(i)
       if (weights.asInstanceOf[AnyRef] != null) {
         fout.write(":" + weights.data(icol))
       }
       var j = jc(icol) - ioffset
       while (j < jc(icol + 1) - ioffset) {
-        fout.write(" " + (data.ir(j) - ioffset + oneBased).toString + ":" + data.data(j).toString);
+        fout.write(" " + (data.ir(j) - ioffset + oneBased).toString + ":" + data.data(j).toString)
         j += 1
       }
       fout.write("\n")
@@ -1258,29 +1248,29 @@ object HMat {
     fout.close()
   }
 
-  def saveVW(fname: String, sdata: SMat, labels: SMat): Unit = saveVW(fname, sdata, labels, 0);
+  def saveVW(fname: String, sdata: SMat, labels: SMat): Unit = saveVW(fname, sdata, labels, 0)
 
   def saveVW(fname: String, sdata: SMat, labels: SMat, compressed: Int, oneBased: Int = 0): Unit = {
-    val fout = new BufferedWriter(new OutputStreamWriter(getOutputStream(fname, compressed).asInstanceOf[DataOutputStream]));
-    val jc = sdata.jc;
-    val ir = sdata.ir;
-    val data = sdata.data;
-    val jci = labels.jc;
-    val iri = labels.ir;
-    val ioffset = Mat.ioneBased;
-    var i = 0;
+    val fout = new BufferedWriter(new OutputStreamWriter(getOutputStream(fname, compressed).asInstanceOf[DataOutputStream]))
+    val jc = sdata.jc
+    val ir = sdata.ir
+    val data = sdata.data
+    val jci = labels.jc
+    val iri = labels.ir
+    val ioffset = Mat.ioneBased
+    var i = 0
     while (i < sdata.ncols) {
-      var j = jci(i);
+      var j = jci(i)
       while (j < jci(i + 1)) {
-        if (j > jci(i)) fout.write(",");
-        fout.write((iri(j - ioffset) - ioffset + oneBased).toString);
-        j += 1;
+        if (j > jci(i)) fout.write(",")
+        fout.write((iri(j - ioffset) - ioffset + oneBased).toString)
+        j += 1
       }
-      fout.write(" |");
-      j = jc(i);
+      fout.write(" |")
+      j = jc(i)
       while (j < jc(i + 1)) {
-        fout.write(" %d:%f" format (ir(j - ioffset) - ioffset + oneBased, data(j - ioffset)));
-        j += 1;
+        fout.write(" %d:%f" format (ir(j - ioffset) - ioffset + oneBased, data(j - ioffset)))
+        j += 1
       }
       fout.write("\n")
       i += 1
@@ -1331,9 +1321,9 @@ object HMat {
             throw new RuntimeException("incorrect number of rows in file " + fn)
           }
         } else {
-          nrows = nr.asInstanceOf[Int]
+          nrows = nr.toInt
         }
-        blkinds(i + 1) = blkinds(i) + nc.asInstanceOf[Int]
+        blkinds(i + 1) = blkinds(i) + nc.toInt
         i += 1
       } else if (catd == 1) {
         if (ncols >= 0) {
@@ -1343,7 +1333,7 @@ object HMat {
         } else {
           ncols = 1
         }
-        blkinds(i + 1) = blkinds(i) + nr.asInstanceOf[Int]
+        blkinds(i + 1) = blkinds(i) + nr.toInt
         i += 1
       }
     })

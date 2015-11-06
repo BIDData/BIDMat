@@ -116,7 +116,7 @@ case class FND(dims0: Array[Int], val data: Array[Float]) extends ND(dims0) {
   def reshape(newdims: Int*): FND = reshape(newdims.toArray)
 
   def reshape(newdims: Array[Int]): FND = {
-    if (newdims.reduce(_ * _) == length) {
+    if (newdims.product == length) {
       val out = FND.newOrCheckFND(newdims, null, GUID, ND.hashInts(newdims), "reshape".##)
       System.arraycopy(data, 0, out.data, 0, length)
       out
@@ -128,7 +128,7 @@ case class FND(dims0: Array[Int], val data: Array[Float]) extends ND(dims0) {
   def reshapeView(newdims: Int*): FND = reshapeView(newdims.toArray)
 
   def reshapeView(newdims: Array[Int]): FND = {
-    if (newdims.reduce(_ * _) == length) {
+    if (newdims.product == length) {
       val out = FND(newdims, data)
       out
     } else {
@@ -448,7 +448,7 @@ case class FND(dims0: Array[Int], val data: Array[Float]) extends ND(dims0) {
     val colinds = new Array[Int](_dims.length / 2)
     val evenDims = subDims(0, 2)
     val oddDims = subDims(1, 2)
-    val evenLength = evenDims.reduce(_ * _)
+    val evenLength = evenDims.product
     var rind = 0
     var i = 0
     while (rind < maxRows && i < evenLength) {
@@ -594,7 +594,7 @@ object FND {
     out
   }
 
-  def apply(dims: Array[Int]): FND = new FND(dims, new Array[Float](dims.reduce(_ * _)))
+  def apply(dims: Array[Int]): FND = new FND(dims, new Array[Float](dims.product))
 
   def apply(dims: Int*): FND = apply(dims.toArray)
 
@@ -682,4 +682,3 @@ object FND {
     }
   }
 }
-

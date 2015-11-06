@@ -836,12 +836,10 @@ object MatFunctions {
   def _sortlex(mat: IMat, asc: Boolean): Unit = {
     if (if (Mat.useGPUsort && Mat.hasCUDA > 0) {
       val (dmy, freebytes, allbytes) = SciFunctions.GPUmem
-      if ((mat.length) * 12L < freebytes) {
-        if (mat.ncols == 2) {
+      if ((mat.length) * 12L < freebytes && mat.ncols == 2) {
           GIMat.i2sortlexGPU(mat, asc)
           false
         } else true
-      } else true
     } else true) {
       val perm = IMat.isortlex(mat, asc)
       val matp = mat(perm, ?)
@@ -880,8 +878,7 @@ object MatFunctions {
       while (k < a.ncols && (a.data(i + k * a.nrows) == a.data(j + k * a.nrows))) {
         k += 1
       }
-      if (k == a.ncols) true
-      else false
+      (k == a.ncols)
     }
     var lastpos = 0
     iptrs.data(0) = 0
@@ -1602,7 +1599,7 @@ object MatFunctions {
   def nHot(c: Mat): Mat = nHot(c, 0);
 
   /** Returns the square root of '''v''' as a float, as an alternative to math.sqrt(v)'s double.  */
-  def fsqrt(v: Float): Float = math.sqrt(v).asInstanceOf[Float]
+  def fsqrt(v: Float): Float = math.sqrt(v).tFloat
 
   def mapfun2x2(fn: (Float, Float) => (Float, Float), in0: FMat, in1: FMat, out0: FMat, out1: FMat) = {
     if (in0.nrows != in1.nrows || in0.nrows != out0.nrows || in0.nrows != out1.nrows ||

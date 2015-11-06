@@ -22,13 +22,7 @@ class DenseMat[@specialized(Double, Float, Int, Byte, Long) T](nr: Int, nc: Int,
   override def mytype = "DenseMat"
 
   /** Returns true if this matrix is a row or column vector, false otherwise. */
-  def isvector(): Boolean = {
-    if (nrows == 1 || ncols == 1) {
-      true
-    } else {
-      false
-    }
-  }
+  def isvector(): Boolean = (nrows == 1 || ncols == 1)
 
   /** Bounds-checked matrix access, 0- or 1-based. */
   def apply(r0: Int, c0: Int): T = {
@@ -1459,10 +1453,10 @@ object DenseMat {
     val out = DenseMat.newOrCheck(a.nrows, a.ncols, null, a.GUID, ik0, "DenseMat.sort".hashCode)
     var ik = ik0
     if (ik0 == 0) {
-      if (a.nrows == 1) {
-        ik = 2
+      ik = if (a.nrows == 1) {
+        2
       } else {
-        ik = 1
+        1
       }
     }
     if (a.nrows == 1 || a.ncols == 1) {
@@ -1867,4 +1861,3 @@ object DenseMat {
 
 // TODO
 trait MatrixWildcard extends Mat
-

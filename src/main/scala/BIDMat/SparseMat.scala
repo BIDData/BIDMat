@@ -22,11 +22,10 @@ class SparseMat[@specialized(Double, Float) T](nr: Int, nc: Int, var nnz0: Int, 
    */
   def get_(r: Int, c: Int): T = {
     val ioff = Mat.ioneBased
-    var ix = 0
-    if (ir != null) {
-      ix = Mat.ibinsearch(r + ioff, ir, jc(c) - ioff, jc(c + 1) - ioff)
+    var ix =  if (ir != null) {
+      Mat.ibinsearch(r + ioff, ir, jc(c) - ioff, jc(c + 1) - ioff)
     } else {
-      ix = r + ioff - jc(c)
+      r + ioff - jc(c)
     }
     if (ix >= 0) data(ix) else numeric.zero
   }
@@ -64,11 +63,10 @@ class SparseMat[@specialized(Double, Float) T](nr: Int, nc: Int, var nnz0: Int, 
    */
   def set_(r: Int, c: Int, v: T) = {
     val ioff = Mat.ioneBased
-    var ix = 0
-    if (ir != null) {
-      ix = Mat.ibinsearch(r + ioff, ir, jc(c) - ioff, jc(c + 1) - ioff)
+    var ix = if (ir != null) {
+      Mat.ibinsearch(r + ioff, ir, jc(c) - ioff, jc(c + 1) - ioff)
     } else {
-      ix = r + ioff - jc(c)
+      r + ioff - jc(c)
     }
     if (ix >= 0) data(ix) = v
     else throw new RuntimeException("Can't set missing values")
@@ -943,4 +941,3 @@ object SparseMat {
   }
 
 }
-

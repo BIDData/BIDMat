@@ -51,7 +51,7 @@ case class IMat(nr: Int, nc: Int, data0: Array[Int]) extends DenseMat[Int](nr, n
   }
 
   override def set(v: Float): IMat = {
-    Arrays.fill(data, 0, length, v.asInstanceOf[Int])
+    Arrays.fill(data, 0, length, v.toInt)
     this
   }
 
@@ -1159,4 +1159,3 @@ object IMat {
     }
   }
 }
-

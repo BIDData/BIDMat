@@ -44,8 +44,8 @@ class Image(val img: BufferedImage) {
   }
 
   def resize(w0: Int, h0: Int): Image = {
-    val w = if (w0 < 0) math.round(1f * width / height * h0).toInt else w0;
-    val h = if (h0 < 0) math.round(1f * height / width * w0).toInt else h0;
+    val w = if (w0 < 0) math.round(1f * width / height * h0) else w0;
+    val h = if (h0 < 0) math.round(1f * height / width * w0) else h0;
     val im0 = img.getScaledInstance(w, h, java.awt.Image.SCALE_SMOOTH)
     val im = new BufferedImage(w, h, img.getType);
     val g: Graphics2D = im.createGraphics();
