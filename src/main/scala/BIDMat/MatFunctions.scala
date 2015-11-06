@@ -804,7 +804,7 @@ object MatFunctions {
    */
   def sortlexInds(mat: IMat, inds: IMat) = _sortlexInds(mat, inds, true)
 
-  def _sortlexInds(mat: IMat, inds: IMat, asc: Boolean) {
+  def _sortlexInds(mat: IMat, inds: IMat, asc: Boolean): Unit = {
     if (if (Mat.useGPUsort && Mat.hasCUDA > 0) {
       val (dmy, freebytes, allbytes) = SciFunctions.GPUmem
       if ((mat.length + inds.length) * 12L < freebytes) {
@@ -1792,7 +1792,7 @@ object MatFunctions {
    * Left and right are the range of the output buffer indices.
    * Element vv(i) goes into buffer number (indx(i)-left)
    */
-  def distribute(indx: FMat, vv: IMat, mats: Array[IMat], locs: IMat, left: Int, right: Int) {
+  def distribute(indx: FMat, vv: IMat, mats: Array[IMat], locs: IMat, left: Int, right: Int): Unit = {
     if (indx.nrows != vv.nrows || vv.ncols != mats(0).ncols)
       throw new RuntimeException("Partition: dimensions mismatch")
     var i = 0
@@ -1817,7 +1817,7 @@ object MatFunctions {
    * Left and right are the range of the output buffer indices.
    * Element vv(i) goes into buffer number (indx(i)-left)
    */
-  def distribute(indx: IMat, vv: IMat, mats: Array[IMat], locs: IMat, left: Int, right: Int) {
+  def distribute(indx: IMat, vv: IMat, mats: Array[IMat], locs: IMat, left: Int, right: Int): Unit = {
     if (indx.nrows != vv.nrows || vv.ncols != mats(0).ncols)
       throw new RuntimeException("Partition: dimensions mismatch")
     var i = 0
@@ -1842,7 +1842,7 @@ object MatFunctions {
    * Left and right are the range of the output buffer indices.
    * Element vv(i) goes into buffer number (indx(i)-left)
    */
-  def distribute(indx: IMat, vv: FMat, mats: Array[FMat], locs: IMat, left: Int, right: Int) {
+  def distribute(indx: IMat, vv: FMat, mats: Array[FMat], locs: IMat, left: Int, right: Int): Unit = {
     if (indx.nrows != vv.nrows || vv.ncols != mats(0).ncols)
       throw new RuntimeException("Partition: dimensions mismatch")
     var i = 0
@@ -2004,4 +2004,3 @@ object MatFunctions {
 
   final val ? = new IMatWildcard
 }
-

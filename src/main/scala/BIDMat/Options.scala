@@ -1,4 +1,3 @@
-
 package BIDMat
 import java.lang.reflect.Method
 import scala.util.Sorting._
@@ -30,7 +29,7 @@ trait Opts {
     }
   }
 
-  def copyFrom(that: Opts) {
+  def copyFrom(that: Opts): Unit = {
     val ignore = List("what", "wait", "equals", "toString", "hashCode", "getClass", "notify", "notifyAll", "ignore", "copyFrom");
     for (setter <- this.getClass.getMethods if (setter.getName.contains("$eq") && !ignore.contains(setter.getName))) {
       val setname = setter.getName;
@@ -45,4 +44,3 @@ trait Opts {
     }
   }
 }
-

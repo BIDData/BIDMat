@@ -119,7 +119,7 @@ class MKLdeclarationsParser extends JavaTokenParsers {
 }
 
 object translateTester {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     import java.io._
     val p = new MKLdeclarationsParser
     val s = scala.io.Source.fromFile(args(0))

@@ -169,11 +169,11 @@ object HMat {
     }
   }
 
-  def readSomeBytes(din: DataInput, a: Array[Byte], n: Int) {
+  def readSomeBytes(din: DataInput, a: Array[Byte], n: Int): Unit = {
     din.readFully(a, 0, n);
   }
 
-  def readSomeInts(din: DataInput, a: Array[Int], buf: ByteBuffer, n: Int) {
+  def readSomeInts(din: DataInput, a: Array[Int], buf: ByteBuffer, n: Int): Unit = {
     val lbytes = 2;
     val mask = (1 << lbytes) - 1;
     var nread = 0;
@@ -188,7 +188,7 @@ object HMat {
     }
   }
 
-  def readSomeLongs(din: DataInput, a: Array[Long], buf: ByteBuffer, n: Int) {
+  def readSomeLongs(din: DataInput, a: Array[Long], buf: ByteBuffer, n: Int): Unit = {
     val lbytes = 3;
     var nread = 0;
     val lbuff = buf.asLongBuffer;
@@ -202,7 +202,7 @@ object HMat {
     }
   }
 
-  def readSomeFloats(din: DataInput, a: Array[Float], buf: ByteBuffer, n: Int) {
+  def readSomeFloats(din: DataInput, a: Array[Float], buf: ByteBuffer, n: Int): Unit = {
     val lbytes = 2;
     var nread = 0;
     val fbuff = buf.asFloatBuffer;
@@ -216,7 +216,7 @@ object HMat {
     }
   }
 
-  def readSomeDoubles(din: DataInput, a: Array[Double], buf: ByteBuffer, n: Int) {
+  def readSomeDoubles(din: DataInput, a: Array[Double], buf: ByteBuffer, n: Int): Unit = {
     val lbytes = 3;
     var nread = 0;
     val dbuff = buf.asDoubleBuffer;
@@ -230,7 +230,7 @@ object HMat {
     }
   }
 
-  def writeSomeInts(dout: DataOutput, a: Array[Int], buf: ByteBuffer, n: Int) {
+  def writeSomeInts(dout: DataOutput, a: Array[Int], buf: ByteBuffer, n: Int): Unit = {
     var nwritten = 0
     val ibuff = buf.asIntBuffer
     val bbuff = buf.array
@@ -243,7 +243,7 @@ object HMat {
     }
   }
 
-  def writeSomeLongs(dout: DataOutput, a: Array[Long], buf: ByteBuffer, n: Int) {
+  def writeSomeLongs(dout: DataOutput, a: Array[Long], buf: ByteBuffer, n: Int): Unit = {
     var nwritten = 0
     val ibuff = buf.asLongBuffer
     val bbuff = buf.array
@@ -256,7 +256,7 @@ object HMat {
     }
   }
 
-  def writeSomeFloats(dout: DataOutput, a: Array[Float], buf: ByteBuffer, n: Int) {
+  def writeSomeFloats(dout: DataOutput, a: Array[Float], buf: ByteBuffer, n: Int): Unit = {
     var nwritten = 0
     val fbuff = buf.asFloatBuffer
     val bbuff = buf.array
@@ -269,7 +269,7 @@ object HMat {
     }
   }
 
-  def writeSomeDoubles(dout: DataOutput, a: Array[Double], buf: ByteBuffer, n: Int) {
+  def writeSomeDoubles(dout: DataOutput, a: Array[Double], buf: ByteBuffer, n: Int): Unit = {
     var nwritten = 0
     val dbuff = buf.asDoubleBuffer
     val bbuff = buf.array
@@ -1301,12 +1301,12 @@ object HMat {
     a
   }
 
-  def apply(dirname: String, filepat: String, varname: String, catd: Int) {
+  def apply(dirname: String, filepat: String, varname: String, catd: Int): HMat = {
     var files: ListBuffer[String] = new ListBuffer[String]
     val dir: File = new File(dirname)
     val slen = dir.getName.length + 1
 
-    def searchDir(dir: File) {
+    def searchDir(dir: File): Unit = {
       for (f <- dir.listFiles) {
         if (f.isDirectory) {
           searchDir(f)
@@ -1358,4 +1358,3 @@ object HMat {
     }
   }
 }
-

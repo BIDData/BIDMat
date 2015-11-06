@@ -492,7 +492,7 @@ object Sorting {
     j + stride
   }
 
-  def quickSort[@specialized(Double, Float, Int, Byte) T](a: Array[T])(implicit ord: Ordering[T]) = {
+  def quickSort[@specialized(Double, Float, Int, Byte) T](a: Array[T])(implicit ord: Ordering[T]): Unit = {
     def comp(i: Int, j: Int): Int = {
       ord.compare(a(i), a(j))
     }
@@ -504,11 +504,13 @@ object Sorting {
     sort1(comp, swap, 0, a.length)
   }
 
-  def quickSort(comp: (Int, Int) => Int, swap: (Int, Int) => Unit, start: Int, len: Int) { sort1(comp, swap, start, len) }
+  def quickSort(comp: (Int, Int) => Int, swap: (Int, Int) => Unit, start: Int, len: Int): Unit = {
+    sort1(comp, swap, start, len)
+  }
 
-  private def sort1(comp: (Int, Int) => Int, swap: (Int, Int) => Unit, off: Int, len: Int) {
+  private def sort1(comp: (Int, Int) => Int, swap: (Int, Int) => Unit, off: Int, len: Int): Unit = {
 
-    def vecswap(_a: Int, _b: Int, n: Int) {
+    def vecswap(_a: Int, _b: Int, n: Int): Unit = {
       var a = _a
       var b = _b
       var i = 0
@@ -526,7 +528,7 @@ object Sorting {
         if (comp(b, c) > 0) b else if (comp(a, c) > 0) c else a
       }
     }
-    def sort2(off: Int, len: Int) {
+    def sort2(off: Int, len: Int): Unit = {
       if (len < 7) {
         var i = off
         while (i < len + off) {
@@ -612,9 +614,9 @@ object Sorting {
     quickSort2(a.data, ii.data, 0, n, 1)
     println("check %d" format find(a(1 -> n, 0) < a(0 -> (n - 1), 0)).length)
     /*		val xa = new myMedian[Float]
-		import myOrdering._
-		val v = xa.median(a.data)
-		println("%f (%f %f %f)" format (v, a(0), a(1), a(2))) */
+                import myOrdering._
+                val v = xa.median(a.data)
+                println("%f (%f %f %f)" format (v, a(0), a(1), a(2))) */
   }
 }
 
@@ -688,4 +690,3 @@ object myOrdering {
   }
   implicit object Float extends FloatOrdering
 }
-

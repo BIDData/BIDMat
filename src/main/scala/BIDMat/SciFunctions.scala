@@ -1549,7 +1549,7 @@ object SciFunctions {
     out
   }
 
-  def doPowx(n: Int, a: Array[Double], p: Float, r: Array[Double]) {
+  def doPowx(n: Int, a: Array[Double], p: Float, r: Array[Double]): Unit = {
     if (!Mat.useMKL) {
       var i = 0
       while (i < n) {
@@ -1623,9 +1623,9 @@ object SciFunctions {
     }
   }
 
-  /* 
+  /*
    * Double scientific functions. Most have both an MKL and non-MKL implementation.
-   * The MKL implementation is used unless !Mat.useMKL = true. 
+   * The MKL implementation is used unless !Mat.useMKL = true.
    */
 
   val signumDFun = (x: Double) => math.signum(x)
@@ -1800,9 +1800,9 @@ object SciFunctions {
   def exppsi(a: DMat, out: Mat) = applyDFun(a, out, null, exppsiDFun, 3L)
   def exppsi(a: DMat): DMat = exppsi(a, null)
 
-  /* 
+  /*
    * Single-precision scientific functions. Most have both an MKL and non-MKL implementation.
-   * The MKL implementation is used unless !Mat.useMKL = true. 
+   * The MKL implementation is used unless !Mat.useMKL = true.
    */
 
   val signumFun = (x: Float) => math.signum(x).toFloat
@@ -1977,9 +1977,9 @@ object SciFunctions {
   def exppsi(a: FMat, out: Mat) = applySFun(a, out, null, exppsiFun, 3L)
   def exppsi(a: FMat): FMat = exppsi(a, null)
 
-  /* 
+  /*
    * Complex single-precision scientific functions. Most have both an MKL and non-MKL implementation.
-   * The MKL implementation is used unless Mat.useMKL = false. 
+   * The MKL implementation is used unless Mat.useMKL = false.
    */
 
   val vcAbsCFun = (n: Int, x: Array[Float], y: Array[Float]) => vcAbs(n, x, y)
@@ -2098,7 +2098,7 @@ object SciFunctions {
    * Generate a random sparse matrix with specified row and column distributions.
    * The column distribution is sampled first to get the number of elements in each column.
    * Then the row generator is sampled nelements_in_column(i) times to get the row indices
-   * for column i. 
+   * for column i.
    */
 
   def sprand(nrows: Int, ncols: Int, rowdistr: (Int) => IMat, coldistr: (Int) => IMat): SMat = {
@@ -2119,7 +2119,7 @@ object SciFunctions {
         j += 1
       }
       i += 1
-    } // We have an unsorted list of elements with repetition. Now make a sparse matrix from them. 
+    } // We have an unsorted list of elements with repetition. Now make a sparse matrix from them.
     sortlex(mat)
     val (bptrs, iptrs) = countDistinct(mat)
     val nnz = bptrs.length
@@ -2167,7 +2167,7 @@ object SciFunctions {
   }
 
   /*
-   * Returns a generator for Pareto samples in the range low>0...high>0. 
+   * Returns a generator for Pareto samples in the range low>0...high>0.
    * alpha must not be zero.
    */
 
@@ -2185,7 +2185,7 @@ object SciFunctions {
   }
 
   /*
-   * Power-law sparse random matrices with alpha =-1 exponents for row and column distributions. 
+   * Power-law sparse random matrices with alpha =-1 exponents for row and column distributions.
    * The density argument determines the approximate mean sum per column.
    */
 
@@ -3212,4 +3212,3 @@ object SciFunctions {
     }
   }
 }
-

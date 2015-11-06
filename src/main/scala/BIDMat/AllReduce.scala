@@ -33,7 +33,7 @@ object AllReduce {
     test1(n, dens, allks, trace, replicate, deadnodes)
   }
 
-  def test1(n: Int, dens: Float, allks: IMat, trace: Int, replicate: Int, deadnodes: IMat) {
+  def test1(n: Int, dens: Float, allks: IMat, trace: Int, replicate: Int, deadnodes: IMat): Unit = {
     val a = sprand(n, n, dens)
     val dd = spdiag(n)
     val ad = a + dd

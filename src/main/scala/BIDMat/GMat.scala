@@ -1,4 +1,3 @@
-
 package BIDMat
 import jcuda._
 import jcuda.runtime._
@@ -682,15 +681,15 @@ class GMat(nr: Int, nc: Int, var data: Pointer, val realsize: Long) extends Mat(
     }
     Mat.nflops += 2L * nrows * a.nnz;
     /*      if (nrows == 1) {                    // Alas, throws "too many resources requested for launch" with large a.nrows
-      	val handle = GSMat.getHandle       // Also gives erroneous values
-      	val descra = GSMat.getDescr
+        val handle = GSMat.getHandle       // Also gives erroneous values
+        val descra = GSMat.getDescr
         var err = JCusparse.cusparseScsrmv(handle, cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE,
-        		ncols, a.ncols, 1.0f, descra,	a.data, a.jc, a.ir, data, 0, out.data)
+                        ncols, a.ncols, 1.0f, descra,	a.data, a.jc, a.ir, data, 0, out.data)
         cudaDeviceSynchronize()
         if (err == 0) err = cudaGetLastError
         if (err != 0) {
-        	println("device is %d" format SciFunctions.getGPU)
-        	throw new RuntimeException("Cuda error in GSMult " + cudaGetErrorString(err))
+                println("device is %d" format SciFunctions.getGPU)
+                throw new RuntimeException("Cuda error in GSMult " + cudaGetErrorString(err))
         }
       } else { */
     val err = CUMAT.dsmult(nrows, a.ncols, a.nnz, data, a.data, a.ir, a.ic, out.data);
@@ -828,7 +827,7 @@ class GMat(nr: Int, nc: Int, var data: Pointer, val realsize: Long) extends Mat(
   }
 
   def copyTo(a: FMat): FMat = {
-    //  		val a = out.recycle(nrows, ncols, 0)
+    //                  val a = out.recycle(nrows, ncols, 0)
     cublasGetVector(nrows * ncols, Sizeof.FLOAT, data, 1, Pointer.to(a.data), 1)
     cudaDeviceSynchronize()
     val err = cudaGetLastError
@@ -1198,7 +1197,7 @@ class GMat(nr: Int, nc: Int, var data: Pointer, val realsize: Long) extends Mat(
   def \(a: GMat) = horzcat(a, null)
 
   /*
-  * Specialize to IMats to help the type system. 
+  * Specialize to IMats to help the type system.
   */
   def *(b: IMat) = Mop_Times.op(this, b, null)
   def *^(b: IMat) = Mop_TimesT.op(this, b, null)
@@ -1231,7 +1230,7 @@ class GMat(nr: Int, nc: Int, var data: Pointer, val realsize: Long) extends Mat(
   def !=(b: IMat) = Mop_NE.op(this, b, null)
 
   /*
-  * Specialize to DMats to help the type system. 
+  * Specialize to DMats to help the type system.
   */
   def *(b: DMat) = Mop_Times.op(this, b, null)
   def *^(b: DMat) = Mop_TimesT.op(this, b, null)
@@ -1264,7 +1263,7 @@ class GMat(nr: Int, nc: Int, var data: Pointer, val realsize: Long) extends Mat(
   def !=(b: DMat) = Mop_NE.op(this, b, null)
 
   /*
-  * Specialize to FMats to help the type system. 
+  * Specialize to FMats to help the type system.
   */
   def *(b: FMat) = Mop_Times.op(this, b, null)
   def *^(b: FMat) = Mop_TimesT.op(this, b, null)
@@ -1297,7 +1296,7 @@ class GMat(nr: Int, nc: Int, var data: Pointer, val realsize: Long) extends Mat(
   def !=(b: FMat) = Mop_NE.op(this, b, null)
 
   /*
-  * Operators whose second arg is generic. 
+  * Operators whose second arg is generic.
   */
   override def *(b: Mat) = Mop_Times.op(this, b, null)
   override def *^(b: Mat) = Mop_TimesT.op(this, b, null)
@@ -1902,7 +1901,7 @@ object GMat {
     }
   }
 
-  def lexsort2i(a: GIMat, b: GMat, i: GIMat) {
+  def lexsort2i(a: GIMat, b: GMat, i: GIMat): Unit = {
     val ab = GMat.embedmat(a, b)
     val err = CUMAT.lsortk(ab.data, i.data, i.length, 1);
     if (err != 0) throw new RuntimeException("lexsort2i error %d: " + cudaGetErrorString(err) format err);
@@ -1931,7 +1930,7 @@ object GMat {
 
   def extractmat(c: GIMat): (GIMat, GMat) = extractmat(null, null, c);
 
-  // sort some indices on the GPU. Output to the input arrays. Also moves the contents of a secondary array. 
+  // sort some indices on the GPU. Output to the input arrays. Also moves the contents of a secondary array.
   // This can be used to build SMats from row, column, value arrays.
   def sortInds(ii: IMat, jj: IMat, vals: Mat, asc: Int): Unit = {
     val inds = ii \ jj;
@@ -2079,7 +2078,7 @@ object GMat {
         cudaFree(vv)
         cudaFree(aa)
         done(ithread, 0) = 1
-        //  	  	println("done %d" format ithread)
+        //              println("done %d" format ithread)
       }
     }
     while (SciFunctions.mini(done).v == 0) Thread.`yield`
@@ -2140,10 +2139,10 @@ object GMat {
       keys <-- tkeys;
       vals <-- tvals;
     } else if (keys.nrows > 128 * 1024) {
-      // 	  val t1 = MatFunctions.toc;
+      //          val t1 = MatFunctions.toc;
       CUMAT.fsort2dk(keys.data, vals.data, keys.nrows, keys.ncols, if (asc) 1 else 0);
-      //  		val t2 = MatFunctions.toc;
-      //  		println("GPU %d sort took %f s" format (SciFunctions.getGPU, t2 -t1));  		
+      //                val t2 = MatFunctions.toc;
+      //                println("GPU %d sort took %f s" format (SciFunctions.getGPU, t2 -t1));
     } else {
       val maxsize = keys.nrows * math.min(16 * 1024 * 1024 / keys.nrows, keys.ncols)
       val nsize = keys.nrows * keys.ncols
@@ -2337,7 +2336,7 @@ object GMat {
 
                 err = CUMAT.distances(aa, garows, bb, gbrows, cc, gcrows, nk, ni, nj, p)
 
-                //    						if (err != 0) throw new RuntimeException("CUDA error in LXdist %d thread %d %d %d %d" format (err, ithread, nk, ni, nj))
+                //                                              if (err != 0) throw new RuntimeException("CUDA error in LXdist %d thread %d %d %d %d" format (err, ithread, nk, ni, nj))
                 if (err != 0) println("CUDA error in LXdist %d thread %d %d %d %d" format (err, ithread, nk, ni, nj))
                 k += gacols
               }
@@ -2469,4 +2468,3 @@ object GMat {
     m
   }
 }
-
