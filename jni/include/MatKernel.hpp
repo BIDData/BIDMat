@@ -243,11 +243,11 @@ int maxsumx(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int 
 
 int dmv(float *A, int nr, int nc, float *B, float *C, int trans);
 
-int poissonrnd(int n, float *A, int *B, int nthreads);
+int poissonrnd(int n, float *A, int *B, int nthreads, unsigned long long seed, unsigned long long offset);
 
-int binornd(int nrows, int ncols, float *A, int atype, int *C, int ctype, int *Out);
+int binornd(int nrows, int ncols, float *A, int atype, int *C, int ctype, int *Out, unsigned long long seed, unsigned long long offset);
 
-int gamrnd(int nrows, int ncols, float *A, int atype, float *B, int btype, float *Out);
+int gamrnd(int nrows, int ncols, float *A, int atype, float *B, int btype, float *Out, unsigned long long seed, unsigned long long offset);
 
 int collectLVec(long long *pakeys, unsigned int *pavals, long long *pokeys, unsigned int *povals, int n);
 
