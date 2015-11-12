@@ -406,13 +406,14 @@ object SciFunctions {
     while (j < a.ncols) {
     	var i = 0;
     	while (i < a.nrows) {
-    		vsRngGamma( METHOD, stream, 1, out.data, a(i,j), 0, b(i,j) );
-    		out(i,j) = out(0,0);
+//    		vsRngGamma( METHOD, stream, 1, out.data, a(i,j), 0, b(i,j) );
+//    		out(i,j) = out(0,0);
+    	  out(i,j) = BIDMat.Random.gen1gamma(a(i,j), b(i,j), myrand).toFloat
     		i += 1;
     	}
     	j += 1;
     }
-    vsRngGamma( METHOD, stream, 1, out.data, a(0,0), 0, b(0,0) );
+//    vsRngGamma( METHOD, stream, 1, out.data, a(0,0), 0, b(0,0) );
     Mat.nflops += 20L*out.length
     out;
   } 
