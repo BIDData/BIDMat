@@ -1379,24 +1379,45 @@ object MatFunctions {
   
   /** Construct a sparse double matrix from arrays of indices (ii=row, jj=col) and values, with given size. */
   def sparse(ii:IMat, jj:IMat, vv:DMat, nr:Int, nc:Int):SDMat = {
-    SDMat(SparseMat.sparseImpl[Double](ii.data, jj.data, vv.data, nr, nc, ii.length))
+    val iidata = if (ii.asInstanceOf[AnyRef] != null) ii.data else null;
+    SDMat(SparseMat.sparseImpl[Double](iidata, jj.data, vv.data, nr, nc, jj.length))
   } 
   
   def _maxi(a:IMat) = a.iiReduceOp(0, IMat.idFun, IMat.maxFun, null)
 
   /** Construct an auto-sized sparse double matrix from arrays of indices (ii=row, jj=col) and values. */
   def sparse(ii:IMat, jj:IMat, vv:DMat):SDMat = {
-    SDMat(SparseMat.sparseImpl[Double](ii.data, jj.data, vv.data, _maxi(ii).v+1, _maxi(jj).v+1, ii.length))
+  	val iidata = if (ii.asInstanceOf[AnyRef] != null) ii.data else null;
+    SDMat(SparseMat.sparseImpl[Double](iidata, jj.data, vv.data, _maxi(ii).v+1, _maxi(jj).v+1, jj.length))
   } 
 
   /** Construct a sparse float matrix from arrays of indices (ii=row, jj=col) and values, with given size. */
   def sparse(ii:IMat, jj:IMat, vv:FMat, nr:Int, nc:Int):SMat = {
-    SMat(SparseMat.sparseImpl[Float](ii.data, jj.data, vv.data, nr, nc, ii.length))
+  	val iidata = if (ii.asInstanceOf[AnyRef] != null) ii.data else null;
+    SMat(SparseMat.sparseImpl[Float](iidata, jj.data, vv.data, nr, nc, jj.length))
   } 
 
   /** Construct an auto-sized sparse float matrix from arrays of indices (ii=row, jj=col) and values. */
   def sparse(ii:IMat, jj:IMat, vv:FMat):SMat = {
-    SMat(SparseMat.sparseImpl[Float](ii.data, jj.data, vv.data, _maxi(ii).v+1, _maxi(jj).v+1, ii.length))
+  	val iidata = if (ii.asInstanceOf[AnyRef] != null) ii.data else null;
+  	val maxlen = if (ii.asInstanceOf[AnyRef] != null) {
+  	  _maxi(ii).v+1;
+  	} else {
+  	  var maxl = 0;
+  	  var curlen = 0;
+  	  var i = 0;
+  	  while (i < jj.length) {
+  	    if (i == 0 || jj.data(i) == jj.data(i-1)) {
+  	      curlen += 1;
+  	      if (curlen > maxl) maxl = curlen;
+  	    } else {
+  	      curlen = 1;
+  	    }
+  	    i += 1;
+  	  }
+  	  maxl;
+  	}
+    SMat(SparseMat.sparseImpl[Float](iidata, jj.data, vv.data, maxlen, _maxi(jj).v+1, jj.length))
   } 
 
   /** Convert from double dense to double dense. */

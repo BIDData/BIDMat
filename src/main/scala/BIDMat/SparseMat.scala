@@ -819,19 +819,28 @@ object SparseMat {
   def sparseImpl[@specialized(Double, Float) T](rows:Array[Int], cols:Array[Int], vals:Array[T], nrows:Int, ncols:Int, nnz:Int)
   (implicit manifest:Manifest[T], numeric:Numeric[T]):SparseMat[T] = {
     val ioff = Mat.ioneBased
-    val out = SparseMat[T](nrows, ncols, nnz)
+    val out = if (rows != null) SparseMat[T](nrows, ncols, nnz) else noRows[T](nrows, ncols, nnz);
     val orows = out.ir
-    val ocols = new Array[Int](rows.length)
-    var i = 0
+    val ocols = new Array[Int](cols.length)
+    var i = 0;
     while (i < nnz) {
-      ocols(i) = cols(i)
-      orows(i) = rows(i) + ioff
-      i += 1
+      ocols(i) = cols(i);
+      i += 1;
     }
-    val isort = BIDMat.Mat.ilexsort2(ocols, orows)
-    i = 0; while (i < orows.length) {out.data(i) = vals(isort(i)); i+=1}
-    val igood = remdups(orows, ocols, out.data)
-    SparseMat.compressInds(ocols, ncols, out.jc, igood)
+    val igood = if (orows != null) {
+    	i = 0;
+    	while (i < nnz) {
+    		orows(i) = rows(i) + ioff;
+    		i += 1;
+    	}
+    	val isort = BIDMat.Mat.ilexsort2(ocols, orows);
+    	i = 0; while (i < orows.length) {out.data(i) = vals(isort(i)); i+=1};
+    	remdups(orows, ocols, out.data);
+    }	else {
+    	i = 0; while (i < vals.length) {out.data(i) = vals(i); i+=1};
+      nnz;
+    }
+    SparseMat.compressInds(ocols, ncols, out.jc, igood);   
     out.sparseTrim
   }
   
