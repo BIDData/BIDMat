@@ -96,8 +96,8 @@ class SparseMat[@specialized(Double,Float) T]
    */
   def gt:SparseMat[T] = {
     explicitInds
-    SparseMat.sparseImpl[T](SparseMat.uncompressInds(jc, ncols, ir), 
-    		            if (Mat.ioneBased==1) SparseMat.decInds(ir) else ir, data, ncols, nrows, nnz)
+    val ic = SparseMat.uncompressInds(jc, ncols, ir);
+    SparseMat.sparseImpl[T](ic, if (Mat.ioneBased==1) SparseMat.decInds(ir) else ir, data, ncols, nrows, nnz)
   }
   
   def gcountnz(n:Int, omat:Mat):IMat = {
@@ -820,8 +820,8 @@ object SparseMat {
   (implicit manifest:Manifest[T], numeric:Numeric[T]):SparseMat[T] = {
     val ioff = Mat.ioneBased
     val out = if (rows != null) SparseMat[T](nrows, ncols, nnz) else noRows[T](nrows, ncols, nnz);
-    val orows = out.ir
-    val ocols = new Array[Int](cols.length)
+    val orows = out.ir;
+    val ocols = new Array[Int](nnz);
     var i = 0;
     while (i < nnz) {
       ocols(i) = cols(i);
