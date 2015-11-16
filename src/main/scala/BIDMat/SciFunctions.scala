@@ -377,7 +377,7 @@ object SciFunctions {
   def genericGammaRand(a:Mat, b:Mat, out:Mat):Mat = {
     (a,b,out) match {
       case (a:GMat, b:GMat, out:GMat) => ggamrnd(a,b,out)
-      case (a:FMat, b:FMat, out:FMat) => ggamrnd(a,b,out)
+      case (a:FMat, b:FMat, out:FMat) => gamrnd(a,b,out)
       case _ => throw new RuntimeException("Error in genericGammaRand, arguments do not match any of the cases")
     }
   }
@@ -398,29 +398,15 @@ object SciFunctions {
     ggamrnd(a, b, out);
   }
   
-  def ggamrnd(a:FMat, b:FMat, out:FMat):FMat = { 
-    Mat.nflops += 100L*out.length;
-    val atype = getMatVecType(a);
-    val btype = getMatVecType(b);
-    var j = 0;
-    while (j < a.ncols) {
-    	var i = 0;
-    	while (i < a.nrows) {
-//    		vsRngGamma( METHOD, stream, 1, out.data, a(i,j), 0, b(i,j) );
-//    		out(i,j) = out(0,0);
-    	  out(i,j) = Random.gen1gamma(a(i,j), b(i,j), myrand).toFloat
-    		i += 1;
-    	}
-    	j += 1;
-    }
-    out;
+  def gamrnd(a:FMat, b:FMat, out:FMat):FMat = { 
+    Random.gamrnd(a, b, out, myrand);
   } 
   
-  def ggamrnd(a:FMat, b:FMat):FMat = { 
+  def gamrnd(a:FMat, b:FMat):FMat = { 
     val nrows = math.max(a.nrows, b.nrows);
     val ncols = math.max(a.ncols, b.ncols);
     val out = FMat(nrows, ncols);
-    ggamrnd(a, b, out);
+    gamrnd(a, b, out);
   }
 
   def gamrnd(shape:Float, scale:Float, out:FMat):FMat = {

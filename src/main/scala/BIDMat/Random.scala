@@ -8,6 +8,22 @@ package BIDMat
 
 object Random {
   
+    def gamrnd(a:FMat, b:FMat, out:FMat, myrand:java.util.Random):FMat = { 
+    Mat.nflops += 100L*out.length;
+    val atype = SciFunctions.getMatVecType(a);
+    val btype = SciFunctions.getMatVecType(b);
+    var j = 0;
+    while (j < a.ncols) {
+    	var i = 0;
+    	while (i < a.nrows) {
+    	  out(i,j) = gen1gamma(a(i,j), b(i,j), myrand).toFloat
+    		i += 1;
+    	}
+    	j += 1;
+    }
+    out;
+  } 
+  
   def gen1gamma(a0:Double, scale:Double, gen:java.util.Random):Double = {
    
     var small:Boolean = false;
