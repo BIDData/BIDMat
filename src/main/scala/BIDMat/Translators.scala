@@ -1,7 +1,8 @@
 package BIDMat
 import scala.util.parsing.combinator._
 
-class MKLdeclarationsParser extends JavaTokenParsers { 
+@SerialVersionUID(100L)
+class MKLdeclarationsParser extends JavaTokenParsers with Serializable { 
   var otype:Int = 3
   var prefix:String = "VML"
   def fdecl: Parser[String] = ftype~ident~"("~decls~")"~""";*""".r ^^ { 

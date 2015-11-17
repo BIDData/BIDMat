@@ -78,19 +78,24 @@ case class HMat(nr:Int, nc:Int, fileList:List[String], varname:String, blkinds:A
   }
 }
 
+trait HDFSIOtrait {
+  def writeMat(name:String, Mat:Mat, comp:Int)
+  def writeND(name:String, nd:ND, comp:Int)
+  def writeMats(name:String, Mats:Array[Mat], comp:Int)
+  def writeNDs(name:String, nds:Array[ND], comp:Int)
+  def readMat(name:String, omat:Mat):Mat
+  def readND(name:String, omat:ND):ND
+  def readMats(name:String, omats:Array[Mat]):Array[Mat]
+  def readNDs(name:String, omat:Array[ND]):Array[ND]
+}
+
 object HMat {
   
   val byteOrder = ByteOrder.LITTLE_ENDIAN
   
   var DEFAULT_BUFSIZE = 64*1024;
-  
-  val classLoader = HMat.getClass.getClassLoader();
-  var HDFSIOclass:Class[_] = null; 
-  var HDFSIOinstance:AnyRef = null;
-  var writeMatMethod:java.lang.reflect.Method = null;
-  var writeNDMethod:java.lang.reflect.Method = null;
-  var readMatMethod:java.lang.reflect.Method = null;
-  var readNDMethod:java.lang.reflect.Method = null;
+   
+  var HDFSIOinstance:HDFSIOtrait = null;
   
   var highCompressor:AnyRef = null;
   var fastCompressor:AnyRef = null;
@@ -109,37 +114,53 @@ object HMat {
     	}
     }
   }
-    	
   
   def checkHDFSloaded = {
-    if (HDFSIOclass == null) {
-    	HDFSIOclass = classLoader.loadClass("BIDMat.HDFSIO");
-      HDFSIOinstance = HDFSIOclass.newInstance().asInstanceOf[AnyRef];
-    	writeMatMethod = HDFSIOclass.getMethod("writeMat", classOf[String], classOf[Mat], classOf[java.lang.Integer]);
-    	writeNDMethod = HDFSIOclass.getMethod("writeND", classOf[String], classOf[ND], classOf[java.lang.Integer]);
-    	readMatMethod = HDFSIOclass.getMethod("readMat", classOf[String], classOf[Mat]);
-    	readNDMethod = HDFSIOclass.getMethod("readND", classOf[String], classOf[ND]);
+    if (HDFSIOinstance == null) {
+    	val classLoader = HMat.getClass.getClassLoader();
+    	val HDFSIOclass = classLoader.loadClass("BIDMat.HDFSIO");
+      HDFSIOinstance = HDFSIOclass.newInstance().asInstanceOf[HDFSIOtrait];
     }
   }
   
   def HDFSwriteMat(fname:String, m:Mat, compress:Int):Unit = {
     checkHDFSloaded;
-    writeMatMethod.invoke(HDFSIOinstance, fname, m, new java.lang.Integer(compress));    
+    HDFSIOinstance.writeMat(fname, m, compress);    
   }
   
   def HDFSwriteND(fname:String, m:ND, compress:Int):Unit = {
     checkHDFSloaded;
-    writeNDMethod.invoke(HDFSIOinstance, fname, m, new java.lang.Integer(compress));    
+    HDFSIOinstance.writeND(fname, m, compress);    
   }
   
   def HDFSreadMat(fname:String, omat:Mat):Mat = {
   	checkHDFSloaded;
-    readMatMethod.invoke(HDFSIOinstance, fname, omat).asInstanceOf[Mat];    
+    HDFSIOinstance.readMat(fname, omat);    
   }
   
-  def HDFSreadFND(fname:String, ond:ND):ND = {
+  def HDFSreadND(fname:String, ond:ND):ND = {
     checkHDFSloaded;
-    readNDMethod.invoke(HDFSIOinstance, fname, ond).asInstanceOf[ND];    
+    HDFSIOinstance.readND(fname, ond);    
+  }
+  
+  def HDFSwriteMats(fname:String, m:Array[Mat], compress:Int):Unit = {
+    checkHDFSloaded;
+    HDFSIOinstance.writeMats(fname, m, compress);    
+  }
+  
+  def HDFSwriteNDs(fname:String, m:Array[ND], compress:Int):Unit = {
+    checkHDFSloaded;
+    HDFSIOinstance.writeNDs(fname, m, compress);    
+  }
+  
+  def HDFSreadMats(fname:String, omat:Array[Mat]):Array[Mat] = {
+    checkHDFSloaded;
+    HDFSIOinstance.readMats(fname, omat);    
+  }
+  
+  def HDFSreadFNDs(fname:String, ond:Array[ND]):Array[ND] = {
+    checkHDFSloaded;
+    HDFSIOinstance.readNDs(fname, ond);    
   }
   
   def getInputStream(fname:String, compressed:Int):DataInputStream = {
@@ -659,7 +680,17 @@ object HMat {
   }
     
   def loadFND(fname:String, omat:ND, compressed:Int):FND = {
-    val gin = getInputStream(fname, compressed);
+	  if (fname.startsWith("hdfs:")) {
+		  HDFSreadND(fname, omat).asInstanceOf[FND];
+    } else {
+      val gin = getInputStream(fname, compressed)
+      val out = loadFND(gin, omat)
+      gin.close
+      out
+    }
+  } 
+    
+  def loadFND(gin:DataInput, omat:ND):FND  = {
     val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder);
     val hints = new Array[Int](1);
     readSomeInts(gin, hints, buff, 1);
@@ -670,7 +701,6 @@ object HMat {
     readSomeInts(gin, hints, buff, 1);
     val out = FND.newOrCheckFND(dims, omat);
     readSomeFloats(gin, out.data, buff, out.length);
-    gin.close;
     out;
   }
   

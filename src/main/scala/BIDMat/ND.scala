@@ -10,8 +10,8 @@ import scala.collection.mutable.HashMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import edu.berkeley.bid.MurmurHash3
 
-
-abstract class ND(protected val _dims:Array[Int]) { 
+@SerialVersionUID(100L)
+abstract class ND(protected val _dims:Array[Int]) extends Serializable { 
 
   final val length = _dims.reduce(_*_)
   
