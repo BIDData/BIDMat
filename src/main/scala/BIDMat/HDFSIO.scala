@@ -1,7 +1,7 @@
 package BIDMat
 
 
-trait HDFSIOtrait {
+trait HDFSIOtrait extends Serializable {
   def writeMat(name:String, Mat:Mat, comp:Int)
   def writeND(name:String, nd:ND, comp:Int)
   def writeMats(name:String, Mats:Array[Mat], comp:Int)
@@ -12,6 +12,6 @@ trait HDFSIOtrait {
   def readNDs(name:String, omat:Array[ND]):Array[ND]
 }
 
-trait MatIOtrait {
+trait MatIOtrait extends Serializable {
   def get:Array[Mat]
 }
