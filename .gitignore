@@ -1,0 +1,8 @@
+.*.swp
+.*.swo
+*.o
+obj/
+project/
+target/
+java_native_path.txt
+BIDMat.jar
