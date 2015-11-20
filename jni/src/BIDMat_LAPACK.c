@@ -1230,7 +1230,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_sgesvd
     jfloat * u = (*env)->GetPrimitiveArrayCritical(env, j_u, JNI_FALSE);
     jfloat * vt = (*env)->GetPrimitiveArrayCritical(env, j_vt, JNI_FALSE);
     jfloat * superb = (*env)->GetPrimitiveArrayCritical(env, j_superb, JNI_FALSE);
-    char[] jobc = {'A', 'S', 'O', 'N'};
+    char jobc[] = {'A', 'S', 'O', 'N'};
 
     jint retval = LAPACKE_sgesvd(matrix_order, jobc[jobu], jobc[jobvt], m, n, a, lda, s, u, ldu, vt, ldvt, superb);
 
@@ -1251,7 +1251,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_dgesvd
     jdouble * u = (*env)->GetPrimitiveArrayCritical(env, j_u, JNI_FALSE);
     jdouble * vt = (*env)->GetPrimitiveArrayCritical(env, j_vt, JNI_FALSE);
     jdouble * superb = (*env)->GetPrimitiveArrayCritical(env, j_superb, JNI_FALSE);
-    char[] jobc = {'A', 'S', 'O', 'N'};
+    char jobc[] = {'A', 'S', 'O', 'N'};
 
     jint retval = LAPACKE_dgesvd(matrix_order, jobc[jobu], jobc[jobvt], m, n, a, lda, s, u, ldu, vt, ldvt, superb);
 
@@ -1272,7 +1272,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_cgesvd
     jfloat * u = (*env)->GetPrimitiveArrayCritical(env, j_u, JNI_FALSE);
     jfloat * vt = (*env)->GetPrimitiveArrayCritical(env, j_vt, JNI_FALSE);
     jfloat * superb = (*env)->GetPrimitiveArrayCritical(env, j_superb, JNI_FALSE);
-    char[] jobc = {'A', 'S', 'O', 'N'};
+    char jobc[] = {'A', 'S', 'O', 'N'};
 
     jint retval = LAPACKE_cgesvd(matrix_order, jobc[jobu], jobc[jobvt], m, n, (MKL_Complex8 *)a, lda, s, 
                                  (MKL_Complex8 *)u, ldu, (MKL_Complex8 *)vt, ldvt, superb);
@@ -1294,7 +1294,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_zgesvd
     jdouble * u = (*env)->GetPrimitiveArrayCritical(env, j_u, JNI_FALSE);
     jdouble * vt = (*env)->GetPrimitiveArrayCritical(env, j_vt, JNI_FALSE);
     jdouble * superb = (*env)->GetPrimitiveArrayCritical(env, j_superb, JNI_FALSE);
-    char[] jobc = {'A', 'S', 'O', 'N'};
+    char jobc[] = {'A', 'S', 'O', 'N'};
 
     jint retval = LAPACKE_zgesvd(matrix_order, jobc[jobu], jobc[jobvt], m, n, (MKL_Complex16 *)a, lda, s, 
                                  (MKL_Complex16 *)u, ldu, (MKL_Complex16 *)vt, ldvt, superb);

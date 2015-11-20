@@ -10,8 +10,8 @@ import java.awt.RenderingHints
 import javax.swing._
 import javax.swing.WindowConstants._
 
-
-class Image(val img:BufferedImage) {
+@SerialVersionUID(100L)
+class Image(val img:BufferedImage) extends Serializable {
     
   final val width = img.getWidth
   

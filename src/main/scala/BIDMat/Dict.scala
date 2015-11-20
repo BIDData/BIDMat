@@ -3,7 +3,8 @@ import scala.collection.mutable.{Map,SynchronizedMap,HashMap}
 import MatFunctions._
 import edu.berkeley.bid.CUMAT
 
-class Dict(val cstr:CSMat) { 
+@SerialVersionUID(100L)
+class Dict(val cstr:CSMat) extends Serializable { 
 
   val length = cstr.length
   
@@ -295,7 +296,7 @@ object Dict {
 
 }
 
-class IDict(val grams:IMat) {
+class IDict(val grams:IMat) extends Serializable {
 
   val length = grams.nrows
   

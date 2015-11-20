@@ -5,7 +5,8 @@ import scala.util.Sorting._
 
 class about(x:String) extends scala.annotation.Annotation {}
 
-trait Opts {
+@SerialVersionUID(100L)
+trait Opts extends Serializable {
   def what:Unit = {
     val ignore = List("what", "wait", "equals", "toString", "hashCode", "getClass", "notify", "notifyAll", "ignore", "copyFrom")
 

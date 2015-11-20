@@ -997,12 +997,12 @@ extern "C" {
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_poissonrnd
-  (JNIEnv *env, jobject obj, jint n, jobject jA, jobject jB, jint nthreads)
+  (JNIEnv *env, jobject obj, jint n, jobject jA, jobject jB, jint nthreads, jlong seed, jlong offset)
   {
     float *A = (float*)getPointer(env, jA);
     int *B = (int*)getPointer(env, jB);
 
-    return poissonrnd(n, A, B, nthreads);
+    return poissonrnd(n, A, B, nthreads, seed, offset);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_collectLVec
@@ -1031,23 +1031,23 @@ extern "C" {
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_binornd
-  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jint atype, jobject jC, jint ctype, jobject jOut)
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jint atype, jobject jC, jint ctype, jobject jOut, jlong seed, jlong offset)
   {
     float *A = (float*)getPointer(env, jA);
     int *C = (int*)getPointer(env, jC);
     int *Out = (int*)getPointer(env, jOut);
 
-    return binornd(nrows, ncols, A, atype, C, ctype, Out);
+    return binornd(nrows, ncols, A, atype, C, ctype, Out, seed, offset);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_gamrnd
-  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jint atype, jobject jB, jint btype, jobject jOut)
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jint atype, jobject jB, jint btype, jobject jOut, jlong seed, jlong offset)
   {
     float *A = (float*)getPointer(env, jA);
     float *B = (float*)getPointer(env, jB);
     float *Out = (float*)getPointer(env, jOut);
 
-    return gamrnd(nrows, ncols, A, atype, B, btype, Out);
+    return gamrnd(nrows, ncols, A, atype, B, btype, Out, seed, offset);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumsumc

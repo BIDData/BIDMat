@@ -12,13 +12,17 @@ import org.apache.commons.math3.special._
 import org.apache.commons.math3.util.FastMath
 
 object SciFunctions {
-  final val SEED:Int = 1452462553 
+  var SEED:Long = 1452434413113462553L;
+  var ISEED:Int = 1341432134;
+  var OFFSET:Long = 0;
+  var GPUSEED:Long = SEED;
+  var GPUseedSteps = 10;
   final val myrand = new java.util.Random(SEED)
   // VSL random number generator initialization
   final val BRNG:Int = if (!Mat.useMKL) 0 else BRNG_MCG31
   final val METHOD:Int = 0
   final val stream = if (!Mat.useMKL) null else new VSL();
-  final val errcode = if (!Mat.useMKL) null else vslNewStream(stream, BRNG, SEED)
+  final val errcode = if (!Mat.useMKL) null else vslNewStream(stream, BRNG, ISEED)
   // VML mode control, controlled with setVMLmode()
   final val VMLdefault = if (!Mat.useMKL) 0 else VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_HA   // Default
   final val VMLfast =    if (!Mat.useMKL) 0 else VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_LA   // Faster, Low accuracy, default error handling
@@ -62,6 +66,14 @@ object SciFunctions {
     GSMat.cusparseDescrsInitialized = false
     jcuda.jcublas.JCublas.cublasInit();
     Mat.clearCaches
+  }
+  
+  def moveGPUseed = {
+    var i = 0;
+    while (i < GPUseedSteps) {
+      GPUSEED = myrand.nextLong();
+      i += 1;
+    }
   }
   
   def resetGPUs = {
@@ -310,22 +322,23 @@ object SciFunctions {
   }
   
   def gpoissrnd(mu:Float, nr:Int, nc:Int):GIMat = {
-    val out = GIMat(nr, nc)
-    gpoissrnd(mu, out)
+    val out = GIMat(nr, nc);
+    gpoissrnd(mu, out);
   }
   
   def gpoissrnd(mu:Float, out:GIMat, nr:Int, nc:Int):GIMat = {
-	  import jcuda.jcurand._
-    Mat.nflops += 10L*out.length
-    JCurand.curandGeneratePoisson(cudarng(getGPU).asInstanceOf[curandGenerator], out.data, out.length, mu)
-    jcuda.runtime.JCuda.cudaDeviceSynchronize()
+	  import jcuda.jcurand._;
+    Mat.nflops += 10L*out.length;
+    JCurand.curandGeneratePoisson(cudarng(getGPU).asInstanceOf[curandGenerator], out.data, out.length, mu);
+    jcuda.runtime.JCuda.cudaDeviceSynchronize();
     out
   }
   
   def gpoissrnd(mu:GMat, out:GIMat):GIMat = {
-    Mat.nflops += 10L*out.length
+    Mat.nflops += 10L*out.length;
     val nthreads = math.max(1, mu.length / 1024);
-    CUMAT.poissonrnd(out.length, mu.data, out.data, nthreads)
+    moveGPUseed;
+    CUMAT.poissonrnd(out.length, mu.data, out.data, nthreads, GPUSEED, OFFSET);
     jcuda.runtime.JCuda.cudaDeviceSynchronize()
     out
   }
@@ -349,7 +362,8 @@ object SciFunctions {
     Mat.nflops += 300L*out.length
     val atype = getMatVecType(p);
     val ctype = getMatVecType(n);
-    CUMAT.binornd(out.nrows, out.ncols, p.data, atype, n.data, ctype, out.data);
+    moveGPUseed;
+    CUMAT.binornd(out.nrows, out.ncols, p.data, atype, n.data, ctype, out.data, GPUSEED, OFFSET);
     out;
   } 
 
@@ -363,14 +377,7 @@ object SciFunctions {
   def genericGammaRand(a:Mat, b:Mat, out:Mat):Mat = {
     (a,b,out) match {
       case (a:GMat, b:GMat, out:GMat) => ggamrnd(a,b,out)
-      case (a:FMat, b:FMat, out:FMat) => {
-        for (i <- 0 until a.nrows) {
-          for (j <- 0 until a.ncols) {
-            out(IMat(i),j) = gamrnd(a(i,j), b(i,j), out(i,j))
-          }
-        }
-        out
-      }
+      case (a:FMat, b:FMat, out:FMat) => gamrnd(a,b,out)
       case _ => throw new RuntimeException("Error in genericGammaRand, arguments do not match any of the cases")
     }
   }
@@ -379,7 +386,8 @@ object SciFunctions {
     Mat.nflops += 100L*out.length;
     val atype = getMatVecType(a);
     val btype = getMatVecType(b);
-    CUMAT.gamrnd(out.nrows, out.ncols, a.data, atype, b.data, btype, out.data);
+    moveGPUseed;
+    CUMAT.gamrnd(out.nrows, out.ncols, a.data, atype, b.data, btype, out.data, GPUSEED, OFFSET);
     out;
   } 
 
@@ -388,6 +396,17 @@ object SciFunctions {
     val ncols = math.max(a.ncols, b.ncols);
     val out = GMat(nrows, ncols);
     ggamrnd(a, b, out);
+  }
+  
+  def gamrnd(a:FMat, b:FMat, out:FMat):FMat = { 
+    Random.gamrnd(a, b, out, myrand);
+  } 
+  
+  def gamrnd(a:FMat, b:FMat):FMat = { 
+    val nrows = math.max(a.nrows, b.nrows);
+    val ncols = math.max(a.ncols, b.ncols);
+    val out = FMat(nrows, ncols);
+    gamrnd(a, b, out);
   }
 
   def gamrnd(shape:Float, scale:Float, out:FMat):FMat = {

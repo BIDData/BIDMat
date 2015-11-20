@@ -3,7 +3,8 @@ import scala.collection.mutable.HashMap
 import java.lang.ref._
 import jcuda.NativePointerObject
 
-class Mat(nr:Int, nc:Int) {
+@SerialVersionUID(100L)
+class Mat(nr:Int, nc:Int) extends Serializable {
   val nrows = nr
   val ncols = nc
   
@@ -310,9 +311,9 @@ class Mat(nr:Int, nc:Int) {
   }
 }
 
-abstract class DSPair {}
+abstract class DSPair extends Serializable {}
 
-abstract class Pair {
+abstract class Pair extends Serializable {
   
   def notImplemented0(s:String):Mat = { 
     throw new RuntimeException("operator "+s+" not implemented for "+this)
