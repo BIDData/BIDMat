@@ -372,6 +372,22 @@ object GSDMat {
   
   def apply(a:SMat):GSDMat = fromSMat(a, null);
   
+  def apply(a:GSMat):GSDMat = {
+    val out = GSDMat.newOrCheckGSDMat(a.nrows, a.ncols, a.nnz, a.nnz, null, a.GUID, SciFunctions.getGPU, "fromGSMat".##);
+    var err = cudaMemcpy(out.ir, a.ir, 1L * a.nnz*Sizeof.INT, cudaMemcpyDeviceToDevice);
+    cudaDeviceSynchronize();
+    if (err == 0) err = cudaMemcpy(out.ic, a.ic, 1L * a.nnz*Sizeof.INT, cudaMemcpyDeviceToDevice);
+    cudaDeviceSynchronize();
+    if (err == 0) err = CUMATD.FloatToDouble(a.data, out.data, a.nnz);
+    cudaDeviceSynchronize();
+    if (err == 0) err = cudaGetLastError();
+    if (err != 0) {
+        println("device is %d" format SciFunctions.getGPU)
+        throw new RuntimeException("GSDMat(GSMat) error " + cudaGetErrorString(err));
+    }
+    out;
+  }
+  
   var myones:Array[GDMat] = null
   var myzeros:Array[GDMat] = null
   var zeroOnesInitialized = false
