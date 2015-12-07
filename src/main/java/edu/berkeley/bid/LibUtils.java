@@ -193,7 +193,7 @@ public final class LibUtils
         switch (osType) 
         {
             case APPLE:
-                return "jnilib";
+                return "dylib";
             case LINUX:
                 return "so";
             case SUN:

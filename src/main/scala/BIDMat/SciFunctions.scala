@@ -16,7 +16,7 @@ object SciFunctions {
   var ISEED:Int = 1341432134;
   var OFFSET:Long = 0;
   var GPUSEED:Long = SEED;
-  var GPUseedSteps = 10;
+  var GPUseedSteps:Int = 10;
   final val myrand = new java.util.Random(SEED)
   // VSL random number generator initialization
   final val BRNG:Int = if (!Mat.useMKL) 0 else BRNG_MCG31
@@ -1782,7 +1782,9 @@ object SciFunctions {
   val gammaDFun = (x:Double) => Gamma.gamma(x)
   val vdTGammaDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdTGamma(n,x,y)
   def gamma(a:DMat, out:Mat) = applyDFun(a, out, vdTGammaDFun, gammaDFun, 10L)
-  def gamma(a:DMat):DMat = gamma(a, null)
+  def gamma(a:DMat):DMat = gamma(a, null);
+  def Γ(a:DMat, out:Mat) = gamma(a, out);
+  def Γ(a:DMat) = gamma(a);
   
   val gammalnDFun = (x:Double) => Gamma.logGamma(x)
   val vdLGammaDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdLGamma(n,x,y)
@@ -1863,7 +1865,7 @@ object SciFunctions {
   val log10Fun = (x:Float) => math.log10(x).toFloat
   val vsLog10Fun = (n:Int, x:Array[Float], y:Array[Float]) => vsLog10(n,x,y)
   def log10(a:FMat, out:Mat) = applySFun(a, out, vsLog10Fun, log10Fun, 10L)
-  def log10(a:FMat):FMat = log10(a, null)
+  def log10(a:FMat):FMat = log10(a, null);
   
   val log1pFun = (x:Float) => math.log1p(x).toFloat
   val vsLog1pFun = (n:Int, x:Array[Float], y:Array[Float]) => vsLog1p(n,x,y)
@@ -1956,10 +1958,12 @@ object SciFunctions {
   def norminv(a:FMat, out:Mat) = applySFun(a, out, vsCdfNormInvFun, null, 10L)
   def norminv(a:FMat):FMat = norminv(a, null)
   
-  val gammaFun = (x:Float) => Gamma.gamma(x).toFloat
-  val vsTGammaFun = (n:Int, x:Array[Float], y:Array[Float]) => vsTGamma(n,x,y)
-  def gamma(a:FMat, out:Mat) = applySFun(a, out, vsTGammaFun, gammaFun, 10L)
-  def gamma(a:FMat):FMat = gamma(a, null)
+  val gammaFun = (x:Float) => Gamma.gamma(x).toFloat;
+  val vsTGammaFun = (n:Int, x:Array[Float], y:Array[Float]) => vsTGamma(n,x,y);
+  def gamma(a:FMat, out:Mat) = applySFun(a, out, vsTGammaFun, gammaFun, 10L);
+  def gamma(a:FMat):FMat = gamma(a, null);
+  def Γ(a:FMat, out:Mat) = gamma(a, out);
+  def Γ(a:FMat) = gamma(a);
   
   val gammalnFun = (x:Float) => Gamma.logGamma(x).toFloat
   val vsLGammaFun = (n:Int, x:Array[Float], y:Array[Float]) => vsLGamma(n,x,y)
@@ -2372,6 +2376,8 @@ object SciFunctions {
   def ercinv(in:GMat, out:Mat):GMat =  applyGfun(in, out, TransF.erfcinv, 10L)
   def gammaln(in:GMat, out:Mat):GMat = applyGfun(in, out, TransF.gammaln, 10L)
   def gamma(in:GMat, out:Mat):GMat =   applyGfun(in, out, TransF.gamma, 10L)
+  def Γ(a:GMat, out:Mat) = gamma(a, out);
+  def Γ(a:GMat) = gamma(a);
   def ceil(in:GMat, out:Mat):GMat =    applyGfun(in, out, TransF.ceil, 10L)
   def floor(in:GMat, out:Mat):GMat =   applyGfun(in, out, TransF.floor, 10L)
   def round(in:GMat, out:Mat):GMat =   applyGfun(in, out, TransF.round, 10L)
@@ -2485,6 +2491,7 @@ object SciFunctions {
   def ercinv(in:GDMat, out:Mat):GDMat =  applyGDfun(in, out, TransF.erfcinv, 10L)
   def gammaln(in:GDMat, out:Mat):GDMat = applyGDfun(in, out, TransF.gammaln, 10L)
   def gamma(in:GDMat, out:Mat):GDMat =   applyGDfun(in, out, TransF.gamma, 10L)
+  def Γ(a:GDMat, out:Mat) = gamma(a, out);
   def ceil(in:GDMat, out:Mat):GDMat =    applyGDfun(in, out, TransF.ceil, 10L)
   def floor(in:GDMat, out:Mat):GDMat =   applyGDfun(in, out, TransF.floor, 10L)
   def round(in:GDMat, out:Mat):GDMat =   applyGDfun(in, out, TransF.round, 10L)
@@ -2522,6 +2529,7 @@ object SciFunctions {
   def ercinv(in:GDMat):GDMat =  applyGDfun(in, TransF.erfcinv, 10L)
   def gammaln(in:GDMat):GDMat = applyGDfun(in, TransF.gammaln, 10L)
   def gamma(in:GDMat):GDMat =   applyGDfun(in, TransF.gamma, 10L)
+  def Γ(a:GDMat) = gamma(a);
   def ceil(in:GDMat):GDMat =    applyGDfun(in, TransF.ceil, 10L)
   def floor(in:GDMat):GDMat =   applyGDfun(in, TransF.floor, 10L)
   def round(in:GDMat):GDMat =   applyGDfun(in, TransF.round, 10L)
@@ -2855,6 +2863,8 @@ object SciFunctions {
       case aa:GDMat => gamma(aa, b)
     }
   }
+  
+  def Γ(a:Mat, out:Mat) = gamma(a, out);
     
   def gammaln(a:Mat, b:Mat):Mat = {
     a match {
@@ -3167,6 +3177,8 @@ object SciFunctions {
       case aa:GDMat => gamma(aa)
     }
   }
+
+  def Γ(a:Mat) = gamma(a);
     
   def gammaln(a:Mat):Mat = {
     a match {

@@ -690,6 +690,7 @@ object SMat {
   
   def apply(a:Mat) = a match {
     case aa:SMat => aa
+    case aa:FMat => MatFunctions.sparse(aa)
     case aa:GSMat => aa.toSMat
     case aa:SDMat => aa.toSMat
   }

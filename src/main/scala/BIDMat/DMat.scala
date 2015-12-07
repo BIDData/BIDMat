@@ -274,6 +274,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   	  case out:DMat => System.arraycopy(data, 0, out.data, 0, length)
   	  case out:FMat => {Mat.copyToFloatArray(data, 0, out.data, 0, length)}
   	  case out:IMat => {Mat.copyToIntArray(data, 0, out.data, 0, length)}
+  	  case out:GDMat => out.copyFrom(this)
   	}
   	a
   }

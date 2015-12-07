@@ -11,10 +11,15 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.hashing.MurmurHash3
 import edu.berkeley.bid.CUMAT
+import java.io.ObjectOutputStream
+import java.io.ObjectInputStream
 import GSMat._
 
-class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, nc) {
+@SerialVersionUID(100L)
+class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) extends Mat(nr, nc) with Serializable {
   import GMat.BinOp._
+  
+  var saveMe:FMat = null
 
   override def dv:Double =
     if (nrows > 1 || ncols > 1) {
@@ -45,7 +50,21 @@ class GMat(nr:Int, nc:Int, var data:Pointer, val realsize:Long) extends Mat(nr, 
     	out
     }
   }
-
+  
+  private def writeObject(out:ObjectOutputStream):Unit = {
+    saveMe = FMat(this);
+  	out.defaultWriteObject();
+  }
+  
+  private def readObject(in:ObjectInputStream):Unit = {
+    in.defaultReadObject();
+    val gpu = SciFunctions.getGPU;
+    SciFunctions.setGPU(myGPU);
+    data = GMat(saveMe).data;
+    SciFunctions.setGPU(gpu);
+    saveMe = null;
+  }
+  
   override def apply(I:GIMat, J:GIMat):GMat = applyx(I, J)
      
   override def apply(i:Int, J:IMat):GMat = applyx(i, GIMat(J))

@@ -132,6 +132,14 @@ case class GSDMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, 
     GIMat.iones(m,n)
   }
   
+  override def zeros(m:Int, n:Int) = {
+    GDMat.zeros(m,n)
+  }
+  
+  override def zeros(m:Int, n:Int, nnz:Int) = {
+    new GSDMat(m, n, 0, new Pointer, new Pointer, new Pointer, new Pointer, 0);
+  }
+  
   def full(omat:Mat):GDMat = {
     val out = GDMat.newOrCheckGDMat(nrows, ncols, omat, GUID, "full".##)
     out.clear
