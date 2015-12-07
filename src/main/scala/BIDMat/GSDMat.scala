@@ -12,8 +12,10 @@ import edu.berkeley.bid.CUMATD
 import scala.util.hashing.MurmurHash3
 import GDMat._
 import GMat.BinOp
+import java.io._
 
-case class GSDMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, val jc:Pointer, val data:Pointer, val realnnz:Int) extends Mat(nr, nc) {
+case class GSDMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @transient var ic:Pointer, @transient var jc:Pointer, @transient var data:Pointer, val realnnz:Int) 
+     extends Mat(nr, nc) {
 	
   def getdata() = data;	
 
@@ -28,6 +30,26 @@ case class GSDMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, 
   }
   
   val myGPU = SciFunctions.getGPU
+  
+  var saveMe:SDMat = null
+  
+  private def writeObject(out:ObjectOutputStream):Unit = {
+    saveMe = SDMat(this);
+  	out.defaultWriteObject();
+  }
+  
+  private def readObject(in:ObjectInputStream):Unit = {
+    in.defaultReadObject();
+    val gpu = SciFunctions.getGPU;
+    SciFunctions.setGPU(myGPU);
+    val tmp = GSDMat(saveMe);
+    data = tmp.data;
+    ir = tmp.ir;
+    ic = tmp.ic;
+    jc = tmp.jc;
+    SciFunctions.setGPU(gpu);
+    saveMe = null;
+  }
     
   override def toString:String = {
     val nnz0 = scala.math.min(nnz,12)       

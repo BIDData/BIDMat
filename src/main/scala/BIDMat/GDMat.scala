@@ -16,8 +16,9 @@ import edu.berkeley.bid.CUMATD._
 import scala.util.hashing.MurmurHash3
 import GSDMat._
 import GMat.BinOp
+import java.io._
 
-class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, nc) {
+class GDMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Int) extends Mat(nr, nc) with Serializable {
   import GMat.BinOp._
 
   override def dv:Double =
@@ -46,6 +47,22 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
     	out.setGUID(MurmurHash3.mix(MurmurHash3.mix(nr, nc), (GUID*3145341).toInt));
     	out
     }
+  }
+     
+  var saveMe:DMat = null
+  
+  private def writeObject(out:ObjectOutputStream):Unit = {
+    saveMe = DMat(this);
+  	out.defaultWriteObject();
+  }
+  
+  private def readObject(in:ObjectInputStream):Unit = {
+    in.defaultReadObject();
+    val gpu = SciFunctions.getGPU;
+    SciFunctions.setGPU(myGPU);
+    data = GDMat(saveMe).data;
+    SciFunctions.setGPU(gpu);
+    saveMe = null;
   }
 
   override def apply(I:GIMat, J:GIMat):GDMat = applyx(I, J)

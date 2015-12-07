@@ -11,8 +11,9 @@ import jcuda.jcublas.JCublas._
 import jcuda.jcusparse._
 import edu.berkeley.bid.CUMAT;
 import scala.util.hashing.MurmurHash3
+import java.io._
 
-class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, nc) {
+class GIMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Int) extends Mat(nr, nc) {
   import GIMat.BinOp._
   
   override def toString:String = {
@@ -56,6 +57,24 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
   override def mytype = "GIMat"
     
   override def nnz = length
+  
+  val myGPU = SciFunctions.getGPU
+     
+  var saveMe:IMat = null
+  
+  private def writeObject(out:ObjectOutputStream):Unit = {
+    saveMe = IMat(this);
+  	out.defaultWriteObject();
+  }
+  
+  private def readObject(in:ObjectInputStream):Unit = {
+    in.defaultReadObject();
+    val gpu = SciFunctions.getGPU;
+    SciFunctions.setGPU(myGPU);
+    data = GIMat(saveMe).data;
+    SciFunctions.setGPU(gpu);
+    saveMe = null;
+  }
   
   override def apply(I:GIMat, J:GIMat):GIMat = applyx(I, J)
      

@@ -8,8 +8,9 @@ import jcuda.runtime.cudaError._
 import edu.berkeley.bid.CUMAT
 import edu.berkeley.bid.CUMATD
 import scala.util.hashing.MurmurHash3
+import java.io._
 
-class GLMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, nc) {
+class GLMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Int) extends Mat(nr, nc) {
   import GIMat.BinOp._
   
   override def toString:String = {
@@ -55,6 +56,24 @@ class GLMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     	out.setGUID(MurmurHash3.mix(MurmurHash3.mix(nr, nc), (GUID*3145341).toInt));
     	out
     }
+  } 
+    
+  val myGPU = SciFunctions.getGPU
+     
+  var saveMe:LMat = null
+  
+  private def writeObject(out:ObjectOutputStream):Unit = {
+    saveMe = LMat(this);
+  	out.defaultWriteObject();
+  }
+  
+  private def readObject(in:ObjectInputStream):Unit = {
+    in.defaultReadObject();
+    val gpu = SciFunctions.getGPU;
+    SciFunctions.setGPU(myGPU);
+    data = GLMat(saveMe).data;
+    SciFunctions.setGPU(gpu);
+    saveMe = null;
   }
   
   override def apply(I:GIMat, J:GIMat):GLMat = applyx(I, J)

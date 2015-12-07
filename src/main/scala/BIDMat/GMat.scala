@@ -16,10 +16,8 @@ import java.io.ObjectInputStream
 import GSMat._
 
 @SerialVersionUID(100L)
-class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) extends Mat(nr, nc) with Serializable {
+class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) extends Mat(nr, nc) {
   import GMat.BinOp._
-  
-  var saveMe:FMat = null
 
   override def dv:Double =
     if (nrows > 1 || ncols > 1) {
@@ -49,7 +47,9 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     	out.setGUID(MurmurHash3.mix(MurmurHash3.mix(nr, nc), (GUID*3145341).toInt));
     	out
     }
-  }
+  } 
+    
+  var saveMe:FMat = null
   
   private def writeObject(out:ObjectOutputStream):Unit = {
     saveMe = FMat(this);
