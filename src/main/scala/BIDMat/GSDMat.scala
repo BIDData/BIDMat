@@ -285,9 +285,6 @@ case class GSDMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @tran
   
   def ~ (b: GDMat) = new GDPair(this, b)
   
-  override def Tx (b : Mat) = Mop_TTimes.op(this, b, null)
-  override def ^* (b : Mat) = Mop_TTimes.op(this, b, null)
-  
   // NOTE: GSDMat op GDMat is an *Edge or Scalar* operation only, and acts only on the non-zeros of the matrix
   
   def +  (a:GDMat) = GSDop(a, null, BinOp.op_add);
@@ -321,6 +318,8 @@ case class GSDMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @tran
   override def *  (b : Mat) = Mop_Times.op(this, b, null)
   override def *^ (b : Mat) = Mop_TimesT.op(this, b, null)
   override def xT (b : Mat) = Mop_TimesT.op(this, b, null)
+  override def ^* (b : Mat) = Mop_TTimes.op(this, b, null)
+  override def Tx (b : Mat) = Mop_TTimes.op(this, b, null)
   override def +  (b : Mat) = Mop_Plus.sop(this, b, null)
   override def -  (b : Mat) = Mop_Minus.sop(this, b, null)
   override def *@ (b : Mat) = Mop_ETimes.sop(this, b, null)
@@ -338,6 +337,7 @@ case class GSDMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @tran
 }
 
 class GSDPair (val omat:Mat, val mat:GSDMat) extends Pair {
+	def * (a:GDMat) = mat.SDMult(a, omat)
 	def Tx(a:GDMat) = mat.SDTMult(a, omat)
 	def ^*(a:GDMat) = mat.SDTMult(a, omat)
 	

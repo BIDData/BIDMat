@@ -274,7 +274,7 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
     if (nrows != a.nrows) {
       throw new RuntimeException("SDTMult dimensions mismatch")
     }
-    val out = GMat.newOrCheckGMat(ncols, a.ncols, omat, GUID, a.GUID, "SDMult".##)
+    val out = GMat.newOrCheckGMat(ncols, a.ncols, omat, GUID, a.GUID, "SDTMult".##)
     val handle = GSMat.getHandle
     val descra = GSMat.getDescr  
     GSMat.initZerosAndOnes
@@ -345,6 +345,8 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
   override def *  (b : Mat) = Mop_Times.op(this, b, null)
   override def *^ (b : Mat) = Mop_TimesT.op(this, b, null)
   override def xT (b : Mat) = Mop_TimesT.op(this, b, null)
+  override def ^* (b : Mat) = Mop_TTimes.op(this, b, null)
+  override def Tx (b : Mat) = Mop_TTimes.op(this, b, null)
   override def +  (b : Mat) = Mop_Plus.sop(this, b, null)
   override def -  (b : Mat) = Mop_Minus.sop(this, b, null)
   override def *@ (b : Mat) = Mop_ETimes.sop(this, b, null)
@@ -362,8 +364,9 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
 }
 
 class GSPair (val omat:Mat, val mat:GSMat) extends Pair {
-	def Tx(a:GMat) = mat.SDTMult(a, omat)
-	def ^*(a:GMat) = mat.SDTMult(a, omat)
+  def * (a:GMat) = mat.SDMult(a, omat)
+	def Tx (a:GMat) = mat.SDTMult(a, omat)
+	def ^* (a:GMat) = mat.SDTMult(a, omat)
 	
 	def +  (a:GMat) = mat.GSDop(a, omat, BinOp.op_add);
   def -  (a:GMat) = mat.GSDop(a, omat, BinOp.op_sub);
@@ -377,9 +380,6 @@ class GSPair (val omat:Mat, val mat:GSMat) extends Pair {
   def <= (a : GMat):GSMat = mat.GSDop(a, omat, BinOp.op_le);  
   def >= (a : GMat):GSMat = mat.GSDop(a, omat, BinOp.op_ge);  
   def == (a : GMat):GSMat = mat.GSDop(a, omat, BinOp.op_eq);
-
-	override def ^* (b : Mat):Mat = Mop_TTimes.op(mat, b, omat)
-	override def Tx (b : Mat):Mat = Mop_TTimes.op(mat, b, omat)
 	
   override def +  (a:Float) = mat.GSDop(GMat(a), omat, BinOp.op_add);
   override def -  (a:Float) = mat.GSDop(GMat(a), omat, BinOp.op_sub);
@@ -394,9 +394,11 @@ class GSPair (val omat:Mat, val mat:GSMat) extends Pair {
   override def >= (a : Float):GSMat = mat.GSDop(GMat(a), omat, BinOp.op_ge);  
   override def == (a : Float):GSMat = mat.GSDop(GMat(a), omat, BinOp.op_eq);
 	
-	override def *  (b : Mat) = Mop_Times.op(mat, b, null)
-  override def *^ (b : Mat) = Mop_TimesT.op(mat, b, null)
-  override def xT (b : Mat) = Mop_TimesT.op(mat, b, null)
+  override def ^* (b : Mat) = Mop_TTimes.op(mat, b, omat)
+	override def Tx (b : Mat) = Mop_TTimes.op(mat, b, omat)
+	override def *  (b : Mat) = Mop_Times.op(mat, b, omat)
+  override def *^ (b : Mat) = Mop_TimesT.op(mat, b, omat)
+  override def xT (b : Mat) = Mop_TimesT.op(mat, b, omat)
   override def +  (b : Mat) = Mop_Plus.sop(mat, b, null)
   override def -  (b : Mat) = Mop_Minus.sop(mat, b, null)
   override def *@ (b : Mat) = Mop_ETimes.sop(mat, b, null)
