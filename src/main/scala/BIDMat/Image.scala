@@ -62,24 +62,28 @@ class Image(val img:BufferedImage) extends Serializable {
     resize(math.round(width*factor).toInt, math.round(height*factor).toInt)
   }
      
-  def show(title0:String):JFrame = {
-    val panel:ImagePanel = new ImagePanel(img)
-    val title = if (title0 != null) title0 else "Image " + Image.imageCount
-    val frame:JFrame = new JFrame(title) 
-    Image.imageCount += 1
-    frame.add(panel)
-    frame.pack
-    frame.setDefaultCloseOperation(HIDE_ON_CLOSE)// or try DO_NOTHING_ON_CLOSE 
-    frame.setVisible(true)
-    frame
+  def show(title0:String):BufferedImage = {
+    if (Mat.inline) {
+      img 
+    } else {
+    	val panel = new ImagePanel(img);
+    	val title = if (title0 != null) title0 else "Image " + Image.imageCount;
+    	val frame = new JFrame(title);
+    	Image.imageCount += 1;
+    	frame.add(panel);
+    	frame.pack;
+    	frame.setDefaultCloseOperation(HIDE_ON_CLOSE);// or try DO_NOTHING_ON_CLOSE 
+    	frame.setVisible(true);
+    	Image.dummyImage.img
+    }
   }
   
-  def show():JFrame = show(null)
+  def show():BufferedImage = show(null)
 }
 
 class ImagePanel(img:BufferedImage) extends JPanel                                                
 {       
-  setPreferredSize(new Dimension(img.getWidth, img.getHeight))
+  setPreferredSize(new Dimension(img.getWidth, img.getHeight));
   
   override def paintComponent(g0:Graphics) =                                 
   {                                                                           
@@ -100,7 +104,11 @@ class ImagePanel(img:BufferedImage) extends JPanel
 object Image {
   def loadImage(fname:String):Image = new Image(ImageIO.read(new File(fname)))
   
-  private var imageCount = 0
+  private var imageCount = 0;
+  
+  var format = "jpg";
+  
+  val dummyImage = apply(MatFunctions.ones(1,1)*255f)
   
   def apply(mat:IMat):Image = {
     val width = mat.nrows
@@ -131,19 +139,4 @@ object Image {
     new Image(img)
   }
 
-  def show (image:Image):JFrame = image.show
-  
-  def show (mat:IMat):JFrame = {show(Image(mat))}
-  
-  def show (mat:FMat):JFrame = {show(Image(mat))}
-  
-  def show (mat:FND):JFrame = {show(Image(mat))}
-  
-  def show (image:Image, title:String):JFrame = image.show(title)
-  
-  def show (mat:IMat, title:String):JFrame = {show(Image(mat), title)}
-  
-  def show (mat:FMat, title:String):JFrame = {show(Image(mat), title)}
-  
-  def show (mat:FND, title:String):JFrame = {show(Image(mat), title)}
 }

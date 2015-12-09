@@ -250,16 +250,17 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
     if (ncols != a.nrows) {
       throw new RuntimeException("SDMult dimensions mismatch")
     }
-    val out = GMat.newOrCheckGMat(nrows, a.ncols, omat, GUID, a.GUID, "SDMult".##)
-    val handle = GSMat.getHandle
-    val descra = GSMat.getDescr
-    GSMat.initZerosAndOnes
-    val one = GSMat.myones(SciFunctions.getGPU)
-    val zero = GSMat.myzeros(SciFunctions.getGPU)
-    var err = JCusparse.cusparseScsrmm(handle, cusparseOperation.CUSPARSE_OPERATION_TRANSPOSE,
-        ncols, a.ncols, nrows, nnz, one.data, descra,	data, jc, ir, a.data, a.nrows, zero.data, out.data, out.nrows)
-    cudaDeviceSynchronize
-    if (err == 0) err = cudaGetLastError
+    val out = GMat.newOrCheckGMat(nrows, a.ncols, omat, GUID, a.GUID, "SDMult".##);
+    val handle = GSMat.getHandle;
+    val descra = GSMat.getDescr;
+    val zero = FMat.zeros(1,1);
+    val one = FMat.ones(1,1);
+    var err = JCusparse.cusparseScsrmm(handle, cusparseOperation.CUSPARSE_OPERATION_TRANSPOSE, 
+        ncols, a.ncols, nrows, nnz, 
+        Pointer.to(one.data), descra,	data, jc, ir, a.data, a.nrows, 
+        Pointer.to(zero.data), out.data, out.nrows);
+    cudaDeviceSynchronize;
+    if (err == 0) err = cudaGetLastError;
     if (err != 0) {
     	println("device is %d" format SciFunctions.getGPU)
     	throw new RuntimeException("Cuda error in GSMAT.SDMult " + cudaGetErrorString(err))
@@ -277,11 +278,12 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
     val out = GMat.newOrCheckGMat(ncols, a.ncols, omat, GUID, a.GUID, "SDTMult".##)
     val handle = GSMat.getHandle
     val descra = GSMat.getDescr  
-    GSMat.initZerosAndOnes
-    val one = GSMat.myones(SciFunctions.getGPU)
-    val zero = GSMat.myzeros(SciFunctions.getGPU)
+    val zero = FMat.zeros(1,1);
+    val one = FMat.ones(1,1);
     var err = JCusparse.cusparseScsrmm(handle, cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE,
-        ncols, a.ncols, nrows, nnz, one.data, descra,	data, jc, ir, a.data, a.nrows, zero.data, out.data, out.nrows)
+        ncols, a.ncols, nrows, nnz, 
+        Pointer.to(one.data), descra,	data, jc, ir, a.data, a.nrows, 
+        Pointer.to(zero.data), out.data, out.nrows)
     cudaDeviceSynchronize
     if (err == 0) err = cudaGetLastError
     if (err != 0) {

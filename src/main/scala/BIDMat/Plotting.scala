@@ -1,11 +1,12 @@
 package BIDMat
 import ptolemy.plot._
+import java.awt.image.BufferedImage
 
 object Plotting { 
   var ifigure:Int = 1
   val marksmat = Array("points","dots","various")
   
-  def _plot(mats:Mat*)(xlog:Boolean=false, ylog:Boolean=false, isconnected:Boolean=true, bars:Boolean=false, marks:Int = 0):Plot = {
+  def _plot(mats:Mat*)(xlog:Boolean=false, ylog:Boolean=false, isconnected:Boolean=true, bars:Boolean=false, marks:Int = 0):BufferedImage = {
     var p:Plot = new Plot
     p.setXLog(xlog)
     p.setYLog(ylog)
@@ -47,10 +48,24 @@ object Plotting {
     		i += 1
     	}
     }
-    var pframe:PlotFrame = new PlotFrame("Figure "+ifigure, p)
-    ifigure += 1
-    pframe.setVisible(true)
-    p
+    var pframe = new PlotFrame("Figure "+ifigure, p)
+    ifigure += 1;
+    showGraphics(pframe);
+  }
+  
+  def showGraphics(pframe:PlotFrame):BufferedImage = {
+    if (Mat.inline) {
+      val bi = new BufferedImage(pframe.getWidth(), pframe.getHeight(), BufferedImage.TYPE_INT_ARGB);
+      val graphics = bi.createGraphics();
+      pframe.setVisible(true);
+      pframe.print(graphics);
+      graphics.dispose;
+      pframe.dispose;
+      bi;
+    } else {
+    	pframe.setVisible(true);
+    	Image.dummyImage.img;
+    }
   }
   
   def plot(mats:Mat*) = _plot(mats: _*)();
@@ -80,7 +95,7 @@ object Plotting {
   def psemilogy(mats:Mat*) = _plot(mats: _*)(ylog=true, isconnected=false)
    
   
-  def hist(m:Mat, nbars:Int=10) = { 
+  def hist(m:Mat, nbars:Int=10):BufferedImage = { 
     import SciFunctions._
     var p:Histogram = new Histogram
     val dataset = 0
@@ -106,8 +121,8 @@ object Plotting {
     	}
       }
     }
-    var pframe:PlotFrame = new PlotFrame("Figure "+ifigure, p)
-    ifigure += 1
-    pframe.setVisible(true)
+    var pframe = new PlotFrame("Figure "+ifigure, p);
+    ifigure += 1;
+    showGraphics(pframe);
   }
 }

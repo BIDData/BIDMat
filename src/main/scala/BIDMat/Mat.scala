@@ -543,7 +543,7 @@ object Mat {
   
   var hostAllocSize = 0xffffffffL;
   
-  var plotInline = false;
+  var inline = false;
   
   final val MSEED:Int = 1452462553;
 
