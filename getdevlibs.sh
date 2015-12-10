@@ -31,6 +31,7 @@ curl -o exelist.txt ${source}/lib/exelist.txt
 while read fname; do
     echo -e "\nDownloading ${fname}"
     curl --retry 2 -O ${source}/lib/${fname}
+    chmod 755 ${fname}
 done < liblist.txt
 
 mv ${BIDMAT_ROOT}/lib/BIDMat.jar ${BIDMAT_ROOT}

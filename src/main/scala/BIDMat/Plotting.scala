@@ -6,13 +6,14 @@ object Plotting {
   var ifigure:Int = 1
   val marksmat = Array("points","dots","various")
   
-  def _plot(mats:Mat*)(xlog:Boolean=false, ylog:Boolean=false, isconnected:Boolean=true, bars:Boolean=false, marks:Int = 0):BufferedImage = {
-    var p:Plot = new Plot
-    p.setXLog(xlog)
-    p.setYLog(ylog)
-    p.setBars(bars)
-    p.setConnected(isconnected)
-    p.setMarksStyle(marksmat(marks))
+  def _plot(mats0:Mat*)(xlog:Boolean=false, ylog:Boolean=false, isconnected:Boolean=true, bars:Boolean=false, marks:Int = 0):BufferedImage = {
+    var p:Plot = new Plot;
+    val mats = mats0.toArray.map(MatFunctions.cpu);
+    p.setXLog(xlog);
+    p.setYLog(ylog);
+    p.setBars(bars);
+    p.setConnected(isconnected);
+    p.setMarksStyle(marksmat(marks));
     val dataset = 0
     if (mats.length == 1) {
       val m = mats(0)
