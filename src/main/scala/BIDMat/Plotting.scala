@@ -3,10 +3,10 @@ import ptolemy.plot._
 import java.awt.image.BufferedImage
 
 object Plotting { 
-  var ifigure:Int = 1
-  val marksmat = Array("points","dots","various")
+  var ifigure:Int = 0;
+  val marksmat = Array("points","dots","various");
   
-  def _plot(mats0:Mat*)(xlog:Boolean=false, ylog:Boolean=false, isconnected:Boolean=true, bars:Boolean=false, marks:Int = 0):BufferedImage = {
+  def _plot(mats0:Mat*)(xlog:Boolean=false, ylog:Boolean=false, isconnected:Boolean=true, bars:Boolean=false, marks:Int = 0) = {
     var p:Plot = new Plot;
     val mats = mats0.toArray.map(MatFunctions.cpu);
     p.setXLog(xlog);
@@ -49,22 +49,21 @@ object Plotting {
     		i += 1
     	}
     }
-    var pframe = new PlotFrame("Figure "+ifigure, p)
     ifigure += 1;
-    showGraphics(pframe);
+    showGraphics(p);
   }
   
-  def showGraphics(pframe:PlotFrame):BufferedImage = {
+  def showGraphics(plot:PlotBox):BufferedImage = {
+  	var pframe = new PlotFrame("Figure "+ifigure, plot);
+  	pframe.setVisible(true);
     if (Mat.inline) {
       val bi = new BufferedImage(pframe.getWidth(), pframe.getHeight(), BufferedImage.TYPE_INT_ARGB);
       val graphics = bi.createGraphics();
-      pframe.setVisible(true);
       pframe.print(graphics);
-      graphics.dispose;
       pframe.dispose;
+      graphics.dispose;
       bi;
     } else {
-    	pframe.setVisible(true);
     	Image.dummyImage.img;
     }
   }
@@ -122,8 +121,7 @@ object Plotting {
     	}
       }
     }
-    var pframe = new PlotFrame("Figure "+ifigure, p);
     ifigure += 1;
-    showGraphics(pframe);
+    showGraphics(p);
   }
 }

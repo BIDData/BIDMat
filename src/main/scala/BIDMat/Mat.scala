@@ -543,7 +543,19 @@ object Mat {
   
   var hostAllocSize = 0xffffffffL;
   
-  var inline = false;
+  var _inline = false;
+  
+  def inline = _inline;
+  
+  def setInline {
+    _inline = true;
+//    System.setProperty("java.awt.headless", "true"); // Ptplot wont work in headless mode
+  }
+  
+  def unsetInline {
+    _inline = false;
+//    System.setProperty("java.awt.headless", "false");
+  }
   
   final val MSEED:Int = 1452462553;
 
