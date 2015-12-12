@@ -16,7 +16,7 @@ object JPlotting {
   var plotXscale = 500;
   var plotYscale = 400;
   var plotPscale = 0.2f;
-  
+
   def _addToDataset(dataset:XYSeriesCollection, mats:Array[Mat]) = {
     if (mats.length == 1) {
       val m = mats(0)
@@ -62,6 +62,9 @@ object JPlotting {
   
   def _plot(mats:Mat*)(xlog:Boolean=false, ylog:Boolean=false, isconnected:Boolean=true, bars:Boolean=false, marks:Int = 0):BufferedImage = {
    	import java.awt.Color;
+   	if (Mat.inline) {
+   		System.setProperty("java.awt.headless", "true");
+   	}
    	val fmats = mats.toArray.map(MatFunctions.cpu)
     val dataset = new XYSeriesCollection();    
     _addToDataset(dataset, fmats);
@@ -128,6 +131,9 @@ object JPlotting {
   
   def hist(m:Mat, nbars:Int=10):BufferedImage = { 
   	import java.awt.Color;
+  	if (Mat.inline) {
+  		System.setProperty("java.awt.headless", "true");
+  	}
     var dd = new HistogramDataset();
     if (m.nrows == 1 || m.ncols == 1) { 
     	m match { 
