@@ -124,11 +124,20 @@ object SciFunctions {
   }
   
   val freeMemArray = new Array[Long](1)
-  val totalMemArray = new Array[Long](1)
+  val totalMemArray = new Array[Long](1);
   
-  def GPUmem:(Float, Long, Long) = {
+  def GPUmem = {
     jcuda.runtime.JCuda.cudaMemGetInfo(freeMemArray, totalMemArray)
-    (freeMemArray(0).toFloat/ totalMemArray(0), freeMemArray(0), totalMemArray(0))
+    val fm = freeMemArray(0);
+    val tm = totalMemArray(0);
+    (fm.toFloat/ tm, fm, tm)
+  }
+  
+  def GPUmemory = {
+    jcuda.runtime.JCuda.cudaMemGetInfo(freeMemArray, totalMemArray)
+    val fm = freeMemArray(0);
+    val tm = totalMemArray(0);
+    println("GPU memory %3.2f%% free out of %2.1f GB" format (fm.toFloat/tm, tm*1e-9));
   }
   
   def setseed(seed:Int):Unit = {

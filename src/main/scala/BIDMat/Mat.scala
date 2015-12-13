@@ -309,6 +309,7 @@ class Mat(nr:Int, nc:Int) extends Serializable {
     case (aa:FMat, bb:SMat) => new FDSPair(aa, bb) 
     case (aa:GMat, bb:GSMat) => new GDSPair(aa, bb)
   }
+  
 }
 
 abstract class DSPair extends Serializable {}
