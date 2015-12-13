@@ -55,6 +55,11 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
     this
   }
   
+  def set(v:Int):IMat = {
+    Arrays.fill(data,0,length,v)
+    this
+  }
+  
   def horzcat(b: IMat) = IMat(ghorzcat(b))
   
   def vertcat(b: IMat) = IMat(gvertcat(b))

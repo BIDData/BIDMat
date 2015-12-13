@@ -12,6 +12,8 @@ import javax.swing.WindowConstants._
 
 @SerialVersionUID(100L)
 class Image(val img:BufferedImage) extends Serializable {
+  
+  var frame:JFrame = null;  
     
   final val width = img.getWidth
   
@@ -44,6 +46,32 @@ class Image(val img:BufferedImage) extends Serializable {
     mat
   }
   
+  def redraw(mat:IMat):Image = {
+    img.setRGB(0, 0, mat.nrows, mat.ncols, mat.data, 0, width);
+    repaint
+    this
+  }
+  
+  def redraw(mat:FMat):Image = {
+    img.getRaster.setPixels(0, 0, mat.nrows, mat.ncols, mat.data);
+    repaint
+    this
+  } 
+  
+  def redraw(mat:FND):Image = {    
+    val width = mat.dims(1);
+    val height = mat.dim(2);
+    img.getRaster.setPixels(0, 0, mat.dims(1), mat.dims(2), mat.data);
+    repaint
+    this;
+  }
+  
+  def repaint = {
+    if (frame != null) {
+      frame.repaint();
+    }
+  }
+  
   def resize(w0:Int, h0:Int):Image = {
     val w = if (w0 < 0) math.round(1f*width/height*h0).toInt else w0;
     val h = if (h0 < 0) math.round(1f*height/width*w0).toInt else h0;
@@ -68,7 +96,7 @@ class Image(val img:BufferedImage) extends Serializable {
     } else {
     	val panel = new ImagePanel(img);
     	val title = if (title0 != null) title0 else "Image " + Image.imageCount;
-    	val frame = new JFrame(title);
+    	frame = new JFrame(title);
     	Image.imageCount += 1;
     	frame.add(panel);
     	frame.pack;
