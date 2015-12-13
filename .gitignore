@@ -6,3 +6,10 @@ project/
 target/
 java_native_path.txt
 BIDMat.jar
+headers/
+classes/
+lib/*.so
+lib/*.dylib
+lib/*.dll
+lib/*.jar
+libs/
