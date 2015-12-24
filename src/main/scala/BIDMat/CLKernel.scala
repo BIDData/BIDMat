@@ -1,4 +1,6 @@
-import org.jocl.{cl_command_queue, cl_kernel, Sizeof, Pointer}
+package BIDMat
+
+import org.jocl.{cl_command_queue, cl_kernel, cl_mem, Sizeof, Pointer}
 import org.jocl.CL._
 
 /**
@@ -47,7 +49,6 @@ class CLKernel(val kernel: cl_kernel) {
 
   def release():Unit = {
     clReleaseKernel(kernel)
-    kernel = null
   }
 
 }

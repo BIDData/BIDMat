@@ -1,4 +1,3 @@
-
 name := "BIDMat"
 
 version := "1.0.3"
@@ -27,13 +26,17 @@ libraryDependencies += "org.apache.commons" % "commons-math3" % "3.2"
 
 //libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.2"
 
-libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.1" % "test"
+libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.4" % "test"
 
 libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.11.6" % "test"
 
 libraryDependencies += "junit" % "junit" % "4.11" % "test"
 
 libraryDependencies += "net.jpountz.lz4" % "lz4" % "1.3"
+
+libraryDependencies += "com.cedarsoftware" % "json-io" % "2.2.29"
+
+libraryDependencies += "com.jsuereth" %% "scala-arm" % "1.4"
 
 //libraryDependencies += "org.scala-saddle" % "jhdf5" % "2.9"
 
@@ -45,5 +48,5 @@ scalacOptions ++= Seq("-feature","-deprecation","-target:jvm-1.7")
 
 initialCommands := scala.io.Source.fromFile("lib/bidmat_init.scala").getLines.mkString("\n")
 
-javaOptions += "-Xmx12g"
+javaOptions += "-Xmx4g"
 

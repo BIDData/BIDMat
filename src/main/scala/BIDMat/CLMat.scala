@@ -15,6 +15,9 @@ case class CLMat(nr: Int, nc: Int, var data: cl_mem, realsize: Long) extends Mat
 
 object CLMat {
 
-  
+
+  //def apply(mat: FMat):CLMat = {
+
+  //}
 
 }

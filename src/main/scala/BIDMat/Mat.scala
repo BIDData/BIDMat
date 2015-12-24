@@ -516,6 +516,16 @@ object Mat {
   var hasCUDA = 0                  // Number of available CUDA GPUs
     
   var useMKL:Boolean = true        // Use MKL libs
+
+  var useOpenCL: Boolean = true    // Use OpenCL if available
+
+  var hasOpenCL: Boolean = false   // true if OpenCL runtime available
+
+  var numOpenCLGPUs = 0            // number of available OpenCL GPUs
+
+  var clContext: org.jocl.cl_context = null // OpenCL context
+
+  var clQueue: org.jocl.cl_command_queue = null // Current OpenCL device command queue
   
   var debugMem = false             // Debug GPU mem calls
   
@@ -778,6 +788,85 @@ object Mat {
     	  }
     	}
     }
+  }
+
+  def checkOpenCL:Unit = checkOpenCL(false)
+
+  def checkOpenCL(verbose: Boolean):Unit = {
+    if (!useOpenCL) return
+    // Attempt to load the runtime library
+    if (!hasOpenCL) {
+      // TODO: More robust method of loading JOCL and OpenCL runtime library
+      try {
+        // Enable OpenCL exceptions and also attempt to load JOCL (by running
+        // the static block inside org.jocl.CL)
+        // Note: JOCL also loads the OpenCL runtime
+        org.jocl.CL.setExceptionsEnabled(true)
+        hasOpenCL = true
+      } catch {
+        case err:Throwable => {
+          println("Failed to load JOCL native shared library")
+          if (verbose) {
+            val msg = err.getMessage
+            if (msg != null) println(msg)
+          }
+          hasOpenCL = false
+        }
+      }
+    }
+    // if we loaded the runtime successfully, query available devices
+    if (hasOpenCL) {
+      val platforms = getCLPlatforms()
+      val platform = platforms(0)
+      //val GPUs = getCLDevices(platform, org.jocl.CL.CL_DEVICE_TYPE_GPU)
+      val GPUs = getCLDevices(platform, org.jocl.CL.CL_DEVICE_TYPE_CPU)
+      numOpenCLGPUs = GPUs.length
+      clContext = createCLContext(platform, GPUs)
+      clQueue = createCLQueue(clContext, GPUs(0))
+
+      // Make sure to clean up before shutdown
+      Runtime.getRuntime().addShutdownHook(new Thread() {
+        override def run() = {
+          freeOpenCL()
+        }
+      })
+    }
+  }
+
+  def freeOpenCL():Unit = {
+    CLKernelCache.release()
+    org.jocl.CL.clReleaseCommandQueue(clQueue)
+    org.jocl.CL.clReleaseContext(clContext)
+  }
+
+  def getCLPlatforms():Array[org.jocl.cl_platform_id] = {
+    val num_platforms_ptr = Array(0)
+    org.jocl.CL.clGetPlatformIDs(0, null, num_platforms_ptr)
+    val num_platforms = num_platforms_ptr(0)
+    val platforms = Array.ofDim[org.jocl.cl_platform_id](num_platforms)
+    org.jocl.CL.clGetPlatformIDs(platforms.length, platforms, null)
+    platforms
+  }
+
+  def getCLDevices(platform: org.jocl.cl_platform_id, device_type: Long):Array[org.jocl.cl_device_id] = {
+    val num_devices_ptr = Array(0)
+    org.jocl.CL.clGetDeviceIDs(platform, device_type.toInt, 0, null, num_devices_ptr)
+    val num_devices = num_devices_ptr(0)
+    val devices = Array.ofDim[org.jocl.cl_device_id](num_devices)
+    org.jocl.CL.clGetDeviceIDs(platform, device_type.toInt, num_devices, devices, null)
+    devices
+  }
+
+  def createCLContext(platform: org.jocl.cl_platform_id, devices: Array[org.jocl.cl_device_id]):org.jocl.cl_context = {
+    val properties = new org.jocl.cl_context_properties()
+    properties.addProperty(org.jocl.CL.CL_CONTEXT_PLATFORM, platform)
+    org.jocl.CL.clCreateContext(properties, devices.length, devices, null, null, null)
+  }
+
+  def createCLQueue(context: org.jocl.cl_context, device: org.jocl.cl_device_id):org.jocl.cl_command_queue = {
+    val properties = new org.jocl.cl_queue_properties()
+    properties.addProperty(org.jocl.CL.CL_QUEUE_PROPERTIES, org.jocl.CL.CL_QUEUE_PROFILING_ENABLE)
+    org.jocl.CL.clCreateCommandQueueWithProperties(context, device, properties, null)
   }
 
   def copyToIntArray[@specialized(Double, Float, Long, Byte, Short) T](data:Array[T], i0:Int, idata:Array[Int], d0:Int, n:Int)
