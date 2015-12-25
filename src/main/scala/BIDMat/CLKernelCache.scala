@@ -8,7 +8,7 @@ import org.jocl.{
   Pointer, Sizeof
 }
 import org.jocl.CL._
-import resource._
+import resource.managed
 
 /**
  * OpenCL Kernel cache singleton
@@ -28,9 +28,8 @@ object CLKernelCache {
   def get(command_queue: cl_command_queue, program_name: String,
     kernel_name: String, params:String = defaultParams):CLKernel = {
 
-      val key = s"$program_name | $kernel_name | $params"
-      kernel_cache.get(key) match {
-        case Some(kernel) => kernel
+      kernel_cache.get(key(program_name, kernel_name, params)) match {
+        case Some(kernel) => kernel.reset(); kernel
         case None => buildKernel(command_queue, program_name, kernel_name, params)
       }
   }
@@ -42,8 +41,7 @@ object CLKernelCache {
   def has(program_name: String, kernel_name: String,
     params:String = defaultParams):Boolean = {
 
-      val key = s"$program_name | $kernel_name | $params"
-      kernel_cache.get(key) match {
+      kernel_cache.get(key(program_name, kernel_name, params)) match {
         case Some(_) => true
         case None => false
       }
@@ -55,30 +53,6 @@ object CLKernelCache {
       kernel.release()
     }
     kernel_cache.clear()
-  }
-
-  /** Fetch the kernel source and try to build it */
-  def buildKernel(command_queue: cl_command_queue, program_name: String,
-    kernel_name: String, params: String):CLKernel = {
-  
-      val context = getQueueContext(command_queue)
-      val device = getQueueDevice(command_queue)
-      val source = getProgramSource(program_name)
-      val program = buildProgram(context, device, program_name, params, source)
-
-      /** Make sure we release the program, even if creating the kernel fails */
-      val clkernel = try {
-        clCreateKernel(program, kernel_name, null)
-      } catch {
-        case e: Throwable => clReleaseProgram(program); throw e
-      }
-
-      val kernel = new CLKernel(clkernel)
-
-      // add the newly built kernel to the cache
-      kernel_cache += ((kernel_name, kernel))
-
-      kernel
   }
 
   def getProgramSource(program_name:String):String = {
@@ -96,7 +70,35 @@ object CLKernelCache {
     return "";
   }
 
-  def buildProgram(context: cl_context, device: cl_device_id, program_name: String,
+  private def key(program_name: String, kernel_name: String, params: String):String = {
+    s"$program_name | $kernel_name | $params"
+  }
+
+  /** Fetch the kernel source and try to build it */
+  private def buildKernel(command_queue: cl_command_queue, program_name: String,
+    kernel_name: String, params: String):CLKernel = {
+  
+      val context = getQueueContext(command_queue)
+      val device = getQueueDevice(command_queue)
+      val source = getProgramSource(program_name)
+      val program = buildProgram(context, device, program_name, params, source)
+
+      /** Make sure we release the program, even if creating the kernel fails */
+      val clkernel = try {
+        clCreateKernel(program, kernel_name, null)
+      } catch {
+        case e: Throwable => clReleaseProgram(program); throw e
+      }
+
+      val kernel = new CLKernel(clkernel)
+
+      // add the newly built kernel to the cache
+      kernel_cache += ((key(program_name, kernel_name, params), kernel))
+
+      kernel
+  }
+
+  private def buildProgram(context: cl_context, device: cl_device_id, program_name: String,
     params: String, program_source: String):cl_program = {
 
       val program = clCreateProgramWithSource(context, 1, Array(program_source), null, null)
@@ -114,7 +116,7 @@ object CLKernelCache {
       program
   }
 
-  def logProgramBuild(program: cl_program, device: cl_device_id,
+  private def logProgramBuild(program: cl_program, device: cl_device_id,
     program_name: String, params: String, program_source: String):Unit = {
 
       println("##############################################")
@@ -130,7 +132,7 @@ object CLKernelCache {
       println("##############################################")
   }
 
-  def getProgramBuildInfo(program: cl_program, device: cl_device_id, info_type: Long):String = {
+  private def getProgramBuildInfo(program: cl_program, device: cl_device_id, info_type: Long):String = {
       val size_ptr = Array(0L)
       clGetProgramBuildInfo(program, device, info_type.toInt, 0, null, size_ptr)
       val size = size_ptr(0)
@@ -140,13 +142,13 @@ object CLKernelCache {
       new String(buffer, 0, (size - 1).toInt)
   }
 
-  def getQueueContext(command_queue: cl_command_queue):cl_context = {
+  private def getQueueContext(command_queue: cl_command_queue):cl_context = {
     var context = new cl_context()
     clGetCommandQueueInfo(command_queue, CL_QUEUE_CONTEXT, Sizeof.cl_context, Pointer.to(context), null)
     context
   }
 
-  def getQueueDevice(command_queue: cl_command_queue):cl_device_id = {
+  private def getQueueDevice(command_queue: cl_command_queue):cl_device_id = {
     var device = new cl_device_id()
     clGetCommandQueueInfo(command_queue, CL_QUEUE_DEVICE, Sizeof.cl_device_id, Pointer.to(device), null)
     device

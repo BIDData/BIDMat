@@ -521,6 +521,10 @@ object Mat {
 
   var hasOpenCL: Boolean = false   // true if OpenCL runtime available
 
+  var clShutdownHookSet: Boolean = false // true if we've set a shutdown hook to clean up OpenCL resources
+
+  var clResourcesFreed: Boolean = false // true if we've freed the OpenCL context & command queue
+
   var numOpenCLGPUs = 0            // number of available OpenCL GPUs
 
   var clContext: org.jocl.cl_context = null // OpenCL context
@@ -819,24 +823,33 @@ object Mat {
       val platforms = getCLPlatforms()
       val platform = platforms(0)
       //val GPUs = getCLDevices(platform, org.jocl.CL.CL_DEVICE_TYPE_GPU)
-      val GPUs = getCLDevices(platform, org.jocl.CL.CL_DEVICE_TYPE_CPU)
-      numOpenCLGPUs = GPUs.length
-      clContext = createCLContext(platform, GPUs)
-      clQueue = createCLQueue(clContext, GPUs(0))
+      val gpus = getCLDevices(platform, org.jocl.CL.CL_DEVICE_TYPE_CPU)
+      numOpenCLGPUs = gpus.length
+      clContext = createCLContext(platform, gpus)
+      clQueue = createCLQueue(clContext, gpus(0))
 
       // Make sure to clean up before shutdown
-      Runtime.getRuntime().addShutdownHook(new Thread() {
-        override def run() = {
-          freeOpenCL()
-        }
-      })
+      if (!clShutdownHookSet) {
+        clShutdownHookSet = true
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+          override def run() = {
+            freeOpenCL()
+          }
+        })
+      }
     }
   }
 
   def freeOpenCL():Unit = {
-    CLKernelCache.release()
-    org.jocl.CL.clReleaseCommandQueue(clQueue)
-    org.jocl.CL.clReleaseContext(clContext)
+    synchronized {
+      if (!clResourcesFreed) {
+        CLKernelCache.release()
+        org.jocl.CL.clReleaseCommandQueue(clQueue)
+        org.jocl.CL.clReleaseContext(clContext)
+        clResourcesFreed = true
+        hasOpenCL = false
+      }
+    }
   }
 
   def getCLPlatforms():Array[org.jocl.cl_platform_id] = {

@@ -40,9 +40,11 @@ class CLKernel(val kernel: cl_kernel) {
     arg_idx = 0
   }
 
-  // Set the next kernel argument
-  def << (mem: cl_mem):CLKernel = {
-    clSetKernelArg(kernel, arg_idx, Sizeof.cl_mem, Pointer.to(mem))
+  def << (mem: cl_mem):CLKernel = pushArg(Pointer.to(mem))
+  def << (ptr: Pointer):CLKernel = pushArg(ptr)
+
+  def pushArg(ptr: Pointer):CLKernel = {
+    clSetKernelArg(kernel, arg_idx, Sizeof.POINTER, ptr)
     arg_idx += 1
     this
   }
