@@ -1,5 +1,7 @@
 package BIDMat
 
+import java.io.Closeable
+
 import org.jocl.{cl_command_queue, cl_kernel, cl_mem, Sizeof, Pointer}
 import org.jocl.CL._
 
@@ -18,11 +20,21 @@ import org.jocl.CL._
  * // reset the arguments set on the kernel
  * kernel.reset()
  */
-class CLKernel(val kernel: cl_kernel) {
+class CLKernel(kernel: cl_kernel) extends Object with Closeable {
 
-  var arg_idx = 0
+  def apply(xs: Any*): CLKernel = {
+    xs.zipWithIndex foreach {
+      case (mat: CLMat, i) => setArg(i, Pointer.to(mat.data))
+      case (mem: cl_mem, i) => setArg(i, Pointer.to(mem))
+      case (ptr: Pointer, i) => setArg(i, ptr)
+      case _ => throw new RuntimeException("Unsupported kernel argument type")
+    }
+    this
+  }
 
-  def run(command_queue: cl_command_queue, global: NDRange, local: NDRange = null):Unit = {
+  def setArg(i: Int, ptr: Pointer): Unit = clSetKernelArg(kernel, i, Sizeof.POINTER, ptr)
+
+  def run(command_queue: cl_command_queue, global: NDRange, local: NDRange = null): Unit = {
     // TODO: profile kernel calls by kernel name
     clEnqueueNDRangeKernel(
       command_queue,
@@ -36,22 +48,8 @@ class CLKernel(val kernel: cl_kernel) {
       null) // event
   }
 
-  def reset():Unit = {
-    arg_idx = 0
-  }
-
-  def << (mem: cl_mem):CLKernel = pushArg(Pointer.to(mem))
-  def << (ptr: Pointer):CLKernel = pushArg(ptr)
-
-  def pushArg(ptr: Pointer):CLKernel = {
-    clSetKernelArg(kernel, arg_idx, Sizeof.POINTER, ptr)
-    arg_idx += 1
-    this
-  }
-
-  def release():Unit = {
-    clReleaseKernel(kernel)
-  }
+  def free():Unit = clReleaseKernel(kernel)
+  override def close() = free()
 
 }
 

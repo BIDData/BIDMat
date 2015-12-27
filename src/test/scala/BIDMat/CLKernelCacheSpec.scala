@@ -2,8 +2,7 @@ package BIDMat
 
 import org.scalatest._
 
-class CLKernelCacheSpec extends FlatSpec
-  with BeforeAndAfterAll
+class CLKernelCacheSpec extends CLSpec
   with BeforeAndAfterEach {
 
   val test_program_src =
@@ -17,17 +16,8 @@ class CLKernelCacheSpec extends FlatSpec
     |
     |""".stripMargin
   
-  override def beforeAll {
-    Mat.useOpenCL = true
-    Mat.checkOpenCL
-  }
-
   override def afterEach {
-    CLKernelCache.release
-  }
-
-  override def afterAll {
-    Mat.freeOpenCL
+    CLKernelCache.free
   }
 
   "The OpenCL kernel cache" should "get program sources from resources" in {

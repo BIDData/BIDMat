@@ -19,17 +19,17 @@ object CLKernelCache {
   /** Caches kernels using their name + compiler parameters as the key */
   val kernel_cache = new HashMap[String, CLKernel]()
 
-  var defaultParams = ""
+  var default_params = "-Werror"
 
   /**
    * Returns a previously built kernel from the cache, or try to build it if it
    * doesn't exist.
    */
   def get(command_queue: cl_command_queue, program_name: String,
-    kernel_name: String, params:String = defaultParams):CLKernel = {
+    kernel_name: String, params:String = default_params):CLKernel = {
 
       kernel_cache.get(key(program_name, kernel_name, params)) match {
-        case Some(kernel) => kernel.reset(); kernel
+        case Some(kernel) => kernel
         case None => buildKernel(command_queue, program_name, kernel_name, params)
       }
   }
@@ -39,7 +39,7 @@ object CLKernelCache {
    * some parameters, otherwise false.
    */
   def has(program_name: String, kernel_name: String,
-    params:String = defaultParams):Boolean = {
+    params:String = default_params):Boolean = {
 
       kernel_cache.get(key(program_name, kernel_name, params)) match {
         case Some(_) => true
@@ -48,9 +48,9 @@ object CLKernelCache {
   }
 
   /** Release all kernels referenced by the cache */
-  def release():Unit = {
+  def free():Unit = {
     for ((_, kernel) <- kernel_cache) {
-      kernel.release()
+      kernel.free()
     }
     kernel_cache.clear()
   }

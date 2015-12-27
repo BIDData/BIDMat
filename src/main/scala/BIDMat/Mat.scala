@@ -794,7 +794,7 @@ object Mat {
     }
   }
 
-  def checkOpenCL:Unit = checkOpenCL(false)
+  def checkOpenCL():Unit = checkOpenCL(false)
 
   def checkOpenCL(verbose: Boolean):Unit = {
     if (!useOpenCL) return
@@ -844,7 +844,7 @@ object Mat {
   def freeOpenCL():Unit = {
     synchronized {
       if (!clResourcesFreed) {
-        CLKernelCache.release()
+        CLKernelCache.free()
         org.jocl.CL.clReleaseCommandQueue(clQueue)
         org.jocl.CL.clReleaseContext(clContext)
         clResourcesFreed = true

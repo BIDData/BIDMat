@@ -5,20 +5,10 @@ import org.jocl.{Pointer, Sizeof}
 import org.scalatest._
 import resource.managed
 
-class CLKernelSpec extends FlatSpec
-  with BeforeAndAfterAll
-  with Matchers {
+class CLKernelSpec extends CLSpec {
 
-  override def beforeAll {
-    Mat.useOpenCL = true
-    Mat.checkOpenCL
-  }
-
-  override def afterAll {
-    Mat.freeOpenCL
-  }
-
-  def testKernel(kernel: CLKernel):Unit = {
+  "A CLKernel" should "run with some parameters attached" in {
+    val kernel = CLKernelCache.get(Mat.clQueue, "test_program.cl", "matrixAdd")
     val dim = 4
     val n = dim * dim
     val A, B, C = Array.ofDim[Float](n)
@@ -46,10 +36,7 @@ class CLKernelSpec extends FlatSpec
         null,
         null))
     } {
-      kernel << A_buf << B_buf << C_buf
-
-      kernel.run(Mat.clQueue, NDRange(n))
-
+      kernel(A_buf, B_buf, C_buf).run(Mat.clQueue, NDRange(n))
       clEnqueueReadBuffer(Mat.clQueue, C_buf, CL_TRUE, 0, Sizeof.cl_float * n, Pointer.to(C), 0, null, null)
     }
 
@@ -57,18 +44,6 @@ class CLKernelSpec extends FlatSpec
     C zip(expected) foreach {
       case(x, y) => x should be (y +- 1e-5f)
     }
-  }
-
-  "A CLKernel" should "run with some parameters attached" in {
-    val kernel = CLKernelCache.get(Mat.clQueue, "test_program.cl", "matrixAdd")
-    testKernel(kernel)
-  }
-
-  it should "reset any bound arguments with kernel.reset()" in {
-    val kernel = CLKernelCache.get(Mat.clQueue, "test_program.cl", "matrixAdd")
-    testKernel(kernel)
-    kernel.reset()
-    testKernel(kernel)
   }
 
 }

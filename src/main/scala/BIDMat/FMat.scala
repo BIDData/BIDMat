@@ -1798,6 +1798,7 @@ object FMat {
       case gg:GMat => gg.toFMat(out)
       case gg:GDMat => gg.copyTo(out)
       case gg:GIMat => gg.toFMat(out)
+      case gg:CLMat => gg.toFMat(out)
       case _ => throw new RuntimeException("Unsupported source type")
     }
     out
