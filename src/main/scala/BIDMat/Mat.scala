@@ -822,11 +822,12 @@ object Mat {
     if (hasOpenCL) {
       val platforms = getCLPlatforms()
       val platform = platforms(0)
-      //val GPUs = getCLDevices(platform, org.jocl.CL.CL_DEVICE_TYPE_GPU)
+      //val gpus = getCLDevices(platform, org.jocl.CL.CL_DEVICE_TYPE_GPU)
       val gpus = getCLDevices(platform, org.jocl.CL.CL_DEVICE_TYPE_CPU)
       numOpenCLGPUs = gpus.length
       clContext = createCLContext(platform, gpus)
       clQueue = createCLQueue(clContext, gpus(0))
+      clResourcesFreed = false
 
       // Make sure to clean up before shutdown
       if (!clShutdownHookSet) {

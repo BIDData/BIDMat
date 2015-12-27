@@ -1,9 +1,9 @@
-import BIDMat.{CLKernelCache, Mat}
+package BIDMat
 
 import org.scalatest._
 
 class CLKernelCacheSpec extends FlatSpec
-  with BeforeAndAfter
+  with BeforeAndAfterAll
   with BeforeAndAfterEach {
 
   val test_program_src =
@@ -17,17 +17,16 @@ class CLKernelCacheSpec extends FlatSpec
     |
     |""".stripMargin
   
-  before {
+  override def beforeAll {
     Mat.useOpenCL = true
     Mat.checkOpenCL
-    assert(Mat.hasOpenCL)
   }
 
   override def afterEach {
-    CLKernelCache.release()
+    CLKernelCache.release
   }
 
-  after {
+  override def afterAll {
     Mat.freeOpenCL
   }
 

@@ -13,3 +13,5 @@ lib/*.dylib
 lib/*.dll
 lib/*.jar
 libs/
+hs_err_pid*.log
+jni/src/Makefile.incl

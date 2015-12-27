@@ -42,6 +42,8 @@ libraryDependencies += "com.jsuereth" %% "scala-arm" % "1.4"
 
 credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 
+parallelExecution in Test := false
+
 javacOptions ++= Seq("-source", "1.7", "-target", "1.7")
 
 scalacOptions ++= Seq("-feature","-deprecation","-target:jvm-1.7")

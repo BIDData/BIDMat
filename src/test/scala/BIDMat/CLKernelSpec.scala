@@ -1,6 +1,4 @@
-import scala.util.Random
-
-import BIDMat.{CLKernel, CLKernelCache, Mat, NDRange}
+package BIDMat
 
 import org.jocl.CL._
 import org.jocl.{Pointer, Sizeof}
@@ -8,17 +6,15 @@ import org.scalatest._
 import resource.managed
 
 class CLKernelSpec extends FlatSpec
-  with BeforeAndAfter
-  with BeforeAndAfterEach
+  with BeforeAndAfterAll
   with Matchers {
 
-  before {
+  override def beforeAll {
     Mat.useOpenCL = true
     Mat.checkOpenCL
-    assert(Mat.hasOpenCL)
   }
 
-  after {
+  override def afterAll {
     Mat.freeOpenCL
   }
 
@@ -26,12 +22,13 @@ class CLKernelSpec extends FlatSpec
     val dim = 4
     val n = dim * dim
     val A, B, C = Array.ofDim[Float](n)
-    val rng = new Random
+    val rng = new scala.util.Random
     for (i <- 0 until n) {
       A(i) = rng.nextFloat
       B(i) = rng.nextFloat
     }
 
+    // wrap the cl_mem's so they're properly freed when we finish using them
     for {
       A_buf <- managed(clCreateBuffer(Mat.clContext,
         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
