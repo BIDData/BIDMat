@@ -2564,9 +2564,12 @@ object SciFunctions {
   def maxi(a:GMat, dir:Int):GMat  = a.reduceOp(null, dir, Float.MinValue, BinOp.op_max)
   def mini(a:GMat, dir:Int):GMat  = a.reduceOp(null, dir, Float.MaxValue, BinOp.op_min)
   def sum(a:GMat, dir:Int):GMat   = a.reduceOp(null, dir, 0f, BinOp.op_add)
+  def prod(a:GMat, dir:Int):GMat   = a.reduceOp(null, dir, 0f, BinOp.op_mul)
+ 
   def maxi(a:GMat):GMat           = a.reduceOp(null, 0, Float.MinValue, BinOp.op_max)
   def mini(a:GMat):GMat           = a.reduceOp(null, 0, Float.MaxValue, BinOp.op_min)
   def sum(a:GMat):GMat            = a.reduceOp(null, 0, 0f, BinOp.op_add)
+  def prod(a:GMat):GMat            = a.reduceOp(null, 0, 1f, BinOp.op_mul)
   
   def max(a:GMat, b:GMat, out:Mat):GMat    = a.gOp(b, out, BinOp.op_max)
   def min(a:GMat, b:GMat, out:Mat):GMat    = a.gOp(b, out, BinOp.op_min)

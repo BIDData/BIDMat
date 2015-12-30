@@ -13,76 +13,189 @@ import edu.berkeley.bid.MurmurHash3
 @SerialVersionUID(100L)
 abstract class ND(protected val _dims:Array[Int]) extends Serializable { 
 
-  final val length = _dims.reduce(_*_)
+  final val length = _dims.reduce(_*_);
   
-  def dims = new IMat(1, _dims.length, _dims.clone)
+  def dims = new IMat(1, _dims.length, _dims.clone);
   
-  def dim(i:Int):Int = _dims(i)
+  def dim(i:Int):Int = _dims(i);
 
   def size() = length;
 
-  private var _GUID = Mat.myrand.nextLong
+  private var _GUID = Mat.myrand.nextLong;
   
-  def setGUID(v:Long):Unit = {_GUID = v}
+  def setGUID(v:Long):Unit = {_GUID = v};
   
-  def GUID:Long = _GUID
+  def GUID:Long = _GUID;
 
-  def apply(indx:Int):Float 
+  def apply(indx:Int):Float;
   
-  def apply(pos:List[Int]):Float
+  def apply(pos:List[Int]):Float;
   
-  def apply(pos:Array[Int]):Float
+  def apply(pos:Array[Int]):Float;
   
-  def apply(i1:Int, i2:Int):Float
-  def apply(i1:Int, i2:Int, i3:Int):Float
-  def apply(i1:Int, i2:Int, i3:Int, i4:Int):Float
-  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):Float
-  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):Float
-  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int):Float
-  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int):Float
+  def apply(i1:Int, i2:Int):Float;
+  def apply(i1:Int, i2:Int, i3:Int):Float;
+  def apply(i1:Int, i2:Int, i3:Int, i4:Int):Float;
   
-  def apply(ii:IMat):FMat
+  def apply(ii:Mat):Mat;
   
-  def apply(jj:List[IMat]):ND
-  
-  def apply(jj:Array[IMat]):ND
-  
-  def apply(i1:IMat, i2:IMat):ND
-  def apply(i1:IMat, i2:IMat, i3:IMat):ND
-  def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat):ND
-  def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat):ND
-  def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat):ND
-  def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat):ND
-  def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat):ND
+  def apply(i1:Mat, i2:Mat):ND;
+  def apply(i1:Mat, i2:Mat, i3:Mat):ND;
+  def apply(i1:Mat, i2:Mat, i3:Mat, i4:Mat):ND;
 
-  def update(indx:Int, v:Float):ND
+  def update(indx:Int, v:Float):ND;
   
-  def update(inds:IMat, vv:FMat):ND
+  def update(inds:Mat, vv:Mat):ND;
+  
+  def update(inds:Mat, vv:Float):ND;
 
-  def update(i1:Int, i2:Int, v:Float):ND
-  def update(i1:Int, i2:Int, i3:Int, v:Float):ND
-  def update(i1:Int, i2:Int, i3:Int, i4:Int, v:Float):ND
-  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, v:Float):ND
-  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, v:Float):ND
-  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, v:Float):ND
-  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int, v:Float):ND
+  def update(i1:Int, i2:Int, v:Float):ND;
+  def update(i1:Int, i2:Int, i3:Int, v:Float):ND;
+  def update(i1:Int, i2:Int, i3:Int, i4:Int, v:Float):ND;
   
-  def update(i1:IMat, i2:IMat, vv:ND):ND
-  def update(i1:IMat, i2:IMat, i3:IMat, vv:ND):ND
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:ND):ND
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:ND):ND
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:ND):ND
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:ND):ND
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:ND):ND
+  def update(i1:Mat, i2:Mat, vv:ND):ND;
+  def update(i1:Mat, i2:Mat, i3:Mat, vv:ND):ND;
+  def update(i1:Mat, i2:Mat, i3:Mat, i4:Mat, vv:ND):ND;
   
-  def update(i1:IMat, i2:IMat, v:Float):ND
-  def update(i1:IMat, i2:IMat, i3:IMat, v:Float):ND
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, v:Float):ND
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, v:Float):ND
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, v:Float):ND
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, v:Float):ND
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, v:Float):ND
+  def update(i1:Mat, i2:Mat, v:Float):ND;
+  def update(i1:Mat, i2:Mat, i3:Mat, v:Float):ND;
+  def update(i1:Mat, i2:Mat, i3:Mat, i4:Mat, v:Float):ND;
+  
+  def printOne(i:Int):String = {
+    val v = apply(i)
+    if (v % 1 == 0 && math.abs(v) < 1e10) {       
+      "%d" format v.intValue
+    } else {
+      "%.5g" format v
+    }
+  }
+    
+  def prodDimsBy(i0:Int, step:Int):Int = {
+		  var p = 1;
+		  var i = i0;
+		  while (i < _dims.length) {
+			  p *= _dims(i);
+			  i += step;
+		  }
+		  p;
+  }
 
+  def prodDimsByX(i0:Int, step:Int):Int = {
+		  var p = 1;
+		  var i = i0;
+		  var tot = 0;
+		  while (i < _dims.length) i += step
+				  i -= step
+				  while (i >= 0) {
+					  p *= _dims(i);
+					  tot += p;
+					  i -= step;
+				  }
+		  tot
+  }
+
+  def linearize(inds:Array[Int], start:Int, step:Int):Int = {
+		  var loc = 0;
+		  var mult = 1;
+		  var pos = start;
+		  var j = 0;
+		  for (i <- 0 until _dims.length) {
+			  if (i == pos) {
+				  pos += step;
+				  loc += mult * inds(j);
+				  j += 1;
+			  }
+			  mult *= _dims(i);
+		  }
+		  loc;
+  }
+
+  def subDims(start:Int, step:Int):Array[Int] = {
+		  val out = new Array[Int](1 + (_dims.length-start-1) / step);
+		  var j = 0;
+		  for (i <- start until _dims.length by step) {
+			  out(j) = _dims(i);
+			  j += 1;
+		  }
+		  out
+  }
+
+  def incInds(inds:Array[Int], dims:Array[Int]):Int = {
+		  var ncarry = 0;
+		  inds(0) += 1;
+		  var j = 0;
+		  while (j < dims.length && inds(j) == dims(j)) {
+			  inds(j) = 0;
+			  j += 1;
+			  if (j < dims.length) inds(j) += 1;
+			  ncarry += 1;
+		  }
+		  ncarry
+  }
+
+  def populateCS(maxRows:Int, maxCols:Int):CSMat = {
+		  val cs = CSMat(maxRows, maxCols);
+		  cs(?,?) = "";
+		  val rowinds = new Array[Int]((_dims.length + 1) / 2);
+		  val colinds = new Array[Int](_dims.length / 2);
+		  val evenDims = subDims(0, 2);
+		  val oddDims = subDims(1, 2);
+		  val evenLength = evenDims.reduce(_*_);
+		  var rind = 0;
+		  var i = 0;
+		  while (rind < maxRows && i < evenLength) {
+			  val ri = linearize(rowinds, 0, 2);
+			  for (j <- 0 until maxCols) {
+				  val ci = linearize(colinds, 1, 2);
+				  cs(rind, j) = printOne(ri + ci);
+				  incInds(colinds, oddDims);
+			  }
+			  Arrays.fill(colinds,0);
+			  rind += 1 + incInds(rowinds, evenDims);
+			  i += 1;
+		  }
+		  cs;
+  }
+   
+  final val somespaces = "                                             "
+  
+  override def toString:String = {
+		val sb:StringBuilder = new StringBuilder();
+    val nChars = Mat.terminalWidth-4;
+    val ncols = prodDimsBy(1,2);
+    val nrows = prodDimsByX(0,2);
+    val maxRows = math.min(4096/nChars, nrows);
+    var maxCols = math.min(nChars, ncols);
+    var fieldWidth = 4;
+    val cs = populateCS(maxRows, maxCols);
+    val ws = new IMat(maxRows, maxCols, cs.data.map(_.length));
+    var icols = 0;
+    val colinds = new Array[Int](_dims.length / 2);
+    val oddDims = subDims(1, 2);
+    while (icols < maxCols) {
+    	var newWidth = fieldWidth;
+    	for (j <- 0 until maxRows) newWidth = math.max(newWidth, 2+(cs(j, icols).length));
+    			if ((icols+1)*newWidth < nChars) {
+    				fieldWidth = newWidth;
+    				icols += 1;
+    			} else {
+    				maxCols = icols;
+    			}
+    }     
+    for (i <- 0 until maxRows) {
+    	Arrays.fill(colinds, 0)
+    	for (j <- 0 until icols) {
+    		val str = cs(i,j);
+    		val ncarry = incInds(colinds, oddDims);
+    		sb.append(somespaces.substring(0,fieldWidth-str.length)+str+somespaces.substring(0,ncarry));
+    	}
+    	if (ncols > icols) {
+    		sb.append("...");
+    	}
+    	sb.append("\n");
+    }
+    sb.toString()
+  }
 }
 
 object ND {
@@ -195,7 +308,7 @@ object ND {
     }
   }
   
-  def hashGUIDs(inds:Array[IMat]):Long = {
+  def hashGUIDs(inds:Array[_ <: Mat]):Long = {
   	MurmurHash3.MurmurHash3_x64_64(inds.map(_.GUID), 0x3142341)
   }
   

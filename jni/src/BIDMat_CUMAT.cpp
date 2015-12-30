@@ -1293,4 +1293,14 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_reverse
   return err;
   }
 
+JNIEXPORT void JNICALL Java_edu_berkeley_bid_CUMAT_spermute
+(JNIEnv * env, jobject obj, jint M, jint N, jint K, jobject j_A, jobject j_B) {
+  int i, offset, step = M*N;
+  float * A = (float *)getPointer(env, j_A);
+  float * B = (float *)getPointer(env, j_B);
+
+  for (i = 0, offset = 0; i < K; i++, offset += step) {
+    transpose(A+offset, M, B+offset, N, M, N);
+  }
 }
+

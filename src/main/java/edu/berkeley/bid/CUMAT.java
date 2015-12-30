@@ -294,4 +294,6 @@ public final class CUMAT {
     public static native int cumsum2ByKeyFF(Pointer A, Pointer B, Pointer out, int nrows, int ncols);
     
     public static native int reverse(Pointer A, Pointer out, long len);
+    
+    public static native  void spermute(int d1, int d2, int d3, Pointer in, Pointer out);
 }
