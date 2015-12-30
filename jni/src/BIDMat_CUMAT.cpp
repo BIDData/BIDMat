@@ -230,6 +230,33 @@ extern "C" {
     return copyToInds2D(A, lda, B, ldb, I, nrows, J, ncols);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_copyToInds3D
+  (JNIEnv *env, jobject obj, jobject jA, jint lda, jint rda, jobject jB, jint ldb, jint rdb, 
+   jobject jI, jint nrows, jobject jJ, jint ncols, jobject jK, jint nk) 
+  {
+    float *A = (float*)getPointer(env, jA);
+    float *B = (float*)getPointer(env, jB);
+    int *I = (int*)getPointer(env, jI);
+    int *J = (int*)getPointer(env, jJ);
+    int *K = (int*)getPointer(env, jK);
+
+    return copyToInds3D(A, lda, rda, B, ldb, rdb, I, nrows, J, ncols, K, nk);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_copyToInds4D
+  (JNIEnv *env, jobject obj, jobject jA, jint lda, jint rda, jint tda, jobject jB, jint ldb, jint rdb, jint tdb,
+   jobject jI, jint nrows, jobject jJ, jint ncols, jobject jK, jint nk, jobject jL, jint nl) 
+  {
+    float *A = (float*)getPointer(env, jA);
+    float *B = (float*)getPointer(env, jB);
+    int *I = (int*)getPointer(env, jI);
+    int *J = (int*)getPointer(env, jJ);
+    int *K = (int*)getPointer(env, jK);
+    int *L = (int*)getPointer(env, jL);
+
+    return copyToInds4D(A, lda, rda, tda, B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl);
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_copyToInds2DLong
   (JNIEnv *env, jobject obj, jobject jA, jint lda, jobject jB, jint ldb,
    jobject jI, jint nrows, jobject jJ, jint ncols) 
@@ -276,6 +303,33 @@ extern "C" {
     return copyFromInds2D(A, lda, B, ldb, I, nrows, J, ncols);
   }
 
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_copyFromInds3D
+  (JNIEnv *env, jobject obj, jobject jA, jint lda, jint rda, jobject jB, jint ldb, jint rdb, 
+   jobject jI, jint nrows, jobject jJ, jint ncols, jobject jK, jint nk) 
+  {
+    float *A = (float*)getPointer(env, jA);
+    float *B = (float*)getPointer(env, jB);
+    int *I = (int*)getPointer(env, jI);
+    int *J = (int*)getPointer(env, jJ);
+    int *K = (int*)getPointer(env, jK);
+
+    return copyFromInds3D(A, lda, rda, B, ldb, rdb, I, nrows, J, ncols, K, nk);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_copyFromInds4D
+  (JNIEnv *env, jobject obj, jobject jA, jint lda, jint rda, jint tda, jobject jB, jint ldb, jint rdb, jint tdb,
+   jobject jI, jint nrows, jobject jJ, jint ncols, jobject jK, jint nk, jobject jL, jint nl) 
+  {
+    float *A = (float*)getPointer(env, jA);
+    float *B = (float*)getPointer(env, jB);
+    int *I = (int*)getPointer(env, jI);
+    int *J = (int*)getPointer(env, jJ);
+    int *K = (int*)getPointer(env, jK);
+    int *L = (int*)getPointer(env, jL);
+
+    return copyFromInds4D(A, lda, rda, tda, B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl);
+  }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_copyFromInds2DLong
   (JNIEnv *env, jobject obj, jobject jA, jint lda, jobject jB, jint ldb,
@@ -1304,3 +1358,4 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CUMAT_spermute
   }
 }
 
+}

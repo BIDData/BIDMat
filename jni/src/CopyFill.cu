@@ -149,6 +149,100 @@ int copyToInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J
   return err;
 }
 
+__global__ void __copyToInds3D(float *A, int lda, int rda, float *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk) {
+  int ii = threadIdx.x + blockDim.x * blockIdx.x;
+  int jj = threadIdx.y + blockDim.y * blockIdx.y;
+  int kk = threadIdx.z + blockDim.z * blockIdx.z;
+  int i, j, k, mapi, mapj, mapk;
+  for (k = kk; k < nk; k += blockDim.z * gridDim.z) {
+    mapk = k;
+    if (K != NULL) mapk = K[k];
+    for (j = jj; j < ncols; j += blockDim.y * gridDim.y) {
+      mapj = j;
+      if (J != NULL) mapj = J[j];
+      if (I != NULL) {
+        for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
+          mapi = I[i];
+          B[mapi + ldb * (mapj + rdb * mapk)] = A[i + lda * (j + rda * k)];
+        }
+      } else {
+        for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
+          mapi = i;
+          B[mapi + ldb * (mapj + rdb * mapk)] = A[i + lda * (j + rda * k)];
+        }
+      }
+    }
+  }
+}
+
+int copyToInds3D(float *A, int lda, int rda, float *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk) {
+  int ntx, nty, ntz, nbx, nby, nbz;
+  ntx = min(nrows, 1024);
+  nbx = min((nrows - 1) / ntx + 1, 1024);
+  nty = min(ncols, 1024/ntx);
+  nby = min((ncols - 1) / nty + 1, 1024);
+  ntz = min(nk, 1024/ntx/nty);
+  nbz = min((nk - 1) / ntz + 1, 1024);
+  dim3 blockdims(ntx, nty, ntz);
+  dim3 griddims(nbx, nby, nbz);
+  __copyToInds3D<<<griddims,blockdims>>>(A, lda, rda, B, ldb, rdb, I, nrows, J, ncols, K, nk);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+__global__ void __copyToInds4D(float *A, int lda, int rda, int tda, float *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl, int ntk, int nbk, int ntl, int nbl) {
+  int ii = threadIdx.x + blockDim.x * blockIdx.x;
+  int jj = threadIdx.y + blockDim.y * blockIdx.y;
+  int tk = threadIdx.z / ntk;
+  int tl = threadIdx.z - tk * ntk;
+  int bk = blockIdx.z / nbk;
+  int bl = blockIdx.z - bk * nbk;
+  int kk = tk + ntk * bk;
+  int ll = tl + ntl * bl;
+  int i, j, k, l, mapi, mapj, mapk, mapl;
+  for (l = ll; l < nl; l += ntl * nbl) {
+    mapl = l;
+    if (L != NULL) mapl = L[l];
+    for (k = kk; k < nk; k += ntk * nbk) {
+      mapk = k;
+      if (K != NULL) mapk = K[k];
+      for (j = jj; j < ncols; j += blockDim.y * gridDim.y) {
+        mapj = j;
+        if (J != NULL) mapj = J[j];
+        if (I != NULL) {
+          for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
+            mapi = I[i];
+            B[mapi + ldb * (mapj + rdb * (mapk + tdb * mapl))] = A[i + lda * (j + rda * (k + tda * l))];
+          }
+        } else {
+          for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
+            B[i + ldb * (mapj + rdb * (mapk + tdb * mapl))] = A[i + lda * (j + rda * (k + tda * l))];
+          }
+        }
+      }
+    }
+  }
+}
+
+int copyToInds4D(float *A, int lda, int rda, int tda, float *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl) {
+  int ntx, nty, ntk, ntl, nbx, nby, nbk, nbl;
+  ntx = min(nrows, 1024);
+  nbx = min((nrows - 1) / ntx + 1, 1024);
+  nty = min(ncols, 1024/ntx);
+  nby = min((ncols - 1) / nty + 1, 1024);
+  ntk = min(nk, 1024/ntx/nty);
+  nbk = min((nk - 1) / ntk + 1, 255);
+  ntl = min(nl, 1024/ntx/nty/ntk);
+  nbl = min((nl - 1) / ntl + 1, 255);
+  dim3 blockdims(ntx, nty, ntk * ntl);
+  dim3 griddims(nbx, nby, nbk * nbl);
+  __copyToInds4D<<<griddims,blockdims>>>(A, lda, rda, tda, B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl, ntk, nbk, ntl, nbl);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
 int copyToInds2DLong(long long *A, int lda, long long *B, int ldb, int *I, int nrows, int *J, int ncols) {
   int len = nrows * ncols;
   int nthreads = max(32, min(1024, nrows));
@@ -292,6 +386,103 @@ int copyFromInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int 
   cudaError_t err = cudaGetLastError();
   return err;
 }
+
+
+__global__ void __copyFromInds3D(float *A, int lda, int rda, float *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk) {
+  int ii = threadIdx.x + blockDim.x * blockIdx.x;
+  int jj = threadIdx.y + blockDim.y * blockIdx.y;
+  int kk = threadIdx.z + blockDim.z * blockIdx.z;
+  int i, j, k, mapi, mapj, mapk;
+  for (k = kk; k < nk; k += blockDim.z * gridDim.z) {
+    mapk = k;
+    if (K != NULL) mapk = K[k];
+    for (j = jj; j < ncols; j += blockDim.y * gridDim.y) {
+      mapj = j;
+      if (J != NULL) mapj = J[j];
+      if (I != NULL) {
+        for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
+          mapi = I[i];
+          B[i + ldb * (j + rdb * k)] = A[mapi + lda * (mapj + rda * mapk)];
+        }
+      } else {
+        for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
+          mapi = i;
+          B[i + ldb * (j + rdb * k)] = A[mapi + lda * (mapj + rda * mapk)];
+        }
+      }
+    }
+  }
+}
+
+int copyFromInds3D(float *A, int lda, int rda, float *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk) {
+  int ntx, nty, ntz, nbx, nby, nbz;
+  ntx = min(nrows, 1024);
+  nbx = (nrows - 1) / ntx + 1;
+  nty = min(ncols, 1024/ntx);
+  nby = (ncols - 1) / nty + 1;
+  ntz = min(nk, 1024/(ntx*nty));
+  nbz = (nk - 1) / ntz + 1;
+  dim3 blockdims(ntx, nty, ntz);
+  dim3 griddims(nbx, nby, nbz);
+  __copyToInds3D<<<griddims,blockdims>>>(A, lda, rda, B, ldb, rdb, I, nrows, J, ncols, K, nk);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+
+__global__ void __copyFromInds4D(float *A, int lda, int rda, int tda, float *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl, int ntk, int nbk, int ntl, int nbl) {
+  int ii = threadIdx.x + blockDim.x * blockIdx.x;
+  int jj = threadIdx.y + blockDim.y * blockIdx.y;
+  int tk = threadIdx.z / ntk;
+  int tl = threadIdx.z - tk * ntk;
+  int bk = blockIdx.z / nbk;
+  int bl = blockIdx.z - bk * nbk;
+  int kk = tk + ntk * bk;
+  int ll = tl + ntl * bl;
+  int i, j, k, l, mapi, mapj, mapk, mapl;
+  for (l = ll; l < nl; l += ntl * nbl) {
+    mapl = l;
+    if (L != NULL) mapl = L[l];
+    for (k = kk; k < nk; k += ntk * nbk) {
+      mapk = k;
+      if (K != NULL) mapk = K[k];
+      for (j = jj; j < ncols; j += blockDim.y * gridDim.y) {
+        mapj = j;
+        if (J != NULL) mapj = J[j];
+        if (I != NULL) {
+          for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
+            mapi = I[i];
+            B[i + ldb * (j + rdb * (k + tdb * l))] = A[mapi + lda * (mapj + rda * (mapk + tda * mapl))];
+          }
+        } else {
+          for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
+            B[i + ldb * (j + rdb * (k + tdb * l))] = A[i + lda * (mapj + rda * (mapk + tda * mapl))];
+          }
+        }
+      }
+    }
+  }
+}
+
+int copyFromInds4D(float *A, int lda, int rda, int tda, float *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl) {
+  int ntx, nty, ntk, ntl, nbx, nby, nbk, nbl;
+  ntx = min(nrows, 1024);
+  nbx = min((nrows - 1) / ntx + 1, 1024);
+  nty = min(ncols, 1024/ntx);
+  nby = min((ncols - 1) / nty + 1, 1024);
+  ntk = min(nk, 1024/ntx/nty);
+  nbk = min((nk - 1) / ntk + 1, 255);
+  ntl = min(nl, 1024/ntx/nty/ntk);
+  nbl = min((nl - 1) / ntl + 1, 255);
+  dim3 blockdims(ntx, nty, ntk * ntl);
+  dim3 griddims(nbx, nby, nbk * nbl);
+  __copyFromInds4D<<<griddims,blockdims>>>(A, lda, rda, tda, B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl, ntk, nbk, ntl, nbl);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
 
 int copyFromInds2DLong(long long *A, int lda, long long *B, int ldb, int *I, int nrows, int *J, int ncols) {
   int len = nrows * ncols;

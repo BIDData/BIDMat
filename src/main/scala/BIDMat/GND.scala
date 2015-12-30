@@ -65,7 +65,15 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
   	}
   }
   
-  def apply(inds0:List[GIMat]):GND = apply(inds0.toArray)
+  def apply(inds0:List[GIMat]):GND = apply(inds0.toArray);
+  
+  def safePointer(ind:GIMat):Pointer = {
+    if (ind.asInstanceOf[AnyRef] == null) {
+      GMat.nullPointer;
+    } else {
+      ind.data;
+    }
+  }
   
   def apply(inds:Array[GIMat]):GND = {  
     val newdims = new Array[Int](_dims.length)
@@ -88,8 +96,16 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
     	  val omat = out.toGMatView(newdims(0), newdims(1));
     	  toGMatView(dims(0), dims(1)).applyx(inds(0), inds(1), omat);
       }
-      case 3 => {}
-      case 4 => {}
+      case 3 => {
+        val err = CUMAT.copyFromInds3D(data, dims(0), dims(1), out.data, newdims(0), newdims(1), 
+            safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1), safePointer(newinds(2)), newdims(2));
+        if (err != 0) throw new RuntimeException("GND apply(I, J, K) error" + cudaGetErrorString(err));
+      }
+      case 4 => {
+      	val err = CUMAT.copyFromInds4D(data, dims(0), dims(1), dims(2), out.data, newdims(0), newdims(1), newdims(2),
+      			safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1), safePointer(newinds(2)), newdims(2), safePointer(newinds(3)), newdims(3));
+      	if (err != 0) throw new RuntimeException("GND apply(I, J, K, L) error" + cudaGetErrorString(err));
+      }   
       case _ => throw new RuntimeException("GND slice access with more than 4 indices not supported");
     }
     out;
@@ -102,24 +118,50 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
   override def apply(inds:Mat):Mat = {
     inds match {
       case ii:GIMat => apply(ii);
+      case ii:IMat => apply(GIMat(ii));
     }
   }
   
   override def apply(i1:Mat, i2:Mat):ND = {
     (i1, i2) match {
       case (a1:GIMat, a2:GIMat) => apply(a1, a2);
+      case (a1:IMat, a2:GIMat) => apply(GIMat(a1), a2);
+      case (a1:GIMat, a2:IMat) => apply(a1, GIMat(a2));
+      case (a1:IMat, a2:IMat) => apply(GIMat(a1), GIMat(a2));
     }
   }
   
   override def apply(i1:Mat, i2:Mat, i3:Mat):ND = {
     (i1, i2, i3) match {
       case (a1:GIMat, a2:GIMat, a3:GIMat) => apply(a1, a2, a3);
+      case (a1:IMat, a2:GIMat, a3:GIMat) => apply(GIMat(a1), a2, a3);
+      case (a1:GIMat, a2:IMat, a3:GIMat) => apply(a1, GIMat(a2), a3);
+      case (a1:IMat, a2:IMat, a3:GIMat) => apply(GIMat(a1), GIMat(a2), a3);
+      case (a1:GIMat, a2:GIMat, a3:IMat) => apply(a1, a2, GIMat(a3));
+      case (a1:IMat, a2:GIMat, a3:IMat) => apply(GIMat(a1), a2, GIMat(a3));
+      case (a1:GIMat, a2:IMat, a3:IMat) => apply(a1, GIMat(a2), GIMat(a3));
+      case (a1:IMat, a2:IMat, a3:IMat) => apply(GIMat(a1), GIMat(a2), GIMat(a3));
     }
   }
   
   override def apply(i1:Mat, i2:Mat, i3:Mat, i4:Mat):ND = {
     (i1, i2, i3, i4) match {
       case (a1:GIMat, a2:GIMat, a3:GIMat, a4:GIMat) => apply(a1, a2, a3, a4);
+      case (a1:IMat, a2:GIMat, a3:GIMat, a4:GIMat) => apply(GIMat(a1), a2, a3, a4);
+      case (a1:GIMat, a2:IMat, a3:GIMat, a4:GIMat) => apply(a1, GIMat(a2), a3, a4);
+      case (a1:IMat, a2:IMat, a3:GIMat, a4:GIMat) => apply(GIMat(a1), GIMat(a2), a3, a4);
+      case (a1:GIMat, a2:GIMat, a3:IMat, a4:GIMat) => apply(a1, a2, GIMat(a3), a4);
+      case (a1:IMat, a2:GIMat, a3:IMat, a4:GIMat) => apply(GIMat(a1), a2, GIMat(a3), a4);
+      case (a1:GIMat, a2:IMat, a3:IMat, a4:GIMat) => apply(a1, GIMat(a2), GIMat(a3), a4);
+      case (a1:IMat, a2:IMat, a3:IMat, a4:GIMat) => apply(GIMat(a1), GIMat(a2), GIMat(a3), a4);
+      case (a1:GIMat, a2:GIMat, a3:GIMat, a4:IMat) => apply(a1, a2, a3, GIMat(a4));
+      case (a1:IMat, a2:GIMat, a3:GIMat, a4:IMat) => apply(GIMat(a1), a2, a3, GIMat(a4));
+      case (a1:GIMat, a2:IMat, a3:GIMat, a4:IMat) => apply(a1, GIMat(a2), a3, GIMat(a4));
+      case (a1:IMat, a2:IMat, a3:GIMat, a4:IMat) => apply(GIMat(a1), GIMat(a2), a3, GIMat(a4));
+      case (a1:GIMat, a2:GIMat, a3:IMat, a4:IMat) => apply(a1, a2, GIMat(a3), GIMat(a4));
+      case (a1:IMat, a2:GIMat, a3:IMat, a4:IMat) => apply(GIMat(a1), a2, GIMat(a3), GIMat(a4));
+      case (a1:GIMat, a2:IMat, a3:IMat, a4:IMat) => apply(a1, GIMat(a2), GIMat(a3), GIMat(a4));
+      case (a1:IMat, a2:IMat, a3:IMat, a4:IMat) => apply(GIMat(a1), GIMat(a2), GIMat(a3), GIMat(a4));
     }
   }
 
@@ -237,8 +279,16 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
     	val omat = vv.toGMatView(newdims(0), newdims(1));
     	toGMatView(dims(0), dims(1)).updatex(inds(0), inds(1), omat);
     }
-    case 3 => {}
-    case 4 => {}
+    case 3 => {
+    	val err = CUMAT.copyToInds3D(vv.data, vv.dims(0), vv.dims(1), data, dims(0), dims(1), 
+    			safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1), safePointer(newinds(2)), newdims(2));
+    	if (err != 0) throw new RuntimeException("GND apply(I, J, K) error" + cudaGetErrorString(err));
+    }
+    case 4 => {
+    	val err = CUMAT.copyToInds4D(vv.data, vv.dims(0), vv.dims(1), vv.dims(2), data, dims(0), dims(1), dims(2),
+    			safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1), safePointer(newinds(2)), newdims(2), safePointer(newinds(3)), newdims(3));
+    	if (err != 0) throw new RuntimeException("GND apply(I, J, K, L) error" + cudaGetErrorString(err));
+    }
     case _ => throw new RuntimeException("GND slice access with more than 4 indices not supported");
     }
     this
@@ -255,24 +305,50 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
   def update(i1:Mat, vv:Mat):FND = {
     (i1, vv) match {
       case (a1:GIMat, uu:FMat) => update(a1, uu);
+      case (a1:IMat, uu:FMat) => update(GIMat(a1), uu);
     }
   }
   
   def update(i1:Mat, i2:Mat, vv:ND):FND = {
     (i1, i2, vv) match {
       case (a1:GIMat, a2:GIMat, uu:FND) => update(a1, a2, uu);
+      case (a1:IMat, a2:GIMat, uu:FND) => update(GIMat(a1), a2, uu);
+      case (a1:GIMat, a2:IMat, uu:FND) => update(a1, GIMat(a2), uu);
+      case (a1:IMat, a2:IMat, uu:FND) => update(GIMat(a1), GIMat(a2), uu);
     }
   }
     
   def update(i1:Mat, i2:Mat, i3:Mat, vv:ND):FND = {
     (i1, i2, i3, vv) match {
       case (a1:GIMat, a2:GIMat, a3:GIMat, uu:FND) => update(a1, a2, a3, uu);
+      case (a1:IMat, a2:GIMat, a3:GIMat, uu:FND) => update(GIMat(a1), a2, a3, uu);
+      case (a1:GIMat, a2:IMat, a3:GIMat, uu:FND) => update(a1, GIMat(a2), a3, uu);
+      case (a1:IMat, a2:IMat, a3:GIMat, uu:FND) => update(GIMat(a1), GIMat(a2), a3, uu);
+      case (a1:GIMat, a2:GIMat, a3:IMat, uu:FND) => update(a1, a2, GIMat(a3), uu);
+      case (a1:IMat, a2:GIMat, a3:IMat, uu:FND) => update(GIMat(a1), a2, GIMat(a3), uu);
+      case (a1:GIMat, a2:IMat, a3:IMat, uu:FND) => update(a1, GIMat(a2), GIMat(a3), uu);
+      case (a1:IMat, a2:IMat, a3:IMat, uu:FND) => update(GIMat(a1), GIMat(a2), GIMat(a3), uu);
     }
   }
   
   def update(i1:Mat, i2:Mat, i3:Mat, i4:Mat, vv:ND):FND = {
     (i1, i2, i3, i4, vv) match {
       case (a1:GIMat, a2:GIMat, a3:GIMat, a4:GIMat, uu:FND) => update(a1, a2, a3, a4, uu);
+      case (a1:IMat, a2:GIMat, a3:GIMat, a4:GIMat, uu:FND) => update(GIMat(a1), a2, a3, a4, uu);
+      case (a1:GIMat, a2:IMat, a3:GIMat, a4:GIMat, uu:FND) => update(a1, GIMat(a2), a3, a4, uu);
+      case (a1:IMat, a2:IMat, a3:GIMat, a4:GIMat, uu:FND) => update(GIMat(a1), GIMat(a2), a3, a4, uu);
+      case (a1:GIMat, a2:GIMat, a3:IMat, a4:GIMat, uu:FND) => update(a1, a2, GIMat(a3), a4, uu);
+      case (a1:IMat, a2:GIMat, a3:IMat, a4:GIMat, uu:FND) => update(GIMat(a1), a2, GIMat(a3), a4, uu);
+      case (a1:GIMat, a2:IMat, a3:IMat, a4:GIMat, uu:FND) => update(a1, GIMat(a2), GIMat(a3), a4, uu);
+      case (a1:IMat, a2:IMat, a3:IMat, a4:GIMat, uu:FND) => update(GIMat(a1), GIMat(a2), GIMat(a3), a4, uu);
+      case (a1:GIMat, a2:GIMat, a3:GIMat, a4:IMat, uu:FND) => update(a1, a2, a3, GIMat(a4), uu);
+      case (a1:IMat, a2:GIMat, a3:GIMat, a4:IMat, uu:FND) => update(GIMat(a1), a2, a3, GIMat(a4), uu);
+      case (a1:GIMat, a2:IMat, a3:GIMat, a4:IMat, uu:FND) => update(a1, GIMat(a2), a3, GIMat(a4), uu);
+      case (a1:IMat, a2:IMat, a3:GIMat, a4:IMat, uu:FND) => update(GIMat(a1), GIMat(a2), a3, GIMat(a4), uu);
+      case (a1:GIMat, a2:GIMat, a3:IMat, a4:IMat, uu:FND) => update(a1, a2, GIMat(a3), GIMat(a4), uu);
+      case (a1:IMat, a2:GIMat, a3:IMat, a4:IMat, uu:FND) => update(GIMat(a1), a2, GIMat(a3), GIMat(a4), uu);
+      case (a1:GIMat, a2:IMat, a3:IMat, a4:IMat, uu:FND) => update(a1, GIMat(a2), GIMat(a3), GIMat(a4), uu);
+      case (a1:IMat, a2:IMat, a3:IMat, a4:IMat, uu:FND) => update(GIMat(a1), GIMat(a2), GIMat(a3), GIMat(a4), uu);
     }
   }
   
@@ -466,8 +542,20 @@ object GND {
   def apply(dims:Int*):GND = apply(dims.toArray)
   
   def apply(f:GMat):GND = {
-    val out:GND = apply(f.nrows, f.ncols)
+    val out = GND.newOrCheckGND(Array(f.nrows, f.ncols), null, f.GUID, "apply".##);
     GPUtoGPUarraycopy(f.data, 0, out.data, 0, f.length, "GND apply");
+    out
+  }
+  
+  def apply(f:FND):GND = {
+    val out = GND.newOrCheckGND(f.dims.data, null, f.GUID, "apply".##);
+    CPUtoGPUarraycopy(f.data, 0, out.data, 0, f.length, "GND apply");
+    out
+  }
+  
+  def apply(f:FMat):GND = {
+    val out = GND.newOrCheckGND(Array(f.nrows, f.ncols), null, f.GUID, "apply".##);
+    CPUtoGPUarraycopy(f.data, 0, out.data, 0, f.length, "GND apply");
     out
   }
   
