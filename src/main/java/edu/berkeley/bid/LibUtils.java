@@ -103,7 +103,7 @@ public final class LibUtils
             PrintWriter pw = new PrintWriter(sw);
             
             pw.println("Error while loading native library \"" +
-                    libName + "\" with base name \""+baseName+"\"");
+                    libName + "\"");
             pw.println("Operating system name: "+
                     System.getProperty("os.name"));
             pw.println("Architecture         : "+
