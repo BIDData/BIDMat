@@ -699,13 +699,14 @@ object Mat {
     path.replace("BIDMat.jar","")
   }
   
-  def checkMKL:Unit = {
+  def checkMKL(verb:Boolean=false):Unit = {
     if (useMKL) {
     	try {
     		edu.berkeley.bid.LibUtils.loadLibrary("bidmatcpu")
     	} catch {
-    	case _:Throwable => {
+    	case th:Throwable => {
     		println("Cant find native CPU libraries")
+    		if (verb) print(th.getMessage)
     		useMKL = false
     	}
     	}
