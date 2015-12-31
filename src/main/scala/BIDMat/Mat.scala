@@ -703,6 +703,7 @@ object Mat {
     if (verb) useMKL = true;
     if (useMKL) {
     	try {
+    	  if (ostype == OS_WINDOWS) edu.berkeley.bid.LibUtils.loadLibrary("libiomp5md")
     		edu.berkeley.bid.LibUtils.loadLibrary("bidmatcpu")
     	} catch {
     	case th:Throwable => {
