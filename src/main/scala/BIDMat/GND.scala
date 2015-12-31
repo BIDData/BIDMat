@@ -115,6 +115,34 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
   def apply(i1:GIMat, i2:GIMat, i3:GIMat):GND = apply(Array(i1, i2, i3));
   def apply(i1:GIMat, i2:GIMat, i3:GIMat, i4:GIMat):GND = apply(Array(i1, i2, i3, i4));
   
+  def apply (a1:IMat, a2:GIMat):GND = apply(GIMat(a1), a2);
+  def apply(a1:GIMat, a2:IMat):GND = apply(a1, GIMat(a2));
+  def apply(a1:IMat, a2:IMat):GND = apply(GIMat(a1), GIMat(a2));
+  
+  def apply(a1:IMat, a2:GIMat, a3:GIMat):GND = apply(GIMat(a1), a2, a3);
+  def apply(a1:GIMat, a2:IMat, a3:GIMat):GND = apply(a1, GIMat(a2), a3);
+  def apply(a1:IMat, a2:IMat, a3:GIMat):GND = apply(GIMat(a1), GIMat(a2), a3);
+  def apply(a1:GIMat, a2:GIMat, a3:IMat):GND = apply(a1, a2, GIMat(a3));
+  def apply(a1:IMat, a2:GIMat, a3:IMat):GND = apply(GIMat(a1), a2, GIMat(a3));
+  def apply(a1:GIMat, a2:IMat, a3:IMat):GND = apply(a1, GIMat(a2), GIMat(a3));
+  def apply(a1:IMat, a2:IMat, a3:IMat):GND = apply(GIMat(a1), GIMat(a2), GIMat(a3));
+
+  def apply(a1:IMat, a2:GIMat, a3:GIMat, a4:GIMat):GND = apply(GIMat(a1), a2, a3, a4);
+  def apply(a1:GIMat, a2:IMat, a3:GIMat, a4:GIMat):GND = apply(a1, GIMat(a2), a3, a4);
+  def apply(a1:IMat, a2:IMat, a3:GIMat, a4:GIMat):GND = apply(GIMat(a1), GIMat(a2), a3, a4);
+  def apply(a1:GIMat, a2:GIMat, a3:IMat, a4:GIMat):GND = apply(a1, a2, GIMat(a3), a4);
+  def apply(a1:IMat, a2:GIMat, a3:IMat, a4:GIMat):GND = apply(GIMat(a1), a2, GIMat(a3), a4);
+  def apply(a1:GIMat, a2:IMat, a3:IMat, a4:GIMat):GND = apply(a1, GIMat(a2), GIMat(a3), a4);
+  def apply(a1:IMat, a2:IMat, a3:IMat, a4:GIMat):GND = apply(GIMat(a1), GIMat(a2), GIMat(a3), a4);
+  def apply(a1:GIMat, a2:GIMat, a3:GIMat, a4:IMat):GND = apply(a1, a2, a3, GIMat(a4));
+  def apply(a1:IMat, a2:GIMat, a3:GIMat, a4:IMat):GND = apply(GIMat(a1), a2, a3, GIMat(a4));
+  def apply(a1:GIMat, a2:IMat, a3:GIMat, a4:IMat):GND = apply(a1, GIMat(a2), a3, GIMat(a4));
+  def apply(a1:IMat, a2:IMat, a3:GIMat, a4:IMat):GND = apply(GIMat(a1), GIMat(a2), a3, GIMat(a4));
+  def apply(a1:GIMat, a2:GIMat, a3:IMat, a4:IMat):GND = apply(a1, a2, GIMat(a3), GIMat(a4));
+  def apply(a1:IMat, a2:GIMat, a3:IMat, a4:IMat):GND = apply(GIMat(a1), a2, GIMat(a3), GIMat(a4));
+  def apply(a1:GIMat, a2:IMat, a3:IMat, a4:IMat):GND = apply(a1, GIMat(a2), GIMat(a3), GIMat(a4));
+  def apply(a1:IMat, a2:IMat, a3:IMat, a4:IMat):GND = apply(GIMat(a1), GIMat(a2), GIMat(a3), GIMat(a4));
+  
   override def apply(inds:Mat):Mat = {
     inds match {
       case ii:GIMat => apply(ii);
@@ -200,6 +228,12 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
       out
     }
   }
+  
+   def toFND(omat:FND):FND = {
+      val out = FND.newOrCheckFND(_dims, omat, GUID, "toFND".##);
+      GPUtoCPUarraycopy(data, 0, out.data, 0, length, "GND toFND");
+      out
+   }
 
   def toGMatView(nr:Int, nc:Int):GMat = {
     if (nr*nc != length) {
@@ -302,53 +336,81 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
   def update(i1:GIMat, i2:GIMat, i3:GIMat, vv:ND):GND = update(Array(i1, i2, i3), vv.asInstanceOf[GND]);
   def update(i1:GIMat, i2:GIMat, i3:GIMat, i4:GIMat, vv:ND):GND = update(Array(i1, i2, i3, i4), vv.asInstanceOf[GND]);
   
-  def update(i1:Mat, vv:Mat):FND = {
+  def update(a1:IMat, a2:GIMat, uu:ND):GND = update(GIMat(a1), a2, uu);
+  def update(a1:GIMat, a2:IMat, uu:ND):GND = update(a1, GIMat(a2), uu);
+  def update(a1:IMat, a2:IMat, uu:ND):GND = update(GIMat(a1), GIMat(a2), uu);
+
+  def update(a1:IMat, a2:GIMat, a3:GIMat, uu:ND):GND = update(GIMat(a1), a2, a3, uu);
+  def update(a1:GIMat, a2:IMat, a3:GIMat, uu:ND):GND = update(a1, GIMat(a2), a3, uu);
+  def update(a1:IMat, a2:IMat, a3:GIMat, uu:ND):GND = update(GIMat(a1), GIMat(a2), a3, uu);
+  def update(a1:GIMat, a2:GIMat, a3:IMat, uu:ND):GND = update(a1, a2, GIMat(a3), uu);
+  def update(a1:IMat, a2:GIMat, a3:IMat, uu:ND):GND = update(GIMat(a1), a2, GIMat(a3), uu);
+  def update(a1:GIMat, a2:IMat, a3:IMat, uu:ND):GND = update(a1, GIMat(a2), GIMat(a3), uu);
+  def update(a1:IMat, a2:IMat, a3:IMat, uu:ND):GND = update(GIMat(a1), GIMat(a2), GIMat(a3), uu);
+
+  def update(a1:IMat, a2:GIMat, a3:GIMat, a4:GIMat, uu:ND):GND = update(GIMat(a1), a2, a3, a4, uu);
+  def update(a1:GIMat, a2:IMat, a3:GIMat, a4:GIMat, uu:ND):GND = update(a1, GIMat(a2), a3, a4, uu);
+  def update(a1:IMat, a2:IMat, a3:GIMat, a4:GIMat, uu:ND):GND = update(GIMat(a1), GIMat(a2), a3, a4, uu);
+  def update(a1:GIMat, a2:GIMat, a3:IMat, a4:GIMat, uu:ND):GND = update(a1, a2, GIMat(a3), a4, uu);
+  def update(a1:IMat, a2:GIMat, a3:IMat, a4:GIMat, uu:ND):GND = update(GIMat(a1), a2, GIMat(a3), a4, uu);
+  def update(a1:GIMat, a2:IMat, a3:IMat, a4:GIMat, uu:ND):GND = update(a1, GIMat(a2), GIMat(a3), a4, uu);
+  def update(a1:IMat, a2:IMat, a3:IMat, a4:GIMat, uu:ND):GND = update(GIMat(a1), GIMat(a2), GIMat(a3), a4, uu);
+  def update(a1:GIMat, a2:GIMat, a3:GIMat, a4:IMat, uu:ND):GND = update(a1, a2, a3, GIMat(a4), uu);
+  def update(a1:IMat, a2:GIMat, a3:GIMat, a4:IMat, uu:ND):GND = update(GIMat(a1), a2, a3, GIMat(a4), uu);
+  def update(a1:GIMat, a2:IMat, a3:GIMat, a4:IMat, uu:ND):GND = update(a1, GIMat(a2), a3, GIMat(a4), uu);
+  def update(a1:IMat, a2:IMat, a3:GIMat, a4:IMat, uu:ND):GND = update(GIMat(a1), GIMat(a2), a3, GIMat(a4), uu);
+  def update(a1:GIMat, a2:GIMat, a3:IMat, a4:IMat, uu:ND):GND = update(a1, a2, GIMat(a3), GIMat(a4), uu);
+  def update(a1:IMat, a2:GIMat, a3:IMat, a4:IMat, uu:ND):GND = update(GIMat(a1), a2, GIMat(a3), GIMat(a4), uu);
+  def update(a1:GIMat, a2:IMat, a3:IMat, a4:IMat, uu:ND):GND = update(a1, GIMat(a2), GIMat(a3), GIMat(a4), uu);
+  def update(a1:IMat, a2:IMat, a3:IMat, a4:IMat, uu:ND):GND = update(GIMat(a1), GIMat(a2), GIMat(a3), GIMat(a4), uu);
+  
+  def update(i1:Mat, vv:Mat):GND = {
     (i1, vv) match {
       case (a1:GIMat, uu:FMat) => update(a1, uu);
       case (a1:IMat, uu:FMat) => update(GIMat(a1), uu);
     }
   }
   
-  def update(i1:Mat, i2:Mat, vv:ND):FND = {
+  def update(i1:Mat, i2:Mat, vv:ND):GND = {
     (i1, i2, vv) match {
-      case (a1:GIMat, a2:GIMat, uu:FND) => update(a1, a2, uu);
-      case (a1:IMat, a2:GIMat, uu:FND) => update(GIMat(a1), a2, uu);
-      case (a1:GIMat, a2:IMat, uu:FND) => update(a1, GIMat(a2), uu);
-      case (a1:IMat, a2:IMat, uu:FND) => update(GIMat(a1), GIMat(a2), uu);
+      case (a1:GIMat, a2:GIMat, uu:ND) => update(a1, a2, uu);
+      case (a1:IMat, a2:GIMat, uu:ND) => update(GIMat(a1), a2, uu);
+      case (a1:GIMat, a2:IMat, uu:ND) => update(a1, GIMat(a2), uu);
+      case (a1:IMat, a2:IMat, uu:ND) => update(GIMat(a1), GIMat(a2), uu);
     }
   }
     
-  def update(i1:Mat, i2:Mat, i3:Mat, vv:ND):FND = {
+  def update(i1:Mat, i2:Mat, i3:Mat, vv:ND):GND = {
     (i1, i2, i3, vv) match {
-      case (a1:GIMat, a2:GIMat, a3:GIMat, uu:FND) => update(a1, a2, a3, uu);
-      case (a1:IMat, a2:GIMat, a3:GIMat, uu:FND) => update(GIMat(a1), a2, a3, uu);
-      case (a1:GIMat, a2:IMat, a3:GIMat, uu:FND) => update(a1, GIMat(a2), a3, uu);
-      case (a1:IMat, a2:IMat, a3:GIMat, uu:FND) => update(GIMat(a1), GIMat(a2), a3, uu);
-      case (a1:GIMat, a2:GIMat, a3:IMat, uu:FND) => update(a1, a2, GIMat(a3), uu);
-      case (a1:IMat, a2:GIMat, a3:IMat, uu:FND) => update(GIMat(a1), a2, GIMat(a3), uu);
-      case (a1:GIMat, a2:IMat, a3:IMat, uu:FND) => update(a1, GIMat(a2), GIMat(a3), uu);
-      case (a1:IMat, a2:IMat, a3:IMat, uu:FND) => update(GIMat(a1), GIMat(a2), GIMat(a3), uu);
+      case (a1:GIMat, a2:GIMat, a3:GIMat, uu:ND) => update(a1, a2, a3, uu);
+      case (a1:IMat, a2:GIMat, a3:GIMat, uu:ND) => update(GIMat(a1), a2, a3, uu);
+      case (a1:GIMat, a2:IMat, a3:GIMat, uu:ND) => update(a1, GIMat(a2), a3, uu);
+      case (a1:IMat, a2:IMat, a3:GIMat, uu:ND) => update(GIMat(a1), GIMat(a2), a3, uu);
+      case (a1:GIMat, a2:GIMat, a3:IMat, uu:ND) => update(a1, a2, GIMat(a3), uu);
+      case (a1:IMat, a2:GIMat, a3:IMat, uu:ND) => update(GIMat(a1), a2, GIMat(a3), uu);
+      case (a1:GIMat, a2:IMat, a3:IMat, uu:ND) => update(a1, GIMat(a2), GIMat(a3), uu);
+      case (a1:IMat, a2:IMat, a3:IMat, uu:ND) => update(GIMat(a1), GIMat(a2), GIMat(a3), uu);
     }
   }
   
-  def update(i1:Mat, i2:Mat, i3:Mat, i4:Mat, vv:ND):FND = {
+  def update(i1:Mat, i2:Mat, i3:Mat, i4:Mat, vv:ND):GND = {
     (i1, i2, i3, i4, vv) match {
-      case (a1:GIMat, a2:GIMat, a3:GIMat, a4:GIMat, uu:FND) => update(a1, a2, a3, a4, uu);
-      case (a1:IMat, a2:GIMat, a3:GIMat, a4:GIMat, uu:FND) => update(GIMat(a1), a2, a3, a4, uu);
-      case (a1:GIMat, a2:IMat, a3:GIMat, a4:GIMat, uu:FND) => update(a1, GIMat(a2), a3, a4, uu);
-      case (a1:IMat, a2:IMat, a3:GIMat, a4:GIMat, uu:FND) => update(GIMat(a1), GIMat(a2), a3, a4, uu);
-      case (a1:GIMat, a2:GIMat, a3:IMat, a4:GIMat, uu:FND) => update(a1, a2, GIMat(a3), a4, uu);
-      case (a1:IMat, a2:GIMat, a3:IMat, a4:GIMat, uu:FND) => update(GIMat(a1), a2, GIMat(a3), a4, uu);
-      case (a1:GIMat, a2:IMat, a3:IMat, a4:GIMat, uu:FND) => update(a1, GIMat(a2), GIMat(a3), a4, uu);
-      case (a1:IMat, a2:IMat, a3:IMat, a4:GIMat, uu:FND) => update(GIMat(a1), GIMat(a2), GIMat(a3), a4, uu);
-      case (a1:GIMat, a2:GIMat, a3:GIMat, a4:IMat, uu:FND) => update(a1, a2, a3, GIMat(a4), uu);
-      case (a1:IMat, a2:GIMat, a3:GIMat, a4:IMat, uu:FND) => update(GIMat(a1), a2, a3, GIMat(a4), uu);
-      case (a1:GIMat, a2:IMat, a3:GIMat, a4:IMat, uu:FND) => update(a1, GIMat(a2), a3, GIMat(a4), uu);
-      case (a1:IMat, a2:IMat, a3:GIMat, a4:IMat, uu:FND) => update(GIMat(a1), GIMat(a2), a3, GIMat(a4), uu);
-      case (a1:GIMat, a2:GIMat, a3:IMat, a4:IMat, uu:FND) => update(a1, a2, GIMat(a3), GIMat(a4), uu);
-      case (a1:IMat, a2:GIMat, a3:IMat, a4:IMat, uu:FND) => update(GIMat(a1), a2, GIMat(a3), GIMat(a4), uu);
-      case (a1:GIMat, a2:IMat, a3:IMat, a4:IMat, uu:FND) => update(a1, GIMat(a2), GIMat(a3), GIMat(a4), uu);
-      case (a1:IMat, a2:IMat, a3:IMat, a4:IMat, uu:FND) => update(GIMat(a1), GIMat(a2), GIMat(a3), GIMat(a4), uu);
+      case (a1:GIMat, a2:GIMat, a3:GIMat, a4:GIMat, uu:ND) => update(a1, a2, a3, a4, uu);
+      case (a1:IMat, a2:GIMat, a3:GIMat, a4:GIMat, uu:ND) => update(GIMat(a1), a2, a3, a4, uu);
+      case (a1:GIMat, a2:IMat, a3:GIMat, a4:GIMat, uu:ND) => update(a1, GIMat(a2), a3, a4, uu);
+      case (a1:IMat, a2:IMat, a3:GIMat, a4:GIMat, uu:ND) => update(GIMat(a1), GIMat(a2), a3, a4, uu);
+      case (a1:GIMat, a2:GIMat, a3:IMat, a4:GIMat, uu:ND) => update(a1, a2, GIMat(a3), a4, uu);
+      case (a1:IMat, a2:GIMat, a3:IMat, a4:GIMat, uu:ND) => update(GIMat(a1), a2, GIMat(a3), a4, uu);
+      case (a1:GIMat, a2:IMat, a3:IMat, a4:GIMat, uu:ND) => update(a1, GIMat(a2), GIMat(a3), a4, uu);
+      case (a1:IMat, a2:IMat, a3:IMat, a4:GIMat, uu:ND) => update(GIMat(a1), GIMat(a2), GIMat(a3), a4, uu);
+      case (a1:GIMat, a2:GIMat, a3:GIMat, a4:IMat, uu:ND) => update(a1, a2, a3, GIMat(a4), uu);
+      case (a1:IMat, a2:GIMat, a3:GIMat, a4:IMat, uu:ND) => update(GIMat(a1), a2, a3, GIMat(a4), uu);
+      case (a1:GIMat, a2:IMat, a3:GIMat, a4:IMat, uu:ND) => update(a1, GIMat(a2), a3, GIMat(a4), uu);
+      case (a1:IMat, a2:IMat, a3:GIMat, a4:IMat, uu:ND) => update(GIMat(a1), GIMat(a2), a3, GIMat(a4), uu);
+      case (a1:GIMat, a2:GIMat, a3:IMat, a4:IMat, uu:ND) => update(a1, a2, GIMat(a3), GIMat(a4), uu);
+      case (a1:IMat, a2:GIMat, a3:IMat, a4:IMat, uu:ND) => update(GIMat(a1), a2, GIMat(a3), GIMat(a4), uu);
+      case (a1:GIMat, a2:IMat, a3:IMat, a4:IMat, uu:ND) => update(a1, GIMat(a2), GIMat(a3), GIMat(a4), uu);
+      case (a1:IMat, a2:IMat, a3:IMat, a4:IMat, uu:ND) => update(GIMat(a1), GIMat(a2), GIMat(a3), GIMat(a4), uu);
     }
   }
   
@@ -365,25 +427,25 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
   def update(i1:GIMat, i2:GIMat, i3:GIMat, vv:Float):GND = update(Array(i1, i2, i3), vv)
   def update(i1:GIMat, i2:GIMat, i3:GIMat, i4:GIMat, vv:Float):GND = update(Array(i1, i2, i3, i4), vv)
   
-  def update(i1:Mat, i2:Mat, vv:Float):FND = {
+  def update(i1:Mat, i2:Mat, vv:Float):ND = {
     (i1, i2) match {
       case (a1:GIMat, a2:GIMat) => update(a1, a2, vv);
     }
   }
   
-  def update(i1:Mat, vv:Float):FND = {
+  def update(i1:Mat, vv:Float):ND = {
     (i1) match {
       case (a1:GIMat) => update(a1, vv);
     }
   }
 
-  def update(i1:Mat, i2:Mat, i3:Mat, vv:Float):FND = {
+  def update(i1:Mat, i2:Mat, i3:Mat, vv:Float):ND = {
     (i1, i2, i3) match {
       case (a1:GIMat, a2:GIMat, a3:GIMat) => update(a1, a2, a3, vv);
     }
   }
     
-  def update(i1:Mat, i2:Mat, i3:Mat, i4:Mat, vv:Float):FND = {
+  def update(i1:Mat, i2:Mat, i3:Mat, i4:Mat, vv:Float):ND = {
     (i1, i2, i3, i4) match {
       case (a1:GIMat, a2:GIMat, a3:GIMat, a4:GIMat) => update(a1, a2, a3, a4, vv);
     }

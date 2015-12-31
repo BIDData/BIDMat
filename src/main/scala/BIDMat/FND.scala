@@ -538,6 +538,10 @@ object FND {
     out
   }
   
+  def apply(f:GND):FND = {
+    f.toFND(null);
+  }
+  
   def asFMats(mat1:FND, mat2:FND, omat:ND, opname:String):(FMat, FMat, FMat, FND) = {
     if (mat1._dims.length != mat2._dims.length) {
       throw new RuntimeException("Operator "+opname+" inconsistent number of dims in operands")
