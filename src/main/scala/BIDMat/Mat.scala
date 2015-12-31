@@ -700,7 +700,7 @@ object Mat {
   }
   
   def checkMKL(verb:Boolean=false):Unit = {
-    if (useMKL) {
+    if (useMKL || verb) {
     	try {
     		edu.berkeley.bid.LibUtils.loadLibrary("bidmatcpu")
     	} catch {
