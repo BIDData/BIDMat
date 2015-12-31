@@ -11,13 +11,15 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) { 
 
-  def apply(indx:Int):Float = { 
+  def applyf(indx:Int):Float = { 
     if (indx >= 0 && indx < length) { 
       data(indx)
     } else { 
       throw new RuntimeException("FND index out of range")
     }
   }
+  
+  def apply(i:Int):Float = applyf(i);
 
   def apply(i1:Int, i2:Int):Float = apply(Array(i1, i2))
   def apply(i1:Int, i2:Int, i3:Int):Float = apply(Array(i1, i2, i3))

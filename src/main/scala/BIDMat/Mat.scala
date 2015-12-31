@@ -4,21 +4,13 @@ import java.lang.ref._
 import jcuda.NativePointerObject
 
 @SerialVersionUID(100L)
-class Mat(nr:Int, nc:Int) extends Serializable {
+class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
   val nrows = nr
   val ncols = nc
-  
-  def dims:(Int, Int) = (nr, nc)
-
-  def length = nr*nc
   
   def llength = 1L*nr*nc
   
   private var _GUID = Mat.myrand.nextLong
-  
-  def setGUID(v:Long):Unit = {_GUID = v}
-  
-  def GUID:Long = _GUID
   
   def notImplemented0(s:String):Mat = { 
     throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
@@ -51,6 +43,15 @@ class Mat(nr:Int, nc:Int) extends Serializable {
   def notImplementedl(s:String):Long = { 
     throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
   }
+  
+  def applyf(indx:Int):Float  = throw new RuntimeException("1D access not supported for "+this.mytype);
+  
+  def apply(i1:Mat, i2:Mat, i3:Mat):ND = throw new RuntimeException("3D access not supported for "+this.mytype);
+  def apply(i1:Mat, i2:Mat, i3:Mat, i4:Mat):ND = throw new RuntimeException("4D access not supported for "+this.mytype);
+  
+  def update(i1:Mat, i2:Mat, vv:ND):ND = throw new RuntimeException("2D updates not supported for "+this.mytype);
+  def update(i1:Mat, i2:Mat, i3:Mat, vv:ND):ND = throw new RuntimeException("3D updates not supported for "+this.mytype);
+  def update(i1:Mat, i2:Mat, i3:Mat, i4:Mat, vv:ND):ND = throw new RuntimeException("4D access not supported for "+this.mytype);
   
   def t = notImplemented0("t")  
   def dv:Double = throw new RuntimeException("operator dv not implemented for "+this.mytype)
@@ -100,9 +101,9 @@ class Mat(nr:Int, nc:Int) extends Serializable {
   def apply(a:GIMat, b:IMat):Mat = notImplemented0("block array access");
   
   def apply(a:Mat):Mat = notImplemented0("linear array access");
-  def apply(a:Mat, b:Mat):Mat = notImplemented0("block array access");
   def apply(a:Mat, b:Int):Mat = notImplemented0("block array access");
   def apply(a:Int, b:Mat):Mat = notImplemented0("block array access");
+  def apply(a:Mat, b:Mat):Mat = notImplemented0("block array access");
   
   def update(a:IMat, b:Mat) = notImplemented0("linear update");
   def update(a:IMat, b:IMat, m:Mat) = notImplemented0("block update");

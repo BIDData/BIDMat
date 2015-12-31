@@ -26,43 +26,23 @@ abstract class ND(protected val _dims:Array[Int]) extends Serializable {
   def setGUID(v:Long):Unit = {_GUID = v};
   
   def GUID:Long = _GUID;
-
-  def apply(indx:Int):Float;
   
-  def apply(pos:List[Int]):Float;
-  
-  def apply(pos:Array[Int]):Float;
-  
-  def apply(i1:Int, i2:Int):Float;
-  def apply(i1:Int, i2:Int, i3:Int):Float;
-  def apply(i1:Int, i2:Int, i3:Int, i4:Int):Float;
+  def applyf(i:Int):Float;
   
   def apply(ii:Mat):Mat;
   
   def apply(i1:Mat, i2:Mat):ND;
   def apply(i1:Mat, i2:Mat, i3:Mat):ND;
   def apply(i1:Mat, i2:Mat, i3:Mat, i4:Mat):ND;
-
-  def update(indx:Int, v:Float):ND;
   
   def update(inds:Mat, vv:Mat):ND;
-  
-  def update(inds:Mat, vv:Float):ND;
-
-  def update(i1:Int, i2:Int, v:Float):ND;
-  def update(i1:Int, i2:Int, i3:Int, v:Float):ND;
-  def update(i1:Int, i2:Int, i3:Int, i4:Int, v:Float):ND;
   
   def update(i1:Mat, i2:Mat, vv:ND):ND;
   def update(i1:Mat, i2:Mat, i3:Mat, vv:ND):ND;
   def update(i1:Mat, i2:Mat, i3:Mat, i4:Mat, vv:ND):ND;
   
-  def update(i1:Mat, i2:Mat, v:Float):ND;
-  def update(i1:Mat, i2:Mat, i3:Mat, v:Float):ND;
-  def update(i1:Mat, i2:Mat, i3:Mat, i4:Mat, v:Float):ND;
-  
   def printOne(i:Int):String = {
-    val v = apply(i)
+    val v = applyf(i)
     if (v % 1 == 0 && math.abs(v) < 1e10) {       
       "%d" format v.intValue
     } else {

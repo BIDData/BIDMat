@@ -5,9 +5,7 @@ import edu.berkeley.bid.CBLAS._
 import scala.util.hashing.MurmurHash3
 
 case class LMat(nr:Int, nc:Int, data0:Array[Long]) extends DenseMat[Long](nr, nc, data0) { 
-  
-  def size() = length;
-  
+
   override def t:LMat = tt(null)
   
   def t(omat:Mat):LMat = tt(omat)

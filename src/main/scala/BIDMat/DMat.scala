@@ -8,8 +8,6 @@ import java.util.Arrays
 
 case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr, nc, data0) {
 
-  def size() = length;
-
   def getdata() = data
   
   override def set(v:Float):DMat = {

@@ -13,8 +13,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, nc, data0) {
 
-  def size() = length;
-  
   override def t:FMat = tt(null)
   
   def t(omat:Mat):FMat = tt(omat)

@@ -18,7 +18,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) { 
 
-  def apply(indx:Int):Float = { 
+  def applyf(indx:Int):Float = { 
     if (indx >= 0 && indx < length) { 
     	val tmp = new Array[Float](1);
     	cudaMemcpy(Pointer.to(tmp), data.withByteOffset(1L*indx*Sizeof.FLOAT), Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost);
@@ -29,6 +29,9 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
       throw new RuntimeException("GND index out of range")
     }
   }
+  
+    
+  def apply(i:Int):Float = applyf(i);
 
   def apply(i1:Int, i2:Int):Float = apply(Array(i1, i2))
   def apply(i1:Int, i2:Int, i3:Int):Float = apply(Array(i1, i2, i3))

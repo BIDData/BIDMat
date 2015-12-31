@@ -647,7 +647,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
   }
   
   /** Prints '''i''' spaces, useful for building strings. */
-  def printOne(i:Int):String = " "
+  override def printOne(i:Int):String = " "
   
   /** Returns a string representation of the matrix. */
   override def toString:String = {
