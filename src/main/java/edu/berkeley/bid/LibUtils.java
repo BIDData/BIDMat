@@ -70,10 +70,13 @@ public final class LibUtils
      * @throws UnsatisfiedLinkError if the native library 
      * could not be loaded.
      */
-    public static void loadLibrary(String baseName)
+    
+    public static void loadLibrary(String baseName) {
+      loadLib(LibUtils.createLibName(baseName));
+    }
+    
+    public static void loadLib(String libName)
     {
-        String libName = LibUtils.createLibName(baseName);
-
         Throwable throwable = null;
         final boolean tryResource = true;
         if (tryResource)
