@@ -700,7 +700,9 @@ object Mat {
     path.replace("BIDMat.jar","")
   }
   
-  def checkMKL(verb:Boolean=false):Unit = {
+  def checkMKL:Unit = checkMKL(false)
+  
+  def checkMKL(verb:Boolean):Unit = {
     if (verb) useMKL = true;
     if (useMKL) {
     	try {
