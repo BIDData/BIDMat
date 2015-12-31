@@ -424,7 +424,7 @@ int copyFromInds3D(float *A, int lda, int rda, float *B, int ldb, int rdb, int *
   nbz = (nk - 1) / ntz + 1;
   dim3 blockdims(ntx, nty, ntz);
   dim3 griddims(nbx, nby, nbz);
-  __copyToInds3D<<<griddims,blockdims>>>(A, lda, rda, B, ldb, rdb, I, nrows, J, ncols, K, nk);
+  __copyFromInds3D<<<griddims,blockdims>>>(A, lda, rda, B, ldb, rdb, I, nrows, J, ncols, K, nk);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
