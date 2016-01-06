@@ -15,6 +15,18 @@ abstract class ND(protected val _dims:Array[Int]) extends Serializable {
 
   final val length = _dims.reduce(_*_);
   
+  val ncols = _dims(_dims.length-1);
+  
+  val nrows = {
+    var p = 1;
+    var i = 0;
+    while (i < _dims.length - 1) {
+      p *= _dims(i);
+      i += 1;
+    }
+    p;
+  }
+  
   def dims = new IMat(1, _dims.length, _dims.clone);
   
   def mytype = "ND"
@@ -272,7 +284,12 @@ abstract class ND(protected val _dims:Array[Int]) extends Serializable {
   def == (b : Long):ND 
   def === (b : Long):ND 
   def != (b : Long):ND 
+  
+  def copyTo(a:ND):ND 
 
+  def <-- (a:ND) = {
+    a.copyTo(this)
+  }
   
   def ~ (a:ND):NDPair 
 }

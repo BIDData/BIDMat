@@ -422,6 +422,23 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
     }
   }
   
+  def copyTo(a:GND):GND = {
+    GMat.CPUtoGPUarraycopy(data, 0, a.data, 0, length, "FND copyTo");
+    a
+  }
+  
+  def copyTo(a:FND):FND = {
+    System.arraycopy(data, 0, a.data, 0, length);
+    a
+  }
+  
+  def copyTo(a:ND):ND = {
+    a match {
+      case aa:FND => copyTo(aa);
+      case aa:GND => copyTo(aa);
+    }
+  }
+  
   def transpose(dims:Array[Int]):FND = transpose(irow(dims))
 
   def transpose(perm:IMat):FND = { 

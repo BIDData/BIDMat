@@ -456,6 +456,23 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
     }
   }
   
+  def copyTo(a:GND):GND = {
+    GMat.GPUtoGPUarraycopy(data, 0, a.data, 0, length, "GND copyTo");
+    a
+  }
+  
+  def copyTo(a:FND):FND = {
+    GMat.GPUtoCPUarraycopy(data, 0, a.data, 0, length, "GND copyTo");
+    a
+  }
+  
+  def copyTo(a:ND):ND = {
+    a match {
+      case aa:FND => copyTo(aa);
+      case aa:GND => copyTo(aa);
+    }
+  }
+  
   def zeros(dims0:IMat):GND = GND.zeros(dims0);
   
   def zeros:GND = GND.zeros(dims);

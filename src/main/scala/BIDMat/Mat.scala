@@ -5,8 +5,8 @@ import jcuda.NativePointerObject
 
 @SerialVersionUID(100L)
 class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
-  val nrows = nr
-  val ncols = nc
+  override val nrows = nr
+  override val ncols = nc
   
   def llength = 1L*nr*nc
   
@@ -206,6 +206,8 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
   
   def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, reps:Int, aoff:Int, lda:Int, astep:Int, 
       b:Mat, boff:Int, ldb:Int, bstep:Int, c:Mat, coff:Int, ldc:Int, cstep:Int):Mat = notImplemented0("blockGemm");
+  
+  def copyTo(a:ND):ND = notImplemented1("<--", a);
 
   def madd(a:Mat, b:Mat, at:Boolean, bt:Boolean):Mat = notImplemented1("update", a);
   def madd(a:Mat, b:Mat):Mat = notImplemented1("update", a);
