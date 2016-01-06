@@ -2007,7 +2007,9 @@ object SciFunctions {
   val acosFun = (x:Float) => math.acos(x).toFloat
   val vsAcosFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAcos(n,x,y)
   def acos(a:FMat, out:Mat) = applySFun(a, out, vsAcosFun, acosFun, 10L)
-  def acos(a:FMat):FMat = acos(a, null)
+  def acos(a:FMat):FMat = acos(a, null);
+  def acos(a:FND, out:ND):FND = applyFNDfun(a, out, vsAcosFun, acosFun, 10L);
+  def acos(a:FND):FND = acos(a, null);
 
   val asinFun = (x:Float) => math.asin(x).toFloat
   val vsAsinFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAsin(n,x,y)
@@ -2635,7 +2637,7 @@ object SciFunctions {
   def erf(in:GND, out:ND):GND =     applyGNDfun(in, out, TransF.erf, 10L)
   def erfinv(in:GND, out:ND):GND =  applyGNDfun(in, out, TransF.erfinv, 10L)
   def erfc(in:GND, out:ND):GND =    applyGNDfun(in, out, TransF.erfc, 10L)
-  def ercinv(in:GND, out:ND):GND =  applyGNDfun(in, out, TransF.erfcinv, 10L)
+  def erfcinv(in:GND, out:ND):GND =  applyGNDfun(in, out, TransF.erfcinv, 10L)
   def gammaln(in:GND, out:ND):GND = applyGNDfun(in, out, TransF.gammaln, 10L)
   def gamma(in:GND, out:ND):GND =   applyGNDfun(in, out, TransF.gamma, 10L)
   def Γ(a:GND, out:ND) = gamma(a, out);
@@ -2905,12 +2907,26 @@ object SciFunctions {
     }
   }
   
+  def abs(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => abs(aa, b):FND
+      case aa:GND => abs(aa, b):GND
+    }
+  }
+  
   def sign(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => sign(aa, b)
       case aa:DMat => sign(aa, b)
       case aa:GMat => sign(aa, b)
       case aa:GDMat => sign(aa, b)
+    }
+  }
+  
+  def sign(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => sign(aa, b):FND
+      case aa:GND => sign(aa, b):GND
     }
   }
        
@@ -2924,6 +2940,13 @@ object SciFunctions {
     }
   }
   
+  def sqrt(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => sqrt(aa, b):FND
+      case aa:GND => sqrt(aa, b):GND
+    }
+  }
+  
   def exp(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => exp(aa, b):FMat
@@ -2934,12 +2957,26 @@ object SciFunctions {
     }
   }
   
+  def exp(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => exp(aa, b):FND
+      case aa:GND => exp(aa, b):GND
+    }
+  }
+  
   def expm1(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => expm1(aa, b)
       case aa:DMat => expm1(aa, b)
       case aa:GMat => expm1(aa, b)
       case aa:GDMat => expm1(aa, b)
+    }
+  }
+  
+  def expm1(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => expm1(aa, b):FND
+      case aa:GND => expm1(aa, b):GND
     }
   }
   
@@ -2953,6 +2990,13 @@ object SciFunctions {
     }
   }
   
+  def ln(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => ln(aa, b):FND
+      case aa:GND => ln(aa, b):GND
+    }
+  }
+  
   def log10(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => log10(aa, b)
@@ -2960,6 +3004,13 @@ object SciFunctions {
       case aa:DMat => log10(aa, b)
       case aa:GMat => log10(aa, b)
       case aa:GDMat => log10(aa, b)
+    }
+  }
+  
+  def log10(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => log10(aa, b):FND
+      case aa:GND => log10(aa, b):GND
     }
   }
     
@@ -2972,6 +3023,13 @@ object SciFunctions {
     }
   }
   
+  def log1p(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => log1p(aa, b):FND
+      case aa:GND => log1p(aa, b):GND
+    }
+  }
+  
   def cos(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => cos(aa, b)
@@ -2979,6 +3037,13 @@ object SciFunctions {
       case aa:DMat => cos(aa, b)
       case aa:GMat => cos(aa, b)
       case aa:GDMat => cos(aa, b)
+    }
+  }
+    
+  def cos(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => cos(aa, b):FND
+      case aa:GND => cos(aa, b):GND
     }
   }
   
@@ -2991,6 +3056,13 @@ object SciFunctions {
       case aa:GDMat => sin(aa, b)
     }
   }
+    
+  def sin(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => sin(aa, b):FND
+      case aa:GND => sin(aa, b):GND
+    }
+  }
   
   def tan(a:Mat, b:Mat):Mat = {
     a match {
@@ -2999,6 +3071,13 @@ object SciFunctions {
       case aa:DMat => tan(aa, b)
       case aa:GMat => tan(aa, b)
       case aa:GDMat => tan(aa, b)
+    }
+  }
+  
+  def tan(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => tan(aa, b):FND
+      case aa:GND => tan(aa, b):GND
     }
   }
     
@@ -3011,6 +3090,13 @@ object SciFunctions {
       case aa:GDMat => cosh(aa, b)
     }
   }
+    
+  def cosh(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => cosh(aa, b):FND
+      case aa:GND => cosh(aa, b):GND
+    }
+  }
      
   def sinh(a:Mat, b:Mat):Mat = {
     a match {
@@ -3019,6 +3105,13 @@ object SciFunctions {
       case aa:DMat => sinh(aa, b)
       case aa:GMat => sinh(aa, b)
       case aa:GDMat => sinh(aa, b)
+    }
+  }
+    
+  def sinh(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => sinh(aa, b):FND
+      case aa:GND => sinh(aa, b):GND
     }
   }
       
@@ -3031,6 +3124,13 @@ object SciFunctions {
       case aa:GDMat => tanh(aa, b)
     }
   }
+  
+  def tanh(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => tanh(aa, b):FND
+      case aa:GND => tanh(aa, b):GND
+    }
+  }
     
   def acos(a:Mat, b:Mat):Mat = {
     a match {
@@ -3039,6 +3139,13 @@ object SciFunctions {
       case aa:DMat => acos(aa, b)
       case aa:GMat => acos(aa, b)
       case aa:GDMat => acos(aa, b)
+    }
+  }
+  
+  def acos(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => acos(aa, b):FND
+      case aa:GND => acos(aa, b):GND
     }
   }
       
@@ -3052,6 +3159,13 @@ object SciFunctions {
     }
   }
   
+  def asin(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => asin(aa, b):FND
+      case aa:GND => asin(aa, b):GND
+    }
+  }
+  
   def atan(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => atan(aa, b)
@@ -3059,6 +3173,13 @@ object SciFunctions {
       case aa:DMat => atan(aa, b)
       case aa:GMat => atan(aa, b)
       case aa:GDMat => atan(aa, b)
+    }
+  }
+  
+  def atan(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => atan(aa, b):FND
+      case aa:GND => atan(aa, b):GND
     }
   }
   
@@ -3072,6 +3193,13 @@ object SciFunctions {
     }
   }
   
+  def acosh(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => acosh(aa, b):FND
+      case aa:GND => acosh(aa, b):GND
+    }
+  }
+  
   def asinh(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => asinh(aa, b)
@@ -3079,6 +3207,13 @@ object SciFunctions {
       case aa:DMat => asinh(aa, b)
       case aa:GMat => asinh(aa, b)
       case aa:GDMat => asinh(aa, b)
+    }
+  }
+  
+  def asinh(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => asinh(aa, b):FND
+      case aa:GND => asinh(aa, b):GND
     }
   }
   
@@ -3090,6 +3225,13 @@ object SciFunctions {
       case aa:GDMat => erf(aa, b)
     }
   }
+  
+  def erf(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => erf(aa, b):FND
+      case aa:GND => erf(aa, b):GND
+    }
+  }
    
   def erfinv(a:Mat, b:Mat):Mat = {
     a match {
@@ -3099,6 +3241,13 @@ object SciFunctions {
       case aa:GDMat => erfinv(aa, b)
     }
   }
+  
+  def erfinv(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => erfinv(aa, b):FND
+      case aa:GND => erfinv(aa, b):GND
+    }
+  }
     
   def erfc(a:Mat, b:Mat):Mat = {
     a match {
@@ -3106,6 +3255,13 @@ object SciFunctions {
       case aa:DMat => erfc(aa, b)
       case aa:GMat => erfc(aa, b)
       case aa:GDMat => erfc(aa, b)
+    }
+  }
+  
+  def erfc(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => erfc(aa, b):FND
+      case aa:GND => erfc(aa, b):GND
     }
   }
    
@@ -3118,12 +3274,26 @@ object SciFunctions {
     }
   }
   
+  def erfcinv(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => erfcinv(aa, b):FND
+      case aa:GND => erfcinv(aa, b):GND
+    }
+  }
+  
   def gamma(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => gamma(aa, b)
       case aa:DMat => gamma(aa, b)
       case aa:GMat => gamma(aa, b)
       case aa:GDMat => gamma(aa, b)
+    }
+  }
+  
+  def gamma(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => gamma(aa, b):FND
+      case aa:GND => gamma(aa, b):GND
     }
   }
   
@@ -3138,12 +3308,26 @@ object SciFunctions {
     }
   }
   
+  def gammaln(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => gammaln(aa, b):FND
+      case aa:GND => gammaln(aa, b):GND
+    }
+  }
+  
   def floor(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => floor(aa, b)
       case aa:DMat => floor(aa, b)
       case aa:GMat => floor(aa, b)
       case aa:GDMat => floor(aa, b)
+    }
+  }
+    
+  def floor(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => floor(aa, b):FND
+      case aa:GND => floor(aa, b):GND
     }
   }
   
@@ -3156,12 +3340,26 @@ object SciFunctions {
     }
   }
    
+  def ceil(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => ceil(aa, b):FND
+      case aa:GND => ceil(aa, b):GND
+    }
+  }
+   
   def round(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => round(aa, b)
       case aa:DMat => round(aa, b)
       case aa:GMat => round(aa, b)
       case aa:GDMat => round(aa, b)
+    }
+  }
+  
+  def round(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => round(aa, b):FND
+      case aa:GND => round(aa, b):GND
     }
   }
   
@@ -3174,12 +3372,26 @@ object SciFunctions {
     }
   }
   
+  def trunc(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => trunc(aa, b):FND
+      case aa:GND => trunc(aa, b):GND
+    }
+  }
+  
   def exppsi(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => exppsi(aa, b)
       case aa:DMat => exppsi(aa, b)
       case aa:GMat => exppsi(aa, b)
       case aa:GDMat => exppsi(aa, b)
+    }
+  }
+  
+  def exppsi(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => exppsi(aa, b):FND
+      case aa:GND => exppsi(aa, b):GND
     }
   }
   
@@ -3209,13 +3421,20 @@ object SciFunctions {
     }
   }
   
-    def abs(a:Mat):Mat = {
+  def abs(a:Mat):Mat = {
     a match {
       case aa:FMat => abs(aa):FMat
       case aa:CMat => abs(aa):FMat
       case aa:DMat => abs(aa):DMat
       case aa:GMat => abs(aa):GMat
       case aa:GDMat => abs(aa):GDMat
+    }
+  }
+  
+  def abs(a:ND):ND = {
+    a match {
+      case aa:FND => abs(aa):FND
+      case aa:GND => abs(aa):GND
     }
   }
   
