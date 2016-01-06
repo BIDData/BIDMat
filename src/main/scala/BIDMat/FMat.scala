@@ -1640,6 +1640,21 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   override def <= (b : Int) = mat.ffMatOpScalarv(b, FMat.vecLEFun, omat)
   override def != (b : Int) = mat.ffMatOpScalarv(b, FMat.vecNEFun, omat)
   
+
+  override def * (b : Long) = mat.ffMatOpScalarv(b.toFloat, FMat.vecMulFun, omat)
+  override def + (b : Long) = mat.ffMatOpScalarv(b.toFloat, FMat.vecAddFun, omat)
+  override def - (b : Long) = mat.ffMatOpScalarv(b.toFloat, FMat.vecSubFun, omat)
+  override def *@ (b : Long) = mat.ffMatOpScalarv(b.toFloat, FMat.vecMulFun, omat)
+  override def ∘  (b : Long) = mat.ffMatOpScalarv(b.toFloat, FMat.vecMulFun, omat)
+  override def /  (b : Long) = mat.ffMatOpScalarv(b.toFloat, FMat.vecDivFun, omat)
+  override def ^ (b : Long) = mat.ffMatOpScalar(b.toFloat, FMat.powFun, omat)
+
+  override def > (b : Long) = mat.ffMatOpScalarv(b.toFloat, FMat.vecGTFun, omat)
+  override def < (b : Long) = mat.ffMatOpScalarv(b.toFloat, FMat.vecLTFun, omat)
+  override def == (b : Long) = mat.ffMatOpScalarv(b.toFloat, FMat.vecEQFun, omat)
+  override def >= (b : Long) = mat.ffMatOpScalarv(b.toFloat, FMat.vecGEFun, omat)
+  override def <= (b : Long) = mat.ffMatOpScalarv(b.toFloat, FMat.vecLEFun, omat)
+  override def != (b : Long) = mat.ffMatOpScalarv(b.toFloat, FMat.vecNEFun, omat)
   /*
    * Specialize to IMat
    */

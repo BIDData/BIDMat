@@ -10,6 +10,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 
 case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) { 
+  
+  override def mytype = "FND"
 
   def applyf(indx:Int):Float = { 
     if (indx >= 0 && indx < length) { 
@@ -138,6 +140,23 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
     (i1, i2, i3, i4) match {
       case (a1:IMat, a2:IMat, a3:IMat, a4:IMat) => apply(a1, a2, a3, a4);
     }
+  }
+  
+  def zeros(dims0:IMat):ND = {
+    FND.zeros(dims0)
+  }
+  
+  def zeros:ND = {
+    FND.zeros(dims)
+  }
+  
+  def ones(dims0:IMat) = {
+    FND.ones(dims0)
+  }
+  
+  def clear:ND = {
+    Arrays.fill(this.data,0,length,0)
+    this
   }
   
   def reshape(newdims:Int*):FND = reshape(newdims.toArray)
@@ -403,12 +422,6 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
     }
   }
   
-  def clear:FND = {
-    Arrays.fill(data, 0f)
-    this
-  }
-  
-  
   def transpose(dims:Array[Int]):FND = transpose(irow(dims))
 
   def transpose(perm:IMat):FND = { 
@@ -446,11 +459,32 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
   def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int):FND = transpose(Array(i1, i2, i3, i4, i5, i6, i7))
   def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int):FND = transpose(Array(i1, i2, i3, i4, i5, i6, i7, i8))
   
- 
+  
+  override def unary_-():FND = {
+    val zz = FND.newOrCheckFND(dims.data, null, GUID, "-".##);
+    val a = toFMatView(length, 1);
+    val b = zz.toFMatView(length, 1);
+    a.ffMatOpScalarv(-1f, FMat.vecMulFun, b);
+    zz;
+  }
+  
   def + (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "+"); c ~ a + b; d}
   def - (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "-"); c ~ a - b; d}
   def *@ (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "*@"); c ~ a *@ b; d}
+  def ∘ (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "∘"); c ~ a *@ b; d}
   def / (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "/"); c ~ a / b; d}
+  def ^ (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "^"); c ~ a ^ b; d}
+  
+  def * (b : FND):FND = {
+      val dims0 = dims(0->(dims.length-1));
+      val dims1 = b.dims(1->b.dims.length);
+    	val x = toFMatView(SciFunctions.prod(dims0).v, dims(dims.length-1)); 
+    	val y = b.toFMatView(b.dims(0), SciFunctions.prod(dims1).v);
+      val zz = FND.newOrCheckFND((dims0 \ dims1).data, null, GUID, b.GUID, "*".##);
+      val z = zz.toFMatView(x.nrows, y.ncols);
+      z ~ x * y;      
+      zz
+  } 
   
   def > (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, ">"); c ~ a > b; d}
   def < (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "<"); c ~ a < b; d}
@@ -460,10 +494,14 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
   def == (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "=="); c ~ a == b; d}
   def === (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "==="); c ~ a === b; d}
   
+  
   def + (b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "+"); c ~ a + b; d}
   def - (b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "-"); c ~ a - b; d}
   def *@ (b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "*@"); c ~ a *@ b; d}
+  def ∘ (b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "∘"); c ~ a *@ b; d}
   def / (b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "/"); c ~ a / b; d}
+  def ^ (b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "^"); c ~ a ^ b; d}
+  def * (b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "*"); c ~ a *@ b; d}
   
   def > (b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, ">"); c ~ a > b; d}
   def < (b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "<"); c ~ a < b; d}
@@ -472,6 +510,77 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
   def != (b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "!="); c ~ a != b; d}
   def == (b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "=="); c ~ a == b; d}
   def === (b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "==="); c ~ a === b; d}
+  
+  
+  def + (b:Double):FND = {val (a, c, d) = FND.asFMats(this, null, "+"); c ~ a + b; d}
+  def - (b:Double):FND = {val (a, c, d) = FND.asFMats(this, null, "-"); c ~ a - b; d}
+  def *@ (b:Double):FND = {val (a, c, d) = FND.asFMats(this, null, "*@"); c ~ a *@ b; d}
+  def ∘ (b:Double):FND = {val (a, c, d) = FND.asFMats(this, null, "∘"); c ~ a *@ b; d}
+  def / (b:Double):FND = {val (a, c, d) = FND.asFMats(this, null, "/"); c ~ a / b; d}
+  def ^ (b:Double):FND = {val (a, c, d) = FND.asFMats(this, null, "^"); c ~ a ^ b; d}
+  def * (b:Double):FND = {val (a, c, d) = FND.asFMats(this, null, "*"); c ~ a *@ b; d}
+  
+  def > (b:Double):FND = {val (a, c, d) = FND.asFMats(this, null, ">"); c ~ a > b; d}
+  def < (b:Double):FND = {val (a, c, d) = FND.asFMats(this, null, "<"); c ~ a < b; d}
+  def >= (b:Double):FND = {val (a, c, d) = FND.asFMats(this, null, ">="); c ~ a >= b; d}
+  def <= (b:Double):FND = {val (a, c, d) = FND.asFMats(this, null, "<="); c ~ a <= b; d}
+  def != (b:Double):FND = {val (a, c, d) = FND.asFMats(this, null, "!="); c ~ a != b; d}
+  def == (b:Double):FND = {val (a, c, d) = FND.asFMats(this, null, "=="); c ~ a == b; d}
+  def === (b:Double):FND = {val (a, c, d) = FND.asFMats(this, null, "==="); c ~ a === b; d}
+  
+  
+  
+  def + (b:Int):FND = {val (a, c, d) = FND.asFMats(this, null, "+"); c ~ a + b; d}
+  def - (b:Int):FND = {val (a, c, d) = FND.asFMats(this, null, "-"); c ~ a - b; d}
+  def *@ (b:Int):FND = {val (a, c, d) = FND.asFMats(this, null, "*@"); c ~ a *@ b; d}
+  def ∘ (b:Int):FND = {val (a, c, d) = FND.asFMats(this, null, "∘"); c ~ a *@ b; d}
+  def / (b:Int):FND = {val (a, c, d) = FND.asFMats(this, null, "/"); c ~ a / b; d}
+  def ^ (b:Int):FND = {val (a, c, d) = FND.asFMats(this, null, "^"); c ~ a ^ b; d}
+  def * (b:Int):FND = {val (a, c, d) = FND.asFMats(this, null, "*"); c ~ a *@ b; d}
+  
+  def > (b:Int):FND = {val (a, c, d) = FND.asFMats(this, null, ">"); c ~ a > b; d}
+  def < (b:Int):FND = {val (a, c, d) = FND.asFMats(this, null, "<"); c ~ a < b; d}
+  def >= (b:Int):FND = {val (a, c, d) = FND.asFMats(this, null, ">="); c ~ a >= b; d}
+  def <= (b:Int):FND = {val (a, c, d) = FND.asFMats(this, null, "<="); c ~ a <= b; d}
+  def != (b:Int):FND = {val (a, c, d) = FND.asFMats(this, null, "!="); c ~ a != b; d}
+  def == (b:Int):FND = {val (a, c, d) = FND.asFMats(this, null, "=="); c ~ a == b; d}
+  def === (b:Int):FND = {val (a, c, d) = FND.asFMats(this, null, "==="); c ~ a === b; d}
+  
+  
+  def + (b:Long):FND = {val (a, c, d) = FND.asFMats(this, null, "+"); c ~ a + b; d}
+  def - (b:Long):FND = {val (a, c, d) = FND.asFMats(this, null, "-"); c ~ a - b; d}
+  def *@ (b:Long):FND = {val (a, c, d) = FND.asFMats(this, null, "*@"); c ~ a *@ b; d}
+  def ∘ (b:Long):FND = {val (a, c, d) = FND.asFMats(this, null, "∘"); c ~ a *@ b; d}
+  def / (b:Long):FND = {val (a, c, d) = FND.asFMats(this, null, "/"); c ~ a / b; d}
+  def ^ (b:Long):FND = {val (a, c, d) = FND.asFMats(this, null, "^"); c ~ a ^ b; d}
+  def * (b:Long):FND = {val (a, c, d) = FND.asFMats(this, null, "*"); c ~ a *@ b; d}
+  
+  def > (b:Long):FND = {val (a, c, d) = FND.asFMats(this, null, ">"); c ~ a > b; d}
+  def < (b:Long):FND = {val (a, c, d) = FND.asFMats(this, null, "<"); c ~ a < b; d}
+  def >= (b:Long):FND = {val (a, c, d) = FND.asFMats(this, null, ">="); c ~ a >= b; d}
+  def <= (b:Long):FND = {val (a, c, d) = FND.asFMats(this, null, "<="); c ~ a <= b; d}
+  def != (b:Long):FND = {val (a, c, d) = FND.asFMats(this, null, "!="); c ~ a != b; d}
+  def == (b:Long):FND = {val (a, c, d) = FND.asFMats(this, null, "=="); c ~ a == b; d}
+  def === (b:Long):FND = {val (a, c, d) = FND.asFMats(this, null, "==="); c ~ a === b; d}
+  
+  def + (b : ND):ND = this + b.asInstanceOf[FND];
+  def - (b : ND):ND = this - b.asInstanceOf[FND]; 
+  def * (b : ND):ND = this * b.asInstanceOf[FND];
+  def *@ (b : ND):ND = this *@ b.asInstanceOf[FND];
+  def ∘  (b : ND):ND = this *@ b.asInstanceOf[FND];
+  def /  (b : ND):ND = this / b.asInstanceOf[FND];
+  def ^ (b : ND):ND = this ^ b.asInstanceOf[FND];
+  
+  def > (b : ND):ND = this > b.asInstanceOf[FND];
+  def < (b : ND):ND = this < b.asInstanceOf[FND];
+  def >= (b : ND):ND = this >= b.asInstanceOf[FND];
+  def <= (b : ND):ND = this <= b.asInstanceOf[FND];
+  def == (b : ND):ND = this == b.asInstanceOf[FND];
+  def === (b : ND):ND = this === b.asInstanceOf[FND];
+  def != (b : ND):ND = this != b.asInstanceOf[FND];
+  
+  def \ (b : ND):ND = this \ b.asInstanceOf[FND];
+  def on (b : ND):ND = this on b.asInstanceOf[FND];
   
   def reduce(inds:Array[Int], fctn:(FMat)=>FMat, opname:String):FND = {
     val alldims = izeros(_dims.length,1)
@@ -502,14 +611,31 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
   def mini(inds:Int*):FND = mini(inds.toArray)  
     
   def ~ (b : FND):FNDPair = new FNDPair(this, b)
+  def ~ (b : ND):FNDPair = new FNDPair(this, b.asInstanceOf[FND])
 
 }
 
-class FNDPair(val omat:ND, val amat:FND) {
+class FNDPair(val omat:ND, val amat:FND) extends NDPair {
+  
+  def * (b : FND):FND = {
+      val dims0 = amat.dims(0->(amat.dims.length-1));
+      val dims1 = b.dims(1->b.dims.length);
+      val x = amat.toFMatView(SciFunctions.prod(dims0).v, amat.dims(amat.dims.length-1)); 
+      val y = b.toFMatView(b.dims(0), SciFunctions.prod(dims1).v);
+      val odims = dims0 \ dims1;
+      ND.checkDims("FND *", odims, omat.dims);
+      val zz = FND.newOrCheckFND(odims.data, omat, amat.GUID, b.GUID, "*".##);
+      val z = zz.toFMatView(x.nrows, y.ncols);
+      z ~ x * y;      
+      zz
+  }
+  
   def + (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(amat, mat, omat, "+"); c ~ a + b; d}
   def - (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(amat, mat, omat, "-"); c ~ a - b; d}
   def *@ (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(amat, mat, omat, "*@"); c ~ a *@ b; d}
+  def ∘ (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(amat, mat, omat, "∘"); c ~ a *@ b; d}
   def / (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(amat, mat, omat, "/"); c ~ a / b; d}
+  def ^ (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(amat, mat, omat, "^"); c ~ a ^ b; d}
   
   def > (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(amat, mat, omat, ">"); c ~ a > b; d}
   def < (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(amat, mat, omat, "<"); c ~ a < b; d}
@@ -518,6 +644,91 @@ class FNDPair(val omat:ND, val amat:FND) {
   def != (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(amat, mat, omat, "!="); c ~ a != b; d}
   def == (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(amat, mat, omat, "=="); c ~ a == b; d}
   def === (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(amat, mat, omat, "==="); c ~ a === b; d}
+  
+  
+  def + (b:Float):FND = {val (a, c, d) = FND.asFMats(amat, omat, "+"); c ~ a + FMat(b); d}
+  def - (b:Float):FND = {val (a, c, d) = FND.asFMats(amat, omat, "-"); c ~ a - FMat(b); d}
+  def *@ (b:Float):FND = {val (a, c, d) = FND.asFMats(amat, omat, "*@"); c ~ a *@ FMat(b); d}
+  def ∘ (b:Float):FND = {val (a, c, d) = FND.asFMats(amat, omat, "∘"); c ~ a *@ FMat(b); d}
+  def * (b:Float):FND = {val (a, c, d) = FND.asFMats(amat, omat, "*"); c ~ a * FMat(b); d}
+  def / (b:Float):FND = {val (a, c, d) = FND.asFMats(amat, omat, "/"); c ~ a / FMat(b); d}  
+  def ^ (b:Float):FND = {val (a, c, d) = FND.asFMats(amat, omat, "^"); c ~ a ^ FMat(b); d}
+  
+  def > (b:Float):FND = {val (a, c, d) = FND.asFMats(amat, omat, ">"); c ~ a > FMat(b); d}
+  def < (b:Float):FND = {val (a, c, d) = FND.asFMats(amat, omat, "<"); c ~ a < FMat(b); d}
+  def >= (b:Float):FND = {val (a, c, d) = FND.asFMats(amat, omat, ">="); c ~ a >= FMat(b); d}
+  def <= (b:Float):FND = {val (a, c, d) = FND.asFMats(amat, omat, "<="); c ~ a <= FMat(b); d}
+  def != (b:Float):FND = {val (a, c, d) = FND.asFMats(amat, omat, "!="); c ~ a != FMat(b); d}
+  def == (b:Float):FND = {val (a, c, d) = FND.asFMats(amat, omat, "=="); c ~ a == FMat(b); d}  
+  def === (b:Float):FND = {val (a, c, d) = FND.asFMats(amat, omat, "==="); c ~ a === FMat(b); d}
+  
+  
+  def + (b:Double):FND = {val (a, c, d) = FND.asFMats(amat, omat, "+"); c ~ a + FMat(b.toFloat); d}
+  def - (b:Double):FND = {val (a, c, d) = FND.asFMats(amat, omat, "-"); c ~ a - FMat(b.toFloat); d}
+  def *@ (b:Double):FND = {val (a, c, d) = FND.asFMats(amat, omat, "*@"); c ~ a *@ FMat(b.toFloat); d}
+  def ∘ (b:Double):FND = {val (a, c, d) = FND.asFMats(amat, omat, "∘"); c ~ a *@ FMat(b.toFloat); d}
+  def * (b:Double):FND = {val (a, c, d) = FND.asFMats(amat, omat, "*"); c ~ a * FMat(b.toFloat); d}
+  def / (b:Double):FND = {val (a, c, d) = FND.asFMats(amat, omat, "/"); c ~ a / FMat(b.toFloat); d}  
+  def ^ (b:Double):FND = {val (a, c, d) = FND.asFMats(amat, omat, "^"); c ~ a ^ FMat(b.toFloat); d}
+  
+  def > (b:Double):FND = {val (a, c, d) = FND.asFMats(amat, omat, ">"); c ~ a > FMat(b.toFloat); d}
+  def < (b:Double):FND = {val (a, c, d) = FND.asFMats(amat, omat, "<"); c ~ a < FMat(b.toFloat); d}
+  def >= (b:Double):FND = {val (a, c, d) = FND.asFMats(amat, omat, ">="); c ~ a >= FMat(b.toFloat); d}
+  def <= (b:Double):FND = {val (a, c, d) = FND.asFMats(amat, omat, "<="); c ~ a <= FMat(b.toFloat); d}
+  def != (b:Double):FND = {val (a, c, d) = FND.asFMats(amat, omat, "!="); c ~ a != FMat(b.toFloat); d}
+  def == (b:Double):FND = {val (a, c, d) = FND.asFMats(amat, omat, "=="); c ~ a == FMat(b.toFloat); d}  
+  def === (b:Double):FND = {val (a, c, d) = FND.asFMats(amat, omat, "==="); c ~ a === FMat(b.toFloat); d}
+  
+  
+  def + (b:Int):FND = {val (a, c, d) = FND.asFMats(amat, omat, "+"); c ~ a + FMat(b.toFloat); d}
+  def - (b:Int):FND = {val (a, c, d) = FND.asFMats(amat, omat, "-"); c ~ a - FMat(b.toFloat); d}
+  def *@ (b:Int):FND = {val (a, c, d) = FND.asFMats(amat, omat, "*@"); c ~ a *@ FMat(b.toFloat); d}
+  def ∘ (b:Int):FND = {val (a, c, d) = FND.asFMats(amat, omat, "∘"); c ~ a *@ FMat(b.toFloat); d}
+  def * (b:Int):FND = {val (a, c, d) = FND.asFMats(amat, omat, "*"); c ~ a * FMat(b.toFloat); d}
+  def / (b:Int):FND = {val (a, c, d) = FND.asFMats(amat, omat, "/"); c ~ a / FMat(b.toFloat); d}  
+  def ^ (b:Int):FND = {val (a, c, d) = FND.asFMats(amat, omat, "^"); c ~ a ^ FMat(b.toFloat); d}
+  
+  def > (b:Int):FND = {val (a, c, d) = FND.asFMats(amat, omat, ">"); c ~ a > FMat(b.toFloat); d}
+  def < (b:Int):FND = {val (a, c, d) = FND.asFMats(amat, omat, "<"); c ~ a < FMat(b.toFloat); d}
+  def >= (b:Int):FND = {val (a, c, d) = FND.asFMats(amat, omat, ">="); c ~ a >= FMat(b.toFloat); d}
+  def <= (b:Int):FND = {val (a, c, d) = FND.asFMats(amat, omat, "<="); c ~ a <= FMat(b.toFloat); d}
+  def != (b:Int):FND = {val (a, c, d) = FND.asFMats(amat, omat, "!="); c ~ a != FMat(b.toFloat); d}
+  def == (b:Int):FND = {val (a, c, d) = FND.asFMats(amat, omat, "=="); c ~ a == FMat(b.toFloat); d}  
+  def === (b:Int):FND = {val (a, c, d) = FND.asFMats(amat, omat, "==="); c ~ a === FMat(b.toFloat); d}
+  
+  
+  def + (b:Long):FND = {val (a, c, d) = FND.asFMats(amat, omat, "+"); c ~ a + FMat(b.toFloat); d}
+  def - (b:Long):FND = {val (a, c, d) = FND.asFMats(amat, omat, "-"); c ~ a - FMat(b.toFloat); d}
+  def *@ (b:Long):FND = {val (a, c, d) = FND.asFMats(amat, omat, "*@"); c ~ a *@ FMat(b.toFloat); d}
+  def ∘ (b:Long):FND = {val (a, c, d) = FND.asFMats(amat, omat, "∘"); c ~ a *@ FMat(b.toFloat); d}
+  def * (b:Long):FND = {val (a, c, d) = FND.asFMats(amat, omat, "*"); c ~ a * FMat(b.toFloat); d}
+  def / (b:Long):FND = {val (a, c, d) = FND.asFMats(amat, omat, "/"); c ~ a / FMat(b.toFloat); d}  
+  def ^ (b:Long):FND = {val (a, c, d) = FND.asFMats(amat, omat, "^"); c ~ a ^ FMat(b.toFloat); d}
+  
+  def > (b:Long):FND = {val (a, c, d) = FND.asFMats(amat, omat, ">"); c ~ a > FMat(b.toFloat); d}
+  def < (b:Long):FND = {val (a, c, d) = FND.asFMats(amat, omat, "<"); c ~ a < FMat(b.toFloat); d}
+  def >= (b:Long):FND = {val (a, c, d) = FND.asFMats(amat, omat, ">="); c ~ a >= FMat(b.toFloat); d}
+  def <= (b:Long):FND = {val (a, c, d) = FND.asFMats(amat, omat, "<="); c ~ a <= FMat(b.toFloat); d}
+  def != (b:Long):FND = {val (a, c, d) = FND.asFMats(amat, omat, "!="); c ~ a != FMat(b.toFloat); d}
+  def == (b:Long):FND = {val (a, c, d) = FND.asFMats(amat, omat, "=="); c ~ a == FMat(b.toFloat); d}  
+  def === (b:Long):FND = {val (a, c, d) = FND.asFMats(amat, omat, "==="); c ~ a === FMat(b.toFloat); d}
+  
+  
+  def * (bmat:ND):FND = this * bmat.asInstanceOf[FND];
+  def + (bmat:ND):FND = {val (a, b, c, d) = FND.asFMats(amat, bmat.asInstanceOf[FND], omat, "+"); c ~ a + b; d}
+  def - (bmat:ND):FND = {val (a, b, c, d) = FND.asFMats(amat, bmat.asInstanceOf[FND], omat, "-"); c ~ a - b; d}
+  def *@ (bmat:ND):FND = {val (a, b, c, d) = FND.asFMats(amat, bmat.asInstanceOf[FND], omat, "*@"); c ~ a *@ b; d}
+  def ∘ (bmat:ND):FND = {val (a, b, c, d) = FND.asFMats(amat, bmat.asInstanceOf[FND], omat, "∘"); c ~ a *@ b; d}
+  def / (bmat:ND):FND = {val (a, b, c, d) = FND.asFMats(amat, bmat.asInstanceOf[FND], omat, "/"); c ~ a / b; d}
+  def ^ (bmat:ND):FND = {val (a, b, c, d) = FND.asFMats(amat, bmat.asInstanceOf[FND], omat, "^"); c ~ a ^ b; d}
+  
+  def > (bmat:ND):FND = {val (a, b, c, d) = FND.asFMats(amat, bmat.asInstanceOf[FND], omat, ">"); c ~ a > b; d}
+  def < (bmat:ND):FND = {val (a, b, c, d) = FND.asFMats(amat, bmat.asInstanceOf[FND], omat, "<"); c ~ a < b; d}
+  def >= (bmat:ND):FND = {val (a, b, c, d) = FND.asFMats(amat, bmat.asInstanceOf[FND], omat, ">="); c ~ a >= b; d}
+  def <= (bmat:ND):FND = {val (a, b, c, d) = FND.asFMats(amat, bmat.asInstanceOf[FND], omat, "<="); c ~ a <= b; d}
+  def != (bmat:ND):FND = {val (a, b, c, d) = FND.asFMats(amat, bmat.asInstanceOf[FND], omat, "!="); c ~ a != b; d}
+  def == (bmat:ND):FND = {val (a, b, c, d) = FND.asFMats(amat, bmat.asInstanceOf[FND], omat, "=="); c ~ a == b; d}
+  def === (bmat:ND):FND = {val (a, b, c, d) = FND.asFMats(amat, bmat.asInstanceOf[FND], omat, "==="); c ~ a === b; d}
 }
 
 object FND {
@@ -534,6 +745,8 @@ object FND {
   
   def apply(dims:Int*):FND = apply(dims.toArray)
   
+  def apply(dims:IMat):FND = apply(dims.data)
+  
   def apply(f:FMat):FND = {
     val out:FND = apply(f.nrows, f.ncols)
     System.arraycopy(f.data, 0, out.data, 0, f.length)
@@ -542,6 +755,18 @@ object FND {
   
   def apply(f:GND):FND = {
     f.toFND(null);
+  }
+  
+  def zeros(dims0:IMat):FND = {
+    val out = FND(dims0)
+    out.clear
+    out
+  }
+  
+  def ones(dims0:IMat):FND = {
+    val out = FND(dims0)
+    Arrays.fill(out.data, 1.0f)
+    out
   }
   
   def asFMats(mat1:FND, mat2:FND, omat:ND, opname:String):(FMat, FMat, FMat, FND) = {
@@ -574,6 +799,8 @@ object FND {
     }
   }
   
+  def newOrCheckFND(dims:IMat, out:ND):FND = newOrCheckFND(dims.data, out);
+  
   def newOrCheckFND(dims:Array[Int], out:ND, matGuid:Long, opHash:Int):FND = {
     if (out.asInstanceOf[AnyRef] != null || !Mat.useCache) {
       newOrCheckFND(dims, out)
@@ -589,6 +816,8 @@ object FND {
       }
     }
   }
+  
+  def newOrCheckFND(dims:IMat, out:ND, matGuid:Long, opHash:Int):FND = newOrCheckFND(dims.data, out, matGuid, opHash);
   
   def newOrCheckFND(dims:Array[Int], out:ND, guid1:Long, guid2:Long, opHash:Int):FND = {
     if (out.asInstanceOf[AnyRef] != null || !Mat.useCache) {
@@ -606,6 +835,8 @@ object FND {
     }
   }
   
+  def newOrCheckFND(dims:IMat, out:ND, guid1:Long, guid2:Long, opHash:Int):FND = newOrCheckFND(dims.data, out, guid1, guid2, opHash);
+  
   def newOrCheckFND(dims:Array[Int], out:ND, g1:Long, g2:Long, g3:Long, opHash:Int):FND = {
     if (out.asInstanceOf[AnyRef] != null || !Mat.useCache) {
       newOrCheckFND(dims, out)
@@ -621,6 +852,8 @@ object FND {
       }
     }
   }
+  
+  def newOrCheckFND(dims:IMat, out:ND, g1:Long, g2:Long, g3:Long, opHash:Int):FND = newOrCheckFND(dims.data, out, g1, g2, g3, opHash);
 }
 
 

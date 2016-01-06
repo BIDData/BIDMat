@@ -17,15 +17,26 @@ abstract class ND(protected val _dims:Array[Int]) extends Serializable {
   
   def dims = new IMat(1, _dims.length, _dims.clone);
   
+  def mytype = "ND"
+  
   def dim(i:Int):Int = _dims(i);
 
   def size() = length;
+  
+  def zeros(dims:IMat):ND;
+  
+  def zeros:ND;
+  
+  def ones(dims:IMat):ND;
+  
+  def clear:ND;
 
   private var _GUID = Mat.myrand.nextLong;
   
   def setGUID(v:Long):Unit = {_GUID = v};
   
   def GUID:Long = _GUID;
+
   
   def applyf(i:Int):Float;
   
@@ -176,6 +187,181 @@ abstract class ND(protected val _dims:Array[Int]) extends Serializable {
     }
     sb.toString()
   }
+  
+  def unary_-():ND
+  
+  def + (b : ND):ND
+  def - (b : ND):ND 
+  def * (b : ND):ND   
+  def *@ (b : ND):ND 
+  def ∘  (b : ND):ND 
+  def /  (b : ND):ND 
+  def ^ (b : ND):ND 
+  
+  def > (b : ND):ND
+  def < (b : ND):ND
+  def >= (b : ND):ND 
+  def <= (b : ND):ND
+  def == (b : ND):ND 
+  def === (b : ND):ND 
+  def != (b : ND):ND 
+  
+  
+  def + (b : Float):ND 
+  def - (b : Float):ND 
+  def * (b : Float):ND 
+  def *@ (b : Float):ND
+  def ∘  (b : Float):ND
+  def /  (b : Float):ND 
+  def ^ (b : Float):ND 
+  
+  def > (b : Float):ND
+  def < (b : Float):ND 
+  def >= (b : Float):ND 
+  def <= (b : Float):ND 
+  def == (b : Float):ND 
+  def === (b : Float):ND 
+  def != (b : Float):ND 
+  
+  def + (b : Double):ND 
+  def - (b : Double):ND 
+  def * (b : Double):ND 
+  def *@ (b : Double):ND 
+  def ∘  (b : Double):ND 
+  def /  (b : Double):ND 
+  def ^ (b : Double):ND  
+  
+  def > (b : Double):ND 
+  def < (b : Double):ND 
+  def >= (b : Double):ND 
+  def <= (b : Double):ND 
+  def == (b : Double):ND 
+  def === (b : Double):ND 
+  def != (b : Double):ND 
+  
+  
+  def + (b : Int):ND 
+  def - (b : Int):ND 
+  def * (b : Int):ND 
+  def *@ (b : Int):ND 
+  def ∘  (b : Int):ND 
+  def /  (b : Int):ND 
+  def ^ (b : Int):ND  
+  
+  def > (b : Int):ND 
+  def < (b : Int):ND 
+  def >= (b : Int):ND 
+  def <= (b : Int):ND 
+  def == (b : Int):ND 
+  def === (b : Int):ND 
+  def != (b : Int):ND 
+  
+  
+  def + (b : Long):ND 
+  def - (b : Long):ND 
+  def * (b : Long):ND 
+  def *@ (b : Long):ND 
+  def ∘  (b : Long):ND 
+  def /  (b : Long):ND 
+  def ^ (b : Long):ND   
+  
+  def > (b : Long):ND 
+  def < (b : Long):ND 
+  def >= (b : Long):ND 
+  def <= (b : Long):ND 
+  def == (b : Long):ND 
+  def === (b : Long):ND 
+  def != (b : Long):ND 
+
+  
+  def ~ (a:ND):NDPair 
+}
+
+abstract class NDPair extends Serializable {
+  
+  def + (b : ND):ND
+  def - (b : ND):ND 
+  def * (b : ND):ND  
+  def *@ (b : ND):ND 
+  def ∘  (b : ND):ND 
+  def /  (b : ND):ND 
+  def ^ (b : ND):ND 
+  
+  def > (b : ND):ND
+  def < (b : ND):ND
+  def >= (b : ND):ND 
+  def <= (b : ND):ND
+  def == (b : ND):ND 
+  def === (b : ND):ND 
+  def != (b : ND):ND 
+
+  
+  def + (b : Float):ND 
+  def - (b : Float):ND 
+  def * (b : Float):ND  
+  def *@ (b : Float):ND
+  def ∘  (b : Float):ND
+  def /  (b : Float):ND 
+  def ^ (b : Float):ND 
+  
+  def > (b : Float):ND
+  def < (b : Float):ND 
+  def >= (b : Float):ND 
+  def <= (b : Float):ND 
+  def == (b : Float):ND 
+  def === (b : Float):ND 
+  def != (b : Float):ND 
+  
+  
+  def + (b : Int):ND 
+  def - (b : Int):ND 
+  def * (b : Int):ND  
+  def *@ (b : Int):ND 
+  def ∘  (b : Int):ND 
+  def /  (b : Int):ND 
+  def ^ (b : Int):ND  
+  
+  def > (b : Int):ND 
+  def < (b : Int):ND 
+  def >= (b : Int):ND 
+  def <= (b : Int):ND 
+  def == (b : Int):ND 
+  def === (b : Int):ND 
+  def != (b : Int):ND 
+  
+  
+  def + (b : Long):ND 
+  def - (b : Long):ND 
+  def * (b : Long):ND  
+  def *@ (b : Long):ND 
+  def ∘  (b : Long):ND 
+  def /  (b : Long):ND 
+  def ^ (b : Long):ND   
+  
+  def > (b : Long):ND 
+  def < (b : Long):ND 
+  def >= (b : Long):ND 
+  def <= (b : Long):ND 
+  def == (b : Long):ND 
+  def === (b : Long):ND 
+  def != (b : Long):ND 
+
+  
+  def + (b : Double):ND 
+  def - (b : Double):ND 
+  def * (b : Double):ND  
+  def *@ (b : Double):ND 
+  def ∘  (b : Double):ND 
+  def /  (b : Double):ND 
+  def ^ (b : Double):ND  
+  
+  def > (b : Double):ND 
+  def < (b : Double):ND 
+  def >= (b : Double):ND 
+  def <= (b : Double):ND 
+  def == (b : Double):ND 
+  def === (b : Double):ND 
+  def != (b : Double):ND 
 }
 
 object ND {

@@ -17,6 +17,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 
 case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) { 
+  
+	override def mytype = "GND"
 
   def applyf(indx:Int):Float = { 
     if (indx >= 0 && indx < length) { 
@@ -453,6 +455,12 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
       case (a1:GIMat, a2:GIMat, a3:GIMat, a4:GIMat) => update(a1, a2, a3, a4, vv);
     }
   }
+  
+  def zeros(dims0:IMat):GND = GND.zeros(dims0);
+  
+  def zeros:GND = GND.zeros(dims);
+  
+  override def ones(dims0:IMat):GND = GND.ones(dims0);
 
   def clear:GND = {
 	  cudaMemset(data, 0, Sizeof.FLOAT*length);
@@ -499,11 +507,32 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
   def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):GND = transpose(Array(i1, i2, i3, i4, i5, i6))
   def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int):GND = transpose(Array(i1, i2, i3, i4, i5, i6, i7))
   def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int):GND = transpose(Array(i1, i2, i3, i4, i5, i6, i7, i8))
+  
+  
+  def * (b : GND):GND = {
+	  val dims0 = dims(0->(dims.length-1));
+	  val dims1 = b.dims(1->b.dims.length);
+	  val x = toGMatView(SciFunctions.prod(dims0).v, dims(dims.length-1)); 
+	  val y = b.toGMatView(b.dims(0), SciFunctions.prod(dims1).v);
+	  val zz = GND.newOrCheckGND((dims0 \ dims1).data, null, GUID, b.GUID, "*".##);
+	  val z = zz.toGMatView(x.nrows, y.ncols);
+	  z ~ x * y;      
+	  zz
+  }
+  
+  def unary_-():GND = {
+    val zz = GND.newOrCheckGND(dims.data, null, GUID, "-".##);
+    val a = toGMatView(length, 1);
+    val b = zz.toGMatView(length, 1);
+    a.gOp(GMat(-1f), null, GMat.BinOp.op_mul);
+    zz;
+  }
    
   def + (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, null, "+"); c ~ a + b; d}
   def - (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, null, "-"); c ~ a - b; d}
   def *@ (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, null, "*@"); c ~ a *@ b; d}
   def / (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, null, "/"); c ~ a / b; d}
+  def ^ (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, null, "^"); c ~ a ^ b; d}
   
   def > (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, null, ">"); c ~ a > b; d}
   def < (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, null, "<"); c ~ a < b; d}
@@ -516,7 +545,10 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
   def + (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "+"); c ~ a + b; d}
   def - (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "-"); c ~ a - b; d}
   def *@ (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "*@"); c ~ a *@ b; d}
+  def ∘ (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "∘"); c ~ a *@ b; d}
+  def * (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "*"); c ~ a *@ b; d}
   def / (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "/"); c ~ a / b; d}
+  def ^ (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "^"); c ~ a ^ b; d}
   
   def > (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, ">"); c ~ a > b; d}
   def < (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "<"); c ~ a < b; d}
@@ -524,7 +556,80 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
   def <= (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "<="); c ~ a <= b; d}
   def != (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "!="); c ~ a != b; d}
   def == (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "=="); c ~ a == b; d}
-  def === (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "==="); c ~ a === b; d}
+  def === (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "==="); c ~ a === b; d} 
+  
+  
+  
+  def + (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "+"); c ~ a + b; d}
+  def - (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "-"); c ~ a - b; d}
+  def *@ (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "*@"); c ~ a *@ b; d}
+  def ∘ (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "∘"); c ~ a *@ b; d}
+  def / (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "/"); c ~ a / b; d}
+  def ^ (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "^"); c ~ a ^ b; d}
+  def * (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "*"); c ~ a *@ b; d}
+  
+  def > (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, ">"); c ~ a > b; d}
+  def < (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "<"); c ~ a < b; d}
+  def >= (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, ">="); c ~ a >= b; d}
+  def <= (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "<="); c ~ a <= b; d}
+  def != (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "!="); c ~ a != b; d}
+  def == (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "=="); c ~ a == b; d}
+  def === (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "==="); c ~ a === b; d}
+  
+  
+  
+  def + (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "+"); c ~ a + b; d}
+  def - (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "-"); c ~ a - b; d}
+  def *@ (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "*@"); c ~ a *@ b; d}
+  def ∘ (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "∘"); c ~ a *@ b; d}
+  def / (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "/"); c ~ a / b; d}
+  def ^ (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "^"); c ~ a ^ b; d}
+  def * (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "*"); c ~ a *@ b; d}
+  
+  def > (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, ">"); c ~ a > b; d}
+  def < (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "<"); c ~ a < b; d}
+  def >= (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, ">="); c ~ a >= b; d}
+  def <= (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "<="); c ~ a <= b; d}
+  def != (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "!="); c ~ a != b; d}
+  def == (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "=="); c ~ a == b; d}
+  def === (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "==="); c ~ a === b; d}
+  
+  
+  def + (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "+"); c ~ a + b; d}
+  def - (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "-"); c ~ a - b; d}
+  def *@ (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "*@"); c ~ a *@ b; d}
+  def ∘ (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "∘"); c ~ a *@ b; d}
+  def / (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "/"); c ~ a / b; d}
+  def ^ (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "^"); c ~ a ^ b; d}
+  def * (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "*"); c ~ a *@ b; d}
+  
+  def > (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, ">"); c ~ a > b; d}
+  def < (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "<"); c ~ a < b; d}
+  def >= (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, ">="); c ~ a >= b; d}
+  def <= (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "<="); c ~ a <= b; d}
+  def != (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "!="); c ~ a != b; d}
+  def == (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "=="); c ~ a == b; d}
+  def === (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "==="); c ~ a === b; d}
+  
+  
+  def + (b : ND):ND = this + b.asInstanceOf[GND];
+  def - (b : ND):ND = this - b.asInstanceOf[GND]; 
+  def * (b : ND):ND = this * b.asInstanceOf[GND];
+  def *@ (b : ND):ND = this *@ b.asInstanceOf[GND];
+  def ∘  (b : ND):ND = this *@ b.asInstanceOf[GND];
+  def /  (b : ND):ND = this / b.asInstanceOf[GND];
+  def ^ (b : ND):ND = this ^ b.asInstanceOf[GND];
+  
+  def > (b : ND):ND = this > b.asInstanceOf[GND];
+  def < (b : ND):ND = this < b.asInstanceOf[GND];
+  def >= (b : ND):ND = this >= b.asInstanceOf[GND];
+  def <= (b : ND):ND = this <= b.asInstanceOf[GND];
+  def == (b : ND):ND = this == b.asInstanceOf[GND];
+  def === (b : ND):ND = this === b.asInstanceOf[GND];
+  def != (b : ND):ND = this != b.asInstanceOf[GND];
+  
+  def \ (b : ND):ND = this \ b.asInstanceOf[GND];
+  def on (b : ND):ND = this on b.asInstanceOf[GND];
   
   def reduce(inds:Array[Int], fctn:(GMat)=>GMat, opname:String):GND = {
     val alldims = izeros(_dims.length,1);
@@ -557,22 +662,124 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
   def mini(inds:Int*):GND = mini(inds.toArray)  
     
   def ~ (b : GND):GNDPair = new GNDPair(this, b)
+  def ~ (b : ND):GNDPair = new GNDPair(this, b.asInstanceOf[GND])
 
 }
 
-class GNDPair(val omat:ND, val amat:GND) {
-  def + (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, mat, omat, "+"); c ~ a + b; d}
-  def - (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, mat, omat, "-"); c ~ a - b; d}
-  def *@ (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, mat, omat, "*@"); c ~ a *@ b; d}
-  def / (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, mat, omat, "/"); c ~ a / b; d}
+class GNDPair(val omat:ND, val amat:GND) extends NDPair {
   
-  def > (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, mat, omat, ">"); c ~ a > b; d}
-  def < (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, mat, omat, "<"); c ~ a < b; d}
-  def >= (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, mat, omat, ">="); c ~ a >= b; d}
-  def <= (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, mat, omat, "<="); c ~ a <= b; d}
-  def != (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, mat, omat, "!="); c ~ a != b; d}
-  def == (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, mat, omat, "=="); c ~ a == b; d}
-  def === (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, mat, omat, "==="); c ~ a === b; d}
+	def * (b : GND):GND = {
+			val dims0 = amat.dims(0->(amat.dims.length-1));
+			val dims1 = b.dims(1->b.dims.length);
+			val x = amat.toGMatView(SciFunctions.prod(dims0).v, amat.dims(amat.dims.length-1)); 
+			val y = b.toGMatView(b.dims(0), SciFunctions.prod(dims1).v);
+			val odims = dims0 \ dims1;
+			ND.checkDims("GND *", odims, omat.dims);
+			val zz = GND.newOrCheckGND(odims.data, omat, amat.GUID, b.GUID, "*".##);
+			val z = zz.toGMatView(x.nrows, y.ncols);
+			z ~ x * y;      
+			zz
+	}
+  
+  def + (bmat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat, omat, "+"); c ~ a + b; d}
+  def - (bmat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat, omat, "-"); c ~ a - b; d}
+  def *@ (bmat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat, omat, "*@"); c ~ a *@ b; d}
+  def ∘ (bmat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat, omat, "∘"); c ~ a *@ b; d}
+  def / (bmat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat, omat, "/"); c ~ a / b; d}
+  def ^ (bmat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat, omat, "^"); c ~ a ^ b; d}
+  
+  def > (bmat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat, omat, ">"); c ~ a > b; d}
+  def < (bmat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat, omat, "<"); c ~ a < b; d}
+  def >= (bmat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat, omat, ">="); c ~ a >= b; d}
+  def <= (bmat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat, omat, "<="); c ~ a <= b; d}
+  def != (bmat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat, omat, "!="); c ~ a != b; d}
+  def == (bmat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat, omat, "=="); c ~ a == b; d}
+  def === (bmat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat, omat, "==="); c ~ a === b; d}
+  
+  
+  def + (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "+"); c ~ a + GMat(b); d}
+  def - (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "-"); c ~ a - GMat(b); d}
+  def *@ (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "*@"); c ~ a *@ GMat(b); d}
+  def ∘ (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "∘"); c ~ a *@ GMat(b); d}
+  def * (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "*"); c ~ a * GMat(b); d}
+  def / (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "/"); c ~ a / GMat(b); d}  
+  def ^ (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "^"); c ~ a ^ GMat(b); d}
+  
+  def > (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, ">"); c ~ a > GMat(b); d}
+  def < (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "<"); c ~ a < GMat(b); d}
+  def >= (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, ">="); c ~ a >= GMat(b); d}
+  def <= (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "<="); c ~ a <= GMat(b); d}
+  def != (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "!="); c ~ a != GMat(b); d}
+  def == (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "=="); c ~ a == GMat(b); d}  
+  def === (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "==="); c ~ a === GMat(b); d}
+  
+  
+  def + (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "+"); c ~ a + GMat(b.toFloat); d}
+  def - (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "-"); c ~ a - GMat(b.toFloat); d}
+  def *@ (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "*@"); c ~ a *@ GMat(b.toFloat); d}
+  def ∘ (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "∘"); c ~ a *@ GMat(b.toFloat); d}
+  def * (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "*"); c ~ a * GMat(b.toFloat); d}
+  def / (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "/"); c ~ a / GMat(b.toFloat); d}  
+  def ^ (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "^"); c ~ a ^ GMat(b.toFloat); d}
+  
+  def > (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, ">"); c ~ a > GMat(b.toFloat); d}
+  def < (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "<"); c ~ a < GMat(b.toFloat); d}
+  def >= (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, ">="); c ~ a >= GMat(b.toFloat); d}
+  def <= (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "<="); c ~ a <= GMat(b.toFloat); d}
+  def != (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "!="); c ~ a != GMat(b.toFloat); d}
+  def == (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "=="); c ~ a == GMat(b.toFloat); d}  
+  def === (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "==="); c ~ a === GMat(b.toFloat); d}
+  
+  
+  def + (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "+"); c ~ a + GMat(b.toFloat); d}
+  def - (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "-"); c ~ a - GMat(b.toFloat); d}
+  def *@ (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "*@"); c ~ a *@ GMat(b.toFloat); d}
+  def ∘ (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "∘"); c ~ a *@ GMat(b.toFloat); d}
+  def * (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "*"); c ~ a * GMat(b.toFloat); d}
+  def / (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "/"); c ~ a / GMat(b.toFloat); d}  
+  def ^ (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "^"); c ~ a ^ GMat(b.toFloat); d}
+  
+  def > (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, ">"); c ~ a > GMat(b.toFloat); d}
+  def < (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "<"); c ~ a < GMat(b.toFloat); d}
+  def >= (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, ">="); c ~ a >= GMat(b.toFloat); d}
+  def <= (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "<="); c ~ a <= GMat(b.toFloat); d}
+  def != (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "!="); c ~ a != GMat(b.toFloat); d}
+  def == (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "=="); c ~ a == GMat(b.toFloat); d}  
+  def === (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "==="); c ~ a === GMat(b.toFloat); d}
+  
+  
+  def + (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "+"); c ~ a + GMat(b.toFloat); d}
+  def - (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "-"); c ~ a - GMat(b.toFloat); d}
+  def *@ (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "*@"); c ~ a *@ GMat(b.toFloat); d}
+  def ∘ (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "∘"); c ~ a *@ GMat(b.toFloat); d}
+  def * (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "*"); c ~ a * GMat(b.toFloat); d}
+  def / (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "/"); c ~ a / GMat(b.toFloat); d}  
+  def ^ (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "^"); c ~ a ^ GMat(b.toFloat); d}
+  
+  def > (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, ">"); c ~ a > GMat(b.toFloat); d}
+  def < (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "<"); c ~ a < GMat(b.toFloat); d}
+  def >= (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, ">="); c ~ a >= GMat(b.toFloat); d}
+  def <= (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "<="); c ~ a <= GMat(b.toFloat); d}
+  def != (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "!="); c ~ a != GMat(b.toFloat); d}
+  def == (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "=="); c ~ a == GMat(b.toFloat); d}  
+  def === (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "==="); c ~ a === GMat(b.toFloat); d}
+  
+  
+  def * (bmat:ND):GND = this * bmat.asInstanceOf[GND];
+  def + (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "+"); c ~ a + b; d}
+  def - (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "-"); c ~ a - b; d}
+  def *@ (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "*@"); c ~ a *@ b; d}
+  def ∘ (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "∘"); c ~ a *@ b; d}
+  def / (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "/"); c ~ a / b; d}
+  def ^ (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "^"); c ~ a ^ b; d}
+  
+  def > (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, ">"); c ~ a > b; d}
+  def < (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "<"); c ~ a < b; d}
+  def >= (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, ">="); c ~ a >= b; d}
+  def <= (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "<="); c ~ a <= b; d}
+  def != (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "!="); c ~ a != b; d}
+  def == (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "=="); c ~ a == b; d}
+  def === (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "==="); c ~ a === b; d}
 }
 
 object GND {
@@ -604,7 +811,9 @@ object GND {
     retv       
   }
   
-  def apply(dims:Int*):GND = apply(dims.toArray)
+  def apply(dims0:IMat):GND = apply(dims0.data);
+  
+  def apply(dims:Int*):GND = apply(dims.toArray);
   
   def apply(f:GMat):GND = {
     val out = GND.newOrCheckGND(Array(f.nrows, f.ncols), null, f.GUID, "apply".##);
@@ -621,6 +830,24 @@ object GND {
   def apply(f:FMat):GND = {
     val out = GND.newOrCheckGND(Array(f.nrows, f.ncols), null, f.GUID, "apply".##);
     CPUtoGPUarraycopy(f.data, 0, out.data, 0, f.length, "GND apply");
+    out
+  }
+  
+  def zeros(dims0:IMat) = {
+    val out = GND(dims0)
+    cudaMemset(out.data, 0, Sizeof.FLOAT*out.length)
+    cudaDeviceSynchronize()
+    val err = cudaGetLastError()
+    if (err != 0) throw new RuntimeException("GPU "+SciFunctions.getGPU+": Cuda error in GND.zeros " + cudaGetErrorString(err));
+    out
+  }
+  
+  def ones(dims0:IMat) = {
+    val out = GND(dims0)
+    CUMAT.setval(out.data, 1f, out.length)
+    cudaDeviceSynchronize()
+    val err = cudaGetLastError()
+    if (err != 0) throw new RuntimeException("GPU "+SciFunctions.getGPU+": Cuda error in GND.ones " + cudaGetErrorString(err));
     out
   }
   
@@ -654,6 +881,8 @@ object GND {
     }
   }
   
+  def newOrCheckGND(dims:IMat, out:ND):GND = newOrCheckGND(dims.data, out);
+    
   def newOrCheckGND(dims:Array[Int], out:ND, matGuid:Long, opHash:Int):GND = {
     if (out.asInstanceOf[AnyRef] != null || !Mat.useCache) {
       newOrCheckGND(dims, out)
@@ -669,6 +898,8 @@ object GND {
       }
     }
   }
+  
+  def newOrCheckGND(dims:IMat, out:ND, g1:Long, opHash:Int):GND = newOrCheckGND(dims.data, out, g1, opHash);
   
   def newOrCheckGND(dims:Array[Int], out:ND, guid1:Long, guid2:Long, opHash:Int):GND = {
     if (out.asInstanceOf[AnyRef] != null || !Mat.useCache) {
@@ -686,6 +917,8 @@ object GND {
     }
   }
   
+  def newOrCheckGND(dims:IMat, out:ND, g1:Long, g2:Long, opHash:Int):GND = newOrCheckGND(dims.data, out, g1, g2, opHash);
+  
   def newOrCheckGND(dims:Array[Int], out:ND, g1:Long, g2:Long, g3:Long, opHash:Int):GND = {
     if (out.asInstanceOf[AnyRef] != null || !Mat.useCache) {
       newOrCheckGND(dims, out)
@@ -701,6 +934,8 @@ object GND {
       }
     }
   }
+  
+  def newOrCheckGND(dims:IMat, out:ND, g1:Long, g2:Long, g3:Long, opHash:Int):GND = newOrCheckGND(dims.data, out, g1, g2, g3, opHash);
 }
 
 

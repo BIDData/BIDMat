@@ -16,6 +16,10 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
     throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
   }
   
+  def notImplemented1(s:String,that:ND):ND = { 
+    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and "+that.mytype)
+  }
+  
   def notImplemented1(s:String,that:Mat):Mat = { 
     throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and "+that.mytype)
   }
@@ -56,16 +60,20 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
   def t = notImplemented0("t")  
   def dv:Double = throw new RuntimeException("operator dv not implemented for "+this.mytype)
   
-  def mytype = "Mat"
+  override def mytype = "Mat"
   def copyTo(a:Mat) = notImplemented0("copyTo");
   def copy = notImplemented0("copy");
   def newcopy = notImplemented0("newcopy");
   def set(v:Float) = notImplemented0("set");
   def set(v:Double) = notImplemented0("set");
   def zeros(nr:Int, nc:Int) = notImplemented0("zeros");
+  def zeros(dims0:IMat) = zeros(dims0(0), dims0(1));
+  def zeros = notImplemented0("zeros");
   def ones(nr:Int, nc:Int) = notImplemented0("ones");
+  def ones(dims0:IMat) = ones(dims0(0), dims0(1));
   def izeros(nr:Int, nc:Int) = notImplemented0("izeros");
   def iones(nr:Int, nc:Int) = notImplemented0("iones");
+  def clear = notImplemented0("clear");
   def clearUpper(i:Int) = notImplemented0("clearUpper");
   def clearLower(i:Int) = notImplemented0("clearLower"); 
   def clearUpper = notImplemented0("clearUpper");
@@ -75,8 +83,7 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
   def view(nr:Int, nc:Int, setGUID:Boolean):Mat = notImplemented0("view");
     
   def nnz:Int = {notImplemented0("nnz"); 0}
-  def clear = notImplemented0("clear");
-  def zeros(nr:Int, nc:Int, nnz:Int):Mat = zeros(nr, nc)
+  def zeros(nr:Int, nc:Int, nnz:Int):Mat = zeros(nr, nc);
   def recycle(nr:Int, nc:Int, nnz:Int):Mat = notImplemented0("recycle");
   def contents:Mat = notImplemented0("contents");
   def colslice(a:Int, b:Int, out:Mat):Mat = notImplemented0("colslice");
@@ -234,6 +241,10 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
   def === (b : Mat):Mat = notImplemented1("===", b)
   def != (b : Mat):Mat = notImplemented1("!=", b)
   
+  def <-- (b : Mat):Mat = b.copyTo(this)
+  def \ (b : Mat):Mat = notImplemented1("\\", b)
+  def on (b : Mat):Mat = notImplemented1("on", b)
+  
   def *  (b : Float):Mat = notImplemented2("*", b)
   def +  (b : Float):Mat = notImplemented2("+", b)
   def -  (b : Float):Mat = notImplemented2("-", b)
@@ -266,6 +277,22 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
   def === (b : Int):Mat = notImplemented2("===", b)
   def != (b : Int):Mat = notImplemented2("!=", b)
   
+  def + (b : Long):Mat = notImplemented2("+", b)
+  def - (b : Long):Mat = notImplemented2("-", b)
+  def * (b : Long):Mat = notImplemented2("*", b)
+  def *@ (b : Long):Mat = notImplemented2("*@", b)
+  def ∘  (b : Long):Mat = notImplemented2("∘", b)
+  def /  (b : Long):Mat = notImplemented2("/", b)
+  def ^ (b : Long):Mat   = notImplemented2("^", b)
+  
+  def > (b : Long):Mat = notImplemented2(">", b)
+  def < (b : Long):Mat = notImplemented2("<", b)
+  def >= (b : Long):Mat = notImplemented2(">=", b)
+  def <= (b : Long):Mat = notImplemented2("<=", b)
+  def == (b : Long):Mat = notImplemented2("==", b)
+  def === (b : Long):Mat = notImplemented2("===", b)
+  def != (b : Long):Mat = notImplemented2("!=", b)
+  
   def *  (b : Double):Mat = notImplemented2("*", b)
   def +  (b : Double):Mat = notImplemented2("+", b)
   def -  (b : Double):Mat = notImplemented2("-", b)
@@ -282,10 +309,52 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
   def === (b : Double):Mat = notImplemented2("===", b)
   def != (b : Double):Mat = notImplemented2("!=", b)
   
-  def <-- (b : Mat):Mat = b.copyTo(this)
+  def +  (b : ND):ND = notImplemented1("+", b)
+  def -  (b : ND):ND = notImplemented1("-", b)
+  def *  (b : ND):ND = notImplemented1("*", b)
+  def *^ (b : ND):ND = notImplemented1("*^", b)
+  def xT (b : ND):ND = notImplemented1("*", b)
+  def Tx (b : ND):ND = notImplemented1("*", b)
+  def ^* (b : ND):ND = notImplemented1("^*", b)
+  def ** (b : ND):ND = notImplemented1("**", b)
+  def ⊗  (b : ND):ND = notImplemented1("⊗", b)       // unicode 8855, 0x2297
+  def /< (b : ND):ND = notImplemented1("/<", b)
+  def ∘  (b : ND):ND = notImplemented1("∘", b)        // unicode 8728, 0x2218 
+  def *@ (b : ND):ND = notImplemented1("*@", b)
+  def /  (b : ND):ND = notImplemented1("/", b)
+  def \\ (b : ND):ND = notImplemented1("\\\\", b)
+  def ^  (b : ND):ND = notImplemented1("^", b) 
+  def ◁  (b : ND):ND = notImplemented1("◁", b)        // unicode 9665, 0x25C1 
+  def ▷  (b : ND):ND = notImplemented1("▷", b)        // unicode 9666, 0x25C2
+  def dot (b : ND):ND = notImplemented1("dot", b)
+  def dotr (b : ND):ND = notImplemented1("dotr", b) 
+  def ∙ (b : ND):ND = notImplemented1("dot", b)       // unicode 8729, 0x2219 
+  def ∙→ (b : ND):ND = notImplemented1("dotr", b)     // unicode (8729, 8594) (0x2219, 0x2192)
+    
+  def >  (b : ND):ND = notImplemented1(">", b)
+  def <  (b : ND):ND = notImplemented1("<", b)
+  def >= (b : ND):ND = notImplemented1(">=", b)
+  def <= (b : ND):ND = notImplemented1("<=", b)
+  def == (b : ND):ND = notImplemented1("==", b)
+  def === (b : ND):ND = notImplemented1("===", b)
+  def != (b : ND):ND = notImplemented1("!=", b)
   
-  def \ (b : Mat):Mat = notImplemented1("\\", b)
-  def on (b : Mat):Mat = notImplemented1("on", b)
+//  def <-- (b : ND):ND = b.copyTo(this)
+  def \ (b : ND):ND = notImplemented1("\\", b)
+  def on (b : ND):ND = notImplemented1("on", b)
+  
+  
+  def ddot (b : Mat):Double = {notImplemented1("ddot", b); 0}
+  def ∙∙ (b : Mat):Double = {notImplemented1("ddot", b); 0}
+  
+  
+  def ^* (b : DSPair):Mat = notImplemented0("^*")
+  def Tx (b : DSPair):Mat = notImplemented0("Tx")
+  def @@ (b : Mat):DSPair = (this, b) match {
+    case (aa:FMat, bb:SMat) => new FDSPair(aa, bb) 
+    case (aa:GMat, bb:GSMat) => new GDSPair(aa, bb)
+  }
+  
   def ~ (b : Mat):Pair = b match {
     case bb:FMat => new FPair(this, bb)
     case bb:DMat => new DPair(this, bb)
@@ -298,29 +367,24 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
     case bb:GDMat => new GDPair(this, bb)
     case bb:GLMat => new GLPair(this, bb)
   }
-  
-  def ddot (b : Mat):Double = {notImplemented1("ddot", b); 0}
-  def ∙∙ (b : Mat):Double = {notImplemented1("ddot", b); 0}
-  
-
-  
-  def ^* (b : DSPair):Mat = notImplemented0("^*")
-  def Tx (b : DSPair):Mat = notImplemented0("Tx")
-  def @@ (b : Mat):DSPair = (this, b) match {
-    case (aa:FMat, bb:SMat) => new FDSPair(aa, bb) 
-    case (aa:GMat, bb:GSMat) => new GDSPair(aa, bb)
-  }
+    
+  def ~ (b:ND):Pair = this ~ b.asInstanceOf[Mat]
   
 }
 
 abstract class DSPair extends Serializable {}
 
-abstract class Pair extends Serializable {
+abstract class Pair extends NDPair {
   
   def notImplemented0(s:String):Mat = { 
     throw new RuntimeException("operator "+s+" not implemented for "+this)
   }
+  
   def notImplemented1(s:String,that:Mat):Mat = { 
+    throw new RuntimeException("operator "+s+" not implemented for "+this+" and "+that.mytype)
+  }
+  
+  def notImplemented1(s:String,that:ND):Mat = { 
     throw new RuntimeException("operator "+s+" not implemented for "+this+" and "+that.mytype)
   }
   
@@ -483,6 +547,40 @@ abstract class Pair extends Serializable {
   
   def \ (b : Double):Mat = notImplemented0("\\")
   def on (b : Double):Mat = notImplemented0("on")
+  
+  
+  def + (b : ND):Mat = notImplemented1("+", b)
+  def - (b : ND):Mat = notImplemented1("-", b)
+  def * (b : ND):Mat = notImplemented1("*", b)
+  def xT (b : ND):Mat = notImplemented1("xT", b)
+  def *^ (b : ND):Mat = notImplemented1("*^", b)
+  def Tx (b : ND):Mat = notImplemented1("Tx", b)
+  def ^* (b : ND):Mat = notImplemented1("*^", b)
+  def /< (b : ND):Mat = notImplemented1("/<", b)
+  def *@ (b : ND):Mat = notImplemented1("*@", b)
+  def ∘  (b : ND):Mat = notImplemented1("∘", b)
+  def /  (b : ND):Mat = notImplemented1("/", b)
+  def \\ (b : ND):Mat = notImplemented1("\\\\", b)
+  def ^ (b : ND):Mat = notImplemented1("^", b) 
+  def ◁ (b : ND):Mat = notImplemented1("◁", b)
+  def ▷ (b : ND):Mat = notImplemented1("▷", b)
+  def dot (b : ND):Mat = notImplemented1("dot", b)
+  def dotr (b : ND):Mat = notImplemented1("dotr", b)
+  def ∙ (b : ND):Mat = notImplemented1("dot", b)
+  def ∙→ (b : ND):Mat = notImplemented1("dotr", b)
+  def ** (b : ND):Mat = notImplemented1("**", b)
+  def ⊗  (b : ND):Mat = notImplemented1("⊗", b) 
+  
+  def > (b : ND):Mat = notImplemented1(">", b)
+  def < (b : ND):Mat = notImplemented1("<", b)
+  def >= (b : ND):Mat = notImplemented1(">=", b)
+  def <= (b : ND):Mat = notImplemented1("<=", b)
+  def == (b : ND):Mat = notImplemented1("==", b)
+  def === (b : ND):Mat = notImplemented1("===", b)
+  def != (b : ND):Mat = notImplemented1("!=", b)
+  
+  def \ (b : ND):Mat = notImplemented1("\\", b)
+  def on (b : ND):Mat = notImplemented1("on", b)
   
 
 }

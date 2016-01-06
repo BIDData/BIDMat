@@ -1198,6 +1198,14 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   def ∙  (a : GMat) = dot(a)
   def ∙→ (a : GMat) = dotr(a)
   
+  def > (b : GMat) = gOp(b, null, op_gt)
+  def < (b : GMat) = gOp(b, null, op_lt)
+  def == (b : GMat) = gOp(b, null, op_eq)
+  def === (b : GMat) = gOp(b, null, op_eq)
+  def >= (b : GMat) = gOp(b, null, op_ge)
+  def <= (b : GMat) = gOp(b, null, op_le)
+  def != (b : GMat) = gOp(b, null, op_ne)
+  
   override def + (a : Float) = gOp(GMat(a), null, op_add)
   override def - (a : Float) = gOp(GMat(a), null, op_sub)
   override def *@ (a : Float) = gOp(GMat(a), null, op_mul)
@@ -1205,6 +1213,30 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   override def ∘  (a : Float) = gOp(GMat(a), null, op_mul)
   override def /  (a : Float) = gOp(GMat(a), null, op_div)
   override def ^  (a : Float) = gOp(GMat(a), null, op_pow)
+  
+  override def < (b : Float) = gOp(GMat(b), null, op_lt);
+  override def > (b : Float) = gOp(GMat(b), null, op_gt);
+  override def <= (b : Float) = gOp(GMat(b), null, op_le);
+  override def >= (b : Float) = gOp(GMat(b), null, op_ge);
+  override def == (b : Float) = gOp(GMat(b), null, op_eq);
+  override def != (b : Float) = gOp(GMat(b), null, op_ne);
+  
+  
+  override def + (a : Double) = gOp(GMat(a.toFloat), null, op_add)
+  override def - (a : Double) = gOp(GMat(a.toFloat), null, op_sub)
+  override def *@ (a : Double) = gOp(GMat(a.toFloat), null, op_mul)
+  override def * (a : Double) = gOp(GMat(a.toFloat), null, op_mul)
+  override def ∘  (a : Double) = gOp(GMat(a.toFloat), null, op_mul)
+  override def /  (a : Double) = gOp(GMat(a.toFloat), null, op_div)
+  override def ^  (a : Double) = gOp(GMat(a.toFloat), null, op_pow)
+  
+  override def < (b : Double) = gOp(GMat(b.toFloat), null, op_lt)
+  override def > (b : Double) = gOp(GMat(b.toFloat), null, op_gt)
+  override def <= (b : Double) = gOp(GMat(b.toFloat), null, op_le)
+  override def >= (b : Double) = gOp(GMat(b.toFloat), null, op_ge)
+  override def == (b : Double) = gOp(GMat(b.toFloat), null, op_eq)
+  override def != (b : Double) = gOp(GMat(b.toFloat), null, op_ne)
+  
   
   override def + (a : Int) = gOp(GMat(a.toFloat), null, op_add)
   override def - (a : Int) = gOp(GMat(a.toFloat), null, op_sub)
@@ -1214,34 +1246,30 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   override def /  (a : Int) = gOp(GMat(a.toFloat), null, op_div)
   override def ^  (a : Int) = gOp(GMat(a.toFloat), null, op_pow)
   
-  def > (b : GMat) = gOp(b, null, op_gt)
-  def < (b : GMat) = gOp(b, null, op_lt)
-  def == (b : GMat) = gOp(b, null, op_eq)
-  def === (b : GMat) = gOp(b, null, op_eq)
-  def >= (b : GMat) = gOp(b, null, op_ge)
-  def <= (b : GMat) = gOp(b, null, op_le)
-  def != (b : GMat) = gOp(b, null, op_ne)
-  
-  override def < (b : Float) = gOp(GMat(b), null, op_lt);
-  override def > (b : Float) = gOp(GMat(b), null, op_gt);
-  override def <= (b : Float) = gOp(GMat(b), null, op_le);
-  override def >= (b : Float) = gOp(GMat(b), null, op_ge);
-  override def == (b : Float) = gOp(GMat(b), null, op_eq);
-  override def != (b : Float) = gOp(GMat(b), null, op_ne);
+  override def < (b : Int) = gOp(GMat(b.toFloat), null, op_lt)
+  override def > (b : Int) = gOp(GMat(b.toFloat), null, op_gt)
+  override def <= (b : Int) = gOp(GMat(b.toFloat), null, op_le)
+  override def >= (b : Int) = gOp(GMat(b.toFloat), null, op_ge)
+  override def == (b : Int) = gOp(GMat(b.toFloat), null, op_eq)
+  override def != (b : Int) = gOp(GMat(b.toFloat), null, op_ne)
 
-  override def < (b : Double) = gOp(GMat(b), null, op_lt)
-  override def > (b : Double) = gOp(GMat(b), null, op_gt)  
-  override def <= (b : Double) = gOp(GMat(b), null, op_le)
-  override def >= (b : Double) = gOp(GMat(b), null, op_ge)
-  override def == (b : Double) = gOp(GMat(b), null, op_eq)  
-  override def != (b : Double) = gOp(GMat(b), null, op_ne)
   
-  override def < (b : Int) = gOp(GMat(b), null, op_lt)
-  override def > (b : Int) = gOp(GMat(b), null, op_gt)
-  override def <= (b : Int) = gOp(GMat(b), null, op_le)
-  override def >= (b : Int) = gOp(GMat(b), null, op_ge)
-  override def == (b : Int) = gOp(GMat(b), null, op_eq)
-  override def != (b : Int) = gOp(GMat(b), null, op_ne)
+  override def + (a : Long) = gOp(GMat(a.toFloat), null, op_add)
+  override def - (a : Long) = gOp(GMat(a.toFloat), null, op_sub)
+  override def *@ (a : Long) = gOp(GMat(a.toFloat), null, op_mul)
+  override def * (a : Long) = gOp(GMat(a.toFloat), null, op_mul)
+  override def ∘  (a : Long) = gOp(GMat(a.toFloat), null, op_mul)
+  override def /  (a : Long) = gOp(GMat(a.toFloat), null, op_div)
+  override def ^  (a : Long) = gOp(GMat(a.toFloat), null, op_pow)
+  
+  override def < (b : Long) = gOp(GMat(b.toFloat), null, op_lt)
+  override def > (b : Long) = gOp(GMat(b.toFloat), null, op_gt)
+  override def <= (b : Long) = gOp(GMat(b.toFloat), null, op_le)
+  override def >= (b : Long) = gOp(GMat(b.toFloat), null, op_ge)
+  override def == (b : Long) = gOp(GMat(b.toFloat), null, op_eq)
+  override def != (b : Long) = gOp(GMat(b.toFloat), null, op_ne)
+
+
 
   
   def on(a : GMat) = vertcat(a, null)
@@ -1460,32 +1488,47 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
   override def != (b : Float) = mat.gOp(GMat(b), omat, op_ne)
   override def >= (b : Float) = mat.gOp(GMat(b), omat, op_ge)
 	override def <= (b : Float) = mat.gOp(GMat(b), omat, op_le)
+  
+  override def * (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_mul)
+  override def ∘ (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_mul)
+  override def + (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_add)
+  override def - (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_sub)
+  override def / (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_div)
+  override def ^ (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_pow)
+  override def >  (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_gt)
+  override def <  (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_lt)
+  override def == (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_eq)
+  override def != (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_ne)
+  override def >= (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_ge)
+  override def <= (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_le)
 	
-	override def * (b : Int) = mat.gOp(GMat(b), omat, op_mul)
-  override def ∘ (b : Int) = mat.gOp(GMat(b), omat, op_mul)
-  override def + (b : Int) = mat.gOp(GMat(b), omat, op_add)
-  override def - (b : Int) = mat.gOp(GMat(b), omat, op_sub)
-  override def / (b : Int) = mat.gOp(GMat(b), omat, op_div)
-  override def ^ (b : Int) = mat.gOp(GMat(b), omat, op_pow)
-  override def >  (b : Int) = mat.gOp(GMat(b), omat, op_gt)
-	override def <  (b : Int) = mat.gOp(GMat(b), omat, op_lt)
-  override def == (b : Int) = mat.gOp(GMat(b), omat, op_eq)
-  override def != (b : Int) = mat.gOp(GMat(b), omat, op_ne)
-  override def >= (b : Int) = mat.gOp(GMat(b), omat, op_ge)
-	override def <= (b : Int) = mat.gOp(GMat(b), omat, op_le)
-	
-  override def * (b : Double) = mat.gOp(GMat(b), omat, op_mul)
-  override def ∘ (b : Double) = mat.gOp(GMat(b), omat, op_mul)
-  override def + (b : Double) = mat.gOp(GMat(b), omat, op_add)
-  override def - (b : Double) = mat.gOp(GMat(b), omat, op_sub)
-  override def / (b : Double) = mat.gOp(GMat(b), omat, op_div)
-  override def ^ (b : Double) = mat.gOp(GMat(b), omat, op_pow)
-  override def >  (b : Double) = mat.gOp(GMat(b), omat, op_gt)
-	override def <  (b : Double) = mat.gOp(GMat(b), omat, op_lt)
-  override def == (b : Double) = mat.gOp(GMat(b), omat, op_eq)
-  override def != (b : Double) = mat.gOp(GMat(b), omat, op_ne)
-  override def >= (b : Double) = mat.gOp(GMat(b), omat, op_ge)
-	override def <= (b : Double) = mat.gOp(GMat(b), omat, op_le)
+  
+	override def * (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_mul)
+  override def ∘ (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_mul)
+  override def + (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_add)
+  override def - (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_sub)
+  override def / (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_div)
+  override def ^ (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_pow)
+  override def >  (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_gt)
+	override def <  (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_lt)
+  override def == (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_eq)
+  override def != (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_ne)
+  override def >= (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_ge)
+	override def <= (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_le)
+  
+  
+  override def * (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_mul)
+  override def ∘ (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_mul)
+  override def + (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_add)
+  override def - (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_sub)
+  override def / (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_div)
+  override def ^ (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_pow)
+  override def >  (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_gt)
+  override def <  (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_lt)
+  override def == (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_eq)
+  override def != (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_ne)
+  override def >= (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_ge)
+  override def <= (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_le)
 
 
 
