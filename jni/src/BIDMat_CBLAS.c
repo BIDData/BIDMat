@@ -1,7 +1,11 @@
 #include <jni.h>
+#ifdef __arm__
+#include <cblas.h>
+#else
 #include <mkl.h>
 #include <mkl_trans.h>
 #include <omp.h>
+#endif
 
 JNIEXPORT jdouble JNICALL Java_edu_berkeley_bid_CBLAS_ddot 
 (JNIEnv * env, jobject calling_obj, jint N, jdoubleArray jX, jint incX, jdoubleArray jY, jint incY){

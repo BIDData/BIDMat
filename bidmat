@@ -3,7 +3,7 @@
 # export CUDA_PATH="" # Set here if not set in environment
 # Fix these if needed
 JCUDA_VERSION="0.7.0a"
-MEMSIZE="-Xmx14G"
+MEMSIZE="-Xmx1G"
 export JAVA_OPTS="${MEMSIZE} -Xms128M -Dfile.encoding=UTF-8" # Set as much memory as possible
 BIDMAT_ROOT="${BASH_SOURCE[0]}"
 if [ ! `uname` = "Darwin" ]; then

@@ -37,9 +37,11 @@ elif [ "$ARCH" = "amd64" ] || [ "$ARCH" = "x86_64" ] ; then
     SUBDIR=/lp64
     PTYPE=_lp64
     MBITS=64
+elif [ "$ARCH" = "armv7l" ] ; then
+    ARCH="arm"
 else
-	echo "ARCH not supported"
-	exit 1
+    echo "ARCH not supported"
+    exit 1
 fi
 
 echo "Creating config for $OS $ARCH"
@@ -56,6 +58,7 @@ BIDMAT_ROOT="$( echo ${BIDMAT_ROOT} | sed s+/cygdrive/c+c:+ )"
 
 if [ "$OS" = "apple" ] ; then
     MKL_ROOT="/opt/intel/mkl"
+    RANDSRC="VSL"
     if [ "$JAVA_HOME" = "" ]; then
 	JAVA_HOME=`/usr/libexec/java_home`
     fi
@@ -102,56 +105,84 @@ if [ "$OS" = "apple" ] ; then
     INSTALL_DIR="${BIDMAT_ROOT}/lib"
     CUDA_LIBS="-L${CUDA_HOME}/lib -L${INSTALL_DIR} -lcudart -lcublas"
 elif [ "$OS" = "linux" ] ; then
-    MKL_ROOT="/opt/intel/mkl"
-    if [ "$JAVA_HOME" = "" ]; then
-    JAVA_HOME="/usr/java/default"
-    fi
-    CUDA_HOME="/usr/local/cuda"
-    CC="icc"
-    GCC="g++"
-    NVCC="nvcc" 
-    NVCCFLAGS="-c -use_fast_math  -I$BIDMAT_ROOT/jni/include \
+    if [ "$ARCH" = "arm" ] ; then
+	RANDSRC="RAND"
+	if [ "$JAVA_HOME" = "" ]; then
+	    JAVA_HOME="/usr/java/default"
+	fi
+	CC="gcc"
+	GCC="g++"
+	OBJ="o"
+	OUTFLG="-o "
+	CPPFLAGS="-fPIC -std=c++11 -marm -mfpu=vfpv3 -mfloat-abi=hard -march=armv7-a -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include" 
+	CFLAGS="-fPIC -marm -mfpu=vfpv3 -mfloat-abi=hard -march=armv7-a -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I/usr/include/openblas"
+	LB="ar rc"    
+	GLD="g++ -shared"
+	LD="gcc -shared -z noexecstack"
+	LDFLAGS="$LDFLAGS"
+	LIBPREPEND="lib"
+	LIBAPPEND="-${OS}-${ARCH}.so"
+	LIBAPPENDLIB="-${OS}-${ARCH}.so"
+	FC="gfortran"
+	FFLAGS="$CFLAGS"
+	LAPACK_INCLUDES=""
+	FORTRAN_LIBS="-lgfortran"
+	MKL_LIBS="-L$JAVA_HOME/lib -L${BIDMAT_ROOT}/lib /usr/local/lib/libopenblas.a -ldl -lpthread -lm"
+	INSTALL_DIR="${BIDMAT_ROOT}/lib"
+    else
+	MKL_ROOT="/opt/intel/mkl"
+        RANDSRC="VSL"
+	if [ "$JAVA_HOME" = "" ]; then
+	    JAVA_HOME="/usr/java/default"
+	fi
+	CUDA_HOME="/usr/local/cuda"
+	CC="icc"
+	GCC="g++"
+	NVCC="nvcc" 
+	NVCCFLAGS="-c -use_fast_math  -I$BIDMAT_ROOT/jni/include \
           -gencode arch=compute_20,code=sm_20 \
           -gencode arch=compute_30,code=sm_30 \
           -gencode arch=compute_35,code=sm_35 \
           -gencode arch=compute_50,code=sm_50 \
           --machine ${MBITS}  -Xcompiler \"-fPIC -c -O2 -g -DNDEBUG\""
-    OBJ="o"
-    OUTFLG="-o "
-    CPPFLAGS="-fPIC -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$CUDA_HOME/include" 
-    CFLAGS="-openmp -fPIC -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$MKL_ROOT/include -I$MKL_ROOT/include/${ARCHD}${SUBDIR}"
-    LB="ar rc"    
-    GLD="g++ -shared"
-    LD="icc -shared -static-intel -z noexecstack"
-    LDFLAGS="$LDFLAGS"
-    LIBPREPEND="lib"
-    LIBAPPEND="-${OS}-${ARCH}.so"
-    LIBAPPENDLIB="-${OS}-${ARCH}.so"
-    FC="gfortran"
-    FFLAGS="$CFLAGS"
-    LAPACK_INCLUDES=""
-    FORTRAN_LIBS="-lgfortran"
-    if [ "$PARLIB" = "sequential" ] ; then
+	OBJ="o"
+	OUTFLG="-o "
+	CPPFLAGS="-fPIC -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$CUDA_HOME/include" 
+	CFLAGS="-openmp -fPIC -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$MKL_ROOT/include -I$MKL_ROOT/include/${ARCHD}${SUBDIR}"
+	LB="ar rc"    
+	GLD="g++ -shared"
+	LD="icc -shared -static-intel -z noexecstack"
+	LDFLAGS="$LDFLAGS"
+	LIBPREPEND="lib"
+	LIBAPPEND="-${OS}-${ARCH}.so"
+	LIBAPPENDLIB="-${OS}-${ARCH}.so"
+	FC="gfortran"
+	FFLAGS="$CFLAGS"
+	LAPACK_INCLUDES=""
+	FORTRAN_LIBS="-lgfortran"
+	if [ "$PARLIB" = "sequential" ] ; then
 	    MKL_LIBS="-L$JAVA_HOME/lib -L${BIDMAT_ROOT}/lib \
             -Wl,--start-group  $MKL_ROOT/lib/${ARCHD}/libmkl_intel${PTYPE}.a \
             $MKL_ROOT/lib/${ARCHD}/libmkl_core.a $MKL_ROOT/lib/${ARCHD}/libmkl_sequential.a \
             -Wl,--end-group -lpthread -lm"
-    else 
+	else 
 	    MKL_LIBS="-L$JAVA_HOME/lib -L${BIDMAT_ROOT}/lib \
             -Wl,--start-group  $MKL_ROOT/lib/${ARCHD}/libmkl_intel${PTYPE}.a \
             $MKL_ROOT/lib/${ARCHD}/libmkl_core.a $MKL_ROOT/lib/${ARCHD}/libmkl_intel_thread.a \
             -Wl,--end-group -liomp5 -ldl -lpthread -lm"
+	fi
+	if [ "$ARCH" = "x86" ] ; then
+            CULIB="lib"
+	else
+            CULIB="lib64"
+	fi
+	INSTALL_DIR="${BIDMAT_ROOT}/lib"
+	CUDA_LIBS="-L${CUDA_HOME}/${CULIB} -L${INSTALL_DIR} -lcudart -lcublas"
     fi
-    if [ "$ARCH" = "x86" ] ; then
-        CULIB="lib"
-    else
-        CULIB="lib64"
-    fi
-    INSTALL_DIR="${BIDMAT_ROOT}/lib"
-    CUDA_LIBS="-L${CUDA_HOME}/${CULIB} -L${INSTALL_DIR} -lcudart -lcublas"
 elif [ "$OS" = "windows" ] ; then
     CUDA_HOME="$CUDA_PATH"
     MKL_ROOT="$MKLROOT"
+    RANDSRC="VSL"
     CC="icl"
     GCC="cl"
     NVCC="nvcc"
@@ -218,6 +249,7 @@ echo "LIBAPPENDLIB=$LIBAPPENDLIB" >> Makefile.incl
 echo "LAPACK_INCLUDES=$LAPACK_INCLUDES" >> Makefile.incl
 echo "MKL_LIBS=$MKL_LIBS" >> Makefile.incl
 echo "CUDA_LIBS=$CUDA_LIBS" >> Makefile.incl
+echo "RANDSRC=$RANDSRC" >> Makefile.incl
 echo "FORTRAN_LIBS=$FORTRAN_LIBS" >> Makefile.incl
 echo "FC=$FC" >> Makefile.incl
 echo "FFLAGS=$FFLAGS" >> Makefile.incl
