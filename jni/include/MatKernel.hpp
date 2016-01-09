@@ -36,6 +36,10 @@ int copyFromInds(float *A, float *B, int *I, long long len);
 
 int copyToInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols);
 
+int copyToInds3D(float *A, int lda, int rda, float *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk);
+
+int copyToInds4D(float *A, int lda, int rda, int tda, float *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl);
+
 int copyToInds2DLong(long long *A, int lda, long long *B, int ldb, int *I, int nrows, int *J, int ncols);
 
 int fillToInds2D(float A, float *B, int ldb, int *I, int nrows, int *J, int ncols);
@@ -43,6 +47,10 @@ int fillToInds2D(float A, float *B, int ldb, int *I, int nrows, int *J, int ncol
 int fillToInds2DLong(long long A, long long *B, int ldb, int *I, int nrows, int *J, int ncols);
 
 int copyFromInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols);
+
+int copyFromInds3D(float *A, int lda, int rda, float *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk);
+
+int copyFromInds4D(float *A, int lda, int rda, int tda, float *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl);
 
 int copyFromInds2DLong(long long *A, int lda, long long *B, int ldb, int *I, int nrows, int *J, int ncols);
 

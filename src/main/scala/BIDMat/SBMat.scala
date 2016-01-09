@@ -4,8 +4,6 @@ import edu.berkeley.bid.LAPACK._
 
 case class SBMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:Array[Byte]) extends SparseMat[Byte](nr, nc, nnz1, ir0, jc0, data0) {
 
-  def size() = length;
-  
   def tryForSBMat(m:Mat, s:String):SBMat = 
   	m match {
   	case mm:SBMat => mm

@@ -115,26 +115,28 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   	}
   }
   
-  def applyx(I:GIMat, J:GIMat):GMat = {
+  def applyx(I:GIMat, J:GIMat):GMat = applyx(I, J, null)
+  
+  def applyx(I:GIMat, J:GIMat, mat:Mat):GMat = {
     var err = 0;
     val omat = (I, J) match {
       case (ii:MatrixWildcard, jj:MatrixWildcard) => {
-        val out = GMat.newOrCheckGMat(nrows, ncols, null, GUID, 0, 0, "applyXJ".##)
+        val out = GMat.newOrCheckGMat(nrows, ncols, mat, GUID, 0, 0, "applyXJ".##)
         err = CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, GMat.nullPointer, nrows, GMat.nullPointer, ncols)
         out
       }
       case (ii:MatrixWildcard, jj:GIMat) => {
-      	val out = GMat.newOrCheckGMat(nrows, J.length, null, GUID, 0, J.GUID, "applyXJ".##)
+      	val out = GMat.newOrCheckGMat(nrows, J.length, mat, GUID, 0, J.GUID, "applyXJ".##)
         err = CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, GMat.nullPointer, nrows, J.data, J.length)
         out
       }
       case (ii:GIMat, jj:MatrixWildcard) => {
-        val out = GMat.newOrCheckGMat(I.length, ncols, null, GUID, I.GUID, 0, "applyIX".##)
+        val out = GMat.newOrCheckGMat(I.length, ncols, mat, GUID, I.GUID, 0, "applyIX".##)
         err = CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, GMat.nullPointer, ncols)
         out
       }
       case _ => {
-      	val out = GMat.newOrCheckGMat(I.length, J.length, null, GUID, I.GUID, J.GUID, "applyIJ".##)
+      	val out = GMat.newOrCheckGMat(I.length, J.length, mat, GUID, I.GUID, J.GUID, "applyIJ".##)
       	err = CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, J.length)
       	out
       }
@@ -149,8 +151,11 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   	I match {
   	case (ii:MatrixWildcard) => {
   		val out = GMat.newOrCheckGMat(length, 1, null, GUID, 0, 0, "applyXI".##);
-  		cudaMemcpy(out.data, data, 1L * length * Sizeof.FLOAT, cudaMemcpyDeviceToDevice)
-  		out
+  		cudaMemcpy(out.data, data, 1L * length * Sizeof.FLOAT, cudaMemcpyDeviceToDevice);
+      cudaDeviceSynchronize;
+      val err = cudaGetLastError;
+      if (err != 0) throw new RuntimeException("GMat apply() error " + cudaGetErrorString(err));
+  		out;
   	}
   	case _ => {
   		val out = GMat.newOrCheckGMat(I.nrows, I.ncols, null, GUID, I.GUID, "applyI".##);
@@ -213,7 +218,10 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   
   def apply(i:Int, j:Int):Float = {
     val tmp = new Array[Float](1)
-    cudaMemcpy(Pointer.to(tmp), data.withByteOffset(1L*(i + j*nrows)*Sizeof.FLOAT), Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
+    cudaMemcpy(Pointer.to(tmp), data.withByteOffset(1L*(i + j*nrows)*Sizeof.FLOAT), Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost);
+    cudaDeviceSynchronize;
+    val err = cudaGetLastError;
+    if (err != 0) throw new RuntimeException("GMat apply() error " + cudaGetErrorString(err));
     tmp(0)
   }
  
@@ -335,7 +343,10 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   def updatex(I:GIMat, v:GMat):GMat = {
   	I match {
   	  case (ii:MatrixWildcard) => {
-  	    cudaMemcpy(data, v.data, 1L * length * Sizeof.FLOAT, cudaMemcpyDeviceToDevice)
+  	    cudaMemcpy(data, v.data, 1L * length * Sizeof.FLOAT, cudaMemcpyDeviceToDevice);
+  	    cudaDeviceSynchronize;
+  	    val err = cudaGetLastError;
+  	    if (err != 0) throw new RuntimeException("GMat update() error " + cudaGetErrorString(err));
   	  }
   	  case _ => {
   	    if (I.length != v.length) {
@@ -353,14 +364,20 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   override def update(i:Int, j:Int, v:Float):GMat = {
     val tmp = new Array[Float](1)
     tmp(0) = v
-    cudaMemcpy(data.withByteOffset(1L*(i + j*nrows)*Sizeof.FLOAT), Pointer.to(tmp), Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+    cudaMemcpy(data.withByteOffset(1L*(i + j*nrows)*Sizeof.FLOAT), Pointer.to(tmp), Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice);
+    cudaDeviceSynchronize;
+    val err = cudaGetLastError;
+    if (err != 0) throw new RuntimeException("GMat update() error " + cudaGetErrorString(err));
     this
   }
   
   override def update(i:Int, v:Float):GMat = {
     val tmp = new Array[Float](1)
     tmp(0) = v
-    cudaMemcpy(data.withByteOffset(1L*i*Sizeof.FLOAT), Pointer.to(tmp), Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+    cudaMemcpy(data.withByteOffset(1L*i*Sizeof.FLOAT), Pointer.to(tmp), Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice);
+    cudaDeviceSynchronize;
+    val err = cudaGetLastError;
+    if (err != 0) throw new RuntimeException("GMat update() error " + cudaGetErrorString(err));
     this
   }
   
@@ -426,6 +443,9 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   override def colslice(a:Int, b:Int, omat:Mat):GMat = {
     val out = GMat.newOrCheckGMat(nrows, b-a, omat, GUID, a, "colslice".##);
     cudaMemcpy(out.data, data.withByteOffset(1L*a*nrows*Sizeof.FLOAT), 1L*(b-a)*nrows*Sizeof.FLOAT, cudaMemcpyDeviceToDevice);
+    cudaDeviceSynchronize;
+    val err = cudaGetLastError;
+    if (err != 0) throw new RuntimeException("GMat colslice() error " + cudaGetErrorString(err));
     out
   }
   
@@ -481,9 +501,13 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
       throw new RuntimeException("GMat \\ row dims not equal")
     val out = GMat.newOrCheckGMat(nrows, ncols+a.ncols, omat, GUID, a.GUID, "horzcat".##)
     cudaMemcpy(out.data, data, 1L*length*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
-    cudaDeviceSynchronize()
+    cudaDeviceSynchronize();
+    var err = cudaGetLastError;
+    if (err != 0) throw new RuntimeException("GMat horzcat() error " + cudaGetErrorString(err));
     cudaMemcpy(out.data.withByteOffset(1L*length*Sizeof.FLOAT), a.data, 1L*a.length*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
-    cudaDeviceSynchronize()
+    cudaDeviceSynchronize();
+    err = cudaGetLastError;
+    if (err != 0) throw new RuntimeException("GMat horzcat() error " + cudaGetErrorString(err));
     out
   }
   
@@ -492,9 +516,13 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
       throw new RuntimeException("GMat on row dims not equal")
     val out = GMat.newOrCheckGMat(nrows+a.nrows, ncols, omat, GUID, a.GUID, "vertcat".##)
     cudaMemcpy2D(out.data, 1L*out.nrows*Sizeof.FLOAT, data, 1L*nrows*Sizeof.FLOAT, 1L*nrows*Sizeof.FLOAT, 1L*ncols, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
-    cudaDeviceSynchronize()
-    cudaMemcpy2D(out.data.withByteOffset(1L*nrows*Sizeof.FLOAT), 1L*out.nrows*Sizeof.FLOAT, a.data, 1L*a.nrows*Sizeof.FLOAT, 1L*a.nrows*Sizeof.FLOAT,  1L*a.ncols, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
-    cudaDeviceSynchronize()
+    cudaDeviceSynchronize();
+    var err = cudaGetLastError;
+    if (err != 0) throw new RuntimeException("GMat vertcat() error " + cudaGetErrorString(err));
+    cudaMemcpy2D(out.data.withByteOffset(1L*nrows*Sizeof.FLOAT), 1L*out.nrows*Sizeof.FLOAT, a.data, 1L*a.nrows*Sizeof.FLOAT, 1L*a.nrows*Sizeof.FLOAT,  1L*a.ncols, cudaMemcpyKind.cudaMemcpyDeviceToDevice);
+    cudaDeviceSynchronize();
+    err = cudaGetLastError;
+    if (err != 0) throw new RuntimeException("GMat vertcat() error " + cudaGetErrorString(err));
     out
   }
 
@@ -860,35 +888,34 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   }
   
   def copyTo(a:GIMat):GIMat = {
-    if (nrows != a.nrows || ncols != a.ncols)
-      throw new RuntimeException("dimensions mismatch in GIMat <-- GMat")
-    val err = CUMAT.toInt(data, a.data, length)
+    if (nrows != a.nrows || ncols != a.ncols) throw new RuntimeException("dimensions mismatch in GIMat <-- GMat");
+    val err = CUMAT.toInt(data, a.data, length);
     if (err != 0) {
-    	println("device is %d" format SciFunctions.getGPU)
-    	throw new RuntimeException("error in copyTo " + cudaGetErrorString(err))
+    	println("device is %d" format SciFunctions.getGPU);
+    	throw new RuntimeException("error in copyTo " + cudaGetErrorString(err));
     }
     a
   }
   
   def copyFrom(in:FMat):GMat = {
-  		cudaMemcpy(data, Pointer.to(in.data), 1L*nrows*ncols*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
-  		cudaDeviceSynchronize()
-  		val err = cudaGetLastError
+  		cudaMemcpy(data, Pointer.to(in.data), 1L*nrows*ncols*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice);
+  		cudaDeviceSynchronize();
+  		val err = cudaGetLastError;
   		if (err != 0) {
-  			println("device is %d" format SciFunctions.getGPU)
-  			throw new RuntimeException("Cublas error in copyFrom " + cudaGetErrorString(err))
+  			println("device is %d" format SciFunctions.getGPU);
+  			throw new RuntimeException("Cublas error in copyFrom " + cudaGetErrorString(err));
   		}
   		this
   }
   
   def copyTo(a:GMat):GMat = {
 //    val a = out.recycle(nrows, ncols, 0)
-    cudaMemcpy(a.data, data, 1L*length*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
-    cudaDeviceSynchronize()
-    val err = cudaGetLastError
+    cudaMemcpy(a.data, data, 1L*length*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice);
+    cudaDeviceSynchronize();
+    val err = cudaGetLastError;
     if (err != 0) {
-    	println("device is %d" format SciFunctions.getGPU)
-    	throw new RuntimeException("Cublas error in copyTo " + cudaGetErrorString(err))
+    	println("device is %d" format SciFunctions.getGPU);
+    	throw new RuntimeException("Cublas error in copyTo " + cudaGetErrorString(err));
     }
     a
   }
@@ -1171,6 +1198,14 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   def ∙  (a : GMat) = dot(a)
   def ∙→ (a : GMat) = dotr(a)
   
+  def > (b : GMat) = gOp(b, null, op_gt)
+  def < (b : GMat) = gOp(b, null, op_lt)
+  def == (b : GMat) = gOp(b, null, op_eq)
+  def === (b : GMat) = gOp(b, null, op_eq)
+  def >= (b : GMat) = gOp(b, null, op_ge)
+  def <= (b : GMat) = gOp(b, null, op_le)
+  def != (b : GMat) = gOp(b, null, op_ne)
+  
   override def + (a : Float) = gOp(GMat(a), null, op_add)
   override def - (a : Float) = gOp(GMat(a), null, op_sub)
   override def *@ (a : Float) = gOp(GMat(a), null, op_mul)
@@ -1178,6 +1213,30 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   override def ∘  (a : Float) = gOp(GMat(a), null, op_mul)
   override def /  (a : Float) = gOp(GMat(a), null, op_div)
   override def ^  (a : Float) = gOp(GMat(a), null, op_pow)
+  
+  override def < (b : Float) = gOp(GMat(b), null, op_lt);
+  override def > (b : Float) = gOp(GMat(b), null, op_gt);
+  override def <= (b : Float) = gOp(GMat(b), null, op_le);
+  override def >= (b : Float) = gOp(GMat(b), null, op_ge);
+  override def == (b : Float) = gOp(GMat(b), null, op_eq);
+  override def != (b : Float) = gOp(GMat(b), null, op_ne);
+  
+  
+  override def + (a : Double) = gOp(GMat(a.toFloat), null, op_add)
+  override def - (a : Double) = gOp(GMat(a.toFloat), null, op_sub)
+  override def *@ (a : Double) = gOp(GMat(a.toFloat), null, op_mul)
+  override def * (a : Double) = gOp(GMat(a.toFloat), null, op_mul)
+  override def ∘  (a : Double) = gOp(GMat(a.toFloat), null, op_mul)
+  override def /  (a : Double) = gOp(GMat(a.toFloat), null, op_div)
+  override def ^  (a : Double) = gOp(GMat(a.toFloat), null, op_pow)
+  
+  override def < (b : Double) = gOp(GMat(b.toFloat), null, op_lt)
+  override def > (b : Double) = gOp(GMat(b.toFloat), null, op_gt)
+  override def <= (b : Double) = gOp(GMat(b.toFloat), null, op_le)
+  override def >= (b : Double) = gOp(GMat(b.toFloat), null, op_ge)
+  override def == (b : Double) = gOp(GMat(b.toFloat), null, op_eq)
+  override def != (b : Double) = gOp(GMat(b.toFloat), null, op_ne)
+  
   
   override def + (a : Int) = gOp(GMat(a.toFloat), null, op_add)
   override def - (a : Int) = gOp(GMat(a.toFloat), null, op_sub)
@@ -1187,34 +1246,30 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   override def /  (a : Int) = gOp(GMat(a.toFloat), null, op_div)
   override def ^  (a : Int) = gOp(GMat(a.toFloat), null, op_pow)
   
-  def > (b : GMat) = gOp(b, null, op_gt)
-  def < (b : GMat) = gOp(b, null, op_lt)
-  def == (b : GMat) = gOp(b, null, op_eq)
-  def === (b : GMat) = gOp(b, null, op_eq)
-  def >= (b : GMat) = gOp(b, null, op_ge)
-  def <= (b : GMat) = gOp(b, null, op_le)
-  def != (b : GMat) = gOp(b, null, op_ne)
-  
-  override def < (b : Float) = gOp(GMat(b), null, op_lt);
-  override def > (b : Float) = gOp(GMat(b), null, op_gt);
-  override def <= (b : Float) = gOp(GMat(b), null, op_le);
-  override def >= (b : Float) = gOp(GMat(b), null, op_ge);
-  override def == (b : Float) = gOp(GMat(b), null, op_eq);
-  override def != (b : Float) = gOp(GMat(b), null, op_ne);
+  override def < (b : Int) = gOp(GMat(b.toFloat), null, op_lt)
+  override def > (b : Int) = gOp(GMat(b.toFloat), null, op_gt)
+  override def <= (b : Int) = gOp(GMat(b.toFloat), null, op_le)
+  override def >= (b : Int) = gOp(GMat(b.toFloat), null, op_ge)
+  override def == (b : Int) = gOp(GMat(b.toFloat), null, op_eq)
+  override def != (b : Int) = gOp(GMat(b.toFloat), null, op_ne)
 
-  override def < (b : Double) = gOp(GMat(b), null, op_lt)
-  override def > (b : Double) = gOp(GMat(b), null, op_gt)  
-  override def <= (b : Double) = gOp(GMat(b), null, op_le)
-  override def >= (b : Double) = gOp(GMat(b), null, op_ge)
-  override def == (b : Double) = gOp(GMat(b), null, op_eq)  
-  override def != (b : Double) = gOp(GMat(b), null, op_ne)
   
-  override def < (b : Int) = gOp(GMat(b), null, op_lt)
-  override def > (b : Int) = gOp(GMat(b), null, op_gt)
-  override def <= (b : Int) = gOp(GMat(b), null, op_le)
-  override def >= (b : Int) = gOp(GMat(b), null, op_ge)
-  override def == (b : Int) = gOp(GMat(b), null, op_eq)
-  override def != (b : Int) = gOp(GMat(b), null, op_ne)
+  override def + (a : Long) = gOp(GMat(a.toFloat), null, op_add)
+  override def - (a : Long) = gOp(GMat(a.toFloat), null, op_sub)
+  override def *@ (a : Long) = gOp(GMat(a.toFloat), null, op_mul)
+  override def * (a : Long) = gOp(GMat(a.toFloat), null, op_mul)
+  override def ∘  (a : Long) = gOp(GMat(a.toFloat), null, op_mul)
+  override def /  (a : Long) = gOp(GMat(a.toFloat), null, op_div)
+  override def ^  (a : Long) = gOp(GMat(a.toFloat), null, op_pow)
+  
+  override def < (b : Long) = gOp(GMat(b.toFloat), null, op_lt)
+  override def > (b : Long) = gOp(GMat(b.toFloat), null, op_gt)
+  override def <= (b : Long) = gOp(GMat(b.toFloat), null, op_le)
+  override def >= (b : Long) = gOp(GMat(b.toFloat), null, op_ge)
+  override def == (b : Long) = gOp(GMat(b.toFloat), null, op_eq)
+  override def != (b : Long) = gOp(GMat(b.toFloat), null, op_ne)
+
+
 
   
   def on(a : GMat) = vertcat(a, null)
@@ -1433,32 +1488,47 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
   override def != (b : Float) = mat.gOp(GMat(b), omat, op_ne)
   override def >= (b : Float) = mat.gOp(GMat(b), omat, op_ge)
 	override def <= (b : Float) = mat.gOp(GMat(b), omat, op_le)
+  
+  override def * (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_mul)
+  override def ∘ (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_mul)
+  override def + (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_add)
+  override def - (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_sub)
+  override def / (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_div)
+  override def ^ (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_pow)
+  override def >  (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_gt)
+  override def <  (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_lt)
+  override def == (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_eq)
+  override def != (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_ne)
+  override def >= (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_ge)
+  override def <= (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_le)
 	
-	override def * (b : Int) = mat.gOp(GMat(b), omat, op_mul)
-  override def ∘ (b : Int) = mat.gOp(GMat(b), omat, op_mul)
-  override def + (b : Int) = mat.gOp(GMat(b), omat, op_add)
-  override def - (b : Int) = mat.gOp(GMat(b), omat, op_sub)
-  override def / (b : Int) = mat.gOp(GMat(b), omat, op_div)
-  override def ^ (b : Int) = mat.gOp(GMat(b), omat, op_pow)
-  override def >  (b : Int) = mat.gOp(GMat(b), omat, op_gt)
-	override def <  (b : Int) = mat.gOp(GMat(b), omat, op_lt)
-  override def == (b : Int) = mat.gOp(GMat(b), omat, op_eq)
-  override def != (b : Int) = mat.gOp(GMat(b), omat, op_ne)
-  override def >= (b : Int) = mat.gOp(GMat(b), omat, op_ge)
-	override def <= (b : Int) = mat.gOp(GMat(b), omat, op_le)
-	
-  override def * (b : Double) = mat.gOp(GMat(b), omat, op_mul)
-  override def ∘ (b : Double) = mat.gOp(GMat(b), omat, op_mul)
-  override def + (b : Double) = mat.gOp(GMat(b), omat, op_add)
-  override def - (b : Double) = mat.gOp(GMat(b), omat, op_sub)
-  override def / (b : Double) = mat.gOp(GMat(b), omat, op_div)
-  override def ^ (b : Double) = mat.gOp(GMat(b), omat, op_pow)
-  override def >  (b : Double) = mat.gOp(GMat(b), omat, op_gt)
-	override def <  (b : Double) = mat.gOp(GMat(b), omat, op_lt)
-  override def == (b : Double) = mat.gOp(GMat(b), omat, op_eq)
-  override def != (b : Double) = mat.gOp(GMat(b), omat, op_ne)
-  override def >= (b : Double) = mat.gOp(GMat(b), omat, op_ge)
-	override def <= (b : Double) = mat.gOp(GMat(b), omat, op_le)
+  
+	override def * (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_mul)
+  override def ∘ (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_mul)
+  override def + (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_add)
+  override def - (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_sub)
+  override def / (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_div)
+  override def ^ (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_pow)
+  override def >  (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_gt)
+	override def <  (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_lt)
+  override def == (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_eq)
+  override def != (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_ne)
+  override def >= (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_ge)
+	override def <= (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_le)
+  
+  
+  override def * (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_mul)
+  override def ∘ (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_mul)
+  override def + (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_add)
+  override def - (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_sub)
+  override def / (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_div)
+  override def ^ (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_pow)
+  override def >  (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_gt)
+  override def <  (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_lt)
+  override def == (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_eq)
+  override def != (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_ne)
+  override def >= (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_ge)
+  override def <= (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_le)
 
 
 
@@ -2093,7 +2163,9 @@ object GMat {
   	  		val colstodo = todo / keys.nrows
   	  		cudaMemcpy(aa, Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), 1L*todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
   	  		cudaMemcpy(vv, Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), 1L*todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
-  	  		cudaDeviceSynchronize
+  	  		cudaDeviceSynchronize;
+  	  		var err = cudaGetLastError;
+  	  		if (err != 0) throw new RuntimeException("GMat GPUsort_old() error " + cudaGetErrorString(err));
   	  		if (tall) {
   	  			CUMAT.fsort2dk(aa, vv, keys.nrows, colstodo, 0)
   	  		} else {
@@ -2101,8 +2173,10 @@ object GMat {
   	  			CUMAT.lsortk(kk, vv, todo, 0)
   	  			CUMAT.extractmat2d(aa, kk, keys.nrows, colstodo)
   	  		}
-  	  		cudaMemcpy(Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), aa, 1L*todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
-  	  		cudaMemcpy(Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), vv, 1L*todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
+  	  		cudaMemcpy(Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), aa, 1L*todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost);
+  	  		cudaMemcpy(Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), vv, 1L*todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost);
+  	  		err = cudaGetLastError;
+  	  		if (err != 0) throw new RuntimeException("GMat GPUsort_old() error " + cudaGetErrorString(err));
   	  		ioff += nthreads * maxsize
   	  	}
   	  	if (!tall) cudaFree(kk)
@@ -2308,6 +2382,27 @@ object GMat {
     }
     if (err != 0) throw new RuntimeException("LXdist scaling error "+err)
     c
+  }
+  
+  def GPUtoGPUarraycopy(a:Pointer, aoffset:Int,  b:Pointer, boffset:Int, len:Int, msg:String ) = {
+	  cudaMemcpy(b.withByteOffset(1L*boffset*Sizeof.FLOAT), a.withByteOffset(1L*aoffset*Sizeof.FLOAT), 1L*len*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice);
+    cudaDeviceSynchronize;
+    val err = cudaGetLastError;
+    if (err != 0) throw new RuntimeException(msg +" error in memcpy "+ cudaGetErrorString(err));
+  }
+  
+  def GPUtoCPUarraycopy(a:Pointer, aoffset:Int,  b:Array[Float], boffset:Int, len:Int, msg:String ) = {
+    cudaMemcpy(Pointer.to(b).withByteOffset(1L*boffset*Sizeof.FLOAT), a.withByteOffset(1L*aoffset*Sizeof.FLOAT), 1L*len*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost);
+    cudaDeviceSynchronize;
+    val err = cudaGetLastError;
+    if (err != 0) throw new RuntimeException(msg +" error in memcpy "+ cudaGetErrorString(err));
+  }
+  
+  def CPUtoGPUarraycopy(a:Array[Float], aoffset:Int,  b:Pointer, boffset:Int, len:Int, msg:String ) = {
+    cudaMemcpy(b.withByteOffset(1L*boffset*Sizeof.FLOAT), Pointer.to(a).withByteOffset(1L*aoffset*Sizeof.FLOAT), 1L*len*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice);
+    cudaDeviceSynchronize;
+    val err = cudaGetLastError;
+    if (err != 0) throw new RuntimeException(msg +" error in memcpy "+ cudaGetErrorString(err));
   }
   
   def LXdist(a:FMat, b:FMat, omat:FMat, p:Float):FMat = {
