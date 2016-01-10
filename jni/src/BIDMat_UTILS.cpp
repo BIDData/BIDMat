@@ -2,10 +2,9 @@
 #include <string.h>
 #include <algorithm>
 #include <vector>
+#include <omp.h>
 #ifdef __INTEL_COMPILER
 #include <mkl.h>
-#else
-#include <omp.h>
 #endif
 
 extern "C" {
@@ -35,9 +34,8 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_setnumthreads
 (JNIEnv * env, jobject calling_obj, jint n) {
 #ifdef __INTEL_COMPILER
   MKL_Set_Num_Threads(n);
-#else
-  omp_set_num_threads(n);
 #endif
+  omp_set_num_threads(n);
 }
 
 
