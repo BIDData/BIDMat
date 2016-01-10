@@ -301,33 +301,29 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_SPBLAS_smcscm
   jfloat * a = (*env)->GetPrimitiveArrayCritical(env, j_a, 0);
   jfloat * c = (*env)->GetPrimitiveArrayCritical(env, j_c, 0);
   jint returnValue = 0;
-  int col, row, i, j, istart, iend;
+  int col, row, i, ioff, istart, iend;
   float v;
 
   if (transb == 0) {
 #pragma omp parallel
     for (col = 0; col < n; col++) {
-      istart = jc[col]-1;
-      iend = jc[col+1]-1;
+      istart = jc[col]-ioff;
+      iend = jc[col+1]-ioff;
       for (i = istart; i < iend; i++) {
-	row = ir[i]-1;
+	row = ir[i]-ioff;
 	v = vals[i];
-	for (j = 0; j < m; j++) {
-	  c[j + col * ldc] += a[j + row * lda] * v;
-	}
+	cblas_saxpy(m, v, a+(row*lda), 1, c+(col*ldc), 1);
       }
     }
   } else {
 #pragma omp parallel
     for (col = 0; col < k; col++) {
-      istart = jc[col]-1;
-      iend = jc[col+1]-1;
+      istart = jc[col]-ioff;
+      iend = jc[col+1]-ioff;
       for (i = istart; i < iend; i++) {
-	row = ir[i]-1;
+	row = ir[i]-ioff;
 	v = vals[i];
-	for (j = 0; j < m; j++) {
-	  c[j + row * ldc] += a[j + col * lda] * v;
-	}
+	cblas_saxpy(m, v, a+(col*lda), 1, c+(row*ldc), 1);
       }
     }
   }
@@ -350,33 +346,30 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_SPBLAS_dmcscm
   jdouble * a = (*env)->GetPrimitiveArrayCritical(env, j_a, 0);
   jdouble * c = (*env)->GetPrimitiveArrayCritical(env, j_c, 0);
   jint returnValue = 0;
-  int col, row, i, j, istart, iend;
+  int col, row, i, ioff, istart, iend;
   double v;
 
+  ioff = jc[0];
   if (transb == 0) {
 #pragma omp parallel
     for (col = 0; col < n; col++) {
-      istart = jc[col]-1;
-      iend = jc[col+1]-1;
+      istart = jc[col]-ioff;
+      iend = jc[col+1]-ioff;
       for (i = istart; i < iend; i++) {
-	row = ir[i]-1;
+	row = ir[i]-ioff;
 	v = vals[i];
-	for (j = 0; j < m; j++) {
-	  c[j + col * ldc] += a[j + row * lda] * v;
-	}
+	cblas_daxpy(m, v, a+(row*lda), 1, c+(col*ldc), 1);
       }
     }
   } else {
 #pragma omp parallel
     for (col = 0; col < k; col++) {
-      istart = jc[col]-1;
-      iend = jc[col+1]-1;
+      istart = jc[col]-ioff;
+      iend = jc[col+1]-ioff;
       for (i = istart; i < iend; i++) {
-	row = ir[i]-1;
+	row = ir[i]-ioff;
 	v = vals[i];
-	for (j = 0; j < m; j++) {
-	  c[j + row * ldc] += a[j + col * lda] * v;
-	}
+	cblas_daxpy(m, v, a+(col*lda), 1, c+(row*ldc), 1);
       }
     }
   }

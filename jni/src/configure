@@ -115,7 +115,7 @@ elif [ "$OS" = "linux" ] ; then
 	OBJ="o"
 	OUTFLG="-o "
 	CPPFLAGS="-fPIC -std=c++11 -marm -mfpu=vfpv3 -mfloat-abi=hard -march=armv7-a -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include" 
-	CFLAGS="-fPIC -marm -mfpu=vfpv3 -mfloat-abi=hard -march=armv7-a -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I/usr/include/openblas"
+	CFLAGS="-fPIC -fopenmp -marm -mfpu=vfpv3 -mfloat-abi=hard -march=armv7-a -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I/usr/include/openblas"
 	LB="ar rc"    
 	GLD="g++ -shared"
 	LD="gcc -shared -z noexecstack"
@@ -127,7 +127,7 @@ elif [ "$OS" = "linux" ] ; then
 	FFLAGS="$CFLAGS"
 	LAPACK_INCLUDES=""
 	FORTRAN_LIBS="-lgfortran"
-	MKL_LIBS="-L$JAVA_HOME/lib -L${BIDMAT_ROOT}/lib /usr/local/lib/libopenblas.a -ldl -lpthread -lm -lstdc++"
+	MKL_LIBS="-L$JAVA_HOME/lib -L${BIDMAT_ROOT}/lib /usr/local/lib/libopenblas.a -ldl -lpthread -lm -lstdc++ -lgomp" 
 	INSTALL_DIR="${BIDMAT_ROOT}/lib"
     else
 	MKL_ROOT="/opt/intel/mkl"
