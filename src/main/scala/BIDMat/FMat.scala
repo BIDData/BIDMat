@@ -2,7 +2,7 @@
 package BIDMat
 import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.LAPACK._
-import edu.berkeley.bid.SPBLAS._
+import edu.berkeley.bid.SPBLAS
 import edu.berkeley.bid.UTILS._
 import scala.util.hashing.MurmurHash3
 import java.util.Arrays
@@ -513,9 +513,10 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     		var jc0 = if (ioff == 0) SparseMat.incInds(a.jc) else a.jc
     		var ir0 = if (ioff == 0) SparseMat.incInds(a.ir) else a.ir 
     		if (nrows == 1) {
-    			scscmv("T", a.nrows, a.ncols, 1.0f, "GLNF", a.data, ir0, jc0, data, 0f, out.data)
+    			SPBLAS.scscmv("T", a.nrows, a.ncols, 1.0f, "GLNF", a.data, ir0, jc0, data, 0f, out.data)
     		} else {
-    			smcscm(nrows, a.ncols, data, nrows, a.data, ir0, jc0, out.data, nrows)
+//    			smcscm(nrows, a.ncols, data, nrows, a.data, ir0, jc0, out.data, nrows);
+    			SPBLAS.smcscm(0, nrows, a.ncols, a.nrows, data, nrows, a.data, ir0, jc0, out.data, nrows)
     		}
     	}
     	out
@@ -718,7 +719,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     } else { 
     	if (nrows == 1) {
     		setnumthreads(1) ; // Otherwise crashes 
-    		scscmv("N", a.nrows, a.ncols, 1.0f, "GLNF", a.data, a.ir, a.jc, data, 0f, out.data) ;
+    		SPBLAS.scscmv("N", a.nrows, a.ncols, 1.0f, "GLNF", a.data, a.ir, a.jc, data, 0f, out.data) ;
     		setnumthreads(Mat.numOMPthreads);
     	} else {
     		smcsrm(nrows, a.ncols, data, nrows, a.data, a.ir, a.jc, out.data, nrows)

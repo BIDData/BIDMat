@@ -2,7 +2,7 @@ package BIDMat
 
 import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.LAPACK._
-import edu.berkeley.bid.SPBLAS._
+import edu.berkeley.bid.SPBLAS
 import scala.util.hashing.MurmurHash3
 import java.util.Arrays
 
@@ -389,7 +389,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   			ir0 = ss.ir
   		}	 
   		if (nrows == 1 && Mat.useMKL) {
-  			dcscmv("T", nr, nc, 1.0, "GLNF", ss.data, ir0, jc0, data, 0.0, out.data)
+  			SPBLAS.dcscmv("T", nr, nc, 1.0, "GLNF", ss.data, ir0, jc0, data, 0.0, out.data)
   			out
   		} else {
   			out.clear
