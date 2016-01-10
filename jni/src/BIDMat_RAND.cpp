@@ -83,6 +83,25 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_SNormal
   return 0;
 }
 
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_SNormalV
+(JNIEnv * env, jobject calling_obj, jint method, jobject jengine, jint n, jfloatArray j_r, jfloatArray j_a, jfloatArray j_b) {
+  std::default_random_engine engine = *getEngine(env, calling_obj, jengine);
+  jfloat * r = (jfloat *)(env->GetPrimitiveArrayCritical(j_r, JNI_FALSE));
+  jfloat * a = (jfloat *)(env->GetPrimitiveArrayCritical(j_a, JNI_FALSE));
+  jfloat * b = (jfloat *)(env->GetPrimitiveArrayCritical(j_b, JNI_FALSE));
+
+  std::normal_distribution<float> dis(0, 1);
+  for (int i = 0; i < n; i++) {
+    std::normal_distribution<float>::param_type p(a[i], b[i]);
+    r[i] = dis(engine, p);
+  }
+
+  env->ReleasePrimitiveArrayCritical(j_b, b, 0);
+  env->ReleasePrimitiveArrayCritical(j_a, a, 0);
+  env->ReleasePrimitiveArrayCritical(j_r, r, 0);
+  return 0;
+}
+
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_SLogNormal
 (JNIEnv * env, jobject calling_obj, jint method, jobject jengine, jint n, jfloatArray j_r, jfloat a, jfloat b) {
@@ -172,7 +191,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_SExponential
 }
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_IPoisson
-(JNIEnv * env, jobject calling_obj, jint method, jobject jengine, jint n, jintArray j_r, jfloat a) {
+(JNIEnv * env, jobject calling_obj, jint method, jobject jengine, jint n, jintArray j_r, jdouble a) {
   std::default_random_engine engine = *getEngine(env, calling_obj, jengine);
   jint * r = (jint *)(env->GetPrimitiveArrayCritical(j_r, JNI_FALSE));
 
@@ -185,8 +204,25 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_IPoisson
   return 0;
 }
 
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_IPoissonV
+(JNIEnv * env, jobject calling_obj, jint method, jobject jengine, jint n, jintArray j_r, jfloatArray j_a) {
+  std::default_random_engine engine = *getEngine(env, calling_obj, jengine);
+  jint * r = (jint *)(env->GetPrimitiveArrayCritical(j_r, JNI_FALSE));
+  jfloat * a = (jfloat *)(env->GetPrimitiveArrayCritical(j_a, JNI_FALSE));
+
+  std::poisson_distribution<int> dis(1);
+  for (int i = 0; i < n; i++) {
+    std::poisson_distribution<int>::param_type p(a[i]);
+    r[i] = dis(engine, p);
+  }
+
+  env->ReleasePrimitiveArrayCritical(j_a, a, 0);
+  env->ReleasePrimitiveArrayCritical(j_r, r, 0);
+  return 0;
+}
+
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_IBernoulli
-(JNIEnv * env, jobject calling_obj, jint method, jobject jengine, jint n, jintArray j_r, jfloat a) {
+(JNIEnv * env, jobject calling_obj, jint method, jobject jengine, jint n, jintArray j_r, jdouble a) {
   std::default_random_engine engine = *getEngine(env, calling_obj, jengine);
   jint * r = (jint *)(env->GetPrimitiveArrayCritical(j_r, JNI_FALSE));
 
@@ -200,7 +236,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_IBernoulli
 }
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_IBinomial
-(JNIEnv * env, jobject calling_obj, jint method, jobject jengine, jint n, jintArray j_r, jfloat a, jint m) {
+(JNIEnv * env, jobject calling_obj, jint method, jobject jengine, jint n, jintArray j_r, jdouble a, jint m) {
   std::default_random_engine engine = *getEngine(env, calling_obj, jengine);
   jint * r = (jint *)(env->GetPrimitiveArrayCritical(j_r, JNI_FALSE));
 
@@ -214,7 +250,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_IBinomial
 }
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_INegBinomial
-(JNIEnv * env, jobject calling_obj, jint method, jobject jengine, jint n, jintArray j_r, jfloat a, jint m) {
+(JNIEnv * env, jobject calling_obj, jint method, jobject jengine, jint n, jintArray j_r, jdouble a, jint m) {
   std::default_random_engine engine = *getEngine(env, calling_obj, jengine);
   jint * r = (jint *)(env->GetPrimitiveArrayCritical(j_r, JNI_FALSE));
 
@@ -228,7 +264,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_INegBinomial
 }
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_IGeometric
-(JNIEnv * env, jobject calling_obj, jint method, jobject jengine, jint n, jintArray j_r, jfloat a) {
+(JNIEnv * env, jobject calling_obj, jint method, jobject jengine, jint n, jintArray j_r, jdouble a) {
   std::default_random_engine engine = *getEngine(env, calling_obj, jengine);
   jint * r = (jint *)(env->GetPrimitiveArrayCritical(j_r, JNI_FALSE));
 
