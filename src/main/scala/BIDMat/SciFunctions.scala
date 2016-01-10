@@ -270,11 +270,13 @@ object SciFunctions {
   }
  
   def normrnd(mu:Float, sig:Float, out:FMat):FMat = {
-    if (!Mat.useMKLRand) {
+    if (Mat.useMKLRand) {
+      vsRngGaussian(METHOD, stream, out.length, out.data, mu, sig );
+    } else if (Mat.useSTLRand) {
+      SNormal(METHOD, engine, out.length, out.data, mu, sig);
+    } else {
       var i = 0; val len = out.length; val odata = out.data; 
       while (i < len) {odata(i) = mu + sig*myrand.nextGaussian.toFloat; i += 1}  
-    } else {
-      vsRngGaussian(METHOD, stream, out.length, out.data, mu, sig )
     }
     Mat.nflops += 10L*out.length
     out
@@ -496,11 +498,13 @@ object SciFunctions {
   }
   
   def dnormrnd(mu:Double, sig:Double, out:DMat):DMat = {
-    if (!Mat.useMKLRand) {
+    if (Mat.useMKLRand) {
+    	vdRngGaussian( METHOD, stream, out.length, out.data, mu, sig );
+    } else if (Mat.useSTLRand) {
+      DNormal(METHOD, engine, out.length, out.data, mu, sig);
+    } else {
       var i = 0; val len = out.length; val odata = out.data; 
       while (i < len) {odata(i) = mu + sig*myrand.nextGaussian; i += 1}  
-    } else {
-      vdRngGaussian( METHOD, stream, out.length, out.data, mu, sig )
     }
     Mat.nflops += 10L*out.length
     out
