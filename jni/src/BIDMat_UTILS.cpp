@@ -2,28 +2,41 @@
 #include <string.h>
 #include <algorithm>
 #include <vector>
-#ifndef __arm__
+#ifdef INTEL_MKL_VERSION
 #include <mkl.h>
 #else
 #include <omp.h>
 #endif
 
 extern "C" {
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_UTILS_hasMKL
+(JNIEnv * env, jobject calling_obj) {
+#ifdef INTEL_MKL_VERSION
+  int mkl = 1;
+#else
+  int mkl = 0;
+#endif
+  return mkl;
+}
+
+
+
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_UTILS_getnumthreads
 (JNIEnv * env, jobject calling_obj) {
-#ifdef __arm__
-  return  omp_get_num_threads();
-#else
+#ifdef INTEL_MKL_VERSION
   return MKL_Get_Max_Threads();
+#else
+  return  omp_get_num_threads();
 #endif
 }
 
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_setnumthreads
 (JNIEnv * env, jobject calling_obj, jint n) {
-#ifdef __arm__
-  omp_set_num_threads(n);
-#else
+#ifdef INTEL_MKL_VERSION
   MKL_Set_Num_Threads(n);
+#else
+  omp_set_num_threads(n);
 #endif
 }
 

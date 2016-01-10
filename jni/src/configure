@@ -127,7 +127,7 @@ elif [ "$OS" = "linux" ] ; then
 	FFLAGS="$CFLAGS"
 	LAPACK_INCLUDES=""
 	FORTRAN_LIBS="-lgfortran"
-	MKL_LIBS="-L$JAVA_HOME/lib -L${BIDMAT_ROOT}/lib /usr/local/lib/libopenblas.a -ldl -lpthread -lm"
+	MKL_LIBS="-L$JAVA_HOME/lib -L${BIDMAT_ROOT}/lib /usr/local/lib/libopenblas.a -ldl -lpthread -lm -lstdc++"
 	INSTALL_DIR="${BIDMAT_ROOT}/lib"
     else
 	MKL_ROOT="/opt/intel/mkl"

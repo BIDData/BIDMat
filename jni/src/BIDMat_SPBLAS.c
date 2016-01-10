@@ -1,8 +1,12 @@
-
+#include <omp.h>
 #include <jni.h>
+#include <string.h>
+
+#ifndef INTEL_MKL_VERSION
+#include <cblas.h>
+#else
 #include <mkl.h>
 #include <mkl_spblas.h>
-#include <string.h>
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_SPBLAS_scsrmm 
 (JNIEnv * env, jobject calling_obj, jstring j_transa, jint m, jint n, jint k, jfloat alpha, jstring j_matdescra,
@@ -285,3 +289,102 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_SPBLAS_dcsrmv
 	(*env)->ReleaseStringUTFChars(env, j_transa, transa);
 	return returnValue;
 }
+
+#endif
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_SPBLAS_smcscm
+(JNIEnv * env, jobject calling_obj, jint transb, jint m, jint n, jint k, jfloatArray j_a, jint lda, 
+ jfloatArray j_vals, jintArray j_ir, jintArray j_jc, jfloatArray j_c, jint ldc){
+  jfloat * vals = (*env)->GetPrimitiveArrayCritical(env, j_vals, 0);
+  jint * ir = (*env)->GetPrimitiveArrayCritical(env, j_ir, 0);
+  jint * jc = (*env)->GetPrimitiveArrayCritical(env, j_jc, 0);
+  jfloat * a = (*env)->GetPrimitiveArrayCritical(env, j_a, 0);
+  jfloat * c = (*env)->GetPrimitiveArrayCritical(env, j_c, 0);
+  jint returnValue = 0;
+  int col, row, i, j, istart, iend;
+  float v;
+
+  if (transb == 0) {
+#pragma omp parallel
+    for (col = 0; col < n; col++) {
+      istart = jc[col]-1;
+      iend = jc[col+1]-1;
+      for (i = istart; i < iend; i++) {
+	row = ir[i]-1;
+	v = vals[i];
+	for (j = 0; j < m; j++) {
+	  c[j + col * ldc] += a[j + row * lda] * v;
+	}
+      }
+    }
+  } else {
+#pragma omp parallel
+    for (col = 0; col < k; col++) {
+      istart = jc[col]-1;
+      iend = jc[col+1]-1;
+      for (i = istart; i < iend; i++) {
+	row = ir[i]-1;
+	v = vals[i];
+	for (j = 0; j < m; j++) {
+	  c[j + row * ldc] += a[j + col * lda] * v;
+	}
+      }
+    }
+  }
+
+  (*env)->ReleasePrimitiveArrayCritical(env, j_c, c, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_a, a, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_jc, jc, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_ir, ir, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_vals, vals, 0);
+  return returnValue;
+};
+
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_SPBLAS_dmcscm
+(JNIEnv * env, jobject calling_obj, jint transb, jint m, jint n, jint k, jdoubleArray j_a, jint lda, 
+ jdoubleArray j_vals, jintArray j_ir, jintArray j_jc, jdoubleArray j_c, jint ldc){
+  jdouble * vals = (*env)->GetPrimitiveArrayCritical(env, j_vals, 0);
+  jint * ir = (*env)->GetPrimitiveArrayCritical(env, j_ir, 0);
+  jint * jc = (*env)->GetPrimitiveArrayCritical(env, j_jc, 0);
+  jdouble * a = (*env)->GetPrimitiveArrayCritical(env, j_a, 0);
+  jdouble * c = (*env)->GetPrimitiveArrayCritical(env, j_c, 0);
+  jint returnValue = 0;
+  int col, row, i, j, istart, iend;
+  double v;
+
+  if (transb == 0) {
+#pragma omp parallel
+    for (col = 0; col < n; col++) {
+      istart = jc[col]-1;
+      iend = jc[col+1]-1;
+      for (i = istart; i < iend; i++) {
+	row = ir[i]-1;
+	v = vals[i];
+	for (j = 0; j < m; j++) {
+	  c[j + col * ldc] += a[j + row * lda] * v;
+	}
+      }
+    }
+  } else {
+#pragma omp parallel
+    for (col = 0; col < k; col++) {
+      istart = jc[col]-1;
+      iend = jc[col+1]-1;
+      for (i = istart; i < iend; i++) {
+	row = ir[i]-1;
+	v = vals[i];
+	for (j = 0; j < m; j++) {
+	  c[j + row * ldc] += a[j + col * lda] * v;
+	}
+      }
+    }
+  }
+
+  (*env)->ReleasePrimitiveArrayCritical(env, j_c, c, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_a, a, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_jc, jc, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_ir, ir, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, j_vals, vals, 0);
+  return returnValue;
+};

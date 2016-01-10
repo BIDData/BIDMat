@@ -1,10 +1,10 @@
 #include <jni.h>
-#ifdef __arm__
-#include <cblas.h>
-#else
+#include <omp.h>
+#ifdef INTEL_MKL_VERSION
 #include <mkl.h>
 #include <mkl_trans.h>
-#include <omp.h>
+#else
+#include <cblas.h>
 #endif
 
 JNIEXPORT jdouble JNICALL Java_edu_berkeley_bid_CBLAS_ddot 
