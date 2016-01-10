@@ -39,7 +39,7 @@ static void setEngine(JNIEnv *env, jclass clazz, jobject jengine, std::default_r
 
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_newEngine
-  (JNIEnv *env, jclass clazz, jobject jengine, jint brng, jint seed)
+(JNIEnv *env, jclass clazz, jobject jengine, jint brng, jint seed)
 {
   std::default_random_engine *enginep;
   enginep = new std::default_random_engine(seed);
@@ -50,7 +50,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_newEngine
 }
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_delEngine
-  (JNIEnv *env, jclass clazz, jobject jengine)
+(JNIEnv *env, jclass clazz, jobject jengine)
 {
     std::default_random_engine *enginep = getEngine(env, clazz, jengine);
     delete [] enginep;
@@ -58,12 +58,69 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_delEngine
 
     return 0;
 }
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_SUniform
+(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jfloatArray j_r, jfloat a, jfloat b)
+{
+  int i, status;
+  std::default_random_engine *enginep = getEngine(env, clazz, jengine);
+  status = (enginep == NULL);
+  if (!status) {
+    jfloat *r = (jfloat *)(env->GetPrimitiveArrayCritical(j_r, JNI_FALSE));
+    status = (r == NULL);
+    if (!status) {
+      std::uniform_real_distribution<float> dis(a, b);
+      for (i = 0; i < n; i++) {
+	r[i] = dis(*enginep);
+      }
+    }
+    env->ReleasePrimitiveArrayCritical(j_r, r, 0);
+  }
+  return status;
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_SNormal
+(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jfloatArray j_r, jfloat a, jfloat b)
+{
+  int i, status;
+  std::default_random_engine *enginep = getEngine(env, clazz, jengine);
+  status = (enginep == NULL);
+  if (!status) {
+    jfloat *r = (jfloat *)(env->GetPrimitiveArrayCritical(j_r, JNI_FALSE));
+    status = (r == NULL);
+    if (!status) {
+      std::normal_distribution<float> dis(a, b);
+      for (i = 0; i < n; i++) {
+	r[i] = dis(*enginep);
+      }
+    }
+    env->ReleasePrimitiveArrayCritical(j_r, r, 0);
+  }
+  return status;
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_SCauchy
+(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jfloatArray j_r, jfloat a, jfloat b)
+{
+  int i, status;
+  std::default_random_engine *enginep = getEngine(env, clazz, jengine);
+  status = (enginep == NULL);
+  if (!status) {
+    jfloat *r = (jfloat *)(env->GetPrimitiveArrayCritical(j_r, JNI_FALSE));
+    status = (r == NULL);
+    if (!status) {
+      std::cauchy_distribution<float> dis(a, b);
+      for (i = 0; i < n; i++) {
+	r[i] = dis(*enginep);
+      }
+    }
+    env->ReleasePrimitiveArrayCritical(j_r, r, 0);
+  }
+  return status;
 }
 
 
-    // public static native int newEngine(RAND engine, int brng, int seed);
 
-    // public static native int deleteEngine(RAND engine);
 
     // public static native int DCauchy(int method, RAND engine, int n, double[] r, double a, double b);
 
@@ -112,3 +169,4 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_delEngine
     // public static native int IPoissonV(int method, RAND engine, int n, int[] r, float [] lambda);
 
 
+}
