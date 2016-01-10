@@ -1,4 +1,4 @@
-#ifdef INTEL_MKL_VERSION
+#ifdef __INTEL_COMPILER
 
 #include <jni.h>
 #include <mkl.h>

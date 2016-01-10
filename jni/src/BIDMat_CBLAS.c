@@ -1,6 +1,6 @@
 #include <jni.h>
 #include <omp.h>
-#ifdef INTEL_MKL_VERSION
+#ifdef __INTEL_COMPILER
 #include <mkl.h>
 #include <mkl_trans.h>
 #else

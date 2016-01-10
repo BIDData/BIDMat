@@ -2,7 +2,7 @@
 #include <jni.h>
 #include <string.h>
 
-#ifndef INTEL_MKL_VERSION
+#ifndef __INTEL_COMPILER
 #include <cblas.h>
 #else
 #include <mkl.h>

@@ -2,7 +2,7 @@
 #include <string.h>
 #include <algorithm>
 #include <vector>
-#ifdef INTEL_MKL_VERSION
+#ifdef __INTEL_COMPILER
 #include <mkl.h>
 #else
 #include <omp.h>
@@ -12,7 +12,7 @@ extern "C" {
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_UTILS_hasMKL
 (JNIEnv * env, jobject calling_obj) {
-#ifdef INTEL_MKL_VERSION
+#ifdef __INTEL_COMPILER
   int mkl = 1;
 #else
   int mkl = 0;
@@ -24,7 +24,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_UTILS_hasMKL
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_UTILS_getnumthreads
 (JNIEnv * env, jobject calling_obj) {
-#ifdef INTEL_MKL_VERSION
+#ifdef __INTEL_COMPILER
   return MKL_Get_Max_Threads();
 #else
   return  omp_get_num_threads();
@@ -33,7 +33,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_UTILS_getnumthreads
 
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_setnumthreads
 (JNIEnv * env, jobject calling_obj, jint n) {
-#ifdef INTEL_MKL_VERSION
+#ifdef __INTEL_COMPILER
   MKL_Set_Num_Threads(n);
 #else
   omp_set_num_threads(n);
