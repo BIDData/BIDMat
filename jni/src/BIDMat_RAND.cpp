@@ -229,14 +229,14 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_IPoisson
 }
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_IBinomial
-(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jintArray j_r, jdouble p, jint m)
+(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jintArray j_r, jint m, double p)
 {
   std::binomial_distribution<int> dis(m, p);
   return genIntValues(env, clazz, method, jengine, n, j_r, dis);
 }
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_INegBinomial
-(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jintArray j_r, jdouble p, jint m)
+(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jintArray j_r, jint m, jdouble p)
 {
   std::negative_binomial_distribution<int> dis(m, p);
   return genIntValues(env, clazz, method, jengine, n, j_r, dis);
