@@ -290,6 +290,65 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_IBernoulli
   }
   return status;
 }
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_DUniform
+(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jdoubleArray j_r, jdouble a, jdouble b)
+{
+  std::uniform_real_distribution<double> dis(a, b);
+  return genDoubleValues(env, clazz, method, jengine, n, j_r, dis);
+}
+
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_DNormal
+(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jdoubleArray j_r, jdouble a, jdouble b)
+{
+  std::normal_distribution<double> dis(a, b);
+  return genDoubleValues(env, clazz, method, jengine, n, j_r, dis);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_DLogNormal
+(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jdoubleArray j_r, jdouble a, jdouble b)
+{
+  std::lognormal_distribution<double> dis(a, b);
+  return genDoubleValues(env, clazz, method, jengine, n, j_r, dis);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_DCauchy
+(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jdoubleArray j_r, jdouble a, jdouble b)
+{
+  std::cauchy_distribution<double> dis(a, b);
+  return genDoubleValues(env, clazz, method, jengine, n, j_r, dis);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_DExponential
+(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jdoubleArray j_r, jdouble a)
+{
+  std::exponential_distribution<double> dis(a);
+  return genDoubleValues(env, clazz, method, jengine, n, j_r, dis);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_DWeibull
+(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jdoubleArray j_r, jdouble a, jdouble b)
+{
+  std::weibull_distribution<double> dis(a, b);
+  return genDoubleValues(env, clazz, method, jengine, n, j_r, dis);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_DGamma
+(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jdoubleArray j_r, jdouble a, jdouble b)
+{
+  std::weibull_distribution<double> dis(a, b);
+  return genDoubleValues(env, clazz, method, jengine, n, j_r, dis);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_DNormalV
+(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jdoubleArray j_r, jdoubleArray j_a, jdoubleArray j_b)
+{
+  return gen2paramV<std::normal_distribution<double>, std::normal_distribution<double>::param_type,
+		    jdouble, jdoubleArray, jdouble, jdoubleArray, jdouble, jdoubleArray>(env, clazz, method, jengine, n, j_r, j_a, j_b);
+}
+
+
 }
 
 // public static native int SUniform(int method, RAND engine, int n, float[] r, float a, float b);
