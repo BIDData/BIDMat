@@ -1,6 +1,8 @@
 #include <jni.h>
 #include <random>
 
+extern "C" {
+  
 union VoidLong {
   jlong l;
   void* p;
@@ -35,7 +37,7 @@ static void setEngine(JNIEnv *env, jobject clazz, jobject jengine, std::default_
 }
 
 
-JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_getEngine
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_newEngine
   (JNIEnv *env, jclass clazz, jobject jengine, jint brng, jint seed)
 {
   std::default_random_engine * enginep = new std::default_random_engine(seed);
@@ -249,6 +251,24 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_IBinomial
   return 0;
 }
 
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_IBinomialV
+(JNIEnv * env, jobject calling_obj, jint method, jobject jengine, jint n, jintArray j_r, jfloatArray j_a, jintArray j_m) {
+  std::default_random_engine engine = *getEngine(env, calling_obj, jengine);
+  jint * r = (jint *)(env->GetPrimitiveArrayCritical(j_r, JNI_FALSE));
+  jfloat * a = (jfloat *)(env->GetPrimitiveArrayCritical(j_a, JNI_FALSE));
+  jint * m = (jint *)(env->GetPrimitiveArrayCritical(j_m, JNI_FALSE));
+
+  std::binomial_distribution<int> dis(0.5, 1);
+  for (int i = 0; i < n; i++) {
+    std::binomial_distribution<int>::param_type p(a[i], m[i]);
+    r[i] = dis(engine, p);
+  }
+
+  env->ReleasePrimitiveArrayCritical(j_r, r, 0);
+  return 0;
+}
+
+  
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_INegBinomial
 (JNIEnv * env, jobject calling_obj, jint method, jobject jengine, jint n, jintArray j_r, jdouble a, jint m) {
   std::default_random_engine engine = *getEngine(env, calling_obj, jengine);
@@ -393,4 +413,6 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_DExponential
 
   env->ReleasePrimitiveArrayCritical(j_r, r, 0);
   return 0;
+}
+
 }
