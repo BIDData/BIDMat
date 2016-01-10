@@ -12,6 +12,7 @@ import java.util.Random._;
 import MatFunctions._
 import org.apache.commons.math3.special._
 import org.apache.commons.math3.util.FastMath
+import org.apache.commons.math3.random.RandomDataGenerator;
 
 object SciFunctions {
   var SEED:Long = 1452434413113462553L;
@@ -19,7 +20,9 @@ object SciFunctions {
   var OFFSET:Long = 0;
   var GPUSEED:Long = SEED;
   var GPUseedSteps:Int = 10;
-  final val myrand = new java.util.Random(SEED)
+  final val myrand = new java.util.Random(SEED);
+  final val acmrand = new RandomDataGenerator();
+  acmrand.reSeed(SEED);
   // VSL random number generator initialization
   final val BRNG:Int = if (!Mat.useMKLRand) 0 else BRNG_MCG31
   final val METHOD:Int = 0
@@ -192,25 +195,6 @@ object SciFunctions {
     sum(acopy)
   }  
   
-  def drand(minv:Double, maxv:Double, out:DMat):DMat = {
-	if (Mat.useMKLRand) {
-    	vdRngUniform( METHOD, stream, out.length, out.data, minv, maxv );
-    } else if (Mat.useSTLRand) {
-    	DUniform(0, engine, out.length, out.data, minv, maxv);
-    } else {
-      var i = 0; val len = out.length; val odata = out.data; 
-      while (i < len) {odata(i) = myrand.nextDouble; i += 1}     
-    } 
-    Mat.nflops += 10L*out.nrows*out.ncols
-    out
-  }
-  
-  def drand(m:Int, n:Int, minv:Double, maxv:Double):DMat = drand(minv, maxv, DMat(m, n))
-  
-  def drand(m:Int, n:Int):DMat = drand(m, n, 0, 1)
-  
-  def drand(out:DMat):DMat = drand(0.0, 1.0, out)
-
   def rand(minv:Float, maxv:Float, out:FMat):FMat = {
     if (Mat.useMKLRand) {
     	vsRngUniform( METHOD, stream, out.length, out.data, minv, maxv );
@@ -229,6 +213,25 @@ object SciFunctions {
   def rand(m:Int, n:Int):FMat = rand(m, n, 0, 1)
   
   def rand(out:FMat):FMat = rand(0.0f, 1.0f, out)
+  
+  def drand(minv:Double, maxv:Double, out:DMat):DMat = {
+	if (Mat.useMKLRand) {
+    	vdRngUniform( METHOD, stream, out.length, out.data, minv, maxv );
+    } else if (Mat.useSTLRand) {
+    	DUniform(0, engine, out.length, out.data, minv, maxv);
+    } else {
+      var i = 0; val len = out.length; val odata = out.data; 
+      while (i < len) {odata(i) = myrand.nextDouble; i += 1}     
+    } 
+    Mat.nflops += 10L*out.nrows*out.ncols
+    out
+  }
+  
+  def drand(m:Int, n:Int, minv:Double, maxv:Double):DMat = drand(minv, maxv, DMat(m, n));
+  
+  def drand(m:Int, n:Int):DMat = drand(m, n, 0, 1);
+  
+  def drand(out:DMat):DMat = drand(0.0, 1.0, out);
 
   def grand(nr:Int, nc:Int, out:GMat):GMat = {
 	  import jcuda.jcurand._
@@ -286,6 +289,23 @@ object SciFunctions {
     normrnd(mu, sig, FMat(m, n))
   }
   
+  def dnormrnd(mu:Double, sig:Double, out:DMat):DMat = {
+    if (Mat.useMKLRand) {
+    	vdRngGaussian( METHOD, stream, out.length, out.data, mu, sig );
+    } else if (Mat.useSTLRand) {
+      DNormal(METHOD, engine, out.length, out.data, mu, sig);
+    } else {
+      var i = 0; val len = out.length; val odata = out.data; 
+      while (i < len) {odata(i) = mu + sig*myrand.nextGaussian; i += 1}  
+    }
+    Mat.nflops += 10L*out.length
+    out
+  }
+  
+  def dnormrnd(mu:Double, sig:Double, m:Int, n:Int):DMat = {
+    dnormrnd(mu, sig, DMat(m, n))
+  }
+  
   def cnormrnd(mu:Float, sig:Float, out:CMat):CMat = {
     if (!Mat.useMKLRand) {
       var i = 0; val len = out.length; val odata = out.data; 
@@ -324,6 +344,13 @@ object SciFunctions {
     out
   }
   
+  def gdnormrnd(mu:Double, sig:Double, out:GDMat):GDMat = gdnormrnd(mu, sig, out, out.nrows, out.ncols)
+  
+  def gdnormrnd(mu:Double, sig:Double, nr:Int, nc:Int):GDMat = {
+    val out = GDMat(nr, nc)
+    gdnormrnd(mu, sig, out)
+  }
+  
   def normrnd(mu:Double, sig:Double, out:Mat):Mat = {
     out match {
       case a:FMat => normrnd(mu.toFloat, sig.toFloat, a);
@@ -333,11 +360,21 @@ object SciFunctions {
     }
   }
   
-  def gdnormrnd(mu:Double, sig:Double, out:GDMat):GDMat = gdnormrnd(mu, sig, out, out.nrows, out.ncols)
+  def poissrnd(lambda:FMat, out:IMat):IMat = {
+    checkSizes(lambda, out);
+    if (Mat.useMKLRand) {
+    	viRngPoissonV( METHOD, stream, out.length, out.data, DMat(lambda).data );
+    } else if (Mat.useSTLRand) {
+      IPoissonV(METHOD, engine, out.length, out.data, lambda.data)
+    } else {
+    	var i = 0; while (i < out.length) {out.data(i) = acmrand.nextPoisson(lambda.data(i)).toInt; i += 1;}  
+    }
+    Mat.nflops += 20L*out.length
+    out
+  }
   
-  def gdnormrnd(mu:Double, sig:Double, nr:Int, nc:Int):GDMat = {
-    val out = GDMat(nr, nc)
-    gdnormrnd(mu, sig, out)
+  def poissrnd(lambda:FMat):IMat = {
+    poissrnd(lambda, IMat(lambda.nrows, lambda.ncols))
   }
   
   def gpoissrnd(mu:Float, nr:Int, nc:Int):GIMat = {
@@ -376,22 +413,52 @@ object SciFunctions {
       if (m.ncols == 1) 1 else 3;
     }
   }
-
-  def gbinornd(p:GMat, n:GIMat, out:GIMat):GIMat = { 
-    Mat.nflops += 300L*out.length
-    val atype = getMatVecType(p);
-    val ctype = getMatVecType(n);
-    moveGPUseed;
-    CUMAT.binornd(out.nrows, out.ncols, p.data, atype, n.data, ctype, out.data, GPUSEED, OFFSET);
-    out;
+   
+  def gamrnd(a:FMat, b:FMat, out:FMat):FMat = { 
+    Random.gamrnd(a, b, out, myrand);
   } 
+  
+  def gamrnd(a:FMat, b:FMat):FMat = { 
+    val nrows = math.max(a.nrows, b.nrows);
+    val ncols = math.max(a.ncols, b.ncols);
+    val out = FMat(nrows, ncols);
+    gamrnd(a, b, out);
+  }
 
-  def gbinornd(p:GMat, n:GIMat):GIMat = {
-    val nrows = math.max(p.nrows, n.nrows);
-    val ncols = math.max(p.ncols, n.ncols);
-    val out = GIMat(nrows, ncols);
-    gbinornd(p, n, out);
-  } 
+  def gamrnd(shape:Float, scale:Float, out:FMat):FMat = {
+    if (Mat.useMKLRand) {
+    	vsRngGamma( METHOD, stream, out.length, out.data, shape, 0, scale );
+    } else if (Mat.useSTLRand) {
+      SGamma( METHOD, engine, out.length, out.data, shape, scale );
+    } else {
+      var i = 0;
+      while (i < out.length) {out.data(i) = acmrand.nextGamma(shape, scale).toFloat; i += 1;}
+    }
+    Mat.nflops += 20L*out.length
+    out
+  }
+
+  def gamrnd(shape:Float, scale:Float, m:Int, n:Int):FMat = {
+    gamrnd(shape, scale, FMat(m, n))
+  }
+  
+  def dgamrnd(shape:Double, scale:Double, out:DMat):DMat = {
+    vdRngGamma( METHOD, stream, out.length, out.data, shape, 0, scale )
+    Mat.nflops += 20L*out.length;
+      if (Mat.useMKLRand) {
+    	vdRngGamma( METHOD, stream, out.length, out.data, shape, 0, scale );
+    } else if (Mat.useSTLRand) {
+      DGamma(METHOD, engine, out.length, out.data, shape, scale);
+    } else {
+    	var i = 0; while (i < out.length) {out.data(i) = acmrand.nextGamma(shape, scale); i += 1;}  
+    }
+    out
+     
+  }
+
+  def dgamrnd(shape:Double, scale:Double, m:Int, n:Int):DMat = {
+    dgamrnd(shape, scale, DMat(m, n))
+  }
   
   def genericGammaRand(a:Mat, b:Mat, out:Mat):Mat = {
     (a,b,out) match {
@@ -417,27 +484,6 @@ object SciFunctions {
     ggamrnd(a, b, out);
   }
   
-  def gamrnd(a:FMat, b:FMat, out:FMat):FMat = { 
-    Random.gamrnd(a, b, out, myrand);
-  } 
-  
-  def gamrnd(a:FMat, b:FMat):FMat = { 
-    val nrows = math.max(a.nrows, b.nrows);
-    val ncols = math.max(a.ncols, b.ncols);
-    val out = FMat(nrows, ncols);
-    gamrnd(a, b, out);
-  }
-
-  def gamrnd(shape:Float, scale:Float, out:FMat):FMat = {
-    vsRngGamma( METHOD, stream, out.length, out.data, shape, 0, scale )
-    Mat.nflops += 20L*out.length
-    out
-  }
-
-  def gamrnd(shape:Float, scale:Float, m:Int, n:Int):FMat = {
-    gamrnd(shape, scale, FMat(m, n))
-  }
-  
   def laprnd(a:Float, b:Float, out:FMat):FMat = {
     vsRngLaplace( METHOD, stream, out.length, out.data, a, b )
     Mat.nflops += 20L*out.length
@@ -449,7 +495,13 @@ object SciFunctions {
   }
 
   def cauchyrnd(a:Float, b:Float, out:FMat):FMat = {
-    vsRngCauchy( METHOD, stream, out.length, out.data, a, b )
+  	if (Mat.useMKLRand) {
+  		vsRngCauchy( METHOD, stream, out.length, out.data, a, b );
+  	} else if (Mat.useSTLRand) {
+  	  SCauchy(METHOD, engine, out.length, out.data, a, b);
+  	} else {
+  		var i = 0; while (i < out.length) {out.data(i) = acmrand.nextCauchy(a, b).toFloat; i += 1;}
+  	}
     Mat.nflops += 20L*out.length
     out
   }
@@ -459,7 +511,13 @@ object SciFunctions {
   }
 
   def exprnd(a:Float, b:Float, out:FMat):FMat = {
-    vsRngExponential( METHOD, stream, out.length, out.data, a, b )
+    if (Mat.useMKLRand) {
+    	vsRngExponential( METHOD, stream, out.length, out.data, a, b );
+    } else if (Mat.useSTLRand) {
+      SExponential(METHOD, engine, out.length, out.data, a);
+    } else {
+  		var i = 0; while (i < out.length) {out.data(i) = acmrand.nextExponential(a).toFloat; i += 1;}      
+    }
     Mat.nflops += 20L*out.length
     out
   }
@@ -475,77 +533,15 @@ object SciFunctions {
   def exprnd(a:Float, out:FMat):FMat = {
     exprnd(a, 1, out)
   }
-
-  def betarnd(p:Float, q:Float, out:FMat):FMat = {
-    vsRngBeta( METHOD, stream, out.length, out.data, p, q, 0, 1 )
-    Mat.nflops += 20L*out.length
-    out
-  }
   
-  def betarnd(p:Float, q:Float, m:Int, n:Int):FMat = {
-    betarnd(p, q, FMat(m, n))
-  }
-
-  def poissrnd(lambda:FMat, out:IMat):IMat = {
-    checkSizes(lambda, out)
-    viRngPoissonV( METHOD, stream, out.length, out.data, DMat(lambda).data )
-    Mat.nflops += 20L*out.length
-    out
-  }
-  
-  def poissrnd(lambda:FMat):IMat = {
-    poissrnd(lambda, IMat(lambda.nrows, lambda.ncols))
-  }
-  
-  def dnormrnd(mu:Double, sig:Double, out:DMat):DMat = {
-    if (Mat.useMKLRand) {
-    	vdRngGaussian( METHOD, stream, out.length, out.data, mu, sig );
-    } else if (Mat.useSTLRand) {
-      DNormal(METHOD, engine, out.length, out.data, mu, sig);
-    } else {
-      var i = 0; val len = out.length; val odata = out.data; 
-      while (i < len) {odata(i) = mu + sig*myrand.nextGaussian; i += 1}  
-    }
-    Mat.nflops += 10L*out.length
-    out
-  }
-  
-  def dnormrnd(mu:Double, sig:Double, m:Int, n:Int):DMat = {
-    dnormrnd(mu, sig, DMat(m, n))
-  }
-  
-  def dgamrnd(shape:Double, scale:Double, out:DMat):DMat = {
-    vdRngGamma( METHOD, stream, out.length, out.data, shape, 0, scale )
-    Mat.nflops += 20L*out.length
-    out
-  }
-
-  def dgamrnd(shape:Double, scale:Double, m:Int, n:Int):DMat = {
-    dgamrnd(shape, scale, DMat(m, n))
-  }
-  
-  def dlaprnd(a:Double, b:Double, out:DMat):DMat = {
-    vdRngLaplace( METHOD, stream, out.length, out.data, a, b )
-    Mat.nflops += 20L*out.length
-    out
-  }
-  
-  def dlaprnd(a:Double, b:Double, m:Int, n:Int):DMat = {
-    dlaprnd(a, b, DMat(m, n))
-  }
-
-  def dcauchyrnd(a:Double, b:Double, out:DMat):DMat = {
-    vdRngCauchy( METHOD, stream, out.length, out.data, a, b )
-    Mat.nflops += 20L*out.length
-    out
-  }
-  
-  def dcauchyrnd(a:Double, b:Double, m:Int, n:Int):DMat = {
-    dcauchyrnd(a, b, DMat(m, n))
-  }
-
   def dexprnd(a:Double, b:Double, out:DMat):DMat = {
-    vdRngExponential( METHOD, stream, out.length, out.data, a, b )
+    if (Mat.useMKLRand) {
+    	vdRngExponential( METHOD, stream, out.length, out.data, a, b);
+    } else if (Mat.useSTLRand) {
+      DExponential(METHOD, engine, out.length, out.data, a);
+    } else {
+    	var i = 0; while (i < out.length) {out.data(i) = acmrand.nextExponential(a); i += 1;}  
+    }
     Mat.nflops += 20L*out.length
     out
   }
@@ -562,6 +558,45 @@ object SciFunctions {
     dexprnd(a, 1, out)
   }
 
+  def betarnd(p:Float, q:Float, out:FMat):FMat = {
+    vsRngBeta( METHOD, stream, out.length, out.data, p, q, 0, 1 )
+    Mat.nflops += 20L*out.length
+    out
+  }
+  
+  def betarnd(p:Float, q:Float, m:Int, n:Int):FMat = {
+    betarnd(p, q, FMat(m, n))
+  }
+  
+  def dlaprnd(a:Double, b:Double, out:DMat):DMat = {
+    vdRngLaplace( METHOD, stream, out.length, out.data, a, b )
+    Mat.nflops += 20L*out.length
+    out
+  }
+  
+  def dlaprnd(a:Double, b:Double, m:Int, n:Int):DMat = {
+    dlaprnd(a, b, DMat(m, n))
+  }
+
+  def dcauchyrnd(a:Double, b:Double, out:DMat):DMat = {
+    vdRngCauchy( METHOD, stream, out.length, out.data, a, b )
+    Mat.nflops += 20L*out.length
+    out
+    if (Mat.useMKLRand) {
+    	vdRngCauchy( METHOD, stream, out.length, out.data, a, b);
+    } else if (Mat.useSTLRand) {
+      DCauchy(METHOD, engine, out.length, out.data, a, b);
+    } else {
+    	var i = 0; while (i < out.length) {out.data(i) = acmrand.nextCauchy(a, b); i += 1;}  
+    }
+    Mat.nflops += 20L*out.length
+    out
+  }
+  
+  def dcauchyrnd(a:Double, b:Double, m:Int, n:Int):DMat = {
+    dcauchyrnd(a, b, DMat(m, n))
+  }
+
   def dbetarnd(p:Double, q:Double, out:DMat):DMat = {
     vdRngBeta( METHOD, stream, out.length, out.data, p, q, 0, 1 )
     Mat.nflops += 20L*out.length
@@ -573,7 +608,13 @@ object SciFunctions {
   }
 
   def binornd(k:Int, p:Double, out:IMat):IMat = {
-    viRngBinomial( METHOD, stream, out.length, out.data, k, p )
+    if (Mat.useMKLRand) {
+    	viRngBinomial( METHOD, stream, out.length, out.data, k, p );
+    } else if (Mat.useSTLRand) {
+      IBinomial(METHOD, engine, out.length, out.data, p, k);
+    } else {
+    	var i = 0; while (i < out.length) {out.data(i) = acmrand.nextBinomial(k, p).toInt; i += 1;}  
+    }
     Mat.nflops += 20L*out.length
     out
   }
@@ -582,8 +623,30 @@ object SciFunctions {
     binornd(k, p, IMat(m, n))
   }
   
+  def gbinornd(p:GMat, n:GIMat, out:GIMat):GIMat = { 
+    Mat.nflops += 300L*out.length
+    val atype = getMatVecType(p);
+    val ctype = getMatVecType(n);
+    moveGPUseed;
+    CUMAT.binornd(out.nrows, out.ncols, p.data, atype, n.data, ctype, out.data, GPUSEED, OFFSET);
+    out;
+  } 
+
+  def gbinornd(p:GMat, n:GIMat):GIMat = {
+    val nrows = math.max(p.nrows, n.nrows);
+    val ncols = math.max(p.ncols, n.ncols);
+    val out = GIMat(nrows, ncols);
+    gbinornd(p, n, out);
+  } 
+  
   def bernrnd(p:Double, out:IMat):IMat = {
-    viRngBernoulli( METHOD, stream, out.length, out.data, p )
+    if (Mat.useMKLRand) {
+    	viRngBernoulli( METHOD, stream, out.length, out.data, p );
+    } else if (Mat.useSTLRand) {
+      IBernoulli(METHOD, engine, out.length, out.data, p);
+    } else {
+    	var i = 0; while (i < out.length) {out.data(i) = if (acmrand.nextUniform(0,1) < p) 1 else 0; i += 1;}  
+    }
     Mat.nflops += 20L*out.length
     out
   }
@@ -593,7 +656,13 @@ object SciFunctions {
   }
   
   def geornd(p:Double, out:IMat):IMat = {
-    viRngGeometric( METHOD, stream, out.length, out.data, p )
+    if (Mat.useMKLRand) {
+    	viRngGeometric( METHOD, stream, out.length, out.data, p );
+    } else if (Mat.useSTLRand) {
+      IGeometric(METHOD, engine, out.length, out.data, p);
+    } else {
+    	var i = 0; while (i < out.length) {out.data(i) = acmrand.nextExponential(p).toInt; i += 1;}  
+    }
     Mat.nflops += 20L*out.length
     out
   }
@@ -603,7 +672,13 @@ object SciFunctions {
   }
   
   def nbinrnd(a:Double, p:Double, out:IMat):IMat = {
-    viRngNegbinomial( METHOD, stream, out.length, out.data, a, p )
+    if (Mat.useMKLRand) {
+    	viRngNegbinomial( METHOD, stream, out.length, out.data, a, p );
+    } else if (Mat.useSTLRand) {
+      INegBinomial(METHOD, engine, out.length, out.data, p, a.toInt);
+    } else {
+    	throw new RuntimeException("No pure java Negative Binomial implementation")
+    }
     Mat.nflops += 20L*out.length
     out
   }	
@@ -613,7 +688,13 @@ object SciFunctions {
   }	
   
   def poissrnd(lambda:Double, out:IMat):IMat = {
-    viRngPoisson( METHOD, stream, out.length, out.data, lambda )
+    if (Mat.useMKLRand) {
+    	viRngPoisson( METHOD, stream, out.length, out.data, lambda );
+    } else if (Mat.useSTLRand) {
+      IPoisson(METHOD, engine, out.length, out.data, lambda);
+    } else {
+    	var i = 0; while (i < out.length) {out.data(i) = acmrand.nextPoisson(lambda).toInt; i += 1;}  
+    }
     Mat.nflops += 20L*out.length
     out
   }
@@ -623,8 +704,12 @@ object SciFunctions {
   }
   
   def poissrnd(lambda:DMat, out:IMat):IMat = {
-    checkSizes(lambda, out)
-    viRngPoissonV( METHOD, stream, out.length, out.data, lambda.data )
+    checkSizes(lambda, out);
+    if (Mat.useMKLRand) {
+    	viRngPoissonV( METHOD, stream, out.length, out.data, lambda.data );
+    } else {
+    	var i = 0; while (i < out.length) {out.data(i) = acmrand.nextPoisson(lambda.data(i)).toInt; i += 1;} 
+    }
     Mat.nflops += 20L*out.length
     out
   }
