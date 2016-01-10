@@ -1,9 +1,6 @@
 #include <jni.h>
 #include <random>
 
-
-extern "C" {
-  
 union VoidLong {
   jlong l;
   void* p;
@@ -37,6 +34,114 @@ static void setEngine(JNIEnv *env, jclass clazz, jobject jengine, std::default_r
   env->SetLongField(jengine, handle_id, handle);
 }
 
+template <class T>
+int genFloatValues(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jfloatArray j_r, T &dis)
+{
+  int i, status;
+  std::default_random_engine *enginep = getEngine(env, clazz, jengine);
+  status = (enginep == NULL);
+  if (!status) {
+    jfloat *r = (jfloat *)(env->GetPrimitiveArrayCritical(j_r, JNI_FALSE));
+    status = (r == NULL);
+    if (!status) {
+      for (i = 0; i < n; i++) {
+	r[i] = dis(*enginep);
+      }
+    }
+    env->ReleasePrimitiveArrayCritical(j_r, r, 0);
+  }
+  return status;
+}
+
+template <class T>
+int genDoubleValues(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jdoubleArray j_r, T &dis)
+{
+  int i, status;
+  std::default_random_engine *enginep = getEngine(env, clazz, jengine);
+  status = (enginep == NULL);
+  if (!status) {
+    jdouble *r = (jdouble *)(env->GetPrimitiveArrayCritical(j_r, JNI_FALSE));
+    status = (r == NULL);
+    if (!status) {
+      for (i = 0; i < n; i++) {
+	r[i] = dis(*enginep);
+      }
+    }
+    env->ReleasePrimitiveArrayCritical(j_r, r, 0);
+  }
+  return status;
+}
+
+template <class T>
+int genIntValues(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jintArray j_r, T &dis)
+{
+  int i, status;
+  std::default_random_engine *enginep = getEngine(env, clazz, jengine);
+  status = (enginep == NULL);
+  if (!status) {
+    jint *r = (jint *)(env->GetPrimitiveArrayCritical(j_r, JNI_FALSE));
+    status = (r == NULL);
+    if (!status) {
+      for (i = 0; i < n; i++) {
+	r[i] = dis(*enginep);
+      }
+    }
+    env->ReleasePrimitiveArrayCritical(j_r, r, 0);
+  }
+  return status;
+}
+
+template <class genT, class paramT, typename V, typename VA, typename P1, typename PA1>
+int gen1paramV(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, VA j_r, PA1 j_a)
+{
+  int i, status;
+  std::default_random_engine *enginep = getEngine(env, clazz, jengine);
+  status = (enginep == NULL);
+  if (!status) {
+    V *r = (V *)(env->GetPrimitiveArrayCritical(j_r, JNI_FALSE));
+    P1 *a = (P1 *)(env->GetPrimitiveArrayCritical(j_a, JNI_FALSE));
+    status = (r == NULL || a == NULL);
+    genT dis(a[0]);
+    if (!status) {
+      for (i = 0; i < n; i++) {
+	paramT param(a[i]);
+	r[i] = dis(*enginep, param);
+      }
+    }
+    env->ReleasePrimitiveArrayCritical(j_a, a, 0);
+    env->ReleasePrimitiveArrayCritical(j_r, r, 0);
+  }
+  return status;
+}
+
+template <class genT, class paramT, typename V, typename VA, typename P1, typename PA1, typename P2, typename PA2>
+int gen2paramV(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, VA j_r, PA1 j_a, PA2 j_b)
+{
+  int i, status;
+  std::default_random_engine *enginep = getEngine(env, clazz, jengine);
+  status = (enginep == NULL);
+  if (!status) {
+    V *r = (V *)(env->GetPrimitiveArrayCritical(j_r, JNI_FALSE));
+    P1 *a = (P1 *)(env->GetPrimitiveArrayCritical(j_a, JNI_FALSE));
+    P2 *b = (P2 *)(env->GetPrimitiveArrayCritical(j_b, JNI_FALSE));
+    status = (r == NULL || a == NULL || b == NULL);
+    genT dis(a[0], b[0]);
+    if (!status) {
+      for (i = 0; i < n; i++) {
+	paramT param(a[i], b[i]);
+	r[i] = dis(*enginep, param);
+      }
+    }
+    env->ReleasePrimitiveArrayCritical(j_b, b, 0);
+    env->ReleasePrimitiveArrayCritical(j_a, a, 0);
+    env->ReleasePrimitiveArrayCritical(j_r, r, 0);
+  }
+  return status;
+}
+
+
+extern "C" {
+
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_newEngine
 (JNIEnv *env, jclass clazz, jobject jengine, jint brng, jint seed)
@@ -62,95 +167,142 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_delEngine
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_SUniform
 (JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jfloatArray j_r, jfloat a, jfloat b)
 {
-  int i, status;
-  std::default_random_engine *enginep = getEngine(env, clazz, jengine);
-  status = (enginep == NULL);
-  if (!status) {
-    jfloat *r = (jfloat *)(env->GetPrimitiveArrayCritical(j_r, JNI_FALSE));
-    status = (r == NULL);
-    if (!status) {
-      std::uniform_real_distribution<float> dis(a, b);
-      for (i = 0; i < n; i++) {
-	r[i] = dis(*enginep);
-      }
-    }
-    env->ReleasePrimitiveArrayCritical(j_r, r, 0);
-  }
-  return status;
+  std::uniform_real_distribution<float> dis(a, b);
+  return genFloatValues(env, clazz, method, jengine, n, j_r, dis);
 }
+
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_SNormal
 (JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jfloatArray j_r, jfloat a, jfloat b)
 {
-  int i, status;
-  std::default_random_engine *enginep = getEngine(env, clazz, jengine);
-  status = (enginep == NULL);
-  if (!status) {
-    jfloat *r = (jfloat *)(env->GetPrimitiveArrayCritical(j_r, JNI_FALSE));
-    status = (r == NULL);
-    if (!status) {
-      std::normal_distribution<float> dis(a, b);
-      for (i = 0; i < n; i++) {
-	r[i] = dis(*enginep);
-      }
-    }
-    env->ReleasePrimitiveArrayCritical(j_r, r, 0);
-  }
-  return status;
+  std::normal_distribution<float> dis(a, b);
+  return genFloatValues(env, clazz, method, jengine, n, j_r, dis);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_SLogNormal
+(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jfloatArray j_r, jfloat a, jfloat b)
+{
+  std::lognormal_distribution<float> dis(a, b);
+  return genFloatValues(env, clazz, method, jengine, n, j_r, dis);
 }
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_SCauchy
 (JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jfloatArray j_r, jfloat a, jfloat b)
 {
+  std::cauchy_distribution<float> dis(a, b);
+  return genFloatValues(env, clazz, method, jengine, n, j_r, dis);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_SExponential
+(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jfloatArray j_r, jfloat a)
+{
+  std::exponential_distribution<float> dis(a);
+  return genFloatValues(env, clazz, method, jengine, n, j_r, dis);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_SWeibull
+(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jfloatArray j_r, jfloat a, jfloat b)
+{
+  std::weibull_distribution<float> dis(a, b);
+  return genFloatValues(env, clazz, method, jengine, n, j_r, dis);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_SGamma
+(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jfloatArray j_r, jfloat a, jfloat b)
+{
+  std::weibull_distribution<float> dis(a, b);
+  return genFloatValues(env, clazz, method, jengine, n, j_r, dis);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_IGeometric
+(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jintArray j_r, jdouble p)
+{
+  std::geometric_distribution<int> dis(p);
+  return genIntValues(env, clazz, method, jengine, n, j_r, dis);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_IPoisson
+(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jintArray j_r, jdouble p)
+{
+  std::poisson_distribution<int> dis(p);
+  return genIntValues(env, clazz, method, jengine, n, j_r, dis);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_IBinomial
+(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jintArray j_r, jdouble p, jint m)
+{
+  std::binomial_distribution<int> dis(m, p);
+  return genIntValues(env, clazz, method, jengine, n, j_r, dis);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_INegBinomial
+(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jintArray j_r, jdouble p, jint m)
+{
+  std::negative_binomial_distribution<int> dis(m, p);
+  return genIntValues(env, clazz, method, jengine, n, j_r, dis);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_SNormalV
+(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jfloatArray j_r, jfloatArray j_a, jfloatArray j_b)
+{
+  return gen2paramV<std::normal_distribution<float>, std::normal_distribution<float>::param_type,
+		    jfloat, jfloatArray, jfloat, jfloatArray, jfloat, jfloatArray>(env, clazz, method, jengine, n, j_r, j_a, j_b);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_IBinomialV
+(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jintArray j_r, jintArray j_a, jfloatArray j_b)
+{
+  return gen2paramV<std::binomial_distribution<int>, std::binomial_distribution<int>::param_type,
+		    jint, jintArray, jint, jintArray, jfloat, jfloatArray>(env, clazz, method, jengine, n, j_r, j_a, j_b);
+}
+
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_INegBinomialV
+(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jintArray j_r, jintArray j_a, jfloatArray j_b)
+{
+  return gen2paramV<std::negative_binomial_distribution<int>, std::negative_binomial_distribution<int>::param_type,
+		    jint, jintArray, jint, jintArray, jfloat, jfloatArray>(env, clazz, method, jengine, n, j_r, j_a, j_b);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_IPoissonV
+(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jintArray j_r, jfloatArray j_a)
+{
+  return gen1paramV<std::poisson_distribution<int>, std::poisson_distribution<int>::param_type,
+		    jint, jintArray, jfloat, jfloatArray>(env, clazz, method, jengine, n, j_r, j_a);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_IBernoulli
+(JNIEnv *env, jclass clazz, jint method, jobject jengine, int n, jintArray j_r, jdouble p)
+{
   int i, status;
   std::default_random_engine *enginep = getEngine(env, clazz, jengine);
   status = (enginep == NULL);
   if (!status) {
-    jfloat *r = (jfloat *)(env->GetPrimitiveArrayCritical(j_r, JNI_FALSE));
+    std::uniform_real_distribution<float> dis(0, 1);
+    jint *r = (jint *)(env->GetPrimitiveArrayCritical(j_r, JNI_FALSE));
     status = (r == NULL);
     if (!status) {
-      std::cauchy_distribution<float> dis(a, b);
       for (i = 0; i < n; i++) {
-	r[i] = dis(*enginep);
+	r[i] = (dis(*enginep) < p);
       }
     }
     env->ReleasePrimitiveArrayCritical(j_r, r, 0);
   }
   return status;
 }
+}
 
-
-
-
-    // public static native int DCauchy(int method, RAND engine, int n, double[] r, double a, double b);
-
-    // public static native int SCauchy(int method, RAND engine, int n, float[] r, float a, float b);
-
-    // public static native int DUniform(int method, RAND engine, int n, double[] r, double a, double b);
-
-    // public static native int SUniform(int method, RAND engine, int n, float[] r, float a, float b);
-
-    // public static native int DNormal(int method, RAND engine, int n, double[] r, double a, double sigma);
+// public static native int SUniform(int method, RAND engine, int n, float[] r, float a, float b);
 
     // public static native int SNormal(int method, RAND engine, int n, float[] r, float a, float sigma);
     
-    // public static native int DNormalV(int method, RAND engine, int n, double[] r, double []a, double []sigma);
+    // public static native int SLognormal(int method, RAND engine, int n, float[] r, float a, float sigma);
 
-    // public static native int SNormalV(int method, RAND engine, int n, float[] r, float []a, float []sigma);
-
-    // public static native int DExponential(int method, RAND engine, int n, double[] r, double a);
+    // public static native int SCauchy(int method, RAND engine, int n, float[] r, float a, float b);
 
     // public static native int SExponential(int method, RAND engine, int n, float[] r, float a);
 
-    // public static native int DWeibull(int method, RAND engine, int n, double[] r, double alpha, double beta);
-
     // public static native int SWeibull(int method, RAND engine, int n, float[] r, float alpha, float beta);
-
-    // public static native int DLognormal(int method, RAND engine, int n, double[] r, double a, double sigma);
-
-    // public static native int SLognormal(int method, RAND engine, int n, float[] r, float a, float sigma);
-
-    // public static native int DGamma(int method, RAND engine, int n, double[] r, double alpha, double beta);
 
     // public static native int SGamma(int method, RAND engine, int n, float[] r, float alpha, float beta);
 
@@ -158,15 +310,15 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_RAND_SCauchy
 
     // public static native int IGeometric(int method, RAND engine, int n, int[] r, double p);
 
-    // public static native int IBinomial(int method, RAND engine, int n, int[] r,  double p, int m);
+    // public static native int IPoisson(int method, RAND engine, int n, int[] r, double lambda);
     
-    // public static native int IBinomialV(int method, RAND engine, int n, int[] r,  float [] p, int [] m);
+    // public static native int IBinomial(int method, RAND engine, int n, int[] r,  double p, int m);
 
     // public static native int INegBinomial(int method, RAND engine, int n, int[] r, double a, int m);
 
-    // public static native int IPoisson(int method, RAND engine, int n, int[] r, double lambda);
+    // public static native int SNormalV(int method, RAND engine, int n, float[] r, float []a, float []sigma);
     
+    // public static native int IBinomialV(int method, RAND engine, int n, int[] r,  float [] p, int [] m);
+
     // public static native int IPoissonV(int method, RAND engine, int n, int[] r, float [] lambda);
 
-
-}
