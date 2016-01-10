@@ -304,6 +304,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_SPBLAS_smcscm
   int col, row, i, ioff, istart, iend;
   float v;
 
+  ioff = jc[0];
   if (transb == 0) {
 #pragma omp parallel
     for (col = 0; col < n; col++) {
