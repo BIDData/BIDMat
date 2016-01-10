@@ -579,9 +579,6 @@ object SciFunctions {
   }
 
   def dcauchyrnd(a:Double, b:Double, out:DMat):DMat = {
-    vdRngCauchy( METHOD, stream, out.length, out.data, a, b )
-    Mat.nflops += 20L*out.length
-    out
     if (Mat.useMKLRand) {
     	vdRngCauchy( METHOD, stream, out.length, out.data, a, b);
     } else if (Mat.useSTLRand) {
