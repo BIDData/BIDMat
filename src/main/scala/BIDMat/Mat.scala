@@ -2,6 +2,7 @@ package BIDMat
 import scala.collection.mutable.HashMap
 import java.lang.ref._
 import jcuda.NativePointerObject
+import edu.berkeley.bid.UTILS
 
 @SerialVersionUID(100L)
 class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
@@ -616,9 +617,15 @@ object Mat {
   var recycleGrow = 1.2            // For caching, amount to grow re-allocated matrices
   
   var hasCUDA = 0                  // Number of available CUDA GPUs
-    
-  var useMKL:Boolean = true        // Use MKL libs
   
+  var useBLAS = true;
+    
+  var useMKL = true;               // Use MKL libs
+  
+  var useMKLRand = false;          // Use MKL random libs
+    
+  var useSTLRand = false;
+    
   var debugMem = false             // Debug GPU mem calls
   
   var debugMemThreshold = 1000;
@@ -671,13 +678,16 @@ object Mat {
   final val OS_LINUX = 1;
   final val OS_OSX = 2;
   final val OS_ANDROID = 3;
+  final val OS_UNKNOWN = 4;
   
   def getOS:Int = {
     val osname = System.getProperty("os.name");
     if (osname.startsWith("Windows")) OS_WINDOWS
-    else if (osname.startsWith("Linux")) OS_LINUX
-    else if (osname.startsWith("Mac")) OS_OSX
-    else OS_ANDROID    
+    else if (osname.startsWith("Linux")) {
+      if (System.getProperty("java.vendor").contains("ndroid")) OS_ANDROID
+      else OS_LINUX      
+    } else if (osname.startsWith("Mac")) OS_OSX
+    else OS_UNKNOWN   
   }
   
   val ostype = getOS  
@@ -816,6 +826,9 @@ object Mat {
     	}
     	}
     }
+    useBLAS = useMKL;
+    if (useMKL) useMKLRand = (UTILS.hasMKL() == 1);
+    useSTLRand = useMKL & !useMKLRand;
     try {
 //      jcuda.LibUtils.loadLibrary("jhdf5")
       System.loadLibrary("jhdf5")
@@ -826,77 +839,77 @@ object Mat {
     }
   }
   
-  def checkCUDA:Unit = checkCUDA(false)
-  
+  def checkCUDA:Unit = checkCUDA(false);
+
   def checkCUDA(verbose:Boolean):Unit = {
-    if (hasCUDA == 0) {
-    	val os = System.getProperty("os.name")
-    	try {
-    		if (os.equals("Linux") || os.equals("Mac OS X")) {
-    			System.loadLibrary("cudart")
-    		} else {
-    			val libnames = List("cudart64_70", "cudart64_65", "cudart64_55", "cudart64_50_35", "cudart64_42_9").iterator
-    			var found = false
-    			while (!found && libnames.hasNext) {
-    			  found = true
-    				try{
-    					System.loadLibrary(libnames.next)
-    				} catch {
-    				case _:Throwable => found = false
-    				}
-    			}
-    			if (!found) throw new RuntimeException("Couldnt find a cudart lib")
-    		}
-    	} catch {
-    	case x:Throwable =>  {
-    		println("Couldnt load CUDA runtime");
-    		if (verbose) {
-    			val msg = x.getMessage;
-    			if (msg != null) println(msg);
-    		}
-    		hasCUDA = -1    		
-    	}
-    	}
-    	if (hasCUDA >= 0) {
-    	  try {
-    	    jcuda.LibUtils.loadLibrary("JCudaRuntime")
-    	  } catch {
-    	  case y:Throwable =>  {
-    	    println("Couldnt load JCuda");
-    	    if (verbose) {
-    	    	val msg = y.getMessage;
-    	    	if (msg != null) println(msg);
-    	    }
-    	    hasCUDA = -1            
-    	  }
-    	  }
-    	}
-    }
-    if (hasCUDA >= 0) {
-    	try {
-    		var cudanum = new Array[Int](1)
-    		jcuda.runtime.JCuda.cudaGetDeviceCount(cudanum)
-    		hasCUDA = cudanum(0)
-    		printf("%d CUDA device%s found", hasCUDA, if (hasCUDA == 1) "" else "s")
-    		if (hasCUDA > 0) {
-    			jcuda.runtime.JCuda.cudaRuntimeGetVersion(cudanum)
-    			println(", CUDA version %d.%d" format (cudanum(0)/1000, (cudanum(0)%100) / 10))
-    		} else {
-    			println("")
-    		}
-    	} catch {
-    	case e:NoClassDefFoundError => println("Couldn't load the JCUDA driver")
-    	case e:Exception => println("Exception while initializing JCUDA driver")
-    	case z:Throwable => println("Something went wrong while loading JCUDA driver" + z.getMessage)
-    	}
-    	if (hasCUDA > 0) {
-    	  try {
-    	    jcuda.LibUtils.loadLibrary("bidmatcuda")
-    	  } catch {
-    	  case z:Throwable => println("Something went wrong while loading BIDMat CUDA library" + z.getMessage)
-    	  }
-    	}
-    }
+  		if (hasCUDA == 0) {
+  			val os = System.getProperty("os.name");
+  			try {
+  				if (os.equals("Linux") || os.equals("Mac OS X")) {
+  					System.loadLibrary("cudart");
+  				} else {
+  					val libnames = List("cudart64_70", "cudart64_65", "cudart64_55", "cudart64_50_35", "cudart64_42_9").iterator;
+  					var found = false;
+  					while (!found && libnames.hasNext) {
+  						found = true;
+  						try{
+  							System.loadLibrary(libnames.next);
+  						} catch {
+  						case _:Throwable => found = false;
+  						}
+  					}
+  					if (!found) throw new RuntimeException("Couldnt find a cudart lib");
+  				}
+  			} catch {
+  			case x:Throwable =>  {
+  				println("Couldnt load CUDA runtime");
+  				if (verbose) {
+  					val msg = x.getMessage;
+  					if (msg != null) println(msg);
+  				}
+  				hasCUDA = -1;    		
+  			}
+  			}
+  			if (hasCUDA >= 0) {
+  				try {
+  					jcuda.LibUtils.loadLibrary("JCudaRuntime");
+  				} catch {
+  				case y:Throwable =>  {
+  					println("Couldnt load JCuda");
+  					if (verbose) {
+  						val msg = y.getMessage;
+  						if (msg != null) println(msg);
+  					}
+  					hasCUDA = -1;   
+  				}
+  				}
+  			}
+  		}
+  		if (hasCUDA >= 0) {
+  			try {
+  				var cudanum = new Array[Int](1);
+  				jcuda.runtime.JCuda.cudaGetDeviceCount(cudanum);
+  				hasCUDA = cudanum(0);
+  				printf("%d CUDA device%s found", hasCUDA, if (hasCUDA == 1) "" else "s");
+  				if (hasCUDA > 0) {
+  					jcuda.runtime.JCuda.cudaRuntimeGetVersion(cudanum);
+  					println(", CUDA version %d.%d" format (cudanum(0)/1000, (cudanum(0)%100) / 10));
+  				} else {
+  					println("");
+  				}
+  			} catch {
+  			case e:NoClassDefFoundError => println("Couldn't load the JCUDA driver");
+  			case e:Exception => println("Exception while initializing JCUDA driver");
+  			case z:Throwable => println("Something went wrong while loading JCUDA driver" + z.getMessage);
+  			}
+  			if (hasCUDA > 0) {
+  				try {
+  					jcuda.LibUtils.loadLibrary("bidmatcuda");
+  				} catch {
+  				case z:Throwable => println("Something went wrong while loading BIDMat CUDA library" + z.getMessage);
+  				}
+  			}
+  		}
   }
 
   def copyToIntArray[@specialized(Double, Float, Long, Byte, Short) T](data:Array[T], i0:Int, idata:Array[Int], d0:Int, n:Int)

@@ -10,6 +10,8 @@ public final class UTILS {
       LibUtils.loadLibrary("bidmatcpu");
     }
     
+    public static native int hasMKL();
+    
     public static native  int  getnumthreads( );
     public static native  void setnumthreads( int n );
 
