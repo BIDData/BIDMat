@@ -57,11 +57,11 @@ public final class RAND {
 
     public static native int IGeometric(int method, RAND stream, int n, int[] r, double p);
 
-    public static native int IBinomial(int method, RAND stream, int n, int[] r,  double p, int m);
+    public static native int IBinomial(int method, RAND stream, int n, int[] r, int m, double p);
     
-    public static native int IBinomialV(int method, RAND stream, int n, int[] r,  float [] p, int [] m);
+    public static native int IBinomialV(int method, RAND stream, int n, int[] r,  int [] m, float [] p);
 
-    public static native int INegBinomial(int method, RAND stream, int n, int[] r, double a, int m);
+    public static native int INegBinomial(int method, RAND stream, int n, int[] r, int m, double a);
 
     public static native int IPoisson(int method, RAND stream, int n, int[] r, double lambda);
     
