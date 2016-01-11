@@ -608,7 +608,7 @@ object SciFunctions {
     if (Mat.useMKLRand) {
     	viRngBinomial( METHOD, stream, out.length, out.data, k, p );
     } else if (Mat.useSTLRand) {
-      IBinomial(METHOD, engine, out.length, out.data, p, k);
+      IBinomial(METHOD, engine, out.length, out.data, k, p);
     } else {
     	var i = 0; while (i < out.length) {out.data(i) = acmrand.nextBinomial(k, p).toInt; i += 1;}  
     }
@@ -672,7 +672,7 @@ object SciFunctions {
     if (Mat.useMKLRand) {
     	viRngNegbinomial( METHOD, stream, out.length, out.data, a, p );
     } else if (Mat.useSTLRand) {
-      INegBinomial(METHOD, engine, out.length, out.data, p, a.toInt);
+      INegBinomial(METHOD, engine, out.length, out.data, a.toInt, p);
     } else {
     	throw new RuntimeException("No pure java Negative Binomial implementation")
     }
