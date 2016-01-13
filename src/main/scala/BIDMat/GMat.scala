@@ -1832,7 +1832,7 @@ object GMat {
     println("GPU memory %3.2f%% free out of %2.1f GB" format (fm.toFloat/tm, tm*1e-9));
   }
   
-   def grand(nr:Int, nc:Int, out:GMat):GMat = {
+  def rand(out:GMat):GMat = {
     import jcuda.jcurand._
     Mat.nflops += 10L*out.length
     JCurand.curandGenerateUniform(cudarng(getGPU).asInstanceOf[curandGenerator], out.data, out.length)
@@ -1840,7 +1840,7 @@ object GMat {
     out
   }
    
-  def gnormrnd(mu:Float, sig:Float, out:GMat, nr:Int, nc:Int):GMat = {
+  def normrnd(mu:Float, sig:Float, out:GMat):GMat = {
     import jcuda.jcurand._
     Mat.nflops += 10L*out.length
     JCurand.curandGenerateNormal(cudarng(getGPU).asInstanceOf[curandGenerator], out.data, out.length, mu, sig)
@@ -1848,7 +1848,7 @@ object GMat {
     out
   }
   
-  def gpoissrnd(mu:Float, out:GIMat, nr:Int, nc:Int):GIMat = {
+  def poissrnd(mu:Float, out:GIMat):GIMat = {
     import jcuda.jcurand._;
     Mat.nflops += 10L*out.length;
     JCurand.curandGeneratePoisson(cudarng(getGPU).asInstanceOf[curandGenerator], out.data, out.length, mu);
@@ -1856,7 +1856,7 @@ object GMat {
     out
   }
   
-  def gpoissrnd(mu:GMat, out:GIMat):GIMat = {
+  def poissrnd(mu:GMat, out:GIMat):GIMat = {
     Mat.nflops += 10L*out.length;
     val nthreads = math.max(1, mu.length / 1024);
     moveGPUseed;
@@ -1873,7 +1873,7 @@ object GMat {
     }
   }
   
-   def ggamrnd(a:GMat, b:GMat, out:GMat):GMat = { 
+   def gamrnd(a:GMat, b:GMat, out:GMat):GMat = { 
     Mat.nflops += 100L*out.length;
     val atype = getMatVecType(a);
     val btype = getMatVecType(b);
@@ -1883,7 +1883,7 @@ object GMat {
   } 
     
    
-   def gbinornd(p:GMat, n:GIMat, out:GIMat):GIMat = { 
+   def binornd(p:GMat, n:GIMat, out:GIMat):GIMat = { 
     Mat.nflops += 300L*out.length
     val atype = getMatVecType(p);
     val ctype = getMatVecType(n);

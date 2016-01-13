@@ -552,6 +552,8 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
   def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int):GND = transpose(Array(i1, i2, i3, i4, i5, i6, i7, i8))
   
   
+  
+  
   def * (b : GND):GND = {
 	  val dims0 = dims(0->(dims.length-1));
 	  val dims1 = b.dims(1->b.dims.length);
@@ -911,12 +913,12 @@ object GND {
   }
   
   def applyGNDfun2(a:GND, b:GND, omat:ND, opn:Int, kflops:Long):GND = {   
-      ND.checkDims("applyGNDfun2", a.dims, b.dims);
-      val out = GND.newOrCheckGND(a.dims, omat, a.GUID, b.GUID, opn);
-      CUMAT.applygfun2(a.data, b.data, out.data, a.nrows*a.ncols, opn);
-      jcuda.runtime.JCuda.cudaDeviceSynchronize();
-      Mat.nflops += kflops*a.length;
-      out;
+  	ND.checkDims("applyGNDfun2", a.dims, b.dims);
+  	val out = GND.newOrCheckGND(a.dims, omat, a.GUID, b.GUID, opn);
+  	CUMAT.applygfun2(a.data, b.data, out.data, a.nrows*a.ncols, opn);
+  	jcuda.runtime.JCuda.cudaDeviceSynchronize();
+  	Mat.nflops += kflops*a.length;
+  	out;
   }
   
   def applyGNDfun2(a:GND, b:GND, opn:Int, kflops:Long):GND = {
@@ -927,6 +929,22 @@ object GND {
     Mat.nflops += kflops*a.length;
     out;
   }
+  
+  def rand(out:GND):GND = {
+    GMat.rand(out.asMat);
+    out;
+  }
+   
+  def normrnd(mu:Float, sig:Float, out:GND):GND = {
+    GMat.normrnd(mu, sig, out.asMat);
+    out;
+  }
+  
+  def gamrnd(a:GND, b:GND, out:GND):GND = { 
+    GMat.gamrnd(a.asMat, b.asMat, out.asMat);
+    out;
+  }
+
   
   def asGMats(mat1:GND, mat2:GND, omat:ND, opname:String):(GMat, GMat, GMat, GND) = {
     if (mat1._dims.length != mat2._dims.length) {

@@ -1562,7 +1562,7 @@ object GDMat {
     }      
   }
   
-  def gdrand(nr:Int, nc:Int, out:GDMat):GDMat = {
+  def rand(out:GDMat):GDMat = {
     import jcuda.jcurand._
     Mat.nflops += 10L*out.length
     JCurand.curandGenerateUniformDouble(GMat.cudarng(GMat.getGPU).asInstanceOf[curandGenerator], out.data, out.length)
@@ -1570,7 +1570,7 @@ object GDMat {
     out
   }
   
-  def gdnormrnd(mu:Double, sig:Double, out:GDMat, nr:Int, nc:Int):GDMat = {
+  def normrnd(mu:Double, sig:Double, out:GDMat):GDMat = {
     import jcuda.jcurand._
     Mat.nflops += 10L*out.length
     JCurand.curandGenerateNormalDouble(GMat.cudarng(GMat.getGPU).asInstanceOf[curandGenerator], out.data, out.length, mu, sig)

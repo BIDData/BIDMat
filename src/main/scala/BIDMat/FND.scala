@@ -813,6 +813,21 @@ object FND {
     out
   }
   
+  def rand(out:FND):FND = {
+    SciFunctions.rand(out.asMat);
+    out;
+  }
+   
+  def normrnd(mu:Float, sig:Float, out:FND):FND = {
+    SciFunctions.normrnd(mu, sig, out.asMat);
+    out;
+  }
+  
+  def gamrnd(a:FND, b:FND, out:FND):FND = { 
+    SciFunctions.gamrnd(a.asMat, b.asMat, out.asMat);
+    out;
+  }
+  
   def asFMats(mat1:FND, mat2:FND, omat:ND, opname:String):(FMat, FMat, FMat, FND) = {
     if (mat1._dims.length != mat2._dims.length) {
       throw new RuntimeException("Operator "+opname+" inconsistent number of dims in operands")

@@ -123,7 +123,7 @@ object SciFunctions {
   
   def rand(out:FMat):FMat = rand(0.0f, 1.0f, out)
   
-  def drand(minv:Double, maxv:Double, out:DMat):DMat = {
+  def rand(minv:Double, maxv:Double, out:DMat):DMat = {
 	if (Mat.useMKLRand) {
     	vdRngUniform( METHOD, stream, out.length, out.data, minv, maxv );
     } else if (Mat.useSTLRand) {
@@ -136,36 +136,63 @@ object SciFunctions {
     out
   }
   
-  def drand(m:Int, n:Int, minv:Double, maxv:Double):DMat = drand(minv, maxv, DMat(m, n));
+  def drand(m:Int, n:Int, minv:Double, maxv:Double):DMat = rand(minv, maxv, DMat(m, n));
   
   def drand(m:Int, n:Int):DMat = drand(m, n, 0, 1);
   
-  def drand(out:DMat):DMat = drand(0.0, 1.0, out);
-
-  def grand(nr:Int, nc:Int, out:GMat):GMat = GMat.grand(nr, nc, out);
+  def rand(out:DMat):DMat = rand(0.0, 1.0, out);
   
-  def grand(out:GMat):GMat = grand(out.nrows, out.ncols, out);
+  def rand(out:GMat):GMat = GMat.rand(out);
   
   def grand(nr:Int, nc:Int):GMat = {
     val out = GMat(nr, nc)
-    grand(out)
-  }  
-    
-  def gdrand(nr:Int, nc:Int, out:GDMat):GDMat = GDMat.gdrand(nr, nc, out)
+    GMat.rand(out)
+  } 
   
-  def gdrand(out:GDMat):GDMat = gdrand(out.nrows, out.ncols, out)
+  def gndrand(dims:IMat):GND = {
+    val out = GND(dims);
+    GND.rand(out);
+    out
+  } 
+  
+  def rand(g:GND):GND = {
+    GND.rand(g);
+    g
+  }
+  
+  def rand(dims:IMat):FND = {
+    val out = FND(dims);
+    FND.rand(out);
+    out
+  } 
+  
+  def rand(f:FND):FND = {
+    FND.rand(f);
+    f
+  }
+  
+  def rand(out:GDMat):GDMat = GDMat.rand(out)
   
   def gdrand(nr:Int, nc:Int):GDMat = {
-    val out = GDMat(nr, nc)
-    gdrand(out)
+    val out = GDMat(nr, nc);
+    rand(out);
+    out
   }
   
   def rand(mat:Mat):Mat = {
     mat match {
       case a:FMat => rand(a);
-      case d:DMat => drand(d);
-      case g:GMat => grand(g);
-      case gd:GDMat => gdrand(gd);
+      case d:DMat => rand(d);
+      case g:GMat => GMat.rand(g);
+      case gd:GDMat => GDMat.rand(gd);
+    }
+  }
+  
+  def rand(mat:ND):ND = {
+    mat match {
+      case a:Mat => rand(a);
+      case g:GND => rand(g);
+      case g:FND => rand(g);
     }
   }
  
@@ -186,7 +213,7 @@ object SciFunctions {
     normrnd(mu, sig, FMat(m, n))
   }
   
-  def dnormrnd(mu:Double, sig:Double, out:DMat):DMat = {
+  def normrnd(mu:Double, sig:Double, out:DMat):DMat = {
     if (Mat.useMKLRand) {
     	vdRngGaussian( METHOD, stream, out.length, out.data, mu, sig );
     } else if (Mat.useSTLRand) {
@@ -200,10 +227,10 @@ object SciFunctions {
   }
   
   def dnormrnd(mu:Double, sig:Double, m:Int, n:Int):DMat = {
-    dnormrnd(mu, sig, DMat(m, n))
+    normrnd(mu, sig, DMat(m, n))
   }
   
-  def cnormrnd(mu:Float, sig:Float, out:CMat):CMat = {
+  def normrnd(mu:Float, sig:Float, out:CMat):CMat = {
     if (!Mat.useMKLRand) {
       var i = 0; val len = out.length; val odata = out.data; 
       while (i < 2*len) {odata(i) = mu + sig*myrand.nextGaussian.toFloat; i += 1}  
@@ -215,33 +242,60 @@ object SciFunctions {
   }
   
   def cnormrnd(mu:Float, sig:Float, m:Int, n:Int):CMat = {
-    cnormrnd(mu, sig, CMat(m, n))
+    normrnd(mu, sig, CMat(m, n))
   }
   
-  def gnormrnd(mu:Float, sig:Float, out:GMat, nr:Int, nc:Int):GMat = GMat.gnormrnd(mu, sig, out, nr, nc);
-  
-  def gnormrnd(mu:Float, sig:Float, out:GMat):GMat = gnormrnd(mu, sig, out, out.nrows, out.ncols)
+  def normrnd(mu:Float, sig:Float, out:GMat):GMat = GMat.normrnd(mu, sig, out)
   
   def gnormrnd(mu:Float, sig:Float, nr:Int, nc:Int):GMat = {
     val out = GMat(nr, nc)
-    gnormrnd(mu, sig, out)
+    GMat.normrnd(mu, sig, out)
   }
   
-  def gdnormrnd(mu:Double, sig:Double, out:GDMat, nr:Int, nc:Int):GDMat = gdnormrnd(mu, sig, out, nr, nc);
-  
-  def gdnormrnd(mu:Double, sig:Double, out:GDMat):GDMat = gdnormrnd(mu, sig, out, out.nrows, out.ncols)
+  def normrnd(mu:Double, sig:Double, out:GDMat):GDMat = GDMat.normrnd(mu, sig, out);
   
   def gdnormrnd(mu:Double, sig:Double, nr:Int, nc:Int):GDMat = {
-    val out = GDMat(nr, nc)
-    gdnormrnd(mu, sig, out)
+    val out = GDMat(nr, nc);
+    GDMat.normrnd(mu, sig, out);
+    out
+  }
+  
+  def gndnormrnd(mu:Float, sig:Float, dims:IMat):GND = {
+    val out = GND(dims);
+    GND.normrnd(mu, sig, out);
+    out
+  } 
+  
+  def normrnd(mu:Float, sig:Float, g:GND):GND = {
+    GND.normrnd(mu, sig, g);
+    g
+  }
+  
+  def normrnd(mu:Float, sig:Float, dims:IMat):FND = {
+    val out = FND(dims);
+    FND.normrnd(mu, sig, out);
+    out
+  } 
+  
+  def normrnd(mu:Float, sig:Float, f:FND):FND = {
+    FND.normrnd(mu, sig, f);
+    f
   }
   
   def normrnd(mu:Double, sig:Double, out:Mat):Mat = {
     out match {
       case a:FMat => normrnd(mu.toFloat, sig.toFloat, a);
-      case a:DMat => dnormrnd(mu, sig, a);
-      case a:GMat => gnormrnd(mu.toFloat, sig.toFloat, a);
-      case a:GDMat => gdnormrnd(mu, sig, a);
+      case a:DMat => normrnd(mu, sig, a);
+      case a:GMat => normrnd(mu.toFloat, sig.toFloat, a);
+      case a:GDMat => normrnd(mu, sig, a);
+    }
+  }
+  
+  def normrnd(mu:Double, sig:Double, out:ND):ND = {
+    out match {
+      case a:Mat => normrnd(mu, sig, a);
+      case a:FND => normrnd(mu.toFloat, sig.toFloat, a);
+      case a:GND => normrnd(mu.toFloat, sig.toFloat, a);
     }
   }
   
@@ -264,19 +318,25 @@ object SciFunctions {
   
   def gpoissrnd(mu:Float, nr:Int, nc:Int):GIMat = {
     val out = GIMat(nr, nc);
-    gpoissrnd(mu, out);
+    GMat.poissrnd(mu, out);
+    out
   }
   
-  def gpoissrnd(mu:Float, out:GIMat, nr:Int, nc:Int):GIMat = GMat.gpoissrnd(mu, out, nr, nc);
+  def poissrnd(mu:GMat, out:GIMat):GIMat = GMat.poissrnd(mu, out);
   
-  def gpoissrnd(mu:GMat, out:GIMat):GIMat = GMat.gpoissrnd(mu, out);
-  
-  def gpoissrnd(mu:GMat):GIMat = {
+  def poissrnd(mu:GMat):GIMat = {
     val out = GIMat(mu.nrows, mu.ncols);
-    gpoissrnd(mu, out);
+    GMat.poissrnd(mu, out);
   }
   
-  def gpoissrnd(mu:Float, out:GIMat):GIMat = gpoissrnd(mu, out, out.nrows, out.ncols)
+  def poissrnd(mu:Float, out:GIMat):GIMat = GMat.poissrnd(mu, out);
+  
+  def poissrnd(lambda:Mat, out:Mat):Mat = {
+    (lambda, out) match {
+      case (a:FMat, b:IMat) => poissrnd(a, b);
+      case (a:GMat, b:GIMat) => poissrnd(a, b);
+    }
+  }
 
   def getMatVecType(m:Mat):Int = { 
     if (m.nrows == 1) { 
@@ -314,7 +374,7 @@ object SciFunctions {
     gamrnd(shape, scale, FMat(m, n))
   }
   
-  def dgamrnd(shape:Double, scale:Double, out:DMat):DMat = {
+  def gamrnd(shape:Double, scale:Double, out:DMat):DMat = {
     vdRngGamma( METHOD, stream, out.length, out.data, shape, 0, scale )
     Mat.nflops += 20L*out.length;
       if (Mat.useMKLRand) {
@@ -329,25 +389,20 @@ object SciFunctions {
   }
 
   def dgamrnd(shape:Double, scale:Double, m:Int, n:Int):DMat = {
-    dgamrnd(shape, scale, DMat(m, n))
+    gamrnd(shape, scale, DMat(m, n))
   }
   
-  def genericGammaRand(a:Mat, b:Mat, out:Mat):Mat = {
+  def gamrnd(a:Mat, b:Mat, out:Mat):Mat = {
     (a,b,out) match {
-      case (a:GMat, b:GMat, out:GMat) => ggamrnd(a,b,out)
+      case (a:GMat, b:GMat, out:GMat) => gamrnd(a,b,out)
       case (a:FMat, b:FMat, out:FMat) => gamrnd(a,b,out)
       case _ => throw new RuntimeException("Error in genericGammaRand, arguments do not match any of the cases")
     }
   }
   
-  def ggamrnd(a:GMat, b:GMat, out:GMat):GMat = GMat.ggamrnd(a, b, out);
+  def gamrnd(a:GMat, b:GMat, out:GMat):GMat = GMat.gamrnd(a, b, out);
 
-  def ggamrnd(a:GMat, b:GMat):GMat = { 
-    val nrows = math.max(a.nrows, b.nrows);
-    val ncols = math.max(a.ncols, b.ncols);
-    val out = GMat(nrows, ncols);
-    ggamrnd(a, b, out);
-  }
+  def gamrnd(a:GMat, b:GMat):GMat = GMat.gamrnd(a, b, GMat(a.nrows, a.ncols));
   
   def laprnd(a:Float, b:Float, out:FMat):FMat = {
     vsRngLaplace( METHOD, stream, out.length, out.data, a, b )
@@ -485,14 +540,9 @@ object SciFunctions {
     binornd(k, p, IMat(m, n))
   }
   
-  def gbinornd(p:GMat, n:GIMat, out:GIMat):GIMat = GMat.gbinornd(p, n, out);
+  def binornd(p:GMat, n:GIMat, out:GIMat):GIMat = GMat.binornd(p, n, out);
 
-  def gbinornd(p:GMat, n:GIMat):GIMat = {
-    val nrows = math.max(p.nrows, n.nrows);
-    val ncols = math.max(p.ncols, n.ncols);
-    val out = GIMat(nrows, ncols);
-    gbinornd(p, n, out);
-  } 
+  def binornd(p:GMat, n:GIMat):GIMat = GMat.binornd(p, n, GIMat(p.nrows, p.ncols));
   
   def bernrnd(p:Double, out:IMat):IMat = {
     if (Mat.useMKLRand) {
