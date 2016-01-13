@@ -187,6 +187,10 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
     GMat.zeros(m,n)
   }
   
+  override def zeros(dims:IMat):GND = {
+    GND.zeros(dims)
+  }
+  
   override def zeros(m:Int, n:Int, nnz:Int) = {
     new GSMat(m, n, 0, new Pointer, new Pointer, new Pointer, new Pointer, 0);
   }

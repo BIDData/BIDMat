@@ -486,6 +486,10 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   
   override def zeros(nr:Int, nc:Int, nnz:Int) = GMat.zeros(nr, nc);
   
+  override def zeros(dims:IMat):GND = {
+    GND.zeros(dims)
+  }
+  
   override def ones(nr:Int, nc:Int) = GMat.ones(nr, nc);
   
   override def izeros(m:Int, n:Int) = {

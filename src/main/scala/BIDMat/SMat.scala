@@ -44,6 +44,10 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
     FMat.zeros(nr, nc)
   }
   
+  override def zeros(dims:IMat):FND = {
+    FND.zeros(dims)
+  }
+  
   override def ones(nr:Int, nc:Int) = {
   	FMat.ones(nr, nc);
   }

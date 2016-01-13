@@ -17,6 +17,10 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
     throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
   }
   
+   def notImplemented0ND(s:String):ND = { 
+    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
+  }
+  
   def notImplemented1(s:String,that:ND):ND = { 
     throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and "+that.mytype)
   }
@@ -68,7 +72,7 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
   def set(v:Float) = notImplemented0("set");
   def set(v:Double) = notImplemented0("set");
   def zeros(nr:Int, nc:Int) = notImplemented0("zeros");
-  def zeros(dims0:IMat) = zeros(dims0(0), dims0(1));
+  def zeros(dims0:IMat) = notImplemented0ND("zeros");
   def zeros = notImplemented0("zeros");
   def ones(nr:Int, nc:Int) = notImplemented0("ones");
   def ones(dims0:IMat) = ones(dims0(0), dims0(1));
