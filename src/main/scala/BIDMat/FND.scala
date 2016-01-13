@@ -429,11 +429,13 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
   }
   
   def copyTo(a:GND):GND = {
+    ND.checkDims("FND GND copyTo", dims, a.dims)
     GMat.CPUtoGPUarraycopy(data, 0, a.data, 0, length, "FND copyTo");
     a
   }
   
   def copyTo(a:FND):FND = {
+    ND.checkDims("FND FND copyTo", dims, a.dims)
     System.arraycopy(data, 0, a.data, 0, length);
     a
   }
