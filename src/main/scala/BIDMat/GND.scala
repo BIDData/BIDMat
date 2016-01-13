@@ -894,6 +894,40 @@ object GND {
     out
   }
   
+  def applyGNDfun(in:GND, omat:ND, opn:Int, kflops:Long):GND = {
+    val out = GND.newOrCheckGND(in.dims, omat, in.GUID, opn)
+    CUMAT.applygfun(in.data, out.data, in.length, opn)
+    jcuda.runtime.JCuda.cudaDeviceSynchronize()
+    Mat.nflops += kflops*in.length
+    out
+  }
+
+  def applyGNDfun(in:GND, opn:Int, kflops:Long):GND = {
+    val out = GND.newOrCheckGND(in.dims, null, in.GUID, opn)
+    CUMAT.applygfun(in.data, out.data, in.length, opn)
+    jcuda.runtime.JCuda.cudaDeviceSynchronize()
+    Mat.nflops += kflops*in.length
+    out
+  }
+  
+  def applyGNDfun2(a:GND, b:GND, omat:ND, opn:Int, kflops:Long):GND = {   
+      ND.checkDims("applyGNDfun2", a.dims, b.dims);
+      val out = GND.newOrCheckGND(a.dims, omat, a.GUID, b.GUID, opn);
+      CUMAT.applygfun2(a.data, b.data, out.data, a.nrows*a.ncols, opn);
+      jcuda.runtime.JCuda.cudaDeviceSynchronize();
+      Mat.nflops += kflops*a.length;
+      out;
+  }
+  
+  def applyGNDfun2(a:GND, b:GND, opn:Int, kflops:Long):GND = {
+    ND.checkDims("applyGNDfun2", a.dims, b.dims);
+    val out = GND.newOrCheckGND(a.dims, null, a.GUID, b.GUID, opn);
+    CUMAT.applygfun2(a.data, b.data, out.data, a.nrows*a.ncols, opn);
+    jcuda.runtime.JCuda.cudaDeviceSynchronize();
+    Mat.nflops += kflops*a.length;
+    out;
+  }
+  
   def asGMats(mat1:GND, mat2:GND, omat:ND, opname:String):(GMat, GMat, GMat, GND) = {
     if (mat1._dims.length != mat2._dims.length) {
       throw new RuntimeException("Operator "+opname+" inconsistent number of dims in operands")
