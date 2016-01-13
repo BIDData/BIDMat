@@ -920,11 +920,20 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     a
   }
   
+  def copyTo(a:GND):GND = {copyTo(a.asMat); a}
+  
   override def copyTo(out:Mat):Mat = {
     out match {
       case a:FMat => copyTo(a)
       case a:GMat => copyTo(a)
       case a:GIMat => copyTo(a)
+    }
+  }
+  
+  override def copyTo(out:ND):ND = {
+    out match {
+      case a:Mat => copyTo(a)
+      case a:GND => copyTo(a)
     }
   }
   
