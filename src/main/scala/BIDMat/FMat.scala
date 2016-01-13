@@ -267,9 +267,9 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
   
   def copyTo(a:FMat) = {
-    val aa = a.recycle(nrows, ncols, 0)
-    System.arraycopy(data, 0, aa.data, 0, length)
-    aa
+    if (nrows != a.nrows || ncols != a.ncols) throw new RuntimeException("dimensions mismatch in FMat copyTo (%d, %d) and (%d, %d)" format (nrows, ncols, a.nrows, a.ncols));
+    System.arraycopy(data, 0, a.data, 0, length)
+    a
   }
   
   override def set(v:Float):FMat = {

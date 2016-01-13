@@ -902,6 +902,8 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   }
   
   def copyFrom(in:FMat):GMat = {
+      if (nrows != in.nrows || ncols != in.ncols) throw new RuntimeException("dimensions mismatch in FMat copyFrom (%d, %d) and (%d, %d)" format (nrows, ncols, in.nrows, in.ncols));
+  
   		cudaMemcpy(data, Pointer.to(in.data), 1L*nrows*ncols*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice);
   		cudaDeviceSynchronize();
   		val err = cudaGetLastError;
@@ -913,7 +915,7 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   }
   
   def copyTo(a:GMat):GMat = {
-//    val a = out.recycle(nrows, ncols, 0)
+    if (nrows != a.nrows || ncols != a.ncols) throw new RuntimeException("dimensions mismatch in GMat copyTo (%d, %d) and (%d, %d)" format (nrows, ncols, a.nrows, a.ncols));
     cudaMemcpy(a.data, data, 1L*length*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice);
     cudaDeviceSynchronize();
     val err = cudaGetLastError;
