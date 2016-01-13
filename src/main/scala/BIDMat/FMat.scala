@@ -285,6 +285,15 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   	}
   	a
   }
+  
+  def copyTo(a:FND):FND = {copyTo(a.asMat); a}
+  
+  override def copyTo(out:ND):ND = {
+    out match {
+      case a:Mat => copyTo(a)
+      case a:FND => copyTo(a)
+    }
+  }
    
   override def zeros(nr:Int, nc:Int) = {
     FMat.zeros(nr, nc)
