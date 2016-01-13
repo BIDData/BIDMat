@@ -1104,6 +1104,11 @@ object MatFunctions {
   
   /** Make a float matrix of zeros of the given size. */
   def zeros(nr:Int, nc:Int):FMat = FMat(nr,nc)
+  
+  /** Make a float NDarray of zeros of the given size. */
+  def zeros(dims:IMat):FND = FND.zeros(dims)
+  
+  def ones(dims:IMat):FND = FND.ones(dims)
 
   /** Make a float matrix of ones of the given size. */  
   def ones(nr:Int, nc:Int):FMat = {
