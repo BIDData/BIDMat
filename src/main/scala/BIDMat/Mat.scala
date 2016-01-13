@@ -95,6 +95,9 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
   def colslice(a:Int, b:Int):Mat = notImplemented0("colslice");
   def rowslice(a:Int, b:Int):Mat = notImplemented0("rowslice");
   
+  def colslice(a:Int, b:Int, out:ND):ND = notImplemented0("colslice");
+  def colslice(a:Int, b:Int, out:ND, c:Int):ND = notImplemented0("colslice");
+  
   def apply(a:IMat):Mat = notImplemented0("linear array access");
   def apply(a:IMat, b:IMat):Mat = notImplemented0("block array access");
   def apply(a:IMat, b:Int):Mat = notImplemented0("block array access");	
@@ -209,6 +212,8 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
       b:Mat, boff:Int, ldb:Int, bstep:Int, c:Mat, coff:Int, ldc:Int, cstep:Int):Mat = notImplemented0("blockGemm");
   
   def copyTo(a:ND):ND = notImplemented1("<--", a);
+  
+  val asMat:Mat = this;
 
   def madd(a:Mat, b:Mat, at:Boolean, bt:Boolean):Mat = notImplemented1("update", a);
   def madd(a:Mat, b:Mat):Mat = notImplemented1("update", a);

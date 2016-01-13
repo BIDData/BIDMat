@@ -1822,9 +1822,9 @@ object SciFunctions {
    * The MKL implementation is used unless !Mat.useMKLRand = true. 
    */
   
-  val signumDFun = (x:Double) => math.signum(x)
-  def sign(a:DMat, out:Mat) = applyDFun(a, out, null, signumDFun, 1L)
-  def sign(a:DMat):DMat = sign(a, null)
+  val signumDFun = (x:Double) => math.signum(x);
+  def sign(a:DMat, out:Mat) = applyDFun(a, out, null, signumDFun, 1L);
+  def sign(a:DMat):DMat = sign(a, null);
   
   val absDFun = (x:Double) => math.abs(x)
   val vdAbsDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdAbs(n,x,y)

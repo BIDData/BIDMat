@@ -14,6 +14,7 @@ import java.util.Arrays
 import java.util.concurrent.atomic._
 import scala.concurrent.future
 import scala.concurrent.ExecutionContext.Implicits.global
+import edu.berkeley.bid.MurmurHash3
 
 
 case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) { 
@@ -456,6 +457,27 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
     }
   }
   
+  val asMat:GMat = {
+    val out = new GMat(nrows, ncols, data, nrows * ncols);
+    out.setGUID(MurmurHash3.MurmurHash3_x64_64(Array(GUID), 0x45239234));
+    out
+  }
+    
+  def colslice(a:Int, b:Int, out:ND):GND = {
+    val dims0 = dims;
+    dims0(dims.length - 1) = b - a;
+    val outx = GND.newOrCheckGND(dims0, out, GUID, a, b, "colslice".##);
+    val omat = asMat.colslice(a, b, outx.asMat, Mat.oneBased);
+    outx;
+  }
+  
+  def colslice(a:Int, b:Int):GND = colslice(a, b, null)
+  
+  def colslice(a:Int, b:Int, out:ND, c:Int):GND = {
+    asMat.colslice(a, b, out.asMat, c);
+    out.asInstanceOf[GND];
+  }
+  
   def copyTo(a:GND):GND = {
     GMat.GPUtoGPUarraycopy(data, 0, a.data, 0, length, "GND copyTo");
     a
@@ -487,6 +509,10 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
     this
   }
   
+  def set(v:Float):GND = {
+    asMat.set(v);
+    this
+  }
   
   def transpose(dims:Array[Int]):GND = transpose(irow(dims))
 

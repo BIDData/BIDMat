@@ -7,6 +7,7 @@ import java.util.Arrays
 import java.util.concurrent.atomic._
 import scala.concurrent.future
 import scala.concurrent.ExecutionContext.Implicits.global
+import edu.berkeley.bid.MurmurHash3
 
 
 case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) { 
@@ -154,8 +155,13 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
     FND.ones(dims0)
   }
   
-  def clear:ND = {
+  def clear:FND = {
     Arrays.fill(this.data,0,length,0)
+    this
+  }
+  
+  def set(v:Float):FND = {
+    asMat.set(v);
     this
   }
   
@@ -437,6 +443,27 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
       case aa:FND => copyTo(aa);
       case aa:GND => copyTo(aa);
     }
+  }
+  
+  val asMat:FMat = {
+    val out = new FMat(nrows, ncols, data);
+    out.setGUID(MurmurHash3.MurmurHash3_x64_64(Array(GUID), 0x45239234));
+    out
+  }
+  
+  def colslice(a:Int, b:Int, out:ND):FND = {
+		val dims0 = dims;
+    dims0(dims.length - 1) = b - a;
+    val outx = FND.newOrCheckFND(dims0, out, GUID, a, b, "colslice".##);
+    val omat = asMat.gcolslice(a, b, outx.asMat, Mat.oneBased);
+    outx;
+  }
+  
+  def colslice(a:Int, b:Int):FND = colslice(a, b, null)
+  
+  def colslice(a:Int, b:Int, out:ND, c:Int):FND = {
+	  asMat.gcolslice(a, b, out.asMat, c);
+	  out.asInstanceOf[FND];
   }
   
   def transpose(dims:Array[Int]):FND = transpose(irow(dims))

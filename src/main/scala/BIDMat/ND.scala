@@ -42,6 +42,8 @@ abstract class ND(protected val _dims:Array[Int]) extends Serializable {
   def ones(dims:IMat):ND;
   
   def clear:ND;
+  
+  def set(v:Float):ND;
 
   private var _GUID = Mat.myrand.nextLong;
   
@@ -63,6 +65,10 @@ abstract class ND(protected val _dims:Array[Int]) extends Serializable {
   def update(i1:Mat, i2:Mat, vv:ND):ND;
   def update(i1:Mat, i2:Mat, i3:Mat, vv:ND):ND;
   def update(i1:Mat, i2:Mat, i3:Mat, i4:Mat, vv:ND):ND;
+  
+  def colslice(a:Int, b:Int, out:ND):ND;
+  def colslice(a:Int, b:Int, out:ND, c:Int):ND;
+  def colslice(a:Int, b:Int):ND;
   
   def printOne(i:Int):String = {
     val v = applyf(i)
@@ -201,6 +207,8 @@ abstract class ND(protected val _dims:Array[Int]) extends Serializable {
   }
   
   def unary_-():ND
+  
+  val asMat:Mat
   
   def + (b : ND):ND
   def - (b : ND):ND 
