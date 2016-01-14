@@ -129,9 +129,9 @@ elif [ "$OS" = "linux" ] ; then
 	FORTRAN_LIBS="-lgfortran"
 	MKL_LIBS="-L$JAVA_HOME/lib -L${BIDMAT_ROOT}/lib /usr/local/lib/libopenblas.a -ldl -lpthread -lm -lstdc++ -lgomp" 
 	INSTALL_DIR="${BIDMAT_ROOT}/lib"
-    else
+else
 	MKL_ROOT="/opt/intel/mkl"
-        RANDSRC="VSL"
+    RANDSRC="VSL"
 	if [ "$JAVA_HOME" = "" ]; then
 	    JAVA_HOME="/usr/java/default"
 	fi

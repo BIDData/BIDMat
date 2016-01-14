@@ -528,8 +528,8 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     		if (nrows == 1) {
     			SPBLAS.scscmv("T", a.nrows, a.ncols, 1.0f, "GLNF", a.data, ir0, jc0, data, 0f, out.data)
     		} else {
-//    			smcscm(nrows, a.ncols, data, nrows, a.data, ir0, jc0, out.data, nrows);
-    			SPBLAS.smcscm(0, nrows, a.ncols, a.nrows, data, nrows, a.data, ir0, jc0, out.data, nrows)
+//  			smcscm(nrows, a.ncols, data, nrows, a.data, ir0, jc0, out.data, nrows);
+  			SPBLAS.smcscm(0, nrows, a.ncols, a.nrows, data, nrows, a.data, ir0, jc0, out.data, nrows)
     		}
     	}
     	out
@@ -735,8 +735,8 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     		SPBLAS.scscmv("N", a.nrows, a.ncols, 1.0f, "GLNF", a.data, a.ir, a.jc, data, 0f, out.data) ;
     		setnumthreads(Mat.numOMPthreads);
     	} else {
-//    		smcsrm(nrows, a.ncols, data, nrows, a.data, a.ir, a.jc, out.data, nrows);
-    		SPBLAS.smcscm(1, nrows, a.ncols, ncols, data, nrows, a.data, a.ir, a.jc, out.data, nrows)
+// 		smcsrm(nrows, a.ncols, data, nrows, a.data, a.ir, a.jc, out.data, nrows);
+   		SPBLAS.smcscm(1, nrows, a.ncols, ncols, data, nrows, a.data, a.ir, a.jc, out.data, nrows)
     	}
     }
     out

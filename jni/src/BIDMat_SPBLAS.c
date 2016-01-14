@@ -306,25 +306,25 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_SPBLAS_smcscm
 
   ioff = jc[0];
   if (transb == 0) {
-#pragma omp parallel
+    //#pragma omp parallel for
     for (col = 0; col < n; col++) {
       istart = jc[col]-ioff;
       iend = jc[col+1]-ioff;
       for (i = istart; i < iend; i++) {
-	row = ir[i]-ioff;
-	v = vals[i];
-	cblas_saxpy(m, v, a+(row*lda), 1, c+(col*ldc), 1);
+        row = ir[i]-ioff;
+        v = vals[i];
+        cblas_saxpy(m, v, a+(row*lda), 1, c+(col*ldc), 1);
       }
     }
   } else {
-#pragma omp parallel
+    //#pragma omp parallel for
     for (col = 0; col < k; col++) {
       istart = jc[col]-ioff;
       iend = jc[col+1]-ioff;
       for (i = istart; i < iend; i++) {
-	row = ir[i]-ioff;
-	v = vals[i];
-	cblas_saxpy(m, v, a+(col*lda), 1, c+(row*ldc), 1);
+        row = ir[i]-ioff;
+        v = vals[i];
+        cblas_saxpy(m, v, a+(col*lda), 1, c+(row*ldc), 1);
       }
     }
   }
@@ -352,7 +352,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_SPBLAS_dmcscm
 
   ioff = jc[0];
   if (transb == 0) {
-#pragma omp parallel
+    //#pragma omp parallel for
     for (col = 0; col < n; col++) {
       istart = jc[col]-ioff;
       iend = jc[col+1]-ioff;
@@ -363,7 +363,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_SPBLAS_dmcscm
       }
     }
   } else {
-#pragma omp parallel
+    //#pragma omp parallel for
     for (col = 0; col < k; col++) {
       istart = jc[col]-ioff;
       iend = jc[col+1]-ioff;
