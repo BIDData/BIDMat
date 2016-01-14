@@ -148,6 +148,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_dmcscm
 
         int ioff = jc[0];
         int i, j, ir0;
+#pragma omp parallel for
         for (i = 0; i < N; i++) {
           for (j = jc[i]-ioff; j < jc[i+1]-ioff; j++) {
             ir0 = ir[j]-ioff;
@@ -174,6 +175,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_dmcsrm
 
     int ioff = jc[0];
     int i, j, k;
+#pragma omp parallel for
     for (i = 0; i < N; i++) {
       for (j = jc[i]-ioff; j < jc[i+1]-ioff; j++) {
         k = ir[j]-ioff;
@@ -389,6 +391,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_smcscm
 
         int ioff = jc[0];
         int i, j, ir0;
+#pragma omp parallel for
         for (i = 0; i < N; i++) {
           for (j = jc[i]-ioff; j < jc[i+1]-ioff; j++) {
             ir0 = ir[j]-ioff;
@@ -414,6 +417,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_smcsrm
 
         int ioff = jc[0];
         int i, j, jj, k;
+#pragma omp parallel for
         for (i = 0; i < N; i++) {
           for (j = jc[i]-ioff; j < jc[i+1]-ioff; j++) {
             jj = ir[j]-ioff;
