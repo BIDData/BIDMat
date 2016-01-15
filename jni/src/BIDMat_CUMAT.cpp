@@ -172,8 +172,8 @@ extern "C" {
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_applylopLeftConst
   (JNIEnv *env, jobject obj, jlong A, jobject jB, jint Bnrows, jint Bncols, jobject jC, jint opn) 
   {
-    jlong *nativeB = (jlong*)getPointer(env, jB);
-    jlong *nativeC = (jlong*)getPointer(env, jC);
+    long long *nativeB = (long long*)getPointer(env, jB);
+    long long *nativeC = (long long*)getPointer(env, jC);
 
     return apply_binop_left_const(A, nativeB, Bnrows, Bncols, nativeC, opn);
   }
@@ -208,8 +208,8 @@ extern "C" {
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_applylopRightConst
   (JNIEnv *env, jobject obj, jobject jA, jint Anrows, jint Ancols, jlong B, jobject jC, jint opn) 
   {
-    jlong *nativeA = (jlong*)getPointer(env, jA);
-    jlong *nativeC = (jlong*)getPointer(env, jC);
+    long long *nativeA = (long long*)getPointer(env, jA);
+    long long *nativeC = (long long*)getPointer(env, jC);
 
     return apply_binop_right_const(nativeA, Anrows, Ancols, B, nativeC, opn);
   }
