@@ -495,8 +495,10 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
     }
   }
   
+  def zeros(nr:Int, nc:Int):GMat = GMat.zeros(nr, nc)
+   
   def zeros(dims0:IMat):GND = GND.zeros(dims0);
-  
+ 
   def zeros:GND = GND.zeros(dims);
   
   override def ones(dims0:IMat):GND = GND.ones(dims0);

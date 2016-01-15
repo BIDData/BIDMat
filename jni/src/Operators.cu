@@ -429,6 +429,22 @@ __global__ void __apply_left_val(ATYPE *A, ATYPE *B, ATYPE *C, int nrows, int nc
     C[i] = op(val,B[i]);									    \
   }												    \
 }												    \
+  \
+__global__ void __apply_right_const(ATYPE *A, ATYPE B, ATYPE *C, int nrows, int ncols, int opn) {    \
+  OPTYPE op = OPARRAY[opn];									    \
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);			    \
+  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {			    \
+    C[i] = op(A[i],B);									    \
+  }												    \
+}												    \
+												    \
+__global__ void __apply_left_const(ATYPE A, ATYPE *B, ATYPE *C, int nrows, int ncols, int opn) {	    \
+  OPTYPE op = OPARRAY[opn];									    \
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);			    \
+  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {			    \
+    C[i] = op(A,B[i]);									    \
+  }												    \
+}												    \
 												    \
 int apply_binop(ATYPE *A, int Anrows, int Ancols,						    \
      ATYPE *B, int Bnrows, int Bncols, ATYPE *C, int opn) {					    \
@@ -454,7 +470,32 @@ int apply_binop(ATYPE *A, int Anrows, int Ancols,						    \
   cudaDeviceSynchronize();									    \
   cudaError_t err = cudaGetLastError();								    \
   return err;                                                                                       \
+} \
+  \
+int apply_binop_left_const(ATYPE A,						    \
+     ATYPE *B, int Bnrows, int Bncols, ATYPE *C, int opn) {					    \
+  int N = Bnrows* Bncols;						    \
+  int nthreads;											    \
+  dim3 griddims;										    \
+  setsizes(N, &griddims, &nthreads);								    \
+    __apply_left_const<<<griddims,nthreads>>>(A, B, C, Bnrows, Bncols, opn);			    \
+  cudaDeviceSynchronize();									    \
+  cudaError_t err = cudaGetLastError();								    \
+  return err;                                                                                       \
+} \
+\
+int apply_binop_right_const(ATYPE *A, int Anrows, int Ancols,						    \
+     ATYPE B, ATYPE *C, int opn) {					    \
+  int N = Anrows*Ancols;						    \
+  int nthreads;											    \
+  dim3 griddims;										    \
+  setsizes(N, &griddims, &nthreads);								    \
+    __apply_right_const<<<griddims,nthreads>>>(A, B, C, Anrows, Ancols, opn);			    \
+  cudaDeviceSynchronize();									    \
+  cudaError_t err = cudaGetLastError();								    \
+  return err;                                                                                       \
 }
+
 
 GENAPPLY(float,optype,operators)
 GENAPPLY(int,ioptype,ioperators)

@@ -22,6 +22,22 @@ int apply_binop(long long *nativeA, int Anrows, int Ancols, long long *nativeB, 
 
 int apply_binop(double *nativeA, int Anrows, int Ancols, double *nativeB, int Bnrows, int Bncols, double *nativeC, int opn);
 
+int apply_binop_left_const(float nativeA, float *nativeB, int Bnrows, int Bncols, float *nativeC, int opn);
+
+int apply_binop_left_const(double nativeA, double *nativeB, int Bnrows, int Bncols, double *nativeC, int opn);
+
+int apply_binop_left_const(int nativeA, int *nativeB, int Bnrows, int Bncols, int *nativeC, int opn);
+
+int apply_binop_left_const(long long nativeA, long long *nativeB, int Bnrows, int Bncols, long long *nativeC, int opn);
+
+int apply_binop_right_const(float *nativeA, int Anrows, int Ancols, float nativeB, float *nativeC, int opn);
+
+int apply_binop_right_const(double *nativeA, int Anrows, int Ancols, double nativeB, double *nativeC, int opn);
+
+int apply_binop_right_const(int *nativeA, int Anrows, int Ancols, int nativeB, int *nativeC, int opn);
+
+int apply_binop_right_const(long long *nativeA, int Anrows, int Ancols, long long nativeB, long long *nativeC, int opn);
+
 int sdoprow(int nrows, int ncols, int nnz, float *A, int *Aic, float *B, int len, int opn);
 
 int sdoprow(int nrows, int ncols, int nnz, double *A, int *Aic, double *B, int len, int opn);

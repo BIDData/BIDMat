@@ -35,6 +35,8 @@ abstract class ND(protected val _dims:Array[Int]) extends Serializable {
 
   def size() = length;
   
+  def zeros(nr:Int, nc:Int):Mat
+  
   def zeros(dims:IMat):ND;
   
   def zeros:ND;

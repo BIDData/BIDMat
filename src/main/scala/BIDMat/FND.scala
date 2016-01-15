@@ -143,6 +143,8 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
     }
   }
   
+  def zeros(nr:Int, nc:Int):FMat = FMat.zeros(nr, nc);
+  
   def zeros(dims0:IMat):ND = {
     FND.zeros(dims0)
   }
