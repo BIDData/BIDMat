@@ -1,5 +1,6 @@
 
 #include <jni.h>
+#ifndef __arm__          // Need a working Lapack first
 #ifdef __arm__
 #include <lapacke.h>
 #else
@@ -1466,4 +1467,4 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_zlaed7
   return info;
 }
 
-
+#endif
