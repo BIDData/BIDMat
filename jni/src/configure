@@ -107,6 +107,7 @@ if [ "$OS" = "apple" ] ; then
 elif [ "$OS" = "linux" ] ; then
     if [ "$ARCH" = "arm" ] ; then
 	RANDSRC="RAND"
+	BLAS_ROOT="/code/QSML"
 	if [ "$JAVA_HOME" = "" ]; then
 	    JAVA_HOME="/usr/java/default"
 	fi
@@ -114,8 +115,8 @@ elif [ "$OS" = "linux" ] ; then
 	GCC="g++"
 	OBJ="o"
 	OUTFLG="-o "
-	CPPFLAGS="-fPIC -std=c++11 -marm -mfpu=vfpv3 -mfloat-abi=hard -march=armv7-a -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include" 
-	CFLAGS="-fPIC -fopenmp -marm -mfpu=vfpv3 -mfloat-abi=hard -march=armv7-a -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I/usr/include/openblas"
+	CPPFLAGS="-fPIC -std=c++11 -marm -mfpu=vfpv3 -mfloat-abi=hard -march=armv7-a -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$BLAS_ROOT/include"
+	CFLAGS="-fPIC -fopenmp -marm -mfpu=vfpv3 -mfloat-abi=hard -march=armv7-a -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$BLAS_ROOT/include"
 	LB="ar rc"    
 	GLD="g++ -shared"
 	LD="gcc -shared -z noexecstack"
@@ -127,7 +128,7 @@ elif [ "$OS" = "linux" ] ; then
 	FFLAGS="$CFLAGS"
 	LAPACK_INCLUDES=""
 	FORTRAN_LIBS="-lgfortran"
-	MKL_LIBS="-L$JAVA_HOME/lib -L${BIDMAT_ROOT}/lib /usr/local/lib/libopenblas.a -ldl -lpthread -lm -lstdc++ -lgomp" 
+	MKL_LIBS="-L$JAVA_HOME/lib -L${BIDMAT_ROOT}/lib -L${BLAS_ROOT}/lib -lQSML -lsymphony-cpu -ldl -lpthread -lm -lstdc++ -lgomp" 
 	INSTALL_DIR="${BIDMAT_ROOT}/lib"
 else
 	MKL_ROOT="/opt/intel/mkl"

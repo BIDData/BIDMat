@@ -2,6 +2,7 @@
 # export JAVA_HOME="" # Set here if not set in environment
 # export CUDA_PATH="" # Set here if not set in environment
 # Fix these if needed
+BLAS_ROOT="/code/QSML"
 JCUDA_VERSION="0.7.0a"
 MEMSIZE="-Xmx1G"
 export JAVA_OPTS="${MEMSIZE} -Xms128M -Dfile.encoding=UTF-8" # Set as much memory as possible
@@ -23,7 +24,7 @@ JAVA_NATIVE=`java getnativepath`
 if [ `uname` = "Darwin" ]; then
     export DYLD_LIBRARY_PATH="${BIDMAT_ROOT}/lib:/usr/local/cuda/lib:${DYLD_LIBRARY_PATH}"
 else
-    export LD_LIBRARY_PATH="${BIDMAT_ROOT}/lib:${BIDMAT_ROOT}/lib/cuda:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}" 
+    export LD_LIBRARY_PATH="${BIDMAT_ROOT}/lib:${BIDMAT_ROOT}/lib/cuda:${BLAS_ROOT}/lib:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}" 
 fi
 export JAVA_NATIVE=${LD_LIBRARY_PATH}:${DYLD_LIBRARY_PATH}:${JAVA_NATIVE}:
 popd  > /dev/null
