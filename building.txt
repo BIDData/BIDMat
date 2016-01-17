@@ -1,17 +1,34 @@
-Updating CUDA version
+Building
 =====================
+
+Building requires the Intel C++ Compiler
 
 All
 ---
 Install new CUDA version
 
+Download JCUDA from http://www.jcuda.org/
+
 Copy updated JCUDA shared libs into BIDMat/lib 
 
 edit bidmat script to change JCUDA_VERSION
 
-copy headers from JCUDA/CommonJNI/src to BIDMat/jni/include
+Download ptplot from the URL below and copy ptolemy/plot/*.jar into BIDMat/lib
+http://ptolemy.eecs.berkeley.edu/java/ptplot5.10/ptolemy/plot/doc/index.htm
 
-copy .cpp files from JCUDA/CommonJNI/src to BIDMat/jni/src
+Compile jni/src:
+./configure
+then ensure that Makefile.inc points to your JDK header include path, and then
+make
+make install
+
+Ensure Intel's libiomp5.so library is in your LD_LIBRARY path
+
+and then:
+./sbt package
+
+test with:
+./sbt test
 
 If compiling MatKernel.cu breaks on the sorting functions, check 
 the CUDA path for radixsort_api.h and update the namespace line as
