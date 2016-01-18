@@ -659,7 +659,7 @@ object Mat {
   
   var useGPUsort = true;
   
-  var hostAllocSize = 0xffffffffL;
+  var hostAllocSize = 4L*2047*1024*1024; // 2 billion floats
   
   var _inline = false;
   
