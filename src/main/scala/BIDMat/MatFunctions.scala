@@ -1169,6 +1169,13 @@ object MatFunctions {
   /** Make an integer column vector from a tuple to support 0->5 syntax for ranges. */  
   def icol(x:Tuple2[Int,Int]):IMat = icol(x._1 until x._2)
 
+  /** Make an integer column vector from an array of Ints.  */
+  def icol(x:Array[Int]):IMat = {
+  	val ahash = if (Mat.useCache) x.## else 0
+    val mat = IMat.newOrCheckIMat(x.length, 1, null, ahash, "icol_array".##)
+    System.arraycopy(x, 0, mat.data, 0, x.length)
+    mat
+  }
   
   /** Make an integer column vector from a List. */
   def icol(x:List[Int]):IMat = {
