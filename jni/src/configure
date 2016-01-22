@@ -207,7 +207,7 @@ else
     fi
 elif [ "$OS" = "windows" ] ; then
     CUDA_HOME="$CUDA_PATH"
-    BLAS_ROOT="$BLASROOT"
+    BLAS_ROOT="$MKLROOT"
     RANDSRC="VSL"
     CC="icl"
     GCC="cl"
