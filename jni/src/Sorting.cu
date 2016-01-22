@@ -131,6 +131,8 @@ int fsort2dk(float *pkeys, unsigned int *pvals, int nrows, int ncols, int asc) {
   return err;
 }
 
+#if CUDA_VERSION >= 7000
+
 long long fisortcubsize(float *inkeys, float *outkeys, unsigned int *invals, unsigned int *outvals, int nelems, int asc) {
   size_t size = 0;
   void *temp = NULL;
@@ -158,7 +160,6 @@ int fisortcub(float *inkeys, float *outkeys, unsigned int *invals, unsigned int 
   return err;
 }
 
-
 int fsort2dx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tvals, 
              int nrows, int ncols, int asc) {
   int i;
@@ -182,6 +183,8 @@ int fsort2dx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tval
   err = cudaGetLastError();
   return err;
 }
+
+#endif
 
 int fsort2d(float *pkeys, int nrows, int ncols, int asc) {
   for (int i = 0; i < ncols; i++) {

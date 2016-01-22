@@ -7,7 +7,7 @@ CUDA_OBJS=BIDMat_CUMAT.$(OBJ) BIDMat_CUMATD.$(OBJ) $(KERNEL_OBJS) MatKernelD.$(O
 
 .SUFFIXES: .$(OBJ) .c .cpp .cu
 
-all: $(LIBPREPEND)bidmatcpu$(LIBAPPEND)  $(LIBPREPEND)bidmatcuda$(LIBAPPEND) 
+all:   $(LIBPREPEND)bidmatcuda$(LIBAPPEND)  $(LIBPREPEND)bidmatcpu$(LIBAPPEND)
 
 cudalib: $(LIBPREPEND)bidmatcuda$(LIBAPPEND)
 
@@ -17,7 +17,7 @@ BIDMat_UTILS.$(OBJ): BIDMat_UTILS.cpp
 	$(CC) $(CFLAGS) $(LAPACK_INCLUDES) BIDMat_UTILS.cpp
 
 $(LIBPREPEND)bidmatcpu$(LIBAPPEND): $(CPU_OBJS)
-	$(LD) $(LDFLAGS) $(CPU_OBJS) $(MKL_LIBS) $(OUTFLG)$@
+	$(LD) $(LDFLAGS) $(CPU_OBJS) $(CPU_LIBS) $(OUTFLG)$@
 
 $(LIBPREPEND)bidmatcuda$(LIBAPPEND): $(CUDA_OBJS)
 	$(GLD) $(LDFLAGS) $(CUDA_OBJS) $(CUDA_LIBS) $(OUTFLG)$@

@@ -790,6 +790,8 @@ int fsorts(double *pkeys, unsigned int *pvals, int *jc, int m, int asc) {
   return err;
 }
 
+#if CUDA_VERSION >= 7000
+
 long long disortcubsize(double *inkeys, double *outkeys, unsigned int *invals, unsigned int *outvals, int nelems, int asc) {
   size_t size = 0;
   void *temp = NULL;
@@ -840,6 +842,8 @@ int fsort2dx(double *pkeys, unsigned int *pvals, double *tkeys, unsigned int *tv
   err = cudaGetLastError();
   return err;
 }
+
+#endif
 
 __global__ void __stratify(double *strata, int n, double *a, double *b, unsigned int *bi, int stride) {
   __shared__ double ss[32];
