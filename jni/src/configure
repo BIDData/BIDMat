@@ -2,14 +2,16 @@
 
 OS=`uname -a`
 PARLIB=$1
-ARCH=`arch`
- 
+if [ "$ARCH" = "" ]; then
+    ARCH=`arch`
+fi
+
 VERSION="dev"
 
 # standardise the OS and ARCH names
 if [[ "$OS" == Darwin* ]] ; then
     if [[ "$OS" == *x86_64 ]] ; then
-	    ARCH="x86_64"
+	ARCH="x86_64"
     fi
     OS="apple"
 elif [[ "$OS" == Linux* ]] ; then
@@ -18,14 +20,14 @@ elif [[ "$OS" == CYGWIN* ]] ; then
     if [[ "$OS" == *WOW* ]] ; then
         ARCH="x86_64"
     fi
-	OS="windows"
+    OS="windows"
 else
     echo "OS not supported" $OS
     exit 1
 fi
 
 if [ "$ARCH" = "x86" ] || [ "$ARCH" = "i686" ] || [ "$ARCH" = "i586" ] \
-	|| [ "$ARCH" = "i486" ] || [ "$ARCH" = "i386" ] ; then
+    || [ "$ARCH" = "i486" ] || [ "$ARCH" = "i386" ] ; then
     ARCH="x86"
     ARCHD=ia32
     SUBDIR=""
@@ -37,9 +39,14 @@ elif [ "$ARCH" = "amd64" ] || [ "$ARCH" = "x86_64" ] ; then
     SUBDIR=/lp64
     PTYPE=_lp64
     MBITS=64
-elif [ "$ARCH" = "armv7l" ] ; then
+elif [[ "$ARCH" == armv7* ]] ; then
     ARCH="arm"
+    ARMARCH="armv7-a"
     MBITS=32
+elif [ "$ARCH" = "aarch64" ] ; then
+    ARCH="arm"
+    ARMARCH="armv8-a"
+    MBITS=64
 else
     echo "ARCH not supported"
     exit 1
@@ -49,9 +56,9 @@ echo "Creating config for $OS $ARCH"
 
 BIDMAT_ROOT="${BASH_SOURCE[0]}"
 if [ ! `uname` = "Darwin" ]; then
-  BIDMAT_ROOT=`readlink -f "${BIDMAT_ROOT}"`
+    BIDMAT_ROOT=`readlink -f "${BIDMAT_ROOT}"`
 else 
-  BIDMAT_ROOT=`readlink "${BIDMAT_ROOT}"`
+    BIDMAT_ROOT=`readlink "${BIDMAT_ROOT}"`
 fi
 BIDMAT_ROOT=`dirname "$BIDMAT_ROOT"`
 BIDMAT_ROOT=`cd "$BIDMAT_ROOT/../..";pwd`
@@ -72,6 +79,8 @@ if [ "$OS" = "apple" ] ; then
           -gencode arch=compute_30,code=sm_30 \
           -gencode arch=compute_35,code=sm_35 \
           -gencode arch=compute_50,code=sm_50 \
+          -gencode arch=compute_52,code=sm_52 \
+          -gencode arch=compute_53,code=sm_53 \
           --machine ${MBITS} -Xcompiler -arch -Xcompiler ${ARCH} -Xcompiler -stdlib=libc++"
     OBJ="o"
     OUTFLG="-o "
@@ -131,11 +140,13 @@ elif [ "$OS" = "linux" ] ; then
           -gencode arch=compute_30,code=sm_30 \
           -gencode arch=compute_35,code=sm_35 \
           -gencode arch=compute_50,code=sm_50 \
-          --machine ${MBITS}  -Xcompiler \"-fPIC -c -O2 -g -DNDEBUG\""
+          -gencode arch=compute_52,code=sm_52 \
+          -gencode arch=compute_53,code=sm_53 \
+          --machine ${MBITS}  -Xcompiler \"-fPIC -c -O2 -g -march=${ARMARCH} -DNDEBUG\""
 	OBJ="o"
 	OUTFLG="-o "
-	CPPFLAGS="-fPIC -std=c++11 -marm -mfpu=vfpv3 -mfloat-abi=hard -march=armv7-a -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$CUDA_HOME/include ${BLAS_INCLUDE}"
-	CFLAGS="-fPIC -fopenmp -marm -mfpu=vfpv3 -mfloat-abi=hard -march=armv7-a -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include ${BLAS_INCLUDE}"
+	CPPFLAGS="-fPIC -std=c++11 -marm -mfpu=vfpv3 -mfloat-abi=hard -march=${ARMARCH} -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$CUDA_HOME/include ${BLAS_INCLUDE}"
+	CFLAGS="-fPIC -fopenmp -marm -mfpu=vfpv3 -mfloat-abi=hard -march=${ARMARCH} -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include ${BLAS_INCLUDE}"
 	LB="ar rc"    
 	GLD="g++ -shared"
 	LD="gcc -shared -z noexecstack"
@@ -170,11 +181,13 @@ else
           -gencode arch=compute_30,code=sm_30 \
           -gencode arch=compute_35,code=sm_35 \
           -gencode arch=compute_50,code=sm_50 \
+          -gencode arch=compute_52,code=sm_52 \
+          -gencode arch=compute_53,code=sm_53 \
           --machine ${MBITS}  -Xcompiler \"-fPIC -c -O2 -g -DNDEBUG\""
 	OBJ="o"
 	OUTFLG="-o "
 	CPPFLAGS="-fPIC -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$CUDA_HOME/include" 
-	CFLAGS="-openmp -fPIC -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$BLAS_ROOT/include -I$BLAS_ROOT/include/${ARCHD}${SUBDIR}"
+	CFLAGS="-openmp -fPIC -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$BLAS_ROOT/include -I$BLAS_ROOT /include/${ARCHD}${SUBDIR}"
 	LB="ar rc"    
 	GLD="g++ -shared"
 	LD="icc -shared -static-intel -z noexecstack"
@@ -207,7 +220,7 @@ else
     fi
 elif [ "$OS" = "windows" ] ; then
     CUDA_HOME="$CUDA_PATH"
-    BLAS_ROOT="$MKLROOT"
+    BLAS_ROOT="$BLASROOT"
     RANDSRC="VSL"
     CC="icl"
     GCC="cl"
@@ -221,6 +234,8 @@ elif [ "$OS" = "windows" ] ; then
           -gencode arch=compute_30,code=sm_30 \
           -gencode arch=compute_35,code=sm_35 \
           -gencode arch=compute_50,code=sm_50 \
+          -gencode arch=compute_52,code=sm_52 \
+          -gencode arch=compute_53,code=sm_53 \
           --machine ${MBITS}  -Xcompiler \"/EHsc /W3 /nologo /O2 /Zi /wd4244 /wd4267 /wd4503 /MT\""
     LB="lib"    
     LD="link"

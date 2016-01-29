@@ -449,7 +449,7 @@ __global__ void __apply_left_const(ATYPE A, ATYPE *B, ATYPE *C, int nrows, int n
 int apply_binop(ATYPE *A, int Anrows, int Ancols,						    \
      ATYPE *B, int Bnrows, int Bncols, ATYPE *C, int opn) {					    \
   int N = max(Anrows, Bnrows)*max(Ancols, Bncols);						    \
-  int nthreads;											    \
+  int nthreads;                                                                                     \
   dim3 griddims;										    \
   setsizes(N, &griddims, &nthreads);								    \
   if (Anrows == Bnrows && Ancols == Bncols) {							    \
