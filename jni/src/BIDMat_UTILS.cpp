@@ -36,6 +36,9 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_setnumthreads
   MKL_Set_Num_Threads(n);
 #endif
   omp_set_num_threads(n);
+#ifdef OPENBLAS_OPENMP
+  openblas_set_num_threads(n);
+#endif
 }
 
 
