@@ -798,7 +798,7 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     	val out = GMat.newOrCheckGMat(math.max(nrows, a.nrows), math.max(ncols, a.ncols), oldmat, GUID, a.GUID, op)
       Mat.nflops += scala.math.max(length, a.length)
       val err = CUMAT.applyop(data, nrows, ncols, a.data, a.nrows, a.ncols, out.data, op)
-      if (err != 0) {throw new RuntimeException("GMult: CUDA kernel error in CUMAT.applyop")}
+      if (err != 0) {throw new RuntimeException("CUDA kernel error %d in CUMAT.applyop"  format err)}
       out
     }	else throw new RuntimeException("dimensions mismatch (%d, %d) (%d, %d)" format (nrows, ncols, a.nrows, a.ncols))
   }

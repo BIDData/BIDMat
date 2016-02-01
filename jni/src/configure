@@ -136,8 +136,8 @@ elif [ "$OS" = "linux" ] ; then
 	GCC="g++"
 	NVCC="nvcc" 
 	NVCCFLAGS="-c -use_fast_math  -I$BIDMAT_ROOT/jni/include \
+          --maxrregcount=31 \
           -gencode arch=compute_32,code=sm_32 \
-          -gencode arch=compute_53,code=sm_53 \
           --machine ${MBITS}  -Xcompiler \"-fPIC -c -O2 -g -march=${ARMARCH} -DNDEBUG\""
 	OBJ="o"
 	OUTFLG="-o "

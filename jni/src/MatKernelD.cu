@@ -25,13 +25,25 @@ return __longlong_as_double(old);
 #define MAXXGRID 65535
 #endif
 
+int getDeviceVersionD() {
+  int igpu;
+  cudaGetDevice(&igpu);
+  cudaDeviceProp prop;
+  cudaGetDeviceProperties(&prop, igpu);
+  return 100 * prop.major + 10 * prop.minor;
+}
+
 void setsizesD(long long N, dim3 *gridp, int *nthreadsp) {
   int nblocks = 1;
   int nthreads = 32;
+  int threads_per_block = 1024;
+//  int version;
+//  version = getDeviceVersionD();
+//  if (version == 320) threads_per_block = 512;
   while (1L * nblocks * nthreads < N) {
     if (nblocks < 16) {
       nblocks = 2*nblocks;
-    } else if (nthreads < 1024) {
+    } else if (nthreads < threads_per_block) {
       nthreads = 2*nthreads;
     } else {
       nblocks = 2*nblocks;
