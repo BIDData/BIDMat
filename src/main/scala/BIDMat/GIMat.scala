@@ -585,7 +585,7 @@ class GIMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Int) exten
       if (err != 0) throw new RuntimeException("CUMAT.cumsumByKeyII error " + cudaGetErrorString(err));
     } else {
     	val tmp = GLMat(nrows, ncols);
-    	var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+    	var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols, 0);
     	if (err != 0)	throw new RuntimeException("CUMAT.embedmat2d error " + cudaGetErrorString(err));
     	if (err == 0) err = CUMAT.cumsumByKeyFL(data, tmp.data, out.data, llength);
     	if (err != 0)	throw new RuntimeException("CUMAT.cumsumByKeyFL error " + cudaGetErrorString(err));
@@ -604,7 +604,7 @@ class GIMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Int) exten
       if (err != 0) throw new RuntimeException("CUMAT.cumsumByKeyII error " + cudaGetErrorString(err));
     } else {
       val tmp = GLMat(nrows, ncols);
-      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols, 0);
       if (err != 0) throw new RuntimeException("CUMAT.embedmat error " + cudaGetErrorString(err));
       if (err == 0) err = CUMAT.cumsumByKeyIL(data, tmp.data, out.data, llength);
       if (err != 0) throw new RuntimeException("CUMAT.cumsumByKeyIL error " + cudaGetErrorString(err));
@@ -629,7 +629,7 @@ class GIMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Int) exten
       }
     } else {
       val tmp = GLMat(nrows, ncols);
-      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols, 0);
       if (err == 0) err = CUMAT.cummaxByKeyIL(data, tmp.data, out.data, llength);
       if (err != 0) {
         throw new RuntimeException("CUMAT.cummaxByKey error " + cudaGetErrorString(err))
@@ -651,7 +651,7 @@ class GIMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Int) exten
       }
     } else {
       val tmp = GLMat(nrows, ncols);
-      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols, 0);
       if (err == 0) err = CUMAT.cummaxByKeyFL(data, tmp.data, out.data, llength);
       if (err != 0) {
         throw new RuntimeException("CUMAT.cummaxByKey error " + cudaGetErrorString(err))
@@ -677,7 +677,7 @@ class GIMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Int) exten
       }
     } else {
       val tmp = GLMat(nrows, ncols);
-      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols, 0);
       if (err == 0) err = CUMAT.cumminByKeyIL(data, tmp.data, out.data, llength);
       if (err != 0) {
         throw new RuntimeException("CUMAT.cumminByKey error " + cudaGetErrorString(err))
@@ -699,7 +699,7 @@ class GIMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Int) exten
       }
     } else {
       val tmp = GLMat(nrows, ncols);
-      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols, 0);
       if (err == 0) err = CUMAT.cumminByKeyIL(data, tmp.data, out.data, llength);
       if (err != 0) {
         throw new RuntimeException("CUMAT.cumminByKey error " + cudaGetErrorString(err))

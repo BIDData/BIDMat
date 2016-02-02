@@ -20,17 +20,20 @@
 #define MAXXGRID 65535
 #endif
 
-__global__ void __embedmat2d(float *a, long long *b, int nrows, int ncols) {
+__global__ void __embedmat2d(float *a, long long *b, int nrows, int ncols, int sortdown) {
   int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
   const int signbit = 0x80000000;
   const int mag =     0x7fffffff;
+  int icol = 0;
   for (int i = tid; i < nrows*ncols; i += blockDim.x*gridDim.x*gridDim.y) {
     float v = a[i];
     int vi = *((int *)&v);
     if (vi & signbit) {
       vi = -(vi & mag);
     }
-    b[i] = (long long)vi + (((long long)(i/nrows+1))<<32);
+    icol = i/nrows+1;
+    if (sortdown) icol = ncols - icol + 1;
+    b[i] = (long long)vi + (((long long)icol)<<32);
   }
 }
 
@@ -48,11 +51,11 @@ __global__ void __embedmat(float *a, int *b, long long *c, int n) {
   }
 }
 
-int embedmat2d(float *a, long long *b, int nrows, int ncols) {
+int embedmat2d(float *a, long long *b, int nrows, int ncols, int sortdown) {
   int nthreads;
   dim3 griddims;
   setsizes(nrows*ncols, &griddims, &nthreads);
-  __embedmat2d<<<griddims,nthreads>>>(a, b, nrows, ncols);
+  __embedmat2d<<<griddims,nthreads>>>(a, b, nrows, ncols, sortdown);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;

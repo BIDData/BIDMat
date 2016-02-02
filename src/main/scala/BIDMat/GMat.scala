@@ -1043,7 +1043,7 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
       }
     } else {
       val tmp = GLMat(nrows, ncols);
-      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols, 0);
       if (err == 0) err = CUMAT.cumsumByKeyFL(data, tmp.data, out.data, llength);
       if (err != 0) {
     		throw new RuntimeException("CUMAT.cumsumByKey error " + cudaGetErrorString(err))
@@ -1065,7 +1065,7 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
       }
     } else {
     	val tmp = GLMat(nrows, ncols);
-      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols, 0);
       if (err == 0) err = CUMAT.cumsumByKeyFL(data, tmp.data, out.data, llength);
       if (err != 0) {
     		throw new RuntimeException("CUMAT.cumsumByKey error " + cudaGetErrorString(err))
@@ -1091,7 +1091,7 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
       }
     } else {
       val tmp = GLMat(nrows, ncols);
-      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols, 0);
       if (err == 0) err = CUMAT.cummaxByKeyFL(data, tmp.data, out.data, llength);
       if (err != 0) {
         throw new RuntimeException("CUMAT.cummaxByKey error " + cudaGetErrorString(err))
@@ -1113,7 +1113,7 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
       }
     } else {
       val tmp = GLMat(nrows, ncols);
-      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols, 0);
       if (err == 0) err = CUMAT.cummaxByKeyFL(data, tmp.data, out.data, llength);
       if (err != 0) {
         throw new RuntimeException("CUMAT.cummaxByKey error " + cudaGetErrorString(err))
@@ -1139,7 +1139,7 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
       }
     } else {
       val tmp = GLMat(nrows, ncols);
-      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols, 0);
       if (err == 0) err = CUMAT.cumminByKeyFL(data, tmp.data, out.data, llength);
       if (err != 0) {
         throw new RuntimeException("CUMAT.cumminByKey error " + cudaGetErrorString(err))
@@ -1161,7 +1161,7 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
       }
     } else {
       val tmp = GLMat(nrows, ncols);
-      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols);
+      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols, 0);
       if (err == 0) err = CUMAT.cumminByKeyFL(data, tmp.data, out.data, llength);
       if (err != 0) {
         throw new RuntimeException("CUMAT.cumminByKey error " + cudaGetErrorString(err))
@@ -2404,7 +2404,7 @@ object GMat {
   	  		if (tall) {
   	  			CUMAT.fsort2dk(aa, vv, keys.nrows, colstodo, 0)
   	  		} else {
-  	  			CUMAT.embedmat2d(aa, kk, keys.nrows, colstodo)
+  	  			CUMAT.embedmat2d(aa, kk, keys.nrows, colstodo, 0)
   	  			CUMAT.lsortk(kk, vv, todo, 0)
   	  			CUMAT.extractmat2d(aa, kk, keys.nrows, colstodo)
   	  		}
@@ -2491,7 +2491,7 @@ object GMat {
     	while (ioff < nsize) {
     		val todo = math.min(maxsize, nsize - ioff)
     		val colstodo = todo / keys.nrows
-    		CUMAT.embedmat2d(keys.data.withByteOffset(1L*ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
+    		CUMAT.embedmat2d(keys.data.withByteOffset(1L*ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo, if (asc) 0 else 1)
     		CUMAT.lsortk(kk, vals.data.withByteOffset(1L*ioff*Sizeof.INT), todo, if (asc) 1 else 0)
     		CUMAT.extractmat2d(keys.data.withByteOffset(1L*ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
     		ioff += maxsize
@@ -2512,7 +2512,7 @@ object GMat {
     	while (ioff < nsize) {
     		val todo = math.min(maxsize, nsize - ioff)
     		val colstodo = todo / keys.nrows
-    		CUMAT.embedmat2d(keys.data.withByteOffset(1L*ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
+    		CUMAT.embedmat2d(keys.data.withByteOffset(1L*ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo, if (asc) 0 else 1)
     		CUMAT.lsort(kk, todo, if (asc) 1 else 0)
     		CUMAT.extractmat2d(keys.data.withByteOffset(1L*ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
     		ioff += maxsize
@@ -2576,7 +2576,7 @@ object GMat {
   	  			err = CUMAT.fsort2dx(aa.data, vv.data, tkeys.data, tvals.data, keys.nrows, colstodo, iasc)
   	  			if (err != 0) throw new RuntimeException("sortGPU tall sort failed thread %d error %d" format (ithread,err))
   	  		} else {
-  	  			err = CUMAT.embedmat2d(aa.data, kk.data, keys.nrows, colstodo)
+  	  			err = CUMAT.embedmat2d(aa.data, kk.data, keys.nrows, colstodo, if (asc) 0 else 1)
   	  			if (err != 0) throw new RuntimeException("sortGPU embed failed thread %d error %d" format (ithread,err))
   	  			err = CUMAT.lsortk(kk.data, vv.data, todo, iasc)
   	  			if (err != 0) throw new RuntimeException("sortGPU sort kernel failed thread %d error %d" format (ithread,err))

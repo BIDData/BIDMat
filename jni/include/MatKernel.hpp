@@ -207,7 +207,7 @@ int minii(int *in, int *out, int *outi, int nrows, int ncols, int dir);
 
 int minil(long long *in, long long *out, int *outi, int nrows, int ncols, int dir);
 
-int embedmat2d(float *a, long long *b, int nrows, int ncols);
+int embedmat2d(float *a, long long *b, int nrows, int ncols, int sortdown);
 
 int embedmat(float *a, int *b, long long *c, int n);
 
