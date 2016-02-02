@@ -1,5 +1,3 @@
-
-
 /*
  * Functions mapped over matrices and reductions using function tables. Unfortunately, it doesnt seem to be possible to 
  * use templates for this. Function pointers have to be stored as device const arrays, but there doesnt seem to be a way
@@ -309,13 +307,26 @@ __device__ const doptype dfctns2[2] = {
     dfn_atan2,
     dfn_pow};
 
+
+int getDeviceVersion() {
+  int igpu;
+  cudaGetDevice(&igpu);
+  cudaDeviceProp prop;
+  cudaGetDeviceProperties(&prop, igpu);
+  return 100 * prop.major + 10 * prop.minor;
+}
+
 void setsizes(long long N, dim3 *gridp, int *nthreadsp) {
   int nblocks = 1;
   int nthreads = 32;
+  int threads_per_block = 1024;
+//  int version;
+//  version = getDeviceVersion();
+//  if (version == 320) threads_per_block = 512;
   while (1L * nblocks * nthreads < N) {
     if (nblocks < 16) {
       nblocks = 2*nblocks;
-    } else if (nthreads < 1024) {
+    } else if (nthreads < threads_per_block) {
       nthreads = 2*nthreads;
     } else {
       nblocks = 2*nblocks;
