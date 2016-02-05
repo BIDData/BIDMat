@@ -60,7 +60,7 @@ int maxif(double *in, double *out, int *outi, int nrows, int ncols, int dir);
 
 int minif(double *in, double *out, int *outi, int nrows, int ncols, int dir);
 
-int embedmat2d(double *a, long long *b, int nrows, int ncols);
+int embedmat2d(double *a, long long *b, int nrows, int ncols, int sortdown);
 
 int embedmat(double *a, int *b, long long *c, int n);
 

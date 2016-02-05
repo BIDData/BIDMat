@@ -70,10 +70,13 @@ public final class LibUtils
      * @throws UnsatisfiedLinkError if the native library 
      * could not be loaded.
      */
-    public static void loadLibrary(String baseName)
+    
+    public static void loadLibrary(String baseName) {
+      loadLib(LibUtils.createLibName(baseName));
+    }
+    
+    public static void loadLib(String libName)
     {
-        String libName = LibUtils.createLibName(baseName);
-
         Throwable throwable = null;
         final boolean tryResource = true;
         if (tryResource)
@@ -100,7 +103,7 @@ public final class LibUtils
             PrintWriter pw = new PrintWriter(sw);
             
             pw.println("Error while loading native library \"" +
-                    libName + "\" with base name \""+baseName+"\"");
+                    libName + "\"");
             pw.println("Operating system name: "+
                     System.getProperty("os.name"));
             pw.println("Architecture         : "+
@@ -193,7 +196,7 @@ public final class LibUtils
         switch (osType) 
         {
             case APPLE:
-                return "jnilib";
+                return "dylib";
             case LINUX:
                 return "so";
             case SUN:

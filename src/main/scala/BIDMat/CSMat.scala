@@ -2,9 +2,7 @@ package BIDMat
 import Mat._
 
 case class CSMat(override val nrows:Int, override val ncols:Int, override val data:Array[String]) extends DenseMat[String](nrows, ncols, data) {	
-    
-	def size() = length;
-	
+ 
 	override def t:CSMat = CSMat(gt(null))
 	
 	override def mytype = "CSMat"

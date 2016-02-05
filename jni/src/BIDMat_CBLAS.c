@@ -1,7 +1,11 @@
 #include <jni.h>
+#include <omp.h>
+#ifdef __INTEL_COMPILER
 #include <mkl.h>
 #include <mkl_trans.h>
-#include <omp.h>
+#else
+#include <cblas.h>
+#endif
 
 JNIEXPORT jdouble JNICALL Java_edu_berkeley_bid_CBLAS_ddot 
 (JNIEnv * env, jobject calling_obj, jint N, jdoubleArray jX, jint incX, jdoubleArray jY, jint incY){
@@ -124,7 +128,13 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_domatcopy
 	jdouble * A = (*env)->GetPrimitiveArrayCritical(env, j_A, JNI_FALSE);
 	jdouble * B = (*env)->GetPrimitiveArrayCritical(env, j_B, JNI_FALSE);
 
+#ifdef __INTEL_COMPILER
 	mkl_domatcopy(order[0], transA[0], M, N, alpha, A, lda, B, ldb);
+#else
+	int corder = (order[0] == 'r' || order[0] == 'R') ? CblasRowMajor : CblasColMajor;
+	int ctrans = (transA[0] == 't' || transA[0] == 'T') ? CblasTrans : CblasNoTrans;
+	cblas_domatcopy(corder, ctrans, M, N, alpha, A, lda, B, ldb);
+#endif
 
 	(*env)->ReleasePrimitiveArrayCritical(env, j_B, B, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, j_A, A, 0);
@@ -144,6 +154,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_dmcscm
 
         int ioff = jc[0];
         int i, j, ir0;
+#pragma omp parallel for
         for (i = 0; i < N; i++) {
           for (j = jc[i]-ioff; j < jc[i+1]-ioff; j++) {
             ir0 = ir[j]-ioff;
@@ -170,6 +181,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_dmcsrm
 
     int ioff = jc[0];
     int i, j, k;
+#pragma omp parallel for
     for (i = 0; i < N; i++) {
       for (j = jc[i]-ioff; j < jc[i+1]-ioff; j++) {
         k = ir[j]-ioff;
@@ -298,7 +310,13 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_somatcopy
 	jfloat * A = (*env)->GetPrimitiveArrayCritical(env, j_A, JNI_FALSE);
 	jfloat * B = (*env)->GetPrimitiveArrayCritical(env, j_B, JNI_FALSE);
 
+#ifdef __INTEL_COMPILER
 	mkl_somatcopy(order[0], transA[0], M, N, alpha, A, lda, B, ldb);
+#else
+	int corder = (order[0] == 'r' || order[0] == 'R') ? CblasRowMajor : CblasColMajor;
+	int ctrans = (transA[0] == 't' || transA[0] == 'T') ? CblasTrans : CblasNoTrans;
+	cblas_somatcopy(corder, ctrans, M, N, alpha, A, lda, B, ldb);
+#endif
 
 	(*env)->ReleasePrimitiveArrayCritical(env, j_B, B, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, j_A, A, 0);
@@ -314,8 +332,13 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_iomatcopy
 	jfloat * A = (*env)->GetPrimitiveArrayCritical(env, j_A, JNI_FALSE);
 	jfloat * B = (*env)->GetPrimitiveArrayCritical(env, j_B, JNI_FALSE);
 
+#ifdef __INTEL_COMPILER
 	mkl_somatcopy(order[0], transA[0], M, N, 1.0f, A, lda, B, ldb);
-
+#else
+	int corder = (order[0] == 'r' || order[0] == 'R') ? CblasRowMajor : CblasColMajor;
+	int ctrans = (transA[0] == 't' || transA[0] == 'T') ? CblasTrans : CblasNoTrans;
+	cblas_somatcopy(corder, ctrans, M, N, 1.0f, A, lda, B, ldb);
+#endif
 	(*env)->ReleasePrimitiveArrayCritical(env, j_B, B, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, j_A, A, 0);
 	(*env)->ReleaseStringUTFChars(env, j_transA, transA);
@@ -330,7 +353,13 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_lomatcopy
 	jdouble * A = (*env)->GetPrimitiveArrayCritical(env, j_A, JNI_FALSE);
 	jdouble * B = (*env)->GetPrimitiveArrayCritical(env, j_B, JNI_FALSE);
 
+#ifdef __INTEL_COMPILER
 	mkl_domatcopy(order[0], transA[0], M, N, 1.0, A, lda, B, ldb);
+#else
+	int corder = (order[0] == 'r' || order[0] == 'R') ? CblasRowMajor : CblasColMajor;
+	int ctrans = (transA[0] == 't' || transA[0] == 'T') ? CblasTrans : CblasNoTrans;
+	cblas_domatcopy(corder, ctrans, M, N, 1.0, A, lda, B, ldb);
+#endif
 
 	(*env)->ReleasePrimitiveArrayCritical(env, j_B, B, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, j_A, A, 0);
@@ -344,9 +373,16 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_spermute
 	jfloat * A = (*env)->GetPrimitiveArrayCritical(env, j_A, JNI_FALSE);
 	jfloat * B = (*env)->GetPrimitiveArrayCritical(env, j_B, JNI_FALSE);
 
+#ifdef __INTEL_COMPILER
         for (i = 0, offset = 0; i < K; i++, offset += step) {
           mkl_somatcopy('C', 'T', M, N, 1.0f, A+offset, M, B+offset, N);
         }
+#else
+        for (i = 0, offset = 0; i < K; i++, offset += step) {
+          cblas_somatcopy(CblasColMajor, CblasTrans, M, N, 1.0f, A+offset, M, B+offset, N);
+        }
+#endif
+
 
 	(*env)->ReleasePrimitiveArrayCritical(env, j_B, B, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, j_A, A, 0);
@@ -385,6 +421,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_smcscm
 
         int ioff = jc[0];
         int i, j, ir0;
+#pragma omp parallel for
         for (i = 0; i < N; i++) {
           for (j = jc[i]-ioff; j < jc[i+1]-ioff; j++) {
             ir0 = ir[j]-ioff;
@@ -410,6 +447,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_smcsrm
 
         int ioff = jc[0];
         int i, j, jj, k;
+#pragma omp parallel for
         for (i = 0; i < N; i++) {
           for (j = jc[i]-ioff; j < jc[i+1]-ioff; j++) {
             jj = ir[j]-ioff;

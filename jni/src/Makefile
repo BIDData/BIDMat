@@ -1,16 +1,13 @@
 include Makefile.incl
 
-CPU_OBJS=BIDMat_CBLAS.$(OBJ) BIDMat_UTILS.$(OBJ) BIDMat_SPBLAS.$(OBJ) BIDMat_LAPACK.$(OBJ) \
-         BIDMat_VML.$(OBJ) BIDMat_VSL.$(OBJ)
+CPU_OBJS=BIDMat_CBLAS.$(OBJ) BIDMat_UTILS.$(OBJ) BIDMat_$(RANDSRC).$(OBJ) BIDMat_SPBLAS.$(OBJ) BIDMat_VML.$(OBJ) BIDMat_LAPACK.$(OBJ)
 
 KERNEL_OBJS=Arith.$(OBJ) CopyFill.$(OBJ) Operators.$(OBJ) Random.$(OBJ) Reducers.$(OBJ) Sorting.$(OBJ)
 CUDA_OBJS=BIDMat_CUMAT.$(OBJ) BIDMat_CUMATD.$(OBJ) $(KERNEL_OBJS) MatKernelD.$(OBJ) Logger.$(OBJ) JNIUtils.$(OBJ) PointerUtils.$(OBJ)
 
-#CUDA_OBJS=BIDMat_CUMAT.$(OBJ) BIDMat_CUMATD.$(OBJ) MatKernel.$(OBJ) MatKernelD.$(OBJ) Logger.$(OBJ) JNIUtils.$(OBJ) PointerUtils.$(OBJ)
-
 .SUFFIXES: .$(OBJ) .c .cpp .cu
 
-all: $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(LIBPREPEND)bidmatcpu$(LIBAPPEND) 
+all:   $(LIBPREPEND)bidmatcuda$(LIBAPPEND)  $(LIBPREPEND)bidmatcpu$(LIBAPPEND)
 
 cudalib: $(LIBPREPEND)bidmatcuda$(LIBAPPEND)
 
@@ -20,7 +17,7 @@ BIDMat_UTILS.$(OBJ): BIDMat_UTILS.cpp
 	$(CC) $(CFLAGS) $(LAPACK_INCLUDES) BIDMat_UTILS.cpp
 
 $(LIBPREPEND)bidmatcpu$(LIBAPPEND): $(CPU_OBJS)
-	$(LD) $(LDFLAGS) $(CPU_OBJS) $(MKL_LIBS) $(OUTFLG)$@
+	$(LD) $(LDFLAGS) $(CPU_OBJS) $(CPU_LIBS) $(OUTFLG)$@
 
 $(LIBPREPEND)bidmatcuda$(LIBAPPEND): $(CUDA_OBJS)
 	$(GLD) $(LDFLAGS) $(CUDA_OBJS) $(CUDA_LIBS) $(OUTFLG)$@

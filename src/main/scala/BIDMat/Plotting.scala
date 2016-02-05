@@ -1,17 +1,19 @@
 package BIDMat
 import ptolemy.plot._
+import java.awt.image.BufferedImage
 
 object Plotting { 
-  var ifigure:Int = 1
-  val marksmat = Array("points","dots","various")
+  var ifigure:Int = 0;
+  val marksmat = Array("points","dots","various");
   
-  def _plot(mats:Mat*)(xlog:Boolean=false, ylog:Boolean=false, isconnected:Boolean=true, bars:Boolean=false, marks:Int = 0):Plot = {
-    var p:Plot = new Plot
-    p.setXLog(xlog)
-    p.setYLog(ylog)
-    p.setBars(bars)
-    p.setConnected(isconnected)
-    p.setMarksStyle(marksmat(marks))
+  def _plot(mats0:Mat*)(xlog:Boolean=false, ylog:Boolean=false, isconnected:Boolean=true, bars:Boolean=false, marks:Int = 0) = {
+    var p:Plot = new Plot;
+    val mats = mats0.toArray.map(MatFunctions.cpu);
+    p.setXLog(xlog);
+    p.setYLog(ylog);
+    p.setBars(bars);
+    p.setConnected(isconnected);
+    p.setMarksStyle(marksmat(marks));
     val dataset = 0
     if (mats.length == 1) {
       val m = mats(0)
@@ -47,10 +49,23 @@ object Plotting {
     		i += 1
     	}
     }
-    var pframe:PlotFrame = new PlotFrame("Figure "+ifigure, p)
-    ifigure += 1
-    pframe.setVisible(true)
-    p
+    ifigure += 1;
+    showGraphics(p);
+  }
+  
+  def showGraphics(plot:PlotBox):BufferedImage = {
+  	var pframe = new PlotFrame("Figure "+ifigure, plot);
+  	pframe.setVisible(true);
+    if (Mat.inline) {
+      val bi = new BufferedImage(pframe.getWidth(), pframe.getHeight(), BufferedImage.TYPE_INT_ARGB);
+      val graphics = bi.createGraphics();
+      pframe.print(graphics);
+      pframe.dispose;
+      graphics.dispose;
+      bi;
+    } else {
+    	Image.dummyImage.img;
+    }
   }
   
   def plot(mats:Mat*) = _plot(mats: _*)();
@@ -80,7 +95,7 @@ object Plotting {
   def psemilogy(mats:Mat*) = _plot(mats: _*)(ylog=true, isconnected=false)
    
   
-  def hist(m:Mat, nbars:Int=10) = { 
+  def hist(m:Mat, nbars:Int=10):BufferedImage = { 
     import SciFunctions._
     var p:Histogram = new Histogram
     val dataset = 0
@@ -106,8 +121,7 @@ object Plotting {
     	}
       }
     }
-    var pframe:PlotFrame = new PlotFrame("Figure "+ifigure, p)
-    ifigure += 1
-    pframe.setVisible(true)
+    ifigure += 1;
+    showGraphics(p);
   }
 }

@@ -5,9 +5,7 @@ import edu.berkeley.bid.CBLAS._
 import scala.util.hashing.MurmurHash3
 
 case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, data0) { 
-  
-  def size() = length;
-  
+
   override def t:IMat = tt(null)
   
   def t(omat:Mat):IMat = tt(omat)
@@ -52,6 +50,11 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
     
   override def set(v:Float):IMat = {
     Arrays.fill(data,0,length,v.asInstanceOf[Int])
+    this
+  }
+  
+  def set(v:Int):IMat = {
+    Arrays.fill(data,0,length,v)
     this
   }
   
