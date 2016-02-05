@@ -5,6 +5,7 @@ import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.LAPACK._
 import edu.berkeley.bid.SPBLAS._
 import scala.concurrent.Future
+import java.awt.image.BufferedImage
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.implicitConversions
 
@@ -1103,6 +1104,11 @@ object MatFunctions {
   
   /** Make a float matrix of zeros of the given size. */
   def zeros(nr:Int, nc:Int):FMat = FMat(nr,nc)
+  
+  /** Make a float NDarray of zeros of the given size. */
+  def zeros(dims:IMat):FND = FND.zeros(dims)
+  
+  def ones(dims:IMat):FND = FND.ones(dims)
 
   /** Make a float matrix of ones of the given size. */  
   def ones(nr:Int, nc:Int):FMat = {
@@ -2028,6 +2034,22 @@ object MatFunctions {
   
   def saveVW(fname:String, sdata:SMat, cats:SMat, compressed:Int, oneBased:Int):Unit = HMat.saveVW(fname, sdata, cats, compressed, oneBased);
   def saveVW(fname:String, sdata:SMat, cats:SMat):Unit = HMat.saveVW(fname, sdata, cats, 0, 0);
+  
+  def show (image:Image):BufferedImage = image.show
+  
+  def show (mat:IMat):BufferedImage = {show(Image(mat))}
+  
+  def show (mat:FMat):BufferedImage = {show(Image(mat))}
+  
+  def show (mat:FND):BufferedImage = {show(Image(mat))}
+  
+  def show (image:Image, title:String):BufferedImage = image.show(title)
+  
+  def show (mat:IMat, title:String):BufferedImage = {show(Image(mat), title)}
+  
+  def show (mat:FMat, title:String):BufferedImage = {show(Image(mat), title)}
+  
+  def show (mat:FND, title:String):BufferedImage = {show(Image(mat), title)}
 
   final val ? = new IMatWildcard
 }

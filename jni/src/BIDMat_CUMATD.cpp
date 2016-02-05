@@ -274,12 +274,12 @@ extern "C" {
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_embedmat2d
-  (JNIEnv *env, jobject obj, jobject ja, jobject jb, jint nrows, jint ncols) 
+  (JNIEnv *env, jobject obj, jobject ja, jobject jb, jint nrows, jint ncols, jint sortdown) 
   {
     double *a = (double*)getPointer(env, ja);
     long long *b = (long long*)getPointer(env, jb);
 
-    return embedmat2d(a, b, nrows, ncols);
+    return embedmat2d(a, b, nrows, ncols, sortdown);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_embedmat

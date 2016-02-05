@@ -2,18 +2,45 @@
 #include <string.h>
 #include <algorithm>
 #include <vector>
+#include <omp.h>
+#ifdef __INTEL_COMPILER
 #include <mkl.h>
+#endif
 
 extern "C" {
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_UTILS_hasMKL
+(JNIEnv * env, jobject calling_obj) {
+#ifdef __INTEL_COMPILER
+  int mkl = 1;
+#else
+  int mkl = 0;
+#endif
+  return mkl;
+}
+
+
+
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_UTILS_getnumthreads
 (JNIEnv * env, jobject calling_obj) {
+#ifdef __INTEL_COMPILER
   return MKL_Get_Max_Threads();
+#else
+  return  omp_get_num_threads();
+#endif
 }
 
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_setnumthreads
 (JNIEnv * env, jobject calling_obj, jint n) {
+#ifdef __INTEL_COMPILER
   MKL_Set_Num_Threads(n);
+#endif
+  omp_set_num_threads(n);
+#ifdef OPENBLAS_OPENMP
+  openblas_set_num_threads(n);
+#endif
 }
+
 
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_memcpybi
 (JNIEnv * env, jobject calling_obj, jint N, jbyteArray jA, jlong startA, jintArray jB, jlong startB){

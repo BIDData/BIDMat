@@ -12,8 +12,10 @@ import edu.berkeley.bid.CUMATD
 import scala.util.hashing.MurmurHash3
 import GDMat._
 import GMat.BinOp
+import java.io._
 
-case class GSDMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, val jc:Pointer, val data:Pointer, val realnnz:Int) extends Mat(nr, nc) {
+case class GSDMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @transient var ic:Pointer, @transient var jc:Pointer, @transient var data:Pointer, val realnnz:Int) 
+     extends Mat(nr, nc) {
 	
   def getdata() = data;	
 
@@ -28,6 +30,26 @@ case class GSDMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, 
   }
   
   val myGPU = SciFunctions.getGPU
+  
+  var saveMe:SDMat = null
+  
+  private def writeObject(out:ObjectOutputStream):Unit = {
+    saveMe = SDMat(this);
+  	out.defaultWriteObject();
+  }
+  
+  private def readObject(in:ObjectInputStream):Unit = {
+    in.defaultReadObject();
+    val gpu = SciFunctions.getGPU;
+    SciFunctions.setGPU(myGPU);
+    val tmp = GSDMat(saveMe);
+    data = tmp.data;
+    ir = tmp.ir;
+    ic = tmp.ic;
+    jc = tmp.jc;
+    SciFunctions.setGPU(gpu);
+    saveMe = null;
+  }
     
   override def toString:String = {
     val nnz0 = scala.math.min(nnz,12)       
@@ -132,6 +154,14 @@ case class GSDMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, 
     GIMat.iones(m,n)
   }
   
+  override def zeros(m:Int, n:Int) = {
+    GDMat.zeros(m,n)
+  }
+  
+  override def zeros(m:Int, n:Int, nnz:Int) = {
+    new GSDMat(m, n, 0, new Pointer, new Pointer, new Pointer, new Pointer, 0);
+  }
+  
   def full(omat:Mat):GDMat = {
     val out = GDMat.newOrCheckGDMat(nrows, ncols, omat, GUID, "full".##)
     out.clear
@@ -188,45 +218,47 @@ case class GSDMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, 
       throw new RuntimeException("SDMult dimensions mismatch")
     }
     val out = GDMat.newOrCheckGDMat(nrows, a.ncols, omat, GUID, a.GUID, "SDMult".##)
-    val handle = GSMat.getHandle
-    val descra = GSMat.getDescr
-    GSDMat.initZerosAndOnes
-    val one = GSDMat.myones(SciFunctions.getGPU)
-    val zero = GSDMat.myzeros(SciFunctions.getGPU)
+    val handle = GSMat.getHandle;
+    val descra = GSMat.getDescr;
+    val zero = MatFunctions.dzeros(1,1);
+    val one = MatFunctions.dones(1,1);
     var err = JCusparse.cusparseDcsrmm(handle, cusparseOperation.CUSPARSE_OPERATION_TRANSPOSE,
-        ncols, a.ncols, nrows, nnz, one.data, descra,	data, jc, ir, a.data, a.nrows, zero.data, out.data, out.nrows)
-    cudaDeviceSynchronize
-    if (err == 0) err = cudaGetLastError
+        ncols, a.ncols, nrows, nnz, 
+        Pointer.to(one.data), descra,	data, jc, ir, a.data, a.nrows, 
+        Pointer.to(zero.data), out.data, out.nrows);
+    cudaDeviceSynchronize;
+    if (err == 0) err = cudaGetLastError;
     if (err != 0) {
-    	println("device is %d" format SciFunctions.getGPU)
-    	throw new RuntimeException("Cuda error in GSDMat.SDMult " + cudaGetErrorString(err))
+    	println("device is %d" format SciFunctions.getGPU);
+    	throw new RuntimeException("Cuda error in GSDMat.SDMult " + cudaGetErrorString(err));
     }
-    Mat.nflops += 2L*nnz*a.ncols
-    out
+    Mat.nflops += 2L*nnz*a.ncols;
+    out;
   }
   
   // This one is OK, but may throw CUDA resource errors with large nrows
   
   def SDTMult(a:GDMat, omat:Mat):GDMat = {
     if (nrows != a.nrows) {
-      throw new RuntimeException("SDTMult dimensions mismatch")
+      throw new RuntimeException("SDTMult dimensions mismatch");
     }
-    val out = GDMat.newOrCheckGDMat(ncols, a.ncols, omat, GUID, a.GUID, "SDMult".##)
-    val handle = GSMat.getHandle
-    val descra = GSMat.getDescr  
-    GSDMat.initZerosAndOnes
-    val one = GSDMat.myones(SciFunctions.getGPU)
-    val zero = GSDMat.myzeros(SciFunctions.getGPU)
+    val out = GDMat.newOrCheckGDMat(ncols, a.ncols, omat, GUID, a.GUID, "SDMult".##);
+    val handle = GSMat.getHandle;
+    val descra = GSMat.getDescr;
+    val zero = MatFunctions.dzeros(1,1);
+    val one = MatFunctions.dones(1,1);
     var err = JCusparse.cusparseDcsrmm(handle, cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE,
-        ncols, a.ncols, nrows, nnz, one.data, descra,	data, jc, ir, a.data, a.nrows, zero.data, out.data, out.nrows)
-    cudaDeviceSynchronize
-    if (err == 0) err = cudaGetLastError
+        ncols, a.ncols, nrows, nnz, 
+        Pointer.to(one.data), descra,	data, jc, ir, a.data, a.nrows, 
+        Pointer.to(zero.data), out.data, out.nrows);
+    cudaDeviceSynchronize;
+    if (err == 0) err = cudaGetLastError;
     if (err != 0) {
-    	println("device is %d" format SciFunctions.getGPU)
-    	throw new RuntimeException("Cuda error in GSDMat.SDTMult " + cudaGetErrorString(err))
+    	println("device is %d" format SciFunctions.getGPU);
+    	throw new RuntimeException("Cuda error in GSDMat.SDTMult " + cudaGetErrorString(err));
     }
-    Mat.nflops += 2L*nnz*a.ncols
-    out
+    Mat.nflops += 2L*nnz*a.ncols;
+    out;
   }
   
   def GSDop(b:GDMat, omat:Mat, op:Int):GSDMat = {
@@ -254,9 +286,6 @@ case class GSDMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, 
   def Tx(a:GDMat) = SDTMult(a, null)
   
   def ~ (b: GDMat) = new GDPair(this, b)
-  
-  override def Tx (b : Mat) = Mop_TTimes.op(this, b, null)
-  override def ^* (b : Mat) = Mop_TTimes.op(this, b, null)
   
   // NOTE: GSDMat op GDMat is an *Edge or Scalar* operation only, and acts only on the non-zeros of the matrix
   
@@ -291,6 +320,8 @@ case class GSDMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, 
   override def *  (b : Mat) = Mop_Times.op(this, b, null)
   override def *^ (b : Mat) = Mop_TimesT.op(this, b, null)
   override def xT (b : Mat) = Mop_TimesT.op(this, b, null)
+  override def ^* (b : Mat) = Mop_TTimes.op(this, b, null)
+  override def Tx (b : Mat) = Mop_TTimes.op(this, b, null)
   override def +  (b : Mat) = Mop_Plus.sop(this, b, null)
   override def -  (b : Mat) = Mop_Minus.sop(this, b, null)
   override def *@ (b : Mat) = Mop_ETimes.sop(this, b, null)
@@ -308,6 +339,7 @@ case class GSDMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, 
 }
 
 class GSDPair (val omat:Mat, val mat:GSDMat) extends Pair {
+	def * (a:GDMat) = mat.SDMult(a, omat)
 	def Tx(a:GDMat) = mat.SDTMult(a, omat)
 	def ^*(a:GDMat) = mat.SDTMult(a, omat)
 	
@@ -371,6 +403,22 @@ object GSDMat {
   def apply(a:SDMat):GSDMat = fromSDMat(a, null);
   
   def apply(a:SMat):GSDMat = fromSMat(a, null);
+  
+  def apply(a:GSMat):GSDMat = {
+    val out = GSDMat.newOrCheckGSDMat(a.nrows, a.ncols, a.nnz, a.nnz, null, a.GUID, SciFunctions.getGPU, "fromGSMat".##);
+    var err = cudaMemcpy(out.ir, a.ir, 1L * a.nnz*Sizeof.INT, cudaMemcpyDeviceToDevice);
+    cudaDeviceSynchronize();
+    if (err == 0) err = cudaMemcpy(out.ic, a.ic, 1L * a.nnz*Sizeof.INT, cudaMemcpyDeviceToDevice);
+    cudaDeviceSynchronize();
+    if (err == 0) err = CUMATD.FloatToDouble(a.data, out.data, a.nnz);
+    cudaDeviceSynchronize();
+    if (err == 0) err = cudaGetLastError();
+    if (err != 0) {
+        println("device is %d" format SciFunctions.getGPU)
+        throw new RuntimeException("GSDMat(GSMat) error " + cudaGetErrorString(err));
+    }
+    out;
+  }
   
   var myones:Array[GDMat] = null
   var myzeros:Array[GDMat] = null

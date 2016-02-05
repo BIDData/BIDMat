@@ -37,5 +37,12 @@ public final class SPBLAS {
   
   public static native  void dcscmv (String transa, int m, int k, double alpha, String matdescra, 
   		double [] val, int [] ir, int [] jc,  double []  x, double beta, double []  y);
+  
+//  public static native  void smcscm( int transb, int m, int n, int k, float [] a, int lda, float [] b, int [] ir, int [] jc, float [] c, int ldc);
+  
+//public static native  void dmcscm( int transb, int m, int n, int k, double [] a, int lda, double [] b, int [] ir, int [] jc, double [] c, int ldc);
+  
+  public static native  void smcscm( int m, int n, float [] a, int lda, float [] b, int [] ir, int [] jc, float [] c, int ldc);
+  public static native  void smcsrm( int m, int n, float [] a, int lda, float [] b, int [] ir, int [] jc, float [] c, int ldc);
 
 }

@@ -1,9 +1,13 @@
 
 #include <jni.h>
+#ifndef __arm__          // Need a working Lapack first
+#ifdef __arm__
+#include <lapacke.h>
+#else
 #include <mkl.h>
 #include <mkl_lapacke.h>
 #include <mkl_lapack.h>
-
+#endif
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_dgetrf
 (JNIEnv * env, jobject calling_obj, jint order, jint m, jint n, jdoubleArray ja, jint lda, jintArray jipiv){
@@ -37,7 +41,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_cgetrf
 	jint * ipiv = (*env)->GetPrimitiveArrayCritical(env, jipiv, JNI_FALSE);
 	jint returnValue;
 
-	returnValue = LAPACKE_cgetrf(order, m, n, (MKL_Complex8 *)a, lda, ipiv);
+	returnValue = LAPACKE_cgetrf(order, m, n, (lapack_complex_float *)a, lda, ipiv);
 
 	(*env)->ReleasePrimitiveArrayCritical(env, jipiv, ipiv, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, ja, a, 0);
@@ -50,7 +54,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_zgetrf
 	jint * ipiv = (*env)->GetPrimitiveArrayCritical(env, jipiv, JNI_FALSE);
 	jint returnValue;
 
-	returnValue = LAPACKE_zgetrf(order, m, n, (MKL_Complex16 *)a, lda, ipiv);
+	returnValue = LAPACKE_zgetrf(order, m, n, (lapack_complex_double *)a, lda, ipiv);
 
 	(*env)->ReleasePrimitiveArrayCritical(env, jipiv, ipiv, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, ja, a, 0);
@@ -89,7 +93,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_cgetri
 	jint * ipiv = (*env)->GetPrimitiveArrayCritical(env, jipiv, JNI_FALSE);
 	jint returnValue;
 
-	returnValue = LAPACKE_cgetri(order, n, (MKL_Complex8 *)a, lda, ipiv);
+	returnValue = LAPACKE_cgetri(order, n, (lapack_complex_float *)a, lda, ipiv);
 
 	(*env)->ReleasePrimitiveArrayCritical(env, jipiv, ipiv, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, ja, a, 0);
@@ -103,7 +107,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_zgetri
 	jint * ipiv = (*env)->GetPrimitiveArrayCritical(env, jipiv, JNI_FALSE);
 	jint returnValue;
 
-	returnValue = LAPACKE_zgetri(order, n, (MKL_Complex16 *)a, lda, ipiv);
+	returnValue = LAPACKE_zgetri(order, n, (lapack_complex_double *)a, lda, ipiv);
 
 	(*env)->ReleasePrimitiveArrayCritical(env, jipiv, ipiv, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, ja, a, 0);
@@ -156,7 +160,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_cgetrs
 	jfloat * b = (*env)->GetPrimitiveArrayCritical(env, j_b, JNI_FALSE);
 	jint returnValue;
 
-	returnValue = LAPACKE_cgetrs(order, *transa, n, nrhs, (MKL_Complex8 *)a, lda, ipiv, (MKL_Complex8 *)b, ldb);
+	returnValue = LAPACKE_cgetrs(order, *transa, n, nrhs, (lapack_complex_float *)a, lda, ipiv, (lapack_complex_float *)b, ldb);
 
 	(*env)->ReleasePrimitiveArrayCritical(env, j_b, b, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, j_ipiv, ipiv, 0);
@@ -174,7 +178,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_zgetrs
 	jdouble * b = (*env)->GetPrimitiveArrayCritical(env, j_b, JNI_FALSE);
 	jint returnValue;
 
-	returnValue = LAPACKE_zgetrs(order, *transa, n, nrhs, (MKL_Complex16 *)a, lda, ipiv, (MKL_Complex16 *)b, ldb);
+	returnValue = LAPACKE_zgetrs(order, *transa, n, nrhs, (lapack_complex_double *)a, lda, ipiv, (lapack_complex_double *)b, ldb);
 
 	(*env)->ReleasePrimitiveArrayCritical(env, j_b, b, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, j_ipiv, ipiv, 0);
@@ -215,7 +219,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_ctrtri
 	jfloat * a = (*env)->GetPrimitiveArrayCritical(env, j_a, JNI_FALSE);
 	jint returnValue;
 
-	returnValue = LAPACKE_ctrtri(order, meta[0], meta[1], n, (MKL_Complex8 *)a, lda);
+	returnValue = LAPACKE_ctrtri(order, meta[0], meta[1], n, (lapack_complex_float *)a, lda);
 
 	(*env)->ReleasePrimitiveArrayCritical(env, j_a, a, 0);
 	(*env)->ReleaseStringUTFChars(env, j_meta, meta);
@@ -228,7 +232,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_ztrtri
 	jdouble * a = (*env)->GetPrimitiveArrayCritical(env, j_a, JNI_FALSE);
 	jint returnValue;
 
-	returnValue = LAPACKE_ztrtri(order, meta[0], meta[1], n, (MKL_Complex16 *)a, lda);
+	returnValue = LAPACKE_ztrtri(order, meta[0], meta[1], n, (lapack_complex_double *)a, lda);
 
 	(*env)->ReleasePrimitiveArrayCritical(env, j_a, a, 0);
 	(*env)->ReleaseStringUTFChars(env, j_meta, meta);
@@ -275,7 +279,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_ctrtrs
 	jfloat * b = (*env)->GetPrimitiveArrayCritical(env, j_b, JNI_FALSE);
 	jint returnValue;
 
-	returnValue = LAPACKE_ctrtrs(order, meta[0], meta[1], meta[2], n, nrhs, (MKL_Complex8 *)a, lda, (MKL_Complex8 *)b, ldb);
+	returnValue = LAPACKE_ctrtrs(order, meta[0], meta[1], meta[2], n, nrhs, (lapack_complex_float *)a, lda, (lapack_complex_float *)b, ldb);
 
 	(*env)->ReleasePrimitiveArrayCritical(env, j_b, b, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, j_a, a, 0);
@@ -291,7 +295,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_ztrtrs
 	jdouble * b = (*env)->GetPrimitiveArrayCritical(env, j_b, JNI_FALSE);
 	jint returnValue;
 
-	returnValue = LAPACKE_ztrtrs(order, meta[0], meta[1], meta[2], n, nrhs, (MKL_Complex16 *)a, lda, (MKL_Complex16 *)b, ldb);
+	returnValue = LAPACKE_ztrtrs(order, meta[0], meta[1], meta[2], n, nrhs, (lapack_complex_double *)a, lda, (lapack_complex_double *)b, ldb);
 
 	(*env)->ReleasePrimitiveArrayCritical(env, j_b, b, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, j_a, a, 0);
@@ -422,7 +426,7 @@ jfloatArray j_d, jfloatArray j_e, jfloatArray j_z, int ldz) {
 	jfloat * z = (*env)->GetPrimitiveArrayCritical(env, j_z, JNI_FALSE);
 	jint returnValue;
 
-	returnValue = LAPACKE_csteqr(order, *compz, n, d, e, (MKL_Complex8 *)z, ldz);
+	returnValue = LAPACKE_csteqr(order, *compz, n, d, e, (lapack_complex_float *)z, ldz);
 
 	(*env)->ReleasePrimitiveArrayCritical(env, j_z, z, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, j_e, e, 0);
@@ -441,7 +445,7 @@ jdoubleArray j_d, jdoubleArray j_e, jdoubleArray j_z, int ldz) {
 	jdouble * z = (*env)->GetPrimitiveArrayCritical(env, j_z, JNI_FALSE);
 	jint returnValue;
 
-	returnValue = LAPACKE_zsteqr(order, *compz, n, d, e, (MKL_Complex16 *)z, ldz);
+	returnValue = LAPACKE_zsteqr(order, *compz, n, d, e, (lapack_complex_double *)z, ldz);
 
 	(*env)->ReleasePrimitiveArrayCritical(env, j_z, z, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, j_e, e, 0);
@@ -531,7 +535,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_cgeev
 	jfloat * vr = (*env)->GetPrimitiveArrayCritical(env, j_vr, JNI_FALSE);
 	jint returnValue;
 
-	returnValue = LAPACKE_cgeev(order, *dolv, *dorv, n, (MKL_Complex8 *)a, lda, (MKL_Complex8 *)w, (MKL_Complex8 *)vl, ldvl, (MKL_Complex8 *)vr, ldvr);
+	returnValue = LAPACKE_cgeev(order, *dolv, *dorv, n, (lapack_complex_float *)a, lda, (lapack_complex_float *)w, (lapack_complex_float *)vl, ldvl, (lapack_complex_float *)vr, ldvr);
 
 	(*env)->ReleasePrimitiveArrayCritical(env, j_vr, vr, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, j_vl, vl, 0);
@@ -554,7 +558,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_zgeev
 	jdouble * vr = (*env)->GetPrimitiveArrayCritical(env, j_vr, JNI_FALSE);
 	jint returnValue;
 
-	returnValue = LAPACKE_zgeev(order, *dolv, *dorv, n, (MKL_Complex16 *)a, lda, (MKL_Complex16 *)w, (MKL_Complex16 *)vl, ldvl, (MKL_Complex16 *)vr, ldvr);
+	returnValue = LAPACKE_zgeev(order, *dolv, *dorv, n, (lapack_complex_double *)a, lda, (lapack_complex_double *)w, (lapack_complex_double *)vl, ldvl, (lapack_complex_double *)vr, ldvr);
 
 	(*env)->ReleasePrimitiveArrayCritical(env, j_vr, vr, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, j_vl, vl, 0);
@@ -639,7 +643,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_cpotrf
 	jfloat * a = (*env)->GetPrimitiveArrayCritical(env, j_a, JNI_FALSE);
 	jint returnValue;
 
-	returnValue = LAPACKE_cpotrf(order, *uplo, n, (MKL_Complex8 *)a, lda);
+	returnValue = LAPACKE_cpotrf(order, *uplo, n, (lapack_complex_float *)a, lda);
 
 	(*env)->ReleasePrimitiveArrayCritical(env, j_a, a, 0);
 	(*env)->ReleaseStringUTFChars(env, j_uplo, uplo);
@@ -653,7 +657,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_zpotrf
 	jdouble * a = (*env)->GetPrimitiveArrayCritical(env, j_a, JNI_FALSE);
 	jint returnValue;
 
-	returnValue = LAPACKE_zpotrf(order, *uplo, n, (MKL_Complex16 *)a, lda);
+	returnValue = LAPACKE_zpotrf(order, *uplo, n, (lapack_complex_double *)a, lda);
 
 	(*env)->ReleasePrimitiveArrayCritical(env, j_a, a, 0);
 	(*env)->ReleaseStringUTFChars(env, j_uplo, uplo);
@@ -1274,8 +1278,8 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_cgesvd
     jfloat * superb = (*env)->GetPrimitiveArrayCritical(env, j_superb, JNI_FALSE);
     char jobc[] = {'A', 'S', 'O', 'N'};
 
-    jint retval = LAPACKE_cgesvd(matrix_order, jobc[jobu], jobc[jobvt], m, n, (MKL_Complex8 *)a, lda, s, 
-                                 (MKL_Complex8 *)u, ldu, (MKL_Complex8 *)vt, ldvt, superb);
+    jint retval = LAPACKE_cgesvd(matrix_order, jobc[jobu], jobc[jobvt], m, n, (lapack_complex_float *)a, lda, s, 
+                                 (lapack_complex_float *)u, ldu, (lapack_complex_float *)vt, ldvt, superb);
 
     (*env)->ReleasePrimitiveArrayCritical(env, j_superb, superb, 0);
     (*env)->ReleasePrimitiveArrayCritical(env, j_vt, vt, 0);
@@ -1296,8 +1300,8 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_zgesvd
     jdouble * superb = (*env)->GetPrimitiveArrayCritical(env, j_superb, JNI_FALSE);
     char jobc[] = {'A', 'S', 'O', 'N'};
 
-    jint retval = LAPACKE_zgesvd(matrix_order, jobc[jobu], jobc[jobvt], m, n, (MKL_Complex16 *)a, lda, s, 
-                                 (MKL_Complex16 *)u, ldu, (MKL_Complex16 *)vt, ldvt, superb);
+    jint retval = LAPACKE_zgesvd(matrix_order, jobc[jobu], jobc[jobvt], m, n, (lapack_complex_double *)a, lda, s, 
+                                 (lapack_complex_double *)u, ldu, (lapack_complex_double *)vt, ldvt, superb);
 
     (*env)->ReleasePrimitiveArrayCritical(env, j_superb, superb, 0);
     (*env)->ReleasePrimitiveArrayCritical(env, j_vt, vt, 0);
@@ -1404,8 +1408,8 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_claed7
   jfloat *rwork = (*env)->GetPrimitiveArrayCritical(env, j_rwork, JNI_FALSE);
   jint info;
 
-  claed7(&n, &cutpnt, &qsiz, &tlvls, &curlvl, &curpbm, d, (MKL_Complex8 *)q, &ldq, &rho, indxq,
-         qstore, qptr, prmptr, perm, givptr, givcol, givnum, (MKL_Complex8 *)work, rwork, iwork, &info );
+  claed7(&n, &cutpnt, &qsiz, &tlvls, &curlvl, &curpbm, d, (lapack_complex_float *)q, &ldq, &rho, indxq,
+         qstore, qptr, prmptr, perm, givptr, givcol, givnum, (lapack_complex_float *)work, rwork, iwork, &info );
 
   (*env)->ReleasePrimitiveArrayCritical(env, j_rwork, rwork, 0);
   (*env)->ReleasePrimitiveArrayCritical(env, j_iwork, iwork, 0);
@@ -1444,8 +1448,8 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_zlaed7
   jdouble *rwork = (*env)->GetPrimitiveArrayCritical(env, j_rwork, JNI_FALSE);
   jint info;
 
-  zlaed7(&n, &cutpnt, &qsiz, &tlvls, &curlvl, &curpbm, d, (MKL_Complex16 *)q, &ldq, &rho, indxq,
-         qstore, qptr, prmptr, perm, givptr, givcol, givnum, (MKL_Complex16 *)work, rwork, iwork, &info );
+  zlaed7(&n, &cutpnt, &qsiz, &tlvls, &curlvl, &curpbm, d, (lapack_complex_double *)q, &ldq, &rho, indxq,
+         qstore, qptr, prmptr, perm, givptr, givcol, givnum, (lapack_complex_double *)work, rwork, iwork, &info );
 
   (*env)->ReleasePrimitiveArrayCritical(env, j_rwork, rwork, 0);
   (*env)->ReleasePrimitiveArrayCritical(env, j_iwork, iwork, 0);
@@ -1463,4 +1467,4 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_LAPACK_zlaed7
   return info;
 }
 
-
+#endif

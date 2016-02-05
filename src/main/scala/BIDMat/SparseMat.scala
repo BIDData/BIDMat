@@ -394,7 +394,7 @@ class SparseMat[@specialized(Double,Float) T]
   	case _ => ""
   }
   
-  private def printOne(v0:Int):String = {
+  override def printOne(v0:Int):String = {
   		val v = v0 + Mat.oneBased
   		"%d" format v
   }

@@ -1,5 +1,9 @@
 #!/bin/bash
 
+if [ "${ARCH}" = "" ];then
+    ARCH=`arch`
+fi
+
 BIDMAT_ROOT="${BASH_SOURCE[0]}"
 if [ ! `uname` = "Darwin" ]; then
   BIDMAT_ROOT=`readlink -f "${BIDMAT_ROOT}"`
@@ -23,14 +27,20 @@ elif [ "$OS" = "Windows_NT" ]; then
     subdir="win"
     curl -o liblist.txt ${source}/lib/liblist_win.txt
 else
-    subdir="linux"
-    curl -o liblist.txt ${source}/lib/liblist_linux.txt
+    if [[ "${ARCH}" == arm* ]]; then
+        subdir="linux_arm"
+        curl -o liblist.txt ${source}/lib/liblist_linux_arm.txt
+    else
+        subdir="linux"
+        curl -o liblist.txt ${source}/lib/liblist_linux.txt
+    fi
 fi
 curl -o exelist.txt ${source}/lib/exelist.txt
 
 while read fname; do
     echo -e "\nDownloading ${fname}"
     curl --retry 2 -O ${source}/lib/${fname}
+    chmod 755 ${fname}
 done < liblist.txt
 
 mv ${BIDMAT_ROOT}/lib/BIDMat.jar ${BIDMAT_ROOT}
