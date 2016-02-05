@@ -11,6 +11,7 @@ class CLKernelSpec extends CLSpec {
     val kernel = CLKernelCache.get(Mat.clQueue, "test_program.cl", "matrixAdd")
     val dim = 4
     val n = dim * dim
+    val a = 123
     val A, B, C = Array.ofDim[Float](n)
     val rng = new scala.util.Random
     for (i <- 0 until n) {
@@ -36,11 +37,11 @@ class CLKernelSpec extends CLSpec {
         null,
         null))
     } {
-      kernel(A_buf, B_buf, C_buf).run(Mat.clQueue, NDRange(n))
+      kernel(A_buf, B_buf, C_buf, a).run(Mat.clQueue, NDRange(n))
       clEnqueueReadBuffer(Mat.clQueue, C_buf, CL_TRUE, 0, Sizeof.cl_float * n, Pointer.to(C), 0, null, null)
     }
 
-    val expected = A zip(B) map { p => p._1 + p._2 }
+    val expected = A zip(B) map { p => p._1 + p._2 + a }
     C zip(expected) foreach {
       case(x, y) => x should be (y +- 1e-5f)
     }

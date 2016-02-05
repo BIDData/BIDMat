@@ -57,7 +57,13 @@ object CLKernelCache {
 
   def getProgramSource(program_name:String):String = {
     val sb = new StringBuilder()
-    val kern_res = CLKernelCache.getClass().getClassLoader().getResource(program_name)
+
+    val kern_res = Option(
+      ClassLoader.getSystemResource(program_name)
+    ) .orElse {
+      Option(CLKernelCache.getClass().getClassLoader().getResource(program_name))
+    } .get
+
     for {
       reader <- managed(new BufferedReader(new InputStreamReader(kern_res.openStream(), "UTF-8")))
     } {

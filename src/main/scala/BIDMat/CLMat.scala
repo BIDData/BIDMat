@@ -3,12 +3,18 @@ package BIDMat
 import java.io.Closeable
 
 import org.jocl.CL._
-import org.jocl.{cl_mem, Pointer, Sizeof}
+import org.jocl.{cl_mem, cl_command_queue, cl_context, Pointer, Sizeof}
 
 /**
- * OpenCL, single precision, dense matrix
+ * OpenCL-backed, single precision, dense matrix
  */
-class CLMat(nr: Int, nc: Int, var data: cl_mem, val realsize: Long)
+class CLMat(
+    nr: Int,
+    nc: Int,
+    queue: cl_command_queue,
+    var data: cl_mem,
+    val realsize: Long
+  )
   extends Mat(nr, nc)
   with Closeable {
 
@@ -21,10 +27,13 @@ class CLMat(nr: Int, nc: Int, var data: cl_mem, val realsize: Long)
   }
   override def close(): Unit = free()
 
+  // TODO: Only copy a subset of the matrix
+  override def toString(): String = FMat(this).toString
+
   def toFMat(a: Mat): FMat = {
     val out = FMat.newOrCheckFMat(nrows, ncols, a, GUID, "toFMat".##)
     clEnqueueReadBuffer(
-      Mat.clQueue,
+      queue,
       data,
       CL_TRUE, // blocking
       0L, // offset
@@ -34,18 +43,50 @@ class CLMat(nr: Int, nc: Int, var data: cl_mem, val realsize: Long)
     out
   }
 
-  def + (a: CLMat): CLMat = {
+  def + (b: CLMat): CLMat = {
     val out = CLMat(nrows, ncols)
-    val kernel = CLKernelCache.get(Mat.clQueue, "clmat_binop.cl", "add")
-    kernel(this, a, out).run(Mat.clQueue, NDRange(nrows * ncols))
+    Mat.nflops += 1L * length
+    val kernel = CLKernelCache.get(queue, "clmat_binop.cl", "add")
+    kernel(this, b, out).run(queue, NDRange(nrows * ncols))
     out
   }
+
+  def * (b: CLMat): CLMat = {
+    if (ncols == b.nrows) {
+      val out = CLMat(nrows, b.ncols)
+      Mat.nflops += 2L * length * b.ncols
+      val kernel = CLKernelCache.get(queue, "clmat_binop.cl", "mult_naive")
+      kernel(nrows, ncols, b.ncols, this, b, out).run(queue, NDRange(nrows, b.ncols))
+      clFinish(queue)
+      out
+    } else {
+      throw new RuntimeException(s"dimension mismatch a($nrows $ncols), b(${b.nrows} ${b.ncols})");
+    }
+  }
+
+  /*
+  def foo(n: Int): (Float, Float) = {
+    val a = rand(n, n)
+    val b = rand(n, n)
+    var gf = (0f, 0f)
+    for {
+      a_ <- managed(CLMat(a))
+      b_ <- managed(CLMat(b))
+    } {
+      flip
+      val c = a_ * b_
+      gf = gflop
+      c.free()
+    }
+    gf
+  }
+  */
 
 }
 
 object CLMat {
 
-  /** Construct empty CLMat of size nr*nc */
+  /** Construct empty CLMat of size nr*nc on the OpenCL device */
   def apply(nr: Int, nc: Int): CLMat = {
     val rsize = nr * nc
     val mem = clCreateBuffer(
@@ -54,7 +95,7 @@ object CLMat {
       Sizeof.cl_float * rsize,
       null,
       null)
-    new CLMat(nr, nc, mem, rsize)
+    new CLMat(nr, nc, Mat.clQueue, mem, rsize)
   }
 
   /** Copy a local FMat to the OpenCL device */
@@ -66,7 +107,7 @@ object CLMat {
       Sizeof.cl_float * rsize,
       Pointer.to(a.data),
       null)
-    new CLMat(a.nrows, a.ncols, mem, rsize)
+    new CLMat(a.nrows, a.ncols, Mat.clQueue, mem, rsize)
   }
 
 }
