@@ -1,5 +1,6 @@
 
 package edu.berkeley.bid.comm;
+// This is draft 1 of sparse Allreduce
 
 import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
