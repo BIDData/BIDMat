@@ -303,12 +303,18 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_SPBLAS_dmcscm
   jdouble * C = (*env)->GetPrimitiveArrayCritical(env, j_C, JNI_FALSE);
 
   int ioff = jc[0];
-  int i, j, ir0;
+  int i, j, k, ir0;
+  double *Ap, *Cp, bv;
 #pragma omp parallel for
   for (i = 0; i < N; i++) {
     for (j = jc[i]-ioff; j < jc[i+1]-ioff; j++) {
       ir0 = ir[j]-ioff;
-      cblas_daxpy(M, B[j], A+(ir0*lda), 1, C+(i*ldc), 1);
+      Ap = A+(ir0*lda);
+      Cp = C+(i*ldc);
+      bv = B[j];
+      for (k = 0; k < M; k++) {
+        Cp[k] += bv * Ap[k];
+      }
     }
   }
 
@@ -330,12 +336,18 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_SPBLAS_dmcsrm
   jdouble * C = (*env)->GetPrimitiveArrayCritical(env, j_C, JNI_FALSE);
 
   int ioff = jc[0];
-  int i, j, k;
+  int i, j, k, ir0;
+  double *Ap, *Cp, bv;
 #pragma omp parallel for
   for (i = 0; i < N; i++) {
     for (j = jc[i]-ioff; j < jc[i+1]-ioff; j++) {
-      k = ir[j]-ioff;
-      cblas_daxpy(M, B[j], A+(i*lda), 1, C+(k*ldc), 1);
+      ir0 = ir[j]-ioff;
+      Ap = A+(ir0*lda);
+      Cp = C+(i*ldc);
+      bv = B[j];
+      for (k = 0; k < N; k++) {
+        Cp[k] += bv * Ap[k];
+      }
     }
   }
 
@@ -357,12 +369,18 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_SPBLAS_smcscm
   jfloat * C = (*env)->GetPrimitiveArrayCritical(env, j_C, JNI_FALSE);
 
   int ioff = jc[0];
-  int i, j, ir0;
+  int i, j, ir0, k;
+  float *Ap, *Cp, bv;
 #pragma omp parallel for
   for (i = 0; i < N; i++) {
     for (j = jc[i]-ioff; j < jc[i+1]-ioff; j++) {
       ir0 = ir[j]-ioff;
-      cblas_saxpy(M, B[j], A+(ir0*lda), 1, C+(i*ldc), 1);
+      Ap = A+(ir0*lda);
+      Cp = C+(i*ldc);
+      bv = B[j];
+      for (k = 0; k < N; k++) {
+        Cp[k] += bv * Ap[k];
+      }
     }
   }
 
@@ -384,20 +402,19 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_SPBLAS_smcsrm
 
   int ioff = jc[0];
   int i, j, jj, k;
+  float *Ap, *Cp, Bj;
 #pragma omp parallel for
   for (i = 0; i < N; i++) {
     for (j = jc[i]-ioff; j < jc[i+1]-ioff; j++) {
       jj = ir[j]-ioff;
       if (M == 1) {
         C[jj*ldc] += B[j] * A[i*lda];
-      } else if (M > 10) {
-        cblas_saxpy(M, B[j], A+(i*lda), 1, C+(jj*ldc), 1);
       } else {
-        int iia = i*lda;
-        int jjc = jj*ldc;
-        float Bj = B[j];
+        Ap = A + (i*lda);
+        Cp = C + (jj*ldc);
+        Bj = B[j];
         for (k = 0; k < M; k++) {
-          C[jjc+k] += Bj * A[iia+k];
+          Cp[k] += Bj * Ap[k];
         }
       }            
     }
