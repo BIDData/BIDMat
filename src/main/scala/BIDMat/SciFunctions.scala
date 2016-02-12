@@ -62,6 +62,10 @@ object SciFunctions {
   
   def GPUmemory = GMat.GPUmemory;
   
+  def setNumThreads(n:Int) = edu.berkeley.bid.UTILS.setnumthreads(n);
+  
+  def getNumThreads = edu.berkeley.bid.UTILS.getnumthreads();
+  
   def setseed(seed:Int):Unit = {
     myrand.setSeed(seed)
     if (stream != null) {
