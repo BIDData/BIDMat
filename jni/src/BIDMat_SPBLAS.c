@@ -410,13 +410,12 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_SPBLAS_smcsrm
     float *Ap, *Cp, Bj;
     for (j = jc[i]-ioff; j < jc[i+1]-ioff; j++) {
       ir0 = ir[j]-ioff;
+      Ap = A + (i*lda);
+      Cp = C + (ir0*ldc);
+      Bj = B[j];
       if (M == 1) {
-        C[ir0*ldc] += B[j] * A[i*lda];
+        *Cp += Bj * *Ap;
       } else {
-        Ap = A + (i*lda);
-        Cp = C + (ir0*ldc);
-        Bj = B[j];
-#pragma omp parallel for
         for (k = 0; k < M; k++) {
           Cp[k] += Bj * Ap[k];
         }
