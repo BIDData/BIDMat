@@ -3,6 +3,8 @@ package edu.berkeley.bid.comm;
 
 // Third version of sparse allreduce
 // Includes support for matrices, feature range limits, long feature indices
+//
+// 
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;

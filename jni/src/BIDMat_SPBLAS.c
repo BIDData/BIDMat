@@ -303,10 +303,11 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_SPBLAS_dmcscm
   jdouble * C = (*env)->GetPrimitiveArrayCritical(env, j_C, JNI_FALSE);
 
   int ioff = jc[0];
-  int i, j, k, ir0;
-  double *Ap, *Cp, bv;
+  int i;
 #pragma omp parallel for
   for (i = 0; i < N; i++) {
+    int j, k, ir0;
+    double *Ap, *Cp, bv;
     for (j = jc[i]-ioff; j < jc[i+1]-ioff; j++) {
       ir0 = ir[j]-ioff;
       Ap = A+(ir0*lda);
@@ -336,16 +337,17 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_SPBLAS_dmcsrm
   jdouble * C = (*env)->GetPrimitiveArrayCritical(env, j_C, JNI_FALSE);
 
   int ioff = jc[0];
-  int i, j, k, ir0;
-  double *Ap, *Cp, bv;
-#pragma omp parallel for
+  int i;
   for (i = 0; i < N; i++) {
+    int j, k, ir0;
+    double *Ap, *Cp, bv;
     for (j = jc[i]-ioff; j < jc[i+1]-ioff; j++) {
       ir0 = ir[j]-ioff;
-      Ap = A+(ir0*lda);
-      Cp = C+(i*ldc);
+      Ap = A+(i*lda);
+      Cp = C+(ir0*ldc);
       bv = B[j];
-      for (k = 0; k < N; k++) {
+#pragma omp parallel for
+      for (k = 0; k < M; k++) {
         Cp[k] += bv * Ap[k];
       }
     }
@@ -369,16 +371,17 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_SPBLAS_smcscm
   jfloat * C = (*env)->GetPrimitiveArrayCritical(env, j_C, JNI_FALSE);
 
   int ioff = jc[0];
-  int i, j, ir0, k;
-  float *Ap, *Cp, bv;
+  int i;
 #pragma omp parallel for
   for (i = 0; i < N; i++) {
+    int j, ir0, k;
+    float *Ap, *Cp, bv;
     for (j = jc[i]-ioff; j < jc[i+1]-ioff; j++) {
       ir0 = ir[j]-ioff;
       Ap = A+(ir0*lda);
       Cp = C+(i*ldc);
       bv = B[j];
-      for (k = 0; k < N; k++) {
+      for (k = 0; k < M; k++) {
         Cp[k] += bv * Ap[k];
       }
     }
@@ -401,18 +404,19 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_SPBLAS_smcsrm
   jfloat * C = (*env)->GetPrimitiveArrayCritical(env, j_C, JNI_FALSE);
 
   int ioff = jc[0];
-  int i, j, jj, k;
-  float *Ap, *Cp, Bj;
-#pragma omp parallel for
+  int i;
   for (i = 0; i < N; i++) {
+    int j, ir0, k;
+    float *Ap, *Cp, Bj;
     for (j = jc[i]-ioff; j < jc[i+1]-ioff; j++) {
-      jj = ir[j]-ioff;
+      ir0 = ir[j]-ioff;
       if (M == 1) {
-        C[jj*ldc] += B[j] * A[i*lda];
+        C[ir0*ldc] += B[j] * A[i*lda];
       } else {
         Ap = A + (i*lda);
-        Cp = C + (jj*ldc);
+        Cp = C + (ir0*ldc);
         Bj = B[j];
+#pragma omp parallel for
         for (k = 0; k < M; k++) {
           Cp[k] += Bj * Ap[k];
         }

@@ -1944,7 +1944,7 @@ object MatFunctions {
   
   def cols2sparse(rows:IMat, cols:IMat, values:FMat):SMat = cols2sparse(rows, cols, values, true, 0)
   
-  def union(dd:Dict*) = Dict._union(dd:_*);
+  def union(dd:Dict*) = Dict.union(dd:_*);
   
   def h5list(fname:String) = MatHDF5.h5list(fname)
   
@@ -2023,9 +2023,11 @@ object MatFunctions {
   def loadIDX(fname:String, compressed:Int) = HMat.loadIDX(fname, compressed)
   def loadIDX(fname:String) = HMat.loadIDX(fname, 0)
   
-  def loadLibSVM(fname:String, nrows:Int, compressed:Int, oneBased:Int) = HMat.loadLibSVM(fname, nrows, compressed, oneBased)
-  def loadLibSVM(fname:String, nrows:Int, compressed:Int) = HMat.loadLibSVM(fname, nrows, compressed)
-  def loadLibSVM(fname:String, nrows:Int) = HMat.loadLibSVM(fname, nrows, 0)
+  def loadLibSVM(fname:String, nrows:Int, compressed:Int, oneBased:Int) = HMat.loadLibSVM(fname, nrows, compressed, oneBased);
+  def loadLibSVM(fname:String, nrows:Int, compressed:Int) = HMat.loadLibSVM(fname, nrows, compressed);
+  def loadLibSVM(fname:String, nrows:Int) = HMat.loadLibSVM(fname, nrows, 0);
+  
+  def loadImage(fname:String) = Image.loadImage(fname);
 
   def saveLibSVM(fname:String, data:SMat, cats:SMat, weights:FMat, compressed:Int, oneBased:Int):Unit = HMat.saveLibSVM(fname, data, cats, weights, compressed, oneBased)
   def saveLibSVM(fname:String, data:SMat, cats:SMat, weights:FMat, compressed:Int):Unit = HMat.saveLibSVM(fname, data, cats, weights, compressed)
