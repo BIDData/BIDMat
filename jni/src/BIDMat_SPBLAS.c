@@ -413,12 +413,8 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_SPBLAS_smcsrm
       Ap = A + (i*lda);
       Cp = C + (ir0*ldc);
       Bj = B[j];
-      if (M == 1) {
-        *Cp += Bj * *Ap;
-      } else {
-        for (k = 0; k < M; k++) {
-          Cp[k] += Bj * Ap[k];
-        }
+      for (k = 0; k < M; k++) {
+        Cp[k] += Bj * Ap[k];
       }            
     }
   }

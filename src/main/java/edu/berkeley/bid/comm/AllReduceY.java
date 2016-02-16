@@ -10,6 +10,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.Arrays;
+import java.lang.Math;
 import java.io.*;
 import java.nio.*;
 import java.net.*;
@@ -17,14 +18,14 @@ import java.net.*;
 
 
 public class AllReduceY {
-
+	
 	public class Machine {
 		/* Machine Configuration Variables */	
 		final int N;                                               // Number of features
 		final int D;                                               // Depth of the network
 		final int M;                                               // Number of Machines
 		final int imachine;                                        // My identity
-		final int [][] groups;                                     // group membership indices
+		final Groups groups;                                       // group membership indices
 		final int replicate;                                       // replication factor
 		final String [] machineIP;                                 // String IP names
 		final boolean doSim;                                       // Simulation on one machine: send messages directly without sockets
@@ -43,38 +44,9 @@ public class AllReduceY {
 		ExecutorService sockExecutor;
 		Listener listener;
 
-		// return the size of the group at level "depth" containing this node, and the position of this node in that group.
 
-		public int [] inMyGroup(int imachine, int depth) {
-			int [] grouplev = groups[depth];
-			int count = 0;
-			int pos = 0;
-			int mygroup = grouplev[imachine];
-			for (int i = 0; i < N; i++) {
-				if (imachine == i) pos = count;
-				if (grouplev[i] == mygroup) count++;
-			}
-			return new int[]{count, pos};
-		}
 
-		// return the machines in the group at level "depth" containing this node, and the position of this node in that group.
-
-		public int [] nodesInMyGroup(int imachine, int depth) {
-			int count = 0;
-			int [] grouplev = groups[depth];
-			int mygroup = grouplev[imachine];
-			int [] img = inMyGroup(imachine, depth);
-			int [] machines = new int[img[0]];
-			for (int i = 0; i < N; i++) {
-				if (grouplev[i] == mygroup) {
-					machines[count] = i;
-					count++;
-				}
-			}
-			return machines;
-		}
-
-		public Machine(int N0, int [][] groups0, int imachine0, int M0, int bufsize, boolean doSim0, int trace0, 
+		public Machine(int N0, Groups groups0, int imachine0, int M0, int bufsize, boolean doSim0, int trace0, 
 				int replicate0, String [] machineIP0) {
 			N = N0;
 			M = M0;
@@ -88,14 +60,14 @@ public class AllReduceY {
 			} else {
 				machineIP = machineIP0;
 			}
-			D = groups.length;
+			D = groups.depth();
 			trace = trace0;
 			layers = new Layer[D];
 			int cumk = 1;
 			int maxk = 1;
 			int cumPos = 0;
 			for (int i = 0; i < D; i++) {
-				int [] inGroup = inMyGroup(imachine, i);
+				int [] inGroup = groups.nodesInGroup(imachine, i);
 				int k = inGroup[0];
 				int pos = inGroup[1];
 				cumPos = cumPos * k + pos;
@@ -188,8 +160,8 @@ public class AllReduceY {
 				cumPos = cumPos0;
 				posInMyGroup = posInMyGroup0;
 				depth = depth0;
-				inNbr = nodesInMyGroup(imachine, depth);
-				outNbr = nodesInMyGroup(imachine, depth);		
+				inNbr = groups.nodesInGroup(imachine, depth);
+				outNbr = groups.nodesInGroup(imachine, depth);		
 				downMaps = new IVec[k];
 				upMaps = new IVec[outNbr.length];
 			}		
