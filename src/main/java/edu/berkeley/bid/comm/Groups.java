@@ -5,28 +5,36 @@ import java.lang.Math;
 
 public class Groups {
 	public final int N;
-	public int [][] groupNums;
+	public int [][] groupIds;
 	public int [][] posInGroups;
 	public int [][][] nbrs;
+	public int [][] groupSizes;
+	public int [] machines;
 	public int [] perm;
   public int [] invperm;
-	public double [] gsizes;
 	public int [] gmods;
+	public int gprod;
 	public int D;
-
+	public float initg;
+	public boolean trace;
+	
+	static private void permuteArray(int [] arr, int n, int seed) {
+		Random gen = new Random(seed);
+		for (int i = 0; i < n; i++) {
+			arr[i] = i;
+		}
+		for (int i = 0; i < (n-1); i++) {
+			int iswap = Math.min(n - 1, i + (int)(gen.nextDouble() * (n-i)));
+			int tmp = arr[i];
+			arr[i] = arr[iswap];
+			arr[iswap] = tmp;
+		}
+	}
+			
 	private void permute(int seed) {
 		perm = new int[N];
 		invperm = new int[N];
-		Random gen = new Random(seed);
-		for (int i = 0; i < N; i++) {
-			perm[i] = i;
-		}
-		for (int i = 0; i < (N-1); i++) {
-			int iswap = Math.min(N - 1, i + (int)(gen.nextDouble() * (N-i)));
-			int tmp = perm[i];
-			perm[i] = perm[iswap];
-			perm[iswap] = tmp;
-		}
+		permuteArray(perm, N, seed);
 		for (int i = 0; i < N; i++) {
 			invperm[perm[i]] = i;
 		}
@@ -38,8 +46,9 @@ public class Groups {
 	// where vi = v0 + i alpha
 	// alpha is the log of the layer growth factor
 	public void getGroupSizes(int N) {
+		double [] gsizes;
 		double alpha = 0.3;
-		double vD = Math.log(6);
+		double vD = Math.log(initg);
 		double a = alpha / 2;
 		double b = vD - alpha / 2;
 		double c = -Math.log(N);
@@ -49,60 +58,224 @@ public class Groups {
 		gsizes = new double[D];
 		gmods = new int[D];
 		vD = -c / D - (D-1) * alpha / 2;
-		int prod = 1;
-		for (int i = 0; i < D; i++) {
+		gprod = 1;
+		for (int i = 0; i < D-1; i++) {
 			gsizes[i] = Math.exp(vD + (D-i-1) * alpha);
-			gmods[i] = (int)Math.round(N/gsizes[i]);
-			prod *= gmods[i];
+			gmods[i] = (int)Math.round(gsizes[i]);
+			gprod *= gmods[i];
 		}
-		if (prod < N) gmods[D-1] = 1 + (N-1) / (prod/gmods[D-1]);
+		gmods[D-1] = 1 + (N-1) / gprod;                    // Make sure gprod >= N 
+		gprod = gprod * gmods[D-1];  
 	}
 	
 	public void assignGroups() {
-		groupNums = new int[D][];
+		groupIds = new int[N][];
 		posInGroups = new int[D][];
 		nbrs = new int[D][][];
-		int [][] groupPos = new int[D][];
-		for (int d = 0; d < D; d++) {
-			groupNums[d] = new int[N];
-			posInGroups[d] = new int[N];
-			groupPos[d] = new int[gmods[d]];
-			nbrs[d] = new int[gmods[d]][];
-		}
+		groupSizes = new int[D][];
 		for (int i = 0; i < N; i++) {
-			int res = i;
-			for (int d = 0; d < D; d++) {
-				int q = res / gmods[d];
-				int v = res - q * gmods[d];
-				groupNums[d][i] = v;
-				posInGroups[d][i] = groupPos[d][v];
-				groupPos[d][v] ++;
-				res = q;
-			}
+			groupIds[i] = new int[D];
 		}
+		int pprod = 1;
+
 		for (int d = 0; d < D; d++) {
-			for (int i = 0; i < gmods[d]; i++) {
-				nbrs[d][i] = new int[groupPos[d][i]];
-				groupPos[d][i] = 0;
-			}
+			int numgroups = gprod / gmods[d];
+			posInGroups[d] = new int[N];
+			nbrs[d] = new int[numgroups][];
+			groupSizes[d] = new int[numgroups];
+			int []groupPos = new int[numgroups];
+
 			for (int i = 0; i < N; i++) {
-				int g = groupNums[d][i];
-				int pos = groupPos[d][g];
-				nbrs[d][g][pos] = i;
-				groupPos[d][g]++;
+				int ii = machines[i];
+				int left = ii / (pprod * gmods[d]);
+				int right = ii % pprod;
+				int gnum = right + pprod * left;
+				groupIds[i][d] = gnum;
+				groupSizes[d][gnum]++;
 			}
+
+			for (int i = 0; i < numgroups; i++) {
+				nbrs[d][i] = new int[groupSizes[d][i]];
+			}
+			
+			for (int i = 0; i < N; i++) {
+				int gnum = groupIds[i][d];
+				int pos = groupPos[gnum];
+				nbrs[d][gnum][pos] = i;
+				posInGroups[d][i] = pos;
+				groupPos[gnum]++;
+			}
+			
+			pprod *= gmods[d];
 		}
 	}
+	
+	public int [] minSizes() {
+		int [] msizes = new int[D];
+		for (int d = 0; d < D; d++) {
+			int mm = 1000000;
+			for (int j = 0; j < groupSizes[d].length; j++) {
+				if (groupSizes[d][j] < mm) {
+					mm = groupSizes[d][j];
+				}
+			}
+			msizes[d] = mm;
+		}
+		return msizes;
+	}
+	
+	public int [] maxSizes() {
+		int [] msizes = new int[D];
+		for (int d = 0; d < D; d++) {
+			int mm = 0;
+			for (int j = 0; j < groupSizes[d].length; j++) {
+				if (groupSizes[d][j] > mm) {
+					mm = groupSizes[d][j];
+				}
+			}
+			msizes[d] = mm;
+		}
+		return msizes;
+	}
+	
+	public int compare(Groups g) {
+		int [] mymin = minSizes();
+		int [] thatmin = g.minSizes();
+		int minc = 1;
+		int maxc = -1;
+		int d = 0;
+		while (maxc - minc < 2 && d < D) {
+			int cmp = (int)Math.signum(mymin[d] - thatmin[d]);
+			if (cmp > maxc) maxc = cmp;
+			if (cmp < minc) minc = cmp;
+			d++;
+		}			
+		return maxc + minc;
+	}
+	
+	public void printArray(int [] arr) {
+		for (int i = 0; i < arr.length-1; i++) {
+			System.out.format("%d,", arr[i]);
+		}
+		System.out.format("%d", arr[arr.length-1]);
+	}
+	
+	static final double mapfn(double v) {
+		return Math.sqrt(v);
+	}
+	//
+	// Minimize the sum of the squares of the group sizes
+	//
+	
+	public int [] optimize(int howlong, double prob) {
+		getGroupSizes(N);
+		machines = new int[gprod];
+		groupSizes = new int[D][];
+		groupIds = new int[gprod][];
+		permuteArray(machines, gprod, 1000);
+		double sumv = 0;
+		for (int d = 0; d < D; d++) {
+			groupSizes[d] = new int[gprod/gmods[d]];
+		}
+		for (int i = 0; i < gprod; i++) {
+			groupIds[i] = new int[D];
+			int ii = machines[i];
+			int pprod = 1;
+			for (int d = 0; d < D; d++) {
+				int left = ii / (pprod * gmods[d]);
+				int right = ii % pprod;
+				int gnum = right + pprod * left;
+				groupIds[i][d] = gnum;
+				if (i < N) {
+					groupSizes[d][gnum]++;
+				}
+				pprod *= gmods[d];
+			}
+		}
+		for (int d = 0; d < D; d++) {
+			for (int i = 0; i < groupSizes[d].length; i++) {
+				sumv += mapfn(groupSizes[d][i]);
+			}
+		}
+		Random gen = new Random(1231231);
+		for (int iter = 0; iter < howlong; iter++) {
+			int i = (int)Math.min(N-1, (gen.nextDouble() * N));
+			int j = (int)Math.min(gprod-1, N + (gen.nextDouble() * (gprod - N)));
+			// Remove i's counts and add j's
+			double testsumv = sumv;
+			for (int d = 0; d < D; d++) {
+				int gi = groupIds[i][d];
+				int gj = groupIds[j][d];
+				int sizei = groupSizes[d][gi];
+				int sizej = groupSizes[d][gj];
+				if (gi != gj) {
+					testsumv += mapfn(sizej+1) - mapfn(sizej) + mapfn(sizei-1) - mapfn(sizei);
+				}
+			}
+			if (testsumv > sumv || gen.nextGaussian()*prob > sumv - testsumv) { 
+				sumv = testsumv;
+				
+				for (int d = 0; d < D; d++) {
+					int gi = groupIds[i][d];
+					int gj = groupIds[j][d];
+					groupSizes[d][gi]--;
+					groupSizes[d][gj]++;
+				}
+				
+				int mm = machines[i];
+				machines[i] = machines[j];
+				machines[j] = mm;
+				
+				int [] vv = groupIds[i];
+				groupIds[i] = groupIds[j];
+				groupIds[j] = vv;	
+				
+				if (trace) {		
+					System.out.format("sumv = %4.3f, ",testsumv);
+					System.out.print("min=[");
+					printArray(minSizes());
+					System.out.print("], ");
+					System.out.print("max=[");
+					printArray(maxSizes());
+					System.out.print("]\n");
+				}
+			}
+		}		
+		
+		return machines;
+	}
 
-	public Groups(int N0, int seed) {
+	public Groups(int N0, float initg0) {
 		N = N0;
-		permute(seed);
+		initg = initg0;
+		trace = false;
 		getGroupSizes(N);			
+	}
+	
+	public Groups(int N0, float initg0, int [] machines0, int seed) {
+		N = N0;
+		initg = initg0;
+		machines = machines0;
+		trace = false;
+		getGroupSizes(N);	
+		permute(seed);
+		assignGroups();
+	}
+	
+	public Groups(int N0, int [] machines0, int [] gmods0, int seed) {
+		N = N0;
+		machines = machines0;
+		trace = false;
+		gmods = gmods0;
+		D = gmods0.length;
+		gprod = 1;
+		for (int i = 0; i < D; i++) gprod *= gmods[i];
+		permute(seed);
 		assignGroups();
 	}
 
-	public int groupNum(int imachine, int level) {
-		return groupNums[level][perm[imachine]];
+	public int groupId(int imachine, int level) {
+		return groupIds[perm[imachine]][level];
 	}
 
 	public int posInGroup(int imachine, int level) {
@@ -110,7 +283,7 @@ public class Groups {
 	}
 
 	public int [] nodesInGroup(int imachine, int level) {
-		int g = groupNums[level][perm[imachine]];
+		int g = groupIds[perm[imachine]][level];
 		int [] grp = nbrs[level][g];
 		int [] out = new int[grp.length];
 		for (int i = 0; i < grp.length; i++) {
@@ -120,6 +293,6 @@ public class Groups {
 	}
 
 	public int depth() {
-		return groupNums.length;
+		return D;
 	}
 }
