@@ -963,8 +963,8 @@ object Mat {
     if (hasOpenCL) {
       val platforms = getCLPlatforms()
       val platform = platforms(0)
-      //val gpus = getCLDevices(platform, org.jocl.CL.CL_DEVICE_TYPE_GPU)
-      val gpus = getCLDevices(platform, org.jocl.CL.CL_DEVICE_TYPE_CPU)
+      val gpus = getCLDevices(platform, org.jocl.CL.CL_DEVICE_TYPE_GPU)
+      //val gpus = getCLDevices(platform, org.jocl.CL.CL_DEVICE_TYPE_CPU)
       numOpenCLGPUs = gpus.length
       clContext = createCLContext(platform, gpus)
       clQueue = createCLQueue(clContext, gpus(0))
@@ -1021,7 +1021,8 @@ object Mat {
   def createCLQueue(context: org.jocl.cl_context, device: org.jocl.cl_device_id):org.jocl.cl_command_queue = {
     val properties = new org.jocl.cl_queue_properties()
     properties.addProperty(org.jocl.CL.CL_QUEUE_PROPERTIES, org.jocl.CL.CL_QUEUE_PROFILING_ENABLE)
-    org.jocl.CL.clCreateCommandQueueWithProperties(context, device, properties, null)
+    //org.jocl.CL.clCreateCommandQueueWithProperties(context, device, properties, null)
+    org.jocl.CL.clCreateCommandQueue(context, device, 0, null)
   }
 
   def copyToIntArray[@specialized(Double, Float, Long, Byte, Short) T](data:Array[T], i0:Int, idata:Array[Int], d0:Int, n:Int)

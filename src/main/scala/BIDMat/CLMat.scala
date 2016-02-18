@@ -64,24 +64,6 @@ class CLMat(
     }
   }
 
-  /*
-  def foo(n: Int): (Float, Float) = {
-    val a = rand(n, n)
-    val b = rand(n, n)
-    var gf = (0f, 0f)
-    for {
-      a_ <- managed(CLMat(a))
-      b_ <- managed(CLMat(b))
-    } {
-      flip
-      val c = a_ * b_
-      gf = gflop
-      c.free()
-    }
-    gf
-  }
-  */
-
 }
 
 object CLMat {
