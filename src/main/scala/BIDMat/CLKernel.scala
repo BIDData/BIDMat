@@ -20,6 +20,7 @@ import org.jocl.CL._
  */
 class CLKernel(kernel: cl_kernel) extends Object with Closeable {
 
+  // Easily set arguments to the kernel
   def apply(xs: Any*): CLKernel = {
     xs.zipWithIndex foreach {
       case (x: Int, i) => setArg(i, Pointer.to(Array(x)), Sizeof.cl_int)

@@ -29,9 +29,37 @@ class CLMatSpec extends CLSpec {
     for {
       a_ <- managed(CLMat(a))
       b_ <- managed(CLMat(b))
-      c_ <- managed(a_ * b_)
+      c_ <- managed(CLMat(20, 20))
     } {
-      val tmp = FMat(c_)
+      val tmp = FMat(a_.mult_naive(b_, c_))
+      assert_approx_eq(tmp, c, 1e-4f)
+    }
+  }
+
+  it should "tiled multiply" in {
+    val a = rand(128, 128)
+    val b = rand(128, 128)
+    val c = a * b
+    for {
+      a_ <- managed(CLMat(a))
+      b_ <- managed(CLMat(b))
+      c_ <- managed(CLMat(128, 128))
+    } {
+      val tmp = FMat(a_.mult_tiled(b_, c_))
+      assert_approx_eq(tmp, c, 1e-4f)
+    }
+  }
+
+  it should "tiled vectorized multiply" in {
+    val a = rand(128, 128)
+    val b = rand(128, 128)
+    val c = a * b
+    for {
+      a_ <- managed(CLMat(a))
+      b_ <- managed(CLMat(b))
+      c_ <- managed(CLMat(128, 128))
+    } {
+      val tmp = FMat(a_.mult_tiled_vectorized(b_, c_))
       assert_approx_eq(tmp, c, 1e-4f)
     }
   }

@@ -48,6 +48,7 @@ class CLMat(
     Mat.nflops += 1L * length
     val kernel = CLKernelCache.get(queue, "clmat_binop.cl", "add")
     kernel(this, b, out).run(queue, NDRange(nrows * ncols))
+    clFinish(queue)
     out
   }
 
@@ -57,6 +58,52 @@ class CLMat(
       Mat.nflops += 2L * length * b.ncols
       val kernel = CLKernelCache.get(queue, "clmat_binop.cl", "mult_naive")
       kernel(nrows, ncols, b.ncols, this, b, out).run(queue, NDRange(nrows, b.ncols))
+      clFinish(queue)
+      out
+    } else {
+      throw new RuntimeException(s"dimension mismatch a($nrows $ncols), b(${b.nrows} ${b.ncols})");
+    }
+  }
+
+  def mult_naive(b: CLMat, out: CLMat) = {
+    if (out.nrows != nrows || out.ncols != b.ncols) {
+      throw new RuntimeException(s"out matrix dimension mismatch out(${out.nrows} ${out.ncols}) != ab($nrows ${b.ncols})");
+    }
+    if (ncols == b.nrows) {
+      Mat.nflops += 2L * length * b.ncols
+      val kernel = CLKernelCache.get(queue, "clmat_binop.cl", "mult_naive")
+      kernel(nrows, b.ncols, ncols, this, b, out).run(queue, NDRange(nrows, b.ncols))
+      clFinish(queue)
+      out
+    } else {
+      throw new RuntimeException(s"dimension mismatch a($nrows $ncols), b(${b.nrows} ${b.ncols})");
+    }
+  }
+
+  def mult_tiled(b: CLMat, out: CLMat, tileSize: Int = 32) = {
+    if (out.nrows != nrows || out.ncols != b.ncols) {
+      throw new RuntimeException(s"out matrix dimension mismatch out(${out.nrows} ${out.ncols}) != ab($nrows ${b.ncols})");
+    }
+    if (ncols == b.nrows) {
+      Mat.nflops += 2L * length * b.ncols
+      val kernel = CLKernelCache.get(queue, "clmat_binop.cl", "mult_tiled", s"-D TS=$tileSize")
+      kernel(nrows, b.ncols, ncols, this, b, out).run(queue, NDRange(nrows, b.ncols), NDRange(tileSize, tileSize))
+      clFinish(queue)
+      out
+    } else {
+      throw new RuntimeException(s"dimension mismatch a($nrows $ncols), b(${b.nrows} ${b.ncols})");
+    }
+  }
+
+  def mult_tiled_vectorized(b: CLMat, out: CLMat, tileSize: Int = 32, width: Int = 4) = {
+    if (out.nrows != nrows || out.ncols != b.ncols) {
+      throw new RuntimeException(s"out matrix dimension mismatch out(${out.nrows} ${out.ncols}) != ab($nrows ${b.ncols})");
+    }
+    if (ncols == b.nrows) {
+      Mat.nflops += 2L * length * b.ncols
+      val kernel = CLKernelCache.get(queue, "clmat_binop.cl", "mult_tiled_vectorized", s"-D TS=$tileSize -D WIDTH=$width")
+      kernel(nrows, b.ncols, ncols, this, b, out)
+        .run(queue, NDRange(nrows/width, b.ncols), NDRange(tileSize/width, tileSize))
       clFinish(queue)
       out
     } else {
