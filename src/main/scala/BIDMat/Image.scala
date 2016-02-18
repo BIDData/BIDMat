@@ -130,7 +130,7 @@ class ImagePanel(img:BufferedImage) extends JPanel
 
 
 object Image {
-  def loadImage(fname:String):Image = new Image(ImageIO.read(new File(fname)))
+  def loadImage(fname:String):Image = new Image(ImageIO.read(new File(fname)));
   
   private var imageCount = 0;
   

@@ -153,9 +153,10 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_dmcscm
 	jdouble * C = (*env)->GetPrimitiveArrayCritical(env, j_C, JNI_FALSE);
 
         int ioff = jc[0];
-        int i, j, ir0;
+        int i;
 #pragma omp parallel for
         for (i = 0; i < N; i++) {
+          int j, ir0;
           for (j = jc[i]-ioff; j < jc[i+1]-ioff; j++) {
             ir0 = ir[j]-ioff;
             cblas_daxpy(M, B[j], A+(ir0*lda), 1, C+(i*ldc), 1);
@@ -180,9 +181,10 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_dmcsrm
 	jdouble * C = (*env)->GetPrimitiveArrayCritical(env, j_C, JNI_FALSE);
 
     int ioff = jc[0];
-    int i, j, k;
+    int i;
 #pragma omp parallel for
     for (i = 0; i < N; i++) {
+      int j, k;
       for (j = jc[i]-ioff; j < jc[i+1]-ioff; j++) {
         k = ir[j]-ioff;
         cblas_daxpy(M, B[j], A+(i*lda), 1, C+(k*ldc), 1);
@@ -420,9 +422,10 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_smcscm
 	jfloat * C = (*env)->GetPrimitiveArrayCritical(env, j_C, JNI_FALSE);
 
         int ioff = jc[0];
-        int i, j, ir0;
+        int i;
 #pragma omp parallel for
         for (i = 0; i < N; i++) {
+          int j, ir0;
           for (j = jc[i]-ioff; j < jc[i+1]-ioff; j++) {
             ir0 = ir[j]-ioff;
             cblas_saxpy(M, B[j], A+(ir0*lda), 1, C+(i*ldc), 1);
@@ -446,9 +449,10 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_smcsrm
 	jfloat * C = (*env)->GetPrimitiveArrayCritical(env, j_C, JNI_FALSE);
 
         int ioff = jc[0];
-        int i, j, jj, k;
+        int i;
 #pragma omp parallel for
         for (i = 0; i < N; i++) {
+          int j, jj, k;
           for (j = jc[i]-ioff; j < jc[i+1]-ioff; j++) {
             jj = ir[j]-ioff;
             if (M == 1) {
@@ -520,11 +524,12 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_cdotr
 	jfloat * X = (*env)->GetPrimitiveArrayCritical(env, jX, JNI_FALSE);
 	jfloat * Y = (*env)->GetPrimitiveArrayCritical(env, jY, JNI_FALSE);
 	jfloat * Z = (*env)->GetPrimitiveArrayCritical(env, jZ, JNI_FALSE);
-    int i, j, ix, iy;
+    int i, j;
 
     for (i = 0; i < ncols; i++) {
 #pragma omp parallel for
       for (j = 0; j < nrows; j++) {
+        int ix, iy;
         ix = 2*(j + i*ldx);
         iy = 2*(j + i*ldy);
         Z[2*j] += X[ix] * Y[ix] - X[ix+1] * Y[ix+1];
@@ -629,16 +634,16 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_word2vecFwd
 (JNIEnv *env, jobject obj, jint nrows, jint ncols, const jint nwa, const jint nwb, jintArray jWA, jintArray jWB, 
  jfloatArray jA, jfloatArray jB, jfloatArray jC)
 {
-  int i, j, k, c, ia, ib, coff;
-  float sum;
   jint * WA = (jint *)((*env)->GetPrimitiveArrayCritical(env, jWA, JNI_FALSE));
   jint * WB = (jint *)((*env)->GetPrimitiveArrayCritical(env, jWB, JNI_FALSE));
   jfloat * A = (jfloat *)((*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE));
   jfloat * B = (jfloat *)((*env)->GetPrimitiveArrayCritical(env, jB, JNI_FALSE));
   jfloat * C = (jfloat *)((*env)->GetPrimitiveArrayCritical(env, jC, JNI_FALSE));
-
+  int i;
 #pragma omp parallel for
   for (i = 0; i < ncols; i++) {
+    int j, k, c, ia, ib, coff;
+    float sum;
     for (j = 0; j < nwa; j++) {
       ia = nrows*WA[j+i*nwa];
       for (k = 0; k < nwb; k++) {
@@ -664,9 +669,6 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_word2vecBwd
 (JNIEnv *env, jobject obj, jint nrows, jint ncols, jint nwa, jint nwb, jintArray jWA, jintArray jWB, 
  jfloatArray jA, jfloatArray jB, jfloatArray jDA, jfloatArray jDB, jfloatArray jC, jfloat lrate)
 {
-  int i, j, k, c;
-  float cv;
-  int ia, ib;
   jint * WA = (jint *)((*env)->GetPrimitiveArrayCritical(env, jWA, JNI_FALSE));
   jint * WB = (jint *)((*env)->GetPrimitiveArrayCritical(env, jWB, JNI_FALSE));
   jfloat * A = (jfloat *)((*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE));
@@ -674,9 +676,13 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_word2vecBwd
   jfloat * DA = (jfloat *)((*env)->GetPrimitiveArrayCritical(env, jDA, JNI_FALSE));
   jfloat * DB = (jfloat *)((*env)->GetPrimitiveArrayCritical(env, jDB, JNI_FALSE));
   jfloat * C = (jfloat *)((*env)->GetPrimitiveArrayCritical(env, jC, JNI_FALSE));
+  int i; 
 
 #pragma omp parallel for
   for (i = 0; i < ncols; i++) {
+    int j, k, c;
+    float cv;
+    int ia, ib;
     for (j = 0; j < nwa; j++) {
       ia = nrows*WA[j+i*nwa];
       for (k = 0; k < nwb; k++) {
