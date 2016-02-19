@@ -27,6 +27,14 @@
         			<family>Windows</family>
       			</os>
    		 </activation>
+	    	<dependencies>
+    			<dependency>
+	        		<groupId>biddata</groupId>
+        	    		<artifactId>natives</artifactId>
+				<classifier>natives-win</classifier>
+            			<version>0.1</version>
+			</dependency>
+	    	</dependencies>
 		</profile>
 		<profile>
 		<id>mac</id>
@@ -37,8 +45,9 @@
    		 </activation>
 	    	<dependencies>
     			<dependency>
-	        		<groupId>natives-mac</groupId>
-        	    		<artifactId>natives-mac</artifactId>
+	        		<groupId>biddata</groupId>
+        	    		<artifactId>natives</artifactId>
+				<classifier>natives-mac</classifier>
             			<version>0.1</version>
 			</dependency>
 	    	</dependencies>
@@ -49,9 +58,17 @@
       			<os>
         			<family>unix</family>
 				<arch>arm</arch>
-				<name>!mac os x</name> 
+				<name>!mac os x</name>  <!--https://issues.apache.org/jira/browse/MNG-4983-->
       			</os>
    		 </activation>
+	    	<dependencies>
+    			<dependency>
+	        		<groupId>biddata</groupId>
+        	    		<artifactId>natives</artifactId>
+				<classifier>natives-linux-arm</classifier>
+            			<version>0.1</version>
+			</dependency>
+	    	</dependencies>
 		</profile>
 		<profile>
 		<id>linux</id>
@@ -61,6 +78,14 @@
 				<name>!mac os x</name> <!--https://issues.apache.org/jira/browse/MNG-4983-->
       			</os>
    		 </activation>
+	    	<dependencies>
+    			<dependency>
+	        		<groupId>biddata</groupId>
+        	    		<artifactId>natives</artifactId>
+				<classifier>natives-linux</classifier>
+            			<version>0.1</version>
+			</dependency>
+	    	</dependencies>
 		</profile>
 	</profiles>
 	<properties>
@@ -118,7 +143,7 @@
             <artifactId>jfreechart</artifactId>
             <version>1.0.19</version>
         </dependency>
-        <dependency>
+	<dependency>
             <groupId>jcommon</groupId>
             <artifactId>jcommon</artifactId>
             <version>1.0.23</version>
@@ -143,7 +168,7 @@
             <artifactId>jcufft</artifactId>
             <version>0.7.0a</version>
         </dependency>
-         <dependency>
+        <dependency>
             <groupId>jcusolver</groupId>
             <artifactId>jcusolver</artifactId>
             <version>0.7.0a</version>
