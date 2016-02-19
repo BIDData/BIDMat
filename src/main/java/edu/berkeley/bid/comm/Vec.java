@@ -53,6 +53,8 @@ public class Vec {
 		return nn;
 	}
 	
+	// Need to add the matrix version of this
+	
 	public void addTo(Vec b, IVec map) {
 		if (length != map.length) {
 			throw new RuntimeException("addTo dimensions mismatch "+length+" "+map.length);

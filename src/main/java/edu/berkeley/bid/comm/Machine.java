@@ -15,35 +15,33 @@ import java.util.concurrent.Executors;
 
 public class Machine {
 	/* Machine Configuration Variables */	
-	final int N;                                               // Number of features
-	final int D;                                               // Depth of the network
-	final int M;                                               // Number of Machines
-	final int imachine;                                        // My identity
-	final Groups groups;                                       // group membership indices
+	public final int D;                                               // Depth of the network
+	public final int M;                                               // Number of Machines
+	public final int imachine;                                        // My identity
+	public final Groups groups;                                       // group membership indices
 	final int replicate;                                       // replication factor
-	final String [] machineIP;                                 // String IP names
-	final boolean doSim;                                       // Simulation on one machine: send messages directly without sockets
+	public final String [] machineIP;                                 // String IP names
+	public final boolean doSim;                                       // Simulation on one machine: send messages directly without sockets
 	int sockBase = 50000;                                      // Socket base address
 	int sendTimeout = 1000;                                    // in msec
 	int trace = 0;                                             // 0: no trace, 1: high-level, 2: everything
 	int timeout = 10000;
 
-	Layer [] layers;                                           // All the layers
-	ByteBuffer [] sendbuf;                                     // buffers, one for each destination in a group
-	ByteBuffer [] recbuf;
-	IVec finalMap;                                             // Map from down --> up at layer D-1
-	Msg [][] messages;                                         // Message queue 
-	boolean [][] msgrecvd;                                     // Receiver status
-	boolean [][] amsending;                                    // Sender status
+	public Layer [] layers;                                           // All the layers
+	public ByteBuffer [] sendbuf;                                     // buffers, one for each destination in a group
+	public ByteBuffer [] recbuf;
+	public IVec finalMap;                                             // Map from down --> up at layer D-1
+	public Msg [][] messages;                                         // Message queue 
+	public boolean [][] msgrecvd;                                     // Receiver status
+	public boolean [][] amsending;                                    // Sender status
 	ExecutorService executor;
 	ExecutorService sockExecutor;
-	Listener listener;
-	AllReduceY parent;
+	public Listener listener;
+	AllReduceY allreducer;
 
-	public Machine(AllReduceY p0, int N0, Groups groups0, int imachine0, int M0, int bufsize, boolean doSim0, int trace0, 
+	public Machine(AllReduceY p0, Groups groups0, int imachine0, int M0, int bufsize, boolean doSim0, int trace0, 
 			int replicate0, String [] machineIP0) {
-		parent = p0;
-		N = N0;
+		allreducer = p0;
 		M = M0;
 		doSim = doSim0;
 		imachine = imachine0;
@@ -95,9 +93,8 @@ public class Machine {
 	}
 
 	public void stop() {
-		if (listener != null) {
-			listener.stop();
-		}
+		executor.shutdownNow();
+		if (sockExecutor != null) sockExecutor.shutdownNow();
 	}
 
 	public void config(IVec downi, IVec upi) {
@@ -124,7 +121,7 @@ public class Machine {
 			upv = layers[d].reduceUp(upv, stride);
 		}
 		if (trace > 0) {
-			synchronized (parent) {
+			synchronized (allreducer) {
 				System.out.format("machine %d reduce result nnz %d out of %d\n", imachine, upv.nnz(), upv.size());
 			}
 		}
@@ -262,7 +259,7 @@ public class Machine {
 		} else { 
 			if (doSim) {					
 				for (int i = 0; i < replicate; i++) { 
-					parent.simNetwork[outi + i*M].messages[imachine][tag] = msg;
+					allreducer.machines[outi + i*M].messages[imachine][tag] = msg;
 				}
 			} else {
 				for (int i = 0; i < replicate; i++) { 

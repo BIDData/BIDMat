@@ -66,8 +66,8 @@ class AllReducer {
     	val thresh = nnz/math.log(nnz)/row(1 to F);
     	nodeInds(i) = find(rv > thresh);
     	nodeData(i) = rand(stride, nodeInds(i).length);
-    	val bufsize = (1.5 * nodeData.length).toInt;
-    	network.simNetwork(i) = new Machine(network, stride, groups, i, M, bufsize, false, trace, replicate, null);
+    	val bufsize = (1.5 * nodeData(0).length).toInt;
+    	network.machines(i) = new Machine(network, groups, i, M, bufsize, false, trace, replicate, null);
     	totvals += stride * nodeInds(i).length;
     }
 
@@ -75,13 +75,11 @@ class AllReducer {
     System.setProperty("actors.maxPoolSize", "%d" format M*replicate);
     val nreps =1;
     tic;
-    val par = (0 until M).par;
-    par.tasksupport = new ForkJoinTaskSupport(new scala.concurrent.forkjoin.ForkJoinPool(M));
-    par.map((i:Int) =>
+    val par = (0 until M).par.map((i:Int) =>
     	//    	  if (irep == 17) network.simNetwork(i).trace=2; else network.simNetwork(i).trace=0;     
       if (deadnodes.length == 0 || sum(deadnodes == i).v == 0) {    // Simulate dead nodes
-    	  network.simNetwork(i).config(nodeInds(i).data, nodeInds(i).data);
-    	  val result = network.simNetwork(i).reduce(nodeData(i).data, stride);
+    	  network.machines(i).config(nodeInds(i).data, nodeInds(i).data);
+    	  val result = network.machines(i).reduce(nodeData(i).data, stride);
       	reducedData(i) = new FMat(stride, nodeInds(i).length, result);
       });
 

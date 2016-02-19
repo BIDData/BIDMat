@@ -4,8 +4,9 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.Arrays;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 
 class Layer {
 
@@ -50,7 +51,7 @@ class Layer {
 		groups = machine.groups;
 		sendbuf = machine.sendbuf;
 		recbuf = machine.recbuf;
-		allreducer = machine.parent;
+		allreducer = machine.allreducer;
 		trace = machine.trace;
 		imachine = machine.imachine;
 		timeout = machine.timeout;
@@ -69,15 +70,13 @@ class Layer {
 		IVec [] utree;
 		int i;
 		int repno;
-		CountDownLatch latch;
 
-		public ConfigThread(IVec [] downp0, IVec [] upp0,	IVec [] dtree0, IVec [] utree0, int i0, CountDownLatch latch0) {
+		public ConfigThread(IVec [] downp0, IVec [] upp0,	IVec [] dtree0, IVec [] utree0, int i0) {
 			downp = downp0;
 			upp = upp0;					
 			dtree = dtree0;
 			utree = utree0;
 			i = i0;
-			latch = latch0;
 		}
 
 		public void run() {
@@ -114,8 +113,6 @@ class Layer {
 			IVec.checkTree(utree, upout, i, k);	
 			downp[i] = downout;
 			upp[i] = upout;
-
-			latch.countDown();
 		}
 	}
 
@@ -131,14 +128,20 @@ class Layer {
 				System.out.format("machine %d layer %d, dparts (%d", imachine, depth, downpartinds[0].size());
 			}
 		}
-
-		CountDownLatch latch = new CountDownLatch(k);
-		executor.execute(new TimeoutThread(timeout, latch));
+		
+		Future<?> [] futures = new Future<?>[k];
+		Future<?> timeoutf = executor.submit(new FutureTask<Void>(new TimeoutThread(timeout, futures), null));
 		for (int i = 0; i < k; i++) {
 			int ix = (i + posInMyGroup) % k;                               // Try to stagger the traffic
-			executor.execute(new ConfigThread(downpartinds, uppartinds, dtree, utree, ix, latch));
-		}
-		try {	latch.await(); } catch (InterruptedException e) {}
+			futures[i] = executor.submit(new FutureTask<Void>(new ConfigThread(downpartinds, uppartinds, dtree, utree, ix), null));
+		};
+		for (int i = 0; i < k; i++) {
+			try {
+				futures[i].get();
+			} catch (Exception e) {}
+		}	
+		timeoutf.cancel(true);
+		
 		IVec dmaster = dtree[0];
 		Arrays.fill(dtree, null);
 		downn = dmaster.size();
@@ -163,15 +166,13 @@ class Layer {
 		Vec newv;
 		Vec downv;
 		int i;
-		CountDownLatch latch;
 
 		// Note, these have to be partitions of the data now. 
 
-		public ReduceDownThread(Vec newv0, Vec downv0, int i0, CountDownLatch latch0) {
+		public ReduceDownThread(Vec newv0, Vec downv0, int i0) {
 			newv = newv0;
 			downv = downv0;
 			i = i0;
-			latch = latch0;
 		}
 
 		public void run() {
@@ -205,20 +206,24 @@ class Layer {
 			synchronized (newv) {
 				res.addTo(newv, downMaps[i]);	
 			}
-			latch.countDown();
 		}
 	}
 
 	public Vec reduceDown(Vec downv, int stride) {
 		Vec newv = new Vec(downn);
 		Vec [] vparts = partitioner.partition(downv, dpart, downpartinds, stride);
-		CountDownLatch latch = new CountDownLatch(k);
-		executor.execute(new TimeoutThread(timeout, latch));
+		Future<?> [] futures = new Future<?>[k];
+		Future<?> timeoutf = executor.submit(new FutureTask<Void>(new TimeoutThread(timeout, futures), null));
 		for (int i = 0; i < k; i++) {
-			int ix = (i + posInMyGroup) % k;   // Try to stagger the traffic
-			executor.execute(new ReduceDownThread(newv, vparts[ix], ix, latch));
+			int ix = (i + posInMyGroup) % k;                               // Try to stagger the traffic
+			futures[i] = executor.submit(new FutureTask<Void>(new ReduceDownThread(newv, vparts[ix], ix), null));
+		};
+		for (int i = 0; i < k; i++) {
+			try {
+				futures[i].get();
+			} catch (Exception e) {}
 		}
-		try { latch.await(); } catch (InterruptedException e) {}
+		timeoutf.cancel(true);
 		return newv;
 	}
 
@@ -226,13 +231,11 @@ class Layer {
 		Vec newv;
 		Vec upv;
 		int i;
-		CountDownLatch latch;
 
-		public ReduceUpThread(Vec newv0, Vec upv0, int i0, CountDownLatch latch0) {
+		public ReduceUpThread(Vec newv0, Vec upv0, int i0) {
 			newv = newv0;
 			upv = upv0;
 			i = i0;
-			latch = latch0;
 		}
 
 		public void run () {
@@ -265,29 +268,32 @@ class Layer {
 			if (msize != psize) throw new RuntimeException("ReduceUp size mismatch "+msize+" "+psize);
 			rbuf.position(1);
 			rbuf.get(upparts[i].data, 0, msize);
-			latch.countDown();
 		}
 	}
 
 	public Vec reduceUp(Vec upv, int stride) {
 		Vec newv = new Vec(upn);
-		CountDownLatch latch = new CountDownLatch(k);
-		executor.execute(new TimeoutThread(timeout, latch));
+		Future<?> [] futures = new Future<?>[k];
+		executor.submit(new FutureTask<Void>(new TimeoutThread(timeout, futures), null));
 		for (int i = 0; i < k; i++) {
 			int ix = (i + posInMyGroup) % k;                               // Try to stagger the traffic
-			executor.execute(new ReduceUpThread(newv, upv, ix, latch));
+			futures[i] = executor.submit(new FutureTask<Void>(new ReduceUpThread(newv, upv, ix), null));
 		};
-		try { latch.await(); } catch (InterruptedException e) {}
+		for (int i = 0; i < k; i++) {
+			try {
+				futures[i].get();
+			} catch (Exception e) {}
+		}
 		partitioner.merge(newv, stride, upparts, interleave);
 		return newv;
 	}
 	
 	public class TimeoutThread implements Runnable {
-		CountDownLatch latch;
+		Future <?> [] futures;
 		int mtime;
 
-		public TimeoutThread(int mtime0, CountDownLatch latch0) {		
-			latch = latch0;
+		public TimeoutThread(int mtime0, Future <?> [] futures0) {		
+			futures = futures0;
 			mtime = mtime0;
 		}
 
@@ -295,14 +301,11 @@ class Layer {
 			try {
 				Thread.sleep(mtime);
 
-				if (latch.getCount() > 0) {
-					if (trace > 1) {
-						synchronized (allreducer) {
-							System.out.format("timed out at depth %d machine %d", depth, imachine);
-						}
+				for (int i = 0; i < futures.length; i++) {
+					if (futures[i] != null) {
+						futures[i].cancel(true);
 					}
 				}
-				while (latch.getCount() > 0) latch.countDown();
 			} catch (InterruptedException e) {
 			}
 		}
