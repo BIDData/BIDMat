@@ -26,6 +26,7 @@ public class Machine {
 	int sockBase = 50000;                                      // Socket base address
 	int sendTimeout = 1000;                                    // in msec
 	int trace = 0;                                             // 0: no trace, 1: high-level, 2: everything
+	int timeout = 10000;
 
 	Layer [] layers;                                           // All the layers
 	ByteBuffer [] sendbuf;                                     // buffers, one for each destination in a group
@@ -60,8 +61,8 @@ public class Machine {
 		int cumk = 1;
 		int maxk = 1;
 		int cumPos = 0;
-		for (int i = 0; i < D; i++) {
-			int k = groups.nodesInGroup(i, imachine).length;
+		for (int level = 0; level < D; level++) {
+			int k = groups.nodesInGroup(imachine, level).length;
 			maxk = Math.max(maxk, k);
 		}
 		executor = Executors.newFixedThreadPool(maxk); // set to 1 for sequential messaging. 
@@ -108,6 +109,11 @@ public class Machine {
 		}
 		finalMap = IVec.mapInds(upi, downi);
 	}
+	
+	public void config(int [] downi, int [] upi) {
+		config(new IVec(downi), new IVec(upi));
+	}
+	
 
 	public Vec reduce(Vec downv, int stride) {
 		for (int d = 0; d < D; d++) {
@@ -125,6 +131,9 @@ public class Machine {
 		return upv;
 	}
 	
+	public float [] reduce(float [] downv, int stride) {
+		return reduce(new Vec(downv), stride).data;
+	}
 
 
 	public class SockWriter implements Runnable {

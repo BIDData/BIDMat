@@ -47,7 +47,7 @@ public class Partitioner {
 		}
 		for (int i = 0; i < k; i++) {
 			parts[i] = new IVec(lens[i]);
-			mapback[i] = new IVec(lens[i]);
+			if (mapback != null) mapback[i] = new IVec(lens[i]);
 			lens[i] = 0;
 		}
 		if (mapback != null) {

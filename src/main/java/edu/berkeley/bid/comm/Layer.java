@@ -5,6 +5,7 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 
 class Layer {
 
@@ -29,9 +30,11 @@ class Layer {
 	int imachine;
 	int downn;                                               // Size of the down master list
 	int upn;
+	int timeout;
 	Partitioner partitioner;
 	Machine machine;
 	Groups groups;
+	ExecutorService executor;
 	AllReduceY allreducer;
 	ByteBuffer [] sendbuf;                                     // buffers, one for each destination in a group
 	ByteBuffer [] recbuf;
@@ -50,6 +53,9 @@ class Layer {
 		allreducer = machine.parent;
 		trace = machine.trace;
 		imachine = machine.imachine;
+		timeout = machine.timeout;
+		executor = machine.executor;
+		partitioner = new Partitioner(cumk, cumPos, k);
 		inNbr = groups.nodesInGroup(imachine, depth);
 		outNbr = groups.nodesInGroup(imachine, depth);		
 		downMaps = new IVec[k];
@@ -127,9 +133,10 @@ class Layer {
 		}
 
 		CountDownLatch latch = new CountDownLatch(k);
+		executor.execute(new TimeoutThread(timeout, latch));
 		for (int i = 0; i < k; i++) {
 			int ix = (i + posInMyGroup) % k;                               // Try to stagger the traffic
-			machine.executor.execute(new ConfigThread(downpartinds, uppartinds, dtree, utree, ix, latch));
+			executor.execute(new ConfigThread(downpartinds, uppartinds, dtree, utree, ix, latch));
 		}
 		try {	latch.await(); } catch (InterruptedException e) {}
 		IVec dmaster = dtree[0];
@@ -203,12 +210,13 @@ class Layer {
 	}
 
 	public Vec reduceDown(Vec downv, int stride) {
-		CountDownLatch latch = new CountDownLatch(k);
 		Vec newv = new Vec(downn);
 		Vec [] vparts = partitioner.partition(downv, dpart, downpartinds, stride);
+		CountDownLatch latch = new CountDownLatch(k);
+		executor.execute(new TimeoutThread(timeout, latch));
 		for (int i = 0; i < k; i++) {
 			int ix = (i + posInMyGroup) % k;   // Try to stagger the traffic
-			machine.executor.execute(new ReduceDownThread(newv, vparts[ix], ix, latch));
+			executor.execute(new ReduceDownThread(newv, vparts[ix], ix, latch));
 		}
 		try { latch.await(); } catch (InterruptedException e) {}
 		return newv;
@@ -264,14 +272,39 @@ class Layer {
 	public Vec reduceUp(Vec upv, int stride) {
 		Vec newv = new Vec(upn);
 		CountDownLatch latch = new CountDownLatch(k);
+		executor.execute(new TimeoutThread(timeout, latch));
 		for (int i = 0; i < k; i++) {
 			int ix = (i + posInMyGroup) % k;                               // Try to stagger the traffic
-			machine.executor.execute(new ReduceUpThread(newv, upv, ix, latch));
-		}
+			executor.execute(new ReduceUpThread(newv, upv, ix, latch));
+		};
 		try { latch.await(); } catch (InterruptedException e) {}
 		partitioner.merge(newv, stride, upparts, interleave);
 		return newv;
 	}
 	
+	public class TimeoutThread implements Runnable {
+		CountDownLatch latch;
+		int mtime;
 
+		public TimeoutThread(int mtime0, CountDownLatch latch0) {		
+			latch = latch0;
+			mtime = mtime0;
+		}
+
+		public void run() {
+			try {
+				Thread.sleep(mtime);
+
+				if (latch.getCount() > 0) {
+					if (trace > 1) {
+						synchronized (allreducer) {
+							System.out.format("timed out at depth %d machine %d", depth, imachine);
+						}
+					}
+				}
+				while (latch.getCount() > 0) latch.countDown();
+			} catch (InterruptedException e) {
+			}
+		}
+	}
 }

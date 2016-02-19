@@ -18,6 +18,36 @@ public class Groups {
 	public float initg;
 	public boolean trace;
 	
+	public Groups(int N0, float initg0) {
+		N = N0;
+		initg = initg0;
+		trace = false;
+		getGroupSizes(N);			
+	}
+	
+	public Groups(int N0, float initg0, int [] machines0, int seed) {
+		N = N0;
+		initg = initg0;
+		machines = machines0;
+		trace = false;
+		getGroupSizes(N);	
+		permute(seed);
+		assignGroups();
+	}
+	
+	public Groups(int N0, int [] gmods0, int [] machines0, int seed) {
+		N = N0;
+		machines = machines0;
+		trace = false;
+		gmods = gmods0;
+		D = gmods0.length;
+		gprod = 1;
+		for (int i = 0; i < D; i++) gprod *= gmods[i];
+		permute(seed);
+		assignGroups();
+	}
+
+	
 	static private void permuteArray(int [] arr, int n, int seed) {
 		Random gen = new Random(seed);
 		for (int i = 0; i < n; i++) {
@@ -243,35 +273,6 @@ public class Groups {
 		}		
 		
 		return machines;
-	}
-
-	public Groups(int N0, float initg0) {
-		N = N0;
-		initg = initg0;
-		trace = false;
-		getGroupSizes(N);			
-	}
-	
-	public Groups(int N0, float initg0, int [] machines0, int seed) {
-		N = N0;
-		initg = initg0;
-		machines = machines0;
-		trace = false;
-		getGroupSizes(N);	
-		permute(seed);
-		assignGroups();
-	}
-	
-	public Groups(int N0, int [] machines0, int [] gmods0, int seed) {
-		N = N0;
-		machines = machines0;
-		trace = false;
-		gmods = gmods0;
-		D = gmods0.length;
-		gprod = 1;
-		for (int i = 0; i < D; i++) gprod *= gmods[i];
-		permute(seed);
-		assignGroups();
 	}
 
 	public int groupId(int imachine, int level) {

@@ -9,7 +9,7 @@ val machines = izeros(n,n);
 var dmax = 0f;
 
 for (i <- 1 to n) {
-  val g = new Groups(i, 8);
+  val g = new Groups(i, 7);
   g.optimize(100000,0.001f);
   val d = g.D;
   val gmod = irow(g.gmods);
@@ -25,3 +25,8 @@ for (i <- 1 to n) {
       dmax = math.min(0.2f,dd);
   }
 }
+
+val dir = "/code/BIDMat/data/bestAllreduce/";
+saveIMat(dir + "dims.imat.lz4", depths);
+saveIMat(dir + "gmods.imat.lz4", gmods);
+saveIMat(dir + "machines.imat.lz4", machines);
