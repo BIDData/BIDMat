@@ -1,6 +1,8 @@
 
 package edu.berkeley.bid.comm;
 
+// Second version of sparse allreduce
+
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -9,6 +11,7 @@ import java.io.*;
 import java.nio.*;
 import java.net.*;
 //import mpi.*;
+
 
 public class AllReduceX {
 	

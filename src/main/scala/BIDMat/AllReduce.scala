@@ -87,8 +87,8 @@ object AllReduce {
       icols(i) = new IVec(find(sum(s,1)).data)
       totvals += icols(i).size()
     }
-    System.setProperty("actors.corePoolSize", "%d" format M*replicate)
-    System.setProperty("actors.maxPoolSize", "%d" format M*replicate)
+    System.setProperty("actors.corePoolSize", "%d" format M*replicate);
+    System.setProperty("actors.maxPoolSize", "%d" format M*replicate);
     val latch = new CountDownLatch(M*replicate)
     tic
     val nreps = 1
