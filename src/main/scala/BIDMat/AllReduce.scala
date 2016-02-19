@@ -99,15 +99,15 @@ object AllReduce {
     				val i0 = i % M
     				network.simNetwork(i).config(irows(i0), icols(i0))
     				retval(i) = network.simNetwork(i).reduce(ivals(i0))
+    				retval(i) = network.simNetwork(i).reduce(ivals(i0))
     			}
     			latch.countDown()
     		}
     	}
     	latch.await()
     network.stop
-    val tt= toc
+    val tt=toc
     println("Allreduce done, t=%4.3f msecs, BW=%4.3fGB/s" format (1000*tt/nreps, totvals*replicate*8*2/tt*nreps/1e9))
-    
     val msum = new Vec(a.ncols)
     msum.clear
     for (i <- 0 until M) {
