@@ -19,6 +19,50 @@
                 <url>http://dl.bintray.com/yyangeecs/BIDData</url>
             </repository>
     	</repositories>
+	<profiles>
+		<profile>
+		<id>win</id>
+		<activation>
+      			<os>
+        			<family>Windows</family>
+      			</os>
+   		 </activation>
+		</profile>
+		<profile>
+		<id>mac</id>
+		<activation>
+      			<os>
+        			<family>mac</family>
+      			</os>
+   		 </activation>
+	    	<dependencies>
+    			<dependency>
+	        		<groupId>natives-mac</groupId>
+        	    		<artifactId>natives-mac</artifactId>
+            			<version>0.1</version>
+			</dependency>
+	    	</dependencies>
+		</profile>
+		<profile>
+		<id>linux_arm</id>
+		<activation>
+      			<os>
+        			<family>unix</family>
+				<arch>arm</arch>
+				<name>!mac os x</name> 
+      			</os>
+   		 </activation>
+		</profile>
+		<profile>
+		<id>linux</id>
+		<activation>
+      			<os>
+        			<family>unix</family>
+				<name>!mac os x</name> <!--https://issues.apache.org/jira/browse/MNG-4983-->
+      			</os>
+   		 </activation>
+		</profile>
+	</profiles>
 	<properties>
 		<scalaVersion>2.11</scalaVersion>
 	</properties>
@@ -120,7 +164,7 @@
             <artifactId>ptplotapplication</artifactId>
             <version>1.0</version>
         </dependency>
-    </dependencies> 
+    	</dependencies> 
 	<build>
 		<plugins>
 			<plugin>
@@ -144,7 +188,25 @@
 						<arg>-target:jvm-1.7</arg>
 					</args>
                 		</configuration>
-           	 </plugin>
+           		</plugin>
+			<plugin>
+        			<groupId>com.googlecode.mavennatives</groupId>
+        			<artifactId>maven-nativedependencies-plugin</artifactId>
+        			<version>0.0.7</version>
+				<configuration>
+					<nativesTargetDir>lib/</nativesTargetDir>
+					<separateDirs>false</separateDirs>
+				</configuration>
+        			<executions>
+                			<execution>
+                        			<id>unpacknatives</id>
+                        			<phase>generate-resources</phase>
+                        			<goals>
+                                			<goal>copy</goal>
+                        			</goals>
+                			</execution>
+        			</executions>
+			</plugin>
         	</plugins>
 		<resources>
 			<resource>
