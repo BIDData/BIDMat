@@ -19,13 +19,15 @@ public class Machine {
 	public final int M;                                               // Number of Machines
 	public final int imachine;                                        // My identity
 	public final Groups groups;                                       // group membership indices
-	final int replicate;                                       // replication factor
+	public final int replicate;                                       // replication factor
 	public final String [] machineIP;                                 // String IP names
 	public final boolean doSim;                                       // Simulation on one machine: send messages directly without sockets
-	int sockBase = 50000;                                      // Socket base address
-	int sendTimeout = 1000;                                    // in msec
-	int trace = 0;                                             // 0: no trace, 1: high-level, 2: everything
-	int timeout = 10000;
+	public int sockBase = 50000;                                      // Socket base address
+	public int sendTimeout = 1000;                                    // in msec
+	public int trace = 0;                                             // 0: no trace, 1: high-level, 2: everything
+	public int timeout = 10000;
+	public Vec downv;;
+	public Vec upv;
 
 	public Layer [] layers;                                           // All the layers
 	public ByteBuffer [] sendbuf;                                     // buffers, one for each destination in a group
@@ -34,14 +36,14 @@ public class Machine {
 	public Msg [][] messages;                                         // Message queue 
 	public boolean [][] msgrecvd;                                     // Receiver status
 	public boolean [][] amsending;                                    // Sender status
-	ExecutorService executor;
-	ExecutorService sockExecutor;
+	public ExecutorService executor;
+	public ExecutorService sockExecutor;
 	public Listener listener;
-	AllReduceY allreducer;
+	Network network;
 
-	public Machine(AllReduceY p0, Groups groups0, int imachine0, int M0, int bufsize, boolean doSim0, int trace0, 
+	public Machine(Network p0, Groups groups0, int imachine0, int M0, int bufsize, boolean doSim0, int trace0, 
 			int replicate0, String [] machineIP0) {
-		allreducer = p0;
+		network = p0;
 		M = M0;
 		doSim = doSim0;
 		imachine = imachine0;
@@ -81,8 +83,8 @@ public class Machine {
 		for (int level = 0; level < D; level++) {
 			int k = groups.nodesInGroup(imachine, level).length;
 			int pos = groups.posInGroup(imachine, level);
-			cumPos = cumPos * k + pos;
 			layers[level] = new Layer(this, k, cumk, cumPos, pos, level);
+			cumPos = cumPos * k + pos;
 			cumk *= k;
 		}
 		if (!doSim) {
@@ -112,16 +114,17 @@ public class Machine {
 	}
 	
 
-	public Vec reduce(Vec downv, int stride) {
+	public Vec reduce(Vec downv0, int stride) {
+		downv = downv0;
 		for (int d = 0; d < D; d++) {
 			downv = layers[d].reduceDown(downv, stride);
 		}
-		Vec upv = downv.mapFrom(finalMap);
+		upv = downv.mapFrom(finalMap, stride);
 		for (int d = D-1; d >= 0; d--) {
 			upv = layers[d].reduceUp(upv, stride);
 		}
 		if (trace > 0) {
-			synchronized (allreducer) {
+			synchronized (network) {
 				System.out.format("machine %d reduce result nnz %d out of %d\n", imachine, upv.nnz(), upv.size());
 			}
 		}
@@ -259,7 +262,7 @@ public class Machine {
 		} else { 
 			if (doSim) {					
 				for (int i = 0; i < replicate; i++) { 
-					allreducer.machines[outi + i*M].messages[imachine][tag] = msg;
+					network.machines[outi + i*M].messages[imachine][tag] = msg;
 				}
 			} else {
 				for (int i = 0; i < replicate; i++) { 

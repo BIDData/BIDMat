@@ -9,7 +9,7 @@ public class Groups {
 	public int [][] posInGroups;
 	public int [][][] nbrs;
 	public int [][] groupSizes;
-	public int [] machines;
+	public int [] machineCodes;
 	public int [] perm;
   public int [] invperm;
 	public int [] gmods;
@@ -25,19 +25,19 @@ public class Groups {
 		getGroupSizes(N);			
 	}
 	
-	public Groups(int N0, float initg0, int [] machines0, int seed) {
+	public Groups(int N0, float initg0, int [] machineCodes0, int seed) {
 		N = N0;
 		initg = initg0;
-		machines = machines0;
+		machineCodes = machineCodes0;
 		trace = false;
 		getGroupSizes(N);	
 		permute(seed);
 		assignGroups();
 	}
 	
-	public Groups(int N0, int [] gmods0, int [] machines0, int seed) {
+	public Groups(int N0, int [] gmods0, int [] machineCodes0, int seed) {
 		N = N0;
-		machines = machines0;
+		machineCodes = machineCodes0;
 		trace = false;
 		gmods = gmods0;
 		D = gmods0.length;
@@ -116,7 +116,7 @@ public class Groups {
 			int []groupPos = new int[numgroups];
 
 			for (int i = 0; i < N; i++) {
-				int ii = machines[i];
+				int ii = machineCodes[i];
 				int left = ii / (pprod * gmods[d]);
 				int right = ii % pprod;
 				int gnum = right + pprod * left;
@@ -199,17 +199,17 @@ public class Groups {
 	
 	public int [] optimize(int howlong, double prob) {
 		getGroupSizes(N);
-		machines = new int[gprod];
+		machineCodes = new int[gprod];
 		groupSizes = new int[D][];
 		groupIds = new int[gprod][];
-		permuteArray(machines, gprod, 1000);
+		permuteArray(machineCodes, gprod, 1000);
 		double sumv = 0;
 		for (int d = 0; d < D; d++) {
 			groupSizes[d] = new int[gprod/gmods[d]];
 		}
 		for (int i = 0; i < gprod; i++) {
 			groupIds[i] = new int[D];
-			int ii = machines[i];
+			int ii = machineCodes[i];
 			int pprod = 1;
 			for (int d = 0; d < D; d++) {
 				int left = ii / (pprod * gmods[d]);
@@ -252,9 +252,9 @@ public class Groups {
 					groupSizes[d][gj]++;
 				}
 				
-				int mm = machines[i];
-				machines[i] = machines[j];
-				machines[j] = mm;
+				int mm = machineCodes[i];
+				machineCodes[i] = machineCodes[j];
+				machineCodes[j] = mm;
 				
 				int [] vv = groupIds[i];
 				groupIds[i] = groupIds[j];
@@ -272,7 +272,7 @@ public class Groups {
 			}
 		}		
 		
-		return machines;
+		return machineCodes;
 	}
 
 	public int groupId(int imachine, int level) {

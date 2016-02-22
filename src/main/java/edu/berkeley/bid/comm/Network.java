@@ -10,11 +10,11 @@ package edu.berkeley.bid.comm;
 //import mpi.*;
 
 
-public class AllReduceY {
+public class Network {
 	
-	public Machine [] machines = null;
+	public Machine [] machines;
 
-	public AllReduceY(int M) {
+	public Network(int M) {
 		machines = new Machine[M];
 	}
 

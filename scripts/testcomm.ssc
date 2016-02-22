@@ -1,32 +1,11 @@
 
-import edu.berkeley.bid.comm.Groups;
+import edu.berkeley.bid.comm._;
+import BIDMat.AllReducer;
 
-val n = 4096;
+val sim = new AllReducer
+sim.makeSim(16,100000,1000,100,2);
 
-val depths = izeros(1,n);
-val gmods = izeros(4,n);
-val machines = izeros(n,n);
-var dmax = 0f;
+val net = sim.network;
+val m0 = net.machines(0);
 
-for (i <- 1 to n) {
-  val g = new Groups(i, 7);
-  g.optimize(100000,0.001f);
-  val d = g.D;
-  val gmod = irow(g.gmods);
-  val machs = new IMat(i, 1, g.machines);
-  depths(i-1) = d;
-  gmods(0->d,i-1) = gmod.t;
-  machines(0->i,i-1) = machs;
-  val diff = irow(g.maxSizes)-irow(g.minSizes);
-  val dd = maxi(float(diff) / float(gmod)).v;
-  print("%d" format maxi(diff).v);
-  if (dd > dmax) {
-      print(" %f " format dd);
-      dmax = math.min(0.2f,dd);
-  }
-}
-
-val dir = "/code/BIDMat/data/bestAllreduce/";
-saveIMat(dir + "dims.imat.lz4", depths);
-saveIMat(dir + "gmods.imat.lz4", gmods);
-saveIMat(dir + "machines.imat.lz4", machines);
+val l0 = m0.layers(0);

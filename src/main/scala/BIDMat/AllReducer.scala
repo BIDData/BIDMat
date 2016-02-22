@@ -1,11 +1,12 @@
 package BIDMat
 
-import edu.berkeley.bid.comm.{IVec,LVec,Vec}
 import edu.berkeley.bid.comm._
 import scala.collection.parallel._
 import BIDMat.MatFunctions._
 import BIDMat.SciFunctions._
-import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 
 class AllReducer {
   /*
@@ -24,12 +25,13 @@ class AllReducer {
 	var gmods:IMat = null;
 	var gridmachines:IMat = null;        
 	var groups:Groups = null;
-	var network:edu.berkeley.bid.comm.AllReduceY = null;
+	var network:Network = null;
 
 	var nodeData:Array[FMat] = null;
 	var nodeInds:Array[IMat] = null;
 	var reducedData:Array[FMat] = null;
 	var total:FMat = null;
+	var netExecutor:ExecutorService = null;
   
   def main(args:Array[String]) = {
     val M = args(0).toInt                               
@@ -48,11 +50,12 @@ class AllReducer {
   def makeSim(M:Int, F:Int, nnz:Int, stride:Int, trace:Int = 0, replicate:Int = 1, deadnodes:IMat = IMat(0,1)) = {
     val clengths = loadIMat(configDir + "dims.imat.lz4");
     val allgmods = loadIMat(configDir + "gmods.imat.lz4");
-    val allmachines = loadIMat(configDir + "machines.imat.lz4");
+    val allmachinecodes = loadIMat(configDir + "machines.imat.lz4");
     gmods = allgmods(0->clengths(M-1), M-1);
-    gridmachines = allmachines(0->M, M-1);        
+    gridmachines = allmachinecodes(0->M, M-1);        
     groups = new Groups(M, gmods.data, gridmachines.data, 1000);
-    network = new AllReduceY(M);
+    network = new Network(M);
+    netExecutor = Executors.newFixedThreadPool(M+2);
 
     nodeData = new Array[FMat](M);
     nodeInds = new Array[IMat](M);
@@ -61,29 +64,32 @@ class AllReducer {
     total = zeros(stride, F);
     var totvals = 0L;
 
-    for (i <- 0 until M) {
+    for (i <- 0 until M) {                                         // Make some random, power-law data
     	val rv = rand(1, F);
     	val thresh = nnz/math.log(nnz)/row(1 to F);
-    	nodeInds(i) = find(rv > thresh);
+    	nodeInds(i) = find(rv < thresh);
     	nodeData(i) = rand(stride, nodeInds(i).length);
     	val bufsize = (1.5 * nodeData(0).length).toInt;
-    	network.machines(i) = new Machine(network, groups, i, M, bufsize, false, trace, replicate, null);
+    	network.machines(i) = new Machine(network, groups, i, M, bufsize, true, trace, replicate, null);
     	totvals += stride * nodeInds(i).length;
     }
 
-    System.setProperty("actors.corePoolSize", "%d" format M*replicate);
-    System.setProperty("actors.maxPoolSize", "%d" format M*replicate);
     val nreps =1;
     tic;
-    val par = (0 until M).par.map((i:Int) =>
+    val futures = (0 until M).toArray.map((i:Int) =>
+      netExecutor.submit(new Runnable {def run:Unit = {
+        	if (deadnodes.length == 0 || sum(deadnodes == i).v == 0) {    // Simulate dead nodes
+        		network.machines(i).config(nodeInds(i).data, nodeInds(i).data);
+        		val result = network.machines(i).reduce(nodeData(i).data, stride);
+        		reducedData(i) = new FMat(stride, nodeInds(i).length, result);
+        	}
+        }
+      }));
     	//    	  if (irep == 17) network.simNetwork(i).trace=2; else network.simNetwork(i).trace=0;     
-      if (deadnodes.length == 0 || sum(deadnodes == i).v == 0) {    // Simulate dead nodes
-    	  network.machines(i).config(nodeInds(i).data, nodeInds(i).data);
-    	  val result = network.machines(i).reduce(nodeData(i).data, stride);
-      	reducedData(i) = new FMat(stride, nodeInds(i).length, result);
-      });
+    for (i <- 0 until M) futures(i).get();                              // Block until all threads are done
 
     network.stop;
+    netExecutor.shutdownNow();
     val tt= toc;
     println("Allreduce done, t=%4.3f msecs, BW=%4.3fGB/s" format (1000*tt/nreps, totvals*replicate*8*2/tt*nreps/1e9));
     
