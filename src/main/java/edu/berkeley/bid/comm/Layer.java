@@ -25,12 +25,12 @@ public class Layer {
 	public IVec [] fromindsparts;                                        // Partition of from indices
 	public IVec topartsizes;                                             // Sizes of the above
 	public IVec frompartsizes;
-	public IVec [] toMaps;                                               // Maps to indices below for "TO" indices
-	public IVec [] fromMaps;                                             // Maps to indices below for "FROM" indices
+	public IVec [] toMaps;                                               // Maps to indices in layer below for "TO" indices
+	public IVec [] fromMaps;                                             // Maps to indices in layer below for "FROM" indices
 	public IVec [] interleave;                                           // Maps to indices above for "FROM" indices
 	public Vec [] fromparts;
-	public int ton;                                                      // Size of the to master list
-	public int fromn;
+	public int ton;                                                      // Size of the "TO" union list
+	public int fromn;                                                    // Size of the "FROM" union list
 	public int trace;
 	public Partitioner partitioner;
 	public Machine machine;
@@ -187,9 +187,7 @@ public class Layer {
 		Vec newv;
 		Vec downv;
 		int ix;
-		int stride;
-
-		// Note, these have to be partitions of the data now. 
+		int stride; 
 
 		public ReduceDownThread(Vec newv0, Vec downv0, int i0, int stride0) {
 			newv = newv0;
@@ -385,7 +383,7 @@ public class Layer {
 			}
 
 			IVec toout = new IVec(seg1);
-			IVec fromout =   new IVec(seg2);
+			IVec fromout = new IVec(seg2);
 			irbuf.get(toout.data, 0, seg1);
 			irbuf.get(fromout.data, 0, seg2);
 			IVec.checkTree(totree, toout, i, k);

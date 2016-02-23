@@ -3,12 +3,12 @@ package edu.berkeley.bid.comm;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.net.ConnectException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -29,13 +29,13 @@ public class Machine {
 	public int trace = 0;                                             // 0: no trace, 1: high-level, 2: everything
 	public int configTimeout = 1000;
 	public int reduceTimeout = 1000;
-	public Vec downv;;
-	public Vec upv;
 
+	public Vec tov;                                                   // Snapshot of the reduced matrix at each layer going down
+	public Vec fromv;                                                 // Snapshot of the result matrix coming up
 	public Layer [] layers;                                           // All the layers
 	public ByteBuffer [] sendbuf;                                     // buffers, one for each destination in a group
 	public ByteBuffer [] recbuf;
-	public IVec finalMap;                                             // Map from down --> up at layer D-1
+	public IVec finalMap;                                             // Map from to --> up at layer D-1
 	public Msg [][] messages;                                         // Message queue 
 	public boolean [][] msgrecvd;                                     // Receiver status
 	public boolean [][] amsending;                                    // Sender status
@@ -108,65 +108,65 @@ public class Machine {
 		}
 	}
 
-	public void config(IVec downi, IVec upi) {
+	public void config(IVec toi, IVec upi) {
 		IVec [] outputs = new IVec[2];
 		for (int i = 0; i < D; i++) {
-			layers[i].config(downi, upi, outputs);
-			downi = outputs[0];
+			layers[i].config(toi, upi, outputs);
+			toi = outputs[0];
 			upi = outputs[1];
 		}
-		finalMap = IVec.mapInds(upi, downi);
+		finalMap = IVec.mapInds(upi, toi);
 	}
 	
-	public void config(int [] downi, int [] upi) {
-		config(new IVec(downi), new IVec(upi));
+	public void config(int [] toi, int [] upi) {
+		config(new IVec(toi), new IVec(upi));
 	}
 	
 
-	public Vec reduce(Vec downv0, int stride) {
-		downv = downv0;
+	public Vec reduce(Vec tov0, int stride) {
+		tov = tov0;
 		for (int d = 0; d < D; d++) {
-			downv = layers[d].reduceDown(downv, stride);
+			tov = layers[d].reduceDown(tov, stride);
 		}
-		upv = downv.mapFrom(finalMap, stride);
+		fromv = tov.mapFrom(finalMap, stride);
 		for (int d = D-1; d >= 0; d--) {
-			upv = layers[d].reduceUp(upv, stride);
+			fromv = layers[d].reduceUp(fromv, stride);
 		}
 		if (trace > 0) {
 			synchronized (network) {
-				System.out.format("Reduce machine %d result nnz %d out of %d\n", imachine, upv.nnz(), upv.size());
+				System.out.format("Reduce machine %d result nnz %d out of %d\n", imachine, fromv.nnz(), fromv.size());
 			}
 		}
-		return upv;
+		return fromv;
 	}
 	
-	public float [] reduce(float [] downv, int stride) {
-		return reduce(new Vec(downv), stride).data;
+	public float [] reduce(float [] tov, int stride) {
+		return reduce(new Vec(tov), stride).data;
 	}
 	
-	public Vec configReduce(IVec downi, IVec upi, Vec downv0, int stride) {
-		downv = downv0;
+	public Vec configReduce(IVec toi, IVec fromi, Vec tov0, int stride) {
+		tov = tov0;
 		IVec [] outputs = new IVec[2];
 		for (int d = 0; d < D; d++) {
-			downv = layers[d].configReduce(downi, upi, outputs, downv, stride);
-			downi = outputs[0];
-			upi = outputs[1];
+			tov = layers[d].configReduce(toi, fromi, outputs, tov, stride);
+			toi = outputs[0];
+			fromi = outputs[1];
 		}
-		finalMap = IVec.mapInds(upi, downi);
-		upv = downv.mapFrom(finalMap, stride);
+		finalMap = IVec.mapInds(fromi, toi);
+		fromv = tov.mapFrom(finalMap, stride);
 		for (int d = D-1; d >= 0; d--) {
-			upv = layers[d].reduceUp(upv, stride);
+			fromv = layers[d].reduceUp(fromv, stride);
 		}
 		if (trace > 0) {
 			synchronized (network) {
-				System.out.format("ConfigReduce machine %d result nnz %d out of %d\n", imachine, upv.nnz(), upv.size());
+				System.out.format("ConfigReduce machine %d result nnz %d out of %d\n", imachine, fromv.nnz(), fromv.size());
 			}
 		}
-		return upv;
+		return fromv;
 	}
 	
-	public float [] configReduce(int [] downi, int [] upi, float [] downv, int stride) {
-		return configReduce(new IVec(downi), new IVec(upi), new Vec(downv), stride).data;
+	public float [] configReduce(int [] toi, int [] fromi, float [] tov, int stride) {
+		return configReduce(new IVec(toi), new IVec(fromi), new Vec(tov), stride).data;
 	}
 
 
@@ -263,7 +263,7 @@ public class Machine {
 						readers.put(scs, fut);
 					}
 				} catch (SocketException e) {
-					// This is probably due to the server shutting down. Don't do anything.
+					// This is probably due to the server shutting to. Don't do anything.
 				}
 				catch (Exception e) {
 					throw new RuntimeException("Socket listener had a problem "+e);

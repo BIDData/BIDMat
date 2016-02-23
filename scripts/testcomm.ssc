@@ -1,15 +1,14 @@
 
-import edu.berkeley.bid.comm._;
-import BIDMat.AllReducer;
+import BIDMat.AllReduce;
 
 val gmods = icol(4,2);
 val M = prod(gmods).v;
 
-val sim = new AllReducer(M,10000,1000);
+val sim = new AllReduce(M,10000,1000);
 sim.doSim = false;
-sim.gmods = icol(4,2);
+sim.gmods = irow(4,2);
 sim.gridmachines = irow(0->M);
-sim.doConfigReduce = false;
+sim.doConfigReduce = true;
 sim.trace = 2;
 
 sim.runSim(100);

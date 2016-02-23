@@ -1,15 +1,6 @@
 
 package edu.berkeley.bid.comm;
 
-// Third version of sparse allreduce
-// Includes support for matrices, feature range limits, long feature indices
-//
-// 
-
-
-//import mpi.*;
-
-
 public class Network {
 	
 	public Machine [] machines;
