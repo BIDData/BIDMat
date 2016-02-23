@@ -16,12 +16,12 @@ public class Groups {
 	public int gprod;
 	public int D;
 	public float initg;
-	public boolean trace;
+	public int trace;
 	
 	public Groups(int N0, float initg0) {
 		N = N0;
 		initg = initg0;
-		trace = false;
+		trace = 0;
 		getGroupSizes(N);			
 	}
 	
@@ -29,7 +29,7 @@ public class Groups {
 		N = N0;
 		initg = initg0;
 		machineCodes = machineCodes0;
-		trace = false;
+		trace = 0;
 		getGroupSizes(N);	
 		permute(seed);
 		assignGroups();
@@ -38,7 +38,7 @@ public class Groups {
 	public Groups(int N0, int [] gmods0, int [] machineCodes0, int seed) {
 		N = N0;
 		machineCodes = machineCodes0;
-		trace = false;
+		trace = 0;
 		gmods = gmods0;
 		D = gmods0.length;
 		gprod = 1;
@@ -260,7 +260,7 @@ public class Groups {
 				groupIds[i] = groupIds[j];
 				groupIds[j] = vv;	
 				
-				if (trace) {		
+				if (trace > 0) {		
 					System.out.format("sumv = %4.3f, ",testsumv);
 					System.out.print("min=[");
 					printArray(minSizes());

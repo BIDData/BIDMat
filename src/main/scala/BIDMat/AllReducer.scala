@@ -8,7 +8,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 
-class AllReducer {
+class AllReducer(val M:Int, val F:Int, val nnz:Int) {
   /*
    * Arguments: 
    *   M: number of machines
@@ -20,7 +20,7 @@ class AllReducer {
    *   deads: comma-separated list of dead node ids
    */
   
-	val configDir = "/code/BIDMat/data/bestAllreduce/";
+	var configDir = "/code/BIDMat/data/bestAllreduce/";
 	
 	var gmods:IMat = null;
 	var gridmachines:IMat = null;        
@@ -32,27 +32,22 @@ class AllReducer {
 	var reducedData:Array[FMat] = null;
 	var total:FMat = null;
 	var netExecutor:ExecutorService = null;
+	var doSim:Boolean = true;
+	var configTimeout = 1000;
+	var reduceTimeout = 1000;
+	var doConfigReduce = false;
+	var trace = 0;
+	var replicate:Int = 1;
+	var deadnodes:IMat = IMat(0,1);
   
-  def main(args:Array[String]) = {
-    val M = args(0).toInt                               
-    val F = args(1).toInt
-    val nnz = args(2).toInt
-    val stride = args(3).toInt
-    val trace = if (args.length > 4) args(4).toInt else 0
-    val replicate = if (args.length > 5) args(5).toInt else 1
-    val deads = if (args.length > 6) args(6).split(",") else new Array[String](0)
-    val deadnodes = IMat(deads.length, 1)
-    for (i <- 0 until deads.length) deadnodes(i) = deads(i).toInt
-
-    makeSim(M, F, nnz, stride, trace, replicate, deadnodes);
-  }
-  
-  def makeSim(M:Int, F:Int, nnz:Int, stride:Int, trace:Int = 0, replicate:Int = 1, deadnodes:IMat = IMat(0,1)) = {
-    val clengths = loadIMat(configDir + "dims.imat.lz4");
-    val allgmods = loadIMat(configDir + "gmods.imat.lz4");
-    val allmachinecodes = loadIMat(configDir + "machines.imat.lz4");
-    gmods = allgmods(0->clengths(M-1), M-1);
-    gridmachines = allmachinecodes(0->M, M-1);        
+  def runSim(stride:Int) = {
+    if (gmods.asInstanceOf[AnyRef] == null) {
+    	val clengths = loadIMat(configDir + "dims.imat.lz4");
+    	val allgmods = loadIMat(configDir + "gmods.imat.lz4");
+    	val allmachinecodes = loadIMat(configDir + "machines.imat.lz4");
+    	gmods = allgmods(0->clengths(M-1), M-1);
+    	gridmachines = allmachinecodes(0->M, M-1);
+    }         
     groups = new Groups(M, gmods.data, gridmachines.data, 1000);
     network = new Network(M);
     netExecutor = Executors.newFixedThreadPool(M+2);
@@ -70,7 +65,9 @@ class AllReducer {
     	nodeInds(i) = find(rv < thresh);
     	nodeData(i) = rand(stride, nodeInds(i).length);
     	val bufsize = (1.5 * nodeData(0).length).toInt;
-    	network.machines(i) = new Machine(network, groups, i, M, bufsize, true, trace, replicate, null);
+    	network.machines(i) = new Machine(network, groups, i, M, bufsize, doSim, trace, replicate, null);
+    	network.machines(i).configTimeout = configTimeout;
+    	network.machines(i).reduceTimeout = reduceTimeout ;
     	totvals += stride * nodeInds(i).length;
     }
 
@@ -79,8 +76,12 @@ class AllReducer {
     val futures = (0 until M).toArray.map((i:Int) =>
       netExecutor.submit(new Runnable {def run:Unit = {
         	if (deadnodes.length == 0 || sum(deadnodes == i).v == 0) {    // Simulate dead nodes
-        		network.machines(i).config(nodeInds(i).data, nodeInds(i).data);
-        		val result = network.machines(i).reduce(nodeData(i).data, stride);
+        	  val result = if (doConfigReduce) {
+        	  	network.machines(i).configReduce(nodeInds(i).data, nodeInds(i).data, nodeData(i).data, stride);  
+        	  } else {
+        	  	network.machines(i).config(nodeInds(i).data, nodeInds(i).data);
+        	  	network.machines(i).reduce(nodeData(i).data, stride);
+        	  }
         		reducedData(i) = new FMat(stride, nodeInds(i).length, result);
         	}
         }
@@ -92,7 +93,7 @@ class AllReducer {
     netExecutor.shutdownNow();
     val tt= toc;
     println("Allreduce done, t=%4.3f msecs, BW=%4.3fGB/s" format (1000*tt/nreps, totvals*replicate*8*2/tt*nreps/1e9));
-    
+
     // Compute ground truth
     for (i <- 0 until M) {
       total(?, nodeInds(i)) = total(?, nodeInds(i)) + nodeData(i);

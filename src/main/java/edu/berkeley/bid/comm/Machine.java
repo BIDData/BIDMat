@@ -12,6 +12,8 @@ import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.Hashtable;
 
 public class Machine {
 	/* Machine Configuration Variables */	
@@ -25,7 +27,8 @@ public class Machine {
 	public int sockBase = 50000;                                      // Socket base address
 	public int sendTimeout = 1000;                                    // in msec
 	public int trace = 0;                                             // 0: no trace, 1: high-level, 2: everything
-	public int timeout = 10000;
+	public int configTimeout = 1000;
+	public int reduceTimeout = 1000;
 	public Vec downv;;
 	public Vec upv;
 
@@ -38,7 +41,9 @@ public class Machine {
 	public boolean [][] amsending;                                    // Sender status
 	public ExecutorService executor;
 	public ExecutorService sockExecutor;
-	public Listener listener;
+	public Future<?> listener;
+	public Hashtable<Machine.SockWriter, Future<?>> writers;
+	public Hashtable<Machine.SockReader, Future<?>> readers;
 	Network network;
 
 	public Machine(Network p0, Groups groups0, int imachine0, int M0, int bufsize, boolean doSim0, int trace0, 
@@ -49,6 +54,8 @@ public class Machine {
 		imachine = imachine0;
 		groups = groups0;
 		replicate = replicate0;
+		writers = new Hashtable<Machine.SockWriter, Future<?>>();
+		readers = new Hashtable<Machine.SockReader, Future<?>>();
 		if (machineIP0 == null) {
 			machineIP = new String[M*replicate];
 			for (int i = 0; i < M*replicate; i++) machineIP[i] = "localhost";
@@ -89,14 +96,16 @@ public class Machine {
 		}
 		if (!doSim) {
 			sockExecutor = Executors.newFixedThreadPool(1+4*maxk); 
-			listener = new Listener();
-			sockExecutor.execute(listener);
+			listener = sockExecutor.submit(new Listener());
 		}
 	}
 
 	public void stop() {
 		executor.shutdownNow();
-		if (sockExecutor != null) sockExecutor.shutdownNow();
+		if (sockExecutor != null) {
+			listener.cancel(true);
+			sockExecutor.shutdownNow();
+		}
 	}
 
 	public void config(IVec downi, IVec upi) {
@@ -125,7 +134,7 @@ public class Machine {
 		}
 		if (trace > 0) {
 			synchronized (network) {
-				System.out.format("machine %d reduce result nnz %d out of %d\n", imachine, upv.nnz(), upv.size());
+				System.out.format("Reduce machine %d result nnz %d out of %d\n", imachine, upv.nnz(), upv.size());
 			}
 		}
 		return upv;
@@ -134,6 +143,32 @@ public class Machine {
 	public float [] reduce(float [] downv, int stride) {
 		return reduce(new Vec(downv), stride).data;
 	}
+	
+	public Vec configReduce(IVec downi, IVec upi, Vec downv0, int stride) {
+		downv = downv0;
+		IVec [] outputs = new IVec[2];
+		for (int d = 0; d < D; d++) {
+			downv = layers[d].configReduce(downi, upi, outputs, downv, stride);
+			downi = outputs[0];
+			upi = outputs[1];
+		}
+		finalMap = IVec.mapInds(upi, downi);
+		upv = downv.mapFrom(finalMap, stride);
+		for (int d = D-1; d >= 0; d--) {
+			upv = layers[d].reduceUp(upv, stride);
+		}
+		if (trace > 0) {
+			synchronized (network) {
+				System.out.format("ConfigReduce machine %d result nnz %d out of %d\n", imachine, upv.nnz(), upv.size());
+			}
+		}
+		return upv;
+	}
+	
+	public float [] configReduce(int [] downi, int [] upi, float [] downv, int stride) {
+		return configReduce(new IVec(downi), new IVec(upi), new Vec(downv), stride).data;
+	}
+
 
 
 	public class SockWriter implements Runnable {
@@ -169,6 +204,9 @@ public class Machine {
 			} finally {
 				try { if (socket != null) socket.close(); } catch (Exception e) {}
 				amsending[dest][msg.tag] = false;
+				synchronized (writers) {
+					if (writers.containsKey(this)) writers.remove(this);
+				}
 			}
 		}
 	}
@@ -197,6 +235,9 @@ public class Machine {
 				throw new RuntimeException("Problem reading socket "+e);
 			} finally {
 				try {socket.close();} catch (IOException e) {}
+				synchronized (readers) {
+					if (readers.containsKey(this)) readers.remove(this);
+				}
 			}
 		}
 	}
@@ -216,8 +257,11 @@ public class Machine {
 		public void run() {
 			while (!stop) {
 				try {
-					Socket cs = ss.accept();
-					sockExecutor.execute(new SockReader(cs));
+					SockReader scs = new SockReader(ss.accept());
+					Future<?> fut = sockExecutor.submit(scs);
+					synchronized (readers) {
+						readers.put(scs, fut);
+					}
 				} catch (SocketException e) {
 					// This is probably due to the server shutting down. Don't do anything.
 				}
@@ -266,7 +310,11 @@ public class Machine {
 				}
 			} else {
 				for (int i = 0; i < replicate; i++) { 
-					sockExecutor.execute(new SockWriter(outi + i*M, msg));
+					SockWriter w = new SockWriter(outi + i*M, msg);
+					Future<?> fut = sockExecutor.submit(w);
+					synchronized (writers) {
+						writers.put(w, fut);
+					}
 				}
 			}
 			boolean gotit = false;

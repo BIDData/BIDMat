@@ -2,8 +2,17 @@
 import edu.berkeley.bid.comm._;
 import BIDMat.AllReducer;
 
-val sim = new AllReducer
-sim.makeSim(16,100000,1000,100,2);
+val gmods = icol(4,2);
+val M = prod(gmods).v;
+
+val sim = new AllReducer(M,10000,1000);
+sim.doSim = false;
+sim.gmods = icol(4,2);
+sim.gridmachines = irow(0->M);
+sim.doConfigReduce = false;
+sim.trace = 2;
+
+sim.runSim(100);
 
 val net = sim.network;
 val m0 = net.machines(0);
