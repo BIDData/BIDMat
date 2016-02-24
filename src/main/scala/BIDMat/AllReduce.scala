@@ -29,6 +29,7 @@ class AllReduce(val M:Int, val F:Int, val nnz:Int) {
 
 	var nodeData:Array[FMat] = null;
 	var nodeInds:Array[IMat] = null;
+	var nodeIndsLong:Array[LMat] = null;
 	var reducedData:Array[FMat] = null;
 	var total:FMat = null;
 	var netExecutor:ExecutorService = null;
@@ -37,6 +38,7 @@ class AllReduce(val M:Int, val F:Int, val nnz:Int) {
 	var reduceTimeout = 1000;
 	var doConfigReduce = false;
 	var trace = 0;
+	var useLong = false;
 	var replicate:Int = 1;
 	var deadnodes:IMat = IMat(0,1);
 	
@@ -71,6 +73,7 @@ class AllReduce(val M:Int, val F:Int, val nnz:Int) {
     	network.machines(i).reduceTimeout = reduceTimeout ;
     	totvals += stride * nodeInds(i).length;
     }
+    if (useLong) nodeIndsLong = nodeInds.map(LMat(_));
 
     val nreps =1;
     tic;
@@ -78,9 +81,17 @@ class AllReduce(val M:Int, val F:Int, val nnz:Int) {
       netExecutor.submit(new Runnable {def run:Unit = {
         	if (deadnodes.length == 0 || sum(deadnodes == i).v == 0) {    // Simulate dead nodes
         	  val result = if (doConfigReduce) {
-        	  	network.machines(i).configReduce(nodeInds(i).data, nodeInds(i).data, nodeData(i).data, stride);  
+        	    if (useLong) {
+        	      network.machines(i).configReduce(nodeIndsLong(i).data, nodeIndsLong(i).data, nodeData(i).data, stride);
+        	    } else {
+        	    	network.machines(i).configReduce(nodeInds(i).data, nodeInds(i).data, nodeData(i).data, stride);
+        	    }
         	  } else {
-        	  	network.machines(i).config(nodeInds(i).data, nodeInds(i).data);
+        	    if (useLong) {
+        	    	network.machines(i).config(nodeIndsLong(i).data, nodeIndsLong(i).data);
+        	    } else {
+        	    	network.machines(i).config(nodeInds(i).data, nodeInds(i).data); 
+        	    }
         	  	network.machines(i).reduce(nodeData(i).data, stride);
         	  }
         		reducedData(i) = new FMat(stride, nodeInds(i).length, result);

@@ -162,6 +162,20 @@ public class LVec {
     }
     return dd;
   }
+  
+  static public void checkTree(LVec [] tree, LVec vals, int i, int k) {
+  	int here = k - 1 + i;
+    tree[here] = vals;
+    int parent = (here-1) / 2;
+    int sibling = 4*parent+3 - here;
+    
+    while (here > 0 && tree[sibling] != null && tree[parent] == null) {
+    	tree[parent] = merge2(tree[here], tree[sibling]);
+    	here = parent;
+    	parent = (here-1) / 2;
+      sibling = 4*parent+3 - here;
+    }
+  }
 	
 	static public LVec merge2(LVec a, LVec b) {
     int i = 0;

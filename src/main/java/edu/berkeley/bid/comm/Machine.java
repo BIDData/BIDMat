@@ -29,6 +29,7 @@ public class Machine {
 	public int trace = 0;                                             // 0: no trace, 1: high-level, 2: everything
 	public int configTimeout = 1000;
 	public int reduceTimeout = 1000;
+	public boolean useLong = false;
 
 	public Vec tov;                                                   // Snapshot of the reduced matrix at each layer going down
 	public Vec fromv;                                                 // Snapshot of the result matrix coming up
@@ -90,7 +91,11 @@ public class Machine {
 		for (int level = 0; level < D; level++) {
 			int k = groups.nodesInGroup(imachine, level).length;
 			int pos = groups.posInGroup(imachine, level);
-			layers[level] = new Layer(this, k, cumk, cumPos, pos, level);
+			if (useLong) {
+				layers[level] = new LongLayer(this, k, cumk, cumPos, pos, level);
+			} else {
+				layers[level] = new Layer(this, k, cumk, cumPos, pos, level);
+			}
 			cumPos = cumPos * k + pos;
 			cumk *= k;
 		}
@@ -120,6 +125,20 @@ public class Machine {
 	
 	public void config(int [] toi, int [] upi) {
 		config(new IVec(toi), new IVec(upi));
+	}
+	
+	public void config(LVec toi, LVec upi) {
+		LVec [] outputs = new LVec[2];
+		for (int i = 0; i < D; i++) {
+			((LongLayer)layers[i]).config(toi, upi, outputs);
+			toi = outputs[0];
+			upi = outputs[1];
+		}
+		finalMap = LVec.mapInds(upi, toi);
+	}
+	
+	public void config(long [] toi, long [] upi) {
+		config(new LVec(toi), new LVec(upi));
 	}
 	
 
@@ -167,6 +186,31 @@ public class Machine {
 	
 	public float [] configReduce(int [] toi, int [] fromi, float [] tov, int stride) {
 		return configReduce(new IVec(toi), new IVec(fromi), new Vec(tov), stride).data;
+	}
+	
+	public Vec configReduce(LVec toi, LVec fromi, Vec tov0, int stride) {
+		tov = tov0;
+		LVec [] outputs = new LVec[2];
+		for (int d = 0; d < D; d++) {
+			tov = ((LongLayer)layers[d]).configReduce(toi, fromi, outputs, tov, stride);
+			toi = outputs[0];
+			fromi = outputs[1];
+		}
+		finalMap = LVec.mapInds(fromi, toi);
+		fromv = tov.mapFrom(finalMap, stride);
+		for (int d = D-1; d >= 0; d--) {
+			fromv = layers[d].reduceUp(fromv, stride);
+		}
+		if (trace > 0) {
+			synchronized (network) {
+				System.out.format("ConfigReduce machine %d result nnz %d out of %d\n", imachine, fromv.nnz(), fromv.size());
+			}
+		}
+		return fromv;
+	}
+	
+	public float [] configReduce(long [] toi, long [] fromi, float [] tov, int stride) {
+		return configReduce(new LVec(toi), new LVec(fromi), new Vec(tov), stride).data;
 	}
 
 
