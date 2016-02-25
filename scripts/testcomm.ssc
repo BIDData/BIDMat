@@ -1,19 +1,26 @@
 
 import BIDMat.AllReduce;
 
-val gmods = icol(4,2);
+val gmods = irow(4,2);
 val M = prod(gmods).v;
 
 val sim = new AllReduce(M,10000,1000);
 sim.doSim = false;
-sim.gmods = irow(4,2);
+sim.gmods = gmods;
 sim.gridmachines = irow(0->M);
-sim.doConfigReduce = true;
-sim.trace = 2;
+sim.fuseConfigReduce = true;
+sim.useLong = false;
+sim.trace = 1;
+sim.nreps = 10;
 
 sim.runSim(100);
 
 val net = sim.network;
 val m0 = net.machines(0);
+val m1 = net.machines(1);
 
 val l0 = m0.layers(0);
+m0.executor;
+m1.executor;
+m0.sockExecutor;
+m1.sockExecutor;

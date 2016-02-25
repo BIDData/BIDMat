@@ -3,7 +3,6 @@ package edu.berkeley.bid.comm;
 
 import java.nio.FloatBuffer;
 import java.nio.LongBuffer;
-import java.util.Arrays;
 import java.util.concurrent.Future;
 
 /**
@@ -26,17 +25,15 @@ public class LongLayer extends Layer {
 	class ConfigThread implements Runnable {
 		LVec [] top;
 		LVec [] fromp;
-		LVec [] totree;
-		LVec [] fromtree;
 		int i;
 		int repno;
+		int tag;
 
-		public ConfigThread(LVec [] top0, LVec [] fromp0,	LVec [] totree0, LVec [] fromtree0, int i0) {
+		public ConfigThread(LVec [] top0, LVec [] fromp0,	 int i0, int tag0) {
 			top = top0;
 			fromp = fromp0;					
-			totree = totree0;
-			fromtree = fromtree0;
 			i = i0;
+			tag = tag0;
 		}
 
 		public void run() {
@@ -56,7 +53,7 @@ public class LongLayer extends Layer {
 					System.out.format("Config layer %d machine %d sent msg to %d, from %d, sizes %d %d\n", depth, imachine, outNbr[i],  inNbr[i],  sbuf.get(0), sbuf.get(1));
 				}
 			}
-			machine.sendrecv(i, sendbuf, 2*(seg1+seg2+2), outNbr[i], recbuf, rbuf.capacity(), inNbr[i], depth*3);
+			machine.sendrecv(i, sendbuf, 2*(seg1+seg2+2), outNbr[i], recbuf, rbuf.capacity(), inNbr[i], depth*3 + tag);
 			seg1 = (int)rbuf.get();
 			seg2 = (int)rbuf.get();
 			if (trace > 1 && network != null) {
@@ -68,24 +65,20 @@ public class LongLayer extends Layer {
 			LVec toout = new LVec(seg1);
 			LVec upout =   new LVec(seg2);
 			rbuf.get(toout.data, 0, seg1);
-			rbuf.get(upout.data, 0, seg2);
-			LVec.checkTree(totree, toout, i, k);
-			LVec.checkTree(fromtree, upout, i, k);	
+			rbuf.get(upout.data, 0, seg2);	
 			top[i] = toout;
 			fromp[i] = upout;
 		}
 	}
 
-	public void config(LVec toi, LVec fromi, LVec [] outputs) {
-		LVec [] totree = new LVec[2*k-1];
-		LVec [] fromtree = new LVec[2*k-1];
+	public void config(LVec toi, LVec fromi, LVec [] outputs, int round) {
 		config_pre(toi, fromi, "Config ");
 
 		Future<?> [] futures = new Future<?>[k];
-		Future<?> timeoutf = executor.submit(new TimeoutThread(machine.configTimeout, futures), null);
+		Future<?> timeoutf = executor.submit(new TimeoutThread(machine.configTimeout, futures, "config"));
 		for (int i = 0; i < k; i++) {
 			int ix = (i + posInMyGroup) % k;                               // Try to stagger the traffic
-			futures[i] = executor.submit(new ConfigThread(toindsparts, fromindsparts, totree, fromtree, ix), null);
+			futures[i] = executor.submit(new ConfigThread(toindsparts, fromindsparts, ix, 3*D*round), null);
 		};
 		for (int i = 0; i < k; i++) {
 			try {
@@ -100,7 +93,7 @@ public class LongLayer extends Layer {
 		}	
 		timeoutf.cancel(true);
 		
-		config_post(toi, fromi, outputs, totree, fromtree, "Config ");
+		config_post(futures, toi, fromi, outputs, "Config ");
 	}
 	
 	public void config_pre(LVec toi, LVec fromi, String prefix) {
@@ -116,54 +109,63 @@ public class LongLayer extends Layer {
 			topartsizes.data[i] = toindsparts[i].length;
 			frompartsizes.data[i] = fromindsparts[i].length;
 		}
-		if (trace > 0 && network != null) {
+		if (trace > 1 && network != null) {
 			synchronized (network) {
 				System.out.format(prefix + "machine %d layer %d, toparts (%d", imachine, depth, toindsparts[0].size());
 			}
 		}
 	}
 	
-	public void config_post(LVec toi, LVec fromi, LVec [] outputs, LVec [] totree, LVec [] fromtree, String prefix) {
-		LVec dmaster = totree[0];
-		Arrays.fill(totree, null);
-		ton = dmaster.size();
-		LVec umaster = fromtree[0];
-		Arrays.fill(fromtree, null);
-		fromn = fromi.size();
-		for (int i = 0; i < k; i++) {
-			toMaps[i] = LVec.mapInds(toindsparts[i], dmaster);
-			fromMaps[i] = LVec.mapInds(fromindsparts[i], umaster);
-			if (trace > 0 && network != null) {
-				synchronized (network) { 
-					System.out.format(prefix + "machine %d layer %d dmap(%d) size %d\n", imachine, depth, i, toMaps[i].size());
-					System.out.format(prefix + "machine %d layer %d umap(%d) size %d\n", imachine, depth, i, fromMaps[i].size());
-				}
+	public void config_post(Future<?> [] futures, LVec toi, LVec fromi, LVec [] outputs, String prefix) {
+		LVec [] totree = new LVec[k];
+		LVec [] fromtree = new LVec[k];
+		for (int i = 0 ; i < k; i++) {
+			if (futures[i].isDone()) {
+				LVec.treeAdd(toindsparts[i], totree);
+				LVec.treeAdd(fromindsparts[i], fromtree);
 			}
 		}
-		outputs[0] = dmaster;
-		outputs[1] = umaster;
+		LVec tomaster = LVec.treeFlush(totree);
+		LVec frommaster = LVec.treeFlush(fromtree);
+		ton = tomaster.size();
+		fromn = fromi.size();
+		for (int i = 0; i < k; i++) {
+			if (futures[i].isDone()) {
+				toMaps[i] = LVec.mapInds(toindsparts[i], tomaster);
+				fromMaps[i] = LVec.mapInds(fromindsparts[i], frommaster);
+				if (trace > 1 && network != null) {
+					synchronized (network) { 
+						System.out.format(prefix + "machine %d layer %d dmap(%d) size %d\n", imachine, depth, i, toMaps[i].size());
+						System.out.format(prefix + "machine %d layer %d umap(%d) size %d\n", imachine, depth, i, fromMaps[i].size());
+					}
+				}
+			} else {
+				toMaps[i] = null;
+				fromMaps[i] = null;
+			}
+		}
+		outputs[0] = tomaster;
+		outputs[1] = frommaster;
 	}
 	
 	class ConfigReduceThread implements Runnable {
 		LVec [] top;
 		LVec [] fromp;
-		LVec [] totree;
-		LVec [] fromtree;
 		Vec downv;
 		Vec [] res;
 		int stride;
 		int i;
 		int repno;
+		int tag;
 
-		public ConfigReduceThread(LVec [] top0, LVec [] fromp0,	LVec [] totree0, LVec [] fromtree0, Vec downv0, Vec [] res0, int i0, int stride0) {
+		public ConfigReduceThread(LVec [] top0, LVec [] fromp0,	Vec downv0, Vec [] res0, int i0, int stride0, int tag0) {
 			top = top0;
 			fromp = fromp0;					
-			totree = totree0;
-			fromtree = fromtree0;
 			downv = downv0;
 			res = res0;
 			i = i0;
 			stride = stride0;
+			tag = tag0;
 		}
 
 		public void run() {
@@ -189,7 +191,7 @@ public class LongLayer extends Layer {
 					System.out.format("ConfigReduce layer %d machine %d sent msg to %d, from %d, sizes %d %d %d\n", depth, imachine, outNbr[i],  inNbr[i],  isbuf.get(0), isbuf.get(1), isbuf.get(2));
 				}
 			}
-			machine.sendrecv(i, sendbuf, 2*(seg1+seg2+3)+msize, outNbr[i], recbuf, rbuf.capacity(), inNbr[i], depth*3);
+			machine.sendrecv(i, sendbuf, 2*(seg1+seg2+3)+msize, outNbr[i], recbuf, rbuf.capacity(), inNbr[i], depth*3 + tag);
 			seg1 = (int)irbuf.get();
 			seg2 = (int)irbuf.get();
 			msize = (int)irbuf.get();
@@ -203,8 +205,6 @@ public class LongLayer extends Layer {
 			LVec fromout = new LVec(seg2);
 			irbuf.get(toout.data, 0, seg1);
 			irbuf.get(fromout.data, 0, seg2);
-			LVec.checkTree(totree, toout, i, k);
-			LVec.checkTree(fromtree, fromout, i, k);	
 			top[i] = toout;
 			fromp[i] = fromout;
 			
@@ -214,20 +214,18 @@ public class LongLayer extends Layer {
 		}
 	}
 	
-	public Vec configReduce(LVec toi, LVec fromi, LVec [] outputs, Vec downv, int stride) {
+	public Vec configReduce(LVec toi, LVec fromi, LVec [] outputs, Vec downv, int stride, int round) {
 		
 		config_pre(toi, fromi, "ConfigReduce ");
 		
-		LVec [] totree = new LVec[2*k-1];
-		LVec [] fromtree = new LVec[2*k-1];
 		Vec [] vparts = partitioner.partition(downv, topart, topartsizes, stride);
 		Vec [] res = new Vec[k];
 
 		Future<?> [] futures = new Future<?>[k];
-		Future<?> timeoutf = executor.submit(new TimeoutThread(machine.configTimeout, futures), null);
+		Future<?> timeoutf = executor.submit(new TimeoutThread(machine.configTimeout, futures, "configReduce"));
 		for (int i = 0; i < k; i++) {
 			int ix = (i + posInMyGroup) % k;                               // Try to stagger the traffic
-			futures[i] = executor.submit(new ConfigReduceThread(toindsparts, fromindsparts, totree, fromtree, vparts[ix], res, ix, stride), null);
+			futures[i] = executor.submit(new ConfigReduceThread(toindsparts, fromindsparts, vparts[ix], res, ix, stride, round), null);
 		};
 		for (int i = 0; i < k; i++) {
 			try {
@@ -242,7 +240,7 @@ public class LongLayer extends Layer {
 		}	
 		timeoutf.cancel(true);
 		
-		config_post(toi, fromi, outputs, totree, fromtree, "ConfigReduce ");
+		config_post(futures, toi, fromi, outputs, "ConfigReduce ");
 		
 		Vec newv = new Vec(ton*stride);
 		for (int i = 0; i < k; i++) {

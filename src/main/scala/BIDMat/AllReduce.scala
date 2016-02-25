@@ -10,14 +10,23 @@ import java.util.concurrent.Executors;
 
 class AllReduce(val M:Int, val F:Int, val nnz:Int) {
   /*
-   * Arguments: 
+   * Constructor arguments: 
    *   M: number of machines
    *   F: number of features
    *   nnz: number of non-zero features (expected) per node
+   *   
+   * AllReduce arguments:
    *   stride: number of rows in the matrices to reduce
+   *   
+   * Config vars:
    *   trace: 0,1,2 increasing amount of trace printed
+   *   useLong: use Long indices
+   *   doSim: simulate communication with mailboxes (instead of sockets)
+   *   fuseConfigReduce: use fused configuration and reduce
+   *   deadnodes: IMat of dead node ids
+   *   
+   * Non-functional for now:
    *   replicate: Integer replication factor. Normally either 1 (no replication) or 2.
-   *   deads: comma-separated list of dead node ids
    */
   
 	var configDir = "/code/BIDMat/data/bestAllreduce/";
@@ -34,13 +43,14 @@ class AllReduce(val M:Int, val F:Int, val nnz:Int) {
 	var total:FMat = null;
 	var netExecutor:ExecutorService = null;
 	var doSim:Boolean = true;
-	var configTimeout = 1000;
-	var reduceTimeout = 1000;
-	var doConfigReduce = false;
+	var configTimeout = 3000;
+	var reduceTimeout = 3000;
+	var fuseConfigReduce = false;
 	var trace = 0;
 	var useLong = false;
 	var replicate:Int = 1;
 	var deadnodes:IMat = IMat(0,1);
+	var nreps = 1;
 	
 	def getConfig(configDir:String) {
 		val clengths = loadIMat(configDir + "dims.imat.lz4");
@@ -68,38 +78,43 @@ class AllReduce(val M:Int, val F:Int, val nnz:Int) {
     	nodeInds(i) = find(rv < thresh);
     	nodeData(i) = rand(stride, nodeInds(i).length);
     	val bufsize = (1.5 * nodeData(0).length).toInt;
-    	network.machines(i) = new Machine(network, groups, i, M, bufsize, doSim, trace, replicate, null);
+    	network.machines(i) = new Machine(network, groups, i, M, useLong, bufsize, doSim, trace, replicate, null);
     	network.machines(i).configTimeout = configTimeout;
-    	network.machines(i).reduceTimeout = reduceTimeout ;
+    	network.machines(i).reduceTimeout = reduceTimeout;
     	totvals += stride * nodeInds(i).length;
     }
     if (useLong) nodeIndsLong = nodeInds.map(LMat(_));
 
-    val nreps =1;
     tic;
-    val futures = (0 until M).toArray.map((i:Int) =>
-      netExecutor.submit(new Runnable {def run:Unit = {
-        	if (deadnodes.length == 0 || sum(deadnodes == i).v == 0) {    // Simulate dead nodes
-        	  val result = if (doConfigReduce) {
-        	    if (useLong) {
-        	      network.machines(i).configReduce(nodeIndsLong(i).data, nodeIndsLong(i).data, nodeData(i).data, stride);
-        	    } else {
-        	    	network.machines(i).configReduce(nodeInds(i).data, nodeInds(i).data, nodeData(i).data, stride);
-        	    }
-        	  } else {
-        	    if (useLong) {
-        	    	network.machines(i).config(nodeIndsLong(i).data, nodeIndsLong(i).data);
-        	    } else {
-        	    	network.machines(i).config(nodeInds(i).data, nodeInds(i).data); 
-        	    }
-        	  	network.machines(i).reduce(nodeData(i).data, stride);
-        	  }
-        		reducedData(i) = new FMat(stride, nodeInds(i).length, result);
-        	}
-        }
-      }));
-    	//    	  if (irep == 17) network.simNetwork(i).trace=2; else network.simNetwork(i).trace=0;     
-    for (i <- 0 until M) futures(i).get();                              // Block until all threads are done
+    var irep = 0;
+    while (irep < nreps) {
+    	println("Starting round %d" format irep);
+    	val futures = (0 until M).toArray.map((i:Int) =>
+    	netExecutor.submit(new Runnable {def run:Unit = {
+    			if (deadnodes.length == 0 || sum(deadnodes == i).v == 0) {    // Simulate dead nodes
+    				val result = if (fuseConfigReduce) {
+    					if (useLong) {
+    						network.machines(i).configReduce(nodeIndsLong(i).data, nodeIndsLong(i).data, nodeData(i).data, stride, irep);
+    					} else {
+    						network.machines(i).configReduce(nodeInds(i).data, nodeInds(i).data, nodeData(i).data, stride, irep);
+    					}
+    				} else {
+    					if (useLong) {
+    						network.machines(i).config(nodeIndsLong(i).data, nodeIndsLong(i).data, irep);
+    					} else {
+    						network.machines(i).config(nodeInds(i).data, nodeInds(i).data, irep); 
+    					}
+    					network.machines(i).reduce(nodeData(i).data, stride, irep);
+    				}
+    				reducedData(i) = new FMat(stride, nodeInds(i).length, result);
+    			}
+    	}
+    	}));
+    	//    	  if (irep == 17) network.simNetwork(i).trace=2; else network.simNetwork(i).trace=0;   
+
+    	for (i <- 0 until M) futures(i).get();                              // Block until all threads are done
+    	irep += 1;
+    }
 
     network.stop;
     netExecutor.shutdownNow();
