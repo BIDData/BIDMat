@@ -2,10 +2,10 @@ package edu.berkeley.bid.comm;
 
 public class Msg {
 	byte [] buf;
-	int size;
-	int sender;
-	int receiver;
-	int tag;
+	public int size;
+	public int sender;
+	public int receiver;
+	public int tag;
 
 	public Msg(int size0, int sender0, int receiver0, int tag0) {
 		buf = new byte[4*size0];

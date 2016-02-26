@@ -31,7 +31,7 @@ public class Groups {
 		machineCodes = machineCodes0;
 		trace = 0;
 		getGroupSizes(N);	
-		permute(seed);
+		createPerm(seed);
 		assignGroups();
 	}
 	
@@ -43,7 +43,7 @@ public class Groups {
 		D = gmods0.length;
 		gprod = 1;
 		for (int i = 0; i < D; i++) gprod *= gmods[i];
-		permute(seed);
+		createPerm(seed);
 		assignGroups();
 	}
 
@@ -60,10 +60,14 @@ public class Groups {
 			arr[iswap] = tmp;
 		}
 	}
-			
-	private void permute(int seed) {
+	
+	private void createPerm(int seed) {
 		perm = new int[N];
 		invperm = new int[N];
+		permute(seed);
+	}
+			
+	private void permute(int seed) {
 		permuteArray(perm, N, seed);
 		for (int i = 0; i < N; i++) {
 			invperm[perm[i]] = i;

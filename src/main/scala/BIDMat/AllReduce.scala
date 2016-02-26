@@ -45,6 +45,8 @@ class AllReduce(val M:Int, val F:Int, val nnz:Int) {
 	var doSim:Boolean = true;
 	var configTimeout = 3000;
 	var reduceTimeout = 3000;
+  var sendTimeout = 1000;
+	var recvTimeout = 1000;
 	var fuseConfigReduce = false;
 	var trace = 0;
 	var useLong = false;
@@ -81,6 +83,8 @@ class AllReduce(val M:Int, val F:Int, val nnz:Int) {
     	network.machines(i) = new Machine(network, groups, i, M, useLong, bufsize, doSim, trace, replicate, null);
     	network.machines(i).configTimeout = configTimeout;
     	network.machines(i).reduceTimeout = reduceTimeout;
+    	network.machines(i).sendTimeout = sendTimeout;
+    	network.machines(i).recvTimeout = recvTimeout;
     	totvals += stride * nodeInds(i).length;
     }
     if (useLong) nodeIndsLong = nodeInds.map(LMat(_));
