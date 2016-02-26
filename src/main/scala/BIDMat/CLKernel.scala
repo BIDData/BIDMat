@@ -29,6 +29,7 @@ class CLKernel(kernel: cl_kernel) extends Object with Closeable {
       case (mat: CLMat, i) => setArg(i, Pointer.to(mat.data))
       case (mem: cl_mem, i) => setArg(i, Pointer.to(mem))
       case (ptr: Pointer, i) => setArg(i, ptr)
+      case (lmem: LocalMem, i) => setArg(i, null, lmem.sizeof)
       case _ => throw new RuntimeException("Unsupported kernel argument type")
     }
     this
@@ -36,6 +37,7 @@ class CLKernel(kernel: cl_kernel) extends Object with Closeable {
 
   def setArg(i: Int, ptr: Pointer): Unit = setArg(i, ptr, Sizeof.POINTER)
   def setArg(i: Int, ptr: Pointer, sizeof: Int): Unit = clSetKernelArg(kernel, i, sizeof, ptr)
+  def setArg(i: Int, ptr: Pointer, sizeof: Long): Unit = clSetKernelArg(kernel, i, sizeof, ptr)
 
   def run(command_queue: cl_command_queue, global: NDRange, local: NDRange = null): Unit = {
     // TODO: profile kernel calls by kernel name
@@ -63,3 +65,5 @@ object NDRange {
   def apply(x: Long, y: Long): NDRange = new NDRange(Array(x, y), 2)
   def apply(x: Long, y: Long, z: Long): NDRange = new NDRange(Array(x, y, z), 3)
 }
+
+case class LocalMem(sizeof: Long)
