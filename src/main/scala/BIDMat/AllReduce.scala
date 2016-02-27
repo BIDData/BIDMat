@@ -116,7 +116,12 @@ class AllReduce(val M:Int, val F:Int, val nnz:Int) {
     	}));
     	//    	  if (irep == 17) network.simNetwork(i).trace=2; else network.simNetwork(i).trace=0;   
 
-    	for (i <- 0 until M) futures(i).get();                              // Block until all threads are done
+    	for (i <- 0 until M) {
+    		futures(i).get();                              // Block until all threads are done
+    		val mach = network.machines(i);
+    		mach.waitForComms();
+//    	  println("Machine %d active threads %s" format (i, mach.executor.toString ))
+    	}
     	irep += 1;
     }
 

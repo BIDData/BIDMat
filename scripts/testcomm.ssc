@@ -1,7 +1,7 @@
 
 import BIDMat.AllReduce;
 
-val gmods = irow(4,4);
+val gmods = irow(4);
 val M = prod(gmods).v;
 
 val sim = new AllReduce(M,10000,1000);
