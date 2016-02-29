@@ -106,6 +106,9 @@ public class IVec {
 		return master;		
 	}
 	
+	// compute a map from sorted indices a to sorted indices b
+	// so if c = mapInds(a,b) then a[i] = b[c[i]];
+	
 	static public IVec mapInds(IVec a, IVec b)  { 
 		IVec out = new IVec(a.length);
 		int [] ad = a.data;

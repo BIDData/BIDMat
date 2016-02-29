@@ -9,8 +9,9 @@ import jcuda.runtime._
 import edu.berkeley.bid.CUMAT
 import scala.util.hashing.MurmurHash3
 import GMat._
+import java.io._
 
-case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, val jc:Pointer, val data:Pointer, val realnnz:Int) extends Mat(nr, nc) {
+case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @transient var ic:Pointer, @transient var jc:Pointer, @transient var data:Pointer, val realnnz:Int) extends Mat(nr, nc) {
 	
   def getdata() = data;	
 
@@ -25,6 +26,26 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
   }
   
   val myGPU = SciFunctions.getGPU
+     
+  var saveMe:SMat = null
+  
+  private def writeObject(out:ObjectOutputStream):Unit = {
+    saveMe = SMat(this);
+  	out.defaultWriteObject();
+  }
+  
+  private def readObject(in:ObjectInputStream):Unit = {
+    in.defaultReadObject();
+    val gpu = SciFunctions.getGPU;
+    SciFunctions.setGPU(myGPU);
+    val tmp = GSMat(saveMe);
+    data = tmp.data;
+    ir = tmp.ir;
+    ic = tmp.ic;
+    jc = tmp.jc;
+    SciFunctions.setGPU(gpu);
+    saveMe = null;
+  }
     
   override def toString:String = {
     val nnz0 = scala.math.min(nnz,12)       
@@ -166,6 +187,10 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     GMat.zeros(m,n)
   }
   
+  override def zeros(dims:IMat):GND = {
+    GND.zeros(dims)
+  }
+  
   override def zeros(m:Int, n:Int, nnz:Int) = {
     new GSMat(m, n, 0, new Pointer, new Pointer, new Pointer, new Pointer, 0);
   }
@@ -229,16 +254,17 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     if (ncols != a.nrows) {
       throw new RuntimeException("SDMult dimensions mismatch")
     }
-    val out = GMat.newOrCheckGMat(nrows, a.ncols, omat, GUID, a.GUID, "SDMult".##)
-    val handle = GSMat.getHandle
-    val descra = GSMat.getDescr
-    GSMat.initZerosAndOnes
-    val one = GSMat.myones(SciFunctions.getGPU)
-    val zero = GSMat.myzeros(SciFunctions.getGPU)
-    var err = JCusparse.cusparseScsrmm(handle, cusparseOperation.CUSPARSE_OPERATION_TRANSPOSE,
-        ncols, a.ncols, nrows, nnz, one.data, descra,	data, jc, ir, a.data, a.nrows, zero.data, out.data, out.nrows)
-    cudaDeviceSynchronize
-    if (err == 0) err = cudaGetLastError
+    val out = GMat.newOrCheckGMat(nrows, a.ncols, omat, GUID, a.GUID, "SDMult".##);
+    val handle = GSMat.getHandle;
+    val descra = GSMat.getDescr;
+    val zero = FMat.zeros(1,1);
+    val one = FMat.ones(1,1);
+    var err = JCusparse.cusparseScsrmm(handle, cusparseOperation.CUSPARSE_OPERATION_TRANSPOSE, 
+        ncols, a.ncols, nrows, nnz, 
+        Pointer.to(one.data), descra,	data, jc, ir, a.data, a.nrows, 
+        Pointer.to(zero.data), out.data, out.nrows);
+    cudaDeviceSynchronize;
+    if (err == 0) err = cudaGetLastError;
     if (err != 0) {
     	println("device is %d" format SciFunctions.getGPU)
     	throw new RuntimeException("Cuda error in GSMAT.SDMult " + cudaGetErrorString(err))
@@ -253,14 +279,15 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
     if (nrows != a.nrows) {
       throw new RuntimeException("SDTMult dimensions mismatch")
     }
-    val out = GMat.newOrCheckGMat(ncols, a.ncols, omat, GUID, a.GUID, "SDMult".##)
+    val out = GMat.newOrCheckGMat(ncols, a.ncols, omat, GUID, a.GUID, "SDTMult".##)
     val handle = GSMat.getHandle
     val descra = GSMat.getDescr  
-    GSMat.initZerosAndOnes
-    val one = GSMat.myones(SciFunctions.getGPU)
-    val zero = GSMat.myzeros(SciFunctions.getGPU)
+    val zero = FMat.zeros(1,1);
+    val one = FMat.ones(1,1);
     var err = JCusparse.cusparseScsrmm(handle, cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE,
-        ncols, a.ncols, nrows, nnz, one.data, descra,	data, jc, ir, a.data, a.nrows, zero.data, out.data, out.nrows)
+        ncols, a.ncols, nrows, nnz, 
+        Pointer.to(one.data), descra,	data, jc, ir, a.data, a.nrows, 
+        Pointer.to(zero.data), out.data, out.nrows)
     cudaDeviceSynchronize
     if (err == 0) err = cudaGetLastError
     if (err != 0) {
@@ -324,6 +351,8 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
   override def *  (b : Mat) = Mop_Times.op(this, b, null)
   override def *^ (b : Mat) = Mop_TimesT.op(this, b, null)
   override def xT (b : Mat) = Mop_TimesT.op(this, b, null)
+  override def ^* (b : Mat) = Mop_TTimes.op(this, b, null)
+  override def Tx (b : Mat) = Mop_TTimes.op(this, b, null)
   override def +  (b : Mat) = Mop_Plus.sop(this, b, null)
   override def -  (b : Mat) = Mop_Minus.sop(this, b, null)
   override def *@ (b : Mat) = Mop_ETimes.sop(this, b, null)
@@ -341,8 +370,9 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, val ir:Pointer, val ic:Pointer, v
 }
 
 class GSPair (val omat:Mat, val mat:GSMat) extends Pair {
-	def Tx(a:GMat) = mat.SDTMult(a, omat)
-	def ^*(a:GMat) = mat.SDTMult(a, omat)
+  def * (a:GMat) = mat.SDMult(a, omat)
+	def Tx (a:GMat) = mat.SDTMult(a, omat)
+	def ^* (a:GMat) = mat.SDTMult(a, omat)
 	
 	def +  (a:GMat) = mat.GSDop(a, omat, BinOp.op_add);
   def -  (a:GMat) = mat.GSDop(a, omat, BinOp.op_sub);
@@ -356,9 +386,6 @@ class GSPair (val omat:Mat, val mat:GSMat) extends Pair {
   def <= (a : GMat):GSMat = mat.GSDop(a, omat, BinOp.op_le);  
   def >= (a : GMat):GSMat = mat.GSDop(a, omat, BinOp.op_ge);  
   def == (a : GMat):GSMat = mat.GSDop(a, omat, BinOp.op_eq);
-
-	override def ^* (b : Mat):Mat = Mop_TTimes.op(mat, b, omat)
-	override def Tx (b : Mat):Mat = Mop_TTimes.op(mat, b, omat)
 	
   override def +  (a:Float) = mat.GSDop(GMat(a), omat, BinOp.op_add);
   override def -  (a:Float) = mat.GSDop(GMat(a), omat, BinOp.op_sub);
@@ -373,9 +400,11 @@ class GSPair (val omat:Mat, val mat:GSMat) extends Pair {
   override def >= (a : Float):GSMat = mat.GSDop(GMat(a), omat, BinOp.op_ge);  
   override def == (a : Float):GSMat = mat.GSDop(GMat(a), omat, BinOp.op_eq);
 	
-	override def *  (b : Mat) = Mop_Times.op(mat, b, null)
-  override def *^ (b : Mat) = Mop_TimesT.op(mat, b, null)
-  override def xT (b : Mat) = Mop_TimesT.op(mat, b, null)
+  override def ^* (b : Mat) = Mop_TTimes.op(mat, b, omat)
+	override def Tx (b : Mat) = Mop_TTimes.op(mat, b, omat)
+	override def *  (b : Mat) = Mop_Times.op(mat, b, omat)
+  override def *^ (b : Mat) = Mop_TimesT.op(mat, b, omat)
+  override def xT (b : Mat) = Mop_TimesT.op(mat, b, omat)
   override def +  (b : Mat) = Mop_Plus.sop(mat, b, null)
   override def -  (b : Mat) = Mop_Minus.sop(mat, b, null)
   override def *@ (b : Mat) = Mop_ETimes.sop(mat, b, null)

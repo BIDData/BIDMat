@@ -107,6 +107,9 @@ public class LVec {
 		return master;		
 	}
 	
+	// compute a map from sorted indices a to sorted indices b
+	// so if c = mapInds(a,b) then a[i] = b[c[i]];
+	
 	static public IVec mapInds(LVec a, LVec b)  { 
 		IVec out = new IVec(a.length);
 		long [] ad = a.data;
@@ -158,6 +161,20 @@ public class LVec {
     	j += 1;
     }
     return dd;
+  }
+  
+  static public void checkTree(LVec [] tree, LVec vals, int i, int k) {
+  	int here = k - 1 + i;
+    tree[here] = vals;
+    int parent = (here-1) / 2;
+    int sibling = 4*parent+3 - here;
+    
+    while (here > 0 && tree[sibling] != null && tree[parent] == null) {
+    	tree[parent] = merge2(tree[here], tree[sibling]);
+    	here = parent;
+    	parent = (here-1) / 2;
+      sibling = 4*parent+3 - here;
+    }
   }
 	
 	static public LVec merge2(LVec a, LVec b) {

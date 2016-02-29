@@ -96,8 +96,8 @@ class SparseMat[@specialized(Double,Float) T]
    */
   def gt:SparseMat[T] = {
     explicitInds
-    SparseMat.sparseImpl[T](SparseMat.uncompressInds(jc, ncols, ir), 
-    		            if (Mat.ioneBased==1) SparseMat.decInds(ir) else ir, data, ncols, nrows, nnz)
+    val ic = SparseMat.uncompressInds(jc, ncols, ir);
+    SparseMat.sparseImpl[T](ic, if (Mat.ioneBased==1) SparseMat.decInds(ir) else ir, data, ncols, nrows, nnz)
   }
   
   def gcountnz(n:Int, omat:Mat):IMat = {
@@ -394,7 +394,7 @@ class SparseMat[@specialized(Double,Float) T]
   	case _ => ""
   }
   
-  private def printOne(v0:Int):String = {
+  override def printOne(v0:Int):String = {
   		val v = v0 + Mat.oneBased
   		"%d" format v
   }
@@ -819,19 +819,28 @@ object SparseMat {
   def sparseImpl[@specialized(Double, Float) T](rows:Array[Int], cols:Array[Int], vals:Array[T], nrows:Int, ncols:Int, nnz:Int)
   (implicit manifest:Manifest[T], numeric:Numeric[T]):SparseMat[T] = {
     val ioff = Mat.ioneBased
-    val out = SparseMat[T](nrows, ncols, nnz)
-    val orows = out.ir
-    val ocols = new Array[Int](rows.length)
-    var i = 0
+    val out = if (rows != null) SparseMat[T](nrows, ncols, nnz) else noRows[T](nrows, ncols, nnz);
+    val orows = out.ir;
+    val ocols = new Array[Int](nnz);
+    var i = 0;
     while (i < nnz) {
-      ocols(i) = cols(i)
-      orows(i) = rows(i) + ioff
-      i += 1
+      ocols(i) = cols(i);
+      i += 1;
     }
-    val isort = BIDMat.Mat.ilexsort2(ocols, orows)
-    i = 0; while (i < orows.length) {out.data(i) = vals(isort(i)); i+=1}
-    val igood = remdups(orows, ocols, out.data)
-    SparseMat.compressInds(ocols, ncols, out.jc, igood)
+    val igood = if (orows != null) {
+    	i = 0;
+    	while (i < nnz) {
+    		orows(i) = rows(i) + ioff;
+    		i += 1;
+    	}
+    	val isort = BIDMat.Mat.ilexsort2(ocols, orows);
+    	i = 0; while (i < orows.length) {out.data(i) = vals(isort(i)); i+=1};
+    	remdups(orows, ocols, out.data);
+    }	else {
+    	i = 0; while (i < vals.length) {out.data(i) = vals(i); i+=1};
+      nnz;
+    }
+    SparseMat.compressInds(ocols, ncols, out.jc, igood);   
     out.sparseTrim
   }
   

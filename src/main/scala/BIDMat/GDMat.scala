@@ -16,8 +16,9 @@ import edu.berkeley.bid.CUMATD._
 import scala.util.hashing.MurmurHash3
 import GSDMat._
 import GMat.BinOp
+import java.io._
 
-class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, nc) {
+class GDMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Int) extends Mat(nr, nc) with Serializable {
   import GMat.BinOp._
 
   override def dv:Double =
@@ -46,6 +47,22 @@ class GDMat(nr:Int, nc:Int, var data:Pointer, val realsize:Int) extends Mat(nr, 
     	out.setGUID(MurmurHash3.mix(MurmurHash3.mix(nr, nc), (GUID*3145341).toInt));
     	out
     }
+  }
+     
+  var saveMe:DMat = null
+  
+  private def writeObject(out:ObjectOutputStream):Unit = {
+    saveMe = DMat(this);
+  	out.defaultWriteObject();
+  }
+  
+  private def readObject(in:ObjectInputStream):Unit = {
+    in.defaultReadObject();
+    val gpu = SciFunctions.getGPU;
+    SciFunctions.setGPU(myGPU);
+    data = GDMat(saveMe).data;
+    SciFunctions.setGPU(gpu);
+    saveMe = null;
   }
 
   override def apply(I:GIMat, J:GIMat):GDMat = applyx(I, J)
@@ -1544,6 +1561,65 @@ object GDMat {
       throw new RuntimeException("mini2 directions not recognized %d" format dim)
     }      
   }
+  
+  def rand(out:GDMat):GDMat = {
+    import jcuda.jcurand._
+    Mat.nflops += 10L*out.length
+    JCurand.curandGenerateUniformDouble(GMat.cudarng(GMat.getGPU).asInstanceOf[curandGenerator], out.data, out.length)
+    jcuda.runtime.JCuda.cudaDeviceSynchronize()
+    out
+  }
+  
+  def normrnd(mu:Double, sig:Double, out:GDMat):GDMat = {
+    import jcuda.jcurand._
+    Mat.nflops += 10L*out.length
+    JCurand.curandGenerateNormalDouble(GMat.cudarng(GMat.getGPU).asInstanceOf[curandGenerator], out.data, out.length, mu, sig)
+    jcuda.runtime.JCuda.cudaDeviceSynchronize()
+    out
+  }
+  
+    
+  def applyGDfun(in:GDMat, omat:Mat, opn:Int, kflops:Long):GDMat = {
+    val out = GDMat.newOrCheckGDMat(in.nrows, in.ncols, omat, in.GUID, opn)
+    CUMAT.applygdfun(in.data, out.data, in.nrows*in.ncols, opn)
+    jcuda.runtime.JCuda.cudaDeviceSynchronize()
+    Mat.nflops += kflops*in.length
+    out
+  }
+
+  def applyGDfun(in:GDMat, opn:Int, kflops:Long):GDMat = {
+    val out = GDMat.newOrCheckGDMat(in.nrows, in.ncols, null, in.GUID, opn)
+    CUMAT.applygdfun(in.data, out.data, in.nrows*in.ncols, opn)
+    jcuda.runtime.JCuda.cudaDeviceSynchronize()
+    Mat.nflops += kflops*in.length
+    out
+  }
+  
+  def applyGDfun2(a:GDMat, b:GDMat, omat:Mat, opn:Int, kflops:Long):GDMat = {   
+    if (a.nrows == b.nrows && a.ncols == b.ncols) {
+      val out = GDMat.newOrCheckGDMat(a.nrows, a.ncols, omat, a.GUID, b.GUID, opn)
+      CUMAT.applygdfun2(a.data, b.data, out.data, a.nrows*a.ncols, opn)
+      jcuda.runtime.JCuda.cudaDeviceSynchronize()
+      Mat.nflops += kflops*a.length
+      out
+    } else {
+      throw new RuntimeException("Dimensions mismatch")
+    }
+  }
+
+  def applyGDfun2(a:GDMat, b:GDMat, opn:Int, kflops:Long):GDMat = {
+    if  (a.nrows == b.nrows && a.ncols == b.ncols)  {
+      val out = GDMat.newOrCheckGDMat(a.nrows, a.ncols, null, a.GUID, b.GUID, opn)
+      CUMAT.applygdfun2(a.data, b.data, out.data, a.nrows*a.ncols, opn)
+      jcuda.runtime.JCuda.cudaDeviceSynchronize()
+      Mat.nflops += kflops*a.length
+      out
+    } else {
+      throw new RuntimeException("Dimensions mismatch")
+    }
+  }
+  
+  def norm(a:GDMat) = math.sqrt(jcuda.jcublas.JCublas.cublasDdot(a.length, a.data, 1, a.data, 1))
 
   def embedmat(a:GIMat, b:GDMat, oMat: Mat):GIMat = {
     if (a.nrows != b.nrows || a.ncols != b.ncols) {

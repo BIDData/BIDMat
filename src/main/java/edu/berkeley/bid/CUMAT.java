@@ -33,9 +33,17 @@ public final class CUMAT {
     
     public static native int copyToInds2D(Pointer A, int lda, Pointer B, int ldb, Pointer I, int nrows, Pointer J, int ncols);
     
+    public static native int copyToInds3D(Pointer A, int lda, int rda, Pointer B, int ldb, int rdb, Pointer I, int nrows, Pointer J, int ncols, Pointer K, int nd);
+    
+    public static native int copyToInds4D(Pointer A, int lda, int rda, int tda, Pointer B, int ldb, int rdb, int tdb, Pointer I, int nrows, Pointer J, int ncols, Pointer K, int nk, Pointer L, int nl);
+    
     public static native int copyToInds2DLong(Pointer A, int lda, Pointer B, int ldb, Pointer I, int nrows, Pointer J, int ncols);
 
     public static native int copyFromInds2D(Pointer A, int lda, Pointer B, int ldb, Pointer I, int nrows, Pointer J, int ncols);
+    
+    public static native int copyFromInds3D(Pointer A, int lda, int rda, Pointer B, int ldb, int rdb, Pointer I, int nrows, Pointer J, int ncols, Pointer K, int nd);
+    
+    public static native int copyFromInds4D(Pointer A, int lda, int rda, int tda, Pointer B, int ldb, int rdb, int tdb, Pointer I, int nrows, Pointer J, int ncols, Pointer K, int nk, Pointer L, int nl);
     
     public static native int copyFromInds2DLong(Pointer A, int lda, Pointer B, int ldb, Pointer I, int nrows, Pointer J, int ncols);
     
@@ -189,7 +197,7 @@ public final class CUMAT {
     
     public static native int minif(Pointer in, Pointer out, Pointer outi, int nrows, int ncols, int dir);
     
-    public static native int embedmat2d(Pointer A, Pointer B, int nrows, int ncols);
+    public static native int embedmat2d(Pointer A, Pointer B, int nrows, int ncols, int sortdown);
     
     public static native int extractmat2d(Pointer A, Pointer B, int nrows, int ncols);
     
@@ -247,11 +255,11 @@ public final class CUMAT {
     
     public static native int hammingdists(Pointer A, Pointer B, Pointer W, Pointer OP, Pointer OW, int n);
     
-    public static native int poissonrnd(int n, Pointer Lambda, Pointer Out, int nthreads);
+    public static native int poissonrnd(int n, Pointer Lambda, Pointer Out, int nthreads, long seed, long offset);
 
-    public static native int binornd(int nrows, int ncols, Pointer prob, int atype, Pointer N, int ctype, Pointer Out);
+    public static native int binornd(int nrows, int ncols, Pointer prob, int atype, Pointer N, int ctype, Pointer Out, long seed, long offset);
     
-    public static native int gamrnd(int nrows, int ncols, Pointer prob, int atype, Pointer B, int btype, Pointer Out);
+    public static native int gamrnd(int nrows, int ncols, Pointer prob, int atype, Pointer B, int btype, Pointer Out, long seed, long offset);
     
     public static native int collectLVec(Pointer pkeys, Pointer okeys, Pointer pvals, Pointer ovals, int n);
     
@@ -294,4 +302,6 @@ public final class CUMAT {
     public static native int cumsum2ByKeyFF(Pointer A, Pointer B, Pointer out, int nrows, int ncols);
     
     public static native int reverse(Pointer A, Pointer out, long len);
+    
+    public static native  void spermute(int d1, int d2, int d3, Pointer in, Pointer out);
 }

@@ -16,7 +16,9 @@ trait Mop {
   def op(a:LMat, b:LMat, c:Mat):LMat = {notImplemented(myname, a, b); a}
   def op(a:CMat, b:CMat, c:Mat):CMat = {notImplemented(myname, a, b); a}
   def op(a:GMat, b:GMat, c:Mat):GMat = {notImplemented(myname, a, b); a}
+  def op(a:GMat, b:GSMat, c:Mat):GMat = {notImplemented(myname, a, b); a}
   def op(a:GDMat, b:GDMat, c:Mat):GDMat = {notImplemented(myname, a, b); a}
+  def op(a:GDMat, b:GSDMat, c:Mat):GDMat = {notImplemented(myname, a, b); a}
   def op(a:GIMat, b:GIMat, c:Mat):GIMat = {notImplemented(myname, a, b); a}
   def op(a:GLMat, b:GLMat, c:Mat):GLMat = {notImplemented(myname, a, b); a}
 
@@ -24,6 +26,8 @@ trait Mop {
   def op(a:SDMat, b:SDMat, c:Mat):SDMat = {notImplemented(myname, a, b); a}
   def op(a:GSMat, b:GSMat, c:Mat):GSMat = {notImplemented(myname, a, b); a}
   def op(a:GSDMat, b:GSDMat, c:Mat):GSDMat = {notImplemented(myname, a, b); a}
+  def op(a:GSMat, b:GMat, c:Mat):GMat = {notImplemented(myname, a, b); b}
+  def op(a:GSDMat, b:GDMat, c:Mat):GDMat = {notImplemented(myname, a, b); b}
 
   def sop(a:SMat, b:FMat, c:Mat):SMat = {notImplemented(myname, a, b); a}
   def sop(a:SDMat, b:DMat, c:Mat):SDMat = {notImplemented(myname, a, b); a}
@@ -183,7 +187,7 @@ trait Mop {
   def op(a:GMat, b:FMat, c:Mat):GMat = op(a, GMat(b), c)
   def op(a:GMat, b:IMat, c:Mat):GMat = op(a, GMat(b), c)
   def op(a:GMat, b:DMat, c:Mat):GMat = op(a, GMat(b), c)
-  def op(a:GMat, b:GSMat, c:Mat):GMat = op(a, b, c)
+//  def op(a:GMat, b:GSMat, c:Mat):GMat = op(a, b, c)
   
   
   def op(a:GMat, b:Mat, c:Mat):Mat = {
@@ -241,7 +245,7 @@ trait Mop {
   def op(a:GDMat, b:FMat, c:Mat):GDMat = op(a, GDMat(b), c)
   def op(a:GDMat, b:IMat, c:Mat):GDMat = op(a, GDMat(b), c)
   def op(a:GDMat, b:DMat, c:Mat):GDMat = op(a, GDMat(b), c)
-  def op(a:GDMat, b:GSDMat, c:Mat):GDMat = op(a, b, c)
+//  def op(a:GDMat, b:GSDMat, c:Mat):GDMat = op(a, b, c)
   
   def op(a:GDMat, b:Mat, c:Mat):Mat = {
     b match {
@@ -257,7 +261,7 @@ trait Mop {
   /*
    * Default coercions when first arg is a GSMat
    */
-  def op(a:GSMat, b:GMat, c:Mat):GMat = op(a, b, c)
+//  def op(a:GSMat, b:GMat, c:Mat):GMat = op(a, b, c)
   def op(a:GSMat, b:FMat, c:Mat):GMat = op(a, GMat(b), c)
   def op(a:GSMat, b:IMat, c:Mat):GMat = op(a, GMat(b), c)
   def op(a:GSMat, b:DMat, c:Mat):GMat = op(a, GMat(b), c)
@@ -284,7 +288,7 @@ trait Mop {
   /*
    * Default coercions when first arg is a GSDMat
    */
-  def op(a:GSDMat, b:GDMat, c:Mat):GDMat = op(a, b, c)
+//  def op(a:GSDMat, b:GDMat, c:Mat):GDMat = op(a, b, c)
   def op(a:GSDMat, b:FMat, c:Mat):GDMat = op(a, GDMat(b), c)
   def op(a:GSDMat, b:IMat, c:Mat):GDMat = op(a, GDMat(b), c)
   def op(a:GSDMat, b:DMat, c:Mat):GDMat = op(a, GDMat(b), c)
@@ -418,6 +422,8 @@ object Mop_Times extends Mop { // Times includes dense-sparse combinations
   override def op(a:GMat, b:GSMat, c:Mat):GMat = getGPair(c, a) * b
   override def op(a:GDMat, b:GSDMat, c:Mat):GDMat = getGDPair(c, a) * b
   override def op(a:TMat, b:Mat, c:Mat):Mat = getTPair(c, a) * b
+  override def op(a:GSMat, b:GMat, c:Mat):GMat = getGSPair(c, a) * b
+  override def op(a:GSDMat, b:GDMat, c:Mat):GDMat = getGSDPair(c, a) * b
 }
 
 object Mop_TimesT extends Mop { 

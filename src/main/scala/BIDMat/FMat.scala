@@ -2,7 +2,7 @@
 package BIDMat
 import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.LAPACK._
-import edu.berkeley.bid.SPBLAS._
+import edu.berkeley.bid.SPBLAS
 import edu.berkeley.bid.UTILS._
 import scala.util.hashing.MurmurHash3
 import java.util.Arrays
@@ -13,8 +13,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, nc, data0) {
 
-  def size() = length;
-  
   override def t:FMat = tt(null)
   
   def t(omat:Mat):FMat = tt(omat)
@@ -269,9 +267,9 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
   
   def copyTo(a:FMat) = {
-    val aa = a.recycle(nrows, ncols, 0)
-    System.arraycopy(data, 0, aa.data, 0, length)
-    aa
+    if (nrows != a.nrows || ncols != a.ncols) throw new RuntimeException("dimensions mismatch in FMat copyTo (%d, %d) and (%d, %d)" format (nrows, ncols, a.nrows, a.ncols));
+    System.arraycopy(data, 0, a.data, 0, length)
+    a
   }
   
   override def set(v:Float):FMat = {
@@ -288,6 +286,15 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   	}
   	a
   }
+  
+  def copyTo(a:FND):FND = {copyTo(a.asMat); a}
+  
+  override def copyTo(out:ND):ND = {
+    out match {
+      case a:Mat => copyTo(a)
+      case a:FND => copyTo(a)
+    }
+  }
    
   override def zeros(nr:Int, nc:Int) = {
     FMat.zeros(nr, nc)
@@ -295,6 +302,10 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   override def zeros(nr:Int, nc:Int, nnz:Int) = {
     FMat.zeros(nr, nc)
+  }
+  
+  override def zeros(dims:IMat):FND = {
+    FND.zeros(dims)
   }
   
   override def ones(nr:Int, nc:Int) = {
@@ -535,9 +546,9 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     		var jc0 = if (ioff == 0) SparseMat.incInds(a.jc) else a.jc
     		var ir0 = if (ioff == 0) SparseMat.incInds(a.ir) else a.ir 
     		if (nrows == 1) {
-    			scscmv("T", a.nrows, a.ncols, 1.0f, "GLNF", a.data, ir0, jc0, data, 0f, out.data)
+    			SPBLAS.scscmv("T", a.nrows, a.ncols, 1.0f, "GLNF", a.data, ir0, jc0, data, 0f, out.data)
     		} else {
-    			smcscm(nrows, a.ncols, data, nrows, a.data, ir0, jc0, out.data, nrows)
+    			SPBLAS.smcscm(nrows, a.ncols, data, nrows, a.data, ir0, jc0, out.data, nrows);
     		}
     	}
     	out
@@ -740,10 +751,10 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     } else { 
     	if (nrows == 1) {
     		setnumthreads(1) ; // Otherwise crashes 
-    		scscmv("N", a.nrows, a.ncols, 1.0f, "GLNF", a.data, a.ir, a.jc, data, 0f, out.data) ;
+    		SPBLAS.scscmv("N", a.nrows, a.ncols, 1.0f, "GLNF", a.data, a.ir, a.jc, data, 0f, out.data) ;
     		setnumthreads(Mat.numOMPthreads);
     	} else {
-    		smcsrm(nrows, a.ncols, data, nrows, a.data, a.ir, a.jc, out.data, nrows)
+    		SPBLAS.smcsrm(nrows, a.ncols, data, nrows, a.data, a.ir, a.jc, out.data, nrows);
     	}
     }
     out
@@ -1768,6 +1779,21 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   override def <= (b : Int) = mat.ffMatOpScalarv(b, FMat.vecLEFun, omat)
   override def != (b : Int) = mat.ffMatOpScalarv(b, FMat.vecNEFun, omat)
   
+
+  override def * (b : Long) = mat.ffMatOpScalarv(b.toFloat, FMat.vecMulFun, omat)
+  override def + (b : Long) = mat.ffMatOpScalarv(b.toFloat, FMat.vecAddFun, omat)
+  override def - (b : Long) = mat.ffMatOpScalarv(b.toFloat, FMat.vecSubFun, omat)
+  override def *@ (b : Long) = mat.ffMatOpScalarv(b.toFloat, FMat.vecMulFun, omat)
+  override def ∘  (b : Long) = mat.ffMatOpScalarv(b.toFloat, FMat.vecMulFun, omat)
+  override def /  (b : Long) = mat.ffMatOpScalarv(b.toFloat, FMat.vecDivFun, omat)
+  override def ^ (b : Long) = mat.ffMatOpScalar(b.toFloat, FMat.powFun, omat)
+
+  override def > (b : Long) = mat.ffMatOpScalarv(b.toFloat, FMat.vecGTFun, omat)
+  override def < (b : Long) = mat.ffMatOpScalarv(b.toFloat, FMat.vecLTFun, omat)
+  override def == (b : Long) = mat.ffMatOpScalarv(b.toFloat, FMat.vecEQFun, omat)
+  override def >= (b : Long) = mat.ffMatOpScalarv(b.toFloat, FMat.vecGEFun, omat)
+  override def <= (b : Long) = mat.ffMatOpScalarv(b.toFloat, FMat.vecLEFun, omat)
+  override def != (b : Long) = mat.ffMatOpScalarv(b.toFloat, FMat.vecNEFun, omat)
   /*
    * Specialize to IMat
    */

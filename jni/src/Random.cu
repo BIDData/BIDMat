@@ -31,9 +31,9 @@ __global__ void __poissonrnd(int n, float *A, int *B, curandState *rstates) {
 }
 
 
-__global__ void __randinit(curandState *rstates) {
+__global__ void __randinit(unsigned long long seed, unsigned long long offset, curandState *rstates) {
   int id = threadIdx.x + blockDim.x * blockIdx.x;
-  curand_init(1234, id, 0, &rstates[id]);
+  curand_init(seed, id, offset, &rstates[id]);
 }
 
 __forceinline__ __device__ int __waittime(curandState *prstate, float p, int n) {
@@ -50,7 +50,7 @@ __forceinline__ __device__ int __waittime(curandState *prstate, float p, int n) 
   return X - 1;  
 }
 
-int poissonrnd(int n, float *A, int *B, int nthreads) {
+int poissonrnd(int n, float *A, int *B, int nthreads, unsigned long long seed, unsigned long long offset) {
   int nblocks = min(1024, max(1,nthreads/1024));
   int nth = min(n, 1024);
   curandState *rstates;
@@ -61,7 +61,7 @@ int poissonrnd(int n, float *A, int *B, int nthreads) {
     return err;
   }
   cudaDeviceSynchronize();
-  __randinit<<<nblocks,nth>>>(rstates); 
+  __randinit<<<nblocks,nth>>>(seed, offset, rstates); 
   cudaDeviceSynchronize();
   __poissonrnd<<<nblocks,nth>>>(n, A, B, rstates);
   cudaDeviceSynchronize();
@@ -171,7 +171,7 @@ __global__ void __binornd(int nrows, int ncols, float *A, int atype, int *C, int
   }
 }
  
-int binornd(int nrows, int ncols, float *A, int atype, int *C, int ctype, int *Out) {
+int binornd(int nrows, int ncols, float *A, int atype, int *C, int ctype, int *Out, unsigned long long seed, unsigned long long offset) {
   int nvals = nrows * ncols;
   int nthreads = min(256, 32*(1+(nvals-1)/32));  // at least nvals, round up to a multiple of 32 l.e. 256
   int nblocks = min(128, 1 + (nvals-1)/nthreads);
@@ -182,7 +182,7 @@ int binornd(int nrows, int ncols, float *A, int atype, int *C, int ctype, int *O
     return err;
   }
   cudaDeviceSynchronize();
-  __randinit<<<nblocks,nthreads>>>(rstates); 
+  __randinit<<<nblocks,nthreads>>>(seed, offset, rstates); 
   cudaDeviceSynchronize(); 
   __binornd<<<nblocks,nthreads>>>(nrows, ncols, A, atype,  C, ctype, Out, rstates);
   cudaDeviceSynchronize();
@@ -191,7 +191,13 @@ int binornd(int nrows, int ncols, float *A, int atype, int *C, int ctype, int *O
   return err;
 }
 
-
+//
+// Based on  Marsaglia and Tsang, <i>A Simple Method for Generating Gamma Variables.</i>
+// ACM Transactions on Mathematical Software,  Volume 26 Issue 3, September, 2000
+//
+// Transformation for a < 1 is based on Stuart's theorem, section IV.6.4 of Devroye's book:
+// http://luc.devroye.org/rnbookindex.html
+//
 __forceinline__ __device__ float __gamrnd1(float a, curandState *prstate) {
   int small = 0;
   if (a < 1.0f) {
@@ -203,13 +209,14 @@ __forceinline__ __device__ float __gamrnd1(float a, curandState *prstate) {
   float c = 0.33333333f / sqrt(d);
   while (1) {
     float z = curand_normal(prstate);
-    float v = 1 + c * z;
-    if (v <= 0) continue;
+    float v0 = 1 + c * z;
+    if (v0 <= 0) continue;
     float u = curand_uniform(prstate);
-    v = v*v*v;
+    float v = v0*v0*v0;
     x = d * v;
-    if (u < 1 - 0.0331f*z*z*z*z) break;
-    if (log(u) < 0.5f*z*z + d - x + d*log(v)) break;
+    float z2 = z * z;
+    if (u < 1 - 0.0331f*z2*z2) break;
+    if (log(u) < 0.5f*z2 + d - x + d*log(v)) break;
   }
   if (small) {
     a -= 1;
@@ -250,7 +257,7 @@ __global__ void __gamrnd(int nrows, int ncols, float *A, int atype, float *B, in
 
 
 
-int gamrnd(int nrows, int ncols, float *A, int atype, float *B, int btype, float *Out) {
+int gamrnd(int nrows, int ncols, float *A, int atype, float *B, int btype, float *Out, unsigned long long seed, unsigned long long offset) {
   int nvals = nrows * ncols;
   int nthreads = min(256, 32*(1+(nvals-1)/32));  // at least nvals, round up to a multiple of 32 l.e. 256
   int nblocks = min(128, 1 + (nvals-1)/nthreads/256);
@@ -261,7 +268,7 @@ int gamrnd(int nrows, int ncols, float *A, int atype, float *B, int btype, float
     return err;
   }
   cudaDeviceSynchronize();
-  __randinit<<<nblocks,nthreads>>>(rstates); 
+  __randinit<<<nblocks,nthreads>>>(seed, offset, rstates); 
   cudaDeviceSynchronize(); 
   __gamrnd<<<nblocks,nthreads>>>(nrows, ncols, A, atype,  B, btype, Out, rstates);
   cudaDeviceSynchronize();

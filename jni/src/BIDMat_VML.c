@@ -1,3 +1,4 @@
+#ifdef __INTEL_COMPILER
 
 #include <jni.h>
 #include <mkl.h>
@@ -2099,3 +2100,4 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_VML_vzUnpackM
     (*env)->ReleasePrimitiveArrayCritical(env, j_my, my, 0);
 }
 
+#endif

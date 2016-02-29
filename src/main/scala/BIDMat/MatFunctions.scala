@@ -5,6 +5,7 @@ import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.LAPACK._
 import edu.berkeley.bid.SPBLAS._
 import scala.concurrent.Future
+import java.awt.image.BufferedImage
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.implicitConversions
 
@@ -1103,6 +1104,11 @@ object MatFunctions {
   
   /** Make a float matrix of zeros of the given size. */
   def zeros(nr:Int, nc:Int):FMat = FMat(nr,nc)
+  
+  /** Make a float NDarray of zeros of the given size. */
+  def zeros(dims:IMat):FND = FND.zeros(dims)
+  
+  def ones(dims:IMat):FND = FND.ones(dims)
 
   /** Make a float matrix of ones of the given size. */  
   def ones(nr:Int, nc:Int):FMat = {
@@ -1379,24 +1385,45 @@ object MatFunctions {
   
   /** Construct a sparse double matrix from arrays of indices (ii=row, jj=col) and values, with given size. */
   def sparse(ii:IMat, jj:IMat, vv:DMat, nr:Int, nc:Int):SDMat = {
-    SDMat(SparseMat.sparseImpl[Double](ii.data, jj.data, vv.data, nr, nc, ii.length))
+    val iidata = if (ii.asInstanceOf[AnyRef] != null) ii.data else null;
+    SDMat(SparseMat.sparseImpl[Double](iidata, jj.data, vv.data, nr, nc, jj.length))
   } 
   
   def _maxi(a:IMat) = a.iiReduceOp(0, IMat.idFun, IMat.maxFun, null)
 
   /** Construct an auto-sized sparse double matrix from arrays of indices (ii=row, jj=col) and values. */
   def sparse(ii:IMat, jj:IMat, vv:DMat):SDMat = {
-    SDMat(SparseMat.sparseImpl[Double](ii.data, jj.data, vv.data, _maxi(ii).v+1, _maxi(jj).v+1, ii.length))
+  	val iidata = if (ii.asInstanceOf[AnyRef] != null) ii.data else null;
+    SDMat(SparseMat.sparseImpl[Double](iidata, jj.data, vv.data, _maxi(ii).v+1, _maxi(jj).v+1, jj.length))
   } 
 
   /** Construct a sparse float matrix from arrays of indices (ii=row, jj=col) and values, with given size. */
   def sparse(ii:IMat, jj:IMat, vv:FMat, nr:Int, nc:Int):SMat = {
-    SMat(SparseMat.sparseImpl[Float](ii.data, jj.data, vv.data, nr, nc, ii.length))
+  	val iidata = if (ii.asInstanceOf[AnyRef] != null) ii.data else null;
+    SMat(SparseMat.sparseImpl[Float](iidata, jj.data, vv.data, nr, nc, jj.length))
   } 
 
   /** Construct an auto-sized sparse float matrix from arrays of indices (ii=row, jj=col) and values. */
   def sparse(ii:IMat, jj:IMat, vv:FMat):SMat = {
-    SMat(SparseMat.sparseImpl[Float](ii.data, jj.data, vv.data, _maxi(ii).v+1, _maxi(jj).v+1, ii.length))
+  	val iidata = if (ii.asInstanceOf[AnyRef] != null) ii.data else null;
+  	val maxlen = if (ii.asInstanceOf[AnyRef] != null) {
+  	  _maxi(ii).v+1;
+  	} else {
+  	  var maxl = 0;
+  	  var curlen = 0;
+  	  var i = 0;
+  	  while (i < jj.length) {
+  	    if (i == 0 || jj.data(i) == jj.data(i-1)) {
+  	      curlen += 1;
+  	      if (curlen > maxl) maxl = curlen;
+  	    } else {
+  	      curlen = 1;
+  	    }
+  	    i += 1;
+  	  }
+  	  maxl;
+  	}
+    SMat(SparseMat.sparseImpl[Float](iidata, jj.data, vv.data, maxlen, _maxi(jj).v+1, jj.length))
   } 
 
   /** Convert from double dense to double dense. */
@@ -1778,6 +1805,7 @@ object MatFunctions {
       case (a:FMat,b:GMat) => GMat(a).kron(b, omat)
       case (a:FMat,b:GIMat) => GMat(a).kron(GMat(b), omat)
       case (a:IMat,b:FMat) => a.kron(b, omat)
+      case (a:IMat,b:IMat) => a.kron(b, omat)
       case (a:IMat,b:SMat) => a.kron(full(b), omat)
       case (a:GMat,b:IMat) => a.kron(GMat(b), omat)
       case (a:GMat,b:GIMat) => a.kron(GMat(b), omat)
@@ -1917,10 +1945,12 @@ object MatFunctions {
   
   def cols2sparse(rows:IMat, cols:IMat, values:FMat):SMat = cols2sparse(rows, cols, values, true, 0)
   
-  def union(dd:Dict*) = Dict._union(dd:_*)
+  def union(dd:Dict*) = Dict.union(dd:_*);
+  
+  def h5list(fname:String) = MatHDF5.h5list(fname)
   
   def load[T](fname:String, vname:String):T = MatHDF5.hload(fname, vname).asInstanceOf[T]
-
+  
   def load[A,B](fname:String, v1:String, v2:String):(A,B) = {
     val a = MatHDF5.hload(fname, List(v1, v2));
     (a(0).asInstanceOf[A], a(1).asInstanceOf[B])
@@ -1960,6 +1990,9 @@ object MatFunctions {
   
   def loadSMat(fname:String) = HMat.loadSMat(fname)    
   def loadSMat(fname:String, compressed:Int) = HMat.loadSMat(fname, compressed)
+
+  def loadSDMat(fname:String) = HMat.loadSDMat(fname)    
+  def loadSDMat(fname:String, compressed:Int) = HMat.loadSDMat(fname, compressed)
   
   def saveMat(fname:String, m:Mat) = HMat.saveMat(fname, m)    
   def saveMat(fname:String, m:Mat, compressed:Int) = HMat.saveMat(fname, m, compressed)
@@ -1978,6 +2011,9 @@ object MatFunctions {
   
   def saveSMat(fname:String, m:SMat) = HMat.saveSMat(fname, m)    
   def saveSMat(fname:String, m:SMat, compressed:Int) = HMat.saveSMat(fname, m, compressed)
+
+  def saveSDMat(fname:String, m:SDMat) = HMat.saveSDMat(fname, m)    
+  def saveSDMat(fname:String, m:SDMat, compressed:Int) = HMat.saveSDMat(fname, m, compressed)
   
   def saveSBMat(fname:String, m:SBMat) = HMat.saveSBMat(fname, m)    
   def saveSBMat(fname:String, m:SBMat, compressed:Int) = HMat.saveSBMat(fname, m, compressed)
@@ -1988,9 +2024,11 @@ object MatFunctions {
   def loadIDX(fname:String, compressed:Int) = HMat.loadIDX(fname, compressed)
   def loadIDX(fname:String) = HMat.loadIDX(fname, 0)
   
-  def loadLibSVM(fname:String, nrows:Int, compressed:Int, oneBased:Int) = HMat.loadLibSVM(fname, nrows, compressed, oneBased)
-  def loadLibSVM(fname:String, nrows:Int, compressed:Int) = HMat.loadLibSVM(fname, nrows, compressed)
-  def loadLibSVM(fname:String, nrows:Int) = HMat.loadLibSVM(fname, nrows, 0)
+  def loadLibSVM(fname:String, nrows:Int, compressed:Int, oneBased:Int) = HMat.loadLibSVM(fname, nrows, compressed, oneBased);
+  def loadLibSVM(fname:String, nrows:Int, compressed:Int) = HMat.loadLibSVM(fname, nrows, compressed);
+  def loadLibSVM(fname:String, nrows:Int) = HMat.loadLibSVM(fname, nrows, 0);
+  
+  def loadImage(fname:String) = Image.loadImage(fname);
 
   def saveLibSVM(fname:String, data:SMat, cats:SMat, weights:FMat, compressed:Int, oneBased:Int):Unit = HMat.saveLibSVM(fname, data, cats, weights, compressed, oneBased)
   def saveLibSVM(fname:String, data:SMat, cats:SMat, weights:FMat, compressed:Int):Unit = HMat.saveLibSVM(fname, data, cats, weights, compressed)
@@ -1999,6 +2037,22 @@ object MatFunctions {
   
   def saveVW(fname:String, sdata:SMat, cats:SMat, compressed:Int, oneBased:Int):Unit = HMat.saveVW(fname, sdata, cats, compressed, oneBased);
   def saveVW(fname:String, sdata:SMat, cats:SMat):Unit = HMat.saveVW(fname, sdata, cats, 0, 0);
+  
+  def show (image:Image):BufferedImage = image.show
+  
+  def show (mat:IMat):BufferedImage = {show(Image(mat))}
+  
+  def show (mat:FMat):BufferedImage = {show(Image(mat))}
+  
+  def show (mat:FND):BufferedImage = {show(Image(mat))}
+  
+  def show (image:Image, title:String):BufferedImage = image.show(title)
+  
+  def show (mat:IMat, title:String):BufferedImage = {show(Image(mat), title)}
+  
+  def show (mat:FMat, title:String):BufferedImage = {show(Image(mat), title)}
+  
+  def show (mat:FND, title:String):BufferedImage = {show(Image(mat), title)}
 
   final val ? = new IMatWildcard
 }
