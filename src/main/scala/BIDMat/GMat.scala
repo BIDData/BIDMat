@@ -591,10 +591,20 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     }
   }
   
+  def madd(b:Mat,c:TMat):TMat = madd(b,c,false,false)
+
+  def madd(b:Mat,c:TMat,at:Boolean,bt:Boolean):TMat = {
+    val g=c.full()
+    madd(b,g,at,bt)
+    c<--g
+    c
+  }
+  
   override def madd(b:Mat, c:Mat, at:Boolean, bt:Boolean):Mat = {
   	(b, c) match {
   	case (bb:GMat, cc:GMat) => madd(bb, cc, at, bt);
   	case (bb:GSMat, cc:GMat) => madd(bb, cc, at, bt);
+  	case (bb:Mat,cc:TMat) => madd(bb,cc,at,bt)
   	case _ => throw new RuntimeException("madd unsupported types %s %s" format (b.mytype, c.mytype));
   	}
   	c
@@ -901,6 +911,15 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     a
   }
   
+  def copyTo(t:TMat):TMat = {
+    var i = 0
+    while (i < t.tiles.length) {
+        applyx(GIMat(MatFunctions.irow(t.y(i) until t.y(i)+t.tiles(i).nrows)),GIMat(MatFunctions.irow(t.x(i) until t.x(i)+t.tiles(i).ncols)),t.tiles(i))
+        i+=1
+    }
+    t
+  }
+  
   def copyFrom(in:FMat):GMat = {
       if (nrows != in.nrows || ncols != in.ncols) throw new RuntimeException("dimensions mismatch in FMat copyFrom (%d, %d) and (%d, %d)" format (nrows, ncols, in.nrows, in.ncols));
   
@@ -933,6 +952,7 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
       case a:FMat => copyTo(a)
       case a:GMat => copyTo(a)
       case a:GIMat => copyTo(a)
+      case a:TMat => copyTo(a)
     }
   }
   
@@ -1428,6 +1448,7 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   def ~ (b: GMat) = new GPair(this, b)
   def ~ (b: GSMat) = new GSPair(this, b)
   override def ~ (b: Mat):Pair = b match {
+    case t:TMat => new GTPair(this,t)
     case bb:GMat => new GPair(this, bb)
     case bb:GSMat => new GSPair(this, bb)
   }
@@ -1441,6 +1462,13 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   override def ^* (b0 : DSPair) = {val b = b0.asInstanceOf[GDSPair]; MatFunctions.DDS(this, b.left, b.right, null)}
   override def Tx (b0 : DSPair) = {val b = b0.asInstanceOf[GDSPair]; MatFunctions.DDS(this, b.left, b.right, null)}
 
+}
+
+class GTPair(val omat:GMat,val mat:TMat) extends Pair {
+    override def * (a:Mat) = a match {
+        case g:GMat => mat.tMult(g,omat)
+        case g:GSMat => mat.tMult(g,omat)
+    }
 }
 
 /*

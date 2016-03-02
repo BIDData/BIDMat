@@ -495,26 +495,70 @@ def tMultT(a:Mat, outmat:Mat) : Mat =  {
     }
     out
   }
-
+  
+  def op_tmat(t:TMat,o:TMat,op:Mop,op_num:Int) = {
+      var out = TMat.newOrCheckTMat(nrows,ncols,x,y,tiles,o,GUID,t.GUID,op_num)
+        var i=0
+        while (i<tiles.length){
+            op.op(tiles(i),t.tiles(i),out.tiles(i))
+            i+=1
+        }
+        out      
+  }
+  
+  def op_mat(t:Mat,o:TMat,op:Mop,op_num:Int) = {
+      var out = TMat.newOrCheckTMat(nrows,ncols,x,y,tiles,o,GUID,t.GUID,op_num)
+      var i=0
+      while (i<tiles.length){
+            op.op(tiles(i),t,out.tiles(i))
+            i+=1
+        }  
+      out
+    }
+    
+  def op(m:Mat,o:TMat,op:Mop,op_num:Int) = 
+    m match {
+        case t:TMat=>op_tmat(t,o,op,op_num)
+        case _=>op_mat(m,o,op,op_num)
+    }
+    
   override def ~ (b: Mat) = b match { 
     case bb:TMat => new TPair(this,bb);
     case bb:Mat => new TTPair(this,bb);
   }
+  
 
   override def zeros(nr: Int, nc: Int) = {
-     TMat.zeros( nr,
+      if (nr == 1 && nc == 1) tiles(0).zeros(1,1)
+      else
+        TMat.zeros( nr,
                  nc,
                  x,
                  y,
-                 tiles.clone() )
+                 TMat.cloneTiles(tiles))
   }
 
   override def ones(nr: Int, nc: Int) = {
+     if (nr == 1 && nc == 1) tiles(0).ones(1,1)
+      else
      TMat.ones ( nr,
                  nc,
                  x,
                  y,
-                 tiles.clone() )
+                 TMat.cloneTiles(tiles))
+  }
+  
+  override def toString:String = {
+      "TMat(%d,%d,%d)" format (nr,nc,x.length)
+  }
+  
+  override def clear = {
+      var i = 0
+      while (i < tiles.length) {
+          tiles(i).clear
+          i+=1
+      }
+      this
   }
 
   def * (a : FMat) = this.tMult(a,null);
@@ -543,18 +587,44 @@ def tMultT(a:Mat, outmat:Mat) : Mat =  {
     case _ => throw new RuntimeException("no match in tMultT");
   } 
 
-  def *@ (b : TMat) = tMatOpF(b, (x,y) => x*y, null)     // will need to specialize all of these for speed
-  def / (b : TMat) = tMatOpF(b, (x,y) => x/y, null)
+  //def *@ (b : TMat) = tMatOpF(b, (x,y) => x*y, null)     // will need to specialize all of these for speed
+  //def / (b : TMat) = tMatOpF(b, (x,y) => x/y, null)
 
-  override def ^ (b : Float) = tMatOpScalarF(b, (x,y) => x^y, null) // and these too
-  override def *@ (b : Float) = tMatOpScalarF(b, (x,y) => x*y, null)
+  import TMat.BinOp._
+  override def ^ (b : Float) = op_mat(GMat(b),null,Mop_Pow,op_pow)//tMatOpScalarF(b, (x,y) => x^y, null) // and these too
+  override def *@ (b : Float) = op_mat(GMat(b),null,Mop_ETimes,op_mul)//tMatOpScalarF(b, (x,y) => x*y, null)
+  
+  override def *@ (m:Mat):Mat = op(m,null,Mop_ETimes,op_mul)/*{ 
+        m match {
+            case t:TMat=>
+            case g:GMat=>op_mat(g,null,Mop_ETimes,op_mul)
+        }
+  }*/
 
-  override def ^ (a : Mat) = tOp(a, null, (x:Mat,y:Mat) => x^y) 
+
+  override def ^ (a : Mat) = op(a,null,Mop_Pow,op_pow)//tOp(a, null, (x:Mat,y:Mat) => x^y) 
+  override def + (a : Mat) = op(a,null,Mop_Plus,op_add)//tOp(a, null, (x:Mat,y:Mat) => x^y) 
 }
 
 class TPair(val omat:Mat, val mat:TMat) extends Pair {
+  import TMat.BinOp._
   override def * (a : Mat) = mat.tMult(a,null) // fix caching 
   override def ^ (a : Mat) = mat.tOp(a, omat, (x:Mat,y:Mat) => x^y) 
+  override def *@ (a: Mat) = (omat) match {
+      case (o:TMat)=>mat.op(a,o,Mop_ETimes,op_mul)
+      //case (g:GMat,o:TMat)=>mat.op_mat(g,o)
+  }
+  override def + (a:Mat) = (omat) match {
+    case (o:TMat)=>mat.op(a,o,Mop_Plus,op_add)    
+  }
+  
+  override def / (a:Mat) = (omat) match {
+    case (o:TMat)=>mat.op(a,o,Mop_EDiv,op_div)    
+  }
+  
+  override def + (f:Float) = omat match {
+      case o:TMat => mat.op_mat(GMat(f),o,Mop_Plus,op_add)
+  }
 }
 
 class TTPair(val omat:Mat, val mat:Mat) extends Pair {
@@ -563,6 +633,33 @@ class TTPair(val omat:Mat, val mat:Mat) extends Pair {
 }
  
 object TMat {
+    
+  object BinOp {
+  	val op_add=0
+  	val op_sub=1
+	  val op_mul=2
+	  val op_div=3
+	  val op_gt=4
+	  val op_lt=5
+	  val op_eq=6
+	  val op_ge=7
+	  val op_le=8
+	  val op_ne=9
+	  val op_max=10
+	  val op_min=11
+	  val op_atan2=12
+	  val op_pow=13
+  }  
+    
+  def cloneTiles(tiles:Array[Mat]) = {
+      val out = tiles.clone()
+      var i = 0
+      while(i<tiles.length){
+        out(i) = tiles(i).zeros(tiles(i).nrows,tiles(i).ncols)
+        i+=1
+      }
+      out
+  }
 
  def apply( nr:Int, 
             nc:Int, 
@@ -609,7 +706,7 @@ object TMat {
                      data: Array[Mat],
                      outmat:Mat ) : TMat = {
     if (outmat.asInstanceOf[AnyRef] == null || (outmat.nrows == 0 && outmat.ncols == 0)) {
-      TMat(nr, nc, xInds, yInds, data.clone()) 
+      TMat(nr, nc, xInds, yInds, cloneTiles(data)) 
     } else {
         outmat.asInstanceOf[TMat]
       }
