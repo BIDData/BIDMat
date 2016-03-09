@@ -13,6 +13,14 @@ import scala.reflect._
 import scala.math.Numeric._
 import scala.collection.mutable.ArrayBuffer
 
+import jcuda._
+import jcuda.runtime._
+import jcuda.runtime.JCuda._
+import jcuda.runtime.cudaMemcpyKind._
+import jcuda.jcublas._
+import jcuda.jcublas.JCublas._
+import jcuda.jcusparse._
+
 
 /*
  * TMat's are composed of tiles, given as an Array of Mats and their companion subindices.
@@ -164,8 +172,13 @@ class TMat
     }
     this
   }
+  
+  var cacheFull:Mat = null
 
-  def full() : Mat = full(null)
+  def full() : Mat = {
+      cacheFull = full(cacheFull)
+      cacheFull
+  }
 
   def full(mat:Mat) : Mat  = {
 
@@ -176,6 +189,7 @@ class TMat
     out.clear
 
     var i = 0
+      val a=SciFunctions.GPUmem._1
 
     while (i < tiles.length) {
      tiles(i) match {
@@ -186,14 +200,20 @@ class TMat
                 out(rowInds,colInds) = fMat
                 i += 1
        case gMat : GMat =>          
-                val rowInds:IMat = IMat(gMat.nrows,1,(y(i) to y(i)+gMat.nrows).toArray)
-                val colInds:IMat = IMat(gMat.ncols,1,(x(i) to x(i)+gMat.ncols).toArray)
-
+                //val rowInds:IMat = IMat(gMat.nrows,1,(y(i) to y(i)+gMat.nrows).toArray)
+                //val colInds:IMat = IMat(gMat.ncols,1,(x(i) to x(i)+gMat.ncols).toArray)
+                //The previous approach will cause memory leak when casting into GIMat
+                val rowInds:GIMat = GIMat(MatFunctions.irow(y(i) to y(i)+gMat.nrows-1))
+                val colInds:GIMat = GIMat(MatFunctions.irow(x(i) to x(i)+gMat.ncols-1))
                 out(rowInds,colInds) = gMat
                 i += 1
        case _ => { throw new RuntimeException("no match in TMat.full for tiles " + i); }
         }
     }
+      val aa=SciFunctions.GPUmem._1
+      if (a!=aa)
+        println(a,aa,out.GUID)
+
     out
   }
 
@@ -560,7 +580,30 @@ def tMultT(a:Mat, outmat:Mat) : Mat =  {
       }
       this
   }
-
+  
+  override def madd(b:Mat,c:Mat,at:Boolean,bt:Boolean) = {
+      (b,c) match {
+          case (gb:GMat,gc:GMat)=>
+            madd(gb,gc,at,bt)
+      }
+  }
+  
+  def madd(b:GMat,c:GMat,at:Boolean,bt:Boolean) = {
+      var i=0
+      while (i<tiles.length) {
+        at match{
+            case true=>{
+            //cublasSgemm('t', 'n', ncols, a.ncols, nrows, 1.0f, data, nrows, a.data, a.nrows, 0f, out.data, out.nrows)
+                val a=tiles(i).asInstanceOf[GMat]
+                cublasSgemm('t', 'n', a.ncols, b.ncols, a.nrows, 1.0f, a.data, a.nrows, b.data.withByteOffset(Sizeof.FLOAT.toLong*(y(i))), b.nrows, 1.0f, c.data.withByteOffset(Sizeof.FLOAT.toLong*(x(i))), c.nrows)
+            }
+        }
+        i+=1  
+      }
+      c
+  }
+  
+  
   def * (a : FMat) = this.tMult(a,null);
   def * (a : GMat) = this.tMult(a,null);
   def * (a : SMat) = this.tMult(a,null);
@@ -665,8 +708,10 @@ object TMat {
             nc:Int, 
             xInds:Array[Int], 
             yInds:Array[Int], 
-            data:Array[Mat] ) = 
+            data:Array[Mat] ) = {
+                println("new",nr,nc)
     new TMat(nr, nc, xInds, yInds, data)
+            }
 
   def TMatGPU ( tmat : TMat, omat : Mat ) : TMat = { 
    var i = 0

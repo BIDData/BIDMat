@@ -593,10 +593,42 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   
   def madd(b:Mat,c:TMat):TMat = madd(b,c,false,false)
 
+import BIDMat.IMatWildcard
   def madd(b:Mat,c:TMat,at:Boolean,bt:Boolean):TMat = {
-    val g=c.full()
+    /*val g=c.full()
     madd(b,g,at,bt)
-    c<--g
+    c<--g*/
+    at match {
+        case false=>{
+            var i=0
+            while(i<c.tiles.length){
+                if (bt)
+                    tileMultT(c.tiles(i).nrows,c.tiles(i).ncols,ncols,c.y(i),0,b,c.x(i),0,c.tiles(i),0,0)
+                else
+                    tileMult(c.tiles(i).nrows,c.tiles(i).ncols,ncols,c.y(i),0,b,0,c.x(i),c.tiles(i),0,0)
+                i+=1
+            }
+    
+        }
+    }
+    
+    /*import BIDMat.SciFunctions._
+    println("in",GPUmem._1)
+    b match {
+            case gss:GSMat=>
+                val gs = if (bt) gss.t else gss
+                println("in2",GPUmem._1)
+                var i=0
+                while(i<c.tiles.length){
+                    val aa = this(MatFunctions.irow(c.y(i) to c.y(i)+c.tiles(i).nrows-1),new BIDMat.IMatWildcard)
+                println("in3",i,GPUmem._1)
+                    aa.madd(gs.colslice(c.x(i),c.x(i)+c.tiles(i).ncols),c.tiles(i))
+                println("in4",i,GPUmem._1)
+                    i+=1
+                }
+            //case g:GMat=>{
+            //}
+        }*/
     c
   }
   

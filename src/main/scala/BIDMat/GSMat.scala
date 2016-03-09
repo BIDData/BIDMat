@@ -211,6 +211,13 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
   
   def full():GMat = full(null):GMat
   
+  var cacheT:GSMat = null
+  override def t():GSMat = {
+      cacheT = GSMat.newOrCheckGSMat(ncols,nrows,nnz,realnnz,cacheT)
+      GSMat.fromSMat(toSMat().t,cacheT)
+      cacheT
+  }
+  
   override def free() = {
     JCublas.cublasFree(data)
     JCublas.cublasFree(ic)
@@ -221,6 +228,7 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
   }
   
   override def recycle(nr:Int, nc:Int, nnzx:Int):GSMat = {
+      println("Being recycle")
     if (realnnz >= nnzx) {  
       new GSMat(nr, nc, nnzx, ir, ic, jc, data, realnnz)
     } else {
