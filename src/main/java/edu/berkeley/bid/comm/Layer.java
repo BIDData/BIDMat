@@ -3,41 +3,44 @@ package edu.berkeley.bid.comm;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.Arrays;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 
-class Layer {
+public class Layer {
 
 	/* Layer Configuration Variables */
 
-	int k;        																					 // Size of this group
-	int cumk;                                                // cumulative product of sizes
-	int cumPos;                                              // cumulative position in groups
-	int depth;
-	int posInMyGroup;                                        // Position in this machines group
-	int [] outNbr;                                           // Machines we talk to 
-	int [] inNbr;                                            // Machines we listen to
-	IVec [] downMaps;                                        // Maps to indices below for down indices
-	IVec [] upMaps;                                          // Maps to indices below for up indices
-	IVec [] interleave;                                      // Indices to undo partitioning for up data
-	IVec dpart;                                              // partition number for each element
-	IVec upart;
-	IVec [] downpartinds;
-	IVec [] uppartinds;
-	Vec [] upparts;
-	int trace;
-	int imachine;
-	int downn;                                               // Size of the down master list
-	int upn;
-	int timeout;
-	Partitioner partitioner;
-	Machine machine;
-	Groups groups;
+	public final int imachine;                                           // This machines global id number
+	public final int k;        																					 // Size of this group
+	public final int cumk;                                               // cumulative product of sizes of layers above
+	public final int cumPos;                                             // cumulative position in groups
+	public final int depth;                                              // How deep is this layer from the top
+	public final int posInMyGroup;                                       // Position in this machines group
+	public int [] outNbr;                                                // Machines we talk to 
+	public int [] inNbr;                                                 // Machines we listen to
+	public IVec topart;                                                  // partition number for each index
+	public IVec frompart;
+	public IVec [] toindsparts;                                          // Partition of to indices 
+	public IVec [] fromindsparts;                                        // Partition of from indices
+	public IVec topartsizes;                                             // Sizes of the above
+	public IVec frompartsizes;
+	public IVec [] toMaps;                                               // Maps to indices in layer below for "TO" indices
+	public IVec [] fromMaps;                                             // Maps to indices in layer below for "FROM" indices
+	public IVec [] interleave;                                           // Maps to indices above for "FROM" indices
+	public Vec [] fromparts;
+	public int ton;                                                      // Size of the "TO" union list
+	public int fromn;                                                    // Size of the "FROM" union list
+	public int trace;
+	public Partitioner partitioner;
+	public Machine machine;
+	public Groups groups;
+	public int D;
 	ExecutorService executor;
-	AllReduceY allreducer;
-	ByteBuffer [] sendbuf;                                     // buffers, one for each destination in a group
-	ByteBuffer [] recbuf;
+	Network network;
+	public ByteBuffer [] sendbuf;                                        // buffers, one for each destination in a group
+  public ByteBuffer [] recbuf;
 
 
 	public Layer(Machine machine0, int k0, int cumk0, int cumPos0, int posInMyGroup0, int depth0) {
@@ -50,261 +53,378 @@ class Layer {
 		groups = machine.groups;
 		sendbuf = machine.sendbuf;
 		recbuf = machine.recbuf;
-		allreducer = machine.parent;
+		network = machine.network;
 		trace = machine.trace;
 		imachine = machine.imachine;
-		timeout = machine.timeout;
 		executor = machine.executor;
+		D = machine.D;
 		partitioner = new Partitioner(cumk, cumPos, k);
 		inNbr = groups.nodesInGroup(imachine, depth);
 		outNbr = groups.nodesInGroup(imachine, depth);		
-		downMaps = new IVec[k];
-		upMaps = new IVec[outNbr.length];
+		toMaps = new IVec[k];
+		fromMaps = new IVec[outNbr.length];
 	}		
 
 	class ConfigThread implements Runnable {
-		IVec [] downp;
-		IVec [] upp;
-		IVec [] dtree;
-		IVec [] utree;
-		int i;
+		IVec [] top;
+		IVec [] fromp;
+		int ix;
+		int iy;
 		int repno;
-		CountDownLatch latch;
+		int tag;
 
-		public ConfigThread(IVec [] downp0, IVec [] upp0,	IVec [] dtree0, IVec [] utree0, int i0, CountDownLatch latch0) {
-			downp = downp0;
-			upp = upp0;					
-			dtree = dtree0;
-			utree = utree0;
-			i = i0;
-			latch = latch0;
+		public ConfigThread(IVec [] top0, IVec [] fromp0,	int ix0, int iy0, int tag0) {
+			top = top0;
+			fromp = fromp0;					
+			ix = ix0;
+			iy = iy0;
+			tag = tag0;
 		}
 
 		public void run() {
-			sendbuf[i].clear();
-			recbuf[i].clear();
-			IntBuffer sbuf = sendbuf[i].asIntBuffer();
-			IntBuffer rbuf = recbuf[i].asIntBuffer();	
-			int seg1 = downp[i].size();
-			int seg2 = seg1 + upp[i].size();
-			sbuf.put(seg1);
-			sbuf.put(seg2);
-			sbuf.put(downp[i].data, 0, seg1);
-			sbuf.put(upp[i].data, 0, seg2-seg1);
+			sendbuf[ix].clear();
+			recbuf[ix].clear();
+			IntBuffer isbuf = sendbuf[ix].asIntBuffer();
+			IntBuffer irbuf = recbuf[ix].asIntBuffer();	
+			int seg1 = top[ix].size();
+			int seg2 = fromp[ix].size();
+			isbuf.put(seg1);
+			isbuf.put(seg2);
+			isbuf.put(top[ix].data, 0, seg1);
+			isbuf.put(fromp[ix].data, 0, seg2);
 
-			if (trace > 1) {
-				synchronized (allreducer) {
-					System.out.format("config layer %d machine %d sent msg to %d, from %d, sizes %d %d\n", depth, imachine, outNbr[i],  inNbr[i],  sbuf.get(0), sbuf.get(1));
-				}
-			}
-			machine.sendrecv(i, sendbuf, seg2+2, outNbr[i], recbuf, rbuf.capacity(), inNbr[i], depth*3);
-			seg1 = rbuf.get();
-			seg2 = rbuf.get();
-			if (trace > 1) {
-				synchronized (allreducer) {
-					System.out.format("config layer %d machine %d got msg from %d, sizes %d %d\n", depth, imachine, inNbr[i], seg1, seg2);
-				}
-			}
+			if (trace > 1) log(String.format("Config layer %d machine %d sent msg to %d, from %d, sizes %d %d\n", depth, imachine, outNbr[ix], outNbr[iy],  isbuf.get(0), isbuf.get(1)));
+			machine.sendrecv(ix, sendbuf[ix], seg1+seg2+2, outNbr[ix], recbuf[ix], irbuf.capacity(), outNbr[iy], depth*3 + tag);
+			seg1 = irbuf.get();
+			seg2 = irbuf.get();
+			if (trace > 1) log(String.format("Config layer %d machine %d got msg from %d, sizes %d %d\n", depth, imachine, outNbr[iy], seg1, seg2));
 
-			IVec downout = new IVec(seg1);
-			IVec upout =   new IVec(seg2-seg1);
-			rbuf.get(downout.data, 0, seg1);
-			rbuf.get(upout.data, 0, seg2-seg1);
-			IVec.checkTree(dtree, downout, i, k);
-			IVec.checkTree(utree, upout, i, k);	
-			downp[i] = downout;
-			upp[i] = upout;
-
-			latch.countDown();
+			IVec toout = new IVec(seg1);
+			IVec fromout = new IVec(seg2);
+			irbuf.get(toout.data, 0, seg1);
+			irbuf.get(fromout.data, 0, seg2);	
+			top[ix] = toout;
+			fromp[ix] = fromout;
 		}
 	}
 
-	public void config(IVec downi, IVec upi, IVec [] outputs) {
-		dpart = partitioner.part(downi);
-		upart = partitioner.part(upi);
-		downpartinds = partitioner.partition(downi, dpart, null);
-		uppartinds = partitioner.partition(upi, upart, interleave);
-		IVec [] dtree = new IVec[2*k-1];
-		IVec [] utree = new IVec[2*k-1];
-		if (trace > 0) {
-			synchronized (allreducer) {
-				System.out.format("machine %d layer %d, dparts (%d", imachine, depth, downpartinds[0].size());
-			}
-		}
+	public void config(IVec toi, IVec fromi, IVec [] outputs, int round) {
+		config_pre(toi, fromi, "Config ");
 
-		CountDownLatch latch = new CountDownLatch(k);
-		executor.execute(new TimeoutThread(timeout, latch));
+		Future<?> [] futures = new Future<?>[k];
+		Future<?> timeoutf = executor.submit(new TimeoutThread(machine, machine.configTimeout, futures, "config "+round));
 		for (int i = 0; i < k; i++) {
 			int ix = (i + posInMyGroup) % k;                               // Try to stagger the traffic
-			executor.execute(new ConfigThread(downpartinds, uppartinds, dtree, utree, ix, latch));
-		}
-		try {	latch.await(); } catch (InterruptedException e) {}
-		IVec dmaster = dtree[0];
-		Arrays.fill(dtree, null);
-		downn = dmaster.size();
-		IVec umaster = utree[0];
-		Arrays.fill(utree, null);
-		upn = upi.size();
+			int iy = (posInMyGroup - i + k) % k;
+			futures[i] = executor.submit(new ConfigThread(toindsparts, fromindsparts, ix, iy, 3*D*round), null);
+		};
 		for (int i = 0; i < k; i++) {
-			downMaps[i] = IVec.mapInds(downpartinds[i], dmaster);
-			upMaps[i] = IVec.mapInds(uppartinds[i], umaster);
-			if (trace > 0) {
-				synchronized (allreducer) { 
-					System.out.format("machine %d dmap(%d) size %d\n", imachine, i, downMaps[i].size());
-					System.out.format("machine %d umap(%d) size %d\n", imachine, i, upMaps[i].size());
+			try {
+				futures[i].get();
+			} catch (Exception e) {
+				if (trace > 0) {
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					PrintStream ps = new PrintStream(baos);
+					e.printStackTrace(ps);
+					log(baos.toString());
+					ps.close();
 				}
 			}
+		}	
+		timeoutf.cancel(true);
+		
+		config_post(futures, toi, fromi, outputs, "Config ");
+	}
+	
+	public void config_pre(IVec toi, IVec fromi, String prefix) {
+		topart = partitioner.part(toi);                                   // Compute partition indices
+		frompart = partitioner.part(fromi);
+		interleave = new IVec[k];
+		toindsparts = partitioner.partition(toi, topart, null);          // Actually partition the indices into k IVec parts
+		fromindsparts = partitioner.partition(fromi, frompart, interleave);
+		topartsizes = new IVec(k);
+		frompartsizes = new IVec(k);
+		fromparts = new Vec[k];
+		for (int i = 0; i < k; i++) {
+			topartsizes.data[i] = toindsparts[i].length;
+			frompartsizes.data[i] = fromindsparts[i].length;
 		}
-		outputs[0] = dmaster;
-		outputs[1] = umaster;
+		if (trace > 1) log(String.format(prefix + "machine %d layer %d, toparts %d\n", imachine, depth, toindsparts[0].size()));
+	}
+	
+	public void config_post(Future<?> [] futures, IVec toi, IVec fromi, IVec [] outputs, String prefix) {
+		IVec [] totree = new IVec[k];
+		IVec [] fromtree = new IVec[k];
+		for (int i = 0; i < k; i++) {
+			if (futures[i].isDone()) {
+				IVec.treeAdd(toindsparts[i], totree);
+				IVec.treeAdd(fromindsparts[i], fromtree);
+			}
+		}
+		IVec tomaster = IVec.treeFlush(totree);
+		IVec frommaster = IVec.treeFlush(fromtree);
+		ton = tomaster.size();
+		fromn = fromi.size();
+		for (int i = 0; i < k; i++) {
+			if (futures[i].isDone()) {
+				toMaps[i] = IVec.mapInds(toindsparts[i], tomaster);
+				fromMaps[i] = IVec.mapInds(fromindsparts[i], frommaster);
+				if (trace > 1) {
+					log(String.format(prefix + "machine %d layer %d dmap(%d) size %d\n", imachine, depth, i, toMaps[i].size()));
+					log(String.format(prefix + "machine %d layer %d umap(%d) size %d\n", imachine, depth, i, fromMaps[i].size()));
+				}
+			} else {
+				toMaps[i] = null;
+				fromMaps[i] = null;				
+			}
+		}
+		outputs[0] = tomaster;
+		outputs[1] = frommaster;
 	}
 
 	public class ReduceDownThread implements Runnable {
-		Vec newv;
 		Vec downv;
-		int i;
-		CountDownLatch latch;
+		int ix;
+		int iy;
+		int stride; 
+		int tag;
+		Vec [] res;
 
-		// Note, these have to be partitions of the data now. 
-
-		public ReduceDownThread(Vec newv0, Vec downv0, int i0, CountDownLatch latch0) {
-			newv = newv0;
+		public ReduceDownThread(Vec downv0, Vec [] res0, int ix0, int iy0, int stride0, int tag0) {
 			downv = downv0;
-			i = i0;
-			latch = latch0;
+			ix = ix0;
+			iy = iy0;
+			stride = stride0;
+			tag = tag0;
+			res = res0;
 		}
 
 		public void run() {
-			sendbuf[i].clear();
-			recbuf[i].clear();
-			IntBuffer isbuf = sendbuf[i].asIntBuffer();
-			IntBuffer irbuf = recbuf[i].asIntBuffer();
-			FloatBuffer sbuf = sendbuf[i].asFloatBuffer();
-			FloatBuffer rbuf = recbuf[i].asFloatBuffer();
+			sendbuf[ix].clear();
+			recbuf[ix].clear();
+			IntBuffer isbuf = sendbuf[ix].asIntBuffer();
+			IntBuffer irbuf = recbuf[ix].asIntBuffer();
+			FloatBuffer fsbuf = sendbuf[ix].asFloatBuffer();
+			FloatBuffer frbuf = recbuf[ix].asFloatBuffer();
 			int msize = downv.size();
 			isbuf.put(msize);
-			sbuf.position(1);
-			sbuf.put(downv.data, 0, msize);
+			fsbuf.position(1);
+			fsbuf.put(downv.data, 0, msize);
 
-			if (trace > 1) {
-				synchronized (allreducer) {
-					System.out.format("reduce layer %d machine %d sent msg to %d, from %d, size %d\n", depth, imachine, outNbr[i],  inNbr[i],  msize);
-				}
-			}
-			machine.sendrecv(i, sendbuf, msize+1, outNbr[i], recbuf, rbuf.capacity(), inNbr[i], depth*3+1);
+			if (trace > 1) log(String.format("Reduce down layer %d machine %d sent msg to %d, from %d, size %d\n", depth, imachine, outNbr[ix],  outNbr[iy],  msize));
+			machine.sendrecv(ix, sendbuf[ix], msize+1, outNbr[ix], recbuf[ix], frbuf.capacity(), outNbr[iy], depth*3+1 + tag);
 			msize = irbuf.get();
-			if (trace > 1) {
-				synchronized (allreducer) {
-					System.out.format("reduce layer %d machine %d got msg from %d, size %d\n", depth, imachine, inNbr[i], msize);
-				}
-			}
+			if (trace > 1) log(String.format("Reduce down layer %d machine %d got msg from %d, size %d\n", depth, imachine, outNbr[iy], msize));
 
-			Vec res = new Vec(msize);
-			rbuf.position(1);
-			rbuf.get(res.data, 0, msize);
-			synchronized (newv) {
-				res.addTo(newv, downMaps[i]);	
+			res[ix] = new Vec(msize);
+			frbuf.position(1);
+			frbuf.get(res[ix].data, 0, msize);
+			if (msize != toMaps[ix].size() * stride) {
+				throw new RuntimeException(String.format("Exception in ReduceDownThread,  mismatched sizes %d %d", msize, toMaps[ix].size()*stride));
 			}
-			latch.countDown();
 		}
 	}
 
-	public Vec reduceDown(Vec downv, int stride) {
-		Vec newv = new Vec(downn);
-		Vec [] vparts = partitioner.partition(downv, dpart, downpartinds, stride);
-		CountDownLatch latch = new CountDownLatch(k);
-		executor.execute(new TimeoutThread(timeout, latch));
+	public Vec reduceDown(Vec downv, int stride, int round) {
+		Vec [] vparts = partitioner.partition(downv, topart, topartsizes, stride);
+		Vec [] res = new Vec[k];
+		Future<?> [] futures = new Future<?>[k];
+		Future<?> timeoutf = executor.submit(new TimeoutThread(machine, machine.reduceTimeout, futures, "reduceDown "+round));
 		for (int i = 0; i < k; i++) {
-			int ix = (i + posInMyGroup) % k;   // Try to stagger the traffic
-			executor.execute(new ReduceDownThread(newv, vparts[ix], ix, latch));
+			int ix = (i + posInMyGroup) % k;  
+			int iy = (posInMyGroup - i + k) % k;  
+			futures[i] = executor.submit(new ReduceDownThread(vparts[ix], res, ix, iy, stride, 3*D*round));
+		};
+		for (int i = 0; i < k; i++) {
+			try {
+				futures[i].get();
+			} catch (Exception e) {
+				if (trace > 0) {
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					PrintStream ps = new PrintStream(baos);
+					e.printStackTrace(ps);
+					log(baos.toString());
+					ps.close();
+				}
+			}
 		}
-		try { latch.await(); } catch (InterruptedException e) {}
+		timeoutf.cancel(true);
+		Vec newv = new Vec(ton*stride);
+		for (int i = 0; i < k; i++) {
+			res[i].addTo(newv, toMaps[i], stride);
+		}
 		return newv;
 	}
 
 	public class ReduceUpThread implements Runnable {
 		Vec newv;
 		Vec upv;
-		int i;
-		CountDownLatch latch;
+		int ix;
+		int iy;
+		int stride;
+		int tag;
 
-		public ReduceUpThread(Vec newv0, Vec upv0, int i0, CountDownLatch latch0) {
+		public ReduceUpThread(Vec newv0, Vec upv0, int ix0, int iy0, int stride0, int tag0) {
 			newv = newv0;
 			upv = upv0;
-			i = i0;
-			latch = latch0;
+			ix = ix0;
+			iy = iy0;
+			stride = stride0;
+			tag = tag0;
 		}
 
 		public void run () {
-			sendbuf[i].clear();
-			recbuf[i].clear();
-			IntBuffer isbuf = sendbuf[i].asIntBuffer();
-			IntBuffer irbuf = recbuf[i].asIntBuffer();
-			FloatBuffer sbuf = sendbuf[i].asFloatBuffer();
-			FloatBuffer rbuf = recbuf[i].asFloatBuffer();
-			Vec up = upv.mapFrom(upMaps[i]);
+			sendbuf[ix].clear();
+			recbuf[ix].clear();
+			IntBuffer isbuf = sendbuf[ix].asIntBuffer();
+			IntBuffer irbuf = recbuf[ix].asIntBuffer();
+			FloatBuffer fsbuf = sendbuf[ix].asFloatBuffer();
+			FloatBuffer frbuf = recbuf[ix].asFloatBuffer();
+			Vec up = upv.mapFrom(fromMaps[ix], stride);
 			int msize = up.size();
 			isbuf.put(msize);
-			sbuf.position(1);
-			sbuf.put(up.data, 0, msize);
+			fsbuf.position(1);
+			fsbuf.put(up.data, 0, msize);
 
-			if (trace > 1) {
-				synchronized (allreducer) {
-					System.out.format("reduce up layer %d machine %d sent msg to %d, from %d, size %d\n", depth, imachine, outNbr[i],  inNbr[i],  msize);
-				}
-			}
-			machine.sendrecv(i, sendbuf, msize+1, inNbr[i], recbuf, irbuf.capacity(), outNbr[i], depth*3+2);
+			if (trace > 1) log(String.format("Reduce up layer %d machine %d sent msg to %d, from %d, size %d\n", depth, imachine, outNbr[ix],  outNbr[iy],  msize));
+			machine.sendrecv(ix, sendbuf[ix], msize+1, outNbr[iy], recbuf[ix], irbuf.capacity(), outNbr[ix], depth*3+2 + tag);
 			msize = irbuf.get();
-			if (trace > 1) {
-				synchronized (allreducer) {
-					System.out.format("reduce up layer %d machine %d got msg from %d, size %d\n", depth, imachine, inNbr[i], msize);
-				}
-			}
+			if (trace > 1) log(String.format("Reduce up layer %d machine %d got msg from %d, size %d\n", depth, imachine, outNbr[iy], msize));
 
-			int psize = upMaps[i].size();
-			if (msize != psize) throw new RuntimeException("ReduceUp size mismatch "+msize+" "+psize);
-			rbuf.position(1);
-			rbuf.get(upparts[i].data, 0, msize);
-			latch.countDown();
+			int psize = interleave[ix].size();
+			if (msize != psize*stride) throw new RuntimeException("ReduceUp size mismatch "+msize+" "+(psize*stride));
+			frbuf.position(1);
+			if (fromparts[ix] == null || fromparts[ix].size() != msize) fromparts[ix] = new Vec(msize);
+			frbuf.get(fromparts[ix].data, 0, msize);
 		}
 	}
 
-	public Vec reduceUp(Vec upv, int stride) {
-		Vec newv = new Vec(upn);
-		CountDownLatch latch = new CountDownLatch(k);
-		executor.execute(new TimeoutThread(timeout, latch));
+	public Vec reduceUp(Vec upv, int stride, int round) {
+		Vec newv = new Vec(fromn*stride);
+		Future<?> [] futures = new Future<?>[k];
+		Future<?> timeoutf = executor.submit(new TimeoutThread(machine, machine.reduceTimeout, futures, "reduceUp " + round));
 		for (int i = 0; i < k; i++) {
-			int ix = (i + posInMyGroup) % k;                               // Try to stagger the traffic
-			executor.execute(new ReduceUpThread(newv, upv, ix, latch));
+			int ix = (i + posInMyGroup) % k;
+			int iy = (posInMyGroup - i + k) % k;
+			futures[i] = executor.submit(new ReduceUpThread(newv, upv, ix, iy, stride, 3*D*round));
 		};
-		try { latch.await(); } catch (InterruptedException e) {}
-		partitioner.merge(newv, stride, upparts, interleave);
+		for (int i = 0; i < k; i++) {
+			try {
+				futures[i].get();
+			} catch (Exception e) {
+				if (trace > 0) {
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					PrintStream ps = new PrintStream(baos);
+					e.printStackTrace(ps);
+					log(baos.toString());
+					ps.close();
+				}
+			}
+		}
+		timeoutf.cancel(true);
+		partitioner.merge(newv, stride, fromparts, interleave);
 		return newv;
 	}
 	
-	public class TimeoutThread implements Runnable {
-		CountDownLatch latch;
-		int mtime;
+	class ConfigReduceThread implements Runnable {
+		IVec [] top;
+		IVec [] fromp;
+		Vec downv;
+		Vec [] res;
+		int stride;
+		int ix;
+		int iy;
+		int repno;
+		int tag;
 
-		public TimeoutThread(int mtime0, CountDownLatch latch0) {		
-			latch = latch0;
-			mtime = mtime0;
+		public ConfigReduceThread(IVec [] top0, IVec [] fromp0,	Vec downv0, Vec [] res0, int ix0, int iy0, int stride0, int tag0) {
+			top = top0;
+			fromp = fromp0;					
+			downv = downv0;
+			res = res0;
+			ix = ix0;
+			iy = iy0;
+			stride = stride0;
+			tag = tag0;
 		}
 
 		public void run() {
-			try {
-				Thread.sleep(mtime);
+			sendbuf[ix].clear();
+			recbuf[ix].clear();
+			IntBuffer isbuf = sendbuf[ix].asIntBuffer();
+			IntBuffer irbuf = recbuf[ix].asIntBuffer();	
+			FloatBuffer fsbuf = sendbuf[ix].asFloatBuffer();
+			FloatBuffer frbuf = recbuf[ix].asFloatBuffer();
+			int seg1 = top[ix].size();
+			int seg2 = fromp[ix].size();
+			int msize = downv.size();
+			isbuf.put(seg1);
+			isbuf.put(seg2);
+			isbuf.put(msize);
+			isbuf.put(top[ix].data, 0, seg1);
+			isbuf.put(fromp[ix].data, 0, seg2);
+			fsbuf.position(3+seg1+seg2);
+			fsbuf.put(downv.data, 0, msize);
 
-				if (latch.getCount() > 0) {
-					if (trace > 1) {
-						synchronized (allreducer) {
-							System.out.format("timed out at depth %d machine %d", depth, imachine);
-						}
-					}
-				}
-				while (latch.getCount() > 0) latch.countDown();
-			} catch (InterruptedException e) {
-			}
+			if (trace > 1) log(String.format("ConfigReduce layer %d machine %d sent msg to %d, from %d, sizes %d %d %d\n", depth, imachine, outNbr[ix],  outNbr[iy],  isbuf.get(0), isbuf.get(1), isbuf.get(2)));
+			machine.sendrecv(ix, sendbuf[ix], seg1+seg2+msize+3, outNbr[ix], recbuf[ix], frbuf.capacity(), outNbr[iy], depth*3 + tag);
+			seg1 = irbuf.get();
+			seg2 = irbuf.get();
+			msize = irbuf.get();
+			if (trace > 1) log(String.format("ConfigReduce layer %d machine %d got msg from %d, sizes %d %d %d\n", depth, imachine, outNbr[iy], seg1, seg2, msize));
+
+			IVec toout = new IVec(seg1);
+			IVec fromout = new IVec(seg2);
+			irbuf.get(toout.data, 0, seg1);
+			irbuf.get(fromout.data, 0, seg2);	
+			top[ix] = toout;
+			fromp[ix] = fromout;
+			
+			res[ix] = new Vec(msize);
+			frbuf.position(3+seg1+seg2);
+			frbuf.get(res[ix].data, 0, msize);
 		}
+	}
+	
+	public Vec configReduce(IVec toi, IVec fromi, IVec [] outputs, Vec downv, int stride, int round) {
+		
+		config_pre(toi, fromi, "ConfigReduce ");
+		
+		Vec [] vparts = partitioner.partition(downv, topart, topartsizes, stride);
+		Vec [] res = new Vec[k];
+
+		Future<?> [] futures = new Future<?>[k];
+		Future<?> timeoutf = executor.submit(new TimeoutThread(machine, machine.configTimeout, futures, "configReduce " + round));
+		for (int i = 0; i < k; i++) {
+			int ix = (i + posInMyGroup) % k;
+			int iy = (posInMyGroup - i + k) % k;  
+			futures[i] = executor.submit(new ConfigReduceThread(toindsparts, fromindsparts, vparts[ix], res, ix, iy, stride, 3*D*round));
+		};
+		for (int i = 0; i < k; i++) {
+			try {
+				futures[i].get();
+			} catch (Exception e) {
+				if (trace > 0) {
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					PrintStream ps = new PrintStream(baos);
+					e.printStackTrace(ps);
+					log(baos.toString());
+					ps.close();
+				}
+			}
+		}	
+		timeoutf.cancel(true);
+		
+		config_post(futures, toi, fromi, outputs, "ConfigReduce ");
+		
+		Vec newv = new Vec(ton*stride);
+		for (int i = 0; i < k; i++) {
+			res[i].addTo(newv, toMaps[i], stride);
+		}
+		return newv;
+	}
+	
+	private void log(String msg) {
+		machine.log(msg);
 	}
 }

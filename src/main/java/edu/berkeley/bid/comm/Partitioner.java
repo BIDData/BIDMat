@@ -1,9 +1,9 @@
 package edu.berkeley.bid.comm;
 
 public class Partitioner {
-	int cumk;
-	int ibase;
-	int k;
+	public final int cumk;
+	public final int ibase;
+	public final int k;
 
 	public Partitioner(int cumk0, int ibase0, int k0) {
 		cumk = cumk0;
@@ -25,6 +25,7 @@ public class Partitioner {
 		return parts;
 	}
 	
+	// Take the input indices and map them to values in 0..(k-1) using the partition map
 	public IVec part(LVec v) {
 		IVec parts = new IVec(v.size());
 		for (int i = 0; i < v.size(); i++) {
@@ -34,7 +35,12 @@ public class Partitioner {
 		return parts;
 	}
 	
+	// Take the input indices, a partition map defined by part() above, and return k IVec's containing the partitioned indices. 
+	// Optionally return k IVecs in "mapback" that specify the indices in the original vector for partition indices.
 	public IVec [] partition(IVec vv, IVec part, IVec [] mapback) {
+		if (part.size() != vv.size()) {
+			throw new RuntimeException(String.format("matrix partition: mismatched lengths %d %d", part.size(), vv.size()));
+		}
 		int n = vv.size();
 		int [] lens = new int[k];
 		IVec [] parts = new IVec[k];
@@ -70,6 +76,9 @@ public class Partitioner {
 	}
 	
 	public LVec [] partition(LVec vv, IVec part, IVec [] mapback) {
+		if (part.size() != vv.size()) {
+			throw new RuntimeException(String.format("matrix partition: mismatched lengths %d %d", part.size(), vv.size()));
+		}
 		int [] lens = new int[k];
 		LVec [] parts = new LVec[k];
 		int n = vv.size();
@@ -82,7 +91,7 @@ public class Partitioner {
 		}
 		for (int i = 0; i < k; i++) {
 			parts[i] = new LVec(lens[i]);
-			mapback[i] = new IVec(lens[i]);
+			if (mapback != null) mapback[i] = new IVec(lens[i]);
 			lens[i] = 0;
 		}
 		if (mapback != null) {
@@ -104,12 +113,15 @@ public class Partitioner {
 		return parts;
 	}
 	
-	public Vec [] partition(Vec vv, IVec part, IVec [] iparts, int stride) {
-		int n = vv.size();
+	public Vec [] partition(Vec vv, IVec part, IVec partsizes, int stride) {
+		if (part.size()*stride != vv.size()) {
+			throw new RuntimeException(String.format("matrix partition: mismatched lengths %d %d",part.size()*stride, vv.size()));
+		}
+		int n = part.size();
 		int [] nlens = new int[k];
 		Vec [] parts = new Vec[k];
 		for (int i = 0; i < k; i++) {
-			parts[i] = new Vec(iparts[i].size() * stride);
+			parts[i] = new Vec(partsizes.data[i] * stride);
 			nlens[i] = 0;
 		}
 		for (int i = 0; i < n; i++) {

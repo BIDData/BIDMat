@@ -825,10 +825,11 @@ object Mat {
     if (verb) useMKL = true;
     if (useMKL) {
     	try {
-    	  if (ostype == OS_WINDOWS) edu.berkeley.bid.LibUtils.loadLib("libiomp5md")
-    		edu.berkeley.bid.LibUtils.loadLibrary("bidmatcpu")
+            if (ostype == OS_WINDOWS) edu.berkeley.bid.LibUtils.loadLib("libiomp5md")
+            edu.berkeley.bid.LibUtils.loadLibrary("bidmatcpu")
     	} catch {
     	case th:Throwable => {
+		println(th)
     		println("Cant find native CPU libraries")
     		if (verb) print(th.getMessage)
     		useMKL = false
@@ -839,11 +840,13 @@ object Mat {
     if (useMKL) useMKLRand = (UTILS.hasMKL() == 1);
     useSTLRand = useMKL & !useMKLRand;
     try {
-//      jcuda.LibUtils.loadLibrary("jhdf5")
+//      edu.berkeley.bid.LibUtils.loadLibrary("jhdf5")
+//        jcuda.LibUtils.loadLibrary("jhdf5")
       System.loadLibrary("jhdf5")
     } catch {
-    case _:Throwable => {
-      println("Cant find native HDF5 library")
+    case th:Throwable => {
+      	println(th)
+	println("Cant find native HDF5 library")
     }
     }
   }

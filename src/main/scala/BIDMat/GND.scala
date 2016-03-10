@@ -467,7 +467,7 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
     val dims0 = dims;
     dims0(dims.length - 1) = b - a;
     val outx = GND.newOrCheckGND(dims0, out, GUID, a, b, "colslice".##);
-    val omat = asMat.colslice(a, b, outx.asMat, Mat.oneBased);
+    val omat = asMat.colslice(a, b, outx.asMat);
     outx;
   }
   
