@@ -918,6 +918,7 @@ object Mat {
   				case z:Throwable => println("Something went wrong while loading BIDMat CUDA library" + z.getMessage);
   				}
   			}
+  			SciFunctions.initCUDArngs
   		}
   }
 

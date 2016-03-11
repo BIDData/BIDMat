@@ -1,16 +1,16 @@
 
 import BIDMat.AllReduce;
 
-val gmods = irow(4);
+val gmods = irow(4,2);
 val M = prod(gmods).v;
 
 val sim = new AllReduce(M,10000,1000);
 sim.doSim = false;
 sim.gmods = gmods;
 sim.gridmachines = irow(0->M);
-sim.fuseConfigReduce = false
+sim.fuseConfigReduce = true
 sim.useLong = false;
-sim.trace = 1;
+sim.trace = 4;
 sim.nreps = 100;
 sim.sendTimeout = 500;
 

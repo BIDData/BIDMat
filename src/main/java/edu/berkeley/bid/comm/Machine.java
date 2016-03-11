@@ -25,6 +25,7 @@ public class Machine {
 	public final boolean doSim;                                       // Simulation on one machine: send messages directly without sockets
 	public int trace = 0;                                             // 0: no trace, 1: high-level, 2: everything
 	public int sockBase = 50000;                                      // Socket base address
+	public int sockOffset = 1;
 	public int sendTimeout = 1000;                                    // in msec
 	public int recvTimeout = 1000;
 	public int configTimeout = 1000;
@@ -286,7 +287,7 @@ public class Machine {
 //			log(String.format("M %d W %d Running writer %s\n", imachine, dest, this.toString()));
 			try {
 				socket = new Socket();
-				socket.connect(new InetSocketAddress(machineIP[dest], sockBase + dest), sendTimeout);
+				socket.connect(new InetSocketAddress(machineIP[dest], sockBase + sockOffset * dest), sendTimeout);
 				if (socket.isConnected()) {
 					amsending[dest][msg.tag % (3*D)] = true;
 					DataOutputStream ostr = new DataOutputStream(socket.getOutputStream());
@@ -371,7 +372,7 @@ public class Machine {
 
 		public Listener() {
 			try {
-				ss = new ServerSocket(sockBase + imachine);
+				ss = new ServerSocket(sockBase + sockOffset * imachine);
 			} catch (Exception e) {
 				throw new RuntimeException("Couldnt start socket listener "+e);
 			}			
@@ -511,7 +512,7 @@ public class Machine {
 		}
 	}	
 
-	void log(String msg) {
+	public void log(String msg) {
 		synchronized (network) {
 			System.out.print(msg);	
 		}
