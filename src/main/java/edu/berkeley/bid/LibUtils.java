@@ -139,7 +139,7 @@ public final class LibUtils
      * @param libName The library name
      * @throws Throwable If the library could not be loaded
      */
-    private static void loadLibraryResource(String libName) throws Throwable
+    public static void loadLibraryResource(String libName) throws Throwable
     {
         String libPrefix = createLibPrefix();
         String libExtension = createLibExtension();
@@ -181,6 +181,7 @@ public final class LibUtils
             }
         }
     }
+
 
     
     /**

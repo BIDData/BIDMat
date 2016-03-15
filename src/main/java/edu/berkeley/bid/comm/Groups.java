@@ -67,7 +67,7 @@ public class Groups {
 		permute(seed);
 	}
 			
-	private void permute(int seed) {
+	public void permute(int seed) {
 		permuteArray(perm, N, seed);
 		for (int i = 0; i < N; i++) {
 			invperm[perm[i]] = i;
