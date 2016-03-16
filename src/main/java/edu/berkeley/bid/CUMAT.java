@@ -6,7 +6,7 @@ public final class CUMAT {
     private CUMAT() {}
 
     static {
-        jcuda.LibUtils.loadLibrary("bidmatcuda");
+        LibUtils.loadLibrary("bidmatcuda");
     }
 
     public static native int toFloat(Pointer A, Pointer B, int N);

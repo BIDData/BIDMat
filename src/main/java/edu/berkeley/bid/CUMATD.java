@@ -6,7 +6,7 @@ public final class CUMATD {
     private CUMATD() {}
 
     static {
-        jcuda.LibUtils.loadLibrary("bidmatcuda");
+        LibUtils.loadLibrary("bidmatcuda");
     }
 
     public static native int IntToDouble(Pointer A, Pointer B, int N);
