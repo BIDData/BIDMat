@@ -1,10 +1,6 @@
 package BIDMat
 
-import org.scalatest._
-
-abstract class CLSpec extends FlatSpec
-  with Matchers
-  with BeforeAndAfterAll {
+abstract class CLSpec extends BIDMatSpec {
   
   override def beforeAll {
     Mat.useOpenCL = true
