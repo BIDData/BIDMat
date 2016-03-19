@@ -122,13 +122,7 @@ public class Layer {
 			try {
 				futures[i].get();
 			} catch (Exception e) {
-				if (trace > 0) {
-					ByteArrayOutputStream baos = new ByteArrayOutputStream();
-					PrintStream ps = new PrintStream(baos);
-					e.printStackTrace(ps);
-					log(baos.toString());
-					ps.close();
-				}
+				if (trace > 0) log("config\n%s" + Msg.printStack(e));
 			}
 		}	
 		timeoutf.cancel(true);

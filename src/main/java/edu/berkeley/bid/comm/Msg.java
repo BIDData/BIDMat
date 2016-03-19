@@ -1,5 +1,8 @@
 package edu.berkeley.bid.comm;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+
 public class Msg {
 	byte [] buf;
 	public int size;
@@ -22,5 +25,14 @@ public class Msg {
 		sender = sender0;
 		receiver = receiver0;
 		tag = tag0;
+	}
+	
+	public static String printStack(Exception e) { 
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		PrintStream ps = new PrintStream(baos);
+		e.printStackTrace(ps);
+		String str = baos.toString();
+		ps.close();
+		return str;
 	}
 }
