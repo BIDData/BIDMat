@@ -5,8 +5,6 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 
 public class Layer {
 
@@ -94,17 +92,22 @@ public class Layer {
 			isbuf.put(fromp[ix].data, 0, seg2);
 
 			if (trace > 1) log(String.format("Config layer %d machine %d sent msg to %d, from %d, sizes %d %d\n", depth, imachine, outNbr[ix], outNbr[iy],  isbuf.get(0), isbuf.get(1)));
-			machine.sendrecv(ix, sendbuf[ix], seg1+seg2+2, outNbr[ix], recbuf[ix], irbuf.capacity(), outNbr[iy], depth*3 + tag);
-			seg1 = irbuf.get();
-			seg2 = irbuf.get();
-			if (trace > 1) log(String.format("Config layer %d machine %d got msg from %d, sizes %d %d\n", depth, imachine, outNbr[iy], seg1, seg2));
+			Boolean gotit = machine.sendrecv(ix, sendbuf[ix], seg1+seg2+2, outNbr[ix], recbuf[ix], irbuf.capacity(), outNbr[iy], depth*3 + tag);
+			if (gotit) {
+				seg1 = irbuf.get();
+				seg2 = irbuf.get();
+				if (trace > 1) log(String.format("Config layer %d machine %d got msg from %d, sizes %d %d\n", depth, imachine, outNbr[iy], seg1, seg2));
 
-			IVec toout = new IVec(seg1);
-			IVec fromout = new IVec(seg2);
-			irbuf.get(toout.data, 0, seg1);
-			irbuf.get(fromout.data, 0, seg2);	
-			top[ix] = toout;
-			fromp[ix] = fromout;
+				IVec toout = new IVec(seg1);
+				IVec fromout = new IVec(seg2);
+				irbuf.get(toout.data, 0, seg1);
+				irbuf.get(fromout.data, 0, seg2);	
+				top[ix] = toout;
+				fromp[ix] = fromout;
+			} else {
+				top[ix] = null;
+				fromp[ix] = null;
+			}
 		}
 	}
 
@@ -151,8 +154,8 @@ public class Layer {
 		IVec [] fromtree = new IVec[k];
 		for (int i = 0; i < k; i++) {
 			if (futures[i].isDone()) {
-				IVec.treeAdd(toindsparts[i], totree);
-				IVec.treeAdd(fromindsparts[i], fromtree);
+				if (toindsparts[i] != null)	IVec.treeAdd(toindsparts[i], totree);
+				if (fromindsparts[i] != null)	IVec.treeAdd(fromindsparts[i], fromtree);
 			}
 		}
 		IVec tomaster = IVec.treeFlush(totree);
@@ -160,17 +163,18 @@ public class Layer {
 		ton = tomaster.size();
 		fromn = fromi.size();
 		for (int i = 0; i < k; i++) {
-			if (futures[i].isDone()) {
+			if (futures[i].isDone() && toindsparts[i] != null)	{
 				toMaps[i] = IVec.mapInds(toindsparts[i], tomaster);
-				fromMaps[i] = IVec.mapInds(fromindsparts[i], frommaster);
-				if (trace > 1) {
-					log(String.format(prefix + "machine %d layer %d dmap(%d) size %d\n", imachine, depth, i, toMaps[i].size()));
-					log(String.format(prefix + "machine %d layer %d umap(%d) size %d\n", imachine, depth, i, fromMaps[i].size()));
-				}
 			} else {
 				toMaps[i] = null;
-				fromMaps[i] = null;				
 			}
+			if (futures[i].isDone() && fromindsparts[i] != null)	{
+				fromMaps[i] = IVec.mapInds(fromindsparts[i], frommaster);
+			} else {
+				fromMaps[i] = null;
+			}
+			if (trace > 1 && toMaps[i] != null) log(String.format(prefix + "machine %d layer %d dmap(%d) size %d\n", imachine, depth, i, toMaps[i].size()));
+			if (trace > 1 && fromMaps[i] != null) log(String.format(prefix + "machine %d layer %d umap(%d) size %d\n", imachine, depth, i, fromMaps[i].size()));				
 		}
 		outputs[0] = tomaster;
 		outputs[1] = frommaster;
@@ -206,15 +210,17 @@ public class Layer {
 			fsbuf.put(downv.data, 0, msize);
 
 			if (trace > 1) log(String.format("Reduce down layer %d machine %d sent msg to %d, from %d, size %d\n", depth, imachine, outNbr[ix],  outNbr[iy],  msize));
-			machine.sendrecv(ix, sendbuf[ix], msize+1, outNbr[ix], recbuf[ix], frbuf.capacity(), outNbr[iy], depth*3+1 + tag);
-			msize = irbuf.get();
-			if (trace > 1) log(String.format("Reduce down layer %d machine %d got msg from %d, size %d\n", depth, imachine, outNbr[iy], msize));
+			Boolean gotit = machine.sendrecv(ix, sendbuf[ix], msize+1, outNbr[ix], recbuf[ix], frbuf.capacity(), outNbr[iy], depth*3+1 + tag);
+			if (gotit) {
+				msize = irbuf.get();
+				if (trace > 1) log(String.format("Reduce down layer %d machine %d got msg from %d, size %d\n", depth, imachine, outNbr[iy], msize));
 
-			res[ix] = new Vec(msize);
-			frbuf.position(1);
-			frbuf.get(res[ix].data, 0, msize);
-			if (msize != toMaps[ix].size() * stride) {
-				throw new RuntimeException(String.format("Exception in ReduceDownThread,  mismatched sizes %d %d", msize, toMaps[ix].size()*stride));
+				res[ix] = new Vec(msize);
+				frbuf.position(1);
+				frbuf.get(res[ix].data, 0, msize);
+				if (toMaps[ix] != null && msize != toMaps[ix].size() * stride) {
+					throw new RuntimeException(String.format("Exception in ReduceDownThread,  mismatched sizes %d %d", msize, toMaps[ix].size()*stride));
+				}
 			}
 		}
 	}
@@ -233,19 +239,15 @@ public class Layer {
 			try {
 				futures[i].get();
 			} catch (Exception e) {
-				if (trace > 0) {
-					ByteArrayOutputStream baos = new ByteArrayOutputStream();
-					PrintStream ps = new PrintStream(baos);
-					e.printStackTrace(ps);
-					log(baos.toString());
-					ps.close();
-				}
+				if (trace > 0) log(Msg.printStack(e));
 			}
 		}
 		timeoutf.cancel(true);
 		Vec newv = new Vec(ton*stride);
 		for (int i = 0; i < k; i++) {
-			res[i].addTo(newv, toMaps[i], stride);
+			if (toMaps[i] != null) {
+				res[i].addTo(newv, toMaps[i], stride);
+			}
 		}
 		return newv;
 	}
@@ -270,26 +272,30 @@ public class Layer {
 		public void run () {
 			sendbuf[ix].clear();
 			recbuf[ix].clear();
-			IntBuffer isbuf = sendbuf[ix].asIntBuffer();
-			IntBuffer irbuf = recbuf[ix].asIntBuffer();
-			FloatBuffer fsbuf = sendbuf[ix].asFloatBuffer();
-			FloatBuffer frbuf = recbuf[ix].asFloatBuffer();
-			Vec up = upv.mapFrom(fromMaps[ix], stride);
-			int msize = up.size();
-			isbuf.put(msize);
-			fsbuf.position(1);
-			fsbuf.put(up.data, 0, msize);
+			if (fromMaps[ix] != null) {
+				IntBuffer isbuf = sendbuf[ix].asIntBuffer();
+				IntBuffer irbuf = recbuf[ix].asIntBuffer();
+				FloatBuffer fsbuf = sendbuf[ix].asFloatBuffer();
+				FloatBuffer frbuf = recbuf[ix].asFloatBuffer();
+				Vec up = upv.mapFrom(fromMaps[ix], stride);
+				int msize = up.size();
+				isbuf.put(msize);
+				fsbuf.position(1);
+				fsbuf.put(up.data, 0, msize);
 
-			if (trace > 1) log(String.format("Reduce up layer %d machine %d sent msg to %d, from %d, size %d\n", depth, imachine, outNbr[ix],  outNbr[iy],  msize));
-			machine.sendrecv(ix, sendbuf[ix], msize+1, outNbr[iy], recbuf[ix], irbuf.capacity(), outNbr[ix], depth*3+2 + tag);
-			msize = irbuf.get();
-			if (trace > 1) log(String.format("Reduce up layer %d machine %d got msg from %d, size %d\n", depth, imachine, outNbr[iy], msize));
+				if (trace > 1) log(String.format("Reduce up layer %d machine %d sent msg to %d, from %d, size %d\n", depth, imachine, outNbr[ix],  outNbr[iy],  msize));
+				machine.sendrecv(ix, sendbuf[ix], msize+1, outNbr[iy], recbuf[ix], irbuf.capacity(), outNbr[ix], depth*3+2 + tag);
+				msize = irbuf.get();
+				if (trace > 1) log(String.format("Reduce up layer %d machine %d got msg from %d, size %d\n", depth, imachine, outNbr[iy], msize));
 
-			int psize = interleave[ix].size();
-			if (msize != psize*stride) throw new RuntimeException("ReduceUp size mismatch "+msize+" "+(psize*stride));
-			frbuf.position(1);
-			if (fromparts[ix] == null || fromparts[ix].size() != msize) fromparts[ix] = new Vec(msize);
-			frbuf.get(fromparts[ix].data, 0, msize);
+				int psize = interleave[ix].size();
+				if (msize != psize*stride) throw new RuntimeException("ReduceUp size mismatch "+msize+" "+(psize*stride));
+				frbuf.position(1);
+				if (fromparts[ix].size() != msize) fromparts[ix] = new Vec(msize);
+				frbuf.get(fromparts[ix].data, 0, msize);
+			} else {
+				fromparts[ix] = null;
+			}
 		}
 	}
 
@@ -306,13 +312,7 @@ public class Layer {
 			try {
 				futures[i].get();
 			} catch (Exception e) {
-				if (trace > 0) {
-					ByteArrayOutputStream baos = new ByteArrayOutputStream();
-					PrintStream ps = new PrintStream(baos);
-					e.printStackTrace(ps);
-					log(baos.toString());
-					ps.close();
-				}
+				if (trace > 0) log(Msg.printStack(e));
 			}
 		}
 		timeoutf.cancel(true);
@@ -398,13 +398,7 @@ public class Layer {
 			try {
 				futures[i].get();
 			} catch (Exception e) {
-				if (trace > 0) {
-					ByteArrayOutputStream baos = new ByteArrayOutputStream();
-					PrintStream ps = new PrintStream(baos);
-					e.printStackTrace(ps);
-					log(baos.toString());
-					ps.close();
-				}
+				if (trace > 0) log(Msg.printStack(e));
 			}
 		}	
 		timeoutf.cancel(true);

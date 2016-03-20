@@ -493,10 +493,12 @@ public class Machine {
 					} catch (InterruptedException e) {}
 				}
 			}
+			Boolean success = true;
 			if (trace > 4) dumptags(String.format("m %d th %d r %d later  %d %d %d ", imachine, ith, round, outi, ini, tag0));
 			if (waiting >= recvTimeout) {
 				log(String.format("m %d th %d r %d ", imachine, ith, round));
 				log(String.format("Round %d sendrecv machine %d to %d from %d tag %d timed out\n", round, imachine, outi, ini, tag0));
+				success = false;
 			}
 			for (int i = 0; i < replicate; i++) {
 				if (trace > 4) log(String.format("m %d th %d r %d from machine %d clear tag %d %d\n", imachine, ith, round, ini, tag0, tag));
@@ -508,7 +510,7 @@ public class Machine {
 			if (trace > 2) log(String.format("Round %d sendrecv machine %d to %d from %d tag %d done after %d\n", round, imachine, outi, ini, tag0, waiting));
 			if (trace > 4) dumptags(String.format("m %d th %d r %d exit   %d %d %d ", imachine, ith, round, outi, ini, tag0));
 			if (trace > 4) log(String.format("m %d th %d r %d sendrecv exit out %d in %d tag %d\n", imachine, ith, round, outi, ini, tag0));
-			return true;
+			return success;
 		}
 	}	
 

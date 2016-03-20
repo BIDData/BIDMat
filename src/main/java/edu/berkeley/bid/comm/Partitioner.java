@@ -137,14 +137,19 @@ public class Partitioner {
 	}
 	
 	public void merge(Vec vv, int stride, Vec [] parts, IVec [] mapback) {
+		for (int i = 0; i < vv.length; i++) {
+			vv.data[i] = 0;
+		}
 		for (int i = 0; i < k; i++) {
 			Vec part = parts[i];
 			IVec mapb = mapback[i];
-			for (int j = 0; j < mapb.size(); j++) {
-				int jj = j * stride;
-				int rj = mapb.data[j] * stride;
-				for (int kk = 0; kk < stride; kk++) {
-					vv.data[kk + rj] = part.data[kk + jj];
+			if (part != null) {
+				for (int j = 0; j < mapb.size(); j++) {
+					int jj = j * stride;
+					int rj = mapb.data[j] * stride;
+					for (int kk = 0; kk < stride; kk++) {
+						vv.data[kk + rj] = part.data[kk + jj];
+					}
 				}
 			}
 		}
