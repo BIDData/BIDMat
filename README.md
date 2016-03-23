@@ -10,7 +10,7 @@ You can also download an executable bundle from <b><a href="http://bid2.berkeley
 
 The main project page is <b><a href="http://bid2.berkeley.edu/bid-data-project/">here</a></b>.
 
-Documentation is <b><a href="https://github.com/BIDData/BIDMach/wiki">here in the wiki</a></b>
+Documentation is <b><a href="https://github.com/BIDData/BIDMat/wiki">here in the wiki</a></b>
 
 BIDMat is a sister project of BIDMach, a machine learning library, which is 
 <b><a href="https://github.com/BIDData/BIDMach">also on github</a></b>
