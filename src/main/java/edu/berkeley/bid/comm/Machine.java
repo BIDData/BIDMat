@@ -24,7 +24,7 @@ public class Machine {
 	public final String [] machineIP;                                 // String IP names
 	public final boolean doSim;                                       // Simulation on one machine: send messages directly without sockets
 	public int trace = 0;                                             // 0: no trace, 1: high-level, 2: everything
-	public int sockBase = 50000;                                      // Socket base address
+	public int sockBase = 50050;                                      // Socket base address
 	public int sockOffset = 1;
 	public int sendTimeout = 1000;                                    // in msec
 	public int recvTimeout = 1000;
@@ -32,6 +32,7 @@ public class Machine {
 	public int reduceTimeout = 1000;
 	public boolean useLong = false;
 	public int round;
+	public int maxk = 0;
 
 	public Vec tov;                                                   // Snapshot of the reduced matrix at each layer going down
 	public Vec fromv;                                                 // Snapshot of the result matrix coming up
@@ -72,13 +73,12 @@ public class Machine {
 		layers = new Layer[D];
 		round = 0;
 		int cumk = 1;
-		int maxk = 1;
+		maxk = 1;
 		int cumPos = 0;
 		for (int level = 0; level < D; level++) {
 			int k = groups.nodesInGroup(imachine, level).length;
 			maxk = Math.max(maxk, k);
-		}
-		executor = Executors.newFixedThreadPool(maxk+6); // set to 1 for sequential messaging. 
+		} 
 		sendbuf = new ByteBuffer[maxk];
 		recbuf = new ByteBuffer[maxk];
 		for (int i = 0; i < maxk; i++) {
@@ -104,20 +104,22 @@ public class Machine {
 			cumPos = cumPos * k + pos;
 			cumk *= k;
 		}
-		if (!doSim) {
-			sockExecutor = Executors.newFixedThreadPool(4+4*maxk); 
-			listener = new Listener();
-			listenerFuture = sockExecutor.submit(listener);
-		}
+	}
+	
+	public void start(int maxk) {
+		executor = Executors.newFixedThreadPool(maxk+6); // set to 1 for sequential messaging.
+		sockExecutor = Executors.newFixedThreadPool(4+4*maxk); 
+		listener = new Listener();
+		listenerFuture = sockExecutor.submit(listener);
 	}
 
 	public void stop() {
-		executor.shutdownNow();
 		if (sockExecutor != null) {
 			listener.stop(true);
 			listenerFuture.cancel(true);
 			sockExecutor.shutdownNow();
 		}
+		if (executor != null) executor.shutdownNow();
 	}
 	
 	public void waitForComms() {
@@ -371,10 +373,11 @@ public class Machine {
 		ServerSocket ss = null;
 
 		public Listener() {
+			int socknum = sockBase + sockOffset * imachine;
 			try {
-				ss = new ServerSocket(sockBase + sockOffset * imachine);
+				ss = new ServerSocket(socknum);
 			} catch (Exception e) {
-				throw new RuntimeException("Couldnt start socket listener "+e);
+				throw new RuntimeException(String.format("Machine couldnt start socket listener on %d ", socknum) +e);
 			}			
 		}
 
