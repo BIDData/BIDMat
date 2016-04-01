@@ -1,10 +1,10 @@
 package BIDMat
 
+import MatFunctions._
+
 object Conv {
 
-  // 2d linear discrete convolution of a single-channel image with some filter.
-  // ok maybe it's actually a 2d cross-correlation, but the neural network 
-  // community is really bad at using proper terminology so whatever.
+  // direct 2d convolution
   def convolution_2d(image: Array[Float], image_width: Int, image_height: Int,
     filter: Array[Float], filter_width: Int, filter_height: Int,
     out: Array[Float],
@@ -92,16 +92,23 @@ object Conv {
       out
   }
 
-  def im2col_dim(image_width: Int, image_height: Int,
-    filter_width: Int, filter_height: Int,
+  // calculate im2col dimensions
+  def im2col_dim(image: FND, filters: FND,
     pad_width: Int, pad_height: Int,
-    stride_width: Int, stride_height: Int,
-    dilation_width: Int, dilation_height: Int): (Int, Int, Int, Int) = {
+    stride_width: Int, stride_height: Int
+    ): (Int, Int, Int, Int) = {
 
-      val out_width = (image_width + 2 * pad_width - (dilation_width * (filter_width - 1) + 1)) / stride_width + 1
-      val out_height = (image_height + 2 * pad_height - (dilation_height * (filter_height - 1) + 1)) / stride_height + 1
+      val image_height = image.dim(0)
+      val image_width = image.dim(1)
+      val image_depth = image.dim(2)
+
+      val filter_height = filters.dim(0)
+      val filter_width = filters.dim(1)
+
+      val out_width = (image_width + 2 * pad_width - filter_width) / stride_width + 1
+      val out_height = (image_height + 2 * pad_height - filter_height) / stride_height + 1
+      val out_rows = filter_width * filter_height * image_depth
       val out_cols = out_width * out_height
-      val out_rows = filter_width * filter_height
 
       return (
           out_width,
@@ -111,24 +118,37 @@ object Conv {
         )
   }
 
-  def im2col(image: Array[Float], image_width: Int, image_height: Int, image_channels: Int,
-    filter_width: Int, filter_height: Int, pad_width: Int, pad_height: Int,
-    stride_width: Int, stride_height: Int, dilation_width: Int, dilation_height: Int,
-    out: Array[Float]) = {
+  // perform im2col preprocessing step to lower spatial convolution to matrix multiplication
+  def im2col(image: FND, filters: FND, 
+    pad_width: Int, pad_height: Int,
+    stride_width: Int, stride_height: Int) = {
 
-      val (out_width, out_height, out_rows, out_cols) = im2col_dim(image_width, image_height, filter_width, filter_height, pad_width, pad_height, stride_width, stride_height, dilation_width, dilation_height)
-      val channel_size = image_width * image_height
+      val image_height = image.dim(0)
+      val image_width = image.dim(1)
+      val image_depth = image.dim(2)
 
-      var channel_offset = 0
-      var channel = 0
+      val filter_height = filters.dim(0)
+      val filter_width = filters.dim(1)
+
+      val (out_width, out_height, out_rows, out_cols) = im2col_dim(
+        image, filters, pad_width, pad_height, stride_width, stride_height)
+      val image_size = image_width * image_height
+
+      val out_mat = FMat(out_rows, out_cols)
+      var out = out_mat.data
+
       var out_idx = 0
-      while (channel < image_channels) {
-        var out_col = 0
-        var image_col_offset = -pad_width
-        while (out_col < out_width) {
-          var out_row = 0
-          var image_row_offset = -pad_height
-          while (out_row < out_height) {
+      var out_col = 0
+      var image_col_offset = -pad_width
+      while (out_col < out_width) {
+        var out_row = 0
+        var image_row_offset = -pad_height
+        while (out_row < out_height) {
+
+          var image_depth_offset = 0
+          var depth = 0
+          while (depth < image_depth) {
+
             var filter_col_offset = 0
             while (filter_col_offset < filter_height) {
               var filter_row_offset = 0
@@ -138,7 +158,7 @@ object Conv {
                 val image_col = image_col_offset + filter_col_offset
                 if (image_row >= 0 && image_row < image_height &&
                   image_col >= 0 && image_col < image_width) {
-                    out(out_idx) = image(image_col * image_height + image_row)
+                    out(out_idx) = image(image_col * image_height + image_row + image_depth_offset)
                 } else {
                     out(out_idx) = 0
                 }
@@ -148,52 +168,89 @@ object Conv {
               }
               filter_col_offset += 1
             }
-            image_row_offset += stride_height
-            out_row += 1
+            image_depth_offset += image_size
+            depth += 1
           }
-          image_col_offset += stride_width
-          out_col += 1
+
+          image_row_offset += stride_height
+          out_row += 1
         }
-        channel_offset += image_width * image_height
-        channel += 1
+        image_col_offset += stride_width
+        out_col += 1
       }
 
+      out_mat
   }
 
-  def flip_filter(filter: Array[Float], filter_width: Int, filter_height: Int) = {
+  // flip filters before multiplication so that we perform convolution and not
+  // cross-correlation
+  def flip_filters(filters: FND) = {
+    val filter_height = filters.dim(0)
+    val filter_width = filters.dim(1)
+    val filter_depth = filters.dim(2)
+    val num_filters = filters.dim(3)
+
     val filter_size = filter_width * filter_height
-    var filter_idx = 0
-    while (filter_idx < filter_size / 2) {
-      val tmp = filter(filter_idx)
-      filter(filter_idx) = filter(filter_size - filter_idx - 1)
-      filter(filter_size - filter_idx - 1) = tmp
-      filter_idx += 1
+    var filter_layer = 0
+    while (filter_layer < num_filters * filter_depth) {
+      val filter_offset = filter_size * filter_layer
+      var filter_idx = 0
+      while (filter_idx < filter_size / 2) {
+        val tmp = filters(filter_offset + filter_idx)
+        filters(filter_offset + filter_idx) = filters(filter_offset + filter_size - filter_idx - 1)
+        filters(filter_offset + filter_size - filter_idx - 1) = tmp
+        filter_idx += 1
+      }
+      filter_layer += 1
     }
   }
 
-  def convolution_2d_mm(
-    image: Array[Float], image_width: Int, image_height: Int, image_channels: Int,
-    filter: Array[Float], filter_width: Int, filter_height: Int,
+  def stack_filters(filters: FND): FMat = {
+    val filter_height = filters.dim(0)
+    val filter_width = filters.dim(1)
+    val filter_depth = filters.dim(2)
+    val num_filters = filters.dim(3)
+    val filter_vol = filter_height * filter_width * filter_depth
+
+    var filter_mat = FMat(num_filters, filter_vol)
+    var filter = 0
+    while (filter < num_filters) {
+      filter_mat(filter, ?) = filters(?, ?, ?, filter).toFMatView(1, filter_vol)
+      filter += 1
+    }
+    filter_mat
+  }
+
+  // spatial convolution lowered to matrix multiplication
+  def convolution_mm(
+    image: FND, filters: FND,
     pad_width: Int, pad_height: Int,
-    stride_width: Int, stride_height: Int,
-    dilation_width: Int, dilation_height: Int,
-    out: Array[Float]): FMat = {
+    stride_width: Int, stride_height: Int): FND = {
 
-      val (out_width, out_height, out_rows, out_cols) = im2col_dim(image_width, image_height, filter_width, filter_height, pad_width, pad_height, stride_width, stride_height, dilation_width, dilation_height)
+      val filter_height = filters.dim(0)
+      val filter_width = filters.dim(1)
+      val num_filters = filters.dim(3)
+      val image_depth = image.dim(2)
+      val (out_width, out_height, out_rows, out_cols) = im2col_dim(
+        image, filters, pad_width, pad_height, stride_width, stride_height)
 
-      im2col(image, image_width, image_height, image_channels,
-        filter_width, filter_height,
+      flip_filters(filters)
+      val filter_mat = stack_filters(filters)
+
+      val conv_mat = im2col(image, filters,
         pad_width, pad_height,
-        stride_width, stride_height,
-        dilation_width, dilation_height,
-        out)
-
-      flip_filter(filter, filter_width, filter_height)
-      val filter_mat = new FMat(1, filter_width * filter_height, filter)
-      val conv_mat = new FMat(out_rows, out_cols, out)
+        stride_width, stride_height)
 
       val out_mat = filter_mat * conv_mat
-      return out_mat.view(out_width, out_height)
+
+      val out = FND(out_height, out_width, num_filters)
+      var filter = 0
+      while (filter < num_filters) {
+        out(?, ?, filter) = FND(out_mat(filter, ?)).reshapeView(out_height, out_width)
+        filter += 1
+      }
+
+      out
   }
 
 }
