@@ -109,6 +109,9 @@ public class Machine {
 	public void start(int maxk) {
 		executor = Executors.newFixedThreadPool(maxk+6); // set to 1 for sequential messaging.
 		sockExecutor = Executors.newFixedThreadPool(4+4*maxk); 
+		for (int level = 0; level < D; level++) {
+			layers[level].executor = executor;
+		}
 		listener = new Listener();
 		listenerFuture = sockExecutor.submit(listener);
 	}
@@ -518,8 +521,12 @@ public class Machine {
 	}	
 
 	public void log(String msg) {
-		synchronized (network) {
-			System.out.print(msg);	
+		if (network != null) {
+			synchronized (network) {
+				System.out.print(msg);	
+			}
+		} else {
+			System.out.print(msg);
 		}
 	}
 }

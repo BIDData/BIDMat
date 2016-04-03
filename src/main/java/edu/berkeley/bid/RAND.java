@@ -3,7 +3,7 @@ package edu.berkeley.bid;
 public final class RAND {
 
     static { 
-      LibUtils.loadLibrary("bidmatcpu");
+      LibUtils.loadLibrary("bidmatcpu", true);
     }
 
     private long handle = 0;

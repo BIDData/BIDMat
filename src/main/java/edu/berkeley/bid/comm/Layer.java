@@ -291,7 +291,7 @@ public class Layer {
 				int psize = interleave[ix].size();
 				if (msize != psize*stride) throw new RuntimeException("ReduceUp size mismatch "+msize+" "+(psize*stride));
 				frbuf.position(1);
-				if (fromparts[ix].size() != msize) fromparts[ix] = new Vec(msize);
+				if (fromparts[ix] == null || fromparts[ix].size() != msize) fromparts[ix] = new Vec(msize);
 				frbuf.get(fromparts[ix].data, 0, msize);
 			} else {
 				fromparts[ix] = null;

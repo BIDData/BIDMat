@@ -5,7 +5,7 @@ public final class VML {
     private VML() {}
 
     static {
-      LibUtils.loadLibrary("bidmatcpu");
+      LibUtils.loadLibrary("bidmatcpu", true);
     }
     
     public final static class VMLMODE {

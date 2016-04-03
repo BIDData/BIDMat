@@ -5,7 +5,7 @@ public final class LAPACK {
     private LAPACK() {}
 
     static {
-      LibUtils.loadLibrary("bidmatcpu");
+      LibUtils.loadLibrary("bidmatcpu", true);
     }
 
 /*    public final static class ORDER {

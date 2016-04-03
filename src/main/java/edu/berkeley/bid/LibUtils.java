@@ -28,6 +28,8 @@
 package edu.berkeley.bid;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Locale;
 
 /**
@@ -72,30 +74,69 @@ public final class LibUtils
      */
     
     public static void loadLibrary(String baseName) {
-      loadLib(LibUtils.createLibName(baseName));
+    	loadLibrary(baseName, false);
     }
     
-    public static void loadLib(String libName)
+    public static void loadLibrary(String baseName, Boolean loadIOMP) {
+      loadLib(LibUtils.createLibName(baseName), loadIOMP);
+    }
+    
+    public static String getIOMPlibName() {
+      OSType osType = calculateOS();
+      switch (osType) 
+      {
+          case APPLE:
+          case LINUX:
+          	return "iomp5";
+          case WINDOWS:
+          	return "libiomp5md";
+          default:
+          	  return "";
+              	
+      }
+    }
+    
+    public static void loadLib(String libName) {
+    	loadLib(libName, false);
+    }
+    
+    public static void loadLib(String libName, Boolean loadIOMP)
     {
         Throwable throwable = null;
         final boolean tryResource = true;
+        ARCHType arch = calculateArch();
         if (tryResource)
         {
-            try
-            {
-                loadLibraryResource(libName);
-                return;
-            }
-            catch (Throwable t) 
-            {
-                throwable = t;
-            }
+        	if (!loadIOMP || arch == ARCHType.ARM) {        // No IOMP5 to worry about
+        		try
+        		{
+        			loadLibraryResource(libName);
+        			return;
+        		}
+        		catch (Throwable t) 
+        		{
+        			throwable = t;
+        		}
+        	} else {
+        		try
+        		{
+        			loadLibraryResource2(libName, getIOMPlibName());
+        			return;
+        		}
+        		catch (Throwable t) 
+        		{
+        			throwable = t;
+        		}       		
+        	}
         }
         
         try
         {
-            System.loadLibrary(libName);
-            return;
+        	if (loadIOMP && arch != ARCHType.ARM) {
+          	System.loadLibrary(getIOMPlibName());        		
+        	}
+        	System.loadLibrary(libName);
+        	return;
         }
         catch (Throwable t)
         {
@@ -131,6 +172,10 @@ public final class LibUtils
                 sw.toString());
         }
     }
+    
+    public static String getResourceName(String libName) {
+    	return "/lib/" + libName;
+    }
 
     /**
      * Load the library with the given name from a resource. 
@@ -139,47 +184,80 @@ public final class LibUtils
      * @param libName The library name
      * @throws Throwable If the library could not be loaded
      */
+    
     public static void loadLibraryResource(String libName) throws Throwable
     {
         String libPrefix = createLibPrefix();
         String libExtension = createLibExtension();
         String fullName = libPrefix + libName;
-        String resourceName = "/lib/" + fullName + "." + libExtension;
-        InputStream inputStream = 
-            LibUtils.class.getResourceAsStream(resourceName);
-        if (inputStream == null)
-        {
-            throw new NullPointerException(
-                    "No resource found with name '"+resourceName+"'");
-        }
+        String resourceName = getResourceName(fullName + "." + libExtension);
         File tempFile = File.createTempFile(fullName, "."+libExtension);
         tempFile.deleteOnExit();
-        OutputStream outputStream = null;
-        try
-        {
-            outputStream = new FileOutputStream(tempFile);
-            byte[] buffer = new byte[8192];
-            while (true)
-            {
-                int read = inputStream.read(buffer);
-                if (read < 0)
-                {
-                    break;
-                }
-                outputStream.write(buffer, 0, read);    
-            }
-            outputStream.flush();
-            outputStream.close();
-            outputStream = null;
-            System.load(tempFile.toString());
-        }
-        finally 
-        {
-            if (outputStream != null)
-            {
-                outputStream.close();
-            }
-        }
+        loadLibFromFile(resourceName, tempFile);
+    }
+    
+    /**
+     * Various heroic attempts to load a native library and its dependency
+     * 
+     * @param libName
+     * @param depName
+     * @throws Throwable
+     */
+    
+    public static void loadLibraryResource2(String libName, String depName) throws Throwable
+    {
+        String libPrefix = createLibPrefix();
+        String libExtension = createLibExtension();
+        String fullName = libPrefix + libName + "." + libExtension;               // Get the full names of the libraries
+        String fullDepName = libPrefix + depName + "." + libExtension;
+        String resourceName = getResourceName(fullName);                                 // Names of the resources
+        String resourceDepName = getResourceName(fullDepName);
+        Path tmpDir = Files.createTempDirectory("BIDMat");                        // Create a temp directory to hold both      
+        File tempFile = tmpDir.resolve(fullName).toFile();                        // Temp files to write the libs to
+        File tempDepFile = tmpDir.resolve(fullDepName).toFile();
+        tempFile.deleteOnExit();
+        tempDepFile.deleteOnExit();
+        String user_dir = System.getProperty("user.dir");                         // Save the current working directory
+        System.setProperty("user.dir", tmpDir.toString());                        // Set the current working directory so "." in the lib path will find the dependency
+        loadLibFromFile(resourceDepName, tempDepFile);                            // Try loading the dependency first - good enough on Linux or Windows
+        loadLibFromFile(resourceName, tempFile);
+        System.setProperty("user.dir", user_dir);                                 // Restore the working directory
+    }
+    
+    public static void loadLibFromFile(String resourceName, File file) throws Throwable 
+    {
+    	InputStream inputStream = LibUtils.class.getResourceAsStream(resourceName);
+    	if (inputStream == null)
+    	{
+    		throw new NullPointerException(
+    				"No resource found with name '"+resourceName+"'");
+    	}
+    	OutputStream outputStream = null;
+    	try
+    	{
+    		outputStream = new FileOutputStream(file);
+    		byte[] buffer = new byte[8192];
+    		while (true)
+    		{
+    			int read = inputStream.read(buffer);
+    			if (read < 0)
+    			{
+    				break;
+    			}
+    			outputStream.write(buffer, 0, read);    
+    		}
+    		outputStream.flush();
+    		outputStream.close();
+    		outputStream = null;
+    		System.load(file.toString());
+    	}
+    	finally 
+    	{
+    		if (outputStream != null)
+    		{
+    			outputStream.close();
+    		}
+    	}
     }
 
 
@@ -204,6 +282,8 @@ public final class LibUtils
                 return "so";
             case WINDOWS:
                 return "dll";
+            case UNKNOWN:
+            		return "";
         }
         return "";
     }
@@ -226,6 +306,8 @@ public final class LibUtils
                 return "lib";
             case WINDOWS:
                 return "";
+            case UNKNOWN:
+          		return "";
         }
         return "";
     }
