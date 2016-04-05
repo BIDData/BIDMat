@@ -65,7 +65,8 @@ BIDMAT_ROOT=`cd "$BIDMAT_ROOT/../..";pwd`
 BIDMAT_ROOT="$( echo ${BIDMAT_ROOT} | sed s+/cygdrive/c+c:+ )" 
 
 if [ "$OS" = "apple" ] ; then
-    BLAS_ROOT="/opt/intel/mkl"
+    ICC_ROOT="/opt/intel/compilers_and_libraries/mac"
+    BLAS_ROOT="${ICC_ROOT}/mkl"
     RANDSRC="VSL"
     if [ "$JAVA_HOME" = "" ]; then
 	JAVA_HOME=`/usr/libexec/java_home`
@@ -109,7 +110,7 @@ if [ "$OS" = "apple" ] ; then
             $BLAS_ROOT/lib/libmkl_core.a \
             $BLAS_ROOT/lib/libmkl_intel${PTYPE}.a $BLAS_ROOT/lib/libmkl_intel_thread.a \
             $BLAS_ROOT/lib/libmkl_core.a \
-            ${BIDMAT_ROOT}/lib/libiomp5.a \
+            $ICC_ROOT/lib/libiomp5.a \
             -lpthread -lm  -framework JavaVM"
     fi
     INSTALL_DIR="${BIDMAT_ROOT}/lib"
