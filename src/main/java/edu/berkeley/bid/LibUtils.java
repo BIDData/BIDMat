@@ -395,7 +395,7 @@ public final class LibUtils
         {
             return ARCHType.SPARC;
         }
-        if (osArch.startsWith("arm"))
+        if (osArch.startsWith("arm") || osArch.startsWith("aarch"))
         {
             return ARCHType.ARM;
         }
