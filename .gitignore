@@ -15,3 +15,8 @@ lib/*.jar
 libs/
 hs_err_pid*.log
 jni/src/Makefile.incl
+*.so
+*.dylib
+BIDMat.jar
+.DS_Store
+*.jnilib

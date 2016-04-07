@@ -24,6 +24,9 @@ typedef enum CBLAS_SIDE CBLAS_SIDE;
 
 #include <qblas_cblas.h>
 
+// Back-fill matrix copy/transpose
+#include <omatcopy.h>
+
 #elif OpenBLAS
 #include <openblas_cblas.h>
 #endif
