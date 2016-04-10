@@ -591,11 +591,35 @@ def tMultT(a:Mat, outmat:Mat) : Mat =  {
   def madd(b:GMat,c:GMat,at:Boolean,bt:Boolean) = {
       var i=0
       while (i<tiles.length) {
-        at match{
+        bt match {
+            case false=>{
+                at match{
+                    case true=>{
+                    //cublasSgemm('t', 'n', ncols, a.ncols, nrows, 1.0f, data, nrows, a.data, a.nrows, 0f, out.data, out.nrows)
+                        val a=tiles(i).asInstanceOf[GMat]
+                        Mat.nflops += 2L * a.length * b.ncols
+                        cublasSgemm('t', 'n', a.ncols, b.ncols, a.nrows, 1.0f, a.data, a.nrows, b.data.withByteOffset(Sizeof.FLOAT.toLong*(y(i))), b.nrows, 1.0f, c.data.withByteOffset(Sizeof.FLOAT.toLong*(x(i))), c.nrows)
+                    }
+                    case false=>{
+                        val a=tiles(i).asInstanceOf[GMat]
+                        Mat.nflops += 2L * a.length * b.ncols
+                        cublasSgemm('n', 'n', a.nrows, b.ncols, a.ncols, 1.0f, a.data, a.nrows, b.data.withByteOffset(Sizeof.FLOAT.toLong*(x(i))), b.nrows, 1.0f, c.data.withByteOffset(Sizeof.FLOAT.toLong*(y(i))), c.nrows)
+                    }
+                }
+            }
             case true=>{
-            //cublasSgemm('t', 'n', ncols, a.ncols, nrows, 1.0f, data, nrows, a.data, a.nrows, 0f, out.data, out.nrows)
-                val a=tiles(i).asInstanceOf[GMat]
-                cublasSgemm('t', 'n', a.ncols, b.ncols, a.nrows, 1.0f, a.data, a.nrows, b.data.withByteOffset(Sizeof.FLOAT.toLong*(y(i))), b.nrows, 1.0f, c.data.withByteOffset(Sizeof.FLOAT.toLong*(x(i))), c.nrows)
+                at match {
+                    case true=>{
+                        val a=tiles(i).asInstanceOf[GMat]
+                        Mat.nflops += 2L * a.length * b.nrows
+                        cublasSgemm('t', 't', a.ncols, b.nrows, a.nrows, 1.0f, a.data, a.nrows, b.data.withByteOffset(Sizeof.FLOAT.toLong*(y(i))*b.nrows), b.nrows, 1.0f, c.data.withByteOffset(Sizeof.FLOAT.toLong*(x(i))), c.nrows)
+                    }
+                    case false=>{
+                        val a=tiles(i).asInstanceOf[GMat]
+                        Mat.nflops += 2L * a.length * b.nrows
+                        cublasSgemm('n', 't', a.nrows, b.nrows, a.ncols, 1.0f, a.data, a.nrows, b.data.withByteOffset(Sizeof.FLOAT.toLong*(x(i))*b.nrows), b.nrows, 1.0f, c.data.withByteOffset(Sizeof.FLOAT.toLong*(y(i))), c.nrows)
+                    }           
+                }
             }
         }
         i+=1  

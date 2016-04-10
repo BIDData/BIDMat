@@ -228,7 +228,7 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
   }
   
   override def recycle(nr:Int, nc:Int, nnzx:Int):GSMat = {
-      println("Being recycle")
+      //println("Being recycle")
     if (realnnz >= nnzx) {  
       new GSMat(nr, nc, nnzx, ir, ic, jc, data, realnnz)
     } else {

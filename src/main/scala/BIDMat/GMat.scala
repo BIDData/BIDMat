@@ -602,13 +602,16 @@ import BIDMat.IMatWildcard
         case false=>{
             var i=0
             while(i<c.tiles.length){
+                Mat.nflops += 2L * c.tiles(i).length * ncols;
                 if (bt)
                     tileMultT(c.tiles(i).nrows,c.tiles(i).ncols,ncols,c.y(i),0,b,c.x(i),0,c.tiles(i),0,0)
                 else
                     tileMult(c.tiles(i).nrows,c.tiles(i).ncols,ncols,c.y(i),0,b,0,c.x(i),c.tiles(i),0,0)
                 i+=1
             }
-    
+        }
+        case _=>{
+            throw new RuntimeException("madd unsupported options Mat, TMat %b %b" format (at, bt));    
         }
     }
     
