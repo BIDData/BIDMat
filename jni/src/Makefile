@@ -34,18 +34,12 @@ $(LIBPREPEND)bidmatcuda$(LIBAPPEND): $(CUDA_OBJS)
 install: all
 	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(INSTALL_DIR)
 	cp $(LIBPREPEND)bidmatcpu$(LIBAPPEND)  $(INSTALL_DIR)
-	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(INSTALL_DIR)/../../BIDMach/lib
-	cp $(LIBPREPEND)bidmatcpu$(LIBAPPEND)  $(INSTALL_DIR)/../../BIDMach/lib
-	cp $(LIBPREPEND)bidmatcpu$(LIBAPPENDLIB)  $(INSTALL_DIR)/../../BIDMach/lib
 
 installcudalib: cudalib
 	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(INSTALL_DIR)
-	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(INSTALL_DIR)/../../BIDMach/lib
 
 installcpulib: cpulib
 	cp $(LIBPREPEND)bidmatcpu$(LIBAPPEND)  $(INSTALL_DIR)
-	cp $(LIBPREPEND)bidmatcpu$(LIBAPPEND)  $(INSTALL_DIR)/../../BIDMach/lib
-	cp $(LIBPREPEND)bidmatcpu$(LIBAPPENDLIB)  $(INSTALL_DIR)/../../BIDMach/lib
 
 upload: all
 	if [ -d /biddata/lib ]; then \
