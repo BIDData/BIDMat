@@ -1,4 +1,6 @@
 /*
+ * This code derives from:
+ * 
  * JCuda - Java bindings for NVIDIA CUDA driver and runtime API
  *
  * Copyright (c) 2009-2012 Marco Hutter - http://www.jcuda.org
@@ -219,7 +221,9 @@ public final class LibUtils
         tempDepFile.deleteOnExit();
         String user_dir = System.getProperty("user.dir");                         // Save the current working directory
         System.setProperty("user.dir", tmpDir.toString());                        // Set the current working directory so "." in the lib path will find the dependency
-        loadLibFromFile(resourceDepName, tempDepFile);                            // Try loading the dependency first - good enough on Linux or Windows
+        if (LibUtils.class.getResource(resourceDepName) != null) {                // There may not be a dependency (e.g. no libiomp on Mac)
+        	loadLibFromFile(resourceDepName, tempDepFile);                          // Try loading the dependency first - good enough on Linux or Windows
+        }
         loadLibFromFile(resourceName, tempFile);
         System.setProperty("user.dir", user_dir);                                 // Restore the working directory
     }
@@ -395,8 +399,8 @@ public final class LibUtils
         {
             return ARCHType.SPARC;
         }
-        if (osArch.startsWith("arm") || osArch.startsWith("aarch"))
-        {
+        if (osArch.startsWith("arm") || osArch.startsWith("aarch"))   // For now, arm CUDA libs are still 32bit on 64bit machines
+        {                                                             // this code will split if that changes
             return ARCHType.ARM;
         }
         if (osArch.startsWith("mips"))
