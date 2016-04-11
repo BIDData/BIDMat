@@ -22,16 +22,20 @@ cd ${BIDMAT_ROOT}/lib
 
 if [ `uname` = "Darwin" ]; then
     subdir="osx"
+    suffix="dylib"
     curl -o liblist.txt ${source}/lib/liblist_osx.txt 
 elif [ "$OS" = "Windows_NT" ]; then
     subdir="win"
+    suffix="dll"
     curl -o liblist.txt ${source}/lib/liblist_win.txt
 else
     if [[ "${ARCH}" == arm* || "${ARCH}" == aarch* ]]; then
         subdir="linux_arm"
+	suffix="so"
         curl -o liblist.txt ${source}/lib/liblist_linux_arm.txt
     else
         subdir="linux"
+	suffix="so"
         curl -o liblist.txt ${source}/lib/liblist_linux.txt
     fi
 fi
@@ -46,12 +50,13 @@ done < liblist.txt
 mv ${BIDMAT_ROOT}/lib/BIDMat.jar ${BIDMAT_ROOT}
 rm ${BIDMAT_ROOT}/lib/BIDMach.jar
 
-cp ${BIDMAT_ROOT}/lib/*bidmat*.{so,dll,dylib} ${BIDMAT_ROOT}/src/main/resources/lib
-cp ${BIDMAT_ROOT}/lib/*iomp5*.{so,dll,dylib} ${BIDMAT_ROOT}/src/main/resources/lib
+cp ${BIDMAT_ROOT}/lib/*bidmat*.${suffix} ${BIDMAT_ROOT}/src/main/resources/lib
+cp ${BIDMAT_ROOT}/lib/*iomp5*.${suffix} ${BIDMAT_ROOT}/src/main/resources/lib
 
 cd ${BIDMAT_ROOT}/src/main/resources
 libs=`echo lib/*`
 
 cd ${BIDMAT_ROOT}
+echo "Packing native libraries in the BIDMat jar"
 jar uvf BIDMat.jar -C src/main/resources $libs
 
