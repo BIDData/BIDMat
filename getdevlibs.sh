@@ -58,5 +58,5 @@ libs=`echo lib/*`
 
 cd ${BIDMAT_ROOT}
 echo "Packing native libraries in the BIDMat jar"
-jar uvf BIDMat.jar -C src/main/resources $libs
+jar uvf BIDMat.jar $libs
 
