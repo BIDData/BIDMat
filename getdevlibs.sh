@@ -50,7 +50,7 @@ done < liblist.txt
 mv ${BIDMAT_ROOT}/lib/BIDMat.jar ${BIDMAT_ROOT}
 rm ${BIDMAT_ROOT}/lib/BIDMach.jar
 
-rm ${BIDMAT_ROOT}/src/main/resources/lib/*.${suffix}
+rm -f ${BIDMAT_ROOT}/src/main/resources/lib/*.${suffix}
 cp ${BIDMAT_ROOT}/lib/*bidmat*.${suffix} ${BIDMAT_ROOT}/src/main/resources/lib
 cp ${BIDMAT_ROOT}/lib/*iomp5*.${suffix} ${BIDMAT_ROOT}/src/main/resources/lib
 
