@@ -1089,7 +1089,7 @@ object LMat {
     0
   }
  
-  def lexcomp(a:IMat, inds:IMat):(Int, Int) => Int = {
+  def lexcomp(a:LMat, inds:IMat):(Int, Int) => Int = {
   	val aa = a.data
   	val nr = a.nrows
   	val ii = inds.data
@@ -1116,7 +1116,7 @@ object LMat {
   	}
   }
   
-  def isortlex(a:IMat, asc:Boolean):IMat = {
+  def isortlex(a:LMat, asc:Boolean):IMat = {
   	val out = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "sortlex".hashCode)
   	val compp = lexcomp(a, out)
   	DenseMat._isortlex(a, asc, out, compp)

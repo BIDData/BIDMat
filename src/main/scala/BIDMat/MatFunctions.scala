@@ -831,6 +831,32 @@ object MatFunctions {
   	}
   }
   
+  def sortlexInds(mat:LMat, inds:IMat) = _sortlexInds(mat, inds, true) 
+  
+  def _sortlexInds(mat:LMat, inds:IMat, asc:Boolean) {
+  	if (if (Mat.useGPUsort && Mat.hasCUDA > 0) {
+  		val (dmy, freebytes, allbytes) = SciFunctions.GPUmem
+  		if ((mat.length+inds.length)*12L < freebytes) {
+  		  if (mat.ncols == 1) {
+  				GLMat.isortlexIndsGPU(mat, inds, asc)
+  				false
+  			} else if (mat.ncols == 2) {
+  				GLMat.i2sortlexIndsGPU(mat, inds, asc)
+  				false
+  			} else if (mat.ncols == 3) {
+  				GLMat.i3sortlexIndsGPU(mat, inds, asc)
+  				false
+  			} else true
+  		} else true
+  	} else true) {
+  		val perm = LMat.isortlex(mat, asc) 
+  		val indsp = inds(perm)
+  		inds <-- indsp
+  		val matp = mat(perm, ?)
+  		mat <-- matp
+  	}
+  }
+  
   /**
    * Lexicographic sort of a matrix '''mat'''. Side-effects '''mat'''.
    */
