@@ -914,6 +914,14 @@ object MatFunctions {
     }
   }
   
+  def copyrow(a:LMat, i:Int, b:LMat, j:Int) = {
+    var k = 0 
+    while (k < a.ncols) {
+      b.data(j + k*b.nrows) = a.data(i + k*a.nrows)
+      k += 1
+    }
+  }
+  
   /**
    * Find the unique rows from a matrix of input rows. Returns (outv, bptrs, outp) where
  - outv is a matrix of sorted rows.
