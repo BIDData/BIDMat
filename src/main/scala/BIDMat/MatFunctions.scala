@@ -1454,6 +1454,7 @@ object MatFunctions {
     case aa:GSDMat => aa.full:GDMat
     case aa:GMat => a
     case aa:GDMat => a
+    case aa:TMat => aa.full
   }
   
   def DDShelper(a:FMat, b:FMat, c:SMat, out:SMat, istart:Int, iend:Int, ioff:Int) = {

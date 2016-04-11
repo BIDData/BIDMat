@@ -1,0 +1,22 @@
+import BIDMat.TMat
+
+val b=TMat(4,4,Array(0),Array(1),Array(GMat(FMat(2,3,Array(1,2,3,4,5,6)))));
+full(b)
+val a=b.ones(1,1)
+full(a)
+val c:Mat =b
+val d=b.zeros(4,4)
+d~c*@c
+full(d)
+a.set(5f)
+d~c*@a
+full(d)
+c~d+b
+full(c)
+val g=GMat(1,1)
+g.set(2f)
+val c:Mat = b
+full(b)
+full(c^g)
+b~b/(c^g)
+full(b)

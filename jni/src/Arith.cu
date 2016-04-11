@@ -120,7 +120,7 @@ __global__ void __dsmultTileT(int nr, int nc, int kk, int nnz, float *A, int lda
     for (int j = jstart; j < jend; j++) {
       int brow = Bir[j] - broff;
       int bcol = Bic[j] - bcoff;
-      if (brow >= 0 && brow < nc && bcol >= 0 && bcol < nr) {
+      if (brow >= 0 && brow < nc && bcol >= 0 && bcol < kk) {
         if (bcol != bcold) {
           aval = A[i + lda * bcol];
         }
@@ -142,7 +142,7 @@ __global__ void __dsmultTileTx(int nr, int nc, int kk, int nnz, float *A, int ld
     for (int j = jstart; j < jend ; j++) {
       int brow = Bir[j] - broff;
       int bcol = Bic[j] - bcoff;
-      if (brow >= 0 && brow < nc && bcol >= 0 && bcol < nr) {
+      if (brow >= 0 && brow < nc && bcol >= 0 && bcol < kk) {
         if (bcol != bcold) {
           aval = A[threadIdx.x + lda * bcol];
         }
