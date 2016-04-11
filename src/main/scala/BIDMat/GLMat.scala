@@ -895,7 +895,163 @@ object GLMat {
       throw new RuntimeException("mini2 direction not recognized %d" format dim)
     }      
   }
+    
+  def isortlexIndsGPU(grams:LMat, inds:IMat, asc:Boolean) = {
+    if (grams.nrows != inds.nrows) throw new RuntimeException("isortlexIndsGPU mismatched dims")
+    val linds = LMat(inds);
+    val p1 = Pointer.to(grams.data)
+    val p2 = Pointer.to(linds.data)
+    p2sortlexGPU(p1, p2, inds.nrows, asc);
+    inds <-- linds;
+  }
   
+  def i2sortlexGPU(mat:LMat, asc:Boolean) = {
+    if (mat.ncols != 2) throw new RuntimeException("i2sortlexGPU mismatched dims")
+    val p1 = Pointer.to(mat.data)
+    val p2 = Pointer.to(mat.data).withByteOffset(1L*mat.nrows*Sizeof.LONG) 
+    p2sortlexGPU(p1, p2, mat.nrows, asc)
+  }
+  
+  def i2sortlexColsGPU(col1:LMat, col2:LMat, asc:Boolean) = {
+    if (col1.nrows != col2.nrows) throw new RuntimeException("i2sortlexGPU mismatched dims")
+    val p1 = Pointer.to(col1.data)
+    val p2 = Pointer.to(col2.data) 
+    p2sortlexGPU(p1, p2, col1.nrows, asc)
+  }
+  
+
+  def p2sortlexGPU(p1:Pointer, p2:Pointer, nrows:Int, asc:Boolean) = {
+    val ggrams = GLMat(nrows, 2)
+    var status = cudaMemcpy(ggrams.data, p2, 1L*nrows*Sizeof.LONG, cudaMemcpyHostToDevice) 
+    if (status != 0) throw new RuntimeException("p3sortlexGPU error1 %d" format (status)) 
+    status = cudaMemcpy(ggrams.data.withByteOffset(1L*nrows*Sizeof.LONG), p1, 1L*nrows*Sizeof.LONG, cudaMemcpyHostToDevice)
+    if (status != 0) throw new RuntimeException("p3sortlexGPU error2 %d" format (status))  
+    cudaDeviceSynchronize
+    val ggramst = ggrams.t
+    ggrams.free
+    CUMAT.l2sort(ggramst.data, nrows, if (asc) 1 else 0)
+    val ograms = ggramst.t
+    ggramst.free
+    status = cudaMemcpy(p1, ograms.data.withByteOffset(1L*nrows*Sizeof.LONG), 1L*nrows*Sizeof.LONG, cudaMemcpyDeviceToHost)
+    if (status != 0) throw new RuntimeException("p3sortlexGPU error4 %d" format (status)) 
+    status = cudaMemcpy(p2, ograms.data, 1L*nrows*Sizeof.LONG, cudaMemcpyDeviceToHost)
+    if (status != 0) throw new RuntimeException("p3sortlexGPU error5 %d" format (status)) 
+    ograms.free
+  }
+  
+    
+  def i2sortlexIndsGPU(grams:LMat, inds:IMat, asc:Boolean) = {
+    if (grams.nrows != inds.nrows) throw new RuntimeException("i2sortlexIndsGPU mismatched dims")
+    val p1 = Pointer.to(grams.data)
+    val p2 = p1.withByteOffset(1L*inds.nrows*Sizeof.LONG);
+    val linds = LMat(inds);
+    val p3 = Pointer.to(linds.data)
+    p3sortlexGPU(p1, p2, p3, inds.nrows, asc);
+    inds <-- linds;
+  }
+  
+  def i2sortlexColsIndsGPU(col1:LMat, col2:LMat, inds:IMat, asc:Boolean) = {
+    if (col1.nrows != inds.nrows || col2.nrows != inds.nrows) throw new RuntimeException("i2sortlexColsIndsGPU mismatched dims")
+    val p1 = Pointer.to(col1.data)
+    val p2 = Pointer.to(col2.data) 
+    val linds = LMat(inds);
+    val p3 = Pointer.to(linds.data)
+    p3sortlexGPU(p1, p2, p3, inds.nrows, asc)
+    inds <-- linds;
+  }
+  /*
+   * Useful for creating sparse matrices
+   */
+  
+  def i2sortlexColsIndsGPU(col1:LMat, col2:LMat, fvals:FMat, asc:Boolean) = {
+    if (col1.nrows != fvals.nrows || col2.nrows != fvals.nrows) throw new RuntimeException("i2sortlexGPU mismatched dims")
+    val p1 = Pointer.to(col1.data)
+    val p2 = Pointer.to(col2.data) 
+    val f2vals = fvals.t on FMat.zeros(1, fvals.length);
+    val p3 = Pointer.to(f2vals.data)
+    p3sortlexGPU(p1, p2, p3, fvals.nrows, asc);
+    fvals <-- f2vals(0, MatFunctions.?).t
+  }
+  
+  /*
+   * This is not strictly a 3-column lex sort, only the first two columns are used, and the third is just permuted
+   */
+  def p3sortlexGPU(p1:Pointer, p2:Pointer, p3:Pointer, nrows:Int, asc:Boolean) = {
+    val ggrams = GLMat(nrows, 2)
+    val gvals = GLMat(nrows, 1)
+    var status = cudaMemcpy(ggrams.data, p2, 1L*nrows*Sizeof.LONG, cudaMemcpyHostToDevice)
+    if (status != 0) throw new RuntimeException("p3sortlexGPU error1 %d" format (status)) 
+    status = cudaMemcpy(ggrams.data.withByteOffset(1L*nrows*Sizeof.LONG), p1, 1L*nrows*Sizeof.LONG, cudaMemcpyHostToDevice)
+    if (status != 0) throw new RuntimeException("p3sortlexGPU error2 %d" format (status))  
+    status = cudaMemcpy(gvals.data, p3, 1L*nrows*Sizeof.LONG, cudaMemcpyHostToDevice)
+    if (status != 0) throw new RuntimeException("p3sortlexGPU error3 %d" format (status)) 
+    cudaDeviceSynchronize
+    val ggramst = ggrams.t
+    ggrams.free
+    CUMAT.l2sortk(ggramst.data, gvals.data, nrows, if (asc) 1 else 0)
+    val ograms = ggramst.t
+    ggramst.free
+    status = cudaMemcpy(p1, ograms.data.withByteOffset(1L*nrows*Sizeof.LONG), 1L*nrows*Sizeof.LONG, cudaMemcpyDeviceToHost)
+    if (status != 0) throw new RuntimeException("p3sortlexGPU error4 %d" format (status)) 
+    status = cudaMemcpy(p2, ograms.data, 1L*nrows*Sizeof.LONG, cudaMemcpyDeviceToHost)
+    if (status != 0) throw new RuntimeException("p3sortlexGPU error5 %d" format (status)) 
+    status = cudaMemcpy(p3, gvals.data, 1L*nrows*Sizeof.LONG, cudaMemcpyDeviceToHost)
+    if (status != 0) throw new RuntimeException("p3sortlexGPU error6 %d" format (status)) 
+    ograms.free
+    gvals.free
+  }
+
+    
+  def i3sortlexIndsGPU(grams:LMat, inds:IMat, asc:Boolean) = {
+    if (grams.nrows != inds.nrows) throw new RuntimeException("i3sortlexIndsGPU mismatched dims")
+    val p1 = Pointer.to(grams.data)
+    val p2 = p1.withByteOffset(1L*inds.nrows*Sizeof.LONG)
+    val p3 = p1.withByteOffset(1L*inds.nrows*2*Sizeof.LONG)
+    val linds = LMat(inds);
+    val p4 = Pointer.to(linds.data)
+    p4sortlexGPU(p1, p2, p3, p4, grams.nrows, asc);
+    inds <-- linds
+  }
+  
+  def i4sortlexColsGPU(col1:LMat, col2:LMat, col3:LMat, inds:LMat, asc:Boolean) = {
+    if (col1.nrows != inds.nrows || col2.nrows != inds.nrows || col3.nrows != inds.nrows) {
+      throw new RuntimeException("i3sortlexColsGPU mismatched dims")
+    }
+    val p1 = Pointer.to(col1.data)
+    val p2 = Pointer.to(col2.data)
+    val p3 = Pointer.to(col3.data)
+    val p4 = Pointer.to(inds.data)
+    p4sortlexGPU(p1, p2, p3, p4, inds.nrows, asc)
+  }
+  
+  def p4sortlexGPU(p1:Pointer, p2:Pointer, p3:Pointer, p4:Pointer, nrows:Int, asc:Boolean) = {
+    val ggrams = GLMat(nrows, 4)
+    var status = cudaMemcpy(ggrams.data, p1, 1L*nrows*Sizeof.LONG, cudaMemcpyHostToDevice)
+    if (status != 0) throw new RuntimeException("p4sortlexGPU error1 %d" format (status)) 
+    status = cudaMemcpy(ggrams.data.withByteOffset(1L*nrows*Sizeof.LONG), p2, 1L*nrows*Sizeof.LONG, cudaMemcpyHostToDevice)
+    if (status != 0) throw new RuntimeException("p4sortlexGPU error2 %d" format (status))
+    status = cudaMemcpy(ggrams.data.withByteOffset(1L*nrows*2*Sizeof.LONG), p3, 1L*nrows*Sizeof.LONG, cudaMemcpyHostToDevice)
+    if (status != 0) throw new RuntimeException("p4sortlexGPU error3 %d" format (status))
+    status = cudaMemcpy(ggrams.data.withByteOffset(1L*nrows*3*Sizeof.LONG), p4, 1L*nrows*Sizeof.LONG, cudaMemcpyHostToDevice)
+    if (status != 0) throw new RuntimeException("p4sortlexGPU error4 %d" format (status))
+    cudaDeviceSynchronize
+    val ggramst = ggrams.t
+    ggrams.free
+    CUMAT.l4sort(ggramst.data, nrows, if (asc) 1 else 0)
+    val ograms = ggramst.t
+    ggramst.free
+    status = cudaMemcpy(p1, ograms.data, 1L*nrows*Sizeof.LONG, cudaMemcpyDeviceToHost)
+    if (status != 0) throw new RuntimeException("p4sortlexGPU error5 %d" format (status)) 
+    status = cudaMemcpy(p2, ograms.data.withByteOffset(1L*nrows*Sizeof.LONG), 1L*nrows*Sizeof.LONG, cudaMemcpyDeviceToHost)
+    if (status != 0) throw new RuntimeException("p4sortlexGPU error6 %d" format (status)) 
+    status = cudaMemcpy(p3, ograms.data.withByteOffset(1L*nrows*2*Sizeof.LONG), 1L*nrows*Sizeof.LONG, cudaMemcpyDeviceToHost)
+    if (status != 0) throw new RuntimeException("p4sortlexGPU error7 %d" format (status)) 
+    status = cudaMemcpy(p4, ograms.data.withByteOffset(1L*nrows*3*Sizeof.LONG), 1L*nrows*Sizeof.LONG, cudaMemcpyDeviceToHost)
+    if (status != 0) throw new RuntimeException("p4sortlexGPU error8 %d" format (status)) 
+    ograms.free
+  }
+ 
+
   def sortLVec(keys:GLMat, asc:Int) = {
     CUMAT.lsort(keys.data, keys.length, asc)
   }

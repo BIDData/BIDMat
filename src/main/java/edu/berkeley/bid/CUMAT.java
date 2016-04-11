@@ -211,6 +211,12 @@ public final class CUMAT {
     
     public static native int lsort(Pointer A, int n, int asc);
     
+    public static native int l2sort(Pointer A, int n, int asc);
+    
+    public static native int l2sortk(Pointer A, Pointer B, int n, int asc);
+    
+    public static native int l4sort(Pointer A, int n, int asc);
+    
     public static native int isortk(Pointer A, Pointer B, int n, int asc);
     
     public static native int lsortk(Pointer A, Pointer B, int n, int asc);
