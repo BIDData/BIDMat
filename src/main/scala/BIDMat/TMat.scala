@@ -925,15 +925,20 @@ object TMat {
      omat
    }
   
-  def powerShape(headCount:Int, power:Float)(tailCount:Int, nfeats:Int):(Array[Int], Array[Int], Array[Int], Array[Int]) = {
-    powerShape(headCount, power, true)(tailCount, nfeats);
+  def powerShape(tailHeight:Float, power:Float)(headCount:Int, nfeats:Int):(Array[Int], Array[Int], Array[Int], Array[Int]) = {
+    powerShape(tailHeight, power, true)(headCount, nfeats);
   }
   
-  def powerShape(headCount:Int, power:Float, leftAlign:Boolean)(tailCount:Int, nfeats:Int):(Array[Int], Array[Int], Array[Int], Array[Int]) = {
+  def powerShape(tailHeight:Float)(headCount:Int, nfeats:Int):(Array[Int], Array[Int], Array[Int], Array[Int]) = {
+    powerShape(tailHeight, 1f, true)(headCount, nfeats);
+  }
+  
+  def powerShape(tailHeight:Float, power:Float, leftAlign:Boolean)(headCount:Int, nfeats:Int):(Array[Int], Array[Int], Array[Int], Array[Int]) = {
     var nblocks = 1;
-    var tc = tailCount;
+    var tc = tailHeight;
     while (tc < headCount) {
-      nblocks += 1;
+      val ymax = math.round(tc);
+      if (ymax > 0) nblocks += 1;
       tc *= 2;
     }
     val y = new Array[Int](nblocks);
@@ -943,19 +948,22 @@ object TMat {
     val ratio = math.pow(0.5, power);
     var xmax = nfeats;
     var ymin = 0;
-    var ymax = tailCount;
+    tc = tailHeight;
     var i = 0;
     while (i < nblocks) {
     	val newx = (xmax * ratio).toInt;
       val xmin = if (leftAlign) 0 else newx; 
-      x(i) = xmin;
-      y(i) = ymin;
-      w(i) = xmax - xmin;
-      h(i) = ymax - ymin;
+      val ymax = math.min(headCount, math.round(tc));
+      if (ymax > 0) {
+      	x(i) = xmin;
+      	y(i) = ymin;
+      	w(i) = xmax - xmin;
+      	h(i) = ymax - ymin;
+      	i += 1;
+      }
       xmax = newx;
       ymin = ymax;
-      ymax = math.min(headCount, ymax + ymax);
-      i += 1;
+      tc *= 2;
     }
     (y, x, h, w)
   }
