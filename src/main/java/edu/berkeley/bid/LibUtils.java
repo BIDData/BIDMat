@@ -30,6 +30,9 @@ package edu.berkeley.bid;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Enumeration;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.Locale;
 
 /**
@@ -170,6 +173,54 @@ public final class LibUtils
             throw new UnsatisfiedLinkError(
                 "Could not load the native library.\n"+
                 sw.toString());
+        }
+    }
+
+    // Move files from inside BIDMat.jar/lib to BIDMat_ROOT/lib
+    public static void unpackNatives() {
+	try {
+	final String path = "lib/";
+	final File jarFile = new File(LibUtils.class.getProtectionDomain().getCodeSource().getLocation().getPath());
+
+   	final JarFile jar = new JarFile(jarFile);
+    	final Enumeration<JarEntry> entries = jar.entries(); //gives ALL entries in jar
+    	while(entries.hasMoreElements()) {
+            final String name = entries.nextElement().getName();
+            if (name.startsWith(path)) { //filter according to the path
+		String baseName = new File(name).getName();
+		LibUtils.unpackLib(baseName);
+            }
+        }
+        jar.close();
+	} catch (Exception e) {
+		System.out.println(e.toString());
+	}
+    }
+
+    public static void unpackLib(String libName) { 
+	String resourceName = getResourceName(libName);
+        File externalLib = new File(System.getProperty("user.dir") + "/lib/" + libName);
+	if (externalLib.exists()) {
+		return;
+	}
+	try {
+	    File directory = new File(externalLib.getParentFile().getAbsolutePath());
+	    directory.mkdirs();
+            loadLibFromFile(resourceName, externalLib);
+        }
+        catch (Throwable t) {
+	    StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            
+            pw.println("Error while unpacking native library \"" +
+                    libName + "\"");
+            
+                pw.println(
+                    "Stack trace from the attempt to " +
+                    "load the library as a resource:");
+                t.printStackTrace(pw);
+            pw.flush();
+            pw.close();
         }
     }
     
@@ -395,7 +446,7 @@ public final class LibUtils
         {
             return ARCHType.SPARC;
         }
-        if (osArch.startsWith("arm") || osArch.startsWith("aarch"))
+        if (osArch.startsWith("arm"))
         {
             return ARCHType.ARM;
         }

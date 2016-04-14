@@ -1,0 +1,5 @@
+target/
+natives/
+lib/
+BIDMat.jar
+*.swp

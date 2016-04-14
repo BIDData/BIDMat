@@ -822,6 +822,7 @@ object Mat {
   def checkMKL:Unit = checkMKL(false)
   
   def checkMKL(verb:Boolean):Unit = {
+    edu.berkeley.bid.LibUtils.unpackNatives()
     if (verb) useMKL = true;
     if (useMKL) {
     	try {
@@ -830,7 +831,7 @@ object Mat {
     	} catch {
     	case th:Throwable => {
     		println("Cant find native CPU libraries")
-    		if (verb) print(th.getMessage)
+    		print(th.getMessage)
     		useMKL = false
     	}
     	}
