@@ -593,7 +593,8 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   
   def madd(b:Mat,c:TMat):TMat = madd(b,c,false,false)
 
-import BIDMat.IMatWildcard
+  import BIDMat.IMatWildcard
+ 
   def madd(b:Mat,c:TMat,at:Boolean,bt:Boolean):TMat = {
     /*val g=c.full()
     madd(b,g,at,bt)
