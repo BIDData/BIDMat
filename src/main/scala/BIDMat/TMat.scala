@@ -45,9 +45,9 @@ import jcuda.jcusparse._
 
 class TMat 
       ( nr: Int, 
-        nc: Int, 
-        val x : Array[Int], 
+        nc: Int,  
         val y : Array[Int], 
+        val x : Array[Int],
         val tiles : Array[Mat] ) extends Mat(nr, nc) {
 
   require(x.length == y.length, "x.length must equal y.length")
@@ -64,7 +64,7 @@ class TMat
   def tMatOpScalarF(b : Float, f : (Mat, Float) => Mat, oldmat:TMat) : TMat = {
     var i = 0
    
-    var out = TMat.newOrCheckTMat(nrows,ncols,x,y,tiles,oldmat)
+    var out = TMat.newOrCheckTMat(nrows,ncols,y,x,tiles,oldmat)
 
     while (i < tiles.length) {
       Mat.nflops += tiles(i).length
@@ -97,15 +97,15 @@ class TMat
    */
  
   def tOp(a : TMat, omat : Mat, op : (Mat,Mat) => Mat) : TMat = {
-    var (newTiles,newXInds,newYInds) = if (omat.asInstanceOf[AnyRef] == null)
+    var (newTiles,newYInds,newXInds) = if (omat.asInstanceOf[AnyRef] == null)
                                      {
                                        (Array.ofDim[Mat](tiles.length), 
                                         Array.ofDim[Int](tiles.length),
                                         Array.ofDim[Int](tiles.length))
                                      } else {
                                         (omat.asInstanceOf[TMat].tiles,
-                                         omat.asInstanceOf[TMat].x,
-                                         omat.asInstanceOf[TMat].y)
+                                         omat.asInstanceOf[TMat].y,
+                                         omat.asInstanceOf[TMat].x)
                                      }
    
     for (i <- 0 to (tiles.length-1)) {
@@ -114,7 +114,7 @@ class TMat
        newYInds(i) = y(i)      
     }
 
-    TMat(nr,nc,newXInds,newYInds,newTiles)
+    TMat(nr,nc,newYInds,newXInds,newTiles)
   }
 
   def tOp(a : Mat, omat : Mat, op : (Mat,Mat) => Mat) : Mat = {
@@ -136,7 +136,7 @@ class TMat
   def tMatOpF(aa : TMat, f : (Float, Float) => Float, oldmat:TMat) : TMat = {
   
     var i = 0
-    var out = TMat.newOrCheckTMat(nrows,ncols,x,y,tiles,oldmat)
+    var out = TMat.newOrCheckTMat(nrows,ncols,y,x,tiles,oldmat)
 
     while (i < tiles.length) {
       Mat.nflops += tiles(i).length
@@ -270,7 +270,7 @@ override def colslice(left:Int, right:Int, omat:Mat) : TMat = {
       i += 1
     }   
 
-    TMat.newOrCheckTMat(nrows, right-left, newXinds, newYinds, newTiles,null) // <-- note cache omitted
+    TMat.newOrCheckTMat(nrows, right-left, newYinds, newXinds, newTiles,null) // <-- note cache omitted
   } 
 
 /*
@@ -517,7 +517,7 @@ def tMultT(a:Mat, outmat:Mat) : Mat =  {
   }
   
   def op_tmat(t:TMat,o:TMat,op:Mop,op_num:Int) = {
-      var out = TMat.newOrCheckTMat(nrows,ncols,x,y,tiles,o,GUID,t.GUID,op_num)
+      var out = TMat.newOrCheckTMat(nrows,ncols,y,x,tiles,o,GUID,t.GUID,op_num)
         var i=0
         while (i<tiles.length){
             op.op(tiles(i),t.tiles(i),out.tiles(i))
@@ -527,7 +527,7 @@ def tMultT(a:Mat, outmat:Mat) : Mat =  {
   }
   
   def op_mat(t:Mat,o:TMat,op:Mop,op_num:Int) = {
-      var out = TMat.newOrCheckTMat(nrows,ncols,x,y,tiles,o,GUID,t.GUID,op_num)
+      var out = TMat.newOrCheckTMat(nrows,ncols,y,x,tiles,o,GUID,t.GUID,op_num)
       var i=0
       while (i<tiles.length){
             op.op(tiles(i),t,out.tiles(i))
@@ -553,8 +553,8 @@ def tMultT(a:Mat, outmat:Mat) : Mat =  {
       else
         TMat.zeros( nr,
                  nc,
-                 x,
                  y,
+                 x,
                  TMat.cloneTiles(tiles))
   }
 
@@ -563,8 +563,8 @@ def tMultT(a:Mat, outmat:Mat) : Mat =  {
       else
      TMat.ones ( nr,
                  nc,
-                 x,
                  y,
+                 x,
                  TMat.cloneTiles(tiles))
   }
   
@@ -729,17 +729,28 @@ object TMat {
   }
 
  def apply( nr:Int, 
-            nc:Int, 
-            xInds:Array[Int], 
+            nc:Int,  
             yInds:Array[Int], 
+            xInds:Array[Int],
             data:Array[Mat] ) = {
                 println("new",nr,nc)
-    new TMat(nr, nc, xInds, yInds, data)
+    new TMat(nr, nc, yInds, xInds, data)
             }
+ 
+ def apply( nr:Int, nc:Int, yInds:Array[Int], xInds:Array[Int], heights:Array[Int], widths:Array[Int], mm:Mat) = {
+   if (yInds.length != xInds.length || xInds.length != heights.length || heights.length != widths.length) {
+     throw new RuntimeException("TMat apply mismatched dimension array lengths")
+   }
+   val out = new TMat(nr, nc, yInds, xInds, new Array[Mat](yInds.length));
+   for (i <- 0 until yInds.length) {
+     out.tiles(i) = mm.zeros(heights(i), widths(i));
+   }
+   out;
+ }
 
   def TMatGPU ( tmat : TMat, omat : Mat ) : TMat = { 
    var i = 0
-   val out = newOrCheckTMat(tmat.nrows, tmat.ncols, tmat.x, tmat.y, tmat.tiles, omat);
+   val out = newOrCheckTMat(tmat.nrows, tmat.ncols, tmat.y, tmat.x, tmat.tiles, omat);
      
    while (i < tmat.tiles.length) {
     var tmp = tmat.tiles(i) match {
@@ -769,33 +780,33 @@ object TMat {
   *
   */ 
  def newOrCheckTMat( nr:Int, 
-                     nc:Int, 
-                     xInds: Array[Int], 
+                     nc:Int,  
                      yInds: Array[Int],
+                     xInds: Array[Int],
                      data: Array[Mat],
                      outmat:Mat ) : TMat = {
     if (outmat.asInstanceOf[AnyRef] == null || (outmat.nrows == 0 && outmat.ncols == 0)) {
-      TMat(nr, nc, xInds, yInds, cloneTiles(data)) 
+      TMat(nr, nc, yInds, xInds, cloneTiles(data)) 
     } else {
         outmat.asInstanceOf[TMat]
       }
   }
   
   def newOrCheckTMat( nr:Int, 
-                      nc:Int, 
-                      xInds: Array[Int], 
+                      nc:Int,  
                       yInds: Array[Int],
+                      xInds: Array[Int],
                       data: Array[Mat],
                       outmat:Mat, matGuid:Long, opHash:Int ) : TMat = {
     if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
-      newOrCheckTMat(nr, nc, xInds, yInds, data, outmat)
+      newOrCheckTMat(nr, nc, yInds, xInds, data, outmat)
     } else {
       val key = (matGuid, opHash)
       val res = Mat.cache2(key)
       if (res != null) {
-      	newOrCheckTMat(nr, nc, xInds, yInds,data,res)
+      	newOrCheckTMat(nr, nc, yInds, xInds, data,res)
       } else {
-        val omat = newOrCheckTMat(nr, nc, xInds, yInds, data, null)
+        val omat = newOrCheckTMat(nr, nc, yInds, xInds, data, null)
         Mat.cache2put(key, omat)
         omat
       }
@@ -804,19 +815,19 @@ object TMat {
   
   def newOrCheckTMat( nr:Int, 
                       nc:Int, 
-                      xInds: Array[Int],
                       yInds: Array[Int],
+                      xInds: Array[Int],
                       data: Array[Mat],
                       outmat:Mat, guid1:Long, guid2:Long, opHash:Int) : TMat = {
     if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
-      newOrCheckTMat(nr, nc, xInds, yInds, data, outmat)
+      newOrCheckTMat(nr, nc, yInds, xInds, data, outmat)
     } else {
       val key = (guid1, guid2, opHash)
       val res = Mat.cache3(key)
       if (res != null) {
-      	newOrCheckTMat(nr, nc, xInds, yInds, data, Mat.cache3(key))
+      	newOrCheckTMat(nr, nc, yInds, xInds, data, Mat.cache3(key))
       } else {
-        val omat = newOrCheckTMat(nr, nc, xInds, yInds, data, null)
+        val omat = newOrCheckTMat(nr, nc, yInds, xInds, data, null)
         Mat.cache3put(key, omat)
         omat
       }
@@ -825,19 +836,19 @@ object TMat {
    
   def newOrCheckTMat( nr:Int, 
                       nc:Int, 
-                      xInds: Array[Int],
                       yInds: Array[Int],
+                      xInds: Array[Int],
                       data: Array[Mat],
                       outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):TMat = {
     if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
-      newOrCheckTMat(nr, nc, xInds, yInds, data, outmat)
+      newOrCheckTMat(nr, nc, yInds, xInds, data, outmat)
     } else {
       val key = (guid1, guid2, guid3, opHash)
       val res = Mat.cache4(key)
       if (res != null) {
-      	newOrCheckTMat(nr, nc, xInds, yInds, data, Mat.cache4(key))
+      	newOrCheckTMat(nr, nc, yInds, xInds, data, Mat.cache4(key))
       } else {
-        val omat = newOrCheckTMat(nr, nc, xInds, yInds, data, null)
+        val omat = newOrCheckTMat(nr, nc, yInds, xInds, data, null)
         Mat.cache4put(key, omat)
         omat
       }
@@ -846,8 +857,8 @@ object TMat {
 
   def zeros ( nr: Int,
               nc: Int,
-              xInds: Array[Int],
               yInds: Array[Int],
+              xInds: Array[Int],
               data: Array[Mat] ) = {
 
     var i = 0
@@ -856,13 +867,13 @@ object TMat {
       i += 1
     }
 
-    new TMat( nr, nc, xInds, yInds, data)
+    new TMat( nr, nc, yInds, xInds, data)
   }
 
   def ones (  nr: Int,
               nc: Int,
-              xInds: Array[Int],
               yInds: Array[Int],
+              xInds: Array[Int],
               data: Array[Mat] ) = {
 
     var i = 0
@@ -871,7 +882,7 @@ object TMat {
       i += 1
     }
 
-    new TMat( nr, nc, xInds, yInds, data)
+    new TMat( nr, nc, yInds, xInds, data)
   }
 
 
@@ -913,4 +924,39 @@ object TMat {
      }
      omat
    }
+  
+  def powerShape(headCount:Int, power:Float)(tailCount:Int, nfeats:Int):(Array[Int], Array[Int], Array[Int], Array[Int]) = {
+    powerShape(headCount, power, true)(tailCount, nfeats);
+  }
+  
+  def powerShape(headCount:Int, power:Float, leftAlign:Boolean)(tailCount:Int, nfeats:Int):(Array[Int], Array[Int], Array[Int], Array[Int]) = {
+    var nblocks = 1;
+    var tc = tailCount;
+    while (tc < headCount) {
+      nblocks += 1;
+      tc *= 2;
+    }
+    val y = new Array[Int](nblocks);
+    val x = new Array[Int](nblocks);
+    val h = new Array[Int](nblocks);
+    val w = new Array[Int](nblocks);
+    val ratio = math.pow(0.5, power);
+    var xmax = nfeats;
+    var ymin = 0;
+    var ymax = tailCount;
+    var i = 0;
+    while (i < nblocks) {
+    	val newx = (xmax * ratio).toInt;
+      val xmin = if (leftAlign) 0 else newx; 
+      x(i) = xmin;
+      y(i) = ymin;
+      w(i) = xmax - xmin;
+      h(i) = ymax - ymin;
+      xmax = newx;
+      ymin = ymax;
+      ymax = math.min(headCount, ymax + ymax);
+      i += 1;
+    }
+    (y, x, h, w)
+  }
 }

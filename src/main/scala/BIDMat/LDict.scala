@@ -3,6 +3,9 @@ import scala.collection.mutable.{Map,SynchronizedMap,HashMap}
 import MatFunctions._
 import edu.berkeley.bid.CUMAT
 
+/**
+ * Note: this is still alpha code. Needs native code infill for long sort routines. 
+ */
 
 class LDict(val grams:LMat) extends Serializable {
 
