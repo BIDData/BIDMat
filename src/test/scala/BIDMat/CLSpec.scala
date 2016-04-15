@@ -4,7 +4,7 @@ abstract class CLSpec extends BIDMatSpec {
   
   override def beforeAll {
     Mat.useOpenCL = true
-    Mat.checkOpenCL()
+    Mat.checkOpenCL(true)
   }
 
   override def afterAll {

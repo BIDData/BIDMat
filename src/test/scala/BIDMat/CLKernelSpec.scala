@@ -1,49 +1,24 @@
 package BIDMat
 
-import org.jocl.CL._
-import org.jocl.{Pointer, Sizeof}
-import org.scalatest._
 import resource.managed
+
+import SciFunctions.rand
 
 class CLKernelSpec extends CLSpec {
 
   "A CLKernel" should "run with some parameters attached" in {
     val kernel = CLKernelCache.get(Mat.clQueue, "test_program.cl", "matrixAdd")
-    val dim = 4
-    val n = dim * dim
-    val a = 123
-    val A, B, C = Array.ofDim[Float](n)
-    val rng = new scala.util.Random
-    for (i <- 0 until n) {
-      A(i) = rng.nextFloat
-      B(i) = rng.nextFloat
-    }
-
-    // wrap the cl_mem's so they're properly freed when we finish using them
+    val n = 4
+    val a = rand(n, n)
+    val b = rand(n, n)
+    val c = a + b
     for {
-      A_buf <- managed(clCreateBuffer(Mat.clContext,
-        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-        Sizeof.cl_float * n,
-        Pointer.to(A),
-        null))
-      B_buf <- managed(clCreateBuffer(Mat.clContext,
-        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-        Sizeof.cl_float * n,
-        Pointer.to(B),
-        null))
-      C_buf <- managed(clCreateBuffer(Mat.clContext,
-        CL_MEM_READ_WRITE,
-        Sizeof.cl_float * n,
-        null,
-        null))
+      a_ <- managed(CLMat(a))
+      b_ <- managed(CLMat(b))
+      c_ <- managed(CLMat(n, n))
     } {
-      kernel(A_buf, B_buf, C_buf, a).run(Mat.clQueue, NDRange(n))
-      clEnqueueReadBuffer(Mat.clQueue, C_buf, CL_TRUE, 0, Sizeof.cl_float * n, Pointer.to(C), 0, null, null)
-    }
-
-    val expected = A zip(B) map { p => p._1 + p._2 + a }
-    C zip(expected) foreach {
-      case(x, y) => x should be (y +- 1e-5f)
+      kernel(a_, b_, c_, 0).run(Mat.clQueue, NDRange(n * n))
+      assert_approx_eq(FMat(c_).data, c.data)
     }
   }
 

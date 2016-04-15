@@ -963,11 +963,16 @@ object Mat {
     if (hasOpenCL) {
       val platforms = getCLPlatforms()
       val platform = platforms(0)
-      val gpus = getCLDevices(platform, org.jocl.CL.CL_DEVICE_TYPE_GPU)
-      //val gpus = getCLDevices(platform, org.jocl.CL.CL_DEVICE_TYPE_CPU)
-      numOpenCLGPUs = gpus.length
-      clContext = createCLContext(platform, gpus)
-      clQueue = createCLQueue(clContext, gpus(0))
+      // Query for available GPUs first, then check CPUs
+      val devices = try {
+        getCLDevices(platform, org.jocl.CL.CL_DEVICE_TYPE_GPU)
+      } catch {
+        case err:org.jocl.CLException => {
+          getCLDevices(platform, org.jocl.CL.CL_DEVICE_TYPE_CPU)
+        }
+      }
+      clContext = createCLContext(platform, devices)
+      clQueue = createCLQueue(clContext, devices(0))
       clResourcesFreed = false
 
       // Make sure to clean up before shutdown
