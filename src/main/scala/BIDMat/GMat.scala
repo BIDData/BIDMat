@@ -591,10 +591,56 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     }
   }
   
+  def madd(b:Mat,c:TMat):TMat = madd(b,c,false,false)
+
+  import BIDMat.IMatWildcard
+ 
+  def madd(b:Mat,c:TMat,at:Boolean,bt:Boolean):TMat = {
+    /*val g=c.full()
+    madd(b,g,at,bt)
+    c<--g*/
+    at match {
+        case false=>{
+            var i=0
+            while(i<c.tiles.length){
+                Mat.nflops += 2L * c.tiles(i).length * ncols;
+                if (bt)
+                    tileMultT(c.tiles(i).nrows,c.tiles(i).ncols,ncols,c.y(i),0,b,c.x(i),0,c.tiles(i),0,0)
+                else
+                    tileMult(c.tiles(i).nrows,c.tiles(i).ncols,ncols,c.y(i),0,b,0,c.x(i),c.tiles(i),0,0)
+                i+=1
+            }
+        }
+        case _=>{
+            throw new RuntimeException("madd unsupported options Mat, TMat %b %b" format (at, bt));    
+        }
+    }
+    
+    /*import BIDMat.SciFunctions._
+    println("in",GPUmem._1)
+    b match {
+            case gss:GSMat=>
+                val gs = if (bt) gss.t else gss
+                println("in2",GPUmem._1)
+                var i=0
+                while(i<c.tiles.length){
+                    val aa = this(MatFunctions.irow(c.y(i) to c.y(i)+c.tiles(i).nrows-1),new BIDMat.IMatWildcard)
+                println("in3",i,GPUmem._1)
+                    aa.madd(gs.colslice(c.x(i),c.x(i)+c.tiles(i).ncols),c.tiles(i))
+                println("in4",i,GPUmem._1)
+                    i+=1
+                }
+            //case g:GMat=>{
+            //}
+        }*/
+    c
+  }
+  
   override def madd(b:Mat, c:Mat, at:Boolean, bt:Boolean):Mat = {
   	(b, c) match {
   	case (bb:GMat, cc:GMat) => madd(bb, cc, at, bt);
   	case (bb:GSMat, cc:GMat) => madd(bb, cc, at, bt);
+  	case (bb:Mat,cc:TMat) => madd(bb,cc,at,bt)
   	case _ => throw new RuntimeException("madd unsupported types %s %s" format (b.mytype, c.mytype));
   	}
   	c
@@ -901,6 +947,15 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     a
   }
   
+  def copyTo(t:TMat):TMat = {
+    var i = 0
+    while (i < t.tiles.length) {
+        applyx(GIMat(MatFunctions.irow(t.y(i) until t.y(i)+t.tiles(i).nrows)),GIMat(MatFunctions.irow(t.x(i) until t.x(i)+t.tiles(i).ncols)),t.tiles(i))
+        i+=1
+    }
+    t
+  }
+  
   def copyFrom(in:FMat):GMat = {
       if (nrows != in.nrows || ncols != in.ncols) throw new RuntimeException("dimensions mismatch in FMat copyFrom (%d, %d) and (%d, %d)" format (nrows, ncols, in.nrows, in.ncols));
   
@@ -933,6 +988,7 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
       case a:FMat => copyTo(a)
       case a:GMat => copyTo(a)
       case a:GIMat => copyTo(a)
+      case a:TMat => copyTo(a)
     }
   }
   
@@ -1428,6 +1484,7 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   def ~ (b: GMat) = new GPair(this, b)
   def ~ (b: GSMat) = new GSPair(this, b)
   override def ~ (b: Mat):Pair = b match {
+    case t:TMat => new GTPair(this,t)
     case bb:GMat => new GPair(this, bb)
     case bb:GSMat => new GSPair(this, bb)
   }
@@ -1441,6 +1498,13 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   override def ^* (b0 : DSPair) = {val b = b0.asInstanceOf[GDSPair]; MatFunctions.DDS(this, b.left, b.right, null)}
   override def Tx (b0 : DSPair) = {val b = b0.asInstanceOf[GDSPair]; MatFunctions.DDS(this, b.left, b.right, null)}
 
+}
+
+class GTPair(val omat:GMat,val mat:TMat) extends Pair {
+    override def * (a:Mat) = a match {
+        case g:GMat => mat.tMult(g,omat)
+        case g:GSMat => mat.tMult(g,omat)
+    }
 }
 
 /*

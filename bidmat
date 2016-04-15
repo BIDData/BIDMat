@@ -4,7 +4,7 @@
 # Fix these if needed
 BLAS_ROOT="/code/QSML"
 JCUDA_VERSION="0.7.0a"
-MEMSIZE="-Xmx1G"
+MEMSIZE="-Xmx12G"
 export JAVA_OPTS="${MEMSIZE} -Xms128M -Dfile.encoding=UTF-8" # Set as much memory as possible
 BIDMAT_ROOT="${BASH_SOURCE[0]}"
 if [ ! `uname` = "Darwin" ]; then
@@ -58,9 +58,7 @@ else
     ALL_LIBS=`echo "${ALL_LIBS}" | sed 's/;/:/g'`
     DJAVA_NATIVE="-Djava.library.path=${JAVA_NATIVE}"
 fi
-if [ ! `uname` = "Darwin" ]; then
-    export JAVA_OPTS="${DJAVA_NATIVE} ${JAVA_OPTS}"
-fi
+export JAVA_OPTS="${DJAVA_NATIVE} ${JAVA_OPTS}"
 
 if [ "$1" = "notebook" ]; then
     shift 1

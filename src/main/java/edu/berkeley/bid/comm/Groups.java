@@ -9,14 +9,44 @@ public class Groups {
 	public int [][] posInGroups;
 	public int [][][] nbrs;
 	public int [][] groupSizes;
-	public int [] machines;
+	public int [] machineCodes;
 	public int [] perm;
   public int [] invperm;
 	public int [] gmods;
 	public int gprod;
 	public int D;
 	public float initg;
-	public boolean trace;
+	public int trace;
+	
+	public Groups(int N0, float initg0) {
+		N = N0;
+		initg = initg0;
+		trace = 0;
+		getGroupSizes(N);			
+	}
+	
+	public Groups(int N0, float initg0, int [] machineCodes0, int seed) {
+		N = N0;
+		initg = initg0;
+		machineCodes = machineCodes0;
+		trace = 0;
+		getGroupSizes(N);	
+		createPerm(seed);
+		assignGroups();
+	}
+	
+	public Groups(int N0, int [] gmods0, int [] machineCodes0, int seed) {
+		N = N0;
+		machineCodes = machineCodes0;
+		trace = 0;
+		gmods = gmods0;
+		D = gmods0.length;
+		gprod = 1;
+		for (int i = 0; i < D; i++) gprod *= gmods[i];
+		createPerm(seed);
+		assignGroups();
+	}
+
 	
 	static private void permuteArray(int [] arr, int n, int seed) {
 		Random gen = new Random(seed);
@@ -30,10 +60,14 @@ public class Groups {
 			arr[iswap] = tmp;
 		}
 	}
-			
-	private void permute(int seed) {
+	
+	private void createPerm(int seed) {
 		perm = new int[N];
 		invperm = new int[N];
+		permute(seed);
+	}
+			
+	public void permute(int seed) {
 		permuteArray(perm, N, seed);
 		for (int i = 0; i < N; i++) {
 			invperm[perm[i]] = i;
@@ -86,7 +120,7 @@ public class Groups {
 			int []groupPos = new int[numgroups];
 
 			for (int i = 0; i < N; i++) {
-				int ii = machines[i];
+				int ii = machineCodes[i];
 				int left = ii / (pprod * gmods[d]);
 				int right = ii % pprod;
 				int gnum = right + pprod * left;
@@ -169,17 +203,17 @@ public class Groups {
 	
 	public int [] optimize(int howlong, double prob) {
 		getGroupSizes(N);
-		machines = new int[gprod];
+		machineCodes = new int[gprod];
 		groupSizes = new int[D][];
 		groupIds = new int[gprod][];
-		permuteArray(machines, gprod, 1000);
+		permuteArray(machineCodes, gprod, 1000);
 		double sumv = 0;
 		for (int d = 0; d < D; d++) {
 			groupSizes[d] = new int[gprod/gmods[d]];
 		}
 		for (int i = 0; i < gprod; i++) {
 			groupIds[i] = new int[D];
-			int ii = machines[i];
+			int ii = machineCodes[i];
 			int pprod = 1;
 			for (int d = 0; d < D; d++) {
 				int left = ii / (pprod * gmods[d]);
@@ -222,15 +256,15 @@ public class Groups {
 					groupSizes[d][gj]++;
 				}
 				
-				int mm = machines[i];
-				machines[i] = machines[j];
-				machines[j] = mm;
+				int mm = machineCodes[i];
+				machineCodes[i] = machineCodes[j];
+				machineCodes[j] = mm;
 				
 				int [] vv = groupIds[i];
 				groupIds[i] = groupIds[j];
 				groupIds[j] = vv;	
 				
-				if (trace) {		
+				if (trace > 0) {		
 					System.out.format("sumv = %4.3f, ",testsumv);
 					System.out.print("min=[");
 					printArray(minSizes());
@@ -242,36 +276,7 @@ public class Groups {
 			}
 		}		
 		
-		return machines;
-	}
-
-	public Groups(int N0, float initg0) {
-		N = N0;
-		initg = initg0;
-		trace = false;
-		getGroupSizes(N);			
-	}
-	
-	public Groups(int N0, float initg0, int [] machines0, int seed) {
-		N = N0;
-		initg = initg0;
-		machines = machines0;
-		trace = false;
-		getGroupSizes(N);	
-		permute(seed);
-		assignGroups();
-	}
-	
-	public Groups(int N0, int [] machines0, int [] gmods0, int seed) {
-		N = N0;
-		machines = machines0;
-		trace = false;
-		gmods = gmods0;
-		D = gmods0.length;
-		gprod = 1;
-		for (int i = 0; i < D; i++) gprod *= gmods[i];
-		permute(seed);
-		assignGroups();
+		return machineCodes;
 	}
 
 	public int groupId(int imachine, int level) {

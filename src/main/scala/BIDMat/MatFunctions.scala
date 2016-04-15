@@ -831,6 +831,32 @@ object MatFunctions {
   	}
   }
   
+  def sortlexInds(mat:LMat, inds:IMat) = _sortlexInds(mat, inds, true) 
+  
+  def _sortlexInds(mat:LMat, inds:IMat, asc:Boolean) {
+  	if (if (Mat.useGPUsort && Mat.hasCUDA > 0) {
+  		val (dmy, freebytes, allbytes) = SciFunctions.GPUmem
+  		if ((mat.length+inds.length)*12L < freebytes) {
+  		  if (mat.ncols == 1) {
+  				GLMat.isortlexIndsGPU(mat, inds, asc)
+  				false
+  			} else if (mat.ncols == 2) {
+  				GLMat.i2sortlexIndsGPU(mat, inds, asc)
+  				false
+  			} else if (mat.ncols == 3) {
+  				GLMat.i3sortlexIndsGPU(mat, inds, asc)
+  				false
+  			} else true
+  		} else true
+  	} else true) {
+  		val perm = LMat.isortlex(mat, asc) 
+  		val indsp = inds(perm)
+  		inds <-- indsp
+  		val matp = mat(perm, ?)
+  		mat <-- matp
+  	}
+  }
+  
   /**
    * Lexicographic sort of a matrix '''mat'''. Side-effects '''mat'''.
    */
@@ -907,6 +933,14 @@ object MatFunctions {
      
   /** Copies row '''i''' from '''a''' into row '''j''' of '''b'''. */
   def copyrow(a:IMat, i:Int, b:IMat, j:Int) = {
+    var k = 0 
+    while (k < a.ncols) {
+      b.data(j + k*b.nrows) = a.data(i + k*a.nrows)
+      k += 1
+    }
+  }
+  
+  def copyrow(a:LMat, i:Int, b:LMat, j:Int) = {
     var k = 0 
     while (k < a.ncols) {
       b.data(j + k*b.nrows) = a.data(i + k*a.nrows)
@@ -1454,6 +1488,7 @@ object MatFunctions {
     case aa:GSDMat => aa.full:GDMat
     case aa:GMat => a
     case aa:GDMat => a
+    case aa:TMat => aa.full
   }
   
   def DDShelper(a:FMat, b:FMat, c:SMat, out:SMat, istart:Int, iend:Int, ioff:Int) = {
