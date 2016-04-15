@@ -25,11 +25,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
 USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *****************************************************************************/
 
-// #include <omatcopy.h>
-
 #include <cblas.h>
-
-// #include "common.h"
 
 /*****************************************************
  * 2014/06/09 Saar
@@ -38,7 +34,6 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * No Trans
  *
 ******************************************************/
-
 
 int cblas_domatcopy (CBLAS_ORDER corder, CBLAS_TRANSPOSE ctrans, qsml_long rows, qsml_long cols, double alpha, double *a, qsml_long lda, double *b, qsml_long ldb){
 	if (corder == CblasRowMajor && ctrans == CblasTrans) {
@@ -241,25 +236,6 @@ int somatcopy_cn(qsml_long rows, qsml_long cols, float alpha, float *a, qsml_lon
 
 	return(0);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 int domatcopy_rn(qsml_long rows, qsml_long cols, double alpha, double *a, qsml_long lda, double *b, qsml_long ldb)
 {

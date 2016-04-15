@@ -1,0 +1,5 @@
+Makefile.incl
+*.so
+*.dylib
+*.dll
+*.o
