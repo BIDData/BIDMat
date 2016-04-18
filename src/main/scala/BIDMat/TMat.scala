@@ -490,8 +490,10 @@ def tMultT(a:Mat, outmat:Mat) : Mat =  {
     }
 
     var i = 0
+    out.clear
     while (i < tiles.length) {
-       tmp <-- SciFunctions.sum(tiles(i),n)    // should pass tmp as "oldmat" here, I think, for caching
+       //tmp <-- SciFunctions.sum(tiles(i),n)    // should pass tmp as "oldmat" here, I think, for caching
+       SciFunctions.sum(tiles(i),n,tmp) 
        // println("tiles(i): " + tiles(i))
        // println("tmp: " + tmp)
 
@@ -530,7 +532,7 @@ def tMultT(a:Mat, outmat:Mat) : Mat =  {
       var out = TMat.newOrCheckTMat(nrows,ncols,y,x,tiles,o,GUID,t.GUID,op_num)
       var i=0
       while (i<tiles.length){
-            op.op(tiles(i),t,out.tiles(i))
+            op.op(tiles(i),t(MatFunctions.irow(y(i) to (y(i)+tiles(i).nrows-1)),MatFunctions.irow(x(i)to(x(i)+tiles(i).ncols-1))),out.tiles(i))
             i+=1
         }  
       out
@@ -670,7 +672,8 @@ def tMultT(a:Mat, outmat:Mat) : Mat =  {
 
 
   override def ^ (a : Mat) = op(a,null,Mop_Pow,op_pow)//tOp(a, null, (x:Mat,y:Mat) => x^y) 
-  override def + (a : Mat) = op(a,null,Mop_Plus,op_add)//tOp(a, null, (x:Mat,y:Mat) => x^y) 
+  override def + (a : Mat) = op(a,null,Mop_Plus,op_add)//tOp(a, null, (x:Mat,y:Mat) => x+y) 
+  override def - (a : Mat) = op(a,null,Mop_Minus,op_sub)//tOp(a, null, (x:Mat,y:Mat) => x-y) 
 }
 
 class TPair(val omat:Mat, val mat:TMat) extends Pair {
