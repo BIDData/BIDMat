@@ -589,7 +589,10 @@ __global__ void __reduce1op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE init
       v = op(v, A[i + icol * nrows]);								    \
     }												    \
     for (int i = 1; i < blockDim.x; i *= 2) {							    \
-      v = op(v, __shfl_down(v, i));								    \
+      ATYPE vtmp = __shfl_down(v, i);                                     \
+      if (threadIdx.x + i < blockDim.x) {                                \
+        v = op(v, vtmp);								    \
+      }                                                   \
     }												    \
     if (threadIdx.x == 0) {									    \
       B[icol] = v;										    \
@@ -602,13 +605,14 @@ __global__ void __reduce1op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE init
   __shared__ ATYPE parts[32][33];								    \
   OPTYPE op = OPARRAY[opn];									    \
   ATYPE v;											    \
-  for (int icol = threadIdx.y + blockIdx.y * blockDim.y; icol < ncols; icol += blockDim.y * gridDim.x) { \
+  for (int icol = threadIdx.y + blockIdx.x * blockDim.y; icol < ncols; icol += blockDim.y * gridDim.x) { \
     v = initval;										    \
     if (threadIdx.x < nrows) v = A[threadIdx.x + icol * nrows];					    \
     for (int irow = threadIdx.x + blockDim.x; irow < nrows; irow += blockDim.x) {		    \
       v = op(v, A[irow + icol * nrows]);							    \
     }												    \
     parts[threadIdx.x][threadIdx.y] = v;							    \
+    __syncthreads();										    \
     for (int i = 1; i < blockDim.x; i *= 2) {							    \
       if (i + threadIdx.x < blockDim.x) {							    \
         parts[threadIdx.x][threadIdx.y] = op(parts[threadIdx.x][threadIdx.y], parts[i + threadIdx.x][threadIdx.y]); \
@@ -634,7 +638,7 @@ GENREDUCE1OPX(int,ioptype,ioperators)
 #endif
 
 GENREDUCE1OPX(long long,loptype,loperators)
-GENREDUCE1OPX(double,loptype,loperators)
+GENREDUCE1OPX(double,doptype,doperators)
 
 template<typename T>
 void reducevec(int n, T *A, T *B, int opn) {
