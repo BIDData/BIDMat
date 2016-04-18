@@ -905,6 +905,8 @@ object SciFunctions {
       case (aa:IMat, bb:IMat) => min(aa, bb, c):IMat
       case (aa:LMat, bb:LMat) => min(aa, bb, c):LMat
       case (aa:DMat, bb:DMat) => min(aa, bb, c):DMat
+      case (aa:DMat, bb:FMat) => min(aa, DMat(bb), c):DMat
+      case (aa:FMat, bb:DMat) => min(DMat(aa), bb, c):DMat
       case (aa:GMat, bb:GMat) => min(aa, bb, c):GMat
       case (aa:GIMat, bb:GIMat) => min(aa, bb, c):GIMat
       case (aa:GLMat, bb:GLMat) => min(aa, bb, c):GLMat

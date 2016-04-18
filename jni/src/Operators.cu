@@ -706,12 +706,13 @@ __global__ void __reducebin1op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE *
   __shared__ ATYPE parts[32][33];								    \
   OPTYPE opbf = OPARRAY[opb];									    \
   OPTYPE oprf = OPARRAY[opr];									    \
-  for (int icol = threadIdx.y + blockIdx.y * blockDim.y; icol < ncols; icol += blockDim.y * gridDim.x) { \
+  for (int icol = threadIdx.y + blockIdx.x * blockDim.y; icol < ncols; icol += blockDim.y * gridDim.x) { \
     ATYPE v = 0;										    \
     for (int irow = threadIdx.x; irow < nrows; irow += blockDim.x) {				    \
       v = oprf(v, opbf(A[irow + icol * nrows], B[irow + icol * nrows]));			    \
     }												    \
     parts[threadIdx.x][threadIdx.y] = v;							    \
+    __syncthreads();										    \
     for (int i = 1; i < blockDim.x; i *= 2) {							    \
       if (i + threadIdx.x < blockDim.x) {							    \
         parts[threadIdx.x][threadIdx.y] = oprf(parts[threadIdx.x][threadIdx.y], parts[i + threadIdx.x][threadIdx.y]); \
