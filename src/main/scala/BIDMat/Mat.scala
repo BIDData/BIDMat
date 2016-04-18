@@ -33,6 +33,10 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
     throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and Float")
   }
   
+  def notImplemented2(s:String,that:Int):Mat = { 
+    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and Int")
+  }
+  
   def notImplemented2(s:String,that:Double):Mat = { 
     throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and Double")
   }
