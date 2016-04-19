@@ -630,7 +630,11 @@ object Mat {
   var recycleGrow = 1.2            // For caching, amount to grow re-allocated matrices
   
   var hasCUDA = 0                  // Number of available CUDA GPUs
-  
+ 
+  var cudaDeviceIndexMap = HashMap.empty[Int, Int] // from logical index to physical index
+
+  var cudaDeviceInverseIndexMap = HashMap.empty[Int, Int] // from physical index to logical index
+ 
   var useBLAS = true;
     
   var useMKL = true;               // Use MKL libs
@@ -854,7 +858,11 @@ object Mat {
   
   def checkCUDA:Unit = checkCUDA(false);
 
-  def checkCUDA(verbose:Boolean):Unit = {
+  def checkCUDA(verbose:Boolean):Unit = checkCUDA(verbose, -1);
+
+  def checkCUDA(numGPUs: Int):Unit = checkCUDA(false, numGPUs);
+
+  def checkCUDA(verbose:Boolean, numGPUs: Int):Unit = {
   		if (hasCUDA == 0) {
   			val os = System.getProperty("os.name");
   			try {
@@ -901,8 +909,7 @@ object Mat {
   		if (hasCUDA >= 0) {
   			try {
   				var cudanum = new Array[Int](1);
-  				jcuda.runtime.JCuda.cudaGetDeviceCount(cudanum);
-  				hasCUDA = cudanum(0);
+				findGPUs(numGPUs)
   				printf("%d CUDA device%s found", hasCUDA, if (hasCUDA == 1) "" else "s");
   				if (hasCUDA > 0) {
   					jcuda.runtime.JCuda.cudaRuntimeGetVersion(cudanum);
@@ -924,6 +931,28 @@ object Mat {
   			}
   			SciFunctions.initCUDArngs
   		}
+  }
+
+  def findGPUs(numGPUs: Int): Unit = {
+    val cudanum = new Array[Int](1);
+    jcuda.runtime.JCuda.cudaGetDeviceCount(cudanum);
+    val minNumGPUs = if (numGPUs < -1) cudanum(0) else Math.min(numGPUs, cudanum(0))
+    var i = 0
+    var j = 0
+    var continue = true
+    val ptr: jcuda.Pointer = new jcuda.Pointer()
+    while(continue) {
+      if ((jcuda.runtime.cudaError.cudaSuccess == jcuda.runtime.JCuda.cudaSetDevice(j)) &&
+          (jcuda.runtime.cudaError.cudaSuccess == jcuda.runtime.JCuda.cudaFree(ptr))) {
+        cudaDeviceIndexMap += (i -> j)
+        cudaDeviceInverseIndexMap += (j -> i)
+        println("Map logical device #" + i + " --> physical device #" + j)
+        i += 1
+      }
+      j += 1
+      if ((j >= cudanum(0)) || (i >= minNumGPUs)) continue = false
+    }
+    hasCUDA = i
   }
 
   def copyToIntArray[@specialized(Double, Float, Long, Byte, Short) T](data:Array[T], i0:Int, idata:Array[Int], d0:Int, n:Int)
