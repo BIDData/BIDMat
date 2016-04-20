@@ -2,14 +2,14 @@ import BIDMat.TMat
 
 def testTMatmadd(){
     val b=TMat(4,4,Array(1,2),Array(0,3),Array(GMat(FMat(2,3,Array(1,2,3,4,5,6))),GMat(FMat(2,1,Array(7,8)))));
-    println(full(b))
+    //println(full(b))
     val c=grand(5,4);
     val d=c.zeros(4,5);
     b.madd(c,d,true,true);
     val bb=full(b);
     val dd=c.zeros(4,5)
     bb.madd(c,dd,true,true)
-    println(sum(sum(d-dd)))
+    println("Should print 0:  %.5f" format sum(sum(d-dd)).dv)
 }
 
 def testGMatmadd(){
@@ -20,10 +20,10 @@ def testGMatmadd(){
     bb<--full(b)
     c.madd(d,b,false,false)
     c.madd(d,bb,false,false)
+    println("The overlapping non-zero values of the following two mats should be the same")
     println(bb)
     println(full(b))
-    //println(b-bb)
-    //println(sum(sum(full(b)-bb)))
+    println("Should print 0:  %.5f" format sum(sum(full(b-bb))).dv)
 }
 
 testTMatmadd()
