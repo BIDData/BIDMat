@@ -423,7 +423,7 @@ def tMultT(a:Mat, outmat:Mat) : Mat =  {
                           if (!Mat.useMKL) {
                             out  // not sure
               		  } else {
-                            m.tileMultT(m.nrows, a.ncols, m.ncols, 0, 0, a, 0, x(i), out, y(i), 0); 
+                            m.tileMultT(m.nrows, a.nrows, m.ncols, 0, 0, a, 0, x(i), out, y(i), 0); 
         	          }
                         i+= 1			 
   	             }
@@ -443,7 +443,7 @@ def tMultT(a:Mat, outmat:Mat) : Mat =  {
                           if (!Mat.useMKL) {
                             out  // not sure
               		  } else {
-                            m.tileMultT(m.nrows, a.ncols, m.ncols, 0, 0, a, 0, x(i), out, y(i), 0); 
+                            m.tileMultT(m.nrows, a.nrows, m.ncols, 0, 0, a, 0, x(i), out, y(i), 0); 
         	          }
                         i+= 1			 
   	             }
@@ -736,7 +736,7 @@ object TMat {
             yInds:Array[Int], 
             xInds:Array[Int],
             data:Array[Mat] ) = {
-                println("new",nr,nc)
+                //println("new",nr,nc)
     new TMat(nr, nc, yInds, xInds, data)
             }
  
