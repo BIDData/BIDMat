@@ -956,6 +956,18 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     t
   }
   
+  def tileCopy(fromrow:Int, fromcol:Int, to:GMat, torow:Int, tocol:Int, height:Int, width:Int):GMat = {
+    val toindx = torow + tocol * to.nrows;
+    val fromindx = fromrow + fromcol * nrows;
+    cudaMemcpy2D(to.data.withByteOffset(toindx * Sizeof.FLOAT), to.nrows*Sizeof.FLOAT, data.withByteOffset(fromindx * Sizeof.FLOAT), nrows*Sizeof.FLOAT,
+        height*Sizeof.FLOAT, width, cudaMemcpyKind.cudaMemcpyDeviceToDevice);  
+    to
+  }
+  
+  override def tileCopy(fromrow:Int, fromcol:Int, to:Mat, torow:Int, tocol:Int, height:Int, width:Int):Mat = {
+    tileCopy(fromrow, fromcol, to.asInstanceOf[GMat], torow, tocol, height, width);
+  }
+  
   def copyFrom(in:FMat):GMat = {
       if (nrows != in.nrows || ncols != in.ncols) throw new RuntimeException("dimensions mismatch in FMat copyFrom (%d, %d) and (%d, %d)" format (nrows, ncols, in.nrows, in.ncols));
   

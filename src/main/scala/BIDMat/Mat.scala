@@ -216,6 +216,14 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
   def tileMultT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):Mat =
     notImplemented0("tileMultT");
   
+  def tileCopy(fromrow:Int, fromcol:Int, to:Mat, torow:Int, tocol:Int, height:Int, width:Int):Mat = {
+  		notImplemented0("tileCopy");
+  }
+  
+  def tileAdd(fromrow:Int, fromcol:Int, to:Mat, torow:Int, tocol:Int, height:Int, width:Int):Mat = {
+  		notImplemented0("tileAdd");
+  }
+  
   def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, reps:Int, aoff:Int, lda:Int, astep:Int, 
       b:Mat, boff:Int, ldb:Int, bstep:Int, c:Mat, coff:Int, ldc:Int, cstep:Int):Mat = notImplemented0("blockGemm");
   

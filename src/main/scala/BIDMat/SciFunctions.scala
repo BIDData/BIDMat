@@ -1053,6 +1053,7 @@ object SciFunctions {
       case aa:GDMat => sum(aa, b, c):GDMat
       case aa:GSMat => sum(aa, b, c):GMat
       case aa:GSDMat => sum(aa, b, c):GDMat
+      case aa:TMat => aa.sum(b, c):Mat
     }
   }
   
