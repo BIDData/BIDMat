@@ -2027,6 +2027,9 @@ object MatFunctions {
 
   def loadSDMat(fname:String) = HMat.loadSDMat(fname)    
   def loadSDMat(fname:String, compressed:Int) = HMat.loadSDMat(fname, compressed)
+
+  def loadTMat(fname:String) = HMat.loadTMat(fname)    
+  def loadTMat(fname:String, compressed:Int) = HMat.loadTMat(fname, compressed)
   
   def saveMat(fname:String, m:Mat) = HMat.saveMat(fname, m)    
   def saveMat(fname:String, m:Mat, compressed:Int) = HMat.saveMat(fname, m, compressed)
@@ -2054,6 +2057,9 @@ object MatFunctions {
 
   def saveCSMat(fname:String, m:CSMat) = HMat.saveCSMat(fname, m)    
   def saveCSMat(fname:String, m:CSMat, compressed:Int) = HMat.saveCSMat(fname, m, compressed)
+
+  def saveTMat(fname:String, m:TMat) = HMat.saveTMat(fname, m)    
+  def saveTMat(fname:String, m:TMat, compressed:Int) = HMat.saveTMat(fname, m, compressed)
 
   def loadIDX(fname:String, compressed:Int) = HMat.loadIDX(fname, compressed)
   def loadIDX(fname:String) = HMat.loadIDX(fname, 0)

@@ -878,6 +878,8 @@ object SciFunctions {
       case (aa:IMat, bb:IMat) => max(aa, bb, c):IMat
       case (aa:LMat, bb:LMat) => max(aa, bb, c):LMat
       case (aa:DMat, bb:DMat) => max(aa, bb, c):DMat
+      case (aa:DMat, bb:FMat) => max(aa, DMat(bb), c):DMat
+      case (aa:FMat, bb:DMat) => max(DMat(aa), bb, c):DMat
       case (aa:GMat, bb:GMat) => max(aa, bb, c):GMat
       case (aa:GIMat, bb:GIMat) => max(aa, bb, c):GIMat
       case (aa:GLMat, bb:GLMat) => max(aa, bb, c):GLMat
@@ -903,6 +905,8 @@ object SciFunctions {
       case (aa:IMat, bb:IMat) => min(aa, bb, c):IMat
       case (aa:LMat, bb:LMat) => min(aa, bb, c):LMat
       case (aa:DMat, bb:DMat) => min(aa, bb, c):DMat
+      case (aa:DMat, bb:FMat) => min(aa, DMat(bb), c):DMat
+      case (aa:FMat, bb:DMat) => min(DMat(aa), bb, c):DMat
       case (aa:GMat, bb:GMat) => min(aa, bb, c):GMat
       case (aa:GIMat, bb:GIMat) => min(aa, bb, c):GIMat
       case (aa:GLMat, bb:GLMat) => min(aa, bb, c):GLMat
@@ -1049,6 +1053,7 @@ object SciFunctions {
       case aa:GDMat => sum(aa, b, c):GDMat
       case aa:GSMat => sum(aa, b, c):GMat
       case aa:GSDMat => sum(aa, b, c):GDMat
+      case aa:TMat => aa.sum(b, c):Mat
     }
   }
   

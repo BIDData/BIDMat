@@ -674,6 +674,25 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     }
   }
   
+  def tileCopy(fromrow:Int, fromcol:Int, to:FMat, torow:Int, tocol:Int, height:Int, width:Int):FMat = {
+  	var i = 0;
+  	while (i < width) {
+  	  val fromindx = fromrow + (fromcol + i) * nrows;
+  	  val toindx = torow + (tocol + i) * to.nrows;
+  		var j = 0;
+  		while (j < height) {
+  		  to.data(j + toindx) = data(j + fromindx);
+  		  j += 1;
+  		}
+  	  i += 1;
+  	}
+    to
+  }
+  
+  override def tileCopy(fromrow:Int, fromcol:Int, to:Mat, torow:Int, tocol:Int, height:Int, width:Int):FMat = {
+    tileCopy(fromrow, fromcol, to.asInstanceOf[FMat], torow, tocol, height, width);
+  }
+  
   def fSMultTHelper(a:SMat, out:FMat, istart:Int, iend:Int, ioff:Int) = {
   	var i = istart
   	while (i < iend) {

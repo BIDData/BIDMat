@@ -593,7 +593,8 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   
   def madd(b:Mat,c:TMat):TMat = madd(b,c,false,false)
 
-import BIDMat.IMatWildcard
+  import BIDMat.IMatWildcard
+ 
   def madd(b:Mat,c:TMat,at:Boolean,bt:Boolean):TMat = {
     /*val g=c.full()
     madd(b,g,at,bt)
@@ -953,6 +954,18 @@ import BIDMat.IMatWildcard
         i+=1
     }
     t
+  }
+  
+  def tileCopy(fromrow:Int, fromcol:Int, to:GMat, torow:Int, tocol:Int, height:Int, width:Int):GMat = {
+    val toindx = torow + tocol * to.nrows;
+    val fromindx = fromrow + fromcol * nrows;
+    cudaMemcpy2D(to.data.withByteOffset(toindx * Sizeof.FLOAT), to.nrows*Sizeof.FLOAT, data.withByteOffset(fromindx * Sizeof.FLOAT), nrows*Sizeof.FLOAT,
+        height*Sizeof.FLOAT, width, cudaMemcpyKind.cudaMemcpyDeviceToDevice);  
+    to
+  }
+  
+  override def tileCopy(fromrow:Int, fromcol:Int, to:Mat, torow:Int, tocol:Int, height:Int, width:Int):Mat = {
+    tileCopy(fromrow, fromcol, to.asInstanceOf[GMat], torow, tocol, height, width);
   }
   
   def copyFrom(in:FMat):GMat = {
