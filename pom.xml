@@ -242,6 +242,13 @@
             					<goals>
 				        		<goal>shade</goal>
 	           				</goals>
+						<configuration>
+							<artifactSet>
+								<excludes>
+									<exclude>biddata:natives:*:*</exclude>
+								</excludes>
+							</artifactSet>
+						</configuration>
         	  			</execution>
         			</executions>
 	      		</plugin>
