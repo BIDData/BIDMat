@@ -2,14 +2,14 @@ import BIDMat.TMat
 
 def testTMatmadd(){
     val b=TMat(4,4,Array(1,2),Array(0,3),Array(GMat(FMat(2,3,Array(1,2,3,4,5,6))),GMat(FMat(2,1,Array(7,8)))));
-    println(full(b))
+    //println(full(b))
     val c=grand(5,4);
     val d=c.zeros(4,5);
     b.madd(c,d,true,true);
     val bb=full(b);
     val dd=c.zeros(4,5)
     bb.madd(c,dd,true,true)
-    println(sum(sum(d-dd)))
+    assert(abs(sum(sum(d-dd)).dv).dv<1e-6,"Should output zero for TMatmadd")
 }
 
 def testGMatmadd(){
@@ -20,14 +20,28 @@ def testGMatmadd(){
     bb<--full(b)
     c.madd(d,b,false,false)
     c.madd(d,bb,false,false)
+/*    println("The overlapping non-zero values of the following two mats should be the same")
     println(bb)
-    println(full(b))
-    //println(b-bb)
-    //println(sum(sum(full(b)-bb)))
+    println(full(b))*/
+    assert(abs(sum(sum(full(b-bb)))).dv<1e-6,"Should output zero for GMatmadd")
+}
+
+def testOp(){
+    val b=TMat(4,4,Array(1,2),Array(0,3),Array(GMat(FMat(2,3,Array(1,2,3,4,5,6))),GMat(FMat(2,1,Array(7,8)))));
+    val bb=GMat.zeros(4,4)
+    bb<--full(b)
+    val c = grand(4,10)
+    val d = grand(10,4)
+    assert(abs(sum(sum(full((b+b)-(bb+bb))))).dv<1e-6,"Should output zero for +")
+    assert(abs(sum(sum(full((b*@b)-(bb*@bb))))).dv<1e-6,"Should output zero for *@")
+    assert(abs(sum(sum(full((b*c)-(bb*c))))).dv<1e-6,"Should output zero for *")
+    assert(abs(sum(sum(full((b*^d)-(bb*^d))))).dv<1e-6,"Should output zero for *^")
 }
 
 testTMatmadd()
 testGMatmadd()
+testOp()
+println("All test passed")
 
 /*val b=TMat(4,4,Array(0),Array(1),Array(GMat(FMat(2,3,Array(1,2,3,4,5,6)))));
 full(b)
