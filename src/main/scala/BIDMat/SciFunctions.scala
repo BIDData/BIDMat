@@ -2726,6 +2726,41 @@ object SciFunctions {
   def atan2(a:GDMat, b:GDMat):GDMat =   applyGDfun2(a, b, TransF2.atan2, 10L)
   def pow(a:GDMat, b:GDMat):GDMat =     applyGDfun2(a, b, TransF2.pow, 10L)
   
+  import TMat.TFuncs
+  def abs(in:TMat, out:Mat):TMat =     in.tFn(out, TFuncs.abs, 1L)
+  def exp(in:TMat, out:Mat):TMat =     in.tFn(out, TFuncs.exp, 10L)
+  def expm1(in:TMat, out:Mat):TMat =   in.tFn(out, TFuncs.expm1, 10L)
+  def sqrt(in:TMat, out:Mat):TMat =    in.tFn(out, TFuncs.sqrt, 10L)
+  def ln(in:TMat, out:Mat):TMat =      in.tFn(out, TFuncs.ln, 10L)
+  def log10(in:TMat, out:Mat):TMat =   in.tFn(out, TFuncs.log10, 10L)
+  def log1p(in:TMat, out:Mat):TMat =   in.tFn(out, TFuncs.log1p, 10L)
+  def cos(in:TMat, out:Mat):TMat =     in.tFn(out, TFuncs.cos, 10L)
+  def sin(in:TMat, out:Mat):TMat =     in.tFn(out, TFuncs.sin, 10L)
+  def tan(in:TMat, out:Mat):TMat =     in.tFn(out, TFuncs.tan, 10L)
+  def cosh(in:TMat, out:Mat):TMat =    in.tFn(out, TFuncs.cosh, 10L)
+  def sinh(in:TMat, out:Mat):TMat =    in.tFn(out, TFuncs.sinh, 10L)
+  def tanh(in:TMat, out:Mat):TMat =    in.tFn(out, TFuncs.tanh, 10L)
+  def acos(in:TMat, out:Mat):TMat =    in.tFn(out, TFuncs.acos, 10L)
+  def asin(in:TMat, out:Mat):TMat =    in.tFn(out, TFuncs.asin, 10L)
+  def atan(in:TMat, out:Mat):TMat =    in.tFn(out, TFuncs.atan, 10L)
+  def acosh(in:TMat, out:Mat):TMat =   in.tFn(out, TFuncs.acosh, 10L)
+  def asinh(in:TMat, out:Mat):TMat =   in.tFn(out, TFuncs.asinh, 10L)
+  def atanh(in:TMat, out:Mat):TMat =   in.tFn(out, TFuncs.atanh, 10L)
+  def erf(in:TMat, out:Mat):TMat =     in.tFn(out, TFuncs.erf, 10L)
+  def erfinv(in:TMat, out:Mat):TMat =  in.tFn(out, TFuncs.erfinv, 10L)
+  def erfc(in:TMat, out:Mat):TMat =    in.tFn(out, TFuncs.erfc, 10L)
+  def ercinv(in:TMat, out:Mat):TMat =  in.tFn(out, TFuncs.erfcinv, 10L)
+  def gammaln(in:TMat, out:Mat):TMat = in.tFn(out, TFuncs.gammaln, 10L)
+  def gamma(in:TMat, out:Mat):TMat =   in.tFn(out, TFuncs.gamma, 10L)
+  def Γ(a:TMat, out:Mat) = gamma(a, out);
+  def ceil(in:TMat, out:Mat):TMat =    in.tFn(out, TFuncs.ceil, 10L)
+  def floor(in:TMat, out:Mat):TMat =   in.tFn(out, TFuncs.floor, 10L)
+  def round(in:TMat, out:Mat):TMat =   in.tFn(out, TFuncs.round, 10L)
+  def trunc(in:TMat, out:Mat):TMat =   in.tFn(out, TFuncs.trunc, 10L)
+  def sign(in:TMat, out:Mat):TMat =    in.tFn(out, TFuncs.sign, 1L)
+  def exppsi(in:TMat, out:Mat):TMat =  in.tFn(out, TFuncs.exppsi, 1L)
+
+  
   import GMat.BinOp
   def max(a:GMat, b:GMat):GMat    = max(a, b, null)
   def min(a:GMat, b:GMat):GMat    = min(a, b, null)
@@ -2809,9 +2844,9 @@ object SciFunctions {
   def mini(a:GDMat, out:Mat):GDMat           = a.reduceOp(out, 0, Double.MaxValue, BinOp.op_min)
   def sum(a:GDMat, out:Mat):GDMat            = a.reduceOp(out, 0, 0.0, BinOp.op_add)
      
-  def sum(a:GSDMat) = a.sum(0, null)
-  def sum(a:GSDMat, n:Int) = a.sum(n, null)
-  def sum(a:GSDMat, n:Int, omat:Mat) = a.sum(n, omat)
+  def sum(a:GSDMat) = a.sum(0, null);
+  def sum(a:GSDMat, n:Int) = a.sum(n, null);
+  def sum(a:GSDMat, n:Int, omat:Mat) = a.sum(n, omat);
   
   def LXdist(a:GMat, b:GMat, omat:GMat, p:Float):GMat = GMat.LXdist(a, b, omat, p)
   
@@ -2828,6 +2863,7 @@ object SciFunctions {
       case aa:DMat => abs(aa, b):DMat
       case aa:GMat => abs(aa, b):GMat
       case aa:GDMat => abs(aa, b):GDMat
+      case aa:TMat => abs(aa, b)
     }
   }
   
@@ -2844,6 +2880,7 @@ object SciFunctions {
       case aa:DMat => sign(aa, b)
       case aa:GMat => sign(aa, b)
       case aa:GDMat => sign(aa, b)
+      case aa:TMat => sign(aa, b)
     }
   }
   
@@ -2861,6 +2898,7 @@ object SciFunctions {
       case aa:DMat => sqrt(aa, b)
       case aa:GMat => sqrt(aa, b)
       case aa:GDMat => sqrt(aa, b)
+      case aa:TMat => sqrt(aa, b)
     }
   }
   
@@ -2878,6 +2916,7 @@ object SciFunctions {
       case aa:DMat => exp(aa, b):DMat
       case aa:GMat => exp(aa, b):GMat
       case aa:GDMat => exp(aa, b):GDMat
+      case aa:TMat => exp(aa, b):TMat
     }
   }
   
@@ -2894,6 +2933,7 @@ object SciFunctions {
       case aa:DMat => expm1(aa, b)
       case aa:GMat => expm1(aa, b)
       case aa:GDMat => expm1(aa, b)
+      case aa:TMat => expm1(aa, b)
     }
   }
   
@@ -2911,6 +2951,7 @@ object SciFunctions {
       case aa:DMat => ln(aa, b)
       case aa:GMat => ln(aa, b)
       case aa:GDMat => ln(aa, b)
+      case aa:TMat => ln(aa, b)
     }
   }
   
@@ -2928,6 +2969,7 @@ object SciFunctions {
       case aa:DMat => log10(aa, b)
       case aa:GMat => log10(aa, b)
       case aa:GDMat => log10(aa, b)
+      case aa:TMat => log10(aa, b)
     }
   }
   
@@ -2944,6 +2986,7 @@ object SciFunctions {
       case aa:DMat => log1p(aa, b)
       case aa:GMat => log1p(aa, b)
       case aa:GDMat => log1p(aa, b)
+      case aa:TMat => log1p(aa, b)
     }
   }
   
@@ -2961,6 +3004,7 @@ object SciFunctions {
       case aa:DMat => cos(aa, b)
       case aa:GMat => cos(aa, b)
       case aa:GDMat => cos(aa, b)
+      case aa:TMat => cos(aa, b)
     }
   }
     
@@ -2978,6 +3022,7 @@ object SciFunctions {
       case aa:DMat => sin(aa, b)
       case aa:GMat => sin(aa, b)
       case aa:GDMat => sin(aa, b)
+      case aa:TMat => sin(aa, b)
     }
   }
     
@@ -2995,6 +3040,7 @@ object SciFunctions {
       case aa:DMat => tan(aa, b)
       case aa:GMat => tan(aa, b)
       case aa:GDMat => tan(aa, b)
+      case aa:TMat => tan(aa, b)
     }
   }
   
@@ -3012,6 +3058,7 @@ object SciFunctions {
       case aa:DMat => cosh(aa, b)
       case aa:GMat => cosh(aa, b)
       case aa:GDMat => cosh(aa, b)
+      case aa:TMat => cosh(aa, b)
     }
   }
     
@@ -3029,6 +3076,7 @@ object SciFunctions {
       case aa:DMat => sinh(aa, b)
       case aa:GMat => sinh(aa, b)
       case aa:GDMat => sinh(aa, b)
+      case aa:TMat => sinh(aa, b)
     }
   }
     
@@ -3046,6 +3094,7 @@ object SciFunctions {
       case aa:DMat => tanh(aa, b)
       case aa:GMat => tanh(aa, b)
       case aa:GDMat => tanh(aa, b)
+      case aa:TMat => tanh(aa, b)
     }
   }
   
@@ -3063,6 +3112,7 @@ object SciFunctions {
       case aa:DMat => acos(aa, b)
       case aa:GMat => acos(aa, b)
       case aa:GDMat => acos(aa, b)
+      case aa:TMat => acos(aa, b)
     }
   }
   
@@ -3080,6 +3130,7 @@ object SciFunctions {
       case aa:DMat => asin(aa, b)
       case aa:GMat => asin(aa, b)
       case aa:GDMat => asin(aa, b)
+      case aa:TMat => asin(aa, b)
     }
   }
   
@@ -3097,6 +3148,7 @@ object SciFunctions {
       case aa:DMat => atan(aa, b)
       case aa:GMat => atan(aa, b)
       case aa:GDMat => atan(aa, b)
+      case aa:TMat => atan(aa, b)
     }
   }
   
@@ -3114,6 +3166,7 @@ object SciFunctions {
       case aa:DMat => acosh(aa, b)
       case aa:GMat => acosh(aa, b)
       case aa:GDMat => acosh(aa, b)
+      case aa:TMat => acosh(aa, b)
     }
   }
   
@@ -3131,6 +3184,7 @@ object SciFunctions {
       case aa:DMat => asinh(aa, b)
       case aa:GMat => asinh(aa, b)
       case aa:GDMat => asinh(aa, b)
+      case aa:TMat => asinh(aa, b)
     }
   }
   
@@ -3141,12 +3195,31 @@ object SciFunctions {
     }
   }
   
+  def atanh(a:Mat, b:Mat):Mat = {
+    a match {
+      case aa:FMat => atanh(aa, b)
+      case aa:CMat => atanh(aa, b)
+      case aa:DMat => atanh(aa, b)
+      case aa:GMat => atanh(aa, b)
+      case aa:GDMat => atanh(aa, b)
+      case aa:TMat => atanh(aa, b)
+    }
+  }
+  
+  def atanh(a:ND, b:ND):ND = {
+    a match {
+      case aa:FND => atanh(aa, b):FND
+      case aa:GND => atanh(aa, b):GND
+    }
+  }
+  
   def erf(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => erf(aa, b)
       case aa:DMat => erf(aa, b)
       case aa:GMat => erf(aa, b)
       case aa:GDMat => erf(aa, b)
+      case aa:TMat => erf(aa, b)
     }
   }
   
@@ -3163,6 +3236,7 @@ object SciFunctions {
       case aa:DMat => erfinv(aa, b)
       case aa:GMat => erfinv(aa, b)
       case aa:GDMat => erfinv(aa, b)
+      case aa:TMat => erfinv(aa, b)
     }
   }
   
@@ -3179,6 +3253,7 @@ object SciFunctions {
       case aa:DMat => erfc(aa, b)
       case aa:GMat => erfc(aa, b)
       case aa:GDMat => erfc(aa, b)
+      case aa:TMat => erfc(aa, b)
     }
   }
   
@@ -3195,6 +3270,7 @@ object SciFunctions {
       case aa:DMat => erfcinv(aa, b)
       case aa:GMat => erfcinv(aa, b)
       case aa:GDMat => erfcinv(aa, b)
+      case aa:TMat => erfcinv(aa, b)
     }
   }
   
@@ -3211,6 +3287,7 @@ object SciFunctions {
       case aa:DMat => gamma(aa, b)
       case aa:GMat => gamma(aa, b)
       case aa:GDMat => gamma(aa, b)
+      case aa:TMat => gamma(aa, b)
     }
   }
   
@@ -3229,6 +3306,7 @@ object SciFunctions {
       case aa:DMat => gammaln(aa, b)
       case aa:GMat => gammaln(aa, b)
       case aa:GDMat => gammaln(aa, b)
+      case aa:TMat => gammaln(aa, b)
     }
   }
   
@@ -3245,6 +3323,7 @@ object SciFunctions {
       case aa:DMat => floor(aa, b)
       case aa:GMat => floor(aa, b)
       case aa:GDMat => floor(aa, b)
+      case aa:TMat => floor(aa, b)
     }
   }
     
@@ -3261,6 +3340,7 @@ object SciFunctions {
       case aa:DMat => ceil(aa, b)
       case aa:GMat => ceil(aa, b)
       case aa:GDMat => ceil(aa, b)
+      case aa:TMat => ceil(aa, b)
     }
   }
    
@@ -3277,6 +3357,7 @@ object SciFunctions {
       case aa:DMat => round(aa, b)
       case aa:GMat => round(aa, b)
       case aa:GDMat => round(aa, b)
+      case aa:TMat => round(aa, b)
     }
   }
   
@@ -3293,6 +3374,7 @@ object SciFunctions {
       case aa:DMat => trunc(aa, b)
       case aa:GMat => trunc(aa, b)
       case aa:GDMat => trunc(aa, b)
+      case aa:TMat => trunc(aa, b)
     }
   }
   
@@ -3309,6 +3391,7 @@ object SciFunctions {
       case aa:DMat => exppsi(aa, b)
       case aa:GMat => exppsi(aa, b)
       case aa:GDMat => exppsi(aa, b)
+      case aa:TMat => exppsi(aa, b)
     }
   }
   

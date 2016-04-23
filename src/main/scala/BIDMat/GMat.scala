@@ -595,9 +595,9 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
 
   import BIDMat.IMatWildcard
  
-  def madd(b:GMat,c:TMat,at:Boolean,bt:Boolean):TMat = {
+  def madd(b:Mat,c:TMat,at:Boolean,bt:Boolean):TMat = {
     for (i <- 0 until c.tiles.length) {
-      val m = c.tiles(i).asInstanceOf[GMat];
+      val m = c.tiles(i);
     	if (!at) {
     		Mat.nflops += 2L * m.length * ncols;
     		if (!bt) {
@@ -620,7 +620,8 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   	(b, c) match {
   	case (bb:GMat, cc:GMat) => madd(bb, cc, at, bt);
   	case (bb:GSMat, cc:GMat) => madd(bb, cc, at, bt);
-  	case (bb:Mat,cc:TMat) => madd(bb,cc,at,bt)
+  	case (bb:GMat,cc:TMat) => madd(bb,cc,at,bt);
+  	case (bb:GSMat,cc:TMat) => madd(bb,cc,at,bt);
   	case _ => throw new RuntimeException("madd unsupported types %s %s" format (b.mytype, c.mytype));
   	}
   	c
@@ -652,7 +653,7 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
    * Note: c is not cleared by the kernel, and the result is added to it. 
    */
   
-  def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:GMat, broff:Int, bcoff:Int, c:GMat, croff:Int, ccoff:Int) = {
+  def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:GMat, broff:Int, bcoff:Int, c:GMat, croff:Int, ccoff:Int):GMat = {
     if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
     	throw new RuntimeException("tileMul: cant have negative offsets or dimensions");
     } else if (aroff + nr > nrows || acoff + kk > ncols || broff + kk > b.nrows || bcoff + nc > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
@@ -666,7 +667,7 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     }
   }
   
-  def tileMultNT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:GMat, broff:Int, bcoff:Int, c:GMat, croff:Int, ccoff:Int) = {
+  def tileMultNT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:GMat, broff:Int, bcoff:Int, c:GMat, croff:Int, ccoff:Int):GMat = {
     if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
     	throw new RuntimeException("tileMultNT: cant have negative offsets or dimensions");
     } else if (aroff + nr > nrows || acoff + kk > ncols || broff + nc > b.nrows || bcoff + kk > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
@@ -680,7 +681,7 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     }
   }
   
-  def tileMultTN(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:GMat, broff:Int, bcoff:Int, c:GMat, croff:Int, ccoff:Int) = {
+  def tileMultTN(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:GMat, broff:Int, bcoff:Int, c:GMat, croff:Int, ccoff:Int):GMat = {
     if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
     	throw new RuntimeException("tileMultTN: cant have negative offsets or dimensions");
     } else if (aroff + kk > nrows || acoff + nr > ncols || broff + kk > b.nrows || bcoff + nc > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
@@ -694,7 +695,7 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     }
   }
   
-  def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:GSMat, broff:Int, bcoff:Int, c:GMat, croff:Int, ccoff:Int) = {
+  def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:GSMat, broff:Int, bcoff:Int, c:GMat, croff:Int, ccoff:Int):GMat = {
     if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
     	throw new RuntimeException("tileMul: cant have negative offsets or dimensions");
     } else if (aroff + nr > nrows || acoff + kk > ncols || broff + kk > b.nrows || bcoff + nc > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
@@ -711,7 +712,7 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     }
   }
   
-  def tileMultNT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:GSMat, broff:Int, bcoff:Int, c:GMat, croff:Int, ccoff:Int) = {
+  def tileMultNT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:GSMat, broff:Int, bcoff:Int, c:GMat, croff:Int, ccoff:Int):GMat = {
     if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
     	throw new RuntimeException("tileMul: cant have negative offsets or dimensions");
     } else if (aroff + nr > nrows || acoff + kk > ncols || broff + nc > b.nrows || bcoff + kk > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
@@ -728,7 +729,7 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     }
   }
   
-  override def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):Mat = {
+  override def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):GMat = {
     (b, c) match {
       case (sb:GSMat, fc:GMat) => tileMult(nr, nc, kk, aroff, acoff, sb, broff, bcoff, fc, croff, ccoff);
       case (fb:GMat, fc:GMat) => tileMult(nr, nc, kk, aroff, acoff, fb, broff, bcoff, fc, croff, ccoff);
@@ -736,7 +737,7 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     }
   }
   
-  override def tileMultNT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):Mat = {
+  override def tileMultNT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):GMat = {
     (b, c) match {
       case (sb:GSMat, fc:GMat) => tileMultNT(nr, nc, kk, aroff, acoff, sb, broff, bcoff, fc, croff, ccoff);
       case (fb:GMat, fc:GMat) => tileMultNT(nr, nc, kk, aroff, acoff, fb, broff, bcoff, fc, croff, ccoff);
@@ -744,7 +745,7 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     }
   }
   
-  override def tileMultTN(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):Mat = {
+  override def tileMultTN(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):GMat = {
     (b, c) match {
 //      case (sb:GSMat, fc:GMat) => tileMultTN(nr, nc, kk, aroff, acoff, sb, broff, bcoff, fc, croff, ccoff);
       case (fb:GMat, fc:GMat) => tileMultTN(nr, nc, kk, aroff, acoff, fb, broff, bcoff, fc, croff, ccoff);
@@ -1573,6 +1574,7 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
 	def \ (a : GMat) = mat.horzcat(a, omat)
 	
   override def * (b : Float) = mat.gOp(GMat(b), omat, op_mul)
+  override def *@ (b : Float) = mat.gOp(GMat(b), omat, op_mul)
   override def ∘ (b : Float) = mat.gOp(GMat(b), omat, op_mul)
   override def + (b : Float) = mat.gOp(GMat(b), omat, op_add)
   override def - (b : Float) = mat.gOp(GMat(b), omat, op_sub)
@@ -1586,6 +1588,7 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
 	override def <= (b : Float) = mat.gOp(GMat(b), omat, op_le)
   
   override def * (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_mul)
+  override def *@ (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_mul)
   override def ∘ (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_mul)
   override def + (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_add)
   override def - (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_sub)
@@ -1600,6 +1603,7 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
 	
   
 	override def * (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_mul)
+	override def *@ (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_mul)
   override def ∘ (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_mul)
   override def + (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_add)
   override def - (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_sub)
@@ -1614,6 +1618,7 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
   
   
   override def * (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_mul)
+  override def *@ (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_mul)
   override def ∘ (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_mul)
   override def + (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_add)
   override def - (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_sub)

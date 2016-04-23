@@ -56,6 +56,15 @@ class TMat
   
 
   override def mytype = "TMat"
+    
+  def tFn(oldmat:Mat, f:(Mat, Mat) => Mat, nflops:Long) : TMat = {
+  		var out = TMat.newOrCheckTMat(nrows,ncols,y,x,tiles.map(_.nrows),tiles.map(_.ncols),tiles(0),oldmat,GUID,f.##);
+  		for (i <- 0 until tiles.length) {
+  		  f(tiles(i), out.tiles(i));
+  		  Mat.nflops += nflops * tiles(i).length;
+  		}
+  		out
+  }
 
   /*
    * Apply a (Mat, scalar, Mat) function to a TMat tilewise. Last argument should be the destination matrix.
@@ -227,15 +236,32 @@ class TMat
     case bb:Mat => new TTPair(this,bb);
   }
   
-
+  /*
+   * Returns a zero TMat with the same structure if size matches. 
+   * If the matrix is a vector, return a base matrix class instead. 
+   */
+  
   override def zeros(nr: Int, nc: Int) = {
-    if (nr != nrows || nc != ncols) throw new RuntimeException("TMat zeros - wrong row/col dimensions");
-  	TMat.zeros(nr, nc, y,	x, tiles.map(_.nrows), tiles.map(_.ncols), tiles(0));
+    if (nr == 1 || nc == 1) {
+      tiles(0).zeros(nr, nc);
+    } else {
+    	if (nr != nrows || nc != ncols) throw new RuntimeException("TMat zeros - wrong row/col dimensions");
+    	TMat.zeros(nr, nc, y,	x, tiles.map(_.nrows), tiles.map(_.ncols), tiles(0));
+    }
   }
   
+  /*
+   * Returns a TMat of ones with the same structure if size matches. 
+   * If the matrix is a vector, return a base matrix class instead. 
+   */
+  
   override def ones(nr: Int, nc: Int) = {
-    if (nr != nrows || nc != ncols) throw new RuntimeException("TMat zeros - wrong row/col dimensions");
-  	TMat.ones(nr, nc, y,	x, tiles.map(_.nrows), tiles.map(_.ncols), tiles(0));
+  	if (nr == 1 || nc == 1) {
+  		tiles(0).ones(nr, nc);
+  	} else {
+  		if (nr != nrows || nc != ncols) throw new RuntimeException("TMat zeros - wrong row/col dimensions");
+  		TMat.ones(nr, nc, y,	x, tiles.map(_.nrows), tiles.map(_.ncols), tiles(0));
+  	}
   }
   
   override def toString:String = {
@@ -300,28 +326,33 @@ class TMat
     case _ => throw new RuntimeException("no match in tMultT");
   } 
 
-  override def ^ (b : Float) = tOpF(b, null, (x:Mat,y:Float,z:Mat) => {z ~ x ^ y});
-  override def *@ (b : Float) = tOpF(b, null, (x:Mat,y:Float,z:Mat) => {z ~ x *@ y})
-
-  override def ^ (a : Mat) = tOp(a.asInstanceOf[TMat], null, (x:Mat,y:Mat,z:Mat) => {z ~ x^y}); 
-  override def + (a : Mat) = tOp(a.asInstanceOf[TMat], null, (x:Mat,y:Mat,z:Mat) => {z ~ x+y}); 
-  override def - (a : Mat) = tOp(a.asInstanceOf[TMat], null, (x:Mat,y:Mat,z:Mat) => {z ~ x-y}); 
+  override def ^ (a : Mat) = tOp(a.asInstanceOf[TMat], null, TMat.powOp); 
+  override def *@ (a : Mat) = tOp(a.asInstanceOf[TMat], null, TMat.mulOp);
+  override def + (a : Mat) = tOp(a.asInstanceOf[TMat], null, TMat.addOp); 
+  override def - (a : Mat) = tOp(a.asInstanceOf[TMat], null, TMat.subOp);
+  override def / (a : Mat) = tOp(a.asInstanceOf[TMat], null, TMat.divOp);
+  
+  override def ^ (b : Float) = tOpF(b, null, TMat.powOpF);
+  override def *@ (b : Float) = tOpF(b, null, TMat.mulOpF);
+  override def + (b : Float) = tOpF(b, null, TMat.addOpF);
+  override def - (b : Float) = tOpF(b, null, TMat.subOpF);
+  override def / (b : Float) = tOpF(b, null, TMat.divOpF);
 }
 
 class TPair(val omat:Mat, val mat:TMat) extends Pair {
   override def * (a : Mat):Mat = mat.tMult(a,omat)
-  override def ^ (a : Mat):TMat = mat.tOp(a.asInstanceOf[TMat], omat, (x:Mat,y:Mat,z:Mat) => {z ~ x^y});
-  override def *@ (a: Mat):TMat = mat.tOp(a.asInstanceOf[TMat], omat, (x:Mat,y:Mat,z:Mat) => {z ~ x *@ y});
-  override def + (a:Mat):TMat = mat.tOp(a.asInstanceOf[TMat], omat, (x:Mat,y:Mat,z:Mat) => {z ~ x + y});
-  override def - (a:Mat):TMat = mat.tOp(a.asInstanceOf[TMat], omat, (x:Mat,y:Mat,z:Mat) => {z ~ x - y});
-  override def / (a:Mat):TMat = mat.tOp(a.asInstanceOf[TMat], omat, (x:Mat,y:Mat,z:Mat) => {z ~ x / y});
+  override def ^ (a : Mat):TMat = mat.tOp(a.asInstanceOf[TMat], omat, TMat.powOp);
+  override def *@ (a: Mat):TMat = mat.tOp(a.asInstanceOf[TMat], omat, TMat.mulOp);
+  override def + (a:Mat):TMat = mat.tOp(a.asInstanceOf[TMat], omat, TMat.addOp);
+  override def - (a:Mat):TMat = mat.tOp(a.asInstanceOf[TMat], omat, TMat.subOp);
+  override def / (a:Mat):TMat = mat.tOp(a.asInstanceOf[TMat], omat, TMat.divOp);
   
-  override def * (a : Float) = mat.tOpF(a, omat, (x:Mat,y:Float,z:Mat) => {z ~ x *@ y});
-  override def ^ (a : Float):TMat = mat.tOpF(a, omat, (x:Mat,y:Float,z:Mat) => {z ~ x ^ y});
-  override def *@ (a: Float):TMat = mat.tOpF(a, omat, (x:Mat,y:Float,z:Mat) => {z ~ x *@ y});
-  override def + (a:Float):TMat = mat.tOpF(a, omat, (x:Mat,y:Float,z:Mat) => {z ~ x + y});
-  override def - (a:Float):TMat = mat.tOpF(a, omat, (x:Mat,y:Float,z:Mat) => {z ~ x - y});
-  override def / (a:Float):TMat = mat.tOpF(a, omat, (x:Mat,y:Float,z:Mat) => {z ~ x / y});
+  override def * (a : Float) = mat.tOpF(a, omat, TMat.mulOpF);
+  override def ^ (a : Float):TMat = mat.tOpF(a, omat, TMat.powOpF);
+  override def *@ (a: Float):TMat = mat.tOpF(a, omat, TMat.mulOpF);
+  override def + (a:Float):TMat = mat.tOpF(a, omat, TMat.addOpF);
+  override def - (a:Float):TMat = mat.tOpF(a, omat, TMat.subOpF);
+  override def / (a:Float):TMat = mat.tOpF(a, omat, TMat.divOpF);
 
 }
 
@@ -331,6 +362,52 @@ class TTPair(val omat:Mat, val mat:Mat) extends Pair {
 }
  
 object TMat {
+  
+  object TFuncs {
+  	val abs = (x:Mat, y:Mat) => SciFunctions.abs(x, y);
+  	val exp = (x:Mat, y:Mat) => SciFunctions.exp(x, y);
+  	val expm1 = (x:Mat, y:Mat) => SciFunctions.expm1(x, y);
+  	val sqrt = (x:Mat, y:Mat) => SciFunctions.sqrt(x, y);
+  	val ln = (x:Mat, y:Mat) => SciFunctions.ln(x, y);
+  	val log10 = (x:Mat, y:Mat) => SciFunctions.log10(x, y);
+  	val log1p = (x:Mat, y:Mat) => SciFunctions.log1p(x, y);
+  	val sign = (x:Mat, y:Mat) => SciFunctions.sign(x, y);
+  	val cos = (x:Mat, y:Mat) => SciFunctions.cos(x, y);
+  	val sin = (x:Mat, y:Mat) => SciFunctions.sin(x, y);
+  	val tan = (x:Mat, y:Mat) => SciFunctions.tan(x, y);
+  	val sinh = (x:Mat, y:Mat) => SciFunctions.sinh(x, y);
+  	val cosh = (x:Mat, y:Mat) => SciFunctions.cosh(x, y);
+  	val tanh = (x:Mat, y:Mat) => SciFunctions.tanh(x, y);
+  	val acos = (x:Mat, y:Mat) => SciFunctions.acos(x, y);
+  	val asin = (x:Mat, y:Mat) => SciFunctions.asin(x, y);
+  	val atan = (x:Mat, y:Mat) => SciFunctions.atan(x, y);
+  	val acosh = (x:Mat, y:Mat) => SciFunctions.acosh(x, y);
+  	val asinh= (x:Mat, y:Mat) => SciFunctions.asinh(x, y);
+  	val atanh = (x:Mat, y:Mat) => SciFunctions.atanh(x, y);
+  	val erf = (x:Mat, y:Mat) => SciFunctions.erf(x, y);
+  	val erfinv = (x:Mat, y:Mat) => SciFunctions.erfinv(x, y);
+  	val erfc = (x:Mat, y:Mat) => SciFunctions.erfc(x, y);
+  	val erfcinv = (x:Mat, y:Mat) => SciFunctions.erfcinv(x, y);
+  	val gamma = (x:Mat, y:Mat) => SciFunctions.gamma(x, y);
+  	val gammaln = (x:Mat, y:Mat) => SciFunctions.gammaln(x, y);
+  	val ceil = (x:Mat, y:Mat) => SciFunctions.ceil(x, y);
+  	val floor = (x:Mat, y:Mat) => SciFunctions.floor(x, y);
+  	val round = (x:Mat, y:Mat) => SciFunctions.round(x, y);
+  	val trunc = (x:Mat, y:Mat) => SciFunctions.trunc(x, y);
+  	val exppsi = (x:Mat, y:Mat) => SciFunctions.exppsi(x, y);
+  }
+  
+  val powOp = (x:Mat, y:Mat, z:Mat) => {z ~ x^y};
+  val mulOp = (x:Mat, y:Mat, z:Mat) => {z ~ x *@ y};
+  val addOp = (x:Mat, y:Mat, z:Mat) => {z ~ x + y};
+  val subOp = (x:Mat, y:Mat, z:Mat) => {z ~ x - y};
+  val divOp = (x:Mat, y:Mat, z:Mat) => {z ~ x / y};
+  
+  val powOpF = (x:Mat, y:Float, z:Mat) => {z ~ x^y};
+  val mulOpF = (x:Mat, y:Float, z:Mat) => {z ~ x *@ y};
+  val addOpF = (x:Mat, y:Float, z:Mat) => {z ~ x + y};
+  val subOpF = (x:Mat, y:Float, z:Mat) => {z ~ x - y};
+  val divOpF = (x:Mat, y:Float, z:Mat) => {z ~ x / y};
   
   /*
    * Basic constructor with predefined tiles
@@ -495,6 +572,24 @@ object TMat {
   	m
   }
   
+    /*
+   * The constructors return a cached base matrix of the specified size and type determined by mat. A full matrix is
+   * always returned so SMat --> FMat, GSMat --> GMat etc. 
+   */
+  
+  def newOrCheckMat(nr:Int, nc:Int,	mat:Mat, omat:Mat):Mat = {
+    mat match {
+      case m:FMat => FMat.newOrCheckFMat(nr, nc, omat);
+      case m:SMat => FMat.newOrCheckFMat(nr, nc, omat);
+      case m:GMat => GMat.newOrCheckGMat(nr, nc, omat);
+      case m:GSMat => GMat.newOrCheckGMat(nr, nc, omat);
+      case m:DMat => DMat.newOrCheckDMat(nr, nc, omat);
+      case m:SDMat => DMat.newOrCheckDMat(nr, nc, omat);
+      case m:GDMat => GDMat.newOrCheckGDMat(nr, nc, omat);
+      case m:GSDMat => GDMat.newOrCheckGDMat(nr, nc, omat);
+    }
+  }
+  
   /*
    * The constructors return a cached base matrix of the specified size and type determined by mat. A full matrix is
    * always returned so SMat --> FMat, GSMat --> GMat etc. 
@@ -505,7 +600,7 @@ object TMat {
       case m:FMat => FMat.newOrCheckFMat(nr, nc, omat, matGUID, opHash);
       case m:SMat => FMat.newOrCheckFMat(nr, nc, omat, matGUID, opHash);
       case m:GMat => GMat.newOrCheckGMat(nr, nc, omat, matGUID, opHash);
-      case m:GSMat => FMat.newOrCheckFMat(nr, nc, omat, matGUID, opHash);
+      case m:GSMat => GMat.newOrCheckGMat(nr, nc, omat, matGUID, opHash);
       case m:DMat => DMat.newOrCheckDMat(nr, nc, omat, matGUID, opHash);
       case m:SDMat => DMat.newOrCheckDMat(nr, nc, omat, matGUID, opHash);
       case m:GDMat => GDMat.newOrCheckGDMat(nr, nc, omat, matGUID, opHash);
@@ -522,7 +617,7 @@ object TMat {
       case m:FMat => FMat.newOrCheckFMat(nr, nc, omat, guid1, guid2, opHash);
       case m:SMat => FMat.newOrCheckFMat(nr, nc, omat, guid1, guid2, opHash);
       case m:GMat => GMat.newOrCheckGMat(nr, nc, omat, guid1, guid2, opHash);
-      case m:GSMat => FMat.newOrCheckFMat(nr, nc, omat, guid1, guid2, opHash);
+      case m:GSMat => GMat.newOrCheckGMat(nr, nc, omat, guid1, guid2, opHash);
       case m:DMat => DMat.newOrCheckDMat(nr, nc, omat, guid1, guid2, opHash);
       case m:SDMat => DMat.newOrCheckDMat(nr, nc, omat, guid1, guid2, opHash);
       case m:GDMat => GDMat.newOrCheckGDMat(nr, nc, omat, guid1, guid2, opHash);
@@ -535,7 +630,7 @@ object TMat {
       case m:FMat => FMat.newOrCheckFMat(nr, nc, omat, guid1, guid2, guid3, opHash);
       case m:SMat => FMat.newOrCheckFMat(nr, nc, omat, guid1, guid2, guid3, opHash);
       case m:GMat => GMat.newOrCheckGMat(nr, nc, omat, guid1, guid2, guid3, opHash);
-      case m:GSMat => FMat.newOrCheckFMat(nr, nc, omat, guid1, guid2, guid3, opHash);
+      case m:GSMat => GMat.newOrCheckGMat(nr, nc, omat, guid1, guid2, guid3, opHash);
       case m:DMat => DMat.newOrCheckDMat(nr, nc, omat, guid1, guid2, guid3, opHash);
       case m:SDMat => DMat.newOrCheckDMat(nr, nc, omat, guid1, guid2, guid3, opHash);
       case m:GDMat => GDMat.newOrCheckGDMat(nr, nc, omat, guid1, guid2, guid3, opHash);
