@@ -86,7 +86,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
         throw new RuntimeException("colslice trying to append to null output matrix")
       }
     	val newnnz = jc(col2) - jc(col1)
-      SMat.newOrCheckSMat(nrows, col2-col1, newnnz, null, GUID, col1, "colslice".##)
+      SMat.newOrCheckSMat(nrows, col2-col1, newnnz, null, GUID, col1, col2, "colslice".##)
     }
  
     if (there == 0) ms.jc(0) = ioff;

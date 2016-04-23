@@ -41,7 +41,7 @@ import jcuda.jcusparse._
  */
 
 /* 
- * fix tileAdd, check madd
+ * fix tileAdd
  */
 
 class TMat 
@@ -186,14 +186,14 @@ class TMat
    * 
    */ 
 
-  def tMultT(a:Mat, outmat:Mat) : Mat =  {
+  def tMultNT(a:Mat, outmat:Mat) : Mat =  {
   	if (ncols == a.ncols) {
   		var out = TMat.newOrCheckMat(nrows, a.nrows, a, outmat, GUID, a.GUID, "tMultT".##);
   		out.clear;
   		for (i <- 0 until tiles.length) {
   			var m = tiles(i);
   			Mat.nflops += 2L * m.length * a.ncols;
-  			m.tileMultT(m.nrows, a.nrows, m.ncols, 0, 0, a, 0, x(i), out, y(i), 0);
+  			m.tileMultNT(m.nrows, a.nrows, m.ncols, 0, 0, a, 0, x(i), out, y(i), 0);
   		}
   		out;
   	}	else throw new RuntimeException("dimension mismatch")      
@@ -213,10 +213,10 @@ class TMat
     for (i <- 0 until tiles.length) {
       if (nn == 1) {
       	SciFunctions.sum(tiles(i), n , tmp.view(1, tiles(i).ncols));
-      	tmp.tileAdd(0, 0, out, 0, x(i), 1, tiles(i).ncols);
+      	tmp.vecAdd(0, out, x(i), tiles(i).ncols);
       } else {
       	SciFunctions.sum(tiles(i), n , tmp.view(tiles(i).nrows, 1));
-      	tmp.tileAdd(0, 0, out, y(i), 0, tiles(i).nrows, 1);
+      	tmp.vecAdd(0, out, y(i), tiles(i).nrows);
       }
     }
     out
@@ -250,35 +250,24 @@ class TMat
       }
       this
   }
-  
-  /* 
-   * Multiply two (dense) base matrices into a TMat.
-   */
-  
+    
   override def madd(b:Mat,c:Mat,at:Boolean,bt:Boolean) = {
-      (b,c) match {
-          case (gb:GMat,gc:GMat)=>
-            madd(gb,gc,at,bt)
-      }
-  }
-  
-  def madd(b:GMat,c:GMat,at:Boolean,bt:Boolean) = {
   	for (i <- 0 until tiles.length) {
-  		val a=tiles(i).asInstanceOf[GMat];
+  		val a=tiles(i);
   		if (!bt) {
   			Mat.nflops += 2L * a.length * b.ncols;
-  			if (at) {
-  				cublasSgemm('t', 'n', a.ncols, b.ncols, a.nrows, 1.0f, a.data, a.nrows, b.data.withByteOffset(Sizeof.FLOAT.toLong*(y(i))), b.nrows, 1.0f, c.data.withByteOffset(Sizeof.FLOAT.toLong*(x(i))), c.nrows)
+  			if (!at) {
+  				a.tileMult(a.nrows, b.ncols, a.ncols, 0, 0, b, x(i), 0, c, y(i), 0);
   			} else {
-  				cublasSgemm('n', 'n', a.nrows, b.ncols, a.ncols, 1.0f, a.data, a.nrows, b.data.withByteOffset(Sizeof.FLOAT.toLong*(x(i))), b.nrows, 1.0f, c.data.withByteOffset(Sizeof.FLOAT.toLong*(y(i))), c.nrows)
+  				a.tileMultTN(a.ncols, b.ncols, a.nrows, 0, 0, b, y(i), 0, c, x(i), 0);
   			}
   		} else {
   			Mat.nflops += 2L * a.length * b.nrows;
-  			if (at) {
-  				cublasSgemm('t', 't', a.ncols, b.nrows, a.nrows, 1.0f, a.data, a.nrows, b.data.withByteOffset(Sizeof.FLOAT.toLong*(y(i))*b.nrows), b.nrows, 1.0f, c.data.withByteOffset(Sizeof.FLOAT.toLong*(x(i))), c.nrows)
+  			if (!at) {
+  				a.tileMultNT(a.nrows, b.nrows, a.ncols, 0, 0, b, 0, x(i), c, y(i), 0);
   			} else {
-  				cublasSgemm('n', 't', a.nrows, b.nrows, a.ncols, 1.0f, a.data, a.nrows, b.data.withByteOffset(Sizeof.FLOAT.toLong*(x(i))*b.nrows), b.nrows, 1.0f, c.data.withByteOffset(Sizeof.FLOAT.toLong*(y(i))), c.nrows)
-  			}           
+  				a.tileMultTT(a.ncols, b.nrows, a.nrows, 0, 0, b, 0, y(i), c, x(i), 0);
+  			}
   		}
   	}
   	c
@@ -290,10 +279,10 @@ class TMat
   def * (a : SMat) = this.tMult(a,null);
   def * (a : GSMat) = this.tMult(a,null);
 
-  def *^ (a : FMat) = this.tMultT(a,null);
-  def *^ (a : GMat) = this.tMultT(a,null);
-  def *^ (a : SMat) = this.tMultT(a,null);
-  def *^ (a : GSMat) = this.tMultT(a,null);
+  def *^ (a : FMat) = this.tMultNT(a,null);
+  def *^ (a : GMat) = this.tMultNT(a,null);
+  def *^ (a : SMat) = this.tMultNT(a,null);
+  def *^ (a : GSMat) = this.tMultNT(a,null);
 
   override def * (a : Mat) = a match {
     case aa:FMat => this.tMult(a,null);
@@ -304,10 +293,10 @@ class TMat
   } 
 
   override def *^ (a : Mat) = a match {
-    case aa:FMat => this.tMultT(a,null);
-    case aa:GMat => this.tMultT(a,null);
-    case aa:SMat => this.tMultT(a,null);
-    case aa:GSMat => this.tMultT(a,null); 
+    case aa:FMat => this.tMultNT(a,null);
+    case aa:GMat => this.tMultNT(a,null);
+    case aa:SMat => this.tMultNT(a,null);
+    case aa:GSMat => this.tMultNT(a,null); 
     case _ => throw new RuntimeException("no match in tMultT");
   } 
 
@@ -566,22 +555,6 @@ object TMat {
     out;
   }
 
-  def ones (  nr: Int,
-              nc: Int,
-              yInds: Array[Int],
-              xInds: Array[Int],
-              data: Array[Mat] ) = {
-
-    var i = 0
-    while (i < data.length) {
-      data(i) = data(i).ones(data(i).nrows,data(i).ncols)
-      i += 1
-    }
-
-    new TMat( nr, nc, yInds, xInds, data)
-  }
-
-
   def tMult ( left: Mat, right: Mat, omat : TMat) : TMat = {
     var i = 0
     while (i < omat.tiles.length) {
@@ -606,7 +579,7 @@ object TMat {
     var i = 0
     while (i < omat.tiles.length) {
       omat.tiles(i).clear
-      left.tileMultT( omat.tiles(i).nrows,  
+      left.tileMultNT( omat.tiles(i).nrows,  
                       omat.tiles(i).ncols,  
                       left.ncols,  
                       omat.y(i),   
