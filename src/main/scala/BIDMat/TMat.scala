@@ -55,7 +55,11 @@ class TMat
   require(x.length == tiles.length, "x.length must equal tiles.length")
   
 
-  override def mytype = "TMat"
+  override def mytype = "TMat";
+
+  /*
+   * Apply a function to an input TMat tile-wise.
+   */
     
   def tFn(oldmat:Mat, f:(Mat, Mat) => Mat, nflops:Long) : TMat = {
   		var out = TMat.newOrCheckTMat(nrows,ncols,y,x,tiles.map(_.nrows),tiles.map(_.ncols),tiles(0),oldmat,GUID,f.##);
@@ -67,7 +71,7 @@ class TMat
   }
 
   /*
-   * Apply a (Mat, scalar, Mat) function to a TMat tilewise. Last argument should be the destination matrix.
+   * Apply a (Mat, scalar, Mat) operator to a TMat tilewise. Last argument should be the destination matrix.
    *
    */  
 
@@ -81,7 +85,7 @@ class TMat
   }
 
   /*
-   * Apply a general elementwise op to a pair of TMats. 
+   * Apply a general elementwise op to a pair of matching TMats. 
    *
    */
  
@@ -94,10 +98,36 @@ class TMat
     }
     out;
   }
+  
+  /*
+   * Apply an operator to a TMat and a base matrix. The base matrix should be a vector, or we throw an error.
+   */
+  
+  def tOpM(a : Mat, omat : Mat, op : (Mat,Mat,Mat) => Mat) : TMat = {
+    if (a.nrows > 1 && a.ncols > 1) throw new RuntimeException("TMat op base matrix must be a vector");
+    val tmp = TMat.newOrCheckMat(a.nrows, a.ncols, a, null, GUID, a.GUID, op.##);
+  	var out = TMat.newOrCheckTMat(nrows,ncols,y,x,tiles.map(_.nrows),tiles.map(_.ncols),tiles(0),omat,GUID,a.GUID,op.##);
+    for (i <- 0 to (tiles.length-1)) {
+    	Mat.nflops += tiles(i).length;
+    	val aview = if (a.nrows > 1) {
+    		a.tileCopy(y(i), 0, tmp, 0, 0, tiles(i).nrows, 1);
+    		tmp.view(tiles(i).nrows, 1);
+    	} else {
+    		a.tileCopy(0, x(i), tmp, 0, 0, 1, tiles(i).ncols);
+    		tmp.view(1, tiles(i).ncols);
+    	}    	
+      op(tiles(i), aview, out.tiles(i));     
+    }
+    out;
+  }
 
-  def tOp(a : Mat, omat : Mat, op : (Mat,Mat,Mat) => Unit) : Mat = {
+  def tOp(a : Mat, omat : Mat, op : (Mat,Mat,Mat) => Mat) : TMat = {
     a match {
-      case aa : TMat => tOp(aa,omat,op)
+      case aa : TMat => tOp(aa,omat,op);
+      case aa : FMat => tOpM(aa,omat,op);
+      case aa : GMat => tOpM(aa,omat,op);
+      case aa : DMat => tOpM(aa,omat,op);
+      case aa : GDMat => tOpM(aa,omat,op);     
     }
   }
 
@@ -326,14 +356,16 @@ class TMat
     case _ => throw new RuntimeException("no match in tMultT");
   } 
 
-  override def ^ (a : Mat) = tOp(a.asInstanceOf[TMat], null, TMat.powOp); 
-  override def *@ (a : Mat) = tOp(a.asInstanceOf[TMat], null, TMat.mulOp);
-  override def + (a : Mat) = tOp(a.asInstanceOf[TMat], null, TMat.addOp); 
-  override def - (a : Mat) = tOp(a.asInstanceOf[TMat], null, TMat.subOp);
-  override def / (a : Mat) = tOp(a.asInstanceOf[TMat], null, TMat.divOp);
+  override def ^ (a : Mat) = tOp(a, null, TMat.powOp); 
+  override def *@ (a : Mat) = tOp(a, null, TMat.mulOp);
+  override def ∘ (a : Mat) = tOp(a, null, TMat.mulOp);
+  override def + (a : Mat) = tOp(a, null, TMat.addOp); 
+  override def - (a : Mat) = tOp(a, null, TMat.subOp);
+  override def / (a : Mat) = tOp(a, null, TMat.divOp);
   
   override def ^ (b : Float) = tOpF(b, null, TMat.powOpF);
   override def *@ (b : Float) = tOpF(b, null, TMat.mulOpF);
+  override def ∘ (b : Float) = tOpF(b, null, TMat.mulOpF);
   override def + (b : Float) = tOpF(b, null, TMat.addOpF);
   override def - (b : Float) = tOpF(b, null, TMat.subOpF);
   override def / (b : Float) = tOpF(b, null, TMat.divOpF);
@@ -341,15 +373,17 @@ class TMat
 
 class TPair(val omat:Mat, val mat:TMat) extends Pair {
   override def * (a : Mat):Mat = mat.tMult(a,omat)
-  override def ^ (a : Mat):TMat = mat.tOp(a.asInstanceOf[TMat], omat, TMat.powOp);
-  override def *@ (a: Mat):TMat = mat.tOp(a.asInstanceOf[TMat], omat, TMat.mulOp);
-  override def + (a:Mat):TMat = mat.tOp(a.asInstanceOf[TMat], omat, TMat.addOp);
-  override def - (a:Mat):TMat = mat.tOp(a.asInstanceOf[TMat], omat, TMat.subOp);
-  override def / (a:Mat):TMat = mat.tOp(a.asInstanceOf[TMat], omat, TMat.divOp);
+  override def ^ (a : Mat):TMat = mat.tOp(a, omat, TMat.powOp);
+  override def *@ (a: Mat):TMat = mat.tOp(a, omat, TMat.mulOp);
+  override def ∘ (a: Mat):TMat = mat.tOp(a, omat, TMat.mulOp);
+  override def + (a:Mat):TMat = mat.tOp(a, omat, TMat.addOp);
+  override def - (a:Mat):TMat = mat.tOp(a, omat, TMat.subOp);
+  override def / (a:Mat):TMat = mat.tOp(a, omat, TMat.divOp);
   
   override def * (a : Float) = mat.tOpF(a, omat, TMat.mulOpF);
   override def ^ (a : Float):TMat = mat.tOpF(a, omat, TMat.powOpF);
   override def *@ (a: Float):TMat = mat.tOpF(a, omat, TMat.mulOpF);
+  override def ∘ (a: Float):TMat = mat.tOpF(a, omat, TMat.mulOpF);
   override def + (a:Float):TMat = mat.tOpF(a, omat, TMat.addOpF);
   override def - (a:Float):TMat = mat.tOpF(a, omat, TMat.subOpF);
   override def / (a:Float):TMat = mat.tOpF(a, omat, TMat.divOpF);

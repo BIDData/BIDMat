@@ -841,7 +841,6 @@ object Mat {
     if (verb) useMKL = true;
     if (useMKL) {
     	try {
-//    	  if (ostype == OS_WINDOWS) edu.berkeley.bid.LibUtils.loadLib("libiomp5md")
     		edu.berkeley.bid.LibUtils.loadLibrary("bidmatcpu", true);
     	} catch {
     	case th:Throwable => {
