@@ -105,14 +105,16 @@ class TMat
   
   def tOpM(a : Mat, omat : Mat, op : (Mat,Mat,Mat) => Mat) : TMat = {
     if (a.nrows > 1 && a.ncols > 1) throw new RuntimeException("TMat op base matrix must be a vector");
-    val tmp = TMat.newOrCheckMat(a.nrows, a.ncols, a, null, GUID, a.GUID, op.##);
+    val tmp = if (a.length > 1) TMat.newOrCheckMat(a.nrows, a.ncols, a, null, GUID, a.GUID, op.##) else null;
   	var out = TMat.newOrCheckTMat(nrows,ncols,y,x,tiles.map(_.nrows),tiles.map(_.ncols),tiles(0),omat,GUID,a.GUID,op.##);
     for (i <- 0 to (tiles.length-1)) {
     	Mat.nflops += tiles(i).length;
-    	val aview = if (a.nrows > 1) {
+    	val aview = if (a.length == 1) {                        // a is actually a scalar, just use it.
+    	  a
+    	} else if (a.nrows > 1) {                               // a is a column vector, copy a section of it to tmp.
     		a.tileCopy(y(i), 0, tmp, 0, 0, tiles(i).nrows, 1);
     		tmp.view(tiles(i).nrows, 1);
-    	} else {
+    	} else {                                                // a is a row vector, copy a section to tmp
     		a.tileCopy(0, x(i), tmp, 0, 0, 1, tiles(i).ncols);
     		tmp.view(1, tiles(i).ncols);
     	}    	
