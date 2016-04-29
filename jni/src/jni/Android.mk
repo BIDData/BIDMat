@@ -51,6 +51,7 @@ LOCAL_LDFLAGS += -fopenmp
 #
 LOCAL_SHARED_LIBRARIES := QSML
 LOCAL_CFLAGS += -DQSML
+LOCAL_SRC_FILES += ../omatcopy.c
 #
 #################################################
 
