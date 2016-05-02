@@ -138,7 +138,7 @@ class TMat
   	val out = TMat.newOrCheckTMat(nrows,ncols,y,x,tiles.map(_.nrows),tiles.map(_.ncols),t0,null,GUID,"toCPU".##);
   	out.tiles(0) = t0;
   	for (i <- 1 until tiles.length) {
-  	  out.tiles(i) = MatFunctions.cpu(tiles(i));
+  	  out.tiles(i) <-- tiles(i);
   	}
   	out;
   }
@@ -148,7 +148,7 @@ class TMat
   	val out = TMat.newOrCheckTMat(nrows,ncols,y,x,tiles.map(_.nrows),tiles.map(_.ncols),t0,null,GUID,"toGPU".##);
   	out.tiles(0) = t0;
   	for (i <- 1 until tiles.length) {
-  	  out.tiles(i) = MatFunctions.gpu(tiles(i));
+  	  out.tiles(i) <-- tiles(i);
   	}
   	out;
   }	
