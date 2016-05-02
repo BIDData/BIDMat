@@ -134,17 +134,21 @@ class TMat
   }
   
   def toCPU:TMat = {
-  	val out = TMat.newOrCheckTMat(nrows,ncols,y,x,tiles.map(_.nrows),tiles.map(_.ncols),tiles(0),null,GUID,"toCPU".##);
-  	for (i <- 0 until tiles.length) {
-  	  out.tiles(i) = MatFunctions.cpu(tiles(i))
+    val t0 = MatFunctions.gpu(tiles(0));
+  	val out = TMat.newOrCheckTMat(nrows,ncols,y,x,tiles.map(_.nrows),tiles.map(_.ncols),t0,null,GUID,"toCPU".##);
+  	out.tiles(0) = t0;
+  	for (i <- 1 until tiles.length) {
+  	  out.tiles(i) = MatFunctions.cpu(tiles(i));
   	}
   	out;
   }
   
   def toGPU:TMat = {
-  	val out = TMat.newOrCheckTMat(nrows,ncols,y,x,tiles.map(_.nrows),tiles.map(_.ncols),tiles(0),null,GUID,"toGPU".##);
-  	for (i <- 0 until tiles.length) {
-  	  out.tiles(i) = MatFunctions.gpu(tiles(i))
+    val t0 = MatFunctions.gpu(tiles(0));
+  	val out = TMat.newOrCheckTMat(nrows,ncols,y,x,tiles.map(_.nrows),tiles.map(_.ncols),t0,null,GUID,"toGPU".##);
+  	out.tiles(0) = t0;
+  	for (i <- 1 until tiles.length) {
+  	  out.tiles(i) = MatFunctions.gpu(tiles(i));
   	}
   	out;
   }	

@@ -599,7 +599,6 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     for (i <- 0 until c.tiles.length) {
       val m = c.tiles(i);
     	if (!at) {
-    		Mat.nflops += 2L * m.length * ncols;
     		if (!bt) {
     			tileMult(m.nrows,m.ncols,ncols,c.y(i),0,b,0,c.x(i),m,0,0);
     		}	else {
@@ -659,6 +658,7 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     } else if (aroff + nr > nrows || acoff + kk > ncols || broff + kk > b.nrows || bcoff + nc > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
       throw new RuntimeException("tileMult: tile strays outside matrix dimensions");
     } else {
+      Mat.nflops += 2L * nr * nc * kk;
     	cublasSgemm('n', 'n',	nr, nc, kk, 1.0f, 
     	    data.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
     	    b.data.withByteOffset(Sizeof.FLOAT.toLong*(broff+bcoff*b.nrows)), b.nrows, 1.0f, 
@@ -673,6 +673,7 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     } else if (aroff + nr > nrows || acoff + kk > ncols || broff + nc > b.nrows || bcoff + kk > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
       throw new RuntimeException("tileMultNT: tile strays outside matrix dimensions");
     } else {
+    	Mat.nflops += 2L * nr * nc * kk;
     	cublasSgemm('n', 't',	nr, nc, kk, 1.0f, 
     	    data.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
     	    b.data.withByteOffset(Sizeof.FLOAT.toLong*(broff+bcoff*b.nrows)), b.nrows, 1.0f, 
@@ -687,6 +688,7 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     } else if (aroff + kk > nrows || acoff + nr > ncols || broff + kk > b.nrows || bcoff + nc > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
       throw new RuntimeException("tileMultTN: tile strays outside matrix dimensions");
     } else {
+    	Mat.nflops += 2L * nr * nc * kk;
     	cublasSgemm('t', 'n',	nr, nc, kk, 1.0f, 
     	    data.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
     	    b.data.withByteOffset(Sizeof.FLOAT.toLong*(broff+bcoff*b.nrows)), b.nrows, 1.0f, 
@@ -697,10 +699,11 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   
   def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:GSMat, broff:Int, bcoff:Int, c:GMat, croff:Int, ccoff:Int):GMat = {
     if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
-    	throw new RuntimeException("tileMul: cant have negative offsets or dimensions");
+    	throw new RuntimeException("tileMult: cant have negative offsets or dimensions");
     } else if (aroff + nr > nrows || acoff + kk > ncols || broff + kk > b.nrows || bcoff + nc > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
       throw new RuntimeException("tileMult: tile strays outside matrix dimensions");
     } else {
+    	Mat.nflops += 2L * nr * b.nnz;
     	val err = CUMAT.dsmultTile(nr, nc, kk, b.nnz,  
     			data.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
     	    b.data, b.ir, b.ic, broff, bcoff, 
@@ -714,10 +717,11 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   
   def tileMultNT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:GSMat, broff:Int, bcoff:Int, c:GMat, croff:Int, ccoff:Int):GMat = {
     if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
-    	throw new RuntimeException("tileMul: cant have negative offsets or dimensions");
+    	throw new RuntimeException("tileMultNT: cant have negative offsets or dimensions");
     } else if (aroff + nr > nrows || acoff + kk > ncols || broff + nc > b.nrows || bcoff + kk > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
-      throw new RuntimeException("tileMult: tile strays outside matrix dimensions");
+      throw new RuntimeException("tileMultNT: tile strays outside matrix dimensions");
     } else {
+    	Mat.nflops += 2L * nr * b.nnz * kk / b.ncols;
     	val err = CUMAT.dsmultTile(nr, nc, kk, b.nnz,  
     			data.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
     	    b.data, b.ir, b.ic, broff, bcoff, 
