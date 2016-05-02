@@ -134,7 +134,7 @@ class TMat
   }
   
   def toCPU:TMat = {
-    val t0 = MatFunctions.gpu(tiles(0));
+    val t0 = MatFunctions.cpu(tiles(0));
   	val out = TMat.newOrCheckTMat(nrows,ncols,y,x,tiles.map(_.nrows),tiles.map(_.ncols),t0,null,GUID,"toCPU".##);
   	out.tiles(0) = t0;
   	for (i <- 1 until tiles.length) {
