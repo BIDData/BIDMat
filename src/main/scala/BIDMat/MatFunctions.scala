@@ -207,10 +207,11 @@ object MatFunctions {
       case b:GLMat => LMat(b);
       case b:GSMat => SMat(b);
       case b:GSDMat => SDMat(b);
+      case b:TMat => b.toCPU;
     }
   }
     
-      /** Convert to a GPU matrix */
+  /** Convert to a GPU matrix */
   def gpu(a:Mat):Mat = {
     a match {
       case b:FMat => GMat(b);
@@ -225,6 +226,7 @@ object MatFunctions {
       case b:GLMat => b;
       case b:GSMat => b;
       case b:GSDMat => b;
+      case b:TMat => b.toGPU;
     }
   }
   

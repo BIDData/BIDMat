@@ -132,8 +132,23 @@ class TMat
       case aa : GDMat => tOpM(aa,omat,op);     
     }
   }
-
- 
+  
+  def toCPU:TMat = {
+  	val out = TMat.newOrCheckTMat(nrows,ncols,y,x,tiles.map(_.nrows),tiles.map(_.ncols),tiles(0),null,GUID,"toCPU".##);
+  	for (i <- 0 until tiles.length) {
+  	  out.tiles(i) = MatFunctions.cpu(tiles(i))
+  	}
+  	out;
+  }
+  
+  def toGPU:TMat = {
+  	val out = TMat.newOrCheckTMat(nrows,ncols,y,x,tiles.map(_.nrows),tiles.map(_.ncols),tiles(0),null,GUID,"toGPU".##);
+  	for (i <- 0 until tiles.length) {
+  	  out.tiles(i) = MatFunctions.gpu(tiles(i))
+  	}
+  	out;
+  }	
+  		
   override def set(f:Float) = {
     for (i <- 0 until tiles.length) {
       tiles(i).set(f)
