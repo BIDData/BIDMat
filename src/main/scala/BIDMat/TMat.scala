@@ -233,7 +233,6 @@ class TMat
   		out.clear; 
   		for (i <- 0 until tiles.length) {
   			val m = tiles(i);
-  			Mat.nflops += 2L * m.length * a.ncols;
   			m.tileMult(m.nrows, a.ncols, m.ncols, 0, 0, a, x(i), 0, out, y(i), 0);
   		}
   		out;
@@ -252,7 +251,6 @@ class TMat
   		out.clear;
   		for (i <- 0 until tiles.length) {
   			var m = tiles(i);
-  			Mat.nflops += 2L * m.length * a.ncols;
   			m.tileMultNT(m.nrows, a.nrows, m.ncols, 0, 0, a, 0, x(i), out, y(i), 0);
   		}
   		out;
