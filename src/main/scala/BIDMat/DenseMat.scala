@@ -9,7 +9,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
 (nr: Int, nc: Int, val data:Array[T])(implicit manifest:ClassTag[T]) extends Mat(nr, nc) {
   
-  def this(nr:Int, nc:Int)(implicit manifest:ClassTag[T]) = this(nr, nc, new Array[T](nr*nc))
+  def this(nr:Int, nc:Int)(implicit manifest:ClassTag[T]) = {
+    this(nr, {if (Mat.debugMem) {
+    		println("DenseMat %d %d" format (nr, nc))
+    		if (nr*nc > Mat.debugMemThreshold) throw new RuntimeException("DenseMat alloc too large");
+    	}
+    nc}, new Array[T](nr*nc));
+  }
 
   /** Return the (0,0) value as a scalar. */
   def v:T =

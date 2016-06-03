@@ -260,7 +260,13 @@ class SDPair (val omat:Mat, val mat:SDMat) extends Pair{
 
 object SDMat {
 
-  def apply(nr:Int, nc:Int, nnz0:Int):SDMat = new SDMat(nr, nc, nnz0, new Array[Int](nnz0), new Array[Int](nc+1), new Array[Double](nnz0)) 
+  def apply(nr:Int, nc:Int, nnz0:Int):SDMat = {
+  	if (Mat.debugMem) {
+      println("SDMat %d %d %d" format (nr, nc, nnz0));
+      if (nnz0 > Mat.debugMemThreshold) throw new RuntimeException("SDMat alloc too large");
+    }
+    new SDMat(nr, nc, nnz0, new Array[Int](nnz0), new Array[Int](nc+1), new Array[Double](nnz0)) 
+  }
   
   def apply(a:SparseMat[Double]):SDMat = new SDMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a.data) 
   
@@ -282,7 +288,13 @@ object SDMat {
     case aa:SDMat => aa
   }
   
-   def SnoRows(nr:Int, nc:Int, nnz0:Int):SDMat = new SDMat(nr, nc, nnz0, null, new Array[Int](nc+1), new Array[Double](nnz0))
+   def SnoRows(nr:Int, nc:Int, nnz0:Int):SDMat = {
+    if (Mat.debugMem) {
+      println("SDMat %d %d %d" format (nr, nc, nnz0));
+      if (nnz0 > Mat.debugMemThreshold) throw new RuntimeException("SDMat alloc too large");
+    }
+     new SDMat(nr, nc, nnz0, null, new Array[Int](nc+1), new Array[Double](nnz0))
+   }
   
   def newOrCheckSDMat(nrows:Int, ncols:Int, nnz:Int, oldmat:Mat):SDMat = {
   	if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows == 0 && oldmat.ncols == 0)) {

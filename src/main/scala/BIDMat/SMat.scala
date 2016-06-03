@@ -673,17 +673,21 @@ class SPair (val omat:Mat, val mat:SMat) extends Pair{
 object SMat {
 
   def apply(nr:Int, nc:Int, nnz0:Int):SMat = {
+    if (Mat.debugMem) {
+      println("SMat %d %d %d" format (nr, nc, nnz0));
+      if (nnz0 > Mat.debugMemThreshold) throw new RuntimeException("SMat alloc too large");
+    }
     val res = new SMat(nr, nc, nnz0, new Array[Int](nnz0), new Array[Int](nc+1), new Array[Float](nnz0));
     java.util.Arrays.fill(res.ir, Mat.ioneBased);
     java.util.Arrays.fill(res.jc, Mat.ioneBased);
     res
   }
   
-   def apply(nr:Int, nc:Int, nnz:Int, realnnz:Int):SMat = {
-     val res = apply(nr, nc, nnz);
-     res.nnz0 = realnnz;
-     res
-   }
+  def apply(nr:Int, nc:Int, nnz:Int, realnnz:Int):SMat = {
+  		val res = apply(nr, nc, nnz);
+  		res.nnz0 = realnnz;
+  		res
+  }
   
   def apply(a:SparseMat[Float]):SMat = {
     val m = new SMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a.data); 
@@ -727,7 +731,13 @@ object SMat {
   val minFun = (x:Float, y:Float) => math.min(x, y)
   val idFun = (x:Float) => x
   
-  def SnoRows(nr:Int, nc:Int, nnz0:Int):SMat = new SMat(nr, nc, nnz0, null, new Array[Int](nc+1), new Array[Float](nnz0))
+  def SnoRows(nr:Int, nc:Int, nnz0:Int):SMat = {
+    if (Mat.debugMem) {
+      println("SMat %d %d %d" format (nr, nc, nnz0));
+      if (nnz0 > Mat.debugMemThreshold) throw new RuntimeException("SMat alloc too large");
+    }
+    new SMat(nr, nc, nnz0, null, new Array[Int](nc+1), new Array[Float](nnz0))
+  }
   
   def newOrCheckSMat(nrows:Int, ncols:Int, nnz:Int, oldmat:Mat):SMat = {
   	if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows == 0 && oldmat.ncols == 0)) {

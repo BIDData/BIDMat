@@ -1986,7 +1986,13 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
 
 object FMat {
   
-  def apply(nr:Int, nc:Int) = new FMat(nr, nc, new Array[Float](nr*nc))
+  def apply(nr:Int, nc:Int) = {    
+    if (Mat.debugMem) {
+      println("FMat %d %d" format (nr, nc))
+      if (nr*nc > Mat.debugMemThreshold) throw new RuntimeException("FMat alloc too large");
+    }
+    new FMat(nr, nc, new Array[Float](nr*nc));
+  }
   
   def apply(a:DenseMat[Float]):FMat = {
     val out = new FMat(a.nrows, a.ncols, a.data) 
