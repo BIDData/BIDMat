@@ -110,6 +110,9 @@ __global__ void __dsmultTilex(int nr, int nc, int kk, int nnz, float *A, int lda
   }
 }
 
+//
+// input A is nr * nc, input B is kk * nc, output C is nr * kk
+//
 
 __global__ void __dsmultTileT(int nr, int nc, int kk, int nnz, float *A, int lda, float *Bdata, int *Bir, int *Bic, int broff, int bcoff, float *C, int ldc) {
   int jstart = ((long long)blockIdx.x) * nnz / gridDim.x;
