@@ -9,6 +9,7 @@ import org.junit.runner.RunWith
 
 @RunWith(classOf[JUnitRunner])
 class DMatTest extends FunSuite with Checkers {
+      Mat.checkMKL(true)
 	val x = DMat(2,3)
 	val xvalues = List(1.0,2.0,3.0,4.0,5.0,6.0).toArray
 	System.arraycopy(xvalues, 0, x.data, 0, 6)
