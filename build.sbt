@@ -35,7 +35,12 @@ libraryDependencies += "junit" % "junit" % "4.11" % "test"
 
 libraryDependencies += "net.jpountz.lz4" % "lz4" % "1.3"
 
-//libraryDependencies += "org.scala-saddle" % "jhdf5" % "2.9"
+libraryDependencies += "org.scala-saddle" % "jhdf5" % "2.9"
+
+libraryDependencies += "org.jfree" % "jfreechart" % "1.0.19"
+
+libraryDependencies += "com.cedarsoftware" % "json-io" % "4.3.0"
+
 
 credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 
