@@ -1885,28 +1885,28 @@ object GMat {
 
   }
   
-  def setGPU(i:Int) = jcuda.runtime.JCuda.cudaSetDevice(i)
+  def setGPU(i:Int) = jcuda.runtime.JCuda.cudaSetDevice(Mat.cudaDeviceIndexMap(i))
   
   def getGPU:Int = {
     val ar = Array[Int](1)
     jcuda.runtime.JCuda.cudaGetDevice(ar)
-    ar(0)
+    Mat.cudaDeviceInverseIndexMap(ar(0))
   }
   
   def connect(i:Int) = {
-    val v0 = jcuda.runtime.JCuda.cudaDeviceEnablePeerAccess(i,0)
+    val v0 = jcuda.runtime.JCuda.cudaDeviceEnablePeerAccess(Mat.cudaDeviceIndexMap(i),0)
     val j = getGPU
     setGPU(i)
-    val v1 = jcuda.runtime.JCuda.cudaDeviceEnablePeerAccess(j,0)
+    val v1 = jcuda.runtime.JCuda.cudaDeviceEnablePeerAccess(Mat.cudaDeviceInverseIndexMap(j),0)
     setGPU(j)
     (v0, v1)
   }
   
   def disconnect(i:Int) = {
-    val v0 = jcuda.runtime.JCuda.cudaDeviceDisablePeerAccess(i)
+    val v0 = jcuda.runtime.JCuda.cudaDeviceDisablePeerAccess(Mat.cudaDeviceIndexMap(i))
     val j = getGPU
     setGPU(i)
-    val v1 = jcuda.runtime.JCuda.cudaDeviceDisablePeerAccess(j)
+    val v1 = jcuda.runtime.JCuda.cudaDeviceDisablePeerAccess(Mat.cudaDeviceInverseIndexMap(j))
     setGPU(j)
     (v0, v1)
   }
@@ -1914,9 +1914,11 @@ object GMat {
   def canconnect(i:Int) = {
     val ar = Array[Int](1)
     val j = getGPU
-    jcuda.runtime.JCuda.cudaDeviceCanAccessPeer(ar, i, j)
-    val v0 = ar(0) 
-    jcuda.runtime.JCuda.cudaDeviceCanAccessPeer(ar, j, i)
+    val mi: Int = Mat.cudaDeviceIndexMap(i)
+    val mj: Int = Mat.cudaDeviceIndexMap(j)
+    jcuda.runtime.JCuda.cudaDeviceCanAccessPeer(ar, mi, mj)
+    val v0 = ar(0)
+    jcuda.runtime.JCuda.cudaDeviceCanAccessPeer(ar, mj, mi)
     (v0, ar(0))
   }
   
