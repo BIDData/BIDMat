@@ -108,7 +108,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   override def colslice(a:Int, b:Int, out:Mat) = FMat(gcolslice(a, b, out, Mat.oneBased))
   
   override def colslice(a:Int, b:Int):FMat = {
-    val out = FMat.newOrCheckFMat(nrows, b-a, null, GUID, a, "colslice".##)
+    val out = FMat.newOrCheckFMat(nrows, b-a, null, GUID, a, b, "colslice".##)
     colslice(a, b, out)
     out
   }
@@ -120,7 +120,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   override def rowslice(a:Int, b:Int, out:Mat, c:Int) = FMat(growslice(a, b, out, c))
   
   override def rowslice(a:Int, b:Int):FMat = {
-    val out = FMat.newOrCheckFMat(b-a, ncols, null, GUID, a, "rowslice".##)
+    val out = FMat.newOrCheckFMat(b-a, ncols, null, GUID, a, b, "rowslice".##)
     rowslice(a, b, out)
     out
   }
@@ -408,6 +408,29 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   def madd(b:FMat, c:FMat):FMat = madd(b, c, false, false);
   
+  def madd(b:FMat, c:TMat):TMat = madd(b, c, false, false);
+  
+  def madd(b:FMat,c:TMat,at:Boolean,bt:Boolean):TMat = {
+  		for (i <- 0 until c.tiles.length) {
+  		  val m = c.tiles(i).asInstanceOf[FMat];
+  			if (!at) {
+  				Mat.nflops += 2L * m.length * ncols;
+  				if (!bt) {
+  					tileMult(m.nrows,m.ncols,ncols,c.y(i),0,b,0,c.x(i),m,0,0);
+  				}	else {
+  					tileMultNT(m.nrows,m.ncols,ncols,c.y(i),0,b,c.x(i),0,m,0,0);
+  				}
+  			} else {
+  				if (!bt) {
+  					tileMultTN(m.nrows,m.ncols,nrows,0,c.y(i),b,0,c.x(i),m,0,0);
+  				}	else {
+  					tileMultTT(m.nrows,m.ncols,nrows,0,c.y(i),b,c.x(i),0,m,0,0);
+  				}
+  			}
+  		}
+  		c;
+  }
+  
   def madd(b:SMat, c:FMat, bt:Boolean, ct:Boolean):FMat = {
     (bt, ct) match {
       case (false, false) => madd(b, c);
@@ -420,6 +443,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     (b, c) match {
       case (bb:FMat, cc:FMat) => madd(bb, cc, at, bt);
       case (bb:SMat, cc:FMat) => madd(bb, cc, at, bt);
+      case (bb:FMat, cc:TMat) => madd(bb, cc, at, bt);
       case _ => throw new RuntimeException("madd unsupported types %s %s" format (b.mytype, c.mytype));
     }
     c
@@ -429,9 +453,9 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:FMat, broff:Int, bcoff:Int, c:FMat, croff:Int, ccoff:Int) = {
     if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
-    	throw new RuntimeException("fSMultTile: cant have negative offsets or dimensions");
+    	throw new RuntimeException("tileMult: cant have negative offsets or dimensions");
     } else if (aroff + nr > nrows || acoff + kk > ncols || broff + kk > b.nrows || bcoff + nc > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
-      throw new RuntimeException("fSMultTile: tile strays outside matrix dimensions");
+      throw new RuntimeException("tileMult: tile strays outside matrix dimensions");
     } else {
       sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.NoTrans,
       		nr, nc, kk, 1.0f, data, aroff+acoff*nrows, nrows, b.data, broff+bcoff*b.nrows, b.nrows, 1.0f, 
@@ -440,32 +464,26 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     }
   }
   
-  def tileMultT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:FMat, broff:Int, bcoff:Int, c:FMat, croff:Int, ccoff:Int) = {
+  def tileMultNT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:FMat, broff:Int, bcoff:Int, c:FMat, croff:Int, ccoff:Int) = {
     if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
-    	throw new RuntimeException("fSMultTile: cant have negative offsets or dimensions");
+    	throw new RuntimeException("tileMultNT: cant have negative offsets or dimensions");
     } else if (aroff + nr > nrows || acoff + kk > ncols || broff + nc > b.nrows || bcoff + kk > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
-
-      println("aroff + nr: " + (aroff+nr));
-      println("nrows: " + nrows);
-
-      println("acoff + kk: " + (aroff+kk));
-      println("ncols: " + ncols);
-
-      println("broff + nc: " + (broff+nc));
-      println("b.nrows: " + b.nrows);
-
-      println("bcoff + kk: " + (bcoff+kk));
-      println("b.ncols: " + b.ncols);
-
-      println("croff + nr: " + (croff+nr));
-      println("c.nrows: " + c.nrows);
-
-      println("ccoff + nc: " + (ccoff+nc));
-      println("c.ncols: " + c.ncols);
-
-      throw new RuntimeException("fSMultTile: tile strays outside matrix dimensions");
+      throw new RuntimeException("tileMultNT: tile strays outside matrix dimensions");
     } else {
       sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.Trans,
+      		nr, nc, kk, 1.0f, data, aroff+acoff*nrows, nrows, b.data, broff+bcoff*b.nrows, b.nrows, 1.0f, 
+      		c.data, croff+ccoff*c.nrows, c.nrows);
+      c;
+    }
+  }
+  
+  def tileMultTN(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:FMat, broff:Int, bcoff:Int, c:FMat, croff:Int, ccoff:Int) = {
+    if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
+    	throw new RuntimeException("tileTN: cant have negative offsets or dimensions");
+    } else if (aroff + kk > nrows || acoff + nr > ncols || broff + nc > b.nrows || bcoff + kk > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
+      throw new RuntimeException("tileTN: tile strays outside matrix dimensions");
+    } else {
+      sgemmx(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans,
       		nr, nc, kk, 1.0f, data, aroff+acoff*nrows, nrows, b.data, broff+bcoff*b.nrows, b.nrows, 1.0f, 
       		c.data, croff+ccoff*c.nrows, c.nrows);
       c;
@@ -632,7 +650,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     }
   }
   
-  def tileMultT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:SMat, broff:Int, bcoff:Int, c:FMat, croff:Int, ccoff:Int):FMat = {
+  def tileMultNT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:SMat, broff:Int, bcoff:Int, c:FMat, croff:Int, ccoff:Int):FMat = {
     if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
     	throw new RuntimeException("fSMultTileT: cant have negative offsets or dimensions");
     } else if (aroff + nr > nrows || acoff + kk > ncols || broff + nc > b.nrows || bcoff + kk > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
@@ -666,12 +684,39 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     }
   }
   
-  override def tileMultT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):Mat = {
+  override def tileMultNT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):Mat = {
     (b, c) match {
-      case (sb:SMat, fc:FMat) => tileMultT(nr, nc, kk, aroff, acoff, sb, broff, bcoff, fc, croff, ccoff);
-      case (fb:FMat, fc:FMat) => tileMultT(nr, nc, kk, aroff, acoff, fb, broff, bcoff, fc, croff, ccoff);
-      case _ => throw new RuntimeException("tileMultT couldnt match matrix types")
+      case (sb:SMat, fc:FMat) => tileMultNT(nr, nc, kk, aroff, acoff, sb, broff, bcoff, fc, croff, ccoff);
+      case (fb:FMat, fc:FMat) => tileMultNT(nr, nc, kk, aroff, acoff, fb, broff, bcoff, fc, croff, ccoff);
+      case _ => throw new RuntimeException("tileMultNT couldnt match matrix types")
     }
+  }
+  
+  override def tileMultTN(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):Mat = {
+    (b, c) match {
+//      case (sb:SMat, fc:FMat) => tileMultTN(nr, nc, kk, aroff, acoff, sb, broff, bcoff, fc, croff, ccoff);
+      case (fb:FMat, fc:FMat) => tileMultTN(nr, nc, kk, aroff, acoff, fb, broff, bcoff, fc, croff, ccoff);
+      case _ => throw new RuntimeException("tileMultTN couldnt match matrix types")
+    }
+  }
+  
+  def tileCopy(fromrow:Int, fromcol:Int, to:FMat, torow:Int, tocol:Int, height:Int, width:Int):FMat = {
+  	var i = 0;
+  	while (i < width) {
+  	  val fromindx = fromrow + (fromcol + i) * nrows;
+  	  val toindx = torow + (tocol + i) * to.nrows;
+  		var j = 0;
+  		while (j < height) {
+  		  to.data(j + toindx) = data(j + fromindx);
+  		  j += 1;
+  		}
+  	  i += 1;
+  	}
+    to
+  }
+  
+  override def tileCopy(fromrow:Int, fromcol:Int, to:Mat, torow:Int, tocol:Int, height:Int, width:Int):FMat = {
+    tileCopy(fromrow, fromcol, to.asInstanceOf[FMat], torow, tocol, height, width);
   }
   
   def fSMultTHelper(a:SMat, out:FMat, istart:Int, iend:Int, ioff:Int) = {
@@ -1351,6 +1396,22 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     out
   }
   
+  def vecAdd(fromi:Int, b:FMat, toi:Int, n:Int):FMat = {
+    var i = 0;
+    while (i < n) {
+      b.data(i + toi) != data(i + fromi);
+      i += 1;
+    }
+    b;
+  }
+  
+  override def vecAdd(fromi:Int, b:Mat, toi:Int, n:Int):Mat = {
+    b match {
+      case bb:FMat => vecAdd(fromi, bb, toi, n);
+    }
+    b
+  }
+  
   def reverse:FMat = _reverse(null);
   
   def reverse(omat:Mat):FMat = _reverse(omat);
@@ -1925,7 +1986,13 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
 
 object FMat {
   
-  def apply(nr:Int, nc:Int) = new FMat(nr, nc, new Array[Float](nr*nc))
+  def apply(nr:Int, nc:Int) = {    
+    if (Mat.debugMem) {
+      println("FMat %d %d" format (nr, nc))
+      if (nr*nc > Mat.debugMemThreshold) throw new RuntimeException("FMat alloc too large");
+    }
+    new FMat(nr, nc, new Array[Float](nr*nc));
+  }
   
   def apply(a:DenseMat[Float]):FMat = {
     val out = new FMat(a.nrows, a.ncols, a.data) 

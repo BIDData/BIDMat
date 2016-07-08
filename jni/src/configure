@@ -134,7 +134,9 @@ elif [ "$OS" = "linux" ] ; then
 	if [ "$JAVA_HOME" = "" ]; then
 	    JAVA_HOME="/usr/java/default"
 	fi
-	CUDA_HOME="/usr/local/cuda"
+        if [ "$CUDA_HOME" = "" ]; then
+	  CUDA_HOME="/usr/local/cuda"
+        fi
 	CC="gcc"
 	GCC="g++"
 	NVCC="nvcc" 
@@ -173,7 +175,9 @@ else
 	if [ "$JAVA_HOME" = "" ]; then
 	    JAVA_HOME="/usr/java/default"
 	fi
-	CUDA_HOME="/usr/local/cuda"
+        if [ "$CUDA_HOME" = "" ]; then
+	  CUDA_HOME="/usr/local/cuda"
+        fi
 	CC="icc"
 	GCC="g++"
 	NVCC="nvcc" 
@@ -288,6 +292,7 @@ echo "LDFLAGS=$LDFLAGS" >> Makefile.incl
 echo "LIBPREPEND=$LIBPREPEND" >> Makefile.incl
 echo "LIBAPPEND=$LIBAPPEND" >> Makefile.incl
 echo "LIBAPPENDLIB=$LIBAPPENDLIB" >> Makefile.incl
+echo "LIBDIR=$LIBDIR" >> Makefile.incl
 echo "LAPACK_INCLUDES=$LAPACK_INCLUDES" >> Makefile.incl
 echo "CPU_LIBS=$CPU_LIBS" >> Makefile.incl
 echo "CUDA_LIBS=$CUDA_LIBS" >> Makefile.incl

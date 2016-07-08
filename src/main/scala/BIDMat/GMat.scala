@@ -441,7 +441,7 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   }
   
   override def colslice(a:Int, b:Int, omat:Mat):GMat = {
-    val out = GMat.newOrCheckGMat(nrows, b-a, omat, GUID, a, "colslice".##);
+    val out = GMat.newOrCheckGMat(nrows, b-a, omat, GUID, a, b, "colslice".##);
     cudaMemcpy(out.data, data.withByteOffset(1L*a*nrows*Sizeof.FLOAT), 1L*(b-a)*nrows*Sizeof.FLOAT, cudaMemcpyDeviceToDevice);
     cudaDeviceSynchronize;
     val err = cudaGetLastError;
@@ -591,56 +591,36 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     }
   }
   
-  def madd(b:Mat,c:TMat):TMat = madd(b,c,false,false)
+  def madd(b:GMat,c:TMat):TMat = madd(b,c,false,false)
 
   import BIDMat.IMatWildcard
  
   def madd(b:Mat,c:TMat,at:Boolean,bt:Boolean):TMat = {
-    /*val g=c.full()
-    madd(b,g,at,bt)
-    c<--g*/
-    at match {
-        case false=>{
-            var i=0
-            while(i<c.tiles.length){
-                Mat.nflops += 2L * c.tiles(i).length * ncols;
-                if (bt)
-                    tileMultT(c.tiles(i).nrows,c.tiles(i).ncols,ncols,c.y(i),0,b,c.x(i),0,c.tiles(i),0,0)
-                else
-                    tileMult(c.tiles(i).nrows,c.tiles(i).ncols,ncols,c.y(i),0,b,0,c.x(i),c.tiles(i),0,0)
-                i+=1
-            }
-        }
-        case _=>{
-            throw new RuntimeException("madd unsupported options Mat, TMat %b %b" format (at, bt));    
-        }
+    for (i <- 0 until c.tiles.length) {
+      val m = c.tiles(i);
+    	if (!at) {
+    		if (!bt) {
+    			tileMult(m.nrows,m.ncols,ncols,c.y(i),0,b,0,c.x(i),m,0,0);
+    		}	else {
+    			tileMultNT(m.nrows,m.ncols,ncols,c.y(i),0,b,c.x(i),0,m,0,0);
+    		}
+    	} else {
+    		if (!bt) {
+    			tileMultTN(m.nrows,m.ncols,nrows,0,c.y(i),b,0,c.x(i),m,0,0);
+    		}	else {
+    			tileMultTT(m.nrows,m.ncols,nrows,0,c.y(i),b,c.x(i),0,m,0,0);
+    		}
+    	}
     }
-    
-    /*import BIDMat.SciFunctions._
-    println("in",GPUmem._1)
-    b match {
-            case gss:GSMat=>
-                val gs = if (bt) gss.t else gss
-                println("in2",GPUmem._1)
-                var i=0
-                while(i<c.tiles.length){
-                    val aa = this(MatFunctions.irow(c.y(i) to c.y(i)+c.tiles(i).nrows-1),new BIDMat.IMatWildcard)
-                println("in3",i,GPUmem._1)
-                    aa.madd(gs.colslice(c.x(i),c.x(i)+c.tiles(i).ncols),c.tiles(i))
-                println("in4",i,GPUmem._1)
-                    i+=1
-                }
-            //case g:GMat=>{
-            //}
-        }*/
-    c
+    c;
   }
   
   override def madd(b:Mat, c:Mat, at:Boolean, bt:Boolean):Mat = {
   	(b, c) match {
   	case (bb:GMat, cc:GMat) => madd(bb, cc, at, bt);
   	case (bb:GSMat, cc:GMat) => madd(bb, cc, at, bt);
-  	case (bb:Mat,cc:TMat) => madd(bb,cc,at,bt)
+  	case (bb:GMat,cc:TMat) => madd(bb,cc,at,bt);
+  	case (bb:GSMat,cc:TMat) => madd(bb,cc,at,bt);
   	case _ => throw new RuntimeException("madd unsupported types %s %s" format (b.mytype, c.mytype));
   	}
   	c
@@ -672,12 +652,13 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
    * Note: c is not cleared by the kernel, and the result is added to it. 
    */
   
-  def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:GMat, broff:Int, bcoff:Int, c:GMat, croff:Int, ccoff:Int) = {
+  def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:GMat, broff:Int, bcoff:Int, c:GMat, croff:Int, ccoff:Int):GMat = {
     if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
     	throw new RuntimeException("tileMul: cant have negative offsets or dimensions");
     } else if (aroff + nr > nrows || acoff + kk > ncols || broff + kk > b.nrows || bcoff + nc > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
       throw new RuntimeException("tileMult: tile strays outside matrix dimensions");
     } else {
+      Mat.nflops += 2L * nr * nc * kk;
     	cublasSgemm('n', 'n',	nr, nc, kk, 1.0f, 
     	    data.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
     	    b.data.withByteOffset(Sizeof.FLOAT.toLong*(broff+bcoff*b.nrows)), b.nrows, 1.0f, 
@@ -686,12 +667,13 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     }
   }
   
-  def tileMultT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:GMat, broff:Int, bcoff:Int, c:GMat, croff:Int, ccoff:Int) = {
+  def tileMultNT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:GMat, broff:Int, bcoff:Int, c:GMat, croff:Int, ccoff:Int):GMat = {
     if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
-    	throw new RuntimeException("tileMul: cant have negative offsets or dimensions");
+    	throw new RuntimeException("tileMultNT: cant have negative offsets or dimensions");
     } else if (aroff + nr > nrows || acoff + kk > ncols || broff + nc > b.nrows || bcoff + kk > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
-      throw new RuntimeException("tileMult: tile strays outside matrix dimensions");
+      throw new RuntimeException("tileMultNT: tile strays outside matrix dimensions");
     } else {
+    	Mat.nflops += 2L * nr * nc * kk;
     	cublasSgemm('n', 't',	nr, nc, kk, 1.0f, 
     	    data.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
     	    b.data.withByteOffset(Sizeof.FLOAT.toLong*(broff+bcoff*b.nrows)), b.nrows, 1.0f, 
@@ -700,12 +682,28 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     }
   }
   
-  def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:GSMat, broff:Int, bcoff:Int, c:GMat, croff:Int, ccoff:Int) = {
+  def tileMultTN(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:GMat, broff:Int, bcoff:Int, c:GMat, croff:Int, ccoff:Int):GMat = {
     if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
-    	throw new RuntimeException("tileMul: cant have negative offsets or dimensions");
+    	throw new RuntimeException("tileMultTN: cant have negative offsets or dimensions");
+    } else if (aroff + kk > nrows || acoff + nr > ncols || broff + kk > b.nrows || bcoff + nc > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
+      throw new RuntimeException("tileMultTN: tile strays outside matrix dimensions");
+    } else {
+    	Mat.nflops += 2L * nr * nc * kk;
+    	cublasSgemm('t', 'n',	nr, nc, kk, 1.0f, 
+    	    data.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
+    	    b.data.withByteOffset(Sizeof.FLOAT.toLong*(broff+bcoff*b.nrows)), b.nrows, 1.0f, 
+      		c.data.withByteOffset(Sizeof.FLOAT.toLong*(croff+ccoff*c.nrows)), c.nrows);
+      c;
+    }
+  }
+  
+  def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:GSMat, broff:Int, bcoff:Int, c:GMat, croff:Int, ccoff:Int):GMat = {
+    if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
+    	throw new RuntimeException("tileMult: cant have negative offsets or dimensions");
     } else if (aroff + nr > nrows || acoff + kk > ncols || broff + kk > b.nrows || bcoff + nc > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
       throw new RuntimeException("tileMult: tile strays outside matrix dimensions");
     } else {
+    	Mat.nflops += 2L * nr * b.nnz;
     	val err = CUMAT.dsmultTile(nr, nc, kk, b.nnz,  
     			data.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
     	    b.data, b.ir, b.ic, broff, bcoff, 
@@ -717,12 +715,13 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     }
   }
   
-  def tileMultT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:GSMat, broff:Int, bcoff:Int, c:GMat, croff:Int, ccoff:Int) = {
+  def tileMultNT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:GSMat, broff:Int, bcoff:Int, c:GMat, croff:Int, ccoff:Int):GMat = {
     if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
-    	throw new RuntimeException("tileMul: cant have negative offsets or dimensions");
+    	throw new RuntimeException("tileMultNT: cant have negative offsets or dimensions");
     } else if (aroff + nr > nrows || acoff + kk > ncols || broff + nc > b.nrows || bcoff + kk > b.ncols || croff + nr > c.nrows || ccoff + nc > c.ncols) {
-      throw new RuntimeException("tileMult: tile strays outside matrix dimensions");
+      throw new RuntimeException("tileMultNT: tile strays outside matrix dimensions");
     } else {
+    	Mat.nflops += 2L * nr * b.nnz * kk / b.ncols;
     	val err = CUMAT.dsmultTile(nr, nc, kk, b.nnz,  
     			data.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
     	    b.data, b.ir, b.ic, broff, bcoff, 
@@ -734,7 +733,7 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     }
   }
   
-  override def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):Mat = {
+  override def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):GMat = {
     (b, c) match {
       case (sb:GSMat, fc:GMat) => tileMult(nr, nc, kk, aroff, acoff, sb, broff, bcoff, fc, croff, ccoff);
       case (fb:GMat, fc:GMat) => tileMult(nr, nc, kk, aroff, acoff, fb, broff, bcoff, fc, croff, ccoff);
@@ -742,10 +741,18 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     }
   }
   
-  override def tileMultT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):Mat = {
+  override def tileMultNT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):GMat = {
     (b, c) match {
-      case (sb:GSMat, fc:GMat) => tileMultT(nr, nc, kk, aroff, acoff, sb, broff, bcoff, fc, croff, ccoff);
-      case (fb:GMat, fc:GMat) => tileMultT(nr, nc, kk, aroff, acoff, fb, broff, bcoff, fc, croff, ccoff);
+      case (sb:GSMat, fc:GMat) => tileMultNT(nr, nc, kk, aroff, acoff, sb, broff, bcoff, fc, croff, ccoff);
+      case (fb:GMat, fc:GMat) => tileMultNT(nr, nc, kk, aroff, acoff, fb, broff, bcoff, fc, croff, ccoff);
+      case _ => throw new RuntimeException("tileMultT couldnt match matrix types")
+    }
+  }
+  
+  override def tileMultTN(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):GMat = {
+    (b, c) match {
+//      case (sb:GSMat, fc:GMat) => tileMultTN(nr, nc, kk, aroff, acoff, sb, broff, bcoff, fc, croff, ccoff);
+      case (fb:GMat, fc:GMat) => tileMultTN(nr, nc, kk, aroff, acoff, fb, broff, bcoff, fc, croff, ccoff);
       case _ => throw new RuntimeException("tileMultT couldnt match matrix types")
     }
   }
@@ -947,13 +954,28 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     a
   }
   
-  def copyTo(t:TMat):TMat = {
-    var i = 0
-    while (i < t.tiles.length) {
-        applyx(GIMat(MatFunctions.irow(t.y(i) until t.y(i)+t.tiles(i).nrows)),GIMat(MatFunctions.irow(t.x(i) until t.x(i)+t.tiles(i).ncols)),t.tiles(i))
-        i+=1
+  def vecAdd(fromi:Int, b:GMat, toi:Int, n:Int):GMat = {
+    val bb = b.data.withByteOffset(toi*Sizeof.FLOAT);
+    CUMAT.applyop(data.withByteOffset(fromi*Sizeof.FLOAT), n, 1, bb, n, 1, bb, GMat.BinOp.op_add);
+    b;
+  }
+  
+  override def vecAdd(fromi:Int, b:Mat, toi:Int, n:Int):Mat = {
+    b match {
+      case bb:GMat => vecAdd(fromi, bb, toi, n);
     }
-    t
+  }
+  
+  def tileCopy(fromrow:Int, fromcol:Int, to:GMat, torow:Int, tocol:Int, height:Int, width:Int):GMat = {
+    val toindx = torow + tocol * to.nrows;
+    val fromindx = fromrow + fromcol * nrows;
+    cudaMemcpy2D(to.data.withByteOffset(toindx * Sizeof.FLOAT), to.nrows*Sizeof.FLOAT, data.withByteOffset(fromindx * Sizeof.FLOAT), nrows*Sizeof.FLOAT,
+        height*Sizeof.FLOAT, width, cudaMemcpyKind.cudaMemcpyDeviceToDevice);  
+    to
+  }
+  
+  override def tileCopy(fromrow:Int, fromcol:Int, to:Mat, torow:Int, tocol:Int, height:Int, width:Int):Mat = {
+    tileCopy(fromrow, fromcol, to.asInstanceOf[GMat], torow, tocol, height, width);
   }
   
   def copyFrom(in:FMat):GMat = {
@@ -1556,6 +1578,7 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
 	def \ (a : GMat) = mat.horzcat(a, omat)
 	
   override def * (b : Float) = mat.gOp(GMat(b), omat, op_mul)
+  override def *@ (b : Float) = mat.gOp(GMat(b), omat, op_mul)
   override def ∘ (b : Float) = mat.gOp(GMat(b), omat, op_mul)
   override def + (b : Float) = mat.gOp(GMat(b), omat, op_add)
   override def - (b : Float) = mat.gOp(GMat(b), omat, op_sub)
@@ -1569,6 +1592,7 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
 	override def <= (b : Float) = mat.gOp(GMat(b), omat, op_le)
   
   override def * (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_mul)
+  override def *@ (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_mul)
   override def ∘ (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_mul)
   override def + (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_add)
   override def - (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_sub)
@@ -1583,6 +1607,7 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
 	
   
 	override def * (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_mul)
+	override def *@ (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_mul)
   override def ∘ (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_mul)
   override def + (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_add)
   override def - (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_sub)
@@ -1597,6 +1622,7 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
   
   
   override def * (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_mul)
+  override def *@ (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_mul)
   override def ∘ (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_mul)
   override def + (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_add)
   override def - (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_sub)

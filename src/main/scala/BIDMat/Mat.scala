@@ -33,6 +33,10 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
     throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and Float")
   }
   
+  def notImplemented2(s:String,that:Int):Mat = { 
+    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and Int")
+  }
+  
   def notImplemented2(s:String,that:Double):Mat = { 
     throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and Double")
   }
@@ -209,8 +213,20 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
   def update(a:Int, b:Int, v:Long):Mat = notImplemented0("update");  
   def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):Mat =
     notImplemented0("tileMult");
-  def tileMultT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):Mat =
+  def tileMultNT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):Mat =
     notImplemented0("tileMultT");
+  def tileMultTN(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):Mat =
+  		notImplemented0("tileMultT");
+  def tileMultTT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):Mat =
+    notImplemented0("tileMultT");
+  
+  def tileCopy(fromrow:Int, fromcol:Int, to:Mat, torow:Int, tocol:Int, height:Int, width:Int):Mat = {
+  		notImplemented0("tileCopy");
+  }
+  
+  def vecAdd(fromi:Int, to:Mat, toi:Int, height:Int):Mat = {
+  		notImplemented0("vecAdd");
+  }
   
   def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, reps:Int, aoff:Int, lda:Int, astep:Int, 
       b:Mat, boff:Int, ldb:Int, bstep:Int, c:Mat, coff:Int, ldc:Int, cstep:Int):Mat = notImplemented0("blockGemm");
@@ -839,7 +855,6 @@ object Mat {
     if (verb) useMKL = true;
     if (useMKL) {
     	try {
-//    	  if (ostype == OS_WINDOWS) edu.berkeley.bid.LibUtils.loadLib("libiomp5md")
     		edu.berkeley.bid.LibUtils.loadLibrary("bidmatcpu", true);
     	} catch {
     	case th:Throwable => {

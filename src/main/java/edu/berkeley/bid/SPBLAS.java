@@ -5,7 +5,7 @@ public final class SPBLAS {
     private SPBLAS() {}
 
     static {
-      LibUtils.loadLibrary("bidmatcpu", true);
+//      LibUtils.loadLibrary("bidmatcpu", true);  // Rely on Mat.checkMKL to load this
     }
 
   public static native  void scsrmm(String transa, int m, int n, int k, float alpha, String matdescra, 

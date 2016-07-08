@@ -791,12 +791,22 @@ class SparseMat[@specialized(Double,Float) T]
 object SparseMat {
   
   def apply[T](nr:Int, nc:Int, nnz0:Int)
-  (implicit manifest:Manifest[T], numeric:Numeric[T]):SparseMat[T] = 
-    new SparseMat[T](nr, nc, nnz0, new Array[Int](nnz0), new Array[Int](nc+1), new Array[T](nnz0))
+  (implicit manifest:Manifest[T], numeric:Numeric[T]):SparseMat[T] = {
+  	if (Mat.debugMem) {
+  		println("SparseMat %d %d %d" format (nr, nc, nnz0));
+  		if (nnz0 > Mat.debugMemThreshold) throw new RuntimeException("SparseMat alloc too large");
+  	}
+    new SparseMat[T](nr, nc, nnz0, new Array[Int](nnz0), new Array[Int](nc+1), new Array[T](nnz0));
+  }
     
   def noRows[T](nr:Int, nc:Int, nnz0:Int)
-  (implicit manifest:Manifest[T], numeric:Numeric[T]):SparseMat[T] = 
-    new SparseMat[T](nr, nc, nnz0, null, new Array[Int](nc+1), new Array[T](nnz0))
+  (implicit manifest:Manifest[T], numeric:Numeric[T]):SparseMat[T] = {
+  	if (Mat.debugMem) {
+  		println("SparseMat %d %d %d" format (nr, nc, nnz0));
+  		if (nnz0 > Mat.debugMemThreshold) throw new RuntimeException("SparseMat alloc too large");
+  	}
+    new SparseMat[T](nr, nc, nnz0, null, new Array[Int](nc+1), new Array[T](nnz0));
+  }
     
   def remdups[@specialized(Double, Float) T](rows:Array[Int], cols:Array[Int], avals:Array[T]) 
   (implicit manifest:Manifest[T], numeric:Numeric[T]):Int = {
