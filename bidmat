@@ -1,10 +1,10 @@
 #!/bin/bash
 # export JAVA_HOME="" # Set here if not set in environment
 # export CUDA_PATH="" # Set here if not set in environment
-# Fix these if needed
+# Change these if needed
 BLAS_ROOT="/code/QSML"
 JCUDA_VERSION="0.7.0a"
-MEMSIZE="-Xmx12G"
+JOCL_VERSION="2.0.1-SNAPSHOT"
 export JAVA_OPTS="${MEMSIZE} -Xms128M -Dfile.encoding=UTF-8" # Set as much memory as possible
 BIDMAT_ROOT="${BASH_SOURCE[0]}"
 if [ ! `uname` = "Darwin" ]; then
@@ -44,7 +44,7 @@ JCUDA_LIBS="${JCUDA_LIBDIR}/jcuda-${JCUDA_VERSION}.jar;${JCUDA_LIBDIR}/jcublas-$
 ${JCUDA_LIBDIR}/jcufft-${JCUDA_VERSION}.jar;${JCUDA_LIBDIR}/jcurand-${JCUDA_VERSION}.jar;\
 ${JCUDA_LIBDIR}/jcusparse-${JCUDA_VERSION}.jar"
 
-JOCL_LIBS="${JOCL_LIBDIR}/jocl.jar"
+JOCL_LIBS="${JOCL_LIBDIR}/jocl-${JOCL_VERSION}.jar"
 
 ALL_LIBS=";${LIBDIR}/IScala.jar;${BIDMAT_LIBS};${JCUDA_LIBS};${JOCL_LIBS};${JAVA_HOME}/lib/tools.jar"
 

@@ -649,15 +649,7 @@ object Mat {
 
   var hasOpenCL: Boolean = false   // true if OpenCL runtime available
 
-  var clShutdownHookSet: Boolean = false // true if we've set a shutdown hook to clean up OpenCL resources
-
-  var clResourcesFreed: Boolean = false // true if we've freed the OpenCL context & command queue
-
-  var numOpenCLGPUs = 0            // number of available OpenCL GPUs
-
-  var clContext: org.jocl.cl_context = null // OpenCL context
-
-  var clQueue: org.jocl.cl_command_queue = null // Current OpenCL device command queue
+  var clHandle: CLHandle = null    // Holds OpenCL context and command queue
   
   var useMKL = true;               // Use MKL libs
   
@@ -900,7 +892,7 @@ object Mat {
   				}
   			} catch {
   			case x:Throwable =>  {
-  				println("Couldnt load CUDA runtime");
+  				println("Couldn't load CUDA runtime");
   				if (verbose) {
   					val msg = x.getMessage;
   					if (msg != null) println(msg);
@@ -913,7 +905,7 @@ object Mat {
   					jcuda.LibUtils.loadLibrary("JCudaRuntime");
   				} catch {
   				case y:Throwable =>  {
-  					println("Couldnt load JCuda");
+  					println("Couldn't load JCuda");
   					if (verbose) {
   						val msg = y.getMessage;
   						if (msg != null) println(msg);
@@ -966,84 +958,25 @@ object Mat {
         hasOpenCL = true
       } catch {
         case err:Throwable => {
-          println("Failed to load JOCL native shared library")
-          if (verbose) {
-            val msg = err.getMessage
-            if (msg != null) println(msg)
-          }
+          println("Couldn't load OpenCL runtime")
+          if (verbose) println(err.getMessage)
           hasOpenCL = false
         }
       }
     }
+
     // if we loaded the runtime successfully, query available devices
     if (hasOpenCL) {
-      val platforms = getCLPlatforms()
-      val platform = platforms(0)
-      // Query for available GPUs first, then check CPUs
-      val devices = try {
-        getCLDevices(platform, org.jocl.CL.CL_DEVICE_TYPE_GPU)
+      try {
+        clHandle = CLHandle()
       } catch {
-        case err:org.jocl.CLException => {
-          getCLDevices(platform, org.jocl.CL.CL_DEVICE_TYPE_CPU)
+        case err:Throwable => {
+          println("Couldn't acquire OpenCL context and command queue")
+          if (verbose) println(err.getMessage)
+          hasOpenCL = false
         }
       }
-      clContext = createCLContext(platform, devices)
-      clQueue = createCLQueue(clContext, devices(0))
-      clResourcesFreed = false
-
-      // Make sure to clean up before shutdown
-      if (!clShutdownHookSet) {
-        clShutdownHookSet = true
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-          override def run() = {
-            freeOpenCL()
-          }
-        })
-      }
     }
-  }
-
-  def freeOpenCL():Unit = {
-    synchronized {
-      if (!clResourcesFreed) {
-        CLKernelCache.free()
-        org.jocl.CL.clReleaseCommandQueue(clQueue)
-        org.jocl.CL.clReleaseContext(clContext)
-        clResourcesFreed = true
-        hasOpenCL = false
-      }
-    }
-  }
-
-  def getCLPlatforms():Array[org.jocl.cl_platform_id] = {
-    val num_platforms_ptr = Array(0)
-    org.jocl.CL.clGetPlatformIDs(0, null, num_platforms_ptr)
-    val num_platforms = num_platforms_ptr(0)
-    val platforms = Array.ofDim[org.jocl.cl_platform_id](num_platforms)
-    org.jocl.CL.clGetPlatformIDs(platforms.length, platforms, null)
-    platforms
-  }
-
-  def getCLDevices(platform: org.jocl.cl_platform_id, device_type: Long):Array[org.jocl.cl_device_id] = {
-    val num_devices_ptr = Array(0)
-    org.jocl.CL.clGetDeviceIDs(platform, device_type.toInt, 0, null, num_devices_ptr)
-    val num_devices = num_devices_ptr(0)
-    val devices = Array.ofDim[org.jocl.cl_device_id](num_devices)
-    org.jocl.CL.clGetDeviceIDs(platform, device_type.toInt, num_devices, devices, null)
-    devices
-  }
-
-  def createCLContext(platform: org.jocl.cl_platform_id, devices: Array[org.jocl.cl_device_id]):org.jocl.cl_context = {
-    val properties = new org.jocl.cl_context_properties()
-    properties.addProperty(org.jocl.CL.CL_CONTEXT_PLATFORM, platform)
-    org.jocl.CL.clCreateContext(properties, devices.length, devices, null, null, null)
-  }
-
-  def createCLQueue(context: org.jocl.cl_context, device: org.jocl.cl_device_id):org.jocl.cl_command_queue = {
-    val properties = new org.jocl.cl_queue_properties()
-    properties.addProperty(org.jocl.CL.CL_QUEUE_PROPERTIES, org.jocl.CL.CL_QUEUE_PROFILING_ENABLE)
-    //org.jocl.CL.clCreateCommandQueueWithProperties(context, device, properties, null)
-    org.jocl.CL.clCreateCommandQueue(context, device, 0, null)
   }
 
   def copyToIntArray[@specialized(Double, Float, Long, Byte, Short) T](data:Array[T], i0:Int, idata:Array[Int], d0:Int, n:Int)

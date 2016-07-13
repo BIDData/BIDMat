@@ -9,6 +9,6 @@ abstract class CLSpec extends BIDMatSpec {
   }
 
   override def afterAll {
-    Mat.freeOpenCL()
+    Mat.clHandle.free()
   }
 }

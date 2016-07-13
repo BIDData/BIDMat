@@ -29,7 +29,7 @@ class CLKernelCacheSpec extends CLSpec
 
   it should "build a new kernel if it's not already cached" in {
     assert(!CLKernelCache.has("test_program.cl", "matrixAdd"))
-    CLKernelCache.get(Mat.clQueue, "test_program.cl", "matrixAdd")
+    CLKernelCache.get(Mat.clHandle.queue, "test_program.cl", "matrixAdd")
     assert(CLKernelCache.has("test_program.cl", "matrixAdd"))
   }
 

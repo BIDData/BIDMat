@@ -229,24 +229,24 @@ object CLMat {
   def apply(nr: Int, nc: Int): CLMat = {
     val rsize = nr * nc
     val mem = clCreateBuffer(
-      Mat.clContext,
+      Mat.clHandle.context,
       CL_MEM_READ_WRITE,
       Sizeof.cl_float * rsize,
       null,
       null)
-    new CLMat(nr, nc, Mat.clQueue, mem, rsize)
+    new CLMat(nr, nc, Mat.clHandle.queue, mem, rsize)
   }
 
   /** Copy a local FMat to the OpenCL device */
   def apply(a: FMat): CLMat = {
     val rsize = a.nrows * a.ncols
     val mem = clCreateBuffer(
-      Mat.clContext,
+      Mat.clHandle.context,
       CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
       Sizeof.cl_float * rsize,
       Pointer.to(a.data),
       null)
-    new CLMat(a.nrows, a.ncols, Mat.clQueue, mem, rsize)
+    new CLMat(a.nrows, a.ncols, Mat.clHandle.queue, mem, rsize)
   }
 
 }
