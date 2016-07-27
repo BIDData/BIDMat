@@ -178,6 +178,11 @@ else
         if [ "$CUDA_HOME" = "" ]; then
 	  CUDA_HOME="/usr/local/cuda"
         fi
+	if [ "$ARCH" = "x86" ] ; then
+            CULIB="lib"
+	else
+            CULIB="lib64"
+	fi
 	CC="icc"
 	GCC="g++"
 	NVCC="nvcc" 
@@ -193,8 +198,7 @@ else
 	CPPFLAGS="-fPIC -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$CUDA_HOME/include -I/usr/include/x86_64-linux-gnu/c++/$GCC_VERSION"
 	CFLAGS="-openmp -fPIC -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$BLAS_ROOT/include -I$BLAS_ROOT/include/${ARCHD}${SUBDIR}"
 	LB="ar rc"    
-	GLD="g++ -shared"
-	GLD="nvcc -shared -Xlinker -rpath -Xlinker ${CUDA_HOME}/lib"
+	GLD="nvcc -shared -Xlinker -rpath -Xlinker ${CUDA_HOME}/${CULIB}"
 	LD="icc -shared -static-intel -z noexecstack"
 	LDFLAGS="$LDFLAGS"
 	LIBPREPEND="lib"
@@ -214,11 +218,6 @@ else
             -Wl,--start-group  $BLAS_ROOT/lib/${ARCHD}/libmkl_intel${PTYPE}.a \
             $BLAS_ROOT/lib/${ARCHD}/libmkl_core.a $BLAS_ROOT/lib/${ARCHD}/libmkl_intel_thread.a \
             -Wl,--end-group -liomp5 -ldl -lpthread -lm"
-	fi
-	if [ "$ARCH" = "x86" ] ; then
-            CULIB="lib"
-	else
-            CULIB="lib64"
 	fi
 	LIBDIR="${BIDMAT_ROOT}/lib"
 	INSTALL_DIR="${BIDMAT_ROOT}/src/main/resources/lib"
