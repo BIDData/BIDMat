@@ -192,14 +192,14 @@ else
           -gencode arch=compute_35,code=sm_35 \
           -gencode arch=compute_50,code=sm_50 \
           -gencode arch=compute_52,code=sm_52 \
-          -dc --machine ${MBITS}  -Xcompiler \"-fPIC -c -O2 -g -DNDEBUG\""
+          --machine ${MBITS}  -Xcompiler \"-fPIC -c -O2 -g -DNDEBUG\""
 	OBJ="o"
 	OUTFLG="-o "
 	CPPFLAGS="-fPIC -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$CUDA_HOME/include -I/usr/include/x86_64-linux-gnu/c++/$GCC_VERSION"
 	CFLAGS="-openmp -fPIC -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$BLAS_ROOT/include -I$BLAS_ROOT/include/${ARCHD}${SUBDIR}"
 	LB="ar rc"    
-	GLD="g++ -shared"
 	GLD="nvcc -shared"
+	GLD="g++ -shared"
 	LD="icc -shared -static-intel -z noexecstack"
 	LDFLAGS="$LDFLAGS"
 	LIBPREPEND="lib"

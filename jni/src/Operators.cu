@@ -182,7 +182,8 @@ __device__ float fn_exppsi(float a) {return (a<1.0f) ? 0.5f*a*a : a-0.5f;}
 
 __device__ float fn_normcdf(float a) {return normcdff(a);}
 __device__ float fn_normcdfinv(float a) {return normcdfinvf(a);}
-__device__ float fn_psi(float a) {return slatec_psi(&a);}
+
+/* __device__ float fn_psi(float a) {return slatec_psi(&a);}
 
 __device__ float fn_psifn(float a, float n) {
   float ans; long nn = (long)n, m = 1, ierr, nz;
@@ -206,11 +207,12 @@ __device__ float fn_psiinv(float a) {
   }
   return x;
 }
+*/
 
 __device__ float fn_atan2(float a, float b) {return atan2f(a, b);}
 __device__ float fn_pow(float a, float b) {return powf(a, b);}
 
-__device__ const fntype fctns[39] = {
+__device__ const fntype fctns[] = {
     fn_abs,
     fn_exp,
     fn_expm1,
@@ -247,16 +249,16 @@ __device__ const fntype fctns[39] = {
     fn_y1,
     fn_exppsi,
     fn_normcdf,
-    fn_normcdfinv,
+    fn_normcdfinv};
     // Some SLATEC functions
-    fn_psi,
-    fn_psiinv};
+//    fn_psi,
+//    fn_psiinv};
 
-__device__ const optype fctns2[3] = {
+__device__ const optype fctns2[] = {
     fn_atan2,
-    fn_pow,
+    fn_pow};
     // Some SLATEC functions
-    fn_psifn};
+//    fn_psifn};
 
 __device__ double dfn_abs(double a) {return abs(a);}
 __device__ double dfn_exp(double a) {return exp(a);}
