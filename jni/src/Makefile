@@ -5,6 +5,9 @@ CPU_OBJS=BIDMat_CBLAS.$(OBJ) BIDMat_UTILS.$(OBJ) BIDMat_$(RANDSRC).$(OBJ) BIDMat
 KERNEL_OBJS=Arith.$(OBJ) CopyFill.$(OBJ) Operators.$(OBJ) Random.$(OBJ) Reducers.$(OBJ) Sorting.$(OBJ)
 CUDA_OBJS=BIDMat_CUMAT.$(OBJ) BIDMat_CUMATD.$(OBJ) $(KERNEL_OBJS) MatKernelD.$(OBJ) Logger.$(OBJ) JNIUtils.$(OBJ) PointerUtils.$(OBJ)
 
+SLATEC_GOBJS=gcsevl.$(OBJ) ginits.$(OBJ) gr1mach.$(OBJ) gi1mach.$(OBJ) gutils.$(OBJ) gyermsg.$(OBJ) gcot.$(OBJ) gpsi.$(OBJ) gpsifn.$(OBJ) 
+SLATEC_OBJS=csevl.$(OBJ) inits.$(OBJ) r1mach.$(OBJ) i1mach.$(OBJ) utils.$(OBJ) yermsg.$(OBJ) cot.$(OBJ) psi.$(OBJ) psifn.$(OBJ) 
+
 .SUFFIXES: .$(OBJ) .c .cpp .cu
 
 all:   $(LIBPREPEND)bidmatcuda$(LIBAPPEND)  $(LIBPREPEND)bidmatcpu$(LIBAPPEND)
@@ -14,22 +17,33 @@ cudalib: $(LIBPREPEND)bidmatcuda$(LIBAPPEND)
 cpulib:	 $(LIBPREPEND)bidmatcpu$(LIBAPPEND) 
 
 BIDMat_UTILS.$(OBJ): BIDMat_UTILS.cpp
-	$(CC) $(CPPFLAGS) $(LAPACK_INCLUDES) BIDMat_UTILS.cpp
+	$(CC) $(CFLAGS) $(LAPACK_INCLUDES) BIDMat_UTILS.cpp
 
-$(LIBPREPEND)bidmatcpu$(LIBAPPEND): $(CPU_OBJS)
-	$(LD) $(LDFLAGS) $(CPU_OBJS) $(CPU_LIBS) $(OUTFLG)$@
+$(LIBPREPEND)bidmatcpu$(LIBAPPEND): $(CPU_OBJS) $(SLATEC_OBJS)
+	$(LD) $(LDFLAGS) $(CPU_OBJS) $(SLATEC_OBJS) $(CPU_LIBS) $(OUTFLG)$@
 
-$(LIBPREPEND)bidmatcuda$(LIBAPPEND): $(CUDA_OBJS)
-	$(GLD) $(LDFLAGS) $(CUDA_OBJS) $(CUDA_LIBS) $(OUTFLG)$@
+$(LIBPREPEND)bidmatcuda$(LIBAPPEND): $(CUDA_OBJS) $(SLATEC_GOBJS)
+	$(GLD) $(LDFLAGS) $(CUDA_OBJS) $(SLATEC_GOBJS) $(CUDA_LIBS) $(OUTFLG)$@
+
 
 %.$(OBJ) : %.c
 	$(CC) $(CFLAGS) $(LAPACK_INCLUDES) $*.c
 
+
 %.$(OBJ) : %.cpp
 	$(GCC) $(CPPFLAGS) $(LAPACK_INCLUDES) $*.cpp
 
+
 %.$(OBJ) : %.cu
 	$(NVCC) $(NVCCFLAGS) $*.cu
+
+
+%.$(OBJ) : slatec/%.cu
+	$(NVCC) $(NVCCFLAGS) slatec/$*.cu
+
+%.$(OBJ) : slatec/%.c
+	$(CC) $(CFLAGS) slatec/$*.c
+
 
 install: all
 	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(INSTALL_DIR)

@@ -2,12 +2,44 @@
 #include <string.h>
 #include <algorithm>
 #include <vector>
+#include <math.h>
 #include <omp.h>
 #ifdef __INTEL_COMPILER
 #include <mkl.h>
 #endif
 
 extern "C" {
+
+typedef float (*fntype)(float);
+
+float slatec_psi(float *);
+
+int slatec_psifn(float *x, long *n, long *kode, long *m, float *ans, long *nz, long *ierr);
+
+float fn_psi(float x) {return slatec_psi(&x);}
+
+float fn_psiinv(float a) {
+  float x;
+  long i, c0 = 0, kode = 1, cn = 2, ierr, nz;
+  float bb[2];
+  if (a >= -2.2f) {
+    x = expf(a) + 0.5f;
+  } else {
+    x = -1/(a + 0.5772156649f);
+  }
+  for (i = 0; i < 3; i++) {
+    slatec_psifn(&x, &c0, &kode, &cn, bb, &nz, &ierr);
+    x = x + (bb[0] + a)/bb[1];
+  }
+  return x;
+}
+
+const fntype slatec_fctns[] = {
+  fn_psi,
+  fn_psiinv
+};
+
+
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_UTILS_hasMKL
 (JNIEnv * env, jobject calling_obj) {
@@ -41,6 +73,18 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_setnumthreads
 #endif
 }
 
+JNIEXPORT void JNICALL Java_edu_berkeley_bid_SLATEC_applyfun
+(JNIEnv * env, jobject calling_obj, jfloatArray jA, jfloatArray jB, jint N, jint opn){
+  jfloat * A = (jfloat *)(env->GetPrimitiveArrayCritical(jA, JNI_FALSE));
+  jfloat * B = (jfloat *)(env->GetPrimitiveArrayCritical(jB, JNI_FALSE));
+  fntype fn = slatec_fctns[opn];
+  int i;
+  for (i = 0; i < N; i++) {
+    B[i] = fn(A[i]);
+  }
+  env->ReleasePrimitiveArrayCritical(jA, A, 0);
+  env->ReleasePrimitiveArrayCritical(jB, B, 0);
+}
 
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_memcpybi
 (JNIEnv * env, jobject calling_obj, jint N, jbyteArray jA, jlong startA, jintArray jB, jlong startB){

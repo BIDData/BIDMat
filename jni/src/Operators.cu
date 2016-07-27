@@ -180,10 +180,37 @@ __device__ float fn_y1(float a) {return y1f(a);}
 //__device__ float fn_yn(float a) {return ynf(a);}
 __device__ float fn_exppsi(float a) {return (a<1.0f) ? 0.5f*a*a : a-0.5f;}
 
+__device__ float fn_normcdf(float a) {return normcdf(a);}
+__device__ float fn_normcdfinv(float a) {return normcdfinv(a);}
+__device__ float fn_psi(float a) {return slatec_psi(&a);}
+
+__device__ float fn_psifn(float a, float n) {
+  float ans; long nn = (long)n, m = 1, ierr, nz;
+  slatec_psifn(&a, &nn, &m, &m, &ans, &nz, &ierr);
+  if (nn % 2 == 0) ans = - ans;
+  return ans/tgammaf(n+1);
+}
+
+__device__ float fn_psiinv(float a) {
+  float x;
+  long i, c0 = 0, kode = 1, cn = 2, ierr, nz;
+  float bb[2];
+  if (a >= -2.2f) {
+    x = expf(a) + 0.5f;
+  } else {
+    x = -1/(a + 0.5772156649f);
+  }
+  for (i = 0; i < 3; i++) {
+    slatec_psifn(&x, &c0, &kode, &cn, bb, &nz, &ierr);
+    x = x + (bb[0] + a)/bb[1];
+  }
+  return x;
+}
+
 __device__ float fn_atan2(float a, float b) {return atan2f(a, b);}
 __device__ float fn_pow(float a, float b) {return powf(a, b);}
 
-__device__ const fntype fctns[35] = {
+__device__ const fntype fctns[39] = {
     fn_abs,
     fn_exp,
     fn_expm1,
@@ -218,11 +245,18 @@ __device__ const fntype fctns[35] = {
     fn_j1,
     fn_y0,
     fn_y1,
-    fn_exppsi};
+    fn_exppsi,
+    fn_normcdf,
+    fn_normcdfinv,
+    // Some SLATEC functions
+    fn_psi,
+    fn_psiinv};
 
-__device__ const optype fctns2[2] = {
+__device__ const optype fctns2[3] = {
     fn_atan2,
-    fn_pow};
+    fn_pow,
+    // Some SLATEC functions
+    fn_psifn};
 
 __device__ double dfn_abs(double a) {return abs(a);}
 __device__ double dfn_exp(double a) {return exp(a);}
@@ -307,6 +341,8 @@ __device__ const doptype dfctns2[2] = {
     dfn_atan2,
     dfn_pow};
 
+__device__ float psi_(float x);
+
 
 int getDeviceVersion() {
   int igpu;
@@ -359,6 +395,7 @@ int apply_gfun(ATYPE *A, ATYPE *B, int N, int opn) {						    \
 
 GENGFUN(float,fntype,fctns)
 GENGFUN(double,dfntype,dfctns)
+
 
 #define GENGFUN2(ATYPE,FNTYPE,FUNCARRAY)							    \
 __global__ void __apply_gfun2_##ATYPE(ATYPE *A, ATYPE *B, ATYPE *C, int N, int opn) {		    \

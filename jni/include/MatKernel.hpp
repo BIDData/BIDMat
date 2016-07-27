@@ -95,6 +95,8 @@ int apply_gfun(float *nativeA, float *nativeB, int N, int opn);
 
 int apply_gfun(double *nativeA, double *nativeB, int N, int opn);
 
+int cephes_fn(float *nativeA, float *nativeB, int N, int opn);
+
 int apply_gfun2(float *nativeA, float *nativeB, float *nativeC, int N, int opn);
 
 int apply_gfun2(double *nativeA, double *nativeB, double *nativeC, int N, int opn);
@@ -304,4 +306,10 @@ int inclusive_scan_by_key_ii_min(int *fvals, int *fkeys, int *fout, long long le
 int inclusive_scan_by_key_fl_min(float *fvals, long long *fkeys, float *fout, long long len);
 
 int reverse(float *fvals, float *fout, long long len);
+
+/* Functions from SLATEC */
+
+__device__ float slatec_psi(float *);
+
+__device__ int slatec_psifn(float *x, long *n, long *kode, long *m, float *ans, long *nz, long *ierr);
 
