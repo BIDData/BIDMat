@@ -14,13 +14,8 @@
 
 /* Table of constant values */
 
-extern __device__ integer c__4;
-extern __device__ integer c__2;
-extern __device__ integer c__3;
-extern __device__ integer c__1;
-
 /* DECK CSEVL */
-__device__ doublereal csevl_(real *x, real *cs, const integer *n)
+__device__ __forceinline__ doublereal csevl_(real *x, real *cs, const integer *n)
 {
     /* Initialized data */
 
@@ -35,9 +30,6 @@ __device__ doublereal csevl_(real *x, real *cs, const integer *n)
      real b0, b1, b2;
      integer ni;
      real twox, onepl;
-    __device__ extern doublereal r1mach_(const integer *);
-    __device__ extern /* Subroutine */ int xermsg_(char *, char *, char *, const integer *, 
-	    const integer *, ftnlen, ftnlen, ftnlen);
 
 /* ***BEGIN PROLOGUE  CSEVL */
 /* ***PURPOSE  Evaluate a Chebyshev series. */

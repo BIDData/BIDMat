@@ -14,9 +14,6 @@
 
 /* Table of constant values */
 
-extern __device__ integer c__1;
-extern __device__ integer c__2;
-
 __device__ __constant__ real equiv_4[5] = {
   1.18E-38,
   3.40E+38,
@@ -27,7 +24,7 @@ __device__ __constant__ real equiv_4[5] = {
 
 
 /* DECK R1MACH */
-__device__ doublereal r1mach_(const integer *i__)
+__device__ __forceinline__ doublereal r1mach_(const integer *i__)
 {
     /* System generated locals */
     real ret_val;
@@ -39,10 +36,6 @@ __device__ doublereal r1mach_(const integer *i__)
 /* #define small ((integer *)equiv_4) */
 /* #define diver ((integer *)equiv_4 + 3) */
 /* #define right ((integer *)equiv_4 + 2) */
-
-
-    __device__ extern /* Subroutine */ int xermsg_(char *, char *, char *, const integer *, 
-	    const integer *, ftnlen, ftnlen, ftnlen);
 
 /* ***BEGIN PROLOGUE  R1MACH */
 /* ***PURPOSE  Return floating point machine dependent constants. */

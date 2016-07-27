@@ -7,4 +7,6 @@ public final class SLATEC {
 
     public static native int applyfun(float[] X, float[] Y,  int N, int opn);
 
+    public static native int applygfun(Pointer X, Pointer Y,  int N, int opn);
+
 }

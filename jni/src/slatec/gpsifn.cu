@@ -14,12 +14,6 @@
 
 /* Table of constant values */
 
-extern __device__ integer c__12;
-extern __device__ integer c__13;
-extern __device__ integer c__5;
-extern __device__ integer c__4;
-extern __device__ integer c__11;
-
 __device__ __constant__ real psifnb[22] = { 1.f,-.5f,.166666666666666667f,
 	    -.0333333333333333333f,.0238095238095238095f,
 	    -.0333333333333333333f,.0757575757575757576f,
@@ -32,7 +26,7 @@ __device__ __constant__ real psifnb[22] = { 1.f,-.5f,.166666666666666667f,
 
 /* DECK PSIFN */
 /* Subroutine */
-__device__ int slatec_psifn(real *x, integer *n, integer *kode, integer *m, 
+__device__ __forceinline__ int slatec_psifn(real *x, integer *n, integer *kode, integer *m, 
 	real *ans, integer *nz, integer *ierr)
 {
     /* Initialized data */
@@ -44,8 +38,6 @@ __device__ int slatec_psifn(real *x, integer *n, integer *kode, integer *m,
     real r__1, r__2;
 
     /* Builtin functions */
-    //    __device__ double log(doublereal), exp(doublereal),
-    __device__ double pow_ri(real *, integer *);
 
     /* Local variables */
      integer i__, j, k;
@@ -56,8 +48,6 @@ __device__ int slatec_psifn(real *x, integer *n, integer *kode, integer *m,
      real xm, tt, xq, den, arg, fln, fnp, r1m4, r1m5, fns, eps, rln, 
 	    tol, xln, trm[22], tss, tst, elim, xinc, xmin, tols, xdmy, yint, 
 	    trmr[100], rxsq, slope, xdmln, wdtol;
-    extern __device__ integer i1mach_(integer *);
-    extern __device__ doublereal r1mach_(const integer *);
 
 /* ***BEGIN PROLOGUE  PSIFN */
 /* ***PURPOSE  Compute derivatives of the Psi function. */

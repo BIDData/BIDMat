@@ -1,8 +1,6 @@
 #include "f2c.h"
 #include <math.h>
 
-extern __device__ integer c__1;
-
 __device__ integer c__1 = 1;
 __device__ integer c__2 = 2;
 __device__ integer c__3 = 3;
@@ -15,11 +13,11 @@ __device__ integer c__13 = 13;
 __device__ integer c__16 = 16;
 __device__ integer c__23 = 23;
 
-__device__ double r_int(real *x) {
+__device__ __forceinline__ double r_int(real *x) {
   return( (*x>0) ? floor(*x) : -floor(- *x) );
 }
 
-__device__ double r_mod(real *x, real *y) {
+__device__ __forceinline__ double r_mod(real *x, real *y) {
   double quotient;
   if( (quotient = (double)*x / *y) >= 0)
     quotient = floor(quotient);
@@ -28,13 +26,13 @@ __device__ double r_mod(real *x, real *y) {
   return(*x - (*y) * quotient );
 }
 
-__device__ double r_sign(real *a, real *b) {
+__device__  __forceinline__ double r_sign(real *a, real *b) {
   double x;
   x = (*a >= 0 ? *a : - *a);
   return( *b >= 0 ? x : -x);
 }
 
-__device__ double pow_ri(real *ap, integer *bp) {
+__device__  __forceinline__ double pow_ri(real *ap, integer *bp) {
 double pow, x;
 integer n;
 unsigned long u;

@@ -183,32 +183,6 @@ __device__ float fn_exppsi(float a) {return (a<1.0f) ? 0.5f*a*a : a-0.5f;}
 __device__ float fn_normcdf(float a) {return normcdff(a);}
 __device__ float fn_normcdfinv(float a) {return normcdfinvf(a);}
 
-/* __device__ float fn_psi(float a) {return slatec_psi(&a);}
-
-__device__ float fn_psifn(float a, float n) {
-  float ans; long nn = (long)n, m = 1, ierr, nz;
-  slatec_psifn(&a, &nn, &m, &m, &ans, &nz, &ierr);
-  if (nn % 2 == 0) ans = - ans;
-  return ans/tgammaf(n+1);
-}
-
-__device__ float fn_psiinv(float a) {
-  float x;
-  long i, c0 = 0, kode = 1, cn = 2, ierr, nz;
-  float bb[2];
-  if (a >= -2.2f) {
-    x = expf(a) + 0.5f;
-  } else {
-    x = -1/(a + 0.5772156649f);
-  }
-  for (i = 0; i < 3; i++) {
-    slatec_psifn(&x, &c0, &kode, &cn, bb, &nz, &ierr);
-    x = x + (bb[0] + a)/bb[1];
-  }
-  return x;
-}
-*/
-
 __device__ float fn_atan2(float a, float b) {return atan2f(a, b);}
 __device__ float fn_pow(float a, float b) {return powf(a, b);}
 

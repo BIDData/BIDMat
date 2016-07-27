@@ -14,12 +14,6 @@
 
 /* Table of constant values */
 
-extern __device__ integer c__3;
-extern __device__ integer c__8;
-extern __device__ integer c__4;
-extern __device__ integer c__2;
-extern __device__ integer c__1;
-
 __device__ real c_b19 = 2.f;
 
 __device__ __constant__ real cotcs[8] = { .2402591609829563f,-.016533031601500228f,
@@ -27,7 +21,7 @@ __device__ __constant__ real cotcs[8] = { .2402591609829563f,-.01653303160150022
 	    -2.430197e-12f,-9.56e-15f,-3.7e-17f };
 
 /* DECK COT */
-__device__ doublereal cot_(real *x)
+__device__ __forceinline__ doublereal cot_(real *x)
 {
     /* Initialized data */
 
@@ -38,21 +32,14 @@ __device__ doublereal cot_(real *x)
     real ret_val, r__1, r__2;
 
     /* Builtin functions */
-//    __device__ double sqrt(doublereal), log(doublereal), exp(doublereal),
-    __device__ double r_int(real *), r_mod(real *, real *), r_sign(real *, real *);
 
     /* Local variables */
      real y;
      integer ifn;
      real xmin, yrem, xmax, xsml;
-    __device__ extern doublereal csevl_(real *, real *, const integer *);
      real ainty;
-    __device__ extern integer inits_(real *, const integer *, real *);
      real sqeps;
-    __device__ extern doublereal r1mach_(const integer *);
      real ainty2, prodbg;
-    __device__ extern /* Subroutine */ int xermsg_(char *, char *, char *, const integer *, 
-	    const integer *, ftnlen, ftnlen, ftnlen);
      integer nterms;
 
 /* ***BEGIN PROLOGUE  COT */

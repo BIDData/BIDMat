@@ -17,7 +17,7 @@
 /* DECK XERMSG */
 /* Subroutine */
 
-__device__ int xermsg_(char *librar, char *subrou, char *messg, const integer 
+__device__ __forceinline__ int xermsg_(const char *librar, const char *subrou, const char *messg, const integer 
 	*nerr, const integer *level, ftnlen librar_len, ftnlen subrou_len, ftnlen 
 	messg_len)
 {

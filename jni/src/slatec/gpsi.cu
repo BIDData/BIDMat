@@ -14,13 +14,6 @@
 
 /* Table of constant values */
 
-extern __device__ integer c__3;
-extern __device__ integer c__23;
-extern __device__ integer c__16;
-extern __device__ integer c__4;
-extern __device__ integer c__2;
-extern __device__ integer c__1;
-
 __device__ __constant__ real psics[23] = { -.038057080835217922f,.49141539302938713f,
 	    -.05681574782124473f,.008357821225914313f,-.001333232857994342f,
 	    2.20313287069308e-4f,-3.7040238178456e-5f,6.283793654854e-6f,
@@ -35,7 +28,7 @@ __device__ __constant__ real apsics[16] = { -.0204749044678185f,-.01018012715348
 	    -2.28e-14f,4.5e-15f,-9e-16f,2e-16f,-0.f };
 
 /* DECK PSI */
-__device__ real slatec_psi(real *x)
+__device__ __forceinline__ real slatec_psi(real *x)
 {
     /* Initialized data */
 
@@ -47,22 +40,14 @@ __device__ real slatec_psi(real *x)
     real ret_val, r__1, r__2;
 
     /* Builtin functions */
-    //    __device__ double sqrt(doublereal), log(doublereal);
-    __device__ double r_int(real *);
 
     /* Local variables */
      integer i__, n;
      real y;
-    __device__ extern doublereal cot_(real *);
      real aux, xbig;
-    __device__ extern doublereal csevl_(real *, real *, const integer *);
      real dxrel;
-    __device__ extern integer inits_(real *, const integer *, real *);
      integer ntpsi;
-    __device__ extern doublereal r1mach_(const integer *);
      integer ntapsi;
-    __device__ extern /* Subroutine */ int xermsg_(char *, char *, char *, const integer *, 
-	    const integer *, ftnlen, ftnlen, ftnlen);
 
 /* ***BEGIN PROLOGUE  PSI */
 /* ***PURPOSE  Compute the Psi (or Digamma) function. */

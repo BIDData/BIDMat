@@ -309,7 +309,4 @@ int reverse(float *fvals, float *fout, long long len);
 
 /* Functions from SLATEC */
 
-__device__ float slatec_psi(float *);
-
-__device__ int slatec_psifn(float *x, long *n, long *kode, long *m, float *ans, long *nz, long *ierr);
-
+int slatec_gfun(float *A, float *B, int N, int opn);

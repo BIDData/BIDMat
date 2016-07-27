@@ -14,9 +14,6 @@
 
 /* Table of constant values */
 
-extern __device__ integer c__2;
-extern __device__ integer c__1;
-
 /* DECK INITS */
 __device__ integer inits_(real *os, const integer *nos, real *eta)
 {
@@ -27,9 +24,6 @@ __device__ integer inits_(real *os, const integer *nos, real *eta)
     /* Local variables */
      integer i__, ii;
      real err;
-    __device__
-      extern /* Subroutine */ int xermsg_(char *, char *, char *, const integer *, 
-	    const integer *, ftnlen, ftnlen, ftnlen);
 
 /* ***BEGIN PROLOGUE  INITS */
 /* ***PURPOSE  Determine the number of terms needed in an orthogonal */

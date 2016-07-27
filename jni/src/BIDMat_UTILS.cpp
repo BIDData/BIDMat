@@ -7,9 +7,10 @@
 #ifdef __INTEL_COMPILER
 #include <mkl.h>
 #endif
+#include <cuda_runtime.h>
 
 extern "C" {
-
+  
 typedef float (*fntype)(float);
 
 float slatec_psi(float *);
@@ -38,8 +39,6 @@ const fntype slatec_fctns[] = {
   fn_psi,
   fn_psiinv
 };
-
-
 
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_UTILS_hasMKL
 (JNIEnv * env, jobject calling_obj) {
