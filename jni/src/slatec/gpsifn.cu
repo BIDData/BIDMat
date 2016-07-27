@@ -44,7 +44,8 @@ __device__ int slatec_psifn(real *x, integer *n, integer *kode, integer *m,
     real r__1, r__2;
 
     /* Builtin functions */
-    __device__ double log(doublereal), exp(doublereal), pow_ri(real *, integer *);
+    //    __device__ double log(doublereal), exp(doublereal),
+    __device__ double pow_ri(real *, integer *);
 
     /* Local variables */
      integer i__, j, k;
