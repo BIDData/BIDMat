@@ -25,18 +25,14 @@ $(LIBPREPEND)bidmatcpu$(LIBAPPEND): $(CPU_OBJS) $(SLATEC_OBJS)
 $(LIBPREPEND)bidmatcuda$(LIBAPPEND): $(CUDA_OBJS) $(SLATEC_GOBJS)
 	$(GLD) $(LDFLAGS) $(CUDA_OBJS) $(SLATEC_GOBJS) $(CUDA_LIBS) $(OUTFLG)$@
 
-
 %.$(OBJ) : %.c
 	$(CC) $(CFLAGS) $(LAPACK_INCLUDES) $*.c
-
 
 %.$(OBJ) : %.cpp
 	$(GCC) $(CPPFLAGS) $(LAPACK_INCLUDES) $*.cpp
 
-
 %.$(OBJ) : %.cu
 	$(NVCC) $(NVCCFLAGS) $*.cu
-
 
 %.$(OBJ) : slatec/%.cu
 	$(NVCC) $(NVCCFLAGS) slatec/$*.cu
