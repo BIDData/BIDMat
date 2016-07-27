@@ -38,8 +38,8 @@ __device__ doublereal cot_(real *x)
     real ret_val, r__1, r__2;
 
     /* Builtin functions */
-    __device__ double sqrt(doublereal), log(doublereal), exp(doublereal), r_int(real *), 
-	    r_mod(real *, real *), r_sign(real *, real *);
+//    __device__ double sqrt(doublereal), log(doublereal), exp(doublereal),
+    __device__ double r_int(real *), r_mod(real *, real *), r_sign(real *, real *);
 
     /* Local variables */
      real y;
