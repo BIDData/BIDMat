@@ -48,7 +48,7 @@ __device__ real slatec_psi(real *x)
 
     /* Builtin functions */
     //    __device__ double sqrt(doublereal), log(doublereal);
-      __device__ double r_int(real *), 
+    __device__ double r_int(real *);
 
     /* Local variables */
      integer i__, n;
