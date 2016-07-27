@@ -132,7 +132,7 @@ object HMat {
     HDFSIOinstance.readND(fname, ond);    
   }
   
-  def HDFSwriteMats(fname:String, m:Array[Mat], compress:Int):Unit = {
+  def HDFSwriteMats(fname:String, m:Array[ND], compress:Int):Unit = {
     checkHDFSloaded;
     HDFSIOinstance.writeMats(fname, m, compress);    
   }
@@ -142,7 +142,7 @@ object HMat {
     HDFSIOinstance.writeNDs(fname, m, compress);    
   }
   
-  def HDFSreadMats(fname:String, omat:Array[Mat]):Array[Mat] = {
+  def HDFSreadMats(fname:String, omat:Array[ND]):Array[ND] = {
     checkHDFSloaded;
     HDFSIOinstance.readMats(fname, omat);    
   }
