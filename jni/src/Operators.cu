@@ -180,8 +180,8 @@ __device__ float fn_y1(float a) {return y1f(a);}
 //__device__ float fn_yn(float a) {return ynf(a);}
 __device__ float fn_exppsi(float a) {return (a<1.0f) ? 0.5f*a*a : a-0.5f;}
 
-__device__ float fn_normcdf(float a) {return normcdf(a);}
-__device__ float fn_normcdfinv(float a) {return normcdfinv(a);}
+__device__ float fn_normcdf(float a) {return normcdff(a);}
+__device__ float fn_normcdfinv(float a) {return normcdfinvf(a);}
 __device__ float fn_psi(float a) {return slatec_psi(&a);}
 
 __device__ float fn_psifn(float a, float n) {
