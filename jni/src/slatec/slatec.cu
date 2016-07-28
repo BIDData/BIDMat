@@ -1,15 +1,15 @@
 #include <cuda_runtime.h>
 #include "MatKernel.hpp"
 
-#import "gutils.cu"
-#import "gyermsg.cu"
-#import "gr1mach.cu"
-#import "gi1mach.cu"
-#import "gcsevl.cu"
-#import "ginits.cu"
-#import "gcot.cu"
-#import "gpsi.cu"
-#import "gpsifn.cu"
+#include "gutils.cu"
+#include "gyermsg.cu"
+#include "gr1mach.cu"
+#include "gi1mach.cu"
+#include "gcsevl.cu"
+#include "ginits.cu"
+#include "gcot.cu"
+#include "gpsi.cu"
+#include "gpsifn.cu"
 
 __device__ float fn_psi(float a) {return slatec_psi(&a);}
 
