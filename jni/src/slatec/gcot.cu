@@ -21,7 +21,7 @@ __device__ __constant__ real cotcs[8] = { .2402591609829563f,-.01653303160150022
 	    -2.430197e-12f,-9.56e-15f,-3.7e-17f };
 
 /* DECK COT */
-__device__ __forceinline__ doublereal cot_(real *x)
+__device__ doublereal cot_(real *x)
 {
     /* Initialized data */
 

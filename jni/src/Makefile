@@ -36,7 +36,7 @@ $(LIBPREPEND)bidmatcuda$(LIBAPPEND): $(CUDA_OBJS) $(SLATEC_GOBJS)
 	$(NVCC) $(NVCCFLAGS) $*.cu
 
 slatec.$(OBJ) : slatec/slatec.cu  $(SLATEC_DEPS)
-	$(NVCC) $(NVCCFLAGS) slatec/slatec.cu
+	$(NVCC) $(NVCCFLAGS)  -Xptxas -v slatec/slatec.cu
 
 $.$(OBJ) : slatec/%.c
 	$(CC) $(CFLAGS) slatec/$*.c

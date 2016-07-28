@@ -11,6 +11,25 @@
 #include "gpsi.cu"
 #include "gpsifn.cu"
 
+void ssetsizes(long long N, dim3 *gridp, int *nthreadsp) {
+  int nblocks = 1;
+  int nthreads = 32;
+  int threads_per_block = 512;
+  while (1L * nblocks * nthreads < N) {
+    if (nblocks < 16) {
+      nblocks = 2*nblocks;
+    } else if (nthreads < threads_per_block) {
+      nthreads = 2*nthreads;
+    } else {
+      nblocks = 2*nblocks;
+    }
+  }
+  gridp->y = 1 + (nblocks-1)/65536;
+  gridp->x = 1 + (nblocks-1)/gridp->y;
+  gridp->z = 1;
+  *nthreadsp = nthreads;
+}
+
 __device__ float fn_psi(float a) {return slatec_psi(&a);}
 
 __device__ float fn_psifn(float a, float n) {
@@ -52,7 +71,7 @@ __global__ void __slatec_gfun(float *A, float *B, int N, int opn) {
 int slatec_gfun(float *A, float *B, int N, int opn) {
   int nthreads;
   dim3 griddims;
-  setsizes(N, &griddims, &nthreads);
+  ssetsizes(N, &griddims, &nthreads);
   __slatec_gfun<<<griddims,nthreads>>>(A, B, N, opn);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();

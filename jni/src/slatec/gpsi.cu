@@ -28,7 +28,7 @@ __device__ __constant__ real apsics[16] = { -.0204749044678185f,-.01018012715348
 	    -2.28e-14f,4.5e-15f,-9e-16f,2e-16f,-0.f };
 
 /* DECK PSI */
-__device__ __forceinline__ real slatec_psi(real *x)
+__device__ real slatec_psi(real *x)
 {
     /* Initialized data */
 

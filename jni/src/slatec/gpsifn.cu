@@ -26,7 +26,7 @@ __device__ __constant__ real psifnb[22] = { 1.f,-.5f,.166666666666666667f,
 
 /* DECK PSIFN */
 /* Subroutine */
-__device__ __forceinline__ int slatec_psifn(real *x, integer *n, integer *kode, integer *m, 
+__device__ int slatec_psifn(real *x, integer *n, integer *kode, integer *m, 
 	real *ans, integer *nz, integer *ierr)
 {
     /* Initialized data */
