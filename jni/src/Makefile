@@ -6,6 +6,7 @@ KERNEL_OBJS=Arith.$(OBJ) CopyFill.$(OBJ) Operators.$(OBJ) Random.$(OBJ) Reducers
 CUDA_OBJS=BIDMat_CUMAT.$(OBJ) BIDMat_CUMATD.$(OBJ) $(KERNEL_OBJS) MatKernelD.$(OBJ) Logger.$(OBJ) JNIUtils.$(OBJ) PointerUtils.$(OBJ)
 
 SLATEC_GOBJS=slatec.$(OBJ)
+SLATEC_DEPS=slatec/gutils.cu slatec/gyermsg.cu slatec/gr1mach.cu slatec/gi1mach.cu slatec/gcsevl.cu slatec/ginits.cu slatec/gcot.cu slatec/gpsi.cu slatec/gpsifn.cu
 SLATEC_OBJS=csevl.$(OBJ) inits.$(OBJ) r1mach.$(OBJ) i1mach.$(OBJ) utils.$(OBJ) yermsg.$(OBJ) cot.$(OBJ) psi.$(OBJ) psifn.$(OBJ) 
 
 .SUFFIXES: .$(OBJ) .c .cpp .cu
@@ -34,10 +35,10 @@ $(LIBPREPEND)bidmatcuda$(LIBAPPEND): $(CUDA_OBJS) $(SLATEC_GOBJS)
 %.$(OBJ) : %.cu
 	$(NVCC) $(NVCCFLAGS) $*.cu
 
-%.$(OBJ) : slatec/%.cu
-	$(NVCC) $(NVCCFLAGS) slatec/$*.cu
+slatec.$(OBJ) : slatec/slatec.cu  $(SLATEC_DEPS)
+	$(NVCC) $(NVCCFLAGS) slatec/slatec.cu
 
-%.$(OBJ) : slatec/%.c
+$.$(OBJ) : slatec/%.c
 	$(CC) $(CFLAGS) slatec/$*.c
 
 
