@@ -140,7 +140,7 @@ elif [ "$OS" = "linux" ] ; then
 	CC="gcc"
 	GCC="g++"
 	NVCC="nvcc" 
-	NVCCFLAGS="-c -use_fast_math -dc -I$BIDMAT_ROOT/jni/include \
+	NVCCFLAGS="-c -use_fast_math -I$BIDMAT_ROOT/jni/include \
           --maxrregcount=31 \
           -gencode arch=compute_32,code=sm_32 \
           --machine ${MBITS}  -Xcompiler \"-fPIC -c -O2 -g -march=${ARMARCH} -DNDEBUG\""
@@ -241,7 +241,7 @@ elif [ "$OS" = "windows" ] ; then
           -gencode arch=compute_35,code=sm_35 \
           -gencode arch=compute_50,code=sm_50 \
           -gencode arch=compute_52,code=sm_52 \
-          -dc --machine ${MBITS}  -Xcompiler \"/EHsc /W3 /nologo /O2 /Zi /wd4244 /wd4267 /wd4503 /MT\""
+          --machine ${MBITS}  -Xcompiler \"/EHsc /W3 /nologo /O2 /Zi /wd4244 /wd4267 /wd4503 /MT\""
     LB="lib"    
     LD="link"
     GLD="link"
