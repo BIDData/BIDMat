@@ -455,6 +455,16 @@ extern "C" {
     return slatec_gfun(A, B, N, opn);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_SLATEC_applygfun2
+  (JNIEnv *env, jobject obj, jint nrows, jint ncols, jobject jA, jint ar, jint ac, jobject jB, jint br, jint bc, jobject jC, jint cc, jint opn) 
+  {
+    float *A = (float*)getPointer(env, jA);
+    float *B = (float*)getPointer(env, jB);
+    float *C = (float*)getPointer(env, jC);
+
+    return slatec_gfun2(nrows, ncols, A, ar, ac, B, br, bc, C, cc, opn);
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_applygdfun
   (JNIEnv *env, jobject obj, jobject jA, jobject jB, jint N, jint opn) 
   {

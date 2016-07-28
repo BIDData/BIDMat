@@ -1812,6 +1812,9 @@ object GMat {
     val trunc=28
     val sign=29
     val exppsi=34
+    val normcdf=35
+    val normcdfinv=36
+    
   }
   
   object TransF2 {

@@ -6,6 +6,7 @@ import edu.berkeley.bid.VSL._
 import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.RAND;
 import edu.berkeley.bid.RAND._;
+import edu.berkeley.bid.SLATEC;
 import java.util.Random._;
 import MatFunctions._
 import org.apache.commons.math3.special._
@@ -1483,6 +1484,46 @@ object SciFunctions {
   	out
   }
   
+  def applySlatecFun(a:FMat, omat:Mat, nfn:Int, nflops:Long) = {
+    val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat, a.GUID, nfn)
+    SLATEC.applyfun(a.data, out.data, a.length, nfn);
+    Mat.nflops += nflops*a.length
+    out
+  }
+  
+  def applySlatecFun2(a:FMat, b:FMat, omat:Mat, nfn:Int, nflops:Long) = {
+    val nr = math.max(a.nrows, b.nrows);
+    val nc = math.max(a.ncols, b.ncols);
+    val out = FMat.newOrCheckFMat(nr, nc, omat, a.GUID, b.GUID, nfn);
+    val arowi = if (a.nrows == nr) 1 else 0;
+    val browi = if (b.nrows == nr) 1 else 0;
+    val acoli = if (a.ncols == nc) a.nrows else 0;
+    val bcoli = if (b.ncols == nc) b.nrows else 0;
+    SLATEC.applyfun2(nr, nc, a.data, arowi, acoli, b.data, browi, bcoli, out.data, nr, nfn);
+    Mat.nflops += nflops*out.length
+    out
+  }
+  
+  def applySlatecGFun(a:GMat, omat:Mat, nfn:Int, nflops:Long) = {
+    val out = GMat.newOrCheckGMat(a.nrows, a.ncols, omat, a.GUID, nfn)
+    SLATEC.applygfun(a.data, out.data, a.length, nfn);
+    Mat.nflops += nflops*a.length
+    out
+  }
+  
+  def applySlatecGFun2(a:GMat, b:GMat, omat:Mat, nfn:Int, nflops:Long) = {
+    val nr = math.max(a.nrows, b.nrows);
+    val nc = math.max(a.ncols, b.ncols);
+    val out = GMat.newOrCheckGMat(nr, nc, omat, a.GUID, b.GUID, nfn);
+    val arowi = if (a.nrows == nr) 1 else 0;
+    val browi = if (b.nrows == nr) 1 else 0;
+    val acoli = if (a.ncols == nc) a.nrows else 0;
+    val bcoli = if (b.ncols == nc) b.nrows else 0;
+    SLATEC.applygfun2(nr, nc, a.data, arowi, acoli, b.data, browi, bcoli, out.data, nr, nfn);
+    Mat.nflops += nflops*out.length
+    out
+  }
+  
   def applyFNDfun(a:FND, omat:ND, vfn:(Int, Array[Float], Array[Float])=>Unit, efn:(Float)=>Float, nflops:Long) ={
     val out = FND.newOrCheckFND(a.dims, omat, a.GUID, vfn.##, efn.##)
     if (!Mat.useMKLRand || vfn == null) {
@@ -2145,7 +2186,15 @@ object SciFunctions {
   def trunc(a:FMat):FMat = trunc(a, null);
   def trunc(a:FND, out:ND):FND = applyFNDfun(a, out, vsTruncFun, truncFun, 10L);
   def trunc(a:FND):FND = trunc(a, null);
-
+  
+  def psi(a:FMat, out:Mat):FMat = applySlatecFun(a, out, 0, 100);
+  def psi(a:FMat):FMat = psi(a, null);
+  
+  def psiinv(a:FMat, out:Mat):FMat = applySlatecFun(a, out, 1, 400);
+  def psiinv(a:FMat):FMat = psiinv(a, null);
+  
+  def psifn(a:FMat, b:FMat, out:Mat):FMat = applySlatecFun2(a, b, out, 0, 200);
+  def psifn(a:FMat, b:FMat):FMat = psifn(a, b, null);
   
   val atan2Fun = (x:Float, y:Float) => math.atan2(x, y).toFloat
   val vsAtan2Fun = (n:Int, x:Array[Float], y:Array[Float], z:Array[Float]) => vsAtan2(n,x,y,z)
@@ -2153,6 +2202,7 @@ object SciFunctions {
   def atan2(a:FMat, b:FMat):FMat = atan2(a, b, null);
   def atan2(a:FND, b:FND, out:ND):FND = applyFND2fun(a, b, out, vsAtan2Fun, atan2Fun, 10L);
   def atan2(a:FND, b:FND):FND = atan2(a, b, null);
+  
   
   val powFun = (x:Float, y:Float) => math.pow(x, y).toFloat
   val vsPowFun = (n:Int, x:Array[Float], y:Array[Float], z:Array[Float]) => vsPow(n,x,y,z)
@@ -2528,6 +2578,17 @@ object SciFunctions {
   def trunc(in:GMat, out:Mat):GMat =   applyGfun(in, out, TransF.trunc, 10L)
   def sign(in:GMat, out:Mat):GMat =    applyGfun(in, out, TransF.sign, 1L)
   def exppsi(in:GMat, out:Mat):GMat =  applyGfun(in, out, TransF.exppsi, 1L)
+  def normcdf(in:GMat, out:Mat):GMat =  applyGfun(in, out, TransF.normcdf, 1L)
+  def normcdfinv(in:GMat, out:Mat):GMat =  applyGfun(in, out, TransF.normcdfinv, 1L)
+  
+  def psi(a:GMat, out:Mat):GMat = applySlatecGFun(a, out, 0, 100);
+  def psi(a:GMat):GMat = psi(a, null);
+  
+  def psiinv(a:GMat, out:Mat):GMat = applySlatecGFun(a, out, 1, 400);
+  def psiinv(a:GMat):GMat = psiinv(a, null);
+  
+  def psifn(a:GMat, b:GMat, out:Mat):GMat = applySlatecGFun2(a, b, out, 0, 200);
+  def psifn(a:GMat, b:GMat):GMat = psifn(a, b, null);
   
   import GMat.TransF2
   
@@ -2565,6 +2626,8 @@ object SciFunctions {
   def trunc(in:GMat):GMat =   applyGfun(in, TransF.trunc, 10L)
   def sign(in:GMat):GMat =    applyGfun(in, TransF.sign, 1L)
   def exppsi(in:GMat):GMat =    applyGfun(in, TransF.exppsi, 1L)
+  def normcdf(in:GMat):GMat =    applyGfun(in, TransF.normcdf, 1L)
+  def normcdfinv(in:GMat):GMat =    applyGfun(in, TransF.normcdfinv, 1L)
   
   def atan2(a:GMat, b:GMat):GMat =   applyGfun2(a, b, TransF2.atan2, 10L)
   def pow(a:GMat, b:GMat):GMat =     applyGfun2(a, b, TransF2.pow, 10L)
@@ -3428,12 +3491,49 @@ object SciFunctions {
     }
   }
   
+  def normcdf(a:Mat, b:Mat):Mat = {
+    a match {
+      case aa:FMat => normcdf(aa, b)
+      case aa:GMat => normcdf(aa, b)
+    }
+  }
+  
+  def normcdfinv(a:Mat, b:Mat):Mat = {
+    a match {
+      case aa:FMat => normcdfinv(aa, b)
+      case aa:GMat => normcdfinv(aa, b)
+    }
+  }
+  
   def exppsi(a:ND, b:ND):ND = {
     a match {
       case aa:FND => exppsi(aa, b):FND
       case aa:GND => exppsi(aa, b):GND
     }
   }
+  
+  def psi(a:Mat, b:Mat):Mat = {
+    a match {
+      case aa:FMat => psi(aa, b)
+      case aa:GMat => psi(aa, b)
+    }
+  }
+  
+  def psiinv(a:Mat, b:Mat):Mat = {
+    a match {
+      case aa:FMat => psiinv(aa, b)
+      case aa:GMat => psiinv(aa, b)
+    }
+  }
+  
+  def psifn(a:Mat, b:Mat, out:Mat):Mat = {
+    (a,b) match {
+      case (aa:FMat, bb:FMat) => psifn(aa, bb, out);
+      case (aa:GMat, bb:GMat) => psifn(aa, bb, out);
+    }
+  }
+  
+
   
   def atan2(a:Mat, b:Mat, c:Mat):Mat = {
     (a, b) match {
@@ -3782,6 +3882,41 @@ object SciFunctions {
       case aa:GMat => exppsi(aa)
       case aa:GDMat => exppsi(aa)
       case aa:TMat => exppsi(aa)
+    }
+  }
+  
+  def normcdf(a:Mat):Mat = {
+    a match {
+      case aa:FMat => normcdf(aa)
+      case aa:GMat => normcdf(aa)
+    }
+  }
+  
+  def normcdfinv(a:Mat):Mat = {
+    a match {
+      case aa:FMat => normcdfinv(aa)
+      case aa:GMat => normcdfinv(aa)
+    }
+  }
+  
+  def psi(a:Mat):Mat = {
+    a match {
+      case aa:FMat => psi(aa)
+      case aa:GMat => psi(aa)
+    }
+  }
+  
+  def psiinv(a:Mat):Mat = {
+    a match {
+      case aa:FMat => psiinv(aa)
+      case aa:GMat => psiinv(aa)
+    }
+  }
+  
+  def psifn(a:Mat, b:Mat):Mat = {
+    (a,b) match {
+      case (aa:FMat, bb:FMat) => psifn(aa, bb);
+      case (aa:GMat, bb:GMat) => psifn(aa, bb);
     }
   }
   

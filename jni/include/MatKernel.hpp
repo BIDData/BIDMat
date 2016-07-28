@@ -310,3 +310,5 @@ int reverse(float *fvals, float *fout, long long len);
 /* Functions from SLATEC */
 
 int slatec_gfun(float *A, float *B, int N, int opn);
+
+int slatec_gfun2(int nrows, int ncols, float *A, int ar, int ac, float *B, int br, int bc, float *C, int cc, int opn);

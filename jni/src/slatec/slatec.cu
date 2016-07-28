@@ -60,6 +60,10 @@ __device__ const fntype slatec_gfctns[] = {
     fn_psiinv
 };
 
+__device__ const optype slatec_gfctns2[] = {
+    fn_psifn,
+};
+
 __global__ void __slatec_gfun(float *A, float *B, int N, int opn) {
   fntype fn = slatec_gfctns[opn];
   int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
@@ -73,6 +77,27 @@ int slatec_gfun(float *A, float *B, int N, int opn) {
   dim3 griddims;
   ssetsizes(N, &griddims, &nthreads);
   __slatec_gfun<<<griddims,nthreads>>>(A, B, N, opn);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+__global__ void __slatec_gfun2(int nrows, int ncols, float *A, int ar, int ac, float *B, int br, int bc, float *C, int cc, int opn) {
+  optype fn = slatec_gfctns2[opn];
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  int row, col;
+  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
+    col = i / nrows;
+    row = i - col * nrows;
+    C[row+col*cc] = fn(A[row*ar+col*ac], B[row*br+col*bc]);
+  }
+}
+
+int slatec_gfun2(int nrows, int ncols, float *A, int ar, int ac, float *B, int br, int bc, float *C, int cc, int opn) {
+  int nthreads;
+  dim3 griddims;
+  ssetsizes(nrows*ncols, &griddims, &nthreads);
+  __slatec_gfun2<<<griddims,nthreads>>>(nrows, ncols, A, ar, ac, B, br, bc, C, cc, opn);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
