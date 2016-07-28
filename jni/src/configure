@@ -233,7 +233,7 @@ elif [ "$OS" = "windows" ] ; then
     NVCC="nvcc"
     OBJ="obj"
     OUTFLG="/OUT:"
-    CPPFLAGS="/c /MT /DNDEBUG /O2 /EHsc $CPPFLAGS"  
+    CPPFLAGS="/openmp /c /MT /DNDEBUG /O2 /EHsc $CPPFLAGS"  
     CFLAGS="/openmp /c /MT /DNDEBUG /O2 /EHsc $CFLAGS" 
     NVCCFLAGS="-c -use_fast_math -I$BIDMAT_ROOT/jni/include \
           -gencode arch=compute_20,code=sm_20 \
