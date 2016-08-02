@@ -40,8 +40,8 @@ object SciFunctions {
   }
   
   def BIDMatInit {
-    Mat.checkCUDA;
     Mat.checkMKL(false);
+    Mat.checkCUDA;
   }
   
   def initCUDArngs = GMat.initCUDArngs;
