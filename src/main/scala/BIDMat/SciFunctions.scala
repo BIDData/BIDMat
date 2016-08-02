@@ -39,6 +39,11 @@ object SciFunctions {
   	initCUDArngs
   }
   
+  def BIDMatInit {
+    Mat.checkCUDA;
+    Mat.checkMKL(false);
+  }
+  
   def initCUDArngs = GMat.initCUDArngs;
   
   def initCUDArng(igpu:Int) = GMat.initCUDArng(igpu);
