@@ -15,6 +15,8 @@ resolvers ++= Seq(
   "Scala Mirror" at "https://oss.sonatype.org/content/repositories/releases/"
 )
 
+resolvers += Resolver.bintrayRepo("biddata", "BIDData")
+
 libraryDependencies <<= (scalaVersion, libraryDependencies) { (sv, deps) =>
   deps :+ ("org.scala-lang" % "scala-compiler" % sv)
 }
@@ -38,7 +40,11 @@ libraryDependencies += "com.cedarsoftware" % "json-io" % "2.2.29"
 
 libraryDependencies += "com.jsuereth" %% "scala-arm" % "1.4"
 
-//libraryDependencies += "org.scala-saddle" % "jhdf5" % "2.9"
+libraryDependencies += "org.jocl" % "jocl" % "2.0.0"
+
+// libraryDependencies += "org.scala-saddle" % "jhdf5" % "2.9"
+
+// libraryDependencies += "jcublas" % "jcublas" % "0.7.0a"
 
 credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 
