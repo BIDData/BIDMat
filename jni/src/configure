@@ -277,7 +277,9 @@ else
     exit 1
 fi
 
-echo "CC=$CC" > Makefile.incl
+echo "OS=$OS" > Makefile.incl
+echo "MARCH=$ARCH" >> Makefile.incl
+echo "CC=$CC" >> Makefile.incl
 echo "GCC=$GCC" >> Makefile.incl
 echo "NVCC=$NVCC" >> Makefile.incl
 echo "NVCCFLAGS=$NVCCFLAGS" >> Makefile.incl
