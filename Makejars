@@ -1,0 +1,10 @@
+include jni/src/Makefile.incl
+JCUDA_VERSION=0.7.0a
+
+nativejars: 
+	jar cf lib/jcuda-$(JCUDA_VERSION)-$(OS)-$(MARCH).jar lib/$(LIBPREPEND)JCudaDriver$(LIBAPPEND) lib/$(LIBPREPEND)JCudaRuntime$(LIBAPPEND)
+	jar cf lib/jcublas-$(JCUDA_VERSION)-$(OS)-$(MARCH).jar lib/$(LIBPREPEND)JCublas$(LIBAPPEND) lib/$(LIBPREPEND)JCublas2$(LIBAPPEND)
+	jar cf lib/jcufft-$(JCUDA_VERSION)-$(OS)-$(MARCH).jar lib/$(LIBPREPEND)JCufft$(LIBAPPEND)
+	jar cf lib/jcurand-$(JCUDA_VERSION)-$(OS)-$(MARCH).jar lib/$(LIBPREPEND)JCurand$(LIBAPPEND)
+	jar cf lib/jcusolver-$(JCUDA_VERSION)-$(OS)-$(MARCH).jar lib/$(LIBPREPEND)JCusolver$(LIBAPPEND)
+	jar cf lib/jcusparse-$(JCUDA_VERSION)-$(OS)-$(MARCH).jar lib/$(LIBPREPEND)JCusparse$(LIBAPPEND) 
