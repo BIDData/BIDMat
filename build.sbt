@@ -15,7 +15,7 @@ resolvers ++= Seq(
   "Scala Mirror" at "https://oss.sonatype.org/content/repositories/releases/"
 )
 
-resolvers += Resolver.bintrayRepo("biddata", "BIDData")
+//resolvers += Resolver.bintrayRepo("biddata", "BIDData")
 
 libraryDependencies <<= (scalaVersion, libraryDependencies) { (sv, deps) =>
   deps :+ ("org.scala-lang" % "scala-compiler" % sv)

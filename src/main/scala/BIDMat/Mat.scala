@@ -860,8 +860,8 @@ object Mat {
     if (useMKL) useMKLRand = (UTILS.hasMKL() == 1);
     useSTLRand = useMKL & !useMKLRand;
     try {
-//      jcuda.LibUtils.loadLibrary("jhdf5")
-      System.loadLibrary("jhdf5")
+      edu.berkeley.bid.LibUtils.loadLibrary("jhdf5")
+//      System.loadLibrary("jhdf5")
     } catch {
     case _:Throwable => {
       println("Cant find native HDF5 library")

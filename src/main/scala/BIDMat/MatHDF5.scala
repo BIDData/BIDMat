@@ -1,7 +1,7 @@
 package BIDMat
-import ncsa.hdf.hdf5lib.structs._
-import ncsa.hdf.hdf5lib.H5._
-import ncsa.hdf.hdf5lib.HDF5Constants._
+import hdf.hdf5lib.structs._
+import hdf.hdf5lib.H5._
+import hdf.hdf5lib.HDF5Constants._
 import scala.reflect._
 
 object MatHDF5 {

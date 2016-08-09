@@ -1,5 +1,6 @@
 include jni/src/Makefile.incl
 JCUDA_VERSION=0.7.0a
+JHDF5_VERSION=3.2.1
 
 nativejars: 
 	jar cf lib/jcuda-$(JCUDA_VERSION)-$(OS)-$(MARCH).jar lib/$(LIBPREPEND)JCudaDriver$(LIBAPPEND) lib/$(LIBPREPEND)JCudaRuntime$(LIBAPPEND)
@@ -8,3 +9,4 @@ nativejars:
 	jar cf lib/jcurand-$(JCUDA_VERSION)-$(OS)-$(MARCH).jar lib/$(LIBPREPEND)JCurand$(LIBAPPEND)
 	jar cf lib/jcusolver-$(JCUDA_VERSION)-$(OS)-$(MARCH).jar lib/$(LIBPREPEND)JCusolver$(LIBAPPEND)
 	jar cf lib/jcusparse-$(JCUDA_VERSION)-$(OS)-$(MARCH).jar lib/$(LIBPREPEND)JCusparse$(LIBAPPEND) 
+	jar cf lib/jhdf5-$(JHDF5_VERSION)-$(OS)-$(MARCH).jar lib/$(LIBPREPEND)jhdf5$(LIBAPPEND) 
