@@ -48,10 +48,12 @@ installcudalib: $(BIDMAT_ROOT)/lib/BIDMat-cuda$(CUDA_VERSION)-v$(VERSION)-$(OS)-
 installcpulib: $(BIDMAT_ROOT)/lib/BIDMat-v$(VERSION)-$(OS)-$(MARCH).jar
 
 $(BIDMAT_ROOT)/lib/BIDMat-cuda$(CUDA_VERSION)-v$(VERSION)-$(OS)-$(MARCH).jar: $(LIBPREPEND)bidmatcuda$(LIBAPPEND)
+	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND)  $(LIBDIR)
 	jar cf $(BIDMAT_ROOT)/lib/BIDMat-cuda$(CUDA_VERSION)-v$(VERSION)-$(OS)-$(MARCH).jar \
 	-C $(BIDMAT_ROOT) lib/$(LIBPREPEND)bidmatcuda$(LIBAPPEND)
 
 $(BIDMAT_ROOT)/lib/BIDMat-v$(VERSION)-$(OS)-$(MARCH).jar: $(LIBPREPEND)bidmatcpu$(LIBAPPEND)
+	cp $(LIBPREPEND)bidmatcpu$(LIBAPPEND)  $(LIBDIR)
 	jar cf $(BIDMAT_ROOT)/lib/BIDMat-v$(VERSION)-$(OS)-$(MARCH).jar \
 	-C $(BIDMAT_ROOT) lib/$(LIBPREPEND)bidmatcpu$(LIBAPPEND) lib/libiomp5$(LIBIOMPAPPEND)
 
