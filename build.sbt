@@ -8,9 +8,14 @@ scalaVersion := "2.11.2"
 
 val jcudaVersion = "0.7.0a"
 
-val OS = "windows"
+val OSmap = List(("windows", "windows"), ("linux", "linux"), ("Mac", "apple"))
 
-val ARCH = "x86_64"
+val ARCHmap = List(("amd64", "x86_64"), ("x86_64", "x86_64"));
+
+val OS_ = System.getProperty( "os.name" ).toLowerCase
+val OS = OSmap.flatMap( v => if (OS_.contains(v._1)) List(v._2) else List()).head;
+val ARCH_ = System.getProperty( "os.arch" ).toLowerCase
+val ARCH = ARCHmap.flatMap( v => if (ARCH_.contains(v._1)) List(v._2) else List()).head;
 
 artifactName := { (sv: ScalaVersion, module: ModuleID, artifact: Artifact) =>
   "../../BIDMat.jar"
@@ -48,14 +53,14 @@ libraryDependencies += "org.jfree" % "jfreechart" % "1.0.19"
 
 libraryDependencies += "org.jfree" % "jcommon" % "1.0.23"
 
-libraryDependencies += "jhdf5" % "jhdf5" % "3.2.1"
-libraryDependencies += "jhdf5" % "jhdf5" % "3.2.1" classifier (OS + "-" + ARCH)
-
-libraryDependencies += "ptplot" % "ptplot" % "1.0"
-
 libraryDependencies += "com.jsuereth" %% "scala-arm" % "1.4"
 
 libraryDependencies += "org.jocl" % "jocl" % "2.0.0"
+
+libraryDependencies += "ptplot" % "ptplot" % "1.0"
+
+libraryDependencies += "jhdf5" % "jhdf5" % "3.2.1"
+libraryDependencies += "jhdf5" % "jhdf5" % "3.2.1" classifier (OS + "-" + ARCH)
 
 libraryDependencies += "jcuda" % "jcuda" % jcudaVersion
 libraryDependencies += "jcuda" % "jcuda" % jcudaVersion classifier (OS + "-" + ARCH)

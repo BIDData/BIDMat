@@ -2,8 +2,8 @@
 #include <string.h>
 #include <algorithm>
 #include <vector>
-#include <math.h>
 #include <omp.h>
+#include <math.h>
 #ifdef __INTEL_COMPILER
 #include <mkl.h>
 #endif
@@ -14,6 +14,8 @@ extern "C" {
 typedef float (*fntype)(float);
 
 typedef float (*optype)(float,float);
+
+float gammaf(float);
 
 float slatec_psi(float *);
 
@@ -41,7 +43,7 @@ float fn_psifn(float a, float n) {
   float ans; long nn = (long)n, m = 1, ierr, nz;
   slatec_psifn(&a, &nn, &m, &m, &ans, &nz, &ierr);
   if (nn % 2 == 0) ans = - ans;
-  return ans/gamma(n+1);
+  return ans/gammaf(n+1);
 }
 
 const fntype slatec_fctns[] = {
