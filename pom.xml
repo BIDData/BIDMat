@@ -136,7 +136,6 @@
       <artifactId>scala-arm_2.11</artifactId>
       <version>1.4</version>
     </dependency>
-
   </dependencies> 
   <build>
     <plugins>
