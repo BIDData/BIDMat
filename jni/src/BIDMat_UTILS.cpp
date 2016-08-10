@@ -41,7 +41,7 @@ float fn_psifn(float a, float n) {
   float ans; long nn = (long)n, m = 1, ierr, nz;
   slatec_psifn(&a, &nn, &m, &m, &ans, &nz, &ierr);
   if (nn % 2 == 0) ans = - ans;
-  return ans/tgammaf(n+1);
+  return ans/gamma(n+1);
 }
 
 const fntype slatec_fctns[] = {
