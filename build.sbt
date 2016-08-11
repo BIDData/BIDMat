@@ -8,7 +8,7 @@ scalaVersion := "2.11.2"
 
 val jcudaVersion = "0.7.0a"
 
-val OSmap = List(("windows", "windows"), ("linux", "linux"), ("Mac", "apple"))
+val OSmap = List(("windows", "windows"), ("linux", "linux"), ("mac", "apple"))
 
 val ARCHmap = List(("amd64", "x86_64"), ("x86_64", "x86_64"));
 
