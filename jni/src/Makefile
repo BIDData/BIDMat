@@ -56,31 +56,31 @@ $(INSTALL_DIR)/$(LIBPREPEND)bidmatcpu$(LIBAPPEND): $(LIBPREPEND)bidmatcpu$(LIBAP
 
 jars: cudajar cpujar
 
-cudajar: $(BIDMAT_ROOT)/target/BIDMat-$(VERSION)-$(OS)-$(MARCH)-cuda$(CUDA_VERSION).jar
+cudajar: $(BIDMAT_ROOT)/target/BIDMat-$(VERSION)-$(OS)-$(MARCH).jar
 
-cpujar: $(BIDMAT_ROOT)/target/BIDMat-$(VERSION)-$(OS)-$(MARCH).jar
+cpujar: $(BIDMAT_ROOT)/target/BIDMat-$(VERSION)-cpu-$(OS)-$(MARCH).jar
 
-$(BIDMAT_ROOT)/target/BIDMat-$(VERSION)-$(OS)-$(MARCH)-cuda$(CUDA_VERSION).jar: $(LIBPREPEND)bidmatcuda$(LIBAPPEND)
+$(BIDMAT_ROOT)/target/BIDMat-$(VERSION)-$(OS)-$(MARCH).jar: $(LIBPREPEND)bidmatcuda$(LIBAPPEND)
 	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(LIBDIR)
-	jar cf $(BIDMAT_ROOT)/target/BIDMat-$(VERSION)-$(OS)-$(MARCH)-cuda$(CUDA_VERSION).jar \
+	jar cf $(BIDMAT_ROOT)/target/BIDMat-$(VERSION)-$(OS)-$(MARCH).jar \
 	-C $(BIDMAT_ROOT) lib/$(LIBPREPEND)bidmatcuda$(LIBAPPEND)
 	rm $(LIBDIR)/$(LIBPREPEND)bidmatcuda$(LIBAPPEND)
 
-$(BIDMAT_ROOT)/target/BIDMat-$(VERSION)-$(OS)-$(MARCH).jar: $(LIBPREPEND)bidmatcpu$(LIBAPPEND)
+$(BIDMAT_ROOT)/target/BIDMat-$(VERSION)-cpu-$(OS)-$(MARCH).jar: $(LIBPREPEND)bidmatcpu$(LIBAPPEND)
 	cp $(LIBPREPEND)bidmatcpu$(LIBAPPEND) $(LIBDIR)
-	jar cf $(BIDMAT_ROOT)/target/BIDMat-$(VERSION)-$(OS)-$(MARCH).jar \
+	jar cf $(BIDMAT_ROOT)/target/BIDMat-$(VERSION)-cpu-$(OS)-$(MARCH).jar \
 	-C $(BIDMAT_ROOT) lib/$(LIBPREPEND)bidmatcpu$(LIBAPPEND)
-	jar uf $(BIDMAT_ROOT)/target/BIDMat-$(VERSION)-$(OS)-$(MARCH).jar \
+	jar uf $(BIDMAT_ROOT)/target/BIDMat-$(VERSION)-cpu-$(OS)-$(MARCH).jar \
 	-C $(BIDMAT_ROOT) lib/libiomp5$(LIBIOMPAPPEND)
 	rm $(LIBDIR)/$(LIBPREPEND)bidmatcpu$(LIBAPPEND)
 
 upload: jars
 	if [ -d /biddata/lib ]; then \
 	cp $(BIDMAT_ROOT)/target/BIDMat-$(VERSION)-$(OS)-$(MARCH).jar /biddata/lib/$(VERSION) \
-	cp $(BIDMAT_ROOT)/target/BIDMat-$(VERSION)-$(OS)-$(MARCH)-cuda$(CUDA_VERSION).jar /biddata/lib/$(VERSION) \
+	cp $(BIDMAT_ROOT)/target/BIDMat-$(VERSION)-cpu-$(OS)-$(MARCH).jar /biddata/lib/$(VERSION) \
 	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) /biddata/lib/$(VERSION) ; \
 	cp $(LIBPREPEND)bidmatcpu$(LIBAPPEND)  /biddata/lib/$(VERSION) ; else \
-	scp $(LIBPREPEND)bidmat*$(LIBAPPEND) $(BIDMAT_ROOT)/target/BIDMat-$(VERSION)-$(OS)-$(MARCH)*.jar login.eecs.berkeley.edu:biddata/lib/$(VERSION) ; fi
+	scp $(LIBPREPEND)bidmat*$(LIBAPPEND) $(BIDMAT_ROOT)/target/BIDMat-$(VERSION)*-$(OS)-$(MARCH).jar login.eecs.berkeley.edu:biddata/lib/$(VERSION) ; fi
 
 clean:
 	rm -f *.$(OBJ) *$(LIBAPPEND) *.pdb *.exp *.lib
