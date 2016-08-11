@@ -12,6 +12,7 @@
   <properties>
     <scalaVersion>2.11</scalaVersion>
     <jcudaVersion>0.7.5b</jcudaVersion>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
   <repositories>
     <repository>
@@ -36,7 +37,7 @@
     <dependency>
       <groupId>jline</groupId>
       <artifactId>jline</artifactId>
-      <version>2.11</version>
+      <version>2.10</version>
     </dependency> 
     <dependency>
       <groupId>org.apache.commons</groupId>
