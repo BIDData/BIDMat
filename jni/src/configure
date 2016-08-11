@@ -7,7 +7,7 @@ if [ "$ARCH" = "" ]; then
 fi
 
 VERSION="1.1.0"
-CUDA_VERSION="7.5"
+CUDA_VERSION="7.0"
 
 # standardise the OS and ARCH names
 if [[ "$OS" == Darwin* ]] ; then
