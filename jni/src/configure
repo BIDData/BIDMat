@@ -6,7 +6,7 @@ if [ "$ARCH" = "" ]; then
     ARCH=`arch`
 fi
 
-VERSION="v1.1.0"
+VERSION="1.1.0"
 CUDA_VERSION="7.5"
 
 # standardise the OS and ARCH names

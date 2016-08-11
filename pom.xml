@@ -6,7 +6,7 @@
   <groupId>edu.berkeley.bid</groupId>
   <artifactId>BIDMat</artifactId>
   <packaging>jar</packaging>
-  <version>v1.1.0</version>
+  <version>1.1.0</version>
   <name>BIDMat</name>
   <description>BIDMat performs matrix operations</description>
   <properties>
