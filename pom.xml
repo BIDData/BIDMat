@@ -6,7 +6,7 @@
   <groupId>edu.berkeley.bid</groupId>
   <artifactId>BIDMat</artifactId>
   <packaging>jar</packaging>
-  <version>1.1.0</version>
+  <version>v1.1.0</version>
   <name>BIDMat</name>
   <description>BIDMat performs matrix operations</description>
   <properties>
@@ -189,7 +189,7 @@
         </excludes>
       </resource>
     </resources>
-    <finalName>${artifactId}-cuda${cudaVersion}-v${version}</finalName>
+    <finalName>${project.artifactId}-${project.version}-cuda${cudaVersion}</finalName>
   </build>	
 </project>
 
