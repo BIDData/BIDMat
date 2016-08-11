@@ -3,15 +3,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>edu.berkeley.bid</groupId>
+  <groupId>BIDMat</groupId>
   <artifactId>BIDMat</artifactId>
   <packaging>jar</packaging>
-  <version>1.1.0</version>
+  <version>1.1.0-cuda7.5</version>
   <name>BIDMat</name>
   <description>BIDMat performs matrix operations</description>
   <properties>
     <scalaVersion>2.11</scalaVersion>
-    <cudaVersion>7.5</cudaVersion>
     <jcudaVersion>0.7.5b</jcudaVersion>
   </properties>
   <repositories>
@@ -189,7 +188,7 @@
         </excludes>
       </resource>
     </resources>
-    <finalName>${project.artifactId}-${project.version}-cuda${cudaVersion}</finalName>
+    <finalName>${project.artifactId}-${project.version}</finalName>
   </build>	
 </project>
 
