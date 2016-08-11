@@ -11,8 +11,8 @@
   <description>BIDMat performs matrix operations</description>
   <properties>
     <scalaVersion>2.11</scalaVersion>
-    <cudaVersion>7.5</cudaVersion>
-    <jcudaVersion>0.7.5b</jcudaVersion>
+    <cudaVersion>7.0</cudaVersion>
+    <jcudaVersion>0.7.0a</jcudaVersion>
   </properties>
   <repositories>
     <repository>
