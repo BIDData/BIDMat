@@ -289,10 +289,31 @@
         <version>3.0.2</version>
         <executions>
           <execution>
+            <id>build_cuda_native_jar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
             <configuration>
+              <classesDirectory>src/main/resources</classesDirectory>
               <classifier>${osarch}</classifier>
               <includes>
-                <include>../../**/*bidmatcuda*</include>
+                <include>lib/*bidmatcuda*</include>
+              </includes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>build_cpu_native_jar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+            <configuration>
+              <classesDirectory>src/main/resources</classesDirectory>
+              <classifier>cpu-${osarch}</classifier>
+              <includes>
+                <include>lib/*bidmatcpu*</include>
+                <include>lib/*iomp5*</include>
               </includes>
             </configuration>
           </execution>
