@@ -6,12 +6,11 @@
   <groupId>BIDMat</groupId>
   <artifactId>BIDMat</artifactId>
   <packaging>jar</packaging>
-  <version>1.1.0-cuda7.5</version>
+  <version>1.1.0-cuda${cudaVersion}</version>
   <name>BIDMat</name>
   <description>BIDMat performs matrix operations</description>
   <properties>
     <scalaVersion>2.11</scalaVersion>
-    <jcudaVersion>0.7.5b</jcudaVersion>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
   <repositories>
@@ -33,6 +32,111 @@
       <url>http://dl.bintray.com/biddata/BIDData</url>
     </repository>
   </repositories>
+  <profiles>
+    <profile>
+      <id>win</id>
+      <activation>
+      	<os>
+          <family>Windows</family>
+      	</os>
+      </activation>
+      <properties>
+	<osarch>windows-x86_64</osarch>
+      </properties>
+      <dependencies>
+    	<dependency>
+          <groupId>${project.groupId}</groupId>
+          <artifactId>${project.artifactId}</artifactId>
+          <version>${project.version}</version>
+          <classifier>cpu-windows-x86_64</classifier>
+        </dependency>
+    	<dependency>
+          <groupId>${project.groupId}</groupId>
+          <artifactId>${project.artifactId}</artifactId>
+          <version>${project.version}</version>
+          <classifier>windows-x86_64</classifier>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>mac</id>
+      <activation>
+      	<os>
+          <family>mac</family>
+      	</os>
+      </activation>
+      <properties>
+	<osarch>apple-x86_64</osarch>
+      </properties>
+      <dependencies>
+    	<dependency>
+          <groupId>${project.groupId}</groupId>
+          <artifactId>${project.artifactId}</artifactId>
+          <version>${project.version}</version>
+          <classifier>cpu-apple-x86_64</classifier>
+        </dependency>
+    	<dependency>
+          <groupId>${project.groupId}</groupId>
+          <artifactId>${project.artifactId}</artifactId>
+          <version>${project.version}</version>
+          <classifier>apple-x86_64</classifier>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>linux_arm</id>
+      <activation>
+      	<os>
+          <family>unix</family>
+          <arch>arm</arch>
+          <name>!mac os x</name>  <!--https://issues.apache.org/jira/browse/MNG-4983-->
+      	</os>
+      </activation>
+      <properties>
+	<osarch>linux-arm</osarch>
+      </properties>
+      <dependencies>
+    	<dependency>
+          <groupId>${project.groupId}</groupId>
+          <artifactId>${project.artifactId}</artifactId>
+          <version>${project.version}</version>
+          <classifier>cpu-linux-arm</classifier>
+        </dependency>
+    	<dependency>
+          <groupId>${project.groupId}</groupId>
+          <artifactId>${project.artifactId}</artifactId>
+          <version>${project.version}</version>
+          <classifier>linux-arm</classifier>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>linux</id>
+      <activation>
+      	<os>
+          <family>unix</family>
+          <name>!mac os x</name> <!--https://issues.apache.org/jira/browse/MNG-4983-->
+      	</os>
+      </activation>
+      <properties>
+	<osarch>linux-x86_64</osarch>
+      </properties>
+      <dependencies>
+    	<dependency>
+          <groupId>${project.groupId}</groupId>
+          <artifactId>${project.artifactId}</artifactId>
+          <version>${project.version}</version>
+          <classifier>cpu-linux-x86_64</classifier>
+        </dependency>
+    	<dependency>
+          <groupId>${project.groupId}</groupId>
+          <artifactId>${project.artifactId}</artifactId>
+          <version>${project.version}</version>
+          <classifier>linux-x86_64</classifier>
+        </dependency>
+      </dependencies>
+    </profile>
+  </profiles>
   <dependencies>
     <dependency>
       <groupId>jline</groupId>
@@ -179,13 +283,28 @@
           <skipTests>true</skipTests>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.0.2</version>
+        <executions>
+          <execution>
+            <configuration>
+              <classifier>${osarch}</classifier>
+              <includes>
+                <include>../../**/*bidmatcuda*</include>
+              </includes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
     <resources>
       <resource>
         <targetPath>lib/</targetPath>
         <directory>src/main/resources/lib/</directory>
         <excludes>
-          <exclude>**/*.jar</exclude>
+          <exclude>*</exclude>
         </excludes>
       </resource>
     </resources>
