@@ -41,22 +41,8 @@
       	</os>
       </activation>
       <properties>
-	<osarch>windows-x86_64</osarch>
+        <osarch>windows-x86_64</osarch>
       </properties>
-      <dependencies>
-    	<dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>${project.artifactId}</artifactId>
-          <version>${project.version}</version>
-          <classifier>cpu-windows-x86_64</classifier>
-        </dependency>
-    	<dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>${project.artifactId}</artifactId>
-          <version>${project.version}</version>
-          <classifier>windows-x86_64</classifier>
-        </dependency>
-      </dependencies>
     </profile>
     <profile>
       <id>mac</id>
@@ -66,22 +52,8 @@
       	</os>
       </activation>
       <properties>
-	<osarch>apple-x86_64</osarch>
+        <osarch>apple-x86_64</osarch>
       </properties>
-      <dependencies>
-    	<dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>${project.artifactId}</artifactId>
-          <version>${project.version}</version>
-          <classifier>cpu-apple-x86_64</classifier>
-        </dependency>
-    	<dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>${project.artifactId}</artifactId>
-          <version>${project.version}</version>
-          <classifier>apple-x86_64</classifier>
-        </dependency>
-      </dependencies>
     </profile>
     <profile>
       <id>linux_arm</id>
@@ -93,22 +65,8 @@
       	</os>
       </activation>
       <properties>
-	<osarch>linux-arm</osarch>
+        <osarch>linux-arm</osarch>
       </properties>
-      <dependencies>
-    	<dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>${project.artifactId}</artifactId>
-          <version>${project.version}</version>
-          <classifier>cpu-linux-arm</classifier>
-        </dependency>
-    	<dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>${project.artifactId}</artifactId>
-          <version>${project.version}</version>
-          <classifier>linux-arm</classifier>
-        </dependency>
-      </dependencies>
     </profile>
     <profile>
       <id>linux</id>
@@ -119,21 +77,86 @@
       	</os>
       </activation>
       <properties>
-	<osarch>linux-x86_64</osarch>
+        <osarch>linux-x86_64</osarch>
       </properties>
+    </profile>
+    <profile>
+      <id>gpu</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jar-plugin</artifactId>
+            <version>3.0.2</version>
+            <executions>
+              <execution>
+                <id>build_cuda_native_jar</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+                <configuration>
+                  <classesDirectory>src/main/resources</classesDirectory>
+                  <classifier>gpu-${osarch}</classifier>
+                  <includes>
+                    <include>lib/*bidmatcuda*</include>
+                  </includes>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>cpu</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jar-plugin</artifactId>
+            <version>3.0.2</version>
+            <executions>
+              <execution>
+                <id>build_cpu_native_jar</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+                <configuration>
+                  <classesDirectory>src/main/resources</classesDirectory>
+                  <classifier>cpu-${osarch}</classifier>
+                  <includes>
+                    <include>lib/*bidmatcpu*</include>
+                    <include>lib/*iomp5*</include>
+                  </includes>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>run</id>
+      <activation>
+        <property>
+          <name>!someNonsense</name>
+        </property>
+      </activation>
       <dependencies>
-    	<dependency>
+        <dependency>
           <groupId>${project.groupId}</groupId>
           <artifactId>${project.artifactId}</artifactId>
           <version>${project.version}</version>
-          <classifier>cpu-linux-x86_64</classifier>
+          <classifier>cpu-${osarch}</classifier>
         </dependency>
-    	<dependency>
+        <dependency>
           <groupId>${project.groupId}</groupId>
           <artifactId>${project.artifactId}</artifactId>
           <version>${project.version}</version>
-          <classifier>linux-x86_64</classifier>
-        </dependency>
+          <classifier>gpu-${osarch}</classifier>
+        </dependency> 
       </dependencies>
     </profile>
   </profiles>
@@ -283,42 +306,6 @@
           <skipTests>true</skipTests>
         </configuration>
       </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>3.0.2</version>
-        <executions>
-          <execution>
-            <id>build_cuda_native_jar</id>
-            <phase>package</phase>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-            <configuration>
-              <classesDirectory>src/main/resources</classesDirectory>
-              <classifier>${osarch}</classifier>
-              <includes>
-                <include>lib/*bidmatcuda*</include>
-              </includes>
-            </configuration>
-          </execution>
-          <execution>
-            <id>build_cpu_native_jar</id>
-            <phase>package</phase>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-            <configuration>
-              <classesDirectory>src/main/resources</classesDirectory>
-              <classifier>cpu-${osarch}</classifier>
-              <includes>
-                <include>lib/*bidmatcpu*</include>
-                <include>lib/*iomp5*</include>
-              </includes>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
     </plugins>
     <resources>
       <resource>
@@ -328,7 +315,7 @@
           <exclude>*</exclude>
         </excludes>
       </resource>
-    </resources>
+    </resources> 
     <finalName>${project.artifactId}-${project.version}</finalName>
   </build>	
 </project>
