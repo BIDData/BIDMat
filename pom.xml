@@ -318,6 +318,13 @@
     </resources> 
     <finalName>${project.artifactId}-${project.version}</finalName>
   </build>	
+  <distributionManagement>
+    <repository>
+      <id>bintray-biddata-BIDData</id>
+      <name>biddata-BIDData</name>
+      <url>https://api.bintray.com/maven/biddata/BIDData/BIDMat/</url>
+    </repository>
+  </distributionManagement>
 </project>
 
 
