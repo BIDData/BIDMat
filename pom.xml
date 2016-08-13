@@ -82,6 +82,11 @@
     </profile>
     <profile>
       <id>gpu</id>
+      <activation>
+        <property>
+          <name>gpu</name>
+        </property>
+      </activation>
       <build>
         <plugins>
           <plugin>
@@ -110,6 +115,11 @@
     </profile>
     <profile>
       <id>cpu</id>
+      <activation>
+        <property>
+          <name>cpu</name>
+        </property>
+      </activation>
       <build>
         <plugins>
           <plugin>
@@ -138,10 +148,10 @@
       </build>
     </profile>
     <profile>
-      <id>run</id>
+      <id>dependcpu</id>
       <activation>
         <property>
-          <name>!someNonsense</name>
+          <name>!cpu</name>
         </property>
       </activation>
       <dependencies>
@@ -151,6 +161,16 @@
           <version>${project.version}</version>
           <classifier>cpu-${osarch}</classifier>
         </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>dependgpu</id>
+      <activation>
+        <property>
+          <name>!gpu</name>
+        </property>
+      </activation>
+      <dependencies>
         <dependency>
           <groupId>${project.groupId}</groupId>
           <artifactId>${project.artifactId}</artifactId>
@@ -322,7 +342,7 @@
     <repository>
       <id>bintray-biddata-BIDData</id>
       <name>biddata-BIDData</name>
-      <url>https://api.bintray.com/maven/biddata/BIDData/BIDMat/</url>
+      <url>https://api.bintray.com/maven/biddata/BIDData/BIDMat/;publish=1</url>
     </repository>
   </distributionManagement>
 </project>
