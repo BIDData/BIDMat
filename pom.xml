@@ -342,7 +342,7 @@
     <repository>
       <id>bintray-biddata-BIDData</id>
       <name>biddata-BIDData</name>
-      <url>https://api.bintray.com/maven/biddata/BIDData/BIDMat/;publish=1</url>
+      <url>https://api.bintray.com/maven/biddata/BIDData/BIDMat/;publish=1;override=1</url>
     </repository>
   </distributionManagement>
 </project>

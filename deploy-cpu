@@ -1,0 +1,14 @@
+
+if [ "$CUDA_VERSION" != "" ]; then
+version="1.1.0-cuda${CUDA_VERSION}"
+OS=windows
+ARCH=x86_64
+mvn org.apache.maven.plugins:maven-deploy-plugin:2.7:deploy-file -Durl='https://api.bintray.com/maven/biddata/BIDData/BIDMat/;publish=1;override=1' \
+                                                                            -DrepositoryId=bintray-biddata-BIDData \
+                                                                            -Dfile="target/BIDMat-${version}-cpu-${OS}-${ARCH}.jar" \
+                                                                            -DpomFile=pom.xml \
+                                                                            -Dversion="${version}" \
+                                                                            -Dclassifier="cpu-${OS}-${ARCH}"
+else 
+echo "Must set environment variable \$CUDA_VERSION"
+fi
