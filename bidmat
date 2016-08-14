@@ -3,7 +3,7 @@
 # export CUDA_PATH="" # Set here if not set in environment
 # Change these if needed
 BLAS_ROOT="/code/QSML"
-JCUDA_VERSION="0.7.0a"
+JCUDA_VERSION="0.7.5b"
 JOCL_VERSION="2.0.1-SNAPSHOT"
 export JAVA_OPTS="${MEMSIZE} -Xms128M -Dfile.encoding=UTF-8" # Set as much memory as possible
 BIDMAT_ROOT="${BASH_SOURCE[0]}"

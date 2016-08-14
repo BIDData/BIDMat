@@ -1,0 +1,48 @@
+#!/bin/bash
+
+if [ "$CUDA_VERSION" != "" ]; then
+version="1.1.0-cuda${CUDA_VERSION}"
+OS=`uname -a`
+if [ "$ARCH" = "" ]; then
+    ARCH=`arch`
+fi
+# standardise the OS and ARCH names
+if [[ "$OS" == Darwin* ]] ; then
+    if [[ "$OS" == *x86_64 ]] ; then
+	ARCH="x86_64"
+    fi
+    OS="apple"
+elif [[ "$OS" == Linux* ]] ; then
+    OS="linux"
+elif [[ "$OS" == CYGWIN* ]] ; then
+    if [[ "$OS" == *WOW* ]] ; then
+        ARCH="x86_64"
+    fi
+    OS="windows"
+else
+    echo "OS not supported" $OS
+    exit 1
+fi
+
+if [ "$ARCH" = "x86" ] || [ "$ARCH" = "i686" ] || [ "$ARCH" = "i586" ] \
+    || [ "$ARCH" = "i486" ] || [ "$ARCH" = "i386" ] ; then
+    ARCH="x86"
+elif [ "$ARCH" = "amd64" ] || [ "$ARCH" = "x86_64" ] ; then
+    ARCH="x86_64"
+elif [[ "$ARCH" == armv7* ]] ; then
+    ARCH="arm"
+elif [ "$ARCH" = "aarch64" ] ; then
+    ARCH="arm"
+else
+    echo "ARCH not supported"
+    exit 1
+fi
+mvn org.apache.maven.plugins:maven-deploy-plugin:2.7:deploy-file -Durl='https://api.bintray.com/maven/biddata/BIDData/BIDMat/;publish=1;override=1' \
+                                                                            -DrepositoryId=bintray-biddata-BIDData \
+                                                                            -Dfile="target/BIDMat-${version}-cpu-${OS}-${ARCH}.jar" \
+                                                                            -DpomFile=pom.xml \
+                                                                            -Dversion="${version}" \
+                                                                            -Dclassifier="cpu-${OS}-${ARCH}"
+else 
+echo "Must set environment variable \$CUDA_VERSION"
+fi
