@@ -54,6 +54,7 @@ rm -f ${BIDMAT_ROOT}/src/main/resources/lib/*.${suffix}
 cp ${BIDMAT_ROOT}/lib/*bidmat*.${suffix} ${BIDMAT_ROOT}/src/main/resources/lib
 cp ${BIDMAT_ROOT}/lib/*iomp5*.${suffix} ${BIDMAT_ROOT}/src/main/resources/lib
 
+mkdir -p ${BIDMAT_ROOT}/src/main/resources
 cd ${BIDMAT_ROOT}/src/main/resources
 libs=`echo lib/*.${suffix}`
 
