@@ -1,12 +1,12 @@
 #!/bin/bash
 
+VERSION="1.1.0-cuda7.0"
+
 OS=`uname -a`
 PARLIB=$1
 if [ "$ARCH" = "" ]; then
     ARCH=`arch`
 fi
-
-VERSION="1.1.0-cuda7.5"
 
 # standardise the OS and ARCH names
 if [[ "$OS" == Darwin* ]] ; then
