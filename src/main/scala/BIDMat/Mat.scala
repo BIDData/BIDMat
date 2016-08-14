@@ -883,7 +883,7 @@ object Mat {
 					    System.loadLibrary("cusparse");
 					}
   				} else {
-  					val libnames = List("cudart64_70", "cudart64_65", "cudart64_55", "cudart64_50_35", "cudart64_42_9").iterator;
+				    val libnames = List("cudart64_75", "cudart64_70", "cudart64_65", "cudart64_55", "cudart64_50_35", "cudart64_42_9").iterator;
   					var found = false;
   					while (!found && libnames.hasNext) {
   						found = true;
