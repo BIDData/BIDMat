@@ -877,6 +877,11 @@ object Mat {
   			try {
   				if (os.equals("Linux") || os.equals("Mac OS X")) {
   					System.loadLibrary("cudart");
+					if (os.equals("Mac OS X")) {
+					    System.loadLibrary("cublas");
+					    System.loadLibrary("curand");
+					    System.loadLibrary("cusparse");
+					}
   				} else {
   					val libnames = List("cudart64_70", "cudart64_65", "cudart64_55", "cudart64_50_35", "cudart64_42_9").iterator;
   					var found = false;
