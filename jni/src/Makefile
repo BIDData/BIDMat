@@ -47,12 +47,15 @@ installcudalib: $(INSTALL_DIR)/$(LIBPREPEND)bidmatcuda$(LIBAPPEND)
 
 installcpulib: $(INSTALL_DIR)/$(LIBPREPEND)bidmatcpu$(LIBAPPEND)
 
-$(INSTALL_DIR)/$(LIBPREPEND)bidmatcuda$(LIBAPPEND): $(LIBPREPEND)bidmatcuda$(LIBAPPEND)
+$(INSTALL_DIR)/$(LIBPREPEND)bidmatcuda$(LIBAPPEND): $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(INSTALL_DIR)
 	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(INSTALL_DIR)
 
-$(INSTALL_DIR)/$(LIBPREPEND)bidmatcpu$(LIBAPPEND): $(LIBPREPEND)bidmatcpu$(LIBAPPEND)
+$(INSTALL_DIR)/$(LIBPREPEND)bidmatcpu$(LIBAPPEND): $(LIBPREPEND)bidmatcpu$(LIBAPPEND) $(INSTALL_DIR)
 	cp $(LIBPREPEND)bidmatcpu$(LIBAPPEND) $(INSTALL_DIR)
 	cp $(LIBDIR)/libiomp5$(LIBIOMPAPPEND) $(INSTALL_DIR)
+
+$(INSTALL_DIR):
+	mkdir -p $(INSTALL_DIR)
 
 jars: cudajar cpujar
 
