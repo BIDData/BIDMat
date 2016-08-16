@@ -42,7 +42,7 @@
       	</os>
       </activation>
       <properties>
-        <osarch>windows-x86_64</osarch>
+        <osarch>windows-x86-64</osarch>
       </properties>
     </profile>
     <profile>
@@ -53,7 +53,7 @@
       	</os>
       </activation>
       <properties>
-        <osarch>apple-x86_64</osarch>
+        <osarch>apple-x86-64</osarch>
       </properties>
     </profile>
     <profile>
@@ -78,7 +78,7 @@
       	</os>
       </activation>
       <properties>
-        <osarch>linux-x86_64</osarch>
+        <osarch>linux-x86-64</osarch>
       </properties>
     </profile>
     <profile>
