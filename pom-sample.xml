@@ -25,12 +25,12 @@
       </snapshots>
     </repository>
     <repository>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
       <id>bintray-biddata-BIDData</id>
       <name>bintray</name>
       <url>http://dl.bintray.com/biddata/BIDData</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
     </repository>
   </repositories>
   <profiles>
