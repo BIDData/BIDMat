@@ -4,13 +4,6 @@ if [ "${ARCH}" = "" ];then
     ARCH=`arch`
 fi
 
-if [ "${CUDA_VERSION}" = "" ];then
-    CUDA_VERSION=`nvcc --version | grep release | sed 's/.*release //' | sed 's/\,.*//'`
-fi
-
-devdir="dev-cuda${CUDA_VERSION}"
-echo "Fetching libs from ${devdir}"
-
 BIDMAT_ROOT="${BASH_SOURCE[0]}"
 if [ ! `uname` = "Darwin" ]; then
   BIDMAT_ROOT=`readlink -f "${BIDMAT_ROOT}"`
@@ -23,6 +16,11 @@ BIDMAT_ROOT=`dirname "$BIDMAT_ROOT"`
 pushd "${BIDMAT_ROOT}"  > /dev/null
 BIDMAT_ROOT=`pwd`
 BIDMAT_ROOT="$( echo ${BIDMAT_ROOT} | sed s+/cygdrive/c+c:+ )" 
+
+source ${BIDMAT_ROOT}/getcudaversion.sh
+
+devdir="dev-cuda${CUDA_VERSION}"
+echo "Fetching libs from ${devdir}"
 
 source="http://people.eecs.berkeley.edu/~jfc/biddata"
 cd ${BIDMAT_ROOT}/lib
