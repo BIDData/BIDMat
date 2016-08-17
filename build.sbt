@@ -6,7 +6,7 @@ organization := "edu.berkeley.bid"
 
 scalaVersion := "2.11.2"
 
-val jcudaVersion = "0.7.0a"
+val jcudaVersion = "0.7.5b"
 
 val OSmap = List(("windows", "windows"), ("linux", "linux"), ("mac", "apple"))
 
@@ -42,10 +42,10 @@ libraryDependencies += "org.apache.commons" % "commons-math3" % "3.2"
 libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.4" % "test"
 
 libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.11.6" % "test"
+/*
+libraryDependencies += "net.jpountz.lz4" % "lz4" % "1.3"
 
 libraryDependencies += "junit" % "junit" % "4.11" % "test"
-
-libraryDependencies += "net.jpountz.lz4" % "lz4" % "1.3"
 
 libraryDependencies += "com.cedarsoftware" % "json-io" % "4.5.0"
 
@@ -73,7 +73,7 @@ libraryDependencies += "jcuda" % "jcurand" % jcudaVersion classifier (OS + "-" +
 
 libraryDependencies += "jcuda" % "jcusparse" % jcudaVersion
 libraryDependencies += "jcuda" % "jcusparse" % jcudaVersion classifier (OS + "-" + ARCH)
-
+*/
 credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 
 parallelExecution in Test := false
