@@ -12,6 +12,7 @@
   <properties>
     <scalaVersion>2.11</scalaVersion>
     <jcudaVersion>0.7.5b</jcudaVersion>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
   <repositories>
     <repository>
@@ -24,19 +25,167 @@
       </snapshots>
     </repository>
     <repository>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
       <id>bintray-biddata-BIDData</id>
       <name>bintray</name>
       <url>http://dl.bintray.com/biddata/BIDData</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
     </repository>
   </repositories>
+  <profiles>
+    <profile>
+      <id>win</id>
+      <activation>
+      	<os>
+          <family>Windows</family>
+      	</os>
+      </activation>
+      <properties>
+        <osarch>windows-x86-64</osarch>
+      </properties>
+    </profile>
+    <profile>
+      <id>mac</id>
+      <activation>
+      	<os>
+          <family>mac</family>
+      	</os>
+      </activation>
+      <properties>
+        <osarch>apple-x86-64</osarch>
+      </properties>
+    </profile>
+    <profile>
+      <id>linux_arm</id>
+      <activation>
+      	<os>
+          <family>unix</family>
+          <arch>arm</arch>
+          <name>!mac os x</name>  <!--https://issues.apache.org/jira/browse/MNG-4983-->
+      	</os>
+      </activation>
+      <properties>
+        <osarch>linux-arm</osarch>
+      </properties>
+    </profile>
+    <profile>
+      <id>linux</id>
+      <activation>
+      	<os>
+          <family>unix</family>
+          <name>!mac os x</name> <!--https://issues.apache.org/jira/browse/MNG-4983-->
+      	</os>
+      </activation>
+      <properties>
+        <osarch>linux-x86-64</osarch>
+      </properties>
+    </profile>
+    <profile>
+      <id>gpu</id>
+      <activation>
+        <property>
+          <name>gpu</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jar-plugin</artifactId>
+            <version>3.0.2</version>
+            <executions>
+              <execution>
+                <id>build_cuda_native_jar</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+                <configuration>
+                  <classesDirectory>src/main/resources</classesDirectory>
+                  <classifier>gpu-${osarch}</classifier>
+                  <includes>
+                    <include>lib/*bidmatcuda*</include>
+                  </includes>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>cpu</id>
+      <activation>
+        <property>
+          <name>cpu</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jar-plugin</artifactId>
+            <version>3.0.2</version>
+            <executions>
+              <execution>
+                <id>build_cpu_native_jar</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+                <configuration>
+                  <classesDirectory>src/main/resources</classesDirectory>
+                  <classifier>cpu-${osarch}</classifier>
+                  <includes>
+                    <include>lib/*bidmatcpu*</include>
+                    <include>lib/*iomp5*</include>
+                  </includes>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>dependcpu</id>
+      <activation>
+        <property>
+          <name>!cpu</name>
+        </property>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>${project.groupId}</groupId>
+          <artifactId>${project.artifactId}</artifactId>
+          <version>${project.version}</version>
+          <classifier>cpu-${osarch}</classifier>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>dependgpu</id>
+      <activation>
+        <property>
+          <name>!gpu</name>
+        </property>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>${project.groupId}</groupId>
+          <artifactId>${project.artifactId}</artifactId>
+          <version>${project.version}</version>
+          <classifier>gpu-${osarch}</classifier>
+        </dependency> 
+      </dependencies>
+    </profile>
+  </profiles>
   <dependencies>
     <dependency>
       <groupId>jline</groupId>
       <artifactId>jline</artifactId>
-      <version>2.11</version>
+      <version>2.10</version>
     </dependency> 
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -166,8 +315,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.5.1</version>
         <configuration>
-          <source>1.6</source>
-          <target>1.6</target>
+          <source>1.7</source>
+          <target>1.7</target>
         </configuration>
       </plugin>
       <plugin>
@@ -184,12 +333,19 @@
         <targetPath>lib/</targetPath>
         <directory>src/main/resources/lib/</directory>
         <excludes>
-          <exclude>**/*.jar</exclude>
+          <exclude>*</exclude>
         </excludes>
       </resource>
-    </resources>
+    </resources> 
     <finalName>${project.artifactId}-${project.version}</finalName>
   </build>	
+  <distributionManagement>
+    <repository>
+      <id>bintray-biddata-BIDData</id>
+      <name>biddata-BIDData</name>
+      <url>https://api.bintray.com/maven/biddata/BIDData/BIDMat/;publish=1;override=1</url>
+    </repository>
+  </distributionManagement>
 </project>
 
 

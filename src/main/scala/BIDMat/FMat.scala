@@ -840,7 +840,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
                 }
                 while (SciFunctions.sum(done).v < Mat.numThreads) {Thread.`yield`()}
             } else {
-                fDMultTHelper(a, out, 0, a.ncols)
+                fDMultTHelper(a, out, 0, a.nrows)
             }    	  
     	} else {
     	  sgemm(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.Trans,

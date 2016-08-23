@@ -47,12 +47,15 @@ installcudalib: $(INSTALL_DIR)/$(LIBPREPEND)bidmatcuda$(LIBAPPEND)
 
 installcpulib: $(INSTALL_DIR)/$(LIBPREPEND)bidmatcpu$(LIBAPPEND)
 
-$(INSTALL_DIR)/$(LIBPREPEND)bidmatcuda$(LIBAPPEND): $(LIBPREPEND)bidmatcuda$(LIBAPPEND)
+$(INSTALL_DIR)/$(LIBPREPEND)bidmatcuda$(LIBAPPEND): $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(INSTALL_DIR)
 	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(INSTALL_DIR)
 
-$(INSTALL_DIR)/$(LIBPREPEND)bidmatcpu$(LIBAPPEND): $(LIBPREPEND)bidmatcpu$(LIBAPPEND)
+$(INSTALL_DIR)/$(LIBPREPEND)bidmatcpu$(LIBAPPEND): $(LIBPREPEND)bidmatcpu$(LIBAPPEND) $(INSTALL_DIR)
 	cp $(LIBPREPEND)bidmatcpu$(LIBAPPEND) $(INSTALL_DIR)
 	cp $(LIBDIR)/libiomp5$(LIBIOMPAPPEND) $(INSTALL_DIR)
+
+$(INSTALL_DIR):
+	mkdir -p $(INSTALL_DIR)
 
 jars: cudajar cpujar
 
@@ -74,13 +77,11 @@ $(BIDMAT_ROOT)/target/BIDMat-$(VERSION)-cpu-$(OS)-$(MARCH).jar: $(LIBPREPEND)bid
 	-C $(BIDMAT_ROOT) lib/libiomp5$(LIBIOMPAPPEND)
 	rm $(LIBDIR)/$(LIBPREPEND)bidmatcpu$(LIBAPPEND)
 
-upload: jars
+upload: $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(LIBPREPEND)bidmatcpu$(LIBAPPEND)
 	if [ -d /biddata/lib ]; then \
-	cp $(BIDMAT_ROOT)/target/BIDMat-$(VERSION)-$(OS)-$(MARCH).jar /biddata/lib/$(VERSION) ; \
-	cp $(BIDMAT_ROOT)/target/BIDMat-$(VERSION)-cpu-$(OS)-$(MARCH).jar /biddata/lib/$(VERSION) ; \
 	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) /biddata/lib/$(VERSION) ; \
 	cp $(LIBPREPEND)bidmatcpu$(LIBAPPEND)  /biddata/lib/$(VERSION) ; else \
-	scp $(LIBPREPEND)bidmat*$(LIBAPPEND) $(BIDMAT_ROOT)/target/BIDMat-$(VERSION)*-$(OS)-$(MARCH).jar login.eecs.berkeley.edu:biddata/lib/$(VERSION) ; fi
+	scp $(LIBPREPEND)bidmat*$(LIBAPPEND) login.eecs.berkeley.edu:biddata/lib/$(VERSION) ; fi
 
 clean:
 	rm -f *.$(OBJ) *$(LIBAPPEND) *.pdb *.exp *.lib
