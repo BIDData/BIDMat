@@ -79,9 +79,9 @@ $(BIDMAT_ROOT)/target/BIDMat-$(VERSION)-cpu-$(OS)-$(MARCH).jar: $(LIBPREPEND)bid
 
 upload: $(LIBPREPEND)bidmatcuda$(LIBAPPEND) $(LIBPREPEND)bidmatcpu$(LIBAPPEND)
 	if [ -d /biddata/lib ]; then \
-	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) /biddata/lib/$(VERSION) ; \
-	cp $(LIBPREPEND)bidmatcpu$(LIBAPPEND)  /biddata/lib/$(VERSION) ; else \
-	scp $(LIBPREPEND)bidmat*$(LIBAPPEND) login.eecs.berkeley.edu:biddata/lib/$(VERSION) ; fi
+	cp $(LIBPREPEND)bidmatcuda$(LIBAPPEND) /biddata/lib/$(DEVVERSION) ; \
+	cp $(LIBPREPEND)bidmatcpu$(LIBAPPEND)  /biddata/lib/$(DEVVERSION) ; else \
+	scp $(LIBPREPEND)bidmat*$(LIBAPPEND) login.eecs.berkeley.edu:biddata/lib/$(DEVVERSION) ; fi
 
 clean:
 	rm -f *.$(OBJ) *$(LIBAPPEND) *.pdb *.exp *.lib
