@@ -1,12 +1,13 @@
 #!/bin/bash
 
+VERSION="1.1.0-cuda7.5"
+DEVVERSION="dev-cuda7.5"
+
 OS=`uname -a`
 PARLIB=$1
 if [ "$ARCH" = "" ]; then
     ARCH=`arch`
 fi
-
-VERSION="1.1.0-cuda7.5"
 
 # standardise the OS and ARCH names
 if [[ "$OS" == Darwin* ]] ; then
@@ -284,6 +285,7 @@ fi
 echo "OS=$OS" > Makefile.incl
 echo "MARCH=$ARCH" >> Makefile.incl
 echo "VERSION=$VERSION" >> Makefile.incl
+echo "DEVVERSION=$DEVVERSION" >> Makefile.incl
 echo "BIDMAT_ROOT=$BIDMAT_ROOT" >> Makefile.incl
 echo "CC=$CC" >> Makefile.incl
 echo "GCC=$GCC" >> Makefile.incl
