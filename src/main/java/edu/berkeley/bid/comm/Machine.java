@@ -21,11 +21,11 @@ public class Machine {
 	public final int imachine;                                        // My identity
 	public final Groups groups;                                       // group membership indices
 	public final int replicate;                                       // replication factor
-	public final String [] machineIP;                                 // String IP names
+	public final InetSocketAddress [] workers;                        // IP/socket
 	public final boolean doSim;                                       // Simulation on one machine: send messages directly without sockets
 	public int trace = 0;                                             // 0: no trace, 1: high-level, 2: everything
 	public int sockBase = 50050;                                      // Socket base address
-	public int sockOffset = 1;
+	public int sockOffset = 2;                                        // Leave space for peer and control ports
 	public int sendTimeout = 1000;                                    // in msec
 	public int recvTimeout = 1000;
 	public int configTimeout = 1000;
@@ -52,7 +52,7 @@ public class Machine {
 	Network network;
 
 	public Machine(Network p0, Groups groups0, int imachine0, int M0, boolean useLong0, int bufsize, boolean doSim0, int trace0, 
-			int replicate0, String [] machineIP0) {
+			int replicate0, InetSocketAddress [] workers0) {
 		network = p0;
 		M = M0;
 		doSim = doSim0;
@@ -62,11 +62,11 @@ public class Machine {
 		useLong = useLong0;
 		writers = new Hashtable<SockWriter, Future<?>>();
 		readers = new Hashtable<SockReader, Future<?>>();
-		if (machineIP0 == null) {
-			machineIP = new String[M*replicate];
-			for (int i = 0; i < M*replicate; i++) machineIP[i] = "localhost";
+		if (workers0 == null) {
+			workers = new InetSocketAddress[M*replicate];
+			for (int i = 0; i < M*replicate; i++) workers[i] = new InetSocketAddress("localhost",sockBase+i*sockOffset);
 		} else {
-			machineIP = machineIP0;
+			workers = workers0;
 		}
 		D = groups.depth();
 		trace = trace0;
@@ -292,7 +292,7 @@ public class Machine {
 //			log(String.format("M %d W %d Running writer %s\n", imachine, dest, this.toString()));
 			try {
 				socket = new Socket();
-				socket.connect(new InetSocketAddress(machineIP[dest], sockBase + sockOffset * dest), sendTimeout);
+				socket.connect(workers[dest], sendTimeout);
 				if (socket.isConnected()) {
 					amsending[dest][msg.tag % (3*D)] = true;
 					DataOutputStream ostr = new DataOutputStream(socket.getOutputStream());
@@ -376,7 +376,7 @@ public class Machine {
 		ServerSocket ss = null;
 
 		public Listener() {
-			int socknum = sockBase + sockOffset * imachine;
+			int socknum = workers[imachine].getPort();
 			try {
 				ss = new ServerSocket(socknum);
 			} catch (Exception e) {
