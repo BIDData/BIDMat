@@ -1,6 +1,7 @@
 #!/bin/bash
 # export JAVA_HOME="" # Set here if not set in environment
-# export CUDA_PATH="" # Set here if not set in environment
+# set CUDA_HOME=""   # set if desired, otherwise defaults to /usr/local/cuda
+# note CUDA_PATH="" # Should be set to the latest toolkit in Windows
 # Change these if needed
 BLAS_ROOT="/code/QSML"
 JOCL_VERSION="2.0.1-SNAPSHOT"
@@ -23,7 +24,12 @@ BIDMAT_ROOT="$( echo ${BIDMAT_ROOT} | sed s+/cygdrive/c+c:+ )"
 JCUDA_LIBDIR=${BIDMAT_ROOT}/lib
 JOCL_LIBDIR=${BIDMAT_ROOT}/lib
 LIBDIR=${BIDMAT_ROOT}/lib
-JCUDA_VERSION=`echo lib/jcuda*.jar | sed 's/.*jcuda-//' | sed 's/\.jar//'`
+if [ -e lib/jcuda-native* ]; then 
+    JCUDA_OSARCH=`echo lib/jcuda-natives*.jar | sed 's/.*jcuda-natives-//' | sed 's/\.jar//'`
+    JCUDA_VERSION=`echo $JCUDA_OSARCH | sed 's/-.*//'`
+else 
+    JCUDA_VERSION=`echo lib/jcuda*.jar | sed 's/.*jcuda-//' | sed 's/\.jar//'`
+fi
 
 JAVA_NATIVE=`java getnativepath`
 if [ `uname` = "Darwin" ]; then
@@ -44,9 +50,15 @@ BIDMAT_LIBS="${BIDMAT_ROOT}/BIDMat.jar;${LIBDIR}/ptplot.jar;${LIBDIR}/ptplotappl
 ${LIBDIR}/jhdf5.jar;${LIBDIR}/commons-math3-3.2.jar;${LIBDIR}/lz4-1.3.jar;${LIBDIR}/json-io-4.1.6.jar;\
 ${LIBDIR}/jfreechart-1.0.19.jar;${LIBDIR}/jcommon-1.0.23.jar"
 
-JCUDA_LIBS="${JCUDA_LIBDIR}/jcuda-${JCUDA_VERSION}.jar;${JCUDA_LIBDIR}/jcublas-${JCUDA_VERSION}.jar;\
-${JCUDA_LIBDIR}/jcufft-${JCUDA_VERSION}.jar;${JCUDA_LIBDIR}/jcurand-${JCUDA_VERSION}.jar;\
-${JCUDA_LIBDIR}/jcusparse-${JCUDA_VERSION}.jar"
+JCUDA_LIBS=""
+for lib in jcuda jcublas jcufft jcurand jcusparse ; do
+    JCUDA_LIBS="${JCUDA_LIBS};${JCUDA_LIBDIR}/${lib}-${JCUDA_VERSION}.jar"
+    if [ ! "${JCUDA_OSARCH}" = "" ]; then
+	JCUDA_LIBS="${JCUDA_LIBS};${JCUDA_LIBDIR}/${lib}-${JCUDA_OSARCH}.jar"
+    fi
+done
+
+echo ${JCUDA_LIBS}
 
 JOCL_LIBS="${JOCL_LIBDIR}/jocl-${JOCL_VERSION}.jar"
 

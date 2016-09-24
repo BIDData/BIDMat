@@ -4,6 +4,8 @@
 #include <thrust/sort.h>
 //#include <cub/device/device_radix_sort.cuh>
 
+#if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 600
+#else
 __device__ double atomicAdd(double* address, double val)
 {
 unsigned long long int* address_as_ull =
@@ -18,6 +20,7 @@ __longlong_as_double(assumed)));
 } while (assumed != old);
 return __longlong_as_double(old);
 }
+#endif
 
 #if __CUDA_ARCH__ > 200
 #define MAXXGRID 2147483647

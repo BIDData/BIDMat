@@ -11,71 +11,71 @@
 <title>Resource not found | EECS UC Berkeley</title>
 
 <style type="text/css" media="all">
-@import url("https://eecs.berkeley.edu/modules/system/system.base.css?oblzkb");
-@import url("https://eecs.berkeley.edu/modules/system/system.messages.css?oblzkb");
-@import url("https://eecs.berkeley.edu/modules/system/system.theme.css?oblzkb");
+@import url("https://eecs.berkeley.edu/modules/system/system.base.css?odi5pm");
+@import url("https://eecs.berkeley.edu/modules/system/system.messages.css?odi5pm");
+@import url("https://eecs.berkeley.edu/modules/system/system.theme.css?odi5pm");
 </style>
 <style type="text/css" media="all">
-@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_core/css/panopoly-jquery-ui-theme.css?oblzkb");
-@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/contrib/jquery_update/replace/ui/themes/base/minified/jquery.ui.accordion.min.css?oblzkb");
+@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_core/css/panopoly-jquery-ui-theme.css?odi5pm");
+@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/contrib/jquery_update/replace/ui/themes/base/minified/jquery.ui.accordion.min.css?odi5pm");
 </style>
 <style type="text/css" media="all">
-@import url("https://eecs.berkeley.edu/modules/book/book.css?oblzkb");
-@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/contrib/date/date_api/date.css?oblzkb");
-@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/contrib/date/date_popup/themes/datepicker.1.7.css?oblzkb");
-@import url("https://eecs.berkeley.edu/modules/field/theme/field.css?oblzkb");
-@import url("https://eecs.berkeley.edu/sites/all/modules/contrib/google_cse/google_cse.css?oblzkb");
-@import url("https://eecs.berkeley.edu/modules/node/node.css?oblzkb");
-@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_admin/panopoly-admin-navbar.css?oblzkb");
-@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_core/css/panopoly-dropbutton.css?oblzkb");
-@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_magic/css/panopoly-magic.css?oblzkb");
-@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_theme/css/panopoly-featured.css?oblzkb");
-@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_theme/css/panopoly-accordian.css?oblzkb");
-@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_theme/css/panopoly-layouts.css?oblzkb");
-@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_widgets/panopoly-widgets-spotlight.css?oblzkb");
-@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_wysiwyg/panopoly-wysiwyg.css?oblzkb");
-@import url("https://eecs.berkeley.edu/sites/all/modules/contrib/picture/picture_wysiwyg.css?oblzkb");
-@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/contrib/radix_layouts/radix_layouts.css?oblzkb");
-@import url("https://eecs.berkeley.edu/modules/search/search.css?oblzkb");
-@import url("https://eecs.berkeley.edu/modules/user/user.css?oblzkb");
-@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/contrib/views/css/views.css?oblzkb");
+@import url("https://eecs.berkeley.edu/modules/book/book.css?odi5pm");
+@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/contrib/date/date_api/date.css?odi5pm");
+@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/contrib/date/date_popup/themes/datepicker.1.7.css?odi5pm");
+@import url("https://eecs.berkeley.edu/modules/field/theme/field.css?odi5pm");
+@import url("https://eecs.berkeley.edu/sites/all/modules/contrib/google_cse/google_cse.css?odi5pm");
+@import url("https://eecs.berkeley.edu/modules/node/node.css?odi5pm");
+@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_admin/panopoly-admin-navbar.css?odi5pm");
+@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_core/css/panopoly-dropbutton.css?odi5pm");
+@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_magic/css/panopoly-magic.css?odi5pm");
+@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_theme/css/panopoly-featured.css?odi5pm");
+@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_theme/css/panopoly-accordian.css?odi5pm");
+@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_theme/css/panopoly-layouts.css?odi5pm");
+@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_widgets/panopoly-widgets-spotlight.css?odi5pm");
+@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_wysiwyg/panopoly-wysiwyg.css?odi5pm");
+@import url("https://eecs.berkeley.edu/sites/all/modules/contrib/picture/picture_wysiwyg.css?odi5pm");
+@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/contrib/radix_layouts/radix_layouts.css?odi5pm");
+@import url("https://eecs.berkeley.edu/modules/search/search.css?odi5pm");
+@import url("https://eecs.berkeley.edu/modules/user/user.css?odi5pm");
+@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/contrib/views/css/views.css?odi5pm");
 </style>
 <style type="text/css" media="all">
-@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/contrib/ctools/css/ctools.css?oblzkb");
-@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/contrib/panels/css/panels.css?oblzkb");
+@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/contrib/ctools/css/ctools.css?odi5pm");
+@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/contrib/panels/css/panels.css?odi5pm");
 </style>
 <style type="text/css" media="screen">
-@import url("https://eecs.berkeley.edu/sites/all/themes/kalatheme/css/tweaks.css?oblzkb");
-@import url("https://eecs.berkeley.edu/sites/all/themes/kalatheme/css/panopoly.css?oblzkb");
+@import url("https://eecs.berkeley.edu/sites/all/themes/kalatheme/css/tweaks.css?odi5pm");
+@import url("https://eecs.berkeley.edu/sites/all/themes/kalatheme/css/panopoly.css?odi5pm");
 </style>
 <style type="text/css" media="all">
-@import url("https://eecs.berkeley.edu/sites/all/themes/eecs/kalastatic/build/styles/main.css?oblzkb");
-@import url("https://eecs.berkeley.edu/sites/all/themes/eecs/css/eecs.css?oblzkb");
+@import url("https://eecs.berkeley.edu/sites/all/themes/eecs/kalastatic/build/styles/main.css?odi5pm");
+@import url("https://eecs.berkeley.edu/sites/all/themes/eecs/css/eecs.css?odi5pm");
 </style>
 <style type="text/css" media="all">
-@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_images/panopoly-images.css?oblzkb");
+@import url("https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_images/panopoly-images.css?odi5pm");
 </style>
 <script type="text/javascript" src="https://eecs.berkeley.edu/profiles/panopoly/modules/contrib/jquery_update/replace/jquery/1.10/jquery.min.js?v=1.10.2"></script>
 <script type="text/javascript" src="https://eecs.berkeley.edu/misc/jquery.once.js?v=1.2"></script>
-<script type="text/javascript" src="https://eecs.berkeley.edu/misc/drupal.js?oblzkb"></script>
+<script type="text/javascript" src="https://eecs.berkeley.edu/misc/drupal.js?odi5pm"></script>
 <script type="text/javascript" src="https://eecs.berkeley.edu/profiles/panopoly/modules/contrib/jquery_update/replace/ui/ui/minified/jquery.ui.core.min.js?v=1.10.2"></script>
 <script type="text/javascript" src="https://eecs.berkeley.edu/profiles/panopoly/modules/contrib/jquery_update/replace/ui/ui/minified/jquery.ui.widget.min.js?v=1.10.2"></script>
 <script type="text/javascript" src="https://eecs.berkeley.edu/profiles/panopoly/modules/contrib/jquery_update/replace/ui/ui/minified/jquery.ui.tabs.min.js?v=1.10.2"></script>
 <script type="text/javascript" src="https://eecs.berkeley.edu/profiles/panopoly/modules/contrib/jquery_update/replace/ui/ui/minified/jquery.ui.accordion.min.js?v=1.10.2"></script>
-<script type="text/javascript" src="https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_images/panopoly-images.js?oblzkb"></script>
-<script type="text/javascript" src="https://eecs.berkeley.edu/sites/all/modules/contrib/google_cse/google_cse.js?oblzkb"></script>
-<script type="text/javascript" src="https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_admin/panopoly-admin.js?oblzkb"></script>
-<script type="text/javascript" src="https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_magic/panopoly-magic.js?oblzkb"></script>
-<script type="text/javascript" src="https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_theme/js/panopoly-accordion.js?oblzkb"></script>
-<script type="text/javascript" src="https://eecs.berkeley.edu/profiles/panopoly/libraries/jquery.imagesloaded/jquery.imagesloaded.min.js?oblzkb"></script>
-<script type="text/javascript" src="https://eecs.berkeley.edu/sites/all/themes/eecs/kalastatic/assets/vendor/matchHeight/jquery.matchHeight-min.js?oblzkb"></script>
-<script type="text/javascript" src="https://eecs.berkeley.edu/sites/all/themes/eecs/kalastatic/assets/vendor/Chart.js/Chart.min.js?oblzkb"></script>
-<script type="text/javascript" src="https://eecs.berkeley.edu/sites/all/themes/eecs/kalastatic/build/js/charts.js?oblzkb"></script>
-<script type="text/javascript" src="https://eecs.berkeley.edu/sites/all/themes/eecs/kalastatic/build/js/eecs.js?oblzkb"></script>
-<script type="text/javascript" src="https://eecs.berkeley.edu/sites/all/themes/eecs/kalastatic/assets/vendor/bootstrap-sass-twbs/assets/javascripts/bootstrap.min.js?oblzkb"></script>
+<script type="text/javascript" src="https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_images/panopoly-images.js?odi5pm"></script>
+<script type="text/javascript" src="https://eecs.berkeley.edu/sites/all/modules/contrib/google_cse/google_cse.js?odi5pm"></script>
+<script type="text/javascript" src="https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_admin/panopoly-admin.js?odi5pm"></script>
+<script type="text/javascript" src="https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_magic/panopoly-magic.js?odi5pm"></script>
+<script type="text/javascript" src="https://eecs.berkeley.edu/profiles/panopoly/modules/panopoly/panopoly_theme/js/panopoly-accordion.js?odi5pm"></script>
+<script type="text/javascript" src="https://eecs.berkeley.edu/profiles/panopoly/libraries/jquery.imagesloaded/jquery.imagesloaded.min.js?odi5pm"></script>
+<script type="text/javascript" src="https://eecs.berkeley.edu/sites/all/themes/eecs/kalastatic/assets/vendor/matchHeight/jquery.matchHeight-min.js?odi5pm"></script>
+<script type="text/javascript" src="https://eecs.berkeley.edu/sites/all/themes/eecs/kalastatic/assets/vendor/Chart.js/Chart.min.js?odi5pm"></script>
+<script type="text/javascript" src="https://eecs.berkeley.edu/sites/all/themes/eecs/kalastatic/build/js/charts.js?odi5pm"></script>
+<script type="text/javascript" src="https://eecs.berkeley.edu/sites/all/themes/eecs/kalastatic/build/js/eecs.js?odi5pm"></script>
+<script type="text/javascript" src="https://eecs.berkeley.edu/sites/all/themes/eecs/kalastatic/assets/vendor/bootstrap-sass-twbs/assets/javascripts/bootstrap.min.js?odi5pm"></script>
 <script type="text/javascript">
 <!--//--><![CDATA[//><!--
-jQuery.extend(Drupal.settings, {"basePath":"\/","pathPrefix":"","ajaxPageState":{"theme":"eecs","theme_token":"z8EmLLBQiZom26J2EXGt1VjexGib7z03InuFamSgm1w","js":{"profiles\/panopoly\/modules\/contrib\/jquery_update\/replace\/jquery\/1.10\/jquery.min.js":1,"misc\/jquery.once.js":1,"misc\/drupal.js":1,"profiles\/panopoly\/modules\/contrib\/jquery_update\/replace\/ui\/ui\/minified\/jquery.ui.core.min.js":1,"profiles\/panopoly\/modules\/contrib\/jquery_update\/replace\/ui\/ui\/minified\/jquery.ui.widget.min.js":1,"profiles\/panopoly\/modules\/contrib\/jquery_update\/replace\/ui\/ui\/minified\/jquery.ui.tabs.min.js":1,"profiles\/panopoly\/modules\/contrib\/jquery_update\/replace\/ui\/ui\/minified\/jquery.ui.accordion.min.js":1,"profiles\/panopoly\/modules\/panopoly\/panopoly_images\/panopoly-images.js":1,"sites\/all\/modules\/contrib\/google_cse\/google_cse.js":1,"profiles\/panopoly\/modules\/panopoly\/panopoly_admin\/panopoly-admin.js":1,"profiles\/panopoly\/modules\/panopoly\/panopoly_magic\/panopoly-magic.js":1,"profiles\/panopoly\/modules\/panopoly\/panopoly_theme\/js\/panopoly-accordion.js":1,"profiles\/panopoly\/libraries\/jquery.imagesloaded\/jquery.imagesloaded.min.js":1,"sites\/all\/themes\/eecs\/kalastatic\/assets\/vendor\/matchHeight\/jquery.matchHeight-min.js":1,"sites\/all\/themes\/eecs\/kalastatic\/assets\/vendor\/Chart.js\/Chart.min.js":1,"sites\/all\/themes\/eecs\/kalastatic\/build\/js\/charts.js":1,"sites\/all\/themes\/eecs\/kalastatic\/build\/js\/eecs.js":1,"sites\/all\/themes\/eecs\/kalastatic\/assets\/vendor\/bootstrap-sass-twbs\/assets\/javascripts\/bootstrap.min.js":1}},"googleCSE":{"cx":"010464314754576911738:fu9nvbsz9t0","language":"","resultsWidth":600,"domain":"www.google.com"},"CToolsModal":{"modalSize":{"type":"scale","width":".9","height":".9","addWidth":0,"addHeight":0,"contentRight":25,"contentBottom":75},"modalOptions":{"opacity":".55","background-color":"#FFF"},"animationSpeed":"fast","modalTheme":"CToolsModalDialog","throbberTheme":"CToolsModalThrobber"},"panopoly_magic":{"pane_add_preview_mode":"single"}});
+jQuery.extend(Drupal.settings, {"basePath":"\/","pathPrefix":"","ajaxPageState":{"theme":"eecs","theme_token":"Ve7e-c5L-R_BN3xMbTl24t1uSTKvuuImR1ELlKt0Rgc","js":{"profiles\/panopoly\/modules\/contrib\/jquery_update\/replace\/jquery\/1.10\/jquery.min.js":1,"misc\/jquery.once.js":1,"misc\/drupal.js":1,"profiles\/panopoly\/modules\/contrib\/jquery_update\/replace\/ui\/ui\/minified\/jquery.ui.core.min.js":1,"profiles\/panopoly\/modules\/contrib\/jquery_update\/replace\/ui\/ui\/minified\/jquery.ui.widget.min.js":1,"profiles\/panopoly\/modules\/contrib\/jquery_update\/replace\/ui\/ui\/minified\/jquery.ui.tabs.min.js":1,"profiles\/panopoly\/modules\/contrib\/jquery_update\/replace\/ui\/ui\/minified\/jquery.ui.accordion.min.js":1,"profiles\/panopoly\/modules\/panopoly\/panopoly_images\/panopoly-images.js":1,"sites\/all\/modules\/contrib\/google_cse\/google_cse.js":1,"profiles\/panopoly\/modules\/panopoly\/panopoly_admin\/panopoly-admin.js":1,"profiles\/panopoly\/modules\/panopoly\/panopoly_magic\/panopoly-magic.js":1,"profiles\/panopoly\/modules\/panopoly\/panopoly_theme\/js\/panopoly-accordion.js":1,"profiles\/panopoly\/libraries\/jquery.imagesloaded\/jquery.imagesloaded.min.js":1,"sites\/all\/themes\/eecs\/kalastatic\/assets\/vendor\/matchHeight\/jquery.matchHeight-min.js":1,"sites\/all\/themes\/eecs\/kalastatic\/assets\/vendor\/Chart.js\/Chart.min.js":1,"sites\/all\/themes\/eecs\/kalastatic\/build\/js\/charts.js":1,"sites\/all\/themes\/eecs\/kalastatic\/build\/js\/eecs.js":1,"sites\/all\/themes\/eecs\/kalastatic\/assets\/vendor\/bootstrap-sass-twbs\/assets\/javascripts\/bootstrap.min.js":1}},"googleCSE":{"cx":"010464314754576911738:fu9nvbsz9t0","language":"","resultsWidth":600,"domain":"www.google.com"},"CToolsModal":{"modalSize":{"type":"scale","width":".9","height":".9","addWidth":0,"addHeight":0,"contentRight":25,"contentBottom":75},"modalOptions":{"opacity":".55","background-color":"#FFF"},"animationSpeed":"fast","modalTheme":"CToolsModalDialog","throbberTheme":"CToolsModalThrobber"},"panopoly_magic":{"pane_add_preview_mode":"single"}});
 //--><!]]>
 </script>
 <!-- pagehead1 file, then title element, then this file -->
@@ -133,7 +133,7 @@ jQuery.extend(Drupal.settings, {"basePath":"\/","pathPrefix":"","ajaxPageState":
 <li class="mid-2024" role="presentation"><a href="https://www2.eecs.berkeley.edu/Research/Areas/Centers/" class="leaf" role="menuitem">Centers &amp; Labs</a></li>
 <li class="mid-2026" role="presentation"><a href="https://www2.eecs.berkeley.edu/Research/Projects/" class="leaf" role="menuitem">Projects</a></li>
 <li class="mid-2027" role="presentation"><a href="https://www2.eecs.berkeley.edu/bears/" class="leaf" role="menuitem">BEARS Symposium</a></li>
-<li class="mid-2327 last" role="presentation"><a href="https://eecs.berkeley.edu/research/colloquium" class="last collapsed" role="menuitem">Colloquium</a></li>
+<li class="mid-2326 last" role="presentation"><a href="https://eecs.berkeley.edu/research/colloquium" class="last leaf" role="menuitem">Colloquium</a></li>
 </ul></li><div class='clearfix visible-xs'></div>
 <li class="mid-1634 dropdown clearfix" role="presentation"><a href="https://eecs.berkeley.edu/people" class="expanded" role="button" id="main-menu-dropdown-4" data-toggle="dropdown" aria-haspopup="true">People<span class="caret" aria-hidden="true"></span></a><span class="element-invisible">Toggle submenu for People</span></a><ul class="dropdown-menu" role="menu" aria-labelledby="main-menu-dropdown-4" aria-expanded="false"><li class="mid-2029 first" role="presentation"><a href="https://eecs.berkeley.edu/people" class="first leaf" role="menuitem">People Overview</a></li>
 <li class="mid-2035" role="presentation"><a href="https://www2.eecs.berkeley.edu/Directories/directory-nostudents.html" class="leaf" role="menuitem">Directory</a></li>
@@ -145,7 +145,7 @@ jQuery.extend(Drupal.settings, {"basePath":"\/","pathPrefix":"","ajaxPageState":
 </ul></li><div class='clearfix visible-xs'></div>
 <li class="mid-1633 last dropdown clearfix" role="presentation"><a href="https://eecs.berkeley.edu/connect" class="last expanded" role="button" id="main-menu-dropdown-5" data-toggle="dropdown" aria-haspopup="true">Connect<span class="caret" aria-hidden="true"></span></a><span class="element-invisible">Toggle submenu for Connect</span></a><ul class="dropdown-menu" role="menu" aria-labelledby="main-menu-dropdown-5" aria-expanded="false"><li class="mid-2203 first" role="presentation"><a href="https://eecs.berkeley.edu/connect" class="first leaf" role="menuitem">Connect Overview</a></li>
 <li class="mid-2531" role="presentation"><a href="https://eecs.berkeley.edu/connect/support" class="collapsed" role="menuitem">Support EECS</a></li>
-<li class="mid-2208" role="presentation"><a href="https://eecs.berkeley.edu/connect/k-12" class="leaf" role="menuitem">K-12 Programs</a></li>
+<li class="mid-2208" role="presentation"><a href="https://eecs.berkeley.edu/connect/k-12" class="leaf" role="menuitem">K-12 Outreach</a></li>
 <li class="mid-2206 last" role="presentation"><a href="https://eecs.berkeley.edu/connect/contact" class="last leaf" role="menuitem">Contact</a></li>
 </ul></li><div class='clearfix visible-xs'></div>
 </ul>
@@ -168,7 +168,7 @@ jQuery.extend(Drupal.settings, {"basePath":"\/","pathPrefix":"","ajaxPageState":
   <label class="element-invisible" for="edit-search-block-form--2">Search </label>
  <input title="Enter the terms you wish to search for." placeholder="Search" class="form-control form-text fa-on" type="text" id="edit-search-block-form--2" name="search_block_form" value="" size="15" maxlength="128" />
 </div>
-<div class="form-actions form-wrapper" id="edit-actions"><button type="submit" id="edit-submit" name="op" class="form-submit btn btn-default btn-primary"><span>Search</span><i class="icon search" aria-hidden="true"></i></button></div><input type="hidden" name="form_build_id" value="form-QfOEPXJKJEZ2PolIOAIFYMD75rC8UvNw5Hh2rsN2yJg" />
+<div class="form-actions form-wrapper" id="edit-actions"><button type="submit" id="edit-submit" name="op" class="form-submit btn btn-default btn-primary"><span>Search</span><i class="icon search" aria-hidden="true"></i></button></div><input type="hidden" name="form_build_id" value="form-refjQjzrWc269nuPBfkHz9E1Cz_QX2XJALACaJ9A7Fk" />
 <input type="hidden" name="form_id" value="search_block_form" />
 </div>
 </div></form>  </div>
@@ -292,9 +292,9 @@ site, please send an email to the following email address:</p>
 <li class="mid-2042" role="presentation"><a href="https://www2.eecs.berkeley.edu/Research/Areas/Centers/" class="leaf" role="menuitem">Centers &amp; Labs</a></li>
 <li class="mid-2043" role="presentation"><a href="https://www2.eecs.berkeley.edu/Research/Projects/" class="leaf" role="menuitem">Projects</a></li>
 <li class="mid-2044" role="presentation"><a href="https://www2.eecs.berkeley.edu/bears/" class="leaf" role="menuitem">BEARS Symposium</a></li>
-<li class="mid-2326" role="presentation"><a href="https://eecs.berkeley.edu/research/colloquium" class="collapsed" role="menuitem">Colloquium</a></li>
 <li class="mid-2045" role="presentation"><a href="https://www2.eecs.berkeley.edu/Pubs/TechRpts/" class="leaf" role="menuitem">Technical Reports</a></li>
-<li class="mid-2046 last" role="presentation"><a href="https://www2.eecs.berkeley.edu/Pubs/Dissertations/" class="last leaf" role="menuitem">PhD Dissertations</a></li>
+<li class="mid-2046" role="presentation"><a href="https://www2.eecs.berkeley.edu/Pubs/Dissertations/" class="leaf" role="menuitem">PhD Dissertations</a></li>
+<li class="mid-2327 last" role="presentation"><a href="https://eecs.berkeley.edu/research/colloquium" class="last collapsed" role="menuitem">Colloquium</a></li>
 </ul></li><div class='clearfix visible-xs'></div>
 <li class="mid-1589 " role="presentation"><a href="https://eecs.berkeley.edu/people" class="expanded" role="menuitem">People</a><ul role="menu" class="nav"><li class="mid-2047 first" role="presentation"><a href="https://www2.eecs.berkeley.edu/Directories/directory-nostudents.html" class="first leaf" role="menuitem">Directory</a></li>
 <li class="mid-1594" role="presentation"><a href="https://eecs.berkeley.edu/people/leadership" class="leaf" role="menuitem">Leadership</a></li>
@@ -317,7 +317,7 @@ site, please send an email to the following email address:</p>
 <li class="mid-3036 last" role="presentation"><a href="https://eecs.berkeley.edu/industry/entrepreneurship" class="last leaf" role="menuitem">Entrepreneurship</a></li>
 </ul></li><div class='clearfix visible-xs'></div>
 <li class="mid-1592 last " role="presentation"><a href="https://eecs.berkeley.edu/connect" class="last expanded" role="menuitem">Connect</a><ul role="menu" class="nav"><li class="mid-2189 first" role="presentation"><a href="https://eecs.berkeley.edu/connect/support" class="first collapsed" role="menuitem">Support Us</a></li>
-<li class="mid-2207" role="presentation"><a href="https://eecs.berkeley.edu/connect/k-12" class="collapsed" role="menuitem">K-12 Programs</a></li>
+<li class="mid-2207" role="presentation"><a href="https://eecs.berkeley.edu/connect/k-12" class="collapsed" role="menuitem">K-12 Outreach</a></li>
 <li class="mid-2204 last" role="presentation"><a href="https://eecs.berkeley.edu/connect/contact" class="last leaf" role="menuitem">Contact</a></li>
 </ul></li><div class='clearfix visible-xs'></div>
 </ul>

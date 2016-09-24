@@ -642,6 +642,8 @@ object Mat {
   var recycleGrow = 1.2            // For caching, amount to grow re-allocated matrices
   
   var hasCUDA = 0                  // Number of available CUDA GPUs
+
+  var cudartVersion = 0;
   
   var useBLAS = true;
     
@@ -907,7 +909,8 @@ object Mat {
   			}
   			if (hasCUDA >= 0) {
   				try {
-  					jcuda.LibUtils.loadLibrary("JCudaRuntime");
+//  					jcuda.LibUtils.loadLibrary("JCudaRuntime");
+					cudartVersion = jcuda.runtime.JCuda.CUDART_VERSION;  // Forces load of Jcuda class
   				} catch {
   				case y:Throwable =>  {
   					println("Couldn't load JCuda");
