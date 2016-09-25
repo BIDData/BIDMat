@@ -58,8 +58,6 @@ for lib in jcuda jcublas jcufft jcurand jcusparse ; do
     fi
 done
 
-echo ${JCUDA_LIBS}
-
 JOCL_LIBS="${JOCL_LIBDIR}/jocl-${JOCL_VERSION}.jar"
 
 ALL_LIBS=";${LIBDIR}/IScala.jar;${BIDMAT_LIBS};${JCUDA_LIBS};${JOCL_LIBS};${JAVA_HOME}/lib/tools.jar"
