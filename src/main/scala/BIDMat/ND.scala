@@ -423,6 +423,11 @@ object ND {
     out
   }
   
+  def trimDims(dims:IMat):IMat = {
+    val dd = trimDims(dims.data);
+    new IMat(1, dd.length, dd);
+  }
+  
   def checkHead(dims1:Array[Int], dims2:Array[Int]):(Int, Int) = {
     var ishead = true;
     var matches = true;
