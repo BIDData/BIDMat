@@ -917,6 +917,7 @@ object FND {
   }
   
   def newOrCheckFND(dims:IMat, out:ND, g1:Long, g2:Long, g3:Long, opHash:Int):FND = newOrCheckFND(dims.data, out, g1, g2, g3, opHash);
+  
 }
 
 
