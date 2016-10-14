@@ -52,7 +52,9 @@ $(INSTALL_DIR)/$(LIBPREPEND)bidmatcuda$(LIBAPPEND): $(LIBPREPEND)bidmatcuda$(LIB
 
 $(INSTALL_DIR)/$(LIBPREPEND)bidmatcpu$(LIBAPPEND): $(LIBPREPEND)bidmatcpu$(LIBAPPEND) $(INSTALL_DIR)
 	cp $(LIBPREPEND)bidmatcpu$(LIBAPPEND) $(INSTALL_DIR)
-	cp $(LIBDIR)/libiomp5$(LIBIOMPAPPEND) $(INSTALL_DIR)
+	if [ -n "$(findstring liomp5,$(CPU_LIBS))" ]; then \
+		cp $(LIBDIR)/libiomp5$(LIBIOMPAPPEND) $(INSTALL_DIR); \
+	fi
 
 $(INSTALL_DIR):
 	mkdir -p $(INSTALL_DIR)
