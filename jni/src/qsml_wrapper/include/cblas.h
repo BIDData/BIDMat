@@ -5,8 +5,6 @@
 #ifndef BIDMAT_CBLAS_WRAPPER_H
 #define BIDMAT_CBLAS_WRAPPER_H
 
-#ifdef QSML
-
 // Ensure parity when compiling as C or C++
 #ifndef __cplusplus
 #include <complex.h>
@@ -26,9 +24,5 @@ typedef enum CBLAS_SIDE CBLAS_SIDE;
 
 // Back-fill matrix copy/transpose
 #include <omatcopy.h>
-
-#elif OpenBLAS
-#include <openblas_cblas.h>
-#endif
 
 #endif // BIDMAT_CBLAS_WRAPPER_H

@@ -1,0 +1,62 @@
+ANDROID_MK := jni/Android.mk jni/Application.mk
+
+LOCAL_SRC_FILES := BIDMat_CBLAS.c BIDMat_UTILS.cpp BIDMat_RAND.cpp BIDMat_SPBLAS.c BIDMat_VML.c
+LOCAL_SRC_FILES += BIDMat_LAPACK.c slatec/csevl.c slatec/inits.c slatec/r1mach.c slatec/i1mach.c
+LOCAL_SRC_FILES += slatec/utils.c slatec/yermsg.c slatec/cot.c slatec/psi.c slatec/psifn.c
+
+all: cpulib
+
+cpulib:	$(LIBPREPEND)bidmatcpu$(LIBAPPEND) libgnustl_shared.so
+
+$(LIBPREPEND)bidmatcpu$(LIBAPPEND): libs/armeabi-v7a/$(LIBPREPEND)bidmatcpu$(LIBAPPEND)
+	cp libs/armeabi-v7a/$(LIBPREPEND)bidmatcpu$(LIBAPPEND) $(LIBPREPEND)bidmatcpu$(LIBAPPEND)
+
+libgnustl_shared.so: libs/armeabi-v7a/libgnustl_shared.so
+	cp libs/armeabi-v7a/libgnustl_shared.so libgnustl_shared.so
+
+libs/armeabi-v7a/$(LIBPREPEND)bidmatcpu$(LIBAPPEND): build
+
+build: $(LOCAL_SRC_FILES) $(ANDROID_MK)
+	ndk-build
+
+install: installcpulib
+
+installcpulib: $(INSTALL_DIR)/$(LIBPREPEND)bidmatcpu$(LIBAPPEND) $(INSTALL_DIR)/libgnustl_shared.so
+
+$(INSTALL_DIR)/$(LIBPREPEND)bidmatcpu$(LIBAPPEND): $(LIBPREPEND)bidmatcpu$(LIBAPPEND) $(INSTALL_DIR) $(LIBDIR)
+	cp $(LIBPREPEND)bidmatcpu$(LIBAPPEND) $(INSTALL_DIR)
+	cp $(LIBPREPEND)bidmatcpu$(LIBAPPEND) $(LIBDIR)
+
+$(INSTALL_DIR)/libgnustl_shared.so: libgnustl_shared.so $(INSTALL_DIR) $(LIBDIR)
+	cp libgnustl_shared.so $(INSTALL_DIR)
+	cp libgnustl_shared.so $(LIBDIR)
+
+$(INSTALL_DIR):
+	mkdir -p $(INSTALL_DIR)
+
+$(LIBDIR):
+	mkdir -p $(LIBDIR)
+
+jars: cpujar
+
+cpujar: $(BIDMAT_ROOT)/target/BIDMat-$(VERSION)-cpu-$(OS)-$(MARCH).jar
+
+$(BIDMAT_ROOT)/target/BIDMat-$(VERSION)-cpu-$(OS)-$(MARCH).jar: $(LIBPREPEND)bidmatcpu$(LIBAPPEND) libgnustl_shared.so $(LIBDIR)
+	cp $(LIBPREPEND)bidmatcpu$(LIBAPPEND) $(LIBDIR)
+	cp libgnustl_shared.so $(LIBDIR)
+	jar cf $(BIDMAT_ROOT)/target/BIDMat-$(VERSION)-cpu-$(OS)-$(MARCH).jar \
+	-C $(BIDMAT_ROOT) lib/armeabi-v7a/$(LIBPREPEND)bidmatcpu$(LIBAPPEND)
+	jar uf $(BIDMAT_ROOT)/target/BIDMat-$(VERSION)-cpu-$(OS)-$(MARCH).jar \
+	-C $(BIDMAT_ROOT) lib/armeabi-v7a/libgnustl_shared.so
+	rm $(LIBDIR)/$(LIBPREPEND)bidmatcpu$(LIBAPPEND)
+	rm $(LIBDIR)/libgnustl_shared.so
+
+clean:
+	ndk-build clean
+	rm -f *.$(OBJ) *$(LIBAPPEND) *.so *.pdb *.exp *.lib
+
+distclean: clean
+	rm -f *.jnilib Makefile.incl
+
+cleanres:
+	rm $(BIDMAT_ROOT)/src/main/resources/lib/*

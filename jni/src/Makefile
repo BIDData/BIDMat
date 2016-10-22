@@ -1,5 +1,9 @@
 include Makefile.incl
 
+ifeq ($(ANDROID), 1)
+	include Makefile.android
+else
+
 CPU_OBJS=BIDMat_CBLAS.$(OBJ) BIDMat_UTILS.$(OBJ) BIDMat_$(RANDSRC).$(OBJ) BIDMat_SPBLAS.$(OBJ) BIDMat_VML.$(OBJ) BIDMat_LAPACK.$(OBJ)
 
 KERNEL_OBJS=Arith.$(OBJ) CopyFill.$(OBJ) Operators.$(OBJ) Random.$(OBJ) Reducers.$(OBJ) Sorting.$(OBJ)
@@ -94,3 +98,5 @@ distclean: clean
 
 cleanres:
 	rm $(BIDMAT_ROOT)/src/main/resources/lib/*
+
+endif
