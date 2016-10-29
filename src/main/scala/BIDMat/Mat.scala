@@ -926,7 +926,10 @@ object Mat {
   		if (hasCUDA >= 0) {
   			try {
   				var cudanum = new Array[Int](1);
-  				jcuda.runtime.JCuda.cudaGetDeviceCount(cudanum);
+  				val err = jcuda.runtime.JCuda.cudaGetDeviceCount(cudanum);
+				if (err != 0) {
+				       println("CUDA error %s" format jcuda.runtime.JCuda.cudaGetErrorString(err));
+				}
   				hasCUDA = cudanum(0);
   				printf("%d CUDA device%s found", hasCUDA, if (hasCUDA == 1) "" else "s");
   				if (hasCUDA > 0) {
