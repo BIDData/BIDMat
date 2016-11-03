@@ -17,34 +17,55 @@ class FFilter(inDims0:IMat, outDims0:IMat, pad0:IMat, stride0:IMat, data0:Array[
     out
   }
   
-  def _convolve(in:FND, out:FND, idim:Int, astart0:Int, bstart0:Int, fstart0:Int) {
+  def _convolve(in:FND, out:FND, idim:Int, astart:Int, bstart:Int, fstart:Int) {
     if (idim > 0) {
     	val idims = in.dims;
     	val odims = out.dims;
-    	var astart = astart0;
-    	var bstart = bstart0;
-      var fstart = fstart0;
-    	var i = 0;
     	if (idim > 0) {
-    		var incol = 1;
-    		var outcol = 1;
-        var fcol = 1; 
+    		var instep = 1;
+    		var outstep = 1;
+        var fstep = 1;
+        val fwidth = inDims(idim);
     		var ix = 0;
     		while (ix < idim) {
-    			incol *= idims(ix);
-    			outcol *= odims(ix);
-          fcol *= inDims(ix);
-          fcol *= outDims(ix);
+    			instep *= idims(ix);
+    			outstep *= odims(ix);
+          fstep *= inDims(ix);
+          fstep *= outDims(ix);
     			ix += 1; 
     		}
-    		while (i < inDims(idim)) {
+    		var k = 0;
+    		while (k + fwidth - 1 < idims(idim)) {
     			var j = 0;
     			while (j < outDims(idim)) {
-    				_convolve(in, out, idim-1, astart, bstart + j*outcol, fstart);
-    				j += 1;
+    				var i = 0;
+    				while (i < fwidth) {
+    					_convolve(in, out, idim-1, 
+    					    astart + (k + fwidth - i - 1) * instep, 
+    					    bstart + (k + outDims(idim) - j - 1) * outstep,
+    					    fstart + (i + j * fwidth) * fstep);
+    					i += 1;
+    				}
+    				j + 1;
     			}
-    			astart += incol;
-    			i + 1;
+    			k += 1;
+    		}
+    	} else {
+        val fwidth = inDims(0); 
+    		var k = 0;
+    		while (k + fwidth - 1 < idims(0)) {           // Move forward over input+output tensors
+    			var j = 0;
+    			while (j < outDims(0)) {                    // Move over output tensor
+    				var i = 0;
+    				var ss = 0f;
+    				while (i < fwidth) {                      // Move over input tensor
+    					ss += in(astart + k + fwidth - i - 1) * data0(fstart + j * fwidth + i);
+    					i += 1;
+    				}
+    				out(bstart + k + outDims(0) - j - 1) += ss;
+    				j + 1;
+    			}
+    			k += 1;
     		}
     	}
     }
@@ -134,5 +155,11 @@ class FFilter(inDims0:IMat, outDims0:IMat, pad0:IMat, stride0:IMat, data0:Array[
 }
 
 object FFilter {
+  def FFilter1D(w:Int, n:Int, nstride:Int, npad:Int) = {
+    val inDims = irow(w);
+    val outDims = irow(n);
+    
+    
+  }
 
 }
