@@ -12,7 +12,7 @@ trait Filter {
 
 object Filter {
   
-  def getOutputDims(imageDims:IMat, filtInDims:IMat, filtOutDims:IMat, filtPad:IMat, filtStride:IMat, compress:Boolean = false):IMat = {
+  def getOutputDims(imageDims:IMat, filtInDims:IMat, filtOutDims:IMat, filtStride:IMat, filtPad:IMat, compress:Boolean = false):IMat = {
     val ilen = imageDims.length;
     if (filtInDims.length != ilen) throw new RuntimeException("getOutputDims Image and Filter number of dimensions mismatch %d %d" format (ilen, filtInDims.length))
     if (filtStride.asInstanceOf[AnyRef] != null && filtStride.length != ilen) throw new RuntimeException("getOutputDims Image and Filter Stride number of dimensions mismatch %d %d" format (ilen, filtInDims.length))

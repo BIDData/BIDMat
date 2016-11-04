@@ -133,14 +133,16 @@ abstract class ND(protected val _dims:Array[Int]) extends Serializable {
 
   def incInds(inds:Array[Int], dims:Array[Int]):Int = {
 		  var ncarry = 0;
-		  inds(0) += 1;
-		  var j = 0;
-		  while (j < dims.length && inds(j) == dims(j)) {
-			  inds(j) = 0;
-			  j += 1;
-			  if (j < dims.length) inds(j) += 1;
-			  ncarry += 1;
-		  }
+      if (inds.length > 0) {
+    	  inds(0) += 1;
+    	  var j = 0;
+    	  while (j < dims.length && inds(j) == dims(j)) {
+    		  inds(j) = 0;
+    		  j += 1;
+    		  if (j < dims.length) inds(j) += 1;
+    		  ncarry += 1;
+    	  }
+      }
 		  ncarry
   }
 
