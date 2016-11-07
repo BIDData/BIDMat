@@ -41,16 +41,16 @@ class Image(val img:BufferedImage) extends Serializable {
     val width = img.getWidth;
     val mat = FND(4, width,  height);
     val ints = new Array[Int](height*width);
-    img.getRGB(0, 0, width, height, ints, 0, width);
+    img.getRGB(0, 0, width, height, ints, 0, width);      // Should be ARGB
     val mdata = mat.data;
     var i = 0;
-    while (i < height*width) {
-	val ii =  ints(i);
-	mdata(i*4+3) = ii & 0xff;
-	mdata(i*4+2) = (ii >> 8) & 0xff;
-	mdata(i*4+1) = (ii >> 16) & 0xff;
-	mdata(i*4) = (ii >> 24) & 0xff;
-	i += 1;
+    while (i < height*width) {                            // Produce an RGBA tensor
+	  val ii =  ints(i);
+	  mdata(i*4+2) = ii & 0xff;                           // B
+	  mdata(i*4+1) = (ii >> 8) & 0xff;                    // G
+	  mdata(i*4+0) = (ii >> 16) & 0xff;                   // R
+	  mdata(i*4+3) = (ii >> 24) & 0xff;                   // A
+	  i += 1;
     }
     mat
   }
@@ -179,22 +179,22 @@ object Image {
 	im;
     }
     case 3 => {
-	val im = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
+	val im = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 	while (i < height*width) {
-	    ints(i) = (((((mdata(3*i).asInstanceOf[Int] & 0xff) << 8) +
-			 mdata(3*i+1).asInstanceOf[Int] & 0xff) << 8) + 
-		       mdata(3*i+2).asInstanceOf[Int] & 0xff);
+	    ints(i) = (((((mdata(3*i).asInstanceOf[Int] & 0xff) << 8) +               // R
+			         (mdata(3*i+1).asInstanceOf[Int] & 0xff)) << 8) +             // G
+		           (mdata(3*i+2).asInstanceOf[Int] & 0xff));                      // B
 	    i += 1;
 	}
 	im; 
     }
     case 4 => {
-	val im = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR);
+	val im = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 	while (i < height*width) {
-	    ints(i) = (((((((mdata(4*i).asInstanceOf[Int] & 0xff) << 8) +
-			   mdata(4*i+1).asInstanceOf[Int] & 0xff) << 8) +
-			 mdata(4*i+2).asInstanceOf[Int] & 0xff) << 8) + 
-		       mdata(4*i+3).asInstanceOf[Int] & 0xff);
+	    ints(i) = (((((((mdata(4*i+3).asInstanceOf[Int] & 0xff) << 8) +           // A
+			           (mdata(4*i+0).asInstanceOf[Int] & 0xff)) << 8) +           // R
+			         (mdata(4*i+1).asInstanceOf[Int] & 0xff)) << 8) +             // G
+		           (mdata(4*i+2).asInstanceOf[Int] & 0xff));                      // B
 	    i += 1;
 	}
 	im; 
