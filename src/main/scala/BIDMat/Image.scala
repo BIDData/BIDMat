@@ -42,7 +42,7 @@ class Image(val img:BufferedImage) extends Serializable {
     val mat = FND(4, width,  height);
     val ints = new Array[Int](height*width);
     img.getRGB(0, 0, width, height, ints, 0, width);
-    val mdata = mats.data;
+    val mdata = mat.data;
     var i = 0;
     while (i < height*width) {
 	val ii =  ints(i);
@@ -173,7 +173,7 @@ object Image {
     case 1 => {
 	val im = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
 	while (i < height*width) {
-	    ints[i] = mdata(i).asInstanceOf[Int];
+	    ints(i) = mdata(i).asInstanceOf[Int];
 	    i += 1;
 	}
 	im;
@@ -181,7 +181,9 @@ object Image {
     case 3 => {
 	val im = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
 	while (i < height*width) {
-	    ints[i] = ((((mdata(3*i+2) << 8) + mdata(3*i+1)) << 8) + mdata(3*i)).asInstanceOf[Int];
+	    ints(i) = (((((mdata(3*i+2).asInstanceOf[Int]) << 8) +
+			 mdata(3*i+1).asInstanceOf[Int]) << 8) + 
+		       mdata(3*i).asInstanceOf[Int]);
 	    i += 1;
 	}
 	im; 
@@ -189,7 +191,10 @@ object Image {
     case 4 => {
 	val im = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR);
 	while (i < height*width) {
-	    ints[i] = ((((((mdata(4*i+3) << 8) + mdata(4*i+2)) << 8) + mdata(4*i+1)) << 8) + mdata(4*i)).asInstanceOf[Int];
+	    ints(i) = (((((((mdata(3*i+3).asInstanceOf[Int]) << 8) +
+			   mdata(3*i+2).asInstanceOf[Int]) << 8) +
+			 mdata(3*i+1).asInstanceOf[Int]) << 8) + 
+		       mdata(3*i).asInstanceOf[Int]);
 	    i += 1;
 	}
 	im; 
