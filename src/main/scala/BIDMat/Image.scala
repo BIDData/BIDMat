@@ -37,12 +37,21 @@ class Image(val img:BufferedImage) extends Serializable {
   }  
     
   def toFND:FND= {
-    val height = img.getHeight
-    val width = img.getWidth
-    val raster = img.getData                            // Seems to always hold RGB or ARGB data, independent of image encoding.
-    val depth = raster.getNumDataElements
-    val mat = FND(depth, width,  height)
-    raster.getPixels(0, 0, width, height, mat.data)
+    val height = img.getHeight;
+    val width = img.getWidth;
+    val mat = FND(4, width,  height);
+    val ints = new Array[Int](height*width);
+    img.getRGB(0, 0, width, height, ints, 0, width);
+    val mdata = mats.data;
+    var i = 0;
+    while (i < height*width) {
+	val ii =  ints(i);
+	mdata(i*4) = ii & 0xff;
+	mdata(i*4+1) = (ii >> 8) & 0xff;
+	mdata(i*4+2) = (ii >> 16) & 0xff;
+	mdata(i*4+3) = (ii >> 24) & 0xff;
+	i += 1;
+    }
     mat
   }
   
@@ -157,13 +166,37 @@ object Image {
   def apply(mat:FND):Image = { 	  
     val width = mat.dims(1)
     val height = mat.dim(2)
+    val ints = new Array[Int](width*height);
+    val mdata = mat.data;
+    var i = 0;
     val img:BufferedImage = mat.dims(0) match {
-  	    case 1 => new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY)
-  	    case 3 => new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR)
-  	    case 4 => new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR)
-  	    case _ => throw new RuntimeException("Image from FND dimension not recognized")
-  	  }
-    img.getRaster.setPixels(0, 0, width, height, mat.data)
+    case 1 => {
+	val im = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+	while (i < height*width) {
+	    ints[i] = mdata(i).asInstanceOf[Int];
+	    i += 1;
+	}
+	im;
+    }
+    case 3 => {
+	val im = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
+	while (i < height*width) {
+	    ints[i] = ((((mdata(3*i+2) << 8) + mdata(3*i+1)) << 8) + mdata(3*i)).asInstanceOf[Int];
+	    i += 1;
+	}
+	im; 
+    }
+    case 4 => {
+	val im = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR);
+	while (i < height*width) {
+	    ints[i] = ((((((mdata(4*i+3) << 8) + mdata(4*i+2)) << 8) + mdata(4*i+1)) << 8) + mdata(4*i)).asInstanceOf[Int];
+	    i += 1;
+	}
+	im; 
+    }
+    case _ => throw new RuntimeException("Image from FND dimension not recognized")
+    }
+    img.setRGB(0, 0, width, height, ints, 0, width);
     new Image(img)
   }
 
