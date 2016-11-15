@@ -402,7 +402,7 @@ class SparseMat[@specialized(Double,Float) T]
   
   override def toString:String = {
     val ioff = Mat.ioneBased
-    val maxRows = 8
+    val maxRows = 40
     var fieldWidth = 4
     val sb:StringBuilder = new StringBuilder
     val somespaces = "                    "
