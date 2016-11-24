@@ -18,6 +18,7 @@ class FFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, data0:Array[
   }
   
   def _convolve(in:FND, out:FND, idim:Int, astart:Int, bstart:Int, fstart:Int) {
+    print("convolve %d %d %d %d\n" format (idim, astart, bstart, fstart))
 	  val idims = in.dims;
 	  val odims = out.dims;
 	  if (idim > 0) {
@@ -45,7 +46,7 @@ class FFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, data0:Array[
 							  fstart + (i + j * fwidth) * fstep);
 					  i += 1;
 				  }
-				  j + 1;
+				  j += 1;
 			  }
 			  k += 1;
 		  }
@@ -155,7 +156,7 @@ class FFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, data0:Array[
 }
 
 object FFilter {
-  def FFilter1D(w:Int, nstride:Int, npad:Int, contents:FND) = {
+  def FFilter1D(w:Int, nstride:Int, npad:Int, contents:ND) = {
     val inDims = irow(w);
     val outDims = irow(1);
     val stride = irow(nstride);
@@ -164,10 +165,24 @@ object FFilter {
       throw new RuntimeException("FFilter1D bad initialization matrix")
     }
     val filt = FND.newOrCheckFND(irow(w), null, contents.GUID, "FFilter1D()".##);
+    filt <-- contents;
     new FFilter(inDims, outDims, stride, pad, filt.data);
   }
-  
-  def FFilter2D(w:Int, h:Int, nstride:Int, npad:Int, contents:FND) = {
+
+  def FFilter1Dd(w:Int, din:Int, dout:Int, nstride:Int, npad:Int, contents:ND) = {
+    val inDims = irow(din, w);
+    val outDims = irow(dout, 1);
+    val stride = irow(1, nstride);
+    val pad = irow(1, npad);
+    if (contents.length != w * din * dout) {
+      throw new RuntimeException("FFilter1D bad initialization matrix")
+    }
+    val filt = FND.newOrCheckFND(irow(din*dout, w), null, contents.GUID, "FFilter1D()".##);
+    filt <-- contents;
+    new FFilter(inDims, outDims, stride, pad, filt.data);
+  }
+
+  def FFilter2D(w:Int, h:Int, nstride:Int, npad:Int, contents:ND) = {
     val inDims = irow(w, h);
     val outDims = irow(1, 1);
     val stride = irow(nstride, nstride);
@@ -176,6 +191,20 @@ object FFilter {
       throw new RuntimeException("FFilter2D bad initialization matrix")
     }
     val filt = FND.newOrCheckFND(irow(w, h), null, contents.GUID, "FFilter2D()".##);
+    filt <-- contents;
+    new FFilter(inDims, outDims, stride, pad, filt.data);
+  }
+
+  def FFilter2Dd(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int, contents:ND) = {
+    val inDims = irow(din, w, h);
+    val outDims = irow(dout, 1, 1);
+    val stride = irow(1, nstride, nstride);
+    val pad = irow(1, npad, npad);
+    if (contents.length != w*h*din*dout) {
+      throw new RuntimeException("FFilter2D bad initialization matrix")
+    }
+    val filt = FND.newOrCheckFND(irow(din*dout, w, h), null, contents.GUID, "FFilter2D()".##);
+    filt <-- contents;
     new FFilter(inDims, outDims, stride, pad, filt.data);
   }
 
