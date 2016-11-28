@@ -22,5 +22,9 @@ object Filter {
     val odims0 = (imageDims + fpad * 2 - filtInDims) / fstride + filtOutDims;
     (if (compress) ND.trimDims(odims0) else odims0);   
   }
+  
+  final val forward = 1;
+  final val backwardGradient = 2;
+  final val backwardModel = 3;
 
 }

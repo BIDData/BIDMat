@@ -15,21 +15,21 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 		val outdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad);
 		val out = FND.newOrCheckFND(outdims, null, a.GUID, GUID, "convout".##);
 		val inpadmat = if (pad.asInstanceOf[AnyRef] != null && SciFunctions.sum(pad).dv > 0) pad(a, pad) else a;
-		out.clear;
 		if (inDims(0) == a.dims(0) && outDims(0) == outdims(0)) {             // Use gemm acceleration
 			val outpaddims = if (pad.asInstanceOf[AnyRef] != null) out.dims + pad*2 else out.dims;
 			val outpadmat = FND.newOrCheckFND(outpaddims, null, a.GUID, GUID, "convoutpad".##);
 			val firststride = find((stride(1->stride.length) > 1) \ 1)(0); 
 			outpadmat.clear;
-			_fast_convolve(inpadmat, outpadmat, inDims.length-1, 0, 0, 0, firststride);
+			_fast_convolve(inpadmat, outpadmat, inDims.length-1, 0, 0, 0, firststride, Filter.forward);
 			_copy_padded(outpadmat, out, inDims.length-1, 0, 0);
 		} else {
-			_convolve(inpadmat, out, inDims.length-1, 0, 0, 0);
+			out.clear;
+			_convolve(inpadmat, out, inDims.length-1, 0, 0, 0, Filter.forward);
 		}
 		out;
 	};
 
-	def _fast_convolve(in:FND, out:FND, idim:Int, astart:Int, bstart:Int, fstart:Int, firststride:Int) {
+	def _fast_convolve(in:FND, out:FND, idim:Int, astart:Int, bstart:Int, fstart:Int, firststride:Int, convType:Int) {
 		val idims = in.dims;
 		val odims = out.dims;
 		val iwidth = inDims(idim);
@@ -59,7 +59,7 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 				  				astart + (ks + iwidth - i - 1) * instep, 
 				  				bstart + (k + owidth - j - 1) * outstep,
 				  				fstart + (i + j * iwidth) * fstep,
-				  				firststride);
+				  				firststride, convType);
 				  		k += 1;
 				  		ks += kstride;
 				  	} 
@@ -68,7 +68,7 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 				  			astart + (iwidth - i - 1) * instep, 
 				  			bstart + (owidth - j - 1) * outstep,
 				  			fstart + (i + j * iwidth) * fstep,
-				  			firststride);
+				  			firststride, convType);
 				  }
 					i += 1;
 				}
@@ -81,10 +81,26 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 				instep *= idims(ix);
 				ix += 1; 
 			}
-		  sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.NoTrans, outDims(0), instep, inDims(0), 1f,
-		      data, fstart, outDims(0), 
-		      in.data, astart, outDims(0), 1f,
-		      out.data, bstart, outDims(0));	  
+			convType match {			  
+			  case Filter.forward => {
+			  	sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.NoTrans, owidth, instep, iwidth, 1f,
+			  			data, fstart, owidth, 
+			  			in.data, astart, iwidth, 1f,
+			  			out.data, bstart, owidth);	
+			  }
+			  case Filter.backwardGradient => {
+			  	sgemmx(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans, iwidth, instep, owidth, 1f,
+			  			data, fstart, owidth, 
+			  			out.data, bstart, owidth, 1f,
+			  			in.data, astart, iwidth);	
+			  }
+			  case Filter.backwardModel => {
+			  	sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.Trans, owidth, iwidth, instep, 1f, 
+			  			out.data, bstart, owidth,
+			  			in.data, astart, iwidth, 1f,
+			  			data, fstart, owidth);	
+			  }
+			}
 		}
 	}
 
@@ -116,7 +132,7 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 	  }
 	}
 
-	def _convolve(in:FND, out:FND, idim:Int, astart:Int, bstart:Int, fstart:Int) {
+	def _convolve(in:FND, out:FND, idim:Int, astart:Int, bstart:Int, fstart:Int, convType:Int) {
 		val idims = in.dims;
 		val odims = out.dims;
 		val iwidth = inDims(idim);
@@ -144,7 +160,8 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 						_convolve(in, out, idim-1, 
 								astart + (ks + iwidth - i - 1) * instep, 
 								bstart + (k + owidth - j - 1) * outstep,
-								fstart + (i + j * iwidth) * fstep);
+								fstart + (i + j * iwidth) * fstep,
+								convType);
 						i += 1;
 					}
 					j += 1;
@@ -155,18 +172,46 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 		} else {
 			var k = 0;
 			var ks = 0;
-			while (ks + iwidth - 1 < idims(0)) {           // Move forward over input+output tensors              
-				var j = 0;
-				while (j < owidth) {                    // Move over output tensor
-					val jfwidth = j * iwidth;
-					var ss = 0f;
-					var i = 0;
-					while (i < iwidth) {                      // Move over input tensor
-						ss += in.data(astart + ks + iwidth - i - 1) * data0(fstart + jfwidth + i);
-						i += 1;
-					}
-					out.data(bstart + k + outDims(0) - j - 1) += ss;
-					j += 1;
+			while (ks + iwidth - 1 < idims(0)) {              // Move forward over input+output tensors              
+				convType match {
+				  case Filter.forward => {
+				  	var j = 0;
+				  	while (j < owidth) {                        // Move over output tensor
+				  		val jfwidth = j * iwidth;
+				  		var ss = 0f;
+				  		var i = 0;
+				  		while (i < iwidth) {                      // Move over input tensor
+				  			ss += in.data(astart + ks + iwidth - i - 1) * data0(fstart + jfwidth + i);
+				  			i += 1;
+				  		}
+				  		out.data(bstart + k + owidth - j - 1) += ss;
+				  		j += 1;
+				  	}
+				  }
+				  case Filter.backwardGradient => {
+				  	var i = 0;
+				  	while (i < iwidth) {
+				  		var j = 0;
+				  		var ss = 0f;
+				  		while (j < owidth) {                        
+				  			ss += out.data(bstart + k + owidth - j - 1) * data0(fstart + j * iwidth + i);
+				  			j += 1;
+				  		}
+				  		in.data(astart + ks + iwidth - i - 1) += ss;
+				  		i += 1;
+				  	}
+				  }
+				  case Filter.backwardModel => {
+				  	var j = 0;
+				  	while (j < owidth) {
+				  		var i = 0;
+				  		while (i < iwidth) {
+				  		  data0(fstart + j * iwidth + i) += out.data(bstart + k + owidth - j - 1) * in.data(astart + ks + iwidth - i - 1);
+				  			i += 1;
+				  		}
+				  		j += 1;
+				  	}
+				  }
 				}
 				k += 1;
 				ks += kstride;
@@ -183,16 +228,16 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 				val outpadmat = FND.newOrCheckFND(outpaddims, null, a.GUID, GUID, "convoutpad".##);
 				val firststride = find((stride(1->stride.length) > 1) \ 1)(0); 
 				outpadmat.clear;
-				_fast_correlate(inpadmat, outpadmat, inDims.length-1, 0, 0, 0, firststride);
+				_fast_correlate(inpadmat, outpadmat, inDims.length-1, 0, 0, 0, firststride, Filter.forward);
 				_copy_padded(outpadmat, out, inDims.length-1, 0, 0);
 			} else {
 				out.clear;
-				_correlate(inpadmat, out, inDims.length-1, 0, 0, 0);
+				_correlate(inpadmat, out, inDims.length-1, 0, 0, 0, Filter.forward);
 			}
 			out
 	};
 	
-	def _fast_correlate(in:FND, out:FND, idim:Int, astart:Int, bstart:Int, fstart:Int, firststride:Int) {
+	def _fast_correlate(in:FND, out:FND, idim:Int, astart:Int, bstart:Int, fstart:Int, firststride:Int, convType:Int) {
 		val idims = in.dims;
 		val odims = out.dims;
 		val iwidth = inDims(idim);
@@ -223,7 +268,7 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 				  				astart + (ks + i) * instep, 
 				  				bstart + (k + j) * outstep,
 				  				fstart + (i + j * iwidth) * fstep,
-				  				firststride);
+				  				firststride, convType);
 				  		k += 1;
 				  		ks += kstride;
 				  	} 
@@ -232,7 +277,7 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 				  			astart + i * instep, 
 				  			bstart + j * outstep,
 				  			fstart + (i + j * iwidth) * fstep,
-				  			firststride);
+				  			firststride, convType);
 				  }
 					i += 1;
 				}
@@ -245,14 +290,30 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 				instep *= idims(ix);
 				ix += 1; 
 			}
-		  sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.NoTrans, outDims(0), instep/inDims(1), inDims(0)*inDims(1), 1f,
-		      data, fstart, outDims(0), 
-		      in.data, astart, outDims(0), 1f,
-		      out.data, bstart, outDims(0));	  
+			convType match {
+			  case Filter.forward => {
+			  	sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.NoTrans, owidth, instep/inDims(1), iwidth*inDims(1), 1f,
+			  			data, fstart, owidth, 
+			  			in.data, astart, iwidth*inDims(1), 1f,
+			  			out.data, bstart, owidth);	
+			  }
+			  case Filter.backwardGradient => {
+			  	sgemmx(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans, iwidth*inDims(1), instep/inDims(1), owidth, 1f,
+			  			data, fstart, owidth,
+			  			out.data, bstart, owidth, 1f,
+			  			in.data, astart, iwidth*inDims(1));	
+			  }
+			  case Filter.backwardModel => {
+			  	sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.Trans, owidth, iwidth*inDims(1), instep/inDims(1), 1f,
+			  			out.data, bstart, owidth, 
+			  			in.data, astart, iwidth*inDims(1), 1f,
+			  			data, fstart, owidth);	
+			  }
+			}
 		}
 	}
 
-	def _correlate(in:FND, out:FND, idim:Int, astart:Int, bstart:Int, fstart:Int) {
+	def _correlate(in:FND, out:FND, idim:Int, astart:Int, bstart:Int, fstart:Int, convType:Int) {
 		val idims = in.dims;
 		val odims = out.dims;
 		val iwidth = inDims(idim);
@@ -280,7 +341,8 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 						_correlate(in, out, idim-1, 
 								astart + (ks + i) * instep, 
 								bstart + (k + j) * outstep,
-								fstart + (i + j * iwidth) * fstep);
+								fstart + (i + j * iwidth) * fstep,
+								convType);
 						i += 1;
 					}
 					j += 1;
@@ -291,19 +353,47 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 		} else {
 			var k = 0;
 			var ks = 0;
-			while (ks + iwidth - 1 < idims(0)) {           // Move forward over input+output tensors              
-				var j = 0;
-				while (j < owidth) {                    // Move over output tensor
-					var ss = 0f;
-					val jfwidth = j * iwidth;
-					var i = 0;
-					while (i < iwidth) {                      // Move over input tensor
-						ss += in.data(astart + ks + i) * data0(fstart + jfwidth + i);
-						i += 1;
-					}
-					out.data(bstart + k + j) += ss;
-					j += 1;
-				}
+			while (ks + iwidth - 1 < idims(0)) {           // Move forward over input+output tensors  
+			  convType match {
+			    case Filter.forward => {
+			    	var j = 0;
+			    	while (j < owidth) {                         // Move over output tensor
+			    		var ss = 0f;
+			    		val jfwidth = j * iwidth;
+			    		var i = 0;
+			    		while (i < iwidth) {                       // Move over input tensor
+			    			ss += in.data(astart + ks + i) * data0(fstart + jfwidth + i);
+			    			i += 1;
+			    		}
+			    		out.data(bstart + k + j) += ss;
+			    		j += 1;
+			    	}
+			    }
+			    case Filter.backwardGradient => {
+			    	var i = 0;
+			    	while (i < iwidth) {
+			    		var ss = 0f;
+			    		var j = 0;
+			    		while (j < owidth) {                         // Move over output tensor
+			    			ss += out.data(bstart + k + j) * data0(fstart + j * iwidth + i);
+			    			j += 1;
+			    		}
+			    		in.data(astart + ks + i) += ss;
+			    		i += 1;
+			    	}
+			    }
+			    case Filter.backwardModel => {
+			    	var j = 0;
+			    	while (j < owidth) {                         // Move over output tensor
+			    		var i = 0;
+			    		while (i < iwidth) {
+			    			data0(fstart + j * iwidth + i) += out.data(bstart + k + j) * in.data(astart + ks + i);
+			    			i += 1;
+			    		}
+			    		j += 1;
+			    	}
+			    }
+			  }
 				k += 1;
 				ks += kstride;
 			}
