@@ -189,24 +189,26 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 				  	}
 				  }
 				  case Filter.backwardGradient => {
-				  	var i = 0;
-				  	while (i < iwidth) {
-				  		var j = 0;
-				  		var ss = 0f;
-				  		while (j < owidth) {                        
-				  			ss += out.data(bstart + k + owidth - j - 1) * data0(fstart + j * iwidth + i);
-				  			j += 1;
+				  	var j = 0;
+				  	while (j < owidth) {
+				  		val jfwidth = j * iwidth;
+				  		val odata = out.data(bstart + k + owidth - j - 1);
+				  		var i = 0;
+				  		while (i < iwidth) {
+				  			in.data(astart + ks + iwidth - i - 1) += odata * data0(fstart + jfwidth + i);
+				  			i += 1;
 				  		}
-				  		in.data(astart + ks + iwidth - i - 1) += ss;
-				  		i += 1;
+				  		j += 1;
 				  	}
 				  }
 				  case Filter.backwardModel => {
 				  	var j = 0;
 				  	while (j < owidth) {
+				  	  val jfwidth = j * iwidth;
+				  	  val odata = out.data(bstart + k + owidth - j - 1);
 				  		var i = 0;
 				  		while (i < iwidth) {
-				  		  data0(fstart + j * iwidth + i) += out.data(bstart + k + owidth - j - 1) * in.data(astart + ks + iwidth - i - 1);
+				  		  data0(fstart + jfwidth + i) += odata * in.data(astart + ks + iwidth - i - 1);
 				  			i += 1;
 				  		}
 				  		j += 1;
@@ -370,24 +372,26 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 			    	}
 			    }
 			    case Filter.backwardGradient => {
-			    	var i = 0;
-			    	while (i < iwidth) {
-			    		var ss = 0f;
-			    		var j = 0;
-			    		while (j < owidth) {                         // Move over output tensor
-			    			ss += out.data(bstart + k + j) * data0(fstart + j * iwidth + i);
-			    			j += 1;
+			    	var j = 0;
+			    	while (j < owidth) { 		
+			    		val jfwidth = j * iwidth;
+			    		val odata = out.data(bstart + k + j);
+			    		var i = 0;
+			    		while (i < iwidth) {
+			    			in.data(astart + ks + i) += odata * data0(fstart + jfwidth + i);
+			    			i += 1;
 			    		}
-			    		in.data(astart + ks + i) += ss;
-			    		i += 1;
+			    		j += 1;
 			    	}
 			    }
 			    case Filter.backwardModel => {
 			    	var j = 0;
 			    	while (j < owidth) {                         // Move over output tensor
+			    	  val jfwidth = j * iwidth;
+			    	  val odata = out.data(bstart + k + j);
 			    		var i = 0;
 			    		while (i < iwidth) {
-			    			data0(fstart + j * iwidth + i) += out.data(bstart + k + j) * in.data(astart + ks + i);
+			    			data0(fstart + jfwidth + i) += odata* in.data(astart + ks + i);
 			    			i += 1;
 			    		}
 			    		j += 1;
