@@ -177,7 +177,7 @@ abstract class ND(protected val _dims:Array[Int]) extends Serializable {
     val nChars = Mat.terminalWidth-4;
     val ncols = prodDimsBy(1,2);
     val nrows = prodDimsByX(0,2);
-    val maxRows = math.min(4096/nChars, nrows);
+    val maxRows = math.min(20000/nChars, nrows);
     var maxCols = math.min(nChars, ncols);
     var fieldWidth = 4;
     val cs = populateCS(maxRows, maxCols);

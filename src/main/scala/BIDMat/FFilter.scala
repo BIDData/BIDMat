@@ -1,6 +1,7 @@
 package BIDMat;
 import BIDMat.MatFunctions._;
 import edu.berkeley.bid.CBLAS._
+import scala.util.hashing.MurmurHash3
 
 @SerialVersionUID(100L)
 class FFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, data0:Array[Float]) extends
@@ -8,26 +9,49 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 
 	override val inDims = inDims0;
 	override val outDims = outDims0;
-	override val pad = pad0;
-	override val stride = stride0;
+	override val stride = if (stride0.asInstanceOf[AnyRef] != null) stride0 else iones(1, inDims.length);
+	override val pad = if (pad0.asInstanceOf[AnyRef] != null) pad0 else izeros(1,inDims.length);
+  var outpadmat:FND = null;
 
-	def convolve(a:FND):FND = {
+	def convolve(a:FND, omat:ND, doclear:Boolean):FND = {
 		val outdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad);
-		val out = FND.newOrCheckFND(outdims, null, a.GUID, GUID, "convout".##);
-		val inpadmat = if (pad.asInstanceOf[AnyRef] != null && SciFunctions.sum(pad).dv > 0) pad(a, pad) else a;
-		if (inDims(0) == a.dims(0) && outDims(0) == outdims(0)) {             // Use gemm acceleration
-			val outpaddims = if (pad.asInstanceOf[AnyRef] != null) out.dims + pad*2 else out.dims;
-			val outpadmat = FND.newOrCheckFND(outpaddims, null, a.GUID, GUID, "convoutpad".##);
-			val firststride = find((stride(1->stride.length) > 1) \ 1)(0); 
-			outpadmat.clear;
+    val hmm = hashIMat(stride, hashIMat(pad));
+		val out = FND.newOrCheckFND(outdims, omat, a.GUID, GUID, hmm, "convout".##);
+		val inpadmat = if (SciFunctions.sum(pad).dv > 0) pad(a, pad) else a;
+		if (Mat.useMKL && inDims(0) == a.dims(0) && outDims(0) == outdims(0)) {             // Use gemm acceleration
+			val outpaddims = if (SciFunctions.sum(pad).dv > 0) out.dims + pad*2 else out.dims;
+			outpadmat = FND.newOrCheckFND(outpaddims, null, a.GUID, GUID, hmm, "convoutpad".##);
+			val firststride = 2 + find((stride(2->stride.length) > 1) \ 1)(0); 
+			if (doclear) { 
+				outpadmat.clear;
+      } else {
+    	  _copy_padded(out, outpadmat, inDims.length-1, 0, 0, true);
+      }
 			_fast_convolve(inpadmat, outpadmat, inDims.length-1, 0, 0, 0, firststride, Filter.forward);
-			_copy_padded(outpadmat, out, inDims.length-1, 0, 0);
+			_copy_padded(outpadmat, out, inDims.length-1, 0, 0, false);
 		} else {
-			out.clear;
+			if (doclear) { 
+        out.clear;
+      } 
 			_convolve(inpadmat, out, inDims.length-1, 0, 0, 0, Filter.forward);
 		}
+		Mat.nflops += computeFlops(a, stride, pad);
 		out;
 	};
+  
+	def convolve(a:FND):FND = convolve(a, null, true);
+  
+  def hashIMat(a:IMat, start:Int):Int = {
+    var i = 0; 
+    var hv = start;
+    while (i < a.length) {
+      hv = MurmurHash3.mix(hv, a.data(i));
+      i += 1;
+    }
+    hv;
+  }
+  
+  def hashIMat(a:IMat):Int = hashIMat(a, 23412154);
 
 	def _fast_convolve(in:FND, out:FND, idim:Int, astart:Int, bstart:Int, fstart:Int, firststride:Int, convType:Int) {
 		val idims = in.dims;
@@ -51,8 +75,8 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 			while (j < owidth) {
 				var i = 0;
 				while (i < iwidth) {
-				  if (idim > firststride) {
-				  	var k = 0;
+				  if (idim >= firststride) {
+				  	var k = pad(idim);
 				  	var ks = 0;
 				  	while (ks + iwidth - 1 < idims(idim)) {
 				  		_fast_convolve(in, out, idim-1, 
@@ -66,7 +90,7 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 				  } else {
 				  	_fast_convolve(in, out, idim-1, 
 				  			astart + (iwidth - i - 1) * instep, 
-				  			bstart + (owidth - j - 1) * outstep,
+				  			bstart + (pad(idim) + owidth - j - 1) * outstep,
 				  			fstart + (i + j * iwidth) * fstep,
 				  			firststride, convType);
 				  }
@@ -75,36 +99,39 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 				j += 1;
 			}
 		} else {
-		  var instep = 1;
+		  var outstep = 1;
 			var ix = 1;
 			while (ix < firststride) {
-				instep *= idims(ix);
+				outstep *= odims(ix);
 				ix += 1; 
 			}
+      val bstart0 = bstart + pad(0);
+      val outstep0 = outstep - (owidth + bstart0 - 1)/owidth;
+//      println("conv dims %d %d %d" format (owidth, outstep0, iwidth))
 			convType match {			  
 			  case Filter.forward => {
-			  	sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.NoTrans, owidth, instep, iwidth, 1f,
-			  			data, fstart, owidth, 
-			  			in.data, astart, iwidth, 1f,
-			  			out.data, bstart, owidth);	
+			  	sgemmx(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans, owidth, outstep0, iwidth, 1f,
+			  			data, fstart, iwidth, 
+			  			in.data, astart, iwidth*stride(1), 1f,
+			  			out.data, bstart0, owidth);	
 			  }
 			  case Filter.backwardGradient => {
-			  	sgemmx(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans, iwidth, instep, owidth, 1f,
-			  			data, fstart, owidth, 
-			  			out.data, bstart, owidth, 1f,
-			  			in.data, astart, iwidth);	
+			  	sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.NoTrans, iwidth, outstep0, owidth, 1f,
+			  			data, fstart, iwidth, 
+			  			out.data, bstart0, owidth, 1f,
+			  			in.data, astart, iwidth*stride(1));	
 			  }
 			  case Filter.backwardModel => {
-			  	sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.Trans, owidth, iwidth, instep, 1f, 
-			  			out.data, bstart, owidth,
-			  			in.data, astart, iwidth, 1f,
-			  			data, fstart, owidth);	
+			  	sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.Trans, iwidth, owidth, outstep0, 1f, 
+			  			in.data, astart, iwidth*stride(1), 
+              out.data, bstart0, owidth, 1f,
+			  			data, fstart, iwidth);	
 			  }
 			}
 		}
 	}
 
-	def _copy_padded(in:FND, out:FND, idim:Int, astart:Int, bstart:Int) {
+	def _copy_padded(in:FND, out:FND, idim:Int, astart:Int, bstart:Int, dopad:Boolean) {
 	  val idims = in.dims;
 	  val odims = out.dims;
 	  val owidth = odims(idim);
@@ -120,15 +147,26 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 	  	}
 	  	var i = 0;
 	  	while (i < owidth) {
-	  		_copy_padded(in, out, idim-1, astart + instep * (ipad + i), bstart + outstep * i);
+        if (dopad) {
+          _copy_padded(in, out, idim-1, astart + instep * i, bstart + outstep * (ipad + i), dopad);
+        } else {
+        	_copy_padded(in, out, idim-1, astart + instep * (ipad + i), bstart + outstep * i, dopad);
+        }
 	  		i += 1;
 	  	}
 	  } else {
 	  	var i = 0;
-	  	while (i < owidth) {
-	  	  out.data(bstart + i) = in.data(astart + ipad + i);
-	  	  i += 1;
-	  	}
+      if (dopad) {
+        while (i < owidth) {
+          out.data(bstart + ipad + i) = in.data(astart + i);
+          i += 1;
+        }       
+      } else {
+    	  while (i < owidth) {
+    		  out.data(bstart + i) = in.data(astart + ipad + i);
+    		  i += 1;
+    	  }
+      }
 	  }
 	}
 
@@ -181,10 +219,10 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 				  		var ss = 0f;
 				  		var i = 0;
 				  		while (i < iwidth) {                      // Move over input tensor
-				  			ss += in.data(astart + ks + iwidth - i - 1) * data0(fstart + jfwidth + i);
+				  			ss += in.data(astart + ks + i) * data0(fstart + jfwidth + i);
 				  			i += 1;
 				  		}
-				  		out.data(bstart + k + owidth - j - 1) += ss;
+				  		out.data(bstart + k + j) += ss;
 				  		j += 1;
 				  	}
 				  }
@@ -221,23 +259,33 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 		}
 	};
 
-	def correlate(a:FND):FND = {
+	def correlate(a:FND, omat:ND, doclear:Boolean):FND = {
 			val outdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad);
-			val out = FND.newOrCheckFND(outdims, null, a.GUID, GUID, "convout".##);
-			val inpadmat = if (pad.asInstanceOf[AnyRef] != null && SciFunctions.sum(pad).dv > 0) pad(a, pad) else a;
-			if (inDims(0) == a.dims(0) && outDims(0) == outdims(0)) {             // Use gemm acceleration
-				val outpaddims = if (pad.asInstanceOf[AnyRef] != null) out.dims + pad*2 else out.dims;
-				val outpadmat = FND.newOrCheckFND(outpaddims, null, a.GUID, GUID, "convoutpad".##);
-				val firststride = find((stride(1->stride.length) > 1) \ 1)(0); 
-				outpadmat.clear;
+			val hmm = hashIMat(stride, hashIMat(pad));
+			val out = FND.newOrCheckFND(outdims, omat, a.GUID, GUID, hmm, "convout".##);
+			val inpadmat = if (SciFunctions.sum(pad).dv > 0) pad(a, pad) else a;
+			if (Mat.useMKL && inDims(0) == a.dims(0) && outDims(0) == outdims(0)) {             // Use gemm acceleration
+				val outpaddims = if (SciFunctions.sum(pad).dv > 0) out.dims + pad*2 else out.dims;
+				val outpadmat = FND.newOrCheckFND(outpaddims, null, a.GUID, GUID, hmm, "convoutpad".##);
+				val firststride = 1 + find((stride(1->stride.length) > 1) \ 1)(0); 
+        if (doclear) {
+        	outpadmat.clear;          
+        } else {
+        	_copy_padded(out, outpadmat, inDims.length-1, 0, 0, true);
+        }
 				_fast_correlate(inpadmat, outpadmat, inDims.length-1, 0, 0, 0, firststride, Filter.forward);
-				_copy_padded(outpadmat, out, inDims.length-1, 0, 0);
+				_copy_padded(outpadmat, out, inDims.length-1, 0, 0, false);
 			} else {
-				out.clear;
+				if (doclear) {
+					out.clear;
+        }
 				_correlate(inpadmat, out, inDims.length-1, 0, 0, 0, Filter.forward);
 			}
+			Mat.nflops += computeFlops(a, stride, pad);
 			out
 	};
+  
+	def correlate(a:FND):FND = correlate(a, null, true);
 	
 	def _fast_correlate(in:FND, out:FND, idim:Int, astart:Int, bstart:Int, fstart:Int, firststride:Int, convType:Int) {
 		val idims = in.dims;
@@ -286,30 +334,32 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 				j += 1;
 			}
 		} else {
-		  var instep = 1;
+		  var outstep = 1;
 			var ix = 1;
 			while (ix < firststride) {
-				instep *= idims(ix);
+				outstep *= odims(ix);
 				ix += 1; 
 			}
+      val bstart0 = bstart + pad(0);
+      val outstep0 = outstep - (owidth + bstart0 - 1)/owidth;
 			convType match {
 			  case Filter.forward => {
-			  	sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.NoTrans, owidth, instep/inDims(1), iwidth*inDims(1), 1f,
-			  			data, fstart, owidth, 
+			  	sgemmx(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans, owidth, outstep0/inDims(1), iwidth*inDims(1), 1f,
+			  			data, fstart, iwidth, 
 			  			in.data, astart, iwidth*inDims(1), 1f,
-			  			out.data, bstart, owidth);	
+			  			out.data, bstart0, owidth);	
 			  }
 			  case Filter.backwardGradient => {
-			  	sgemmx(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans, iwidth*inDims(1), instep/inDims(1), owidth, 1f,
-			  			data, fstart, owidth,
-			  			out.data, bstart, owidth, 1f,
+			  	sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.NoTrans, iwidth*inDims(1), outstep0/inDims(1), owidth, 1f,
+			  			data, fstart, iwidth,
+			  			out.data, bstart0, owidth, 1f,
 			  			in.data, astart, iwidth*inDims(1));	
 			  }
 			  case Filter.backwardModel => {
-			  	sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.Trans, owidth, iwidth*inDims(1), instep/inDims(1), 1f,
-			  			out.data, bstart, owidth, 
-			  			in.data, astart, iwidth*inDims(1), 1f,
-			  			data, fstart, owidth);	
+			  	sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.Trans, iwidth*inDims(1), owidth, outstep0/inDims(1), 1f,		  			 
+			  			in.data, astart, iwidth*inDims(1), 
+              out.data, bstart0, owidth, 1f,
+			  			data, fstart, iwidth);	
 			  }
 			}
 		}
@@ -487,59 +537,57 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 			}   
 		}
 	}
+    
+  def computeFlops(in:ND, stride:IMat, pad:IMat):Long = {
+    var i = 0;
+    var flops = 2L;
+    while (i < stride.length) {
+      flops *= 1L * inDims(i) * outDims(i) * (in.dims(i) - inDims(i) + 1 + 2*pad(i))/stride(i)
+      i += 1;
+    }
+    flops;
+  }
 }
 
 object FFilter {
-	def FFilter1D(w:Int, nstride:Int, npad:Int, contents:ND) = {
+	def FFilter1D(w:Int, nstride:Int, npad:Int) = {
 		val inDims = irow(w);
 		val outDims = irow(1);
 		val stride = irow(nstride);
 		val pad = irow(npad);
-		if (contents.length != w) {
-			throw new RuntimeException("FFilter1D bad initialization matrix")
-		}
-		val filt = FND.newOrCheckFND(irow(w), null, contents.GUID, "FFilter1D()".##);
-		filt <-- contents;
-		new FFilter(inDims, outDims, stride, pad, filt.data);
+		new FFilter(inDims, outDims, stride, pad, new Array[Float](w));
 	}
 
-	def FFilter1Dd(w:Int, din:Int, dout:Int, nstride:Int, npad:Int, contents:ND) = {
+	def FFilter1Dd(w:Int, din:Int, dout:Int, nstride:Int, npad:Int) = {
 		val inDims = irow(din, w);
 		val outDims = irow(dout, 1);
 		val stride = irow(1, nstride);
-		val pad = irow(1, npad);
-		if (contents.length != w * din * dout) {
-			throw new RuntimeException("FFilter1D bad initialization matrix")
-		}
-		val filt = FND.newOrCheckFND(irow(din*dout, w), null, contents.GUID, "FFilter1D()".##);
-		filt <-- contents;
-		new FFilter(inDims, outDims, stride, pad, filt.data);
+		val pad = irow(0, npad);
+		new FFilter(inDims, outDims, stride, pad, new Array[Float](din*dout*w));
 	}
 
-	def FFilter2D(w:Int, h:Int, nstride:Int, npad:Int, contents:ND) = {
+	def FFilter2D(w:Int, h:Int, nstride:Int, npad:Int) = {
 		val inDims = irow(w, h);
 		val outDims = irow(1, 1);
 		val stride = irow(nstride, nstride);
 		val pad = irow(npad, npad);
-		if (contents.length != w*h) {
-			throw new RuntimeException("FFilter2D bad initialization matrix")
-		}
-		val filt = FND.newOrCheckFND(irow(w, h), null, contents.GUID, "FFilter2D()".##);
-		filt <-- contents;
-		new FFilter(inDims, outDims, stride, pad, filt.data);
+		new FFilter(inDims, outDims, stride, pad, new Array[Float](w*h));
 	}
 
-	def FFilter2Dd(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int, contents:ND) = {
+	def FFilter2Dd(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int) = {
 		val inDims = irow(din, w, h);
 		val outDims = irow(dout, 1, 1);
 		val stride = irow(1, nstride, nstride);
-		val pad = irow(1, npad, npad);
-		if (contents.length != w*h*din*dout) {
-			throw new RuntimeException("FFilter2D bad initialization matrix")
-		}
-		val filt = FND.newOrCheckFND(irow(din*dout, w, h), null, contents.GUID, "FFilter2D()".##);
-		filt <-- contents;
-		new FFilter(inDims, outDims, stride, pad, filt.data);
+		val pad = irow(0, npad, npad);
+		new FFilter(inDims, outDims, stride, pad, new Array[Float](din*dout*w*h));
 	}
+  
+  def FFilter2Ddn(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int) = {
+    val inDims = irow(din, w, h, 1);
+    val outDims = irow(dout, 1, 1, 1);
+    val stride = irow(1, nstride, nstride, 1);
+    val pad = irow(0, npad, npad, 0);
+    new FFilter(inDims, outDims, stride, pad, new Array[Float](din*dout*w*h));
+  }
 
 }
