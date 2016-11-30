@@ -1,0 +1,35 @@
+import BIDMat.FFilter._
+
+val a = FND(irow(4,6,6))
+a.asMat <-- (ones(24,1)*row(0 until 6))
+
+val b = FFilter2Dd(3,3,4,4,1,1)
+b(?) = ones(b.length,1);
+
+val c = b.convolve(a)
+
+val nfilters = 128
+val ndim = 28
+val nbatch = 8
+val nstages = 8
+
+val a = FND(irow(nfilters, ndim, ndim, nbatch));
+a(?) = rand(a.length, 1)
+
+
+val bb = new Array[BIDMat.FFilter](nstages)
+for (i <- 0 until nstages) {
+bb(i) = FFilter2Ddn(3,3,nfilters,nfilters,1,1);
+bb(i)(?) = rand(bb(i).length,1)
+}
+
+Mat.useCache=true;
+val cc = new Array[FND](nstages+1);
+cc(0) = a;
+
+flip;
+for (i <- 0 until nstages) {
+  cc(i+1) = bb(i).convolve(cc(i));
+}
+val gf=gflop
+
