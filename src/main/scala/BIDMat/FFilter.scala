@@ -311,7 +311,7 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 				var i = 0;
 				while (i < aiwidth) {
 				  if (idim > firststride) {
-				  	var k = 0;
+				  	var k = pad(0);
 				  	var ks = 0;
 				  	while (ks + iwidth - 1 < idims(idim)) {
 				  		_fast_correlate(in, out, idim-1, 
