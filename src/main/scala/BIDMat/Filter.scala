@@ -1,5 +1,6 @@
 
 package BIDMat
+import scala.util.hashing.MurmurHash3
 
 
 trait Filter {
@@ -8,20 +9,48 @@ trait Filter {
   val pad:IMat = null;
   val stride:IMat = null;
   
+  def computeFlops(in:ND, stride:IMat, pad:IMat):Long = {
+    var i = 0;
+    var flops = 2L;
+    while (i < stride.length) {
+      flops *= 1L * inDims(i) * outDims(i) * (in.dims(i) - inDims(i) + 1 + 2*pad(i))/stride(i)
+      i += 1;
+    }
+    flops;
+  }
 }
 
 object Filter {
   
-  def getOutputDims(imageDims:IMat, filtInDims:IMat, filtOutDims:IMat, filtStride:IMat, filtPad:IMat, compress:Boolean = false):IMat = {
+  def getOutputDims(imageDims:IMat, finDims:IMat, foutDims:IMat, stride:IMat, pad:IMat, compress:Boolean = false):IMat = {
     val ilen = imageDims.length;
-    if (filtInDims.length != ilen) throw new RuntimeException("getOutputDims Image and Filter number of dimensions mismatch %d %d" format (ilen, filtInDims.length))
-    if (filtStride.asInstanceOf[AnyRef] != null && filtStride.length != ilen) throw new RuntimeException("getOutputDims Image and Filter Stride number of dimensions mismatch %d %d" format (ilen, filtInDims.length))
-    if (filtPad.asInstanceOf[AnyRef] != null && filtPad.length != ilen) throw new RuntimeException("getOutputDims Image and Filter Pad number of dimensions mismatch %d %d" format (ilen, filtInDims.length))
-    val fstride = if (filtStride.asInstanceOf[AnyRef] != null) filtStride else MatFunctions.iones(1, ilen);
-    val fpad = if (filtPad.asInstanceOf[AnyRef] != null) filtPad else MatFunctions.izeros(1, ilen);
-    val odims0 = (imageDims + fpad * 2 - filtInDims) / fstride + filtOutDims;
-    (if (compress) ND.trimDims(odims0) else odims0);   
+    if (finDims.length != ilen) throw new RuntimeException("getOutputDims Image and Filter number of dimensions mismatch %d %d" format (ilen, finDims.length))
+    if (stride.length != ilen) throw new RuntimeException("getOutputDims Image and Filter Stride number of dimensions mismatch %d %d" format (ilen, stride.length))
+    if (pad.length != ilen) throw new RuntimeException("getOutputDims Image and Filter Pad number of dimensions mismatch %d %d" format (ilen, pad.length))
+    val odims = (imageDims + pad * 2 - finDims) / stride + foutDims;
+    (if (compress) ND.trimDims(odims) else odims);   
   }
+  
+  def getInputDims(imageDims:IMat, finDims:IMat, foutDims:IMat, stride:IMat, pad:IMat, compress:Boolean = false):IMat = {
+    val ilen = imageDims.length;
+    if (finDims.length != ilen) throw new RuntimeException("getInputDims Image and Filter number of dimensions mismatch %d %d" format (ilen, finDims.length))
+    if (stride.length != ilen) throw new RuntimeException("getInputDims Image and Filter Stride number of dimensions mismatch %d %d" format (ilen, stride.length))
+    if (pad.length != ilen) throw new RuntimeException("getInputDims Image and Filter Pad number of dimensions mismatch %d %d" format (ilen, pad.length))
+    val indims = (imageDims - foutDims) *@ stride - pad*2 + finDims;
+    (if (compress) ND.trimDims(indims) else indims);   
+  }
+  
+  def hashIMat(a:IMat, start:Int):Int = {
+    var i = 0; 
+    var hv = start;
+    while (i < a.length) {
+      hv = MurmurHash3.mix(hv, a.data(i));
+      i += 1;
+    }
+    hv;
+  }
+  
+  def hashIMat(a:IMat):Int = hashIMat(a, 23412154);
   
   final val forward = 1;
   final val backwardGradient = 2;

@@ -1,7 +1,7 @@
 package BIDMat;
 import BIDMat.MatFunctions._;
 import edu.berkeley.bid.CBLAS._
-import scala.util.hashing.MurmurHash3
+
 
 @SerialVersionUID(100L)
 class FFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, data0:Array[Float]) extends
@@ -11,16 +11,22 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 	override val outDims = outDims0;
 	override val stride = if (stride0.asInstanceOf[AnyRef] != null) stride0 else iones(1, inDims.length);
 	override val pad = if (pad0.asInstanceOf[AnyRef] != null) pad0 else izeros(1,inDims.length);
-  var outpadmat:FND = null;
 
 	def convolve(a:FND, omat:ND, doclear:Boolean):FND = {
 		val outdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad);
-    val hmm = hashIMat(stride, hashIMat(pad));
+    val hmm = Filter.hashIMat(stride, Filter.hashIMat(pad));
 		val out = FND.newOrCheckFND(outdims, omat, a.GUID, GUID, hmm, "convout".##);
-		val inpadmat = if (SciFunctions.sum(pad).dv > 0) pad(a, pad) else a;
+		val inpadmat = if (SciFunctions.sum(pad).dv > 0) {
+      val m = FND.newOrCheckFND(a.dims + pad * 2, null, a.GUID, GUID, hmm, "convinpad".##);
+      _copy_padded(a, m, inDims.length-1, 0, 0, true);
+      m
+    } else a;
 		if (Mat.useMKL && inDims(0) == a.dims(0) && outDims(0) == outdims(0)) {             // Use gemm acceleration
-			val outpaddims = if (SciFunctions.sum(pad).dv > 0) out.dims + pad*2 else out.dims;
-			outpadmat = FND.newOrCheckFND(outpaddims, null, a.GUID, GUID, hmm, "convoutpad".##);
+			val outpadmat = if (SciFunctions.sum(pad).dv > 0) {
+        FND.newOrCheckFND(out.dims + pad*2/stride, null, a.GUID, GUID, hmm, "convoutpad".##);
+      } else {
+        out;
+      }
 			val firststride = 2 + find((stride(2->stride.length) > 1) \ 1)(0); 
 			if (doclear) { 
 				outpadmat.clear;
@@ -41,17 +47,36 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
   
 	def convolve(a:FND):FND = convolve(a, null, true);
   
-  def hashIMat(a:IMat, start:Int):Int = {
-    var i = 0; 
-    var hv = start;
-    while (i < a.length) {
-      hv = MurmurHash3.mix(hv, a.data(i));
-      i += 1;
+  def convolveT(a:FND, omat:ND, doclear:Boolean):FND = {
+    val indims = Filter.getInputDims(a.dims, inDims, outDims, stride, pad);
+    val hmm = Filter.hashIMat(stride, Filter.hashIMat(pad));
+    val in = FND.newOrCheckFND(indims, omat, a.GUID, GUID, hmm, "convTin".##);
+    val inpadmat = if (SciFunctions.sum(pad).dv > 0) {
+      val m = FND.newOrCheckFND(in.dims + pad * 2, null, a.GUID, GUID, hmm, "convTinpad".##);
+      _copy_padded(a, m, inDims.length-1, 0, 0, true);
+      m
+    } else a;
+    if (doclear) inpadmat.clear;
+    if (Mat.useMKL && inDims(0) == indims(0) && outDims(0) == a.dims(0)) {             // Use gemm acceleration
+      val outpadmat = if (SciFunctions.sum(pad).dv > 0) {
+    	  FND.newOrCheckFND(a.dims + pad*2/stride, null, a.GUID, GUID, hmm, "convToutpad".##);
+      } else {
+        a;
+      }
+      val firststride = 2 + find((stride(2->stride.length) > 1) \ 1)(0); 
+      _copy_padded(a, outpadmat, inDims.length-1, 0, 0, true);
+      _fast_convolve(inpadmat, outpadmat, inDims.length-1, 0, 0, 0, firststride, Filter.backwardGradient);
+    } else {
+      _convolve(inpadmat, a, inDims.length-1, 0, 0, 0, Filter.forward);
     }
-    hv;
-  }
+    if (inpadmat.GUID != in.GUID) {
+    	_copy_padded(inpadmat, in, inDims.length-1, 0, 0, false);
+    }
+    Mat.nflops += computeFlops(a, stride, pad);
+    in;
+  };
   
-  def hashIMat(a:IMat):Int = hashIMat(a, 23412154);
+  def convolveT(a:FND):FND = convolveT(a, null, true);
 
 	def _fast_convolve(in:FND, out:FND, idim:Int, astart:Int, bstart:Int, fstart:Int, firststride:Int, convType:Int) {
 		val idims = in.dims;
@@ -261,7 +286,7 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 
 	def correlate(a:FND, omat:ND, doclear:Boolean):FND = {
 			val outdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad);
-			val hmm = hashIMat(stride, hashIMat(pad));
+			val hmm = Filter.hashIMat(stride, Filter.hashIMat(pad));
 			val out = FND.newOrCheckFND(outdims, omat, a.GUID, GUID, hmm, "convout".##);
 			val inpadmat = if (SciFunctions.sum(pad).dv > 0) pad(a, pad) else a;
 			if (Mat.useMKL && inDims(0) == a.dims(0) && outDims(0) == outdims(0)) {             // Use gemm acceleration
@@ -537,16 +562,6 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 			}   
 		}
 	}
-    
-  def computeFlops(in:ND, stride:IMat, pad:IMat):Long = {
-    var i = 0;
-    var flops = 2L;
-    while (i < stride.length) {
-      flops *= 1L * inDims(i) * outDims(i) * (in.dims(i) - inDims(i) + 1 + 2*pad(i))/stride(i)
-      i += 1;
-    }
-    flops;
-  }
 }
 
 object FFilter {
