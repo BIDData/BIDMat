@@ -311,6 +311,7 @@ abstract class NDPair extends Serializable {
   def + (b : ND):ND
   def - (b : ND):ND 
   def * (b : ND):ND  
+  def *^ (b : ND):ND
   def *@ (b : ND):ND 
   def ∘  (b : ND):ND 
   def /  (b : ND):ND 

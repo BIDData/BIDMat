@@ -678,6 +678,18 @@ class FNDPair(val omat:ND, val amat:FND) extends NDPair {
       zz
   }
   
+  def *^ (b : FND):FND = {
+     omat match {
+       case ff:FFilter => {ff.convolveM(amat, b); ff}
+     }
+  }
+  
+  def *^ (b : ND):ND = {
+     (omat, b) match {
+       case (ff:FFilter, bb:FND) => {ff.convolveM(amat, bb); ff}
+     }
+  }
+  
   def + (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(amat, mat, omat, "+"); c ~ a + b; d}
   def - (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(amat, mat, omat, "-"); c ~ a - b; d}
   def *@ (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(amat, mat, omat, "*@"); c ~ a *@ b; d}

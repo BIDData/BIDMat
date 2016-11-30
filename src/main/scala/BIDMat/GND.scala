@@ -727,6 +727,18 @@ class GNDPair(val omat:ND, val amat:GND) extends NDPair {
 			z ~ x * y;      
 			zz
 	}
+	
+	def *^ (b : GND):GND = {
+     omat match {
+       case gg:GFilter => {gg}
+     }
+  }
+  
+  def *^ (b : ND):ND = {
+     (omat, b) match {
+       case (ff:GFilter, bb:GND) => {ff}
+     }
+  }
   
   def + (bmat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat, omat, "+"); c ~ a + b; d}
   def - (bmat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat, omat, "-"); c ~ a - b; d}
