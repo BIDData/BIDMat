@@ -10,8 +10,8 @@ val c = b.convolve(a)
 
 val nfilters = 128
 val ndim = 28
-val nbatch = 8
-val nstages = 8
+val nbatch = 16
+val nstages = 50
 
 val a = FND(irow(nfilters, ndim, ndim, nbatch));
 a(?) = rand(a.length, 1)

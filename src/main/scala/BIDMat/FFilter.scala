@@ -23,7 +23,8 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
       m
     } else a;
 		if (Mat.useMKL && inDims(0) == a.dims(0) && outDims(0) == outdims(0)) {             // Use gemm acceleration
-		  val outdiff = outDims - 1 - (inDims - 1)/stride;
+		  val outdiff = (inDims - 1)/stride - outDims + 1;
+		  outdiff(0) = 0;
 			val outpadmat = if (outdiff.data.exists(_ != 0)) {
         FND.newOrCheckFND(out.dims + outdiff, null, a.GUID, GUID, hmm, "convoutpad".##);
       } else {
@@ -188,11 +189,13 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 			}
 		}
 	}
+	
+	// copy into padded array, or from padded array
 
-	def _copy_padded(in:FND, out:FND, padx:IMat, idim:Int, astart:Int, bstart:Int, dopad:Boolean) {
+	def _copy_padded(in:FND, out:FND, padx:IMat, idim:Int, astart:Int, bstart:Int, topadded:Boolean) {
 	  val idims = in.dims;
 	  val odims = out.dims;
-	  val owidth = odims(idim);
+	  val width = if (topadded) idims(idim) else odims(idim);
 	  val ipad = padx(idim);
 	  if (idim > 0) {
 	  	var instep = 1;
@@ -204,23 +207,23 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 	  		ix += 1; 
 	  	}
 	  	var i = 0;
-	  	while (i < owidth) {
-        if (dopad) {
-          _copy_padded(in, out, padx, idim-1, astart + instep * i, bstart + outstep * (ipad + i), dopad);
+	  	while (i < width) {
+        if (topadded) {
+          _copy_padded(in, out, padx, idim-1, astart + instep * i, bstart + outstep * (ipad + i), topadded);
         } else {
-        	_copy_padded(in, out, padx, idim-1, astart + instep * (ipad + i), bstart + outstep * i, dopad);
+        	_copy_padded(in, out, padx, idim-1, astart + instep * (ipad + i), bstart + outstep * i, topadded);
         }
 	  		i += 1;
 	  	}
 	  } else {
 	  	var i = 0;
-      if (dopad) {
-        while (i < owidth) {
+      if (topadded) {
+        while (i < width) {
           out.data(bstart + ipad + i) = in.data(astart + i);
           i += 1;
         }       
       } else {
-    	  while (i < owidth) {
+    	  while (i < width) {
     		  out.data(bstart + i) = in.data(astart + ipad + i);
     		  i += 1;
     	  }
