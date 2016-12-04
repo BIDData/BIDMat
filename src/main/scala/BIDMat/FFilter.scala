@@ -60,7 +60,7 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
       if (!doclear) _copy_padded(a, m, pad, inDims.length-1, 0, 0, true);
       m
     } else a;
-    if (doclear) a.clear;
+    if (doclear) apadmat.clear;
     val ddiff = (inDims - 1)/stride - outDims + 1;
     ddiff(0) = 0;
     if (Mat.useMKL && inDims(0) == adims(0) && outDims(0) == b.dims(0)) {             // Use gemm acceleration
@@ -86,11 +86,12 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
   
   def convolveT(a:FND):FND = convolveT(a, null, true);
   
-  def convolveM(a:FND, out:FND, doclear:Boolean):FND = {
+  def convolveM(a:FND, b:FND, doclear:Boolean):FND = {
 		val outdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad);
     val hmm = Filter.hashIMat(stride, Filter.hashIMat(pad));
-		val inpadmat = if (pad.data.exists(_ != 0)) {
-      val m = FND.newOrCheckFND(a.dims + pad * 2, null, a.GUID, GUID, hmm, "convMinpad".##);
+		val apadmat = if (pad.data.exists(_ != 0)) {
+      val m = FND.newOrCheckFND(a.dims + pad * 2, null, a.GUID, b.GUID, hmm, "convMinpad".##);
+      m.clear;
       _copy_padded(a, m, pad, inDims.length-1, 0, 0, true);
       m
     } else a;
@@ -98,38 +99,39 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 		if (Mat.useMKL && inDims(0) == a.dims(0) && outDims(0) == outdims(0)) {             // Use gemm acceleration
 		  val outdiff = (inDims - 1)/stride - outDims + 1;
 		  outdiff(0) = 0;
-			val outpadmat = if (outdiff.data.exists(_ != 0)) {
-        val m = FND.newOrCheckFND(out.dims + outdiff, null, a.GUID, GUID, hmm, "convMoutpad".##);
-        _copy_padded(out, m, outdiff/2, inDims.length-1, 0, 0, true);
+			val bpadmat = if (outdiff.data.exists(_ != 0)) {
+        val m = FND.newOrCheckFND(b.dims + outdiff, null, a.GUID, b.GUID, hmm, "convMoutpad".##);
+        m.clear;
+        _copy_padded(b, m, outdiff/2, inDims.length-1, 0, 0, true);
         m;
       } else {
-        out;
+        b;
       }
 			val firststride = 2 + find((stride(2->stride.length) > 1) \ 1)(0); 
-			_fast_convolve(inpadmat, outpadmat, inDims.length-1, 0, 0, 0, firststride, Filter.backwardModel);
+			_fast_convolve(apadmat, bpadmat, inDims.length-1, 0, 0, 0, firststride, Filter.backwardModel);
 		} else {
-			_convolve(inpadmat, out, inDims.length-1, 0, 0, 0, Filter.backwardModel);
+			_convolve(apadmat, b, inDims.length-1, 0, 0, 0, Filter.backwardModel);
 		}
 		Mat.nflops += computeFlops(a, stride, pad);
-		out;
+		this;
 	};
 	
   def convolveM(a:FND, b:FND):FND = convolveM(a, b, true);
 
-	def _fast_convolve(in:FND, out:FND, idim:Int, astart:Int, bstart:Int, fstart:Int, firststride:Int, convType:Int) {
-		val idims = in.dims;
-		val odims = out.dims;
+	def _fast_convolve(a:FND, b:FND, idim:Int, astart:Int, bstart:Int, fstart:Int, firststride:Int, convType:Int) {
+		val adims = a.dims;
+		val bdims = b.dims;
 		val iwidth = inDims(idim);
 		val owidth = outDims(idim);
 		val kstride = stride(idim);
 		if (idim > 0) {
-			var instep = 1;
-			var outstep = 1;
+			var astep = 1;
+			var bstep = 1;
 			var fstep = 1;
 			var ix = 0;
 			while (ix < idim) {
-				instep *= idims(ix);
-				outstep *= odims(ix);
+				astep *= adims(ix);
+				bstep *= bdims(ix);
 				fstep *= inDims(ix);
 				fstep *= outDims(ix);
 				ix += 1; 
@@ -141,19 +143,19 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 				  if (idim >= firststride) {
 				  	var k = pad(idim);
 				  	var ks = 0;
-				  	while (ks + iwidth - 1 < idims(idim)) {
-				  		_fast_convolve(in, out, idim-1, 
-				  				astart + (ks + iwidth - i - 1) * instep, 
-				  				bstart + (k + owidth - j - 1) * outstep,
+				  	while (ks + iwidth - 1 < adims(idim)) {
+				  		_fast_convolve(a, b, idim-1, 
+				  				astart + (ks + iwidth - i - 1) * astep, 
+				  				bstart + (k + owidth - j - 1) * bstep,
 				  				fstart + (i + j * iwidth) * fstep,
 				  				firststride, convType);
 				  		k += 1;
 				  		ks += kstride;
 				  	} 
 				  } else {
-				  	_fast_convolve(in, out, idim-1, 
-				  			astart + (iwidth - i - 1) * instep, 
-				  			bstart + (pad(idim) + owidth - j - 1) * outstep,
+				  	_fast_convolve(a, b, idim-1, 
+				  			astart + (iwidth - i - 1) * astep, 
+				  			bstart + (pad(idim) + owidth - j - 1) * bstep,
 				  			fstart + (i + j * iwidth) * fstep,
 				  			firststride, convType);
 				  }
@@ -165,7 +167,7 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 		  var outstep = 1;
 			var ix = 1;
 			while (ix < firststride) {
-				outstep *= odims(ix);
+				outstep *= bdims(ix);
 				ix += 1; 
 			}
       val bstart0 = bstart + pad(0);
@@ -175,19 +177,19 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 			  case Filter.forward => {
 			  	sgemmx(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans, owidth, outstep0, iwidth, 1f,
 			  			data, fstart, iwidth, 
-			  			in.data, astart, iwidth*stride(1), 1f,
-			  			out.data, bstart0, owidth);	
+			  			a.data, astart, iwidth*stride(1), 1f,
+			  			b.data, bstart0, owidth);	
 			  }
 			  case Filter.backwardGradient => {
 			  	sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.NoTrans, iwidth, outstep0, owidth, 1f,
 			  			data, fstart, iwidth, 
-			  			out.data, bstart0, owidth, 1f,
-			  			in.data, astart, iwidth*stride(1));	
+			  			b.data, bstart0, owidth, 1f,
+			  			a.data, astart, iwidth*stride(1));	
 			  }
 			  case Filter.backwardModel => {
 			  	sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.Trans, iwidth, owidth, outstep0, 1f, 
-			  			in.data, astart, iwidth*stride(1), 
-              out.data, bstart0, owidth, 1f,
+			  			a.data, astart, iwidth*stride(1), 
+              b.data, bstart0, owidth, 1f,
 			  			data, fstart, iwidth);	
 			  }
 			}
@@ -235,34 +237,34 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 	  }
 	}
 
-	def _convolve(in:FND, out:FND, idim:Int, astart:Int, bstart:Int, fstart:Int, convType:Int) {
-		val idims = in.dims;
-		val odims = out.dims;
+	def _convolve(a:FND, b:FND, idim:Int, astart:Int, bstart:Int, fstart:Int, convType:Int) {
+		val adims = a.dims;
+		val bdims = b.dims;
 		val iwidth = inDims(idim);
 		val owidth = outDims(idim);
 		val kstride = stride(idim);
 		if (idim > 0) {
-			var instep = 1;
-			var outstep = 1;
+			var astep = 1;
+			var bstep = 1;
 			var fstep = 1;
 			var ix = 0;
 			while (ix < idim) {
-				instep *= idims(ix);
-				outstep *= odims(ix);
+				astep *= adims(ix);
+				bstep *= bdims(ix);
 				fstep *= inDims(ix);
 				fstep *= outDims(ix);
 				ix += 1; 
 			}
 			var k = 0;
 			var ks = 0;
-			while (ks + iwidth - 1 < idims(idim)) {
+			while (ks + iwidth - 1 < adims(idim)) {
 				var j = 0;
 				while (j < owidth) {
 					var i = 0;
 					while (i < iwidth) {
-						_convolve(in, out, idim-1, 
-								astart + (ks + iwidth - i - 1) * instep, 
-								bstart + (k + owidth - j - 1) * outstep,
+						_convolve(a, b, idim-1, 
+								astart + (ks + iwidth - i - 1) * astep, 
+								bstart + (k + owidth - j - 1) * bstep,
 								fstart + (i + j * iwidth) * fstep,
 								convType);
 						i += 1;
@@ -275,7 +277,7 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 		} else {
 			var k = 0;
 			var ks = 0;
-			while (ks + iwidth - 1 < idims(0)) {              // Move forward over input+output tensors              
+			while (ks + iwidth - 1 < adims(0)) {              // Move forward over input+output tensors              
 				convType match {
 				  case Filter.forward => {
 				  	var j = 0;
@@ -284,10 +286,10 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 				  		var ss = 0f;
 				  		var i = 0;
 				  		while (i < iwidth) {                      // Move over input tensor
-				  			ss += in.data(astart + ks + i) * data0(fstart + jfwidth + i);
+				  			ss += a.data(astart + ks + i) * data0(fstart + jfwidth + i);
 				  			i += 1;
 				  		}
-				  		out.data(bstart + k + j) += ss;
+				  		b.data(bstart + k + j) += ss;
 				  		j += 1;
 				  	}
 				  }
@@ -295,10 +297,10 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 				  	var j = 0;
 				  	while (j < owidth) {
 				  		val jfwidth = j * iwidth;
-				  		val odata = out.data(bstart + k + owidth - j - 1);
+				  		val bdata = b.data(bstart + k + j);
 				  		var i = 0;
 				  		while (i < iwidth) {
-				  			in.data(astart + ks + iwidth - i - 1) += odata * data0(fstart + jfwidth + i);
+				  			a.data(astart + ks + i) += bdata * data0(fstart + jfwidth + i);
 				  			i += 1;
 				  		}
 				  		j += 1;
@@ -308,10 +310,10 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 				  	var j = 0;
 				  	while (j < owidth) {
 				  	  val jfwidth = j * iwidth;
-				  	  val odata = out.data(bstart + k + owidth - j - 1);
+				  	  val bdata = b.data(bstart + k + j);
 				  		var i = 0;
 				  		while (i < iwidth) {
-				  		  data0(fstart + jfwidth + i) += odata * in.data(astart + ks + iwidth - i - 1);
+				  		  data0(fstart + jfwidth + i) += bdata * a.data(astart + ks + i);
 				  			i += 1;
 				  		}
 				  		j += 1;
