@@ -3,6 +3,14 @@ import BIDMat.MatFunctions._;
 import edu.berkeley.bid.CBLAS._
 import SciFunctions._
 
+//
+// Basic CPU convolution class.
+//
+// Works in any dimension, but the last three (minor) dimensions should be HWC.
+// e.g. it assumes 4D tensors are in NHWC order (N-major, C-minor). 
+// Matrix blocks for each dimension are stored OI order (output-major, input-minor). 
+//
+
 
 @SerialVersionUID(100L)
 class FFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, data0:Array[Float]) extends
@@ -164,32 +172,31 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 				j += 1;
 			}
 		} else {
-		  var outstep = 1;
+		  var mstep = 1;
 			var ix = 1;
 			while (ix < firststride) {
-				outstep *= bdims(ix);
+				mstep *= bdims(ix);
 				ix += 1; 
 			}
       val bstart0 = bstart + pad(0);
-      val outstep0 = outstep - (owidth + bstart0 - 1)/owidth;
-//      println("conv dims %d %d %d" format (owidth, outstep0, iwidth))
+      val mstep0 = math.min(mstep, math.min((a.length - astart)/(iwidth*stride(1)), (b.length - bstart0)/owidth));
 			convType match {			  
 			  case Filter.forward => {
-			  	sgemmx(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans, owidth, outstep0, iwidth, 1f,
+			  	sgemmx(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans, owidth, mstep0, iwidth, 1f,
 			  			data, fstart, iwidth, 
 			  			a.data, astart, iwidth*stride(1), 1f,
 			  			b.data, bstart0, owidth);	
 			  }
 			  case Filter.backwardGradient => {
-			  	sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.NoTrans, iwidth, outstep0, owidth, 1f,
+			  	sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.NoTrans, iwidth, mstep0, owidth, 1f,
 			  			data, fstart, iwidth, 
 			  			b.data, bstart0, owidth, 1f,
 			  			a.data, astart, iwidth*stride(1));	
 			  }
 			  case Filter.backwardModel => {
-			  	sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.Trans, iwidth, owidth, outstep0, 1f, 
+			  	sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.Trans, iwidth, owidth, mstep0, 1f, 
 			  			a.data, astart, iwidth*stride(1), 
-              b.data, bstart0, owidth, 1f,
+			  			b.data, bstart0, owidth, 1f,
 			  			data, fstart, iwidth);	
 			  }
 			}
