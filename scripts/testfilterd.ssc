@@ -27,9 +27,6 @@ Mat.useCache=true;
 val cc = new Array[FND](nstages+1);
 cc(0) = a;
 
-flip;
-for (i <- 0 until nstages) {
-  cc(i+1) = bb(i).convolve(cc(i));
-}
-val gf=gflop
+
+flip;for (i <- 0 until nstages) {cc(i+1)=bb(i).convolve(cc(i));}val gf=gflop
 

@@ -14,71 +14,74 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 	override val pad = if (pad0.asInstanceOf[AnyRef] != null) pad0 else izeros(1,inDims.length);
 
 	def convolve(a:FND, omat:ND, doclear:Boolean):FND = {
-		val outdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad);
+		val bdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad);
     val hmm = Filter.hashIMat(stride, Filter.hashIMat(pad));
-		val out = FND.newOrCheckFND(outdims, omat, a.GUID, GUID, hmm, "convout".##);
-		val inpadmat = if (pad.data.exists(_ != 0)) {
+		val b = FND.newOrCheckFND(bdims, omat, a.GUID, GUID, hmm, "convout".##);
+		val apadmat = if (pad.data.exists(_ != 0)) {
       val m = FND.newOrCheckFND(a.dims + pad * 2, null, a.GUID, GUID, hmm, "convinpad".##);
+      m.clear;
       _copy_padded(a, m, pad, inDims.length-1, 0, 0, true);
       m
     } else a;
-		if (Mat.useMKL && inDims(0) == a.dims(0) && outDims(0) == outdims(0)) {             // Use gemm acceleration
-		  val outdiff = (inDims - 1)/stride - outDims + 1;
-		  outdiff(0) = 0;
-			val outpadmat = if (outdiff.data.exists(_ != 0)) {
-        FND.newOrCheckFND(out.dims + outdiff, null, a.GUID, GUID, hmm, "convoutpad".##);
+		if (Mat.useMKL && inDims(0) == a.dims(0) && outDims(0) == bdims(0)) {             // Use gemm acceleration
+		  val ddiff = (inDims - 1)/stride - outDims + 1;
+		  ddiff(0) = 0;
+			val bpadmat = if (ddiff.data.exists(_ != 0)) {
+        FND.newOrCheckFND(b.dims + ddiff, null, a.GUID, GUID, hmm, "convoutpad".##);
       } else {
-        out;
+        b;
       }
 			val firststride = 2 + find((stride(2->stride.length) > 1) \ 1)(0); 
 			if (doclear) { 
-				outpadmat.clear;
+				bpadmat.clear;
       } else {
-    	  _copy_padded(out, outpadmat, outdiff/2, inDims.length-1, 0, 0, true);
+    	  _copy_padded(b, bpadmat, ddiff/2, inDims.length-1, 0, 0, true);
       }
-			_fast_convolve(inpadmat, outpadmat, inDims.length-1, 0, 0, 0, firststride, Filter.forward);
-			_copy_padded(outpadmat, out, outdiff/2, inDims.length-1, 0, 0, false);
+			_fast_convolve(apadmat, bpadmat, inDims.length-1, 0, 0, 0, firststride, Filter.forward);
+			_copy_padded(bpadmat, b, ddiff/2, inDims.length-1, 0, 0, false);
 		} else {
 			if (doclear) { 
-        out.clear;
+        b.clear;
       } 
-			_convolve(inpadmat, out, inDims.length-1, 0, 0, 0, Filter.forward);
+			_convolve(apadmat, b, inDims.length-1, 0, 0, 0, Filter.forward);
 		}
 		Mat.nflops += computeFlops(a, stride, pad);
-		out;
+		b;
 	};
   
 	def convolve(a:FND):FND = convolve(a, null, true);
   
-  def convolveT(a:FND, omat:ND, doclear:Boolean):FND = {
-    val indims = Filter.getInputDims(a.dims, inDims, outDims, stride, pad);
+  def convolveT(b:FND, omat:ND, doclear:Boolean):FND = {
+    val adims = Filter.getInputDims(b.dims, inDims, outDims, stride, pad);
     val hmm = Filter.hashIMat(stride, Filter.hashIMat(pad));
-    val in = FND.newOrCheckFND(indims, omat, a.GUID, GUID, hmm, "convTin".##);
-    val inpadmat = if (pad.data.exists(_ != 0)) {
-      val m = FND.newOrCheckFND(in.dims + pad * 2, null, a.GUID, GUID, hmm, "convTinpad".##);
-      _copy_padded(a, m, pad, inDims.length-1, 0, 0, true);
+    val a = FND.newOrCheckFND(adims, omat, b.GUID, GUID, hmm, "convTin".##);
+    val apadmat = if (pad.data.exists(_ != 0)) {
+      val m = FND.newOrCheckFND(a.dims + pad * 2, null, b.GUID, GUID, hmm, "convTinpad".##);
+      if (!doclear) _copy_padded(a, m, pad, inDims.length-1, 0, 0, true);
       m
     } else a;
-    val outdiff = outDims - 1 - (inDims - 1)/stride;
-    if (doclear) inpadmat.clear;
-    if (Mat.useMKL && inDims(0) == indims(0) && outDims(0) == a.dims(0)) {             // Use gemm acceleration
-      val outpadmat = if (outdiff.data.exists(_ != 0)) {
-    	  val m = FND.newOrCheckFND(a.dims + outdiff, null, a.GUID, GUID, hmm, "convToutpad".##);
-    	  _copy_padded(a, m, outdiff/2, inDims.length-1, 0, 0, true);
+    if (doclear) a.clear;
+    val ddiff = (inDims - 1)/stride - outDims + 1;
+    ddiff(0) = 0;
+    if (Mat.useMKL && inDims(0) == adims(0) && outDims(0) == b.dims(0)) {             // Use gemm acceleration
+      val bpadmat = if (ddiff.data.exists(_ != 0)) {
+    	  val m = FND.newOrCheckFND(b.dims + ddiff, null, b.GUID, GUID, hmm, "convToutpad".##);
+    	  m.clear;
+    	  _copy_padded(b, m, ddiff/2, inDims.length-1, 0, 0, true);
     	  m;
       } else {
-        a;
+        b;
       }
       val firststride = 2 + find((stride(2->stride.length) > 1) \ 1)(0); 
-      _fast_convolve(inpadmat, outpadmat, inDims.length-1, 0, 0, 0, firststride, Filter.backwardGradient);
+      _fast_convolve(apadmat, bpadmat, inDims.length-1, 0, 0, 0, firststride, Filter.backwardGradient);
     } else {
-      _convolve(inpadmat, a, inDims.length-1, 0, 0, 0, Filter.forward);
+      _convolve(apadmat, b, inDims.length-1, 0, 0, 0, Filter.backwardGradient);
     }
-    if (inpadmat.GUID != in.GUID) {
-    	_copy_padded(inpadmat, in, pad, inDims.length-1, 0, 0, false);
+    if (apadmat.GUID != a.GUID) {
+    	_copy_padded(apadmat, a, pad, inDims.length-1, 0, 0, false);
     }
     Mat.nflops += computeFlops(a, stride, pad);
-    in;
+    a;
   };
   
   def convolveT(a:FND):FND = convolveT(a, null, true);
@@ -93,7 +96,8 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
     } else a;
 		if (doclear) clear;
 		if (Mat.useMKL && inDims(0) == a.dims(0) && outDims(0) == outdims(0)) {             // Use gemm acceleration
-		  val outdiff = outDims - 1 - (inDims - 1)/stride;
+		  val outdiff = (inDims - 1)/stride - outDims + 1;
+		  outdiff(0) = 0;
 			val outpadmat = if (outdiff.data.exists(_ != 0)) {
         val m = FND.newOrCheckFND(out.dims + outdiff, null, a.GUID, GUID, hmm, "convMoutpad".##);
         _copy_padded(out, m, outdiff/2, inDims.length-1, 0, 0, true);
@@ -331,7 +335,8 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
       m
     } else a;
 		if (Mat.useMKL && inDims(0) == a.dims(0) && outDims(0) == outdims(0)) {             // Use gemm acceleration
-		  val outdiff = outDims - 1 - (inDims - 1)/stride;
+		  val outdiff = (inDims - 1)/stride - outDims + 1;
+		  outdiff(0) = 0;
 			val outpadmat = if (outdiff.data.exists(_ != 0)) {
         FND.newOrCheckFND(out.dims + outdiff, null, a.GUID, GUID, hmm, "corroutpad".##);
       } else {
