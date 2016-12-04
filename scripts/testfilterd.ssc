@@ -28,5 +28,14 @@ val cc = new Array[FND](nstages+1);
 cc(0) = a;
 
 
-flip;for (i <- 0 until nstages) {cc(i+1)=bb(i).convolve(cc(i));}val gf=gflop
+flip;for (i <- 0 until nstages) {cc(i+1)=bb(i).convolve(cc(i));};val gf=gflop
 
+println("forward gflops = %f" format (gf._1))
+
+flip;for (i <- (nstages-1) to 0 by -1) {cc(i)=bb(i).convolveT(cc(i+1));};val gf=gflop
+
+println("backward gflops = %f" format (gf._1))
+
+flip;for (i <- (nstages-1) to 0 by -1) {bb(i).convolveM(cc(i),cc(i+1));};val gf=gflop
+
+println("backward gflops = %f" format (gf._1))

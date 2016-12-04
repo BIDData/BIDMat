@@ -4,10 +4,11 @@ import edu.berkeley.bid.CBLAS._
 import SciFunctions._
 
 //
-// Basic CPU convolution class.
+// Basic CPU convolutional Filter class.
 //
 // Works in any dimension, but the last three (minor) dimensions should be HWC.
-// e.g. it assumes 4D tensors are in NHWC order (N-major, C-minor). 
+// e.g. it assumes 4D tensors are in NHWC order (N-major, C-minor) as per Tensorflow. 
+//
 // Matrix blocks for each dimension are stored OI order (output-major, input-minor). 
 //
 
@@ -96,6 +97,9 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
   
   def convolveM(a:FND, b:FND, doclear:Boolean):FND = {
 		val outdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad);
+		if ((b.dims - outdims).data.exists(_ != 0)) {
+		  throw new RuntimeException("Output dimensions mismatch in convolveM")
+		}
     val hmm = Filter.hashIMat(stride, Filter.hashIMat(pad));
 		val apadmat = if (pad.data.exists(_ != 0)) {
       val m = FND.newOrCheckFND(a.dims + pad * 2, null, a.GUID, b.GUID, hmm, "convMinpad".##);
@@ -537,90 +541,6 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 			}
 		}
 	};
-
-
-	def pad(a:FND, pad:IMat):FND = { 
-			val inpaddims = if (pad.asInstanceOf[AnyRef] != null) a.dims + pad*2 else a.dims;
-			val out = FND.newOrCheckFND(inpaddims, null, a.GUID, GUID, "convpad".##);
-			_pad(a, pad, out, inpaddims.length-1, 0, 0);
-			out
-	};
-
-	def _zerofill(out:FND, idim:Int, bstart0:Int) {
-		val odims = out.dims;
-		var bstart = bstart0;
-		var i = 0;
-		if (idim > 0) {
-			var outcol = 1;
-			var ix = 0;
-			while (ix < idim) {
-				outcol *= odims(ix);
-				ix += 1; 
-			}    
-			while (i < odims(idim)) {
-				_zerofill(out, idim-1, bstart);
-				bstart += outcol;
-				i += 1;
-			}
-		} else {
-			while (i < odims(idim)) {
-				out.data(bstart) = 0;
-				bstart += 1;
-				i += 1;
-			}
-		}
-	};
-
-	def _pad(a:FND, pad:IMat, out:FND, idim:Int, astart0:Int, bstart0:Int) {
-		val adims = a.dims;
-		val odims = out.dims;
-		var astart = astart0;
-		var bstart = bstart0;
-		var i = 0;
-		if (idim > 0) {
-			var incol = 1;
-			var outcol = 1;
-			var ix = 0;
-			while (ix < idim) {
-				incol *= adims(ix);
-				outcol *= odims(ix);
-				ix += 1; 
-			}
-			while (i < pad(idim)) {
-				_zerofill(out, idim-1, bstart);
-				bstart += outcol;
-				i += 1;
-			}
-			while (i - pad(idim) < adims(idim)) {
-				_pad(a, pad, out, idim-1, astart, bstart);
-				astart += incol;
-				bstart += outcol;
-				i += 1;
-			}
-			while (i - pad(idim) - adims(idim) < pad(idim)) {
-				_zerofill(out, idim-1, bstart);
-				bstart += outcol;
-				i += 1;
-			}
-		} else {
-			while (i < pad(idim)) {
-				out.data(bstart) = 0;
-				bstart += 1;
-				i += 1;
-			}
-			while (i - pad(idim) < adims(idim)) {
-				out.data(bstart) = a.data(astart);
-				astart += 1;
-				bstart += 1;
-				i += 1;
-			}
-			while (i - pad(idim) - adims(idim) < pad(idim)) {
-				out.data(bstart) = 0;
-				bstart += 1;
-				i += 1;
-			}   
-		}
-	}
 	
   override def * (a:FND):FND = {
     convolve(a);
