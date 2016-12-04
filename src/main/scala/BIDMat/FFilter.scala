@@ -336,59 +336,130 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 			}
 		}
 	};
-
-
+	
+	
 	def correlate(a:FND, omat:ND, doclear:Boolean):FND = {
-		val outdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad);
+		val bdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad);
     val hmm = Filter.hashIMat(stride, Filter.hashIMat(pad));
-		val out = FND.newOrCheckFND(outdims, omat, a.GUID, GUID, hmm, "corrout".##);
-		val inpadmat = if (pad.data.exists(_ != 0)) {
-      val m = FND.newOrCheckFND(a.dims + pad * 2, null, a.GUID, GUID, hmm, "corrinpad".##);
+		val b = FND.newOrCheckFND(bdims, omat, a.GUID, GUID, hmm, "convout".##);
+		val apadmat = if (pad.data.exists(_ != 0)) {
+      val m = FND.newOrCheckFND(a.dims + pad * 2, null, a.GUID, GUID, hmm, "convinpad".##);
+      m.clear;
       _copy_padded(a, m, pad, inDims.length-1, 0, 0, true);
       m
     } else a;
-		if (Mat.useMKL && inDims(0) == a.dims(0) && outDims(0) == outdims(0)) {             // Use gemm acceleration
-		  val outdiff = (inDims - 1)/stride - outDims + 1;
-		  outdiff(0) = 0;
-			val outpadmat = if (outdiff.data.exists(_ != 0)) {
-        FND.newOrCheckFND(out.dims + outdiff, null, a.GUID, GUID, hmm, "corroutpad".##);
+		if (Mat.useMKL && inDims(0) == a.dims(0) && outDims(0) == bdims(0)) {             // Use gemm acceleration
+		  val ddiff = (inDims - 1)/stride - outDims + 1;
+		  ddiff(0) = 0;
+			val bpadmat = if (ddiff.data.exists(_ != 0)) {
+        FND.newOrCheckFND(b.dims + ddiff, null, a.GUID, GUID, hmm, "convoutpad".##);
       } else {
-        out;
+        b;
       }
 			val firststride = 2 + find((stride(2->stride.length) > 1) \ 1)(0); 
 			if (doclear) { 
-				outpadmat.clear;
+				bpadmat.clear;
       } else {
-    	  _copy_padded(out, outpadmat, outdiff/2, inDims.length-1, 0, 0, true);
+    	  _copy_padded(b, bpadmat, ddiff/2, inDims.length-1, 0, 0, true);
       }
-			_fast_correlate(inpadmat, outpadmat, inDims.length-1, 0, 0, 0, firststride, Filter.forward);
-			_copy_padded(outpadmat, out, outdiff/2, inDims.length-1, 0, 0, false);
+			_fast_correlate(apadmat, bpadmat, inDims.length-1, 0, 0, 0, firststride, Filter.forward);
+			_copy_padded(bpadmat, b, ddiff/2, inDims.length-1, 0, 0, false);
 		} else {
 			if (doclear) { 
-        out.clear;
+        b.clear;
       } 
-			_correlate(inpadmat, out, inDims.length-1, 0, 0, 0, Filter.forward);
+			_correlate(apadmat, b, inDims.length-1, 0, 0, 0, Filter.forward);
 		}
 		Mat.nflops += computeFlops(a, stride, pad);
-		out;
+		b;
 	};
   
 	def correlate(a:FND):FND = correlate(a, null, true);
+  
+  def correlateT(b:FND, omat:ND, doclear:Boolean):FND = {
+    val adims = Filter.getInputDims(b.dims, inDims, outDims, stride, pad);
+    val hmm = Filter.hashIMat(stride, Filter.hashIMat(pad));
+    val a = FND.newOrCheckFND(adims, omat, b.GUID, GUID, hmm, "convTin".##);
+    val apadmat = if (pad.data.exists(_ != 0)) {
+      val m = FND.newOrCheckFND(a.dims + pad * 2, null, b.GUID, GUID, hmm, "convTinpad".##);
+      if (!doclear) _copy_padded(a, m, pad, inDims.length-1, 0, 0, true);
+      m
+    } else a;
+    if (doclear) apadmat.clear;
+    val ddiff = (inDims - 1)/stride - outDims + 1;
+    ddiff(0) = 0;
+    if (Mat.useMKL && inDims(0) == adims(0) && outDims(0) == b.dims(0)) {             // Use gemm acceleration
+      val bpadmat = if (ddiff.data.exists(_ != 0)) {
+    	  val m = FND.newOrCheckFND(b.dims + ddiff, null, b.GUID, GUID, hmm, "convToutpad".##);
+    	  m.clear;
+    	  _copy_padded(b, m, ddiff/2, inDims.length-1, 0, 0, true);
+    	  m;
+      } else {
+        b;
+      }
+      val firststride = 2 + find((stride(2->stride.length) > 1) \ 1)(0); 
+      _fast_correlate(apadmat, bpadmat, inDims.length-1, 0, 0, 0, firststride, Filter.backwardGradient);
+    } else {
+      _correlate(apadmat, b, inDims.length-1, 0, 0, 0, Filter.backwardGradient);
+    }
+    if (apadmat.GUID != a.GUID) {
+    	_copy_padded(apadmat, a, pad, inDims.length-1, 0, 0, false);
+    }
+    Mat.nflops += computeFlops(a, stride, pad);
+    a;
+  };
+  
+  def correlateT(a:FND):FND = correlateT(a, null, true);
+  
+  def correlateM(a:FND, b:FND, doclear:Boolean):FND = {
+		val outdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad);
+		if ((b.dims - outdims).data.exists(_ != 0)) {
+		  throw new RuntimeException("Output dimensions mismatch in correlateM")
+		}
+    val hmm = Filter.hashIMat(stride, Filter.hashIMat(pad));
+		val apadmat = if (pad.data.exists(_ != 0)) {
+      val m = FND.newOrCheckFND(a.dims + pad * 2, null, a.GUID, b.GUID, hmm, "convMinpad".##);
+      m.clear;
+      _copy_padded(a, m, pad, inDims.length-1, 0, 0, true);
+      m
+    } else a;
+		if (doclear) clear;
+		if (Mat.useMKL && inDims(0) == a.dims(0) && outDims(0) == outdims(0)) {             // Use gemm acceleration
+		  val outdiff = (inDims - 1)/stride - outDims + 1;
+		  outdiff(0) = 0;
+			val bpadmat = if (outdiff.data.exists(_ != 0)) {
+        val m = FND.newOrCheckFND(b.dims + outdiff, null, a.GUID, b.GUID, hmm, "convMoutpad".##);
+        m.clear;
+        _copy_padded(b, m, outdiff/2, inDims.length-1, 0, 0, true);
+        m;
+      } else {
+        b;
+      }
+			val firststride = 2 + find((stride(2->stride.length) > 1) \ 1)(0); 
+			_fast_correlate(apadmat, bpadmat, inDims.length-1, 0, 0, 0, firststride, Filter.backwardModel);
+		} else {
+			_correlate(apadmat, b, inDims.length-1, 0, 0, 0, Filter.backwardModel);
+		}
+		Mat.nflops += computeFlops(a, stride, pad);
+		this;
+	};
 	
-	def _fast_correlate(in:FND, out:FND, idim:Int, astart:Int, bstart:Int, fstart:Int, firststride:Int, convType:Int) {
-		val idims = in.dims;
-		val odims = out.dims;
+  def correlateM(a:FND, b:FND):FND = correlateM(a, b, true);
+	
+	def _fast_correlate(a:FND, b:FND, idim:Int, astart:Int, bstart:Int, fstart:Int, firststride:Int, convType:Int) {
+		val adims = a.dims;
+		val bdims = b.dims;
 		val iwidth = inDims(idim);
 		val owidth = outDims(idim);
 		val kstride = stride(idim);
 		if (idim > 0) {
-			var instep = 1;
-			var outstep = 1;
+			var astep = 1;
+			var bstep = 1;
 			var fstep = 1;
 			var ix = 0;
 			while (ix < idim) {
-				instep *= idims(ix);
-				outstep *= odims(ix);
+				astep *= adims(ix);
+				bstep *= bdims(ix);
 				fstep *= inDims(ix);
 				fstep *= outDims(ix);
 				ix += 1; 
@@ -398,22 +469,22 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 			while (j < owidth) {
 				var i = 0;
 				while (i < aiwidth) {
-				  if (idim > firststride) {
-				  	var k = pad(0);
+				  if (idim >= firststride) {
+				  	var k = pad(idim);
 				  	var ks = 0;
-				  	while (ks + iwidth - 1 < idims(idim)) {
-				  		_fast_correlate(in, out, idim-1, 
-				  				astart + (ks + i) * instep, 
-				  				bstart + (k + j) * outstep,
+				  	while (ks + iwidth - 1 < adims(idim)) {
+				  		_fast_correlate(a, b, idim-1, 
+				  				astart + (ks + i) * astep, 
+				  				bstart + (k + j) * bstep,
 				  				fstart + (i + j * iwidth) * fstep,
 				  				firststride, convType);
 				  		k += 1;
 				  		ks += kstride;
 				  	} 
 				  } else {
-				  	_fast_correlate(in, out, idim-1, 
-				  			astart + i * instep, 
-				  			bstart + j * outstep,
+				  	_fast_correlate(a, b, idim-1, 
+				  			astart + i * astep, 
+				  			bstart + (pad(idim) + j) * bstep,
 				  			fstart + (i + j * iwidth) * fstep,
 				  			firststride, convType);
 				  }
@@ -422,65 +493,65 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 				j += 1;
 			}
 		} else {
-		  var outstep = 1;
+		  var mstep = 1;
 			var ix = 1;
 			while (ix < firststride) {
-				outstep *= odims(ix);
+				mstep *= bdims(ix);
 				ix += 1; 
 			}
       val bstart0 = bstart + pad(0);
-      val outstep0 = outstep - (owidth + bstart0 - 1)/owidth;
+      val mstep0 = math.min(mstep, math.min((a.length - astart)/(iwidth*stride(1)), (b.length - bstart0)/owidth));
 			convType match {
 			  case Filter.forward => {
-			  	sgemmx(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans, owidth, outstep0/inDims(1), iwidth*inDims(1), 1f,
+			  	sgemmx(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans, owidth, mstep0/inDims(1), iwidth*inDims(1), 1f,
 			  			data, fstart, iwidth, 
-			  			in.data, astart, iwidth*inDims(1), 1f,
-			  			out.data, bstart0, owidth);	
+			  			a.data, astart, iwidth*inDims(1), 1f,
+			  			b.data, bstart0, owidth);	
 			  }
 			  case Filter.backwardGradient => {
-			  	sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.NoTrans, iwidth*inDims(1), outstep0/inDims(1), owidth, 1f,
+			  	sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.NoTrans, iwidth*inDims(1), mstep0/inDims(1), owidth, 1f,
 			  			data, fstart, iwidth,
-			  			out.data, bstart0, owidth, 1f,
-			  			in.data, astart, iwidth*inDims(1));	
+			  			b.data, bstart0, owidth, 1f,
+			  			a.data, astart, iwidth*inDims(1));	
 			  }
 			  case Filter.backwardModel => {
-			  	sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.Trans, iwidth*inDims(1), owidth, outstep0/inDims(1), 1f,		  			 
-			  			in.data, astart, iwidth*inDims(1), 
-              out.data, bstart0, owidth, 1f,
+			  	sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.Trans, iwidth*inDims(1), owidth, mstep0/inDims(1), 1f,		  			 
+			  			a.data, astart, iwidth*inDims(1), 
+              b.data, bstart0, owidth, 1f,
 			  			data, fstart, iwidth);	
 			  }
 			}
 		}
 	}
 
-	def _correlate(in:FND, out:FND, idim:Int, astart:Int, bstart:Int, fstart:Int, convType:Int) {
-		val idims = in.dims;
-		val odims = out.dims;
+	def _correlate(a:FND, b:FND, idim:Int, astart:Int, bstart:Int, fstart:Int, convType:Int) {
+		val adims = a.dims;
+		val bdims = b.dims;
 		val iwidth = inDims(idim);
 		val owidth = outDims(idim);
 		val kstride = stride(idim);
 		if (idim > 0) {
-			var instep = 1;
-			var outstep = 1;
+			var astep = 1;
+			var bstep = 1;
 			var fstep = 1;
 			var ix = 0;
 			while (ix < idim) {
-				instep *= idims(ix);
-				outstep *= odims(ix);
+				astep *= adims(ix);
+				bstep *= bdims(ix);
 				fstep *= inDims(ix);
 				fstep *= outDims(ix);
 				ix += 1; 
 			}
 			var k = 0;
 			var ks = 0;
-			while (ks + iwidth - 1 < idims(idim)) {
+			while (ks + iwidth - 1 < adims(idim)) {
 				var j = 0;
 				while (j < owidth) {
 					var i = 0;
 					while (i < iwidth) {
-						_correlate(in, out, idim-1, 
-								astart + (ks + i) * instep, 
-								bstart + (k + j) * outstep,
+						_correlate(a, b, idim-1, 
+								astart + (ks + i) * astep, 
+								bstart + (k + j) * bstep,
 								fstart + (i + j * iwidth) * fstep,
 								convType);
 						i += 1;
@@ -493,7 +564,7 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 		} else {
 			var k = 0;
 			var ks = 0;
-			while (ks + iwidth - 1 < idims(0)) {           // Move forward over input+output tensors  
+			while (ks + iwidth - 1 < adims(0)) {           // Move forward over input+output tensors  
 			  convType match {
 			    case Filter.forward => {
 			    	var j = 0;
@@ -502,10 +573,10 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 			    		val jfwidth = j * iwidth;
 			    		var i = 0;
 			    		while (i < iwidth) {                       // Move over input tensor
-			    			ss += in.data(astart + ks + i) * data0(fstart + jfwidth + i);
+			    			ss += a.data(astart + ks + i) * data0(fstart + jfwidth + i);
 			    			i += 1;
 			    		}
-			    		out.data(bstart + k + j) += ss;
+			    		b.data(bstart + k + j) += ss;
 			    		j += 1;
 			    	}
 			    }
@@ -513,10 +584,10 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 			    	var j = 0;
 			    	while (j < owidth) { 		
 			    		val jfwidth = j * iwidth;
-			    		val odata = out.data(bstart + k + j);
+			    		val bdata = b.data(bstart + k + j);
 			    		var i = 0;
 			    		while (i < iwidth) {
-			    			in.data(astart + ks + i) += odata * data0(fstart + jfwidth + i);
+			    			a.data(astart + ks + i) += bdata * data0(fstart + jfwidth + i);
 			    			i += 1;
 			    		}
 			    		j += 1;
@@ -526,10 +597,10 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 			    	var j = 0;
 			    	while (j < owidth) {                         // Move over output tensor
 			    	  val jfwidth = j * iwidth;
-			    	  val odata = out.data(bstart + k + j);
+			    	  val bdata = b.data(bstart + k + j);
 			    		var i = 0;
 			    		while (i < iwidth) {
-			    			data0(fstart + jfwidth + i) += odata* in.data(astart + ks + i);
+			    			data0(fstart + jfwidth + i) += bdata * a.data(astart + ks + i);
 			    			i += 1;
 			    		}
 			    		j += 1;
