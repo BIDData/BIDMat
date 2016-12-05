@@ -439,7 +439,7 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 	  	  while (j < iwidth) {
 	  	  	val astart0 = astart + astep * (iin + j);
 	  	  	val bstart0 = bstart + celldim * iout + cellstep * j;
-	  	  	if (cellstep > 16) {
+	  	  	if (cellstep > FFilter.arraycopy) {
 	  	  		System.arraycopy(a.data, astart0, i2c.data, bstart0, cellstep);
 	  	  	} else {
 	  	  		var k = 0;
@@ -454,7 +454,7 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 	  		iin += stride(idim);
 	  	}	    
 	  } else {
-	    if (iwidth > 16) {
+	    if (iwidth > FFilter.arraycopy) {
 	      System.arraycopy(a.data, astart, i2c.data, bstart, iwidth);
 	    } else {
 	      var i = 0;
@@ -557,6 +557,7 @@ class FFiltPair(val omat:Filter, val a:FND) extends Pair {
 object FFilter {
   
   var im2colThreshold = 10;
+  var arraycopy = 16;
   
 	def FFilter1D(w:Int, nstride:Int, npad:Int) = {
 		val inDims = irow(w);
