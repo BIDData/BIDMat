@@ -556,7 +556,7 @@ class FFiltPair(val omat:Filter, val a:FND) extends Pair {
 
 object FFilter {
   
-  var im2colThreshold = 16;
+  var im2colThreshold = 10;
   
 	def FFilter1D(w:Int, nstride:Int, npad:Int) = {
 		val inDims = irow(w);
