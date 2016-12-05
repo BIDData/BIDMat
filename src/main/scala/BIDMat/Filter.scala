@@ -31,10 +31,6 @@ trait Filter {
     throw new RuntimeException("operator "+s+" not implemented for Filter and "+a.mytype+" and "+b.mytype)
   }
   
-/*  def * (a:ND):ND = {
-    notImplemented1ND("*", a);
-  }*/
-  
   def ^* (a:ND):ND = {
     notImplemented1ND("^*", a);
   }

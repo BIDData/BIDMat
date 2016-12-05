@@ -1,0 +1,63 @@
+:silent
+import BIDMat.FFilter._
+
+Mat.useMKL=false
+//Mat.useCache = true;
+BIDMat.FFilter.im2colThreshold = 10
+
+val din = 16;
+val fh = 3;
+val npad = 1;
+val h = 56;
+val w = 56;
+val dout = 64;
+val n = 16;
+val nreps = 10;
+
+val a = FND(irow(din,h,w,n))
+a(?) = rand(a.length,1)
+val b = FFilter2Ddn(fh,fh,din,dout,1,npad);
+b(?) = rand(b.length,1)
+val b1 = FFilter2Ddn(fh,fh,din,dout,1,npad);
+val b2 = FFilter2Ddn(fh,fh,din,dout,1,npad);
+
+val c = b.convolve(a)
+c(?) = rand(c.length,1)
+
+val c1 = b.convolve(a)
+
+val d1 = b.convolveT(c)
+
+b1.convolveM(a, c);
+
+Mat.useMKL=true
+
+
+val c2 = b.convolve(a)
+
+val d2 = b.convolveT(c)
+
+b2.convolveM(a, c);
+
+println("diffs %f %f %f" format (maxi(abs(c1-c2)(?)).v, maxi(abs(d1-d2)(?)).v, maxi(abs(b1-b2)(?)).v))
+
+for (i<- 0 until nreps) {c1 <-- b.convolve(a)}
+
+flip;
+for (i<- 0 until nreps) {c1 <-- b.convolve(a)}
+val g1=gflop
+
+flip;
+for (i<- 0 until nreps) {d1 <-- b.convolveT(c)}
+val g2=gflop
+
+flip;
+for (i<- 0 until nreps) {b1.convolveM(a,c)}
+val g3=gflop
+
+
+println("times = %f, %f, %f" format (g1._2, g2._2, g3._2))
+
+println("gflops = %f, %f, %f" format (g1._1, g2._1, g3._1))
+
+:silent
