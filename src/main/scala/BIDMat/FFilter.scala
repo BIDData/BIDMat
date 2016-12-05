@@ -12,7 +12,10 @@ import SciFunctions._
 // e.g. a 4D data tensor would be NHWC (Channel minor, N(minibatch number) major).
 // a 4D filter block would be HWIO
 // 
-//
+// There are three algorithms:
+// * Element-wise - pure Scala implementation
+// * im2col - copy input elements into a im2col matrix and do a single multiply.
+// * 1x1 convolutions. For a kxk filter, perform k^2 1x1 convolutions each with a single matrix multiply. 
 
 
 @SerialVersionUID(100L)
@@ -244,7 +247,7 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 	  val odims = out.dims;
 	  val width = if (topadded) idims(idim) else odims(idim);
 	  val ipad = padx(idim);
-	  if (idim > 0) {
+	  if (idim > 1) {
 	  	var instep = 1;
 	  	var outstep = 1;
 	  	var ix = 0;
@@ -262,6 +265,35 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
         }
 	  		i += 1;
 	  	}
+	  } else if (idim == 1){
+	    val instep = idims(0);
+	    val outstep = odims(0);
+	    val ipad0 = padx(0);
+	    val width0 = if (topadded) idims(0) else odims(0);
+	    var i = 0;
+	    if (topadded) {
+	    	while (i < width) {
+	    		val astart0 = astart + instep * i;
+	    		val bstart0 = bstart + outstep * (ipad + i);
+	    		var j = 0;
+	    		while (j < width0) {
+	    			out.data(bstart0 + ipad0 + j) = in.data(astart0 + j);
+	    			j += 1;
+	    		}
+	    		i += 1;
+        }
+	    } else {
+	      while (i < width) {
+	    		val astart0 = astart + instep * (ipad + i);
+	    		val bstart0 = bstart + outstep * i;
+	    		var j = 0;
+	    		while (j < width0) {
+	    			out.data(bstart0 + j) = in.data(astart0 + ipad0 + j);
+	    			j += 1;
+	    		}
+	    		i += 1;
+	      }
+	    }
 	  } else {
 	  	var i = 0;
       if (topadded) {
@@ -321,46 +353,46 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 			while (ks + iwidth - 1 < adims(0)) {              // Move forward over input+output tensors              
 				convType match {
 				  case Filter.forward => {
-				  	var j = 0;
-				  	while (j < owidth) {                        // Move over output tensor
-				  		var ss = 0f;
-				  		var i = 0;
-				  		var ifilt = 0;
-				  		while (i < iwidth) {                      // Move over input tensor
-				  			ss += data0(fstart + ifilt + j) * a.data(astart + ks + i);
-				  			i += 1;
-				  			ifilt += owidth;
+				  	var i = 0;
+				  	var ifilt = 0;
+				  	while (i < iwidth) {                      // Move over input tensor
+				  	  val adat = a.data(astart + ks + i);
+				  		var j = 0;
+				  		while (j < owidth) {                        // Move over output tensor
+				  			b.data(bstart + k + j) += data0(fstart + ifilt + j) * adat;
+				  			j += 1;
 				  		}
-				  		b.data(bstart + k + j) += ss;
-				  		j += 1;
+				  		i += 1;
+				  		ifilt += owidth;
 				  	}
 				  }
 				  case Filter.backwardGradient => {
-				  	var j = 0;
-				  	while (j < owidth) {
-				  		val bdata = b.data(bstart + k + j);
-				  		var i = 0;
-				  		var ifilt = 0;
-				  		while (i < iwidth) {
-				  			a.data(astart + ks + i) += bdata * data0(fstart + j + ifilt);
-				  			i += 1;
-				  			ifilt += owidth;
+				  	var i = 0;
+				  	var ifilt = 0;
+				  	while (i < iwidth) {
+				  	  var ss = 0f;
+				  		var j = 0;
+				  		while (j < owidth) {
+				  			ss += b.data(bstart + k + j) * data0(fstart + j + ifilt);
+				  			j += 1;
 				  		}
-				  		j += 1;
+				  		a.data(astart + ks + i) += ss;
+				  		i += 1;
+				  		ifilt += owidth;
 				  	}
 				  }
 				  case Filter.backwardModel => {
-				  	var j = 0;
-				  	while (j < owidth) {
-				  	  val bdata = b.data(bstart + k + j);
-				  		var i = 0;
-				  		var ifilt = 0;
-				  		while (i < iwidth) {
-				  		  data0(fstart + j + ifilt) += bdata * a.data(astart + ks + i);
-				  			i += 1;
-				  			ifilt += owidth;
+				  	var i = 0;
+				  	var ifilt = 0;
+				  	while (i < iwidth) {
+				  	  val adat = a.data(astart + ks + i);
+				  		var j = 0;
+				  		while (j < owidth) {
+				  			data0(fstart + j + ifilt) += b.data(bstart + k + j) * adat;
+				  			j += 1;
 				  		}
-				  		j += 1;
+				  		i += 1;
+				  		ifilt += owidth;
 				  	}
 				  }
 				}
@@ -407,7 +439,6 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 	  	  while (j < iwidth) {
 	  	  	val astart0 = astart + astep * (iin + j);
 	  	  	val bstart0 = bstart + celldim * iout + cellstep * j;
-//	  	  	println("testing %d %d %d %d %d, %d %d %d" format (j, astart, bstart, astart0, bstart0, celldim, astep, cellstep))
 	  	  	if (cellstep > 16) {
 	  	  		System.arraycopy(a.data, astart0, i2c.data, bstart0, cellstep);
 	  	  	} else {
