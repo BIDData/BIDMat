@@ -26,11 +26,14 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 	override val outDims = outDims0;
 	override val stride = if (stride0.asInstanceOf[AnyRef] != null) stride0 else iones(1, inDims.length);
 	override val pad = if (pad0.asInstanceOf[AnyRef] != null) pad0 else izeros(1,inDims.length);
+  var xx:FND = null;
+  var timer = 0f;
 
 	def convolve(a:FND, omat:ND, doclear:Boolean):FND = {
 		val bdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad);
     val hmm = Filter.hashIMat(stride, Filter.hashIMat(pad));
 		val b = FND.newOrCheckFND(bdims, omat, a.GUID, GUID, hmm, "convout".##);
+    xx = b;
 		val apadmat = if (pad.data.exists(_ != 0)) {
       val m = FND.newOrCheckFND(a.dims + pad * 2, null, a.GUID, GUID, hmm, "convinpad".##);
       m.clear;
@@ -38,29 +41,32 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
       m
     } else a;
 		if (Mat.useMKL && inDims(0) == a.dims(0) && outDims(0) == bdims(0)) {             // Use gemm acceleration
-		  if (inDims(0) < FFilter.im2colThreshold) {
+			if (inDims(0) < FFilter.im2colThreshold) {                                      // shallow input matrix, do kx1 convolutions
+				if (doclear) b.clear; 
+				_fast_convolve2(apadmat, b, inDims.length-1, 0, 0, 0, Filter.forward);       
+      } else if (stride.data.exists(_ > 1)) {                                         // input is deep but strided, use im2col
 		    val cellsize = SciFunctions.prod(inDims).v;
 		    val outlength = SciFunctions.prod(bdims(1 -> bdims.length)).v;
 		  	val i2cmat = FMat.newOrCheckFMat(cellsize, outlength, null, a.GUID, GUID, hmm, "convIm2col".##);
 		  	_im2col(apadmat, b, i2cmat, inDims.length-1, cellsize, 0, 0);
 		  	if (doclear) b.clear;
+//        println("convolve %d x %d by %d x %d " format (bdims(0), cellsize, cellsize, outlength));
 		  	sgemm(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.NoTrans, bdims(0), outlength, cellsize, 1f,
 		  	    data, bdims(0), i2cmat.data, cellsize, 1f, b.data, bdims(0));
-		  } else {
+		  } else {                                                                         // do 1x1 convolutions
 		  	val ddiff = (inDims - 1)/stride - outDims + 1;
 		  	ddiff(0) = 0;
 		  	val bpadmat = if (ddiff.data.exists(_ != 0)) {
 		  		FND.newOrCheckFND(b.dims + ddiff, null, a.GUID, GUID, hmm, "convoutpad".##);
 		  	} else {
 		  		b;
-		  	}
-		  	val firststride = 2 + find((stride(2->stride.length) > 1) \ 1)(0); 
+		  	} 
 		  	if (doclear) { 
 		  		bpadmat.clear;
 		  	} else {
 		  		_copy_padded(b, bpadmat, ddiff/2, inDims.length-1, 0, 0, true);
 		  	}
-		  	_fast_convolve(apadmat, bpadmat, inDims.length-1, 0, 0, 0, firststride, Filter.forward);
+		  	_fast_convolve(apadmat, bpadmat, inDims.length-1, 0, 0, 0, Filter.forward);
 		  	_copy_padded(bpadmat, b, ddiff/2, inDims.length-1, 0, 0, false);
 		  }
 		} else {
@@ -87,14 +93,16 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
     val ddiff = (inDims - 1)/stride - outDims + 1;
     ddiff(0) = 0;
     if (Mat.useMKL && inDims(0) == adims(0) && outDims(0) == b.dims(0)) {             // Use gemm acceleration
-    	if (inDims(0) < FFilter.im2colThreshold) {
+    	if (inDims(0) < FFilter.im2colThreshold) {                                      // shallow input matrix, do kx1 convolutions 
+        _fast_convolve2(apadmat, b, inDims.length-1, 0, 0, 0, Filter.backwardGradient); 
+      } else if (stride.data.exists(_ > 1)) {                                         // if strided use im2col
     		val cellsize = SciFunctions.prod(inDims).v;
     		val outlength = SciFunctions.prod(bdims(1 -> bdims.length)).v;
     		val i2cmat = FMat.newOrCheckFMat(cellsize, outlength, null, a.GUID, GUID, hmm, "convTIm2col".##);
     		sgemm(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans, cellsize, outlength, bdims(0), 1f,
     				data, bdims(0), b.data, bdims(0), 0f, i2cmat.data, cellsize);
     		_col2im(apadmat, b, i2cmat, inDims.length-1, cellsize, 0, 0);
-    	} else {
+    	} else {                                                                        // use 1x1 convolutions
     		val bpadmat = if (ddiff.data.exists(_ != 0)) {
     			val m = FND.newOrCheckFND(b.dims + ddiff, null, b.GUID, GUID, hmm, "convToutpad".##);
     			m.clear;
@@ -103,8 +111,7 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
     		} else {
     			b;
     		}
-    		val firststride = 2 + find((stride(2->stride.length) > 1) \ 1)(0); 
-    		_fast_convolve(apadmat, bpadmat, inDims.length-1, 0, 0, 0, firststride, Filter.backwardGradient);
+    		_fast_convolve(apadmat, bpadmat, inDims.length-1, 0, 0, 0, Filter.backwardGradient);
     	} 
     } else {
     	_convolve(apadmat, b, inDims.length-1, 0, 0, 0, Filter.backwardGradient);
@@ -133,7 +140,9 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
     } else a;
 		if (doclear) clear;
 		if (Mat.useMKL && inDims(0) == a.dims(0) && outDims(0) == outdims(0)) {             // Use gemm acceleration
-			if (inDims(0) < FFilter.im2colThreshold) {
+			if (inDims(0) < FFilter.im2colThreshold) {                                      // shallow input matrix, do 0-1 dim gemm 
+        _fast_convolve2(apadmat, b, inDims.length-1, 0, 0, 0, Filter.backwardModel); 
+      } else if (stride.data.exists(_ > 1) || inDims(0) < FFilter.im2colThreshold) {
 				val cellsize = SciFunctions.prod(inDims).v;
 				val outlength = SciFunctions.prod(bdims(1 -> bdims.length)).v;
 				val i2cmat = FMat.newOrCheckFMat(cellsize, outlength, null, a.GUID, GUID, hmm, "convMIm2col".##);
@@ -151,8 +160,7 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 				} else {
 					b;
 				}
-				val firststride = 2 + find((stride(2->stride.length) > 1) \ 1)(0); 
-				_fast_convolve(apadmat, bpadmat, inDims.length-1, 0, 0, 0, firststride, Filter.backwardModel);
+				_fast_convolve(apadmat, bpadmat, inDims.length-1, 0, 0, 0, Filter.backwardModel);
 			}
 		} else {
 			_convolve(apadmat, b, inDims.length-1, 0, 0, 0, Filter.backwardModel);
@@ -163,7 +171,7 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 	
   def convolveM(a:FND, b:FND):FND = convolveM(a, b, true);
 
-	def _fast_convolve(a:FND, b:FND, idim:Int, astart:Int, bstart:Int, fstart:Int, firststride:Int, convType:Int) {
+	def _fast_convolve(a:FND, b:FND, idim:Int, astart:Int, bstart:Int, fstart:Int, convType:Int) {
 		val adims = a.dims;
 		val bdims = b.dims;
 		val iwidth = inDims(idim);
@@ -185,25 +193,11 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 			while (j < owidth) {
 				var i = 0;
 				while (i < iwidth) {
-				  if (idim >= firststride) {
-				  	var k = pad(idim);
-				  	var ks = 0;
-				  	while (ks + iwidth - 1 < adims(idim)) {
-				  		_fast_convolve(a, b, idim-1, 
-				  				astart + (ks + i) * astep, 
-				  				bstart + (k + j) * bstep,
-				  				fstart + (j + i * owidth) * fstep,
-				  				firststride, convType);
-				  		k += 1;
-				  		ks += kstride;
-				  	} 
-				  } else {
-				  	_fast_convolve(a, b, idim-1, 
-				  			astart + i * astep, 
-				  			bstart + (pad(idim) + j) * bstep,
-				  			fstart + (j + i * owidth) * fstep,
-				  			firststride, convType);
-				  }
+					_fast_convolve(a, b, idim-1, 
+							astart + i * astep, 
+							bstart + (pad(idim) + j) * bstep,
+							fstart + (j + i * owidth) * fstep,
+							convType);			
 					i += 1;
 				}
 				j += 1;
@@ -211,7 +205,7 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 		} else {
 		  var mstep = 1;
 			var ix = 1;
-			while (ix < firststride) {
+			while (ix < bdims.length) {
 				mstep *= bdims(ix);
 				ix += 1; 
 			}
@@ -239,6 +233,99 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 			}
 		}
 	}
+  //
+  // Convolve into unpadded b
+  //
+  
+  def _fast_convolve2(a:FND, b:FND, idim:Int, astart:Int, bstart:Int, fstart:Int, convType:Int) {
+//    println("rec %d %d %d %d" format (idim, astart, bstart, fstart))
+    val adims = a.dims;
+    val bdims = b.dims;
+    val iwidth = inDims(idim);
+    val owidth = outDims(idim);
+    val kstride = stride(idim);
+    if (idim > 1) {
+      var astep = 1;
+      var bstep = 1;
+      var fstep = 1;
+      var ix = 0;
+      while (ix < idim) {
+        astep *= adims(ix);
+        bstep *= bdims(ix);
+        fstep *= inDims(ix);
+        fstep *= outDims(ix);
+        ix += 1; 
+      }
+      var j = 0;
+      while (j < owidth) {
+        var i = 0;
+        while (i < iwidth) {
+        	var k = 0;
+        	var ks = 0;
+        	while (k < bdims(idim)) {
+        		_fast_convolve2(a, b, idim-1, 
+        				astart + (i + ks) * astep, 
+        				bstart + (j + k) * bstep,
+        				fstart + (j + i * owidth) * fstep,
+        				convType);  
+        		k += 1;
+        		ks += kstride;
+        	}
+        	i += 1;
+        }
+        j += 1;
+      }
+    } else {
+    	val astep = adims(0);
+      val bstep = bdims(0);
+      val fstep = inDims(0)*outDims(0);
+      val iwidth0 = inDims(0);
+      val owidth0 = outDims(0);
+      val nstrides = 1 + (iwidth - 1)/kstride;
+      val iwidthUp = nstrides * kstride;
+//      println("widths %d %d" format (nstrides, iwidthUp))
+      var j = 0;
+      while (j < owidth) {
+        var k = 0;
+        var ks = 0;
+        while (ks < iwidth) {
+        	val astart1 = astart + ks * astep;
+        	val bstart1 = bstart + (j + k) * bstep;
+          val fstart1 = fstart + j * fstep;
+          val mstep0 = math.min((adims(1)-ks)/iwidthUp, 1 + (bdims(1)-k-1)/nstrides);
+//          val mstep0 = (adims(1)-ks)/widthUp;
+        	convType match {        
+        	case Filter.forward => {
+//            println("%d %d %d, %d %d, %d %d, %d %d" format (owidth0, mstep0, iwidth0*iwidth, 
+//            		fstart1, owidth0*iwidth, astart1, iwidth0*iwidthUp, bstart1, owidth0*nstrides));
+            val t0 = toc
+        		sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.NoTrans, owidth0, mstep0, iwidth0*iwidth, 1f,
+        				data, fstart1, owidth0, 
+        				a.data, astart1, iwidth0*iwidthUp, 1f,
+        				b.data, bstart1, owidth0*nstrides); 
+            val t1 = toc
+            timer += t1 - t0;
+        	}
+        	case Filter.backwardGradient => {
+        		sgemmx(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans, iwidth0*iwidth, mstep0, owidth0, 1f,
+        				data, fstart1, owidth0, 
+        				b.data, bstart1, owidth0*nstrides, 1f,
+        				a.data, astart1, iwidth0*iwidthUp);  
+        	}
+        	case Filter.backwardModel => {
+        		sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.Trans, owidth0, iwidth0*iwidth, mstep0, 1f, 
+        				b.data, bstart1, owidth0*nstrides,  
+        				a.data, astart1, iwidth0*iwidthUp, 1f,
+        				data, fstart1, owidth0);  
+        	}
+        	}
+        	k += 1;
+        	ks += kstride;
+        }
+        j += 1;
+      }
+    }
+  }
 	
 	// copy into padded array, or from padded array
 
@@ -330,7 +417,7 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 			}
 			var k = 0;
 			var ks = 0;
-			while (ks + iwidth - 1 < adims(idim)) {
+			while (k < bdims(idim)) {
 				var j = 0;
 				while (j < owidth) {
 					var i = 0;
@@ -350,7 +437,7 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 		} else {
 			var k = 0;
 			var ks = 0;
-			while (ks + iwidth - 1 < adims(0)) {              // Move forward over input+output tensors              
+			while (k + owidth - 1 < bdims(0)) {              // Move forward over input+output tensors              
 				convType match {
 				  case Filter.forward => {
 				  	var i = 0;
@@ -407,7 +494,7 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 	  val bdims = b.dims;
 		val iwidth = inDims(idim);
 		val owidth = outDims(idim);
-	  if (idim > 1) {
+	  if (idim > 2) {
 	  	var astep = 1;
 	  	var bstep = 1;
 	  	var cellstep = 1;
@@ -429,30 +516,85 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 	  	  iout += 1;
 	  		iin += stride(idim);
 	  	}
-	  } else if (idim == 1) {
-	  	var	astep = adims(0);
-	  	var	cellstep = inDims(0);
-	  	var iin = 0;
-	  	var iout = 0;
-	  	while (iout < bdims(idim)) {
-	  	  var j = 0;
-	  	  while (j < iwidth) {
-	  	  	val astart0 = astart + astep * (iin + j);
-	  	  	val bstart0 = bstart + celldim * iout + cellstep * j;
-	  	  	if (cellstep > FFilter.arraycopy) {
-	  	  		System.arraycopy(a.data, astart0, i2c.data, bstart0, cellstep);
-	  	  	} else {
-	  	  		var k = 0;
-	  	  		while (k < cellstep) {
-	  	  			i2c.data(bstart0 + k) = a.data(astart0 + k);
-	  	  			k += 1;
-	  	  		}
-	  	    }
-	  	  	j += 1;
-	  	  }
-	  	  iout += 1;
-	  		iin += stride(idim);
-	  	}	    
+	  } else if (idim == 2) {
+      val astep1 = adims(0)*adims(1);
+      val bstep1 = bdims(1);
+      val cellstep1 = inDims(0)*inDims(1);
+      var iin1 = 0;
+      var iout1 = 0;
+      while (iout1 < bdims(2)) {     
+    	  var astart1 = astart + astep1 * iin1;
+    	  var bstart1 = bstart + celldim * bstep1 * iout1;
+        var j1 = 0;
+        while (j1 < iwidth) {     
+        	var	astep0 = adims(0);
+        	var	cellstep0 = inDims(0);
+        	var iin0 = 0;
+        	var iout0 = 0;
+        	while (iout0 < bdims(1)) {
+        		var j0 = 0;
+        		if (cellstep0 > FFilter.arraycopy) {
+        			while (j0 < inDims(1)) {
+        				val astart0 = astart1 + astep0 * (iin0 + j0);
+        				val bstart0 = bstart1 + celldim * iout0 + cellstep0 * j0;
+        				System.arraycopy(a.data, astart0, i2c.data, bstart0, cellstep0);
+        				j0 += 1;
+        			} 
+        		} else {
+        			var astart0 = astart1 + astep0 * iin0;
+        			var bstart0 = bstart1 + celldim * iout0;
+        			while (j0 < inDims(1)) {
+        				var k = 0;
+        				while (k < cellstep0) {
+        					i2c.data(bstart0 + k) = a.data(astart0 + k);
+        					k += 1;
+        				}
+        				astart0 += astep0;
+        				bstart0 += cellstep0;
+        				j0 += 1;
+        			}
+        		}
+        		iout0 += 1;
+        		iin0 += stride(1);
+          }
+        	astart1 += astep1;
+        	bstart1 += cellstep1;
+          j1 += 1;
+        }
+        iout1 += 1;
+        iin1 += stride(2);
+      }
+    } else if (idim == 1) {
+      var astep = adims(0);
+      var cellstep = inDims(0);
+      var iin = 0;
+      var iout = 0;
+      while (iout < bdims(idim)) {
+        var j = 0;
+        if (cellstep > FFilter.arraycopy) {
+          while (j < iwidth) {
+            val astart0 = astart + astep * (iin + j);
+            val bstart0 = bstart + celldim * iout + cellstep * j;
+            System.arraycopy(a.data, astart0, i2c.data, bstart0, cellstep);
+            j += 1;
+          } 
+        } else {
+          var astart0 = astart + astep * iin;
+          var bstart0 = bstart + celldim * iout;
+          while (j < iwidth) {
+            var k = 0;
+            while (k < cellstep) {
+              i2c.data(bstart0 + k) = a.data(astart0 + k);
+              k += 1;
+            }
+            astart0 += astep;
+            bstart0 += cellstep;
+            j += 1;
+          }
+        }
+        iout += 1;
+        iin += stride(idim);
+      }    
 	  } else {
 	    if (iwidth > FFilter.arraycopy) {
 	      System.arraycopy(a.data, astart, i2c.data, bstart, iwidth);

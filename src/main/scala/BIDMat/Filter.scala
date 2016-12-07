@@ -44,7 +44,7 @@ object Filter {
     if (finDims.length != ilen) throw new RuntimeException("getOutputDims Image and Filter number of dimensions mismatch %d %d" format (ilen, finDims.length))
     if (stride.length != ilen) throw new RuntimeException("getOutputDims Image and Filter Stride number of dimensions mismatch %d %d" format (ilen, stride.length))
     if (pad.length != ilen) throw new RuntimeException("getOutputDims Image and Filter Pad number of dimensions mismatch %d %d" format (ilen, pad.length))
-    val odims = (imageDims + pad * 2 - finDims + 1) / stride + foutDims - 1;
+    val odims = (imageDims + pad * 2 - finDims) / stride + foutDims;
     (if (compress) ND.trimDims(odims) else odims);   
   }
   
