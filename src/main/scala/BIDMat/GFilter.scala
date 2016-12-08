@@ -53,9 +53,12 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, data0:Pointe
       
 //      println("workspace size = %d" format workspaceSizeInBytes)
 
-      val err = cudnnConvolutionForward(GFilter.getHandle, GFilter.myone, adesc, a.data, fdesc, data, convdesc, 
+      var err = cudnnConvolutionForward(GFilter.getHandle, GFilter.myone, adesc, a.data, fdesc, data, convdesc, 
           fwdAlgo, workspace.data, workspaceSizeInBytes, if (doclear) GFilter.myzero else GFilter.myone, bdesc, b.data);
-      if (err > 0) throw new RuntimeException("Error in CUDNN forward convolution %d" format err)
+      
+      cudaDeviceSynchronize;
+      if (err == 0) err = cudaGetLastError();
+      if (err > 0) throw new RuntimeException("Error in CUDNN forward convolution %d" format cudaGetErrorString(err));
       
       cudnnDestroyConvolutionDescriptor(convdesc);
       cudnnDestroyFilterDescriptor(fdesc);
@@ -105,7 +108,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, data0:Pointe
       
       cudaDeviceSynchronize;
       if (err == 0) err = cudaGetLastError();
-      if (err > 0) throw new RuntimeException("Error in CUDNN backward data convolution %d" format cudaGetErrorString(err))
+      if (err > 0) throw new RuntimeException("Error in CUDNN backward data convolution %d" format cudaGetErrorString(err));
       
       cudnnDestroyConvolutionDescriptor(convdesc);
       cudnnDestroyFilterDescriptor(fdesc);
