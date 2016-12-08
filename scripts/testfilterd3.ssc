@@ -23,10 +23,13 @@ a(?) = rand(a.length,1);
 val aa = GND(a);
 
 val b = FFilter2Ddn(fh,fh,din,dout,nstride,npad);
+val b1 = FFilter2Ddn(fh,fh,din,dout,nstride,npad);
+val b2 = FFilter2Ddn(fh,fh,din,dout,nstride,npad);
 b(?) = rand(b.length,1);
 val bt = FFilter2Ddn(fh,fh,din,dout,nstride,npad);
 bt(?) = (b.reshape(dout, din, fh, fh).transpose(irow(1,2,3,0)))(?)
 val bb = GFilter(bt);
+val bb2 = GFilter(b2);
 
 bb.tensorFormat=jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NHWC
 //bb.tensorFormat=jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW                           // Needed for GEMM
@@ -51,7 +54,35 @@ flip;
 for (i <- 0 until nreps) {bb.convolve(aa, cc, true)};
 val gf2=gflop;
 
+val d1 = b.convolveT(c1);
+val cc1 = GND(c1);
+
+val dd2 = bb.convolveT(cc1);
+val d2 = FND(dd2);
+
+flip;
+for (i <- 0 until nreps) {b.convolveT(c1, d1, true)};
+val gf3=gflop;
+
+flip;
+for (i <- 0 until nreps) {bb.convolveT(cc1, dd2, true)};
+val gf4=gflop;
+
+b1.convolveM(a,c1);
+
+cc <-- c1;
+bb2.convolveM(aa,cc);
+b2 <-- bb2;
+
+flip;
+for (i <- 0 until nreps) {b1.convolveM(a, c1)};
+val gf5=gflop;
+
+flip;
+for (i <- 0 until nreps) {bb2.convolveM(aa, cc)};
+val gf6=gflop;
+
 
 :silent
-(gf1, gf2)
-maxi(abs(c1-c2)(?))
+(gf1, gf2, gf3, gf4, gf5, gf6)
+(maxi(abs(c1-c2)(?)), maxi(abs(d1-d2)(?)), maxi(abs(b1-b2)(?)))
