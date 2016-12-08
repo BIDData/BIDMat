@@ -1,0 +1,58 @@
+:silent
+import BIDMat.FFilter._
+import BIDMat.GFilter
+import BIDMat.GFilter._
+
+Mat.useCache = true;
+BIDMat.FFilter.im2colThreshold = 0
+
+val din = 128;
+val fh = 3;
+val npad = 1;
+val nstride = 1;
+val h = 28;
+val w = h;
+val dout = 128;
+val n = 16;
+val nreps = 100;
+
+Mat.useMKL = true;
+
+val a = FND(irow(din,h,w,n));
+a(?) = rand(a.length,1);
+val aa = GND(a);
+
+val b = FFilter2Ddn(fh,fh,din,dout,nstride,npad);
+b(?) = rand(b.length,1);
+val bt = FFilter2Ddn(fh,fh,din,dout,nstride,npad);
+bt(?) = (b.reshape(dout, din, fh, fh).transpose(irow(1,2,3,0)))(?)
+val bb = GFilter(bt);
+
+bb.tensorFormat=jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NHWC
+//bb.tensorFormat=jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW                           // Needed for GEMM
+bb.fwdAlgo = jcuda.jcudnn.cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM
+//bb.fwdAlgo = jcuda.jcudnn.cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_GEMM          // Generally fastest
+//bb.fwdAlgo = jcuda.jcudnn.cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_WINOGRAD
+bb.convType = jcuda.jcudnn.cudnnConvolutionMode.CUDNN_CROSS_CORRELATION
+//bb.convType = jcuda.jcudnn.cudnnConvolutionMode.CUDNN_CONVOLUTION
+
+val c1 = b.convolve(a)
+
+flip;
+for (i <- 0 until nreps) {b.convolve(a, c1, true)};
+val gf1=gflop;
+
+val cc = bb.convolve(aa)
+val c2 = FND(cc);
+
+var test:GND = null
+
+flip;
+for (i <- 0 until nreps) {test = bb.convolve(aa, cc, true)};
+val c3 = FND(cc);
+val gf2=gflop;
+
+
+:silent
+(gf1, gf2)
+maxi(abs(c1-c2)(?))

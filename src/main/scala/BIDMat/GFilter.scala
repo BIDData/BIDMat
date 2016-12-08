@@ -51,10 +51,10 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, data0:Pointe
       val workspaceSizeInBytes = _workspaceSizeInBytes(0);
       val workspace = GMat.newOrCheckGMat((workspaceSizeInBytes/4).toInt, 1, null, GUID, a.GUID, hmm, "ConvFwdWS".##);
       
-      println("workspace size = %d" format workspaceSizeInBytes)
+//      println("workspace size = %d" format workspaceSizeInBytes)
 
-      val err = cudnnConvolutionForward(GFilter.getHandle, GFilter.getOne.data, adesc, a.data, fdesc, data, convdesc, 
-          fwdAlgo, workspace.data, workspaceSizeInBytes, if (doclear) GFilter.getZero.data else GFilter.getOne.data, bdesc, b.data);
+      val err = cudnnConvolutionForward(GFilter.getHandle, GFilter.myone, adesc, a.data, fdesc, data, convdesc, 
+          fwdAlgo, workspace.data, workspaceSizeInBytes, if (doclear) GFilter.myzero else GFilter.myone, bdesc, b.data);
       if (err > 0) throw new RuntimeException("Error in CUDNN forward convolution %d" format err)
       
       cudnnDestroyConvolutionDescriptor(convdesc);
@@ -62,8 +62,11 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, data0:Pointe
       cudnnDestroyTensorDescriptor(bdesc);
       cudnnDestroyTensorDescriptor(adesc);
     }
+    Mat.nflops += computeFlops(a, stride, pad);
     b
   }
+  
+  def convolve(a:GND):GND = convolve(a, null, true);
     
   def convolveT(b:GND, omat:ND, doclear:Boolean):GND = {
     val adims = Filter.getInputDims(b.dims, inDims, outDims, stride, pad);
@@ -95,17 +98,21 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, data0:Pointe
       val workspaceSizeInBytes = _workspaceSizeInBytes(0);
       val workspace = GMat.newOrCheckGMat((workspaceSizeInBytes/4).toInt, 1, null, GUID, a.GUID, hmm, "ConvBwdWS".##);
       
-      println("workspace size = %d" format workspaceSizeInBytes)
+//      println("workspace size = %d" format workspaceSizeInBytes)
 
-      val err = cudnnConvolutionBackwardData(GFilter.getHandle, GFilter.getOne.data, fdesc, data, bdesc, b.data, convdesc, 
-          bwdDataAlgo, workspace.data, workspaceSizeInBytes, if (doclear) GFilter.getZero.data else GFilter.getOne.data, adesc, a.data);
-      if (err > 0) throw new RuntimeException("Error in CUDNN backward data convolution %d" format err)
+      var err = cudnnConvolutionBackwardData(GFilter.getHandle, GFilter.myone, fdesc, data, bdesc, b.data, convdesc, 
+          bwdDataAlgo, workspace.data, workspaceSizeInBytes, if (doclear) GFilter.myzero else GFilter.myone, adesc, a.data);
+      
+      cudaDeviceSynchronize;
+      if (err == 0) err = cudaGetLastError();
+      if (err > 0) throw new RuntimeException("Error in CUDNN backward data convolution %d" format cudaGetErrorString(err))
       
       cudnnDestroyConvolutionDescriptor(convdesc);
       cudnnDestroyFilterDescriptor(fdesc);
       cudnnDestroyTensorDescriptor(bdesc);
       cudnnDestroyTensorDescriptor(adesc);
     }
+    Mat.nflops += computeFlops(a, stride, pad);
     a
 	}
   
@@ -115,9 +122,13 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, data0:Pointe
 object GFilter {
   var cudnnContexts:Array[cudnnHandle] = null
   var cudnnContextsInitialized = false
-  var myones:Array[GMat] = null
-  var myzeros:Array[GMat] = null
-  var zerosAndOnesInitialized = false
+  val _myone = new Array[Float](1);
+  val _myzero = new Array[Float](1);
+  _myone(0) = 1f;
+  _myzero(0) = 0f;
+  val myone = Pointer.to(_myone);
+  val myzero = Pointer.to(_myzero);
+  
   
   def apply(a:FFilter):GFilter = {
     val outnd = GND.newOrCheckGND(a.dims, null, a.GUID, "GFilter".##);
@@ -149,36 +160,6 @@ object GFilter {
 		if (!cudnnContextsInitialized) initHandles
 		cudnnContexts(SciFunctions.getGPU)
   }
-  
-  def initZerosAndOnes = {
-		import SciFunctions._
-		if (! zerosAndOnesInitialized) {
-			val thisGPU = getGPU;
-			val nGPUs = Mat.hasCUDA;
-			myzeros = new Array[GMat](nGPUs);
-			myones = new Array[GMat](nGPUs);
-			for (i <- 0 until nGPUs) {
-				setGPU(i);
-				myzeros(i) = GMat.zeros(1,1);
-				myones(i) = GMat.ones(1,1);
-			}
-			setGPU(thisGPU);
-			zerosAndOnesInitialized = true
-		}
-  }
-  
-  def getZero = {
-    if (! zerosAndOnesInitialized) initZerosAndOnes;
-      myzeros(SciFunctions.getGPU)
-  }
-  
-  def getOne = {
-    if (! zerosAndOnesInitialized) initZerosAndOnes;
-      myones(SciFunctions.getGPU)
-  }
-  
-    var im2colThreshold = 10;
-  var arraycopy = 16;
   
   def GFilter1D(w:Int, nstride:Int, npad:Int) = {
     val inDims = irow(w);
