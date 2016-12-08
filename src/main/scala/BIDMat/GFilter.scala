@@ -14,10 +14,10 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, data0:Pointe
 	override val outDims = outDims0;
 	override val stride = if (stride0.asInstanceOf[AnyRef] != null) stride0 else iones(1, inDims.length);
 	override val pad = if (pad0.asInstanceOf[AnyRef] != null) pad0 else izeros(1,inDims.length);
-  var tensorFormat = cudnnTensorFormat.CUDNN_TENSOR_NHWC;
-  var dataType = cudnnDataType.CUDNN_DATA_FLOAT;
+	var dataType = cudnnDataType.CUDNN_DATA_FLOAT;
+	var tensorFormat = cudnnTensorFormat.CUDNN_TENSOR_NCHW;
   var convType = cudnnConvolutionMode.CUDNN_CROSS_CORRELATION;
-  var fwdAlgo = cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_WINOGRAD;
+  var fwdAlgo = cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_GEMM;
   var bwdFilterAlgo = cudnnConvolutionBwdFilterAlgo.CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
   var bwdDataAlgo = cudnnConvolutionBwdDataAlgo.CUDNN_CONVOLUTION_BWD_DATA_ALGO_1;
   
