@@ -31,6 +31,7 @@ val bb = GFilter(bt);
 bb.tensorFormat=jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NHWC
 //bb.tensorFormat=jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW                           // Needed for GEMM
 bb.fwdAlgo = jcuda.jcudnn.cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM
+//bb.fwdAlgo = jcuda.jcudnn.cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_DIRECT
 //bb.fwdAlgo = jcuda.jcudnn.cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_GEMM          // Generally fastest
 //bb.fwdAlgo = jcuda.jcudnn.cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_WINOGRAD
 bb.convType = jcuda.jcudnn.cudnnConvolutionMode.CUDNN_CROSS_CORRELATION
@@ -43,13 +44,11 @@ for (i <- 0 until nreps) {b.convolve(a, c1, true)};
 val gf1=gflop;
 
 val cc = bb.convolve(aa)
+
 val c2 = FND(cc);
 
-var test:GND = null
-
 flip;
-for (i <- 0 until nreps) {test = bb.convolve(aa, cc, true)};
-val c3 = FND(cc);
+for (i <- 0 until nreps) {bb.convolve(aa, cc, true)};
 val gf2=gflop;
 
 
