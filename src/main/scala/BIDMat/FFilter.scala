@@ -12,10 +12,12 @@ import SciFunctions._
 // e.g. a 4D data tensor would be NHWC (Channel minor, N(minibatch number) major).
 // a 4D filter block would be HWIO
 // 
-// There are three algorithms:
+// There are four algorithms:
 // * Element-wise - pure Scala implementation
 // * im2col - copy input elements into a im2col matrix and do a single multiply.
-// * 1x1 convolutions. For a kxk filter, perform k^2 1x1 convolutions each with a single matrix multiply. 
+// * 1x1 convolutions. For a kxk filter, perform k^2 1x1 convolutions each with a single matrix multiply. Strides must all be 1.
+// * kx1 convolutions. For a kxk filter, perform multiple kx1 gemm convolutions over the W dimension only. Works directly on a
+//   padded input array and can handle strides > 1. 
 
 
 @SerialVersionUID(100L)

@@ -271,6 +271,12 @@
       <type>jar</type>
     </dependency>
     <dependency>
+      <groupId>${jcudaGroupId}</groupId>
+      <artifactId>jcudnn</artifactId>
+      <version>${jcudaVersion}</version>
+      <type>jar</type>
+    </dependency>
+    <dependency>
       <groupId>jhdf5</groupId>
       <artifactId>jhdf5</artifactId>
       <version>3.2.1</version>
