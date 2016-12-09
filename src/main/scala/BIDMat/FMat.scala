@@ -296,6 +296,14 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     }
   }
 
+  def asFND(dims:Int*) = {
+      FND(this, dims.toArray);
+  }
+
+  def asFND(dims:IMat) = {
+      FND(this, dims.data);
+  }
+
   override def zeros(nr:Int, nc:Int) = {
     FMat.zeros(nr, nc)
   }

@@ -812,6 +812,21 @@ object FND {
     System.arraycopy(f.data, 0, out.data, 0, f.length)
     out
   }
+
+  def apply(f:FMat, dims:Array[Int]):FND = {
+    if (dims.reduce(_*_) != f.length) throw new RuntimeException("FND apply bad dimensions")
+    val out:FND = apply(dims.toArray);
+    System.arraycopy(f.data, 0, out.data, 0, f.length)
+    out
+  }
+
+  def apply(f:FMat, dims:Int*):FND = {
+    apply(f, dims.toArray);
+  }
+
+  def apply(f:FMat, dims:IMat):FND = {
+    apply(f, dims.data);
+  }
   
   def apply(f:GND):FND = {
     f.toFND(null);
