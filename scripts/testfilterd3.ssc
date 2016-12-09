@@ -33,12 +33,18 @@ val bb2 = GFilter(b2);
 
 bb.tensorFormat=jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NHWC
 //bb.tensorFormat=jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW                           // Needed for GEMM
+
 bb.fwdAlgo = jcuda.jcudnn.cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM
 //bb.fwdAlgo = jcuda.jcudnn.cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_DIRECT
 //bb.fwdAlgo = jcuda.jcudnn.cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_GEMM          // Generally fastest
 //bb.fwdAlgo = jcuda.jcudnn.cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_WINOGRAD
+
 bb.convType = jcuda.jcudnn.cudnnConvolutionMode.CUDNN_CROSS_CORRELATION
 //bb.convType = jcuda.jcudnn.cudnnConvolutionMode.CUDNN_CONVOLUTION
+
+bb2.tensorFormat = bb.tensorFormat;
+bb2.fwdAlgo = bb.fwdAlgo;
+bb2.convType = bb.convType;
 
 val c1 = b.convolve(a)
 
@@ -74,6 +80,9 @@ cc <-- c1;
 bb2.convolveM(aa,cc);
 b2 <-- bb2;
 
+//bt(?) = (b2.reshape(din, fh, fh, dout).transpose(irow(3,0,1,2)))(?)
+bt(?) = (b1.reshape(dout, din, fh, fh).transpose(irow(1,2,3,0)))(?)
+
 flip;
 for (i <- 0 until nreps) {b1.convolveM(a, c1)};
 val gf5=gflop;
@@ -85,4 +94,5 @@ val gf6=gflop;
 
 :silent
 (gf1, gf2, gf3, gf4, gf5, gf6)
-(maxi(abs(c1-c2)(?)), maxi(abs(d1-d2)(?)), maxi(abs(b1-b2)(?)))
+(maxi(abs(c1-c2)(?)), maxi(abs(d1-d2)(?)), maxi(abs(bt-b2)(?)))
+println("\n    CPU       GPU\n%8.2f  %8.2f\n%8.2f  %8.2f\n%8.2f  %8.2f" format (gf1._1, gf2._1, gf3._1, gf4._1, gf5._1, gf6._1))
