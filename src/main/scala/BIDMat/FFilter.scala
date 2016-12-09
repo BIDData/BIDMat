@@ -172,6 +172,12 @@ FND((inDims0 *@ outDims0).data, data0) with Filter {
 	};
 	
   def convolveM(a:FND, b:FND):FND = convolveM(a, b, true);
+  
+  def copy:FFilter = {
+    val a = new FFilter(inDims.copy, outDims.copy, stride.copy, pad.copy, new Array[Float](length));
+    System.arraycopy(data, 0, a.data, 0, length)
+    a;
+  }
 
 	def _fast_convolve(a:FND, b:FND, idim:Int, astart:Int, bstart:Int, fstart:Int, convType:Int) {
 		val adims = a.dims;
@@ -702,6 +708,14 @@ object FFilter {
   
   var im2colThreshold = 10;
   var arraycopy = 16;
+  
+  def apply(dims:IMat, stride:IMat, pad:IMat):FFilter = {
+    new FFilter(dims, iones(1, dims.length), stride, pad, new Array[Float](dims.data.reduce(_*_)))
+  }
+  
+  def apply(indims:IMat, outdims:IMat, stride:IMat, pad:IMat):FFilter = {
+    new FFilter(indims, outdims, stride, pad, new Array[Float]((indims dotr outdims).v))
+  }
   
 	def FFilter1D(w:Int, nstride:Int, npad:Int) = {
 		val inDims = irow(w);
