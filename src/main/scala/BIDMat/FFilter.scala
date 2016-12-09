@@ -706,7 +706,7 @@ class FFiltPair(val omat:Filter, val a:FND) extends Pair {
 
 object FFilter {
   
-  var im2colThreshold = 10;
+  var im2colThreshold = 0;
   var arraycopy = 16;
   
   def apply(dims:IMat, stride:IMat, pad:IMat):FFilter = {
