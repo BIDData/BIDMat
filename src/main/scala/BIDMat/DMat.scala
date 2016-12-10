@@ -448,7 +448,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
     	val out = DMat.newOrCheckDMat(ncols, a.ncols, outmat, GUID, a.GUID, "Tmult".##)
     	dgemm(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans,
   					ncols, a.ncols, nrows, 1.0f, data, nrows, a.data, a.nrows, 0, out.data, out.nrows)
-    	Mat.nflops += 2L * length * a.nrows
+    	Mat.nflops += 2L * length * a.ncols
     	out
     } else {
       throw new RuntimeException("Tx dimensions mismatch")

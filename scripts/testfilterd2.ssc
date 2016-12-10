@@ -3,11 +3,11 @@ import BIDMat.FFilter._
 
 Mat.useMKL=false
 //Mat.useCache = true;
-BIDMat.FFilter.im2colThreshold = 10
+BIDMat.FFilter.im2colThreshold = 0
 
 val din = 4;
-val fh = 8;
-val npad = 2;
+val fh = 7;
+val npad = 3;
 val nstride = 4;
 val h = 80;
 val w = h;

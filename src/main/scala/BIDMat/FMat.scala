@@ -866,7 +866,7 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     	val out = FMat.newOrCheckFMat(ncols, a.ncols, outmat, GUID, a.GUID, "Tmult".##)
     	sgemm(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans,
   					ncols, a.ncols, nrows, 1.0f, data, nrows, a.data, a.nrows, 0, out.data, out.nrows)
-    	Mat.nflops += 2L * length * a.nrows
+    	Mat.nflops += 2L * length * a.ncols
     	out
     } else {
       throw new RuntimeException("Tx dimensions mismatch")
