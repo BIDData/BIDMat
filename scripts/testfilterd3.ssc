@@ -25,10 +25,7 @@ val aa = GND(a);
 val b = FFilter2Ddn(fh,fh,din,dout,nstride,npad);
 val b1 = FFilter2Ddn(fh,fh,din,dout,nstride,npad);
 val b2 = FFilter2Ddn(fh,fh,din,dout,nstride,npad);
-b(?) = rand(b.length,1);
-val bt = FFilter2Ddn(fh,fh,din,dout,nstride,npad);
-bt(?) = (b.reshape(dout, din, fh, fh).transpose(irow(1,2,3,0)))(?)
-val bb = GFilter(bt);
+val bb = GFilter(b);
 val bb2 = GFilter(b2);
 
 bb.tensorFormat=jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NHWC
@@ -80,8 +77,6 @@ cc <-- c1;
 bb2.convolveM(aa,cc);
 b2 <-- bb2;
 
-bt(?) = (b2.reshape(din, fh, fh, dout).transpose(irow(3,0,1,2)))(?)
-
 flip;
 for (i <- 0 until nreps) {b1.convolveM(a, c1)};
 val gf5=gflop;
@@ -91,7 +86,7 @@ for (i <- 0 until nreps) {bb2.convolveM(aa, cc)};
 val gf6=gflop;
 
 
-:silent
 (gf1, gf2, gf3, gf4, gf5, gf6)
-(maxi(abs(c1-c2)(?)), maxi(abs(d1-d2)(?)), maxi(abs(b1-bt)(?)))
+:silent
+println("Errors %f %f %f" format (maxi(abs(c1-c2)(?)).v, maxi(abs(d1-d2)(?)).v, maxi(abs(b1-b2)(?)).v));
 println("\n    CPU       GPU\n%8.2f  %8.2f\n%8.2f  %8.2f\n%8.2f  %8.2f" format (gf1._1, gf2._1, gf3._1, gf4._1, gf5._1, gf6._1))

@@ -6,9 +6,20 @@ import jcuda.runtime.JCuda._
 import jcuda.jcudnn._
 import jcuda.jcudnn.JCudnn._
 
+//
+// Basic GPU convolutional Filter class.
+//
+// Currently a basic wrapper for NVIDIA CUDNN 4d filters (2 spatial dimensions). 
+// Supported tensor orders are NHWC and NCHW. The NHWC order matches BIDMat's CPU implementation. 
+//
+// The filter is stored with the output dimension major, and the other dimensions in the same order as a data tensor.
+// so a 4D filter block would be OHWC. This matches the ordering in NVIDIA CUDNN, and in BIDMat's CPU filter class. 
+// 
+
+
 @SerialVersionUID(100L)
 class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, data0:Pointer) extends
-  GND((inDims0 *@ outDims0).data, data0) with Filter {
+  GND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 
 	override val inDims = inDims0;
 	override val outDims = outDims0;

@@ -13,7 +13,7 @@ val h = 80;
 val w = h;
 val dout = 16;
 val n = 16;
-val nreps = 100;
+val nreps = 1000;
 
 val a = FND(irow(din,h,w,n))
 a(?) = rand(a.length,1)

@@ -7,10 +7,12 @@ import SciFunctions._;
 //
 // Basic CPU convolutional Filter class.
 //
-// Works in any dimension, but the last three (minor) dimensions should be HWC with C having unit stride. 
-// e.g. A 4D data tensor would be NHWC (Channel minor, N(minibatch number) major).
-// The filter is stored with the output dimension major, and the others in the same order as a data tensor.
-// so a 4D filter block would be OHWC
+// Works in any dimension, but the last three (minor) dimensions should be HWC in descending stride order, so C has unit stride. 
+// e.g. A 4D data tensor would be NHWC (Channel minor, N(minibatch number) major), which agrees with Tensorflow, and is one of the
+// supported formats in NVIDIA CUDNN.
+//
+// The filter is stored with the output dimension major, and the other dimensions in the same order as a data tensor.
+// so a 4D filter block would be OHWC. This matches the ordering in NVIDIA CUDNN.
 // 
 // There are four algorithms:
 // * Element-wise - pure Scala implementation
@@ -48,8 +50,8 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 					val cellsize = SciFunctions.prod(inDims).v;
 					val outlength = SciFunctions.prod(bdims(1 -> bdims.length)).v;
 					val i2cmat = FMat.newOrCheckFMat(cellsize, outlength, null, a.GUID, GUID, hmm, "convIm2col".##);
-					_im2col(a, b, i2cmat, inDims.length-1, cellsize, 0, 0, false);
-//					UTILS.im2col(inDims.length, inDims.data, outDims.data, apadmat.dims.data, apadmat.data, b.dims.data, b.data, i2cmat.data, stride.data);
+//					_im2col(apadmat, b, i2cmat, inDims.length-1, cellsize, 0, 0);
+					UTILS.im2col(inDims.length, inDims.data, outDims.data, apadmat.dims.data, apadmat.data, b.dims.data, b.data, i2cmat.data, stride.data);
 					if (doclear) b.clear;
 					//        println("convolve %d x %d by %d x %d " format (bdims(0), cellsize, cellsize, outlength));
 					sgemm(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans, bdims(0), outlength, cellsize, 1f,
@@ -148,7 +150,8 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 					val cellsize = SciFunctions.prod(inDims).v;
 					val outlength = SciFunctions.prod(bdims(1 -> bdims.length)).v;
 					val i2cmat = FMat.newOrCheckFMat(cellsize, outlength, null, a.GUID, GUID, hmm, "convMIm2col".##);
-					_im2col(a, b, i2cmat, inDims.length-1, cellsize, 0, 0, false);
+//					_im2col(apadmat, b, i2cmat, inDims.length-1, cellsize, 0, 0);
+					UTILS.im2col(inDims.length, inDims.data, outDims.data, apadmat.dims.data, apadmat.data, b.dims.data, b.data, i2cmat.data, stride.data);
 					sgemm(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.Trans, cellsize, bdims(0), outlength, 1f,
 							i2cmat.data, cellsize, b.data, bdims(0), if (doclear) 0f else 1f, data, length/bdims(0));
 				} else {
@@ -228,9 +231,9 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 						a.data, astart, iwidth*stride(1));	
 			}
 			case Filter.backwardModel => {
-				sgemmx(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.Trans, iwidth, owidth, mstep0, 1f, 
-						b.data, bstart0, owidth,  
-						a.data, astart, iwidth*stride(1), 1f,
+				sgemmx(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.Trans, iwidth, owidth, mstep0, 1f, 
+						a.data, astart, iwidth*stride(1), 
+            b.data, bstart0, owidth, 1f,
 						data, fstart, length/owidth);	
 			}
 			}
@@ -478,7 +481,7 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 		}
 	};
   
-	def _im2col(a:FND, b:FND, i2c:FMat, idim:Int, celldim:Int, astart:Int, bstart:Int, zerofill:Boolean):FMat = {
+	def _im2col(a:FND, b:FND, i2c:FMat, idim:Int, celldim:Int, astart:Int, bstart:Int):FMat = {
 			val adims = a.dims;
 			val bdims = b.dims;
 			val iwidth = inDims(idim);
@@ -494,30 +497,28 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 					cellstep *= inDims(ix);
 					ix += 1; 
 				}
-				var iin = -pad(idim);
+				var iin = 0;
 				var iout = 0;
-				while (iout < bdims(idim)) {
-					var j = 0;
-					while (j < iwidth) {
-						val zerofilln = zerofill || iin + j < 0 || iin + j >= adims(idim);
-						_im2col(a, b, i2c, idim - 1, celldim, astart + astep * (iin + j), bstart + celldim * bstep * iout + cellstep * j, zerofilln);
-						j += 1;
-					}
-					iout += 1;
-					iin += stride(idim);
-				}
+        while (iout < bdims(idim)) { 
+        	var j = 0;
+        	while (j < iwidth) {
+        		_im2col(a, b, i2c, idim - 1, celldim, astart + astep * (iin + j), bstart + celldim * bstep * iout + cellstep * j);
+        		j += 1;
+        	}
+        	iout += 1;
+          iin += stride(idim);
+        }
 			} else if (idim == 2) {
 				val astep1 = adims(0)*adims(1);
 				val bstep1 = bdims(1);
 				val cellstep1 = inDims(0)*inDims(1);
-				var iin1 = -pad(2);
+				var iin1 = 0;
 				var iout1 = 0;
 				while (iout1 < bdims(2)) {     
 					var astart1 = astart + astep1 * iin1;
 					var bstart1 = bstart + celldim * bstep1 * iout1;
 					var j1 = 0;
 					while (j1 < iwidth) {     
-						val zerofill1 = zerofill || iin1 + j1 < 0 || iin1 + j1 >= adims(2);
 						var	astep0 = adims(0);
 						var	cellstep0 = inDims(0);
 						var iin0 = 0;
@@ -527,20 +528,11 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 							var astart0 = astart1 + astep0 * iin0;
 							var bstart0 = bstart1 + celldim * iout0;
 							while (j0 < inDims(1)) {
-								val zerofill0 = zerofill1 || iin0 + j0 < 0 || iin0 + j0 >= adims(1);
-                if (zerofill0) {
-                	var k = 0;
-                	while (k < cellstep0) {
-                		i2c.data(bstart0 + k) = 0f;
-                		k += 1;
-                	} 
-                } else {
-                	var k = 0;
-                	while (k < cellstep0) {
-                		i2c.data(bstart0 + k) = a.data(astart0 + k);
-                		k += 1;
-                	}
-                }
+								var k = 0;
+								while (k < cellstep0) {
+									i2c.data(bstart0 + k) = a.data(astart0 + k);
+									k += 1;
+								}
 								astart0 += astep0;
 								bstart0 += cellstep0;
 								j0 += 1;
@@ -562,26 +554,17 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 				var iout = 0;
 				while (iout < bdims(idim)) {
 					var j = 0;
-					if (cellstep > FFilter.arraycopy) {
-						while (j < iwidth) {
-							val astart0 = astart + astep * (iin + j);
-							val bstart0 = bstart + celldim * iout + cellstep * j;
-							System.arraycopy(a.data, astart0, i2c.data, bstart0, cellstep);
-							j += 1;
-						} 
-					} else {
-						var astart0 = astart + astep * iin;
-						var bstart0 = bstart + celldim * iout;
-						while (j < iwidth) {
-							var k = 0;
-							while (k < cellstep) {
-								i2c.data(bstart0 + k) = a.data(astart0 + k);
-								k += 1;
-							}
-							astart0 += astep;
-							bstart0 += cellstep;
-							j += 1;
+					var astart0 = astart + astep * iin;
+					var bstart0 = bstart + celldim * iout;
+					while (j < iwidth) {
+						var k = 0;
+						while (k < cellstep) {
+							i2c.data(bstart0 + k) = a.data(astart0 + k);
+							k += 1;
 						}
+						astart0 += astep;
+						bstart0 += cellstep;
+						j += 1;
 					}
 					iout += 1;
 					iin += stride(idim);
@@ -600,6 +583,137 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 			i2c
 	}
 
+    def _im2colpad(a:FND, b:FND, i2c:FMat, idim:Int, celldim:Int, astart:Int, bstart:Int, zerofill:Boolean, inparallel:Boolean):FMat = {
+      val adims = a.dims;
+      val bdims = b.dims;
+      val iwidth = inDims(idim);
+      val owidth = outDims(idim);
+      if (idim > 2) {
+        var astep = 1;
+        var bstep = 1;
+        var cellstep = 1;
+        var ix = 0;
+        while (ix < idim) {
+          astep *= adims(ix);
+          if (ix > 0) bstep *= bdims(ix);
+          cellstep *= inDims(ix);
+          ix += 1; 
+        }
+        var iin = -pad(idim);
+        var iout = 0;
+        if (! inparallel && bdims(idim) > 4) {
+          (0 until bdims(idim)).par.foreach((iout:Int) =>{
+            val iin = -pad(idim) + iout * stride(idim); 
+            var j = 0;
+            while (j < iwidth) {
+              val zerofilln = zerofill || iin + j < 0 || iin + j >= adims(idim);
+              _im2colpad(a, b, i2c, idim - 1, celldim, astart + astep * (iin + j), bstart + celldim * bstep * iout + cellstep * j, zerofilln, true);
+              j += 1;
+            }
+          });          
+        } else {
+          (0 until bdims(idim)).foreach((iout:Int) =>{
+            val iin = -pad(idim) + iout * stride(idim);
+            var j = 0;
+            while (j < iwidth) {
+              val zerofilln = zerofill || iin + j < 0 || iin + j >= adims(idim);
+              _im2colpad(a, b, i2c, idim - 1, celldim, astart + astep * (iin + j), bstart + celldim * bstep * iout + cellstep * j, zerofilln, false);
+              j += 1;
+            }
+          });
+        }
+      } else if (idim == 2) {
+        val astep1 = adims(0)*adims(1);
+        val bstep1 = bdims(1);
+        val cellstep1 = inDims(0)*inDims(1);
+        var iin1 = -pad(2);
+        var iout1 = 0;
+        while (iout1 < bdims(2)) {     
+          var astart1 = astart + astep1 * iin1;
+          var bstart1 = bstart + celldim * bstep1 * iout1;
+          var j1 = 0;
+          while (j1 < iwidth) {     
+            val zerofill1 = zerofill || iin1 + j1 < 0 || iin1 + j1 >= adims(2);
+            var astep0 = adims(0);
+            var cellstep0 = inDims(0);
+            var iin0 = -pad(1);
+            var iout0 = 0;
+            while (iout0 < bdims(1)) {
+              var j0 = 0;
+              var astart0 = astart1 + astep0 * iin0;
+              var bstart0 = bstart1 + celldim * iout0;
+              while (j0 < inDims(1)) {
+                val zerofill0 = zerofill1 || iin0 + j0 < 0 || iin0 + j0 >= adims(1);
+                if (zerofill0) {
+                  var k = 0;
+                  while (k < cellstep0) {
+                    i2c.data(bstart0 + k) = 0f;
+                    k += 1;
+                  } 
+                } else {
+                  var k = 0;
+                  while (k < cellstep0) {
+                    i2c.data(bstart0 + k) = a.data(astart0 + k);
+                    k += 1;
+                  }
+                }
+                astart0 += astep0;
+                bstart0 += cellstep0;
+                j0 += 1;
+              }
+              iout0 += 1;
+              iin0 += stride(1);
+            }
+            astart1 += astep1;
+            bstart1 += cellstep1;
+            j1 += 1;
+          }
+          iout1 += 1;
+          iin1 += stride(2);
+        }
+      } else if (idim == 1) {
+        var astep = adims(0);
+        var cellstep = inDims(0);
+        var iin = 0;
+        var iout = 0;
+        while (iout < bdims(idim)) {
+          var j = 0;
+          var astart0 = astart + astep * iin;
+          var bstart0 = bstart + celldim * iout;
+          while (j < iwidth) {
+            val zerofill0 = zerofill || iin + j < 0 || iin + j >= adims(1);
+            var k = 0;
+            if (zerofill0) {
+              while (k < cellstep) {
+                i2c.data(bstart0 + k) = 0f;
+                k += 1;
+              }
+            } else {
+              while (k < cellstep) {
+                i2c.data(bstart0 + k) = a.data(astart0 + k);
+                k += 1;
+              }
+            }
+            astart0 += astep;
+            bstart0 += cellstep;
+            j += 1;
+          }
+          iout += 1;
+          iin += stride(idim);
+        }    
+      } else {
+        if (iwidth > FFilter.arraycopy) {
+          System.arraycopy(a.data, astart, i2c.data, bstart, iwidth);
+        } else {
+          var i = 0;
+          while (i < iwidth) {
+            i2c.data(bstart + i) = a.data(astart + i);
+            i += 1;
+          }
+        }
+      }
+      i2c
+  }
 /*	def _im2col(a:FND, b:FND, i2c:FMat, idim:Int, celldim:Int, astart:Int, bstart:Int, zerofill:Boolean):FMat = {
 			val adims = a.dims;
 			val bdims = b.dims;
