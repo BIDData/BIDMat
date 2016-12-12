@@ -30,6 +30,13 @@ public final class UTILS {
     public static native  void memcpyil( int n, int [] a, long startA, long [] b, long startB );
     
     public static native  void lsort(long [] A, int N, int asc);
+
+    public static native  void im2col(int ndims, int [] idims, int [] odims, int [] adims, float [] adata,
+				      int [] bdims, float [] bdata,  float [] cdata, int [] stride);
+
+    public static native  void col2im(int ndims, int [] idims, int [] odims, int [] adims, float [] adata,
+				      int [] bdims, float [] bdata,  float [] cdata, int [] stride);
+
     
     public static OutputStream _getOutputStream(String fname, int compressionLevel) throws IOException {
     	FileOutputStream fout = new FileOutputStream(fname);
