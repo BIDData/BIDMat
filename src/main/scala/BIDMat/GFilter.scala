@@ -195,6 +195,26 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, data0:Pointe
 		cudaDeviceSynchronize;
 		out;
 	}
+  
+  override def * (a:GND):GND = {
+			convolve(a);
+	}
+
+	def ^* (a:GND):GND = {
+			convolveT(a);
+	}
+
+	override def * (a:ND):ND = {
+  	a match {
+  	case aa:GND => convolve(aa);
+  	}
+	};
+
+  override def ^* (a:ND):ND = {
+  		a match {
+  		case aa:GND => convolveT(aa);
+  		}
+  }
 }
 
 object GFilter {
