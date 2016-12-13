@@ -57,8 +57,10 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   } 
   
   def asND(dims:Array[Int]):GND = {
-    if (dims.reduce(_*_) != length) throw new RuntimeException("asND dimensions mismatch");
-    new GND(dims, data);
+    val out = new GND(dims, data);
+    val hmm = ND.hashInts(dims);
+    out.setGUID(edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64(Array(GUID, hmm),0x54345432));
+    out;
   }
    
   

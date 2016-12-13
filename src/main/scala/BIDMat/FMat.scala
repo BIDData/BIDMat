@@ -305,7 +305,10 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   
   def asND(dims:Array[Int]):FND = {
     if (dims.reduce(_*_) != length) throw new RuntimeException("asND dimensions mismatch");
-    new FND(dims, data);
+    val out = new FND(dims, data);
+    val hmm = ND.hashInts(dims);
+    out.setGUID(edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64(Array(GUID, hmm),0x54345432));
+    out;
   }
 
   def asND(dims:Int*):FND = {
