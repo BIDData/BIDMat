@@ -13,6 +13,20 @@ import edu.berkeley.bid.MurmurHash3
 case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) { 
   
   override def mytype = "FND"
+    
+  override def dv:Double =
+    if (nrows > 1 || ncols > 1) {
+      throw new RuntimeException("Matrix should be 1x1 to extract value")
+    } else {
+      data(0)
+    }
+  
+  override def fv:Float =
+    if (nrows > 1 || ncols > 1) {
+      throw new RuntimeException("Matrix should be 1x1 to extract value")
+    } else {
+      data(0)
+    }
 
   def applyf(indx:Int):Float = { 
     if (indx >= 0 && indx < length) { 

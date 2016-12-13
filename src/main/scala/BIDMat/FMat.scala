@@ -33,6 +33,13 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     } else {
       data(0)
     }
+  
+  override def fv:Float =
+    if (nrows > 1 || ncols > 1) {
+      throw new RuntimeException("Matrix should be 1x1 to extract value")
+    } else {
+      data(0)
+    }
 
   override def mytype = "FMat"
 

@@ -28,6 +28,13 @@ class GDMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Int) exten
       toDMat(null).data(0)
     }
   
+  override def fv:Float =
+    if (nrows > 1 || ncols > 1) {
+      throw new RuntimeException("Matrix should be 1x1 to extract value")
+    } else {
+      toDMat(null).data(0).toFloat
+    }
+  
   override def contents() = {
     new GDMat(length, 1, data, realsize)
   }

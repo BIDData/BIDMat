@@ -10,6 +10,7 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
   override val ncols = nc
   
   def llength = 1L*nr*nc
+ 
   
   private var _GUID = Mat.myrand.nextLong
   
@@ -67,7 +68,6 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
   def update(i1:Mat, i2:Mat, i3:Mat, i4:Mat, vv:ND):ND = throw new RuntimeException("4D access not supported for "+this.mytype);
   
   def t = notImplemented0("t")  
-  def dv:Double = throw new RuntimeException("operator dv not implemented for "+this.mytype)
   
   override def mytype = "Mat"
   def copyTo(a:Mat) = notImplemented0("copyTo");

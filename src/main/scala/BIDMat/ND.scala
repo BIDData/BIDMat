@@ -210,6 +210,10 @@ abstract class ND(protected val _dims:Array[Int]) extends Serializable {
     sb.toString()
   }
   
+  def dv:Double = throw new RuntimeException("operator dv not implemented for "+this.mytype);
+  
+  def fv:Float = throw new RuntimeException("operator dv not implemented for "+this.mytype);
+  
   def unary_-():ND
   
   val asMat:Mat

@@ -26,6 +26,13 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
       toFMat(null).data(0)
     }
   
+  override def fv:Float =
+    if (nrows > 1 || ncols > 1) {
+      throw new RuntimeException("Matrix should be 1x1 to extract value")
+    } else {
+      toFMat(null).data(0)
+    }
+  
   override def contents() = {
     val out = new GMat(length, 1, data, realsize);
     out.setGUID(MurmurHash3.mix(MurmurHash3.mix(length, 1), (GUID*7897889).toInt));
