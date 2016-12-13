@@ -537,12 +537,12 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
     if (perm.length != nd) { 
       throw new RuntimeException("GND transpose bad permutation ")
     }
-    val xdims = irow(_dims)
-    val iperm = invperm(perm)
-    val pdims = xdims(perm).data
-    var out = GND.newOrCheckGND(pdims, null, GUID, ND.hashInts(pdims), "transpose".##)
-    var out2 = GND.newOrCheckGND(pdims, null, GUID, ND.hashInts(pdims), "transpose1".##)
-    System.arraycopy(data, 0, out.data, 0, length)
+    val xdims = irow(_dims);
+    val iperm = invperm(perm);
+    val pdims = xdims(perm).data;
+    var out = GND.newOrCheckGND(pdims, null, GUID, ND.hashInts(pdims), "transpose".##);
+    var out2 = GND.newOrCheckGND(pdims, null, GUID, ND.hashInts(pdims), "transpose1".##);
+    cudaMemcpy(out.data, data, 4L*length, cudaMemcpyDeviceToDevice);
     for (i <- (nd - 1) until 0 by -1) { 
       if (iperm(i) != i) { 
         val (d1, d2, d3) = ND.getDims(i, iperm, xdims)
