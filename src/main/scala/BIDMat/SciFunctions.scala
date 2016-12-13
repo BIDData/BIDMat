@@ -878,6 +878,34 @@ object SciFunctions {
   def cumsum(a:GMat, dir:Int) = GMat.cumsum(a, null, dir)
   def cumsum(a:GMat) = GMat.cumsum(a, null, 0)
   
+  def max(a:FND, b:FND):FND = a.max(b);
+  def max(a:FND, b:Float):FND = a.max(b);
+  def max(b:Float, a:FND):FND = a.max(b); 
+  def max(a:FND, b:FND, c:ND):FND = a.max(b, c);
+  def max(a:FND, b:Float, c:ND):FND = a.max(b, c);
+  def max(b:Float, a:FND, c:ND):FND = a.max(b, c);
+  
+  def min(a:FND, b:FND):FND = a.min(b);
+  def min(a:FND, b:Float):FND = a.min(b);
+  def min(b:Float, a:FND):FND = a.min(b); 
+  def min(a:FND, b:FND, c:ND):FND = a.min(b, c);
+  def min(a:FND, b:Float, c:ND):FND = a.min(b, c);
+  def min(b:Float, a:FND, c:ND):FND = a.min(b, c);
+  
+  def max(a:GND, b:GND):GND = a.max(b);
+  def max(a:GND, b:Float):GND = a.max(b);
+  def max(b:Float, a:GND):GND = a.max(b); 
+  def max(a:GND, b:GND, c:ND):GND = a.max(b, c);
+  def max(a:GND, b:Float, c:ND):GND = a.max(b, c);
+  def max(b:Float, a:GND, c:ND):GND = a.max(b, c);
+  
+  def min(a:GND, b:GND):GND = a.min(b);
+  def min(a:GND, b:Float):GND = a.min(b);
+  def min(b:Float, a:GND):GND = a.min(b); 
+  def min(a:GND, b:GND, c:ND):GND = a.min(b, c);
+  def min(a:GND, b:Float, c:ND):GND = a.min(b, c);
+  def min(b:Float, a:GND, c:ND):GND = a.min(b, c);
+  
   def max(a:Mat, b:Mat, c:Mat):Mat = {
     (a, b) match {
       case (aa:FMat, bb:FMat) => max(aa, bb, c):FMat

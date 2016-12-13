@@ -603,6 +603,18 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
   def == (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, null, "=="); c ~ a == b; d}
   def === (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, null, "==="); c ~ a === b; d}
   
+    
+  def max (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, null, "max"); SciFunctions.max(a, b, c); d}
+  def max (mat:GND, omat:ND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, omat, "max"); SciFunctions.max(a, b, c); d}
+  def min (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, null, "max"); SciFunctions.min(a, b, c); d}
+  def min (mat:GND, omat:ND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, omat, "max"); SciFunctions.min(a, b, c); d}
+  
+  def max(b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "max"); SciFunctions.max(a, b, c); d}
+  def min(b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "min"); SciFunctions.min(a, b, c); d}
+  def max(b:Float, omat:ND):GND = {val (a, c, d) = GND.asGMats(this, omat, "max"); SciFunctions.max(a, b, c); d}
+  def min(b:Float, omat:ND):GND = {val (a, c, d) = GND.asGMats(this, omat, "min"); SciFunctions.min(a, b, c); d}
+
+  
   def + (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "+"); c ~ a + b; d}
   def - (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "-"); c ~ a - b; d}
   def *@ (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "*@"); c ~ a *@ b; d}

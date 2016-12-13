@@ -537,6 +537,17 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
   def / (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "/"); c ~ a / b; d}
   def ^ (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "^"); c ~ a ^ b; d}
   
+  def max (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "max"); SciFunctions.max(a, b, c); d}
+  def max (mat:FND, omat:ND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, omat, "max"); SciFunctions.max(a, b, c); d}
+  def min (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "max"); SciFunctions.min(a, b, c); d}
+  def min (mat:FND, omat:ND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, omat, "max"); SciFunctions.min(a, b, c); d}
+  
+  def max(b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "+"); SciFunctions.max(a, b, c); d}
+  def min(b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "+"); SciFunctions.min(a, b, c); d}
+  def max(b:Float, omat:ND):FND = {val (a, c, d) = FND.asFMats(this, omat, "+"); SciFunctions.max(a, b, c); d}
+  def min(b:Float, omat:ND):FND = {val (a, c, d) = FND.asFMats(this, omat, "+"); SciFunctions.min(a, b, c); d}
+
+  
   def * (b : FND):FND = {
       val dims0 = dims(0->(dims.length-1));
       val dims1 = b.dims(1->b.dims.length);
@@ -671,7 +682,7 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
   def mean(inds:Int*):FND = mean(inds.toArray)
   def maxi(inds:Int*):FND = maxi(inds.toArray)
   def mini(inds:Int*):FND = mini(inds.toArray)  
-    
+  
   def ~ (b : FND):FNDPair = new FNDPair(this, b)
   def ~ (b : ND):FNDPair = new FNDPair(this, b.asInstanceOf[FND])
 
