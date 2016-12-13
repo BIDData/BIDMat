@@ -295,13 +295,18 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
       case a:FND => copyTo(a)
     }
   }
-
-  def asFND(dims:Int*) = {
-      FND(this, dims.toArray);
+  
+  def asND(dims:Array[Int]):FND = {
+    if (dims.reduce(_*_) != length) throw new RuntimeException("asND dimensions mismatch");
+    new FND(dims, data);
   }
 
-  def asFND(dims:IMat) = {
-      FND(this, dims.data);
+  def asND(dims:Int*):FND = {
+      asND(dims.toArray);
+  }
+
+  def asND(dims:IMat):FND = {
+      asND(dims.data);
   }
 
   override def zeros(nr:Int, nc:Int) = {

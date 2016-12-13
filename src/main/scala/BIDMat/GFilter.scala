@@ -5,6 +5,7 @@ import jcuda.runtime._
 import jcuda.runtime.JCuda._
 import jcuda.jcudnn._
 import jcuda.jcudnn.JCudnn._
+import jcuda.runtime.cudaMemcpyKind._
 
 //
 // Basic GPU convolutional Filter class.
@@ -184,6 +185,16 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, data0:Pointe
   }
   
   def convolveM(a:GND, b:GND):GND = convolveM(a, b, true);
+  
+  def copy:GFilter = {
+		val out = new GFilter(inDims.copy, outDims.copy, stride.copy, pad.copy, new Pointer);
+		val len = 1L*length*Sizeof.FLOAT
+		cudaMalloc(out.data, len);
+		cudaDeviceSynchronize;
+		cudaMemcpy(out.data, data, len, cudaMemcpyDeviceToDevice);
+		cudaDeviceSynchronize;
+		out;
+	}
 }
 
 object GFilter {
@@ -235,6 +246,7 @@ object GFilter {
     val pad = irow(npad);
     val out = new GFilter(inDims, outDims, stride, pad, new Pointer);
     cudaMalloc(out.data, 1L*w*Sizeof.FLOAT);
+    cudaDeviceSynchronize;
     out
   }
 
@@ -245,6 +257,7 @@ object GFilter {
     val pad = irow(0, npad);
     val out = new GFilter(inDims, outDims, stride, pad, new Pointer);
     cudaMalloc(out.data, 1L*w*din*dout*Sizeof.FLOAT);
+    cudaDeviceSynchronize;
     out    
   }
 
@@ -255,6 +268,7 @@ object GFilter {
     val pad = irow(npad, npad);
     val out = new GFilter(inDims, outDims, stride, pad, new Pointer);
     cudaMalloc(out.data, 1L*w*h*Sizeof.FLOAT);
+    cudaDeviceSynchronize;
     out
   }
 
@@ -265,6 +279,7 @@ object GFilter {
     val pad = irow(0, npad, npad);
     val out = new GFilter(inDims, outDims, stride, pad, new Pointer);
     cudaMalloc(out.data, 1L*din*dout*w*h*Sizeof.FLOAT);
+    cudaDeviceSynchronize;
     out
   }
   
@@ -275,6 +290,7 @@ object GFilter {
     val pad = irow(0, npad, npad, 0);
     val out = new GFilter(inDims, outDims, stride, pad, new Pointer);
     cudaMalloc(out.data, 1L*din*dout*w*h*Sizeof.FLOAT);
+    cudaDeviceSynchronize;
     out
   }
 

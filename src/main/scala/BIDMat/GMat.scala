@@ -48,6 +48,20 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     	out
     }
   } 
+  
+  def asND(dims:Array[Int]):GND = {
+    if (dims.reduce(_*_) != length) throw new RuntimeException("asND dimensions mismatch");
+    new GND(dims, data);
+  }
+   
+  
+  def asND(dims:Int*):GND = {
+  		asND(dims.toArray);
+  }
+
+  def asND(dims:IMat):GND = {
+      asND(dims.data);
+  }
     
   var saveMe:FMat = null
   
