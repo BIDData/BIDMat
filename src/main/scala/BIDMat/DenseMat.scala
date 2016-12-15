@@ -5,6 +5,7 @@ import java.util.Arrays
 import java.util.Comparator
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.tools.nsc.interpreter
 
 class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
 (nr: Int, nc: Int, val data:Array[T])(implicit manifest:ClassTag[T]) extends Mat(nr, nc) {
@@ -668,7 +669,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
       }
     } else {
       val nChars = Mat.terminalWidth-4
-      val maxRows = 640/nChars
+      val maxRows = 64000/nChars
       var maxCols = nChars
       var fieldWidth = 4
       var icols = 0
