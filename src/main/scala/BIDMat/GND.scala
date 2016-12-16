@@ -388,8 +388,9 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
   
   def update(i1:Mat, vv:Mat):GND = {
     (i1, vv) match {
-      case (a1:GIMat, uu:FMat) => update(a1, uu);
-      case (a1:IMat, uu:FMat) => update(GIMat(a1), uu);
+      case (a1:GIMat, uu:GMat) => update(a1, uu);
+      case (a1:GIMat, uu:FMat) => update(a1, GMat(uu));
+      case (a1:IMat, uu:FMat) => update(GIMat(a1), GMat(uu));
     }
   }
   
