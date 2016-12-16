@@ -391,6 +391,7 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
       case (a1:GIMat, uu:GMat) => update(a1, uu);
       case (a1:GIMat, uu:FMat) => update(a1, GMat(uu));
       case (a1:IMat, uu:FMat) => update(GIMat(a1), GMat(uu));
+      case (a1:IMat, uu:GMat) => update(GIMat(a1), uu);
     }
   }
   
