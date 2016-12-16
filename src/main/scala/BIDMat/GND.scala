@@ -296,6 +296,8 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
   	}
   }
   
+  def update(inds:GIMat, vv:GMat):GND = updatex(inds:GIMat, vv:GMat):GND;
+  
   def update(inds:List[Int], v:Float):GND = update(inds.toArray, v)
   
   def update(inds:Array[Int], v:Float):GND = {
