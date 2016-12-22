@@ -2886,7 +2886,7 @@ object GMat {
   }  
     
   def newOrCheckGMat(nr:Int, nc:Int, outmat:Mat, matGuid:Long, opHash:Int):GMat = {
-    val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+    val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
       newOrCheckGMat(nr, nc, outmat)
     } else {
       val key = (matGuid, opHash)
@@ -2906,7 +2906,7 @@ object GMat {
   }
   
   def newOrCheckGMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, opHash:Int):GMat = {
-    val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+    val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
       newOrCheckGMat(nr, nc, outmat)
     } else {
       val key = (guid1, guid2, opHash)
@@ -2926,7 +2926,7 @@ object GMat {
   }
     
   def newOrCheckGMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):GMat = {
-    val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+    val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
     	newOrCheckGMat(nr, nc, outmat)
     } else {
     	val key = (guid1, guid2, guid3, opHash)

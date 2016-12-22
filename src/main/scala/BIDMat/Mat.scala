@@ -639,6 +639,8 @@ object Mat {
   
   var useCache = false						 // Use matrix caching
   
+  var useGPUcache = false
+  
   var recycleGrow = 1.2            // For caching, amount to grow re-allocated matrices
   
   var hasCUDA = 0                  // Number of available CUDA GPUs

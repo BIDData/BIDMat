@@ -1023,7 +1023,7 @@ object GND {
   def newOrCheckGND(dims:IMat, out:ND):GND = newOrCheckGND(dims.data, out);
     
   def newOrCheckGND(dims:Array[Int], out:ND, matGuid:Long, opHash:Int):GND = {
-    if (out.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+    if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
       newOrCheckGND(dims, out)
     } else {
       val key = (matGuid, opHash)
@@ -1041,7 +1041,7 @@ object GND {
   def newOrCheckGND(dims:IMat, out:ND, g1:Long, opHash:Int):GND = newOrCheckGND(dims.data, out, g1, opHash);
   
   def newOrCheckGND(dims:Array[Int], out:ND, guid1:Long, guid2:Long, opHash:Int):GND = {
-    if (out.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+    if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
       newOrCheckGND(dims, out)
     } else {
       val key = (guid1, guid2, opHash)
@@ -1059,7 +1059,7 @@ object GND {
   def newOrCheckGND(dims:IMat, out:ND, g1:Long, g2:Long, opHash:Int):GND = newOrCheckGND(dims.data, out, g1, g2, opHash);
   
   def newOrCheckGND(dims:Array[Int], out:ND, g1:Long, g2:Long, g3:Long, opHash:Int):GND = {
-    if (out.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+    if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
       newOrCheckGND(dims, out)
     } else {
       val key = (g1, g2, g3, opHash)

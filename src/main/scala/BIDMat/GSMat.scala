@@ -233,7 +233,7 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
       new GSMat(nr, nc, nnzx, ir, ic, jc, data, realnnz)
     } else {
 //      free
-      if (Mat.useCache) {
+      if (Mat.useGPUcache) {
         val m = GSMat(nr, nc, (Mat.recycleGrow * nnzx).toInt)
         m.nnz0 = nnzx
         m
@@ -635,7 +635,7 @@ object GSMat {
   
   def newOrCheckGSMat(nrows:Int, ncols:Int, nnz:Int, realnnz:Int, oldmat:Mat):GSMat = {
   	val m = if (oldmat.asInstanceOf[AnyRef] == null || (oldmat.nrows ==0 && oldmat.ncols == 0)) {
-  	  if (Mat.useCache) {
+  	  if (Mat.useGPUcache) {
   	    val size = math.max((Mat.recycleGrow*nnz).toInt, realnnz)
   	    val m = GSMat(nrows, ncols, nnz, size)
   	    m
@@ -659,7 +659,7 @@ object GSMat {
   }
   
    def newOrCheckGSMat(nrows:Int, ncols:Int, nnz:Int, realnnz:Int, outmat:Mat, guid1:Long, opHash:Int):GSMat = {
-    val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+    val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
       newOrCheckGSMat(nrows, ncols, nnz, realnnz, outmat)
     } else {
       val key = (guid1, opHash)
@@ -679,7 +679,7 @@ object GSMat {
   }   
 
   def newOrCheckGSMat(nrows:Int, ncols:Int, nnz:Int, realnnz:Int, outmat:Mat, guid1:Long, guid2:Long, opHash:Int):GSMat = {
-    val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+    val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
       newOrCheckGSMat(nrows, ncols, nnz, realnnz, outmat)
     } else {
       val key = (guid1, guid2, opHash)
@@ -700,7 +700,7 @@ object GSMat {
 
     
   def newOrCheckGSMat(nrows:Int, ncols:Int, nnz:Int, realnnz:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):GSMat = {
-    val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+    val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
       newOrCheckGSMat(nrows, ncols, nnz, realnnz, outmat)
     } else {
       val key = (guid1, guid2, guid3, opHash)
