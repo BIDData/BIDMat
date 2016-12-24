@@ -259,7 +259,9 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
     if (nr*nc != length) {
       throw new RuntimeException("GND output GMat dims dont match")
     } else {
-      new GMat(nr, nc, data, nr * nc);
+      val out = new GMat(nr, nc, data, nr * nc);
+      out.setGUID(MurmurHash3.MurmurHash3_x64_64(Array(GUID, nr), "toGMatView".##));
+      out;
     }
   }
 
@@ -589,7 +591,9 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
     val zz = GND.newOrCheckGND(dims.data, null, GUID, "-".##);
     val a = toGMatView(length, 1);
     val b = zz.toGMatView(length, 1);
-    a.gOp(GMat(-1f), null, GMat.BinOp.op_mul);
+    val minusOne = GMat.newOrCheckGMat(1,1,null,-1,"minusOne".##);
+    minusOne.set(-1f);
+    a.gOp(minusOne, null, GMat.BinOp.op_mul);
     zz;
   }
    

@@ -1292,7 +1292,11 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   /*
    * Basic compute routines on pairs of GMats
    */
-  override def unary_-() = gOp(GMat(-1f), null, op_mul)
+  override def unary_-() = {
+    val minusOne = GMat.newOrCheckGMat(1,1,null,-1,"minusOne".##);
+    minusOne.set(-1f);
+    gOp(minusOne, null, op_mul)
+  }
   
   def * (a : GMat) = GMult(a, null)
   def * (a : GSMat) = GSMult(a, null)
@@ -2156,13 +2160,13 @@ object GMat {
   }
 
   def elem(a:Float):GMat = {
-    val out = GMat(1, 1);
+    val out = GMat.newOrCheckGMat(1, 1, null, a.##, "Gelem".##);
     out.set(a)
     out
   }
   
   def elem(a:Double):GMat = {
-    val out = GMat(1, 1);
+    val out = GMat.newOrCheckGMat(1, 1, null, a.##, "Gelem".##);
     out.set(a.toFloat)
     out
   }
