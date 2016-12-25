@@ -4,10 +4,11 @@ import scala.util.hashing.MurmurHash3
 
 
 trait Filter {
-  val inDims:IMat = null;
-  val outDims:IMat = null;
-  val pad:IMat = null;
-  val stride:IMat = null;
+  val inDims:IMat;
+  val outDims:IMat;
+  val pad:IMat;
+  val stride:IMat;
+  val outPad:IMat;
   
   def computeFlops(in:ND, stride:IMat, pad:IMat):Long = {
     var i = 0;
@@ -39,21 +40,23 @@ trait Filter {
 
 object Filter {
   
-  def getOutputDims(imageDims:IMat, finDims:IMat, foutDims:IMat, stride:IMat, pad:IMat, compress:Boolean = false):IMat = {
+  def getOutputDims(imageDims:IMat, finDims:IMat, foutDims:IMat, stride:IMat, pad:IMat, outPad:IMat, compress:Boolean = false):IMat = {
     val ilen = imageDims.length;
     if (finDims.length != ilen) throw new RuntimeException("getOutputDims Image and Filter number of dimensions mismatch %d %d" format (ilen, finDims.length))
     if (stride.length != ilen) throw new RuntimeException("getOutputDims Image and Filter Stride number of dimensions mismatch %d %d" format (ilen, stride.length))
     if (pad.length != ilen) throw new RuntimeException("getOutputDims Image and Filter Pad number of dimensions mismatch %d %d" format (ilen, pad.length))
-    val odims = (imageDims + pad * 2 - finDims) / stride + foutDims;
+    if (outPad.length != ilen) throw new RuntimeException("getOutputDims Image and Filter Pad number of dimensions mismatch %d %d" format (ilen, outPad.length))
+    val odims = (imageDims + pad * 2 - finDims) / stride + foutDims + outPad * 2;
     (if (compress) ND.trimDims(odims) else odims);   
   }
   
-  def getInputDims(imageDims:IMat, finDims:IMat, foutDims:IMat, stride:IMat, pad:IMat, compress:Boolean = false):IMat = {
+  def getInputDims(imageDims:IMat, finDims:IMat, foutDims:IMat, stride:IMat, pad:IMat, outPad:IMat, compress:Boolean = false):IMat = {
     val ilen = imageDims.length;
     if (finDims.length != ilen) throw new RuntimeException("getInputDims Image and Filter number of dimensions mismatch %d %d" format (ilen, finDims.length))
     if (stride.length != ilen) throw new RuntimeException("getInputDims Image and Filter Stride number of dimensions mismatch %d %d" format (ilen, stride.length))
     if (pad.length != ilen) throw new RuntimeException("getInputDims Image and Filter Pad number of dimensions mismatch %d %d" format (ilen, pad.length))
-    val indims = (imageDims - foutDims + 1) *@ stride - pad*2 + finDims - 1;
+    if (outPad.length != ilen) throw new RuntimeException("getInputDims Image and Filter Pad number of dimensions mismatch %d %d" format (ilen, outPad.length))
+    val indims = (imageDims - foutDims - outPad*2 + 1) *@ stride - pad*2 + finDims - 1;
     (if (compress) ND.trimDims(indims) else indims);   
   }
   

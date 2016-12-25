@@ -19,13 +19,14 @@ import jcuda.runtime.cudaMemcpyKind._
 
 
 @SerialVersionUID(100L)
-class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, data0:Pointer) extends
+class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat, data0:Pointer) extends
   GND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 
-	override val inDims = inDims0;
-	override val outDims = outDims0;
-	override val stride = if (stride0.asInstanceOf[AnyRef] != null) stride0 else iones(1, inDims.length);
-	override val pad = if (pad0.asInstanceOf[AnyRef] != null) pad0 else izeros(1,inDims.length);
+	val inDims = inDims0;
+	val outDims = outDims0;
+	val stride = if (stride0.asInstanceOf[AnyRef] != null) stride0 else iones(1, inDims.length);
+	val pad = if (pad0.asInstanceOf[AnyRef] != null) pad0 else izeros(1,inDims.length);
+	val outPad = if (outPad0.asInstanceOf[AnyRef] != null) outPad0 else izeros(1,inDims.length);
 	var dataType = cudnnDataType.CUDNN_DATA_FLOAT;
 	var tensorFormat = cudnnTensorFormat.CUDNN_TENSOR_NCHW;
   var convType = cudnnConvolutionMode.CUDNN_CROSS_CORRELATION;
@@ -34,7 +35,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, data0:Pointe
   var bwdDataAlgo = cudnnConvolutionBwdDataAlgo.CUDNN_CONVOLUTION_BWD_DATA_ALGO_1;
   
 	def convolve(a:GND, omat:ND, doclear:Boolean):GND = {
-    val bdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad);
+    val bdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad, outPad);
     val hmm = Filter.hashIMat(stride, Filter.hashIMat(pad));
     val b = GND.newOrCheckGND(bdims, omat, a.GUID, GUID, hmm, "convout".##);
     if (dims.length == 4) {
@@ -84,7 +85,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, data0:Pointe
   def convolve(a:GND):GND = convolve(a, null, true);
     
   def convolveT(b:GND, omat:ND, doclear:Boolean):GND = {
-    val adims = Filter.getInputDims(b.dims, inDims, outDims, stride, pad);
+    val adims = Filter.getInputDims(b.dims, inDims, outDims, stride, pad, outPad);
     val hmm = Filter.hashIMat(stride, Filter.hashIMat(pad));
     val a = GND.newOrCheckGND(adims, omat, b.GUID, GUID, hmm, "convoutT".##);
     if (dims.length == 4) {
@@ -135,7 +136,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, data0:Pointe
   
   def convolveM(a:GND, b:GND, doclear:Boolean):GND = {
 		val bdims = b.dims;
-    val outdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad);
+    val outdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad, outPad);
     if ((bdims - outdims).data.exists(_ != 0)) {
       throw new RuntimeException("Output dimensions mismatch in convolveM")
     }
@@ -187,7 +188,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, data0:Pointe
   def convolveM(a:GND, b:GND):GND = convolveM(a, b, true);
   
   def copy:GFilter = {
-		val out = new GFilter(inDims.copy, outDims.copy, stride.copy, pad.copy, new Pointer);
+		val out = new GFilter(inDims.copy, outDims.copy, stride.copy, pad.copy, outPad.copy, new Pointer);
 		val len = 1L*length*Sizeof.FLOAT
 		cudaMalloc(out.data, len);
 		cudaDeviceSynchronize;
@@ -231,7 +232,7 @@ object GFilter {
   def apply(a:FFilter):GFilter = {
     val outnd = GND.newOrCheckGND(a.dims, null, a.GUID, "GFilter".##);
     outnd <-- a;
-    val out = new GFilter(a.inDims, a.outDims, a.stride, a.pad, outnd.data);
+    val out = new GFilter(a.inDims, a.outDims, a.stride, a.pad, a.outPad, outnd.data);
     out;
   }
   
@@ -259,59 +260,74 @@ object GFilter {
 		cudnnContexts(SciFunctions.getGPU)
   }
   
-  def GFilter1D(w:Int, nstride:Int, npad:Int) = {
+  def GFilter1D(w:Int, nstride:Int, npad:Int, noutpad:Int):GFilter = {
     val inDims = irow(w);
     val outDims = irow(1);
     val stride = irow(nstride);
     val pad = irow(npad);
-    val out = new GFilter(inDims, outDims, stride, pad, new Pointer);
+    val outPad = irow(noutpad);
+    val out = new GFilter(inDims, outDims, stride, pad, outPad, new Pointer);
     cudaMalloc(out.data, 1L*w*Sizeof.FLOAT);
     cudaDeviceSynchronize;
     out
   }
+  
+  def GFilter1D(w:Int, nstride:Int, npad:Int):GFilter = GFilter1D(w, nstride, npad, 0);
 
-  def GFilter1Dd(w:Int, din:Int, dout:Int, nstride:Int, npad:Int) = {
+  def GFilter1Dd(w:Int, din:Int, dout:Int, nstride:Int, npad:Int, noutpad:Int):GFilter = {
     val inDims = irow(din, w);
     val outDims = irow(dout, 1);
     val stride = irow(1, nstride);
     val pad = irow(0, npad);
-    val out = new GFilter(inDims, outDims, stride, pad, new Pointer);
+    val outPad = irow(0, noutpad);
+    val out = new GFilter(inDims, outDims, stride, pad, outPad, new Pointer);
     cudaMalloc(out.data, 1L*w*din*dout*Sizeof.FLOAT);
     cudaDeviceSynchronize;
     out    
   }
+  
+  def GFilter1Dd(w:Int, din:Int, dout:Int, nstride:Int, npad:Int):GFilter = GFilter1Dd(w, din, dout, nstride, npad, 0);
 
-  def GFilter2D(w:Int, h:Int, nstride:Int, npad:Int) = {
+  def GFilter2D(w:Int, h:Int, nstride:Int, npad:Int, noutpad:Int):GFilter = {
     val inDims = irow(w, h);
     val outDims = irow(1, 1);
     val stride = irow(nstride, nstride);
     val pad = irow(npad, npad);
-    val out = new GFilter(inDims, outDims, stride, pad, new Pointer);
+    val outPad = irow(noutpad, noutpad);
+    val out = new GFilter(inDims, outDims, stride, pad, outPad, new Pointer);
     cudaMalloc(out.data, 1L*w*h*Sizeof.FLOAT);
     cudaDeviceSynchronize;
     out
   }
+  
+  def GFilter2D(w:Int, h:Int, nstride:Int, npad:Int):GFilter = GFilter2D(w, h, nstride, npad, 0);
 
-  def GFilter2Dd(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int) = {
+  def GFilter2Dd(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int, noutpad:Int):GFilter = {
     val inDims = irow(din, w, h);
     val outDims = irow(dout, 1, 1);
     val stride = irow(1, nstride, nstride);
     val pad = irow(0, npad, npad);
-    val out = new GFilter(inDims, outDims, stride, pad, new Pointer);
+    val outPad = irow(0, noutpad, noutpad);
+    val out = new GFilter(inDims, outDims, stride, pad, outPad, new Pointer);
     cudaMalloc(out.data, 1L*din*dout*w*h*Sizeof.FLOAT);
     cudaDeviceSynchronize;
     out
   }
   
-  def GFilter2Ddn(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int) = {
+  def GFilter2Dd(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int):GFilter = GFilter2Dd(w, h, dout, nstride, npad, 0);
+  
+  def GFilter2Ddn(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int, noutpad:Int):GFilter = {
     val inDims = irow(din, w, h, 1);
     val outDims = irow(dout, 1, 1, 1);
     val stride = irow(1, nstride, nstride, 1);
     val pad = irow(0, npad, npad, 0);
-    val out = new GFilter(inDims, outDims, stride, pad, new Pointer);
+    val outPad = irow(0, noutpad, noutpad, 0);
+    val out = new GFilter(inDims, outDims, stride, pad, outPad, new Pointer);
     cudaMalloc(out.data, 1L*din*dout*w*h*Sizeof.FLOAT);
     cudaDeviceSynchronize;
     out
   }
+  
+  def GFilter2Ddn(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int):GFilter = GFilter2Ddn(w, h, din, dout, nstride, npad, 0);
 
 }

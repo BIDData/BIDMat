@@ -23,17 +23,18 @@ import SciFunctions._;
 
 
 @SerialVersionUID(100L)
-class FFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, data0:Array[Float]) extends
+class FFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat, data0:Array[Float]) extends
 FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 
-	override val inDims = inDims0;
-	override val outDims = outDims0;
-	override val stride = if (stride0.asInstanceOf[AnyRef] != null) stride0 else iones(1, inDims.length);
-	override val pad = if (pad0.asInstanceOf[AnyRef] != null) pad0 else izeros(1,inDims.length);
+	val inDims = inDims0;
+	val outDims = outDims0;
+	val stride = if (stride0.asInstanceOf[AnyRef] != null) stride0 else iones(1, inDims.length);
+	val pad = if (pad0.asInstanceOf[AnyRef] != null) pad0 else izeros(1,inDims.length);
+	val outPad = if (outPad0.asInstanceOf[AnyRef] != null) outPad0 else izeros(1,inDims.length);
 	var timer = 0f;
 
 	def convolve(a:FND, omat:ND, doclear:Boolean):FND = {
-			val bdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad);
+			val bdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad, outPad);
 			val hmm = Filter.hashIMat(stride, Filter.hashIMat(pad));
 			val b = FND.newOrCheckFND(bdims, omat, a.GUID, GUID, hmm, "convout".##);
 			val apadmat = if (pad.data.exists(_ != 0)) {
@@ -84,7 +85,7 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 
 	def convolveT(b:FND, omat:ND, doclear:Boolean):FND = {
 			val bdims = b.dims;
-			val adims = Filter.getInputDims(b.dims, inDims, outDims, stride, pad);
+			val adims = Filter.getInputDims(b.dims, inDims, outDims, stride, pad, outPad);
 			val hmm = Filter.hashIMat(stride, Filter.hashIMat(pad));
 			val a = FND.newOrCheckFND(adims, omat, b.GUID, GUID, hmm, "convTin".##);
 			val apadmat = if (pad.data.exists(_ != 0)) {
@@ -131,7 +132,7 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 
 	def convolveM(a:FND, b:FND, doclear:Boolean):FND = {
 			val bdims = b.dims;
-			val outdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad);
+			val outdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad, outPad);
 			if ((bdims - outdims).data.exists(_ != 0)) {
 				throw new RuntimeException("Output dimensions mismatch in convolveM")
 			}
@@ -177,10 +178,12 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 	def convolveM(a:FND, b:FND):FND = convolveM(a, b, true);
 
 	def copy:FFilter = {
-		val a = new FFilter(inDims.copy, outDims.copy, stride.copy, pad.copy, new Array[Float](length));
+		val a = new FFilter(inDims.copy, outDims.copy, stride.copy, pad.copy, outPad.copy, new Array[Float](length));
 		System.arraycopy(data, 0, a.data, 0, length)
 		a;
 	}
+	
+	// Convolution using global 1x1 Convolutions. 
 
 	def _fast_convolve(a:FND, b:FND, idim:Int, astart:Int, bstart:Int, fstart:Int, convType:Int) {
 		val adims = a.dims;
@@ -942,51 +945,66 @@ object FFilter {
 	var arraycopy = 16;
 
 	def apply(dims:IMat, stride:IMat, pad:IMat):FFilter = {
-			new FFilter(dims, iones(1, dims.length), stride, pad, new Array[Float](dims.data.reduce(_*_)))
+			new FFilter(dims, iones(1, dims.length), stride, pad, null, new Array[Float](dims.data.reduce(_*_)))
 	}
 
 	def apply(indims:IMat, outdims:IMat, stride:IMat, pad:IMat):FFilter = {
-			new FFilter(indims, outdims, stride, pad, new Array[Float]((indims dotr outdims).v))
+			new FFilter(indims, outdims, stride, pad, null, new Array[Float]((indims dotr outdims).v))
 	}
 
-	def FFilter1D(w:Int, nstride:Int, npad:Int) = {
+	def FFilter1D(w:Int, nstride:Int, npad:Int, noutpad:Int):FFilter = {
 		val inDims = irow(w);
 		val outDims = irow(1);
 		val stride = irow(nstride);
 		val pad = irow(npad);
-		new FFilter(inDims, outDims, stride, pad, new Array[Float](w));
+		val outPad = irow(noutpad);		
+		new FFilter(inDims, outDims, stride, pad, outPad, new Array[Float](w));
 	}
+	
+	def FFilter1D(w:Int, nstride:Int, npad:Int):FFilter = FFilter1D(w, nstride, npad, 0);
 
-	def FFilter1Dd(w:Int, din:Int, dout:Int, nstride:Int, npad:Int) = {
+	def FFilter1Dd(w:Int, din:Int, dout:Int, nstride:Int, npad:Int, noutpad:Int):FFilter = {
 		val inDims = irow(din, w);
 		val outDims = irow(dout, 1);
 		val stride = irow(1, nstride);
 		val pad = irow(0, npad);
-		new FFilter(inDims, outDims, stride, pad, new Array[Float](din*dout*w));
+		val outPad = irow(0, noutpad);
+		new FFilter(inDims, outDims, stride, pad, outPad, new Array[Float](din*dout*w));
 	}
+	
+	def FFilter1Dd(w:Int, din:Int, dout:Int, nstride:Int, npad:Int):FFilter = FFilter1Dd(w, din, dout, nstride, npad, 0);
 
-	def FFilter2D(w:Int, h:Int, nstride:Int, npad:Int) = {
+	def FFilter2D(w:Int, h:Int, nstride:Int, npad:Int, noutpad:Int):FFilter = {
 		val inDims = irow(w, h);
 		val outDims = irow(1, 1);
 		val stride = irow(nstride, nstride);
 		val pad = irow(npad, npad);
-		new FFilter(inDims, outDims, stride, pad, new Array[Float](w*h));
+		val outPad = irow(noutpad, noutpad);
+		new FFilter(inDims, outDims, stride, pad, outPad, new Array[Float](w*h));
 	}
+	
+	def FFilter2D(w:Int, h:Int, nstride:Int, npad:Int):FFilter = FFilter2D(w, h, nstride, npad, 0);
 
-	def FFilter2Dd(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int) = {
+	def FFilter2Dd(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int, noutpad:Int):FFilter = {
 		val inDims = irow(din, w, h);
 		val outDims = irow(dout, 1, 1);
 		val stride = irow(1, nstride, nstride);
 		val pad = irow(0, npad, npad);
-		new FFilter(inDims, outDims, stride, pad, new Array[Float](din*dout*w*h));
+		val outPad = irow(0, noutpad, noutpad);		
+		new FFilter(inDims, outDims, stride, pad, outPad, new Array[Float](din*dout*w*h));
 	}
+	
+	def FFilter2Dd(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int):FFilter = FFilter2Dd(w, h, din, dout, nstride, npad, 0);
 
-	def FFilter2Ddn(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int) = {
+	def FFilter2Ddn(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int, noutpad:Int):FFilter = {
 		val inDims = irow(din, w, h, 1);
 		val outDims = irow(dout, 1, 1, 1);
 		val stride = irow(1, nstride, nstride, 1);
 		val pad = irow(0, npad, npad, 0);
-		new FFilter(inDims, outDims, stride, pad, new Array[Float](din*dout*w*h));
+		val outPad = irow(0, noutpad, noutpad, 0);
+		new FFilter(inDims, outDims, stride, pad, outPad, new Array[Float](din*dout*w*h));
 	}
+	
+	def FFilter2Ddn(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int):FFilter = FFilter2Ddn(w, h, din, dout, nstride, npad, 0);
 
 }

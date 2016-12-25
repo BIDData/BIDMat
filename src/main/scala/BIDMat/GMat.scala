@@ -82,9 +82,9 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   private def readObject(in:ObjectInputStream):Unit = {
     in.defaultReadObject();
     val gpu = SciFunctions.getGPU;
-    SciFunctions.setGPU(myGPU);
+    GMat.setGPU(myGPU);
     data = GMat(saveMe).data;
-    SciFunctions.setGPU(gpu);
+    GMat.setGPU(gpu);
     saveMe = null;
   }
   
@@ -2433,7 +2433,7 @@ object GMat {
   	  for (ix <- 0 until rblkk) {
   	    for (iy <- 0 until cblkk) {
   	    	Future {
-  	    		SciFunctions.setGPU(ix+iy*2)
+  	    		GMat.setGPU(ix+iy*2)
   	    		val aa = new Pointer
   	    		val bb = new Pointer
   	    		val cc = new Pointer
@@ -2507,7 +2507,7 @@ object GMat {
 
   	for (ithread <- 0 until nthreads) {
   	  Future {
- 	    	SciFunctions.setGPU(ithread)
+ 	    	GMat.setGPU(ithread)
   	  	val aa = GMat(maxsize, 1).data
   	  	val vv = GIMat(maxsize, 1).data
   	  	val kk = if (!tall) GMat(maxsize, 2).data else null
@@ -2676,7 +2676,7 @@ object GMat {
   	var myturn = 0
   	for (ithread <- 0 until nthreads) {
   	  Future {
- 	    	SciFunctions.setGPU(ithread)
+ 	    	GMat.setGPU(ithread)
   	  	val aa = GMat(maxsize, 1)
   	  	val vv = GIMat(maxsize, 1)
   	  	val kk = if (!tall) GMat(maxsize, 2) else null
@@ -2787,7 +2787,7 @@ object GMat {
   			Future {
   				val ithread = ix+iy*2
   				var err = 0
-  				SciFunctions.setGPU(ithread)
+  				GMat.setGPU(ithread)
   				val pinv = if (takeroot) GMat(1f/p) else null:GMat
   				val ga = GMat(garows, gacols)
   				val gb = GMat(gbrows, gbcols)
@@ -2840,7 +2840,7 @@ object GMat {
   		}
   	}
   	while (SciFunctions.mini(done).v == 0) Thread.`yield`
-  	SciFunctions.setGPU(0)
+  	GMat.setGPU(0)
   	Mat.nflops += 3L * c.nrows * c.ncols * a.ncols
   	c
   }
