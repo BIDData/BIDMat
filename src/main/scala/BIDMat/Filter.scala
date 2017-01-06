@@ -60,18 +60,6 @@ object Filter {
     (if (compress) ND.trimDims(indims) else indims);   
   }
   
-  def hashIMat(a:IMat, start:Int):Int = {
-    var i = 0; 
-    var hv = start;
-    while (i < a.length) {
-      hv = MurmurHash3.mix(hv, a.data(i));
-      i += 1;
-    }
-    hv;
-  }
-  
-  def hashIMat(a:IMat):Int = hashIMat(a, 23412154);
-  
   final val forward = 1;
   final val backwardGradient = 2;
   final val backwardModel = 3;

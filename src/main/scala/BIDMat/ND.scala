@@ -525,6 +525,18 @@ object ND {
   	MurmurHash3.MurmurHash3_x64_64(inds.map(_.toLong), 0x3142341)
   }
   
+  def hashIMat(a:IMat, start:Int):Int = {
+    var i = 0; 
+    var hv = start;
+    while (i < a.length) {
+      hv = scala.util.hashing.MurmurHash3.mix(hv, a.data(i));
+      i += 1;
+    }
+    hv;
+  }
+  
+  def hashIMat(a:IMat):Int = hashIMat(a, 23412154);
+  
   def linearize(inds:Array[Int], dims:IMat):Int = {
     if (inds.length != dims.length) {
       throw new RuntimeException("Dimension of indices dont match array dimension")

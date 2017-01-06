@@ -35,7 +35,7 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 
 	def convolve(a:FND, omat:ND, doclear:Boolean):FND = {
 			val bdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad, outPad);
-			val hmm = Filter.hashIMat(stride, Filter.hashIMat(pad));
+			val hmm = ND.hashIMat(stride, ND.hashIMat(pad));
 			val b = FND.newOrCheckFND(bdims, omat, a.GUID, GUID, hmm, "convout".##);
 			val apadmat = if (pad.data.exists(_ != 0)) {
 				val m = FND.newOrCheckFND(a.dims + pad * 2, null, a.GUID, GUID, hmm, "convinpad".##);
@@ -86,7 +86,7 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 	def convolveT(b:FND, omat:ND, doclear:Boolean):FND = {
 			val bdims = b.dims;
 			val adims = Filter.getInputDims(b.dims, inDims, outDims, stride, pad, outPad);
-			val hmm = Filter.hashIMat(stride, Filter.hashIMat(pad));
+			val hmm = ND.hashIMat(stride, ND.hashIMat(pad));
 			val a = FND.newOrCheckFND(adims, omat, b.GUID, GUID, hmm, "convTin".##);
 			val apadmat = if (pad.data.exists(_ != 0)) {
 				val m = FND.newOrCheckFND(a.dims + pad * 2, null, b.GUID, GUID, hmm, "convTinpad".##);
@@ -136,7 +136,7 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 			if ((bdims - outdims).data.exists(_ != 0)) {
 				throw new RuntimeException("Output dimensions mismatch in convolveM")
 			}
-			val hmm = Filter.hashIMat(stride, Filter.hashIMat(pad));
+			val hmm = ND.hashIMat(stride, ND.hashIMat(pad));
 			val apadmat = if (pad.data.exists(_ != 0)) {
 				val m = FND.newOrCheckFND(a.dims + pad * 2, null, a.GUID, b.GUID, hmm, "convMinpad".##);
 				m.clear;

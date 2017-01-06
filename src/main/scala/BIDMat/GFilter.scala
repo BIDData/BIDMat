@@ -36,7 +36,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
   
 	def convolve(a:GND, omat:ND, doclear:Boolean):GND = {
     val bdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad, outPad);
-    val hmm = Filter.hashIMat(stride, Filter.hashIMat(pad));
+    val hmm = ND.hashIMat(stride, ND.hashIMat(pad));
     val b = GND.newOrCheckGND(bdims, omat, a.GUID, GUID, hmm, "convout".##);
     if (dims.length == 4) {
       val adesc = new cudnnTensorDescriptor;
@@ -86,7 +86,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
     
   def convolveT(b:GND, omat:ND, doclear:Boolean):GND = {
     val adims = Filter.getInputDims(b.dims, inDims, outDims, stride, pad, outPad);
-    val hmm = Filter.hashIMat(stride, Filter.hashIMat(pad));
+    val hmm = ND.hashIMat(stride, ND.hashIMat(pad));
     val a = GND.newOrCheckGND(adims, omat, b.GUID, GUID, hmm, "convoutT".##);
     if (dims.length == 4) {
       val adesc = new cudnnTensorDescriptor;
@@ -140,7 +140,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
     if ((bdims - outdims).data.exists(_ != 0)) {
       throw new RuntimeException("Output dimensions mismatch in convolveM")
     }
-    val hmm = Filter.hashIMat(stride, Filter.hashIMat(pad));
+    val hmm = ND.hashIMat(stride, ND.hashIMat(pad));
     if (dims.length == 4) {
       val adesc = new cudnnTensorDescriptor;
       cudnnCreateTensorDescriptor(adesc);

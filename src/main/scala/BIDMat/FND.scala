@@ -875,6 +875,14 @@ object FND {
     out
   }
   
+  def elem(x:Float, ndims:Int) = {
+    val dims = iones(1,ndims);
+    val hmm = ND.hashIMat(dims);
+    val out = newOrCheckFND(dims,null,x.##,hmm,"felem".##)
+    out.data(0) = x
+    out
+  }
+  
   def rand(out:FND):FND = {
     SciFunctions.rand(out.asMat);
     out;

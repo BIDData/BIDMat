@@ -128,6 +128,20 @@ object MatFunctions {
     out
   }
   
+  /** implicit conversion from FMat to FND */
+  implicit def fMat2FND(x:FMat):FND = {
+    x.asND(x.nrows, x.ncols)
+  }
+  
+  /** implicit conversion from GMat to GND */
+  implicit def gMat2GND(x:GMat):GND = {
+    x.asND(x.nrows, x.ncols)
+  } 
+  
+/*  implicit def float2FND(x:Float):FND = {
+    FND.elem(x, 2);
+  } */
+  
   /** Convert to the corresponding integral type */
   def int(a:FMat):IMat = {
     IMat(a);

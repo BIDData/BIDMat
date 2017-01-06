@@ -2111,8 +2111,8 @@ object SciFunctions {
   def normcdf(a:DMat):DMat = normcdf(a, null)
   
   val vdCdfNormInvdFun = (n:Int, x:Array[Double], y:Array[Double]) => vdCdfNormInv(n,x,y)
-  def norminv(a:DMat, out:Mat) = applyDFun(a, out, vdCdfNormInvdFun, null, 10L)
-  def norminv(a:DMat):DMat = norminv(a, null)
+  def normcdfinv(a:DMat, out:Mat) = applyDFun(a, out, vdCdfNormInvdFun, null, 10L)
+  def normcdfinv(a:DMat):DMat = normcdfinv(a, null)
   
   val gammaDFun = (x:Double) => Gamma.gamma(x)
   val vdTGammaDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdTGamma(n,x,y)
@@ -2340,10 +2340,10 @@ object SciFunctions {
   def normcdf(a:FND):FND = normcdf(a, null);
   
   val vsCdfNormInvFun = (n:Int, x:Array[Float], y:Array[Float]) => vsCdfNormInv(n,x,y)
-  def norminv(a:FMat, out:Mat) = applySFun(a, out, vsCdfNormInvFun, null, 10L)
-  def norminv(a:FMat):FMat = norminv(a, null);
-  def norminv(a:FND, out:ND):FND = applyFNDfun(a, out, vsCdfNormInvFun, null, 10L);
-  def norminv(a:FND):FND = norminv(a, null);
+  def normcdfinv(a:FMat, out:Mat) = applySFun(a, out, vsCdfNormInvFun, null, 10L)
+  def normcdfinv(a:FMat):FMat = normcdfinv(a, null);
+  def normcdfinv(a:FND, out:ND):FND = applyFNDfun(a, out, vsCdfNormInvFun, null, 10L);
+  def normcdfinv(a:FND):FND = normcdfinv(a, null);
   
   val gammaFun = (x:Float) => Gamma.gamma(x).toFloat;
   val vsTGammaFun = (n:Int, x:Array[Float], y:Array[Float]) => vsTGamma(n,x,y);
@@ -2430,6 +2430,7 @@ object SciFunctions {
   def exppsi(a:FMat):FMat = exppsi(a, null);
   def exppsi(a:FND, out:ND):FND = applyFNDfun(a, out, null, exppsiFun, 3L);
   def exppsi(a:FND):FND = exppsi(a, null);
+  
 
   /* 
    * Complex single-precision scientific functions. Most have both an MKL and non-MKL implementation.
@@ -2874,6 +2875,8 @@ object SciFunctions {
   def trunc(in:GND, out:ND):GND =   applyGNDfun(in, out, TransF.trunc, 10L)
   def sign(in:GND, out:ND):GND =    applyGNDfun(in, out, TransF.sign, 1L)
   def exppsi(in:GND, out:ND):GND =  applyGNDfun(in, out, TransF.exppsi, 1L)
+  def normcdf(in:GND, out:ND):GND =  applyGNDfun(in, out, TransF.normcdf, 1L)
+  def normcdfinv(in:GND, out:ND):GND =  applyGNDfun(in, out, TransF.normcdfinv, 1L)
   
   def atan2(a:GND, b:GND, out:ND):GND =   applyGNDfun2(a, b, out, TransF2.atan2, 10L)
   def pow(a:GND, b:GND, out:ND):GND =     applyGNDfun2(a, b, out, TransF2.pow, 10L)
@@ -3105,6 +3108,7 @@ object SciFunctions {
   
   def sign(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => sign(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => sign(aa, b):FND
       case aa:GND => sign(aa, b):GND
     }
@@ -3123,6 +3127,7 @@ object SciFunctions {
   
   def sqrt(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => sqrt(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => sqrt(aa, b):FND
       case aa:GND => sqrt(aa, b):GND
     }
@@ -3141,6 +3146,7 @@ object SciFunctions {
   
   def exp(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => exp(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => exp(aa, b):FND
       case aa:GND => exp(aa, b):GND
     }
@@ -3158,6 +3164,7 @@ object SciFunctions {
   
   def expm1(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => expm1(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => expm1(aa, b):FND
       case aa:GND => expm1(aa, b):GND
     }
@@ -3176,6 +3183,7 @@ object SciFunctions {
   
   def ln(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => ln(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => ln(aa, b):FND
       case aa:GND => ln(aa, b):GND
     }
@@ -3194,6 +3202,7 @@ object SciFunctions {
   
   def log10(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => log10(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => log10(aa, b):FND
       case aa:GND => log10(aa, b):GND
     }
@@ -3211,6 +3220,7 @@ object SciFunctions {
   
   def log1p(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => log1p(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => log1p(aa, b):FND
       case aa:GND => log1p(aa, b):GND
     }
@@ -3229,6 +3239,7 @@ object SciFunctions {
     
   def cos(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => cos(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => cos(aa, b):FND
       case aa:GND => cos(aa, b):GND
     }
@@ -3247,6 +3258,7 @@ object SciFunctions {
     
   def sin(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => sin(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => sin(aa, b):FND
       case aa:GND => sin(aa, b):GND
     }
@@ -3265,6 +3277,7 @@ object SciFunctions {
   
   def tan(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => tan(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => tan(aa, b):FND
       case aa:GND => tan(aa, b):GND
     }
@@ -3283,6 +3296,7 @@ object SciFunctions {
     
   def cosh(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => cosh(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => cosh(aa, b):FND
       case aa:GND => cosh(aa, b):GND
     }
@@ -3301,6 +3315,7 @@ object SciFunctions {
     
   def sinh(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => sinh(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => sinh(aa, b):FND
       case aa:GND => sinh(aa, b):GND
     }
@@ -3319,6 +3334,7 @@ object SciFunctions {
   
   def tanh(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => tanh(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => tanh(aa, b):FND
       case aa:GND => tanh(aa, b):GND
     }
@@ -3337,6 +3353,7 @@ object SciFunctions {
   
   def acos(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => acos(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => acos(aa, b):FND
       case aa:GND => acos(aa, b):GND
     }
@@ -3355,6 +3372,7 @@ object SciFunctions {
   
   def asin(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => asin(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => asin(aa, b):FND
       case aa:GND => asin(aa, b):GND
     }
@@ -3373,6 +3391,7 @@ object SciFunctions {
   
   def atan(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => atan(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => atan(aa, b):FND
       case aa:GND => atan(aa, b):GND
     }
@@ -3391,6 +3410,7 @@ object SciFunctions {
   
   def acosh(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => acosh(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => acosh(aa, b):FND
       case aa:GND => acosh(aa, b):GND
     }
@@ -3409,6 +3429,7 @@ object SciFunctions {
   
   def asinh(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => asinh(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => asinh(aa, b):FND
       case aa:GND => asinh(aa, b):GND
     }
@@ -3427,6 +3448,7 @@ object SciFunctions {
   
   def atanh(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => atanh(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => atanh(aa, b):FND
       case aa:GND => atanh(aa, b):GND
     }
@@ -3444,6 +3466,7 @@ object SciFunctions {
   
   def erf(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => erf(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => erf(aa, b):FND
       case aa:GND => erf(aa, b):GND
     }
@@ -3461,6 +3484,7 @@ object SciFunctions {
   
   def erfinv(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => erfinv(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => erfinv(aa, b):FND
       case aa:GND => erfinv(aa, b):GND
     }
@@ -3478,6 +3502,7 @@ object SciFunctions {
   
   def erfc(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => erfc(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => erfc(aa, b):FND
       case aa:GND => erfc(aa, b):GND
     }
@@ -3495,6 +3520,7 @@ object SciFunctions {
   
   def erfcinv(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => erfcinv(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => erfcinv(aa, b):FND
       case aa:GND => erfcinv(aa, b):GND
     }
@@ -3512,6 +3538,7 @@ object SciFunctions {
   
   def gamma(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => gamma(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => gamma(aa, b):FND
       case aa:GND => gamma(aa, b):GND
     }
@@ -3531,6 +3558,7 @@ object SciFunctions {
   
   def gammaln(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => gammaln(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => gammaln(aa, b):FND
       case aa:GND => gammaln(aa, b):GND
     }
@@ -3548,6 +3576,7 @@ object SciFunctions {
     
   def floor(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => floor(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => floor(aa, b):FND
       case aa:GND => floor(aa, b):GND
     }
@@ -3565,6 +3594,7 @@ object SciFunctions {
    
   def ceil(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => ceil(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => ceil(aa, b):FND
       case aa:GND => ceil(aa, b):GND
     }
@@ -3582,6 +3612,7 @@ object SciFunctions {
   
   def round(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => round(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => round(aa, b):FND
       case aa:GND => round(aa, b):GND
     }
@@ -3599,6 +3630,7 @@ object SciFunctions {
   
   def trunc(a:ND, b:ND):ND = {
     a match {
+      case aa:Mat => trunc(aa, b.asInstanceOf[Mat]):Mat
       case aa:FND => trunc(aa, b):FND
       case aa:GND => trunc(aa, b):GND
     }
@@ -3614,10 +3646,26 @@ object SciFunctions {
     }
   }
   
+  def exppsi(a:ND, b:ND):ND = {
+    a match {
+      case aa:Mat => exppsi(aa, b.asInstanceOf[Mat]):Mat
+      case aa:FND => exppsi(aa, b):FND
+      case aa:GND => exppsi(aa, b):GND
+    }
+  }
+  
   def normcdf(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => normcdf(aa, b)
       case aa:GMat => normcdf(aa, b)
+    }
+  }
+  
+  def normcdf(a:ND, b:ND):ND = {
+    a match {
+      case aa:Mat => normcdf(aa, b.asInstanceOf[Mat]):Mat
+      case aa:FND => normcdf(aa, b):FND
+      case aa:GND => normcdf(aa, b):GND
     }
   }
   
@@ -3628,10 +3676,11 @@ object SciFunctions {
     }
   }
   
-  def exppsi(a:ND, b:ND):ND = {
+  def normcdfinv(a:ND, b:ND):ND = {
     a match {
-      case aa:FND => exppsi(aa, b):FND
-      case aa:GND => exppsi(aa, b):GND
+      case aa:Mat => normcdfinv(aa, b.asInstanceOf[Mat]):Mat
+      case aa:FND => normcdfinv(aa, b):FND
+      case aa:GND => normcdfinv(aa, b):GND
     }
   }
   
@@ -3697,6 +3746,7 @@ object SciFunctions {
   
   def abs(a:ND):ND = {
     a match {
+      case aa:Mat => abs(aa):Mat
       case aa:FND => abs(aa):FND
       case aa:GND => abs(aa):GND
     }
@@ -3709,6 +3759,14 @@ object SciFunctions {
       case aa:GMat => sign(aa)
       case aa:GDMat => sign(aa)
       case aa:TMat => sign(aa)
+    }
+  }
+  
+  def sign(a:ND):ND = {
+    a match {
+      case aa:Mat => sign(aa):Mat
+      case aa:FND => sign(aa):FND
+      case aa:GND => sign(aa):GND
     }
   }
        
