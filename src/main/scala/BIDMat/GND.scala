@@ -14,7 +14,7 @@ import java.util.Arrays
 import java.util.concurrent.atomic._
 import scala.concurrent.future
 import scala.concurrent.ExecutionContext.Implicits.global
-import edu.berkeley.bid.MurmurHash3
+import scala.util.hashing.MurmurHash3
 
 
 case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) { 
@@ -34,6 +34,12 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
     } else {
       toFND(null).data(0)
     }
+  
+  override def contents() = {
+    val out = new GMat(length, 1, data, length);
+    out.setGUID(MurmurHash3.mix(MurmurHash3.mix(length, 1), (GUID*7897889).toInt));
+    out
+  }
 
   def applyf(indx:Int):Float = { 
     if (indx >= 0 && indx < length) { 
@@ -260,7 +266,7 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
       throw new RuntimeException("GND output GMat dims dont match")
     } else {
       val out = new GMat(nr, nc, data, nr * nc);
-      out.setGUID(MurmurHash3.MurmurHash3_x64_64(Array(GUID, nr), "toGMatView".##));
+      out.setGUID(edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64(Array(GUID, nr), "toGMatView".##));
       out;
     }
   }
@@ -479,7 +485,7 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
   
   val asMat:GMat = {
     val out = new GMat(nrows, ncols, data, nrows * ncols);
-    out.setGUID(MurmurHash3.MurmurHash3_x64_64(Array(GUID), 0x45239234));
+    out.setGUID(edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64(Array(GUID), 0x45239234));
     out
   }
     

@@ -210,6 +210,14 @@ object MatFunctions {
       case b:TMat => b.toCPU;
     }
   }
+  
+  def cpu(a:ND):ND = {
+    a match {
+      case aa:Mat => cpu(aa);
+      case aa:FND => aa;
+      case aa:GND => FND(aa);
+    }
+  }
     
   /** Convert to a GPU matrix */
   def gpu(a:Mat):Mat = {
@@ -227,6 +235,14 @@ object MatFunctions {
       case b:GSMat => b;
       case b:GSDMat => b;
       case b:TMat => b.toGPU;
+    }
+  }
+  
+  def gpu(a:ND):ND = {
+    a match {
+      case aa:Mat => gpu(aa);
+      case aa:FND => GND(aa);
+      case aa:GND => aa;
     }
   }
   
@@ -2029,12 +2045,16 @@ object MatFunctions {
 
   def loadSDMat(fname:String) = HMat.loadSDMat(fname)    
   def loadSDMat(fname:String, compressed:Int) = HMat.loadSDMat(fname, compressed)
+  
+  def loadFND(fname:String) = HMat.loadFND(fname)  
+  def loadFND(fname:String, omat:ND) = HMat.loadFND(fname, omat)  
+  def loadFND(fname:String, omat:ND, compressed:Int) = HMat.loadFND(fname, omat, compressed)
 
   def loadTMat(fname:String) = HMat.loadTMat(fname)    
   def loadTMat(fname:String, compressed:Int) = HMat.loadTMat(fname, compressed)
   
-  def saveMat(fname:String, m:Mat) = HMat.saveMat(fname, m)    
-  def saveMat(fname:String, m:Mat, compressed:Int) = HMat.saveMat(fname, m, compressed)
+  def saveMat(fname:String, m:ND) = HMat.saveMat(fname, m)    
+  def saveMat(fname:String, m:ND, compressed:Int) = HMat.saveMat(fname, m, compressed)
   
   def saveFMat(fname:String, m:FMat) = HMat.saveFMat(fname, m)    
   def saveFMat(fname:String, m:FMat, compressed:Int) = HMat.saveFMat(fname, m, compressed)
@@ -2058,7 +2078,10 @@ object MatFunctions {
   def saveSBMat(fname:String, m:SBMat, compressed:Int) = HMat.saveSBMat(fname, m, compressed)
 
   def saveCSMat(fname:String, m:CSMat) = HMat.saveCSMat(fname, m)    
-  def saveCSMat(fname:String, m:CSMat, compressed:Int) = HMat.saveCSMat(fname, m, compressed)
+  def saveCSMat(fname:String, m:CSMat, compressed:Int) = HMat.saveCSMat(fname, m, compressed)  
+  
+  def saveFND(fname:String, m:FND) = HMat.saveFND(fname, m)    
+  def saveFND(fname:String, m:FND, compressed:Int) = HMat.saveFND(fname, m, compressed)
 
   def saveTMat(fname:String, m:TMat) = HMat.saveTMat(fname, m)    
   def saveTMat(fname:String, m:TMat, compressed:Int) = HMat.saveTMat(fname, m, compressed)

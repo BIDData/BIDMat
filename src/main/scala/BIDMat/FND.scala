@@ -7,7 +7,7 @@ import java.util.Arrays
 import java.util.concurrent.atomic._
 import scala.concurrent.future
 import scala.concurrent.ExecutionContext.Implicits.global
-import edu.berkeley.bid.MurmurHash3
+import scala.util.hashing.MurmurHash3
 
 
 case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) { 
@@ -27,6 +27,12 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
     } else {
       data(0)
     }
+  
+  override def contents():FMat = {
+    val out = new FMat(length, 1, data);
+    out.setGUID(MurmurHash3.mix(MurmurHash3.mix(length, 1), (GUID*7897889).toInt));
+    out
+  }
 
   def applyf(indx:Int):Float = { 
     if (indx >= 0 && indx < length) { 
@@ -465,7 +471,7 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
   
   val asMat:FMat = {
     val out = new FMat(nrows, ncols, data);
-    out.setGUID(MurmurHash3.MurmurHash3_x64_64(Array(GUID), 0x45239234));
+    out.setGUID(edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64(Array(GUID), 0x45239234));
     out
   }
   
@@ -542,10 +548,10 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
   def min (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "max"); SciFunctions.min(a, b, c); d}
   def min (mat:FND, omat:ND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, omat, "max"); SciFunctions.min(a, b, c); d}
   
-  def max(b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "+"); SciFunctions.max(a, b, c); d}
-  def min(b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "+"); SciFunctions.min(a, b, c); d}
-  def max(b:Float, omat:ND):FND = {val (a, c, d) = FND.asFMats(this, omat, "+"); SciFunctions.max(a, b, c); d}
-  def min(b:Float, omat:ND):FND = {val (a, c, d) = FND.asFMats(this, omat, "+"); SciFunctions.min(a, b, c); d}
+  def max(b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "+"); SciFunctions.max(a, b, c):FMat; d}
+  def min(b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "+"); SciFunctions.min(a, b, c):FMat; d}
+  def max(b:Float, omat:ND):FND = {val (a, c, d) = FND.asFMats(this, omat, "+"); SciFunctions.max(a, b, c):FMat; d}
+  def min(b:Float, omat:ND):FND = {val (a, c, d) = FND.asFMats(this, omat, "+"); SciFunctions.min(a, b, c):FMat; d}
 
   
   def * (b : FND):FND = {

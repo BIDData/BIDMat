@@ -35,6 +35,8 @@ abstract class ND(protected val _dims:Array[Int]) extends Serializable {
 
   def size() = length;
   
+  def nnz() = length;
+  
   def zeros(nr:Int, nc:Int):Mat
   
   def zeros(dims:IMat):ND;
@@ -46,6 +48,8 @@ abstract class ND(protected val _dims:Array[Int]) extends Serializable {
   def clear:ND;
   
   def set(v:Float):ND;
+  
+  def contents:Mat; 
 
   private var _GUID = Mat.myrand.nextLong;
   

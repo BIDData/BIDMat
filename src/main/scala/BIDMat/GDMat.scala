@@ -1399,6 +1399,12 @@ object GDMat {
     out
   }
   
+  def elem(a:Double):GDMat = {
+    val out = GDMat.newOrCheckGDMat(1, 1, null, SciFunctions.getGPU, a.##, "GDelem".##);
+    out.set(a)
+    out
+  }
+  
   def toDMat(a:GDMat):DMat = a.toDMat(null)  
   
   def fromDMat(a:DMat, b:GDMat):GDMat = {

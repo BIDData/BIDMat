@@ -869,14 +869,103 @@ object SciFunctions {
   def mini2(a:GDMat, dir:Int):(GDMat,GIMat) = GDMat.mini2(a, null, null, dir)
   def maxi2(a:GDMat):(GDMat,GIMat) = GDMat.maxi2(a, null, null, 0)  
   def mini2(a:GDMat):(GDMat,GIMat) = GDMat.mini2(a, null, null, 0)
-     
-  def max(a:Mat, b:Mat):Mat = max(a, b, null)
-  def min(a:Mat, b:Mat):Mat = min(a, b, null)
   
   def cumsum(a:GMat, b:Mat, dir:Int) = GMat.cumsum(a, b, dir)
   def cumsum(a:GMat, b:Mat) = GMat.cumsum(a, b, 0)
   def cumsum(a:GMat, dir:Int) = GMat.cumsum(a, null, dir)
   def cumsum(a:GMat) = GMat.cumsum(a, null, 0)
+  
+  import GMat.BinOp
+  def max(a:GMat, b:GMat):GMat    = max(a, b, null)
+  def min(a:GMat, b:GMat):GMat    = min(a, b, null)
+  def max(a:GIMat, b:GIMat):GIMat    = max(a, b, null)
+  def min(a:GIMat, b:GIMat):GIMat    = min(a, b, null)
+  def max(a:GLMat, b:GLMat):GLMat    = max(a, b, null)
+  def min(a:GLMat, b:GLMat):GLMat    = min(a, b, null)
+  def max(a:GMat, b:FMat):GMat    = max(a, b, null)
+  def min(a:GMat, b:FMat):GMat    = min(a, b, null)
+  def max(a:FMat, b:GMat):GMat    = max(a, b, null)
+  def min(a:FMat, b:GMat):GMat    = min(a, b, null)
+    
+  def maxi(a:GMat, dir:Int):GMat  = a.reduceOp(null, dir, Float.MinValue, BinOp.op_max)
+  def mini(a:GMat, dir:Int):GMat  = a.reduceOp(null, dir, Float.MaxValue, BinOp.op_min)
+  def sum(a:GMat, dir:Int):GMat   = a.reduceOp(null, dir, 0f, BinOp.op_add)
+  def prod(a:GMat, dir:Int):GMat   = a.reduceOp(null, dir, 0f, BinOp.op_mul)
+ 
+  def maxi(a:GMat):GMat           = a.reduceOp(null, 0, Float.MinValue, BinOp.op_max)
+  def mini(a:GMat):GMat           = a.reduceOp(null, 0, Float.MaxValue, BinOp.op_min)
+  def sum(a:GMat):GMat            = a.reduceOp(null, 0, 0f, BinOp.op_add)
+  def prod(a:GMat):GMat            = a.reduceOp(null, 0, 1f, BinOp.op_mul)
+  
+  def max(a:GMat, b:GMat, out:Mat):GMat    = a.gOp(b, out, BinOp.op_max)
+  def min(a:GMat, b:GMat, out:Mat):GMat    = a.gOp(b, out, BinOp.op_min)
+  def max(a:GIMat, b:GIMat, out:Mat):GIMat = a.GIop(b, out, BinOp.op_max)
+  def min(a:GIMat, b:GIMat, out:Mat):GIMat = a.GIop(b, out, BinOp.op_min)
+  def max(a:GLMat, b:GLMat, out:Mat):GLMat = a.GIop(b, out, BinOp.op_max)
+  def min(a:GLMat, b:GLMat, out:Mat):GLMat = a.GIop(b, out, BinOp.op_min)
+  def max(a:GMat, b:FMat, out:Mat):GMat    = a.gOp(GMat(b), out, BinOp.op_max)
+  def min(a:GMat, b:FMat, out:Mat):GMat    = a.gOp(GMat(b), out, BinOp.op_min)
+  def max(a:FMat, b:GMat, out:Mat):GMat    = GMat(a).gOp(b, out, BinOp.op_max)
+  def min(a:FMat, b:GMat, out:Mat):GMat    = GMat(a).gOp(b, out, BinOp.op_min)
+  def max(a:GMat, b:Float, out:Mat):GMat    = a.gOp(GMat.elem(b), out, BinOp.op_max)
+  def min(a:GMat, b:Float, out:Mat):GMat    = a.gOp(GMat.elem(b), out, BinOp.op_min)
+  def max(a:Float, b:GMat, out:Mat):GMat    = GMat.elem(a).gOp(b, out, BinOp.op_max)
+  def min(a:Float, b:GMat, out:Mat):GMat    = GMat.elem(a).gOp(b, out, BinOp.op_min)  
+  
+  def maxi(a:GMat, dir:Int, out:Mat):GMat  = a.reduceOp(out, dir, Float.MinValue, BinOp.op_max)
+  def mini(a:GMat, dir:Int, out:Mat):GMat  = a.reduceOp(out, dir, Float.MaxValue, BinOp.op_min)
+  def sum(a:GMat, dir:Int, out:Mat):GMat   = a.reduceOp(out, dir, 0f, BinOp.op_add)
+  def maxi(a:GMat, out:Mat):GMat           = a.reduceOp(out, 0, Float.MinValue, BinOp.op_max)
+  def mini(a:GMat, out:Mat):GMat           = a.reduceOp(out, 0, Float.MaxValue, BinOp.op_min)
+  def sum(a:GMat, out:Mat):GMat            = a.reduceOp(out, 0, 0f, BinOp.op_add)
+  
+  def maxi(a:GIMat, dir:Int):GIMat  = a.reduceOp(null, dir, Int.MinValue, BinOp.op_max)
+  def mini(a:GIMat, dir:Int):GIMat  = a.reduceOp(null, dir, Int.MaxValue, BinOp.op_min)
+  def sum(a:GIMat, dir:Int):GIMat   = a.reduceOp(null, dir, 0, BinOp.op_add)
+  def maxi(a:GIMat):GIMat           = a.reduceOp(null, 0, Int.MinValue, BinOp.op_max)
+  def mini(a:GIMat):GIMat           = a.reduceOp(null, 0, Int.MaxValue, BinOp.op_min)
+  def sum(a:GIMat):GIMat            = a.reduceOp(null, 0, 0, BinOp.op_add)
+  
+  def maxi(a:GLMat, dir:Int):GLMat  = a.reduceOp(null, dir, Long.MinValue, BinOp.op_max)
+  def mini(a:GLMat, dir:Int):GLMat  = a.reduceOp(null, dir, Long.MaxValue, BinOp.op_min)
+  def sum(a:GLMat, dir:Int):GLMat   = a.reduceOp(null, dir, 0, BinOp.op_add)
+  def maxi(a:GLMat):GLMat           = a.reduceOp(null, 0, Long.MinValue, BinOp.op_max)
+  def mini(a:GLMat):GLMat           = a.reduceOp(null, 0, Long.MaxValue, BinOp.op_min)
+  def sum(a:GLMat):GLMat            = a.reduceOp(null, 0, 0, BinOp.op_add)
+     
+  def sum(a:GSMat) = a.sum(0, null)
+  def sum(a:GSMat, n:Int) = a.sum(n, null)
+  def sum(a:GSMat, n:Int, omat:Mat) = a.sum(n, omat)
+  
+  def max(a:GDMat, b:GDMat):GDMat    = max(a, b, null)
+  def min(a:GDMat, b:GDMat):GDMat    = min(a, b, null)
+  def max(a:GDMat, b:FMat):GDMat    = max(a, b, null)
+  def min(a:GDMat, b:FMat):GDMat    = min(a, b, null)
+  def max(a:FMat, b:GDMat):GDMat    = max(a, b, null)
+  def min(a:FMat, b:GDMat):GDMat    = min(a, b, null)
+  def maxi(a:GDMat, dir:Int):GDMat  = a.reduceOp(null, dir, Double.MinValue, BinOp.op_max)
+  def mini(a:GDMat, dir:Int):GDMat  = a.reduceOp(null, dir, Double.MaxValue, BinOp.op_min)
+  def sum(a:GDMat, dir:Int):GDMat   = a.reduceOp(null, dir, 0.0, BinOp.op_add)
+  def maxi(a:GDMat):GDMat           = a.reduceOp(null, 0, Double.MinValue, BinOp.op_max)
+  def mini(a:GDMat):GDMat           = a.reduceOp(null, 0, Double.MaxValue, BinOp.op_min)
+  def sum(a:GDMat):GDMat            = a.reduceOp(null, 0, 0.0, BinOp.op_add)
+  
+  def max(a:GDMat, b:GDMat, out:Mat):GDMat    = a.gOp(b, out, BinOp.op_max)
+  def min(a:GDMat, b:GDMat, out:Mat):GDMat    = a.gOp(b, out, BinOp.op_min)
+  def max(a:GDMat, b:FMat, out:Mat):GDMat    = a.gOp(GDMat(b), out, BinOp.op_max)
+  def min(a:GDMat, b:FMat, out:Mat):GDMat    = a.gOp(GDMat(b), out, BinOp.op_min)
+  def max(a:FMat, b:GDMat, out:Mat):GDMat    = GDMat(a).gOp(b, out, BinOp.op_max)
+  def min(a:FMat, b:GDMat, out:Mat):GDMat    = GDMat(a).gOp(b, out, BinOp.op_min)
+  def maxi(a:GDMat, dir:Int, out:Mat):GDMat  = a.reduceOp(out, dir, Double.MinValue, BinOp.op_max)
+  def mini(a:GDMat, dir:Int, out:Mat):GDMat  = a.reduceOp(out, dir, Double.MaxValue, BinOp.op_min)
+  def sum(a:GDMat, dir:Int, out:Mat):GDMat   = a.reduceOp(out, dir, 0.0, BinOp.op_add)
+  def maxi(a:GDMat, out:Mat):GDMat           = a.reduceOp(out, 0, Double.MinValue, BinOp.op_max)
+  def mini(a:GDMat, out:Mat):GDMat           = a.reduceOp(out, 0, Double.MaxValue, BinOp.op_min)
+  def sum(a:GDMat, out:Mat):GDMat            = a.reduceOp(out, 0, 0.0, BinOp.op_add)
+     
+  def sum(a:GSDMat) = a.sum(0, null);
+  def sum(a:GSDMat, n:Int) = a.sum(n, null);
+  def sum(a:GSDMat, n:Int, omat:Mat) = a.sum(n, omat);
   
   def max(a:FND, b:FND):FND = a.max(b);
   def max(a:FND, b:Float):FND = a.max(b);
@@ -933,6 +1022,49 @@ object SciFunctions {
     }
   }
   
+  def max(a:Mat, b:Mat):Mat = max(a, b, null);
+  
+  def max(a:ND, b:ND, c:ND):ND = {
+    (a, b) match {
+      case (aa:Mat, bb:Mat) => max(aa, bb, c.asInstanceOf[Mat]):Mat;
+      case (aa:FND, bb:FND) => max(aa, bb, c):FND;
+      case (aa:GND, bb:GND) => max(aa, bb, c):GND;
+    }
+  }
+  
+  def max(a:ND, b:ND):ND = max(a, b, null);
+  
+  def max(a:Mat, b:Float, c:Mat):Mat = {
+    a match {
+      case (aa:FMat) => max(aa, b, c.asInstanceOf[Mat]):FMat;
+      case (aa:DMat) => max(aa, DMat.delem(b), c.asInstanceOf[Mat]):DMat;
+      case (aa:IMat) => max(aa, IMat.ielem(b.toInt), c.asInstanceOf[Mat]):IMat;
+      case (aa:LMat) => max(aa, LMat.lelem(b.toInt), c.asInstanceOf[Mat]):LMat;
+      case (aa:GMat) => max(aa, GMat.elem(b), c.asInstanceOf[Mat]):GMat;
+      case (aa:GDMat) => max(aa, GDMat.elem(b), c.asInstanceOf[Mat]):GDMat;
+      case (aa:GIMat) => max(aa, GIMat.elem(b.toInt), c.asInstanceOf[Mat]):GIMat;
+      case (aa:GLMat) => max(aa, GLMat.elem(b.toLong), c.asInstanceOf[Mat]):GLMat;
+      case (aa:SMat) => aa.ssMatOpScalar(b, FMat.maxFun, c.asInstanceOf[Mat]):SMat;
+      case (aa:SDMat) => aa.ssMatOpScalar(b, DMat.maxFun, c.asInstanceOf[Mat]):SDMat;
+    }
+  }
+  
+  def max(a:Float, b:Mat, c:Mat):Mat = max(b, a, c);  
+  def max(a:Mat, b:Float):Mat = max(a, b, null);  
+  def max(a:Float, b:Mat):Mat = max(b, a, null);
+  
+  def max(a:ND, b:Float, c:ND):ND = {
+    a match {
+      case (aa:Mat) => max(aa, b, c.asInstanceOf[Mat]):Mat;
+      case (aa:FND) => aa.max(b, c):FND;
+      case (aa:GND) => aa.max(b, c):GND;
+    }
+  }
+  
+  def max(a:Float, b:ND, c:ND):ND = max(b, a, c);  
+  def max(a:ND, b:Float):ND = max(a, b, null);  
+  def max(a:Float, b:ND):ND = max(b, a, null);
+
   def min(a:Mat, b:Mat, c:Mat):Mat = {
     (a, b) match {
       case (aa:FMat, bb:FMat) => min(aa, bb, c):FMat
@@ -959,6 +1091,49 @@ object SciFunctions {
       case (aa:IMat, bb:GDMat) => min(GDMat(aa), bb, c):GDMat
     }
   }
+  
+  def min(a:Mat, b:Mat):Mat = min(a, b, null);
+  
+  def min(a:ND, b:ND, c:ND):ND = {
+    (a, b) match {
+      case (aa:Mat, bb:Mat) => min(aa, bb, if (c.asInstanceOf[AnyRef] == null) null else c.asInstanceOf[Mat]):Mat;
+      case (aa:FND, bb:FND) => min(aa, bb, c):FND;
+      case (aa:GND, bb:GND) => min(aa, bb, c):GND;
+    }
+  }
+  
+  def min(a:ND, b:ND):ND = min(a, b, null);
+  
+  def min(a:Mat, b:Float, c:Mat):Mat = {
+    a match {
+      case (aa:FMat) => min(aa, b, c.asInstanceOf[Mat]):FMat;
+      case (aa:DMat) => min(aa, DMat.delem(b), c.asInstanceOf[Mat]):DMat;
+      case (aa:IMat) => min(aa, IMat.ielem(b.toInt), c.asInstanceOf[Mat]):IMat;
+      case (aa:LMat) => min(aa, LMat.lelem(b.toInt), c.asInstanceOf[Mat]):LMat;
+      case (aa:GMat) => min(aa, GMat.elem(b), c.asInstanceOf[Mat]):GMat;
+      case (aa:GDMat) => min(aa, GDMat.elem(b), c.asInstanceOf[Mat]):GDMat;
+      case (aa:GIMat) => min(aa, GIMat.elem(b.toInt), c.asInstanceOf[Mat]):GIMat;
+      case (aa:GLMat) => min(aa, GLMat.elem(b.toLong), c.asInstanceOf[Mat]):GLMat;
+      case (aa:SMat) => aa.ssMatOpScalar(b, FMat.minFun, c.asInstanceOf[Mat]):SMat;
+      case (aa:SDMat) => aa.ssMatOpScalar(b, DMat.minFun, c.asInstanceOf[Mat]):SDMat;
+    }
+  }
+  
+  def min(a:Float, b:Mat, c:Mat):Mat = min(b, a, c);  
+  def min(a:Mat, b:Float):Mat = min(a, b, null);  
+  def min(a:Float, b:Mat):Mat = min(b, a, null);
+  
+  def min(a:ND, b:Float, c:ND):ND = {
+    a match {
+      case (aa:Mat) => min(aa, b, c.asInstanceOf[Mat]):Mat;
+      case (aa:FND) => aa.min(b, c):FND;
+      case (aa:GND) => aa.min(b, c):GND;
+    }
+  }
+  
+  def min(a:Float, b:ND, c:ND):ND = min(b, a, c); 
+  def min(a:ND, b:Float):ND = min(a, b, null); 
+  def min(a:Float, b:ND):ND = min(b, a, null);
    
   def maxi(a:Mat, b:Int):Mat = {
     a match {
@@ -2890,97 +3065,7 @@ object SciFunctions {
   def sign(in:TMat):TMat =    in.tFn(null, TFuncs.sign, 1L)
   def exppsi(in:TMat):TMat =  in.tFn(null, TFuncs.exppsi, 1L)
   
-  import GMat.BinOp
-  def max(a:GMat, b:GMat):GMat    = max(a, b, null)
-  def min(a:GMat, b:GMat):GMat    = min(a, b, null)
-  def max(a:GIMat, b:GIMat):GIMat    = max(a, b, null)
-  def min(a:GIMat, b:GIMat):GIMat    = min(a, b, null)
-  def max(a:GLMat, b:GLMat):GLMat    = max(a, b, null)
-  def min(a:GLMat, b:GLMat):GLMat    = min(a, b, null)
-  def max(a:GMat, b:FMat):GMat    = max(a, b, null)
-  def min(a:GMat, b:FMat):GMat    = min(a, b, null)
-  def max(a:FMat, b:GMat):GMat    = max(a, b, null)
-  def min(a:FMat, b:GMat):GMat    = min(a, b, null)
-    
-  def maxi(a:GMat, dir:Int):GMat  = a.reduceOp(null, dir, Float.MinValue, BinOp.op_max)
-  def mini(a:GMat, dir:Int):GMat  = a.reduceOp(null, dir, Float.MaxValue, BinOp.op_min)
-  def sum(a:GMat, dir:Int):GMat   = a.reduceOp(null, dir, 0f, BinOp.op_add)
-  def prod(a:GMat, dir:Int):GMat   = a.reduceOp(null, dir, 0f, BinOp.op_mul)
- 
-  def maxi(a:GMat):GMat           = a.reduceOp(null, 0, Float.MinValue, BinOp.op_max)
-  def mini(a:GMat):GMat           = a.reduceOp(null, 0, Float.MaxValue, BinOp.op_min)
-  def sum(a:GMat):GMat            = a.reduceOp(null, 0, 0f, BinOp.op_add)
-  def prod(a:GMat):GMat            = a.reduceOp(null, 0, 1f, BinOp.op_mul)
-  
-  def max(a:GMat, b:GMat, out:Mat):GMat    = a.gOp(b, out, BinOp.op_max)
-  def min(a:GMat, b:GMat, out:Mat):GMat    = a.gOp(b, out, BinOp.op_min)
-  def max(a:GIMat, b:GIMat, out:Mat):GIMat = a.GIop(b, out, BinOp.op_max)
-  def min(a:GIMat, b:GIMat, out:Mat):GIMat = a.GIop(b, out, BinOp.op_min)
-  def max(a:GLMat, b:GLMat, out:Mat):GLMat = a.GIop(b, out, BinOp.op_max)
-  def min(a:GLMat, b:GLMat, out:Mat):GLMat = a.GIop(b, out, BinOp.op_min)
-  def max(a:GMat, b:FMat, out:Mat):GMat    = a.gOp(GMat(b), out, BinOp.op_max)
-  def min(a:GMat, b:FMat, out:Mat):GMat    = a.gOp(GMat(b), out, BinOp.op_min)
-  def max(a:FMat, b:GMat, out:Mat):GMat    = GMat(a).gOp(b, out, BinOp.op_max)
-  def min(a:FMat, b:GMat, out:Mat):GMat    = GMat(a).gOp(b, out, BinOp.op_min)
-  def max(a:GMat, b:Float, out:Mat):GMat    = a.gOp(GMat.elem(b), out, BinOp.op_max)
-  def min(a:GMat, b:Float, out:Mat):GMat    = a.gOp(GMat.elem(b), out, BinOp.op_min)
-  def max(a:Float, b:GMat, out:Mat):GMat    = GMat.elem(a).gOp(b, out, BinOp.op_max)
-  def min(a:Float, b:GMat, out:Mat):GMat    = GMat.elem(a).gOp(b, out, BinOp.op_min)  
-  
-  def maxi(a:GMat, dir:Int, out:Mat):GMat  = a.reduceOp(out, dir, Float.MinValue, BinOp.op_max)
-  def mini(a:GMat, dir:Int, out:Mat):GMat  = a.reduceOp(out, dir, Float.MaxValue, BinOp.op_min)
-  def sum(a:GMat, dir:Int, out:Mat):GMat   = a.reduceOp(out, dir, 0f, BinOp.op_add)
-  def maxi(a:GMat, out:Mat):GMat           = a.reduceOp(out, 0, Float.MinValue, BinOp.op_max)
-  def mini(a:GMat, out:Mat):GMat           = a.reduceOp(out, 0, Float.MaxValue, BinOp.op_min)
-  def sum(a:GMat, out:Mat):GMat            = a.reduceOp(out, 0, 0f, BinOp.op_add)
-  
-  def maxi(a:GIMat, dir:Int):GIMat  = a.reduceOp(null, dir, Int.MinValue, BinOp.op_max)
-  def mini(a:GIMat, dir:Int):GIMat  = a.reduceOp(null, dir, Int.MaxValue, BinOp.op_min)
-  def sum(a:GIMat, dir:Int):GIMat   = a.reduceOp(null, dir, 0, BinOp.op_add)
-  def maxi(a:GIMat):GIMat           = a.reduceOp(null, 0, Int.MinValue, BinOp.op_max)
-  def mini(a:GIMat):GIMat           = a.reduceOp(null, 0, Int.MaxValue, BinOp.op_min)
-  def sum(a:GIMat):GIMat            = a.reduceOp(null, 0, 0, BinOp.op_add)
-  
-  def maxi(a:GLMat, dir:Int):GLMat  = a.reduceOp(null, dir, Long.MinValue, BinOp.op_max)
-  def mini(a:GLMat, dir:Int):GLMat  = a.reduceOp(null, dir, Long.MaxValue, BinOp.op_min)
-  def sum(a:GLMat, dir:Int):GLMat   = a.reduceOp(null, dir, 0, BinOp.op_add)
-  def maxi(a:GLMat):GLMat           = a.reduceOp(null, 0, Long.MinValue, BinOp.op_max)
-  def mini(a:GLMat):GLMat           = a.reduceOp(null, 0, Long.MaxValue, BinOp.op_min)
-  def sum(a:GLMat):GLMat            = a.reduceOp(null, 0, 0, BinOp.op_add)
-     
-  def sum(a:GSMat) = a.sum(0, null)
-  def sum(a:GSMat, n:Int) = a.sum(n, null)
-  def sum(a:GSMat, n:Int, omat:Mat) = a.sum(n, omat)
-  
-  def max(a:GDMat, b:GDMat):GDMat    = max(a, b, null)
-  def min(a:GDMat, b:GDMat):GDMat    = min(a, b, null)
-  def max(a:GDMat, b:FMat):GDMat    = max(a, b, null)
-  def min(a:GDMat, b:FMat):GDMat    = min(a, b, null)
-  def max(a:FMat, b:GDMat):GDMat    = max(a, b, null)
-  def min(a:FMat, b:GDMat):GDMat    = min(a, b, null)
-  def maxi(a:GDMat, dir:Int):GDMat  = a.reduceOp(null, dir, Double.MinValue, BinOp.op_max)
-  def mini(a:GDMat, dir:Int):GDMat  = a.reduceOp(null, dir, Double.MaxValue, BinOp.op_min)
-  def sum(a:GDMat, dir:Int):GDMat   = a.reduceOp(null, dir, 0.0, BinOp.op_add)
-  def maxi(a:GDMat):GDMat           = a.reduceOp(null, 0, Double.MinValue, BinOp.op_max)
-  def mini(a:GDMat):GDMat           = a.reduceOp(null, 0, Double.MaxValue, BinOp.op_min)
-  def sum(a:GDMat):GDMat            = a.reduceOp(null, 0, 0.0, BinOp.op_add)
-  
-  def max(a:GDMat, b:GDMat, out:Mat):GDMat    = a.gOp(b, out, BinOp.op_max)
-  def min(a:GDMat, b:GDMat, out:Mat):GDMat    = a.gOp(b, out, BinOp.op_min)
-  def max(a:GDMat, b:FMat, out:Mat):GDMat    = a.gOp(GDMat(b), out, BinOp.op_max)
-  def min(a:GDMat, b:FMat, out:Mat):GDMat    = a.gOp(GDMat(b), out, BinOp.op_min)
-  def max(a:FMat, b:GDMat, out:Mat):GDMat    = GDMat(a).gOp(b, out, BinOp.op_max)
-  def min(a:FMat, b:GDMat, out:Mat):GDMat    = GDMat(a).gOp(b, out, BinOp.op_min)
-  def maxi(a:GDMat, dir:Int, out:Mat):GDMat  = a.reduceOp(out, dir, Double.MinValue, BinOp.op_max)
-  def mini(a:GDMat, dir:Int, out:Mat):GDMat  = a.reduceOp(out, dir, Double.MaxValue, BinOp.op_min)
-  def sum(a:GDMat, dir:Int, out:Mat):GDMat   = a.reduceOp(out, dir, 0.0, BinOp.op_add)
-  def maxi(a:GDMat, out:Mat):GDMat           = a.reduceOp(out, 0, Double.MinValue, BinOp.op_max)
-  def mini(a:GDMat, out:Mat):GDMat           = a.reduceOp(out, 0, Double.MaxValue, BinOp.op_min)
-  def sum(a:GDMat, out:Mat):GDMat            = a.reduceOp(out, 0, 0.0, BinOp.op_add)
-     
-  def sum(a:GSDMat) = a.sum(0, null);
-  def sum(a:GSDMat, n:Int) = a.sum(n, null);
-  def sum(a:GSDMat, n:Int, omat:Mat) = a.sum(n, omat);
+
   
   def LXdist(a:GMat, b:GMat, omat:GMat, p:Float):GMat = GMat.LXdist(a, b, omat, p)
   

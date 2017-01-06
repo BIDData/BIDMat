@@ -75,7 +75,7 @@ class GLMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Int) exten
     SciFunctions.setGPU(gpu);
     saveMe = null;
   }
-  
+
   override def apply(I:GIMat, J:GIMat):GLMat = applyx(I, J)
      
   override def apply(i:Int, J:IMat):GLMat = applyx(i, GIMat(J))
@@ -749,6 +749,12 @@ object GLMat {
   
   def apply(a:Long):GLMat = {
     val out = GLMat.newOrCheckGLMat(1, 1, null, a.##, SciFunctions.getGPU, "GLMat_Int".##)
+    out.set(a)
+    out
+  }
+  
+  def elem(a:Long):GLMat = {
+    val out = GLMat.newOrCheckGLMat(1, 1, null, SciFunctions.getGPU, a.##, "GLelem".##);
     out.set(a)
     out
   }

@@ -294,7 +294,7 @@ object HMat {
     }
   }
   
-  def loadMat(fname:String, omat:Mat, compressed:Int):Mat = {
+  def loadMat(fname:String, omat:ND, compressed:Int):ND = {
     val gin = getInputStream(fname, compressed)
     val buff = ByteBuffer.allocate(1024).order(byteOrder)
     val hints = new Array[Int](4)
@@ -302,10 +302,10 @@ object HMat {
     val ftype = hints(0)
     gin.close
     ftype match {
-      case 130 => loadFMat(fname, omat, compressed)
-      case 110 => loadIMat(fname, omat, compressed)
-      case 120 => loadLMat(fname, omat, compressed)
-      case 140 => loadDMat(fname, omat, compressed)
+      case 130 => loadFMat(fname, omat.asMat, compressed)
+      case 110 => loadIMat(fname, omat.asMat, compressed)
+      case 120 => loadLMat(fname, omat.asMat, compressed)
+      case 140 => loadDMat(fname, omat.asMat, compressed)
       case 231 => loadSMat(fname, compressed)
       case 331 => loadSMat(fname, compressed)
       case 241 => loadSDMat(fname, compressed)
@@ -315,14 +315,21 @@ object HMat {
       case 301 => loadSBMat(fname, compressed)
       case 302 => loadCSMat(fname, compressed)
       case 401 => loadTMat(fname, compressed)
+      case 430 => loadFND(fname, compressed)
+      case 530 => loadFND(fname, compressed)
+      case 630 => loadFND(fname, compressed)
+      case 730 => loadFND(fname, compressed)
+      case 830 => loadFND(fname, compressed)
+      case 930 => loadFND(fname, compressed)
+      case 1030 => loadFND(fname, compressed)
     }
   }
   
-  def loadMat(fname:String):Mat = loadMat(fname, null, 0)
+  def loadMat(fname:String):ND = loadMat(fname, null, 0)
   
-  def loadMat(fname:String, omat:Mat):Mat = loadMat(fname, omat, 0)
+  def loadMat(fname:String, omat:ND):ND = loadMat(fname, omat, 0)
   
-  def saveMat(fname:String, m:Mat, compressed:Int=0):Unit = {
+  def saveMat(fname:String, m:ND, compressed:Int=0):Unit = {
     m match {
       case a:FMat => saveFMat(fname, a, compressed)
       case a:DMat => saveDMat(fname, a, compressed)
@@ -333,6 +340,7 @@ object HMat {
       case a:SMat => saveSMat(fname, a, compressed)
       case a:CSMat => saveCSMat(fname, a, compressed)
       case a:TMat => saveTMat(fname, a, compressed)
+      case a:FND => saveFND(fname, a, compressed)
     }
   }
   
@@ -724,6 +732,12 @@ object HMat {
       out
     }
   } 
+  
+  def loadFND(fname:String, compressed:Int):FND = loadFND(fname, null, compressed);
+  
+  def loadFND(fname:String, omat:ND):FND = loadFND(fname, omat, 0);
+  
+  def loadFND(fname:String):FND = loadFND(fname, null, 0);
     
   def loadFND(gin:DataInput, omat:ND):FND  = {
     val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder);

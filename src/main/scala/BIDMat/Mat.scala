@@ -91,7 +91,6 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
   def view(nr:Int, nc:Int):Mat = notImplemented0("view");
   def view(nr:Int, nc:Int, setGUID:Boolean):Mat = notImplemented0("view");
     
-  def nnz:Int = {notImplemented0("nnz"); 0}
   def zeros(nr:Int, nc:Int, nnz:Int):Mat = zeros(nr, nc);
   def recycle(nr:Int, nc:Int, nnz:Int):Mat = notImplemented0("recycle");
   def contents:Mat = notImplemented0("contents");
