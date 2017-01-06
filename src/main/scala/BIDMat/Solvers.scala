@@ -658,7 +658,7 @@ object Solvers {
       R(?,0) = res
       var (vj, r) = QRdecompt(R)
       V(?, 0 -> s) = vj
-      var ex = r(0,0)*e1
+      var ex = e1*r(0,0)
       var j = 0
       while (j < m && !done) {
         var Uj = A * vj

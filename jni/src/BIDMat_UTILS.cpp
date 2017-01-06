@@ -344,14 +344,14 @@ void _col2im(int * inDims, int * outDims, int * adims, float * adata, int * bdim
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_im2col
 (JNIEnv * env, jobject calling_obj, jint ndims, jintArray jidims, jintArray jodims, jintArray jadims, jfloatArray jadata,
  jintArray jbdims, jfloatArray jbdata, jfloatArray jcdata, jintArray jstride){
-  jint * idims  = (jint*)(env->GetPrimitiveArrayCritical(jidims, JNI_FALSE));
-  jint * odims  = (jint*)(env->GetPrimitiveArrayCritical(jodims, JNI_FALSE));
-  jint * adims  = (jint*)(env->GetPrimitiveArrayCritical(jadims, JNI_FALSE));
-  jfloat * adata  = (jfloat*)(env->GetPrimitiveArrayCritical(jadata, JNI_FALSE));
-  jint * bdims  = (jint*)(env->GetPrimitiveArrayCritical(jbdims, JNI_FALSE));
-  jfloat * bdata  = (jfloat*)(env->GetPrimitiveArrayCritical(jbdata, JNI_FALSE));
-  jfloat * cdata  = (jfloat*)(env->GetPrimitiveArrayCritical(jcdata, JNI_FALSE));
-  jint * stride  = (jint*)(env->GetPrimitiveArrayCritical(jstride, JNI_FALSE));
+  int * idims  = (int*)(env->GetPrimitiveArrayCritical(jidims, JNI_FALSE));
+  int * odims  = (int*)(env->GetPrimitiveArrayCritical(jodims, JNI_FALSE));
+  int * adims  = (int*)(env->GetPrimitiveArrayCritical(jadims, JNI_FALSE));
+  float * adata  = (float*)(env->GetPrimitiveArrayCritical(jadata, JNI_FALSE));
+  int * bdims  = (int*)(env->GetPrimitiveArrayCritical(jbdims, JNI_FALSE));
+  float * bdata  = (float*)(env->GetPrimitiveArrayCritical(jbdata, JNI_FALSE));
+  float * cdata  = (float*)(env->GetPrimitiveArrayCritical(jcdata, JNI_FALSE));
+  int * stride  = (int*)(env->GetPrimitiveArrayCritical(jstride, JNI_FALSE));
 
   int celldim = 1;
   for (int i = 0; i < ndims; i++) {celldim *= idims[i];}
@@ -371,14 +371,14 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_im2col
   JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_col2im
 (JNIEnv * env, jobject calling_obj, jint ndims, jintArray jidims, jintArray jodims, jintArray jadims, jfloatArray jadata,
  jintArray jbdims, jfloatArray jbdata, jfloatArray jcdata, jintArray jstride){
-  jint * idims  = (jint*)(env->GetPrimitiveArrayCritical(jidims, JNI_FALSE));
-  jint * odims  = (jint*)(env->GetPrimitiveArrayCritical(jodims, JNI_FALSE));
-  jint * adims  = (jint*)(env->GetPrimitiveArrayCritical(jadims, JNI_FALSE));
-  jfloat * adata  = (jfloat*)(env->GetPrimitiveArrayCritical(jadata, JNI_FALSE));
-  jint * bdims  = (jint*)(env->GetPrimitiveArrayCritical(jbdims, JNI_FALSE));
-  jfloat * bdata  = (jfloat*)(env->GetPrimitiveArrayCritical(jbdata, JNI_FALSE));
-  jfloat * cdata  = (jfloat*)(env->GetPrimitiveArrayCritical(jcdata, JNI_FALSE));
-  jint * stride  = (jint*)(env->GetPrimitiveArrayCritical(jstride, JNI_FALSE));
+  int * idims  = (int*)(env->GetPrimitiveArrayCritical(jidims, JNI_FALSE));
+  int * odims  = (int*)(env->GetPrimitiveArrayCritical(jodims, JNI_FALSE));
+  int * adims  = (int*)(env->GetPrimitiveArrayCritical(jadims, JNI_FALSE));
+  float * adata  = (float*)(env->GetPrimitiveArrayCritical(jadata, JNI_FALSE));
+  int * bdims  = (int*)(env->GetPrimitiveArrayCritical(jbdims, JNI_FALSE));
+  float * bdata  = (float*)(env->GetPrimitiveArrayCritical(jbdata, JNI_FALSE));
+  float * cdata  = (float*)(env->GetPrimitiveArrayCritical(jcdata, JNI_FALSE));
+  int * stride  = (int*)(env->GetPrimitiveArrayCritical(jstride, JNI_FALSE));
 
   int celldim = 1;
   for (int i = 0; i < ndims; i++) {celldim *= idims[i];}

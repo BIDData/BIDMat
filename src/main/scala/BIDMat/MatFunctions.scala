@@ -138,9 +138,9 @@ object MatFunctions {
     x.asND(x.nrows, x.ncols)
   } 
   
-/*  implicit def float2FND(x:Float):FND = {
+  implicit def float2FND(x:Float):FND = {
     FND.elem(x, 2);
-  } */
+  } 
   
   /** Convert to the corresponding integral type */
   def int(a:FMat):IMat = {
