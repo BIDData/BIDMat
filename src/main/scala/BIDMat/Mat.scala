@@ -14,48 +14,20 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
   
   private var _GUID = Mat.myrand.nextLong
   
-  def notImplemented0(s:String):Mat = { 
+  override def notImplemented0(s:String):Mat = { 
     throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
-  }
+  } 
   
-   def notImplemented0ND(s:String):ND = { 
-    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
-  }
-  
-  def notImplemented1(s:String,that:ND):ND = { 
-    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and "+that.mytype)
-  }
-  
-  def notImplemented1(s:String,that:Mat):Mat = { 
-    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and "+that.mytype)
-  }
-  
-  def notImplemented2(s:String,that:Float):Mat = { 
+  override def notImplemented1(s:String,that:Float):Mat = { 
     throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and Float")
   }
   
-  def notImplemented2(s:String,that:Int):Mat = { 
+  override def notImplemented1(s:String,that:Int):Mat = { 
     throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and Int")
   }
   
-  def notImplemented2(s:String,that:Double):Mat = { 
+  override def notImplemented1(s:String,that:Double):Mat = { 
     throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and Double")
-  }
-  
-  def notImplementedf(s:String):Float = { 
-    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
-  }
-  
-  def notImplementedd(s:String):Double = { 
-    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
-  }
-  
-  def notImplementedi(s:String):Int = { 
-    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
-  }
-  
-  def notImplementedl(s:String):Long = { 
-    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
   }
   
   def applyf(indx:Int):Float  = throw new RuntimeException("1D access not supported for "+this.mytype);
@@ -76,7 +48,7 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
   def set(v:Float) = notImplemented0("set");
   def set(v:Double) = notImplemented0("set");
   def zeros(nr:Int, nc:Int) = notImplemented0("zeros");
-  def zeros(dims0:IMat) = notImplemented0ND("zeros");
+  def zeros(dims0:IMat):ND = notImplemented0("zeros");
   def zeros = notImplemented0("zeros");
   def ones(nr:Int, nc:Int) = notImplemented0("ones");
   def ones(dims0:IMat) = ones(dims0(0), dims0(1));
@@ -94,16 +66,12 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
   def zeros(nr:Int, nc:Int, nnz:Int):Mat = zeros(nr, nc);
   def recycle(nr:Int, nc:Int, nnz:Int):Mat = notImplemented0("recycle");
   def contents:Mat = notImplemented0("contents");
-  def colslice(a:Int, b:Int, out:Mat):Mat = notImplemented0("colslice");
-  def colslice(a:Int, b:Int, out:Mat, c:Int):Mat = notImplemented0("colslice");
-  def colslice(a:Int, b:Int, out:Mat, c:Int, pb:Boolean):Mat = colslice(a, b, out, c);
+  
+  override def colslice(a:Int, b:Int):Mat = notImplemented0("colslice");
+
   def rowslice(a:Int, b:Int, out:Mat):Mat = notImplemented0("rowslice");
   def rowslice(a:Int, b:Int, out:Mat, c:Int):Mat = notImplemented0("rowslice");
-  def colslice(a:Int, b:Int):Mat = notImplemented0("colslice");
   def rowslice(a:Int, b:Int):Mat = notImplemented0("rowslice");
-  
-  def colslice(a:Int, b:Int, out:ND):ND = notImplemented0("colslice");
-  def colslice(a:Int, b:Int, out:ND, c:Int):ND = notImplemented0("colslice");
   
   def apply(a:IMat):Mat = notImplemented0("linear array access");
   def apply(a:IMat, b:IMat):Mat = notImplemented0("block array access");
@@ -238,137 +206,91 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
   def madd(a:Mat, b:Mat):Mat = notImplemented1("update", a);
   
   def unary_-():Mat = notImplemented1("-", this)
-  def +  (b : Mat):Mat = notImplemented1("+", b)
-  def -  (b : Mat):Mat = notImplemented1("-", b)
-  def *  (b : Mat):Mat = notImplemented1("*", b)
-  def *^ (b : Mat):Mat = notImplemented1("*^", b)
-  def xT (b : Mat):Mat = notImplemented1("*", b)
-  def Tx (b : Mat):Mat = notImplemented1("*", b)
-  def ^* (b : Mat):Mat = notImplemented1("^*", b)
-  def ** (b : Mat):Mat = notImplemented1("**", b)
-  def ⊗  (b : Mat):Mat = notImplemented1("⊗", b)       // unicode 8855, 0x2297
-  def /< (b : Mat):Mat = notImplemented1("/<", b)
-  def ∘  (b : Mat):Mat = notImplemented1("∘", b)        // unicode 8728, 0x2218 
-  def *@ (b : Mat):Mat = notImplemented1("*@", b)
-  def /  (b : Mat):Mat = notImplemented1("/", b)
-  def \\ (b : Mat):Mat = notImplemented1("\\\\", b)
-  def ^  (b : Mat):Mat = notImplemented1("^", b) 
-  def ◁  (b : Mat):Mat = notImplemented1("◁", b)        // unicode 9665, 0x25C1 
-  def ▷  (b : Mat):Mat = notImplemented1("▷", b)        // unicode 9666, 0x25C2
-  def dot (b : Mat):Mat = notImplemented1("dot", b)
-  def dotr (b : Mat):Mat = notImplemented1("dotr", b) 
-  def ∙ (b : Mat):Mat = notImplemented1("dot", b)       // unicode 8729, 0x2219 
-  def ∙→ (b : Mat):Mat = notImplemented1("dotr", b)     // unicode (8729, 8594) (0x2219, 0x2192)
-    
-  def >  (b : Mat):Mat = notImplemented1(">", b)
-  def <  (b : Mat):Mat = notImplemented1("<", b)
-  def >= (b : Mat):Mat = notImplemented1(">=", b)
-  def <= (b : Mat):Mat = notImplemented1("<=", b)
-  def == (b : Mat):Mat = notImplemented1("==", b)
-  def === (b : Mat):Mat = notImplemented1("===", b)
-  def != (b : Mat):Mat = notImplemented1("!=", b)
   
   def <-- (b : Mat):Mat = b.copyTo(this)
-  def \ (b : Mat):Mat = notImplemented1("\\", b)
-  def on (b : Mat):Mat = notImplemented1("on", b)
   
-  def *  (b : Float):Mat = notImplemented2("*", b)
-  def +  (b : Float):Mat = notImplemented2("+", b)
-  def -  (b : Float):Mat = notImplemented2("-", b)
-  def *@ (b : Float):Mat = notImplemented2("*@", b)
-  def ∘  (b : Float):Mat = notImplemented2("∘", b)
-  def / (b : Float):Mat = notImplemented2("/", b)
-  def ^  (b : Float):Mat = notImplemented2("^", b)
+  override def sum(b : Int*):Mat = notImplemented0("sum")
+  override def prod(b : Int*):Mat = notImplemented0("prod")
+  override def maxi(b : Int*):Mat = notImplemented0("maxi")
+  override def mini(b : Int*):Mat = notImplemented0("mini")
+  override def mean(b : Int*):Mat = notImplemented0("mean")
+  override def variance(b : Int*):Mat = notImplemented0("variance")
   
-  def >  (b : Float):Mat = notImplemented2(">", b)
-  def <  (b : Float):Mat = notImplemented2("<", b)
-  def >= (b : Float):Mat = notImplemented2(">=", b)
-  def <= (b : Float):Mat = notImplemented2("<=", b)
-  def == (b : Float):Mat = notImplemented2("==", b)
-  def === (b : Float):Mat = notImplemented2("===", b)
-  def != (b : Float):Mat = notImplemented2("!=", b)
+  override def *  (b : Float):Mat = notImplemented1("*", b)
+  override def +  (b : Float):Mat = notImplemented1("+", b)
+  override def -  (b : Float):Mat = notImplemented1("-", b)
+  override def *@ (b : Float):Mat = notImplemented1("*@", b)
+  override def ∘  (b : Float):Mat = notImplemented1("∘", b)
+  override def / (b : Float):Mat = notImplemented1("/", b)
+  override def ^  (b : Float):Mat = notImplemented1("^", b)
   
-  def *  (b : Int):Mat = notImplemented2("*", b)
-  def +  (b : Int):Mat = notImplemented2("+", b)
-  def -  (b : Int):Mat = notImplemented2("-", b)
-  def *@ (b : Int):Mat = notImplemented2("*@", b)
-  def ∘  (b : Int):Mat = notImplemented2("∘", b)
-  def / (b : Int):Mat = notImplemented2("/", b)
-  def ^  (b : Int):Mat = notImplemented2("^", b)
+  override def >  (b : Float):Mat = notImplemented1(">", b)
+  override def <  (b : Float):Mat = notImplemented1("<", b)
+  override def >= (b : Float):Mat = notImplemented1(">=", b)
+  override def <= (b : Float):Mat = notImplemented1("<=", b)
+  override def == (b : Float):Mat = notImplemented1("==", b)
+  override def === (b : Float):Mat = notImplemented1("===", b)
+  override def != (b : Float):Mat = notImplemented1("!=", b)
   
-  def >  (b : Int):Mat = notImplemented2(">", b)
-  def <  (b : Int):Mat = notImplemented2("<", b)
-  def >= (b : Int):Mat = notImplemented2(">=", b)
-  def <= (b : Int):Mat = notImplemented2("<=", b)
-  def == (b : Int):Mat = notImplemented2("==", b)
-  def === (b : Int):Mat = notImplemented2("===", b)
-  def != (b : Int):Mat = notImplemented2("!=", b)
+  override def max(b : Float):Mat = notImplemented1("max", b)
+  override def min(b : Float):Mat = notImplemented1("min", b)
   
-  def + (b : Long):Mat = notImplemented2("+", b)
-  def - (b : Long):Mat = notImplemented2("-", b)
-  def * (b : Long):Mat = notImplemented2("*", b)
-  def *@ (b : Long):Mat = notImplemented2("*@", b)
-  def ∘  (b : Long):Mat = notImplemented2("∘", b)
-  def /  (b : Long):Mat = notImplemented2("/", b)
-  def ^ (b : Long):Mat   = notImplemented2("^", b)
+  override def *  (b : Int):Mat = notImplemented1("*", b)
+  override def +  (b : Int):Mat = notImplemented1("+", b)
+  override def -  (b : Int):Mat = notImplemented1("-", b)
+  override def *@ (b : Int):Mat = notImplemented1("*@", b)
+  override def ∘  (b : Int):Mat = notImplemented1("∘", b)
+  override def / (b : Int):Mat = notImplemented1("/", b)
+  override def ^  (b : Int):Mat = notImplemented1("^", b)
   
-  def > (b : Long):Mat = notImplemented2(">", b)
-  def < (b : Long):Mat = notImplemented2("<", b)
-  def >= (b : Long):Mat = notImplemented2(">=", b)
-  def <= (b : Long):Mat = notImplemented2("<=", b)
-  def == (b : Long):Mat = notImplemented2("==", b)
-  def === (b : Long):Mat = notImplemented2("===", b)
-  def != (b : Long):Mat = notImplemented2("!=", b)
+  override def >  (b : Int):Mat = notImplemented1(">", b)
+  override def <  (b : Int):Mat = notImplemented1("<", b)
+  override def >= (b : Int):Mat = notImplemented1(">=", b)
+  override def <= (b : Int):Mat = notImplemented1("<=", b)
+  override def == (b : Int):Mat = notImplemented1("==", b)
+  override def === (b : Int):Mat = notImplemented1("===", b)
+  override def != (b : Int):Mat = notImplemented1("!=", b)
   
-  def *  (b : Double):Mat = notImplemented2("*", b)
-  def +  (b : Double):Mat = notImplemented2("+", b)
-  def -  (b : Double):Mat = notImplemented2("-", b)
-  def *@ (b : Double):Mat = notImplemented2("*@", b)
-  def ∘  (b : Double):Mat = notImplemented2("∘", b)
-  def / (b : Double):Mat = notImplemented2("/", b)
-  def ^  (b : Double):Mat = notImplemented2("^", b)
+  override def max(b : Int):Mat = notImplemented1("max", b)
+  override def min(b : Int):Mat = notImplemented1("min", b)
   
-  def >  (b : Double):Mat = notImplemented2(">", b)
-  def <  (b : Double):Mat = notImplemented2("<", b)
-  def >= (b : Double):Mat = notImplemented2(">=", b)
-  def <= (b : Double):Mat = notImplemented2("<=", b)
-  def == (b : Double):Mat = notImplemented2("==", b)
-  def === (b : Double):Mat = notImplemented2("===", b)
-  def != (b : Double):Mat = notImplemented2("!=", b)
+  override def + (b : Long):Mat = notImplemented1("+", b)
+  override def - (b : Long):Mat = notImplemented1("-", b)
+  override def * (b : Long):Mat = notImplemented1("*", b)
+  override def *@ (b : Long):Mat = notImplemented1("*@", b)
+  override def ∘  (b : Long):Mat = notImplemented1("∘", b)
+  override def /  (b : Long):Mat = notImplemented1("/", b)
+  override def ^ (b : Long):Mat   = notImplemented1("^", b)
   
-  def +  (b : ND):ND = notImplemented1("+", b)
-  def -  (b : ND):ND = notImplemented1("-", b)
-  def *  (b : ND):ND = notImplemented1("*", b)
-  def *^ (b : ND):ND = notImplemented1("*^", b)
-  def xT (b : ND):ND = notImplemented1("*", b)
-  def Tx (b : ND):ND = notImplemented1("*", b)
-  def ^* (b : ND):ND = notImplemented1("^*", b)
-  def ** (b : ND):ND = notImplemented1("**", b)
-  def ⊗  (b : ND):ND = notImplemented1("⊗", b)       // unicode 8855, 0x2297
-  def /< (b : ND):ND = notImplemented1("/<", b)
-  def ∘  (b : ND):ND = notImplemented1("∘", b)        // unicode 8728, 0x2218 
-  def *@ (b : ND):ND = notImplemented1("*@", b)
-  def /  (b : ND):ND = notImplemented1("/", b)
-  def \\ (b : ND):ND = notImplemented1("\\\\", b)
-  def ^  (b : ND):ND = notImplemented1("^", b) 
-  def ◁  (b : ND):ND = notImplemented1("◁", b)        // unicode 9665, 0x25C1 
-  def ▷  (b : ND):ND = notImplemented1("▷", b)        // unicode 9666, 0x25C2
-  def dot (b : ND):ND = notImplemented1("dot", b)
-  def dotr (b : ND):ND = notImplemented1("dotr", b) 
-  def ∙ (b : ND):ND = notImplemented1("dot", b)       // unicode 8729, 0x2219 
-  def ∙→ (b : ND):ND = notImplemented1("dotr", b)     // unicode (8729, 8594) (0x2219, 0x2192)
-    
-  def >  (b : ND):ND = notImplemented1(">", b)
-  def <  (b : ND):ND = notImplemented1("<", b)
-  def >= (b : ND):ND = notImplemented1(">=", b)
-  def <= (b : ND):ND = notImplemented1("<=", b)
-  def == (b : ND):ND = notImplemented1("==", b)
-  def === (b : ND):ND = notImplemented1("===", b)
-  def != (b : ND):ND = notImplemented1("!=", b)
+  override def > (b : Long):Mat = notImplemented1(">", b)
+  override def < (b : Long):Mat = notImplemented1("<", b)
+  override def >= (b : Long):Mat = notImplemented1(">=", b)
+  override def <= (b : Long):Mat = notImplemented1("<=", b)
+  override def == (b : Long):Mat = notImplemented1("==", b)
+  override def === (b : Long):Mat = notImplemented1("===", b)
+  override def != (b : Long):Mat = notImplemented1("!=", b)
   
-//  def <-- (b : ND):ND = b.copyTo(this)
-  def \ (b : ND):ND = notImplemented1("\\", b)
-  def on (b : ND):ND = notImplemented1("on", b)
+  override def max(b : Long):Mat = notImplemented1("max", b)
+  override def min(b : Long):Mat = notImplemented1("min", b)
+  
+  override def *  (b : Double):Mat = notImplemented1("*", b)
+  override def +  (b : Double):Mat = notImplemented1("+", b)
+  override def -  (b : Double):Mat = notImplemented1("-", b)
+  override def *@ (b : Double):Mat = notImplemented1("*@", b)
+  override def ∘  (b : Double):Mat = notImplemented1("∘", b)
+  override def / (b : Double):Mat = notImplemented1("/", b)
+  override def ^  (b : Double):Mat = notImplemented1("^", b)
+  
+  override def >  (b : Double):Mat = notImplemented1(">", b)
+  override def <  (b : Double):Mat = notImplemented1("<", b)
+  override def >= (b : Double):Mat = notImplemented1(">=", b)
+  override def <= (b : Double):Mat = notImplemented1("<=", b)
+  override def == (b : Double):Mat = notImplemented1("==", b)
+  override def === (b : Double):Mat = notImplemented1("===", b)
+  override def != (b : Double):Mat = notImplemented1("!=", b)
+  
+  override def max(b : Double):Mat = notImplemented1("max", b)
+  override def min(b : Double):Mat = notImplemented1("min", b)
   
   
   def ddot (b : Mat):Double = {notImplemented1("ddot", b); 0}

@@ -1326,20 +1326,51 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   def <= (b : GMat) = gOp(b, null, op_le)
   def != (b : GMat) = gOp(b, null, op_ne)
   
-  override def + (a : Float) = gOp(GMat(a), null, op_add)
-  override def - (a : Float) = gOp(GMat(a), null, op_sub)
-  override def *@ (a : Float) = gOp(GMat(a), null, op_mul)
-  override def * (a : Float) = gOp(GMat(a), null, op_mul)
-  override def ∘  (a : Float) = gOp(GMat(a), null, op_mul)
-  override def /  (a : Float) = gOp(GMat(a), null, op_div)
-  override def ^  (a : Float) = gOp(GMat(a), null, op_pow)
+  def max (b : GMat) = gOp(b, null, op_max)
+  def min (b : GMat) = gOp(b, null, op_min)
   
-  override def < (b : Float) = gOp(GMat(b), null, op_lt);
-  override def > (b : Float) = gOp(GMat(b), null, op_gt);
-  override def <= (b : Float) = gOp(GMat(b), null, op_le);
-  override def >= (b : Float) = gOp(GMat(b), null, op_ge);
-  override def == (b : Float) = gOp(GMat(b), null, op_eq);
-  override def != (b : Float) = gOp(GMat(b), null, op_ne);
+  def checkOne(b:Seq[Int], name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("GMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  def checkOne(b:IMat, name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("GMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  override def sum(ind:IMat):GMat = reduceOp(null, checkOne(ind,"sum")+1, 0f, op_add);
+  override def prod(ind:IMat):GMat = reduceOp(null, checkOne(ind,"prod")+1, 0f, op_mul);
+  override def maxi(ind:IMat):GMat = reduceOp(null, checkOne(ind,"maxi")+1, 0f, op_max);
+  override def mini(ind:IMat):GMat = reduceOp(null, checkOne(ind,"mini")+1, 0f, op_min);
+  override def mean(ind:IMat):GMat = SciFunctions._mean(this, checkOne(ind,"mean")+1).asInstanceOf[GMat];
+  override def variance(ind:IMat):GMat = SciFunctions._variance(this, checkOne(ind,"variance")+1).asInstanceOf[GMat];
+
+  override def sum(ind:Int*):GMat = reduceOp(null, checkOne(ind,"sum")+1, 0f, op_add);
+  override def prod(ind:Int*):GMat = reduceOp(null, checkOne(ind,"prod")+1, 0f, op_mul);
+  override def maxi(ind:Int*):GMat = reduceOp(null, checkOne(ind,"maxi")+1, 0f, op_max);
+  override def mini(ind:Int*):GMat = reduceOp(null, checkOne(ind,"mini")+1, 0f, op_min);
+  override def mean(ind:Int*):GMat = SciFunctions._mean(this, checkOne(ind,"mean")+1).asInstanceOf[GMat];
+  override def variance(ind:Int*):GMat = SciFunctions._variance(this, checkOne(ind,"variance")+1).asInstanceOf[GMat];
+
+  
+  override def + (a : Float) = gOp(GMat.elem(a), null, op_add)
+  override def - (a : Float) = gOp(GMat.elem(a), null, op_sub)
+  override def *@ (a : Float) = gOp(GMat.elem(a), null, op_mul)
+  override def * (a : Float) = gOp(GMat.elem(a), null, op_mul)
+  override def ∘  (a : Float) = gOp(GMat.elem(a), null, op_mul)
+  override def /  (a : Float) = gOp(GMat.elem(a), null, op_div)
+  override def ^  (a : Float) = gOp(GMat.elem(a), null, op_pow)
+  
+  override def < (b : Float) = gOp(GMat.elem(b), null, op_lt);
+  override def > (b : Float) = gOp(GMat.elem(b), null, op_gt);
+  override def <= (b : Float) = gOp(GMat.elem(b), null, op_le);
+  override def >= (b : Float) = gOp(GMat.elem(b), null, op_ge);
+  override def == (b : Float) = gOp(GMat.elem(b), null, op_eq);
+  override def != (b : Float) = gOp(GMat.elem(b), null, op_ne);
+  
+  override def max (b : Float) = gOp(GMat.elem(b), null, op_max)
+  override def min (b : Float) = gOp(GMat.elem(b), null, op_min)
   
   
   override def + (a : Double) = gOp(GMat(a.toFloat), null, op_add)
@@ -1356,6 +1387,9 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   override def >= (b : Double) = gOp(GMat(b.toFloat), null, op_ge)
   override def == (b : Double) = gOp(GMat(b.toFloat), null, op_eq)
   override def != (b : Double) = gOp(GMat(b.toFloat), null, op_ne)
+
+  override def max (b : Double) = gOp(GMat.elem(b), null, op_max)
+  override def min (b : Double) = gOp(GMat.elem(b), null, op_min)
   
   
   override def + (a : Int) = gOp(GMat(a.toFloat), null, op_add)
@@ -1372,6 +1406,9 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   override def >= (b : Int) = gOp(GMat(b.toFloat), null, op_ge)
   override def == (b : Int) = gOp(GMat(b.toFloat), null, op_eq)
   override def != (b : Int) = gOp(GMat(b.toFloat), null, op_ne)
+  
+  override def max (b : Int) = gOp(GMat.elem(b), null, op_max)
+  override def min (b : Int) = gOp(GMat.elem(b), null, op_min)
 
   
   override def + (a : Long) = gOp(GMat(a.toFloat), null, op_add)
@@ -1388,8 +1425,9 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   override def >= (b : Long) = gOp(GMat(b.toFloat), null, op_ge)
   override def == (b : Long) = gOp(GMat(b.toFloat), null, op_eq)
   override def != (b : Long) = gOp(GMat(b.toFloat), null, op_ne)
-
-
+  
+  override def max (b : Long) = gOp(GMat.elem(b), null, op_max)
+  override def min (b : Long) = gOp(GMat.elem(b), null, op_min)
 
   
   def on(a : GMat) = vertcat(a, null)

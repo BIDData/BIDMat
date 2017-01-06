@@ -843,6 +843,33 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   def >=  (b : DMat) = ddMatOp(b, DMat.geFun, null)
   def <=  (b : DMat) = ddMatOp(b, DMat.leFun, null)
   def !=  (b : DMat) = ddMatOp(b, DMat.neFun, null)
+  
+  def max(b: DMat) = ddMatOpv(b, DMat.vecMaxFun, null)
+  def min(b: DMat) = ddMatOpv(b, DMat.vecMinFun, null)
+  
+  def checkOne(b:Seq[Int], name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("DMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  def checkOne(b:IMat, name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("DMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  override def sum(ind:Int*):DMat = ddReduceOpv(checkOne(ind,"sum")+1, DMat.idFun, DMat.vecAddFun, null);
+  override def prod(ind:Int*):DMat = ddReduceOpv(checkOne(ind,"prod")+1, DMat.idFun, DMat.vecMulFun, null);
+  override def maxi(ind:Int*):DMat = ddReduceOpv(checkOne(ind,"maxi")+1, DMat.idFun, DMat.vecMaxFun, null);
+  override def mini(ind:Int*):DMat = ddReduceOpv(checkOne(ind,"mini")+1, DMat.idFun, DMat.vecMinFun, null);
+  override def mean(ind:Int*):DMat = SciFunctions._mean(this, checkOne(ind,"mean")+1).asInstanceOf[DMat];
+  override def variance(ind:Int*):DMat = SciFunctions._variance(this, checkOne(ind,"variance")+1).asInstanceOf[DMat];
+
+  override def sum(ind:IMat):DMat = ddReduceOpv(checkOne(ind,"sum")+1, DMat.idFun, DMat.vecAddFun, null);
+  override def prod(ind:IMat):DMat = ddReduceOpv(checkOne(ind,"prod")+1, DMat.idFun, DMat.vecMulFun, null);
+  override def maxi(ind:IMat):DMat = ddReduceOpv(checkOne(ind,"maxi")+1, DMat.idFun, DMat.vecMaxFun, null);
+  override def mini(ind:IMat):DMat = ddReduceOpv(checkOne(ind,"mini")+1, DMat.idFun, DMat.vecMinFun, null);
+  override def mean(ind:IMat):DMat = SciFunctions._mean(this, checkOne(ind,"mean")+1).asInstanceOf[DMat];
+  override def variance(ind:IMat):DMat = SciFunctions._variance(this, checkOne(ind,"variance")+1).asInstanceOf[DMat];
 
   override def *  (b : Double) = fDMult(DMat.delem(b), null)
   override def +  (b : Double) = ddMatOpScalarv(b, DMat.vecAddFun, null)
@@ -859,6 +886,9 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   override def <=  (b : Double) = ddMatOpScalar(b, DMat.leFun, null)
   override def !=  (b : Double) = ddMatOpScalar(b, DMat.neFun, null) 
   
+  override def min  (b : Double) = ddMatOpScalar(b, DMat.minFun, null)
+  override def max  (b : Double) = ddMatOpScalar(b, DMat.maxFun, null) 
+  
   override def *  (b : Float) = fDMult(DMat.delem(b), null)
   override def +  (b : Float) = ddMatOpScalarv(b, DMat.vecAddFun, null)
   override def -  (b : Float) = ddMatOpScalarv(b, DMat.vecSubFun, null)
@@ -874,6 +904,9 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   override def <=  (b : Float) = ddMatOpScalar(b, DMat.leFun, null)
   override def !=  (b : Float) = ddMatOpScalar(b, DMat.neFun, null)
   
+  override def min  (b : Float) = ddMatOpScalar(b, DMat.minFun, null)
+  override def max  (b : Float) = ddMatOpScalar(b, DMat.maxFun, null)
+  
   override def *  (b : Int) = fDMult(DMat.delem(b), null)
   override def +  (b : Int) = ddMatOpScalarv(b, DMat.vecAddFun, null)
   override def -  (b : Int) = ddMatOpScalarv(b, DMat.vecSubFun, null)
@@ -888,6 +921,9 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   override def >=  (b : Int) = ddMatOpScalar(b, DMat.geFun, null)
   override def <=  (b : Int) = ddMatOpScalar(b, DMat.leFun, null)
   override def !=  (b : Int) = ddMatOpScalar(b, DMat.neFun, null)
+  
+  override def min  (b : Int) = ddMatOpScalar(b, DMat.minFun, null)
+  override def max  (b : Int) = ddMatOpScalar(b, DMat.maxFun, null)
 
   def \ (b: DMat) = DMat(ghorzcat(b))
   def \ (b:Double) = DMat(ghorzcat(DMat.delem(b)))

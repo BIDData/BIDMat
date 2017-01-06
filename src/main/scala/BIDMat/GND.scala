@@ -489,7 +489,7 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
     out
   }
     
-  def colslice(a:Int, b:Int, out:ND):GND = {
+ override def colslice(a:Int, b:Int, out:ND):GND = {
     val dims0 = dims;
     dims0(dims.length - 1) = b - a;
     val outx = GND.newOrCheckGND(dims0, out, GUID, a, b, "colslice".##);
@@ -497,9 +497,9 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
     outx;
   }
   
-  def colslice(a:Int, b:Int):GND = colslice(a, b, null)
+  override def colslice(a:Int, b:Int):GND = colslice(a, b, null)
   
-  def colslice(a:Int, b:Int, out:ND, c:Int):GND = {
+  override def colslice(a:Int, b:Int, out:ND, c:Int):GND = {
     asMat.colslice(a, b, out.asMat, c);
     out.asInstanceOf[GND];
   }
@@ -616,107 +616,106 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
   def != (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, null, "!="); c ~ a != b; d}
   def == (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, null, "=="); c ~ a == b; d}
   def === (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, null, "==="); c ~ a === b; d}
-  
-    
+     
   def max (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, null, "max"); SciFunctions.max(a, b, c); d}
   def max (mat:GND, omat:ND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, omat, "max"); SciFunctions.max(a, b, c); d}
   def min (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, null, "max"); SciFunctions.min(a, b, c); d}
   def min (mat:GND, omat:ND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, omat, "max"); SciFunctions.min(a, b, c); d}
   
-  def max(b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "max"); SciFunctions.max(a, b, c); d}
-  def min(b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "min"); SciFunctions.min(a, b, c); d}
+  
+  override def + (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "+"); c ~ a + b; d}
+  override def - (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "-"); c ~ a - b; d}
+  override def *@ (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "*@"); c ~ a *@ b; d}
+  override def ∘ (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "∘"); c ~ a *@ b; d}
+  override def * (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "*"); c ~ a *@ b; d}
+  override def / (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "/"); c ~ a / b; d}
+  override def ^ (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "^"); c ~ a ^ b; d}
+  
+  override def > (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, ">"); c ~ a > b; d}
+  override def < (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "<"); c ~ a < b; d}
+  override def >= (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, ">="); c ~ a >= b; d}
+  override def <= (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "<="); c ~ a <= b; d}
+  override def != (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "!="); c ~ a != b; d}
+  override def == (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "=="); c ~ a == b; d}
+  override def === (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "==="); c ~ a === b; d}  
+    
+  override def max(b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "max"); SciFunctions.max(a, b, c); d}
+  override def min(b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "min"); SciFunctions.min(a, b, c); d}
   def max(b:Float, omat:ND):GND = {val (a, c, d) = GND.asGMats(this, omat, "max"); SciFunctions.max(a, b, c); d}
   def min(b:Float, omat:ND):GND = {val (a, c, d) = GND.asGMats(this, omat, "min"); SciFunctions.min(a, b, c); d}
-
-  
-  def + (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "+"); c ~ a + b; d}
-  def - (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "-"); c ~ a - b; d}
-  def *@ (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "*@"); c ~ a *@ b; d}
-  def ∘ (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "∘"); c ~ a *@ b; d}
-  def * (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "*"); c ~ a *@ b; d}
-  def / (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "/"); c ~ a / b; d}
-  def ^ (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "^"); c ~ a ^ b; d}
-  
-  def > (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, ">"); c ~ a > b; d}
-  def < (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "<"); c ~ a < b; d}
-  def >= (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, ">="); c ~ a >= b; d}
-  def <= (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "<="); c ~ a <= b; d}
-  def != (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "!="); c ~ a != b; d}
-  def == (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "=="); c ~ a == b; d}
-  def === (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "==="); c ~ a === b; d} 
   
   
   
-  def + (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "+"); c ~ a + b; d}
-  def - (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "-"); c ~ a - b; d}
-  def *@ (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "*@"); c ~ a *@ b; d}
-  def ∘ (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "∘"); c ~ a *@ b; d}
-  def / (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "/"); c ~ a / b; d}
-  def ^ (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "^"); c ~ a ^ b; d}
-  def * (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "*"); c ~ a *@ b; d}
+  override def + (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "+"); c ~ a + b; d}
+  override def - (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "-"); c ~ a - b; d}
+  override def *@ (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "*@"); c ~ a *@ b; d}
+  override def ∘ (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "∘"); c ~ a *@ b; d}
+  override def / (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "/"); c ~ a / b; d}
+  override def ^ (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "^"); c ~ a ^ b; d}
+  override def * (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "*"); c ~ a *@ b; d}
   
-  def > (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, ">"); c ~ a > b; d}
-  def < (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "<"); c ~ a < b; d}
-  def >= (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, ">="); c ~ a >= b; d}
-  def <= (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "<="); c ~ a <= b; d}
-  def != (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "!="); c ~ a != b; d}
-  def == (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "=="); c ~ a == b; d}
-  def === (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "==="); c ~ a === b; d}
-  
-  
-  
-  def + (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "+"); c ~ a + b; d}
-  def - (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "-"); c ~ a - b; d}
-  def *@ (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "*@"); c ~ a *@ b; d}
-  def ∘ (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "∘"); c ~ a *@ b; d}
-  def / (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "/"); c ~ a / b; d}
-  def ^ (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "^"); c ~ a ^ b; d}
-  def * (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "*"); c ~ a *@ b; d}
-  
-  def > (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, ">"); c ~ a > b; d}
-  def < (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "<"); c ~ a < b; d}
-  def >= (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, ">="); c ~ a >= b; d}
-  def <= (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "<="); c ~ a <= b; d}
-  def != (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "!="); c ~ a != b; d}
-  def == (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "=="); c ~ a == b; d}
-  def === (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "==="); c ~ a === b; d}
+  override def > (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, ">"); c ~ a > b; d}
+  override def < (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "<"); c ~ a < b; d}
+  override def >= (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, ">="); c ~ a >= b; d}
+  override def <= (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "<="); c ~ a <= b; d}
+  override def != (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "!="); c ~ a != b; d}
+  override def == (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "=="); c ~ a == b; d}
+  override def === (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "==="); c ~ a === b; d}
   
   
-  def + (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "+"); c ~ a + b; d}
-  def - (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "-"); c ~ a - b; d}
-  def *@ (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "*@"); c ~ a *@ b; d}
-  def ∘ (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "∘"); c ~ a *@ b; d}
-  def / (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "/"); c ~ a / b; d}
-  def ^ (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "^"); c ~ a ^ b; d}
-  def * (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "*"); c ~ a *@ b; d}
   
-  def > (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, ">"); c ~ a > b; d}
-  def < (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "<"); c ~ a < b; d}
-  def >= (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, ">="); c ~ a >= b; d}
-  def <= (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "<="); c ~ a <= b; d}
-  def != (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "!="); c ~ a != b; d}
-  def == (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "=="); c ~ a == b; d}
-  def === (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "==="); c ~ a === b; d}
+  override def + (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "+"); c ~ a + b; d}
+  override def - (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "-"); c ~ a - b; d}
+  override def *@ (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "*@"); c ~ a *@ b; d}
+  override def ∘ (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "∘"); c ~ a *@ b; d}
+  override def / (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "/"); c ~ a / b; d}
+  override def ^ (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "^"); c ~ a ^ b; d}
+  override def * (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "*"); c ~ a *@ b; d}
+  
+  override def > (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, ">"); c ~ a > b; d}
+  override def < (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "<"); c ~ a < b; d}
+  override def >= (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, ">="); c ~ a >= b; d}
+  override def <= (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "<="); c ~ a <= b; d}
+  override def != (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "!="); c ~ a != b; d}
+  override def == (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "=="); c ~ a == b; d}
+  override def === (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "==="); c ~ a === b; d}
   
   
-  def + (b : ND):ND = this + b.asInstanceOf[GND];
-  def - (b : ND):ND = this - b.asInstanceOf[GND]; 
-  def * (b : ND):ND = this * b.asInstanceOf[GND];
-  def *@ (b : ND):ND = this *@ b.asInstanceOf[GND];
-  def ∘  (b : ND):ND = this *@ b.asInstanceOf[GND];
-  def /  (b : ND):ND = this / b.asInstanceOf[GND];
-  def ^ (b : ND):ND = this ^ b.asInstanceOf[GND];
+  override def + (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "+"); c ~ a + b; d}
+  override def - (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "-"); c ~ a - b; d}
+  override def *@ (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "*@"); c ~ a *@ b; d}
+  override def ∘ (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "∘"); c ~ a *@ b; d}
+  override def / (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "/"); c ~ a / b; d}
+  override def ^ (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "^"); c ~ a ^ b; d}
+  override def * (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "*"); c ~ a *@ b; d}
   
-  def > (b : ND):ND = this > b.asInstanceOf[GND];
-  def < (b : ND):ND = this < b.asInstanceOf[GND];
-  def >= (b : ND):ND = this >= b.asInstanceOf[GND];
-  def <= (b : ND):ND = this <= b.asInstanceOf[GND];
-  def == (b : ND):ND = this == b.asInstanceOf[GND];
-  def === (b : ND):ND = this === b.asInstanceOf[GND];
-  def != (b : ND):ND = this != b.asInstanceOf[GND];
+  override def > (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, ">"); c ~ a > b; d}
+  override def < (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "<"); c ~ a < b; d}
+  override def >= (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, ">="); c ~ a >= b; d}
+  override def <= (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "<="); c ~ a <= b; d}
+  override def != (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "!="); c ~ a != b; d}
+  override def == (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "=="); c ~ a == b; d}
+  override def === (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "==="); c ~ a === b; d}
   
-  def \ (b : ND):ND = this \ b.asInstanceOf[GND];
-  def on (b : ND):ND = this on b.asInstanceOf[GND];
+  
+  override def + (b : ND):ND = this + b.asInstanceOf[GND];
+  override def - (b : ND):ND = this - b.asInstanceOf[GND]; 
+  override def * (b : ND):ND = this * b.asInstanceOf[GND];
+  override def *@ (b : ND):ND = this *@ b.asInstanceOf[GND];
+  override def ∘  (b : ND):ND = this *@ b.asInstanceOf[GND];
+  override def /  (b : ND):ND = this / b.asInstanceOf[GND];
+  override def ^ (b : ND):ND = this ^ b.asInstanceOf[GND];
+  
+  override def > (b : ND):ND = this > b.asInstanceOf[GND];
+  override def < (b : ND):ND = this < b.asInstanceOf[GND];
+  override def >= (b : ND):ND = this >= b.asInstanceOf[GND];
+  override def <= (b : ND):ND = this <= b.asInstanceOf[GND];
+  override def == (b : ND):ND = this == b.asInstanceOf[GND];
+  override def === (b : ND):ND = this === b.asInstanceOf[GND];
+  override def != (b : ND):ND = this != b.asInstanceOf[GND];
+  
+  override def \ (b : ND):ND = this \ b.asInstanceOf[GND];
+  override def on (b : ND):ND = this on b.asInstanceOf[GND];
   
   def reduce(inds:Array[Int], fctn:(GMat)=>GMat, opname:String):GND = {
     val alldims = izeros(_dims.length,1);
@@ -739,14 +738,16 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
   def sum(inds:Array[Int]):GND = reduce(inds, SciFunctions.sum, "sum")
   def prod(inds:Array[Int]):GND = reduce(inds, SciFunctions.prod, "prod")
   def mean(inds:Array[Int]):GND = reduce(inds, SciFunctions.mean, "mean")
+  def variance(inds:Array[Int]):GND = reduce(inds, SciFunctions.variance, "variance")
   def maxi(inds:Array[Int]):GND = reduce(inds, SciFunctions.maxi, "maxi")
   def mini(inds:Array[Int]):GND = reduce(inds, SciFunctions.mini, "mini")
   
-  def sum(inds:Int*):GND = sum(inds.toArray)
-  def prod(inds:Int*):GND = prod(inds.toArray)
-  def mean(inds:Int*):GND = mean(inds.toArray)
-  def maxi(inds:Int*):GND = maxi(inds.toArray)
-  def mini(inds:Int*):GND = mini(inds.toArray)  
+  override def sum(inds:Int*):GND = sum(inds.toArray)
+  override def prod(inds:Int*):GND = prod(inds.toArray)
+  override def mean(inds:Int*):GND = mean(inds.toArray)
+  override def variance(inds:Int*):GND = variance(inds.toArray)
+  override def maxi(inds:Int*):GND = maxi(inds.toArray)
+  override def mini(inds:Int*):GND = mini(inds.toArray)  
     
   def ~ (b : GND):GNDPair = new GNDPair(this, b)
   def ~ (b : ND):GNDPair = new GNDPair(this, b.asInstanceOf[GND])

@@ -1488,6 +1488,33 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def >=  (b : FMat) = ffMatOpv(b, FMat.vecGEFun, null)
   def <=  (b : FMat) = ffMatOpv(b, FMat.vecLEFun, null)
   def !=  (b : FMat) = ffMatOpv(b, FMat.vecNEFun, null)
+  
+  def max(b: FMat) = ffMatOpv(b, FMat.vecMaxFun, null)
+  def min(b: FMat) = ffMatOpv(b, FMat.vecMinFun, null)
+  
+  def checkOne(b:Seq[Int], name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("FMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  def checkOne(b:IMat, name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("FMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  override def sum(ind:IMat):FMat = ffReduceOpv(checkOne(ind,"sum")+1, FMat.idFun, FMat.vecAddFun, null);
+  override def prod(ind:IMat):FMat = ffReduceOpv(checkOne(ind,"prod")+1, FMat.idFun, FMat.vecMulFun, null);
+  override def maxi(ind:IMat):FMat = ffReduceOpv(checkOne(ind,"maxi")+1, FMat.idFun, FMat.vecMaxFun, null);
+  override def mini(ind:IMat):FMat = ffReduceOpv(checkOne(ind,"mini")+1, FMat.idFun, FMat.vecMinFun, null);
+  override def mean(ind:IMat):FMat = SciFunctions._mean(this, checkOne(ind,"mean")+1).asInstanceOf[FMat];
+  override def variance(ind:IMat):FMat = SciFunctions._variance(this, checkOne(ind,"variance")+1).asInstanceOf[FMat];
+
+  override def sum(ind:Int*):FMat = ffReduceOpv(checkOne(ind,"sum")+1, FMat.idFun, FMat.vecAddFun, null);
+  override def prod(ind:Int*):FMat = ffReduceOpv(checkOne(ind,"prod")+1, FMat.idFun, FMat.vecMulFun, null);
+  override def maxi(ind:Int*):FMat = ffReduceOpv(checkOne(ind,"maxi")+1, FMat.idFun, FMat.vecMaxFun, null);
+  override def mini(ind:Int*):FMat = ffReduceOpv(checkOne(ind,"mini")+1, FMat.idFun, FMat.vecMinFun, null);
+  override def mean(ind:Int*):FMat = SciFunctions._mean(this, checkOne(ind,"mean")+1).asInstanceOf[FMat];
+  override def variance(ind:Int*):FMat = SciFunctions._variance(this, checkOne(ind,"variance")+1).asInstanceOf[FMat];
 
   /*
    * Scalar operations
@@ -1507,6 +1534,9 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   override def >=  (b : Float) = ffMatOpScalarv(b, FMat.vecGEFun, null)
   override def <=  (b : Float) = ffMatOpScalarv(b, FMat.vecLEFun, null)
   override def !=  (b : Float) = ffMatOpScalarv(b, FMat.vecNEFun, null)
+  
+  override def min  (b : Float) = ffMatOpScalar(b, FMat.minFun, null)
+  override def max  (b : Float) = ffMatOpScalar(b, FMat.maxFun, null)
 
   override def *  (b : Double) = fDMult(FMat.elem(b.toFloat), null)
   override def +  (b : Double) = ffMatOpScalarv(b.toFloat, FMat.vecAddFun, null)
@@ -1522,6 +1552,9 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   override def >=  (b : Double) = ffMatOpScalarv(b.toFloat, FMat.vecGEFun, null)
   override def <=  (b : Double) = ffMatOpScalarv(b.toFloat, FMat.vecLEFun, null)
   override def !=  (b : Double) = ffMatOpScalarv(b.toFloat, FMat.vecNEFun, null)
+  
+  override def min  (b : Double) = ffMatOpScalar(b.toFloat, FMat.minFun, null)
+  override def max  (b : Double) = ffMatOpScalar(b.toFloat, FMat.maxFun, null)
 
   override def *  (b : Int) = fDMult(FMat.elem(b), null)
   override def +  (b : Int) = ffMatOpScalarv(b, FMat.vecAddFun, null)
@@ -1537,6 +1570,9 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   override def >=  (b : Int) = ffMatOpScalarv(b, FMat.vecGEFun, null)
   override def <=  (b : Int) = ffMatOpScalarv(b, FMat.vecLEFun, null)
   override def !=  (b : Int) = ffMatOpScalarv(b, FMat.vecNEFun, null)
+  
+  override def min  (b : Int) = ffMatOpScalar(b.toFloat, FMat.minFun, null)
+  override def max  (b : Int) = ffMatOpScalar(b.toFloat, FMat.maxFun, null)
 
   def \ (b: FMat) = horzcat(b)
   def \ (b: Float) = horzcat(FMat.elem(b))

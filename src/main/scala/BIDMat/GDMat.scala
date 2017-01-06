@@ -880,6 +880,41 @@ class GDMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Int) exten
   def ∙  (a : GDMat) = dot(a)
   def ∙→ (a : GDMat) = dotr(a)
   
+  def > (b : GDMat) = gOp(b, null, op_gt)
+  def < (b : GDMat) = gOp(b, null, op_lt)
+  def == (b : GDMat) = gOp(b, null, op_eq)
+  def === (b : GDMat) = gOp(b, null, op_eq)
+  def >= (b : GDMat) = gOp(b, null, op_ge)
+  def <= (b : GDMat) = gOp(b, null, op_le)
+  def != (b : GDMat) = gOp(b, null, op_ne)
+  
+  def max (b : GDMat) = gOp(b, null, op_max)
+  def min (b : GDMat) = gOp(b, null, op_min)
+  
+    def checkOne(b:Seq[Int], name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("GMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  def checkOne(b:IMat, name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("GMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  override def sum(ind:IMat):GDMat = reduceOp(null, checkOne(ind,"sum")+1, 0f, op_add);
+  override def prod(ind:IMat):GDMat = reduceOp(null, checkOne(ind,"prod")+1, 0f, op_mul);
+  override def maxi(ind:IMat):GDMat = reduceOp(null, checkOne(ind,"maxi")+1, 0f, op_max);
+  override def mini(ind:IMat):GDMat = reduceOp(null, checkOne(ind,"mini")+1, 0f, op_min);
+  override def mean(ind:IMat):GDMat = SciFunctions._mean(this, checkOne(ind,"mean")+1).asInstanceOf[GDMat];
+  override def variance(ind:IMat):GDMat = SciFunctions._variance(this, checkOne(ind,"variance")+1).asInstanceOf[GDMat];
+
+  override def sum(ind:Int*):GDMat = reduceOp(null, checkOne(ind,"sum")+1, 0f, op_add);
+  override def prod(ind:Int*):GDMat = reduceOp(null, checkOne(ind,"prod")+1, 0f, op_mul);
+  override def maxi(ind:Int*):GDMat = reduceOp(null, checkOne(ind,"maxi")+1, 0f, op_max);
+  override def mini(ind:Int*):GDMat = reduceOp(null, checkOne(ind,"mini")+1, 0f, op_min);
+  override def mean(ind:Int*):GDMat = SciFunctions._mean(this, checkOne(ind,"mean")+1).asInstanceOf[GDMat];
+  override def variance(ind:Int*):GDMat = SciFunctions._variance(this, checkOne(ind,"variance")+1).asInstanceOf[GDMat];
+  
   override def + (a : Float) = gOp(GDMat(a), null, op_add)
   override def - (a : Float) = gOp(GDMat(a), null, op_sub)
   override def *@ (a : Float) = gOp(GDMat(a), null, op_mul)
@@ -887,6 +922,16 @@ class GDMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Int) exten
   override def ∘  (a : Float) = gOp(GDMat(a), null, op_mul)
   override def /  (a : Float) = gOp(GDMat(a), null, op_div)
   override def ^  (a : Float) = gOp(GDMat(a), null, op_pow)
+    
+  override def < (b : Float) = gOp(GDMat(b), null, op_lt)
+  override def > (b : Float) = gOp(GDMat(b), null, op_gt)
+  override def <= (b : Float) = gOp(GDMat(b), null, op_le)
+  override def >= (b : Float) = gOp(GDMat(b), null, op_ge)
+  override def == (b : Float) = gOp(GDMat(b), null, op_eq)
+  override def != (b : Float) = gOp(GDMat(b), null, op_ne)
+  
+  override def max (b : Float) = gOp(GDMat(b), null, op_max)
+  override def min (b : Float) = gOp(GDMat(b), null, op_min)
   
   override def + (a : Double) = gOp(GDMat(a), null, op_add)
   override def - (a : Double) = gOp(GDMat(a), null, op_sub)
@@ -895,6 +940,17 @@ class GDMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Int) exten
   override def ∘  (a : Double) = gOp(GDMat(a), null, op_mul)
   override def /  (a : Double) = gOp(GDMat(a), null, op_div)
   override def ^  (a : Double) = gOp(GDMat(a), null, op_pow)
+   
+  override def < (b : Double) = gOp(GDMat(b), null, op_lt)
+  override def > (b : Double) = gOp(GDMat(b), null, op_gt)
+  override def <= (b : Double) = gOp(GDMat(b), null, op_le)
+  override def >= (b : Double) = gOp(GDMat(b), null, op_ge)
+  override def == (b : Double) = gOp(GDMat(b), null, op_eq)
+  override def != (b : Double) = gOp(GDMat(b), null, op_ne)
+  
+  override def max (b : Double) = gOp(GDMat(b), null, op_max)
+  override def min (b : Double) = gOp(GDMat(b), null, op_min)
+  
   
   override def + (a : Int) = gOp(GDMat(a.toDouble), null, op_add)
   override def - (a : Int) = gOp(GDMat(a.toDouble), null, op_sub)
@@ -904,34 +960,20 @@ class GDMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Int) exten
   override def /  (a : Int) = gOp(GDMat(a.toDouble), null, op_div)
   override def ^  (a : Int) = gOp(GDMat(a.toDouble), null, op_pow)
   
-  def > (b : GDMat) = gOp(b, null, op_gt)
-  def < (b : GDMat) = gOp(b, null, op_lt)
-  def == (b : GDMat) = gOp(b, null, op_eq)
-  def === (b : GDMat) = gOp(b, null, op_eq)
-  def >= (b : GDMat) = gOp(b, null, op_ge)
-  def <= (b : GDMat) = gOp(b, null, op_le)
-  def != (b : GDMat) = gOp(b, null, op_ne)
-  
-  override def < (b : Float) = gOp(GDMat(b), null, op_lt)
-  override def > (b : Float) = gOp(GDMat(b), null, op_gt)
-  override def <= (b : Float) = gOp(GDMat(b), null, op_le)
-  override def >= (b : Float) = gOp(GDMat(b), null, op_ge)
-  override def == (b : Float) = gOp(GDMat(b), null, op_eq)
-  override def != (b : Float) = gOp(GDMat(b), null, op_ne)
-
   override def < (b : Int) = gOp(GDMat(b), null, op_lt)
   override def > (b : Int) = gOp(GDMat(b), null, op_gt)
   override def <= (b : Int) = gOp(GDMat(b), null, op_le)
   override def >= (b : Int) = gOp(GDMat(b), null, op_ge)
   override def == (b : Int) = gOp(GDMat(b), null, op_eq)
   override def != (b : Int) = gOp(GDMat(b), null, op_ne)
- 
-  override def < (b : Double) = gOp(GDMat(b), null, op_lt)
-  override def > (b : Double) = gOp(GDMat(b), null, op_gt)
-  override def <= (b : Double) = gOp(GDMat(b), null, op_le)
-  override def >= (b : Double) = gOp(GDMat(b), null, op_ge)
-  override def == (b : Double) = gOp(GDMat(b), null, op_eq)
-  override def != (b : Double) = gOp(GDMat(b), null, op_ne)
+  
+  override def max (b : Int) = gOp(GDMat(b), null, op_max)
+  override def min (b : Int) = gOp(GDMat(b), null, op_min)
+  
+
+
+
+
   
   def on(a : GDMat) = vertcat(a, null)
   def \ (a : GDMat) = horzcat(a, null)

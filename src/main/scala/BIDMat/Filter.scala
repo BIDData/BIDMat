@@ -20,20 +20,12 @@ trait Filter {
     flops;
   }
   
-  def notImplemented0ND(s:String):ND = { 
-    throw new RuntimeException("operator "+s+" not implemented for Filter")
-  }
-  
-  def notImplemented1ND(s:String, a:ND):ND = { 
+  def notImplemented1NDf(s:String, a:ND):ND = { 
     throw new RuntimeException("operator "+s+" not implemented for Filter and "+a.mytype)
   }
   
-  def notImplemented2ND(s:String, a:ND, b:ND):ND = { 
-    throw new RuntimeException("operator "+s+" not implemented for Filter and "+a.mytype+" and "+b.mytype)
-  }
-  
   def ^* (a:ND):ND = {
-    notImplemented1ND("^*", a);
+    notImplemented1NDf("^*", a);
   }
 
 }

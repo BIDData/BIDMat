@@ -389,6 +389,32 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   def \ (b: SMat) = horzcat(b)
   def on (b: SMat) = vertcat(b)
   
+  def max(b: SMat) = ssMatOp(b, SMat.maxFun, null)
+  def min(b: SMat) = ssMatOp(b, SMat.minFun, null)
+  
+  def checkOne(b:Seq[Int], name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("FMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  def checkOne(b:IMat, name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("FMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  override def sum(ind:IMat):FMat = ssReduceOp(checkOne(ind,"sum")+1, FMat.idFun, FMat.sumFun, null);
+  override def maxi(ind:IMat):FMat = ssReduceOp(checkOne(ind,"maxi")+1, FMat.idFun, FMat.maxFun, null);
+  override def mini(ind:IMat):FMat = ssReduceOp(checkOne(ind,"mini")+1, FMat.idFun, FMat.minFun, null);
+  override def mean(ind:IMat):FMat = SciFunctions._mean(this, checkOne(ind,"mean")+1).asInstanceOf[FMat];
+  override def variance(ind:IMat):FMat = SciFunctions._variance(this, checkOne(ind,"variance")+1).asInstanceOf[FMat];
+
+  override def sum(ind:Int*):FMat = ssReduceOp(checkOne(ind,"sum")+1, FMat.idFun, FMat.sumFun, null);
+  override def maxi(ind:Int*):FMat = ssReduceOp(checkOne(ind,"maxi")+1, FMat.idFun, FMat.maxFun, null);
+  override def mini(ind:Int*):FMat = ssReduceOp(checkOne(ind,"mini")+1, FMat.idFun, FMat.minFun, null);
+  override def mean(ind:Int*):FMat = SciFunctions._mean(this, checkOne(ind,"mean")+1).asInstanceOf[FMat];
+  override def variance(ind:Int*):FMat = SciFunctions._variance(this, checkOne(ind,"variance")+1).asInstanceOf[FMat];
+
+  
   override def + (b : Float) = ssMatOpScalar(b, SMat.sumFun, null)
   override def - (b : Float) = ssMatOpScalar(b, SMat.subFun, null)
   override def *@ (b : Float) = ssMatOpScalar(b, SMat.mulFun, null)

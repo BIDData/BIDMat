@@ -17,6 +17,8 @@ abstract class ND(protected val _dims:Array[Int]) extends Serializable {
   
   val ncols = _dims(_dims.length-1);
   
+  val ndims = _dims.length;
+  
   val nrows = {
     var p = 1;
     var i = 0;
@@ -57,6 +59,58 @@ abstract class ND(protected val _dims:Array[Int]) extends Serializable {
   
   def GUID:Long = _GUID;
 
+ 
+  def notImplemented0(s:String):ND = { 
+    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
+  }
+  
+  def notImplemented0Mat(s:String):Mat = { 
+    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
+  }
+  
+  def notImplemented1(s:String,that:ND):ND = { 
+    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and "+that.mytype)
+  }
+  
+  def notImplemented2(s:String, a:ND, b:ND):ND = { 
+    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and "+a.mytype+" and "+b.mytype)
+  }
+  
+  def notImplemented1(s:String,that:Mat):Mat = { 
+    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and "+that.mytype)
+  }
+  
+  def notImplemented2(s:String, a:Mat, b:Mat):Mat = { 
+    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and "+a.mytype+" and "+b.mytype)
+  }
+  
+  def notImplemented1(s:String,that:Float):ND = { 
+    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and Float")
+  }
+  
+  def notImplemented1(s:String,that:Int):ND = { 
+    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and Int")
+  }
+  
+  def notImplemented1(s:String,that:Double):ND = { 
+    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and Double")
+  }
+  
+  def notImplementedf(s:String):Float = { 
+    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
+  }
+  
+  def notImplementedd(s:String):Double = { 
+    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
+  }
+  
+  def notImplementedi(s:String):Int = { 
+    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
+  }
+  
+  def notImplementedl(s:String):Long = { 
+    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
+  }
   
   def applyf(i:Int):Float;
   
@@ -72,9 +126,15 @@ abstract class ND(protected val _dims:Array[Int]) extends Serializable {
   def update(i1:Mat, i2:Mat, i3:Mat, vv:ND):ND;
   def update(i1:Mat, i2:Mat, i3:Mat, i4:Mat, vv:ND):ND;
   
-  def colslice(a:Int, b:Int, out:ND):ND;
-  def colslice(a:Int, b:Int, out:ND, c:Int):ND;
-  def colslice(a:Int, b:Int):ND;
+  def colslice(a:Int, b:Int, out:Mat):Mat = notImplemented0Mat("colslice");;
+  def colslice(a:Int, b:Int, out:Mat, c:Int):Mat = notImplemented0Mat("colslice");
+  def colslice(a:Int, b:Int, out:Mat, c:Int, pb:Boolean):Mat = notImplemented0Mat("colslice");
+  
+  def colslice(a:Int, b:Int, out:ND):ND = notImplemented0("colslice");
+  def colslice(a:Int, b:Int, out:ND, c:Int):ND = notImplemented0("colslice");
+  def colslice(a:Int, b:Int, out:ND, c:Int, pb:Boolean):ND = notImplemented0("colslice");
+  
+  def colslice(a:Int, b:Int):ND = notImplemented0("colslice");
   
   def printOne(i:Int):String = {
     val v = applyf(i)
@@ -222,94 +282,173 @@ abstract class ND(protected val _dims:Array[Int]) extends Serializable {
   
   val asMat:Mat
   
-  def + (b : ND):ND
-  def - (b : ND):ND 
-  def * (b : ND):ND   
-  def *@ (b : ND):ND 
-  def ∘  (b : ND):ND 
-  def /  (b : ND):ND 
-  def ^ (b : ND):ND 
+  def +  (b : ND):ND = notImplemented1("+", b)
+  def -  (b : ND):ND = notImplemented1("-", b)
+  def *  (b : ND):ND = notImplemented1("*", b)
+  def *^ (b : ND):ND = notImplemented1("*^", b)
+  def xT (b : ND):ND = notImplemented1("*", b)
+  def Tx (b : ND):ND = notImplemented1("*", b)
+  def ^* (b : ND):ND = notImplemented1("^*", b)
+  def ** (b : ND):ND = notImplemented1("**", b)
+  def ⊗  (b : ND):ND = notImplemented1("⊗", b)       // unicode 8855, 0x2297
+  def /< (b : ND):ND = notImplemented1("/<", b)
+  def ∘  (b : ND):ND = notImplemented1("∘", b)        // unicode 8728, 0x2218 
+  def *@ (b : ND):ND = notImplemented1("*@", b)
+  def /  (b : ND):ND = notImplemented1("/", b)
+  def \\ (b : ND):ND = notImplemented1("\\\\", b)
+  def ^  (b : ND):ND = notImplemented1("^", b) 
+  def ◁  (b : ND):ND = notImplemented1("◁", b)        // unicode 9665, 0x25C1 
+  def ▷  (b : ND):ND = notImplemented1("▷", b)        // unicode 9666, 0x25C2
+  def dot (b : ND):ND = notImplemented1("dot", b)
+  def dotr (b : ND):ND = notImplemented1("dotr", b) 
+  def ∙ (b : ND):ND = notImplemented1("dot", b)       // unicode 8729, 0x2219 
+  def ∙→ (b : ND):ND = notImplemented1("dotr", b)     // unicode (8729, 8594) (0x2219, 0x2192)
+    
+  def >  (b : ND):ND = notImplemented1(">", b)
+  def <  (b : ND):ND = notImplemented1("<", b)
+  def >= (b : ND):ND = notImplemented1(">=", b)
+  def <= (b : ND):ND = notImplemented1("<=", b)
+  def == (b : ND):ND = notImplemented1("==", b)
+  def === (b : ND):ND = notImplemented1("===", b)
+  def != (b : ND):ND = notImplemented1("!=", b)
   
-  def > (b : ND):ND
-  def < (b : ND):ND
-  def >= (b : ND):ND 
-  def <= (b : ND):ND
-  def == (b : ND):ND 
-  def === (b : ND):ND 
-  def != (b : ND):ND 
+  def max(b : ND):ND = notImplemented1("max", b)
+  def min(b : ND):ND = notImplemented1("min", b)
+  
+  def sum(b : IMat):ND = notImplemented0("sum")
+  def prod(b : IMat):ND = notImplemented0("prod")
+  def maxi(b : IMat):ND = notImplemented0("maxi")
+  def mini(b : IMat):ND = notImplemented0("mini")
+  def mean(b : IMat):ND = notImplemented0("mean")
+  def variance(b : IMat):ND = notImplemented0("variance")
+  
+  def sum(b : Int*):ND = notImplemented0("sum")
+  def prod(b : Int*):ND = notImplemented0("prod")
+  def maxi(b : Int*):ND = notImplemented0("maxi")
+  def mini(b : Int*):ND = notImplemented0("mini")
+  def mean(b : Int*):ND = notImplemented0("mean")
+  def variance(b : Int*):ND = notImplemented0("variance")
+  
+  def <-- (b : ND):ND = b.copyTo(this)
+  
+  def \ (b : ND):ND = notImplemented1("\\", b)
+  def on (b : ND):ND = notImplemented1("on", b)
+  
+  def +  (b : Mat):Mat = notImplemented1("+", b)
+  def -  (b : Mat):Mat = notImplemented1("-", b)
+  def *  (b : Mat):Mat = notImplemented1("*", b)
+  def *^ (b : Mat):Mat = notImplemented1("*^", b)
+  def xT (b : Mat):Mat = notImplemented1("*", b)
+  def Tx (b : Mat):Mat = notImplemented1("*", b)
+  def ^* (b : Mat):Mat = notImplemented1("^*", b)
+  def ** (b : Mat):Mat = notImplemented1("**", b)
+  def ⊗  (b : Mat):Mat = notImplemented1("⊗", b)       // unicode 8855, 0x2297
+  def /< (b : Mat):Mat = notImplemented1("/<", b)
+  def ∘  (b : Mat):Mat = notImplemented1("∘", b)        // unicode 8728, 0x2218 
+  def *@ (b : Mat):Mat = notImplemented1("*@", b)
+  def /  (b : Mat):Mat = notImplemented1("/", b)
+  def \\ (b : Mat):Mat = notImplemented1("\\\\", b)
+  def ^  (b : Mat):Mat = notImplemented1("^", b) 
+  def ◁  (b : Mat):Mat = notImplemented1("◁", b)        // unicode 9665, 0x25C1 
+  def ▷  (b : Mat):Mat = notImplemented1("▷", b)        // unicode 9666, 0x25C2
+  def dot (b : Mat):Mat = notImplemented1("dot", b)
+  def dotr (b : Mat):Mat = notImplemented1("dotr", b) 
+  def ∙ (b : Mat):Mat = notImplemented1("dot", b)       // unicode 8729, 0x2219 
+  def ∙→ (b : Mat):Mat = notImplemented1("dotr", b)     // unicode (8729, 8594) (0x2219, 0x2192)
+    
+  def >  (b : Mat):Mat = notImplemented1(">", b)
+  def <  (b : Mat):Mat = notImplemented1("<", b)
+  def >= (b : Mat):Mat = notImplemented1(">=", b)
+  def <= (b : Mat):Mat = notImplemented1("<=", b)
+  def == (b : Mat):Mat = notImplemented1("==", b)
+  def === (b : Mat):Mat = notImplemented1("===", b)
+  def != (b : Mat):Mat = notImplemented1("!=", b)
+  
+  def max(b : Mat):Mat = notImplemented1("max", b)
+  def min(b : Mat):Mat = notImplemented1("min", b)
+  
+//  def <-- (b : Mat):Mat = b.copyTo(this) 
+  def \ (b : Mat):Mat = notImplemented1("\\", b)
+  def on (b : Mat):Mat = notImplemented1("on", b)
+  
+  def *  (b : Float):ND = notImplemented1("*", b)
+  def +  (b : Float):ND = notImplemented1("+", b)
+  def -  (b : Float):ND = notImplemented1("-", b)
+  def *@ (b : Float):ND = notImplemented1("*@", b)
+  def ∘  (b : Float):ND = notImplemented1("∘", b)
+  def / (b : Float):ND = notImplemented1("/", b)
+  def ^  (b : Float):ND = notImplemented1("^", b)
+  
+  def >  (b : Float):ND = notImplemented1(">", b)
+  def <  (b : Float):ND = notImplemented1("<", b)
+  def >= (b : Float):ND = notImplemented1(">=", b)
+  def <= (b : Float):ND = notImplemented1("<=", b)
+  def == (b : Float):ND = notImplemented1("==", b)
+  def === (b : Float):ND = notImplemented1("===", b)
+  def != (b : Float):ND = notImplemented1("!=", b)
+  
+  def max(b : Float):ND = notImplemented1("max", b)
+  def min(b : Float):ND = notImplemented1("min", b)
+  
+  def *  (b : Int):ND = notImplemented1("*", b)
+  def +  (b : Int):ND = notImplemented1("+", b)
+  def -  (b : Int):ND = notImplemented1("-", b)
+  def *@ (b : Int):ND = notImplemented1("*@", b)
+  def ∘  (b : Int):ND = notImplemented1("∘", b)
+  def / (b : Int):ND = notImplemented1("/", b)
+  def ^  (b : Int):ND = notImplemented1("^", b)
+  
+  def >  (b : Int):ND = notImplemented1(">", b)
+  def <  (b : Int):ND = notImplemented1("<", b)
+  def >= (b : Int):ND = notImplemented1(">=", b)
+  def <= (b : Int):ND = notImplemented1("<=", b)
+  def == (b : Int):ND = notImplemented1("==", b)
+  def === (b : Int):ND = notImplemented1("===", b)
+  def != (b : Int):ND = notImplemented1("!=", b)
+  
+  def max(b : Int):ND = notImplemented1("max", b)
+  def min(b : Int):ND = notImplemented1("min", b)
+  
+  def + (b : Long):ND = notImplemented1("+", b)
+  def - (b : Long):ND = notImplemented1("-", b)
+  def * (b : Long):ND = notImplemented1("*", b)
+  def *@ (b : Long):ND = notImplemented1("*@", b)
+  def ∘  (b : Long):ND = notImplemented1("∘", b)
+  def /  (b : Long):ND = notImplemented1("/", b)
+  def ^ (b : Long):ND   = notImplemented1("^", b)
+  
+  def > (b : Long):ND = notImplemented1(">", b)
+  def < (b : Long):ND = notImplemented1("<", b)
+  def >= (b : Long):ND = notImplemented1(">=", b)
+  def <= (b : Long):ND = notImplemented1("<=", b)
+  def == (b : Long):ND = notImplemented1("==", b)
+  def === (b : Long):ND = notImplemented1("===", b)
+  def != (b : Long):ND = notImplemented1("!=", b)
+  
+  def max(b : Long):ND = notImplemented1("max", b)
+  def min(b : Long):ND = notImplemented1("min", b)
+  
+  def *  (b : Double):ND = notImplemented1("*", b)
+  def +  (b : Double):ND = notImplemented1("+", b)
+  def -  (b : Double):ND = notImplemented1("-", b)
+  def *@ (b : Double):ND = notImplemented1("*@", b)
+  def ∘  (b : Double):ND = notImplemented1("∘", b)
+  def / (b : Double):ND = notImplemented1("/", b)
+  def ^  (b : Double):ND = notImplemented1("^", b)
+  
+  def >  (b : Double):ND = notImplemented1(">", b)
+  def <  (b : Double):ND = notImplemented1("<", b)
+  def >= (b : Double):ND = notImplemented1(">=", b)
+  def <= (b : Double):ND = notImplemented1("<=", b)
+  def == (b : Double):ND = notImplemented1("==", b)
+  def === (b : Double):ND = notImplemented1("===", b)
+  def != (b : Double):ND = notImplemented1("!=", b)
+   
+  def max(b : Double):ND = notImplemented1("max", b)
+  def min(b : Double):ND = notImplemented1("min", b)
   
   
-  def + (b : Float):ND 
-  def - (b : Float):ND 
-  def * (b : Float):ND 
-  def *@ (b : Float):ND
-  def ∘  (b : Float):ND
-  def /  (b : Float):ND 
-  def ^ (b : Float):ND 
-  
-  def > (b : Float):ND
-  def < (b : Float):ND 
-  def >= (b : Float):ND 
-  def <= (b : Float):ND 
-  def == (b : Float):ND 
-  def === (b : Float):ND 
-  def != (b : Float):ND 
-  
-  def + (b : Double):ND 
-  def - (b : Double):ND 
-  def * (b : Double):ND 
-  def *@ (b : Double):ND 
-  def ∘  (b : Double):ND 
-  def /  (b : Double):ND 
-  def ^ (b : Double):ND  
-  
-  def > (b : Double):ND 
-  def < (b : Double):ND 
-  def >= (b : Double):ND 
-  def <= (b : Double):ND 
-  def == (b : Double):ND 
-  def === (b : Double):ND 
-  def != (b : Double):ND 
-  
-  
-  def + (b : Int):ND 
-  def - (b : Int):ND 
-  def * (b : Int):ND 
-  def *@ (b : Int):ND 
-  def ∘  (b : Int):ND 
-  def /  (b : Int):ND 
-  def ^ (b : Int):ND  
-  
-  def > (b : Int):ND 
-  def < (b : Int):ND 
-  def >= (b : Int):ND 
-  def <= (b : Int):ND 
-  def == (b : Int):ND 
-  def === (b : Int):ND 
-  def != (b : Int):ND 
-  
-  
-  def + (b : Long):ND 
-  def - (b : Long):ND 
-  def * (b : Long):ND 
-  def *@ (b : Long):ND 
-  def ∘  (b : Long):ND 
-  def /  (b : Long):ND 
-  def ^ (b : Long):ND   
-  
-  def > (b : Long):ND 
-  def < (b : Long):ND 
-  def >= (b : Long):ND 
-  def <= (b : Long):ND 
-  def == (b : Long):ND 
-  def === (b : Long):ND 
-  def != (b : Long):ND 
-  
-  def copyTo(a:ND):ND 
-
-  def <-- (a:ND) = {
-    a.copyTo(this)
-  }
+  def copyTo(a:ND):ND
   
   def ~ (a:ND):NDPair 
 }

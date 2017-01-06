@@ -502,6 +502,30 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   def on (b: IMat) = vertcat(b)
   def on (b: Int) = vertcat(IMat.ielem(b))
   
+  def max(b: IMat) = iiMatOpv(b, IMat.vecMaxFun, null)
+  def min(b: IMat) = iiMatOpv(b, IMat.vecMinFun, null)
+  
+   def checkOne(b:Seq[Int], name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("IMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  def checkOne(b:IMat, name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("IMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  override def sum(ind:Int*):IMat = iiReduceOpv(checkOne(ind,"sum")+1, IMat.idFun, IMat.vecAddFun, null);
+  override def prod(ind:Int*):IMat = iiReduceOpv(checkOne(ind,"prod")+1, IMat.idFun, IMat.vecMulFun, null);
+  override def maxi(ind:Int*):IMat = iiReduceOpv(checkOne(ind,"maxi")+1, IMat.idFun, IMat.vecMaxFun, null);
+  override def mini(ind:Int*):IMat = iiReduceOpv(checkOne(ind,"mini")+1, IMat.idFun, IMat.vecMinFun, null);
+
+  override def sum(ind:IMat):IMat = iiReduceOpv(checkOne(ind,"sum")+1, IMat.idFun, IMat.vecAddFun, null);
+  override def prod(ind:IMat):IMat = iiReduceOpv(checkOne(ind,"prod")+1, IMat.idFun, IMat.vecMulFun, null);
+  override def maxi(ind:IMat):IMat = iiReduceOpv(checkOne(ind,"maxi")+1, IMat.idFun, IMat.vecMaxFun, null);
+  override def mini(ind:IMat):IMat = iiReduceOpv(checkOne(ind,"mini")+1, IMat.idFun, IMat.vecMinFun, null);
+
+  
   override def * (b : Int) = iMult(IMat.ielem(b), null)
   override def + (b : Int) = iiMatOpScalarv(b, IMat.vecAddFun, null)
   override def - (b : Int) = iiMatOpScalarv(b, IMat.vecSubFun, null)
@@ -518,6 +542,9 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   override def <= (b : Int) = iiMatOpScalarv(b, IMat.vecLEFun, null)
   override def != (b : Int) = iiMatOpScalarv(b, IMat.vecNEFun, null)
   
+  override def min  (b : Int) = iiMatOpScalarv(b, IMat.vecMinFun, null)
+  override def max  (b : Int) = iiMatOpScalarv(b, IMat.vecMaxFun, null)
+  
   override def > (b : Float) = iiMatOpScalarv(b.toInt, IMat.vecGTFun, null)
   override def < (b : Float) = iiMatOpScalarv(b.toInt, IMat.vecLTFun, null)
   override def == (b : Float) = iiMatOpScalarv(b.toInt, IMat.vecEQFun, null)
@@ -525,12 +552,18 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   override def <= (b : Float) = iiMatOpScalarv(b.toInt, IMat.vecLEFun, null)
   override def != (b : Float) = iiMatOpScalarv(b.toInt, IMat.vecNEFun, null)
   
+  override def min  (b : Float) = iiMatOpScalarv(b.toInt, IMat.vecMinFun, null)
+  override def max  (b : Float) = iiMatOpScalarv(b.toInt, IMat.vecMaxFun, null)
+  
   override def > (b : Double) = iiMatOpScalarv(b.toInt, IMat.vecGTFun, null)
   override def < (b : Double) = iiMatOpScalarv(b.toInt, IMat.vecLTFun, null)
   override def == (b : Double) = iiMatOpScalarv(b.toInt, IMat.vecEQFun, null)
   override def >= (b : Double) = iiMatOpScalarv(b.toInt, IMat.vecGEFun, null)
   override def <= (b : Double) = iiMatOpScalarv(b.toInt, IMat.vecLEFun, null)
   override def != (b : Double) = iiMatOpScalarv(b.toInt, IMat.vecNEFun, null)
+  
+  override def min  (b : Double) = iiMatOpScalarv(b.toInt, IMat.vecMinFun, null)
+  override def max  (b : Double) = iiMatOpScalarv(b.toInt, IMat.vecMaxFun, null)
   
 
  /*
