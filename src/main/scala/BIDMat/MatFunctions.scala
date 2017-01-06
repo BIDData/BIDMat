@@ -138,9 +138,9 @@ object MatFunctions {
     x.asND(x.nrows, x.ncols)
   } 
   
-  implicit def float2FND(x:Float):FND = {
+ /* implicit def float2FND(x:Float):FND = {
     FND.elem(x, 2);
-  } 
+  } */
   
   /** Convert to the corresponding integral type */
   def int(a:FMat):IMat = {
@@ -1521,6 +1521,12 @@ object MatFunctions {
     case aa:GMat => a
     case aa:GDMat => a
     case aa:TMat => aa.full
+  }
+  
+  def full(a:ND):ND = a match {
+    case aa:Mat => full(aa):Mat;
+    case aa:FND => aa;
+    case aa:GND => aa;
   }
   
   def DDShelper(a:FMat, b:FMat, c:SMat, out:SMat, istart:Int, iend:Int, ioff:Int) = {
