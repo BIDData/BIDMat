@@ -691,6 +691,8 @@ class SPair (val omat:Mat, val mat:SMat) extends Pair{
   def >= (b : SMat) = mat.ssMatOp(b, SMat.geFun, omat)
   def <= (b : SMat) = mat.ssMatOp(b, SMat.leFun, omat)
   def != (b : SMat) = mat.ssMatOp(b, SMat.neFun, omat)
+  def max (b : SMat) = mat.ssMatOp(b, SMat.maxFun, omat)
+  def min (b : SMat) = mat.ssMatOp(b, SMat.minFun, omat)
   
   def > (b : FMat) = mat.ssMatOpD(b, SMat.gtFun, omat)
   def < (b : FMat) = mat.ssMatOpD(b, SMat.ltFun, omat)
@@ -699,7 +701,74 @@ class SPair (val omat:Mat, val mat:SMat) extends Pair{
   def >= (b : FMat) = mat.ssMatOpD(b, SMat.geFun, omat)
   def <= (b : FMat) = mat.ssMatOpD(b, SMat.leFun, omat)
   def != (b : FMat) = mat.ssMatOpD(b, SMat.neFun, omat)
+  def max (b : FMat) = mat.ssMatOpD(b, SMat.maxFun, omat)
+  def min (b : FMat) = mat.ssMatOpD(b, SMat.minFun, omat)
   
+   def checkOne(b:Seq[Int], name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("FMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  def checkOne(b:IMat, name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("FMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  override def sum(ind:IMat):FMat = mat.ssReduceOp(checkOne(ind,"sum")+1, FMat.idFun, FMat.sumFun, omat);
+  override def maxi(ind:IMat):FMat = mat.ssReduceOp(checkOne(ind,"maxi")+1, FMat.idFun, FMat.maxFun, omat);
+  override def mini(ind:IMat):FMat = mat.ssReduceOp(checkOne(ind,"mini")+1, FMat.idFun, FMat.minFun, omat);
+
+  override def sum(ind:Int*):FMat = mat.ssReduceOp(checkOne(ind,"sum")+1, FMat.idFun, FMat.sumFun, omat);
+  override def maxi(ind:Int*):FMat = mat.ssReduceOp(checkOne(ind,"maxi")+1, FMat.idFun, FMat.maxFun, omat);
+  override def mini(ind:Int*):FMat = mat.ssReduceOp(checkOne(ind,"mini")+1, FMat.idFun, FMat.minFun, omat);
+  
+  override def + (b : Double) = mat.ssMatOpScalar(b.toFloat, SMat.sumFun, omat)
+  override def - (b : Double) = mat.ssMatOpScalar(b.toFloat, SMat.subFun, omat)
+  override def *@ (b : Double) = mat.ssMatOpScalar(b.toFloat, SMat.mulFun, omat)
+  override def ∘  (b : Double) = mat.ssMatOpScalar(b.toFloat, SMat.mulFun, omat)
+  override def /  (b : Double) = mat.ssMatOpScalar(b.toFloat, SMat.divFun, omat)
+  
+  override def > (b : Double) = mat.ssMatOpScalar(b.toFloat, SMat.gtFun, omat)
+  override def < (b : Double) = mat.ssMatOpScalar(b.toFloat, SMat.ltFun, omat)
+  override def == (b : Double) = mat.ssMatOpScalar(b.toFloat, SMat.eqFun, omat)
+  override def >= (b : Double) = mat.ssMatOpScalar(b.toFloat, SMat.geFun, omat)
+  override def <= (b : Double) = mat.ssMatOpScalar(b.toFloat, SMat.leFun, omat)
+  override def != (b : Double) = mat.ssMatOpScalar(b.toFloat, SMat.neFun, omat)
+  
+  override def max (b : Double) = mat.ssMatOpScalar(b.toFloat, SMat.maxFun, omat)
+  override def min (b : Double) = mat.ssMatOpScalar(b.toFloat, SMat.minFun, omat)
+  
+  override def + (b : Float) = mat.ssMatOpScalar(b, SMat.sumFun, omat)
+  override def - (b : Float) = mat.ssMatOpScalar(b, SMat.subFun, omat)
+  override def *@ (b : Float) = mat.ssMatOpScalar(b, SMat.mulFun, omat)
+  override def ∘  (b : Float) = mat.ssMatOpScalar(b, SMat.mulFun, omat)
+  override def /  (b : Float) = mat.ssMatOpScalar(b, SMat.divFun, omat)
+  
+  override def > (b : Float) = mat.ssMatOpScalar(b, SMat.gtFun, omat)
+  override def < (b : Float) = mat.ssMatOpScalar(b, SMat.ltFun, omat)
+  override def == (b : Float) = mat.ssMatOpScalar(b, SMat.eqFun, omat)
+  override def >= (b : Float) = mat.ssMatOpScalar(b, SMat.geFun, omat)
+  override def <= (b : Float) = mat.ssMatOpScalar(b, SMat.leFun, omat)
+  override def != (b : Float) = mat.ssMatOpScalar(b, SMat.neFun, omat)
+  
+  override def max (b : Float) = mat.ssMatOpScalar(b, SMat.maxFun, omat)
+  override def min (b : Float) = mat.ssMatOpScalar(b, SMat.minFun, omat)
+  
+  override def + (b : Int) = mat.ssMatOpScalar(b, SMat.sumFun, omat)
+  override def - (b : Int) = mat.ssMatOpScalar(b, SMat.subFun, omat)
+  override def *@ (b : Int) = mat.ssMatOpScalar(b, SMat.mulFun, omat)
+  override def ∘  (b : Int) = mat.ssMatOpScalar(b, SMat.mulFun, omat)
+  override def /  (b : Int) = mat.ssMatOpScalar(b, SMat.divFun, omat)
+  
+  override def > (b : Int) = mat.ssMatOpScalar(b, SMat.gtFun, omat)
+  override def < (b : Int) = mat.ssMatOpScalar(b, SMat.ltFun, omat)
+  override def == (b : Int) = mat.ssMatOpScalar(b, SMat.eqFun, omat)
+  override def >= (b : Int) = mat.ssMatOpScalar(b, SMat.geFun, omat)
+  override def <= (b : Int) = mat.ssMatOpScalar(b, SMat.leFun, omat)
+  override def != (b : Int) = mat.ssMatOpScalar(b, SMat.neFun, omat)
+  
+  override def max (b : Int) = mat.ssMatOpScalar(b, SMat.maxFun, omat)
+  override def min (b : Int) = mat.ssMatOpScalar(b, SMat.minFun, omat)
 }
 
 object SMat {
