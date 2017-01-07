@@ -427,6 +427,9 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   override def <= (b : Float) = ssMatOpScalar(b, SMat.leFun, null)
   override def != (b : Float) = ssMatOpScalar(b, SMat.neFun, null)
   
+  override def max (b : Float) = ssMatOpScalar(b, SMat.maxFun, null)
+  override def min (b : Float) = ssMatOpScalar(b, SMat.minFun, null)
+  
   override def + (b : Int) = ssMatOpScalar(b, SMat.sumFun, null)
   override def - (b : Int) = ssMatOpScalar(b, SMat.subFun, null)
   override def *@ (b : Int) = ssMatOpScalar(b, SMat.mulFun, null)
@@ -438,6 +441,9 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   override def >= (b : Int) = ssMatOpScalar(b, SMat.geFun, null)
   override def <= (b : Int) = ssMatOpScalar(b, SMat.leFun, null)
   override def != (b : Int) = ssMatOpScalar(b, SMat.neFun, null)
+  
+  override def max (b : Int) = ssMatOpScalar(b, SMat.maxFun, null)
+  override def min (b : Int) = ssMatOpScalar(b, SMat.minFun, null)
   
     
  /*

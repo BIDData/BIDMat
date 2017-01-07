@@ -775,7 +775,7 @@ class GNDPair(val omat:ND, val amat:GND) extends NDPair {
      }
   }
   
-  def *^ (b : ND):ND = {
+  override def *^ (b : ND):ND = {
      (omat, b) match {
        case (ff:GFilter, bb:GND) => {ff}
      }
@@ -796,90 +796,109 @@ class GNDPair(val omat:ND, val amat:GND) extends NDPair {
   def == (bmat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat, omat, "=="); c ~ a == b; d}
   def === (bmat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat, omat, "==="); c ~ a === b; d}
   
-  
-  def + (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "+"); c ~ a + GMat(b); d}
-  def - (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "-"); c ~ a - GMat(b); d}
-  def *@ (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "*@"); c ~ a *@ GMat(b); d}
-  def ∘ (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "∘"); c ~ a *@ GMat(b); d}
-  def * (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "*"); c ~ a * GMat(b); d}
-  def / (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "/"); c ~ a / GMat(b); d}  
-  def ^ (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "^"); c ~ a ^ GMat(b); d}
-  
-  def > (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, ">"); c ~ a > GMat(b); d}
-  def < (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "<"); c ~ a < GMat(b); d}
-  def >= (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, ">="); c ~ a >= GMat(b); d}
-  def <= (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "<="); c ~ a <= GMat(b); d}
-  def != (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "!="); c ~ a != GMat(b); d}
-  def == (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "=="); c ~ a == GMat(b); d}  
-  def === (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "==="); c ~ a === GMat(b); d}
+  def max (bmat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat, omat, "max"); (c ~ a) max b; d}
+  def min (bmat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat, omat, "min"); (c ~ a) min b; d}
   
   
-  def + (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "+"); c ~ a + GMat(b.toFloat); d}
-  def - (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "-"); c ~ a - GMat(b.toFloat); d}
-  def *@ (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "*@"); c ~ a *@ GMat(b.toFloat); d}
-  def ∘ (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "∘"); c ~ a *@ GMat(b.toFloat); d}
-  def * (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "*"); c ~ a * GMat(b.toFloat); d}
-  def / (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "/"); c ~ a / GMat(b.toFloat); d}  
-  def ^ (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "^"); c ~ a ^ GMat(b.toFloat); d}
+  override def + (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "+"); c ~ a + GMat(b); d}
+  override def - (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "-"); c ~ a - GMat(b); d}
+  override def *@ (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "*@"); c ~ a *@ GMat(b); d}
+  override def ∘ (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "∘"); c ~ a *@ GMat(b); d}
+  override def * (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "*"); c ~ a * GMat(b); d}
+  override def / (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "/"); c ~ a / GMat(b); d}  
+  override def ^ (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "^"); c ~ a ^ GMat(b); d}
   
-  def > (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, ">"); c ~ a > GMat(b.toFloat); d}
-  def < (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "<"); c ~ a < GMat(b.toFloat); d}
-  def >= (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, ">="); c ~ a >= GMat(b.toFloat); d}
-  def <= (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "<="); c ~ a <= GMat(b.toFloat); d}
-  def != (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "!="); c ~ a != GMat(b.toFloat); d}
-  def == (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "=="); c ~ a == GMat(b.toFloat); d}  
-  def === (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "==="); c ~ a === GMat(b.toFloat); d}
+  override def > (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, ">"); c ~ a > GMat(b); d}
+  override def < (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "<"); c ~ a < GMat(b); d}
+  override def >= (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, ">="); c ~ a >= GMat(b); d}
+  override def <= (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "<="); c ~ a <= GMat(b); d}
+  override def != (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "!="); c ~ a != GMat(b); d}
+  override def == (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "=="); c ~ a == GMat(b); d}  
+  override def === (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "==="); c ~ a === GMat(b); d}
   
-  
-  def + (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "+"); c ~ a + GMat(b.toFloat); d}
-  def - (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "-"); c ~ a - GMat(b.toFloat); d}
-  def *@ (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "*@"); c ~ a *@ GMat(b.toFloat); d}
-  def ∘ (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "∘"); c ~ a *@ GMat(b.toFloat); d}
-  def * (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "*"); c ~ a * GMat(b.toFloat); d}
-  def / (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "/"); c ~ a / GMat(b.toFloat); d}  
-  def ^ (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "^"); c ~ a ^ GMat(b.toFloat); d}
-  
-  def > (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, ">"); c ~ a > GMat(b.toFloat); d}
-  def < (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "<"); c ~ a < GMat(b.toFloat); d}
-  def >= (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, ">="); c ~ a >= GMat(b.toFloat); d}
-  def <= (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "<="); c ~ a <= GMat(b.toFloat); d}
-  def != (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "!="); c ~ a != GMat(b.toFloat); d}
-  def == (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "=="); c ~ a == GMat(b.toFloat); d}  
-  def === (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "==="); c ~ a === GMat(b.toFloat); d}
+  override def max (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "max"); (c ~ a) max GMat(b); d}  
+  override def min (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "min"); (c ~ a) min GMat(b); d}
   
   
-  def + (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "+"); c ~ a + GMat(b.toFloat); d}
-  def - (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "-"); c ~ a - GMat(b.toFloat); d}
-  def *@ (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "*@"); c ~ a *@ GMat(b.toFloat); d}
-  def ∘ (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "∘"); c ~ a *@ GMat(b.toFloat); d}
-  def * (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "*"); c ~ a * GMat(b.toFloat); d}
-  def / (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "/"); c ~ a / GMat(b.toFloat); d}  
-  def ^ (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "^"); c ~ a ^ GMat(b.toFloat); d}
+  override def + (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "+"); c ~ a + GMat(b.toFloat); d}
+  override def - (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "-"); c ~ a - GMat(b.toFloat); d}
+  override def *@ (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "*@"); c ~ a *@ GMat(b.toFloat); d}
+  override def ∘ (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "∘"); c ~ a *@ GMat(b.toFloat); d}
+  override def * (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "*"); c ~ a * GMat(b.toFloat); d}
+  override def / (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "/"); c ~ a / GMat(b.toFloat); d}  
+  override def ^ (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "^"); c ~ a ^ GMat(b.toFloat); d}
   
-  def > (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, ">"); c ~ a > GMat(b.toFloat); d}
-  def < (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "<"); c ~ a < GMat(b.toFloat); d}
-  def >= (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, ">="); c ~ a >= GMat(b.toFloat); d}
-  def <= (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "<="); c ~ a <= GMat(b.toFloat); d}
-  def != (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "!="); c ~ a != GMat(b.toFloat); d}
-  def == (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "=="); c ~ a == GMat(b.toFloat); d}  
-  def === (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "==="); c ~ a === GMat(b.toFloat); d}
+  override def > (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, ">"); c ~ a > GMat(b.toFloat); d}
+  override def < (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "<"); c ~ a < GMat(b.toFloat); d}
+  override def >= (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, ">="); c ~ a >= GMat(b.toFloat); d}
+  override def <= (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "<="); c ~ a <= GMat(b.toFloat); d}
+  override def != (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "!="); c ~ a != GMat(b.toFloat); d}
+  override def == (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "=="); c ~ a == GMat(b.toFloat); d}  
+  override def === (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "==="); c ~ a === GMat(b.toFloat); d}
+  
+  override def max (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "max"); (c ~ a) max GMat(b); d}  
+  override def min (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "min"); (c ~ a) min GMat(b); d}
   
   
-  def * (bmat:ND):GND = this * bmat.asInstanceOf[GND];
-  def + (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "+"); c ~ a + b; d}
-  def - (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "-"); c ~ a - b; d}
-  def *@ (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "*@"); c ~ a *@ b; d}
-  def ∘ (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "∘"); c ~ a *@ b; d}
-  def / (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "/"); c ~ a / b; d}
-  def ^ (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "^"); c ~ a ^ b; d}
+  override def + (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "+"); c ~ a + GMat(b.toFloat); d}
+  override def - (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "-"); c ~ a - GMat(b.toFloat); d}
+  override def *@ (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "*@"); c ~ a *@ GMat(b.toFloat); d}
+  override def ∘ (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "∘"); c ~ a *@ GMat(b.toFloat); d}
+  override def * (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "*"); c ~ a * GMat(b.toFloat); d}
+  override def / (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "/"); c ~ a / GMat(b.toFloat); d}  
+  override def ^ (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "^"); c ~ a ^ GMat(b.toFloat); d}
   
-  def > (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, ">"); c ~ a > b; d}
-  def < (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "<"); c ~ a < b; d}
-  def >= (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, ">="); c ~ a >= b; d}
-  def <= (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "<="); c ~ a <= b; d}
-  def != (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "!="); c ~ a != b; d}
-  def == (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "=="); c ~ a == b; d}
-  def === (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "==="); c ~ a === b; d}
+  override def > (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, ">"); c ~ a > GMat(b.toFloat); d}
+  override def < (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "<"); c ~ a < GMat(b.toFloat); d}
+  override def >= (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, ">="); c ~ a >= GMat(b.toFloat); d}
+  override def <= (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "<="); c ~ a <= GMat(b.toFloat); d}
+  override def != (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "!="); c ~ a != GMat(b.toFloat); d}
+  override def == (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "=="); c ~ a == GMat(b.toFloat); d}  
+  override def === (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "==="); c ~ a === GMat(b.toFloat); d}
+  
+  override def max (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "max"); (c ~ a) max GMat(b.toFloat); d}  
+  override def min (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "min"); (c ~ a) min GMat(b.toFloat); d}
+  
+  
+  override def + (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "+"); c ~ a + GMat(b.toFloat); d}
+  override def - (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "-"); c ~ a - GMat(b.toFloat); d}
+  override def *@ (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "*@"); c ~ a *@ GMat(b.toFloat); d}
+  override def ∘ (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "∘"); c ~ a *@ GMat(b.toFloat); d}
+  override def * (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "*"); c ~ a * GMat(b.toFloat); d}
+  override def / (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "/"); c ~ a / GMat(b.toFloat); d}  
+  override def ^ (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "^"); c ~ a ^ GMat(b.toFloat); d}
+  
+  override def > (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, ">"); c ~ a > GMat(b.toFloat); d}
+  override def < (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "<"); c ~ a < GMat(b.toFloat); d}
+  override def >= (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, ">="); c ~ a >= GMat(b.toFloat); d}
+  override def <= (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "<="); c ~ a <= GMat(b.toFloat); d}
+  override def != (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "!="); c ~ a != GMat(b.toFloat); d}
+  override def == (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "=="); c ~ a == GMat(b.toFloat); d}  
+  override def === (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "==="); c ~ a === GMat(b.toFloat); d}
+  
+  override def max (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "max"); (c ~ a) max GMat(b.toFloat); d}  
+  override def min (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "min"); (c ~ a) min GMat(b.toFloat); d}
+  
+  
+  override def * (bmat:ND):GND = this * bmat.asInstanceOf[GND];
+  override def + (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "+"); c ~ a + b; d}
+  override def - (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "-"); c ~ a - b; d}
+  override def *@ (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "*@"); c ~ a *@ b; d}
+  override def ∘ (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "∘"); c ~ a *@ b; d}
+  override def / (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "/"); c ~ a / b; d}
+  override def ^ (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "^"); c ~ a ^ b; d}
+  
+  override def > (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, ">"); c ~ a > b; d}
+  override def < (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "<"); c ~ a < b; d}
+  override def >= (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, ">="); c ~ a >= b; d}
+  override def <= (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "<="); c ~ a <= b; d}
+  override def != (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "!="); c ~ a != b; d}
+  override def == (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "=="); c ~ a == b; d}
+  override def === (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "==="); c ~ a === b; d}
+  
+  override def max (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "max"); (c ~ a) max b; d}
+  override def min (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "min"); (c ~ a) min b; d}
+
 }
 
 object GND {

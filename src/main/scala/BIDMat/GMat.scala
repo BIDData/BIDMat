@@ -1635,6 +1635,9 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
 	def <= (b : GMat) = mat.gOp(b, omat, op_le)
 	def != (b : GMat) = mat.gOp(b, omat, op_ne)
 	
+  def max (b : GMat) = mat.gOp(b, omat, op_max)
+	def min (b : GMat) = mat.gOp(b, omat, op_min)
+	
 	def dot (b :GMat) = mat.dot(b, omat) 
 	def dotr (b :GMat) = mat.dotr(b, omat) 
 	def ∙ (b :GMat) = mat.dot(b, omat)
@@ -1655,6 +1658,8 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
   override def != (b : Float) = mat.gOp(GMat(b), omat, op_ne)
   override def >= (b : Float) = mat.gOp(GMat(b), omat, op_ge)
 	override def <= (b : Float) = mat.gOp(GMat(b), omat, op_le)
+	override def max (b : Float) = mat.gOp(GMat(b), omat, op_max)
+	override def min (b : Float) = mat.gOp(GMat(b), omat, op_min)
   
   override def * (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_mul)
   override def *@ (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_mul)
@@ -1669,6 +1674,8 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
   override def != (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_ne)
   override def >= (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_ge)
   override def <= (b : Double) = mat.gOp(GMat(b.toFloat), omat, op_le)
+ override def max (b : Double) = mat.gOp(GMat(b), omat, op_max)
+	override def min (b : Double) = mat.gOp(GMat(b), omat, op_min)
 	
   
 	override def * (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_mul)
@@ -1684,6 +1691,8 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
   override def != (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_ne)
   override def >= (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_ge)
 	override def <= (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_le)
+	override def max (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_max)
+	override def min (b : Int) = mat.gOp(GMat(b.toFloat), omat, op_min)
   
   
   override def * (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_mul)
@@ -1699,7 +1708,8 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
   override def != (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_ne)
   override def >= (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_ge)
   override def <= (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_le)
-
+	override def max (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_max)
+	override def min (b : Long) = mat.gOp(GMat(b.toFloat), omat, op_min)
 
 
   def ^* (b : GDSPair) = MatFunctions.DDS(mat, b.left, b.right, omat)

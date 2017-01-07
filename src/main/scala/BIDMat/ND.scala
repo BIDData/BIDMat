@@ -455,90 +455,243 @@ abstract class ND(protected val _dims:Array[Int]) extends Serializable {
 
 abstract class NDPair extends Serializable {
   
-  def + (b : ND):ND
-  def - (b : ND):ND 
-  def * (b : ND):ND  
-  def *^ (b : ND):ND
-  def *@ (b : ND):ND 
-  def ∘  (b : ND):ND 
-  def /  (b : ND):ND 
-  def ^ (b : ND):ND 
+  def notImplemented0(s:String):ND = { 
+    throw new RuntimeException("operator "+s+" not implemented for "+this)
+  }
   
-  def > (b : ND):ND
-  def < (b : ND):ND
-  def >= (b : ND):ND 
-  def <= (b : ND):ND
-  def == (b : ND):ND 
-  def === (b : ND):ND 
-  def != (b : ND):ND 
+  def notImplemented1(s:String,that:Mat):Mat = { 
+    throw new RuntimeException("operator "+s+" not implemented for "+this+" and "+that.mytype)
+  }
+  
+  def notImplemented1(s:String,that:ND):ND = { 
+    throw new RuntimeException("operator "+s+" not implemented for "+this+" and "+that.mytype)
+  }
+  
+  def sum(b : Int*):ND = notImplemented0("sum")
+  def prod(b : Int*):ND = notImplemented0("prod")
+  def maxi(b : Int*):ND = notImplemented0("maxi")
+  def mini(b : Int*):ND = notImplemented0("mini")
+  def mean(b : Int*):ND = notImplemented0("mean")
+  def variance(b : Int*):ND = notImplemented0("variance")
+  
+  def sum(b : IMat):ND = notImplemented0("sum")
+  def prod(b : IMat):ND = notImplemented0("prod")
+  def maxi(b : IMat):ND = notImplemented0("maxi")
+  def mini(b : IMat):ND = notImplemented0("mini")
+  def mean(b : IMat):ND = notImplemented0("mean")
+  def variance(b : IMat):ND = notImplemented0("variance")
+  
+  def + (b : ND):ND = notImplemented1("+", b)
+  def - (b : ND):ND = notImplemented1("-", b)
+  def * (b : ND):ND = notImplemented1("*", b)
+  def xT (b : ND):ND = notImplemented1("xT", b)
+  def *^ (b : ND):ND = notImplemented1("*^", b)
+  def Tx (b : ND):ND = notImplemented1("Tx", b)
+  def ^* (b : ND):ND = notImplemented1("*^", b)
+  def /< (b : ND):ND = notImplemented1("/<", b)
+  def *@ (b : ND):ND = notImplemented1("*@", b)
+  def ∘  (b : ND):ND = notImplemented1("∘", b)
+  def /  (b : ND):ND = notImplemented1("/", b)
+  def \\ (b : ND):ND = notImplemented1("\\\\", b)
+  def ^ (b : ND):ND = notImplemented1("^", b) 
+  def ◁ (b : ND):ND = notImplemented1("◁", b)
+  def ▷ (b : ND):ND = notImplemented1("▷", b)
+  def dot (b : ND):ND = notImplemented1("dot", b)
+  def dotr (b : ND):ND = notImplemented1("dotr", b)
+  def ∙ (b : ND):ND = notImplemented1("dot", b)
+  def ∙→ (b : ND):ND = notImplemented1("dotr", b)
+  def ** (b : ND):ND = notImplemented1("**", b)
+  def ⊗  (b : ND):ND = notImplemented1("⊗", b) 
+  
+  def > (b : ND):ND = notImplemented1(">", b)
+  def < (b : ND):ND = notImplemented1("<", b)
+  def >= (b : ND):ND = notImplemented1(">=", b)
+  def <= (b : ND):ND = notImplemented1("<=", b)
+  def == (b : ND):ND = notImplemented1("==", b)
+  def === (b : ND):ND = notImplemented1("===", b)
+  def != (b : ND):ND = notImplemented1("!=", b)
+  
+  def max (b : ND):ND = notImplemented1("max", b)
+  def min (b : ND):ND = notImplemented1("min", b)
+  
+  def \ (b : ND):ND = notImplemented1("\\", b)
+  def on (b : ND):ND = notImplemented1("on", b)
+  
+  def + (b : Mat):Mat = notImplemented1("+", b)
+  def - (b : Mat):Mat = notImplemented1("-", b)
+  def * (b : Mat):Mat = notImplemented1("*", b)
+  def xT (b : Mat):Mat = notImplemented1("xT", b)
+  def *^ (b : Mat):Mat = notImplemented1("*^", b)
+  def Tx (b : Mat):Mat = notImplemented1("Tx", b)
+  def ^* (b : Mat):Mat = notImplemented1("*^", b)
+  def /< (b : Mat):Mat = notImplemented1("/<", b)
+  def *@ (b : Mat):Mat = notImplemented1("*@", b)
+  def ∘  (b : Mat):Mat = notImplemented1("∘", b)
+  def /  (b : Mat):Mat = notImplemented1("/", b)
+  def \\ (b : Mat):Mat = notImplemented1("\\\\", b)
+  def ^ (b : Mat):Mat = notImplemented1("^", b) 
+  def ◁ (b : Mat):Mat = notImplemented1("◁", b)
+  def ▷ (b : Mat):Mat = notImplemented1("▷", b)
+  def dot (b : Mat):Mat = notImplemented1("dot", b)
+  def dotr (b : Mat):Mat = notImplemented1("dotr", b)
+  def ∙ (b : Mat):Mat = notImplemented1("dot", b)
+  def ∙→ (b : Mat):Mat = notImplemented1("dotr", b)
+  def ** (b : Mat):Mat = notImplemented1("**", b)
+  def ⊗  (b : Mat):Mat = notImplemented1("⊗", b) 
+  
+  def > (b : Mat):Mat = notImplemented1(">", b)
+  def < (b : Mat):Mat = notImplemented1("<", b)
+  def >= (b : Mat):Mat = notImplemented1(">=", b)
+  def <= (b : Mat):Mat = notImplemented1("<=", b)
+  def == (b : Mat):Mat = notImplemented1("==", b)
+  def === (b : Mat):Mat = notImplemented1("===", b)
+  def != (b : Mat):Mat = notImplemented1("!=", b)
+  
+  def max (b : Mat):Mat = notImplemented1("max", b)
+  def min (b : Mat):Mat = notImplemented1("min", b)
+  
+  def \ (b : Mat):Mat = notImplemented1("\\", b)
+  def on (b : Mat):Mat = notImplemented1("on", b)
+  
+  def + (b : Float):ND = notImplemented0("+")
+  def - (b : Float):ND = notImplemented0("-")
+  def * (b : Float):ND = notImplemented0("*")
+  def xT (b : Float):ND = notImplemented0("xT")
+  def *^ (b : Float):ND = notImplemented0("*^")
+  def Tx (b : Float):ND = notImplemented0("Tx")
+  def ^* (b : Float):ND = notImplemented0("*^")
+  def /< (b : Float):ND = notImplemented0("/<")
+  def *@ (b : Float):ND = notImplemented0("*@")
+  def ∘  (b : Float):ND = notImplemented0("∘")
+  def /  (b : Float):ND = notImplemented0("/")
+  def \\ (b : Float):ND = notImplemented0("\\\\")
+  def ^ (b : Float):ND = notImplemented0("^") 
+  def ◁ (b : Float):ND = notImplemented0("◁")
+  def ▷ (b : Float):ND = notImplemented0("▷")
+  def dot (b : Float):ND = notImplemented0("dot")
+  def dotr (b : Float):ND = notImplemented0("dotr")
+  def ∙ (b : Float):ND = notImplemented0("dot")
+  def ∙→ (b : Float):ND = notImplemented0("dotr")
+  
+  def > (b : Float):ND = notImplemented0(">")
+  def < (b : Float):ND = notImplemented0("<")
+  def >= (b : Float):ND = notImplemented0(">=")
+  def <= (b : Float):ND = notImplemented0("<=")
+  def == (b : Float):ND = notImplemented0("==")
+  def === (b : Float):ND = notImplemented0("===")
+  def != (b : Float):ND = notImplemented0("!=")
+  
+  def max (b : Float):ND = notImplemented0("max")
+  def min (b : Float):ND = notImplemented0("min")
+  
+  def \ (b : Float):ND = notImplemented0("\\")
+  def on (b : Float):ND = notImplemented0("on")
+  
+  
+  def + (b : Int):ND = notImplemented0("+")
+  def - (b : Int):ND = notImplemented0("-")
+  def * (b : Int):ND = notImplemented0("*")
+  def xT (b : Int):ND = notImplemented0("xT")
+  def *^ (b : Int):ND = notImplemented0("*^")
+  def Tx (b : Int):ND = notImplemented0("Tx")
+  def ^* (b : Int):ND = notImplemented0("*^")
+  def /< (b : Int):ND = notImplemented0("/<")
+  def *@ (b : Int):ND = notImplemented0("*@")
+  def ∘  (b : Int):ND = notImplemented0("∘")
+  def /  (b : Int):ND = notImplemented0("/")
+  def \\ (b : Int):ND = notImplemented0("\\\\")
+  def ^ (b : Int):ND = notImplemented0("^") 
+  def ◁ (b : Int):ND = notImplemented0("◁")
+  def ▷ (b : Int):ND = notImplemented0("▷")
+  def dot (b : Int):ND = notImplemented0("dot")
+  def dotr (b : Int):ND = notImplemented0("dotr")
+  def ∙ (b : Int):ND = notImplemented0("dot")
+  def ∙→ (b : Int):ND = notImplemented0("dotr")
+  
+  def > (b : Int):ND = notImplemented0(">")
+  def < (b : Int):ND = notImplemented0("<")
+  def >= (b : Int):ND = notImplemented0(">=")
+  def <= (b : Int):ND = notImplemented0("<=")
+  def == (b : Int):ND = notImplemented0("==")
+  def === (b : Int):ND = notImplemented0("===")
+  def != (b : Int):ND = notImplemented0("!=")
+  
+  def \ (b : Int):ND = notImplemented0("\\")
+  def on (b : Int):ND = notImplemented0("on")
+  
+  def max (b : Int):ND = notImplemented0("max")
+  def min (b : Int):ND = notImplemented0("min")
+  
+  
+  def + (b : Long):ND = notImplemented0("+")
+  def - (b : Long):ND = notImplemented0("-")
+  def * (b : Long):ND = notImplemented0("*")
+  def xT (b : Long):ND = notImplemented0("xT")
+  def *^ (b : Long):ND = notImplemented0("*^")
+  def Tx (b : Long):ND = notImplemented0("Tx")
+  def ^* (b : Long):ND = notImplemented0("*^")
+  def /< (b : Long):ND = notImplemented0("/<")
+  def *@ (b : Long):ND = notImplemented0("*@")
+  def ∘  (b : Long):ND = notImplemented0("∘")
+  def /  (b : Long):ND = notImplemented0("/")
+  def \\ (b : Long):ND = notImplemented0("\\\\")
+  def ^ (b : Long):ND = notImplemented0("^") 
+  def ◁ (b : Long):ND = notImplemented0("◁")
+  def ▷ (b : Long):ND = notImplemented0("▷")
+  def dot (b : Long):ND = notImplemented0("dot")
+  def dotr (b : Long):ND = notImplemented0("dotr")
+  def ∙ (b : Long):ND = notImplemented0("dot")
+  def ∙→ (b : Long):ND = notImplemented0("dotr")
+  
+  def > (b : Long):ND = notImplemented0(">")
+  def < (b : Long):ND = notImplemented0("<")
+  def >= (b : Long):ND = notImplemented0(">=")
+  def <= (b : Long):ND = notImplemented0("<=")
+  def == (b : Long):ND = notImplemented0("==")
+  def === (b : Long):ND = notImplemented0("===")
+  def != (b : Long):ND = notImplemented0("!=")
+  
+  def \ (b : Long):ND = notImplemented0("\\")
+  def on (b : Long):ND = notImplemented0("on")
+  
+  def max (b : Long):ND = notImplemented0("max")
+  def min (b : Long):ND = notImplemented0("min")
+  
+  
+  def + (b : Double):ND = notImplemented0("+")
+  def - (b : Double):ND = notImplemented0("-")
+  def * (b : Double):ND = notImplemented0("*")
+  def xT (b : Double):ND = notImplemented0("xT")
+  def *^ (b : Double):ND = notImplemented0("*^")
+  def Tx (b : Double):ND = notImplemented0("Tx")
+  def ^* (b : Double):ND = notImplemented0("*^")
+  def /< (b : Double):ND = notImplemented0("/<")
+  def *@ (b : Double):ND = notImplemented0("*@")
+  def ∘  (b : Double):ND = notImplemented0("∘")
+  def /  (b : Double):ND = notImplemented0("/")
+  def \\ (b : Double):ND = notImplemented0("\\\\")
+  def ^ (b : Double):ND = notImplemented0("^") 
+  def ◁ (b : Double):ND = notImplemented0("◁")
+  def ▷ (b : Double):ND = notImplemented0("▷")
+  def dot (b : Double):ND = notImplemented0("dot")
+  def dotr (b : Double):ND = notImplemented0("dotr")
+  def ∙ (b : Double):ND = notImplemented0("dot")
+  def ∙→ (b : Double):ND = notImplemented0("dotr")
+  
+  def > (b : Double):ND = notImplemented0(">")
+  def < (b : Double):ND = notImplemented0("<")
+  def >= (b : Double):ND = notImplemented0(">=")
+  def <= (b : Double):ND = notImplemented0("<=")
+  def == (b : Double):ND = notImplemented0("==")
+  def === (b : Double):ND = notImplemented0("===")
+  def != (b : Double):ND = notImplemented0("!=")
+  
+  def \ (b : Double):ND = notImplemented0("\\")
+  def on (b : Double):ND = notImplemented0("on")
+  
+  def max (b : Double):ND = notImplemented0("max")
+  def min (b : Double):ND = notImplemented0("min")
 
-  
-  def + (b : Float):ND 
-  def - (b : Float):ND 
-  def * (b : Float):ND  
-  def *@ (b : Float):ND
-  def ∘  (b : Float):ND
-  def /  (b : Float):ND 
-  def ^ (b : Float):ND 
-  
-  def > (b : Float):ND
-  def < (b : Float):ND 
-  def >= (b : Float):ND 
-  def <= (b : Float):ND 
-  def == (b : Float):ND 
-  def === (b : Float):ND 
-  def != (b : Float):ND 
-  
-  
-  def + (b : Int):ND 
-  def - (b : Int):ND 
-  def * (b : Int):ND  
-  def *@ (b : Int):ND 
-  def ∘  (b : Int):ND 
-  def /  (b : Int):ND 
-  def ^ (b : Int):ND  
-  
-  def > (b : Int):ND 
-  def < (b : Int):ND 
-  def >= (b : Int):ND 
-  def <= (b : Int):ND 
-  def == (b : Int):ND 
-  def === (b : Int):ND 
-  def != (b : Int):ND 
-  
-  
-  def + (b : Long):ND 
-  def - (b : Long):ND 
-  def * (b : Long):ND  
-  def *@ (b : Long):ND 
-  def ∘  (b : Long):ND 
-  def /  (b : Long):ND 
-  def ^ (b : Long):ND   
-  
-  def > (b : Long):ND 
-  def < (b : Long):ND 
-  def >= (b : Long):ND 
-  def <= (b : Long):ND 
-  def == (b : Long):ND 
-  def === (b : Long):ND 
-  def != (b : Long):ND 
-
-  
-  def + (b : Double):ND 
-  def - (b : Double):ND 
-  def * (b : Double):ND  
-  def *@ (b : Double):ND 
-  def ∘  (b : Double):ND 
-  def /  (b : Double):ND 
-  def ^ (b : Double):ND  
-  
-  def > (b : Double):ND 
-  def < (b : Double):ND 
-  def >= (b : Double):ND 
-  def <= (b : Double):ND 
-  def == (b : Double):ND 
-  def === (b : Double):ND 
-  def != (b : Double):ND 
 }
 
 object ND {
