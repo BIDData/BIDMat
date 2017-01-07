@@ -620,8 +620,8 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
   def max (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, null, "max"); SciFunctions.max(a, b, c); d}
   def max (mat:GND, omat:ND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, omat, "max"); SciFunctions.max(a, b, c); d}
   
-  def min (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, null, "max"); SciFunctions.min(a, b, c); d}
-  def min (mat:GND, omat:ND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, omat, "max"); SciFunctions.min(a, b, c); d}
+  def min (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, null, "min"); SciFunctions.min(a, b, c); d}
+  def min (mat:GND, omat:ND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, omat, "min"); SciFunctions.min(a, b, c); d}
   
   
   override def + (b:Float):GND = {val (a, c, d) = GND.asGMats(this, null, "+"); c ~ a + b; d}

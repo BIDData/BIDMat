@@ -547,11 +547,6 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
   def max (mat:FND, omat:ND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, omat, "max"); SciFunctions.max(a, b, c); d}
   def min (mat:FND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, null, "max"); SciFunctions.min(a, b, c); d}
   def min (mat:FND, omat:ND):FND = {val (a, b, c, d) = FND.asFMats(this, mat, omat, "max"); SciFunctions.min(a, b, c); d}
-  
-  override def max(b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "+"); SciFunctions.max(a, b, c):FMat; d}
-  override def min(b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "+"); SciFunctions.min(a, b, c):FMat; d}
-  def max(b:Float, omat:ND):FND = {val (a, c, d) = FND.asFMats(this, omat, "+"); SciFunctions.max(a, b, c):FMat; d}
-  def min(b:Float, omat:ND):FND = {val (a, c, d) = FND.asFMats(this, omat, "+"); SciFunctions.min(a, b, c):FMat; d}
 
   
   def * (b : FND):FND = {
@@ -590,6 +585,10 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
   override def == (b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "=="); c ~ a == b; d}
   override def === (b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "==="); c ~ a === b; d}
   
+  override def max(b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "max"); SciFunctions.max(a, b, c):FMat; d}
+  override def min(b:Float):FND = {val (a, c, d) = FND.asFMats(this, null, "min"); SciFunctions.min(a, b, c):FMat; d}
+  def max(b:Float, omat:ND):FND = {val (a, c, d) = FND.asFMats(this, omat, "max"); SciFunctions.max(a, b, c):FMat; d}
+  def min(b:Float, omat:ND):FND = {val (a, c, d) = FND.asFMats(this, omat, "min"); SciFunctions.min(a, b, c):FMat; d} 
   
   override def + (b:Double):FND = {val (a, c, d) = FND.asFMats(this, null, "+"); c ~ a + b; d}
   override def - (b:Double):FND = {val (a, c, d) = FND.asFMats(this, null, "-"); c ~ a - b; d}
@@ -606,7 +605,8 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
   override def != (b:Double):FND = {val (a, c, d) = FND.asFMats(this, null, "!="); c ~ a != b; d}
   override def == (b:Double):FND = {val (a, c, d) = FND.asFMats(this, null, "=="); c ~ a == b; d}
   override def === (b:Double):FND = {val (a, c, d) = FND.asFMats(this, null, "==="); c ~ a === b; d}
-  
+  override def max (b:Double):FND = {val (a, c, d) = FND.asFMats(this, null, "max"); c ~ a max b; d}
+  override def min (b:Double):FND = {val (a, c, d) = FND.asFMats(this, null, "min"); c ~ a min b; d}  
   
   
   override def + (b:Int):FND = {val (a, c, d) = FND.asFMats(this, null, "+"); c ~ a + b; d}
@@ -624,7 +624,8 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
   override def != (b:Int):FND = {val (a, c, d) = FND.asFMats(this, null, "!="); c ~ a != b; d}
   override def == (b:Int):FND = {val (a, c, d) = FND.asFMats(this, null, "=="); c ~ a == b; d}
   override def === (b:Int):FND = {val (a, c, d) = FND.asFMats(this, null, "==="); c ~ a === b; d}
-  
+  override def max (b:Int):FND = {val (a, c, d) = FND.asFMats(this, null, "max"); c ~ a max b; d}
+  override def min (b:Int):FND = {val (a, c, d) = FND.asFMats(this, null, "min"); c ~ a min b; d}  
   
   override def + (b:Long):FND = {val (a, c, d) = FND.asFMats(this, null, "+"); c ~ a + b; d}
   override def - (b:Long):FND = {val (a, c, d) = FND.asFMats(this, null, "-"); c ~ a - b; d}
@@ -641,6 +642,8 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
   override def != (b:Long):FND = {val (a, c, d) = FND.asFMats(this, null, "!="); c ~ a != b; d}
   override def == (b:Long):FND = {val (a, c, d) = FND.asFMats(this, null, "=="); c ~ a == b; d}
   override def === (b:Long):FND = {val (a, c, d) = FND.asFMats(this, null, "==="); c ~ a === b; d}
+  override def max (b:Long):FND = {val (a, c, d) = FND.asFMats(this, null, "max"); c ~ a max b; d}
+  override def min (b:Long):FND = {val (a, c, d) = FND.asFMats(this, null, "min"); c ~ a min b; d} 
   
   override def + (b : ND):ND = this + b.asInstanceOf[FND];
   override def - (b : ND):ND = this - b.asInstanceOf[FND]; 
@@ -657,6 +660,8 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
   override def == (b : ND):ND = this == b.asInstanceOf[FND];
   override def === (b : ND):ND = this === b.asInstanceOf[FND];
   override def != (b : ND):ND = this != b.asInstanceOf[FND];
+  override def max (b : ND):ND = this max b.asInstanceOf[FND];
+  override def min (b : ND):ND = this min b.asInstanceOf[FND];
   
   override def \ (b : ND):ND = this \ b.asInstanceOf[FND];
   override def on (b : ND):ND = this on b.asInstanceOf[FND];
@@ -818,8 +823,8 @@ class FNDPair(val omat:ND, val amat:FND) extends NDPair {
   override def == (b:Long):FND = {val (a, c, d) = FND.asFMats(amat, omat, "=="); c ~ a == FMat(b.toFloat); d}  
   override def === (b:Long):FND = {val (a, c, d) = FND.asFMats(amat, omat, "==="); c ~ a === FMat(b.toFloat); d}
   
-  override def max (b:Long):FND = {val (a, c, d) = FND.asFMats(amat, omat, "max"); (c ~ a) max FMat(b); d}  
-  override def min (b:Long):FND = {val (a, c, d) = FND.asFMats(amat, omat, "min"); (c ~ a) min FMat(b); d}
+  override def max (b:Long):FND = {val (a, c, d) = FND.asFMats(amat, omat, "max"); (c ~ a) max FMat(b.toFloat); d}  
+  override def min (b:Long):FND = {val (a, c, d) = FND.asFMats(amat, omat, "min"); (c ~ a) min FMat(b.toFloat); d}
   
   
   override def * (bmat:ND):FND = this * bmat.asInstanceOf[FND];
