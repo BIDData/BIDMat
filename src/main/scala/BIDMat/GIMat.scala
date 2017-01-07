@@ -875,7 +875,9 @@ class GIPair (val omat:Mat, val mat:GIMat) extends Pair{
 	def >= (b : GIMat) = mat.GIop(b, omat, op_ge)
 	def <= (b : GIMat) = mat.GIop(b, omat, op_le)
 	def != (b : GIMat) = mat.GIop(b, omat, op_ne)
-	
+  def max (b : GIMat) = mat.GIop(b, omat, op_max)
+  def min (b : GIMat) = mat.GIop(b, omat, op_min)
+  
 	def on(a : GIMat) = mat.vertcat(a, omat)
 	def \ (a : GIMat) = mat.horzcat(a, omat)
   
@@ -905,12 +907,15 @@ class GIPair (val omat:Mat, val mat:GIMat) extends Pair{
 	override def /  (a : Float) = mat.GIop(GIMat(a.toInt), omat, op_div)
 	override def ^  (a : Float) = mat.GIop(GIMat(a.toInt), omat, op_pow)
 
-	override def + (a : Int) = mat.GIop(GIMat(a), omat, op_add)
-	override def - (a : Int) = mat.GIop(GIMat(a), omat, op_sub)
-	override def *@ (a : Int) = mat.GIop(GIMat(a), omat, op_mul)
-	override def ∘  (a : Int) = mat.GIop(GIMat(a), omat, op_mul)
-	override def /  (a : Int) = mat.GIop(GIMat(a), omat, op_div)
-	override def ^  (a : Int) = mat.GIop(GIMat(a), omat, op_pow)
+  override def < (b : Float) = mat.GIop(GIMat(b.toInt), omat, op_lt)
+  override def > (b : Float) = mat.GIop(GIMat(b.toInt), omat, op_gt)
+  override def <= (b : Float) = mat.GIop(GIMat(b.toInt), omat, op_le)
+  override def >= (b : Float) = mat.GIop(GIMat(b.toInt), omat, op_ge)
+  override def == (b : Float) = mat.GIop(GIMat(b.toInt), omat, op_eq)
+  override def != (b : Float) = mat.GIop(GIMat(b.toInt), omat, op_ne)
+  override def max (b : Float) = mat.GIop(GIMat(b.toInt), omat, op_max)
+  override def min (b : Float) = mat.GIop(GIMat(b.toInt), omat, op_min)  
+
 	
   override def + (a : Double) = mat.GIop(GIMat(a.toInt), omat, op_add)
 	override def - (a : Double) = mat.GIop(GIMat(a.toInt), omat, op_sub)
@@ -918,27 +923,32 @@ class GIPair (val omat:Mat, val mat:GIMat) extends Pair{
 	override def ∘  (a : Double) = mat.GIop(GIMat(a.toInt), omat, op_mul)
 	override def /  (a : Double) = mat.GIop(GIMat(a.toInt), omat, op_div)
 	override def ^  (a : Double) = mat.GIop(GIMat(a.toInt), omat, op_pow)
-
-	override def < (b : Float) = mat.GIop(GIMat(b.toInt), omat, op_lt)
-	override def > (b : Float) = mat.GIop(GIMat(b.toInt), omat, op_gt)
-	override def <= (b : Float) = mat.GIop(GIMat(b.toInt), omat, op_le)
-	override def >= (b : Float) = mat.GIop(GIMat(b.toInt), omat, op_ge)
-	override def == (b : Float) = mat.GIop(GIMat(b.toInt), omat, op_eq)
-	override def != (b : Float) = mat.GIop(GIMat(b.toInt), omat, op_ne)
-	
+  
+  override def < (b : Double) = mat.GIop(GIMat(b.toInt), omat, op_lt) 
+  override def > (b : Double) = mat.GIop(GIMat(b.toInt), omat, op_gt)
+  override def <= (b : Double) = mat.GIop(GIMat(b.toInt), omat, op_le)  
+  override def >= (b : Double) = mat.GIop(GIMat(b.toInt), omat, op_ge)  
+  override def == (b : Double) = mat.GIop(GIMat(b.toInt), omat, op_eq)  
+  override def != (b : Double) = mat.GIop(GIMat(b.toInt), null, op_ne) 
+  override def max (b : Double) = mat.GIop(GIMat(b.toInt), omat, op_max)
+  override def min (b : Double) = mat.GIop(GIMat(b.toInt), omat, op_min)  
+  
+  override def + (a : Int) = mat.GIop(GIMat(a), omat, op_add)
+  override def - (a : Int) = mat.GIop(GIMat(a), omat, op_sub)
+  override def *@ (a : Int) = mat.GIop(GIMat(a), omat, op_mul)
+  override def ∘  (a : Int) = mat.GIop(GIMat(a), omat, op_mul)
+  override def /  (a : Int) = mat.GIop(GIMat(a), omat, op_div)
+  override def ^  (a : Int) = mat.GIop(GIMat(a), omat, op_pow)
+  
 	override def != (b : Int) = mat.GIop(GIMat(b), omat, op_ne)
 	override def == (b : Int) = mat.GIop(GIMat(b), omat, op_eq)
 	override def >= (b : Int) = mat.GIop(GIMat(b), omat, op_ge)
 	override def <= (b : Int) = mat.GIop(GIMat(b), omat, op_le)
 	override def < (b : Int) = mat.GIop(GIMat(b), omat, op_lt)	
 	override def > (b : Int) = mat.GIop(GIMat(b), omat, op_gt)
-	
-	override def < (b : Double) = mat.GIop(GIMat(b.toInt), omat, op_lt)	
-	override def > (b : Double) = mat.GIop(GIMat(b.toInt), omat, op_gt)
-	override def <= (b : Double) = mat.GIop(GIMat(b.toInt), omat, op_le)	
-	override def >= (b : Double) = mat.GIop(GIMat(b.toInt), omat, op_ge)	
-	override def == (b : Double) = mat.GIop(GIMat(b.toInt), omat, op_eq)	
-	override def != (b : Double) = mat.GIop(GIMat(b.toInt), null, op_ne)  
+  override def max (b : Int) = mat.GIop(GIMat(b), omat, op_max)
+  override def min (b : Int) = mat.GIop(GIMat(b), omat, op_min) 
+ 
 	
 	 /*
    * Generics

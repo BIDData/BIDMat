@@ -974,7 +974,8 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   def >=  (b : IMat) = Mop_GE.op(this, b, null)
   def <=  (b : IMat) = Mop_LE.op(this, b, null)
   def !=  (b : IMat) = Mop_NE.op(this, b, null)
-   
+  def max  (b : IMat) = Mop_Max.op(this, b, null)
+  def min  (b : IMat) = Mop_Min.op(this, b, null)   
  /*
   * Specialize to FMats to help the type system. 
   */ 
@@ -1009,7 +1010,8 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   def >=  (b : FMat) = Mop_GE.op(this, b, null)
   def <=  (b : FMat) = Mop_LE.op(this, b, null)
   def !=  (b : FMat) = Mop_NE.op(this, b, null)
- 
+  def max  (b : FMat) = Mop_Max.op(this, b, null)
+  def min  (b : FMat) = Mop_Min.op(this, b, null)
  /*
   * Specialize to CMats to help the type system. 
   */ 
@@ -1044,6 +1046,8 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   def >=  (b : CMat) = Mop_GE.op(this, b, null)
   def <=  (b : CMat) = Mop_LE.op(this, b, null)
   def !=  (b : CMat) = Mop_NE.op(this, b, null)
+  def max  (b : CMat) = Mop_Max.op(this, b, null)
+  def min  (b : CMat) = Mop_Min.op(this, b, null)
    
  /*
   * Specialize to GMats to help the type system. 
@@ -1079,7 +1083,8 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   def >=  (b : GMat) = Mop_GE.op(this, b, null)
   def <=  (b : GMat) = Mop_LE.op(this, b, null)
   def !=  (b : GMat) = Mop_NE.op(this, b, null)
-  
+  def max  (b : GMat) = Mop_Max.op(this, b, null)
+  def min  (b : GMat) = Mop_Min.op(this, b, null)
  /*
   * Operators whose second arg is generic. 
   */ 
@@ -1114,7 +1119,8 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   override def ==  (b : Mat) = Mop_EQ.op(this, b, null)
   override def === (b : Mat) = Mop_EQ.op(this, b, null) 
   override def !=  (b : Mat) = Mop_NE.op(this, b, null)
-
+  override def max  (b : Mat) = Mop_Max.op(this, b, null)
+  override def min  (b : Mat) = Mop_Min.op(this, b, null)
 }
 
 class DPair (val omat:Mat, val mat:DMat) extends Pair{
@@ -1150,7 +1156,9 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   def === (b : DMat) = mat.ddMatOp(b, DMat.eqFun, omat)
   def >= (b : DMat) = mat.ddMatOp(b, DMat.geFun, omat)
   def <= (b : DMat) = mat.ddMatOp(b, DMat.leFun, omat)
-  def != (b : DMat) = mat.ddMatOp(b, DMat.neFun, omat)  
+  def != (b : DMat) = mat.ddMatOp(b, DMat.neFun, omat)
+  def max (b : DMat) = mat.ddMatOp(b, DMat.maxFun, omat)
+  def min (b : DMat) = mat.ddMatOp(b, DMat.minFun, omat)
   
   override def * (b : Float) = mat.fDMult(DMat.delem(b), omat)
   override def + (b : Float) = mat.ddMatOpScalarv(b, DMat.vecAddFun, omat)
@@ -1167,7 +1175,9 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   override def >= (b : Float) = mat.ddMatOpScalar(b, DMat.geFun, omat)
   override def <= (b : Float) = mat.ddMatOpScalar(b, DMat.leFun, omat)
   override def != (b : Float) = mat.ddMatOpScalar(b, DMat.neFun, omat) 
-
+  override def max (b : Float) = mat.ddMatOpScalar(b, DMat.maxFun, omat)
+  override def min (b : Float) = mat.ddMatOpScalar(b, DMat.minFun, omat)
+  
   override def * (b : Double) = mat.fDMult(DMat.delem(b), omat) 
   override def + (b : Double) = mat.ddMatOpScalarv(b, DMat.vecAddFun, omat)
   override def - (b : Double) = mat.ddMatOpScalarv(b, DMat.vecSubFun, omat)
@@ -1183,6 +1193,8 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   override def >= (b : Double) = mat.ddMatOpScalar(b, DMat.geFun, omat)
   override def <= (b : Double) = mat.ddMatOpScalar(b, DMat.leFun, omat)
   override def != (b : Double) = mat.ddMatOpScalar(b, DMat.neFun, omat) 
+  override def max (b : Double) = mat.ddMatOpScalar(b, DMat.maxFun, omat)
+  override def min (b : Double) = mat.ddMatOpScalar(b, DMat.minFun, omat)
   
   override def * (b : Int) = mat.fDMult(DMat.delem(b), omat) 
   override def + (b : Int) = mat.ddMatOpScalarv(b, DMat.vecAddFun, omat)
@@ -1199,6 +1211,8 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   override def >= (b : Int) = mat.ddMatOpScalar(b, DMat.geFun, omat)
   override def <= (b : Int) = mat.ddMatOpScalar(b, DMat.leFun, omat)
   override def != (b : Int) = mat.ddMatOpScalar(b, DMat.neFun, omat)
+  override def max (b : Int) = mat.ddMatOpScalar(b, DMat.maxFun, omat)
+  override def min (b : Int) = mat.ddMatOpScalar(b, DMat.minFun, omat)
   
   /*
    * Specialize to IMat
@@ -1230,7 +1244,8 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   def >=  (b : IMat) = Mop_GE.op(mat, b, omat)
   def <=  (b : IMat) = Mop_LE.op(mat, b, omat)
   def !=  (b : IMat) = Mop_NE.op(mat, b, omat)
-  
+  def max  (b : IMat) = Mop_Max.op(mat, b, omat)
+  def min  (b : IMat) = Mop_Min.op(mat, b, omat)  
   /*
    * Specialize to FMat
    */
@@ -1261,7 +1276,8 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   def >=  (b : FMat) = Mop_GE.op(mat, b, omat)
   def <=  (b : FMat) = Mop_LE.op(mat, b, omat)
   def !=  (b : FMat) = Mop_NE.op(mat, b, omat)
-  
+  def max  (b : FMat) = Mop_Max.op(mat, b, omat)
+  def min  (b : FMat) = Mop_Min.op(mat, b, omat) 
   /*
    * Specialize to GMat
    */
@@ -1292,7 +1308,8 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   def >=  (b : GMat) = Mop_GE.op(mat, b, omat)
   def <=  (b : GMat) = Mop_LE.op(mat, b, omat)
   def !=  (b : GMat) = Mop_NE.op(mat, b, omat)
-  
+  def max  (b : GMat) = Mop_Max.op(mat, b, omat)
+  def min  (b : GMat) = Mop_Min.op(mat, b, omat) 
   /*
    * Generics
    */
@@ -1327,6 +1344,7 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   override def ==  (b : Mat):Mat = Mop_EQ.op(mat, b, omat)
   override def === (b : Mat):Mat = Mop_EQ.op(mat, b, omat) 
   override def !=  (b : Mat):Mat = Mop_NE.op(mat, b, omat)
+  override def max  (b : Mat):Mat = Mop_Min.op(mat, b, omat)
 }
 
 object DMat {

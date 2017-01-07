@@ -301,7 +301,25 @@ case class GSDMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @tran
   def <= (a : GDMat):GSDMat = GSDop(a, null, BinOp.op_le);  
   def >= (a : GDMat):GSDMat = GSDop(a, null, BinOp.op_ge);  
   def == (a : GDMat):GSDMat = GSDop(a, null, BinOp.op_eq);
+  def max (a : GDMat):GSDMat = GSDop(a, null, BinOp.op_max);  
+  def min (a : GDMat):GSDMat = GSDop(a, null, BinOp.op_min);
   
+  // Scalar operators are applied only to the non-zeros of the matrix
+  
+  override def +  (b : Double):GSDMat = GSDop(GDMat(b), null, BinOp.op_add);
+  override def -  (b : Double):GSDMat = GSDop(GDMat(b), null, BinOp.op_sub);
+  override def *@ (b : Double):GSDMat = GSDop(GDMat(b), null, BinOp.op_mul);
+  override def ∘  (b : Double):GSDMat = GSDop(GDMat(b), null, BinOp.op_mul);
+  override def /  (b : Double):GSDMat = GSDop(GDMat(b), null, BinOp.op_div);
+  
+  override def != (b : Double):GSDMat = GSDop(GDMat(b), null, BinOp.op_ne);
+  override def >  (b : Double):GSDMat = GSDop(GDMat(b), null, BinOp.op_gt);
+  override def <  (b : Double):GSDMat = GSDop(GDMat(b), null, BinOp.op_lt);  
+  override def <= (b : Double):GSDMat = GSDop(GDMat(b), null, BinOp.op_le);  
+  override def >= (b : Double):GSDMat = GSDop(GDMat(b), null, BinOp.op_ge);  
+  override def == (b : Double):GSDMat = GSDop(GDMat(b), null, BinOp.op_eq);
+  override def max (b : Double):GSDMat = GSDop(GDMat(b), null, BinOp.op_max);  
+  override def min (b : Double):GSDMat = GSDop(GDMat(b), null, BinOp.op_min);
   // Scalar operators are applied only to the non-zeros of the matrix
   
   override def +  (b : Float):GSDMat = GSDop(GDMat(b), null, BinOp.op_add);
@@ -316,6 +334,25 @@ case class GSDMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @tran
   override def <= (b : Float):GSDMat = GSDop(GDMat(b), null, BinOp.op_le);  
   override def >= (b : Float):GSDMat = GSDop(GDMat(b), null, BinOp.op_ge);  
   override def == (b : Float):GSDMat = GSDop(GDMat(b), null, BinOp.op_eq);
+  override def max (b : Float):GSDMat = GSDop(GDMat(b), null, BinOp.op_max);  
+  override def min (b : Float):GSDMat = GSDop(GDMat(b), null, BinOp.op_min);
+  
+   // Scalar operators are applied only to the non-zeros of the matrix
+  
+  override def +  (b : Int):GSDMat = GSDop(GDMat(b.toDouble), null, BinOp.op_add);
+  override def -  (b : Int):GSDMat = GSDop(GDMat(b.toDouble), null, BinOp.op_sub);
+  override def *@ (b : Int):GSDMat = GSDop(GDMat(b.toDouble), null, BinOp.op_mul);
+  override def ∘  (b : Int):GSDMat = GSDop(GDMat(b.toDouble), null, BinOp.op_mul);
+  override def /  (b : Int):GSDMat = GSDop(GDMat(b.toDouble), null, BinOp.op_div);
+  
+  override def != (b : Int):GSDMat = GSDop(GDMat(b.toDouble), null, BinOp.op_ne);
+  override def >  (b : Int):GSDMat = GSDop(GDMat(b.toDouble), null, BinOp.op_gt);
+  override def <  (b : Int):GSDMat = GSDop(GDMat(b.toDouble), null, BinOp.op_lt);  
+  override def <= (b : Int):GSDMat = GSDop(GDMat(b.toDouble), null, BinOp.op_le);  
+  override def >= (b : Int):GSDMat = GSDop(GDMat(b.toDouble), null, BinOp.op_ge);  
+  override def == (b : Int):GSDMat = GSDop(GDMat(b.toDouble), null, BinOp.op_eq);
+  override def max (b : Int):GSDMat = GSDop(GDMat(b.toDouble), null, BinOp.op_max);  
+  override def min (b : Int):GSDMat = GSDop(GDMat(b.toDouble), null, BinOp.op_min); 
   
   override def *  (b : Mat) = Mop_Times.op(this, b, null)
   override def *^ (b : Mat) = Mop_TimesT.op(this, b, null)
@@ -335,7 +372,7 @@ case class GSDMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @tran
   override def ==  (b : Mat) = Mop_EQ.sop(this, b, null)
   override def === (b : Mat) = Mop_EQ.sop(this, b, null) 
   override def !=  (b : Mat) = Mop_NE.sop(this, b, null)  
-  
+
 }
 
 class GSDPair (val omat:Mat, val mat:GSDMat) extends Pair {
@@ -355,7 +392,59 @@ class GSDPair (val omat:Mat, val mat:GSDMat) extends Pair {
   def <= (a : GDMat):GSDMat = mat.GSDop(a, omat, BinOp.op_le);  
   def >= (a : GDMat):GSDMat = mat.GSDop(a, omat, BinOp.op_ge);  
   def == (a : GDMat):GSDMat = mat.GSDop(a, omat, BinOp.op_eq);
-
+  def max (a : GDMat):GSDMat = mat.GSDop(a, omat, BinOp.op_max);  
+  def min (a : GDMat):GSDMat = mat.GSDop(a, omat, BinOp.op_min);
+  
+    // Scalar operators are applied only to the non-zeros of the matrix
+  
+  override def +  (b : Double):GSDMat = mat.GSDop(GDMat(b), omat, BinOp.op_add);
+  override def -  (b : Double):GSDMat = mat.GSDop(GDMat(b), omat, BinOp.op_sub);
+  override def *@ (b : Double):GSDMat = mat.GSDop(GDMat(b), omat, BinOp.op_mul);
+  override def ∘  (b : Double):GSDMat = mat.GSDop(GDMat(b), omat, BinOp.op_mul);
+  override def /  (b : Double):GSDMat = mat.GSDop(GDMat(b), omat, BinOp.op_div);
+  
+  override def != (b : Double):GSDMat = mat.GSDop(GDMat(b), omat, BinOp.op_ne);
+  override def >  (b : Double):GSDMat = mat.GSDop(GDMat(b), omat, BinOp.op_gt);
+  override def <  (b : Double):GSDMat = mat.GSDop(GDMat(b), omat, BinOp.op_lt);  
+  override def <= (b : Double):GSDMat = mat.GSDop(GDMat(b), omat, BinOp.op_le);  
+  override def >= (b : Double):GSDMat = mat.GSDop(GDMat(b), omat, BinOp.op_ge);  
+  override def == (b : Double):GSDMat = mat.GSDop(GDMat(b), omat, BinOp.op_eq);
+  override def max (b : Double):GSDMat = mat.GSDop(GDMat(b), omat, BinOp.op_max);  
+  override def min (b : Double):GSDMat = mat.GSDop(GDMat(b), omat, BinOp.op_min);
+  // Scalar operators are applied only to the non-zeros of the matrix
+  
+  override def +  (b : Float):GSDMat = mat.GSDop(GDMat(b), omat, BinOp.op_add);
+  override def -  (b : Float):GSDMat = mat.GSDop(GDMat(b), omat, BinOp.op_sub);
+  override def *@ (b : Float):GSDMat = mat.GSDop(GDMat(b), omat, BinOp.op_mul);
+  override def ∘  (b : Float):GSDMat = mat.GSDop(GDMat(b), omat, BinOp.op_mul);
+  override def /  (b : Float):GSDMat = mat.GSDop(GDMat(b), omat, BinOp.op_div);
+  
+  override def != (b : Float):GSDMat = mat.GSDop(GDMat(b), omat, BinOp.op_ne);
+  override def >  (b : Float):GSDMat = mat.GSDop(GDMat(b), omat, BinOp.op_gt);
+  override def <  (b : Float):GSDMat = mat.GSDop(GDMat(b), omat, BinOp.op_lt);  
+  override def <= (b : Float):GSDMat = mat.GSDop(GDMat(b), omat, BinOp.op_le);  
+  override def >= (b : Float):GSDMat = mat.GSDop(GDMat(b), omat, BinOp.op_ge);  
+  override def == (b : Float):GSDMat = mat.GSDop(GDMat(b), omat, BinOp.op_eq);
+  override def max (b : Float):GSDMat = mat.GSDop(GDMat(b), omat, BinOp.op_max);  
+  override def min (b : Float):GSDMat = mat.GSDop(GDMat(b), omat, BinOp.op_min);
+  
+  // Scalar operators are applied only to the non-zeros of the matrix
+  
+  override def +  (b : Int):GSDMat = mat.GSDop(GDMat(b.toDouble), omat, BinOp.op_add);
+  override def -  (b : Int):GSDMat = mat.GSDop(GDMat(b.toDouble), omat, BinOp.op_sub);
+  override def *@ (b : Int):GSDMat = mat.GSDop(GDMat(b.toDouble), omat, BinOp.op_mul);
+  override def ∘  (b : Int):GSDMat = mat.GSDop(GDMat(b.toDouble), omat, BinOp.op_mul);
+  override def /  (b : Int):GSDMat = mat.GSDop(GDMat(b.toDouble), omat, BinOp.op_div);
+  
+  override def != (b : Int):GSDMat = mat.GSDop(GDMat(b.toDouble), omat, BinOp.op_ne);
+  override def >  (b : Int):GSDMat = mat.GSDop(GDMat(b.toDouble), omat, BinOp.op_gt);
+  override def <  (b : Int):GSDMat = mat.GSDop(GDMat(b.toDouble), omat, BinOp.op_lt);  
+  override def <= (b : Int):GSDMat = mat.GSDop(GDMat(b.toDouble), omat, BinOp.op_le);  
+  override def >= (b : Int):GSDMat = mat.GSDop(GDMat(b.toDouble), omat, BinOp.op_ge);  
+  override def == (b : Int):GSDMat = mat.GSDop(GDMat(b.toDouble), omat, BinOp.op_eq);
+  override def max (b : Int):GSDMat = mat.GSDop(GDMat(b.toDouble), omat, BinOp.op_max);  
+  override def min (b : Int):GSDMat = mat.GSDop(GDMat(b.toDouble), omat, BinOp.op_min);
+  
 	override def ^* (b : Mat):Mat = Mop_TTimes.op(mat, b, omat)
 	override def Tx (b : Mat):Mat = Mop_TTimes.op(mat, b, omat)
 	

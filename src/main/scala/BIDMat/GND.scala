@@ -619,6 +619,7 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
      
   def max (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, null, "max"); SciFunctions.max(a, b, c); d}
   def max (mat:GND, omat:ND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, omat, "max"); SciFunctions.max(a, b, c); d}
+  
   def min (mat:GND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, null, "max"); SciFunctions.min(a, b, c); d}
   def min (mat:GND, omat:ND):GND = {val (a, b, c, d) = GND.asGMats(this, mat, omat, "max"); SciFunctions.min(a, b, c); d}
   
@@ -661,7 +662,8 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
   override def != (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "!="); c ~ a != b; d}
   override def == (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "=="); c ~ a == b; d}
   override def === (b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "==="); c ~ a === b; d}
-  
+  override def max(b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "max"); c ~ a max b; d}
+  override def min(b:Double):GND = {val (a, c, d) = GND.asGMats(this, null, "min"); c ~ a min b; d}  
   
   
   override def + (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "+"); c ~ a + b; d}
@@ -679,7 +681,8 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
   override def != (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "!="); c ~ a != b; d}
   override def == (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "=="); c ~ a == b; d}
   override def === (b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "==="); c ~ a === b; d}
-  
+  override def max(b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "max"); c ~ a max b; d}
+  override def min(b:Int):GND = {val (a, c, d) = GND.asGMats(this, null, "min"); c ~ a min b; d} 
   
   override def + (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "+"); c ~ a + b; d}
   override def - (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "-"); c ~ a - b; d}
@@ -696,7 +699,8 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
   override def != (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "!="); c ~ a != b; d}
   override def == (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "=="); c ~ a == b; d}
   override def === (b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "==="); c ~ a === b; d}
-  
+  override def max(b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "max"); c ~ a max b; d}
+  override def min(b:Long):GND = {val (a, c, d) = GND.asGMats(this, null, "min"); c ~ a min b; d}  
   
   override def + (b : ND):ND = this + b.asInstanceOf[GND];
   override def - (b : ND):ND = this - b.asInstanceOf[GND]; 
@@ -713,6 +717,8 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
   override def == (b : ND):ND = this == b.asInstanceOf[GND];
   override def === (b : ND):ND = this === b.asInstanceOf[GND];
   override def != (b : ND):ND = this != b.asInstanceOf[GND];
+  override def max (b : ND):ND = this max b.asInstanceOf[GND];
+  override def min (b : ND):ND = this min b.asInstanceOf[GND];
   
   override def \ (b : ND):ND = this \ b.asInstanceOf[GND];
   override def on (b : ND):ND = this on b.asInstanceOf[GND];
@@ -796,8 +802,8 @@ class GNDPair(val omat:ND, val amat:GND) extends NDPair {
   def == (bmat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat, omat, "=="); c ~ a == b; d}
   def === (bmat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat, omat, "==="); c ~ a === b; d}
   
-  def max (bmat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat, omat, "max"); (c ~ a) max b; d}
-  def min (bmat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat, omat, "min"); (c ~ a) min b; d}
+  def max (bmat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat, omat, "max"); c ~ a max b; d}
+  def min (bmat:GND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat, omat, "min"); c ~ a min b; d}
   
   
   override def + (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "+"); c ~ a + GMat(b); d}
@@ -816,8 +822,8 @@ class GNDPair(val omat:ND, val amat:GND) extends NDPair {
   override def == (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "=="); c ~ a == GMat(b); d}  
   override def === (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "==="); c ~ a === GMat(b); d}
   
-  override def max (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "max"); (c ~ a) max GMat(b); d}  
-  override def min (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "min"); (c ~ a) min GMat(b); d}
+  override def max (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "max"); c ~ a max GMat(b); d}  
+  override def min (b:Float):GND = {val (a, c, d) = GND.asGMats(amat, omat, "min"); c ~ a min GMat(b); d}
   
   
   override def + (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "+"); c ~ a + GMat(b.toFloat); d}
@@ -836,8 +842,8 @@ class GNDPair(val omat:ND, val amat:GND) extends NDPair {
   override def == (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "=="); c ~ a == GMat(b.toFloat); d}  
   override def === (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "==="); c ~ a === GMat(b.toFloat); d}
   
-  override def max (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "max"); (c ~ a) max GMat(b); d}  
-  override def min (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "min"); (c ~ a) min GMat(b); d}
+  override def max (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "max"); c ~ a max GMat(b); d}  
+  override def min (b:Double):GND = {val (a, c, d) = GND.asGMats(amat, omat, "min"); c ~ a min GMat(b); d}
   
   
   override def + (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "+"); c ~ a + GMat(b.toFloat); d}
@@ -856,8 +862,8 @@ class GNDPair(val omat:ND, val amat:GND) extends NDPair {
   override def == (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "=="); c ~ a == GMat(b.toFloat); d}  
   override def === (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "==="); c ~ a === GMat(b.toFloat); d}
   
-  override def max (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "max"); (c ~ a) max GMat(b.toFloat); d}  
-  override def min (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "min"); (c ~ a) min GMat(b.toFloat); d}
+  override def max (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "max"); c ~ a max GMat(b.toFloat); d}  
+  override def min (b:Int):GND = {val (a, c, d) = GND.asGMats(amat, omat, "min"); c ~ a min GMat(b.toFloat); d}
   
   
   override def + (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "+"); c ~ a + GMat(b.toFloat); d}
@@ -876,8 +882,8 @@ class GNDPair(val omat:ND, val amat:GND) extends NDPair {
   override def == (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "=="); c ~ a == GMat(b.toFloat); d}  
   override def === (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "==="); c ~ a === GMat(b.toFloat); d}
   
-  override def max (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "max"); (c ~ a) max GMat(b.toFloat); d}  
-  override def min (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "min"); (c ~ a) min GMat(b.toFloat); d}
+  override def max (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "max"); c ~ a max GMat(b.toFloat); d}  
+  override def min (b:Long):GND = {val (a, c, d) = GND.asGMats(amat, omat, "min"); c ~ a min GMat(b.toFloat); d}
   
   
   override def * (bmat:ND):GND = this * bmat.asInstanceOf[GND];
@@ -896,8 +902,8 @@ class GNDPair(val omat:ND, val amat:GND) extends NDPair {
   override def == (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "=="); c ~ a == b; d}
   override def === (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "==="); c ~ a === b; d}
   
-  override def max (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "max"); (c ~ a) max b; d}
-  override def min (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "min"); (c ~ a) min b; d}
+  override def max (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "max"); c ~ a max b; d}
+  override def min (bmat:ND):GND = {val (a, b, c, d) = GND.asGMats(amat, bmat.asInstanceOf[GND], omat, "min"); c ~ a min b; d}
 
 }
 

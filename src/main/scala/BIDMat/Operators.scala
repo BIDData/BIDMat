@@ -658,3 +658,33 @@ object Mop_NE extends Mop {
   override def sop(a:GSMat, b:GMat, c:Mat):GSMat = getGSPair(c, a) != b
   override def sop(a:GSDMat, b:GDMat, c:Mat):GSDMat = getGSDPair(c, a) != b
 }
+
+object Mop_Max extends Mop { 
+  override def myname = "max"
+  override def op(a:FMat, b:FMat, c:Mat):FMat = getFPair(c, a) max b
+  override def op(a:DMat, b:DMat, c:Mat):DMat = getDPair(c, a) max b
+  override def op(a:IMat, b:IMat, c:Mat):IMat = getIPair(c, a) max b
+  override def op(a:LMat, b:LMat, c:Mat):LMat = getLPair(c, a) max b
+  override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) max b
+  override def op(a:GDMat, b:GDMat, c:Mat):GDMat = getGDPair(c, a) max b
+  override def op(a:GIMat, b:GIMat, c:Mat):GIMat = getGIPair(c, a) max b
+  override def op(a:GLMat, b:GLMat, c:Mat):GLMat = getGLPair(c, a) max b
+  override def sop(a:SMat, b:FMat, c:Mat):SMat = getSPair(c, a) max b
+  override def sop(a:GSMat, b:GMat, c:Mat):GSMat = getGSPair(c, a) max b
+  override def sop(a:GSDMat, b:GDMat, c:Mat):GSDMat = getGSDPair(c, a) max b
+}
+
+object Mop_Min extends Mop { 
+  override def myname = "min"
+  override def op(a:FMat, b:FMat, c:Mat):FMat = getFPair(c, a) min b
+  override def op(a:DMat, b:DMat, c:Mat):DMat = getDPair(c, a) min b
+  override def op(a:IMat, b:IMat, c:Mat):IMat = getIPair(c, a) min b
+  override def op(a:LMat, b:LMat, c:Mat):LMat = getLPair(c, a) min b
+  override def op(a:GMat, b:GMat, c:Mat):GMat = getGPair(c, a) min b
+  override def op(a:GDMat, b:GDMat, c:Mat):GDMat = getGDPair(c, a) min b
+  override def op(a:GIMat, b:GIMat, c:Mat):GIMat = getGIPair(c, a) min b
+  override def op(a:GLMat, b:GLMat, c:Mat):GLMat = getGLPair(c, a) min b
+  override def sop(a:SMat, b:FMat, c:Mat):SMat = getSPair(c, a) min b
+  override def sop(a:GSMat, b:GMat, c:Mat):GSMat = getGSPair(c, a) min b
+  override def sop(a:GSDMat, b:GDMat, c:Mat):GSDMat = getGSDPair(c, a) min b
+}

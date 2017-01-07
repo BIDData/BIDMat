@@ -342,6 +342,8 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
   def <= (a : GMat):GSMat = GSDop(a, null, BinOp.op_le);  
   def >= (a : GMat):GSMat = GSDop(a, null, BinOp.op_ge);  
   def == (a : GMat):GSMat = GSDop(a, null, BinOp.op_eq);
+  def max (a : GMat):GSMat = GSDop(a, null, BinOp.op_max);  
+  def min (a : GMat):GSMat = GSDop(a, null, BinOp.op_min);
   
   override def +  (b : Float):GSMat = GSDop(GMat(b), null, BinOp.op_add);
   override def -  (b : Float):GSMat = GSDop(GMat(b), null, BinOp.op_sub);
@@ -355,6 +357,38 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
   override def <= (b : Float):GSMat = GSDop(GMat(b), null, BinOp.op_le);  
   override def >= (b : Float):GSMat = GSDop(GMat(b), null, BinOp.op_ge);  
   override def == (b : Float):GSMat = GSDop(GMat(b), null, BinOp.op_eq);
+  override def max (b : Float):GSMat = GSDop(GMat(b), null, BinOp.op_max);  
+  override def min (b : Float):GSMat = GSDop(GMat(b), null, BinOp.op_min);
+  
+  override def +  (b : Double):GSMat = GSDop(GMat(b), null, BinOp.op_add);
+  override def -  (b : Double):GSMat = GSDop(GMat(b), null, BinOp.op_sub);
+  override def *@ (b : Double):GSMat = GSDop(GMat(b), null, BinOp.op_mul);
+  override def ∘  (b : Double):GSMat = GSDop(GMat(b), null, BinOp.op_mul);
+  override def /  (b : Double):GSMat = GSDop(GMat(b), null, BinOp.op_div);
+  
+  override def != (b : Double):GSMat = GSDop(GMat(b), null, BinOp.op_ne);
+  override def >  (b : Double):GSMat = GSDop(GMat(b), null, BinOp.op_gt);
+  override def <  (b : Double):GSMat = GSDop(GMat(b), null, BinOp.op_lt);  
+  override def <= (b : Double):GSMat = GSDop(GMat(b), null, BinOp.op_le);  
+  override def >= (b : Double):GSMat = GSDop(GMat(b), null, BinOp.op_ge);  
+  override def == (b : Double):GSMat = GSDop(GMat(b), null, BinOp.op_eq);
+  override def max (b : Double):GSMat = GSDop(GMat(b), null, BinOp.op_max);  
+  override def min (b : Double):GSMat = GSDop(GMat(b), null, BinOp.op_min);
+  
+  override def +  (b : Int):GSMat = GSDop(GMat(b), null, BinOp.op_add);
+  override def -  (b : Int):GSMat = GSDop(GMat(b), null, BinOp.op_sub);
+  override def *@ (b : Int):GSMat = GSDop(GMat(b), null, BinOp.op_mul);
+  override def ∘  (b : Int):GSMat = GSDop(GMat(b), null, BinOp.op_mul);
+  override def /  (b : Int):GSMat = GSDop(GMat(b), null, BinOp.op_div);
+  
+  override def != (b : Int):GSMat = GSDop(GMat(b.toFloat), null, BinOp.op_ne);
+  override def >  (b : Int):GSMat = GSDop(GMat(b.toFloat), null, BinOp.op_gt);
+  override def <  (b : Int):GSMat = GSDop(GMat(b.toFloat), null, BinOp.op_lt);  
+  override def <= (b : Int):GSMat = GSDop(GMat(b.toFloat), null, BinOp.op_le);  
+  override def >= (b : Int):GSMat = GSDop(GMat(b.toFloat), null, BinOp.op_ge);  
+  override def == (b : Int):GSMat = GSDop(GMat(b.toFloat), null, BinOp.op_eq);
+  override def max (b : Int):GSMat = GSDop(GMat(b.toFloat), null, BinOp.op_max);  
+  override def min (b : Int):GSMat = GSDop(GMat(b.toFloat), null, BinOp.op_min);
   
   override def *  (b : Mat) = Mop_Times.op(this, b, null)
   override def *^ (b : Mat) = Mop_TimesT.op(this, b, null)
@@ -394,7 +428,9 @@ class GSPair (val omat:Mat, val mat:GSMat) extends Pair {
   def <= (a : GMat):GSMat = mat.GSDop(a, omat, BinOp.op_le);  
   def >= (a : GMat):GSMat = mat.GSDop(a, omat, BinOp.op_ge);  
   def == (a : GMat):GSMat = mat.GSDop(a, omat, BinOp.op_eq);
-	
+  def max (a : GMat):GSMat = mat.GSDop(a, omat, BinOp.op_max);  
+  def min (a : GMat):GSMat = mat.GSDop(a, omat, BinOp.op_min);
+  
   override def +  (a:Float) = mat.GSDop(GMat(a), omat, BinOp.op_add);
   override def -  (a:Float) = mat.GSDop(GMat(a), omat, BinOp.op_sub);
   override def *@ (a:Float) = mat.GSDop(GMat(a), omat, BinOp.op_mul);
@@ -407,7 +443,41 @@ class GSPair (val omat:Mat, val mat:GSMat) extends Pair {
   override def <= (a : Float):GSMat = mat.GSDop(GMat(a), omat, BinOp.op_le);  
   override def >= (a : Float):GSMat = mat.GSDop(GMat(a), omat, BinOp.op_ge);  
   override def == (a : Float):GSMat = mat.GSDop(GMat(a), omat, BinOp.op_eq);
-	
+  override def max (a : Float):GSMat = mat.GSDop(GMat(a), omat, BinOp.op_max);  
+  override def min (a : Float):GSMat = mat.GSDop(GMat(a), omat, BinOp.op_min);
+  
+  
+  override def +  (a:Int) = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_add);
+  override def -  (a:Int) = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_sub);
+  override def *@ (a:Int) = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_mul);
+  override def ∘  (a:Int) = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_mul);
+  override def /  (a:Int) = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_div);
+  
+  override def != (a : Int):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_ne);
+  override def >  (a : Int):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_gt);
+  override def <  (a : Int):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_lt);  
+  override def <= (a : Int):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_le);  
+  override def >= (a : Int):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_ge);  
+  override def == (a : Int):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_eq);
+  override def max (a : Int):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_max);  
+  override def min (a : Int):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_min);
+  
+  
+  override def +  (a:Double) = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_add);
+  override def -  (a:Double) = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_sub);
+  override def *@ (a:Double) = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_mul);
+  override def ∘  (a:Double) = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_mul);
+  override def /  (a:Double) = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_div);
+  
+  override def != (a : Double):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_ne);
+  override def >  (a : Double):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_gt);
+  override def <  (a : Double):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_lt);  
+  override def <= (a : Double):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_le);  
+  override def >= (a : Double):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_ge);  
+  override def == (a : Double):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_eq);
+  override def max (a : Double):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_max);  
+  override def min (a : Double):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_min);
+  
   override def ^* (b : Mat) = Mop_TTimes.op(mat, b, omat)
 	override def Tx (b : Mat) = Mop_TTimes.op(mat, b, omat)
 	override def *  (b : Mat) = Mop_Times.op(mat, b, omat)

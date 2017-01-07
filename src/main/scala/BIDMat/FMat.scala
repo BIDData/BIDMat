@@ -1624,7 +1624,8 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def >=  (b : IMat) = Mop_GE.op(this, b, null)
   def <=  (b : IMat) = Mop_LE.op(this, b, null)
   def !=  (b : IMat) = Mop_NE.op(this, b, null)
-
+  def max (b : IMat) = Mop_Max.op(this, b, null)
+  def min  (b : IMat) = Mop_Min.op(this, b, null)
  /*
   * Specialize to DMats to help the type system.
   */
@@ -1659,7 +1660,8 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def >=  (b : DMat) = Mop_GE.op(this, b, null)
   def <=  (b : DMat) = Mop_LE.op(this, b, null)
   def !=  (b : DMat) = Mop_NE.op(this, b, null)
-
+  def max (b : DMat) = Mop_Max.op(this, b, null)
+  def min  (b : DMat) = Mop_Min.op(this, b, null)
  /*
   * Specialize to CMats to help the type system.
   */
@@ -1694,6 +1696,8 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def >=  (b : CMat) = Mop_GE.op(this, b, null)
   def <=  (b : CMat) = Mop_LE.op(this, b, null)
   def !=  (b : CMat) = Mop_NE.op(this, b, null)
+  def max (b : CMat) = Mop_Max.op(this, b, null)
+  def min  (b : CMat) = Mop_Min.op(this, b, null)
    /*
   * Specialize to SMats to help the type system.
   */
@@ -1725,7 +1729,8 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def >=  (b : SMat) = Mop_GE.op(this, b, null)
   def <=  (b : SMat) = Mop_LE.op(this, b, null)
   def !=  (b : SMat) = Mop_NE.op(this, b, null)
-
+  def max (b : SMat) = Mop_Max.op(this, b, null)
+  def min  (b : SMat) = Mop_Min.op(this, b, null)
  /*
   * Specialize to GMats to help the type system.
   */
@@ -1760,7 +1765,8 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   def >=  (b : GMat) = Mop_GE.op(this, b, null)
   def <=  (b : GMat) = Mop_LE.op(this, b, null)
   def !=  (b : GMat) = Mop_NE.op(this, b, null)
-
+  def max (b : GMat) = Mop_Max.op(this, b, null)
+  def min  (b : GMat) = Mop_Min.op(this, b, null)
  /*
   * Operators whose second arg is generic.
   */
@@ -1795,6 +1801,8 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   override def ==  (b : Mat) = Mop_EQ.op(this, b, null)
   override def === (b : Mat) = Mop_EQ.op(this, b, null)
   override def !=  (b : Mat) = Mop_NE.op(this, b, null)
+  override def max (b : Mat) = Mop_Max.op(this, b, null)
+  override def min  (b : Mat) = Mop_Min.op(this, b, null)
 
   def @@ (b : SMat) = new FDSPair(this, b)
   def ^* (b : FDSPair) = MatFunctions.DDS(this, b.left, b.right, null)
@@ -1961,7 +1969,8 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   def >=  (b : IMat) = Mop_GE.op(mat, b, omat)
   def <=  (b : IMat) = Mop_LE.op(mat, b, omat)
   def !=  (b : IMat) = Mop_NE.op(mat, b, omat)
-
+  def max (b : IMat) = Mop_Max.op(mat, b, omat)
+  def min  (b : IMat) = Mop_Min.op(mat, b, omat)
   /*
    * Specialize to DMat
    */
@@ -1992,7 +2001,8 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   def >=  (b : DMat) = Mop_GE.op(mat, b, omat)
   def <=  (b : DMat) = Mop_LE.op(mat, b, omat)
   def !=  (b : DMat) = Mop_NE.op(mat, b, omat)
-
+  def max (b : DMat) = Mop_Max.op(mat, b, omat)
+  def min (b : DMat) = Mop_Min.op(mat, b, omat)
   /*
    * Specialize to GMat
    */
@@ -2023,7 +2033,8 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   def >=  (b : GMat) = Mop_GE.op(mat, b, omat)
   def <=  (b : GMat) = Mop_LE.op(mat, b, omat)
   def !=  (b : GMat) = Mop_NE.op(mat, b, omat)
-
+  def max (b : GMat) = Mop_Max.op(mat, b, omat)
+  def min  (b : GMat) = Mop_Min.op(mat, b, omat)
   /*
    * Generics
    */
@@ -2058,6 +2069,8 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   override def ==  (b : Mat):Mat = Mop_EQ.op(mat, b, omat)
   override def === (b : Mat):Mat = Mop_EQ.op(mat, b, omat)
   override def !=  (b : Mat):Mat = Mop_NE.op(mat, b, omat)
+  override def max (b : Mat):Mat = Mop_Max.op(mat, b, omat)
+  override def min  (b : Mat):Mat = Mop_Min.op(mat, b, omat)
 }
 
 object FMat {
