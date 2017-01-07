@@ -566,16 +566,47 @@ class GLMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Int) exten
   def >= (b : GLMat) = GIop(b, null, op_ge)
   def <= (b : GLMat) = GIop(b, null, op_le)
   def != (b : GLMat) = GIop(b, null, op_ne)
+  def max (b : GLMat) = GIop(b, null, op_max)
+  def min (b : GLMat) = GIop(b, null, op_min)
   
   def on(a : GLMat) = vertcat(a, null)
   def \ (a : GLMat) = horzcat(a, null)
   
-  override def + (a : Float) = GIop(GLMat(a.toInt), null, op_add)
-  override def - (a : Float) = GIop(GLMat(a.toInt), null, op_sub)
-  override def *@ (a : Float) = GIop(GLMat(a.toInt), null, op_mul)
-  override def ∘  (a : Float) = GIop(GLMat(a.toInt), null, op_mul)
-  override def /  (a : Float) = GIop(GLMat(a.toInt), null, op_div)
-  override def ^  (a : Float) = GIop(GLMat(a.toInt), null, op_pow)
+  def checkOne(b:Seq[Int], name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("GLMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  def checkOne(b:IMat, name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("GLMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  override def sum(ind:IMat):GLMat = reduceOp(null, checkOne(ind,"sum")+1, 0, op_add);
+  override def prod(ind:IMat):GLMat = reduceOp(null, checkOne(ind,"prod")+1, 1, op_mul);
+  override def maxi(ind:IMat):GLMat = reduceOp(null, checkOne(ind,"maxi")+1, Long.MinValue, op_max);
+  override def mini(ind:IMat):GLMat = reduceOp(null, checkOne(ind,"mini")+1, Long.MaxValue, op_min);
+
+  override def sum(ind:Int*):GLMat = reduceOp(null, checkOne(ind,"sum")+1, 0, op_add);
+  override def prod(ind:Int*):GLMat = reduceOp(null, checkOne(ind,"prod")+1, 1, op_mul);
+  override def maxi(ind:Int*):GLMat = reduceOp(null, checkOne(ind,"maxi")+1, Long.MinValue, op_max);
+  override def mini(ind:Int*):GLMat = reduceOp(null, checkOne(ind,"mini")+1, Long.MaxValue, op_min);
+  
+  override def + (a : Float) = GIop(GLMat(a.toLong), null, op_add)
+  override def - (a : Float) = GIop(GLMat(a.toLong), null, op_sub)
+  override def *@ (a : Float) = GIop(GLMat(a.toLong), null, op_mul)
+  override def ∘  (a : Float) = GIop(GLMat(a.toLong), null, op_mul)
+  override def /  (a : Float) = GIop(GLMat(a.toLong), null, op_div)
+  override def ^  (a : Float) = GIop(GLMat(a.toLong), null, op_pow)
+  
+  override def < (b : Float) = GIop(GLMat(b.toLong), null, op_lt);
+  override def > (b : Float) = GIop(GLMat(b.toLong), null, op_gt);
+  override def <= (b : Float) = GIop(GLMat(b.toLong), null, op_le);
+  override def >= (b : Float) = GIop(GLMat(b.toLong), null, op_ge);
+  override def == (b : Float) = GIop(GLMat(b.toLong), null, op_eq);
+  override def != (b : Float) = GIop(GLMat(b.toLong), null, op_ne);
+  override def max (b : Float) = GIop(GLMat(b.toLong), null, op_max);
+  override def min (b : Float) = GIop(GLMat(b.toLong), null, op_min);
   
   override def + (a : Int) = GIop(GLMat(a), null, op_add)
   override def - (a : Int) = GIop(GLMat(a), null, op_sub)
@@ -584,26 +615,30 @@ class GLMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Int) exten
   override def /  (a : Int) = GIop(GLMat(a), null, op_div)
   override def ^  (a : Int) = GIop(GLMat(a), null, op_pow)
    
-  override def < (b : Float) = GIop(GLMat(b.toInt), null, op_lt);
-  override def > (b : Float) = GIop(GLMat(b.toInt), null, op_gt);
-  override def <= (b : Float) = GIop(GLMat(b.toInt), null, op_le);
-  override def >= (b : Float) = GIop(GLMat(b.toInt), null, op_ge);
-  override def == (b : Float) = GIop(GLMat(b.toInt), null, op_eq);
-  override def != (b : Float) = GIop(GLMat(b.toInt), null, op_ne);
-
-  override def < (b : Double) = GIop(GLMat(b.toInt), null, op_lt)
-  override def > (b : Double) = GIop(GLMat(b.toInt), null, op_gt)    
-  override def <= (b : Double) = GIop(GLMat(b.toInt), null, op_le)
-  override def >= (b : Double) = GIop(GLMat(b.toInt), null, op_ge)  
-  override def == (b : Double) = GIop(GLMat(b.toInt), null, op_eq)  
-  override def != (b : Double) = GIop(GLMat(b.toInt), null, op_ne)
-  
   override def < (b : Int) = GIop(GLMat(b), null, op_lt)
   override def > (b : Int) = GIop(GLMat(b), null, op_gt)
   override def <= (b : Int) = GIop(GLMat(b), null, op_le)
   override def >= (b : Int) = GIop(GLMat(b), null, op_ge)
   override def == (b : Int) = GIop(GLMat(b), null, op_eq)
   override def != (b : Int) = GIop(GLMat(b), null, op_ne)
+  override def max (b : Int) = GIop(GLMat(b), null, op_max);
+  override def min (b : Int) = GIop(GLMat(b), null, op_min);
+
+  override def + (a : Double) = GIop(GLMat(a.toLong), null, op_add)
+  override def - (a : Double) = GIop(GLMat(a.toLong), null, op_sub)
+  override def *@ (a : Double) = GIop(GLMat(a.toLong), null, op_mul)
+  override def ∘  (a : Double) = GIop(GLMat(a.toLong), null, op_mul)
+  override def /  (a : Double) = GIop(GLMat(a.toLong), null, op_div)
+  override def ^  (a : Double) = GIop(GLMat(a.toLong), null, op_pow)
+  
+  override def < (b : Double) = GIop(GLMat(b.toLong), null, op_lt)
+  override def > (b : Double) = GIop(GLMat(b.toLong), null, op_gt)    
+  override def <= (b : Double) = GIop(GLMat(b.toLong), null, op_le)
+  override def >= (b : Double) = GIop(GLMat(b.toLong), null, op_ge)  
+  override def == (b : Double) = GIop(GLMat(b.toLong), null, op_eq)  
+  override def != (b : Double) = GIop(GLMat(b.toLong), null, op_ne)
+  override def max (b : Double) = GIop(GLMat(b.toLong), null, op_max);
+  override def min (b : Double) = GIop(GLMat(b.toLong), null, op_min);
           
   
   def ~ (b: GLMat) = new GLPair(this, b)
@@ -629,9 +664,31 @@ class GLPair (val omat:Mat, val mat:GLMat) extends Pair{
 	def >= (b : GLMat) = mat.GIop(b, omat, op_ge)
 	def <= (b : GLMat) = mat.GIop(b, omat, op_le)
 	def != (b : GLMat) = mat.GIop(b, omat, op_ne)
+	def max (b : GLMat) = mat.GIop(b, omat, op_max)
+  def min (b : GLMat) = mat.GIop(b, omat, op_min)
 	
 	def on(a : GLMat) = mat.vertcat(a, omat)
 	def \ (a : GLMat) = mat.horzcat(a, omat)
+    
+  def checkOne(b:Seq[Int], name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("GLMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  def checkOne(b:IMat, name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("GLMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  override def sum(ind:IMat):GLMat = mat.reduceOp(omat, checkOne(ind,"sum")+1, 0, op_add);
+  override def prod(ind:IMat):GLMat = mat.reduceOp(omat, checkOne(ind,"prod")+1, 1, op_mul);
+  override def maxi(ind:IMat):GLMat = mat.reduceOp(omat, checkOne(ind,"maxi")+1, Long.MinValue, op_max);
+  override def mini(ind:IMat):GLMat = mat.reduceOp(omat, checkOne(ind,"mini")+1, Long.MaxValue, op_min);
+
+  override def sum(ind:Int*):GLMat = mat.reduceOp(omat, checkOne(ind,"sum")+1, 0, op_add);
+  override def prod(ind:Int*):GLMat = mat.reduceOp(omat, checkOne(ind,"prod")+1, 1, op_mul);
+  override def maxi(ind:Int*):GLMat = mat.reduceOp(omat, checkOne(ind,"maxi")+1, Long.MinValue, op_max);
+  override def mini(ind:Int*):GLMat = mat.reduceOp(omat, checkOne(ind,"mini")+1, Long.MaxValue, op_min);
 	
   override def + (a : Long) = mat.GIop(GLMat(a), omat, op_add)
 	override def - (a : Long) = mat.GIop(GLMat(a), omat, op_sub)
@@ -646,7 +703,9 @@ class GLPair (val omat:Mat, val mat:GLMat) extends Pair{
 	override def >= (b : Long) = mat.GIop(GLMat(b), omat, op_ge)
 	override def == (b : Long) = mat.GIop(GLMat(b), omat, op_eq)
 	override def != (b : Long) = mat.GIop(GLMat(b), omat, op_ne)
-	
+  override def max (b : Long) = mat.GIop(GLMat(b), omat, op_max)
+  override def min (b : Long) = mat.GIop(GLMat(b), omat, op_min)
+  
 	override def + (a : Float) = mat.GIop(GLMat(a.toLong), omat, op_add)
 	override def - (a : Float) = mat.GIop(GLMat(a.toLong), omat, op_sub)
 	override def *@ (a : Float) = mat.GIop(GLMat(a.toLong), omat, op_mul)
@@ -660,6 +719,8 @@ class GLPair (val omat:Mat, val mat:GLMat) extends Pair{
 	override def >= (b : Float) = mat.GIop(GLMat(b.toLong), omat, op_ge)
 	override def == (b : Float) = mat.GIop(GLMat(b.toLong), omat, op_eq)
 	override def != (b : Float) = mat.GIop(GLMat(b.toLong), omat, op_ne) 
+	override def max (b : Float) = mat.GIop(GLMat(b.toLong), omat, op_max)
+  override def min (b : Float) = mat.GIop(GLMat(b.toLong), omat, op_min) 
 	
 	override def + (a : Int) = mat.GIop(GLMat(a), omat, op_add)
 	override def - (a : Int) = mat.GIop(GLMat(a), omat, op_sub)
@@ -674,6 +735,8 @@ class GLPair (val omat:Mat, val mat:GLMat) extends Pair{
 	override def >= (b : Int) = mat.GIop(GLMat(b), omat, op_ge)
 	override def == (b : Int) = mat.GIop(GLMat(b), omat, op_eq)
 	override def != (b : Int) = mat.GIop(GLMat(b), omat, op_ne)
+	override def max (b : Int) = mat.GIop(GLMat(b), omat, op_max)
+  override def min (b : Int) = mat.GIop(GLMat(b), omat, op_min)
 	
 	override def + (a : Double) = mat.GIop(GLMat(a.toLong), omat, op_add)
 	override def - (a : Double) = mat.GIop(GLMat(a.toLong), omat, op_sub)
@@ -688,6 +751,8 @@ class GLPair (val omat:Mat, val mat:GLMat) extends Pair{
 	override def >= (b : Double) = mat.GIop(GLMat(b.toLong), omat, op_ge)
 	override def == (b : Double) = mat.GIop(GLMat(b.toLong), omat, op_eq)
 	override def != (b : Double) = mat.GIop(GLMat(b.toLong), omat, op_ne)
+	override def max (b : Double) = mat.GIop(GLMat(b.toLong), omat, op_max)
+  override def min (b : Double) = mat.GIop(GLMat(b.toLong), omat, op_min)
 }
 
 object GLMat {

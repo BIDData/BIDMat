@@ -1340,16 +1340,16 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   }
   
   override def sum(ind:IMat):GMat = reduceOp(null, checkOne(ind,"sum")+1, 0f, op_add);
-  override def prod(ind:IMat):GMat = reduceOp(null, checkOne(ind,"prod")+1, 0f, op_mul);
-  override def maxi(ind:IMat):GMat = reduceOp(null, checkOne(ind,"maxi")+1, 0f, op_max);
-  override def mini(ind:IMat):GMat = reduceOp(null, checkOne(ind,"mini")+1, 0f, op_min);
+  override def prod(ind:IMat):GMat = reduceOp(null, checkOne(ind,"prod")+1, 1f, op_mul);
+  override def maxi(ind:IMat):GMat = reduceOp(null, checkOne(ind,"maxi")+1, Float.MinValue, op_max);
+  override def mini(ind:IMat):GMat = reduceOp(null, checkOne(ind,"mini")+1, Float.MaxValue, op_min);
   override def mean(ind:IMat):GMat = SciFunctions._mean(this, checkOne(ind,"mean")+1).asInstanceOf[GMat];
   override def variance(ind:IMat):GMat = SciFunctions._variance(this, checkOne(ind,"variance")+1).asInstanceOf[GMat];
 
   override def sum(ind:Int*):GMat = reduceOp(null, checkOne(ind,"sum")+1, 0f, op_add);
-  override def prod(ind:Int*):GMat = reduceOp(null, checkOne(ind,"prod")+1, 0f, op_mul);
-  override def maxi(ind:Int*):GMat = reduceOp(null, checkOne(ind,"maxi")+1, 0f, op_max);
-  override def mini(ind:Int*):GMat = reduceOp(null, checkOne(ind,"mini")+1, 0f, op_min);
+  override def prod(ind:Int*):GMat = reduceOp(null, checkOne(ind,"prod")+1, 1f, op_mul);
+  override def maxi(ind:Int*):GMat = reduceOp(null, checkOne(ind,"maxi")+1, Float.MinValue, op_max);
+  override def mini(ind:Int*):GMat = reduceOp(null, checkOne(ind,"mini")+1, Float.MaxValue, op_min);
   override def mean(ind:Int*):GMat = SciFunctions._mean(this, checkOne(ind,"mean")+1).asInstanceOf[GMat];
   override def variance(ind:Int*):GMat = SciFunctions._variance(this, checkOne(ind,"variance")+1).asInstanceOf[GMat];
 
@@ -1644,6 +1644,25 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
 	def ∙→ (b :GMat) = mat.dotr(b, omat)
 	def on(a : GMat) = mat.vertcat(a, omat)
 	def \ (a : GMat) = mat.horzcat(a, omat)
+  
+	def checkOne(b:Seq[Int], name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("GMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  def checkOne(b:IMat, name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("GMat %s only takes one argument" format name);
+    b(0);
+  }
+  override def sum(ind:IMat):GMat = mat.reduceOp(omat, checkOne(ind,"sum")+1, 0f, op_add);
+  override def prod(ind:IMat):GMat = mat.reduceOp(omat, checkOne(ind,"prod")+1, 1f, op_mul);
+  override def maxi(ind:IMat):GMat = mat.reduceOp(omat, checkOne(ind,"maxi")+1, Float.MinValue, op_max);
+  override def mini(ind:IMat):GMat = mat.reduceOp(omat, checkOne(ind,"mini")+1, Float.MaxValue, op_min);
+
+  override def sum(ind:Int*):GMat = mat.reduceOp(omat, checkOne(ind,"sum")+1, 0f, op_add);
+  override def prod(ind:Int*):GMat = mat.reduceOp(omat, checkOne(ind,"prod")+1, 1f, op_mul);
+  override def maxi(ind:Int*):GMat = mat.reduceOp(omat, checkOne(ind,"maxi")+1, Float.MinValue, op_max);
+  override def mini(ind:Int*):GMat = mat.reduceOp(omat, checkOne(ind,"mini")+1, Float.MaxValue, op_min);
 	
   override def * (b : Float) = mat.gOp(GMat(b), omat, op_mul)
   override def *@ (b : Float) = mat.gOp(GMat(b), omat, op_mul)

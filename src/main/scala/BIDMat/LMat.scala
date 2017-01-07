@@ -818,7 +818,28 @@ class LPair(val omat:Mat, val mat:LMat) extends Pair {
   def >= (b : LMat) = mat.iiMatOpv(b, LMat.vecGEFun, omat)
   def <= (b : LMat) = mat.iiMatOpv(b, LMat.vecLEFun, omat)
   def != (b : LMat) = mat.iiMatOpv(b, LMat.vecNEFun, omat) 
+  def max (b : LMat) = mat.iiMatOpv(b, LMat.vecMaxFun, omat)
+  def min (b : LMat) = mat.iiMatOpv(b, LMat.vecMinFun, omat) 
   
+  def checkOne(b:Seq[Int], name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("IMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  def checkOne(b:IMat, name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("IMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  override def sum(ind:Int*):LMat = mat.iiReduceOpv(checkOne(ind,"sum")+1, LMat.idFun, LMat.vecAddFun, omat);
+  override def prod(ind:Int*):LMat = mat.iiReduceOpv(checkOne(ind,"prod")+1, LMat.idFun, LMat.vecMulFun, omat);
+  override def maxi(ind:Int*):LMat = mat.iiReduceOpv(checkOne(ind,"maxi")+1, LMat.idFun, LMat.vecMaxFun, omat);
+  override def mini(ind:Int*):LMat = mat.iiReduceOpv(checkOne(ind,"mini")+1, LMat.idFun, LMat.vecMinFun, omat);
+
+  override def sum(ind:IMat):LMat = mat.iiReduceOpv(checkOne(ind,"sum")+1, LMat.idFun, LMat.vecAddFun, omat);
+  override def prod(ind:IMat):LMat = mat.iiReduceOpv(checkOne(ind,"prod")+1, LMat.idFun, LMat.vecMulFun, omat);
+  override def maxi(ind:IMat):LMat = mat.iiReduceOpv(checkOne(ind,"maxi")+1, LMat.idFun, LMat.vecMaxFun, omat);
+  override def mini(ind:IMat):LMat = mat.iiReduceOpv(checkOne(ind,"mini")+1, LMat.idFun, LMat.vecMinFun, omat);
    
   override def * (b : Long) = mat.iMult(LMat.lelem(b), omat)
   override def + (b : Long) = mat.iiMatOpScalarv(b, LMat.vecAddFun, omat)
@@ -834,6 +855,8 @@ class LPair(val omat:Mat, val mat:LMat) extends Pair {
   override def >= (b : Long) = mat.iiMatOpScalarv(b, LMat.vecGEFun, omat)
   override def <= (b : Long) = mat.iiMatOpScalarv(b, LMat.vecLEFun, omat)
   override def != (b : Long) = mat.iiMatOpScalarv(b, LMat.vecNEFun, omat)
+  override def max (b : Long) = mat.iiMatOpScalarv(b, LMat.vecMaxFun, omat)
+  override def min (b : Long) = mat.iiMatOpScalarv(b, LMat.vecMinFun, omat)
   
   override def * (b : Int) = mat.iMult(LMat.lelem(b), omat)
   override def + (b : Int) = mat.iiMatOpScalarv(b, LMat.vecAddFun, omat)
@@ -851,6 +874,9 @@ class LPair(val omat:Mat, val mat:LMat) extends Pair {
   override def >= (b : Int) = mat.iiMatOpScalarv(b, LMat.vecGEFun, omat)
   override def <= (b : Int) = mat.iiMatOpScalarv(b, LMat.vecLEFun, omat)
   override def != (b : Int) = mat.iiMatOpScalarv(b, LMat.vecNEFun, omat) 
+  
+  override def max (b : Int) = mat.iiMatOpScalarv(b, LMat.vecMaxFun, omat)
+  override def min (b : Int) = mat.iiMatOpScalarv(b, LMat.vecMinFun, omat)
   
   /*
    * Specialize to FMat

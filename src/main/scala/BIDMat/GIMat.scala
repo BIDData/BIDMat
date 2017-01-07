@@ -741,9 +741,31 @@ class GIMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Int) exten
   def >= (b : GIMat) = GIop(b, null, op_ge)
   def <= (b : GIMat) = GIop(b, null, op_le)
   def != (b : GIMat) = GIop(b, null, op_ne)
+  def max (b : GIMat) = GIop(b, null, op_max)
+  def min (b : GIMat) = GIop(b, null, op_min)
   
   def on(a : GIMat) = vertcat(a, null)
   def \ (a : GIMat) = horzcat(a, null)
+  
+  def checkOne(b:Seq[Int], name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("GIMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  def checkOne(b:IMat, name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("GIMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  override def sum(ind:IMat):GIMat = reduceOp(null, checkOne(ind,"sum")+1, 0, op_add);
+  override def prod(ind:IMat):GIMat = reduceOp(null, checkOne(ind,"prod")+1, 1, op_mul);
+  override def maxi(ind:IMat):GIMat = reduceOp(null, checkOne(ind,"maxi")+1, Int.MinValue, op_max);
+  override def mini(ind:IMat):GIMat = reduceOp(null, checkOne(ind,"mini")+1, Int.MaxValue, op_min);
+
+  override def sum(ind:Int*):GIMat = reduceOp(null, checkOne(ind,"sum")+1, 0, op_add);
+  override def prod(ind:Int*):GIMat = reduceOp(null, checkOne(ind,"prod")+1, 1, op_mul);
+  override def maxi(ind:Int*):GIMat = reduceOp(null, checkOne(ind,"maxi")+1, Int.MinValue, op_max);
+  override def mini(ind:Int*):GIMat = reduceOp(null, checkOne(ind,"mini")+1, Int.MaxValue, op_min);
   
   override def + (a : Float) = GIop(GIMat(a.toInt), null, op_add)
   override def - (a : Float) = GIop(GIMat(a.toInt), null, op_sub)
@@ -751,20 +773,22 @@ class GIMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Int) exten
   override def ∘  (a : Float) = GIop(GIMat(a.toInt), null, op_mul)
   override def /  (a : Float) = GIop(GIMat(a.toInt), null, op_div)
   override def ^  (a : Float) = GIop(GIMat(a.toInt), null, op_pow)
-  
-  override def + (a : Int) = GIop(GIMat(a), null, op_add)
-  override def - (a : Int) = GIop(GIMat(a), null, op_sub)
-  override def *@ (a : Int) = GIop(GIMat(a), null, op_mul)
-  override def ∘  (a : Int) = GIop(GIMat(a), null, op_mul)
-  override def /  (a : Int) = GIop(GIMat(a), null, op_div)
-  override def ^  (a : Int) = GIop(GIMat(a), null, op_pow)
-   
+
   override def < (b : Float) = GIop(GIMat(b.toInt), null, op_lt);
   override def > (b : Float) = GIop(GIMat(b.toInt), null, op_gt);
   override def <= (b : Float) = GIop(GIMat(b.toInt), null, op_le);
   override def >= (b : Float) = GIop(GIMat(b.toInt), null, op_ge);
   override def == (b : Float) = GIop(GIMat(b.toInt), null, op_eq);
   override def != (b : Float) = GIop(GIMat(b.toInt), null, op_ne);
+  override def max (b : Float) = GIop(GIMat(b.toInt), null, op_max);
+  override def min (b : Float) = GIop(GIMat(b.toInt), null, op_min); 
+  
+  override def + (a : Double) = GIop(GIMat(a.toInt), null, op_add)
+  override def - (a : Double) = GIop(GIMat(a.toInt), null, op_sub)
+  override def *@ (a : Double) = GIop(GIMat(a.toInt), null, op_mul)
+  override def ∘  (a : Double) = GIop(GIMat(a.toInt), null, op_mul)
+  override def /  (a : Double) = GIop(GIMat(a.toInt), null, op_div)
+  override def ^  (a : Double) = GIop(GIMat(a.toInt), null, op_pow)
   
   override def < (b : Double) = GIop(GIMat(b.toInt), null, op_lt)
   override def > (b : Double) = GIop(GIMat(b.toInt), null, op_gt)
@@ -772,6 +796,15 @@ class GIMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Int) exten
   override def >= (b : Double) = GIop(GIMat(b.toInt), null, op_ge) 
   override def == (b : Double) = GIop(GIMat(b.toInt), null, op_eq)
   override def != (b : Double) = GIop(GIMat(b.toInt), null, op_ne)
+  override def max (b : Double) = GIop(GIMat(b.toInt), null, op_max);
+  override def min (b : Double) = GIop(GIMat(b.toInt), null, op_min);   
+    
+  override def + (a : Int) = GIop(GIMat(a), null, op_add)
+  override def - (a : Int) = GIop(GIMat(a), null, op_sub)
+  override def *@ (a : Int) = GIop(GIMat(a), null, op_mul)
+  override def ∘  (a : Int) = GIop(GIMat(a), null, op_mul)
+  override def /  (a : Int) = GIop(GIMat(a), null, op_div)
+  override def ^  (a : Int) = GIop(GIMat(a), null, op_pow)
   
   override def < (b : Int) = GIop(GIMat(b), null, op_lt)
   override def > (b : Int) = GIop(GIMat(b), null, op_gt)
@@ -779,6 +812,8 @@ class GIMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Int) exten
   override def >= (b : Int) = GIop(GIMat(b), null, op_ge)
   override def == (b : Int) = GIop(GIMat(b), null, op_eq)
   override def != (b : Int) = GIop(GIMat(b), null, op_ne)
+  override def max (b : Int) = GIop(GIMat(b), null, op_max);
+  override def min (b : Int) = GIop(GIMat(b), null, op_min); 
   
    /*
   * Operators whose second arg is generic. 
@@ -843,6 +878,25 @@ class GIPair (val omat:Mat, val mat:GIMat) extends Pair{
 	
 	def on(a : GIMat) = mat.vertcat(a, omat)
 	def \ (a : GIMat) = mat.horzcat(a, omat)
+  
+  def checkOne(b:Seq[Int], name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("GIMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  def checkOne(b:IMat, name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("GIMat %s only takes one argument" format name);
+    b(0);
+  }
+  override def sum(ind:IMat):GIMat = mat.reduceOp(omat, checkOne(ind,"sum")+1, 0, op_add);
+  override def prod(ind:IMat):GIMat = mat.reduceOp(omat, checkOne(ind,"prod")+1, 1, op_mul);
+  override def maxi(ind:IMat):GIMat = mat.reduceOp(omat, checkOne(ind,"maxi")+1, Int.MinValue, op_max);
+  override def mini(ind:IMat):GIMat = mat.reduceOp(omat, checkOne(ind,"mini")+1, Int.MaxValue, op_min);
+
+  override def sum(ind:Int*):GIMat = mat.reduceOp(omat, checkOne(ind,"sum")+1, 0, op_add);
+  override def prod(ind:Int*):GIMat = mat.reduceOp(omat, checkOne(ind,"prod")+1, 1, op_mul);
+  override def maxi(ind:Int*):GIMat = mat.reduceOp(omat, checkOne(ind,"maxi")+1, Int.MinValue, op_max);
+  override def mini(ind:Int*):GIMat = mat.reduceOp(omat, checkOne(ind,"mini")+1, Int.MaxValue, op_min);
 	
 	override def + (a : Float) = mat.GIop(GIMat(a.toInt), omat, op_add)
 	override def - (a : Float) = mat.GIop(GIMat(a.toInt), omat, op_sub)

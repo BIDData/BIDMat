@@ -505,7 +505,7 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   def max(b: IMat) = iiMatOpv(b, IMat.vecMaxFun, null)
   def min(b: IMat) = iiMatOpv(b, IMat.vecMinFun, null)
   
-   def checkOne(b:Seq[Int], name:String):Int = {
+  def checkOne(b:Seq[Int], name:String):Int = {
     if (b.length > 1) throw new RuntimeException("IMat %s only takes one argument" format name);
     b(0);
   }
@@ -793,6 +793,30 @@ class IPair(val omat:Mat, val mat:IMat) extends Pair {
   def <= (b : IMat) = mat.iiMatOpv(b, IMat.vecLEFun, omat)
   def != (b : IMat) = mat.iiMatOpv(b, IMat.vecNEFun, omat) 
   
+  def max (b : IMat) = mat.iiMatOpv(b, IMat.vecMaxFun, omat)
+  def min (b : IMat) = mat.iiMatOpv(b, IMat.vecMinFun, omat) 
+  
+   def checkOne(b:Seq[Int], name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("IMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  def checkOne(b:IMat, name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("IMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  override def sum(ind:Int*):IMat = mat.iiReduceOpv(checkOne(ind,"sum")+1, IMat.idFun, IMat.vecAddFun, omat);
+  override def prod(ind:Int*):IMat = mat.iiReduceOpv(checkOne(ind,"prod")+1, IMat.idFun, IMat.vecMulFun, omat);
+  override def maxi(ind:Int*):IMat = mat.iiReduceOpv(checkOne(ind,"maxi")+1, IMat.idFun, IMat.vecMaxFun, omat);
+  override def mini(ind:Int*):IMat = mat.iiReduceOpv(checkOne(ind,"mini")+1, IMat.idFun, IMat.vecMinFun, omat);
+
+  override def sum(ind:IMat):IMat = mat.iiReduceOpv(checkOne(ind,"sum")+1, IMat.idFun, IMat.vecAddFun, omat);
+  override def prod(ind:IMat):IMat = mat.iiReduceOpv(checkOne(ind,"prod")+1, IMat.idFun, IMat.vecMulFun, omat);
+  override def maxi(ind:IMat):IMat = mat.iiReduceOpv(checkOne(ind,"maxi")+1, IMat.idFun, IMat.vecMaxFun, omat);
+  override def mini(ind:IMat):IMat = mat.iiReduceOpv(checkOne(ind,"mini")+1, IMat.idFun, IMat.vecMinFun, omat);
+
+  
    
   override def * (b : Int) = mat.iMult(IMat.ielem(b), omat)
   override def + (b : Int) = mat.iiMatOpScalarv(b, IMat.vecAddFun, omat)
@@ -809,6 +833,47 @@ class IPair(val omat:Mat, val mat:IMat) extends Pair {
   override def >= (b : Int) = mat.iiMatOpScalarv(b, IMat.vecGEFun, omat)
   override def <= (b : Int) = mat.iiMatOpScalarv(b, IMat.vecLEFun, omat)
   override def != (b : Int) = mat.iiMatOpScalarv(b, IMat.vecNEFun, omat) 
+  
+  override def max (b : Int) = mat.iiMatOpScalarv(b, IMat.vecMaxFun, omat)
+  override def min (b : Int) = mat.iiMatOpScalarv(b, IMat.vecMinFun, omat) 
+  
+  override def * (b : Float) = mat.iMult(IMat.ielem(b.toInt), omat)
+  override def + (b : Float) = mat.iiMatOpScalarv(b.toInt, IMat.vecAddFun, omat)
+  override def - (b : Float) = mat.iiMatOpScalarv(b.toInt, IMat.vecSubFun, omat)
+  override def *@ (b : Float) = mat.iiMatOpScalarv(b.toInt, IMat.vecMulFun, omat)
+  override def ∘  (b : Float) = mat.iiMatOpScalarv(b.toInt, IMat.vecMulFun, omat)
+  override def /  (b : Float) = mat.iiMatOpScalarv(b.toInt, IMat.vecDivFun, omat)
+//  override def /@ (b : Float) = mat.iiMatOpScalarv(b.toInt, IMat.fVecDiv _, omat)
+//  override def ^ (b : Float) = mat.iiMatOpScalar(b.toInt, (x:Float, y:Float) => math.pow(x,y).toFloat, omat)
+
+  override def > (b : Float) = mat.iiMatOpScalarv(b.toInt, IMat.vecGTFun, omat)
+  override def < (b : Float) = mat.iiMatOpScalarv(b.toInt, IMat.vecLTFun, omat)
+  override def == (b : Float) = mat.iiMatOpScalarv(b.toInt, IMat.vecEQFun, omat)
+  override def >= (b : Float) = mat.iiMatOpScalarv(b.toInt, IMat.vecGEFun, omat)
+  override def <= (b : Float) = mat.iiMatOpScalarv(b.toInt, IMat.vecLEFun, omat)
+  override def != (b : Float) = mat.iiMatOpScalarv(b.toInt, IMat.vecNEFun, omat) 
+  
+  override def max (b : Float) = mat.iiMatOpScalarv(b.toInt, IMat.vecMaxFun, omat)
+  override def min (b : Float) = mat.iiMatOpScalarv(b.toInt, IMat.vecMinFun, omat)
+  
+  override def * (b : Double) = mat.iMult(IMat.ielem(b.toInt), omat)
+  override def + (b : Double) = mat.iiMatOpScalarv(b.toInt, IMat.vecAddFun, omat)
+  override def - (b : Double) = mat.iiMatOpScalarv(b.toInt, IMat.vecSubFun, omat)
+  override def *@ (b : Double) = mat.iiMatOpScalarv(b.toInt, IMat.vecMulFun, omat)
+  override def ∘  (b : Double) = mat.iiMatOpScalarv(b.toInt, IMat.vecMulFun, omat)
+  override def /  (b : Double) = mat.iiMatOpScalarv(b.toInt, IMat.vecDivFun, omat)
+//  override def /@ (b : Double) = mat.iiMatOpScalarv(b.toInt, IMat.fVecDiv _, omat)
+//  override def ^ (b : Double) = mat.iiMatOpScalar(b.toInt, (x:Double, y:Double) => math.pow(x,y).toDouble, omat)
+
+  override def > (b : Double) = mat.iiMatOpScalarv(b.toInt, IMat.vecGTFun, omat)
+  override def < (b : Double) = mat.iiMatOpScalarv(b.toInt, IMat.vecLTFun, omat)
+  override def == (b : Double) = mat.iiMatOpScalarv(b.toInt, IMat.vecEQFun, omat)
+  override def >= (b : Double) = mat.iiMatOpScalarv(b.toInt, IMat.vecGEFun, omat)
+  override def <= (b : Double) = mat.iiMatOpScalarv(b.toInt, IMat.vecLEFun, omat)
+  override def != (b : Double) = mat.iiMatOpScalarv(b.toInt, IMat.vecNEFun, omat) 
+  
+  override def max (b : Double) = mat.iiMatOpScalarv(b.toInt, IMat.vecMaxFun, omat)
+  override def min (b : Double) = mat.iiMatOpScalarv(b.toInt, IMat.vecMinFun, omat) 
   
 
   
@@ -951,9 +1016,7 @@ object IMat {
     out.setGUID(a.GUID)
     out
   }
-  
-  def apply(a:Float) = ielem(a.toInt)
-  
+    
   def apply(a:Int) = ielem(a)
   
   def apply(a:Double) = ielem(a.toInt)

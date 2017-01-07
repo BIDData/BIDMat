@@ -891,7 +891,7 @@ class GDMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Int) exten
   def max (b : GDMat) = gOp(b, null, op_max)
   def min (b : GDMat) = gOp(b, null, op_min)
   
-    def checkOne(b:Seq[Int], name:String):Int = {
+  def checkOne(b:Seq[Int], name:String):Int = {
     if (b.length > 1) throw new RuntimeException("GMat %s only takes one argument" format name);
     b(0);
   }
@@ -901,17 +901,17 @@ class GDMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Int) exten
     b(0);
   }
   
-  override def sum(ind:IMat):GDMat = reduceOp(null, checkOne(ind,"sum")+1, 0f, op_add);
-  override def prod(ind:IMat):GDMat = reduceOp(null, checkOne(ind,"prod")+1, 0f, op_mul);
-  override def maxi(ind:IMat):GDMat = reduceOp(null, checkOne(ind,"maxi")+1, 0f, op_max);
-  override def mini(ind:IMat):GDMat = reduceOp(null, checkOne(ind,"mini")+1, 0f, op_min);
+  override def sum(ind:IMat):GDMat = reduceOp(null, checkOne(ind,"sum")+1, 0.0, op_add);
+  override def prod(ind:IMat):GDMat = reduceOp(null, checkOne(ind,"prod")+1, 1.0, op_mul);
+  override def maxi(ind:IMat):GDMat = reduceOp(null, checkOne(ind,"maxi")+1, Double.MinValue, op_max);
+  override def mini(ind:IMat):GDMat = reduceOp(null, checkOne(ind,"mini")+1, Double.MaxValue, op_min);
   override def mean(ind:IMat):GDMat = SciFunctions._mean(this, checkOne(ind,"mean")+1).asInstanceOf[GDMat];
   override def variance(ind:IMat):GDMat = SciFunctions._variance(this, checkOne(ind,"variance")+1).asInstanceOf[GDMat];
 
-  override def sum(ind:Int*):GDMat = reduceOp(null, checkOne(ind,"sum")+1, 0f, op_add);
-  override def prod(ind:Int*):GDMat = reduceOp(null, checkOne(ind,"prod")+1, 0f, op_mul);
-  override def maxi(ind:Int*):GDMat = reduceOp(null, checkOne(ind,"maxi")+1, 0f, op_max);
-  override def mini(ind:Int*):GDMat = reduceOp(null, checkOne(ind,"mini")+1, 0f, op_min);
+  override def sum(ind:Int*):GDMat = reduceOp(null, checkOne(ind,"sum")+1, 0.0, op_add);
+  override def prod(ind:Int*):GDMat = reduceOp(null, checkOne(ind,"prod")+1, 1.0, op_mul);
+  override def maxi(ind:Int*):GDMat = reduceOp(null, checkOne(ind,"maxi")+1, Double.MinValue, op_max);
+  override def mini(ind:Int*):GDMat = reduceOp(null, checkOne(ind,"mini")+1, Double.MaxValue, op_min);
   override def mean(ind:Int*):GDMat = SciFunctions._mean(this, checkOne(ind,"mean")+1).asInstanceOf[GDMat];
   override def variance(ind:Int*):GDMat = SciFunctions._variance(this, checkOne(ind,"variance")+1).asInstanceOf[GDMat];
   
@@ -970,9 +970,6 @@ class GDMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Int) exten
   override def max (b : Int) = gOp(GDMat(b), null, op_max)
   override def min (b : Int) = gOp(GDMat(b), null, op_min)
   
-
-
-
 
   
   def on(a : GDMat) = vertcat(a, null)
@@ -1169,6 +1166,8 @@ class GDPair(val omat:Mat, val mat:GDMat) extends Pair{
 	def >= (b : GDMat) = mat.gOp(b, omat, op_ge)
 	def <= (b : GDMat) = mat.gOp(b, omat, op_le)
 	def != (b : GDMat) = mat.gOp(b, omat, op_ne)
+  def max (b : GDMat) = mat.gOp(b, omat, op_max)
+  def min (b : GDMat) = mat.gOp(b, omat, op_min)
 	
 	def dot (b :GDMat) = mat.dot(b, omat) 
 	def dotr (b :GDMat) = mat.dotr(b, omat) 
@@ -1176,6 +1175,26 @@ class GDPair(val omat:Mat, val mat:GDMat) extends Pair{
 	def ∙→ (b :GDMat) = mat.dotr(b, omat)
 	def on(a : GDMat) = mat.vertcat(a, omat)
 	def \ (a : GDMat) = mat.horzcat(a, omat)
+  
+  def checkOne(b:Seq[Int], name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("GDMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  def checkOne(b:IMat, name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("GDMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  override def sum(ind:IMat):GDMat = mat.reduceOp(omat, checkOne(ind,"sum")+1, 0.0, op_add);
+  override def prod(ind:IMat):GDMat = mat.reduceOp(omat, checkOne(ind,"prod")+1, 1.0, op_mul);
+  override def maxi(ind:IMat):GDMat = mat.reduceOp(omat, checkOne(ind,"maxi")+1, Double.MinValue, op_max);
+  override def mini(ind:IMat):GDMat = mat.reduceOp(omat, checkOne(ind,"mini")+1, Double.MaxValue, op_min);
+
+  override def sum(ind:Int*):GDMat = mat.reduceOp(omat, checkOne(ind,"sum")+1, 0.0, op_add);
+  override def prod(ind:Int*):GDMat = mat.reduceOp(omat, checkOne(ind,"prod")+1, 1.0, op_mul);
+  override def maxi(ind:Int*):GDMat = mat.reduceOp(omat, checkOne(ind,"maxi")+1, Double.MinValue, op_max);
+  override def mini(ind:Int*):GDMat = mat.reduceOp(omat, checkOne(ind,"mini")+1, Double.MaxValue, op_min);
 
   override def * (b : Float) = mat.gOp(GDMat(b), omat, op_mul)
   override def ∘ (b : Float) = mat.gOp(GDMat(b), omat, op_mul)
@@ -1189,6 +1208,8 @@ class GDPair(val omat:Mat, val mat:GDMat) extends Pair{
   override def != (b : Float) = mat.gOp(GDMat(b), omat, op_ne)
   override def >= (b : Float) = mat.gOp(GDMat(b), omat, op_ge)
 	override def <= (b : Float) = mat.gOp(GDMat(b), omat, op_le)
+  override def max (b : Float) = mat.gOp(GDMat(b), omat, op_max)
+  override def min (b : Float) = mat.gOp(GDMat(b), omat, op_min)
 	
 	override def * (b : Double) = mat.gOp(GDMat(b), omat, op_mul)
   override def ∘ (b : Double) = mat.gOp(GDMat(b), omat, op_mul)
@@ -1202,6 +1223,8 @@ class GDPair(val omat:Mat, val mat:GDMat) extends Pair{
   override def != (b : Double) = mat.gOp(GDMat(b), omat, op_ne)
   override def >= (b : Double) = mat.gOp(GDMat(b), omat, op_ge)
 	override def <= (b : Double) = mat.gOp(GDMat(b), omat, op_le)
+  override def max (b : Double) = mat.gOp(GDMat(b), omat, op_max)
+  override def min (b : Double) = mat.gOp(GDMat(b), omat, op_min)
   
   override def * (b : Int) = mat.gOp(GDMat(b), omat, op_mul)
   override def ∘ (b : Int) = mat.gOp(GDMat(b), omat, op_mul)
@@ -1215,7 +1238,9 @@ class GDPair(val omat:Mat, val mat:GDMat) extends Pair{
   override def != (b : Int) = mat.gOp(GDMat(b), omat, op_ne)
   override def >= (b : Int) = mat.gOp(GDMat(b), omat, op_ge)
 	override def <= (b : Int) = mat.gOp(GDMat(b), omat, op_le)
-
+  override def max (b : Int) = mat.gOp(GDMat(b), omat, op_max)
+  override def min (b : Int) = mat.gOp(GDMat(b), omat, op_min)
+  
   def ^* (b : GDSPair) = MatFunctions.DDS(mat, b.left, b.right, omat)
   def Tx (b : GDSPair) = MatFunctions.DDS(mat, b.left, b.right, omat)
   /*
