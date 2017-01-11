@@ -39,14 +39,6 @@ abstract class ND(protected val _dims:Array[Int]) extends Serializable {
   
   def nnz() = length;
   
-  def zeros(nr:Int, nc:Int):Mat
-  
-  def zeros(dims:IMat):ND;
-  
-  def zeros:ND;
-  
-  def ones(dims:IMat):ND;
-  
   def clear:ND;
   
   def set(v:Float):ND;
@@ -135,6 +127,21 @@ abstract class ND(protected val _dims:Array[Int]) extends Serializable {
   def colslice(a:Int, b:Int, out:ND, c:Int, pb:Boolean):ND = notImplemented0("colslice");
   
   def colslice(a:Int, b:Int):ND = notImplemented0("colslice");
+  
+  def zeros(nr:Int, nc:Int):Mat = notImplemented0Mat("zeros");
+  
+  def zeros(dims:IMat):ND = notImplemented0("zeros");
+  
+  def zeros:ND  = notImplemented0("zeros");
+  
+  def zero:ND  = notImplemented0("zero");
+  
+  def ones(nr:Int, nc:Int):Mat = notImplemented0Mat("ones");
+  
+  def ones(dims:IMat):ND  = notImplemented0("ones");
+  
+  def one:ND  = notImplemented0("one");
+  
   
   def printOne(i:Int):String = {
     val v = applyf(i)

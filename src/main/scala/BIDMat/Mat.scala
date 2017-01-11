@@ -47,11 +47,11 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
   def newcopy = notImplemented0("newcopy");
   def set(v:Float) = notImplemented0("set");
   def set(v:Double) = notImplemented0("set");
-  def zeros(nr:Int, nc:Int) = notImplemented0("zeros");
-  def zeros(dims0:IMat):ND = notImplemented0("zeros");
-  def zeros = notImplemented0("zeros");
-  def ones(nr:Int, nc:Int) = notImplemented0("ones");
-  def ones(dims0:IMat) = ones(dims0(0), dims0(1));
+
+  override def zeros = notImplemented0("zeros");
+  override def zero = notImplemented0("zero");
+  override def one = notImplemented0("one");
+
   def izeros(nr:Int, nc:Int) = notImplemented0("izeros");
   def iones(nr:Int, nc:Int) = notImplemented0("iones");
   def clear = notImplemented0("clear");
@@ -64,6 +64,7 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
   def view(nr:Int, nc:Int, setGUID:Boolean):Mat = notImplemented0("view");
     
   def zeros(nr:Int, nc:Int, nnz:Int):Mat = zeros(nr, nc);
+  
   def recycle(nr:Int, nc:Int, nnz:Int):Mat = notImplemented0("recycle");
   def contents:Mat = notImplemented0("contents");
   

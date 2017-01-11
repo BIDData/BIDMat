@@ -521,13 +521,21 @@ case class GND(dims0:Array[Int], val data:Pointer) extends ND(dims0) {
     }
   }
   
-  def zeros(nr:Int, nc:Int):GMat = GMat.zeros(nr, nc)
+  override def zeros(nr:Int, nc:Int):GMat = GMat.zeros(nr, nc)
    
-  def zeros(dims0:IMat):GND = GND.zeros(dims0);
+  override def zeros(dims0:IMat):GND = GND.zeros(dims0);
  
-  def zeros:GND = GND.zeros(dims);
+  override def zeros:GND = GND.zeros(dims);
   
   override def ones(dims0:IMat):GND = GND.ones(dims0);
+  
+  override def one() = {
+    GND.ones(iones(1,dims.length))
+  }
+  
+  override def zero() = {
+    GND.zeros(iones(1,dims.length))
+  }
 
   def clear:GND = {
 	  cudaMemset(data, 0, Sizeof.FLOAT*length);

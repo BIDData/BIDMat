@@ -120,11 +120,13 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
     out
   }
 
-  override def colslice(a:Int, b:Int, out:Mat, c:Int) = FMat(gcolslice(a, b, out, c))
+  override def colslice(a:Int, b:Int, out:Mat, c:Int) = FMat(gcolslice(a, b, out, c));
+  
+  override def colslice(a:Int, b:Int, out:Mat, c:Int, pb:Boolean) = FMat(gcolslice(a, b, out, c));
 
-  override def rowslice(a:Int, b:Int, out:Mat) = FMat(growslice(a, b, out, Mat.oneBased))
+  override def rowslice(a:Int, b:Int, out:Mat) = FMat(growslice(a, b, out, Mat.oneBased));
 
-  override def rowslice(a:Int, b:Int, out:Mat, c:Int) = FMat(growslice(a, b, out, c))
+  override def rowslice(a:Int, b:Int, out:Mat, c:Int) = FMat(growslice(a, b, out, c));
 
   override def rowslice(a:Int, b:Int):FMat = {
     val out = FMat.newOrCheckFMat(b-a, ncols, null, GUID, a, b, "rowslice".##)
@@ -333,6 +335,14 @@ case class FMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
 
   override def ones(nr:Int, nc:Int) = {
   	FMat.ones(nr, nc)
+  }
+  
+  override def one = {
+    FMat.ones(1, 1)
+  }
+  
+  override def zero = {
+    FMat.zeros(1, 1)
   }
 
   override def izeros(m:Int, n:Int) = {
@@ -2109,6 +2119,14 @@ object FMat {
       case _ => throw new RuntimeException("Unsupported source type")
     }
     out
+  }
+  
+  def apply(x:ND):FMat = {
+    x match {
+      case aa:Mat => apply(aa);
+      case bb:FND => apply(bb.asMat);
+      case bb:GND => apply(bb.asMat);
+    }
   }
 
   def zeros(nr:Int, nc:Int) = {

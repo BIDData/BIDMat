@@ -108,6 +108,8 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   override def colslice(a:Int, b:Int, out:Mat) = IMat(gcolslice(a, b, out, Mat.oneBased))
   
   override def colslice(a:Int, b:Int, out:Mat, c:Int) = IMat(gcolslice(a, b, out, c))
+  
+  override def colslice(a:Int, b:Int, out:Mat, c:Int, pb:Boolean) = IMat(gcolslice(a, b, out, c))
 
   override def colslice(a:Int, b:Int):IMat = {
     val out = IMat.newOrCheckIMat(nrows, b-a, null, GUID, a, "colslice".##)
@@ -232,6 +234,14 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
   
   override def ones(nr:Int, nc:Int) = {
   	FMat.ones(nr, nc)
+  }
+  
+  override def zero = {
+    FMat.zeros(1, 1)
+  }
+  
+  override def one = {
+    FMat.ones(1, 1)
   }
      
   override def izeros(m:Int, n:Int) = {

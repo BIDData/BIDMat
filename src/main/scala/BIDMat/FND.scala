@@ -163,18 +163,26 @@ case class FND(dims0:Array[Int], val data:Array[Float]) extends ND(dims0) {
     }
   }
   
-  def zeros(nr:Int, nc:Int):FMat = FMat.zeros(nr, nc);
+  override def zeros(nr:Int, nc:Int):FMat = FMat.zeros(nr, nc);
   
-  def zeros(dims0:IMat):ND = {
+  override def zeros(dims0:IMat):ND = {
     FND.zeros(dims0)
   }
   
-  def zeros:ND = {
+  override def zeros:ND = {
     FND.zeros(dims)
   }
   
-  def ones(dims0:IMat) = {
+  override def ones(dims0:IMat) = {
     FND.ones(dims0)
+  }
+  
+  override def one() = {
+    FND.ones(iones(1,dims.length))
+  }
+  
+  override def zero() = {
+    FND.zeros(iones(1,dims.length))
   }
   
   def clear:FND = {

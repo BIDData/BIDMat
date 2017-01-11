@@ -476,6 +476,17 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
     colslice(a, b, null)
   }
   
+  override def colslice(a:Int, b:Int, omat:Mat, c:Int):GMat = {
+    val out = GMat.newOrCheckGMat(nrows, b-a+c, omat, GUID, a, b, "colslice".##);
+    cudaMemcpy(out.data.withByteOffset(1L*c*nrows*Sizeof.FLOAT), data.withByteOffset(1L*a*nrows*Sizeof.FLOAT), 1L*(b-a)*nrows*Sizeof.FLOAT, cudaMemcpyDeviceToDevice);
+    cudaDeviceSynchronize;
+    val err = cudaGetLastError;
+    if (err != 0) throw new RuntimeException("GMat colslice() error " + cudaGetErrorString(err));
+    out
+  }
+  
+  override def colslice(a:Int, b:Int, omat:Mat, c:Int, pb:Boolean):GMat = colslice(a, b, omat, c)
+  
   val myGPU = SciFunctions.getGPU
   
   override def clear = {
@@ -514,6 +525,10 @@ class GMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Long) exten
   }
   
   override def ones(nr:Int, nc:Int) = GMat.ones(nr, nc);
+  
+  override def zero = GMat.zeros(1, 1);
+  
+  override def one = GMat.ones(1, 1);
   
   override def izeros(m:Int, n:Int) = {
     GIMat.izeros(m,n)

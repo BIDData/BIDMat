@@ -307,6 +307,14 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   	out
   }
   
+  override def one = {
+    DMat.ones(1, 1)
+  }
+  
+  override def zero = {
+    DMat.zeros(1, 1)
+  }
+  
   override def izeros(m:Int, n:Int) = {
     IMat.izeros(m,n)
   }
@@ -1375,6 +1383,18 @@ object DMat {
       case gg:GDMat => gg.toDMat(out)
       case _ => throw new RuntimeException("Unsupported source type")
     }
+    out
+  }
+  
+  def zeros(nr:Int, nc:Int) = {
+    val out = DMat(nr, nc)
+    out.clear
+    out
+  }
+
+  def ones(nr:Int, nc:Int) = {
+    val out = DMat(nr, nc)
+    Arrays.fill(out.data, 1.0f)
     out
   }
    

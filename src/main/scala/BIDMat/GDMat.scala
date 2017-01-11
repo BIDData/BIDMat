@@ -412,6 +412,10 @@ class GDMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Int) exten
   
   override def ones(nr:Int, nc:Int) = GDMat.ones(nr, nc)
   
+  override def zero = GDMat.zeros(1, 1);
+  
+  override def one = GDMat.ones(1, 1);
+  
   override def izeros(m:Int, n:Int) = {
     GIMat.izeros(m,n)
   }
