@@ -1826,7 +1826,7 @@ class FDSPair(val left:FMat, val right:SMat) extends DSPair {
 
 }
 
-class FPair(val omat:Mat, val mat:FMat) extends Pair {
+class FPair(val omat:Mat, val mat:FMat) extends Pair(omat, mat) {
   /*
    * Compute routines
    */
