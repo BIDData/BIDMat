@@ -1901,7 +1901,6 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair {
   
   override def max (b : Double) = mat.ffMatOpScalarv(b.toFloat, FMat.vecMaxFun, omat)
   override def min (b : Double) = mat.ffMatOpScalarv(b.toFloat, FMat.vecMinFun, omat)
-  
 
   override def * (b : Int) = mat.fDMult(FMat.elem(b), omat)
   override def + (b : Int) = mat.ffMatOpScalarv(b, FMat.vecAddFun, omat)
