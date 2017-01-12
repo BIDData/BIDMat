@@ -4,7 +4,9 @@ import java.util.Arrays
 import edu.berkeley.bid.CBLAS._
 import scala.util.hashing.MurmurHash3
 
-case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, data0) { 
+case class IMat(dims:Array[Int], val data:Array[Int]) extends DenseMat[Int](dims, data) { 
+  
+  def this(nr:Int, nc:Int, data:Array[Int]) = this(Array(nr, nc), data);
 
   override def t:IMat = tt(null)
   
@@ -770,12 +772,12 @@ case class IMat(nr:Int, nc:Int, data0:Array[Int]) extends DenseMat[Int](nr, nc, 
     } else if (data.size >= nr*nc) {
       new IMat(nr, nc, data)
     } else {
-      IMat(nr, nc, new Array[Int]((nr*nc*Mat.recycleGrow).toInt))
+      new IMat(nr, nc, new Array[Int]((nr*nc*Mat.recycleGrow).toInt))
     }  
   }
 }
 
-class IPair(val omat:Mat, val mat:IMat) extends Pair {
+class IPair(val omat:Mat, val mat:IMat) extends Pair(omat, mat) {
   
   override def t:IMat = mat.tt(omat)
   
@@ -1022,7 +1024,7 @@ object IMat {
   def apply(nr:Int, nc:Int) = new IMat(nr, nc, new Array[Int](nr*nc))
   
   def apply(a:DenseMat[Int]) = {
-    val out = new IMat(a.nrows, a.ncols, a.data) 
+    val out = new IMat(a.nrows, a.ncols, a._data) 
     out.setGUID(a.GUID)
     out
   }

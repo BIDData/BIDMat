@@ -4,7 +4,7 @@ import java.util.Arrays
 import edu.berkeley.bid.CBLAS._
 import scala.util.hashing.MurmurHash3
 
-case class LMat(nr:Int, nc:Int, data0:Array[Long]) extends DenseMat[Long](nr, nc, data0) { 
+case class LMat(nr:Int, nc:Int, val data:Array[Long]) extends DenseMat[Long](nr, nc, data) { 
 
   override def t:LMat = tt(null)
   
@@ -790,7 +790,7 @@ case class LMat(nr:Int, nc:Int, data0:Array[Long]) extends DenseMat[Long](nr, nc
   }
 }
 
-class LPair(val omat:Mat, val mat:LMat) extends Pair {
+class LPair(val omat:Mat, val mat:LMat) extends Pair(omat, mat) {
   
   override def t:LMat = mat.tt(omat)
   

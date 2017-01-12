@@ -6,7 +6,7 @@ import edu.berkeley.bid.SPBLAS
 import scala.util.hashing.MurmurHash3
 import java.util.Arrays
 
-case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr, nc, data0) {
+case class DMat(nr:Int, nc:Int, val data:Array[Double]) extends DenseMat[Double](nr, nc, data) {
 
   def getdata() = data
   
@@ -1131,7 +1131,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   override def min  (b : Mat) = Mop_Min.op(this, b, null)
 }
 
-class DPair (val omat:Mat, val mat:DMat) extends Pair{
+class DPair (val omat:Mat, val mat:DMat) extends Pair(omat, mat) {
   
   override def t:DMat = mat.tt(omat)
   /*
@@ -1360,7 +1360,7 @@ object DMat {
   def apply(nr:Int, nc:Int) = new DMat(nr, nc, new Array[Double](nr*nc)) 
   
   def apply(a:DenseMat[Double]):DMat = {
-    val out = new DMat(a.nrows, a.ncols, a.data) 
+    val out = new DMat(a.nrows, a.ncols, a._data) 
     out.setGUID(a.GUID)
     out
   }

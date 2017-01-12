@@ -9,6 +9,8 @@ class Mat(protected val _dims:Array[Int]) extends ND with Serializable {
   
   def this(nr:Int, nc:Int) = this(Array(nr, nc));
   
+  val dims = new IMat(1, _dims.length, _dims)
+  
   val ndims = _dims.length;
   
   def t = notImplemented0("t")  

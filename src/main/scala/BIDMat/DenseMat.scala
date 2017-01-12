@@ -8,14 +8,27 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.tools.nsc.interpreter
 
 class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
-(nr: Int, nc: Int, val data:Array[T])(implicit manifest:ClassTag[T]) extends Mat(nr, nc) {
+(_dims:Array[Int], val _data:Array[T])(implicit manifest:ClassTag[T]) extends Mat(_dims) {
+  
+  def this(nr:Int, nc:Int, data:Array[T])(implicit manifest:ClassTag[T]) = this(Array(nr, nc), data);
+  
+  def this(dims0:Array[Int])(implicit manifest:ClassTag[T]) = this(
+		  {
+	       if (Mat.debugMem) {
+	    	   val len = dims0.reduce(_*_);
+	    	   println("DenseMat %d" format len);
+	    	   if (len > Mat.debugMemThreshold) throw new RuntimeException("DenseMat alloc too large");
+	       }
+	       dims0;
+      },
+      new Array[T](dims0.reduce(_*_)));
   
   def this(nr:Int, nc:Int)(implicit manifest:ClassTag[T]) = {
-    this(nr, {if (Mat.debugMem) {
-    		println("DenseMat %d %d" format (nr, nc))
-    		if (nr*nc > Mat.debugMemThreshold) throw new RuntimeException("DenseMat alloc too large");
-    	}
-    nc}, new Array[T](nr*nc));
+	  this({if (Mat.debugMem) {
+		  println("DenseMat %d %d" format (nr, nc))
+		  if (nr*nc > Mat.debugMemThreshold) throw new RuntimeException("DenseMat alloc too large");
+	  }
+	  Array(nr, nc);}, new Array[T](nr*nc));
   }
 
   /** Return the (0,0) value as a scalar. */
@@ -23,7 +36,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
     if (nrows > 1 || ncols > 1) {
       throw new RuntimeException("Matrix should be 1x1 to extract value")
     } else {
-      data(0)
+      _data(0)
     }
   
   /** Returns a string description of this type, i.e., returns "DenseMat". */
@@ -46,7 +59,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
     if (r < 0 || r >= nrows || c < 0 || c >= ncols) {
       throw new IndexOutOfBoundsException("("+(r+off)+","+(c+off)+") vs ("+nrows+","+ncols+")");
     } else {
-    	data(r+c*nrows)
+    	_data(r+c*nrows)
     }
   }
 
@@ -57,13 +70,13 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
     if (i < 0 || i >= length) {
       throw new IndexOutOfBoundsException(""+(i+off)+" >= ("+length+")");
     } else {
-      data(i)
+      _data(i)
     }
   } 
 
   /** Unchecked 0-based matrix access of element at m(r,c). */ 
   def get_(r:Int, c:Int):T = {
-    data(r+c*nrows)
+    _data(r+c*nrows)
   }
   
   /** 
@@ -89,7 +102,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
    * }}}
    */
   def indexOf(a:T):Int = {
-    data.indexOf(a) + Mat.oneBased
+    _data.indexOf(a) + Mat.oneBased
   }
   
   /**
@@ -113,7 +126,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
    */
   def indexOf2(a:T):(Int, Int) = {
     val off = Mat.oneBased
-    val v = data.indexOf(a)
+    val v = _data.indexOf(a)
     (v % nrows + off, v / nrows + off)
   }
   
@@ -125,7 +138,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
     if (r < 0 || r >= nrows || c < 0 || c >= ncols) {
       throw new IndexOutOfBoundsException("("+(r+off)+","+(c+off)+") vs ("+nrows+","+ncols+")");
     } else {
-      data(r+c*nrows) = v
+      _data(r+c*nrows) = v
     }
     v
   }
@@ -137,14 +150,14 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
     if (i < 0 || i >= length) {
       throw new IndexOutOfBoundsException(""+(i+off)+" vs ("+length+")");
     } else {
-      data(i) = v
+      _data(i) = v
     }
     v
   }
 
   /** Unchecked 0-based set, so m(r,c) = v. */ 
   def set_(r:Int, c:Int, v:T):T = {
-    data(r+c*nrows) = v
+    _data(r+c*nrows) = v
     v
   } 
 
@@ -155,7 +168,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
     while (i < nrows) {
       var j = 0
       while (j < ncols) {
-        out.data(j+i*ncols) = data(i+j*nrows)
+        out._data(j+i*ncols) = _data(i+j*nrows)
         j += 1
       }
       i += 1
@@ -203,8 +216,8 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
       var out = DenseMat.newOrCheck(nrows+a.nrows, ncols, null, GUID, a.GUID, "on".hashCode)
       var i = 0
       while (i < ncols) {
-        System.arraycopy(data, i*nrows, out.data, i*(nrows+a.nrows), nrows)
-        System.arraycopy(a.data, i*a.nrows, out.data, nrows+i*(nrows+a.nrows), a.nrows)
+        System.arraycopy(_data, i*nrows, out._data, i*(nrows+a.nrows), nrows)
+        System.arraycopy(a._data, i*a.nrows, out._data, nrows+i*(nrows+a.nrows), a.nrows)
         i += 1
       }
       out
@@ -242,8 +255,8 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
       throw new RuntimeException("nrows must match")
     } else {
       var out = DenseMat.newOrCheck(nrows, ncols+a.ncols, null, GUID, a.GUID, "\\".hashCode)
-      System.arraycopy(data, 0, out.data, 0, nrows*ncols)
-      System.arraycopy(a.data, 0, out.data, nrows*ncols, nrows*a.ncols)
+      System.arraycopy(_data, 0, out._data, 0, nrows*ncols)
+      System.arraycopy(a._data, 0, out._data, nrows*ncols, nrows*a.ncols)
       out
     }
 
@@ -252,7 +265,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
     var count:Int = 0
     var i = 0
     while (i < length) {
-      if (data(i) != 0) {
+      if (_data(i) != 0) {
         count += 1
       }
       i += 1
@@ -265,8 +278,8 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
     var count = 0
     var i = off
     while (i < length+off) {
-      if (data(i) != 0) {
-        out.data(count) = i
+      if (_data(i) != 0) {
+        out._data(count) = i
         count += 1
       } 
       i += 1
@@ -288,9 +301,9 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
     val off = Mat.oneBased
     var i = 0
     while (i < iout.length) {
-      val ival:Int = iout.data(i)
-      jout.data(i) = (ival / nrows) + off
-      iout.data(i) = (ival % nrows) + off
+      val ival:Int = iout._data(i)
+      jout._data(i) = (ival / nrows) + off
+      iout._data(i) = (ival % nrows) + off
       i += 1
     }
     (iout, jout)
@@ -305,10 +318,10 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
     val off = Mat.oneBased
     var i = 0
     while (i < iout.length) {
-      val ival:Int = iout.data(i)
-      vout.data(i) = data(ival)
-      jout.data(i) = (ival / nrows) + off
-      iout.data(i) = (ival % nrows) + off
+      val ival:Int = iout._data(i)
+      vout._data(i) = _data(ival)
+      jout._data(i) = (ival / nrows) + off
+      iout._data(i) = (ival % nrows) + off
       i += 1
     }
     (iout, jout, vout)
@@ -319,7 +332,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
     im match {
       case aa:MatrixWildcard => {
         val out = DenseMat.newOrCheck(length, 1, null, GUID, im.GUID, "gapply1dx".hashCode)
-        System.arraycopy(data, 0, out.data, 0, out.length)
+        System.arraycopy(_data, 0, out._data, 0, out.length)
         out
       }
       case _ => {
@@ -327,11 +340,11 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
         var i = 0
         val off = Mat.oneBased
         while (i < out.length) {
-          val ind = im.data(i) - off
+          val ind = im._data(i) - off
           if (ind < 0 || ind >= length) {
             throw new RuntimeException("bad linear index "+(ind+off)+" vs "+length)
           } else {
-            out.data(i) = data(ind)
+            out._data(i) = _data(ind)
           }
           i += 1
         }
@@ -346,7 +359,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
         if (length != b.length || b.ncols != 1) {
           throw new RuntimeException("dims mismatch")
         } else {
-          System.arraycopy(b.data, 0, data, 0, length)
+          System.arraycopy(b._data, 0, _data, 0, length)
         }
         b
       }
@@ -357,11 +370,11 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
         	val off = Mat.oneBased
           var i = 0
           while (i < im.length) {
-            val ind = im.data(i) - off
+            val ind = im._data(i) - off
             if (ind < 0 || ind >= length) {
               throw new RuntimeException("bad linear index "+(ind+off)+" vs "+length)
             } else {
-              data(ind) = b.data(i)
+              _data(ind) = b._data(i)
             }
             i += 1
           }
@@ -376,7 +389,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
   		case aaa:MatrixWildcard => {
   			var i = 0
   			while (i < length) {
-  				data(i) = b
+  				_data(i) = b
   				i += 1
   			}
   		}
@@ -384,11 +397,11 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
   			var i = 0
   			val off = Mat.oneBased
   			while (i < inds.length) {
-  				val ind = inds.data(i) - off
+  				val ind = inds._data(i) - off
   				if (ind < 0 || ind >= length) {
   					throw new RuntimeException("bad linear index "+(ind+off)+" vs "+length)
   				} else {
-  					data(ind) = b
+  					_data(ind) = b
   				}
   				i += 1
   			}
@@ -402,7 +415,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
   	val off = Mat.oneBased
   	var i = 0
   	while (i < inds.length) {
-  		val r = inds.data(i)-off
+  		val r = inds._data(i)-off
   		if (r >= limit) throw new RuntimeException(typ+ " index out of range %d %d" format (r, limit))
   		i += 1
   	}
@@ -417,15 +430,15 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
   		colinds match {
   		case dummy2:MatrixWildcard => {
   			out = DenseMat.newOrCheck(nrows, ncols, null, GUID, rowinds.GUID, colinds.GUID, "gapply2d".hashCode)
-  			System.arraycopy(data, 0, out.data, 0, length)
+  			System.arraycopy(_data, 0, out._data, 0, length)
   		}
   		case _ => {
   			out = DenseMat.newOrCheck(nrows, colinds.length, null, GUID, rowinds.GUID, colinds.GUID, "gapply2d".hashCode)
   			var i = 0 
   			while (i < colinds.length) {
-  				val c = colinds.data(i) - off
+  				val c = colinds._data(i) - off
   				if (c >= ncols) throw new RuntimeException("col index out of range %d %d" format (c, ncols))
-  				System.arraycopy(data, c*nrows, out.data, i*nrows, nrows)
+  				System.arraycopy(_data, c*nrows, out._data, i*nrows, nrows)
   				i += 1
   			}
   		}
@@ -440,8 +453,8 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
   			while (i < ncols) {
   				var j = 0
   				while (j < out.nrows) {
-  					val r = rowinds.data(j)-off
-  					out.data(j+i*out.nrows) = data(r+i*nrows)
+  					val r = rowinds._data(j)-off
+  					out._data(j+i*out.nrows) = _data(r+i*nrows)
   					j += 1
   				}
   				i += 1
@@ -452,11 +465,11 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
   			var i = 0
   			while (i < out.ncols) {
   				var j = 0
-  				val c = colinds.data(i) - off
+  				val c = colinds._data(i) - off
   				if (c >= ncols) throw new RuntimeException("col index out of range %d %d" format (c, ncols))
   				while (j < out.nrows) {
-  					val r = rowinds.data(j)-off
-  					out.data(j+i*out.nrows) = data(r+nrows*c)
+  					val r = rowinds._data(j)-off
+  					out._data(j+i*out.nrows) = _data(r+nrows*c)
   					j += 1
   				}
   				i += 1
@@ -475,7 +488,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
     if (a-off < 0) throw new RuntimeException("colslice index out of range %d" format (a))
     if (b-off > ncols) throw new RuntimeException("colslice index out of range %d %d" format (b, ncols))
     
-    System.arraycopy(data, (a-off)*nrows, out.data, (c-off)*nrows, (b-a)*nrows)
+    System.arraycopy(_data, (a-off)*nrows, out._data, (c-off)*nrows, (b-a)*nrows)
     out
   }
   
@@ -487,7 +500,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
     if (b-off > nrows) throw new RuntimeException("rowslice index out of range %d %d" format (b, nrows))
     var i = 0
     while (i < ncols) {
-      System.arraycopy(data, (a-off)+i*nrows, out.data, (c-off)+i*out.nrows, (b-a))
+      System.arraycopy(_data, (a-off)+i*nrows, out._data, (c-off)+i*out.nrows, (b-a))
       i += 1
     }    
     out
@@ -513,7 +526,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
   			if (nrows != b.nrows || ncols != b.ncols) {
   				throw new RuntimeException("dims mismatch in assignment")
   			}
-  			System.arraycopy(b.data, 0, data, 0, length) 
+  			System.arraycopy(b._data, 0, _data, 0, length) 
   		}
   		case _ => {
   			if (nrows != b.nrows || colinds.length != b.ncols) {
@@ -521,9 +534,9 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
   			}
   			var i = 0 
     		while (i < colinds.length) {
-    			val c = colinds.data(i) - off
+    			val c = colinds._data(i) - off
     		  if (c >= ncols) throw new RuntimeException("col index out of range %d %d" format (c, ncols))
-    			System.arraycopy(b.data, i*nrows, data, c*nrows, nrows)
+    			System.arraycopy(b._data, i*nrows, _data, c*nrows, nrows)
     			i += 1
     		}
   		}
@@ -540,8 +553,8 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
     		while (i < ncols) {
     		  var j = 0
     		  while (j < b.nrows) {
-    		  	val r = rowinds.data(j)-off
-    		  	data(r+i*nrows) = b.data(j+i*b.nrows) 
+    		  	val r = rowinds._data(j)-off
+    		  	_data(r+i*nrows) = b._data(j+i*b.nrows) 
     		    j += 1
     		  }
     		  i += 1
@@ -553,12 +566,12 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
   			}
     		var i = 0
     		while (i < b.ncols) {
-    			val c = colinds.data(i) - off
+    			val c = colinds._data(i) - off
     			if (c >= ncols) throw new RuntimeException("col index out of range %d %d" format (c, ncols))
     			var j = 0
     			while (j < b.nrows) {
-    			  val r = rowinds.data(j)-off
-    				data(r+nrows*c) = b.data(j+i*b.nrows)
+    			  val r = rowinds._data(j)-off
+    				_data(r+nrows*c) = b._data(j+i*b.nrows)
     				j += 1
     			}
     			i += 1
@@ -589,18 +602,18 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
   		case dummy2:MatrixWildcard => {
   			var i = 0 
   			while (i < length) {
-  			  data(i) = b
+  			  _data(i) = b
   			  i += 1
   			}
   		}
   		case _ => {
   			var i = 0 
     		while (i < colinds.length) {
-    			val c = colinds.data(i) - off
+    			val c = colinds._data(i) - off
     		  if (c >= ncols) throw new RuntimeException("col index out of range %d %d" format (c, ncols))
     			var j = 0
     			while (j < nrows) {
-    			  data(j + c*nrows) = b
+    			  _data(j + c*nrows) = b
     			  j += 1
     			}
     			i += 1
@@ -616,8 +629,8 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
     		while (i < ncols) {
     		  var j = 0
     		  while (j < rowinds.length) {
-    		  	val r = rowinds.data(j)-off
-    		  	data(r+i*nrows) = b 
+    		  	val r = rowinds._data(j)-off
+    		  	_data(r+i*nrows) = b 
     		    j += 1
     		  }
     		  i += 1
@@ -626,12 +639,12 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
     	case _ => {
     		var i = 0
     		while (i < colinds.length) {
-    			val c = colinds.data(i) - off
+    			val c = colinds._data(i) - off
     			if (c >= ncols) throw new RuntimeException("col index out of range %d %d" format (c, ncols))
     			var j = 0
     			while (j < rowinds.length) {
-    			  val r = rowinds.data(j)-off
-    				data(r+nrows*c) = b
+    			  val r = rowinds._data(j)-off
+    				_data(r+nrows*c) = b
     				j += 1
     			}
     			i += 1
@@ -709,12 +722,12 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
     if (length == 0) {
       this
     } else {
-      val v = data(0)
+      val v = _data(0)
       v match {
-        case a:Float => Arrays.fill(data.asInstanceOf[Array[Float]], 0, length, 0)
-        case a:Double => Arrays.fill(data.asInstanceOf[Array[Double]], 0, length, 0)
-        case a:Int => Arrays.fill(data.asInstanceOf[Array[Int]], 0, length, 0)
-        case _ => Arrays.fill(data.asInstanceOf[Array[AnyRef]], 0, length, null)
+        case a:Float => Arrays.fill(_data.asInstanceOf[Array[Float]], 0, length, 0)
+        case a:Double => Arrays.fill(_data.asInstanceOf[Array[Double]], 0, length, 0)
+        case a:Int => Arrays.fill(_data.asInstanceOf[Array[Int]], 0, length, 0)
+        case _ => Arrays.fill(_data.asInstanceOf[Array[AnyRef]], 0, length, null)
       }
     }
     this
@@ -760,7 +773,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
   	while (i < ncols) {
   		var j = 0
   		while (j < i+off) {
-  			data(j + i*nrows) = v
+  			_data(j + i*nrows) = v
   			j += 1
   		}
   		i += 1
@@ -801,7 +814,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
   	while (i < ncols) {
   		var j = math.max(0,i+1+off)
   		while (j < nrows) {
-  			data(j + i*nrows) = v
+  			_data(j + i*nrows) = v
   			j += 1
   		}
   		i += 1
@@ -818,7 +831,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
           while (i < aa.ncols) {
             var j = 0
             while (j < nrows) {
-              out.data(j+i*nrows) = op2(data(j), aa.data(j+i*aa.nrows))
+              out._data(j+i*nrows) = op2(_data(j), aa._data(j+i*aa.nrows))
               j += 1
             }
             i += 1
@@ -831,7 +844,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
           while (i < ncols) {
             var j = 0
             while (j < aa.nrows) {
-              out.data(j+i*aa.nrows) = op2(data(i), aa.data(j+i*aa.nrows))
+              out._data(j+i*aa.nrows) = op2(_data(i), aa._data(j+i*aa.nrows))
               j += 1
             }
             i += 1
@@ -844,7 +857,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
           while (i < ncols) {
             var j = 0
             while (j < nrows) {
-              out.data(j+i*nrows) = op2(data(j+i*nrows), aa.data(j))
+              out._data(j+i*nrows) = op2(_data(j+i*nrows), aa._data(j))
               j += 1
             }
             i += 1
@@ -857,7 +870,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
           while (i <  ncols) {
             var j = 0
             while (j < nrows) {
-              out.data(j+i*nrows) = op2(data(j+i*nrows), aa.data(i))
+              out._data(j+i*nrows) = op2(_data(j+i*nrows), aa._data(i))
               j += 1
             }
             i += 1   
@@ -876,27 +889,27 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
           Mat.nflops += length
           var i = 0
           while (i < aa.length) {
-            out.data(i) = op2(data(i), aa.data(i))
+            out._data(i) = op2(_data(i), aa._data(i))
             i += 1
           }
           out
         } else if (aa.nrows == 1 && aa.ncols == 1) {
           val out = DenseMat.newOrCheck[T](nrows, ncols, oldmat, GUID, aa.GUID, op2.hashCode)
           Mat.nflops += length
-          val aval = aa.data(0)
+          val aval = aa._data(0)
           var i = 0
           while (i < length) {
-            out.data(i) = op2(data(i), aval)
+            out._data(i) = op2(_data(i), aval)
             i += 1
           }
           out
         } else if (nrows == 1 && ncols == 1) {
           val out = DenseMat.newOrCheck[T](aa.nrows, aa.ncols, oldmat, GUID, aa.GUID, op2.hashCode)
           Mat.nflops += aa.length
-          val aval = data(0)
+          val aval = _data(0)
           var i = 0
           while (i < aa.length) {
-            out.data(i) = op2(aval, aa.data(i))
+            out._data(i) = op2(aval, aa._data(i))
             i += 1
           }
           out
@@ -908,7 +921,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
     Mat.nflops += length
     var i  = 0
     while (i < length) {
-      out.data(i) = op2(data(i), a)
+      out._data(i) = op2(_data(i), a)
       i += 1
     }
     out
@@ -924,7 +937,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
           Mat.nflops += aa.length
           var i = 0          
           while (i < aa.ncols) {
-            opv(data, 0, 1, aa.data, i*aa.nrows, 1, out.data, i*nrows, 1, nrows)
+            opv(_data, 0, 1, aa._data, i*aa.nrows, 1, out._data, i*nrows, 1, nrows)
             i += 1
           }
           out
@@ -933,7 +946,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
           Mat.nflops += aa.length
           var i = 0
           while (i < ncols) {
-            opv(data, i, 0, aa.data, i*aa.nrows, 1, out.data, i*aa.nrows, 1, aa.nrows)
+            opv(_data, i, 0, aa._data, i*aa.nrows, 1, out._data, i*aa.nrows, 1, aa.nrows)
             i += 1
           }
           out
@@ -942,7 +955,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
           Mat.nflops += length
           var i = 0
           while (i < ncols) {
-            opv(data, i*nrows, 1, aa.data, 0, 1, out.data, i*nrows, 1, nrows)
+            opv(_data, i*nrows, 1, aa._data, 0, 1, out._data, i*nrows, 1, nrows)
             i += 1
           }
           out
@@ -951,7 +964,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
           Mat.nflops += length
           var i = 0
           while (i < ncols) {
-            opv(data, i*nrows, 1, aa.data, i, 0, out.data, i*nrows, 1, nrows)
+            opv(_data, i*nrows, 1, aa._data, i, 0, out._data, i*nrows, 1, nrows)
             i += 1   
           }
           out
@@ -975,22 +988,22 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
         		val len = (1L*(ithread+1)*mylen/Mat.numThreads).toInt - istart
         		Future {
         			if (nrows==aa.nrows && ncols==aa.ncols) {
-        				opv(data, istart, 1, aa.data, istart, 1, out.data, istart, 1, len)
+        				opv(_data, istart, 1, aa._data, istart, 1, out._data, istart, 1, len)
         			} else if (aa.nrows == 1 && aa.ncols == 1) {
-        				opv(data, istart, 1, aa.data, 0, 0, out.data, istart, 1, len)
+        				opv(_data, istart, 1, aa._data, 0, 0, out._data, istart, 1, len)
         			} else {
-        				opv(data, 0, 0, aa.data, istart, 1, out.data, istart, 1, len)
+        				opv(_data, 0, 0, aa._data, istart, 1, out._data, istart, 1, len)
         			}
         			done(ithread) = 1
         		}
         	}
         	while (SciFunctions.sum(done).v < Mat.numThreads) {Thread.`yield`()}         
         } else if (nrows==aa.nrows && ncols==aa.ncols) {
-        	opv(data, 0, 1, aa.data, 0, 1, out.data, 0, 1, aa.length)
+        	opv(_data, 0, 1, aa._data, 0, 1, out._data, 0, 1, aa.length)
         } else if (aa.nrows == 1 && aa.ncols == 1) {
-          opv(data, 0, 1, aa.data, 0, 0, out.data, 0, 1, length)
+          opv(_data, 0, 1, aa._data, 0, 0, out._data, 0, 1, length)
         } else if (nrows == 1 && ncols == 1) {
-          opv(data, 0, 0, aa.data, 0, 1, out.data, 0, 1, aa.length)
+          opv(_data, 0, 0, aa._data, 0, 1, out._data, 0, 1, aa.length)
         } 
         Mat.nflops += mylen
         out
@@ -1002,7 +1015,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
     Mat.nflops += length
     val aa = new Array[T](1)
     aa(0) = a
-    opv(data, 0, 1, aa, 0, 0, out.data, 0, 1, length)    
+    opv(_data, 0, 1, aa, 0, 0, out._data, 0, 1, length)    
     out
   }
 
@@ -1015,12 +1028,12 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
       var i = 0
       while (i < ncols) { 
         var j = 1
-        var acc = op1(data(i*nrows))
+        var acc = op1(_data(i*nrows))
         while (j < nrows) { 
-          acc = op2(acc, data(j+i*nrows))
+          acc = op2(acc, _data(j+i*nrows))
           j += 1
         }
-        out.data(i) = acc
+        out._data(i) = acc
         i += 1
       }
       out
@@ -1029,14 +1042,14 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
       Mat.nflops += length
       var j = 0
       while (j < nrows) { 
-        out.data(j) = op1(data(j))
+        out._data(j) = op1(_data(j))
         j += 1
       }
       var i = 1
       while (i < ncols) { 
         var j = 0
         while (j < nrows) { 
-          out.data(j) = op2(out.data(j), data(j+i*nrows))
+          out._data(j) = op2(out._data(j), _data(j+i*nrows))
           j += 1
         }
         i += 1
@@ -1056,18 +1069,18 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
       var i = 0
       while (i < ncols) { 
         var j = 1
-        var acc = data(i*nrows)
+        var acc = _data(i*nrows)
         var iacc = 0
         while (j < nrows) { 
-          val v = data(j+i*nrows)
+          val v = _data(j+i*nrows)
           if (op2(v, acc)) {
             acc = v
             iacc = j            
           }
           j += 1
         }
-        out.data(i) = acc
-        iout.data(i) = iacc
+        out._data(i) = acc
+        iout._data(i) = iacc
         i += 1
       }
       (out, iout)
@@ -1077,18 +1090,18 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
       Mat.nflops += length
       var j = 0
       while (j < nrows) { 
-        out.data(j) = data(j)
-        iout.data(j) = 0
+        out._data(j) = _data(j)
+        iout._data(j) = 0
         j += 1
       }
       var i = 1
       while (i < ncols) { 
         var j = 0
         while (j < nrows) { 
-          val v = data(j+i*nrows)
-          if (op2(v, out.data(j))) {
-          	out.data(j) = v
-          	iout.data(j) = i
+          val v = _data(j+i*nrows)
+          if (op2(v, out._data(j))) {
+          	out._data(j) = v
+          	iout._data(j) = i
           }
           j += 1
         }
@@ -1107,8 +1120,8 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
       Mat.nflops += length
       var i = 0
       while (i < ncols) { 
-        out.data(i) = op1(data(i*nrows))
-        opv(data, i*nrows+1, 1, out.data, i, 0, out.data, i, 0, nrows-1)
+        out._data(i) = op1(_data(i*nrows))
+        opv(_data, i*nrows+1, 1, out._data, i, 0, out._data, i, 0, nrows-1)
         i += 1
       }
       out
@@ -1117,12 +1130,12 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
       Mat.nflops += length
       var j = 0
       while (j < nrows) { 
-        out.data(j) = op1(data(j))
+        out._data(j) = op1(_data(j))
         j += 1
       }
       var i = 1
       while (i < ncols) { 
-        opv(data, i*nrows, 1, out.data, 0, 1, out.data, 0, 1, nrows)
+        opv(_data, i*nrows, 1, out._data, 0, 1, out._data, 0, 1, nrows)
         i += 1
       }
       out
@@ -1140,11 +1153,11 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
       while (i < ncols) { 
         val i0 = i*nrows
         var j = 1
-        var acc = op1(data(i0))
-        out.data(i0) = acc
+        var acc = op1(_data(i0))
+        out._data(i0) = acc
         while (j < nrows) { 
-          acc = op2(acc, data(j+i0))
-          out.data(j+i0) = acc
+          acc = op2(acc, _data(j+i0))
+          out._data(j+i0) = acc
           j += 1
         }
         i += 1
@@ -1155,7 +1168,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
       Mat.nflops += length
       var j = 0
       while (j < nrows) { 
-        out.data(j) = op1(data(j))
+        out._data(j) = op1(_data(j))
         j += 1
       }
       var i = 1
@@ -1163,7 +1176,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
         val i0 = i*nrows
         var j = 0
         while (j < nrows) { 
-          out.data(j+i0) = op2(out.data(j+i0-nrows), data(j+i0))
+          out._data(j+i0) = op2(out._data(j+i0-nrows), _data(j+i0))
           j += 1
         }
         i += 1
@@ -1182,8 +1195,8 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
       var i = 0
       while (i < ncols) { 
         val i0 = i*nrows
-        out.data(i0) = data(i0)
-        opv(data, i0+1, 1, out.data, i0, 1, out.data, i0+1, 1, nrows-1)
+        out._data(i0) = _data(i0)
+        opv(_data, i0+1, 1, out._data, i0, 1, out._data, i0+1, 1, nrows-1)
         i += 1
       }
       out
@@ -1192,13 +1205,13 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
       Mat.nflops += length
       var j = 0
       while (j < nrows) { 
-        out.data(j) = data(j)
+        out._data(j) = _data(j)
         j += 1
       }
       var i = 1
       while (i < ncols) { 
         val i0 = i*nrows
-        opv(data, i0, 1, out.data, i0-nrows, 1, out.data, i0, 1, nrows)
+        opv(_data, i0, 1, out._data, i0-nrows, 1, out._data, i0, 1, nrows)
         i += 1
       }
       out
@@ -1240,7 +1253,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
   		var v = 0.0
   		var i = 0
   		while (i < length){
-  			v += numeric.toDouble(numeric.times(data(i),a.data(i)))
+  			v += numeric.toDouble(numeric.times(_data(i),a._data(i)))
   			i += 1
   		}
   		v
@@ -1259,10 +1272,10 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
   	    var j = 0
   	    var sum = numeric.zero
   	    while (j < nrows) {
-  	    	sum = numeric.plus(sum, numeric.times(data(j+ix),a.data(j+ix)))
+  	    	sum = numeric.plus(sum, numeric.times(_data(j+ix),a._data(j+ix)))
   	    	j += 1
   	    }
-  	    out.data(i) = sum
+  	    out._data(i) = sum
   	  	i += 1
   	  }
   	  out
@@ -1281,7 +1294,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
   		  val ix = i*nrows
   		  var j = 0
   		  while (j < nrows) {
-  		  	out.data(j) = numeric.plus(out.data(j), numeric.times(data(j+ix),a.data(j+ix)))
+  		  	out._data(j) = numeric.plus(out._data(j), numeric.times(_data(j+ix),a._data(j+ix)))
   		  	j += 1
   		  }
   			i += 1
@@ -1321,7 +1334,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
     val out = DenseMat.newOrCheck[T](n, n, null, GUID, "mkdiag".hashCode)
     var i = 0
     while (i < n) {
-      out.data(i*(n+1)) = data(i)
+      out._data(i*(n+1)) = _data(i)
       i += 1
     }
     out
@@ -1363,7 +1376,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
     val out = DenseMat.newOrCheck[T](n, 1, null, GUID, "getdiag".hashCode)
     var i = 0
     while (i < n) {
-      out.data(i) = data(i*(nrows+1))
+      out._data(i) = _data(i*(nrows+1))
       i += 1
     }
     out
@@ -1393,7 +1406,7 @@ object DenseMat {
       }
       case _ => {
       	(i:Int)	=> {
-      		val ind = ii.data(i) - off
+      		val ind = ii._data(i) - off
           if (ind < 0 || ind >= n) {
             throw new RuntimeException("index out of range "+(ind+off)+" vs "+n)
           } 
@@ -1475,10 +1488,10 @@ object DenseMat {
       }
     }    
     if (a.nrows == 1 || a.ncols == 1) {
-      System.arraycopy(a.data, 0, out.data, 0, a.length)
-      genSort(out.data)
+      System.arraycopy(a._data, 0, out._data, 0, a.length)
+      genSort(out._data)
       if (!asc) {
-      	reverse(out.data)
+      	reverse(out._data)
       }
       out
     } else if (ik == 1) {
@@ -1487,19 +1500,19 @@ object DenseMat {
       while (i < a.ncols) {
         var j = 0
         while (j < a.nrows) {
-          thiscol(j) = a.data(j+i*a.nrows)
+          thiscol(j) = a._data(j+i*a.nrows)
           j += 1
         }
         genSort(thiscol)
         j = 0
         if (asc) {
         	while (j < a.nrows) {
-        		out.data(j+i*a.nrows) = thiscol(j)
+        		out._data(j+i*a.nrows) = thiscol(j)
         		j += 1
         	}
         } else {
           while (j < a.nrows) {
-        		out.data(j+i*a.nrows) = thiscol(a.nrows-j-1)
+        		out._data(j+i*a.nrows) = thiscol(a.nrows-j-1)
         		j += 1
         	}
         }
@@ -1512,19 +1525,19 @@ object DenseMat {
       while (i < a.nrows) {
         var j = 0
         while (j < a.ncols) {
-          thisrow(j) = a.data(i+j*a.nrows)
+          thisrow(j) = a._data(i+j*a.nrows)
           j += 1
         }
         genSort(thisrow)
         j = 0
         if (asc) {
         	while (j < a.ncols) {
-        		out.data(i+j*out.nrows) = thisrow(j)
+        		out._data(i+j*out.nrows) = thisrow(j)
         		j += 1
         	}
         } else {
         	while (j < a.ncols) {
-        		out.data(i+j*out.nrows) = thisrow(a.ncols-j-1)
+        		out._data(i+j*out.nrows) = thisrow(a.ncols-j-1)
         		j += 1
         	}
         }
@@ -1571,8 +1584,8 @@ object DenseMat {
       while (i < a.ncols) {
         var j = 0
         while (j < a.nrows) {
-        	iout.data(j+i*a.nrows) = j
-        	out.data(j+i*a.nrows) = a.data(j+i*a.nrows)
+        	iout._data(j+i*a.nrows) = j
+        	out._data(j+i*a.nrows) = a._data(j+i*a.nrows)
         	j += 1
         }
         i += 1
@@ -1580,9 +1593,9 @@ object DenseMat {
       i = 0
       while (i < a.ncols) {
       	if (asc) {
-      		quickSort2(out.data, iout.data, i*a.nrows, (i+1)*a.nrows, 1)
+      		quickSort2(out._data, iout._data, i*a.nrows, (i+1)*a.nrows, 1)
       	} else {
-      		quickSort2(out.data, iout.data, (i+1)*a.nrows-1, i*a.nrows-1, -1)       
+      		quickSort2(out._data, iout._data, (i+1)*a.nrows-1, i*a.nrows-1, -1)       
       	}
       	i += 1
       } 
@@ -1594,7 +1607,7 @@ object DenseMat {
       while (i < a.nrows) {
         var j = 0
         while (j < a.ncols) {
-          vcols(j) = a.data(i + j*a.nrows)
+          vcols(j) = a._data(i + j*a.nrows)
           icols(j) = j
           j += 1
         }
@@ -1605,8 +1618,8 @@ object DenseMat {
         }
         j = 0
         while (j < a.ncols) {
-          out.data(i+j*out.nrows) = vcols(j)
-          iout.data(i+j*iout.nrows) = icols(j)
+          out._data(i+j*out.nrows) = vcols(j)
+          iout._data(i+j*iout.nrows) = icols(j)
           j += 1
         }
         i += 1
@@ -1617,9 +1630,9 @@ object DenseMat {
   
   // TODO
   def lexcomp[T](a:DenseMat[T], out:IMat)(implicit ordering:Ordering[T]):(Int, Int) => Int = {
-  	val aa = a.data
+  	val aa = a._data
   	val nr = a.nrows
-  	val ii = out.data
+  	val ii = out._data
   	(i:Int, j:Int) => {
   		val ip = ii(i)
   		val jp = ii(j)
@@ -1647,12 +1660,12 @@ object DenseMat {
   // TODO
   def _isortlex[@specialized(Double, Float, Int, Byte, Long) T](a:DenseMat[T], asc:Boolean, out:IMat, compp:(Int, Int)=>Int)(implicit ordering:Ordering[T]):IMat = {
     import BIDMat.Sorting._
-    val ii = out.data
-    val aa = a.data
+    val ii = out._data
+    val aa = a._data
     val nr = a.nrows
     var i = 0
     while (i < a.nrows) {
-      out.data(i) = i
+      out._data(i) = i
       i += 1
     }
  
@@ -1676,19 +1689,19 @@ object DenseMat {
     val (vss, iss) = sort2(a, true)  
     val iptrs = IMat.newOrCheckIMat(a.length, 1, null, a.GUID, "unique2".hashCode)
     var lastpos = 0
-    iptrs.data(iss.data(0)) = lastpos
+    iptrs._data(iss._data(0)) = lastpos
     var i = 1
     while (i < iss.length) {
-      if (vss.data(i-1) !=  vss.data(i)) {
+      if (vss._data(i-1) !=  vss._data(i)) {
         lastpos += 1
       }
-      iptrs.data(iss.data(i)) = lastpos
+      iptrs._data(iss._data(i)) = lastpos
       i += 1
     }
     val bptrs = IMat.newOrCheckIMat(lastpos+1, 1, null, a.GUID, "unique2_2".hashCode)
     i = iss.length
     while (i > 0) {
-      bptrs.data(iptrs.data(i-1)) = i-1
+      bptrs._data(iptrs._data(i-1)) = i-1
       i = i - 1
     }
     (bptrs, iptrs)    
@@ -1707,19 +1720,19 @@ object DenseMat {
     }
     val iptrs = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "uniquerows2".hashCode)
     var lastpos = 0
-    iptrs.data(iss.data(0)) = lastpos
+    iptrs._data(iss._data(0)) = lastpos
     var i = 1
     while (i < iss.length) {
-      if (!compeq(iss.data(i-1), iss.data(i))) {
+      if (!compeq(iss._data(i-1), iss._data(i))) {
         lastpos += 1
       }
-      iptrs.data(iss.data(i)) = lastpos
+      iptrs._data(iss._data(i)) = lastpos
       i += 1
     }
     val bptrs = IMat.newOrCheckIMat(lastpos+1, 1, null, a.GUID, "uniquerows2_2".hashCode)
     i = iss.length
     while (i > 0) {
-      bptrs.data(iptrs.data(i-1)) = i-1
+      bptrs._data(iptrs._data(i-1)) = i-1
       i = i - 1
     }
     (bptrs, iptrs)    
@@ -1730,7 +1743,7 @@ object DenseMat {
     var max0 = 0;
     var i = 0;
     while (i < ii.length) {
-    	max0 = math.max(max0, ii.data(i));
+    	max0 = math.max(max0, ii._data(i));
     	i += 1;
     }
     max0+1;
@@ -1742,7 +1755,7 @@ object DenseMat {
     var i = 0;
     val coloff = icol * ii.nrows;
     while (i < ii.nrows) {
-    	max0 = math.max(max0, ii.data(i + coloff));
+    	max0 = math.max(max0, ii._data(i + coloff));
     	i += 1;
     }
     max0+1;
@@ -1766,13 +1779,13 @@ object DenseMat {
   	  		var i = 0;
   	  if (vals.length > 1) {
   	  	while (i < inds.length) { 
-  	  		out.data(inds.data(i)) = numeric.plus(out.data(inds.data(i)), vals.data(i));
+  	  		out._data(inds._data(i)) = numeric.plus(out._data(inds._data(i)), vals._data(i));
   	  		i += 1;
   	  	}
   	  } else {
-  	  	val v = vals.data(0);
+  	  	val v = vals._data(0);
   	  	while (i < inds.length) { 
-  	  		out.data(inds.data(i)) = numeric.plus(out.data(inds.data(i)), v);
+  	  		out._data(inds._data(i)) = numeric.plus(out._data(inds._data(i)), v);
   	  		i += 1;
   	  	}
   	  }
@@ -1789,19 +1802,19 @@ object DenseMat {
   				throw new RuntimeException("accum: mismatch in array dimensions")
   			}
   			while (i < inds.nrows) { 
-  				if (inds.data(i) >= nr || inds.data(i+inds.nrows) >= nc)
-  					throw new RuntimeException("indices out of bounds "+inds.data(i)+" "+inds.data(i+inds.nrows))
-  				val indx = inds.data(i) + nr*inds.data(i+inds.nrows)
-  				out.data(indx) = numeric.plus(out.data(indx), vals.data(i))
+  				if (inds._data(i) >= nr || inds._data(i+inds.nrows) >= nc)
+  					throw new RuntimeException("indices out of bounds "+inds._data(i)+" "+inds._data(i+inds.nrows))
+  				val indx = inds._data(i) + nr*inds._data(i+inds.nrows)
+  				out._data(indx) = numeric.plus(out._data(indx), vals._data(i))
   				i += 1
   			}
   		} else {
   			while (i < inds.nrows) { 
-  				if (inds.data(i) >= nr || inds.data(i+inds.nrows) >= nc)
-  					throw new RuntimeException("indices out of bounds "+inds.data(i)+" "+inds.data(i+inds.nrows))
-  				val v = vals.data(0);
-  				val indx = inds.data(i) + nr*inds.data(i+inds.nrows)
-  						out.data(indx) = numeric.plus(out.data(indx), v)
+  				if (inds._data(i) >= nr || inds._data(i+inds.nrows) >= nc)
+  					throw new RuntimeException("indices out of bounds "+inds._data(i)+" "+inds._data(i+inds.nrows))
+  				val v = vals._data(0);
+  				val indx = inds._data(i) + nr*inds._data(i+inds.nrows)
+  						out._data(indx) = numeric.plus(out._data(indx), v)
   						i += 1
   			}
   		}
@@ -1817,8 +1830,8 @@ object DenseMat {
     } else {
       val omat = oldmat.asInstanceOf[DenseMat[T]]
       if (oldmat.nrows != nr || oldmat.ncols != nc) {
-        if (nr*nc <= omat.data.size) {
-          new DenseMat[T](nr, nc, omat.data)
+        if (nr*nc <= omat._data.size) {
+          new DenseMat[T](nr, nc, omat._data)
         } else {
         	new DenseMat[T](nr, nc)
         }
