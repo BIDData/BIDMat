@@ -4,8 +4,26 @@ import java.util.Arrays
 import edu.berkeley.bid.CBLAS._
 import scala.util.hashing.MurmurHash3
 
-case class LMat(nr:Int, nc:Int, val data:Array[Long]) extends DenseMat[Long](nr, nc, data) { 
-
+case class LMat(dims:Array[Int], val data:Array[Long]) extends DenseMat[Long](dims, data) { 
+  
+  def this(nr:Int, nc:Int, data:Array[Long]) = this(Array(nr, nc), data);
+    
+  override def mytype = "LMat";
+ 
+  override def dv:Double =
+  		if (nrows > 1 || ncols > 1) {
+  			throw new RuntimeException("Matrix should be 1x1 to extract value")
+  		} else {
+  			data(0)
+  		}
+  
+  override def fv:Float =
+  		if (nrows > 1 || ncols > 1) {
+  			throw new RuntimeException("Matrix should be 1x1 to extract value")
+  		} else {
+  			data(0).toFloat
+  		}
+    
   override def t:LMat = tt(null)
   
   def t(omat:Mat):LMat = tt(omat)
@@ -19,15 +37,6 @@ case class LMat(nr:Int, nc:Int, val data:Array[Long]) extends DenseMat[Long](nr,
     }
     out
   }
-  
-  override def dv:Double =
-    if (nrows > 1 || ncols > 1) {
-      throw new RuntimeException("Matrix should be 1x1 to extract value")
-    } else {
-      data(0)
-    }
-  
-  override def mytype = "LMat";
   
   override def view(nr:Int, nc:Int):LMat = {
     if (1L * nr * nc > data.length) {
@@ -785,7 +794,7 @@ case class LMat(nr:Int, nc:Int, val data:Array[Long]) extends DenseMat[Long](nr,
     } else if (data.size >= nr*nc) {
       new LMat(nr, nc, data)
     } else {
-      LMat(nr, nc, new Array[Long]((nr*nc*Mat.recycleGrow).toInt))
+      new LMat(nr, nc, new Array[Long]((nr*nc*Mat.recycleGrow).toInt))
     }  
   }
 }
@@ -1013,7 +1022,7 @@ object LMat {
   def apply(nr:Int, nc:Int) = new LMat(nr, nc, new Array[Long](nr*nc))
   
   def apply(a:DenseMat[Long]) = {
-    val out = new LMat(a.nrows, a.ncols, a.data) 
+    val out = new LMat(Array(a.nrows, a.ncols), a._data) 
     out.setGUID(a.GUID)
     out
   }

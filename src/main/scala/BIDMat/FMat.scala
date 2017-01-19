@@ -18,20 +18,8 @@ case class FMat(dims:Array[Int], val data:Array[Float]) extends DenseMat[Float](
 
   def this(nr:Int, nc:Int, data:Array[Float]) = this(Array(nr, nc), data);
 
-  override def t:FMat = tt(null)
-
-  def t(omat:Mat):FMat = tt(omat)
-
-  def tt(omat:Mat):FMat = {
-  	val out = FMat.newOrCheckFMat(ncols, nrows, omat, GUID, "t".##)
-  	if (!Mat.useMKL) {
-  		gt(out)
-  	} else {
-  		somatcopy("C", "T", nrows, ncols, 1.0f, data, nrows, out.data, ncols)
-  	}
-    out
-  }
-
+  override def mytype = "FMat";
+      
   override def dv:Double =
     if (nrows > 1 || ncols > 1) {
       throw new RuntimeException("Matrix should be 1x1 to extract value")
@@ -45,8 +33,20 @@ case class FMat(dims:Array[Int], val data:Array[Float]) extends DenseMat[Float](
     } else {
       data(0)
     }
+  
+  override def t:FMat = tt(null)
 
-  override def mytype = "FMat"
+  def t(omat:Mat):FMat = tt(omat)
+
+  def tt(omat:Mat):FMat = {
+  	val out = FMat.newOrCheckFMat(ncols, nrows, omat, GUID, "t".##)
+  	if (!Mat.useMKL) {
+  		gt(out)
+  	} else {
+  		somatcopy("C", "T", nrows, ncols, 1.0f, data, nrows, out.data, ncols)
+  	}
+    out
+  }
 
   override def view(nr:Int, nc:Int):FMat = {
     if (1L * nr * nc > data.length) {
@@ -2034,39 +2034,7 @@ case class FMat(dims:Array[Int], val data:Array[Float]) extends DenseMat[Float](
  /*
   * Specialize to GMats to help the type system.
   */
-  def *   (b : GMat) = Mop_Times.op(this, b, null)
-  def *^  (b : GMat) = Mop_TimesT.op(this, b, null)
-  def xT  (b : GMat) = Mop_TimesT.op(this, b, null)
-  def Tx  (b : GMat) = Mop_TTimes.op(this, b, null)
-  def ^*  (b : GMat) = Mop_TTimes.op(this, b, null)
-  def +   (b : GMat) = Mop_Plus.op(this, b, null)
-  def -   (b : GMat) = Mop_Minus.op(this, b, null)
-  def *@  (b : GMat) = Mop_ETimes.op(this, b, null)
-  def ∘   (b : GMat) = Mop_ETimes.op(this, b, null)
-  def /   (b : GMat) = Mop_EDiv.op(this, b, null)
-  def /<  (b : GMat) = Mop_Div.op(this, b, null)
-  def \\  (b : GMat) = Mop_RSolve.op(this, b, null)
-  def ◁   (b : GMat) = Mop_Div.op(this, b, null)
-  def ▷   (b : GMat) = Mop_RSolve.op(this, b, null)
-  def ^   (b : GMat) = Mop_Pow.op(this, b, null)
-  def ∙   (b : GMat) = Mop_Dot.op(this, b, null)
-  def ∙→  (b : GMat) = Mop_Dotr.op(this, b, null)
-  def dot (b : GMat) = Mop_Dot.op(this, b, null)
-  def dotr(b : GMat) = Mop_Dotr.op(this, b, null)
-  def **  (b : GMat) = Mop_Kron.op(this, b, null)
-  def ⊗   (b : GMat) = Mop_Kron.op(this, b, null)
-  def \   (b : GMat) = Mop_HCat.op(this, b, null)
-  def on  (b : GMat) = Mop_VCat.op(this, b, null)
 
-  def >   (b : GMat) = Mop_GT.op(this, b, null)
-  def <   (b : GMat) = Mop_LT.op(this, b, null)
-  def ==  (b : GMat) = Mop_EQ.op(this, b, null)
-  def === (b : GMat) = Mop_EQ.op(this, b, null)
-  def >=  (b : GMat) = Mop_GE.op(this, b, null)
-  def <=  (b : GMat) = Mop_LE.op(this, b, null)
-  def !=  (b : GMat) = Mop_NE.op(this, b, null)
-  def max (b : GMat) = Mop_Max.op(this, b, null)
-  def min  (b : GMat) = Mop_Min.op(this, b, null)
  /*
   * Operators whose second arg is generic.
   */
@@ -2302,38 +2270,7 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair(omat, mat) {
   def !=  (b : DMat) = Mop_NE.op(mat, b, omat)
   def max (b : DMat) = Mop_Max.op(mat, b, omat)
   def min (b : DMat) = Mop_Min.op(mat, b, omat)
-  /*
-   * Specialize to GMat
-   */
-  def *   (b : GMat) = Mop_Times.op(mat, b, omat)
-  def *^  (b : GMat) = Mop_TimesT.op(mat, b, omat)
-  def xT  (b : GMat) = Mop_TimesT.op(mat, b, omat)
-  def Tx  (b : GMat) = Mop_TTimes.op(mat, b, omat)
-  def ^*  (b : GMat) = Mop_TTimes.op(mat, b, omat)
-  def +   (b : GMat) = Mop_Plus.op(mat, b, omat)
-  def -   (b : GMat) = Mop_Minus.op(mat, b, omat)
-  def *@  (b : GMat) = Mop_ETimes.op(mat, b, omat)
-  def ∘   (b : GMat) = Mop_ETimes.op(mat, b, omat)
-  def /   (b : GMat) = Mop_EDiv.op(mat, b, omat)
-  def ^   (b : GMat) = Mop_Pow.op(mat, b, omat)
-  def ∙   (b : GMat) = Mop_Dot.op(mat, b, omat)
-  def ∙→  (b : GMat) = Mop_Dotr.op(mat, b, omat)
-  def dot (b : GMat) = Mop_Dot.op(mat, b, omat)
-  def dotr(b : GMat) = Mop_Dotr.op(mat, b, omat)
-  def \   (b : GMat) = Mop_HCat.op(mat, b, omat)
-  def **  (b : GMat) = Mop_Kron.op(mat, b, omat)
-  def ⊗   (b : GMat) = Mop_Kron.op(mat, b, omat)
-  def on  (b : GMat) = Mop_VCat.op(mat, b, omat)
 
-  def >   (b : GMat) = Mop_GT.op(mat, b, omat)
-  def <   (b : GMat) = Mop_LT.op(mat, b, omat)
-  def ==  (b : GMat) = Mop_EQ.op(mat, b, omat)
-  def === (b : GMat) = Mop_EQ.op(mat, b, omat)
-  def >=  (b : GMat) = Mop_GE.op(mat, b, omat)
-  def <=  (b : GMat) = Mop_LE.op(mat, b, omat)
-  def !=  (b : GMat) = Mop_NE.op(mat, b, omat)
-  def max (b : GMat) = Mop_Max.op(mat, b, omat)
-  def min  (b : GMat) = Mop_Min.op(mat, b, omat)
   /*
    * Generics
    */
@@ -2428,6 +2365,12 @@ object FMat {
 
   def zeros(nr:Int, nc:Int) = {
     val out = FMat(nr, nc)
+  	out.clear
+  	out
+  }
+  
+   def zeros(dims:IMat) = {
+    val out = FMat(dims)
   	out.clear
   	out
   }

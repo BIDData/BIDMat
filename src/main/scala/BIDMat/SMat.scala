@@ -23,7 +23,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   def find3:(IMat, IMat, FMat) = { val (ii, jj, vv) = gfind3 ; (IMat(ii), IMat(jj), FMat(vv)) }	
   
   override def contents:FMat = {
-    val out = FMat(nnz, 1, this.data);
+    val out = new FMat(nnz, 1, this.data);
     out.setGUID(MurmurHash3.mix(MurmurHash3.mix(nnz, 1), (GUID*7897889).toInt));
     out  
   }
@@ -44,8 +44,8 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
     FMat.zeros(nr, nc)
   }
   
-  override def zeros(dims:IMat):FND = {
-    FND.zeros(dims)
+  override def zeros(dims:IMat):FMat = {
+    FMat.zeros(dims)
   }
   
   override def ones(nr:Int, nc:Int) = {
@@ -665,7 +665,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:
   }
 }
 
-class SPair (val omat:Mat, val mat:SMat) extends Pair{
+class SPair (val omat:Mat, val mat:SMat) extends Pair(omat, mat) {
   def * (b : FMat):FMat = mat.SMult(b, omat)
   def * (b : SMat):SMat = mat.SSMult(b, omat)
   def Tx (b : FMat):FMat = mat.Tmult(b, omat)

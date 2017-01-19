@@ -7,6 +7,22 @@ import scala.util.hashing.MurmurHash3
 case class IMat(dims:Array[Int], val data:Array[Int]) extends DenseMat[Int](dims, data) { 
   
   def this(nr:Int, nc:Int, data:Array[Int]) = this(Array(nr, nc), data);
+  
+  override def mytype = "IMat";
+  
+  override def dv:Double =
+    if (nrows > 1 || ncols > 1) {
+      throw new RuntimeException("Matrix should be 1x1 to extract value")
+    } else {
+      data(0)
+    }
+    
+  override def fv:Float =
+    if (nrows > 1 || ncols > 1) {
+      throw new RuntimeException("Matrix should be 1x1 to extract value")
+    } else {
+      data(0)
+    }
 
   override def t:IMat = tt(null)
   
@@ -21,16 +37,7 @@ case class IMat(dims:Array[Int], val data:Array[Int]) extends DenseMat[Int](dims
     }
     out
   }
-  
-  override def dv:Double =
-    if (nrows > 1 || ncols > 1) {
-      throw new RuntimeException("Matrix should be 1x1 to extract value")
-    } else {
-      data(0)
-    }
-  
-  override def mytype = "IMat";
-  
+    
   override def view(nr:Int, nc:Int):IMat = {
     if (1L * nr * nc > data.length) {
       throw new RuntimeException("view dimensions too large")

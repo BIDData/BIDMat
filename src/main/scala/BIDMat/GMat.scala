@@ -19,11 +19,11 @@ import GSMat._
 class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) extends FMat(dims, null) {
   import GMat.BinOp._
   
-  override def mytype = "GMat";
-  
   /** 2D Constructor */
   def this(nr:Int, nc:Int, pdata:Pointer, realsize:Long) = this(Array(nr, nc), pdata, realsize);
     
+  override def mytype = "GMat";
+  
   override def nnz = length;
   
   /** hold indices in GPU mem */
@@ -540,7 +540,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     	Mat.nflops += 2L * nr * b.nnz;
     	val err = CUMAT.dsmultTile(nr, nc, kk, b.nnz,  
     			pdata.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
-    	    b.pdata, b.ir, b.ic, broff, bcoff, 
+    	    b.pdata, b.pir, b.pic, broff, bcoff, 
       		c.pdata.withByteOffset(Sizeof.FLOAT.toLong*(croff+ccoff*c.nrows)), c.nrows, 0);
     	if (err != 0) {
     		throw new RuntimeException("CUMAT.tileMult error " + cudaGetErrorString(err))
@@ -558,7 +558,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     	Mat.nflops += 2L * nr * b.nnz * kk / b.ncols;
     	val err = CUMAT.dsmultTile(nr, nc, kk, b.nnz,  
     			pdata.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
-    	    b.pdata, b.ir, b.ic, broff, bcoff, 
+    	    b.pdata, b.pir, b.pic, broff, bcoff, 
       		c.pdata.withByteOffset(Sizeof.FLOAT.toLong*(croff+ccoff*c.nrows)), c.nrows, 1);
     	if (err != 0) {
     		throw new RuntimeException("CUMAT.tileMultT error " + cudaGetErrorString(err))
@@ -632,7 +632,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
         	throw new RuntimeException("Cuda error in GSMult " + cudaGetErrorString(err))
         }
       } else { */
-    val err = CUMAT.dsmult(nrows, a.ncols, a.nnz, pdata, a.pdata, a.ir, a.ic, out.pdata);
+    val err = CUMAT.dsmult(nrows, a.ncols, a.nnz, pdata, a.pdata, a.pir, a.pic, out.pdata);
     if (err != 0) throw new RuntimeException("GMult: CUDA kernel error in CUMAT.dsmult " + cudaGetErrorString(err));
     //      }
     out;
@@ -652,7 +652,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
       throw new RuntimeException("GSMadd dimensions mismatch (%d %d) (%d %d) (%d %d)" format (nrows, ncols, a.nrows, a.ncols, out.nrows, out.ncols))
     }
     Mat.nflops += 2L * nrows * a.nnz;
-    val err = CUMAT.dsmultT(nrows, a.ncols, a.nnz, pdata, a.pdata, a.ir, a.ic, out.pdata);
+    val err = CUMAT.dsmultT(nrows, a.ncols, a.nnz, pdata, a.pdata, a.pir, a.pic, out.pdata);
     if (err != 0) throw new RuntimeException("GMult: CUDA kernel error in CUMAT.dsmultT " + cudaGetErrorString(err));
     out
   }
@@ -1313,6 +1313,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
  /*
   * Specialize to FMats to help the type system. 
   */ 
+  /*
   def *   (b : FMat) = Mop_Times.op(this, b, null) 
   def *^  (b : FMat) = Mop_TimesT.op(this, b, null)
   def xT  (b : FMat) = Mop_TimesT.op(this, b, null)
@@ -1342,6 +1343,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
   def >=  (b : FMat) = Mop_GE.op(this, b, null)
   def <=  (b : FMat) = Mop_LE.op(this, b, null)
   def !=  (b : FMat) = Mop_NE.op(this, b, null)
+  */
   
  /*
   * Operators whose second arg is generic. 
@@ -1398,7 +1400,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
 
 }
 
-class GTPair(val omat:GMat,val mat:TMat) extends Pair {
+class GTPair(val omat:GMat,val mat:TMat) extends Pair(omat, mat) {
     override def * (a:Mat) = a match {
         case g:GMat => mat.tMult(g,omat)
         case g:GSMat => mat.tMult(g,omat)
@@ -1413,7 +1415,7 @@ class GDSPair(val left:GMat, val right:GSMat) extends DSPair {}
 /*
  * GPair is the result of a~b
  */
-class GPair(val omat:Mat, val mat:GMat) extends Pair{
+class GPair(val omat:Mat, val mat:GMat) extends Pair(omat, mat) {
 	import GMat.BinOp._
 	
 	override def t = {
@@ -1605,6 +1607,7 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
   /*
    * Specialize to FMat
    */
+  /*
   def *   (b : FMat) = Mop_Times.op(mat, b, omat) 
   def *^  (b : FMat) = Mop_TimesT.op(mat, b, omat)
   def xT  (b : FMat) = Mop_TimesT.op(mat, b, omat)
@@ -1630,6 +1633,7 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
   def >=  (b : FMat) = Mop_GE.op(mat, b, omat)
   def <=  (b : FMat) = Mop_LE.op(mat, b, omat)
   def !=  (b : FMat) = Mop_NE.op(mat, b, omat)
+  * */
   
   /*
    * Generics
@@ -2071,7 +2075,7 @@ object GMat {
   
   def fromFMat(a:FMat, b:GMat):GMat = {
     val bb = GMat.newOrCheckGMat(a.nrows, a.ncols, b, a.GUID, SciFunctions.getGPU, "GMat_fromFMat".##)
-    cudaMemcpy(bb.pdata, Pointer.to(a.pdata), a.length*1L*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+    cudaMemcpy(bb.pdata, Pointer.to(a.data), a.length*1L*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
     cudaDeviceSynchronize()
     var err = cudaGetLastError()
     if (err != 0) {
@@ -2405,7 +2409,7 @@ object GMat {
   	  Future {
  	    	GMat.setGPU(ithread)
   	  	val aa = GMat(maxsize, 1).pdata
-  	  	val vv = GIMat(maxsize, 1).ppdata
+  	  	val vv = GIMat(maxsize, 1).pdata
   	  	val kk = if (!tall) GMat(maxsize, 2).pdata else null
 
   	  	var ioff = ithread * maxsize
@@ -2453,7 +2457,7 @@ object GMat {
   def sortdown2(keys:GMat):(GMat,GIMat) = {
 	 val nkeys = GMat.newOrCheckGMat(keys.nrows, keys.ncols, null, keys.GUID, "GMat.sortdown2".##)
 	 val nvals = GIMat.newOrCheckGIMat(keys.nrows, keys.ncols, null, keys.GUID, "GMat.sortdown2i".##)
-	 CUMAT.initSeq(nvals.data, keys.nrows, keys.ncols, 1)
+	 CUMAT.initSeq(nvals.pdata, keys.nrows, keys.ncols, 1)
 	 nkeys <-- keys
 	 sortdownGPU(nkeys, nvals)
 	 (nkeys, nvals)
@@ -2519,7 +2523,7 @@ object GMat {
   
   def _sortGPU(keys:GMat, asc:Boolean):Unit = {
   	if (keys.nrows > 128*1024) {
-  		CUMAT.fsort2d(keys.data,	keys.nrows, keys.ncols, if (asc) 1 else 0)
+  		CUMAT.fsort2d(keys.pdata,	keys.nrows, keys.ncols, if (asc) 1 else 0)
     } else {
     	val maxsize = keys.nrows * math.min(16*1024*1024/keys.nrows, keys.ncols)
     	val nsize = keys.nrows*keys.ncols
@@ -2530,7 +2534,7 @@ object GMat {
     		val colstodo = todo / keys.nrows
     		CUMAT.embedmat2d(keys.pdata.withByteOffset(1L*ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo, if (asc) 0 else 1)
     		CUMAT.lsort(kk, todo, if (asc) 1 else 0)
-    		CUMAT.extractmat2d(keys.data.withByteOffset(1L*ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
+    		CUMAT.extractmat2d(keys.pdata.withByteOffset(1L*ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
     		ioff += maxsize
     	}
     	cudaFree(kk)
