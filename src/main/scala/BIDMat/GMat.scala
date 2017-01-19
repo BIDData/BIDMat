@@ -19,10 +19,17 @@ import GSMat._
 class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) extends FMat(dims, null) {
   import GMat.BinOp._
   
-  def this(nr:Int, nc:Int, data:Pointer, realsize:Long) = this(Array(nr, nc), data, realsize);
+  override def mytype = "GMat";
   
+  /** 2D Constructor */
+  def this(nr:Int, nc:Int, pdata:Pointer, realsize:Long) = this(Array(nr, nc), pdata, realsize);
+    
+  override def nnz = length;
+  
+  /** hold indices in GPU mem */
   val ginds = new Array[GIMat](ndims);
 
+  /** Access values and contents */
   override def dv:Double =
     if (nrows > 1 || ncols > 1) {
       throw new RuntimeException("Matrix should be 1x1 to extract value")
@@ -42,10 +49,6 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     out.setGUID(MurmurHash3.mix(MurmurHash3.mix(length, 1), (GUID*7897889).toInt));
     out
   }
-  
-  override def mytype = "GMat"
-    
-  override def nnz = length;
   
   override def view(nr:Int, nc:Int):GMat = {
     if (1L * nr * nc > realsize) {
@@ -102,7 +105,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     if (ind.asInstanceOf[AnyRef] == null) {
       GMat.nullPointer;
     } else {
-      ind.data;
+      ind.pdata;
     }
   }
   
@@ -143,7 +146,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
   override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, mat:Mat):Mat = apply(Array(i1, i2, i3, i4, i5, i6), mat);
   
  
-  def apply(inds:Array[IMat], out:Mat):GMat = {  
+  def apply(inds:Array[IMat], omat:Mat):GMat = {  
     val newdims = new Array[Int](_dims.length)
     val newinds = new Array[GIMat](_dims.length)
     var j = 0
@@ -158,7 +161,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
         }
       }
     }
-    val out = GMat.newOrCheckGMat(newdims, out, GUID, ND.hashGUIDs(inds), "apply".##);
+    val out = GMat.newOrCheckGMat(newdims, omat, GUID, ND.hashGUIDs(inds), "apply".##);
     inds.length match {
     case 1 => {
         val err = CUMAT.copyFromInds(pdata, out.pdata, safePointer(newinds(0)), newdims(0));
@@ -174,7 +177,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
         if (err != 0) throw new RuntimeException("GND apply(I, J, K) error" + cudaGetErrorString(err));
       }
       case 4 => {
-        val err = CUMAT.copyFromInds4D(pdata, dims(0), dims(1), dims(2), out.data, newdims(0), newdims(1), newdims(2),
+        val err = CUMAT.copyFromInds4D(pdata, dims(0), dims(1), dims(2), out.pdata, newdims(0), newdims(1), newdims(2),
             safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1), safePointer(newinds(2)), newdims(2), safePointer(newinds(3)), newdims(3));
         if (err != 0) throw new RuntimeException("GND apply(I, J, K, L) error" + cudaGetErrorString(err));
       }   
@@ -335,11 +338,11 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     if (nrows != a.nrows)
       throw new RuntimeException("GMat \\ row dims not equal")
     val out = GMat.newOrCheckGMat(nrows, ncols+a.ncols, omat, GUID, a.GUID, "horzcat".##)
-    cudaMemcpy(out.data, data, 1L*length*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaMemcpy(out.pdata, pdata, 1L*length*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
     cudaDeviceSynchronize();
     var err = cudaGetLastError;
     if (err != 0) throw new RuntimeException("GMat horzcat() error " + cudaGetErrorString(err));
-    cudaMemcpy(out.data.withByteOffset(1L*length*Sizeof.FLOAT), a.data, 1L*a.length*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaMemcpy(out.pdata.withByteOffset(1L*length*Sizeof.FLOAT), a.pdata, 1L*a.length*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
     cudaDeviceSynchronize();
     err = cudaGetLastError;
     if (err != 0) throw new RuntimeException("GMat horzcat() error " + cudaGetErrorString(err));
@@ -350,11 +353,11 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     if (ncols != a.ncols)
       throw new RuntimeException("GMat on row dims not equal")
     val out = GMat.newOrCheckGMat(nrows+a.nrows, ncols, omat, GUID, a.GUID, "vertcat".##)
-    cudaMemcpy2D(out.data, 1L*out.nrows*Sizeof.FLOAT, data, 1L*nrows*Sizeof.FLOAT, 1L*nrows*Sizeof.FLOAT, 1L*ncols, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaMemcpy2D(out.pdata, 1L*out.nrows*Sizeof.FLOAT, pdata, 1L*nrows*Sizeof.FLOAT, 1L*nrows*Sizeof.FLOAT, 1L*ncols, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
     cudaDeviceSynchronize();
     var err = cudaGetLastError;
     if (err != 0) throw new RuntimeException("GMat vertcat() error " + cudaGetErrorString(err));
-    cudaMemcpy2D(out.data.withByteOffset(1L*nrows*Sizeof.FLOAT), 1L*out.nrows*Sizeof.FLOAT, a.data, 1L*a.nrows*Sizeof.FLOAT, 1L*a.nrows*Sizeof.FLOAT,  1L*a.ncols, cudaMemcpyKind.cudaMemcpyDeviceToDevice);
+    cudaMemcpy2D(out.pdata.withByteOffset(1L*nrows*Sizeof.FLOAT), 1L*out.nrows*Sizeof.FLOAT, a.pdata, 1L*a.nrows*Sizeof.FLOAT, 1L*a.nrows*Sizeof.FLOAT,  1L*a.ncols, cudaMemcpyKind.cudaMemcpyDeviceToDevice);
     cudaDeviceSynchronize();
     err = cudaGetLastError;
     if (err != 0) throw new RuntimeException("GMat vertcat() error " + cudaGetErrorString(err));
@@ -365,30 +368,30 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     if (ncols == 1 && nrows == 1) {
       val out = GMat.newOrCheckGMat(a.nrows, a.ncols, oldmat, GUID, a.GUID, "GMult1".##)
       Mat.nflops += 1L * a.length
-      val err = CUMAT.applyop(data, nrows, ncols, a.data, a.nrows, a.ncols, out.data, GMat.BinOp.op_mul)
+      val err = CUMAT.applyop(pdata, nrows, ncols, a.pdata, a.nrows, a.ncols, out.pdata, GMat.BinOp.op_mul)
       if (err != 0) {throw new RuntimeException("GMult: CUDA kernel error in CUMAT.applyop " + cudaGetErrorString(err))}
       out
     } else if (a.ncols == 1 && a.nrows == 1) {
       val out = GMat.newOrCheckGMat(nrows, ncols, oldmat, GUID, a.GUID, "GMult2".##)
       Mat.nflops += 1L * length
-      val err = CUMAT.applyop(data, nrows, ncols, a.data, a.nrows, a.ncols, out.data, GMat.BinOp.op_mul)
+      val err = CUMAT.applyop(pdata, nrows, ncols, a.pdata, a.nrows, a.ncols, out.pdata, GMat.BinOp.op_mul)
       if (err != 0) {throw new RuntimeException("GMult: CUDA kernel error in CUMAT.applyop " + cudaGetErrorString(err))}
       out
     } else if (ncols == a.nrows) {
     	val out = GMat.newOrCheckGMat(nrows, a.ncols, oldmat, GUID, a.GUID, "GMult".##)
     	Mat.nflops += 2L * length * a.ncols
     	if (nrows == 1) {
-    		//        cublasSgemv('t', a.nrows, a.ncols, 1.0f, a.data, nrows, data, 1, 0f, out.data, 1)
+    		//        cublasSgemv('t', a.nrows, a.ncols, 1.0f, a.pdata, nrows, pdata, 1, 0f, out.pdata, 1)
     		out.clear
-    		val err = CUMAT.dmv(a.data, a.nrows, a.ncols, data, out.data, 1)
+    		val err = CUMAT.dmv(a.pdata, a.nrows, a.ncols, pdata, out.pdata, 1)
     		if (err != 0) {throw new RuntimeException("GMult: CUDA kernel error in CUMAT.dmv " + cudaGetErrorString(err))}
     	} else if (a.ncols == 1) {
-    		//        cublasSgemv('n', nrows, ncols, 1.0f, data, nrows, a.data, 1, 0f, out.data, 1)
+    		//        cublasSgemv('n', nrows, ncols, 1.0f, pdata, nrows, a.pdata, 1, 0f, out.pdata, 1)
     		out.clear
-    		val err = CUMAT.dmv(data, nrows, ncols, a.data, out.data, 0)
+    		val err = CUMAT.dmv(pdata, nrows, ncols, a.pdata, out.pdata, 0)
     		if (err != 0) {throw new RuntimeException("GMult: CUDA kernel error in CUMAT.dmv " + cudaGetErrorString(err))}
     	} else {
-    		cublasSgemm('n', 'n', nrows, a.ncols, ncols, 1.0f, data, nrows, a.data, a.nrows, 0f, out.data, nrows)
+    		cublasSgemm('n', 'n', nrows, a.ncols, ncols, 1.0f, pdata, nrows, a.pdata, a.nrows, 0f, out.pdata, nrows)
     		cudaDeviceSynchronize()
     		val err = cudaGetLastError
     		if (err != 0) {
@@ -408,7 +411,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
       throw new RuntimeException("madd bad dimensions (%d %d) (%d %d) (%d %d)" format (arows, acols, brows, bcols, c.nrows, c.ncols));
     }
     Mat.nflops += 2L * arows * bcols * acols;
-    cublasSgemm(atrans, btrans,	arows, bcols, acols, 1.0f, data, nrows, b.data, b.nrows, 1.0f, c.data, c.nrows);
+    cublasSgemm(atrans, btrans,	arows, bcols, acols, 1.0f, pdata, nrows, b.pdata, b.nrows, 1.0f, c.pdata, c.nrows);
     c
   }
   
@@ -463,7 +466,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     if (ncols == a.ncols) {
       val out = GMat.newOrCheckGMat(nrows, a.nrows, oldmat, GUID, a.GUID, "GMultT".##)
       Mat.nflops += 2L * length * a.nrows
-      cublasSgemm('n', 't', nrows, a.nrows, ncols, 1.0f, data, nrows, a.data, a.nrows, 0f, out.data, nrows)
+      cublasSgemm('n', 't', nrows, a.nrows, ncols, 1.0f, pdata, nrows, a.pdata, a.nrows, 0f, out.pdata, nrows)
       cudaDeviceSynchronize()
       val err = cudaGetLastError
       if (err != 0) {
@@ -491,9 +494,9 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     } else {
       Mat.nflops += 2L * nr * nc * kk;
     	cublasSgemm('n', 'n',	nr, nc, kk, 1.0f, 
-    	    data.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
-    	    b.data.withByteOffset(Sizeof.FLOAT.toLong*(broff+bcoff*b.nrows)), b.nrows, 1.0f, 
-      		c.data.withByteOffset(Sizeof.FLOAT.toLong*(croff+ccoff*c.nrows)), c.nrows);
+    	    pdata.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
+    	    b.pdata.withByteOffset(Sizeof.FLOAT.toLong*(broff+bcoff*b.nrows)), b.nrows, 1.0f, 
+      		c.pdata.withByteOffset(Sizeof.FLOAT.toLong*(croff+ccoff*c.nrows)), c.nrows);
       c;
     }
   }
@@ -506,9 +509,9 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     } else {
     	Mat.nflops += 2L * nr * nc * kk;
     	cublasSgemm('n', 't',	nr, nc, kk, 1.0f, 
-    	    data.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
-    	    b.data.withByteOffset(Sizeof.FLOAT.toLong*(broff+bcoff*b.nrows)), b.nrows, 1.0f, 
-      		c.data.withByteOffset(Sizeof.FLOAT.toLong*(croff+ccoff*c.nrows)), c.nrows);
+    	    pdata.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
+    	    b.pdata.withByteOffset(Sizeof.FLOAT.toLong*(broff+bcoff*b.nrows)), b.nrows, 1.0f, 
+      		c.pdata.withByteOffset(Sizeof.FLOAT.toLong*(croff+ccoff*c.nrows)), c.nrows);
       c;
     }
   }
@@ -521,9 +524,9 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     } else {
     	Mat.nflops += 2L * nr * nc * kk;
     	cublasSgemm('t', 'n',	nr, nc, kk, 1.0f, 
-    	    data.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
-    	    b.data.withByteOffset(Sizeof.FLOAT.toLong*(broff+bcoff*b.nrows)), b.nrows, 1.0f, 
-      		c.data.withByteOffset(Sizeof.FLOAT.toLong*(croff+ccoff*c.nrows)), c.nrows);
+    	    pdata.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
+    	    b.pdata.withByteOffset(Sizeof.FLOAT.toLong*(broff+bcoff*b.nrows)), b.nrows, 1.0f, 
+      		c.pdata.withByteOffset(Sizeof.FLOAT.toLong*(croff+ccoff*c.nrows)), c.nrows);
       c;
     }
   }
@@ -536,9 +539,9 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     } else {
     	Mat.nflops += 2L * nr * b.nnz;
     	val err = CUMAT.dsmultTile(nr, nc, kk, b.nnz,  
-    			data.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
-    	    b.data, b.ir, b.ic, broff, bcoff, 
-      		c.data.withByteOffset(Sizeof.FLOAT.toLong*(croff+ccoff*c.nrows)), c.nrows, 0);
+    			pdata.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
+    	    b.pdata, b.ir, b.ic, broff, bcoff, 
+      		c.pdata.withByteOffset(Sizeof.FLOAT.toLong*(croff+ccoff*c.nrows)), c.nrows, 0);
     	if (err != 0) {
     		throw new RuntimeException("CUMAT.tileMult error " + cudaGetErrorString(err))
     	}
@@ -554,9 +557,9 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     } else {
     	Mat.nflops += 2L * nr * b.nnz * kk / b.ncols;
     	val err = CUMAT.dsmultTile(nr, nc, kk, b.nnz,  
-    			data.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
-    	    b.data, b.ir, b.ic, broff, bcoff, 
-      		c.data.withByteOffset(Sizeof.FLOAT.toLong*(croff+ccoff*c.nrows)), c.nrows, 1);
+    			pdata.withByteOffset(Sizeof.FLOAT.toLong*(aroff+acoff*nrows)), nrows, 
+    	    b.pdata, b.ir, b.ic, broff, bcoff, 
+      		c.pdata.withByteOffset(Sizeof.FLOAT.toLong*(croff+ccoff*c.nrows)), c.nrows, 1);
     	if (err != 0) {
     		throw new RuntimeException("CUMAT.tileMultT error " + cudaGetErrorString(err))
     	}
@@ -592,7 +595,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     if (nrows == a.nrows) {
       val out = GMat.newOrCheckGMat(ncols, a.ncols, oldmat, GUID, a.GUID, "GMultT".##)
       Mat.nflops += 2L * length * a.ncols
-      cublasSgemm('t', 'n', ncols, a.ncols, nrows, 1.0f, data, nrows, a.data, a.nrows, 0f, out.data, out.nrows)
+      cublasSgemm('t', 'n', ncols, a.ncols, nrows, 1.0f, pdata, nrows, a.pdata, a.nrows, 0f, out.pdata, out.nrows)
       cudaDeviceSynchronize()
       val err = cudaGetLastError
       if (err != 0) {
@@ -621,7 +624,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
       	val handle = GSMat.getHandle       // Also gives erroneous values
       	val descra = GSMat.getDescr
         var err = JCusparse.cusparseScsrmv(handle, cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE,
-        		ncols, a.ncols, 1.0f, descra,	a.data, a.jc, a.ir, data, 0, out.data)
+        		ncols, a.ncols, 1.0f, descra,	a.pdata, a.jc, a.ir, pdata, 0, out.pdata)
         cudaDeviceSynchronize()
         if (err == 0) err = cudaGetLastError
         if (err != 0) {
@@ -629,7 +632,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
         	throw new RuntimeException("Cuda error in GSMult " + cudaGetErrorString(err))
         }
       } else { */
-    val err = CUMAT.dsmult(nrows, a.ncols, a.nnz, data, a.data, a.ir, a.ic, out.data);
+    val err = CUMAT.dsmult(nrows, a.ncols, a.nnz, pdata, a.pdata, a.ir, a.ic, out.pdata);
     if (err != 0) throw new RuntimeException("GMult: CUDA kernel error in CUMAT.dsmult " + cudaGetErrorString(err));
     //      }
     out;
@@ -649,7 +652,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
       throw new RuntimeException("GSMadd dimensions mismatch (%d %d) (%d %d) (%d %d)" format (nrows, ncols, a.nrows, a.ncols, out.nrows, out.ncols))
     }
     Mat.nflops += 2L * nrows * a.nnz;
-    val err = CUMAT.dsmultT(nrows, a.ncols, a.nnz, data, a.data, a.ir, a.ic, out.data);
+    val err = CUMAT.dsmultT(nrows, a.ncols, a.nnz, pdata, a.pdata, a.ir, a.ic, out.pdata);
     if (err != 0) throw new RuntimeException("GMult: CUDA kernel error in CUMAT.dsmultT " + cudaGetErrorString(err));
     out
   }
@@ -659,7 +662,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
       val out = GMat.newOrCheckGMat(nrows, a.nrows, oldmat, GUID, a.GUID, "GMST".##)
       Mat.nflops += 2L * nrows * a.nrows * ncols
       out.clear
-      val err = CUMAT.maxsumx(data, nrows, a.data, a.nrows, out.data, nrows, ncols, nrows, a.nrows)
+      val err = CUMAT.maxsumx(pdata, nrows, a.pdata, a.nrows, out.pdata, nrows, ncols, nrows, a.nrows)
       if (err != 0) throw new RuntimeException("GMult: CUDA kernel error in CUMAT.maxsumx " + cudaGetErrorString(err))
       out
     }	else throw new RuntimeException("dimensions mismatch")
@@ -668,7 +671,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
   def kron(a:GMat, oldmat:Mat):GMat = {
     val out = GMat.newOrCheckGMat(nrows * a.nrows, ncols * a.ncols, oldmat, GUID, a.GUID, "kron".##);
     Mat.nflops += 1L * out.nrows * out.ncols;
-    val err = CUMAT.kron(data, a.data, out.data, nrows, ncols, a.nrows, a.ncols);
+    val err = CUMAT.kron(pdata, a.pdata, out.pdata, nrows, ncols, a.nrows, a.ncols);
     if (err != 0) throw new RuntimeException("kron: CUDA kernel error in CUMAT.kron " + cudaGetErrorString(err));
     out;
   }
@@ -681,7 +684,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
         (ncols == 1 && nrows == 1)) {
     	val out = GMat.newOrCheckGMat(math.max(nrows, a.nrows), math.max(ncols, a.ncols), oldmat, GUID, a.GUID, op)
       Mat.nflops += scala.math.max(length, a.length)
-      val err = CUMAT.applyop(data, nrows, ncols, a.data, a.nrows, a.ncols, out.data, op)
+      val err = CUMAT.applyop(pdata, nrows, ncols, a.pdata, a.nrows, a.ncols, out.pdata, op)
       if (err != 0) {throw new RuntimeException("CUDA kernel error %d in CUMAT.applyop"  format err)}
       out
     }	else throw new RuntimeException("dimensions mismatch (%d, %d) (%d, %d)" format (nrows, ncols, a.nrows, a.ncols))
@@ -693,7 +696,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
   	} else {
   		val out = GMat.newOrCheckGMat(1, ncols, oldmat, GUID, a.GUID, "dot".##) 
   		Mat.nflops += 2L * length
-  	  val err = CUMAT.reducebin1op(nrows, ncols, data, a.data, out.data, op_mul, op_add)
+  	  val err = CUMAT.reducebin1op(nrows, ncols, pdata, a.pdata, out.pdata, op_mul, op_add)
   	  if (err != 0) {throw new RuntimeException("GMult: CUDA kernel error in CUMAT.reducebin1op " + cudaGetErrorString(err))}
   	  out
   	}
@@ -706,7 +709,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
   	} else {
   		val out = GMat.newOrCheckGMat(nrows, 1, oldmat, GUID, a.GUID, "dotr".##) 
   		Mat.nflops += 2L * length
-  	  val err = CUMAT.reducebin2op(nrows, ncols, data, a.data, out.data, op_mul, op_add)
+  	  val err = CUMAT.reducebin2op(nrows, ncols, pdata, a.pdata, out.pdata, op_mul, op_add)
   	  if (err != 0) {throw new RuntimeException("GMult: CUDA kernel error in CUMAT.reducebin2op " + cudaGetErrorString(err))}
   	  out
   	}
@@ -719,7 +722,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
   	} else {
   	  a match {
   	  case aa:GMat => {
-  	    val v = cublasSdot(length, data, 1, aa.data, 1)
+  	    val v = cublasSdot(length, pdata, 1, aa.pdata, 1)
   	  	cudaDeviceSynchronize()
   	  	val err = cudaGetLastError
   	  	if (err != 0) {
@@ -735,14 +738,14 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     if (dir == 1 || (dir == 0 && nrows > 1)) {
       val out = GMat.newOrCheckGMat(1, ncols, oldmat, GUID, 1, op) 
       out.clear
-      val err = CUMAT.reduce1op(nrows, ncols, data, out.data, initval, op)
+      val err = CUMAT.reduce1op(nrows, ncols, pdata, out.pdata, initval, op)
       if (err != 0) {throw new RuntimeException("CUDA kernel error in CUMAT.reduce1op " + cudaGetErrorString(err))}
       Mat.nflops += length
       out
     } else if (dir == 2 || dir == 0) {
       val out = GMat.newOrCheckGMat(nrows, 1, oldmat, GUID, 2, op)  
       out.clear
-      val err = CUMAT.reduce2op(nrows, ncols, data, out.data, initval, op)
+      val err = CUMAT.reduce2op(nrows, ncols, pdata, out.pdata, initval, op)
       if (err != 0) {throw new RuntimeException("CUDA kernel error in CUMAT.reduce2op " + cudaGetErrorString(err))}
       Mat.nflops += length
       out
@@ -753,7 +756,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
 
   def toFMat(a:Mat):FMat = {
     val out = FMat.newOrCheckFMat(nrows, ncols, a, GUID, "toFMat".##)
-    cublasGetVector(nrows*ncols, Sizeof.FLOAT, data, 1, Pointer.to(out.data), 1)
+    cublasGetVector(nrows*ncols, Sizeof.FLOAT, pdata, 1, Pointer.to(out.data), 1)
     cudaDeviceSynchronize()
     val err = cudaGetLastError
     if (err != 0) {
@@ -765,7 +768,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
   
   def copyTo(a:FMat):FMat = {
 //  		val a = out.recycle(nrows, ncols, 0)
-  		cublasGetVector(nrows*ncols, Sizeof.FLOAT, data, 1, Pointer.to(a.data), 1)
+  		cublasGetVector(nrows*ncols, Sizeof.FLOAT, pdata, 1, Pointer.to(a.data), 1)
   		cudaDeviceSynchronize()
   		val err = cudaGetLastError
   		if (err != 0) {
@@ -777,7 +780,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
   
   def copyTo(a:GIMat):GIMat = {
     if (nrows != a.nrows || ncols != a.ncols) throw new RuntimeException("dimensions mismatch in GIMat <-- GMat");
-    val err = CUMAT.toInt(data, a.data, length);
+    val err = CUMAT.toInt(pdata, a.pdata, length);
     if (err != 0) {
     	println("device is %d" format SciFunctions.getGPU);
     	throw new RuntimeException("error in copyTo " + cudaGetErrorString(err));
@@ -786,8 +789,8 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
   }
   
   def vecAdd(fromi:Int, b:GMat, toi:Int, n:Int):GMat = {
-    val bb = b.data.withByteOffset(toi*Sizeof.FLOAT);
-    CUMAT.applyop(data.withByteOffset(fromi*Sizeof.FLOAT), n, 1, bb, n, 1, bb, GMat.BinOp.op_add);
+    val bb = b.pdata.withByteOffset(toi*Sizeof.FLOAT);
+    CUMAT.applyop(pdata.withByteOffset(fromi*Sizeof.FLOAT), n, 1, bb, n, 1, bb, GMat.BinOp.op_add);
     b;
   }
   
@@ -800,7 +803,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
   def tileCopy(fromrow:Int, fromcol:Int, to:GMat, torow:Int, tocol:Int, height:Int, width:Int):GMat = {
     val toindx = torow + tocol * to.nrows;
     val fromindx = fromrow + fromcol * nrows;
-    cudaMemcpy2D(to.data.withByteOffset(toindx * Sizeof.FLOAT), to.nrows*Sizeof.FLOAT, data.withByteOffset(fromindx * Sizeof.FLOAT), nrows*Sizeof.FLOAT,
+    cudaMemcpy2D(to.pdata.withByteOffset(toindx * Sizeof.FLOAT), to.nrows*Sizeof.FLOAT, pdata.withByteOffset(fromindx * Sizeof.FLOAT), nrows*Sizeof.FLOAT,
         height*Sizeof.FLOAT, width, cudaMemcpyKind.cudaMemcpyDeviceToDevice);  
     to
   }
@@ -812,7 +815,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
   def copyFrom(in:FMat):GMat = {
       if (nrows != in.nrows || ncols != in.ncols) throw new RuntimeException("dimensions mismatch in FMat copyFrom (%d, %d) and (%d, %d)" format (nrows, ncols, in.nrows, in.ncols));
   
-  		cudaMemcpy(data, Pointer.to(in.data), 1L*nrows*ncols*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice);
+  		cudaMemcpy(pdata, Pointer.to(in.data), 1L*nrows*ncols*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice);
   		cudaDeviceSynchronize();
   		val err = cudaGetLastError;
   		if (err != 0) {
@@ -824,7 +827,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
   
   def copyTo(a:GMat):GMat = {
     if (nrows != a.nrows || ncols != a.ncols) throw new RuntimeException("dimensions mismatch in GMat copyTo (%d, %d) and (%d, %d)" format (nrows, ncols, a.nrows, a.ncols));
-    cudaMemcpy(a.data, data, 1L*length*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice);
+    cudaMemcpy(a.pdata, pdata, 1L*length*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice);
     cudaDeviceSynchronize();
     val err = cudaGetLastError;
     if (err != 0) {
@@ -862,7 +865,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     if (nrows == nr && nc == ncols) {
       this
     } else if (realsize >= nr*nc) {
-      new GMat(nr, nc, data, realsize)
+      new GMat(nr, nc, pdata, realsize)
     } else {
 //      free
       GMat(nr, nc)
@@ -870,20 +873,20 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
   }
   
   override def free() = {
-    if (data == null) throw new RuntimeException("attempt to free a free'd matrix");
-    cudaFree(data)
-    data = null;
+    if (pdata == null) throw new RuntimeException("attempt to free a free'd matrix");
+    cudaFree(pdata)
+    pdata = null;
     this
   }
   
   override def finalize = {
-//    if (data != null) free
+//    if (pdata != null) free
   }
   
   def getdiag():GMat = {
     if (nrows != ncols) throw new RuntimeException("getdiag requires a square matrix, but dims= %d %d" format (nrows, ncols))
     val out = GMat.newOrCheckGMat(nrows, 1, null, GUID, "getdiag".##)
-    cudaMemcpy2D(out.data, Sizeof.FLOAT, data, (nrows+1)*Sizeof.FLOAT, Sizeof.FLOAT, nrows, cudaMemcpyDeviceToDevice)
+    cudaMemcpy2D(out.pdata, Sizeof.FLOAT, pdata, (nrows+1)*Sizeof.FLOAT, Sizeof.FLOAT, nrows, cudaMemcpyDeviceToDevice)
     cudaDeviceSynchronize
     val err = cudaGetLastError()
     if (err != 0) {
@@ -899,7 +902,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     val size = math.max(nrows, ncols)
     val out = GMat.newOrCheckGMat(size, size, null, GUID, "mkdiag".##)
     out.clear
-    var err = cudaMemcpy2D(out.data, (nrows+1)*Sizeof.FLOAT, data, Sizeof.FLOAT, Sizeof.FLOAT, nrows, cudaMemcpyDeviceToDevice)
+    var err = cudaMemcpy2D(out.pdata, (nrows+1)*Sizeof.FLOAT, pdata, Sizeof.FLOAT, Sizeof.FLOAT, nrows, cudaMemcpyDeviceToDevice)
     cudaDeviceSynchronize
     if (err == 0) err = cudaGetLastError()
     if (err != 0) {
@@ -929,8 +932,8 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     
     c.clear;
     Mat.nflops += 2L * nr * nc * ka * reps;
-    CUMAT.blockSgemm(transa, transb, nr, nc, ka, reps, data.withByteOffset(1L * Sizeof.FLOAT * aoff), lda, astep,
-    		b.data.withByteOffset(1L * Sizeof.FLOAT * boff), ldb, bstep, c.data.withByteOffset(1L * Sizeof.FLOAT * coff), ldc, cstep);
+    CUMAT.blockSgemm(transa, transb, nr, nc, ka, reps, pdata.withByteOffset(1L * Sizeof.FLOAT * aoff), lda, astep,
+    		b.pdata.withByteOffset(1L * Sizeof.FLOAT * boff), ldb, bstep, c.pdata.withByteOffset(1L * Sizeof.FLOAT * coff), ldc, cstep);
     c;
   }
   
@@ -946,14 +949,14 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     val out = GMat.newOrCheckGMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
     Mat.nflops += 2L*length;
     if (nrows == 1 || ncols == 1) {
-      val err = CUMAT.cumsumByKeyFF(data, keys.data, out.data, llength);
+      val err = CUMAT.cumsumByKeyFF(pdata, keys.pdata, out.pdata, llength);
       if (err != 0) {
     		throw new RuntimeException("CUMAT.cumsumByKey error " + cudaGetErrorString(err))
       }
     } else {
       val tmp = GLMat(nrows, ncols);
-      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols, 0);
-      if (err == 0) err = CUMAT.cumsumByKeyFL(data, tmp.data, out.data, llength);
+      var err = CUMAT.embedmat2d(keys.pdata, tmp.pdata, nrows, ncols, 0);
+      if (err == 0) err = CUMAT.cumsumByKeyFL(pdata, tmp.pdata, out.pdata, llength);
       if (err != 0) {
     		throw new RuntimeException("CUMAT.cumsumByKey error " + cudaGetErrorString(err))
       }      
@@ -968,14 +971,14 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     val out = GMat.newOrCheckGMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
     Mat.nflops += 2L*length;
     if (nrows == 1 || ncols == 1) {
-      val err = CUMAT.cumsumByKeyFI(data, keys.data, out.data, llength);
+      val err = CUMAT.cumsumByKeyFI(pdata, keys.pdata, out.pdata, llength);
       if (err != 0) {
     		throw new RuntimeException("CUMAT.cumsumByKey error " + cudaGetErrorString(err))
       }
     } else {
     	val tmp = GLMat(nrows, ncols);
-      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols, 0);
-      if (err == 0) err = CUMAT.cumsumByKeyFL(data, tmp.data, out.data, llength);
+      var err = CUMAT.embedmat2d(keys.pdata, tmp.pdata, nrows, ncols, 0);
+      if (err == 0) err = CUMAT.cumsumByKeyFL(pdata, tmp.pdata, out.pdata, llength);
       if (err != 0) {
     		throw new RuntimeException("CUMAT.cumsumByKey error " + cudaGetErrorString(err))
       }
@@ -994,14 +997,14 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     val out = GMat.newOrCheckGMat(nrows, ncols, omat, GUID, keys.GUID, "cummaxKey".##);
     Mat.nflops += 2L*length;
     if (nrows == 1 || ncols == 1) {
-      val err = CUMAT.cummaxByKeyFF(data, keys.data, out.data, llength);
+      val err = CUMAT.cummaxByKeyFF(pdata, keys.pdata, out.pdata, llength);
       if (err != 0) {
         throw new RuntimeException("CUMAT.cummaxByKey error " + cudaGetErrorString(err))
       }
     } else {
       val tmp = GLMat(nrows, ncols);
-      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols, 0);
-      if (err == 0) err = CUMAT.cummaxByKeyFL(data, tmp.data, out.data, llength);
+      var err = CUMAT.embedmat2d(keys.pdata, tmp.pdata, nrows, ncols, 0);
+      if (err == 0) err = CUMAT.cummaxByKeyFL(pdata, tmp.pdata, out.pdata, llength);
       if (err != 0) {
         throw new RuntimeException("CUMAT.cummaxByKey error " + cudaGetErrorString(err))
       }      
@@ -1016,14 +1019,14 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     val out = GMat.newOrCheckGMat(nrows, ncols, omat, GUID, keys.GUID, "cummaxKey".##);
     Mat.nflops += 2L*length;
     if (nrows == 1 || ncols == 1) {
-      val err = CUMAT.cummaxByKeyFI(data, keys.data, out.data, llength);
+      val err = CUMAT.cummaxByKeyFI(pdata, keys.pdata, out.pdata, llength);
       if (err != 0) {
         throw new RuntimeException("CUMAT.cummaxByKey error " + cudaGetErrorString(err))
       }
     } else {
       val tmp = GLMat(nrows, ncols);
-      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols, 0);
-      if (err == 0) err = CUMAT.cummaxByKeyFL(data, tmp.data, out.data, llength);
+      var err = CUMAT.embedmat2d(keys.pdata, tmp.pdata, nrows, ncols, 0);
+      if (err == 0) err = CUMAT.cummaxByKeyFL(pdata, tmp.pdata, out.pdata, llength);
       if (err != 0) {
         throw new RuntimeException("CUMAT.cummaxByKey error " + cudaGetErrorString(err))
       }
@@ -1042,14 +1045,14 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     val out = GMat.newOrCheckGMat(nrows, ncols, omat, GUID, keys.GUID, "cumminKey".##);
     Mat.nflops += 2L*length;
     if (nrows == 1 || ncols == 1) {
-      val err = CUMAT.cumminByKeyFF(data, keys.data, out.data, llength);
+      val err = CUMAT.cumminByKeyFF(pdata, keys.pdata, out.pdata, llength);
       if (err != 0) {
         throw new RuntimeException("CUMAT.cumminByKey error " + cudaGetErrorString(err))
       }
     } else {
       val tmp = GLMat(nrows, ncols);
-      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols, 0);
-      if (err == 0) err = CUMAT.cumminByKeyFL(data, tmp.data, out.data, llength);
+      var err = CUMAT.embedmat2d(keys.pdata, tmp.pdata, nrows, ncols, 0);
+      if (err == 0) err = CUMAT.cumminByKeyFL(pdata, tmp.pdata, out.pdata, llength);
       if (err != 0) {
         throw new RuntimeException("CUMAT.cumminByKey error " + cudaGetErrorString(err))
       }      
@@ -1064,14 +1067,14 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     val out = GMat.newOrCheckGMat(nrows, ncols, omat, GUID, keys.GUID, "cumminKey".##);
     Mat.nflops += 2L*length;
     if (nrows == 1 || ncols == 1) {
-      val err = CUMAT.cumminByKeyFI(data, keys.data, out.data, llength);
+      val err = CUMAT.cumminByKeyFI(pdata, keys.pdata, out.pdata, llength);
       if (err != 0) {
         throw new RuntimeException("CUMAT.cumminByKey error " + cudaGetErrorString(err))
       }
     } else {
       val tmp = GLMat(nrows, ncols);
-      var err = CUMAT.embedmat2d(keys.data, tmp.data, nrows, ncols, 0);
-      if (err == 0) err = CUMAT.cumminByKeyFL(data, tmp.data, out.data, llength);
+      var err = CUMAT.embedmat2d(keys.pdata, tmp.pdata, nrows, ncols, 0);
+      if (err == 0) err = CUMAT.cumminByKeyFL(pdata, tmp.pdata, out.pdata, llength);
       if (err != 0) {
         throw new RuntimeException("CUMAT.cumminByKey error " + cudaGetErrorString(err))
       }
@@ -1086,7 +1089,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
 
   def _reverse(omat:Mat):GMat = {
     val out = GMat.newOrCheckGMat(nrows, ncols, omat, GUID,  "reverse".##);
-    val err = CUMAT.reverse(data, out.data, llength);
+    val err = CUMAT.reverse(pdata, out.pdata, llength);
     if (err != 0) {
     	throw new RuntimeException("CUMAT.reverse error " + cudaGetErrorString(err))
     }
@@ -1415,7 +1418,7 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair{
 	
 	override def t = {
     val out = GMat.newOrCheckGMat(mat.ncols, mat.nrows, omat, mat.GUID, "pt".##)
-    CUMAT.transpose(mat.data, mat.nrows, out.data, mat.ncols, mat.nrows, mat.ncols)
+    CUMAT.transpose(mat.pdata, mat.nrows, out.pdata, mat.ncols, mat.nrows, mat.ncols)
     out
   }
   def *  (a : GMat) = mat.GMult(a, omat)
@@ -1845,7 +1848,7 @@ object GMat {
   def rand(out:GMat):GMat = {
     import jcuda.jcurand._
     Mat.nflops += 10L*out.length
-    JCurand.curandGenerateUniform(cudarng(getGPU).asInstanceOf[curandGenerator], out.data, out.length)
+    JCurand.curandGenerateUniform(cudarng(getGPU).asInstanceOf[curandGenerator], out.pdata, out.length)
     jcuda.runtime.JCuda.cudaDeviceSynchronize()
     out
   }
@@ -1853,7 +1856,7 @@ object GMat {
   def normrnd(mu:Float, sig:Float, out:GMat):GMat = {
     import jcuda.jcurand._
     Mat.nflops += 10L*out.length
-    JCurand.curandGenerateNormal(cudarng(getGPU).asInstanceOf[curandGenerator], out.data, out.length, mu, sig)
+    JCurand.curandGenerateNormal(cudarng(getGPU).asInstanceOf[curandGenerator], out.pdata, out.length, mu, sig)
     jcuda.runtime.JCuda.cudaDeviceSynchronize()
     out
   }
@@ -1861,7 +1864,7 @@ object GMat {
   def poissrnd(mu:Float, out:GIMat):GIMat = {
     import jcuda.jcurand._;
     Mat.nflops += 10L*out.length;
-    JCurand.curandGeneratePoisson(cudarng(getGPU).asInstanceOf[curandGenerator], out.data, out.length, mu);
+    JCurand.curandGeneratePoisson(cudarng(getGPU).asInstanceOf[curandGenerator], out.pdata, out.length, mu);
     jcuda.runtime.JCuda.cudaDeviceSynchronize();
     out
   }
@@ -1870,7 +1873,7 @@ object GMat {
     Mat.nflops += 10L*out.length;
     val nthreads = math.max(1, mu.length / 1024);
     moveGPUseed;
-    CUMAT.poissonrnd(out.length, mu.data, out.data, nthreads, GPUSEED, OFFSET);
+    CUMAT.poissonrnd(out.length, mu.pdata, out.pdata, nthreads, GPUSEED, OFFSET);
     jcuda.runtime.JCuda.cudaDeviceSynchronize()
     out
   }
@@ -1888,7 +1891,7 @@ object GMat {
     val atype = getMatVecType(a);
     val btype = getMatVecType(b);
     moveGPUseed;
-    CUMAT.gamrnd(out.nrows, out.ncols, a.data, atype, b.data, btype, out.data, GPUSEED, OFFSET);
+    CUMAT.gamrnd(out.nrows, out.ncols, a.pdata, atype, b.pdata, btype, out.pdata, GPUSEED, OFFSET);
     out;
   } 
     
@@ -1898,13 +1901,13 @@ object GMat {
     val atype = getMatVecType(p);
     val ctype = getMatVecType(n);
     moveGPUseed;
-    CUMAT.binornd(out.nrows, out.ncols, p.data, atype, n.data, ctype, out.data, GPUSEED, OFFSET);
+    CUMAT.binornd(out.nrows, out.ncols, p.pdata, atype, n.pdata, ctype, out.pdata, GPUSEED, OFFSET);
     out;
   } 
    
   def applyGfun(in:GMat, omat:Mat, opn:Int, kflops:Long):GMat = {
     val out = GMat.newOrCheckGMat(in.nrows, in.ncols, omat, in.GUID, opn)
-    CUMAT.applygfun(in.data, out.data, in.nrows*in.ncols, opn)
+    CUMAT.applygfun(in.pdata, out.pdata, in.nrows*in.ncols, opn)
     jcuda.runtime.JCuda.cudaDeviceSynchronize()
     Mat.nflops += kflops*in.length
     out
@@ -1912,7 +1915,7 @@ object GMat {
 
   def applyGfun(in:GMat, opn:Int, kflops:Long):GMat = {
     val out = GMat.newOrCheckGMat(in.nrows, in.ncols, null, in.GUID, opn)
-    CUMAT.applygfun(in.data, out.data, in.nrows*in.ncols, opn)
+    CUMAT.applygfun(in.pdata, out.pdata, in.nrows*in.ncols, opn)
     jcuda.runtime.JCuda.cudaDeviceSynchronize()
     Mat.nflops += kflops*in.length
     out
@@ -1921,7 +1924,7 @@ object GMat {
   def applyGfun2(a:GMat, b:GMat, omat:Mat, opn:Int, kflops:Long):GMat = {   
     if (a.nrows == b.nrows && a.ncols == b.ncols) {
       val out = GMat.newOrCheckGMat(a.nrows, a.ncols, omat, a.GUID, b.GUID, opn)
-      CUMAT.applygfun2(a.data, b.data, out.data, a.nrows*a.ncols, opn)
+      CUMAT.applygfun2(a.pdata, b.pdata, out.pdata, a.nrows*a.ncols, opn)
       jcuda.runtime.JCuda.cudaDeviceSynchronize()
       Mat.nflops += kflops*a.length
       out
@@ -1933,7 +1936,7 @@ object GMat {
   def applyGfun2(a:GMat, b:GMat, opn:Int, kflops:Long):GMat = {
     if  (a.nrows == b.nrows && a.ncols == b.ncols)  {
       val out = GMat.newOrCheckGMat(a.nrows, a.ncols, null, a.GUID, b.GUID, opn)
-      CUMAT.applygfun2(a.data, b.data, out.data, a.nrows*a.ncols, opn)
+      CUMAT.applygfun2(a.pdata, b.pdata, out.pdata, a.nrows*a.ncols, opn)
       jcuda.runtime.JCuda.cudaDeviceSynchronize()
       Mat.nflops += kflops*a.length
       out
@@ -1942,13 +1945,13 @@ object GMat {
     }
   }
   
-  def norm(a:GMat) = math.sqrt(jcuda.jcublas.JCublas.cublasSdot(a.length, a.data, 1, a.data, 1))
+  def norm(a:GMat) = math.sqrt(jcuda.jcublas.JCublas.cublasSdot(a.length, a.pdata, 1, a.pdata, 1))
   
   val nullPointer = new Pointer
   
   def zeros(nr:Int, nc:Int) = {
     val out = GMat(nr, nc)
-    cudaMemset(out.data, 0, Sizeof.FLOAT*out.llength)
+    cudaMemset(out.pdata, 0, Sizeof.FLOAT*out.llength)
     cudaDeviceSynchronize()
     val err = cudaGetLastError()
     if (err != 0) {
@@ -1960,7 +1963,7 @@ object GMat {
   
   def ones(nr:Int, nc:Int) = {
     val out = GMat(nr, nc)
-    CUMAT.setval(out.data, 1f, out.length)
+    CUMAT.setval(out.pdata, 1f, out.length)
     cudaDeviceSynchronize()
     val err = cudaGetLastError()
     if (err != 0) {
@@ -1977,9 +1980,9 @@ object GMat {
       if (nr*nc > Mat.debugMemThreshold) throw new RuntimeException("GMat alloc too large");
     }
     var err = if (1L*nr*nc*Sizeof.FLOAT > Mat.hostAllocSize) {
-      cudaMallocHost(retv.data, 1L*nr*nc*Sizeof.FLOAT);
+      cudaMallocHost(retv.pdata, 1L*nr*nc*Sizeof.FLOAT);
     } else {
-      cudaMalloc(retv.data, 1L*nr*nc*Sizeof.FLOAT);
+      cudaMalloc(retv.pdata, 1L*nr*nc*Sizeof.FLOAT);
     }
     cudaDeviceSynchronize;
     if (err == 0) err = cudaGetLastError();
@@ -1987,10 +1990,28 @@ object GMat {
     retv        
   }   
   
+  def apply(dims:Array[Int]):GMat = {
+	  val len = dims.reduce(_*_);
+    val retv = new GMat(dims, new Pointer, len);
+    if (Mat.debugMem) {
+      println("GMat %d, %d %f" format (len, SciFunctions.getGPU, SciFunctions.GPUmem._1))
+      if (len > Mat.debugMemThreshold) throw new RuntimeException("GND alloc too large");
+    }
+    var err = if (1L*len*Sizeof.FLOAT > Mat.hostAllocSize) {
+      cudaMallocHost(retv.pdata, 1L*len*Sizeof.FLOAT);
+    } else {
+      cudaMalloc(retv.pdata, 1L*len*Sizeof.FLOAT);
+    }
+    cudaDeviceSynchronize;
+    if (err == 0) err = cudaGetLastError();
+    if (err != 0) throw new RuntimeException("CUDA alloc failed " + cudaGetErrorString(err));
+    retv       
+  }
+  
   def apply(a:FMat):GMat = {
   	val rsize = a.nrows*a.ncols
     val retv = GMat.newOrCheckGMat(a.nrows, a.ncols, null, a.GUID, SciFunctions.getGPU, "GMat_FMat".##)
-  	cudaMemcpy(retv.data, Pointer.to(a.data), 1L*rsize*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+  	cudaMemcpy(retv.pdata, Pointer.to(a.data), 1L*rsize*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
   	cudaDeviceSynchronize()
   	val err = cudaGetLastError()
     if (err != 0) {
@@ -2004,7 +2025,7 @@ object GMat {
  
     val rsize = a.nrows*a.ncols
     val retv = GMat.newOrCheckGMat(a.nrows, a.ncols, null, a.GUID, SciFunctions.getGPU, "GMat_GIMat".##)
-    var err = CUMAT.toFloat(a.data, retv.data, a.length)
+    var err = CUMAT.toFloat(a.pdata, retv.pdata, a.length)
     cudaDeviceSynchronize()
     if (err == 0) err = cudaGetLastError()
     if (err != 0) {
@@ -2050,7 +2071,7 @@ object GMat {
   
   def fromFMat(a:FMat, b:GMat):GMat = {
     val bb = GMat.newOrCheckGMat(a.nrows, a.ncols, b, a.GUID, SciFunctions.getGPU, "GMat_fromFMat".##)
-    cudaMemcpy(bb.data, Pointer.to(a.data), a.length*1L*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+    cudaMemcpy(bb.pdata, Pointer.to(a.pdata), a.length*1L*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
     cudaDeviceSynchronize()
     var err = cudaGetLastError()
     if (err != 0) {
@@ -2066,7 +2087,7 @@ object GMat {
     if (I.length != J.length || I.length != V.length) {
       throw new RuntimeException("GMat accum: index lengths dont match")
     }
-    CUMAT.accum(I.data, J.data, V.data, out.data, I.length, nrows)
+    CUMAT.accum(I.pdata, J.pdata, V.pdata, out.pdata, I.length, nrows)
     Mat.nflops += I.length
     out
   }
@@ -2077,7 +2098,7 @@ object GMat {
     if (J.length != V.length) {
       throw new RuntimeException("GMat accum: index lengths dont match")
     }
-    CUMAT.accumI(I, J.data, V.data, out.data, J.length, nrows)
+    CUMAT.accumI(I, J.pdata, V.pdata, out.pdata, J.length, nrows)
     Mat.nflops += J.length
     out
   }
@@ -2088,7 +2109,7 @@ object GMat {
     if (I.length != V.length) {
       throw new RuntimeException("GMat accum: index lengths dont match")
     }
-    CUMAT.accumJ(I.data, J, V.data, out.data, I.length, nrows)
+    CUMAT.accumJ(I.pdata, J, V.pdata, out.pdata, I.length, nrows)
     Mat.nflops += I.length
     out
   }
@@ -2099,7 +2120,7 @@ object GMat {
     if (I.length != J.length) {
       throw new RuntimeException("GMat accum: index lengths dont match")
     }
-    CUMAT.accumV(I.data, J.data, V, out.data, I.length, nrows)
+    CUMAT.accumV(I.pdata, J.pdata, V, out.pdata, I.length, nrows)
     Mat.nflops += I.length
     out
   }
@@ -2107,7 +2128,7 @@ object GMat {
   def accumIJ(I:Int, J:GIMat, V:Float, omat:Mat, nrows:Int, ncols:Int):GMat = {
     val out = GMat.newOrCheckGMat(nrows, ncols, omat, I, J.GUID, V.hashCode, "GMat_accumIV".##)
     out.clear
-    CUMAT.accumIV(I, J.data, V, out.data, J.length, nrows)
+    CUMAT.accumIV(I, J.pdata, V, out.pdata, J.length, nrows)
     Mat.nflops += J.length
     out
   }
@@ -2115,7 +2136,7 @@ object GMat {
   def accumIJ(I:GIMat, J:Int, V:Float, omat:Mat, nrows:Int, ncols:Int):GMat = {
     val out = GMat.newOrCheckGMat(nrows, ncols, omat, I.GUID, J, V.hashCode, "GMat_accumJV".##)
     out.clear
-    CUMAT.accumJV(I.data, J, V, out.data, I.length, nrows)
+    CUMAT.accumJV(I.pdata, J, V, out.pdata, I.length, nrows)
     Mat.nflops += I.length
     out
   }
@@ -2127,9 +2148,9 @@ object GMat {
     val out = GMat.newOrCheckGMat(nrows, ncols, omat, IJ.GUID, V.GUID, "GMat_accumIJ".##)
     out.clear
     if (IJ.ncols == 2) {
-    	CUMAT.accum(IJ.data, IJ.data.withByteOffset(1L*IJ.nrows*Sizeof.INT), V.data, out.data, V.length, nrows)
+    	CUMAT.accum(IJ.pdata, IJ.pdata.withByteOffset(1L*IJ.nrows*Sizeof.INT), V.pdata, out.pdata, V.length, nrows)
     } else {
-      CUMAT.accumJ(IJ.data, 0, V.data, out.data, V.length, nrows)
+      CUMAT.accumJ(IJ.pdata, 0, V.pdata, out.pdata, V.length, nrows)
     }
     Mat.nflops += V.length
     out
@@ -2142,9 +2163,9 @@ object GMat {
     val out = GMat.newOrCheckGMat(nrows, ncols, omat, IJ.GUID, V.hashCode, "GMat_accumIJV".##)
     out.clear
     if (IJ.ncols == 2) {
-    	CUMAT.accumV(IJ.data, IJ.data.withByteOffset(1L*IJ.nrows*Sizeof.INT), V, out.data, IJ.nrows, nrows)
+    	CUMAT.accumV(IJ.pdata, IJ.pdata.withByteOffset(1L*IJ.nrows*Sizeof.INT), V, out.pdata, IJ.nrows, nrows)
     } else {
-      CUMAT.accumJV(IJ.data, 0, V, out.data, IJ.nrows, nrows)
+      CUMAT.accumJV(IJ.pdata, 0, V, out.pdata, IJ.nrows, nrows)
     }
     Mat.nflops += IJ.nrows
     out
@@ -2153,7 +2174,7 @@ object GMat {
   def cumsumg(a:GMat, jc:GIMat, omat:Mat):GMat = {
     Mat.nflops += 1L * a.length
     val out = GMat.newOrCheckGMat(a.nrows, a.ncols, omat, a.GUID, jc.GUID, "cumsumi".##)
-    val err = CUMAT.cumsumgf(a.data, out.data, jc.data, a.nrows, a.ncols, jc.length-1)
+    val err = CUMAT.cumsumgf(a.pdata, out.pdata, jc.pdata, a.nrows, a.ncols, jc.length-1)
     if (err != 0) throw new RuntimeException("cumsumi error %d: " + cudaGetErrorString(err) format err);
     out
   }
@@ -2162,7 +2183,7 @@ object GMat {
     Mat.nflops += 1L * a.length
     val out = GMat.newOrCheckGMat(jc.length-1, a.ncols, omat, a.GUID, jc.GUID, "maxg".##)
     val outi = GIMat.newOrCheckGIMat(jc.length-1, a.ncols, omati, a.GUID, jc.GUID, "maxg_1".##)
-    val err = CUMAT.maxgf(a.data, out.data, outi.data, jc.data, a.nrows, a.ncols, jc.length-1)
+    val err = CUMAT.maxgf(a.pdata, out.pdata, outi.pdata, jc.pdata, a.nrows, a.ncols, jc.length-1)
     if (err != 0) throw new RuntimeException("maxg error %d: " + cudaGetErrorString(err) format err);
     (out, outi)
   }
@@ -2171,7 +2192,7 @@ object GMat {
     Mat.nflops += 1L * a.length
     val out = GMat.newOrCheckGMat(jc.length-1, a.ncols, omat, a.GUID, jc.GUID, "ming".##)
     val outi = GIMat.newOrCheckGIMat(jc.length-1, a.ncols, omati, a.GUID, jc.GUID, "ming_1".##)
-    val err = CUMAT.mingf(a.data, out.data, outi.data, jc.data, a.nrows, a.ncols, jc.length-1)
+    val err = CUMAT.mingf(a.pdata, out.pdata, outi.pdata, jc.pdata, a.nrows, a.ncols, jc.length-1)
     if (err != 0) throw new RuntimeException("ming error %d: " + cudaGetErrorString(err) format err);
     (out, outi)
   }
@@ -2182,13 +2203,13 @@ object GMat {
     if (dim == 1) {
       val out = GMat.newOrCheckGMat(1, a.ncols, omat, a.GUID, "maxi2".##)
       val outi = GIMat.newOrCheckGIMat(1, a.ncols, omati, a.GUID, "maxi2_1".##)
-      val err = CUMAT.maxif(a.data, out.data, outi.data, a.nrows, a.ncols, 1)
+      val err = CUMAT.maxif(a.pdata, out.pdata, outi.pdata, a.nrows, a.ncols, 1)
       if (err != 0) throw new RuntimeException("maxi2 error %d: " + cudaGetErrorString(err) format err);
       (out, outi)
     } else if (dim == 2) {
       val out = GMat.newOrCheckGMat(a.nrows, 1, omat, a.GUID, "maxi2".##)
       val outi = GIMat.newOrCheckGIMat(a.nrows, 1, omati, a.GUID, "maxi2_1".##)
-      val err = CUMAT.maxif(a.data, out.data, outi.data, a.nrows, a.ncols, 2)
+      val err = CUMAT.maxif(a.pdata, out.pdata, outi.pdata, a.nrows, a.ncols, 2)
       if (err != 0) throw new RuntimeException("maxi2 error %d: " + cudaGetErrorString(err) format err);
       (out, outi)
     } else {
@@ -2202,13 +2223,13 @@ object GMat {
     if (dim == 1) {
       val out = GMat.newOrCheckGMat(1, a.ncols, omat, a.GUID, "mini2".##)
       val outi = GIMat.newOrCheckGIMat(1, a.ncols, omati, a.GUID, "mini2_1".##)
-      val err = CUMAT.minif(a.data, out.data, outi.data, a.nrows, a.ncols, dim)
+      val err = CUMAT.minif(a.pdata, out.pdata, outi.pdata, a.nrows, a.ncols, dim)
       if (err != 0) throw new RuntimeException("mini2 error %d: " + cudaGetErrorString(err) format err);
       (out, outi)
     } else if (dim == 2) {
       val out = GMat.newOrCheckGMat(a.nrows, 1, omat, a.GUID, "mini2".##)
       val outi = GIMat.newOrCheckGIMat(a.nrows, 1, omati, a.GUID, "mini2_1".##)
-      val err = CUMAT.minif(a.data, out.data, outi.data, a.nrows, a.ncols, dim)
+      val err = CUMAT.minif(a.pdata, out.pdata, outi.pdata, a.nrows, a.ncols, dim)
       if (err != 0) throw new RuntimeException("mini2 error %d: " + cudaGetErrorString(err) format err);
       (out, outi)
     } else {
@@ -2222,7 +2243,7 @@ object GMat {
   	val dim = if (a.nrows == 1 && dim0 == 0) 2 else math.max(1, dim0);
   	if (dim == 1) {
   		val out = GMat.newOrCheckGMat(a.nrows, a.ncols, omat, a.GUID, "cumsum".##)
-  		CUMAT.cumsumc(a.nrows, a.ncols, a.data, out.data)
+  		CUMAT.cumsumc(a.nrows, a.ncols, a.pdata, out.pdata)
   		out
   	} else {
   	  throw new RuntimeException("Cumsum across rows not supported yet")
@@ -2231,7 +2252,7 @@ object GMat {
 
   def lexsort2i(a:GIMat, b:GMat, i:GIMat) {
     val ab = GMat.embedmat(a,b)
-    val err = CUMAT.lsortk(ab.data, i.data, i.length, 1);
+    val err = CUMAT.lsortk(ab.pdata, i.pdata, i.length, 1);
     if (err != 0) throw new RuntimeException("lexsort2i error %d: " + cudaGetErrorString(err) format err);
     GMat.extractmat(a, b, ab);
   }
@@ -2241,7 +2262,7 @@ object GMat {
       throw new RuntimeException("embedmat error: mismatched dimensions");
     }
     val out = GIMat.newOrCheckGIMat(a.nrows * 2, a.ncols, oMat, a.GUID, b.GUID, "embedmat".##)
-    val err = CUMAT.embedmat(b.data, a.data, out.data, a.length);
+    val err = CUMAT.embedmat(b.pdata, a.pdata, out.pdata, a.length);
     if (err != 0) throw new RuntimeException("embedmat error %d: " + cudaGetErrorString(err) format err);
     out
   }
@@ -2251,7 +2272,7 @@ object GMat {
   def extractmat(a:Mat, b: Mat, c: GIMat):(GIMat, GMat) = {
     val outA = GIMat.newOrCheckGIMat(c.nrows /2, c.ncols, a, c.GUID, "extractmat_A".##)
     val outB = GMat.newOrCheckGMat(c.nrows /2, c.ncols, b, c.GUID, "extractmat_B".##)
-    val err = CUMAT.extractmat(outB.data, outA.data, c.data, outA.length);
+    val err = CUMAT.extractmat(outB.pdata, outA.pdata, c.pdata, outA.length);
     if (err != 0) throw new RuntimeException("extractmat error %d: " + cudaGetErrorString(err) format err);
     (outA, outB)
   }
@@ -2266,11 +2287,11 @@ object GMat {
     val ginds = GIMat(inds.nrows, inds.ncols);
     ginds <-- inds;
     val gindst = ginds.t;
-    val (gvals, gdata) = vals match {
-      case ivals:IMat => {val gd = GIMat(ivals); (gd, gd.data) }
-      case fvals:FMat => {val gd = GMat(fvals); (gd, gd.data) }
+    val (gvals, gpdata) = vals match {
+      case ivals:IMat => {val gd = GIMat(ivals); (gd, gd.pdata) }
+      case fvals:FMat => {val gd = GMat(fvals); (gd, gd.pdata) }
     }
-    CUMAT.lsortk(gindst.data, gdata, ginds.length/2, asc);
+    CUMAT.lsortk(gindst.pdata, gpdata, ginds.length/2, asc);
     (ginds ~ gindst).t;
     inds <-- ginds
     vals <-- gvals
@@ -2383,9 +2404,9 @@ object GMat {
   	for (ithread <- 0 until nthreads) {
   	  Future {
  	    	GMat.setGPU(ithread)
-  	  	val aa = GMat(maxsize, 1).data
-  	  	val vv = GIMat(maxsize, 1).data
-  	  	val kk = if (!tall) GMat(maxsize, 2).data else null
+  	  	val aa = GMat(maxsize, 1).pdata
+  	  	val vv = GIMat(maxsize, 1).ppdata
+  	  	val kk = if (!tall) GMat(maxsize, 2).pdata else null
 
   	  	var ioff = ithread * maxsize
   	  	while (ioff < nsize) {
@@ -2423,7 +2444,7 @@ object GMat {
   def sort2(keys:GMat):(GMat,GIMat) = {
 	 val nkeys = GMat.newOrCheckGMat(keys.nrows, keys.ncols, null, keys.GUID, "GMat.sort2".##)
 	 val nvals = GIMat.newOrCheckGIMat(keys.nrows, keys.ncols, null, keys.GUID, "GMat.sort2i".##)
-	 CUMAT.initSeq(nvals.data, keys.nrows, keys.ncols, 1)
+	 CUMAT.initSeq(nvals.pdata, keys.nrows, keys.ncols, 1)
 	 nkeys <-- keys
 	 sortGPU(nkeys, nvals)
 	 (nkeys, nvals)
@@ -2466,29 +2487,29 @@ object GMat {
   	if (keys.ncols == 1) {
   	  val tkeys = GMat.newOrCheckGMat(keys.nrows, 1, null, keys.GUID, vals.GUID, "_sortGPU1".##);
   	  val tvals = GIMat.newOrCheckGIMat(vals.nrows, 1, null, keys.GUID, vals.GUID, "_sortGPU2".##);
-  	  val ntemp = CUMAT.fisortcubsize(keys.data, tkeys.data, vals.data, tvals.data, keys.nrows, if (asc) 1 else 0);
+  	  val ntemp = CUMAT.fisortcubsize(keys.pdata, tkeys.pdata, vals.pdata, tvals.pdata, keys.nrows, if (asc) 1 else 0);
   	  val temp = GIMat.newOrCheckGIMat((1+(ntemp - 1)/4).toInt, 1, null, keys.GUID, vals.GUID, "_sortGPU3".##);
-  	  val err = CUMAT.fisortcub(keys.data, tkeys.data, vals.data, tvals.data, temp.data, ntemp, keys.nrows, if (asc) 1 else 0);
+  	  val err = CUMAT.fisortcub(keys.pdata, tkeys.pdata, vals.pdata, tvals.pdata, temp.pdata, ntemp, keys.nrows, if (asc) 1 else 0);
   	  if (err != 0) 
   	    throw new RuntimeException("CUDA error in _sortGPU " + cudaGetErrorString(err));  	
   	  keys <-- tkeys;
   	  vals <-- tvals;
   	} else if (keys.nrows > 128*1024) {
  // 	  val t1 = MatFunctions.toc;
-  		CUMAT.fsort2dk(keys.data,	vals.data, keys.nrows, keys.ncols, if (asc) 1 else 0);
+  		CUMAT.fsort2dk(keys.pdata,	vals.pdata, keys.nrows, keys.ncols, if (asc) 1 else 0);
 //  		val t2 = MatFunctions.toc;
 //  		println("GPU %d sort took %f s" format (SciFunctions.getGPU, t2 -t1));  		
     } else {
     	val maxsize = keys.nrows * math.min(16*1024*1024/keys.nrows, keys.ncols)
     	val nsize = keys.nrows*keys.ncols
-    	val kk = GMat(maxsize, 2).data
+    	val kk = GMat(maxsize, 2).pdata
     	var ioff = 0
     	while (ioff < nsize) {
     		val todo = math.min(maxsize, nsize - ioff)
     		val colstodo = todo / keys.nrows
-    		CUMAT.embedmat2d(keys.data.withByteOffset(1L*ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo, if (asc) 0 else 1)
-    		CUMAT.lsortk(kk, vals.data.withByteOffset(1L*ioff*Sizeof.INT), todo, if (asc) 1 else 0)
-    		CUMAT.extractmat2d(keys.data.withByteOffset(1L*ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
+    		CUMAT.embedmat2d(keys.pdata.withByteOffset(1L*ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo, if (asc) 0 else 1)
+    		CUMAT.lsortk(kk, vals.pdata.withByteOffset(1L*ioff*Sizeof.INT), todo, if (asc) 1 else 0)
+    		CUMAT.extractmat2d(keys.pdata.withByteOffset(1L*ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
     		ioff += maxsize
     	}
     	cudaFree(kk)
@@ -2502,12 +2523,12 @@ object GMat {
     } else {
     	val maxsize = keys.nrows * math.min(16*1024*1024/keys.nrows, keys.ncols)
     	val nsize = keys.nrows*keys.ncols
-    	val kk = GMat(maxsize, 2).data
+    	val kk = GMat(maxsize, 2).pdata
     	var ioff = 0
     	while (ioff < nsize) {
     		val todo = math.min(maxsize, nsize - ioff)
     		val colstodo = todo / keys.nrows
-    		CUMAT.embedmat2d(keys.data.withByteOffset(1L*ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo, if (asc) 0 else 1)
+    		CUMAT.embedmat2d(keys.pdata.withByteOffset(1L*ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo, if (asc) 0 else 1)
     		CUMAT.lsort(kk, todo, if (asc) 1 else 0)
     		CUMAT.extractmat2d(keys.data.withByteOffset(1L*ioff*Sizeof.FLOAT), kk, keys.nrows, colstodo)
     		ioff += maxsize
@@ -2527,7 +2548,7 @@ object GMat {
     val tkeys = GMat(keys.nrows, 1)
     val tvals = GIMat(keys.nrows, 1)
 
-    CUMAT.fsort2dx(keys.data, vals.data, tkeys.data, tvals.data, keys.nrows, keys.ncols, if (asc) 1 else 0)
+    CUMAT.fsort2dx(keys.pdata, vals.pdata, tkeys.pdata, tvals.pdata, keys.nrows, keys.ncols, if (asc) 1 else 0)
 
     tvals.free
     tkeys.free
@@ -2562,25 +2583,25 @@ object GMat {
   	  	while (ioff < nsize) {
   	  		val todo = math.min(maxsize, nsize - ioff)
   	  		val colstodo = todo / keys.nrows
-  	  		err = cudaMemcpy(aa.data, Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), 1L*todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+  	  		err = cudaMemcpy(aa.pdata, Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), 1L*todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
   	  		if (err != 0) throw new RuntimeException("sortGPU copy a in failed thread %d error %d" format (ithread,err))
-  	  		cudaMemcpy(vv.data, Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), 1L*todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+  	  		cudaMemcpy(vv.pdata, Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), 1L*todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
   	  		if (err != 0) throw new RuntimeException("sortGPU copy v in failed thread %d error %d" format (ithread,err))
   	  		cudaDeviceSynchronize
   	  		if (tall) {
-  	  			err = CUMAT.fsort2dx(aa.data, vv.data, tkeys.data, tvals.data, keys.nrows, colstodo, iasc)
+  	  			err = CUMAT.fsort2dx(aa.pdata, vv.pdata, tkeys.pdata, tvals.pdata, keys.nrows, colstodo, iasc)
   	  			if (err != 0) throw new RuntimeException("sortGPU tall sort failed thread %d error %d" format (ithread,err))
   	  		} else {
-  	  			err = CUMAT.embedmat2d(aa.data, kk.data, keys.nrows, colstodo, if (asc) 0 else 1)
+  	  			err = CUMAT.embedmat2d(aa.pdata, kk.pdata, keys.nrows, colstodo, if (asc) 0 else 1)
   	  			if (err != 0) throw new RuntimeException("sortGPU embed failed thread %d error %d" format (ithread,err))
-  	  			err = CUMAT.lsortk(kk.data, vv.data, todo, iasc)
+  	  			err = CUMAT.lsortk(kk.pdata, vv.pdata, todo, iasc)
   	  			if (err != 0) throw new RuntimeException("sortGPU sort kernel failed thread %d error %d" format (ithread,err))
-  	  			err = CUMAT.extractmat2d(aa.data, kk.data, keys.nrows, colstodo)
+  	  			err = CUMAT.extractmat2d(aa.pdata, kk.pdata, keys.nrows, colstodo)
   	  			if (err != 0) throw new RuntimeException("sortGPU extract failed thread %d error %d" format (ithread,err))
   	  		}
-  	  		cudaMemcpy(Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), aa.data, 1L*todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
+  	  		cudaMemcpy(Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), aa.pdata, 1L*todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
   	  		if (err != 0) throw new RuntimeException("sortGPU copy a out failed thread %d error %d" format (ithread,err))
-  	  		cudaMemcpy(Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), vv.data, 1L*todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
+  	  		cudaMemcpy(Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), vv.pdata, 1L*todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
   	  		if (err != 0) throw new RuntimeException("sortGPU copy v out failed thread %d error %d" format (ithread,err))
   	  		ioff += nthreads * maxsize
   	  	}
@@ -2603,12 +2624,12 @@ object GMat {
     val c = GMat.newOrCheckGMat(a.nrows, b.nrows, omat, a.GUID, b.GUID, "LXdist".##)
     c.clear
     Mat.nflops += 3L * c.nrows * c.ncols * a.ncols
-    var err = CUMAT.distances(a.data, a.nrows, b.data, b.nrows, c.data, c.nrows, a.ncols, c.nrows, c.ncols, p)
+    var err = CUMAT.distances(a.pdata, a.nrows, b.pdata, b.nrows, c.pdata, c.nrows, a.ncols, c.nrows, c.ncols, p)
     if (err != 0) throw new RuntimeException("LXdist kernel error "+err)
     val easyp = (p == 0f || p == 1f || p == 2f)
     if (!easyp) { 
       val pinv = GMat(1/p)
-      err = CUMAT.applyop(c.data, c.nrows, c.ncols, pinv.data, 1, 1, c.data, BinOp.op_pow)
+      err = CUMAT.applyop(c.pdata, c.nrows, c.ncols, pinv.pdata, 1, 1, c.pdata, BinOp.op_pow)
     }
     if (err != 0) throw new RuntimeException("LXdist scaling error "+err)
     c
@@ -2667,9 +2688,9 @@ object GMat {
   				val ga = GMat(garows, gacols)
   				val gb = GMat(gbrows, gbcols)
   				val gc = GMat(gcrows, gccols)
-  				val aa = ga.data
-  				val bb = gb.data
-  				val cc = gc.data         
+  				val aa = ga.pdata
+  				val bb = gb.pdata
+  				val cc = gc.pdata         
   				var i = ix*gcrows; 
   				while (i < c.nrows) {
   					val ni = math.min(gcrows, c.nrows - i)
@@ -2696,7 +2717,7 @@ object GMat {
   							if (err != 0) println("CUDA error in LXdist %d thread %d %d %d %d" format (err, ithread, nk, ni, nj))
   							k += gacols
   						}
-  						if (takeroot) err = CUMAT.applyop(cc, ni, nj, pinv.data, 1, 1, cc, BinOp.op_pow)
+  						if (takeroot) err = CUMAT.applyop(cc, ni, nj, pinv.pdata, 1, 1, cc, BinOp.op_pow)
   						if (err != 0) throw new RuntimeException("LXdist scale c failed "+err)
   						err = cudaMemcpy2D(Pointer.to(c.data).withByteOffset(1L*(i+j*c.nrows)*Sizeof.FLOAT), c.nrows*Sizeof.FLOAT, 
   								cc, gcrows*Sizeof.FLOAT, ni*Sizeof.FLOAT, nj, cudaMemcpyDeviceToHost) 
@@ -2723,7 +2744,7 @@ object GMat {
   def sortdown2(a:DMat) = _sort2(a, true)
   
   def _sort2(a:DMat, asc:Boolean):(DMat, IMat) = {
-    if (a.ncols != 1) throw new RuntimeException("_sort2 works only on column data")
+    if (a.ncols != 1) throw new RuntimeException("_sort2 works only on column pdata")
     val outv = DMat.newOrCheckDMat(a.nrows, a.ncols, null, a.GUID, "_sort2_1".hashCode)
     val outi = IMat.newOrCheckIMat(a.nrows, a.ncols, null, a.GUID, "_sort2_2".hashCode)
     if (Mat.hasCUDA > 0) {
@@ -2732,11 +2753,11 @@ object GMat {
     		var i = 0; while (i < a.nrows) {outi(i) = i; i += 1}
     		val gv = GMat(a.nrows, 2*a.ncols)
     		val gi = GIMat(outi)
-    		var err = cudaMemcpy(gv.data, Pointer.to(a.data), 1L*a.nrows*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyHostToDevice)
+    		var err = cudaMemcpy(gv.pdata, Pointer.to(a.data), 1L*a.nrows*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyHostToDevice)
     		if (err != 0) throw new RuntimeException("sortGPU copy v error %d" format err)    
     		cudaDeviceSynchronize
-    		CUMAT.dsortk(gv.data, gi.data, a.nrows, if (asc) 1 else 0)
-    		err = cudaMemcpy(Pointer.to(outv.data), gv.data, 1L*a.nrows*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyDeviceToHost)
+    		CUMAT.dsortk(gv.pdata, gi.pdata, a.nrows, if (asc) 1 else 0)
+    		err = cudaMemcpy(Pointer.to(outv.data), gv.pdata, 1L*a.nrows*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyDeviceToHost)
     		if (err != 0) throw new RuntimeException("sortGPU copy v error %d" format err)
     		outi <-- gi
     		gi.free
@@ -2763,6 +2784,16 @@ object GMat {
       }
     }
   }  
+  
+  def newOrCheckGMat(dims:Array[Int], out:Mat):GMat = {
+    if (out.asInstanceOf[AnyRef] != null && ND.checkDims("GMat newOrCheckGMat: ", out.dims.data, dims)) {
+      out.asInstanceOf[GMat]
+    } else {
+      GMat(dims)
+    }
+  }
+  
+  def newOrCheckGMat(dims:IMat, out:Mat):GMat = newOrCheckGMat(dims.data, out);
     
   def newOrCheckGMat(nr:Int, nc:Int, outmat:Mat, matGuid:Long, opHash:Int):GMat = {
     val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
@@ -2784,6 +2815,24 @@ object GMat {
     m
   }
   
+  def newOrCheckGMat(dims:Array[Int], out:Mat, matGuid:Long, opHash:Int):GMat = {
+    if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
+       newOrCheckGMat(dims, out)
+    } else {
+      val key = (matGuid, opHash)
+      val res = Mat.cache2(key)
+      if (res != null) {
+        newOrCheckGMat(dims, res)
+      } else {
+        val omat = newOrCheckGMat(dims, null)
+        Mat.cache2put(key, omat)
+        omat
+      }
+    }
+  }
+  
+  def newOrCheckGMat(dims:IMat, out:Mat, g1:Long, opHash:Int):GMat = newOrCheckGMat(dims.data, out, g1, opHash);
+  
   def newOrCheckGMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, opHash:Int):GMat = {
     val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
       newOrCheckGMat(nr, nc, outmat)
@@ -2803,6 +2852,24 @@ object GMat {
     }
     m
   }
+  
+  def newOrCheckGMat(dims:Array[Int], out:Mat, guid1:Long, guid2:Long, opHash:Int):GMat = {
+    if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
+      newOrCheckGMat(dims, out)
+    } else {
+      val key = (guid1, guid2, opHash)
+      val res = Mat.cache3(key)
+      if (res != null) {
+        newOrCheckGMat(dims, res)
+      } else {
+        val omat = newOrCheckGMat(dims, null)
+        Mat.cache3put(key, omat)
+        omat
+      }
+    }
+  }
+  
+  def newOrCheckGMat(dims:IMat, out:Mat, g1:Long, g2:Long, opHash:Int):GMat = newOrCheckGMat(dims.data, out, g1, g2, opHash);
     
   def newOrCheckGMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):GMat = {
     val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
@@ -2823,6 +2890,24 @@ object GMat {
     }
     m
   }
+  
+  def newOrCheckGMat(dims:Array[Int], out:Mat, g1:Long, g2:Long, g3:Long, opHash:Int):GMat = {
+    if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
+      newOrCheckGMat(dims, out)
+    } else {
+      val key = (g1, g2, g3, opHash)
+      val res = Mat.cache4(key)
+      if (res != null) {
+        newOrCheckGMat(dims, res)
+      } else {
+        val omat = newOrCheckGMat(dims, null)
+        Mat.cache4put(key, omat)
+        omat
+      }
+    }
+  }
+  
+  def newOrCheckGMat(dims:IMat, out:Mat, g1:Long, g2:Long, g3:Long, opHash:Int):GMat = newOrCheckGMat(dims.data, out, g1, g2, g3, opHash);
 }
 
 

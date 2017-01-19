@@ -13,15 +13,17 @@ import edu.berkeley.bid.CUMAT;
 import scala.util.hashing.MurmurHash3
 import java.io._
 
-class GIMat(nr:Int, nc:Int, @transient var data:Pointer, val realsize:Int) extends Mat(nr, nc) {
+class GIMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) extends IMat(dims, null) {
   import GIMat.BinOp._
+  
+  def this(nr:Int, nc:Int, pdata:Pointer, realsize:Long) = this(Array(nr, nc), pdata, realsize);
   
   override def toString:String = {
     val nr = scala.math.min(nrows,10)
     val nc = scala.math.min(ncols,50)   
     if	(nr*nc > 0) {
     	val tmpMat = IMat(nr, nc)
-    	JCublas.cublasGetMatrix(nr, nc, Sizeof.INT, data, nrows, Pointer.to(tmpMat.data), nr)
+    	JCublas.cublasGetMatrix(nr, nc, Sizeof.INT, pdata, nrows, Pointer.to(tmpMat.data), nr)
     	tmpMat.toString
     } else {
       ""
