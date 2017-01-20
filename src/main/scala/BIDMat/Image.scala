@@ -24,22 +24,11 @@ class Image(val img:BufferedImage) extends Serializable {
     img.getRGB(0, 0, width, height, mat.data, 0, width)  // Actually returns packed ARGB values in the IMat
     mat
   }
-  
-  def toFMat:FMat = {
-    val raster = img.getData                             // Seems to always hold RGB or ARGB data, independent of image encoding.
-    val depth = raster.getNumDataElements 
-    if (depth != 1) {
-      throw new RuntimeException("Image is not grayscale, cannot push to an FMat")
-    }
-    val mat = FMat(width,height)
-    raster.getPixels(0, 0, width, height, mat.data)
-    mat
-  }  
     
-  def toFND:FND= {
+  def toFMat:FMat= {
     val height = img.getHeight;
     val width = img.getWidth;
-    val mat = FND(4, width,  height);
+    val mat = FMat(Array(4, width,  height));
     val ints = new Array[Int](height*width);
     img.getRGB(0, 0, width, height, ints, 0, width);      // Should be ARGB
     val mdata = mat.data;
@@ -59,17 +48,11 @@ class Image(val img:BufferedImage) extends Serializable {
     img.setRGB(0, 0, mat.nrows, mat.ncols, mat.data, 0, width);
     repaint
     this
-  }
-  
-  def redraw(mat:FMat):Image = {
-    img.getRaster.setPixels(0, 0, mat.nrows, mat.ncols, mat.data);
-    repaint
-    this
   } 
   
-  def redraw(mat:FND):Image = {    
+  def redraw(mat:FMat):Image = {    
     val width = mat.dims(1);
-    val height = mat.dim(2);
+    val height = mat.dims(2);
     img.getRaster.setPixels(0, 0, mat.dims(1), mat.dims(2), mat.data);
     repaint
     this;
@@ -155,54 +138,47 @@ object Image {
     new Image(img)
   }
   
-  def apply(mat:FMat):Image = {
-    val width = mat.nrows
-    val height = mat.ncols
-    val img:BufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY)
-    img.getRaster.setPixels(0, 0, width, height, mat.data)
-    new Image(img)
-  } 
   
-  def apply(mat:FND):Image = { 	  
-    val width = mat.dims(1)
-    val height = mat.dim(2)
-    val ints = new Array[Int](width*height);
-    val mdata = mat.data;
-    var i = 0;
-    val img:BufferedImage = mat.dims(0) match {
-    case 1 => {
-	val im = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
-	while (i < height*width) {
-	    ints(i) = mdata(i).asInstanceOf[Int];
-	    i += 1;
-	}
-	im;
-    }
-    case 3 => {
-	val im = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-	while (i < height*width) {
-	    ints(i) = (((((mdata(3*i).asInstanceOf[Int] & 0xff) << 8) +               // R
-			         (mdata(3*i+1).asInstanceOf[Int] & 0xff)) << 8) +             // G
-		           (mdata(3*i+2).asInstanceOf[Int] & 0xff));                      // B
-	    i += 1;
-	}
-	im; 
-    }
-    case 4 => {
-	val im = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-	while (i < height*width) {
-	    ints(i) = (((((((mdata(4*i+3).asInstanceOf[Int] & 0xff) << 8) +           // A
-			           (mdata(4*i+0).asInstanceOf[Int] & 0xff)) << 8) +           // R
-			         (mdata(4*i+1).asInstanceOf[Int] & 0xff)) << 8) +             // G
-		           (mdata(4*i+2).asInstanceOf[Int] & 0xff));                      // B
-	    i += 1;
-	}
-	im; 
-    }
-    case _ => throw new RuntimeException("Image from FND dimension not recognized")
-    }
-    img.setRGB(0, 0, width, height, ints, 0, width);
-    new Image(img)
+  def apply(mat:FMat):Image = { 	  
+		  val width = mat.dims(1);
+		  val height = mat.dims(2);
+		  val ints = new Array[Int](width*height);
+		  val mdata = mat.data;
+		  var i = 0;
+		  val img:BufferedImage = mat.dims(0) match {
+		  case 1 => {
+			  val im = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+			  while (i < height*width) {
+				  ints(i) = mdata(i).asInstanceOf[Int];
+				  i += 1;
+			  }
+			  im;
+		  }
+		  case 3 => {
+			  val im = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+			  while (i < height*width) {
+				  ints(i) = (((((mdata(3*i).asInstanceOf[Int] & 0xff) << 8) +               // R
+						  (mdata(3*i+1).asInstanceOf[Int] & 0xff)) << 8) +             // G
+						  (mdata(3*i+2).asInstanceOf[Int] & 0xff));                      // B
+				  i += 1;
+			  }
+			  im; 
+		  }
+		  case 4 => {
+			  val im = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+			  while (i < height*width) {
+				  ints(i) = (((((((mdata(4*i+3).asInstanceOf[Int] & 0xff) << 8) +           // A
+						  (mdata(4*i+0).asInstanceOf[Int] & 0xff)) << 8) +           // R
+						  (mdata(4*i+1).asInstanceOf[Int] & 0xff)) << 8) +             // G
+						  (mdata(4*i+2).asInstanceOf[Int] & 0xff));                      // B
+				  i += 1;
+			  }
+			  im; 
+		  }
+		  case _ => throw new RuntimeException("Image from FND dimension not recognized")
+		  }
+		  img.setRGB(0, 0, width, height, ints, 0, width);
+		  new Image(img);
   }
 
 }

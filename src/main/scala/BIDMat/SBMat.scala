@@ -2,7 +2,7 @@ package BIDMat
 import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.LAPACK._
 
-case class SBMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:Array[Byte]) extends SparseMat[Byte](nr, nc, nnz1, ir0, jc0, data0) {
+case class SBMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], val data:Array[Byte]) extends SparseMat[Byte](nr, nc, nnz1, ir0, jc0, data) {
 
   def tryForSBMat(m:Mat, s:String):SBMat = 
   	m match {
@@ -31,7 +31,7 @@ case class SBMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
   def find3:(IMat, IMat, IMat) = { 
     val (ii, jj, vv) = gfind3 
     val vi = IMat(vv.length, 1)
-    Mat.copyToIntArray(vv.data, 0, vi.data, 0, vv.length)
+    Mat.copyToIntArray(vv._data, 0, vi.data, 0, vv.length)
     (IMat(ii), IMat(jj), vi)
   }
   
@@ -125,7 +125,7 @@ case class SBMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
   }
 }
 
-class BPair (val omat:Mat, val mat:SBMat) extends Pair {
+class BPair (val omat:Mat, val mat:SBMat) extends Pair(omat, mat) {
   
   def > (b : Byte) = mat.bSBMatOpScalar(b, (x:Byte, y:Byte) => if (x > y) 1 else 0, omat)
   def < (b : Byte) = mat.bSBMatOpScalar(b, (x:Byte, y:Byte) => if (x < y) 1 else 0, omat)
@@ -139,7 +139,7 @@ object SBMat {
   
   def apply(nr:Int, nc:Int, nnz0:Int):SBMat = new SBMat(nr, nc, nnz0, new Array[Int](nnz0), new Array[Int](nc+1), new Array[Byte](nnz0)) 
   
-  def apply(a:SparseMat[Byte]):SBMat = new SBMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a.data) 
+  def apply(a:SparseMat[Byte]):SBMat = new SBMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a._data) 
    
   def SnoRows(nr:Int, nc:Int, nnz0:Int):SBMat = new SBMat(nr, nc, nnz0, null, new Array[Int](nc+1), new Array[Byte](nnz0))
   

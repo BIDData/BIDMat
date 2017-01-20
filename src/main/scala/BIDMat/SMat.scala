@@ -4,7 +4,7 @@ import edu.berkeley.bid.SPBLAS._
 import edu.berkeley.bid.UTILS._
 import scala.util.hashing.MurmurHash3
 
-case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:Array[Float]) extends SparseMat[Float](nr, nc, nnz1, ir0, jc0, data0) {
+case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], val data:Array[Float]) extends SparseMat[Float](nr, nc, nnz1, ir0, jc0, data) {
 
   def getdata() = data;	
   
@@ -791,7 +791,7 @@ object SMat {
   }
   
   def apply(a:SparseMat[Float]):SMat = {
-    val m = new SMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a.data); 
+    val m = new SMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a._data); 
     m.setGUID(a.GUID); 
     m
   }
@@ -800,12 +800,12 @@ object SMat {
   
   def apply(nrows:Int, ncols:Int, arows:Array[Int], acols:Array[Int], avals:Array[Float]) = {
     val a = SparseMat.sparseImpl(arows, acols, avals, nrows, ncols, arows.size)
-    new SMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a.data)
+    new SMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a._data)
   }
   
   def apply(nrows:Int, ncols:Int, arows:IMat, acols:IMat, avals:FMat) = {
     val a = SparseMat.sparseImpl(if (arows.asInstanceOf[AnyRef] != null) arows.data else null, acols.data, avals.data, nrows, ncols, avals.length)
-    new SMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a.data)
+    new SMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a._data)
   }
   
   def apply(a:Mat) = a match {

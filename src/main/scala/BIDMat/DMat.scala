@@ -6,9 +6,28 @@ import edu.berkeley.bid.SPBLAS
 import scala.util.hashing.MurmurHash3
 import java.util.Arrays
 
-case class DMat(nr:Int, nc:Int, val data:Array[Double]) extends DenseMat[Double](nr, nc, data) {
+case class DMat(dims:Array[Int], val data:Array[Double]) extends DenseMat[Double](dims, data) {
+  
+  /** 2D Constructor */
+  def this(nr:Int, nc:Int, data:Array[Double]) = this(Array(nr, nc), data);
 
+  override def mytype = "DMat";
+  
   def getdata() = data
+  
+  override def dv:Double =
+    if (nrows > 1 || ncols > 1) {
+      throw new RuntimeException("Matrix should be 1x1 to extract value")
+    } else {
+      data(0)
+    }
+  
+  override def fv:Float =
+    if (nrows > 1 || ncols > 1) {
+      throw new RuntimeException("Matrix should be 1x1 to extract value")
+    } else {
+      data(0).toFloat
+    }
   
   override def set(v:Float):DMat = {
     Arrays.fill(data,0,length,v)
@@ -28,22 +47,7 @@ case class DMat(nr:Int, nc:Int, val data:Array[Double]) extends DenseMat[Double]
     }
     out
   }
-  
-  override def dv:Double =
-    if (nrows > 1 || ncols > 1) {
-      throw new RuntimeException("Matrix should be 1x1 to extract value")
-    } else {
-      data(0)
-    }
-  
-    override def fv:Float =
-    if (nrows > 1 || ncols > 1) {
-      throw new RuntimeException("Matrix should be 1x1 to extract value")
-    } else {
-      data(0).toFloat
-    }
 
-  override def mytype = "DMat";
   
   override def view(nr:Int, nc:Int):DMat = {
     if (1L * nr * nc > data.length) {
@@ -814,7 +818,7 @@ case class DMat(nr:Int, nc:Int, val data:Array[Double]) extends DenseMat[Double]
     } else if (data.size >= nr*nc) {
       new DMat(nr, nc, data)
     } else {
-      DMat(nr, nc, new Array[Double]((nr*nc*Mat.recycleGrow).toInt))
+      new DMat(nr, nc, new Array[Double]((nr*nc*Mat.recycleGrow).toInt))
     }  
   }
   /*

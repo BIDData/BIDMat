@@ -316,8 +316,8 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
   
   override def zeros(nr:Int, nc:Int, nnz:Int) = GMat.zeros(nr, nc);
   
-  override def zeros(dims:IMat):GND = {
-    GND.zeros(dims)
+  override def zeros(dims:IMat):GMat = {
+    GMat.zeros(dims)
   }
   
   override def ones(nr:Int, nc:Int) = GMat.ones(nr, nc);
@@ -429,7 +429,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
 
   import BIDMat.IMatWildcard
  
-  def madd(b:Mat,c:TMat,at:Boolean,bt:Boolean):TMat = {
+  def madd(b:GMat,c:TMat,at:Boolean,bt:Boolean):TMat = {
     for (i <- 0 until c.tiles.length) {
       val m = c.tiles(i);
     	if (!at) {
@@ -837,21 +837,12 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     a
   }
   
-  def copyTo(a:GND):GND = {copyTo(a.asMat); a}
-  
   override def copyTo(out:Mat):Mat = {
     out match {
       case a:FMat => copyTo(a)
       case a:GMat => copyTo(a)
       case a:GIMat => copyTo(a)
       case a:TMat => copyTo(a)
-    }
-  }
-  
-  override def copyTo(out:ND):ND = {
-    out match {
-      case a:Mat => copyTo(a)
-      case a:GND => copyTo(a)
     }
   }
   
@@ -1954,26 +1945,26 @@ object GMat {
   val nullPointer = new Pointer
   
   def zeros(nr:Int, nc:Int) = {
-    val out = GMat(nr, nc)
-    cudaMemset(out.pdata, 0, Sizeof.FLOAT*out.llength)
-    cudaDeviceSynchronize()
-    val err = cudaGetLastError()
-    if (err != 0) {
-        val gpu = SciFunctions.getGPU
-    	throw new RuntimeException("GPU "+gpu+": Cuda error in gzeros " + cudaGetErrorString(err))
-    }
+    val out = GMat(nr, nc);
+    out.clear;
+    out;
+  }
+  
+  def zeros(dims:IMat) = {
+    val out = GMat(dims);
+    out.clear;
     out
   }
   
   def ones(nr:Int, nc:Int) = {
-    val out = GMat(nr, nc)
-    CUMAT.setval(out.pdata, 1f, out.length)
-    cudaDeviceSynchronize()
-    val err = cudaGetLastError()
-    if (err != 0) {
-    	println("device is %d" format SciFunctions.getGPU)
-    	throw new RuntimeException("Cublas error in gones " + cudaGetErrorString(err))
-    }
+    val out = GMat(nr, nc);
+    out.set(1f);
+    out
+  }
+  
+  def ones(dims:IMat) = {
+    val out = GMat(dims);
+    out.set(1f);
     out
   }
   

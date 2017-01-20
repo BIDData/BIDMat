@@ -20,6 +20,8 @@ class Mat(protected val _dims:Array[Int]) extends ND with Serializable {
   val ncols = _dims(ndims-1)
   val nrows = _dims.slice(0,ndims-1).reduce(_*_);
   val length = nrows * ncols;
+  
+  val nnz = length;
 
   val llength = 1L*nrows*ncols
  
@@ -181,6 +183,9 @@ class Mat(protected val _dims:Array[Int]) extends ND with Serializable {
   def == (b : Mat):Mat = notImplemented1("==", b)
   def === (b : Mat):Mat = notImplemented1("===", b)
   def != (b : Mat):Mat = notImplemented1("!=", b)
+  
+  def \ (b : Mat):Mat = notImplemented1("\\", b)
+  def on (b : Mat):Mat = notImplemented1("on", b)
   
   def max(b : Mat):Mat = notImplemented1("max", b)
   def min(b : Mat):Mat = notImplemented1("min", b)

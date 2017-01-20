@@ -3,7 +3,7 @@ package BIDMat
 import edu.berkeley.bid.SPBLAS._
 import scala.util.hashing.MurmurHash3
 
-case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:Array[Double]) extends SparseMat[Double](nr, nc, nnz1, ir0, jc0, data0) {
+case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], val data:Array[Double]) extends SparseMat[Double](nr, nc, nnz1, ir0, jc0, data) {
 
   def getdata() = data;	
   
@@ -38,7 +38,7 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
   override def colslice(a:Int, b:Int):SDMat = SDMat(gcolslice(a, b, null));
   
   override def contents:DMat = {
-    val out = DMat(nnz, 1, this.data);
+    val out = new DMat(nnz, 1, this.data);
     out.setGUID(MurmurHash3.mix(MurmurHash3.mix(nnz, 1), (GUID*7897889).toInt));
     out  
   }
@@ -301,7 +301,7 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
   }
 }
 
-class SDPair (val omat:Mat, val mat:SDMat) extends Pair{
+class SDPair (val omat:Mat, val mat:SDMat) extends Pair(omat, mat) {
 	def * (b : DMat):DMat = mat.SMult(b, omat)
 	def * (b : SDMat):SDMat = mat.SSMult(b, omat)
   def Tx (b : DMat):DMat = mat.Tmult(b, omat)
@@ -418,18 +418,18 @@ object SDMat {
     new SDMat(nr, nc, nnz0, new Array[Int](nnz0), new Array[Int](nc+1), new Array[Double](nnz0)) 
   }
   
-  def apply(a:SparseMat[Double]):SDMat = new SDMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a.data) 
+  def apply(a:SparseMat[Double]):SDMat = new SDMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a._data) 
   
   def apply(a:SMat) = a.toSDMat
   
   def apply(nrows:Int, ncols:Int, arows:Array[Int], acols:Array[Int], avals:Array[Double]) = {
     val a = SparseMat.sparseImpl(arows, acols, avals, nrows, ncols, arows.size)
-    new SDMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a.data)
+    new SDMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a._data)
   }
   
   def apply(nrows:Int, ncols:Int, arows:IMat, acols:IMat, avals:DMat) = {
     val a = SparseMat.sparseImpl(arows.data, acols.data, avals.data, nrows, ncols, arows.length)
-    new SDMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a.data)
+    new SDMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a._data)
   }
   
   def apply(a:Mat) = a match {

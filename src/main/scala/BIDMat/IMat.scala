@@ -1035,6 +1035,11 @@ object IMat {
     out.setGUID(a.GUID)
     out
   }
+  
+  def make(dims:Array[Int]) = {
+    val out = new IMat(dims, new Array[Int](dims.reduce(_*_))); 
+    out
+  }
     
   def apply(a:Int) = ielem(a)
   

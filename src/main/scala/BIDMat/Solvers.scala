@@ -376,12 +376,12 @@ object Solvers {
     val q = GMat.newOrCheckGMat(a.nrows, a.ncols, qin, a.GUID, "QRdecompt_q".##);
     val r = GMat.newOrCheckGMat(a.ncols, a.ncols, rin, a.GUID, "QRdecompt_r".##);
     Mat.nflops += 2L*a.ncols*a.ncols*a.nrows
-    cublasSgemm('T', 'N', n, n, m, 1f, a.data, m, a.data, m, 0f, r.data, n);
+    cublasSgemm('T', 'N', n, n, m, 1f, a.pdata, m, a.pdata, m, 0f, r.pdata, n);
     val fr = FMat(r);
     chol(fr, fr);
     r <-- fr;
     q <-- a
-    cublasStrsm('R', 'U', 'N', 'N', a.nrows, a.ncols, 1.0f, r.data, r.nrows, q.data, q.nrows)
+    cublasStrsm('R', 'U', 'N', 'N', a.nrows, a.ncols, 1.0f, r.pdata, r.nrows, q.pdata, q.nrows)
     (q, r)    
   }
   
@@ -391,12 +391,12 @@ object Solvers {
     val q = GDMat.newOrCheckGDMat(a.nrows, a.ncols, qin, a.GUID, "QRdecompt_q".##);
     val r = GDMat.newOrCheckGDMat(a.ncols, a.ncols, rin, a.GUID, "QRdecompt_r".##);
     Mat.nflops += 2L*a.ncols*a.ncols*a.nrows
-    cublasDgemm('T', 'N', n, n, m, 1, a.data, m, a.data, m, 0, r.data, n);
+    cublasDgemm('T', 'N', n, n, m, 1, a.pdata, m, a.pdata, m, 0, r.pdata, n);
     val fr = DMat(r);
     chol(fr, fr);
     r <-- fr;
     q <-- a
-    cublasDtrsm('R', 'U', 'N', 'N', a.nrows, a.ncols, 1.0, r.data, r.nrows, q.data, q.nrows)
+    cublasDtrsm('R', 'U', 'N', 'N', a.nrows, a.ncols, 1.0, r.pdata, r.nrows, q.pdata, q.nrows)
     (q, r)    
   }
   
@@ -481,7 +481,7 @@ object Solvers {
     val trans = mode.charAt(1);
     val diag = mode.charAt(2);
     val alpha = 1.0f;
-    cublasStrsm(side, uplo, trans, diag, a.nrows, r.ncols, alpha, a.data, a.nrows, out.data, out.nrows) 
+    cublasStrsm(side, uplo, trans, diag, a.nrows, r.ncols, alpha, a.pdata, a.nrows, out.pdata, out.nrows) 
     out
   }
   
@@ -501,7 +501,7 @@ object Solvers {
     val trans = mode.charAt(1);
     val diag = mode.charAt(2);
     val alpha = 1.0f;
-    cublasDtrsm(side, uplo, trans, diag, a.nrows, r.ncols, alpha, a.data, a.nrows, out.data, out.nrows) 
+    cublasDtrsm(side, uplo, trans, diag, a.nrows, r.ncols, alpha, a.pdata, a.nrows, out.pdata, out.nrows) 
     out
   }
 
@@ -571,7 +571,7 @@ object Solvers {
     }
     val out = GMat.newOrCheckGMat(a.ncols, a.ncols, omat);
     out(0,0) = 1f;
-    var err = cudaMemcpy2D(out.data, (a.nrows+1)*Sizeof.FLOAT, out.data, 0, Sizeof.FLOAT, a.nrows, cudaMemcpyDeviceToDevice);
+    var err = cudaMemcpy2D(out.pdata, (a.nrows+1)*Sizeof.FLOAT, out.pdata, 0, Sizeof.FLOAT, a.nrows, cudaMemcpyDeviceToDevice);
     cudaDeviceSynchronize
     Mat.nflops += 1L*a.nrows*a.nrows*a.ncols
     val side = 'L';
@@ -579,7 +579,7 @@ object Solvers {
     val diag = mode.charAt(1);
     val trans = 'N';
     val alpha = 1.0f;
-    cublasStrsm(side, uplo, trans, diag, a.nrows, a.ncols, alpha, a.data, a.nrows, out.data, out.nrows) 
+    cublasStrsm(side, uplo, trans, diag, a.nrows, a.ncols, alpha, a.pdata, a.nrows, out.pdata, out.nrows) 
     out
   }
   
@@ -589,7 +589,7 @@ object Solvers {
     }
     val out = GDMat.newOrCheckGDMat(a.ncols, a.ncols, omat);
     out(0,0) = 1f;
-    var err = cudaMemcpy2D(out.data, (a.nrows+1)*Sizeof.DOUBLE, out.data, 0, Sizeof.DOUBLE, a.nrows, cudaMemcpyDeviceToDevice);
+    var err = cudaMemcpy2D(out.pdata, (a.nrows+1)*Sizeof.DOUBLE, out.pdata, 0, Sizeof.DOUBLE, a.nrows, cudaMemcpyDeviceToDevice);
     cudaDeviceSynchronize
     Mat.nflops += 1L*a.nrows*a.nrows*a.ncols
     val side = 'L';
@@ -597,7 +597,7 @@ object Solvers {
     val trans = 'N';
     val diag = mode.charAt(1);
     val alpha = 1.0f;
-    cublasDtrsm(side, uplo, trans, diag, a.nrows, a.ncols, alpha, a.data, a.nrows, out.data, out.nrows) 
+    cublasDtrsm(side, uplo, trans, diag, a.nrows, a.ncols, alpha, a.pdata, a.nrows, out.pdata, out.nrows) 
     out
   }
   

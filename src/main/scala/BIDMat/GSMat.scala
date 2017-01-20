@@ -188,8 +188,8 @@ class GSMat(nr0:Int, nc0:Int, var nnz0:Int, @transient var pir:Pointer, @transie
     GMat.zeros(m,n)
   }
   
-  override def zeros(dims:IMat):GND = {
-    GND.zeros(dims)
+  override def zeros(dims:IMat):GMat = {
+    GMat.zeros(dims)
   }
   
   override def zeros(m:Int, n:Int, nnz:Int) = {

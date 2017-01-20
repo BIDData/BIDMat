@@ -3,8 +3,10 @@ import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.LAPACK._
 import java.util.Arrays
 
-case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, nc, data0) {
+case class CMat(dims:Array[Int], val data:Array[Float]) extends DenseMat[Float](dims, data) {
 
+  def this(nr:Int, nc:Int, data:Array[Float]) = this(Array(nr, nc), data);
+  
   override def dv:Double =
     if (nrows > 1 || ncols > 1) {
       throw new RuntimeException("Matrix should be 1x1 to extract value")
@@ -1194,7 +1196,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
 }
 
-class CPair (val omat:Mat, val mat:CMat) extends Pair {
+class CPair (val omat:Mat, val mat:CMat) extends Pair(omat, mat) {
   
   override def t:CMat = CMat(mat.gt(omat))
   

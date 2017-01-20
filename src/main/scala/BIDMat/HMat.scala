@@ -294,7 +294,7 @@ object HMat {
     }
   }
   
-  def loadMat(fname:String, omat:ND, compressed:Int):ND = {
+  def loadMat(fname:String, omat:Mat, compressed:Int):Mat = {
     val gin = getInputStream(fname, compressed)
     val buff = ByteBuffer.allocate(1024).order(byteOrder)
     val hints = new Array[Int](4)
@@ -302,10 +302,10 @@ object HMat {
     val ftype = hints(0)
     gin.close
     ftype match {
-      case 130 => loadFMat(fname, omat.asMat, compressed)
-      case 110 => loadIMat(fname, omat.asMat, compressed)
-      case 120 => loadLMat(fname, omat.asMat, compressed)
-      case 140 => loadDMat(fname, omat.asMat, compressed)
+      case 130 => loadFMat(fname, omat, compressed)
+      case 110 => loadIMat(fname, omat, compressed)
+      case 120 => loadLMat(fname, omat, compressed)
+      case 140 => loadDMat(fname, omat, compressed)
       case 231 => loadSMat(fname, compressed)
       case 331 => loadSMat(fname, compressed)
       case 241 => loadSDMat(fname, compressed)
@@ -325,11 +325,7 @@ object HMat {
     }
   }
   
-  def loadMat(fname:String):ND = loadMat(fname, null, 0)
-  
-  def loadMat(fname:String, omat:ND):ND = loadMat(fname, omat, 0)
-  
-  def saveMat(fname:String, m:ND, compressed:Int=0):Unit = {
+  def saveMat(fname:String, m:Mat, compressed:Int=0):Unit = {
     m match {
       case a:FMat => saveFMat(fname, a, compressed)
       case a:DMat => saveDMat(fname, a, compressed)
@@ -340,7 +336,6 @@ object HMat {
       case a:SMat => saveSMat(fname, a, compressed)
       case a:CSMat => saveCSMat(fname, a, compressed)
       case a:TMat => saveTMat(fname, a, compressed)
-      case a:FND => saveFND(fname, a, compressed)
     }
   }
   
@@ -625,9 +620,9 @@ object HMat {
     out
   } 
   
-  def loadIDX(fname:String):FND = loadIDX(fname, 0);
+  def loadIDX(fname:String):FMat = loadIDX(fname, 0);
   
-  def loadIDX(fname:String, compressed:Int, byteOrder:ByteOrder=ByteOrder.BIG_ENDIAN):FND = {
+  def loadIDX(fname:String, compressed:Int, byteOrder:ByteOrder=ByteOrder.BIG_ENDIAN):FMat = {
     val gin = getInputStream(fname, compressed);
     val bytebuff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder);
     val magicnum = new Array[Int](1);
@@ -641,12 +636,12 @@ object HMat {
     val length = dims.reduce(_*_);
     val result = mtype match {
       case 0xD => {
-        val out = FND(dims);
+        val out = FMat(dims);
         readSomeFloats(gin, out.data, bytebuff, length);
         out;
       }      
       case 0x8 => {
-        val out = FND(dims);
+        val out = FMat(dims);
         val btmp = new Array[Byte](length);
         readSomeBytes(gin, btmp, length);
         var i = 0;
@@ -657,7 +652,7 @@ object HMat {
         out;
       }
       case 0x9 => {
-        val out = FND(dims);
+        val out = FMat(dims);
         val btmp = new Array[Byte](length);
         readSomeBytes(gin, btmp, length);
         Mat.copyToFloatArray(btmp, 0, out.data, 0, length);
@@ -697,7 +692,7 @@ object HMat {
   	writeSomeFloats(gout, m.data, buff, m.nrows*m.ncols);
   }
 
-  def saveFND(fname:String, m:FND, compressed:Int=0):Unit = {
+  def saveFND(fname:String, m:FMat, compressed:Int=0):Unit = {
     if (fname.startsWith("hdfs:")) {
       HDFSwriteND(fname, m, compressed)
     } else {
@@ -707,14 +702,14 @@ object HMat {
     }
   }
     
-  def saveFND(gout:DataOutput, m:FND):Unit = {
+  def saveFND(gout:DataOutput, m:FMat):Unit = {
     val dims = m.dims;
     val ndims = dims.length;
     val hints = new Array[Int](1);
     val tbuf = ByteBuffer.allocate(dims.length*4).order(byteOrder);
     hints(0) = 30 + 100 * (ndims + 3);
     writeSomeInts(gout, hints, tbuf, 1);
-    writeSomeInts(gout, dims.data, tbuf, ndims);
+    writeSomeInts(gout, dims, tbuf, ndims);
     hints(0) = 0;
     writeSomeInts(gout, hints, tbuf, 1);
     val bsize = 4*m.length;
@@ -722,9 +717,9 @@ object HMat {
     writeSomeFloats(gout, m.data, buff, m.length);
   }
     
-  def loadFND(fname:String, omat:ND, compressed:Int):FND = {
+  def loadFND(fname:String, omat:Mat, compressed:Int):FMat = {
 	  if (fname.startsWith("hdfs:")) {
-		  HDFSreadND(fname, omat).asInstanceOf[FND];
+		  HDFSreadND(fname, omat).asInstanceOf[FMat];
     } else {
       val gin = getInputStream(fname, compressed)
       val out = loadFND(gin, omat)
@@ -733,13 +728,11 @@ object HMat {
     }
   } 
   
-  def loadFND(fname:String, compressed:Int):FND = loadFND(fname, null, compressed);
+  def loadFND(fname:String, omat:Mat):FMat = loadFND(fname, omat, 0);
   
-  def loadFND(fname:String, omat:ND):FND = loadFND(fname, omat, 0);
-  
-  def loadFND(fname:String):FND = loadFND(fname, null, 0);
+  def loadFND(fname:String, compressed:Int):FMat = loadFND(fname, null, compressed);
     
-  def loadFND(gin:DataInput, omat:ND):FND  = {
+  def loadFND(gin:DataInput, omat:Mat):FMat  = {
     val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder);
     val hints = new Array[Int](1);
     readSomeInts(gin, hints, buff, 1);
@@ -748,7 +741,7 @@ object HMat {
     val dims = new Array[Int](ndims);
     readSomeInts(gin, dims, buff, ndims);
     readSomeInts(gin, hints, buff, 1);
-    val out = FND.newOrCheckFND(dims, omat);
+    val out = FMat.newOrCheckFMat(dims, omat);
     readSomeFloats(gin, out.data, buff, out.length);
     out;
   }
@@ -1353,7 +1346,7 @@ object HMat {
 	  while(i<len) {
 	      val data = new Array[Float](nr(i)*nc(i))
 	      readSomeFloats(gin, data, buff, nr(i)*nc(i));
-	      mats(i) = FMat(nr(i),nc(i),data)
+	      mats(i) = new FMat(nr(i),nc(i),data)
 	      i+=1
 	  }
 	  TMat(nrows,ncols,y,x,mats);

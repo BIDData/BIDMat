@@ -390,7 +390,7 @@ class TMat
   override def / (b : Float) = tOpF(b, null, TMat.divOpF);
 }
 
-class TPair(val omat:Mat, val mat:TMat) extends Pair {
+class TPair(val omat:Mat, val mat:TMat) extends Pair(omat, mat) {
   override def * (a : Mat):Mat = mat.tMult(a,omat)
   override def ^ (a : Mat):TMat = mat.tOp(a, omat, TMat.powOp);
   override def *@ (a: Mat):TMat = mat.tOp(a, omat, TMat.mulOp);
@@ -409,7 +409,7 @@ class TPair(val omat:Mat, val mat:TMat) extends Pair {
 
 }
 
-class TTPair(val omat:Mat, val mat:Mat) extends Pair {
+class TTPair(val omat:Mat, val mat:Mat) extends Pair(omat, mat) {
   override def * (a : Mat) = TMat.tMult(mat,a,omat.asInstanceOf[TMat]) 
   override def *^ (a : Mat) = TMat.tMultT(mat,a,omat.asInstanceOf[TMat]) 
 }

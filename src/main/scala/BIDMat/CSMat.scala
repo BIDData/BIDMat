@@ -1,7 +1,9 @@
 package BIDMat
 import Mat._
 
-case class CSMat(override val nrows:Int, override val ncols:Int, override val data:Array[String]) extends DenseMat[String](nrows, ncols, data) {	
+case class CSMat(dims:Array[Int], override val data:Array[String]) extends DenseMat[String](dims, data) {	
+  
+  def this(nr:Int, nc:Int, data:Array[String]) = this(Array(nr, nc), data);
  
 	override def t:CSMat = CSMat(gt(null))
 	
@@ -220,7 +222,7 @@ object CSMat {
   
     def apply(nr:Int, nc:Int):CSMat = new CSMat(nr, nc, new Array[String](nr*nc))
 
-    def apply(a:DenseMat[String]):CSMat = new CSMat(a.nrows, a.ncols, a.data) 
+    def apply(a:DenseMat[String]):CSMat = new CSMat(a.nrows, a.ncols, a._data) 
     
     def apply(a:SBMat) = a.toCSMat
     

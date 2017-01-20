@@ -128,16 +128,6 @@ object MatFunctions {
     out
   }
   
-  /** implicit conversion from FMat to FND */
-  implicit def fMat2FND(x:FMat):FND = {
-    x.asND(x.nrows, x.ncols)
-  }
-  
-  /** implicit conversion from GMat to GND */
-  implicit def gMat2GND(x:GMat):GND = {
-    x.asND(x.nrows, x.ncols)
-  } 
-  
  /* implicit def float2FND(x:Float):FND = {
     FND.elem(x, 2);
   } */
@@ -224,14 +214,6 @@ object MatFunctions {
       case b:TMat => b.toCPU;
     }
   }
-  
-  def cpu(a:ND):ND = {
-    a match {
-      case aa:Mat => cpu(aa);
-      case aa:FND => aa;
-      case aa:GND => FND(aa);
-    }
-  }
     
   /** Convert to a GPU matrix */
   def gpu(a:Mat):Mat = {
@@ -249,14 +231,6 @@ object MatFunctions {
       case b:GSMat => b;
       case b:GSDMat => b;
       case b:TMat => b.toGPU;
-    }
-  }
-  
-  def gpu(a:ND):ND = {
-    a match {
-      case aa:Mat => gpu(aa);
-      case aa:FND => GND(aa);
-      case aa:GND => aa;
     }
   }
   
@@ -1170,11 +1144,6 @@ object MatFunctions {
   
   /** Make a float matrix of zeros of the given size. */
   def zeros(nr:Int, nc:Int):FMat = FMat(nr,nc)
-  
-  /** Make a float NDarray of zeros of the given size. */
-  def zeros(dims:IMat):FND = FND.zeros(dims)
-  
-  def ones(dims:IMat):FND = FND.ones(dims)
 
   /** Make a float matrix of ones of the given size. */  
   def ones(nr:Int, nc:Int):FMat = {
@@ -1521,12 +1490,6 @@ object MatFunctions {
     case aa:GMat => a
     case aa:GDMat => a
     case aa:TMat => aa.full
-  }
-  
-  def full(a:ND):ND = a match {
-    case aa:Mat => full(aa):Mat;
-    case aa:FND => aa;
-    case aa:GND => aa;
   }
   
   def DDShelper(a:FMat, b:FMat, c:SMat, out:SMat, istart:Int, iend:Int, ioff:Int) = {
@@ -2034,8 +1997,8 @@ object MatFunctions {
 
   def saveAs(fname:String, args:AnyRef*) = MatHDF5.hsaveAs(fname, args.toList)
   
-  def loadMat(fname:String) = HMat.loadMat(fname)  
-  def loadMat(fname:String, omat:Mat) = HMat.loadMat(fname, omat)  
+  def loadMat(fname:String) = HMat.loadMat(fname, null, 0);  
+  def loadMat(fname:String, omat:Mat) = HMat.loadMat(fname, omat, 0); 
   def loadMat(fname:String, omat:Mat, compressed:Int) = HMat.loadMat(fname, omat, compressed)
   
   def loadDMat(fname:String) = HMat.loadDMat(fname)  
@@ -2065,16 +2028,9 @@ object MatFunctions {
 
   def loadSDMat(fname:String) = HMat.loadSDMat(fname)    
   def loadSDMat(fname:String, compressed:Int) = HMat.loadSDMat(fname, compressed)
-  
-  def loadFND(fname:String) = HMat.loadFND(fname)  
-  def loadFND(fname:String, omat:ND) = HMat.loadFND(fname, omat)  
-  def loadFND(fname:String, omat:ND, compressed:Int) = HMat.loadFND(fname, omat, compressed)
 
   def loadTMat(fname:String) = HMat.loadTMat(fname)    
   def loadTMat(fname:String, compressed:Int) = HMat.loadTMat(fname, compressed)
-  
-  def saveMat(fname:String, m:ND) = HMat.saveMat(fname, m)    
-  def saveMat(fname:String, m:ND, compressed:Int) = HMat.saveMat(fname, m, compressed)
   
   def saveFMat(fname:String, m:FMat) = HMat.saveFMat(fname, m)    
   def saveFMat(fname:String, m:FMat, compressed:Int) = HMat.saveFMat(fname, m, compressed)
@@ -2099,9 +2055,6 @@ object MatFunctions {
 
   def saveCSMat(fname:String, m:CSMat) = HMat.saveCSMat(fname, m)    
   def saveCSMat(fname:String, m:CSMat, compressed:Int) = HMat.saveCSMat(fname, m, compressed)  
-  
-  def saveFND(fname:String, m:FND) = HMat.saveFND(fname, m)    
-  def saveFND(fname:String, m:FND, compressed:Int) = HMat.saveFND(fname, m, compressed)
 
   def saveTMat(fname:String, m:TMat) = HMat.saveTMat(fname, m)    
   def saveTMat(fname:String, m:TMat, compressed:Int) = HMat.saveTMat(fname, m, compressed)
@@ -2129,15 +2082,11 @@ object MatFunctions {
   
   def show (mat:FMat):BufferedImage = {show(Image(mat))}
   
-  def show (mat:FND):BufferedImage = {show(Image(mat))}
-  
   def show (image:Image, title:String):BufferedImage = image.show(title)
   
   def show (mat:IMat, title:String):BufferedImage = {show(Image(mat), title)}
   
   def show (mat:FMat, title:String):BufferedImage = {show(Image(mat), title)}
-  
-  def show (mat:FND, title:String):BufferedImage = {show(Image(mat), title)}
 
   final val ? = new IMatWildcard
 }
