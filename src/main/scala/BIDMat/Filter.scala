@@ -10,7 +10,7 @@ trait Filter {
   val stride:IMat;
   val outPad:IMat;
   
-  def computeFlops(in:ND, stride:IMat, pad:IMat):Long = {
+  def computeFlops(in:Mat, stride:IMat, pad:IMat):Long = {
     var i = 0;
     var flops = 2L;
     while (i < stride.length) {
@@ -20,12 +20,12 @@ trait Filter {
     flops;
   }
   
-  def notImplemented1NDf(s:String, a:ND):ND = { 
+  def notImplemented1f(s:String, a:Mat):Mat = { 
     throw new RuntimeException("operator "+s+" not implemented for Filter and "+a.mytype)
   }
   
-  def ^* (a:ND):ND = {
-    notImplemented1NDf("^*", a);
+  def ^* (a:Mat):Mat = {
+    notImplemented1f("^*", a);
   }
 
 }

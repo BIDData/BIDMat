@@ -1036,11 +1036,13 @@ object IMat {
     out
   }
   
-  def make(dims:Array[Int]) = {
+  def make(dims:Array[Int]):IMat = {
     val out = new IMat(dims, new Array[Int](dims.reduce(_*_))); 
     out
   }
     
+  def make(dims:IMat):IMat = make(dims.data);
+  
   def apply(a:Int) = ielem(a)
   
   def apply(a:Double) = ielem(a.toInt)

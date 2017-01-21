@@ -20,7 +20,7 @@ import jcuda.runtime.cudaMemcpyKind._
 
 @SerialVersionUID(100L)
 class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat, data0:Pointer) extends
-  GND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
+  GMat((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0, inDims0.data.reduce(_*_)) with Filter {
 
 	val inDims = inDims0;
 	val outDims = outDims0;
@@ -34,10 +34,10 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
   var bwdFilterAlgo = cudnnConvolutionBwdFilterAlgo.CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
   var bwdDataAlgo = cudnnConvolutionBwdDataAlgo.CUDNN_CONVOLUTION_BWD_DATA_ALGO_1;
   
-	def convolve(a:GND, omat:ND, doclear:Boolean):GND = {
+	def convolve(a:GMat, omat:Mat, doclear:Boolean):GMat = {
     val bdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad, outPad);
     val hmm = ND.hashIMat(stride, ND.hashIMat(pad));
-    val b = GND.newOrCheckGND(bdims, omat, a.GUID, GUID, hmm, "convout".##);
+    val b = GMat.newOrCheckGMat(bdims, omat, a.GUID, GUID, hmm, "convout".##);
     if (dims.length == 4) {
       val adesc = new cudnnTensorDescriptor;
       cudnnCreateTensorDescriptor(adesc);
@@ -66,8 +66,8 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       
 //      println("workspace size = %d" format workspaceSizeInBytes)
 
-      var err = cudnnConvolutionForward(GFilter.getHandle, GFilter.myone, adesc, a.data, fdesc, data, convdesc, 
-          fwdAlgo, workspace.data, workspaceSizeInBytes, if (doclear) GFilter.myzero else GFilter.myone, bdesc, b.data);
+      var err = cudnnConvolutionForward(GFilter.getHandle, GFilter.myone, adesc, a.pdata, fdesc, pdata, convdesc, 
+          fwdAlgo, workspace.pdata, workspaceSizeInBytes, if (doclear) GFilter.myzero else GFilter.myone, bdesc, b.pdata);
       
       cudaDeviceSynchronize;
       if (err == 0) err = cudaGetLastError();
@@ -82,12 +82,12 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
     b
   }
   
-  def convolve(a:GND):GND = convolve(a, null, true);
+  def convolve(a:GMat):GMat = convolve(a, null, true);
     
-  def convolveT(b:GND, omat:ND, doclear:Boolean):GND = {
+  def convolveT(b:GMat, omat:Mat, doclear:Boolean):GMat = {
     val adims = Filter.getInputDims(b.dims, inDims, outDims, stride, pad, outPad);
     val hmm = ND.hashIMat(stride, ND.hashIMat(pad));
-    val a = GND.newOrCheckGND(adims, omat, b.GUID, GUID, hmm, "convoutT".##);
+    val a = GMat.newOrCheckGMat(adims, omat, b.GUID, GUID, hmm, "convoutT".##);
     if (dims.length == 4) {
       val adesc = new cudnnTensorDescriptor;
       cudnnCreateTensorDescriptor(adesc);
@@ -116,8 +116,8 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       
 //      println("workspace size = %d" format workspaceSizeInBytes)
 
-      var err = cudnnConvolutionBackwardData(GFilter.getHandle, GFilter.myone, fdesc, data, bdesc, b.data, convdesc, 
-          bwdDataAlgo, workspace.data, workspaceSizeInBytes, if (doclear) GFilter.myzero else GFilter.myone, adesc, a.data);
+      var err = cudnnConvolutionBackwardData(GFilter.getHandle, GFilter.myone, fdesc, pdata, bdesc, b.pdata, convdesc, 
+          bwdDataAlgo, workspace.pdata, workspaceSizeInBytes, if (doclear) GFilter.myzero else GFilter.myone, adesc, a.pdata);
       
       cudaDeviceSynchronize;
       if (err == 0) err = cudaGetLastError();
@@ -132,9 +132,9 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
     a
 	}
   
-  def convolveT(a:GND):GND = convolveT(a, null, true);
+  def convolveT(a:GMat):GMat = convolveT(a, null, true);
   
-  def convolveM(a:GND, b:GND, doclear:Boolean):GND = {
+  def convolveM(a:GMat, b:GMat, doclear:Boolean):GMat = {
 		val bdims = b.dims;
     val outdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad, outPad);
     if ((bdims - outdims).data.exists(_ != 0)) {
@@ -169,8 +169,8 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       
 //      println("workspace size = %d" format workspaceSizeInBytes)
 
-      var err = cudnnConvolutionBackwardFilter(GFilter.getHandle, GFilter.myone, adesc, a.data, bdesc, b.data, convdesc, 
-          bwdFilterAlgo, workspace.data, workspaceSizeInBytes, if (doclear) GFilter.myzero else GFilter.myone, fdesc, data);
+      var err = cudnnConvolutionBackwardFilter(GFilter.getHandle, GFilter.myone, adesc, a.pdata, bdesc, b.pdata, convdesc, 
+          bwdFilterAlgo, workspace.pdata, workspaceSizeInBytes, if (doclear) GFilter.myzero else GFilter.myone, fdesc, pdata);
       
       cudaDeviceSynchronize;
       if (err == 0) err = cudaGetLastError();
@@ -185,35 +185,35 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
     this
   }
   
-  def convolveM(a:GND, b:GND):GND = convolveM(a, b, true);
+  def convolveM(a:GMat, b:GMat):GMat = convolveM(a, b, true);
   
   def copy:GFilter = {
 		val out = new GFilter(inDims.copy, outDims.copy, stride.copy, pad.copy, outPad.copy, new Pointer);
 		val len = 1L*length*Sizeof.FLOAT
-		cudaMalloc(out.data, len);
+		cudaMalloc(out.pdata, len);
 		cudaDeviceSynchronize;
-		cudaMemcpy(out.data, data, len, cudaMemcpyDeviceToDevice);
+		cudaMemcpy(out.pdata, pdata, len, cudaMemcpyDeviceToDevice);
 		cudaDeviceSynchronize;
 		out;
 	}
   
-  override def * (a:GND):GND = {
+  override def * (a:GMat):GMat = {
 			convolve(a);
 	}
 
-	def ^* (a:GND):GND = {
+	def ^* (a:GMat):GMat = {
 			convolveT(a);
 	}
 
 	override def * (a:ND):ND = {
   	a match {
-  	case aa:GND => convolve(aa);
+  	case aa:GMat => convolve(aa);
   	}
 	};
 
   override def ^* (a:ND):ND = {
   		a match {
-  		case aa:GND => convolveT(aa);
+  		case aa:GMat => convolveT(aa);
   		}
   }
 }
@@ -230,9 +230,9 @@ object GFilter {
   
   
   def apply(a:FFilter):GFilter = {
-    val outnd = GND.newOrCheckGND(a.dims, null, a.GUID, "GFilter".##);
+    val outnd = GMat.newOrCheckGMat(a.dims, null, a.GUID, "GFilter".##);
     outnd <-- a;
-    val out = new GFilter(a.inDims, a.outDims, a.stride, a.pad, a.outPad, outnd.data);
+    val out = new GFilter(a.inDims, a.outDims, a.stride, a.pad, a.outPad, outnd.pdata);
     out;
   }
   
@@ -267,7 +267,7 @@ object GFilter {
     val pad = irow(npad);
     val outPad = irow(noutpad);
     val out = new GFilter(inDims, outDims, stride, pad, outPad, new Pointer);
-    cudaMalloc(out.data, 1L*w*Sizeof.FLOAT);
+    cudaMalloc(out.pdata, 1L*w*Sizeof.FLOAT);
     cudaDeviceSynchronize;
     out
   }
@@ -281,7 +281,7 @@ object GFilter {
     val pad = irow(0, npad);
     val outPad = irow(0, noutpad);
     val out = new GFilter(inDims, outDims, stride, pad, outPad, new Pointer);
-    cudaMalloc(out.data, 1L*w*din*dout*Sizeof.FLOAT);
+    cudaMalloc(out.pdata, 1L*w*din*dout*Sizeof.FLOAT);
     cudaDeviceSynchronize;
     out    
   }
@@ -295,7 +295,7 @@ object GFilter {
     val pad = irow(npad, npad);
     val outPad = irow(noutpad, noutpad);
     val out = new GFilter(inDims, outDims, stride, pad, outPad, new Pointer);
-    cudaMalloc(out.data, 1L*w*h*Sizeof.FLOAT);
+    cudaMalloc(out.pdata, 1L*w*h*Sizeof.FLOAT);
     cudaDeviceSynchronize;
     out
   }
@@ -309,7 +309,7 @@ object GFilter {
     val pad = irow(0, npad, npad);
     val outPad = irow(0, noutpad, noutpad);
     val out = new GFilter(inDims, outDims, stride, pad, outPad, new Pointer);
-    cudaMalloc(out.data, 1L*din*dout*w*h*Sizeof.FLOAT);
+    cudaMalloc(out.pdata, 1L*din*dout*w*h*Sizeof.FLOAT);
     cudaDeviceSynchronize;
     out
   }
@@ -323,7 +323,7 @@ object GFilter {
     val pad = irow(0, npad, npad, 0);
     val outPad = irow(0, noutpad, noutpad, 0);
     val out = new GFilter(inDims, outDims, stride, pad, outPad, new Pointer);
-    cudaMalloc(out.data, 1L*din*dout*w*h*Sizeof.FLOAT);
+    cudaMalloc(out.pdata, 1L*din*dout*w*h*Sizeof.FLOAT);
     cudaDeviceSynchronize;
     out
   }

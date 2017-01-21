@@ -24,7 +24,7 @@ import SciFunctions._;
 
 @SerialVersionUID(100L)
 class FFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat, data0:Array[Float]) extends
-FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
+FMat((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 
 	val inDims = inDims0;
 	val outDims = outDims0;
@@ -33,12 +33,12 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 	val outPad = if (outPad0.asInstanceOf[AnyRef] != null) outPad0 else izeros(1,inDims.length);
 	var timer = 0f;
 
-	def convolve(a:FND, omat:ND, doclear:Boolean):FND = {
+	def convolve(a:FMat, omat:Mat, doclear:Boolean):FMat = {
 			val bdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad, outPad);
 			val hmm = ND.hashIMat(stride, ND.hashIMat(pad));
-			val b = FND.newOrCheckFND(bdims, omat, a.GUID, GUID, hmm, "convout".##);
+			val b = FMat.newOrCheckFMat(bdims, omat, a.GUID, GUID, hmm, "convout".##);
 			val apadmat = if (pad.data.exists(_ != 0)) {
-				val m = FND.newOrCheckFND(a.dims + pad * 2, null, a.GUID, GUID, hmm, "convinpad".##);
+				val m = FMat.newOrCheckFMat(a.dims + pad * 2, null, a.GUID, GUID, hmm, "convinpad".##);
 				m.clear;
 				_copy_padded(a, m, pad, inDims.length-1, 0, 0, true);
 				m
@@ -61,7 +61,7 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 					val ddiff = (inDims - 1)/stride - outDims + 1;
 					ddiff(0) = 0;
 					val bpadmat = if (ddiff.data.exists(_ != 0)) {
-						FND.newOrCheckFND(b.dims + ddiff, null, a.GUID, GUID, hmm, "convoutpad".##);
+						FMat.newOrCheckFMat(b.dims + ddiff, null, a.GUID, GUID, hmm, "convoutpad".##);
 					} else {
 						b;
 					} 
@@ -81,15 +81,15 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 			b;
 	};
 
-	def convolve(a:FND):FND = convolve(a, null, true);
+	def convolve(a:FMat):FMat = convolve(a, null, true);
 
-	def convolveT(b:FND, omat:ND, doclear:Boolean):FND = {
+	def convolveT(b:FMat, omat:Mat, doclear:Boolean):FMat = {
 			val bdims = b.dims;
 			val adims = Filter.getInputDims(b.dims, inDims, outDims, stride, pad, outPad);
 			val hmm = ND.hashIMat(stride, ND.hashIMat(pad));
-			val a = FND.newOrCheckFND(adims, omat, b.GUID, GUID, hmm, "convTin".##);
+			val a = FMat.newOrCheckFMat(adims, omat, b.GUID, GUID, hmm, "convTin".##);
 			val apadmat = if (pad.data.exists(_ != 0)) {
-				val m = FND.newOrCheckFND(a.dims + pad * 2, null, b.GUID, GUID, hmm, "convTinpad".##);
+				val m = FMat.newOrCheckFMat(a.dims + pad * 2, null, b.GUID, GUID, hmm, "convTinpad".##);
 				if (!doclear) _copy_padded(a, m, pad, inDims.length-1, 0, 0, true);
 				m
 			} else a;
@@ -109,7 +109,7 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 					//		_col2im(apadmat, b, i2cmat, inDims.length-1, cellsize, 0, 0);
 				} else {                                                                        // use 1x1 convolutions
 					val bpadmat = if (ddiff.data.exists(_ != 0)) {
-						val m = FND.newOrCheckFND(b.dims + ddiff, null, b.GUID, GUID, hmm, "convToutpad".##);
+						val m = FMat.newOrCheckFMat(b.dims + ddiff, null, b.GUID, GUID, hmm, "convToutpad".##);
 						m.clear;
 						_copy_padded(b, m, ddiff/2, inDims.length-1, 0, 0, true);
 						m;
@@ -128,9 +128,9 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 			a;
 	};
 
-	def convolveT(a:FND):FND = convolveT(a, null, true);
+	def convolveT(a:FMat):FMat = convolveT(a, null, true);
 
-	def convolveM(a:FND, b:FND, doclear:Boolean):FND = {
+	def convolveM(a:FMat, b:FMat, doclear:Boolean):FMat = {
 			val bdims = b.dims;
 			val outdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad, outPad);
 			if ((bdims - outdims).data.exists(_ != 0)) {
@@ -138,7 +138,7 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 			}
 			val hmm = ND.hashIMat(stride, ND.hashIMat(pad));
 			val apadmat = if (pad.data.exists(_ != 0)) {
-				val m = FND.newOrCheckFND(a.dims + pad * 2, null, a.GUID, b.GUID, hmm, "convMinpad".##);
+				val m = FMat.newOrCheckFMat(a.dims + pad * 2, null, a.GUID, b.GUID, hmm, "convMinpad".##);
 				m.clear;
 				_copy_padded(a, m, pad, inDims.length-1, 0, 0, true);
 				m
@@ -159,7 +159,7 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 					val outdiff = (inDims - 1)/stride - outDims + 1;
 					outdiff(0) = 0;
 					val bpadmat = if (outdiff.data.exists(_ != 0)) {
-						val m = FND.newOrCheckFND(b.dims + outdiff, null, a.GUID, b.GUID, hmm, "convMoutpad".##);
+						val m = FMat.newOrCheckFMat(b.dims + outdiff, null, a.GUID, b.GUID, hmm, "convMoutpad".##);
 						m.clear;
 						_copy_padded(b, m, outdiff/2, inDims.length-1, 0, 0, true);
 						m;
@@ -175,7 +175,7 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 			this;
 	};
 
-	def convolveM(a:FND, b:FND):FND = convolveM(a, b, true);
+	def convolveM(a:FMat, b:FMat):FMat = convolveM(a, b, true);
 
 	def copy:FFilter = {
 		val a = new FFilter(inDims.copy, outDims.copy, stride.copy, pad.copy, outPad.copy, new Array[Float](length));
@@ -185,7 +185,7 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 	
 	// Convolution using global 1x1 Convolutions. 
 
-	def _fast_convolve(a:FND, b:FND, idim:Int, astart:Int, bstart:Int, fstart:Int, convType:Int) {
+	def _fast_convolve(a:FMat, b:FMat, idim:Int, astart:Int, bstart:Int, fstart:Int, convType:Int) {
 		val adims = a.dims;
 		val bdims = b.dims;
 		val iwidth = inDims(idim);
@@ -246,7 +246,7 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 	// Convolve into unpadded b
 	//
 
-	def _fast_convolve2(a:FND, b:FND, idim:Int, astart:Int, bstart:Int, fstart:Int, convType:Int) {
+	def _fast_convolve2(a:FMat, b:FMat, idim:Int, astart:Int, bstart:Int, fstart:Int, convType:Int) {
 		//    println("rec %d %d %d %d" format (idim, astart, bstart, fstart))
 		val adims = a.dims;
 		val bdims = b.dims;
@@ -328,7 +328,7 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 
 	// copy into padded array, or from padded array
 
-	def _copy_padded(in:FND, out:FND, padx:IMat, idim:Int, astart:Int, bstart:Int, topadded:Boolean) {
+	def _copy_padded(in:FMat, out:FMat, padx:IMat, idim:Int, astart:Int, bstart:Int, topadded:Boolean) {
 		val idims = in.dims;
 		val odims = out.dims;
 		val width = if (topadded) idims(idim) else odims(idim);
@@ -396,7 +396,7 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 		}
 	}
 
-	def _convolve(a:FND, b:FND, idim:Int, astart:Int, bstart:Int, fstart:Int, convType:Int) {
+	def _convolve(a:FMat, b:FMat, idim:Int, astart:Int, bstart:Int, fstart:Int, convType:Int) {
 		val adims = a.dims;
 		val bdims = b.dims;
 		val iwidth = inDims(idim);
@@ -484,7 +484,7 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 		}
 	};
   
-	def _im2col(a:FND, b:FND, i2c:FMat, idim:Int, celldim:Int, astart:Int, bstart:Int):FMat = {
+	def _im2col(a:FMat, b:FMat, i2c:FMat, idim:Int, celldim:Int, astart:Int, bstart:Int):FMat = {
 			val adims = a.dims;
 			val bdims = b.dims;
 			val iwidth = inDims(idim);
@@ -586,7 +586,7 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 			i2c
 	}
 
-    def _im2colpad(a:FND, b:FND, i2c:FMat, idim:Int, celldim:Int, astart:Int, bstart:Int, zerofill:Boolean, inparallel:Boolean):FMat = {
+    def _im2colpad(a:FMat, b:FMat, i2c:FMat, idim:Int, celldim:Int, astart:Int, bstart:Int, zerofill:Boolean, inparallel:Boolean):FMat = {
       val adims = a.dims;
       val bdims = b.dims;
       val iwidth = inDims(idim);
@@ -717,7 +717,7 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
       }
       i2c
   }
-/*	def _im2col(a:FND, b:FND, i2c:FMat, idim:Int, celldim:Int, astart:Int, bstart:Int, zerofill:Boolean):FMat = {
+/*	def _im2col(a:FMat, b:FMat, i2c:FMat, idim:Int, celldim:Int, astart:Int, bstart:Int, zerofill:Boolean):FMat = {
 			val adims = a.dims;
 			val bdims = b.dims;
 			val iwidth = inDims(idim);
@@ -854,7 +854,7 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 	}
 */
 
-	def _col2im(a:FND, b:FND, i2c:FMat, idim:Int, celldim:Int, astart:Int, bstart:Int):FMat = {
+	def _col2im(a:FMat, b:FMat, i2c:FMat, idim:Int, celldim:Int, astart:Int, bstart:Int):FMat = {
 			val adims = a.dims;
 			val bdims = b.dims;
 			val iwidth = inDims(idim);
@@ -911,30 +911,30 @@ FND((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 			i2c;
 	}
 
-	override def * (a:FND):FND = {
+	override def * (a:FMat):FMat = {
 			convolve(a);
 	}
 
-	def ^* (a:FND):FND = {
+	def ^* (a:FMat):FMat = {
 			convolveT(a);
 	}
 
 	override def * (a:ND):ND = {
 			a match {
-			case aa:FND => convolve(aa);
+			case aa:FMat => convolve(aa);
 			}
 	};
 
 	override def ^* (a:ND):ND = {
 			a match {
-			case aa:FND => convolveT(aa);
+			case aa:FMat => convolveT(aa);
 			}
 	}
 }
 
 
-class FFiltPair2(val omat:Filter, val a:FND) extends Pair {
-	def *^ (b:FND):FND = {
+class FFiltPair2(val omat:Filter, val a:FMat) extends Pair(omat.asInstanceOf[Mat], a) {
+	def *^ (b:FMat):FMat = {
 			omat.asInstanceOf[FFilter].convolveM(a, b);
 	}
 }

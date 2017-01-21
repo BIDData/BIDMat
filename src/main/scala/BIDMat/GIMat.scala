@@ -1032,13 +1032,15 @@ object GIMat {
     }
   }
   
-  def make(dims:Array[Int]) = {
+  def make(dims:Array[Int]):GIMat = {
     val len = dims.reduce(_*_);
     val out = new GIMat(dims, new Pointer, len); 
     cudaMalloc(out.pdata, 1L*len*Sizeof.INT);
     cudaDeviceSynchronize();
     out
   }
+  
+  def make(dims:IMat):GIMat = make(dims.data)
   
   def apply(a:GMat):GIMat = {
     val rsize = a.nrows*a.ncols

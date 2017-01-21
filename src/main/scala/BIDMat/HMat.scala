@@ -709,7 +709,7 @@ object HMat {
     val tbuf = ByteBuffer.allocate(dims.length*4).order(byteOrder);
     hints(0) = 30 + 100 * (ndims + 3);
     writeSomeInts(gout, hints, tbuf, 1);
-    writeSomeInts(gout, dims, tbuf, ndims);
+    writeSomeInts(gout, dims.data, tbuf, ndims);
     hints(0) = 0;
     writeSomeInts(gout, hints, tbuf, 1);
     val bsize = 4*m.length;

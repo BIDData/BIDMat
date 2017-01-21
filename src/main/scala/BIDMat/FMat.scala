@@ -14,7 +14,7 @@ import MatFunctions.irow
 import MatFunctions.invperm
 
 
-case class FMat(dims:Array[Int], val data:Array[Float]) extends DenseMat[Float](dims, data) {
+case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float](dims0, data) {
 
   def this(nr:Int, nc:Int, data:Array[Float]) = this(Array(nr, nc), data);
 
@@ -307,7 +307,7 @@ case class FMat(dims:Array[Int], val data:Array[Float]) extends DenseMat[Float](
   def update(inds:List[Int], v:Float):FMat = update(inds.toArray, v)
   
   def update(inds:Array[Int], v:Float):FMat = {
-    val indx = ND.linearize(inds, dims); 
+    val indx = ND.linearize(inds, dims.data); 
     data(indx) = v
     this
   }
@@ -416,7 +416,7 @@ case class FMat(dims:Array[Int], val data:Array[Float]) extends DenseMat[Float](
   /** Column slicing. Actually slices all but the last dimension */
 
   override def colslice(a:Int, b:Int):FMat = {
-    val newdims = dims.clone;
+    val newdims = dims.data.clone;
     newdims(dims.length-1) = b-a;
     val out = FMat.newOrCheckFMat(newdims, null, GUID, a, b, "colslice".##)
     colslice(a, b, out)

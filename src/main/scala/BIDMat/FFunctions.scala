@@ -45,7 +45,7 @@ object FFunctions {
     out
   }
 	
-	 def poissrnd(lambda:FMat, out:IMat):IMat = {
+	def poissrnd(lambda:FMat, out:IMat):IMat = {
     checkSizes(lambda, out);
     if (Mat.useMKLRand) {
     	viRngPoissonV( METHOD, stream, out.length, out.data, DMat(lambda).data );
