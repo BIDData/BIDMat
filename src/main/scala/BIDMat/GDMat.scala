@@ -43,8 +43,6 @@ class GDMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   override def contents() = {
     new GDMat(length, 1, pdata, realsize)
   }
-    
-  override def nnz = length;
   
   override def view(nr:Int, nc:Int):GDMat = {
     if (1L * nr * nc > realsize) {

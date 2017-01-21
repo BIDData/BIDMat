@@ -29,5 +29,7 @@
 	<classpathentry kind="lib" path="lib/ptplotapplication-1.0.jar"/>
 	<classpathentry kind="lib" path="lib/scala-compiler-2.11.0-M8.jar"/>
 	<classpathentry kind="lib" path="lib/scala-reflect-2.11.2.jar"/>
+	<classpathentry kind="lib" path="lib/scala-arm_2.11-1.4.jar"/>
+	<classpathentry kind="lib" path="lib/scala-parser-combinators_2.11-1.0.3.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

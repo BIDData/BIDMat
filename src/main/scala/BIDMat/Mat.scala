@@ -5,7 +5,7 @@ import jcuda.NativePointerObject
 import edu.berkeley.bid.UTILS
 
 @SerialVersionUID(100L)
-class Mat(protected val _dims:Array[Int]) extends ND with Serializable {
+class Mat(val _dims:Array[Int]) extends ND with Serializable {
   
   def this(nr:Int, nc:Int) = this(Array(nr, nc));
   
@@ -21,7 +21,7 @@ class Mat(protected val _dims:Array[Int]) extends ND with Serializable {
   val nrows = _dims.slice(0,ndims-1).reduce(_*_);
   val length = nrows * ncols;
   
-  val nnz = length;
+  def nnz = length;
 
   val llength = 1L*nrows*ncols
  
@@ -52,8 +52,6 @@ class Mat(protected val _dims:Array[Int]) extends ND with Serializable {
   def notImplemented1(s:String,that:Mat):Mat = { 
     throw new RuntimeException(s+" not implemented for "+this.mytype+" and Double")
   }
-  
-  def applyf(indx:Int):Float  = throw new RuntimeException("1D access not supported for "+this.mytype);
   
   def apply(i1:IMat):Mat = notImplemented0("1D access");
   def apply(i1:IMat, i2:IMat):Mat = notImplemented0("2D access");
