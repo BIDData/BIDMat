@@ -9,28 +9,28 @@ class Mat(val _dims:Array[Int]) extends ND with Serializable {
   
   def this(nr:Int, nc:Int) = this(Array(nr, nc));
   
+  def mytype = "Mat";
+    
   val dims = new IMat(1, _dims.length, _dims)
-  
   val ndims = _dims.length;
-  
-  def t = notImplemented0("t")  
-  
-  def mytype = "Mat"
-  
   val ncols = _dims(ndims-1)
   val nrows = _dims.slice(0,ndims-1).reduce(_*_);
-  val length = nrows * ncols;
-  
+  val length = nrows * ncols; 
+  val llength = 1L*nrows*ncols;
   def nnz = length;
-
-  val llength = 1L*nrows*ncols
  
   private var _GUID = Mat.myrand.nextLong
-  
   def GUID = _GUID;
-  
   def setGUID(v:Long) {
     _GUID = v;
+  }
+  
+  def dv:Double = {
+    throw new RuntimeException("dv not implemented for "+this.mytype)
+  }
+  
+  def fv:Float = {
+    throw new RuntimeException("fv not implemented for "+this.mytype)
   }
   
   def notImplemented0(s:String):Mat = { 
@@ -52,13 +52,19 @@ class Mat(val _dims:Array[Int]) extends ND with Serializable {
   def notImplemented1(s:String,that:Mat):Mat = { 
     throw new RuntimeException(s+" not implemented for "+this.mytype+" and Double")
   }
+    
+  def t = notImplemented0("t")  
   
-  def apply(i1:IMat):Mat = notImplemented0("1D access");
-  def apply(i1:IMat, i2:IMat):Mat = notImplemented0("2D access");
-  def apply(i1:IMat, i2:IMat, i3:IMat):Mat = notImplemented0("3D access");
-  def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat):Mat = notImplemented0("4D access");
-  def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat):Mat = notImplemented0("5D access");
-  def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat):Mat = notImplemented0("6D access");
+  def apply(i1:IMat):Mat = notImplemented0("1D slice");
+  def apply(i1:IMat, i2:IMat):Mat = notImplemented0("2D slice");
+  def apply(i1:IMat, i2:IMat, i3:IMat):Mat = notImplemented0("3D slice");
+  def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat):Mat = notImplemented0("4D slice");
+  def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat):Mat = notImplemented0("5D slice");
+  def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat):Mat = notImplemented0("6D slice");
+  def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat):Mat = notImplemented0("7D slice");
+  def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat):Mat = notImplemented0("8D slice");
+  def apply(i1:IMat, i2:Int):Mat = notImplemented0("2D slice");
+  def apply(i1:Int, i2:IMat):Mat = notImplemented0("2D slice");
     
   def update(i1:IMat, v:Mat):Mat = notImplemented0("1D update");
   def update(i1:IMat, i2:IMat, v:Mat):Mat = notImplemented0("2D update");
@@ -66,6 +72,52 @@ class Mat(val _dims:Array[Int]) extends ND with Serializable {
   def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, v:Mat):Mat = notImplemented0("4D update");
   def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, v:Mat):Mat = notImplemented0("5D update");
   def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, v:Mat):Mat = notImplemented0("6D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, v:Mat):Mat = notImplemented0("7D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, v:Mat):Mat = notImplemented0("8D update");
+  def update(i1:IMat, i2:Int, v:Mat):Mat = notImplemented0("2D update");
+  def update(i1:Int, i2:IMat, v:Mat):Mat = notImplemented0("2D update");
+  
+  def update(i1:IMat, v:Double):Mat = notImplemented0("1D update");
+  def update(i1:IMat, i2:IMat, v:Double):Mat = notImplemented0("2D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, v:Double):Mat = notImplemented0("3D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, v:Double):Mat = notImplemented0("4D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, v:Double):Mat = notImplemented0("5D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, v:Double):Mat = notImplemented0("6D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, v:Double):Mat = notImplemented0("7D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, v:Double):Mat = notImplemented0("8D update");  
+  
+  def update(i1:Int, v:Double):Mat = notImplemented0("1D update");
+  def update(i1:Int, i2:Int, v:Double):Mat = notImplemented0("2D update");
+  def update(i1:Int, i2:IMat, v:Double):Mat = notImplemented0("2D update");
+  def update(i1:IMat, i2:Int, v:Double):Mat = notImplemented0("2D update");
+  
+  def update(i1:IMat, v:Float):Mat = notImplemented0("1D update");
+  def update(i1:IMat, i2:IMat, v:Float):Mat = notImplemented0("2D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, v:Float):Mat = notImplemented0("3D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, v:Float):Mat = notImplemented0("4D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, v:Float):Mat = notImplemented0("5D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, v:Float):Mat = notImplemented0("6D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, v:Float):Mat = notImplemented0("7D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, v:Float):Mat = notImplemented0("8D update");  
+  
+  def update(i1:Int, v:Float):Mat = notImplemented0("1D update");
+  def update(i1:Int, i2:Int, v:Float):Mat = notImplemented0("2D update");
+  def update(i1:Int, i2:IMat, v:Float):Mat = notImplemented0("2D update");
+  def update(i1:IMat, i2:Int, v:Float):Mat = notImplemented0("2D update");
+  
+  def update(i1:IMat, v:Int):Mat = notImplemented0("1D update");
+  def update(i1:IMat, i2:IMat, v:Int):Mat = notImplemented0("2D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, v:Int):Mat = notImplemented0("3D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, v:Int):Mat = notImplemented0("4D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, v:Int):Mat = notImplemented0("5D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, v:Int):Mat = notImplemented0("6D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, v:Int):Mat = notImplemented0("7D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, v:Int):Mat = notImplemented0("8D update");  
+  
+  def update(i1:Int, v:Int):Mat = notImplemented0("1D update");
+  def update(i1:Int, i2:Int, v:Int):Mat = notImplemented0("2D update");
+  def update(i1:Int, i2:IMat, v:Int):Mat = notImplemented0("2D update");
+  def update(i1:IMat, i2:Int, v:Int):Mat = notImplemented0("2D update");
   
   def copyTo(a:Mat) = notImplemented0("copyTo");
   def copy = notImplemented0("copy");
@@ -124,6 +176,8 @@ class Mat(val _dims:Array[Int]) extends ND with Serializable {
   def transpose(d1:Int, d2:Int, d3:Int, d4:Int):Mat = notImplemented0("transpose");
   def transpose(d1:Int, d2:Int, d3:Int, d4:Int, d5:Int):Mat = notImplemented0("transpose");
   def transpose(d1:Int, d2:Int, d3:Int, d4:Int, d5:Int, d6:Int):Mat = notImplemented0("transpose"); 
+  def transpose(d1:Int, d2:Int, d3:Int, d4:Int, d5:Int, d6:Int, d7:Int):Mat = notImplemented0("transpose"); 
+  def transpose(d1:Int, d2:Int, d3:Int, d4:Int, d5:Int, d6:Int, d7:Int, d8:Int):Mat = notImplemented0("transpose"); 
   
   def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):Mat =
     notImplemented0("tileMult");
@@ -188,19 +242,54 @@ class Mat(val _dims:Array[Int]) extends ND with Serializable {
   def max(b : Mat):Mat = notImplemented1("max", b)
   def min(b : Mat):Mat = notImplemented1("min", b)
   
-  def sum(b : Int*):Mat = notImplemented0("sum")
-  def prod(b : Int*):Mat = notImplemented0("prod")
-  def maxi(b : Int*):Mat = notImplemented0("maxi")
-  def mini(b : Int*):Mat = notImplemented0("mini")
-  def mean(b : Int*):Mat = notImplemented0("mean")
-  def variance(b : Int*):Mat = notImplemented0("variance")
-  
-  def sum(b : IMat):Mat = notImplemented0("sum")
+   def sum(b : IMat):Mat = notImplemented0("sum")
   def prod(b : IMat):Mat = notImplemented0("prod")
   def maxi(b : IMat):Mat = notImplemented0("maxi")
   def mini(b : IMat):Mat = notImplemented0("mini")
   def mean(b : IMat):Mat = notImplemented0("mean")
   def variance(b : IMat):Mat = notImplemented0("variance")
+  
+  def sum(i1:Int):Mat = notImplemented0("sum");
+  def sum(i1:Int, i2:Int):Mat = notImplemented0("sum");
+  def sum(i1:Int, i2:Int, i3:Int):Mat = notImplemented0("sum");  
+  def sum(i1:Int, i2:Int, i3:Int, i4:Int):Mat = notImplemented0("sum");   
+  def sum(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):Mat = notImplemented0("sum");   
+  def sum(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):Mat = notImplemented0("sum");  
+  
+  def prod(i1:Int):Mat = notImplemented0("prod");
+  def prod(i1:Int, i2:Int):Mat = notImplemented0("prod");
+  def prod(i1:Int, i2:Int, i3:Int):Mat = notImplemented0("prod");  
+  def prod(i1:Int, i2:Int, i3:Int, i4:Int):Mat = notImplemented0("prod");   
+  def prod(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):Mat = notImplemented0("prod");   
+  def prod(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):Mat = notImplemented0("prod");  
+  
+  def maxi(i1:Int):Mat = notImplemented0("maxi");
+  def maxi(i1:Int, i2:Int):Mat = notImplemented0("maxi");
+  def maxi(i1:Int, i2:Int, i3:Int):Mat = notImplemented0("maxi");  
+  def maxi(i1:Int, i2:Int, i3:Int, i4:Int):Mat = notImplemented0("maxi");   
+  def maxi(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):Mat = notImplemented0("maxi");   
+  def maxi(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):Mat = notImplemented0("maxi");  
+    
+  def mini(i1:Int):Mat = notImplemented0("mini");
+  def mini(i1:Int, i2:Int):Mat = notImplemented0("mini");
+  def mini(i1:Int, i2:Int, i3:Int):Mat = notImplemented0("mini");  
+  def mini(i1:Int, i2:Int, i3:Int, i4:Int):Mat = notImplemented0("mini");   
+  def mini(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):Mat = notImplemented0("mini");   
+  def mini(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):Mat = notImplemented0("mini");  
+  
+  def mean(i1:Int):Mat = notImplemented0("mean");
+  def mean(i1:Int, i2:Int):Mat = notImplemented0("mean");
+  def mean(i1:Int, i2:Int, i3:Int):Mat = notImplemented0("mean");  
+  def mean(i1:Int, i2:Int, i3:Int, i4:Int):Mat = notImplemented0("mean");   
+  def mean(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):Mat = notImplemented0("mean");   
+  def mean(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):Mat = notImplemented0("mean");  
+  
+  def variance(i1:Int):Mat = notImplemented0("variance");
+  def variance(i1:Int, i2:Int):Mat = notImplemented0("variance");
+  def variance(i1:Int, i2:Int, i3:Int):Mat = notImplemented0("variance");  
+  def variance(i1:Int, i2:Int, i3:Int, i4:Int):Mat = notImplemented0("variance");   
+  def variance(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):Mat = notImplemented0("variance");   
+  def variance(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):Mat = notImplemented0("variance");  
   
   def *  (b : Float):Mat = notImplemented1("*", b)
   def +  (b : Float):Mat = notImplemented1("+", b)
@@ -352,19 +441,8 @@ abstract class Pair(omat:Mat, mat:Mat) extends Serializable {
   def max(b : Mat):Mat = notImplemented1("max", b)
   def min(b : Mat):Mat = notImplemented1("min", b)
   
-  def sum(b : Int*):Mat = notImplemented0("sum")
-  def prod(b : Int*):Mat = notImplemented0("prod")
-  def maxi(b : Int*):Mat = notImplemented0("maxi")
-  def mini(b : Int*):Mat = notImplemented0("mini")
-  def mean(b : Int*):Mat = notImplemented0("mean")
-  def variance(b : Int*):Mat = notImplemented0("variance")
-  
-  def sum(b : IMat):Mat = notImplemented0("sum")
-  def prod(b : IMat):Mat = notImplemented0("prod")
-  def maxi(b : IMat):Mat = notImplemented0("maxi")
-  def mini(b : IMat):Mat = notImplemented0("mini")
-  def mean(b : IMat):Mat = notImplemented0("mean")
-  def variance(b : IMat):Mat = notImplemented0("variance")
+  def \ (b : Mat):Mat = notImplemented1("max", b)
+  def on(b : Mat):Mat = notImplemented1("min", b)
   
   def + (b : Float):Mat = notImplemented0("+")
   def - (b : Float):Mat = notImplemented0("-")
@@ -393,6 +471,9 @@ abstract class Pair(omat:Mat, mat:Mat) extends Serializable {
   def == (b : Float):Mat = notImplemented0("==")
   def === (b : Float):Mat = notImplemented0("===")
   def != (b : Float):Mat = notImplemented0("!=")
+  
+  def max(b : Float):Mat = notImplemented0("max")
+  def min(b : Float):Mat = notImplemented0("min")
   
   def \ (b : Float):Mat = notImplemented0("\\")
   def on (b : Float):Mat = notImplemented0("on")
@@ -426,6 +507,9 @@ abstract class Pair(omat:Mat, mat:Mat) extends Serializable {
   def === (b : Int):Mat = notImplemented0("===")
   def != (b : Int):Mat = notImplemented0("!=")
   
+  def max(b : Int):Mat = notImplemented0("max")
+  def min(b : Int):Mat = notImplemented0("min")
+  
   def \ (b : Int):Mat = notImplemented0("\\")
   def on (b : Int):Mat = notImplemented0("on")
   
@@ -457,6 +541,9 @@ abstract class Pair(omat:Mat, mat:Mat) extends Serializable {
   def === (b : Long):Mat = notImplemented0("===")
   def != (b : Long):Mat = notImplemented0("!=")
   
+  def max(b : Long):Mat = notImplemented0("max")
+  def min(b : Long):Mat = notImplemented0("min")
+  
   def \ (b : Long):Mat = notImplemented0("\\")
   def on (b : Long):Mat = notImplemented0("on")
   
@@ -487,6 +574,9 @@ abstract class Pair(omat:Mat, mat:Mat) extends Serializable {
   def == (b : Double):Mat = notImplemented0("==")
   def === (b : Double):Mat = notImplemented0("===")
   def != (b : Double):Mat = notImplemented0("!=")
+ 
+  def max(b : Double):Mat = notImplemented0("max")
+  def min(b : Double):Mat = notImplemented0("min")
   
   def \ (b : Double):Mat = notImplemented0("\\")
   def on (b : Double):Mat = notImplemented0("on")

@@ -4,7 +4,7 @@ import java.util.Arrays
 import edu.berkeley.bid.CBLAS._
 import scala.util.hashing.MurmurHash3
 
-case class IMat(dims:Array[Int], val data:Array[Int]) extends DenseMat[Int](dims, data) { 
+case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dims0, data) { 
   
   def this(nr:Int, nc:Int, data:Array[Int]) = this(Array(nr, nc), data);
   

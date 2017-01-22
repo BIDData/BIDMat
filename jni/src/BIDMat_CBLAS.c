@@ -390,6 +390,26 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_spermute
 	(*env)->ReleasePrimitiveArrayCritical(env, j_A, A, 0);
 }
 
+JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_dpermute
+(JNIEnv * env, jobject calling_obj, jint M, jint N, jint K, jdoubleArray j_A, jdoubleArray j_B) {
+        int i, offset, step = M*N;
+	jdouble * A = (*env)->GetPrimitiveArrayCritical(env, j_A, JNI_FALSE);
+	jdouble * B = (*env)->GetPrimitiveArrayCritical(env, j_B, JNI_FALSE);
+
+#ifdef __INTEL_COMPILER
+        for (i = 0, offset = 0; i < K; i++, offset += step) {
+          mkl_domatcopy('C', 'T', M, N, 1.0, A+offset, M, B+offset, N);
+        }
+#else
+        for (i = 0, offset = 0; i < K; i++, offset += step) {
+          cblas_domatcopy(CblasColMajor, CblasTrans, M, N, 1.0, A+offset, M, B+offset, N);
+        }
+#endif
+
+	(*env)->ReleasePrimitiveArrayCritical(env, j_B, B, 0);
+	(*env)->ReleasePrimitiveArrayCritical(env, j_A, A, 0);
+}
+
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_saxpy
 (JNIEnv * env, jobject calling_obj, jint N, jfloat a, jfloatArray jX, jint incX, jfloatArray jY, jint incY){
 	jfloat * X = (*env)->GetPrimitiveArrayCritical(env, jX, JNI_FALSE);

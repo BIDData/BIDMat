@@ -102,31 +102,17 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   }
 
   def find3:(IMat, IMat, FMat) = { val (ii, jj, vv) = gfind3 ; (IMat(ii), IMat(jj), FMat(vv)) }
-
-  /** Basic 2D slicing with IMats and Ints */
-  
-  override def apply(a:IMat, b:IMat):FMat = FMat(gapply(a, b))
-  override def apply(a:IMat, b:Int):FMat = FMat(gapply(a, b))
-  override def apply(a:Int, b:IMat):FMat = FMat(gapply(a, b))
   
   /** n-dimensional element access */
   
-  def apply(i1:Int, i2:Int):Float = apply(Array(i1, i2))
-  def apply(i1:Int, i2:Int, i3:Int):Float = apply(Array(i1, i2, i3))
-  def apply(i1:Int, i2:Int, i3:Int, i4:Int):Float = apply(Array(i1, i2, i3, i4))
-  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):Float = apply(Array(i1, i2, i3, i4, i5))
-  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):Float = apply(Array(i1, i2, i3, i4, i5, i6))
-  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int):Float = apply(Array(i1, i2, i3, i4, i5, i6, i7))
-  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int):Float = apply(Array(i1, i2, i3, i4, i5, i6, i7, i8))
-  
-  /** n-dimensional slicing */
-  
-  def apply(i1:IMat, i2:IMat, i3:IMat):FMat = apply(Array(i1, i2, i3))
-  def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat):FMat = apply(Array(i1, i2, i3, i4))
-  def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat):FMat = apply(Array(i1, i2, i3, i4, i5))
-  def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat):FMat = apply(Array(i1, i2, i3, i4, i5, i6))
-  def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat):FMat = apply(Array(i1, i2, i3, i4, i5, i6, i7))
-  def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat):FMat = apply(Array(i1, i2, i3, i4, i5, i6, i7, i8))
+  override def apply(i1:Int):Float = super.apply(i1);  
+  override def apply(i1:Int, i2:Int):Float = super.apply(i1, i2);
+  def apply(i1:Int, i2:Int, i3:Int):Float = apply(Array(i1, i2, i3));
+  def apply(i1:Int, i2:Int, i3:Int, i4:Int):Float = apply(Array(i1, i2, i3, i4));
+  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):Float = apply(Array(i1, i2, i3, i4, i5));
+  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):Float = apply(Array(i1, i2, i3, i4, i5, i6));
+  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int):Float = apply(Array(i1, i2, i3, i4, i5, i6, i7));
+  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int):Float = apply(Array(i1, i2, i3, i4, i5, i6, i7, i8));
   
   /** linearized access */
   
@@ -135,9 +121,26 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
     data(indx)
   }
   
+  /** Basic 2D slicing with IMats and Ints */
+  
+  override def apply(a:IMat, b:IMat):FMat = FMat(gapply(a, b));
+  override def apply(a:IMat, b:Int):FMat = FMat(gapply(a, b));
+  override def apply(a:Int, b:IMat):FMat = FMat(gapply(a, b));
+  
+  /** n-dimensional slicing */
+  
+  override def apply(i1:IMat, i2:IMat, i3:IMat):FMat = apply(Array(i1, i2, i3));
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat):FMat = apply(Array(i1, i2, i3, i4));
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat):FMat = apply(Array(i1, i2, i3, i4, i5));
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat):FMat = apply(Array(i1, i2, i3, i4, i5, i6));
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat):FMat = apply(Array(i1, i2, i3, i4, i5, i6, i7));
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat):FMat = apply(Array(i1, i2, i3, i4, i5, i6, i7, i8));
+  
+ 
+  
   /** apply to an index IMat, and mirror its structure in the result */
   
-  def apply(inds:IMat):FMat = {
+  override def apply(inds:IMat):FMat = {
     	inds match {
     	case aa:MatrixWildcard => {
     		val out = FMat.newOrCheckFMat(length, 1, null, GUID, inds.GUID, "apply(?)".##);
@@ -461,9 +464,9 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   }
 
   /** transpose */
-   def transpose(dims:Array[Int]):FMat = transpose(irow(dims))
+  override def transpose(dims:Array[Int]):FMat = transpose(irow(dims))
 
-  def transpose(perm:IMat):FMat = { 
+  override def transpose(perm:IMat):FMat = { 
     val nd = _dims.length
     if (perm.length != nd) { 
       throw new RuntimeException("FND transpose bad permutation ")
@@ -490,13 +493,13 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
     out
   }
   
-  def transpose(i1:Int, i2:Int):FMat = transpose(Array(i1, i2))
-  def transpose(i1:Int, i2:Int, i3:Int):FMat = transpose(Array(i1, i2, i3))
-  def transpose(i1:Int, i2:Int, i3:Int, i4:Int):FMat = transpose(Array(i1, i2, i3, i4))
-  def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):FMat = transpose(Array(i1, i2, i3, i4, i5))
-  def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):FMat = transpose(Array(i1, i2, i3, i4, i5, i6))
-  def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int):FMat = transpose(Array(i1, i2, i3, i4, i5, i6, i7))
-  def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int):FMat = transpose(Array(i1, i2, i3, i4, i5, i6, i7, i8))
+  override def transpose(i1:Int, i2:Int):FMat = transpose(Array(i1, i2))
+  override def transpose(i1:Int, i2:Int, i3:Int):FMat = transpose(Array(i1, i2, i3))
+  override def transpose(i1:Int, i2:Int, i3:Int, i4:Int):FMat = transpose(Array(i1, i2, i3, i4))
+  override def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):FMat = transpose(Array(i1, i2, i3, i4, i5))
+  override def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):FMat = transpose(Array(i1, i2, i3, i4, i5, i6))
+  override def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int):FMat = transpose(Array(i1, i2, i3, i4, i5, i6, i7))
+  override def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int):FMat = transpose(Array(i1, i2, i3, i4, i5, i6, i7, i8))
   
   
   def ffMatOp(b: Mat, f:(Float, Float) => Float, out:Mat):FMat =
@@ -645,26 +648,31 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   override def sum(i1:Int, i2:Int, i3:Int, i4:Int):FMat = sum(Array(i1, i2, i3, i4));
   override def sum(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):FMat = sum(Array(i1, i2, i3, i4, i5));
   override def sum(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):FMat = sum(Array(i1, i2, i3, i4, i5, i6));
+  
   override def prod(i1:Int, i2:Int):FMat = prod(Array(i1, i2));
   override def prod(i1:Int, i2:Int, i3:Int):FMat = prod(Array(i1, i2, i3));
   override def prod(i1:Int, i2:Int, i3:Int, i4:Int):FMat = prod(Array(i1, i2, i3, i4));
   override def prod(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):FMat = prod(Array(i1, i2, i3, i4, i5));
   override def prod(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):FMat = prod(Array(i1, i2, i3, i4, i5, i6));
+  
   override def maxi(i1:Int, i2:Int):FMat = maxi(Array(i1, i2));
   override def maxi(i1:Int, i2:Int, i3:Int):FMat = maxi(Array(i1, i2, i3));
   override def maxi(i1:Int, i2:Int, i3:Int, i4:Int):FMat = maxi(Array(i1, i2, i3, i4));
   override def maxi(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):FMat = maxi(Array(i1, i2, i3, i4, i5));
   override def maxi(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):FMat = maxi(Array(i1, i2, i3, i4, i5, i6));
+  
   override def mini(i1:Int, i2:Int):FMat = mini(Array(i1, i2));
   override def mini(i1:Int, i2:Int, i3:Int):FMat = mini(Array(i1, i2, i3));
   override def mini(i1:Int, i2:Int, i3:Int, i4:Int):FMat = mini(Array(i1, i2, i3, i4));
   override def mini(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):FMat = mini(Array(i1, i2, i3, i4, i5));
   override def mini(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):FMat = mini(Array(i1, i2, i3, i4, i5, i6));
+  
   override def mean(i1:Int, i2:Int):FMat = mean(Array(i1, i2));
   override def mean(i1:Int, i2:Int, i3:Int):FMat = mean(Array(i1, i2, i3));
   override def mean(i1:Int, i2:Int, i3:Int, i4:Int):FMat = mean(Array(i1, i2, i3, i4));
   override def mean(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):FMat = mean(Array(i1, i2, i3, i4, i5));
   override def mean(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):FMat = mean(Array(i1, i2, i3, i4, i5, i6));
+  
   override def variance(i1:Int, i2:Int):FMat = variance(Array(i1, i2));
   override def variance(i1:Int, i2:Int, i3:Int):FMat = variance(Array(i1, i2, i3));
   override def variance(i1:Int, i2:Int, i3:Int, i4:Int):FMat = variance(Array(i1, i2, i3, i4));
@@ -2295,6 +2303,7 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair(omat, mat) {
   override def dotr(b : Mat) = Mop_Dotr.op(mat, b, omat)
   override def ⊗  (b : Mat) = Mop_Kron.op(mat, b, omat)
   override def ** (b : Mat) = Mop_Kron.op(mat, b, omat)
+  
   override def \  (b : Mat):Mat = Mop_HCat.op(mat, b, omat)
   override def on (b : Mat):Mat = Mop_VCat.op(mat, b, omat)
 
@@ -2351,7 +2360,7 @@ object FMat {
     x match {
       case dd:DMat => {Mat.copyToFloatArray(dd.data, 0, out.data, 0, dd.length)}
       case ff:FMat => {System.arraycopy(ff.data, 0, out.data, 0, ff.length)}
-      case ii:IMat => {Mat.copyToFloatArray(ii.data, 0, out.data, 0, ii.length)}
+      case ii:IMat => apply(ii)
       case ii:LMat => {Mat.copyToFloatArray(ii.data, 0, out.data, 0, ii.length)}
       case ss:SMat => ss.full(out)
       case gg:GMat => gg.toFMat(out)
