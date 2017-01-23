@@ -77,20 +77,6 @@ class Mat(val _dims:Array[Int]) extends ND with Serializable {
   def update(i1:IMat, i2:Int, v:Mat):Mat = notImplemented0("2D update");
   def update(i1:Int, i2:IMat, v:Mat):Mat = notImplemented0("2D update");
   
-  def update(i1:IMat, v:Double):Mat = notImplemented0("1D update");
-  def update(i1:IMat, i2:IMat, v:Double):Mat = notImplemented0("2D update");
-  def update(i1:IMat, i2:IMat, i3:IMat, v:Double):Mat = notImplemented0("3D update");
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, v:Double):Mat = notImplemented0("4D update");
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, v:Double):Mat = notImplemented0("5D update");
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, v:Double):Mat = notImplemented0("6D update");
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, v:Double):Mat = notImplemented0("7D update");
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, v:Double):Mat = notImplemented0("8D update");  
-  
-  def update(i1:Int, v:Double):Mat = notImplemented0("1D update");
-  def update(i1:Int, i2:Int, v:Double):Mat = notImplemented0("2D update");
-  def update(i1:Int, i2:IMat, v:Double):Mat = notImplemented0("2D update");
-  def update(i1:IMat, i2:Int, v:Double):Mat = notImplemented0("2D update");
-  
   def update(i1:IMat, v:Float):Mat = notImplemented0("1D update");
   def update(i1:IMat, i2:IMat, v:Float):Mat = notImplemented0("2D update");
   def update(i1:IMat, i2:IMat, i3:IMat, v:Float):Mat = notImplemented0("3D update");
@@ -105,6 +91,20 @@ class Mat(val _dims:Array[Int]) extends ND with Serializable {
   def update(i1:Int, i2:IMat, v:Float):Mat = notImplemented0("2D update");
   def update(i1:IMat, i2:Int, v:Float):Mat = notImplemented0("2D update");
   
+  def update(i1:IMat, v:Double):Mat = notImplemented0("1D update");
+  def update(i1:IMat, i2:IMat, v:Double):Mat = notImplemented0("2D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, v:Double):Mat = notImplemented0("3D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, v:Double):Mat = notImplemented0("4D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, v:Double):Mat = notImplemented0("5D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, v:Double):Mat = notImplemented0("6D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, v:Double):Mat = notImplemented0("7D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, v:Double):Mat = notImplemented0("8D update");  
+  
+  def update(i1:Int, v:Double):Mat = notImplemented0("1D update");
+  def update(i1:Int, i2:Int, v:Double):Mat = notImplemented0("2D update");
+  def update(i1:Int, i2:IMat, v:Double):Mat = notImplemented0("2D update");
+  def update(i1:IMat, i2:Int, v:Double):Mat = notImplemented0("2D update");
+  
   def update(i1:IMat, v:Int):Mat = notImplemented0("1D update");
   def update(i1:IMat, i2:IMat, v:Int):Mat = notImplemented0("2D update");
   def update(i1:IMat, i2:IMat, i3:IMat, v:Int):Mat = notImplemented0("3D update");
@@ -118,6 +118,20 @@ class Mat(val _dims:Array[Int]) extends ND with Serializable {
   def update(i1:Int, i2:Int, v:Int):Mat = notImplemented0("2D update");
   def update(i1:Int, i2:IMat, v:Int):Mat = notImplemented0("2D update");
   def update(i1:IMat, i2:Int, v:Int):Mat = notImplemented0("2D update");
+  
+  def update(i1:IMat, v:Long):Mat = notImplemented0("1D update");
+  def update(i1:IMat, i2:IMat, v:Long):Mat = notImplemented0("2D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, v:Long):Mat = notImplemented0("3D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, v:Long):Mat = notImplemented0("4D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, v:Long):Mat = notImplemented0("5D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, v:Long):Mat = notImplemented0("6D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, v:Long):Mat = notImplemented0("7D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, v:Long):Mat = notImplemented0("8D update");  
+  
+  def update(i1:Int, v:Long):Mat = notImplemented0("1D update");
+  def update(i1:Int, i2:Int, v:Long):Mat = notImplemented0("2D update");
+  def update(i1:Int, i2:IMat, v:Long):Mat = notImplemented0("2D update");
+  def update(i1:IMat, i2:Int, v:Long):Mat = notImplemented0("2D update"); 
   
   def copyTo(a:Mat) = notImplemented0("copyTo");
   def copy = notImplemented0("copy");
@@ -178,6 +192,7 @@ class Mat(val _dims:Array[Int]) extends ND with Serializable {
   def transpose(d1:Int, d2:Int, d3:Int, d4:Int, d5:Int, d6:Int):Mat = notImplemented0("transpose"); 
   def transpose(d1:Int, d2:Int, d3:Int, d4:Int, d5:Int, d6:Int, d7:Int):Mat = notImplemented0("transpose"); 
   def transpose(d1:Int, d2:Int, d3:Int, d4:Int, d5:Int, d6:Int, d7:Int, d8:Int):Mat = notImplemented0("transpose"); 
+   
   
   def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):Mat =
     notImplemented0("tileMult");
