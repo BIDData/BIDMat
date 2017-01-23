@@ -88,6 +88,8 @@ public final class CBLAS {
 
   public static native  void spermute(int d1, int d2, int d3, float [] in, float [] out);
   public static native  void dpermute(int d1, int d2, int d3, double [] in, double [] out);
+  public static native  void ipermute(int d1, int d2, int d3, int [] in, int [] out);
+  public static native  void lpermute(int d1, int d2, int d3, long [] in, long [] out);
   
   public static native  void word2vecFwd(int nrows, int ncols, int nwa, int nwb, int [] WA, int [] WB, float [] A, float [] B, float [] C);
   
