@@ -107,6 +107,7 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   
   override def apply(i1:Int):Float = super.apply(i1);  
   override def apply(i1:Int, i2:Int):Float = super.apply(i1, i2);
+  
   def apply(i1:Int, i2:Int, i3:Int):Float = apply(Array(i1, i2, i3));
   def apply(i1:Int, i2:Int, i3:Int, i4:Int):Float = apply(Array(i1, i2, i3, i4));
   def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):Float = apply(Array(i1, i2, i3, i4, i5));

@@ -1,5 +1,6 @@
 
 package BIDMat
+
 import jcuda._
 import jcuda.runtime._
 import jcuda.runtime.JCuda._
@@ -13,7 +14,6 @@ import scala.util.hashing.MurmurHash3
 import edu.berkeley.bid.CUMAT
 import java.io.ObjectOutputStream
 import java.io.ObjectInputStream
-import GSMat._
 
 @SerialVersionUID(100L)
 class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) extends FMat(dims, null) {
@@ -109,42 +109,49 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     }
   }
   
+  /** 1D access */
+  
+  override def apply(ind:Int):Float = {
+  	val tmp = new Array[Float](1);
+    GMat.GPUtoCPUarraycopy(pdata, ind, tmp, 0, 1, "GMat apply");
+    tmp(0)
+  }
+  
   /** 2D access */
   
-  def apply(i:Int, j:Int):Float = {
-    val tmp = new Array[Float](1)
-    cudaMemcpy(Pointer.to(tmp), pdata.withByteOffset(1L*(i + j*nrows)*Sizeof.FLOAT), Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost);
-    cudaDeviceSynchronize;
-    val err = cudaGetLastError;
-    if (err != 0) throw new RuntimeException("GMat apply() error " + cudaGetErrorString(err));
+  override def apply(i:Int, j:Int):Float = {
+    val tmp = new Array[Float](1);
+    GMat.GPUtoCPUarraycopy(pdata, i + nrows * j, tmp, 0, 1, "GMat apply");
     tmp(0)
   }
   
   /** ND access */
   
-  def apply(inds:Array[Int]):Float = {
+  override def apply(inds:Array[Int]):Float = {
     val indx = ND.linearize(inds, dims);
     val tmp = new Array[Float](1);
     GMat.GPUtoCPUarraycopy(pdata, indx, tmp, 0, 1, "GMat apply");
     tmp(0);
   }
   
+  /** explicit ND access */
+  
+  override def apply(i1:Int, i2:Int, i3:Int):Float = apply(Array(i1, i2, i3));
+  override def apply(i1:Int, i2:Int, i3:Int, i4:Int):Float = apply(Array(i1, i2, i3, i4));
+  override def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):Float = apply(Array(i1, i2, i3, i4, i5));
+  override def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):Float = apply(Array(i1, i2, i3, i4, i5 ,i6));
+
   /** ND slicing */
   
   override def apply(i1:IMat):GMat = apply(Array(i1), null);
   override def apply(i1:IMat, i2:IMat):GMat = apply(Array(i1, i2), null);
   override def apply(i1:IMat, i2:IMat, i3:IMat):GMat = apply(Array(i1, i2, i3), null);
   override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat):GMat = apply(Array(i1, i2, i3, i4), null);
-  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat):Mat = apply(Array(i1, i2, i3, i4, i5), null);
-  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat):Mat = apply(Array(i1, i2, i3, i4, i5), null);
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat):GMat = apply(Array(i1, i2, i3, i4, i5), null);
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat):GMat = apply(Array(i1, i2, i3, i4, i5), null);
   
-  override def apply(i1:IMat, mat:Mat):GMat = apply(Array(i1), mat);
-  override def apply(i1:IMat, i2:IMat, mat:Mat):GMat = apply(Array(i1, i2), mat);
-  override def apply(i1:IMat, i2:IMat, i3:IMat, mat:Mat):GMat = apply(Array(i1, i2, i3), mat);
-  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, mat:Mat):GMat = apply(Array(i1, i2, i3, i4), mat);
-  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, mat:Mat):Mat = apply(Array(i1, i2, i3, i4, i5), mat);
-  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, mat:Mat):Mat = apply(Array(i1, i2, i3, i4, i5, i6), mat);
-  
+  override def apply(i1:IMat, i2:Int):GMat = apply(Array(i1, MatFunctions.irow(i2)), null);
+  override def apply(i1:Int, i2:IMat):GMat = apply(Array(MatFunctions.irow(i1), i2), null);
  
   def apply(inds:Array[IMat], omat:Mat):GMat = {  
     val newdims = new Array[Int](_dims.length)
@@ -197,7 +204,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
   
   /** ND update */
   
-  def update(inds:Array[Int], v:Float):GMat = {
+  override def update(inds:Array[Int], v:Float):GMat = {
     val indx = ND.linearize(inds, dims); 
     val tmp = Array[Float](v);
     GMat.CPUtoGPUarraycopy(tmp, 0, pdata, indx, 1, "GMat update");
@@ -206,19 +213,15 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
   
   /** ND sliced updates */
   
-  def update(i1:IMat, i2:IMat, i3:IMat, vv:GMat):GMat = update(Array(i1, i2, i3), vv)
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:GMat):GMat = update(Array(i1, i2, i3, i4), vv)
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:GMat):GMat = update(Array(i1, i2, i3, i4, i5), vv)
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:GMat):GMat = update(Array(i1, i2, i3, i4, i5, i6), vv)
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:GMat):GMat = update(Array(i1, i2, i3, i4, i5, i6, i7), vv)
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:GMat):GMat = update(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv)
-  
-  override def update(i1:IMat, i2:IMat, i3:IMat, vv:Mat):GMat = update(Array(i1, i2, i3), vv.asInstanceOf[GMat])
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:Mat):GMat = update(Array(i1, i2, i3, i4), vv.asInstanceOf[GMat])
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:Mat):GMat = update(Array(i1, i2, i3, i4, i5), vv.asInstanceOf[GMat])
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:Mat):GMat = update(Array(i1, i2, i3, i4, i5, i6), vv.asInstanceOf[GMat])
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:Mat):GMat = update(Array(i1, i2, i3, i4, i5, i6, i7), vv.asInstanceOf[GMat])
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:Mat):GMat = update(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv.asInstanceOf[GMat])
+  override def update(i1:IMat, i2:IMat, i3:IMat, vv:FMat):GMat = update(Array(i1, i2, i3), GMat(vv))
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:FMat):GMat = update(Array(i1, i2, i3, i4), GMat(vv))
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:FMat):GMat = update(Array(i1, i2, i3, i4, i5), GMat(vv))
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:FMat):GMat = update(Array(i1, i2, i3, i4, i5, i6), GMat(vv))
+
+  override def update(i1:IMat, i2:IMat, i3:IMat, vv:Mat):GMat = update(Array(i1, i2, i3), GMat(vv))
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:Mat):GMat = update(Array(i1, i2, i3, i4), GMat(vv))
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:Mat):GMat = update(Array(i1, i2, i3, i4, i5), GMat(vv))
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:Mat):GMat = update(Array(i1, i2, i3, i4, i5, i6), GMat(vv))
 
   
  def update(inds:Array[IMat], vv:GMat):GMat = {
@@ -766,7 +769,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     out
   }
   
-  def copyTo(a:FMat):FMat = {
+  override def copyTo(a:FMat):FMat = {
 //  		val a = out.recycle(nrows, ncols, 0)
   		cublasGetVector(nrows*ncols, Sizeof.FLOAT, pdata, 1, Pointer.to(a.data), 1)
   		cudaDeviceSynchronize()
@@ -808,7 +811,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     to
   }
   
-  override def tileCopy(fromrow:Int, fromcol:Int, to:Mat, torow:Int, tocol:Int, height:Int, width:Int):Mat = {
+  override def tileCopy(fromrow:Int, fromcol:Int, to:Mat, torow:Int, tocol:Int, height:Int, width:Int):FMat = {
     tileCopy(fromrow, fromcol, to.asInstanceOf[GMat], torow, tocol, height, width);
   }
   
@@ -839,9 +842,9 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
   
   override def copyTo(out:Mat):Mat = {
     out match {
-      case a:FMat => copyTo(a)
       case a:GMat => copyTo(a)
       case a:GIMat => copyTo(a)
+      case a:FMat => copyTo(a)
       case a:TMat => copyTo(a)
     }
   }
@@ -874,7 +877,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
 //    if (pdata != null) free
   }
   
-  def getdiag():GMat = {
+  override def getdiag():GMat = {
     if (nrows != ncols) throw new RuntimeException("getdiag requires a square matrix, but dims= %d %d" format (nrows, ncols))
     val out = GMat.newOrCheckGMat(nrows, 1, null, GUID, "getdiag".##)
     cudaMemcpy2D(out.pdata, Sizeof.FLOAT, pdata, (nrows+1)*Sizeof.FLOAT, Sizeof.FLOAT, nrows, cudaMemcpyDeviceToDevice)
@@ -888,7 +891,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
   }
   
     
-  def mkdiag():GMat = {
+  override def mkdiag():GMat = {
     if (math.min(nrows, ncols) != 1) throw new RuntimeException("mkdiag requires a vector argument, but dims= %d %d" format (nrows, ncols))
     val size = math.max(nrows, ncols)
     val out = GMat.newOrCheckGMat(size, size, null, GUID, "mkdiag".##)
@@ -1078,7 +1081,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     
   def cumminByKey(keys:GIMat):GMat = cumminByKey(keys, null);
 
-  def _reverse(omat:Mat):GMat = {
+  override def _reverse(omat:Mat):GMat = {
     val out = GMat.newOrCheckGMat(nrows, ncols, omat, GUID,  "reverse".##);
     val err = CUMAT.reverse(pdata, out.pdata, llength);
     if (err != 0) {
@@ -1087,9 +1090,9 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     out
   }
   
-  def reverse:GMat = _reverse(null);
+  override def reverse:GMat = _reverse(null);
   
-  def reverse(omat:Mat):GMat = _reverse(omat);
+  override def reverse(omat:Mat):GMat = _reverse(omat);
   
   /*
    * Basic compute routines on pairs of GMats
@@ -1148,12 +1151,12 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
   override def mean(ind:IMat):GMat = SciFunctions._mean(this, checkOne(ind,"mean")+1).asInstanceOf[GMat];
   override def variance(ind:IMat):GMat = SciFunctions._variance(this, checkOne(ind,"variance")+1).asInstanceOf[GMat];
 
-  override def sum(ind:Int*):GMat = reduceOp(null, checkOne(ind,"sum")+1, 0f, op_add);
-  override def prod(ind:Int*):GMat = reduceOp(null, checkOne(ind,"prod")+1, 1f, op_mul);
-  override def maxi(ind:Int*):GMat = reduceOp(null, checkOne(ind,"maxi")+1, Float.MinValue, op_max);
-  override def mini(ind:Int*):GMat = reduceOp(null, checkOne(ind,"mini")+1, Float.MaxValue, op_min);
-  override def mean(ind:Int*):GMat = SciFunctions._mean(this, checkOne(ind,"mean")+1).asInstanceOf[GMat];
-  override def variance(ind:Int*):GMat = SciFunctions._variance(this, checkOne(ind,"variance")+1).asInstanceOf[GMat];
+  override def sum(ind:Int):GMat = reduceOp(null, ind+1, 0f, op_add);
+  override def prod(ind:Int):GMat = reduceOp(null, ind+1, 1f, op_mul);
+  override def maxi(ind:Int):GMat = reduceOp(null, ind+1, Float.MinValue, op_max);
+  override def mini(ind:Int):GMat = reduceOp(null, ind+1, Float.MaxValue, op_min);
+  override def mean(ind:Int):GMat = SciFunctions._mean(this, ind+1).asInstanceOf[GMat];
+  override def variance(ind:Int):GMat = SciFunctions._variance(this, ind+1).asInstanceOf[GMat];
 
   
   override def + (a : Float) = gOp(GMat.elem(a), null, op_add)
@@ -1238,68 +1241,68 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
  /*
   * Specialize to IMats to help the type system. 
   */
-  def *   (b : IMat) = Mop_Times.op(this, b, null) 
-  def *^  (b : IMat) = Mop_TimesT.op(this, b, null)
-  def xT  (b : IMat) = Mop_TimesT.op(this, b, null)
-  def Tx  (b : IMat) = Mop_TTimes.op(this, b, null)
-  def ^*  (b : IMat) = Mop_TTimes.op(this, b, null)
-  def +   (b : IMat) = Mop_Plus.op(this, b, null)
-  def -   (b : IMat) = Mop_Minus.op(this, b, null)
-  def *@  (b : IMat) = Mop_ETimes.op(this, b, null)
-  def ∘   (b : IMat) = Mop_ETimes.op(this, b, null)
-  def /<  (b : IMat) = Mop_Div.op(this, b, null)
-  def \\  (b : IMat) = Mop_RSolve.op(this, b, null)
-  def ◁   (b : IMat) = Mop_Div.op(this, b, null)
-  def ▷   (b : IMat) = Mop_RSolve.op(this, b, null)
-  def /   (b : IMat) = Mop_EDiv.op(this, b, null)  
-  def ^   (b : IMat) = Mop_Pow.op(this, b, null) 
-  def ∙   (b : IMat) = Mop_Dot.op(this, b, null)
-  def ∙→  (b : IMat) = Mop_Dotr.op(this, b, null)
-  def dot (b : IMat) = Mop_Dot.op(this, b, null)
-  def dotr(b : IMat) = Mop_Dotr.op(this, b, null)
-  def \   (b : IMat) = Mop_HCat.op(this, b, null)
-  def on  (b : IMat) = Mop_VCat.op(this, b, null)
+  override def *   (b : IMat) = Mop_Times.op(this, b, null) 
+  override def *^  (b : IMat) = Mop_TimesT.op(this, b, null)
+  override def xT  (b : IMat) = Mop_TimesT.op(this, b, null)
+  override def Tx  (b : IMat) = Mop_TTimes.op(this, b, null)
+  override def ^*  (b : IMat) = Mop_TTimes.op(this, b, null)
+  override def +   (b : IMat) = Mop_Plus.op(this, b, null)
+  override def -   (b : IMat) = Mop_Minus.op(this, b, null)
+  override def *@  (b : IMat) = Mop_ETimes.op(this, b, null)
+  override def ∘   (b : IMat) = Mop_ETimes.op(this, b, null)
+  override def /<  (b : IMat) = Mop_Div.op(this, b, null)
+  override def \\  (b : IMat) = Mop_RSolve.op(this, b, null)
+  override def ◁   (b : IMat) = Mop_Div.op(this, b, null)
+  override def ▷   (b : IMat) = Mop_RSolve.op(this, b, null)
+  override def /   (b : IMat) = Mop_EDiv.op(this, b, null)  
+  override def ^   (b : IMat) = Mop_Pow.op(this, b, null) 
+  override def ∙   (b : IMat) = Mop_Dot.op(this, b, null)
+  override def ∙→  (b : IMat) = Mop_Dotr.op(this, b, null)
+  override def dot (b : IMat) = Mop_Dot.op(this, b, null)
+  override def dotr(b : IMat) = Mop_Dotr.op(this, b, null)
+  override def \   (b : IMat) = Mop_HCat.op(this, b, null)
+  override def on  (b : IMat) = Mop_VCat.op(this, b, null)
 
-  def >   (b : IMat) = Mop_GT.op(this, b, null)
-  def <   (b : IMat) = Mop_LT.op(this, b, null)
-  def ==  (b : IMat) = Mop_EQ.op(this, b, null)
-  def === (b : IMat) = Mop_EQ.op(this, b, null)
-  def >=  (b : IMat) = Mop_GE.op(this, b, null)
-  def <=  (b : IMat) = Mop_LE.op(this, b, null)
-  def !=  (b : IMat) = Mop_NE.op(this, b, null)
+  override def >   (b : IMat) = Mop_GT.op(this, b, null)
+  override def <   (b : IMat) = Mop_LT.op(this, b, null)
+  override def ==  (b : IMat) = Mop_EQ.op(this, b, null)
+  override def === (b : IMat) = Mop_EQ.op(this, b, null)
+  override def >=  (b : IMat) = Mop_GE.op(this, b, null)
+  override def <=  (b : IMat) = Mop_LE.op(this, b, null)
+  override def !=  (b : IMat) = Mop_NE.op(this, b, null)
    
  /*
   * Specialize to DMats to help the type system. 
   */ 
-  def *   (b : DMat) = Mop_Times.op(this, b, null) 
-  def *^  (b : DMat) = Mop_TimesT.op(this, b, null)
-  def xT  (b : DMat) = Mop_TimesT.op(this, b, null)
-  def Tx  (b : DMat) = Mop_TTimes.op(this, b, null)
-  def ^*  (b : DMat) = Mop_TTimes.op(this, b, null)
-  def +   (b : DMat) = Mop_Plus.op(this, b, null)
-  def -   (b : DMat) = Mop_Minus.op(this, b, null)
-  def *@  (b : DMat) = Mop_ETimes.op(this, b, null)
-  def ∘   (b : DMat) = Mop_ETimes.op(this, b, null)
-  def /<  (b : DMat) = Mop_Div.op(this, b, null)
-  def \\  (b : DMat) = Mop_RSolve.op(this, b, null)
-  def ◁   (b : DMat) = Mop_Div.op(this, b, null)
-  def ▷   (b : DMat) = Mop_RSolve.op(this, b, null)
-  def /   (b : DMat) = Mop_EDiv.op(this, b, null)  
-  def ^   (b : DMat) = Mop_Pow.op(this, b, null) 
-  def ∙   (b : DMat) = Mop_Dot.op(this, b, null)
-  def ∙→  (b : DMat) = Mop_Dotr.op(this, b, null)
-  def dot (b : DMat) = Mop_Dot.op(this, b, null)
-  def dotr(b : DMat) = Mop_Dotr.op(this, b, null)
-  def \   (b : DMat) = Mop_HCat.op(this, b, null)
-  def on  (b : DMat) = Mop_VCat.op(this, b, null)
+  override def *   (b : DMat) = Mop_Times.op(this, b, null) 
+  override def *^  (b : DMat) = Mop_TimesT.op(this, b, null)
+  override def xT  (b : DMat) = Mop_TimesT.op(this, b, null)
+  override def Tx  (b : DMat) = Mop_TTimes.op(this, b, null)
+  override def ^*  (b : DMat) = Mop_TTimes.op(this, b, null)
+  override def +   (b : DMat) = Mop_Plus.op(this, b, null)
+  override def -   (b : DMat) = Mop_Minus.op(this, b, null)
+  override def *@  (b : DMat) = Mop_ETimes.op(this, b, null)
+  override def ∘   (b : DMat) = Mop_ETimes.op(this, b, null)
+  override def /<  (b : DMat) = Mop_Div.op(this, b, null)
+  override def \\  (b : DMat) = Mop_RSolve.op(this, b, null)
+  override def ◁   (b : DMat) = Mop_Div.op(this, b, null)
+  override def ▷   (b : DMat) = Mop_RSolve.op(this, b, null)
+  override def /   (b : DMat) = Mop_EDiv.op(this, b, null)  
+  override def ^   (b : DMat) = Mop_Pow.op(this, b, null) 
+  override def ∙   (b : DMat) = Mop_Dot.op(this, b, null)
+  override def ∙→  (b : DMat) = Mop_Dotr.op(this, b, null)
+  override def dot (b : DMat) = Mop_Dot.op(this, b, null)
+  override def dotr(b : DMat) = Mop_Dotr.op(this, b, null)
+  override def \   (b : DMat) = Mop_HCat.op(this, b, null)
+  override def on  (b : DMat) = Mop_VCat.op(this, b, null)
   
-  def >   (b : DMat) = Mop_GT.op(this, b, null)
-  def <   (b : DMat) = Mop_LT.op(this, b, null)
-  def ==  (b : DMat) = Mop_EQ.op(this, b, null)
-  def === (b : DMat) = Mop_EQ.op(this, b, null)
-  def >=  (b : DMat) = Mop_GE.op(this, b, null)
-  def <=  (b : DMat) = Mop_LE.op(this, b, null)
-  def !=  (b : DMat) = Mop_NE.op(this, b, null)
+  override def >   (b : DMat) = Mop_GT.op(this, b, null)
+  override def <   (b : DMat) = Mop_LT.op(this, b, null)
+  override def ==  (b : DMat) = Mop_EQ.op(this, b, null)
+  override def === (b : DMat) = Mop_EQ.op(this, b, null)
+  override def >=  (b : DMat) = Mop_GE.op(this, b, null)
+  override def <=  (b : DMat) = Mop_LE.op(this, b, null)
+  override def !=  (b : DMat) = Mop_NE.op(this, b, null)
  
  /*
   * Specialize to FMats to help the type system. 
@@ -1453,20 +1456,6 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair(omat, mat) {
     if (b.length > 1) throw new RuntimeException("GMat %s only takes one argument" format name);
     b(0);
   }
-  
-  def checkOne(b:IMat, name:String):Int = {
-    if (b.length > 1) throw new RuntimeException("GMat %s only takes one argument" format name);
-    b(0);
-  }
-  override def sum(ind:IMat):GMat = mat.reduceOp(omat, checkOne(ind,"sum")+1, 0f, op_add);
-  override def prod(ind:IMat):GMat = mat.reduceOp(omat, checkOne(ind,"prod")+1, 1f, op_mul);
-  override def maxi(ind:IMat):GMat = mat.reduceOp(omat, checkOne(ind,"maxi")+1, Float.MinValue, op_max);
-  override def mini(ind:IMat):GMat = mat.reduceOp(omat, checkOne(ind,"mini")+1, Float.MaxValue, op_min);
-
-  override def sum(ind:Int*):GMat = mat.reduceOp(omat, checkOne(ind,"sum")+1, 0f, op_add);
-  override def prod(ind:Int*):GMat = mat.reduceOp(omat, checkOne(ind,"prod")+1, 1f, op_mul);
-  override def maxi(ind:Int*):GMat = mat.reduceOp(omat, checkOne(ind,"maxi")+1, Float.MinValue, op_max);
-  override def mini(ind:Int*):GMat = mat.reduceOp(omat, checkOne(ind,"mini")+1, Float.MaxValue, op_min);
 	
   override def * (b : Float) = mat.gOp(GMat(b), omat, op_mul)
   override def *@ (b : Float) = mat.gOp(GMat(b), omat, op_mul)
@@ -2032,10 +2021,10 @@ object GMat {
   
   def apply(a:Mat):GMat = a match {
     case aa:GMat => aa
+    case aa:GIMat => GMat(aa)
     case aa:FMat => GMat(aa)
     case aa:DMat => GMat(FMat(aa))
     case aa:IMat => GMat(FMat(aa))
-    case aa:GIMat => GMat(aa)
   }
   
   def apply(a:Float):GMat = {
