@@ -531,8 +531,8 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
   
   override def copyTo(a:Mat) = {
   	a match {
-  	  case out:IMat => System.arraycopy(data, 0, out.data, 0, length)
-  	  case aa:GIMat => aa.copyFrom(this)
+  	  case aa:GIMat => aa.copyFrom(this);
+  	  case out:IMat => System.arraycopy(data, 0, out.data, 0, length);
   	}
   	a
   }
@@ -1411,13 +1411,13 @@ object IMat {
   def apply(x:Mat):IMat = {
     var out:IMat = null
     x match {
-      case dd:DMat => {out = IMat.newOrCheckIMat(x.nrows, x.ncols, null, x.GUID, "IMat".##) ; Mat.copyToIntArray(dd.data, 0, out.data, 0, dd.length)}
-      case ff:FMat => {out = IMat.newOrCheckIMat(x.nrows, x.ncols, null, x.GUID, "IMat".##); Mat.copyToIntArray(ff.data, 0, out.data, 0, ff.length)}
-      case ff:LMat => {out = IMat.newOrCheckIMat(x.nrows, x.ncols, null, x.GUID, "IMat".##); Mat.copyToIntArray(ff.data, 0, out.data, 0, ff.length)}
-      case ii:IMat => {out = IMat.newOrCheckIMat(x.nrows, x.ncols, null, x.GUID, "IMat".##); System.arraycopy(ii.data, 0, out.data, 0, ii.length)}
-      case gg:GIMat => out = gg.toIMat
-      case _ => throw new RuntimeException("Unsupported source type")
-    }
+    case gg:GIMat => out = gg.toIMat;
+    case dd:DMat => {out = IMat.newOrCheckIMat(x.nrows, x.ncols, null, x.GUID, "IMat".##) ; Mat.copyToIntArray(dd.data, 0, out.data, 0, dd.length)};
+    case ff:FMat => {out = IMat.newOrCheckIMat(x.nrows, x.ncols, null, x.GUID, "IMat".##); Mat.copyToIntArray(ff.data, 0, out.data, 0, ff.length)};
+    case ff:LMat => {out = IMat.newOrCheckIMat(x.nrows, x.ncols, null, x.GUID, "IMat".##); Mat.copyToIntArray(ff.data, 0, out.data, 0, ff.length)};
+    case ii:IMat => {out = IMat.newOrCheckIMat(x.nrows, x.ncols, null, x.GUID, "IMat".##); System.arraycopy(ii.data, 0, out.data, 0, ii.length)};
+    case _ => throw new RuntimeException("Unsupported source type")
+  }
     out
   }
        

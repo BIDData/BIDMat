@@ -565,10 +565,10 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
       throw new RuntimeException("DMat copyTo dimensions mismatch")
     }
   	a match {
-  	  case out:DMat => System.arraycopy(data, 0, out.data, 0, length)
-  	  case out:FMat => {Mat.copyToFloatArray(data, 0, out.data, 0, length)}
-  	  case out:IMat => {Mat.copyToIntArray(data, 0, out.data, 0, length)}
-  	  case out:GDMat => out.copyFrom(this)
+  	case out:GDMat => out.copyFrom(this);
+  	case out:DMat => System.arraycopy(data, 0, out.data, 0, length);
+  	case out:FMat => {Mat.copyToFloatArray(data, 0, out.data, 0, length)};
+  	case out:IMat => {Mat.copyToIntArray(data, 0, out.data, 0, length)};
   	}
   	a
   }
@@ -1736,13 +1736,13 @@ object DMat {
   def apply(x:Mat):DMat = {
     val out = DMat.newOrCheckDMat(x.nrows, x.ncols, null, x.GUID, "DMat".##)
     x match {
+      case gg:GMat => {val ff = gg.toFMat(null); Mat.copyToDoubleArray(ff.data, 0, out.data, 0, ff.length)}
+      case gg:GDMat => gg.toDMat(out)
       case dd:DMat => {System.arraycopy(dd.data, 0, out.data, 0, dd.length)}
       case ff:FMat => {Mat.copyToDoubleArray(ff.data, 0, out.data, 0, ff.length)}
       case ii:IMat => apply(ii)
       case ii:LMat => {Mat.copyToDoubleArray(ii.data, 0, out.data, 0, ii.length)}
       case ss:SDMat => ss.full(out)
-      case gg:GMat => {val ff = gg.toFMat(null); Mat.copyToDoubleArray(ff.data, 0, out.data, 0, ff.length)}
-      case gg:GDMat => gg.toDMat(out)
       case _ => throw new RuntimeException("Unsupported source type")
     }
     out

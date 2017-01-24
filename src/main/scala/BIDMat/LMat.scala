@@ -1423,14 +1423,14 @@ object LMat {
   def apply(x:Mat):LMat = {
     var out:LMat = null
     x match {
-      case dd:DMat => {out = LMat(x.nrows, x.ncols); Mat.copyToLongArray(dd.data, 0, out.data, 0, dd.length)}
-      case ff:FMat => {out = LMat(x.nrows, x.ncols); Mat.copyToLongArray(ff.data, 0, out.data, 0, ff.length)}
-      case ff:IMat => {out = LMat(x.nrows, x.ncols); Mat.copyToLongArray(ff.data, 0, out.data, 0, ff.length)}
-      case ii:LMat => {out = LMat(x.nrows, x.ncols); System.arraycopy(ii.data, 0, out.data, 0, ii.length)}
-      case gg:GIMat => out = gg.toLMat
-      case gg:GLMat => out = gg.toLMat
-      case _ => throw new RuntimeException("Unsupported source type")
-    }
+    case gg:GIMat => out = gg.toLMat;
+    case gg:GLMat => out = gg.toLMat;
+    case dd:DMat => {out = LMat(x.nrows, x.ncols); Mat.copyToLongArray(dd.data, 0, out.data, 0, dd.length)};
+    case ff:FMat => {out = LMat(x.nrows, x.ncols); Mat.copyToLongArray(ff.data, 0, out.data, 0, ff.length)};
+    case ff:IMat => {out = LMat(x.nrows, x.ncols); Mat.copyToLongArray(ff.data, 0, out.data, 0, ff.length)};
+    case ii:LMat => {out = LMat(x.nrows, x.ncols); System.arraycopy(ii.data, 0, out.data, 0, ii.length)};
+    case _ => throw new RuntimeException("Unsupported source type");
+   }
     out
   }
        

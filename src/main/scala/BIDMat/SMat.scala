@@ -34,12 +34,6 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], val da
 
   override def apply(a:Int, b:IMat):SMat = SMat(gapply(a, b))
   
-  override def apply(a:Mat, b:Mat):SMat = SMat(gapply(a.asInstanceOf[IMat], b.asInstanceOf[IMat]))
-  
-  override def apply(a:Mat, b:Int):SMat = SMat(gapply(a.asInstanceOf[IMat], b))
-  
-  override def apply(a:Int, b:Mat):SMat = SMat(gapply(a, b.asInstanceOf[IMat]))
-  
   override def zeros(nr:Int, nc:Int) = {
     FMat.zeros(nr, nc)
   }
@@ -408,11 +402,11 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], val da
   override def mean(ind:IMat):FMat = SciFunctions._mean(this, checkOne(ind,"mean")+1).asInstanceOf[FMat];
   override def variance(ind:IMat):FMat = SciFunctions._variance(this, checkOne(ind,"variance")+1).asInstanceOf[FMat];
 
-  override def sum(ind:Int*):FMat = ssReduceOp(checkOne(ind,"sum")+1, FMat.idFun, FMat.sumFun, null);
-  override def maxi(ind:Int*):FMat = ssReduceOp(checkOne(ind,"maxi")+1, FMat.idFun, FMat.maxFun, null);
-  override def mini(ind:Int*):FMat = ssReduceOp(checkOne(ind,"mini")+1, FMat.idFun, FMat.minFun, null);
-  override def mean(ind:Int*):FMat = SciFunctions._mean(this, checkOne(ind,"mean")+1).asInstanceOf[FMat];
-  override def variance(ind:Int*):FMat = SciFunctions._variance(this, checkOne(ind,"variance")+1).asInstanceOf[FMat];
+  override def sum(ind:Int):FMat = ssReduceOp(ind+1, FMat.idFun, FMat.sumFun, null);
+  override def maxi(ind:Int):FMat = ssReduceOp(ind+1, FMat.idFun, FMat.maxFun, null);
+  override def mini(ind:Int):FMat = ssReduceOp(ind+1, FMat.idFun, FMat.minFun, null);
+  override def mean(ind:Int):FMat = SciFunctions._mean(this, ind+1).asInstanceOf[FMat];
+  override def variance(ind:Int):FMat = SciFunctions._variance(this, ind+1).asInstanceOf[FMat];
 
   
   override def + (b : Float) = ssMatOpScalar(b, SMat.sumFun, null)
@@ -714,14 +708,6 @@ class SPair (val omat:Mat, val mat:SMat) extends Pair(omat, mat) {
     b(0);
   }
   
-  override def sum(ind:IMat):FMat = mat.ssReduceOp(checkOne(ind,"sum")+1, FMat.idFun, FMat.sumFun, omat);
-  override def maxi(ind:IMat):FMat = mat.ssReduceOp(checkOne(ind,"maxi")+1, FMat.idFun, FMat.maxFun, omat);
-  override def mini(ind:IMat):FMat = mat.ssReduceOp(checkOne(ind,"mini")+1, FMat.idFun, FMat.minFun, omat);
-
-  override def sum(ind:Int*):FMat = mat.ssReduceOp(checkOne(ind,"sum")+1, FMat.idFun, FMat.sumFun, omat);
-  override def maxi(ind:Int*):FMat = mat.ssReduceOp(checkOne(ind,"maxi")+1, FMat.idFun, FMat.maxFun, omat);
-  override def mini(ind:Int*):FMat = mat.ssReduceOp(checkOne(ind,"mini")+1, FMat.idFun, FMat.minFun, omat);
-  
   override def + (b : Double) = mat.ssMatOpScalar(b.toFloat, SMat.sumFun, omat)
   override def - (b : Double) = mat.ssMatOpScalar(b.toFloat, SMat.subFun, omat)
   override def *@ (b : Double) = mat.ssMatOpScalar(b.toFloat, SMat.mulFun, omat)
@@ -809,9 +795,9 @@ object SMat {
   }
   
   def apply(a:Mat) = a match {
+    case aa:GSMat => aa.toSMat
     case aa:SMat => aa
     case aa:FMat => MatFunctions.sparse(aa)
-    case aa:GSMat => aa.toSMat
     case aa:SDMat => aa.toSMat
   }
   

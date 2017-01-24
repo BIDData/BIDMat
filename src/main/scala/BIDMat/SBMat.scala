@@ -41,12 +41,6 @@ case class SBMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], val d
   
   override def apply(a:Int, b:IMat):SBMat = SBMat(gapply(a, b))
   
-  override def apply(a:Mat, b:Mat):SBMat = SBMat(gapply(a.asInstanceOf[IMat], b.asInstanceOf[IMat]))
-  
-  override def apply(a:Mat, b:Int):SBMat = SBMat(gapply(a.asInstanceOf[IMat], b))
-  
-  override def apply(a:Int, b:Mat):SBMat = SBMat(gapply(a, b.asInstanceOf[IMat]))
-  
   def bSBMatOp(b: SBMat, f:(Byte, Byte) => Byte, out:Mat):SBMat = SBMat(sgMatOp(b, f, out))
   
   def bSBMatOpScalar(b: Byte, f:(Byte, Byte) => Byte, out:Mat):SBMat = SBMat(sgMatOpScalar(b, f, out))

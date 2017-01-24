@@ -565,10 +565,10 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
 
   override def copyTo(a:Mat) = {
   	a match {
-  	  case out:FMat => copyTo(out):FMat
-  	  case aa:GMat => aa.copyFrom(this)
-  	  case aa:GDMat => aa.copyFrom(DMat(this))
-          case aa:TMat =>TMat(nrows,ncols,Array(0),Array(0),Array(this))
+  	  case aa:GMat => aa.copyFrom(this);
+  	  case aa:GDMat => aa.copyFrom(DMat(this));
+  	  case out:FMat => copyTo(out):FMat;
+  	  case aa:TMat =>TMat(nrows,ncols,Array(0),Array(0),Array(this))
   	}
   	a
   }
@@ -2358,15 +2358,15 @@ object FMat {
   def apply(x:Mat):FMat = {
     val out = FMat.newOrCheckFMat(x.nrows, x.ncols, null, x.GUID, "FMat".##)
     x match {
+      case gg:GMat => gg.toFMat(out)
+      case gg:GDMat => gg.copyTo(out)
+      case gg:GIMat => gg.toFMat(out)
+      case gg:CLMat => gg.toFMat(out)
       case dd:DMat => {Mat.copyToFloatArray(dd.data, 0, out.data, 0, dd.length)}
       case ff:FMat => {System.arraycopy(ff.data, 0, out.data, 0, ff.length)}
       case ii:IMat => apply(ii)
       case ii:LMat => {Mat.copyToFloatArray(ii.data, 0, out.data, 0, ii.length)}
       case ss:SMat => ss.full(out)
-      case gg:GMat => gg.toFMat(out)
-      case gg:GDMat => gg.copyTo(out)
-      case gg:GIMat => gg.toFMat(out)
-      case gg:CLMat => gg.toFMat(out)
       case _ => throw new RuntimeException("Unsupported source type")
     }
     out

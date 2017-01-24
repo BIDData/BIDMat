@@ -27,12 +27,6 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], val d
 
   override def apply(a:Int, b:IMat):SDMat = SDMat(gapply(a, b));
   
-  override def apply(a:Mat, b:Mat):SDMat = SDMat(gapply(a.asInstanceOf[IMat], b.asInstanceOf[IMat]));
-  
-  override def apply(a:Mat, b:Int):SDMat = SDMat(gapply(a.asInstanceOf[IMat], b));
-  
-  override def apply(a:Int, b:Mat):SDMat = SDMat(gapply(a, b.asInstanceOf[IMat]));
-  
   override def colslice(a:Int, b:Int, out:Mat):SDMat = SDMat(gcolslice(a, b, out));
   
   override def colslice(a:Int, b:Int):SDMat = SDMat(gcolslice(a, b, null));
@@ -224,11 +218,11 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], val d
   override def mean(ind:IMat):DMat = SciFunctions._mean(this, checkOne(ind,"mean")+1).asInstanceOf[DMat];
   override def variance(ind:IMat):DMat = SciFunctions._variance(this, checkOne(ind,"variance")+1).asInstanceOf[DMat];
 
-  override def sum(ind:Int*):DMat = ssReduceOp(checkOne(ind,"sum")+1, DMat.idFun, DMat.sumFun, null);
-  override def maxi(ind:Int*):DMat = ssReduceOp(checkOne(ind,"maxi")+1, DMat.idFun, DMat.maxFun, null);
-  override def mini(ind:Int*):DMat = ssReduceOp(checkOne(ind,"mini")+1, DMat.idFun, DMat.minFun, null);
-  override def mean(ind:Int*):DMat = SciFunctions._mean(this, checkOne(ind,"mean")+1).asInstanceOf[DMat];
-  override def variance(ind:Int*):DMat = SciFunctions._variance(this, checkOne(ind,"variance")+1).asInstanceOf[DMat];
+  override def sum(ind:Int):DMat = ssReduceOp(ind+1, DMat.idFun, DMat.sumFun, null);
+  override def maxi(ind:Int):DMat = ssReduceOp(ind+1, DMat.idFun, DMat.maxFun, null);
+  override def mini(ind:Int):DMat = ssReduceOp(ind+1, DMat.idFun, DMat.minFun, null);
+  override def mean(ind:Int):DMat = SciFunctions._mean(this, ind+1).asInstanceOf[DMat];
+  override def variance(ind:Int):DMat = SciFunctions._variance(this, ind+1).asInstanceOf[DMat];
   
   
   override def + (b : Double) = ssMatOpScalar(b, SDMat.sumFun, null)
@@ -334,14 +328,6 @@ class SDPair (val omat:Mat, val mat:SDMat) extends Pair(omat, mat) {
     b(0);
   }
   
-  override def sum(ind:IMat):DMat = mat.ssReduceOp(checkOne(ind,"sum")+1, DMat.idFun, DMat.sumFun, omat);
-  override def maxi(ind:IMat):DMat = mat.ssReduceOp(checkOne(ind,"maxi")+1, DMat.idFun, DMat.maxFun, omat);
-  override def mini(ind:IMat):DMat = mat.ssReduceOp(checkOne(ind,"mini")+1, DMat.idFun, DMat.minFun, omat);
-
-  override def sum(ind:Int*):DMat = mat.ssReduceOp(checkOne(ind,"sum")+1, DMat.idFun, DMat.sumFun, omat);
-  override def maxi(ind:Int*):DMat = mat.ssReduceOp(checkOne(ind,"maxi")+1, DMat.idFun, DMat.maxFun, omat);
-  override def mini(ind:Int*):DMat = mat.ssReduceOp(checkOne(ind,"mini")+1, DMat.idFun, DMat.minFun, omat);
-  
   def + (b : DMat) = mat.ssMatOpD(b, SDMat.sumFun, omat)
   def - (b : DMat) = mat.ssMatOpD(b, SDMat.subFun, omat)
   def *@ (b : DMat) = mat.ssMatOpD(b, SDMat.mulFun, omat)
@@ -433,8 +419,8 @@ object SDMat {
   }
   
   def apply(a:Mat) = a match {
-    case aa:SMat => aa.toSDMat
     case aa:GSMat => aa.toSMat.toSDMat
+    case aa:SMat => aa.toSDMat
     case aa:SDMat => aa
   }
   
