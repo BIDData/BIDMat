@@ -384,8 +384,6 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_spermute
           cblas_somatcopy(CblasColMajor, CblasTrans, M, N, 1.0f, A+offset, M, B+offset, N);
         }
 #endif
-
-
 	(*env)->ReleasePrimitiveArrayCritical(env, j_B, B, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, j_A, A, 0);
 }
@@ -394,11 +392,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_ipermute
 (JNIEnv * env, jobject calling_obj, jint M, jint N, jint K, jintArray j_A, jintArray j_B) {
         int i, offset, step = M*N;
 	jfloat * A = (jfloat *)((*env)->GetPrimitiveArrayCritical(env, j_A, JNI_FALSE));
-	jfloat * B = (jfloat *)((*env)->GetPrimitiveArrayCritical(env, j_B, JNI_FALSE))JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_spermute
-(JNIEnv * env, jobject calling_obj, jint M, jint N, jint K, jfloatArray j_A, jfloatArray j_B) {
-        int i, offset, step = M*N;
-	jfloat * A = (*env)->GetPrimitiveArrayCritical(env, j_A, JNI_FALSE);
-	jfloat * B = (*env)->GetPrimitiveArrayCritical(env, j_B, JNI_FALSE);
+	jfloat * B = (jfloat *)((*env)->GetPrimitiveArrayCritical(env, j_B, JNI_FALSE));
 
 #ifdef __INTEL_COMPILER
         for (i = 0, offset = 0; i < K; i++, offset += step) {
@@ -409,183 +403,6 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_ipermute
           cblas_somatcopy(CblasColMajor, CblasTrans, M, N, 1.0f, A+offset, M, B+offset, N);
         }
 #endif
-
-
-	(*env)->ReleasePrimitiveArrayCritical(env, j_B, B, 0);
-	(*env)->ReleasePrimitiveArrayCritical(env, j_A, A, 0);
-}
-JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_spermute
-(JNIEnv * env, jobject calling_obj, jint M, jint N, jint K, jfloatArray j_A, jfloatArray j_B) {
-        int i, offset, step = M*N;
-	jfloat * A = (*env)->GetPrimitiveArrayCritical(env, j_A, JNI_FALSE);
-	jfloat * B = (*env)->GetPrimitiveArrayCritical(env, j_B, JNI_FALSE);
-
-#ifdef __INTEL_COMPILER
-        for (i = 0, offset = 0; i < K; i++, offset += step) {
-          mkl_somatcopy('C', 'T', M, N, 1.0f, A+offset, M, B+offset, N);
-        }
-#else
-        for (i = 0, offset = 0; i < K; i++, offset += step) {
-          cblas_somatcopy(CblasColMajor, CblasTrans, M, N, 1.0f, A+offset, M, B+offset, N);
-        }
-#endif
-
-
-	(*env)->ReleasePrimitiveArrayCritical(env, j_B, B, 0);
-	(*env)->ReleasePrimitiveArrayCritical(env, j_A, A, 0);
-}
-JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_spermute
-(JNIEnv * env, jobject calling_obj, jint M, jint N, jint K, jfloatArray j_A, jfloatArray j_B) {
-        int i, offset, step = M*N;
-	jfloat * A = (*env)->GetPrimitiveArrayCritical(env, j_A, JNI_FALSE);
-	jfloat * B = (*env)->GetPrimitiveArrayCritical(env, j_B, JNI_FALSE);
-
-#ifdef __INTEL_COMPILER
-        for (i = 0, offset = 0; i < K; i++, offset += step) {
-          mkl_somatcopy('C', 'T', M, N, 1.0f, A+offset, M, B+offset, N);
-        }
-#else
-        for (i = 0, offset = 0; i < K; i++, offset += step) {
-          cblas_somatcopy(CblasColMajor, CblasTrans, M, N, 1.0f, A+offset, M, B+offset, N);
-        }
-#endif
-
-
-	(*env)->ReleasePrimitiveArrayCritical(env, j_B, B, 0);
-	(*env)->ReleasePrimitiveArrayCritical(env, j_A, A, 0);
-}
-JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_spermute
-(JNIEnv * env, jobject calling_obj, jint M, jint N, jint K, jfloatArray j_A, jfloatArray j_B) {
-        int i, offset, step = M*N;
-	jfloat * A = (*env)->GetPrimitiveArrayCritical(env, j_A, JNI_FALSE);
-	jfloat * B = (*env)->GetPrimitiveArrayCritical(env, j_B, JNI_FALSE);
-
-#ifdef __INTEL_COMPILER
-        for (i = 0, offset = 0; i < K; i++, offset += step) {
-          mkl_somatcopy('C', 'T', M, N, 1.0f, A+offset, M, B+offset, N);
-        }
-#else
-        for (i = 0, offset = 0; i < K; i++, offset += step) {
-          cblas_somatcopy(CblasColMajor, CblasTrans, M, N, 1.0f, A+offset, M, B+offset, N);
-        }
-#endif
-
-
-	(*env)->ReleasePrimitiveArrayCritical(env, j_B, B, 0);
-	(*env)->ReleasePrimitiveArrayCritical(env, j_A, A, 0);
-}
-JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_spermute
-(JNIEnv * env, jobject calling_obj, jint M, jint N, jint K, jfloatArray j_A, jfloatArray j_B) {
-        int i, offset, step = M*N;
-	jfloat * A = (*env)->GetPrimitiveArrayCritical(env, j_A, JNI_FALSE);
-	jfloat * B = (*env)->GetPrimitiveArrayCritical(env, j_B, JNI_FALSE);
-
-#ifdef __INTEL_COMPILER
-        for (i = 0, offset = 0; i < K; i++, offset += step) {
-          mkl_somatcopy('C', 'T', M, N, 1.0f, A+offset, M, B+offset, N);
-        }
-#else
-        for (i = 0, offset = 0; i < K; i++, offset += step) {
-          cblas_somatcopy(CblasColMajor, CblasTrans, M, N, 1.0f, A+offset, M, B+offset, N);
-        }
-#endif
-
-
-	(*env)->ReleasePrimitiveArrayCritical(env, j_B, B, 0);
-	(*env)->ReleasePrimitiveArrayCritical(env, j_A, A, 0);
-}
-JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_spermute
-(JNIEnv * env, jobject calling_obj, jint M, jint N, jint K, jfloatArray j_A, jfloatArray j_B) {
-        int i, offset, step = M*N;
-	jfloat * A = (*env)->GetPrimitiveArrayCritical(env, j_A, JNI_FALSE);
-	jfloat * B = (*env)->GetPrimitiveArrayCritical(env, j_B, JNI_FALSE);
-
-#ifdef __INTEL_COMPILER
-        for (i = 0, offset = 0; i < K; i++, offset += step) {
-          mkl_somatcopy('C', 'T', M, N, 1.0f, A+offset, M, B+offset, N);
-        }
-#else
-        for (i = 0, offset = 0; i < K; i++, offset += step) {
-          cblas_somatcopy(CblasColMajor, CblasTrans, M, N, 1.0f, A+offset, M, B+offset, N);
-        }
-#endif
-
-
-	(*env)->ReleasePrimitiveArrayCritical(env, j_B, B, 0);
-	(*env)->ReleasePrimitiveArrayCritical(env, j_A, A, 0);
-}
-JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_spermute
-(JNIEnv * env, jobject calling_obj, jint M, jint N, jint K, jfloatArray j_A, jfloatArray j_B) {
-        int i, offset, step = M*N;
-	jfloat * A = (*env)->GetPrimitiveArrayCritical(env, j_A, JNI_FALSE);
-	jfloat * B = (*env)->GetPrimitiveArrayCritical(env, j_B, JNI_FALSE);
-
-#ifdef __INTEL_COMPILER
-        for (i = 0, offset = 0; i < K; i++, offset += step) {
-          mkl_somatcopy('C', 'T', M, N, 1.0f, A+offset, M, B+offset, N);
-        }
-#else
-        for (i = 0, offset = 0; i < K; i++, offset += step) {
-          cblas_somatcopy(CblasColMajor, CblasTrans, M, N, 1.0f, A+offset, M, B+offset, N);
-        }
-#endif
-
-
-	(*env)->ReleasePrimitiveArrayCritical(env, j_B, B, 0);
-	(*env)->ReleasePrimitiveArrayCritical(env, j_A, A, 0);
-}
-JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_spermute
-(JNIEnv * env, jobject calling_obj, jint M, jint N, jint K, jfloatArray j_A, jfloatArray j_B) {
-        int i, offset, step = M*N;
-	jfloat * A = (*env)->GetPrimitiveArrayCritical(env, j_A, JNI_FALSE);
-	jfloat * B = (*env)->GetPrimitiveArrayCritical(env, j_B, JNI_FALSE);
-
-#ifdef __INTEL_COMPILER
-        for (i = 0, offset = 0; i < K; i++, offset += step) {
-          mkl_somatcopy('C', 'T', M, N, 1.0f, A+offset, M, B+offset, N);
-        }
-#else
-        for (i = 0, offset = 0; i < K; i++, offset += step) {
-          cblas_somatcopy(CblasColMajor, CblasTrans, M, N, 1.0f, A+offset, M, B+offset, N);
-        }
-#endif
-
-
-	(*env)->ReleasePrimitiveArrayCritical(env, j_B, B, 0);
-	(*env)->ReleasePrimitiveArrayCritical(env, j_A, A, 0);
-}
-JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_spermute
-(JNIEnv * env, jobject calling_obj, jint M, jint N, jint K, jfloatArray j_A, jfloatArray j_B) {
-        int i, offset, step = M*N;
-	jfloat * A = (*env)->GetPrimitiveArrayCritical(env, j_A, JNI_FALSE);
-	jfloat * B = (*env)->GetPrimitiveArrayCritical(env, j_B, JNI_FALSE);
-
-#ifdef __INTEL_COMPILER
-        for (i = 0, offset = 0; i < K; i++, offset += step) {
-          mkl_somatcopy('C', 'T', M, N, 1.0f, A+offset, M, B+offset, N);
-        }
-#else
-        for (i = 0, offset = 0; i < K; i++, offset += step) {
-          cblas_somatcopy(CblasColMajor, CblasTrans, M, N, 1.0f, A+offset, M, B+offset, N);
-        }
-#endif
-
-
-	(*env)->ReleasePrimitiveArrayCritical(env, j_B, B, 0);
-	(*env)->ReleasePrimitiveArrayCritical(env, j_A, A, 0);
-}
-
-#ifdef __INTEL_COMPILER
-        for (i = 0, offset = 0; i < K; i++, offset += step) {
-          mkl_somatcopy('C', 'T', M, N, 1.0f, A+offset, M, B+offset, N);
-        }
-#else
-        for (i = 0, offset = 0; i < K; i++, offset += step) {
-          cblas_somatcopy(CblasColMajor, CblasTrans, M, N, 1.0f, A+offset, M, B+offset, N);
-        }
-#endif
-
-
 	(*env)->ReleasePrimitiveArrayCritical(env, j_B, B, 0);
 	(*env)->ReleasePrimitiveArrayCritical(env, j_A, A, 0);
 }

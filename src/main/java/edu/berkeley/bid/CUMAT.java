@@ -29,16 +29,38 @@ public final class CUMAT {
     
     public static native int copyToInds(Pointer A, Pointer B, Pointer I, long len);
     
-    public static native int copyFromInds(Pointer A, Pointer B, Pointer I, long len);
-    
     public static native int copyToInds2D(Pointer A, int lda, Pointer B, int ldb, Pointer I, int nrows, Pointer J, int ncols);
     
     public static native int copyToInds3D(Pointer A, int lda, int rda, Pointer B, int ldb, int rdb, Pointer I, int nrows, Pointer J, int ncols, Pointer K, int nd);
     
     public static native int copyToInds4D(Pointer A, int lda, int rda, int tda, Pointer B, int ldb, int rdb, int tdb, Pointer I, int nrows, Pointer J, int ncols, Pointer K, int nk, Pointer L, int nl);
     
+    public static native int copyToIndsLong(Pointer A, Pointer B, Pointer I, long len);
+    
     public static native int copyToInds2DLong(Pointer A, int lda, Pointer B, int ldb, Pointer I, int nrows, Pointer J, int ncols);
 
+    public static native int copyToInds3DLong(Pointer A, int lda, int rda, Pointer B, int ldb, int rdb, Pointer I, int nrows, Pointer J, int ncols, Pointer K, int nd);
+    
+    public static native int copyToInds4DLong(Pointer A, int lda, int rda, int tda, Pointer B, int ldb, int rdb, int tdb, Pointer I, int nrows, Pointer J, int ncols, Pointer K, int nk, Pointer L, int nl);
+    
+    public static native int fillToInds(float A, Pointer B, Pointer I, long len);
+    
+    public static native int fillToInds2D(float A, Pointer B, int ldb, Pointer I, int nrows, Pointer J, int ncols);
+    
+    public static native int fillToInds3D(float A, Pointer B, int ldb, int rdb, Pointer I, int nrows, Pointer J, int ncols, Pointer K, int nd);
+    
+    public static native int fillToInds4D(float A, Pointer B, int ldb, int rdb, int tdb, Pointer I, int nrows, Pointer J, int ncols, Pointer K, int nk, Pointer L, int nl);
+    
+    public static native int fillToIndsLong(long A, Pointer B, Pointer I, long len);
+    
+    public static native int fillToInds2DLong(long A, Pointer B, int ldb, Pointer I, int nrows, Pointer J, int ncols);
+
+    public static native int fillToInds3DLong(long A, Pointer B, int ldb, int rdb, Pointer I, int nrows, Pointer J, int ncols, Pointer K, int nd);
+    
+    public static native int fillToInds4DLong(long A, Pointer B, int ldb, int rdb, int tdb, Pointer I, int nrows, Pointer J, int ncols, Pointer K, int nk, Pointer L, int nl);
+    
+    public static native int copyFromInds(Pointer A, Pointer B, Pointer I, long len);
+    
     public static native int copyFromInds2D(Pointer A, int lda, Pointer B, int ldb, Pointer I, int nrows, Pointer J, int ncols);
     
     public static native int copyFromInds3D(Pointer A, int lda, int rda, Pointer B, int ldb, int rdb, Pointer I, int nrows, Pointer J, int ncols, Pointer K, int nd);

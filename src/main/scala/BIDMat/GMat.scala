@@ -100,7 +100,7 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
       ginds(i);
     }
   }
-  
+   
   def safePointer(ind:GIMat):Pointer = {
     if (ind.asInstanceOf[AnyRef] == null) {
       GMat.nullPointer;
@@ -260,6 +260,45 @@ class GMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ext
     }
     case 4 => {
       val err = CUMAT.copyToInds4D(vv.pdata, vv.dims(0), vv.dims(1), vv.dims(2), pdata, dims(0), dims(1), dims(2),
+          safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1), safePointer(newinds(2)), newdims(2), safePointer(newinds(3)), newdims(3));
+      if (err != 0) throw new RuntimeException("GMat udpate (I, J, K, L) error" + cudaGetErrorString(err));
+    }
+    case _ => throw new RuntimeException("GMat slice access with more than 4 indices not supported");
+    }
+    this
+  }
+  
+  def updatev(inds:Array[IMat], vv:Float):GMat = {
+    val newdims = new Array[Int](_dims.length);
+    val newinds = new Array[GIMat](_dims.length);
+    for (i <- 0 until _dims.length) {
+      inds(i) match {
+        case aa:MatrixWildcard => {
+          newdims(i) = _dims(i); 
+        }
+        case _ => {
+          newdims(i) = inds(i).length;
+          newinds(i) = getIndexMat(i, inds(i));
+        }
+      }
+    }
+    inds.length match {
+    case 1 => {
+      val err = CUMAT.fillToInds(vv, pdata, safePointer(newinds(0)), newdims(0));
+      if (err != 0) throw new RuntimeException("GMat update (I, J) error" + cudaGetErrorString(err));
+    }
+    case 2 => {
+      val err = CUMAT.fillToInds2D(vv,  pdata, dims(0), 
+          safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1));
+      if (err != 0) throw new RuntimeException("GMat update (I, J) error" + cudaGetErrorString(err));
+    }
+    case 3 => {
+      val err = CUMAT.fillToInds3D(vv, pdata, dims(0), dims(1), 
+          safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1), safePointer(newinds(2)), newdims(2));
+      if (err != 0) throw new RuntimeException("GMat update (I, J, K) error" + cudaGetErrorString(err));
+    }
+    case 4 => {
+      val err = CUMAT.fillToInds4D(vv, pdata, dims(0), dims(1), dims(2),
           safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1), safePointer(newinds(2)), newdims(2), safePointer(newinds(3)), newdims(3));
       if (err != 0) throw new RuntimeException("GMat udpate (I, J, K, L) error" + cudaGetErrorString(err));
     }

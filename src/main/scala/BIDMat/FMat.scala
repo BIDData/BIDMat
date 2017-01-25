@@ -218,10 +218,11 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
     /** Basic 2D sliced updating with Ints */
 
   override def update(i:Int, b:Float):FMat = {_update(i, b); this}
-  override def update(i:Int, j:Int, b:Float):FMat = {_update(i, j, b); this}
   override def update(i:Int, b:Double):FMat = {_update(i, b.toFloat); this}
+  override def update(i:Int, b:Int):FMat = {_update(i, b.toFloat); this}   
+    
+  override def update(i:Int, j:Int, b:Float):FMat = {_update(i, j, b); this}
   override def update(i:Int, j:Int, b:Double):FMat = {_update(i, j, b.toFloat); this}
-  override def update(i:Int, b:Int):FMat = {_update(i, b.toFloat); this}
   override def update(i:Int, j:Int, b:Int):FMat = {_update(i, j, b.toFloat); this}
 
   /** Basic 2D sliced updating with Ints and IMats */
