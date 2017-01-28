@@ -29,7 +29,7 @@
 	<classpathentry kind="lib" path="lib/scala-reflect-2.11.2.jar"/>
 	<classpathentry kind="lib" path="lib/scala-arm_2.11-1.4.jar"/>
 	<classpathentry kind="lib" path="lib/scala-parser-combinators_2.11-1.0.3.jar"/>
-	<classpathentry kind="lib" path="C:/code/BIDMat/lib/BIDMat-1.9.0-cuda8.0-cpu-windows-x86_64.jar"/>
-	<classpathentry kind="lib" path="C:/code/BIDMat/lib/BIDMat-1.9.0-cuda8.0-gpu-windows-x86_64.jar"/>
+	<classpathentry kind="lib" path="/code/BIDMat/lib/BIDMat-1.1.1-cuda8.0-cpu-linux-x86_64.jar"/>
+	<classpathentry kind="lib" path="/code/BIDMat/lib/BIDMat-1.1.1-cuda8.0-gpu-linux-x86_64.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

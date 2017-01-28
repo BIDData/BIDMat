@@ -103,43 +103,48 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
 
   def find3:(IMat, IMat, FMat) = { val (ii, jj, vv) = gfind3 ; (IMat(ii), IMat(jj), FMat(vv)) }
   
-  /** n-dimensional element access */
+  /** 1D and 2D element access */
+  /* need to implement the next 3 in subclasses */
   
   override def apply(i1:Int):Float = super.apply(i1);  
   override def apply(i1:Int, i2:Int):Float = super.apply(i1, i2);
   
-  def apply(i1:Int, i2:Int, i3:Int):Float = apply(Array(i1, i2, i3));
-  def apply(i1:Int, i2:Int, i3:Int, i4:Int):Float = apply(Array(i1, i2, i3, i4));
-  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):Float = apply(Array(i1, i2, i3, i4, i5));
-  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):Float = apply(Array(i1, i2, i3, i4, i5, i6));
-  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int):Float = apply(Array(i1, i2, i3, i4, i5, i6, i7));
-  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int):Float = apply(Array(i1, i2, i3, i4, i5, i6, i7, i8));
-  
   /** linearized access */
   
-  def apply(inds:Array[Int]):Float = {
+  def applyv(inds:Array[Int]):Float = {
     val indx = ND.linearize(inds, _dims);
     data(indx)
   }
   
+  /** Explicit ND accessors */
+  /* these should take care of the corresponding calls in subclasses */
+  
+  def apply(i1:Int, i2:Int, i3:Int):Float = applyv(Array(i1, i2, i3));
+  def apply(i1:Int, i2:Int, i3:Int, i4:Int):Float = applyv(Array(i1, i2, i3, i4));
+  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):Float = applyv(Array(i1, i2, i3, i4, i5));
+  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):Float = applyv(Array(i1, i2, i3, i4, i5, i6));
+  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int):Float = applyv(Array(i1, i2, i3, i4, i5, i6, i7));
+  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int):Float = applyv(Array(i1, i2, i3, i4, i5, i6, i7, i8));
+  
   /** Basic 2D slicing with IMats and Ints */
+  /* need to implement these in subclasses */
   
   override def apply(a:IMat, b:IMat):FMat = FMat(gapply(a, b));
   override def apply(a:IMat, b:Int):FMat = FMat(gapply(a, b));
   override def apply(a:Int, b:IMat):FMat = FMat(gapply(a, b));
   
   /** n-dimensional slicing */
+  /* should take care of the corresponding calls in subclasses */
   
-  override def apply(i1:IMat, i2:IMat, i3:IMat):FMat = apply(Array(i1, i2, i3));
-  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat):FMat = apply(Array(i1, i2, i3, i4));
-  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat):FMat = apply(Array(i1, i2, i3, i4, i5));
-  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat):FMat = apply(Array(i1, i2, i3, i4, i5, i6));
-  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat):FMat = apply(Array(i1, i2, i3, i4, i5, i6, i7));
-  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat):FMat = apply(Array(i1, i2, i3, i4, i5, i6, i7, i8));
-  
- 
+  override def apply(i1:IMat, i2:IMat, i3:IMat):FMat = applyi(Array(i1, i2, i3));
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat):FMat = applyi(Array(i1, i2, i3, i4));
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat):FMat = applyi(Array(i1, i2, i3, i4, i5));
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat):FMat = applyi(Array(i1, i2, i3, i4, i5, i6));
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat):FMat = applyi(Array(i1, i2, i3, i4, i5, i6, i7));
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat):FMat = applyi(Array(i1, i2, i3, i4, i5, i6, i7, i8));
   
   /** apply to an index IMat, and mirror its structure in the result */
+  /* should be implemented in subclasses */
   
   override def apply(inds:IMat):FMat = {
     	inds match {
@@ -193,9 +198,11 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
     }
   }
   
-  def apply(inds0:List[IMat]):FMat = apply(inds0.toArray);
+  def apply(inds0:List[IMat]):FMat = applyi(inds0.toArray);
   
-  def apply(inds:Array[IMat]):FMat = {  
+  /** Should be implemented in subclasses */
+  
+  def applyi(inds:Array[IMat]):FMat = {  
     val newdims = new Array[Int](_dims.length)
     val newinds = new Array[IMat](_dims.length)
     var j = 0
@@ -214,37 +221,48 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
     applyHelper(newinds, out, 0, 0, inds.length-1)
     out
   }
- 
-    /** Basic 2D sliced updating with Ints */
 
-  override def update(i:Int, b:Float):FMat = {_update(i, b); this}
-  override def update(i:Int, b:Double):FMat = {_update(i, b.toFloat); this}
-  override def update(i:Int, b:Int):FMat = {_update(i, b.toFloat); this}   
-    
-  override def update(i:Int, j:Int, b:Float):FMat = {_update(i, j, b); this}
-  override def update(i:Int, j:Int, b:Double):FMat = {_update(i, j, b.toFloat); this}
-  override def update(i:Int, j:Int, b:Int):FMat = {_update(i, j, b.toFloat); this}
-
-  /** Basic 2D sliced updating with Ints and IMats */
+  /** Basic 1D and 2D sliced updates with Ints and IMats */
+  /* need to implement these in subclasses */
   
-  override def update(iv:IMat, b:Float):FMat = FMat(_update(iv, b))
-  override def update(iv:IMat, jv:IMat, b:Float):FMat = FMat(_update(iv, jv, b))
-  override def update(i:Int, jv:IMat, b:Float):FMat = FMat(_update(IMat.ielem(i), jv, b))
-  override def update(iv:IMat, j:Int, b:Float):FMat = FMat(_update(iv, IMat.ielem(j), b))
+  override def update(i:Int, b:Float):FMat = {_update(i, b); this}
+  override def update(i:Int, j:Int, b:Float):FMat = {_update(i, j, b); this}
+  
+  override def update(iv:IMat, b:Float):FMat = FMat(_update(iv, b));
+  override def update(iv:IMat, jv:IMat, b:Float):FMat = FMat(_update(iv, jv, b));
+  
+  def update(iv:IMat, jv:IMat, b:FMat):FMat = FMat(_update(iv, jv, b));
+  
+  /** 1D and 2D type-specialized updates */
+  /* these should take care of the corresponding calls in subclasses */
+  
+  override def update(i:Int, b:Double):FMat = update(i, b.toFloat); 
+  override def update(i:Int, b:Int):FMat = update(i, b.toFloat);  
+  
+  override def update(i:Int, j:Int, b:Double):FMat = update(i, j, b.toFloat); 
+  override def update(i:Int, j:Int, b:Int):FMat = update(i, j, b.toFloat); 
 
-  override def update(iv:IMat, b:Double):FMat = FMat(_update(iv, b.toFloat))
-  override def update(iv:IMat, jv:IMat, b:Double):FMat = FMat(_update(iv, jv, b.toFloat))
-  override def update(i:Int, jv:IMat, b:Double):FMat = FMat(_update(IMat.ielem(i), jv, b.toFloat))
-  override def update(iv:IMat, j:Int, b:Double):FMat = FMat(_update(iv, IMat.ielem(j), b.toFloat))
+  /** 1D and 2D type-specialized sliced updates with scalar RHS*/ 
+  /* these should take care of the corresponding calls in subclasses */
+  
+  override def update(i:Int, jv:IMat, b:Float):FMat = update(IMat.ielem(i), jv, b);
+  override def update(iv:IMat, j:Int, b:Float):FMat = update(iv, IMat.ielem(j), b);
 
-  override def update(iv:IMat, b:Int):FMat = FMat(_update(iv, b.toFloat))
-  override def update(iv:IMat, jv:IMat, b:Int):FMat = FMat(_update(iv, jv, b.toFloat))
-  override def update(i:Int, jv:IMat, b:Int):FMat = FMat(_update(IMat.ielem(i), jv, b.toFloat))
-  override def update(iv:IMat, j:Int, b:Int):FMat = FMat(_update(iv, IMat.ielem(j), b.toFloat))
+  override def update(iv:IMat, b:Double):FMat = update(iv, b.toFloat);
+  override def update(iv:IMat, jv:IMat, b:Double):FMat = update(iv, jv, b.toFloat);
+  override def update(i:Int, jv:IMat, b:Double):FMat = update(IMat.ielem(i), jv, b.toFloat);
+  override def update(iv:IMat, j:Int, b:Double):FMat = update(iv, IMat.ielem(j), b.toFloat);
 
-  def update(iv:IMat, jv:IMat, b:FMat):FMat = FMat(_update(iv, jv, b))
-  def update(iv:IMat, j:Int, b:FMat):FMat = FMat(_update(iv, IMat.ielem(j), b))
-  def update(i:Int, jv:IMat, b:FMat):FMat = FMat(_update(IMat.ielem(i), jv, b))
+  override def update(iv:IMat, b:Int):FMat = update(iv, b.toFloat);
+  override def update(iv:IMat, jv:IMat, b:Int):FMat = update(iv, jv, b.toFloat);
+  override def update(i:Int, jv:IMat, b:Int):FMat = update(IMat.ielem(i), jv, b.toFloat);
+  override def update(iv:IMat, j:Int, b:Int):FMat = update(iv, IMat.ielem(j), b.toFloat);
+
+  /** 2D sliced updating with Matrix RHS */
+  /* these should take care of the corresponding calls in subclasses */
+
+  def update(iv:IMat, j:Int, b:FMat):FMat = update(iv, IMat.ielem(j), b);
+  def update(i:Int, jv:IMat, b:FMat):FMat = update(IMat.ielem(i), jv, b);
 
   override def update(iv:IMat, b:Mat):FMat = FMat(_update(iv, b.asInstanceOf[FMat]))
   override def update(iv:IMat, jv:IMat, b:Mat):FMat = FMat(_update(iv, jv, b.asInstanceOf[FMat]))
@@ -253,37 +271,38 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
 
   /** ND single element updates */
   
-  def update(i1:Int, i2:Int, i3:Int, vv:Float):FMat = update(Array(i1, i2, i3), vv)
-  def update(i1:Int, i2:Int, i3:Int, i4:Int, vv:Float):FMat = update(Array(i1, i2, i3, i4), vv)
-  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, vv:Float):FMat = update(Array(i1, i2, i3, i4, i5), vv)
-  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, vv:Float):FMat = update(Array(i1, i2, i3, i4, i5, i6), vv)
-  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, vv:Float):FMat = update(Array(i1, i2, i3, i4, i5, i6, i7), vv)
-  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int, vv:Float):FMat = update(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv)
+  def update(i1:Int, i2:Int, i3:Int, vv:Float):FMat = updatev(Array(i1, i2, i3), vv)
+  def update(i1:Int, i2:Int, i3:Int, i4:Int, vv:Float):FMat = updatev(Array(i1, i2, i3, i4), vv)
+  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, vv:Float):FMat = updatev(Array(i1, i2, i3, i4, i5), vv)
+  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, vv:Float):FMat = updatev(Array(i1, i2, i3, i4, i5, i6), vv)
+  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, vv:Float):FMat = updatev(Array(i1, i2, i3, i4, i5, i6, i7), vv)
+  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int, vv:Float):FMat = updatev(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv)
  
   /** General ND sliced updating with IMats */
   
-  def update(i1:IMat, i2:IMat, i3:IMat, vv:FMat):FMat = update(Array(i1, i2, i3), vv)
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:FMat):FMat = update(Array(i1, i2, i3, i4), vv)
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:FMat):FMat = update(Array(i1, i2, i3, i4, i5), vv)
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:FMat):FMat = update(Array(i1, i2, i3, i4, i5, i6), vv)
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:FMat):FMat = update(Array(i1, i2, i3, i4, i5, i6, i7), vv)
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:FMat):FMat = update(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, vv:FMat):FMat = updatei(Array(i1, i2, i3), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:FMat):FMat = updatei(Array(i1, i2, i3, i4), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:FMat):FMat = updatei(Array(i1, i2, i3, i4, i5), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:FMat):FMat = updatei(Array(i1, i2, i3, i4, i5, i6), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:FMat):FMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:FMat):FMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv)
   
-  override def update(i1:IMat, i2:IMat, i3:IMat, vv:Mat):FMat = update(Array(i1, i2, i3), vv.asInstanceOf[FMat])
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:Mat):FMat = update(Array(i1, i2, i3, i4), vv.asInstanceOf[FMat])
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:Mat):FMat = update(Array(i1, i2, i3, i4, i5), vv.asInstanceOf[FMat])
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:Mat):FMat = update(Array(i1, i2, i3, i4, i5, i6), vv.asInstanceOf[FMat])
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:Mat):FMat = update(Array(i1, i2, i3, i4, i5, i6, i7), vv.asInstanceOf[FMat])
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:Mat):FMat = update(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv.asInstanceOf[FMat])
+  override def update(i1:IMat, i2:IMat, i3:IMat, vv:Mat):FMat = updatei(Array(i1, i2, i3), vv.asInstanceOf[FMat])
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:Mat):FMat = updatei(Array(i1, i2, i3, i4), vv.asInstanceOf[FMat])
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:Mat):FMat = updatei(Array(i1, i2, i3, i4, i5), vv.asInstanceOf[FMat])
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:Mat):FMat = updatei(Array(i1, i2, i3, i4, i5, i6), vv.asInstanceOf[FMat])
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:Mat):FMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7), vv.asInstanceOf[FMat])
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:Mat):FMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv.asInstanceOf[FMat])
   
-  override def update(i1:IMat, i2:IMat, i3:IMat, vv:Float):FMat = update(Array(i1, i2, i3), vv)
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:Float):FMat = update(Array(i1, i2, i3, i4), vv)
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:Float):FMat = update(Array(i1, i2, i3, i4, i5), vv)
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:Float):FMat = update(Array(i1, i2, i3, i4, i5, i6), vv)
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:Float):FMat = update(Array(i1, i2, i3, i4, i5, i6, i7), vv)
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:Float):FMat = update(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv)
+  override def update(i1:IMat, i2:IMat, i3:IMat, vv:Float):FMat = updatei(Array(i1, i2, i3), vv);
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:Float):FMat = updatei(Array(i1, i2, i3, i4), vv);
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:Float):FMat = updatei(Array(i1, i2, i3, i4, i5), vv);
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:Float):FMat = updatei(Array(i1, i2, i3, i4, i5, i6), vv);
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:Float):FMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7), vv);
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:Float):FMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv)
  
-
+  /** This one should also be implemented in subclasses */ 
+  
   def update(inds:IMat, vv:FMat):FMat = {
     inds match {
     case aa:MatrixWildcard => {
@@ -309,9 +328,9 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
     }
   }
   
-  def update(inds:List[Int], v:Float):FMat = update(inds.toArray, v)
+  def update(inds:List[Int], v:Float):FMat = updatev(inds.toArray, v)
   
-  def update(inds:Array[Int], v:Float):FMat = {
+  def updatev(inds:Array[Int], v:Float):FMat = {
     val indx = ND.linearize(inds, dims.data); 
     data(indx) = v
     this
@@ -349,7 +368,7 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
     }
   }
   
-  def update(inds:Array[IMat], vv:FMat):FMat = {
+  def updatei(inds:Array[IMat], vv:FMat):FMat = {
     if (inds.length != _dims.length) {
       throw new RuntimeException("FMat update wrong number of dims")
     }
@@ -409,7 +428,7 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
     }
   }
   
-  def update(inds:Array[IMat], v:Float):FMat = {
+  def updatei(inds:Array[IMat], v:Float):FMat = {
     val newdims = new Array[Int](dims.length)
     for (i <- 0 until dims.length) {
       newdims(i) = inds(i) match {case aa:MatrixWildcard => _dims(i); case _ => inds(i).length}

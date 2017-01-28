@@ -100,23 +100,24 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
 
   def find3:(IMat, IMat, DMat) = { val (ii, jj, vv) = gfind3 ; (ii, jj, DMat(vv)) }
 
-  /** n-dimensional element access */
+  /** 1D and 2D element access */
   
   override def apply(i1:Int):Double = super.apply(i1);  
   override def apply(i1:Int, i2:Int):Double = super.apply(i1, i2);
-  def apply(i1:Int, i2:Int, i3:Int):Double = apply(Array(i1, i2, i3));
-  def apply(i1:Int, i2:Int, i3:Int, i4:Int):Double = apply(Array(i1, i2, i3, i4));
-  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):Double = apply(Array(i1, i2, i3, i4, i5));
-  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):Double = apply(Array(i1, i2, i3, i4, i5, i6));
-  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int):Double = apply(Array(i1, i2, i3, i4, i5, i6, i7));
-  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int):Double = apply(Array(i1, i2, i3, i4, i5, i6, i7, i8));
   
-  /** linearized access */
+   /** linearized access */
   
-  def apply(inds:Array[Int]):Double = {
+  def applyv(inds:Array[Int]):Double = {
     val indx = ND.linearize(inds, _dims);
-    data(indx)
-  }
+    data(indx);
+  } 
+  
+  def apply(i1:Int, i2:Int, i3:Int):Double = applyv(Array(i1, i2, i3));
+  def apply(i1:Int, i2:Int, i3:Int, i4:Int):Double = applyv(Array(i1, i2, i3, i4));
+  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):Double = applyv(Array(i1, i2, i3, i4, i5));
+  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):Double = applyv(Array(i1, i2, i3, i4, i5, i6));
+  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int):Double = applyv(Array(i1, i2, i3, i4, i5, i6, i7));
+  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int):Double = applyv(Array(i1, i2, i3, i4, i5, i6, i7, i8));
   
   /** Basic 2D slicing with IMats and Ints */
   
@@ -126,14 +127,12 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
   
   /** n-dimensional slicing */
   
-  override def apply(i1:IMat, i2:IMat, i3:IMat):DMat = apply(Array(i1, i2, i3));
-  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat):DMat = apply(Array(i1, i2, i3, i4));
-  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat):DMat = apply(Array(i1, i2, i3, i4, i5));
-  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat):DMat = apply(Array(i1, i2, i3, i4, i5, i6));
-  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat):DMat = apply(Array(i1, i2, i3, i4, i5, i6, i7));
-  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat):DMat = apply(Array(i1, i2, i3, i4, i5, i6, i7, i8));
-  
- 
+  override def apply(i1:IMat, i2:IMat, i3:IMat):DMat = applyi(Array(i1, i2, i3));
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat):DMat = applyi(Array(i1, i2, i3, i4));
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat):DMat = applyi(Array(i1, i2, i3, i4, i5));
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat):DMat = applyi(Array(i1, i2, i3, i4, i5, i6));
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat):DMat = applyi(Array(i1, i2, i3, i4, i5, i6, i7));
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat):DMat = applyi(Array(i1, i2, i3, i4, i5, i6, i7, i8));
   
   /** apply to an index IMat, and mirror its structure in the result */
   
@@ -189,9 +188,9 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
     }
   }
   
-  def apply(inds0:List[IMat]):DMat = apply(inds0.toArray);
+  def apply(inds0:List[IMat]):DMat = applyi(inds0.toArray);
   
-  def apply(inds:Array[IMat]):DMat = {  
+  def applyi(inds:Array[IMat]):DMat = {  
     val newdims = new Array[Int](_dims.length)
     val newinds = new Array[IMat](_dims.length)
     var j = 0
@@ -211,72 +210,76 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
     out
   }
  
-    /** Basic 2D sliced updating with Ints */
+  /** Basic 2D sliced updating with Ints */
+  /* these need to be implemented in subclasses */
 
   override def update(i:Int, b:Double):DMat = {_update(i, b); this}
   override def update(i:Int, j:Int, b:Double):DMat = {_update(i, j, b); this}
-  override def update(i:Int, b:Float):DMat = {_update(i, b.toDouble); this}
-  override def update(i:Int, j:Int, b:Float):DMat = {_update(i, j, b.toDouble); this}
-  override def update(i:Int, b:Int):DMat = {_update(i, b.toDouble); this}
-  override def update(i:Int, j:Int, b:Int):DMat = {_update(i, j, b.toDouble); this}
-
+  
   /** Basic 2D sliced updating with Ints and IMats */
   
-  override def update(iv:IMat, b:Double):DMat = DMat(_update(iv, b))
-  override def update(iv:IMat, jv:IMat, b:Double):DMat = DMat(_update(iv, jv, b))
-  override def update(i:Int, jv:IMat, b:Double):DMat = DMat(_update(IMat.ielem(i), jv, b))
-  override def update(iv:IMat, j:Int, b:Double):DMat = DMat(_update(iv, IMat.ielem(j), b))
+  override def update(iv:IMat, b:Double):DMat = DMat(_update(iv, b));
+  override def update(iv:IMat, jv:IMat, b:Double):DMat = DMat(_update(iv, jv, b));
+  
+  def update(iv:IMat, jv:IMat, b:DMat):DMat = DMat(_update(iv, jv, b));
+  
+  override def update(i:Int, b:Float):DMat = update(i, b.toDouble);
+  override def update(i:Int, j:Int, b:Float):DMat = update(i, j, b.toDouble);
+  override def update(i:Int, b:Int):DMat = update(i, b.toDouble); 
+  override def update(i:Int, j:Int, b:Int):DMat = update(i, j, b.toDouble); 
 
-  override def update(iv:IMat, b:Float):DMat = DMat(_update(iv, b.toDouble))
-  override def update(iv:IMat, jv:IMat, b:Float):DMat = DMat(_update(iv, jv, b.toDouble))
-  override def update(i:Int, jv:IMat, b:Float):DMat = DMat(_update(IMat.ielem(i), jv, b.toDouble))
-  override def update(iv:IMat, j:Int, b:Float):DMat = DMat(_update(iv, IMat.ielem(j), b.toDouble))
+  override def update(i:Int, jv:IMat, b:Double):DMat = update(IMat.ielem(i), jv, b);
+  override def update(iv:IMat, j:Int, b:Double):DMat = update(iv, IMat.ielem(j), b);
 
-  override def update(iv:IMat, b:Int):DMat = DMat(_update(iv, b.toDouble))
-  override def update(iv:IMat, jv:IMat, b:Int):DMat = DMat(_update(iv, jv, b.toDouble))
-  override def update(i:Int, jv:IMat, b:Int):DMat = DMat(_update(IMat.ielem(i), jv, b.toDouble))
-  override def update(iv:IMat, j:Int, b:Int):DMat = DMat(_update(iv, IMat.ielem(j), b.toDouble))
+  override def update(iv:IMat, b:Float):DMat = update(iv, b.toDouble);
+  override def update(iv:IMat, jv:IMat, b:Float):DMat = update(iv, jv, b.toDouble);
+  override def update(i:Int, jv:IMat, b:Float):DMat = update(IMat.ielem(i), jv, b.toDouble);
+  override def update(iv:IMat, j:Int, b:Float):DMat = update(iv, IMat.ielem(j), b.toDouble);
 
-  def update(iv:IMat, jv:IMat, b:DMat):DMat = DMat(_update(iv, jv, b))
-  def update(iv:IMat, j:Int, b:DMat):DMat = DMat(_update(iv, IMat.ielem(j), b))
-  def update(i:Int, jv:IMat, b:DMat):DMat = DMat(_update(IMat.ielem(i), jv, b))
+  override def update(iv:IMat, b:Int):DMat = update(iv, b.toDouble);
+  override def update(iv:IMat, jv:IMat, b:Int):DMat = update(iv, jv, b.toDouble);
+  override def update(i:Int, jv:IMat, b:Int):DMat = update(IMat.ielem(i), jv, b.toDouble);
+  override def update(iv:IMat, j:Int, b:Int):DMat = update(iv, IMat.ielem(j), b.toDouble);
 
-  override def update(iv:IMat, b:Mat):DMat = DMat(_update(iv, b.asInstanceOf[DMat]))
-  override def update(iv:IMat, jv:IMat, b:Mat):DMat = DMat(_update(iv, jv, b.asInstanceOf[DMat]))
-  override def update(iv:IMat, j:Int, b:Mat):DMat = DMat(_update(iv, IMat.ielem(j), b.asInstanceOf[DMat]))
-  override def update(i:Int, jv:IMat, b:Mat):DMat = DMat(_update(IMat.ielem(i), jv, b.asInstanceOf[DMat]))
+  def update(iv:IMat, j:Int, b:DMat):DMat = update(iv, IMat.ielem(j), b);
+  def update(i:Int, jv:IMat, b:DMat):DMat = update(IMat.ielem(i), jv, b);
+
+  override def update(iv:IMat, b:Mat):DMat = update(iv, DMat(b));
+  override def update(iv:IMat, jv:IMat, b:Mat):DMat = update(iv, jv, DMat(b));
+  override def update(iv:IMat, j:Int, b:Mat):DMat = update(iv, IMat.ielem(j), DMat(b));
+  override def update(i:Int, jv:IMat, b:Mat):DMat = update(IMat.ielem(i), jv, DMat(b));
 
   /** ND single element updates */
   
-  def update(i1:Int, i2:Int, i3:Int, vv:Double):DMat = update(Array(i1, i2, i3), vv)
-  def update(i1:Int, i2:Int, i3:Int, i4:Int, vv:Double):DMat = update(Array(i1, i2, i3, i4), vv)
-  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, vv:Double):DMat = update(Array(i1, i2, i3, i4, i5), vv)
-  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, vv:Double):DMat = update(Array(i1, i2, i3, i4, i5, i6), vv)
-  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, vv:Double):DMat = update(Array(i1, i2, i3, i4, i5, i6, i7), vv)
-  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int, vv:Double):DMat = update(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv)
+  def update(i1:Int, i2:Int, i3:Int, vv:Double):DMat = updatev(Array(i1, i2, i3), vv)
+  def update(i1:Int, i2:Int, i3:Int, i4:Int, vv:Double):DMat = updatev(Array(i1, i2, i3, i4), vv)
+  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, vv:Double):DMat = updatev(Array(i1, i2, i3, i4, i5), vv)
+  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, vv:Double):DMat = updatev(Array(i1, i2, i3, i4, i5, i6), vv)
+  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, vv:Double):DMat = updatev(Array(i1, i2, i3, i4, i5, i6, i7), vv)
+  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int, vv:Double):DMat = updatev(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv)
  
   /** General ND sliced updating with IMats */
   
-  def update(i1:IMat, i2:IMat, i3:IMat, vv:DMat):DMat = update(Array(i1, i2, i3), vv)
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:DMat):DMat = update(Array(i1, i2, i3, i4), vv)
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:DMat):DMat = update(Array(i1, i2, i3, i4, i5), vv)
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:DMat):DMat = update(Array(i1, i2, i3, i4, i5, i6), vv)
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:DMat):DMat = update(Array(i1, i2, i3, i4, i5, i6, i7), vv)
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:DMat):DMat = update(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, vv:DMat):DMat = updatei(Array(i1, i2, i3), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:DMat):DMat = updatei(Array(i1, i2, i3, i4), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:DMat):DMat = updatei(Array(i1, i2, i3, i4, i5), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:DMat):DMat = updatei(Array(i1, i2, i3, i4, i5, i6), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:DMat):DMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:DMat):DMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv)
   
-  override def update(i1:IMat, i2:IMat, i3:IMat, vv:Mat):DMat = update(Array(i1, i2, i3), vv.asInstanceOf[DMat])
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:Mat):DMat = update(Array(i1, i2, i3, i4), vv.asInstanceOf[DMat])
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:Mat):DMat = update(Array(i1, i2, i3, i4, i5), vv.asInstanceOf[DMat])
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:Mat):DMat = update(Array(i1, i2, i3, i4, i5, i6), vv.asInstanceOf[DMat])
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:Mat):DMat = update(Array(i1, i2, i3, i4, i5, i6, i7), vv.asInstanceOf[DMat])
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:Mat):DMat = update(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv.asInstanceOf[DMat])
+  override def update(i1:IMat, i2:IMat, i3:IMat, vv:Mat):DMat = updatei(Array(i1, i2, i3), vv.asInstanceOf[DMat])
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:Mat):DMat = updatei(Array(i1, i2, i3, i4), vv.asInstanceOf[DMat])
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:Mat):DMat = updatei(Array(i1, i2, i3, i4, i5), vv.asInstanceOf[DMat])
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:Mat):DMat = updatei(Array(i1, i2, i3, i4, i5, i6), vv.asInstanceOf[DMat])
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:Mat):DMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7), vv.asInstanceOf[DMat])
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:Mat):DMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv.asInstanceOf[DMat])
   
-  override def update(i1:IMat, i2:IMat, i3:IMat, vv:Double):DMat = update(Array(i1, i2, i3), vv)
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:Double):DMat = update(Array(i1, i2, i3, i4), vv)
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:Double):DMat = update(Array(i1, i2, i3, i4, i5), vv)
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:Double):DMat = update(Array(i1, i2, i3, i4, i5, i6), vv)
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:Double):DMat = update(Array(i1, i2, i3, i4, i5, i6, i7), vv)
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:Double):DMat = update(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv)
+  override def update(i1:IMat, i2:IMat, i3:IMat, vv:Double):DMat = updatei(Array(i1, i2, i3), vv)
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:Double):DMat = updatei(Array(i1, i2, i3, i4), vv)
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:Double):DMat = updatei(Array(i1, i2, i3, i4, i5), vv)
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:Double):DMat = updatei(Array(i1, i2, i3, i4, i5, i6), vv)
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:Double):DMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7), vv)
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:Double):DMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv)
  
 
   def update(inds:IMat, vv:DMat):DMat = {
@@ -304,9 +307,9 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
     }
   }
   
-  def update(inds:List[Int], v:Double):DMat = update(inds.toArray, v)
+  def update(inds:List[Int], v:Double):DMat = updatev(inds.toArray, v)
   
-  def update(inds:Array[Int], v:Double):DMat = {
+  def updatev(inds:Array[Int], v:Double):DMat = {
     val indx = ND.linearize(inds, dims.data); 
     data(indx) = v
     this
@@ -344,7 +347,7 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
     }
   }
   
-  def update(inds:Array[IMat], vv:DMat):DMat = {
+  def updatei(inds:Array[IMat], vv:DMat):DMat = {
     if (inds.length != _dims.length) {
       throw new RuntimeException("DMat update wrong number of dims")
     }
@@ -404,7 +407,7 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
     }
   }
   
-  def update(inds:Array[IMat], v:Double):DMat = {
+  def updatei(inds:Array[IMat], v:Double):DMat = {
     val newdims = new Array[Int](dims.length)
     for (i <- 0 until dims.length) {
       newdims(i) = inds(i) match {case aa:MatrixWildcard => _dims(i); case _ => inds(i).length}
