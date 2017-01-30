@@ -10,7 +10,7 @@ import edu.berkeley.bid.CUMATD
 import scala.util.hashing.MurmurHash3
 import java.io._
 
-class GLMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) extends LMat(dims, null) {
+class GLMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) extends LMat(dims0, null) {
   import GIMat.BinOp._
   
   def this(nr:Int, nc:Int, pdata:Pointer, realsize:Long) = this(Array(nr, nc), pdata, realsize);
@@ -47,6 +47,9 @@ class GLMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     
   override def nnz = length;
   
+    /** hold indices in GPU mem */
+  val ginds = new Array[GIMat](ndims);
+  
   override def view(nr:Int, nc:Int):GLMat = {
     if (1L * nr * nc > realsize) {
       throw new RuntimeException("view dimensions too large")
@@ -77,254 +80,299 @@ class GLMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     SciFunctions.setGPU(gpu);
     saveMe = null;
   }
+  
+   def getIndxWrapper(i:Int):GIMat = {
+    if (ginds(i).asInstanceOf[AnyRef] == null) {
+      ginds(i) = GIMat(1,1)
+    }
+    ginds(i);
+  }
+  
+  def getIndexValue(i:Int, v:Int):GIMat = {
+    getIndxWrapper(i);
+    ginds(i).set(v);
+    ginds(i);
+  }
+  
+  def getIndexMat(i:Int, v:IMat):GIMat = {
+    if (v.length == 0 || v.length > 1) {
+      GIMat(v);
+    } else {
+      getIndxWrapper(i).set(v.v);
+      ginds(i);
+    }
+  }
+   
+  def safePointer(ind:GIMat):Pointer = {
+    if (ind.asInstanceOf[AnyRef] == null) {
+      GMat.nullPointer;
+    } else {
+      ind.pdata;
+    }
+  }
 
-  override def apply(I:GIMat, J:GIMat):GLMat = applyx(I, J)
-     
-  override def apply(i:Int, J:IMat):GLMat = applyx(i, GIMat(J))
-
-  override def apply(i:Int, J:GIMat):GLMat = applyx(i, J)  
-      
-  override def apply(I:IMat, j:Int):GLMat = applyx(GIMat(I), j)
-
-  override def apply(I:GIMat, j:Int):GLMat = applyx(I, j)
+   /** 1D access */
   
-  override def apply(I:IMat, J:GIMat):GLMat = applyx(GIMat(I), J)
-  
-  override def apply(I:GIMat, J:IMat):GLMat = applyx(I, GIMat(J))
-  
-  override def apply(I:IMat, J:IMat):GLMat = applyx(GIMat(I), GIMat(J))
-  
-  override def apply(I:Mat, J:Mat):GLMat = {
-    	(I, J) match {
-    	  case (ii:IMat, jj:IMat) => applyx(GIMat(ii), GIMat(jj))
-    	  case (ii:GIMat, jj:IMat) => applyx(ii, GIMat(jj))
-    	  case (ii:IMat, jj:GIMat) => applyx(GIMat(ii), jj)
-    	  case (ii:GIMat, jj:GIMat) => applyx(ii, jj)
-    	}
-  }
-  
-  override def apply(I:Mat, j:Int):GLMat = {
-  	I match {
-  	case ii:IMat=> applyx(GIMat(ii), j)
-  	case ii:GIMat => applyx(ii, j)
-  	}
-  }
-  
-  override def apply(i:Int, J:Mat):GLMat = {
-  	J match {
-  	case jj:IMat=> applyx(i, GIMat(jj))
-  	case jj:GIMat => applyx(i, jj)
-  	}
-  }
-  
-  override def apply(I:IMat):GLMat = applyx(GIMat(I))
-  
-  override def apply(I:GIMat):GLMat = applyx(I)
-  
-  override def apply(I:Mat):GLMat = {
-  	I match {
-  	case ii:IMat=> applyx(GIMat(ii))
-  	case ii:GIMat => applyx(ii)
-  	}
-  }
-  
-  def applyx(I:GIMat):GLMat = {
-  	I match {
-  	case (ii:MatrixWildcard) => {
-  		val out = GLMat.newOrCheckGLMat(length, 1, null, GUID, 0, 0, "applyXI".##);
-  		cudaMemcpy(out.pdata, pdata, 1L * length * Sizeof.DOUBLE, cudaMemcpyDeviceToDevice)
-  		out
-  	}
-  	case _ => {
-  		val out = GLMat.newOrCheckGLMat(I.nrows, I.ncols, null, GUID, I.GUID, "applyI".##);
-  		CUMATD.copyFromInds(pdata, out.pdata, I.pdata, I.llength)
-      out
-    }
-  	}
-  }
-    
-  def applyx(I:GIMat, J:GIMat):GLMat = {
-    (I, J) match {
-      case (ii:MatrixWildcard, jj:MatrixWildcard) => {
-        val out = GLMat.newOrCheckGLMat(nrows, ncols, null, GUID, 0, 0, "applyXJ".##)
-        CUMAT.copyFromInds2DLong(pdata, nrows, out.pdata, out.nrows, GMat.nullPointer, nrows, GMat.nullPointer, ncols)
-        out
-      }
-      case (ii:MatrixWildcard, jj:GIMat) => {
-      	val out = GLMat.newOrCheckGLMat(nrows, J.length, null, GUID, 0, J.GUID, "applyXJ".##)
-        CUMAT.copyFromInds2DLong(pdata, nrows, out.pdata, out.nrows, GMat.nullPointer, nrows, J.pdata, J.length)
-        out
-      }
-      case (ii:GIMat, jj:MatrixWildcard) => {
-        val out = GLMat.newOrCheckGLMat(I.length, ncols, null, GUID, I.GUID, 0, "applyIX".##)
-        CUMAT.copyFromInds2DLong(pdata, nrows, out.pdata, out.nrows, I.pdata, I.length, GMat.nullPointer, ncols)
-        out
-      }
-      case _ => {
-      	val out = GLMat.newOrCheckGLMat(I.length, J.length, null, GUID, I.GUID, J.GUID, "applyIJ".##)
-      	CUMAT.copyFromInds2DLong(pdata, nrows, out.pdata, out.nrows, I.pdata, I.length, J.pdata, J.length)
-      	out
-      }
-    }
-  } 
-  
-  def applyx(i:Int, J:GIMat):GLMat = {
-    val I = GIMat.elem(i)
-    J match {
-    case (jj:MatrixWildcard) => {
-    	val out = GLMat.newOrCheckGLMat(1, ncols, null, GUID, i, 0, "applyiX".##)
-    	CUMAT.copyFromInds2DLong(pdata, nrows, out.pdata, out.nrows, I.pdata, 1, GMat.nullPointer, ncols)
-    	I.free
-    	out
-    }
-    case _ => {
-    	val out = GLMat.newOrCheckGLMat(1, J.length, null, GUID, i, J.GUID, "applyiJ".##)
-    	CUMAT.copyFromInds2DLong(pdata, nrows, out.pdata, out.nrows, I.pdata, 1, J.pdata, J.length)
-    	I.free
-    	out
-    }
-    }
-  }
-  
-  def applyx(I:GIMat, j:Int):GLMat = {
-    val J = GIMat.elem(j)
-    I match {
-    case (ii:MatrixWildcard) => {
-    	val out = GLMat.newOrCheckGLMat(nrows, 1, null, GUID, 0, j, "applyXj".##)
-    	CUMAT.copyFromInds2DLong(pdata, nrows, out.pdata, out.nrows, GMat.nullPointer, nrows, J.pdata, 1)
-    	J.free
-    	out
-    }    
-    case _ => {
-    	val out = GLMat.newOrCheckGLMat(I.length, 1, null, GUID, I.GUID, j, "applyIj".##)
-    	CUMAT.copyFromInds2DLong(pdata, nrows, out.pdata, out.nrows, I.pdata, I.length, J.pdata, 1)
-    	J.free
-    	out
-    }
-    }
-  }
-  
-  def apply(i:Int, j:Int):Long = {
-    val tmp = new Array[Long](1)
-    cudaMemcpy(Pointer.to(tmp), pdata.withByteOffset(1L*(i + j*nrows)*Sizeof.LONG), Sizeof.LONG, cudaMemcpyKind.cudaMemcpyDeviceToHost)
+  override def apply(ind:Int):Long = {
+    val tmp = new Array[Long](1);
+    GLMat.GPUtoCPUarraycopy(pdata, ind, tmp, 0, 1, "GMat apply");
     tmp(0)
   }
   
-  override def update(I:GIMat, J:GIMat, V:Mat) = updatex(I, J, V.asInstanceOf[GLMat])
+  /** 2D access */
   
-  override def update(I:GIMat, j:Int, V:Mat) = updatex(I, j, V.asInstanceOf[GLMat])
-  
-  override def update(i:Int, J:GIMat, V:Mat) = updatex(i, J, V.asInstanceOf[GLMat])
-  
-  override def update(I:IMat, J:IMat, V:Mat) = updatex(GIMat(I), GIMat(J), V.asInstanceOf[GLMat])
-  
-  override def update(I:IMat, j:Int, V:Mat) = updatex(GIMat(I), j, V.asInstanceOf[GLMat])
-
-  override def update(i:Int, J:IMat, V:Mat) = updatex(i, GIMat(J), V.asInstanceOf[GLMat])
-  
-  override def update(I:Mat, J:Mat, V:Mat):GLMat = {
-  	(I, J, V) match {
-  	case (ii:IMat, jj:IMat, vv:GLMat) => update(GIMat(ii), GIMat(jj), vv)
-  	case (ii:GIMat, jj:IMat, vv:GLMat) => update(ii, GIMat(jj), vv)
-  	case (ii:IMat, jj:GIMat, vv:GLMat) => update(GIMat(ii), jj, vv)
-  	case (ii:GIMat, jj:GIMat, vv:GLMat) => update(ii, jj, vv)
-  	}
+  override def apply(i:Int, j:Int):Long = {
+    val tmp = new Array[Long](1);
+    GLMat.GPUtoCPUarraycopy(pdata, i + nrows * j, tmp, 0, 1, "GMat apply");
+    tmp(0)
   }
   
-  override def update(I:Mat, j:Int, V:Mat):GLMat = {
-  	(I, V) match {
-  	case (ii:IMat, vv:GLMat) => update(GIMat(ii), j, vv)
-  	case (ii:GIMat, vv:GLMat) => update(ii, j, vv)
-  	}
+  /** ND access */
+  
+  override def applyv(inds:Array[Int]):Long = {
+    val indx = ND.linearize(inds, dims.data);
+    val tmp = new Array[Long](1);
+    GLMat.GPUtoCPUarraycopy(pdata, indx, tmp, 0, 1, "GMat apply");
+    tmp(0);
   }
+ 
+  override def apply(i1:IMat):GLMat = applyi(Array(i1), null);
+  override def apply(i1:IMat, i2:IMat):GLMat = applyi(Array(i1, i2), null);
+  override def apply(i1:IMat, i2:Int):GLMat = applyi(Array(i1, IMat.ielem(i2)), null);
+  override def apply(i1:Int, i2:IMat):GLMat = applyi(Array(IMat.ielem(i1), i2), null);
   
-  override def update(i:Int, J:Mat, V:Mat):GLMat = {
-  	(J, V) match {
-  	case (jj:IMat, vv:GLMat) => update(i, GIMat(jj), vv)
-  	case (jj:GIMat, vv:GLMat) => update(i, jj, vv)
-  	}
-  }
-  
-  def update(I:GIMat, V:GLMat):GLMat = updatex(I, V)
-  
-  override def update(I:GIMat, V:Mat):GLMat = updatex(I, V.asInstanceOf[GLMat])
-  
-  override def update(I:Mat, V:Mat):GLMat = {
-  	(I, V) match {
-  	case (jj:IMat, vv:GLMat) => updatex(GIMat(jj), vv)
-  	case (jj:GIMat, vv:GLMat) => updatex(jj, vv)
-  	}
-  }
-  
-  def updatex(I:GIMat, J:GIMat, V:GLMat):GLMat = {
-    (I, J) match {
-      case (ii:MatrixWildcard, jj:MatrixWildcard) => {
-        CUMAT.copyToInds2DLong(V.pdata, V.nrows, pdata, nrows, GMat.nullPointer, nrows, GMat.nullPointer, ncols)
-      }
-      case (ii:MatrixWildcard, jj:GIMat) => {
-        CUMAT.copyToInds2DLong(V.pdata, V.nrows, pdata, nrows, GMat.nullPointer, nrows, J.pdata, J.length)
-      }
-      case (ii:GIMat, jj:MatrixWildcard) => {
-        CUMAT.copyToInds2DLong(V.pdata, V.nrows, pdata, nrows, I.pdata, I.length, GMat.nullPointer, ncols)
-      }
-      case _ => {
-      	CUMAT.copyToInds2DLong(V.pdata, V.nrows, pdata, nrows, I.pdata, I.length, J.pdata, J.length)
+  override def applyi(inds:Array[IMat]):GLMat = applyi(inds, null);
+ 
+  def applyi(inds:Array[IMat], omat:Mat):GLMat = {  
+    val newdims = new Array[Int](_dims.length)
+    val newinds = new Array[GIMat](_dims.length)
+    for (i <- 0 until _dims.length) {
+      inds(i) match {
+        case aa:MatrixWildcard => {
+          newdims(i) = _dims(i); 
+        }
+        case _ => {
+          newdims(i) = inds(i).length;
+          newinds(i) = getIndexMat(i, inds(i));
+        }
       }
     }
-    this
-  }
-  
-  def updatex(i:Int, J:GIMat, V:GLMat):GLMat = {
-  	val I = GIMat(i)
-  	J match {
-  	case jj:MatrixWildcard => {
-  		CUMAT.copyToInds2DLong(V.pdata, V.nrows, pdata, nrows, I.pdata, 1, GMat.nullPointer, ncols)
-  	}
-  	case _ => {
-  		CUMAT.copyToInds2DLong(V.pdata, V.nrows, pdata, nrows, I.pdata, 1, J.pdata, J.length)
-  	}
-  	}
-    this
-  }
-    
-  def updatex(I:GIMat, j:Int, V:GLMat):GLMat = {
-  	val J = GIMat(j)
-  	I match {
-  	case ii:MatrixWildcard => {
-  		CUMAT.copyToInds2DLong(V.pdata, V.nrows, pdata, nrows, GMat.nullPointer, I.length, J.pdata, 1)
-  	}
-  	case _ => {
-  		CUMAT.copyToInds2DLong(V.pdata, V.nrows, pdata, nrows, I.pdata, I.length, J.pdata, 1)
-  	}
-  	}
-    this
-  }
-  
-  def updatex(I:GIMat, v:GLMat):GLMat = {
-  	I match {
-  	case (ii:MatrixWildcard) => {
-  		cudaMemcpy(pdata, v.pdata, 1L * length * Sizeof.DOUBLE, cudaMemcpyDeviceToDevice)
-  	}
-  	case _ => {
-  		CUMATD.copyToInds(pdata, v.pdata, I.pdata, I.llength)
+    val out = GLMat.newOrCheckGLMat(newdims, omat, GUID, ND.hashGUIDs(inds), "apply".##);
+    inds.length match {
+    case 1 => {
+        val err = CUMATD.copyFromInds(pdata, out.pdata, safePointer(newinds(0)), newdims(0));
+        if (err != 0) throw new RuntimeException("GLMat apply(I) error" + cudaGetErrorString(err));
+      }
+      case 2 => {
+        val err = CUMATD.copyFromInds2D(pdata, dims(0), out.pdata, newdims(0), safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1));
+        if (err != 0) throw new RuntimeException("GLMat apply(I, J) error" + cudaGetErrorString(err));
+      }
+      case 3 => {
+        val err = CUMATD.copyFromInds3D(pdata, dims(0), dims(1), out.pdata, newdims(0), newdims(1), 
+            safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1), safePointer(newinds(2)), newdims(2));
+        if (err != 0) throw new RuntimeException("GLMat apply(I, J, K) error" + cudaGetErrorString(err));
+      }
+      case 4 => {
+        val err = CUMATD.copyFromInds4D(pdata, dims(0), dims(1), dims(2), out.pdata, newdims(0), newdims(1), newdims(2),
+            safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1), safePointer(newinds(2)), newdims(2), safePointer(newinds(3)), newdims(3));
+        if (err != 0) throw new RuntimeException("GLMat apply(I, J, K, L) error" + cudaGetErrorString(err));
+      }   
+      case _ => throw new RuntimeException("GLMat slice access with more than 4 indices not supported");
     }
-  	}
-  	this
+    out;
   }
-      
-  override def update(i:Int, j:Int, v:Long):GLMat = {
-    val tmp = new Array[Long](1)
-    tmp(0) = v
-    cudaMemcpy(pdata.withByteOffset(1L*(i + j*nrows)*Sizeof.LONG), Pointer.to(tmp), Sizeof.LONG, cudaMemcpyKind.cudaMemcpyHostToDevice)
-    this
-  }
+  
+  /** 1D update */
   
   override def update(i:Int, v:Long):GLMat = {
-    val tmp = new Array[Long](1)
-    tmp(0) = v
-    cudaMemcpy(pdata.withByteOffset(1L*i*Sizeof.LONG), Pointer.to(tmp), Sizeof.LONG, cudaMemcpyKind.cudaMemcpyHostToDevice)
+    val tmp = new Array[Long](1);
+    tmp(0) = v;
+    GLMat.CPUtoGPUarraycopy(tmp, 0, pdata, i, 1, "GLMat update");
     this
   }
+  
+  /** 2D update */
+  
+  override def update(i:Int, j:Int, v:Long):GLMat = {
+    val tmp = new Array[Long](1);
+    tmp(0) = v;
+    GLMat.CPUtoGPUarraycopy(tmp, 0, pdata, i + j * nrows, 1, "GLMat update");
+    this
+  }
+  
+  /** ND update */
+  
+  override def updatev(inds:Array[Int], v:Long):GLMat = {
+    val indx = ND.linearize(inds, _dims); 
+    val tmp = Array[Long](v);
+    GLMat.CPUtoGPUarraycopy(tmp, 0, pdata, indx, 1, "GLMat update");
+    this
+  } 
+ 
+  /** ND sliced updates */
+  
+  override def update(iv:IMat, jv:IMat, b:LMat):LMat = updatei(Array(iv, jv), GLMat(b));
+  override def update(iv:IMat, j:Int, b:LMat):LMat = updatei(Array(iv, IMat.ielem(j)), GLMat(b));
+  override def update(i:Int, jv:IMat, b:LMat):LMat = updatei(Array(IMat.ielem(i), jv), GLMat(b));
+ 
+  override def update(i1:IMat, vv:Long):LMat = updatei(Array(i1), vv);
+  override def update(i1:IMat, i2:IMat, vv:Long):LMat = updatei(Array(i1, i2), vv);
+ 
+  override def updatei(inds:Array[IMat], vv:LMat):GLMat = updatei(inds, GLMat(vv));
+ 
+  def updatei(inds:Array[IMat], vv:GLMat):GLMat = {
+    if (inds.length != _dims.length) {
+      throw new RuntimeException("GLMat update wrong number of dims")
+    }
+    val newdims = new Array[Int](_dims.length)
+    val newinds = new Array[GIMat](_dims.length)
+    var j = 0
+    for (i <- 0 until _dims.length) {
+      inds(i) match {
+        case aa:MatrixWildcard => {
+          newdims(i) = _dims(i); 
+        }
+        case _ => {
+          newdims(i) = inds(i).length;
+          newinds(i) = getIndexMat(i, inds(i));
+        }
+      }
+    }
+    ND.checkDims("GND update:", ND.trimDims(newdims), ND.trimDims(vv._dims));
+    inds.length match {
+    case 1 => {
+      val err = CUMATD.copyToInds(vv.pdata, pdata, safePointer(newinds(0)), newdims(0));
+      if (err != 0) throw new RuntimeException("GMat update (I, J) error" + cudaGetErrorString(err));
+    }
+    case 2 => {
+      val err = CUMATD.copyToInds2D(vv.pdata, vv.dims(0), pdata, dims(0), 
+          safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1));
+      if (err != 0) throw new RuntimeException("GMat update (I, J) error" + cudaGetErrorString(err));
+    }
+    case 3 => {
+      val err = CUMATD.copyToInds3D(vv.pdata, vv.dims(0), vv.dims(1), pdata, dims(0), dims(1), 
+          safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1), safePointer(newinds(2)), newdims(2));
+      if (err != 0) throw new RuntimeException("GMat update (I, J, K) error" + cudaGetErrorString(err));
+    }
+    case 4 => {
+      val err = CUMATD.copyToInds4D(vv.pdata, vv.dims(0), vv.dims(1), vv.dims(2), pdata, dims(0), dims(1), dims(2),
+          safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1), safePointer(newinds(2)), newdims(2), safePointer(newinds(3)), newdims(3));
+      if (err != 0) throw new RuntimeException("GMat udpate (I, J, K, L) error" + cudaGetErrorString(err));
+    }
+    case _ => throw new RuntimeException("GMat slice access with more than 4 indices not supported");
+    }
+    this
+  }
+  
+  override def updatei(inds:Array[IMat], vv:Long):GLMat = {
+    val newdims = new Array[Int](_dims.length);
+    val newinds = new Array[GIMat](_dims.length);
+    for (i <- 0 until _dims.length) {
+      inds(i) match {
+        case aa:MatrixWildcard => {
+          newdims(i) = _dims(i); 
+        }
+        case _ => {
+          newdims(i) = inds(i).length;
+          newinds(i) = getIndexMat(i, inds(i));
+        }
+      }
+    }
+    inds.length match {
+    case 1 => {
+      val err = CUMATD.fillToInds(vv, pdata, safePointer(newinds(0)), newdims(0));
+      if (err != 0) throw new RuntimeException("GMat update (I, J) error" + cudaGetErrorString(err));
+    }
+    case 2 => {
+      val err = CUMATD.fillToInds2D(vv,  pdata, dims(0), 
+          safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1));
+      if (err != 0) throw new RuntimeException("GMat update (I, J) error" + cudaGetErrorString(err));
+    }
+    case 3 => {
+      val err = CUMATD.fillToInds3D(vv, pdata, dims(0), dims(1), 
+          safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1), safePointer(newinds(2)), newdims(2));
+      if (err != 0) throw new RuntimeException("GMat update (I, J, K) error" + cudaGetErrorString(err));
+    }
+    case 4 => {
+      val err = CUMATD.fillToInds4D(vv, pdata, dims(0), dims(1), dims(2),
+          safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1), safePointer(newinds(2)), newdims(2), safePointer(newinds(3)), newdims(3));
+      if (err != 0) throw new RuntimeException("GMat udpate (I, J, K, L) error" + cudaGetErrorString(err));
+    }
+    case _ => throw new RuntimeException("GMat slice access with more than 4 indices not supported");
+    }
+    this
+  }
+  
+    
+  /** explicit ND access */
+  /* see if superclass methods work
+  override def apply(i1:Int, i2:Int, i3:Int):Float = apply(Array(i1, i2, i3));
+  override def apply(i1:Int, i2:Int, i3:Int, i4:Int):Float = apply(Array(i1, i2, i3, i4));
+  override def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):Float = apply(Array(i1, i2, i3, i4, i5));
+  override def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):Float = apply(Array(i1, i2, i3, i4, i5 ,i6));
+*/
+
+  /** ND slicing */
+  /* see if superclass methods work
+
+  override def apply(i1:IMat, i2:IMat, i3:IMat):GMat = apply(Array(i1, i2, i3), null);
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat):GMat = apply(Array(i1, i2, i3, i4), null);
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat):GMat = apply(Array(i1, i2, i3, i4, i5), null);
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat):GMat = apply(Array(i1, i2, i3, i4, i5), null);
+  
+  */
+  
+  
+  /** Type helpers for 2D updating with Ints */
+  /* Should come from superclass
+  override def update(i:Int, b:Double):FMat = update(i, b.toFloat);
+  override def update(i:Int, b:Int):FMat = update(i, b.toFloat);   
+    
+  override def update(i:Int, j:Int, b:Double):FMat = update(i, j, b.toFloat);
+  override def update(i:Int, j:Int, b:Int):FMat = update(i, j, b.toFloat);
+  */
+  
+  /** ND single element updates */
+  /* should come from superclass
+  override def update(i1:Int, i2:Int, i3:Int, vv:Float):FMat = update(Array(i1, i2, i3), vv)
+  override def update(i1:Int, i2:Int, i3:Int, i4:Int, vv:Float):FMat = update(Array(i1, i2, i3, i4), vv)
+  override def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, vv:Float):FMat = update(Array(i1, i2, i3, i4, i5), vv)
+  override def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, vv:Float):FMat = update(Array(i1, i2, i3, i4, i5, i6), vv)
+  override def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, vv:Float):FMat = update(Array(i1, i2, i3, i4, i5, i6, i7), vv)
+  override def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int, vv:Float):FMat = update(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv)
+ 
+  override def update(i1:Int, i2:Int, i3:Int, vv:Double):FMat = update(Array(i1, i2, i3), vv.toFloat)
+  override def update(i1:Int, i2:Int, i3:Int, i4:Int, vv:Double):FMat = update(Array(i1, i2, i3, i4), vv.toFloat)
+  override def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, vv:Double):FMat = update(Array(i1, i2, i3, i4, i5), vv.toFloat)
+  override def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, vv:Double):FMat = update(Array(i1, i2, i3, i4, i5, i6), vv.toFloat)
+  override def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, vv:Double):FMat = update(Array(i1, i2, i3, i4, i5, i6, i7), vv.toFloat)
+  override def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int, vv:Double):FMat = update(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv.toFloat)
+ 
+  override def update(i1:Int, i2:Int, i3:Int, vv:Int):FMat = update(Array(i1, i2, i3), vv.toFloat)
+  override def update(i1:Int, i2:Int, i3:Int, i4:Int, vv:Int):FMat = update(Array(i1, i2, i3, i4), vv.toFloat)
+  override def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, vv:Int):FMat = update(Array(i1, i2, i3, i4, i5), vv.toFloat)
+  override def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, vv:Int):FMat = update(Array(i1, i2, i3, i4, i5, i6), vv.toFloat)
+  override def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, vv:Int):FMat = update(Array(i1, i2, i3, i4, i5, i6, i7), vv.toFloat)
+  override def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int, vv:Int):FMat = update(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv.toFloat)
+  */
+  
+  /* should be inherited from superclass
+  
+  override def update(i1:IMat, i2:IMat, i3:IMat, vv:FMat):GMat = update(Array(i1, i2, i3), GMat(vv));
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:FMat):GMat = update(Array(i1, i2, i3, i4), GMat(vv));
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:FMat):GMat = update(Array(i1, i2, i3, i4, i5), GMat(vv));
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:FMat):GMat = update(Array(i1, i2, i3, i4, i5, i6), GMat(vv));
+
+  override def update(iv:IMat, jv:IMat, b:Mat):FMat = update(Array(iv, jv), GMat(b));
+  override def update(iv:IMat, j:Int, b:Mat):FMat = update(Array(iv, IMat.ielem(j)), GMat(b));
+  override def update(i:Int, jv:IMat, b:Mat):FMat = update(Array(IMat.ielem(i), jv), GMat(b));
+  
+  override def update(i1:IMat, i2:IMat, i3:IMat, vv:Mat):GMat = update(Array(i1, i2, i3), GMat(vv));
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:Mat):GMat = update(Array(i1, i2, i3, i4), GMat(vv));
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:Mat):GMat = update(Array(i1, i2, i3, i4, i5), GMat(vv));
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:Mat):GMat = update(Array(i1, i2, i3, i4, i5, i6), GMat(vv));
+  */
+
   
   override def clear = {
   	cudaMemset(pdata, 0, Sizeof.LONG*length)
@@ -461,9 +509,9 @@ class GLMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   
   override def copyTo(out:Mat):Mat = {
     out match {
-      case a:LMat => copyTo(a)
       case a:GLMat => copyTo(a)
       case a:GMat => copyTo(a)
+      case a:LMat => copyTo(a)
     }
   }
   
@@ -512,15 +560,15 @@ class GLMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   
   def cumminByKey(keys:GLMat):GLMat = cumminByKey(keys, null);
   
-  def _reverse(omat:Mat):GLMat = {
+  override def _reverse(omat:Mat):GLMat = {
     val out = GLMat.newOrCheckGLMat(nrows, ncols, omat, GUID,  "reverse".##);
     CUMATD.reverse(pdata, out.pdata, llength);  
     out
   }
   
-  def reverse:GLMat = _reverse(null);
+  override def reverse:GLMat = _reverse(null);
   
-  def reverse(omat:Mat):GLMat = _reverse(omat);
+  override def reverse(omat:Mat):GLMat = _reverse(omat);
   
   override def free() = {
     if (pdata == null) throw new RuntimeException("Attempt to free an already free'd GLMat")
@@ -528,7 +576,7 @@ class GLMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     this
   }
   
-  def getdiag():GLMat = {
+  override def getdiag():GLMat = {
     if (nrows != ncols) throw new RuntimeException("getdiag requires a square matrix, but dims= %d %d" format (nrows, ncols))
     val out = GLMat.newOrCheckGLMat(nrows, 1, null, GUID, "getdiag".##)
     cudaMemcpy2D(out.pdata, Sizeof.LONG, pdata, (nrows+1)*Sizeof.LONG, Sizeof.LONG, nrows, cudaMemcpyDeviceToDevice)
@@ -541,7 +589,7 @@ class GLMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     out
   }
     
-  def mkdiag():GLMat = {
+  override def mkdiag():GLMat = {
     if (math.min(nrows, ncols) != 1) throw new RuntimeException("mkdiag requires a vector argument, but dims= %d %d" format (nrows, ncols))
     val size = math.max(nrows, ncols)
     val out = GLMat.newOrCheckGLMat(size, size, null, GUID, "mkdiag".##)
@@ -573,26 +621,7 @@ class GLMat(dims:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   
   def on(a : GLMat) = vertcat(a, null)
   def \ (a : GLMat) = horzcat(a, null)
-  
-  def checkOne(b:Seq[Int], name:String):Int = {
-    if (b.length > 1) throw new RuntimeException("GLMat %s only takes one argument" format name);
-    b(0);
-  }
-  
-  def checkOne(b:IMat, name:String):Int = {
-    if (b.length > 1) throw new RuntimeException("GLMat %s only takes one argument" format name);
-    b(0);
-  }
-  
-  override def sum(ind:IMat):GLMat = reduceOp(null, checkOne(ind,"sum")+1, 0, op_add);
-  override def prod(ind:IMat):GLMat = reduceOp(null, checkOne(ind,"prod")+1, 1, op_mul);
-  override def maxi(ind:IMat):GLMat = reduceOp(null, checkOne(ind,"maxi")+1, Long.MinValue, op_max);
-  override def mini(ind:IMat):GLMat = reduceOp(null, checkOne(ind,"mini")+1, Long.MaxValue, op_min);
 
-  override def sum(ind:Int*):GLMat = reduceOp(null, checkOne(ind,"sum")+1, 0, op_add);
-  override def prod(ind:Int*):GLMat = reduceOp(null, checkOne(ind,"prod")+1, 1, op_mul);
-  override def maxi(ind:Int*):GLMat = reduceOp(null, checkOne(ind,"maxi")+1, Long.MinValue, op_max);
-  override def mini(ind:Int*):GLMat = reduceOp(null, checkOne(ind,"mini")+1, Long.MaxValue, op_min);
   
   override def + (a : Float) = GIop(GLMat(a.toLong), null, op_add)
   override def - (a : Float) = GIop(GLMat(a.toLong), null, op_sub)
@@ -671,26 +700,7 @@ class GLPair (val omat:Mat, val mat:GLMat) extends Pair (omat, mat){
 	
 	def on(a : GLMat) = mat.vertcat(a, omat)
 	def \ (a : GLMat) = mat.horzcat(a, omat)
-    
-  def checkOne(b:Seq[Int], name:String):Int = {
-    if (b.length > 1) throw new RuntimeException("GLMat %s only takes one argument" format name);
-    b(0);
-  }
-  
-  def checkOne(b:IMat, name:String):Int = {
-    if (b.length > 1) throw new RuntimeException("GLMat %s only takes one argument" format name);
-    b(0);
-  }
-  
-  override def sum(ind:IMat):GLMat = mat.reduceOp(omat, checkOne(ind,"sum")+1, 0, op_add);
-  override def prod(ind:IMat):GLMat = mat.reduceOp(omat, checkOne(ind,"prod")+1, 1, op_mul);
-  override def maxi(ind:IMat):GLMat = mat.reduceOp(omat, checkOne(ind,"maxi")+1, Long.MinValue, op_max);
-  override def mini(ind:IMat):GLMat = mat.reduceOp(omat, checkOne(ind,"mini")+1, Long.MaxValue, op_min);
 
-  override def sum(ind:Int*):GLMat = mat.reduceOp(omat, checkOne(ind,"sum")+1, 0, op_add);
-  override def prod(ind:Int*):GLMat = mat.reduceOp(omat, checkOne(ind,"prod")+1, 1, op_mul);
-  override def maxi(ind:Int*):GLMat = mat.reduceOp(omat, checkOne(ind,"maxi")+1, Long.MinValue, op_max);
-  override def mini(ind:Int*):GLMat = mat.reduceOp(omat, checkOne(ind,"mini")+1, Long.MaxValue, op_min);
 	
   override def + (a : Long) = mat.GIop(GLMat(a), omat, op_add)
 	override def - (a : Long) = mat.GIop(GLMat(a), omat, op_sub)
@@ -794,6 +804,24 @@ object GLMat {
   	retv;
   }
   
+   def apply(dims:Array[Int]):GLMat = {
+    val len = dims.reduce(_*_);
+    val retv = new GLMat(dims, new Pointer, len);
+    if (Mat.debugMem) {
+      println("GLMat %d, %d %f" format (len, SciFunctions.getGPU, SciFunctions.GPUmem._1))
+      if (len > Mat.debugMemThreshold) throw new RuntimeException("GLMat alloc too large");
+    }
+    var err = if (1L*len*Sizeof.LONG > Mat.hostAllocSize) {
+      cudaMallocHost(retv.pdata, 1L*len*Sizeof.LONG);
+    } else {
+      cudaMalloc(retv.pdata, 1L*len*Sizeof.LONG);
+    }
+    cudaDeviceSynchronize;
+    if (err == 0) err = cudaGetLastError();
+    if (err != 0) throw new RuntimeException("CUDA alloc failed " + cudaGetErrorString(err));
+    retv       
+  }
+  
   def apply(a:GMat):GLMat = {
     val rsize = a.nrows*a.ncols;
     val retv = GLMat.newOrCheckGLMat(a.nrows, a.ncols, null, a.GUID, SciFunctions.getGPU, "GIMat_GMat".##);
@@ -836,6 +864,29 @@ object GLMat {
     val out = GLMat(m,n)
     out.set(1)
     out
+  }
+  
+  
+  
+  def GPUtoGPUarraycopy(a:Pointer, aoffset:Int,  b:Pointer, boffset:Int, len:Int, msg:String ) = {
+    cudaMemcpy(b.withByteOffset(1L*boffset*Sizeof.LONG), a.withByteOffset(1L*aoffset*Sizeof.LONG), 1L*len*Sizeof.LONG, cudaMemcpyKind.cudaMemcpyDeviceToDevice);
+    cudaDeviceSynchronize;
+    val err = cudaGetLastError;
+    if (err != 0) throw new RuntimeException(msg +" error in memcpy "+ cudaGetErrorString(err));
+  }
+  
+  def GPUtoCPUarraycopy(a:Pointer, aoffset:Int,  b:Array[Long], boffset:Int, len:Int, msg:String ) = {
+    cudaMemcpy(Pointer.to(b).withByteOffset(1L*boffset*Sizeof.LONG), a.withByteOffset(1L*aoffset*Sizeof.LONG), 1L*len*Sizeof.LONG, cudaMemcpyKind.cudaMemcpyDeviceToHost);
+    cudaDeviceSynchronize;
+    val err = cudaGetLastError;
+    if (err != 0) throw new RuntimeException(msg +" error in memcpy "+ cudaGetErrorString(err));
+  }
+  
+  def CPUtoGPUarraycopy(a:Array[Long], aoffset:Int,  b:Pointer, boffset:Int, len:Int, msg:String ) = {
+    cudaMemcpy(b.withByteOffset(1L*boffset*Sizeof.LONG), Pointer.to(a).withByteOffset(1L*aoffset*Sizeof.LONG), 1L*len*Sizeof.LONG, cudaMemcpyKind.cudaMemcpyHostToDevice);
+    cudaDeviceSynchronize;
+    val err = cudaGetLastError;
+    if (err != 0) throw new RuntimeException(msg +" error in memcpy "+ cudaGetErrorString(err));
   }
   
   
@@ -1171,6 +1222,15 @@ object GLMat {
     }
   }
   
+  def newOrCheckGLMat(dims:Array[Int], out:Mat):GLMat = {
+    if (out.asInstanceOf[AnyRef] != null && ND.checkDims("GLMat newOrCheckGLMat: ", out.dims.data, dims)) {
+      out.asInstanceOf[GLMat]
+    } else {
+      GLMat(dims)
+    }
+  }
+      
+  def newOrCheckGLMat(dims:IMat, out:Mat):GLMat = newOrCheckGLMat(dims.data, out);
     
   def newOrCheckGLMat(nr:Int, nc:Int, outmat:Mat, matGuid:Long, opHash:Int):GLMat = {
     if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
@@ -1188,6 +1248,24 @@ object GLMat {
     }
   }
   
+  def newOrCheckGLMat(dims:Array[Int], out:Mat, matGuid:Long, opHash:Int):GLMat = {
+    if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
+       newOrCheckGLMat(dims, out)
+    } else {
+      val key = (matGuid, opHash)
+      val res = Mat.cache2(key)
+      if (res != null) {
+        newOrCheckGLMat(dims, res)
+      } else {
+        val omat = newOrCheckGLMat(dims, null)
+        Mat.cache2put(key, omat)
+        omat
+      }
+    }
+  }
+  
+  def newOrCheckGLMat(dims:IMat, out:Mat, g1:Long, opHash:Int):GLMat = newOrCheckGLMat(dims.data, out, g1, opHash);
+  
   def newOrCheckGLMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, opHash:Int):GLMat = {
     if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
       newOrCheckGLMat(nr, nc, outmat)
@@ -1203,7 +1281,25 @@ object GLMat {
       }
     }
   }
-   
+  
+  def newOrCheckGLMat(dims:Array[Int], out:Mat, guid1:Long, guid2:Long, opHash:Int):GLMat = {
+    if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
+      newOrCheckGLMat(dims, out)
+    } else {
+      val key = (guid1, guid2, opHash)
+      val res = Mat.cache3(key)
+      if (res != null) {
+        newOrCheckGLMat(dims, res)
+      } else {
+        val omat = newOrCheckGLMat(dims, null)
+        Mat.cache3put(key, omat)
+        omat
+      }
+    }
+  }
+  
+  def newOrCheckGLMat(dims:IMat, out:Mat, g1:Long, g2:Long, opHash:Int):GLMat = newOrCheckGLMat(dims.data, out, g1, g2, opHash);
+    
   def newOrCheckGLMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):GLMat = {
     if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
       newOrCheckGLMat(nr, nc, outmat)
@@ -1219,6 +1315,25 @@ object GLMat {
       }
     }
   }
+  
+   def newOrCheckGLMat(dims:Array[Int], out:Mat, g1:Long, g2:Long, g3:Long, opHash:Int):GLMat = {
+    if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
+      newOrCheckGLMat(dims, out)
+    } else {
+      val key = (g1, g2, g3, opHash)
+      val res = Mat.cache4(key)
+      if (res != null) {
+        newOrCheckGLMat(dims, res)
+      } else {
+        val omat = newOrCheckGLMat(dims, null)
+        Mat.cache4put(key, omat)
+        omat
+      }
+    }
+  }
+  
+  def newOrCheckGLMat(dims:IMat, out:Mat, g1:Long, g2:Long, g3:Long, opHash:Int):GLMat = newOrCheckGLMat(dims.data, out, g1, g2, g3, opHash);
+  
 }
 
 

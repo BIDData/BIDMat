@@ -390,21 +390,22 @@ class Mat(val _dims:Array[Int]) extends ND with Serializable {
   def ^* (b : DSPair):Mat = notImplemented0("^*")
   def Tx (b : DSPair):Mat = notImplemented0("Tx")
   def @@ (b : Mat):DSPair = (this, b) match {
-    case (aa:FMat, bb:SMat) => new FDSPair(aa, bb) 
     case (aa:GMat, bb:GSMat) => new GDSPair(aa, bb)
+    case (aa:FMat, bb:SMat) => new FDSPair(aa, bb) 
   }
   
   def ~ (b : Mat):Pair = b match {
-    case bb:FMat => new FPair(this, bb)
-    case bb:DMat => new DPair(this, bb)
-    case bb:IMat => new IPair(this, bb)
-    case bb:SMat => new SPair(this, bb)
-    case bb:SDMat => new SDPair(this, bb)
-    case bb:CMat => new CPair(this, bb)
-    case bb:GMat => new GPair(this, bb)
-    case bb:GIMat => new GIPair(this, bb)
-    case bb:GDMat => new GDPair(this, bb)
-    case bb:GLMat => new GLPair(this, bb)
+  case bb:GMat => new GPair(this, bb)
+  case bb:GIMat => new GIPair(this, bb)
+  case bb:GDMat => new GDPair(this, bb)
+  case bb:GLMat => new GLPair(this, bb)
+  case bb:FMat => new FPair(this, bb)
+  case bb:DMat => new DPair(this, bb)
+  case bb:IMat => new IPair(this, bb)
+  case bb:SMat => new SPair(this, bb)
+  case bb:SDMat => new SDPair(this, bb)
+  case bb:CMat => new CPair(this, bb)
+
   }
   
 }

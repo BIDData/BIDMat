@@ -813,10 +813,10 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   
   override def copyTo(out:Mat):Mat = {
     out match {
-      case a:FMat => copyTo(a)
-      case a:DMat => copyTo(a)
       case a:GMat => copyTo(a)
       case a:GDMat => copyTo(a)
+      case a:FMat => copyTo(a)
+      case a:DMat => copyTo(a)
       case a:GIMat => copyTo(a)
     }
   }
@@ -1241,16 +1241,6 @@ class GDPair(val omat:Mat, val mat:GDMat) extends Pair(omat, mat) {
 	def ∙→ (b :GDMat) = mat.dotr(b, omat)
 	def on(a : GDMat) = mat.vertcat(a, omat)
 	def \ (a : GDMat) = mat.horzcat(a, omat)
-  
-  def checkOne(b:Seq[Int], name:String):Int = {
-    if (b.length > 1) throw new RuntimeException("GDMat %s only takes one argument" format name);
-    b(0);
-  }
-  
-  def checkOne(b:IMat, name:String):Int = {
-    if (b.length > 1) throw new RuntimeException("GDMat %s only takes one argument" format name);
-    b(0);
-  }
 
   override def * (b : Float) = mat.gOp(GDMat(b), omat, op_mul)
   override def ∘ (b : Float) = mat.gOp(GDMat(b), omat, op_mul)

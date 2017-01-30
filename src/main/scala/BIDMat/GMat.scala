@@ -1288,23 +1288,6 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   
   def max (b : GMat) = gOp(b, null, op_max)
   def min (b : GMat) = gOp(b, null, op_min)
-  
-  def checkOne(b:Seq[Int], name:String):Int = {
-    if (b.length > 1) throw new RuntimeException("GMat %s only takes one argument" format name);
-    b(0);
-  }
-  
-  def checkOne(b:IMat, name:String):Int = {
-    if (b.length > 1) throw new RuntimeException("GMat %s only takes one argument" format name);
-    b(0);
-  }
-  
-  override def sum(ind:IMat):GMat = reduceOp(null, checkOne(ind,"sum")+1, 0f, op_add);
-  override def prod(ind:IMat):GMat = reduceOp(null, checkOne(ind,"prod")+1, 1f, op_mul);
-  override def maxi(ind:IMat):GMat = reduceOp(null, checkOne(ind,"maxi")+1, Float.MinValue, op_max);
-  override def mini(ind:IMat):GMat = reduceOp(null, checkOne(ind,"mini")+1, Float.MaxValue, op_min);
-  override def mean(ind:IMat):GMat = SciFunctions._mean(this, checkOne(ind,"mean")+1).asInstanceOf[GMat];
-  override def variance(ind:IMat):GMat = SciFunctions._variance(this, checkOne(ind,"variance")+1).asInstanceOf[GMat];
 
   override def sum(ind:Int):GMat = reduceOp(null, ind+1, 0f, op_add);
   override def prod(ind:Int):GMat = reduceOp(null, ind+1, 1f, op_mul);
@@ -1312,7 +1295,6 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   override def mini(ind:Int):GMat = reduceOp(null, ind+1, Float.MaxValue, op_min);
   override def mean(ind:Int):GMat = SciFunctions._mean(this, ind+1).asInstanceOf[GMat];
   override def variance(ind:Int):GMat = SciFunctions._variance(this, ind+1).asInstanceOf[GMat];
-
   
   override def + (a : Float) = gOp(GMat.elem(a), null, op_add)
   override def - (a : Float) = gOp(GMat.elem(a), null, op_sub)
@@ -2134,7 +2116,7 @@ object GMat {
     val retv = new GMat(dims, new Pointer, len);
     if (Mat.debugMem) {
       println("GMat %d, %d %f" format (len, SciFunctions.getGPU, SciFunctions.GPUmem._1))
-      if (len > Mat.debugMemThreshold) throw new RuntimeException("GND alloc too large");
+      if (len > Mat.debugMemThreshold) throw new RuntimeException("GMat alloc too large");
     }
     var err = if (1L*len*Sizeof.FLOAT > Mat.hostAllocSize) {
       cudaMallocHost(retv.pdata, 1L*len*Sizeof.FLOAT);
