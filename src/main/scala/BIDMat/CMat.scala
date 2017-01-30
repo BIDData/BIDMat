@@ -3,7 +3,7 @@ import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.LAPACK._
 import java.util.Arrays
 
-case class CMat(dims:Array[Int], val data:Array[Float]) extends DenseMat[Float](dims, data) {
+case class CMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float](dims0, data) {
 
   def this(nr:Int, nc:Int, data:Array[Float]) = this(Array(nr, nc), data);
   

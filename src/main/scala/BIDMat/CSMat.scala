@@ -1,7 +1,7 @@
 package BIDMat
 import Mat._
 
-case class CSMat(dims:Array[Int], override val data:Array[String]) extends DenseMat[String](dims, data) {	
+case class CSMat(dims0:Array[Int], override val data:Array[String]) extends DenseMat[String](dims0, data) {	
   
   def this(nr:Int, nc:Int, data:Array[String]) = this(Array(nr, nc), data);
  

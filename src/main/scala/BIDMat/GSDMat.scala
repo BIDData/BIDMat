@@ -14,8 +14,8 @@ import GDMat._
 import GMat.BinOp
 import java.io._
 
-class GSDMat(nr0:Int, nc0:Int, var nnz0:Int, @transient var pir:Pointer, @transient var pic:Pointer, @transient var pjc:Pointer, @transient var pdata:Pointer, val realnnz:Int) 
-     extends SDMat(nr0, nc0, nnz0, null, null, null) {	
+class GSDMat(nr0:Int, nc0:Int, nnz1:Int, @transient var pir:Pointer, @transient var pic:Pointer, @transient var pjc:Pointer, @transient var pdata:Pointer, val realnnz:Int) 
+     extends SDMat(nr0, nc0, nnz1, null, null, null) {	
 
   override def mytype = "GSDMat"
     
@@ -160,7 +160,7 @@ class GSDMat(nr0:Int, nc0:Int, var nnz0:Int, @transient var pir:Pointer, @transi
     new GSDMat(m, n, 0, new Pointer, new Pointer, new Pointer, new Pointer, 0);
   }
   
-  def full(omat:Mat):GDMat = {
+  override def full(omat:Mat):GDMat = {
     val out = GDMat.newOrCheckGDMat(nrows, ncols, omat, GUID, "full".##)
     out.clear
     var err = CUMATD.full(pir, pic, pdata, out.pdata, nrows, ncols, nnz)  
@@ -170,7 +170,7 @@ class GSDMat(nr0:Int, nc0:Int, var nnz0:Int, @transient var pir:Pointer, @transi
     out
   }
   
-  def full():GDMat = full(null):GDMat
+  override def full():GDMat = full(null):GDMat
   
   override def free() = {
     JCublas.cublasFree(pdata)

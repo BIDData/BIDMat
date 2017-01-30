@@ -11,10 +11,8 @@ import scala.util.hashing.MurmurHash3
 import GMat._
 import java.io._
 
-class GSMat(nr0:Int, nc0:Int, var nnz0:Int, @transient var pir:Pointer, @transient var pic:Pointer, @transient var pjc:Pointer, 
-    @transient var pdata:Pointer, val realnnz:Int) extends SMat(nr0, nc0, nnz0, null, null, null) {
-	
-  def getdata() = data;	
+class GSMat(nr0:Int, nc0:Int, nnz1:Int, @transient var pir:Pointer, @transient var pic:Pointer, @transient var pjc:Pointer, 
+    @transient var pdata:Pointer, val realnnz:Int) extends SMat(nr0, nc0, nnz1, null, null, null) {
 
   override def mytype = "GSMat"
     
@@ -140,7 +138,7 @@ class GSMat(nr0:Int, nc0:Int, var nnz0:Int, @transient var pir:Pointer, @transie
     out
   }
   
-  def copyTo(out:SMat) = { 
+  override def copyTo(out:SMat) = { 
     if (nrows != out.nrows && ncols != out.ncols && nnz != out.nnz) {
       throw new RuntimeException("GSMAT.copyTo dimensions mismatch")
     }
@@ -200,7 +198,7 @@ class GSMat(nr0:Int, nc0:Int, var nnz0:Int, @transient var pir:Pointer, @transie
     GIMat.iones(m,n)
   }
   
-  def full(omat:Mat):GMat = {
+  override def full(omat:Mat):GMat = {
     val out = GMat.newOrCheckGMat(nrows, ncols, omat, GUID, "full".##)
     out.clear
     var err = CUMAT.full(pir, pic, pdata, out.pdata, nrows, ncols, nnz)  
@@ -210,7 +208,7 @@ class GSMat(nr0:Int, nc0:Int, var nnz0:Int, @transient var pir:Pointer, @transie
     out
   }
   
-  def full():GMat = full(null):GMat
+  override def full():GMat = full(null):GMat
   
   var cacheT:GSMat = null
   override def t():GSMat = {
@@ -326,8 +324,8 @@ class GSMat(nr0:Int, nc0:Int, var nnz0:Int, @transient var pir:Pointer, @transie
   
   def ~ (b: GMat) = new GPair(this, b)
   
-  def ^*(a:GMat) = SDTMult(a, null)
-  def Tx(a:GMat) = SDTMult(a, null)
+  override def ^*(a:GMat) = SDTMult(a, null)
+  override def Tx(a:GMat) = SDTMult(a, null)
   
   // NOTE: GSMat op GMat is an *Edge or Scalar* operation only, and acts only on the non-zeros of the matrix
   /* Shouldnt be needed any more
