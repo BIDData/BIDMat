@@ -19,12 +19,28 @@ public final class CUMATD {
     
     public static native int copyToInds(Pointer A, Pointer B, Pointer I, long len);
     
+    public static native int copyToInds2D(Pointer A, int lda, Pointer B, int ldb, Pointer I, int nrows, Pointer J, int ncols);
+    
+    public static native int copyToInds3D(Pointer A, int lda, int rda, Pointer B, int ldb, int rdb, Pointer I, int nrows, Pointer J, int ncols, Pointer K, int nd);
+    
+    public static native int copyToInds4D(Pointer A, int lda, int rda, int tda, Pointer B, int ldb, int rdb, int tdb, Pointer I, int nrows, Pointer J, int ncols, Pointer K, int nk, Pointer L, int nl);
+    
     public static native int copyFromInds(Pointer A, Pointer B, Pointer I, long len);
     
-    public static native int copyToInds2D(Pointer A, int lda, Pointer B, int ldb, Pointer I, int nrows, Pointer J, int ncols);
-
     public static native int copyFromInds2D(Pointer A, int lda, Pointer B, int ldb, Pointer I, int nrows, Pointer J, int ncols);
-      
+    
+    public static native int copyFromInds3D(Pointer A, int lda, int rda, Pointer B, int ldb, int rdb, Pointer I, int nrows, Pointer J, int ncols, Pointer K, int nd);
+    
+    public static native int copyFromInds4D(Pointer A, int lda, int rda, int tda, Pointer B, int ldb, int rdb, int tdb, Pointer I, int nrows, Pointer J, int ncols, Pointer K, int nk, Pointer L, int nl);
+ 
+    public static native int fillToInds(double A, Pointer B, Pointer I, long len);
+    
+    public static native int fillToInds2D(double A, Pointer B, int ldb, Pointer I, int nrows, Pointer J, int ncols);
+    
+    public static native int fillToInds3D(double A, Pointer B, int ldb, int rdb, Pointer I, int nrows, Pointer J, int ncols, Pointer K, int nd);
+    
+    public static native int fillToInds4D(double A, Pointer B, int ldb, int rdb, int tdb, Pointer I, int nrows, Pointer J, int ncols, Pointer K, int nk, Pointer L, int nl);
+ 
     public static native int full(Pointer ir, Pointer ic, Pointer vv, Pointer dd, int nrows, int ncols, int nnz);
     
     public static native int setval(Pointer A, double vv, int N);
@@ -136,5 +152,7 @@ public final class CUMATD {
     public static native int cumminByKeyLL(Pointer A, Pointer B, Pointer out, long len);
     
     public static native int reverse(Pointer A, Pointer out, long len);
+    
+    public static native void dpermute(int d1, int d2, int d3, Pointer in, Pointer out);
 
 }

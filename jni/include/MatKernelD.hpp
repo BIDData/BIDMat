@@ -8,6 +8,22 @@ int copyToInds2D(double *A, int lda, double *B, int ldb, int *I, int nrows, int 
 
 int copyFromInds2D(double *A, int lda, double *B, int ldb, int *I, int nrows, int *J, int ncols);
 
+int copyToInds3D(double *A, int lda, int rda, double *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk);
+
+int copyToInds4D(double *A, int lda, int rda, int tda, double *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl);
+
+int copyFromInds3D(double *A, int lda, int rda, double *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk);
+
+int copyFromInds4D(double *A, int lda, int rda, int tda, double *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl);
+
+int fillToInds(double A, double *B, int *I, long long len);
+
+int fillToInds2D(double A, double *B, int ldb, int *I, int nrows, int *J, int ncols);
+
+int fillToInds3D(double A, double *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk);
+
+int fillToInds4D(double A, double *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl);
+
 int set_val(double *A, double val, int length);
 
 int full(int *ir, int *ic, double *data, double *od, int nrows, int ncols, int nnz);

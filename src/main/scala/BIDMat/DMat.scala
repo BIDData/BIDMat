@@ -210,7 +210,7 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
     out
   }
  
-  /** Basic 2D sliced updating with Ints */
+  /** Basic 1D/2D updating with Ints */
   /* these need to be implemented in subclasses */
 
   override def update(i:Int, b:Double):DMat = {_update(i, b); this}
@@ -222,6 +222,8 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
   override def update(iv:IMat, jv:IMat, b:Double):DMat = DMat(_update(iv, jv, b));
   
   def update(iv:IMat, jv:IMat, b:DMat):DMat = DMat(_update(iv, jv, b));
+  
+  /* not needed in subclasses */
   
   override def update(i:Int, b:Float):DMat = update(i, b.toDouble);
   override def update(i:Int, j:Int, b:Float):DMat = update(i, j, b.toDouble);
@@ -267,12 +269,12 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
   def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:DMat):DMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7), vv)
   def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:DMat):DMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv)
   
-  override def update(i1:IMat, i2:IMat, i3:IMat, vv:Mat):DMat = updatei(Array(i1, i2, i3), vv.asInstanceOf[DMat])
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:Mat):DMat = updatei(Array(i1, i2, i3, i4), vv.asInstanceOf[DMat])
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:Mat):DMat = updatei(Array(i1, i2, i3, i4, i5), vv.asInstanceOf[DMat])
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:Mat):DMat = updatei(Array(i1, i2, i3, i4, i5, i6), vv.asInstanceOf[DMat])
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:Mat):DMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7), vv.asInstanceOf[DMat])
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:Mat):DMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv.asInstanceOf[DMat])
+  override def update(i1:IMat, i2:IMat, i3:IMat, vv:Mat):DMat = updatei(Array(i1, i2, i3), DMat(vv))
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:Mat):DMat = updatei(Array(i1, i2, i3, i4), DMat(vv))
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:Mat):DMat = updatei(Array(i1, i2, i3, i4, i5), DMat(vv))
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:Mat):DMat = updatei(Array(i1, i2, i3, i4, i5, i6), DMat(vv))
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:Mat):DMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7), DMat(vv))
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:Mat):DMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7, i8), DMat(vv))
   
   override def update(i1:IMat, i2:IMat, i3:IMat, vv:Double):DMat = updatei(Array(i1, i2, i3), vv)
   override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:Double):DMat = updatei(Array(i1, i2, i3, i4), vv)

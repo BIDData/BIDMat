@@ -588,7 +588,7 @@ object Solvers {
       throw new RuntimeException("triinv a must be square")
     }
     val out = GDMat.newOrCheckGDMat(a.ncols, a.ncols, omat);
-    out(0,0) = 1f;
+    out(0,0) = 1.0;
     var err = cudaMemcpy2D(out.pdata, (a.nrows+1)*Sizeof.DOUBLE, out.pdata, 0, Sizeof.DOUBLE, a.nrows, cudaMemcpyDeviceToDevice);
     cudaDeviceSynchronize
     Mat.nflops += 1L*a.nrows*a.nrows*a.ncols
