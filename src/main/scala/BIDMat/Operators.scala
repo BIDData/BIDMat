@@ -84,7 +84,6 @@ trait Mop {
       case bb:LMat => op(a, bb, c)
       case bb:SMat => op(a, bb, c)
       case bb:CMat => op(a, bb, c)
-      case bb:GMat => op(a, bb, c)
     }
   }
   
