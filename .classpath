@@ -22,8 +22,6 @@
 	<classpathentry kind="lib" path="lib/scala-reflect-2.11.2.jar"/>
 	<classpathentry kind="lib" path="lib/scala-arm_2.11-1.4.jar"/>
 	<classpathentry kind="lib" path="lib/scala-parser-combinators_2.11-1.0.3.jar"/>
-	<classpathentry kind="lib" path="lib/BIDMat-1.9.0-cuda8.0-cpu-apple-x86_64.jar"/>
-	<classpathentry kind="lib" path="lib/BIDMat-1.9.0-cuda8.0-gpu-apple-x86_64.jar"/>
 	<classpathentry kind="lib" path="lib/jcublas-0.8.0.jar"/>
 	<classpathentry kind="lib" path="lib/jcuda-0.8.0.jar"/>
 	<classpathentry kind="lib" path="lib/jcudnn-0.8.0.jar"/>

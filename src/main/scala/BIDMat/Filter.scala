@@ -19,14 +19,6 @@ trait Filter {
     }
     flops;
   }
-  
-  def notImplemented1f(s:String, a:Mat):Mat = { 
-    throw new RuntimeException("operator "+s+" not implemented for Filter and "+a.mytype)
-  }
-  
-  def ^* (a:Mat):Mat = {
-    notImplemented1f("^*", a);
-  }
 
 }
 

@@ -61,14 +61,6 @@ case class CMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   override def apply(i:Int, jv:IMat):CMat = {
   	applyx(IMat.ielem(i), jv)
   }
-
-  override def apply(a:Mat):CMat = applyx(a.asInstanceOf[IMat])
-    
-  override def apply(a:Mat, b:Mat):CMat = applyx(a.asInstanceOf[IMat], b.asInstanceOf[IMat])
-  
-  override def apply(a:Mat, b:Int):CMat = applyx(a.asInstanceOf[IMat], IMat.ielem(b))
-  
-  override def apply(a:Int, b:Mat):CMat = applyx(IMat.ielem(a), b.asInstanceOf[IMat])
   
   def update(I:IMat, V:CMat) = updatex(I, V)
   
@@ -85,14 +77,6 @@ case class CMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   override def update(I:IMat, j:Int, V:Mat) = updatex(I, IMat.ielem(j), V.asInstanceOf[CMat])
   
   override def update(i:Int, J:IMat, V:Mat) = updatex(IMat.ielem(i), J, V.asInstanceOf[CMat])
-  
-  override def update(I:Mat, V:Mat) = updatex(I.asInstanceOf[IMat], V.asInstanceOf[CMat])
-  
-  override def update(I:Mat, J:Mat, V:Mat) = updatex(I.asInstanceOf[IMat], J.asInstanceOf[IMat], V.asInstanceOf[CMat])
-    
-  override def update(I:Mat, j:Int, V:Mat) = updatex(I.asInstanceOf[IMat], IMat.ielem(j), V.asInstanceOf[CMat])
-  
-  override def update(i:Int, J:Mat, V:Mat) = updatex(IMat.ielem(i), J.asInstanceOf[IMat], V.asInstanceOf[CMat])
 
   def update(r0:Int, c0:Int, v:CMat):CMat = {
     val off = Mat.oneBased

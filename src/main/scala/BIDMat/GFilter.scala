@@ -187,7 +187,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
   
   def convolveM(a:GMat, b:GMat):GMat = convolveM(a, b, true);
   
-  def copy:GFilter = {
+  override def copy:GFilter = {
 		val out = new GFilter(inDims.copy, outDims.copy, stride.copy, pad.copy, outPad.copy, new Pointer);
 		val len = 1L*length*Sizeof.FLOAT
 		cudaMalloc(out.pdata, len);
@@ -201,21 +201,9 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
 			convolve(a);
 	}
 
-	def ^* (a:GMat):GMat = {
+	override def ^* (a:GMat):GMat = {
 			convolveT(a);
 	}
-
-	override def * (a:ND):ND = {
-  	a match {
-  	case aa:GMat => convolve(aa);
-  	}
-	};
-
-  override def ^* (a:ND):ND = {
-  		a match {
-  		case aa:GMat => convolveT(aa);
-  		}
-  }
 }
 
 object GFilter {

@@ -329,9 +329,9 @@ object LDict {
   def gramDict(nuni:Int, nbi:Int, ntri:Int, du:Dict, db:LDict, dt:LDict) = {
     val c1 = du.cstr(0->nuni,0)
     val n1 = du.counts(0->nuni, 0)
-    val c2 = du.cstr(db.grams(0->nbi, 0), 0) + csrow(" ") + du.cstr(db.grams(0->nbi, 1), 0)
+    val c2 = du.cstr(IMat(db.grams(0->nbi, 0)), 0) + csrow(" ") + du.cstr(IMat(db.grams(0->nbi, 1)), 0);
     val n2 = db.counts(0->nbi, 0)
-    val c3 = du.cstr(dt.grams(0->ntri, 0), 0) + csrow(" ") + du.cstr(dt.grams(0->ntri, 1), 0) + csrow(" ") + du.cstr(dt.grams(0->ntri, 2), 0)
+    val c3 = du.cstr(IMat(dt.grams(0->ntri, 0)), 0) + csrow(" ") + du.cstr(IMat(dt.grams(0->ntri, 1)), 0) + csrow(" ") + du.cstr(IMat(dt.grams(0->ntri, 2)), 0)
     val n3 = dt.counts(0->ntri, 0)
     Dict(c1 on c2 on c3, n1 on n2 on n3)
   }

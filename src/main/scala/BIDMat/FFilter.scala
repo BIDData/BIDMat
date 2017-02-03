@@ -177,7 +177,7 @@ FMat((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 
 	def convolveM(a:FMat, b:FMat):FMat = convolveM(a, b, true);
 
-	def copy:FFilter = {
+	override def copy:FFilter = {
 		val a = new FFilter(inDims.copy, outDims.copy, stride.copy, pad.copy, outPad.copy, new Array[Float](length));
 		System.arraycopy(data, 0, a.data, 0, length)
 		a;
@@ -915,21 +915,10 @@ FMat((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 			convolve(a);
 	}
 
-	def ^* (a:FMat):FMat = {
+	override def ^* (a:FMat):FMat = {
 			convolveT(a);
 	}
 
-	override def * (a:ND):ND = {
-			a match {
-			case aa:FMat => convolve(aa);
-			}
-	};
-
-	override def ^* (a:ND):ND = {
-			a match {
-			case aa:FMat => convolveT(aa);
-			}
-	}
 }
 
 
