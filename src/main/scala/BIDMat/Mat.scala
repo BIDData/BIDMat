@@ -10,8 +10,16 @@ class Mat(val _dims:Array[Int]) extends ND with Serializable {
   def this(nr:Int, nc:Int) = this(Array(nr, nc));
   
   def mytype = "Mat";
-    
-  val dims = new IMat(1, _dims.length, _dims)
+  
+  var _idims:IMat = null
+   
+  def dims = {
+    if (_idims.asInstanceOf[IMat] == null) {
+      _idims = new IMat(1, _dims.length, _dims);
+    }
+    _idims;
+  }
+  
   val ndims = _dims.length;
   val ncols = _dims(ndims-1)
   val nrows = _dims.slice(0,ndims-1).reduce(_*_);

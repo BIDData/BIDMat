@@ -155,11 +155,12 @@ object MatFunctions {
   
   def int(a:Mat):Mat = {
     a match {
+      case ga:GMat => GIMat(ga);
+      case gi:GIMat => gi;
       case fa:FMat => IMat(fa);
       case da:DMat => IMat(da);
       case ia:IMat => ia;
-      case ga:GMat => GIMat(ga);
-      case gi:GIMat => gi;
+
     }
   }
   
@@ -186,51 +187,54 @@ object MatFunctions {
   
   def float(a:Mat):Mat = {
     a match {
-      case fa:FMat => fa;
-      case da:DMat => FMat(da);
-      case ia:IMat => FMat(ia);
-      case ga:GMat => ga;
-      case gi:GIMat => GMat(gi);
+    case ga:GMat => ga;
+    case gi:GIMat => GMat(gi);
+    case fa:FMat => fa;
+    case da:DMat => FMat(da);
+    case ia:IMat => FMat(ia);
+
     }
   }
   
   /** Convert to a CPU matrix */
   def cpu(a:Mat):Mat = {
     a match {
-      case b:FMat => b;
-      case b:DMat => b;
-      case b:IMat => b;
-      case b:LMat => b;
-      case b:SMat => b;
-      case b:SDMat => b;
-      case b:SBMat => b;
-      case b:CSMat => b;
-      case b:GMat => FMat(b);
-      case b:GDMat => DMat(b);
-      case b:GIMat => IMat(b);
-      case b:GLMat => LMat(b);
-      case b:GSMat => SMat(b);
-      case b:GSDMat => SDMat(b);
-      case b:TMat => b.toCPU;
+    case b:GMat => FMat(b);
+    case b:GDMat => DMat(b);
+    case b:GIMat => IMat(b);
+    case b:GLMat => LMat(b);
+    case b:GSMat => SMat(b);
+    case b:GSDMat => SDMat(b);
+    case b:FMat => b;
+    case b:DMat => b;
+    case b:IMat => b;
+    case b:LMat => b;
+    case b:SMat => b;
+    case b:SDMat => b;
+    case b:SBMat => b;
+    case b:CSMat => b;
+
+    case b:TMat => b.toCPU;
     }
   }
     
   /** Convert to a GPU matrix */
   def gpu(a:Mat):Mat = {
     a match {
-      case b:FMat => GMat(b);
-      case b:DMat => GDMat(b);
-      case b:IMat => GIMat(b);
-      case b:LMat => GLMat(b);
-      case b:SMat => GSMat(b);
-      case b:SDMat => GSDMat(b);
-      case b:GMat => b;
-      case b:GDMat => b;
-      case b:GIMat => b;
-      case b:GLMat => b;
-      case b:GSMat => b;
-      case b:GSDMat => b;
-      case b:TMat => b.toGPU;
+    case b:GMat => b;
+    case b:GDMat => b;
+    case b:GIMat => b;
+    case b:GLMat => b;
+    case b:GSMat => b;
+    case b:GSDMat => b;
+    case b:FMat => GMat(b);
+    case b:DMat => GDMat(b);
+    case b:IMat => GIMat(b);
+    case b:LMat => GLMat(b);
+    case b:SMat => GSMat(b);
+    case b:SDMat => GSDMat(b);
+
+    case b:TMat => b.toGPU;
     }
   }
   
@@ -690,41 +694,41 @@ object MatFunctions {
   
   def sort(keys:Mat):Mat = {
     keys match {
-      case a:FMat => sort(a);
-      case a:IMat => sort(a);
-      case a:DMat => sort(a);
-      case a:LMat => sort(a);
-      case a:GMat => sort(a);
+    case a:GMat => sort(a);
+    case a:FMat => sort(a);
+    case a:IMat => sort(a);
+    case a:DMat => sort(a);
+    case a:LMat => sort(a);
     } 
   }
   
   def sortdown(keys:Mat):Mat = {
     keys match {
-      case a:FMat => sortdown(a);
-      case a:IMat => sortdown(a);
-      case a:DMat => sortdown(a);
-      case a:LMat => sortdown(a);
-      case a:GMat => sortdown(a);
+    case a:GMat => sortdown(a);
+    case a:FMat => sortdown(a);
+    case a:IMat => sortdown(a);
+    case a:DMat => sortdown(a);
+    case a:LMat => sortdown(a);
     } 
   }
   
   def sort2(keys:Mat):(Mat, Mat) = {
     keys match {
-      case a:FMat => sort2(a);
-      case a:IMat => sort2(a);
-      case a:DMat => sort2(a);
-      case a:LMat => sort2(a);
-      case a:GMat => sort2(a);
+    case a:GMat => sort2(a);
+    case a:FMat => sort2(a);
+    case a:IMat => sort2(a);
+    case a:DMat => sort2(a);
+    case a:LMat => sort2(a);
     } 
   }
   
   def sortdown2(keys:Mat):(Mat, Mat) = {
     keys match {
-      case a:FMat => sortdown2(a);
-      case a:IMat => sortdown2(a);
-      case a:DMat => sortdown2(a);
-      case a:LMat => sortdown2(a);
-      case a:GMat => sortdown2(a);
+    case a:GMat => sortdown2(a);
+    case a:FMat => sortdown2(a);
+    case a:IMat => sortdown2(a);
+    case a:DMat => sortdown2(a);
+    case a:LMat => sortdown2(a);
     } 
   }
   
@@ -732,12 +736,12 @@ object MatFunctions {
   /** Accumulate (row, col, value) tuples from inds \\ vals (generic version) into omat. nr and nc are row and column bounds */
   def accum(inds:Mat, vals:Mat, omat:Mat, nrows:Int, ncols:Int):Mat = {
     (inds, vals) match {
-      case (iinds:IMat, fvals:FMat) => accum(iinds, fvals, nrows, ncols):FMat
-      case (iinds:IMat, ivals:IMat) => accum(iinds, ivals, nrows, ncols):IMat
-      case (iinds:IMat, ivals:LMat) => accum(iinds, ivals, nrows, ncols):LMat
-      case (iinds:IMat, dvals:DMat) => accum(iinds, dvals, nrows, ncols):DMat
-      case (ginds:GIMat, gvals:GMat) => GMat.accum(ginds, gvals, omat, nrows, ncols):GMat
-      case (ginds:GIMat, gvals:GIMat) => GIMat.accum(ginds, gvals, omat, nrows, ncols):GIMat
+    case (ginds:GIMat, gvals:GMat) => GMat.accum(ginds, gvals, omat, nrows, ncols):GMat
+    case (ginds:GIMat, gvals:GIMat) => GIMat.accum(ginds, gvals, omat, nrows, ncols):GIMat
+    case (iinds:IMat, fvals:FMat) => accum(iinds, fvals, nrows, ncols):FMat
+    case (iinds:IMat, ivals:IMat) => accum(iinds, ivals, nrows, ncols):IMat
+    case (iinds:IMat, ivals:LMat) => accum(iinds, ivals, nrows, ncols):LMat
+    case (iinds:IMat, dvals:DMat) => accum(iinds, dvals, nrows, ncols):DMat
     }
   }
   
@@ -747,8 +751,8 @@ object MatFunctions {
   /** Accumulate (row, col, fval) tuples from inds (generic version) into omat. nr and nc are row and column bounds */
   def accum(inds:Mat, fval:Float, omat:Mat, nrows:Int, ncols:Int):Mat = {
     inds match {
-      case iinds:IMat => accum(iinds, fval, nrows, ncols):FMat
-      case ginds:GIMat => GMat.accum(ginds, fval, omat, nrows, ncols):GMat
+    case ginds:GIMat => GMat.accum(ginds, fval, omat, nrows, ncols):GMat;
+    case iinds:IMat => accum(iinds, fval, nrows, ncols):FMat;
     }
   }
   
@@ -758,8 +762,8 @@ object MatFunctions {
   /** Accumulate (row, col, ival) tuples from inds (generic version) into omat. nr and nc are row and column bounds */
   def accum(inds:Mat, ival:Int, omat:Mat, nrows:Int, ncols:Int):Mat = {
     inds match {
-      case iinds:IMat => accum(iinds, ival, nrows, ncols):IMat
-      case ginds:GIMat => GIMat.accum(ginds, ival, omat, nrows, ncols):GIMat
+    case ginds:GIMat => GIMat.accum(ginds, ival, omat, nrows, ncols):GIMat;
+    case iinds:IMat => accum(iinds, ival, nrows, ncols):IMat;
     }
   }
   
@@ -1480,16 +1484,16 @@ object MatFunctions {
   def full(ss:GSDMat):GDMat = ss.full
   
   def full(a:Mat):Mat = a match {
-    case aa:DMat => a
-    case aa:FMat => a
-    case aa:IMat => a
-    case aa:SMat => full(aa):FMat
-    case aa:SDMat => full(aa):DMat
-    case aa:GSMat => aa.full:GMat
-    case aa:GSDMat => aa.full:GDMat
-    case aa:GMat => a
-    case aa:GDMat => a
-    case aa:TMat => aa.full
+  case aa:GSMat => aa.full:GMat
+  case aa:GSDMat => aa.full:GDMat
+  case aa:GMat => a
+  case aa:GDMat => a
+  case aa:DMat => a
+  case aa:FMat => a
+  case aa:IMat => a
+  case aa:SMat => full(aa):FMat
+  case aa:SDMat => full(aa):DMat
+  case aa:TMat => aa.full
   }
   
   def DDShelper(a:FMat, b:FMat, c:SMat, out:SMat, istart:Int, iend:Int, ioff:Int) = {
@@ -1561,11 +1565,11 @@ object MatFunctions {
   
   def DDS(a:Mat, b:Mat, c:Mat, omat:Mat=null):Mat = {
     (a, b, c) match {
-      case (a:FMat, b:FMat, c:SMat) => DDS(a, b, c, omat):SMat
-      case (a:GMat, b:GMat, c:GSMat) => GSMat.DDS(a, b, c, omat):GSMat
-      case (a:GDMat, b:GDMat, c:GSDMat) => GSDMat.DDS(a, b, c, omat):GSDMat
-      case (a:GMat, b:GMat, c:GMat) => a.t * b
-      case (a:FMat, b:FMat, c:FMat) => a.t * b
+    case (a:GMat, b:GMat, c:GSMat) => GSMat.DDS(a, b, c, omat):GSMat
+    case (a:GDMat, b:GDMat, c:GSDMat) => GSDMat.DDS(a, b, c, omat):GSDMat
+    case (a:GMat, b:GMat, c:GMat) => a.t * b
+    case (a:FMat, b:FMat, c:SMat) => DDS(a, b, c, omat):SMat
+    case (a:FMat, b:FMat, c:FMat) => a.t * b
     }
   }
   
@@ -1629,8 +1633,8 @@ object MatFunctions {
   
   def oneHot(c:Mat, ncats:Int):Mat = {
     c match {
-      case cc:IMat => oneHot(cc, ncats);
-      case cc:GIMat => oneHot(cc, ncats);
+    case cc:GIMat => oneHot(cc, ncats);
+    case cc:IMat => oneHot(cc, ncats);
     }
   }
   def oneHot(c:Mat):Mat = oneHot(c, 0);
@@ -1663,8 +1667,8 @@ object MatFunctions {
   
   def nHot(c:Mat, ncats:Int):Mat = {
     c match {
-      case cc:IMat => nHot(cc, ncats);
-      case cc:GIMat => nHot(cc, ncats);
+    case cc:GIMat => nHot(cc, ncats);
+    case cc:IMat => nHot(cc, ncats);
     }
   }
   def nHot(c:Mat):Mat = nHot(c, 0);
@@ -1739,15 +1743,15 @@ object MatFunctions {
    */
   def mkdiag(a:Mat):Mat = {
     a match {
-      case aa:DMat => mkdiag(aa):DMat
-      case aa:FMat => mkdiag(aa):FMat
-      case aa:IMat => mkdiag(aa):IMat
-      case aa:LMat => mkdiag(aa):LMat
-      case aa:CMat => mkdiag(aa):CMat
-      case aa:GMat => mkdiag(aa):GMat
-      case aa:GDMat => mkdiag(aa):GDMat
-      case aa:GIMat => mkdiag(aa):GIMat
-      case aa:GLMat => mkdiag(aa):GLMat
+    case aa:GMat => mkdiag(aa):GMat;
+    case aa:GDMat => mkdiag(aa):GDMat;
+    case aa:GIMat => mkdiag(aa):GIMat;
+    case aa:GLMat => mkdiag(aa):GLMat;
+    case aa:DMat => mkdiag(aa):DMat;
+    case aa:FMat => mkdiag(aa):FMat;
+    case aa:IMat => mkdiag(aa):IMat;
+    case aa:LMat => mkdiag(aa):LMat;
+    case aa:CMat => mkdiag(aa):CMat;
     }
   }
 
@@ -1790,15 +1794,15 @@ object MatFunctions {
    */
   def getdiag(a:Mat):Mat = {
     a match {
-      case aa:DMat => getdiag(aa):DMat
-      case aa:FMat => getdiag(aa):FMat
-      case aa:IMat => getdiag(aa):IMat
-      case aa:LMat => getdiag(aa):LMat
-      case aa:CMat => getdiag(aa):CMat 
-      case aa:GMat => getdiag(aa):GMat
-      case aa:GDMat => getdiag(aa):GDMat
-      case aa:GIMat => getdiag(aa):GIMat
-      case aa:GLMat => getdiag(aa):GLMat
+    case aa:GMat => getdiag(aa):GMat;
+    case aa:GDMat => getdiag(aa):GDMat;
+    case aa:GIMat => getdiag(aa):GIMat;
+    case aa:GLMat => getdiag(aa):GLMat;
+    case aa:DMat => getdiag(aa):DMat;
+    case aa:FMat => getdiag(aa):FMat;
+    case aa:IMat => getdiag(aa):IMat;
+    case aa:LMat => getdiag(aa):LMat;
+    case aa:CMat => getdiag(aa):CMat;
     }
   }
   
@@ -1835,21 +1839,23 @@ object MatFunctions {
    */
   def kron(a:Mat, b:Mat, omat:Mat) : Mat = {
     (a, b) match {
-      case (a:FMat,b:FMat) => a.kron(b, omat)
-      case (a:FMat,b:SMat) => a.kron(full(b), omat)
-      case (a:FMat,b:GMat) => GMat(a).kron(b, omat)
-      case (a:FMat,b:GIMat) => GMat(a).kron(GMat(b), omat)
-      case (a:IMat,b:FMat) => a.kron(b, omat)
-      case (a:IMat,b:IMat) => a.kron(b, omat)
-      case (a:IMat,b:SMat) => a.kron(full(b), omat)
-      case (a:GMat,b:IMat) => a.kron(GMat(b), omat)
-      case (a:GMat,b:GIMat) => a.kron(GMat(b), omat)
-      case (a:GMat,b:GMat) => a.kron(b, omat)
-      case (a:GMat,b:GSMat) => a.kron(full(b), omat)
-      case (a:GIMat,b:IMat) => a.kron(GIMat(b), omat)
-      case (a:GIMat,b:GMat) => GMat(a).kron(b, omat)
-      case (a:GIMat,b:GIMat) => a.kron(b, omat)
-      case (a:GIMat,b:GSMat) => GMat(a).kron(full(b), omat)
+    case (a:GMat,b:GMat) => a.kron(b, omat)
+    case (a:GMat,b:GIMat) => a.kron(GMat(b), omat)
+    case (a:GIMat,b:GMat) => GMat(a).kron(b, omat)
+    case (a:GIMat,b:GIMat) => a.kron(b, omat)
+    case (a:GIMat,b:GSMat) => GMat(a).kron(full(b), omat)
+    case (a:GMat,b:GSMat) => a.kron(full(b), omat)
+    
+    case (a:FMat,b:GMat) => GMat(a).kron(b, omat)
+    case (a:FMat,b:GIMat) => GMat(a).kron(GMat(b), omat)
+    case (a:GMat,b:IMat) => a.kron(GMat(b), omat)
+    case (a:GIMat,b:IMat) => a.kron(GIMat(b), omat)
+
+    case (a:FMat,b:FMat) => a.kron(b, omat)
+    case (a:FMat,b:SMat) => a.kron(full(b), omat)
+    case (a:IMat,b:FMat) => a.kron(b, omat)
+    case (a:IMat,b:IMat) => a.kron(b, omat)
+    case (a:IMat,b:SMat) => a.kron(full(b), omat)
     }
   }
   
