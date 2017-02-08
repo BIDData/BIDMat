@@ -102,8 +102,8 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
 
   /** 1D and 2D element access */
   
-  override def apply(i1:Int):Double = super.apply(i1);  
-  override def apply(i1:Int, i2:Int):Double = super.apply(i1, i2);
+  override def apply(i1:Int):Double = gapply(i1);  
+  override def apply(i1:Int, i2:Int):Double = gapply(i1, i2);
   
    /** linearized access */
   

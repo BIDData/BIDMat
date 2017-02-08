@@ -52,7 +52,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
   }
 
   /** Bounds-checked matrix access, 0- or 1-based. */ 
-  def apply(r0:Int, c0:Int):T = {
+  def gapply(r0:Int, c0:Int):T = {
     val off = Mat.oneBased
     val r = r0 - off
     val c = c0 - off
@@ -64,7 +64,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
   }
 
   /** Bounds-checked linear access, 0- or 1-based. */ 
-  def apply(i0:Int):T = {
+  def gapply(i0:Int):T = {
     val off = Mat.oneBased
     val i = i0 - off
     if (i < 0 || i >= length) {
@@ -73,6 +73,10 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
       _data(i)
     }
   } 
+  
+  def apply(i:Int, j:Int):T = gapply(i, j);
+  
+  def apply(i:Int):T = gapply(i);
 
   /** Unchecked 0-based matrix access of element at m(r,c). */ 
   def get_(r:Int, c:Int):T = {
@@ -671,18 +675,62 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
   
   /** Returns a string representation of the matrix. */
   override def toString:String = {
+    if (dims.length == 2) {
+      twoDtoString;
+    } else {
+    	val sb:StringBuilder = new StringBuilder();
+      val nChars = Mat.terminalWidth-4;
+      val ncols = prodDimsBy(1,2);
+      val nrows = prodDimsByX(0,2);
+      val maxRows = math.min(20000/nChars, nrows);
+      var maxCols = math.min(nChars, ncols);
+      var fieldWidth = 4;
+      val cs = populateCS(maxRows, maxCols);
+      val ws = new IMat(maxRows, maxCols, cs.data.map(_.length));
+      var icols = 0;
+      val colinds = new Array[Int](_dims.length / 2);
+      val oddDims = subDims(1, 2);
+      while (icols < maxCols) {
+    	  var newWidth = fieldWidth;
+    	  for (j <- 0 until maxRows) newWidth = math.max(newWidth, 2+(cs(j, icols).length));
+    			  if ((icols+1)*newWidth < nChars) {
+    				  fieldWidth = newWidth;
+    				  icols += 1;
+    			  } else {
+    				  maxCols = icols;
+    			  }
+      }     
+      for (i <- 0 until maxRows) {
+    	  Arrays.fill(colinds, 0)
+    	  for (j <- 0 until icols) {
+    		  val str = cs(i,j);
+    		  val ncarry = incInds(colinds, oddDims);
+    		  sb.append(somespaces.substring(0,fieldWidth-str.length)+str+somespaces.substring(0,ncarry));
+    	  }
+    	  if (ncols > icols) {
+    		  sb.append("...");
+    	  }
+    	  sb.append("\n");
+      }
+      sb.toString()
+    }
+  }
+
+
+  def twoDtoString:String = {
     val sb:StringBuilder = new StringBuilder
+    val maxlen = 64000;
     if (nrows == 1) {
       if (ncols > 0) sb.append(printOne(0))
       var i = 1
-      while (i < math.min(20000, ncols)) {
+      while (i < math.min(maxlen/4, ncols)) {
     	sb.append(",")
     	sb.append(printOne(i))
     	i += 1
       }
     } else {
       val nChars = Mat.terminalWidth-4
-      val maxRows = 64000/nChars
+      val maxRows = maxlen/nChars
       var maxCols = nChars
       var fieldWidth = 4
       var icols = 0
@@ -1712,7 +1760,7 @@ object DenseMat {
     val iss = isortlex(a, true)
     def compeq(i:Int, j:Int):Boolean = {
       var k:Int = 0;
-      while (k < a.ncols && ordering.equiv(a(i,k):T, a(j,k):T)) {
+      while (k < a.ncols && ordering.equiv(a.gapply(i,k):T, a.gapply(j,k):T)) {
         k += 1
       }
       if (k == a.ncols) true

@@ -106,8 +106,8 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   /** 1D and 2D element access */
   /* need to implement the next 3 in subclasses */
   
-  override def apply(i1:Int):Float = super.apply(i1);  
-  override def apply(i1:Int, i2:Int):Float = super.apply(i1, i2);
+  override def apply(i1:Int):Float = gapply(i1);  
+  override def apply(i1:Int, i2:Int):Float = gapply(i1, i2);
   
   /** linearized access */
   

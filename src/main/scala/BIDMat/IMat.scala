@@ -101,8 +101,8 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
 
    /** n-dimensional element access */
   
-  override def apply(i1:Int):Int = super.apply(i1);  
-  override def apply(i1:Int, i2:Int):Int = super.apply(i1, i2);
+  override def apply(i1:Int):Int = gapply(i1);  
+  override def apply(i1:Int, i2:Int):Int = gapply(i1, i2);
   def apply(i1:Int, i2:Int, i3:Int):Int = applyv(Array(i1, i2, i3));
   def apply(i1:Int, i2:Int, i3:Int, i4:Int):Int = applyv(Array(i1, i2, i3, i4));
   def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):Int = applyv(Array(i1, i2, i3, i4, i5));
