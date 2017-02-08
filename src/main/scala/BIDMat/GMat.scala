@@ -64,7 +64,20 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     }
   } 
     
-  var saveMe:FMat = null
+  var saveMe:FMat = null;
+  
+  var printVal:Array[Float] = null;
+  
+  override def printOne(i:Int):String = {
+    if (printVal.asInstanceOf[AnyRef] == null) printVal = new Array[Float](1);
+    GMat.GPUtoCPUarraycopy(pdata, i,  printVal, 0, 1, "printOne");
+    val v = printVal(0);
+    if (v % 1 == 0 && math.abs(v) < 1e10) {
+      "%d" format v.intValue
+    } else {
+      "%.5g" format v
+    }
+  }
   
   private def writeObject(out:ObjectOutputStream):Unit = {
     saveMe = FMat(this);

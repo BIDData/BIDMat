@@ -224,7 +224,6 @@ class FMatTest extends BIDMatSpec {
     	val b = rand(nr, nk);
     	val c = rand(nr, nc);
     	val d = a \ b \ c;
-
     	val e = d.colslice(nc, nc+nk);
     	checkSimilar(e, b);
     }
