@@ -13,6 +13,7 @@ class FMatTest extends BIDMatSpec {
     val nr = 10;
     val nc = 20;
     val nk = 30;  
+    val nl = 40;
     
     def checkSimilar(a:FMat, b:FMat) = {
       a.dims.length should equal (b.dims.length) ;
@@ -188,7 +189,27 @@ class FMatTest extends BIDMatSpec {
 
     testScalar2(nr, nc, (a:FMat, b:Float) => a / b, (x:Float, y:Float)=>x / y, "support division of scalar 2");
     
-    it should "support vertical stacking and slicing" in {
+    it should "support 1D element access" in {
+       val a = rand(nr, nc); 
+       assert_approx_eq(Array(a(5)), Array(a.data(5)));
+    }
+    
+    it should "support 2D element access" in {
+       val a = rand(nr, nc); 
+       assert_approx_eq(Array(a(2,3)), Array(a.data(2 + 3 * nr)));
+    }
+       
+    it should "support 3D element access" in {
+       val a = rand(nr \ nc \ nk); 
+       assert_approx_eq(Array(a(2, 3, 4)), Array(a.data(2 + 3 * nr + 4 * nr * nc)));
+    }
+    
+    it should "support 4D element access" in {
+       val a = rand(nr \ nc \ nk \ nl); 
+       assert_approx_eq(Array(a(2, 3, 4, 5)), Array(a.data(2 + nr * (3 + nc * (4 + nk * 5)))));
+    }
+    
+    it should "support 2D vertical stacking and slicing" in {
     	val a = rand(nr, nc);
     	val b = rand(nr, nk);
     	val c = rand(nr, nc);
@@ -198,7 +219,7 @@ class FMatTest extends BIDMatSpec {
     	checkSimilar(e, b);
     }
     
-    it should "support vertical stacking and colslice" in {
+    it should "support 2D vertical stacking and colslice" in {
     	val a = rand(nr, nc);
     	val b = rand(nr, nk);
     	val c = rand(nr, nc);
@@ -208,7 +229,7 @@ class FMatTest extends BIDMatSpec {
     	checkSimilar(e, b);
     }
 
-    it should "support horizontal stacking and slicing" in {
+    it should "support 2D horizontal stacking and slicing" in {
     	val a = rand(nr, nc);
     	val b = rand(nk, nc);
     	val c = rand(nr, nc);
