@@ -1428,7 +1428,7 @@ object GDMat {
     retv        
   } 
   
-   def apply(dims:Array[Int]):GDMat = {
+   def make(dims:Array[Int]):GDMat = {
     val len = dims.reduce(_*_);
     val retv = new GDMat(dims, new Pointer, len);
     if (Mat.debugMem) {
@@ -1445,6 +1445,8 @@ object GDMat {
     if (err != 0) throw new RuntimeException("CUDA alloc failed " + cudaGetErrorString(err));
     retv       
   }
+   
+  def make(dims:IMat):GDMat = make(dims.data);
   
   def zeros(nr:Int, nc:Int) = {
     val out = GDMat(nr, nc)
@@ -1712,6 +1714,16 @@ object GDMat {
     JCurand.curandGenerateUniformDouble(GMat.cudarng(GMat.getGPU).asInstanceOf[curandGenerator], out.pdata, out.length)
     jcuda.runtime.JCuda.cudaDeviceSynchronize()
     out
+  }
+  
+  def rand(nr:Int, nc:Int):GDMat = {
+    val out = GDMat(nr, nc);
+    rand(out);
+  }
+  
+  def rand(dims:IMat):GDMat = {
+	  val out = GDMat.make(dims);
+	  rand(out);
   }
   
   def normrnd(mu:Double, sig:Double, out:GDMat):GDMat = {
@@ -2069,7 +2081,7 @@ object GDMat {
     if (out.asInstanceOf[AnyRef] != null && ND.checkDims("GDMat newOrCheckGDMat: ", out.dims.data, dims)) {
       out.asInstanceOf[GDMat]
     } else {
-      GDMat(dims)
+      GDMat.make(dims)
     }
   }
       

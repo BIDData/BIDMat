@@ -587,12 +587,12 @@ object HMat {
     val length = dims.reduce(_*_);
     val result = mtype match {
       case 0xD => {
-        val out = FMat(dims);
+        val out = FMat.make(dims);
         readSomeFloats(gin, out.data, bytebuff, length);
         out;
       }      
       case 0x8 => {
-        val out = FMat(dims);
+        val out = FMat.make(dims);
         val btmp = new Array[Byte](length);
         readSomeBytes(gin, btmp, length);
         var i = 0;
@@ -603,7 +603,7 @@ object HMat {
         out;
       }
       case 0x9 => {
-        val out = FMat(dims);
+        val out = FMat.make(dims);
         val btmp = new Array[Byte](length);
         readSomeBytes(gin, btmp, length);
         Mat.copyToFloatArray(btmp, 0, out.data, 0, length);

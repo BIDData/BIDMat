@@ -1382,7 +1382,7 @@ object LMat {
   
   def apply(nr:Int, nc:Int) = new LMat(nr, nc, new Array[Long](nr*nc));
   
-   def apply(dims:Array[Int]):LMat = {
+   def make(dims:Array[Int]):LMat = {
     val length = dims.reduce(_*_);
     if (Mat.debugMem) {
       print("LMat"); 
@@ -1393,8 +1393,8 @@ object LMat {
     new LMat(dims, new Array[Long](length));   
   }
   
-   def apply(dims:IMat):LMat = {
-     apply(dims.data)   
+   def make(dims:IMat):LMat = {
+     make(dims.data)   
   }
   
   def apply(a:DenseMat[Long]) = {
@@ -1622,7 +1622,7 @@ object LMat {
     if (out.asInstanceOf[AnyRef] != null && ND.checkDims("LMat:NewOrCheckLMat", dims, out.dims.data)) {
       out.asInstanceOf[LMat]
     } else {
-      LMat(dims)
+      LMat.make(dims)
     }
   }
   

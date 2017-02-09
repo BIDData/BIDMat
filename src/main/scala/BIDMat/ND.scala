@@ -113,46 +113,7 @@ trait ND {
 		  }
 		  cs;
   }
-   
-  final val somespaces = "                                             "
-  
-  override def toString:String = {
-		val sb:StringBuilder = new StringBuilder();
-    val nChars = Mat.terminalWidth-4;
-    val ncols = prodDimsBy(1,2);
-    val nrows = prodDimsByX(0,2);
-    val maxRows = math.min(20000/nChars, nrows);
-    var maxCols = math.min(nChars, ncols);
-    var fieldWidth = 4;
-    val cs = populateCS(maxRows, maxCols);
-    val ws = new IMat(maxRows, maxCols, cs.data.map(_.length));
-    var icols = 0;
-    val colinds = new Array[Int](_dims.length / 2);
-    val oddDims = subDims(1, 2);
-    while (icols < maxCols) {
-    	var newWidth = fieldWidth;
-    	for (j <- 0 until maxRows) newWidth = math.max(newWidth, 2+(cs(j, icols).length));
-    			if ((icols+1)*newWidth < nChars) {
-    				fieldWidth = newWidth;
-    				icols += 1;
-    			} else {
-    				maxCols = icols;
-    			}
-    }     
-    for (i <- 0 until maxRows) {
-    	Arrays.fill(colinds, 0)
-    	for (j <- 0 until icols) {
-    		val str = cs(i,j);
-    		val ncarry = incInds(colinds, oddDims);
-    		sb.append(somespaces.substring(0,fieldWidth-str.length)+str+somespaces.substring(0,ncarry));
-    	}
-    	if (ncols > icols) {
-    		sb.append("...");
-    	}
-    	sb.append("\n");
-    }
-    sb.toString()
-  }
+ 
 }
 
 object ND {

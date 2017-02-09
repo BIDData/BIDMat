@@ -8,7 +8,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.tools.nsc.interpreter
 
 class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
-(_dims:Array[Int], val _data:Array[T])(implicit manifest:ClassTag[T]) extends Mat(_dims) {
+(_dims:Array[Int], val _data:Array[T])(implicit manifest:ClassTag[T]) extends Mat(_dims)  {
   
   def this(nr:Int, nc:Int, data:Array[T])(implicit manifest:ClassTag[T]) = this(Array(nr, nc), data);
   
@@ -678,44 +678,11 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
     if (dims.length == 2) {
       twoDtoString;
     } else {
-    	val sb:StringBuilder = new StringBuilder();
-      val nChars = Mat.terminalWidth-4;
-      val ncols = prodDimsBy(1,2);
-      val nrows = prodDimsByX(0,2);
-      val maxRows = math.min(20000/nChars, nrows);
-      var maxCols = math.min(nChars, ncols);
-      var fieldWidth = 4;
-      val cs = populateCS(maxRows, maxCols);
-      val ws = new IMat(maxRows, maxCols, cs.data.map(_.length));
-      var icols = 0;
-      val colinds = new Array[Int](_dims.length / 2);
-      val oddDims = subDims(1, 2);
-      while (icols < maxCols) {
-    	  var newWidth = fieldWidth;
-    	  for (j <- 0 until maxRows) newWidth = math.max(newWidth, 2+(cs(j, icols).length));
-    			  if ((icols+1)*newWidth < nChars) {
-    				  fieldWidth = newWidth;
-    				  icols += 1;
-    			  } else {
-    				  maxCols = icols;
-    			  }
-      }     
-      for (i <- 0 until maxRows) {
-    	  Arrays.fill(colinds, 0)
-    	  for (j <- 0 until icols) {
-    		  val str = cs(i,j);
-    		  val ncarry = incInds(colinds, oddDims);
-    		  sb.append(somespaces.substring(0,fieldWidth-str.length)+str+somespaces.substring(0,ncarry));
-    	  }
-    	  if (ncols > icols) {
-    		  sb.append("...");
-    	  }
-    	  sb.append("\n");
-      }
-      sb.toString()
+    	NDtoString;
     }
   }
-
+  
+  val somespaces = "                                             "
 
   def twoDtoString:String = {
     val sb:StringBuilder = new StringBuilder
@@ -744,7 +711,6 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
     		maxCols = icols
     	}
       }    	
-      val somespaces = "                                             "
         for (i <- 0 until math.min(nrows, maxRows)) {
           for (j <- 0 until math.min(ncols, icols)) {
     	    val str = printOne(i+j*nrows)
@@ -761,6 +727,46 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
     	  }
     	  sb.append("\n")
         }
+    }
+    sb.toString()
+  }
+  
+   
+  def NDtoString:String = {
+    val maxlen = 64000
+    val sb:StringBuilder = new StringBuilder();
+    val nChars = Mat.terminalWidth-4;
+    val ncols = prodDimsBy(1,2);
+    val nrows = prodDimsByX(0,2);
+    val maxRows = math.min(maxlen/nChars, nrows);
+    var maxCols = math.min(nChars, ncols);
+    var fieldWidth = 4;
+    val cs = populateCS(maxRows, maxCols);
+    val ws = new IMat(maxRows, maxCols, cs.data.map(_.length));
+    var icols = 0;
+    val colinds = new Array[Int](_dims.length / 2);
+    val oddDims = subDims(1, 2);
+    while (icols < maxCols) {
+      var newWidth = fieldWidth;
+      for (j <- 0 until maxRows) newWidth = math.max(newWidth, 2+(cs(j, icols).length));
+          if ((icols+1)*newWidth < nChars) {
+            fieldWidth = newWidth;
+            icols += 1;
+          } else {
+            maxCols = icols;
+          }
+    }     
+    for (i <- 0 until maxRows) {
+      Arrays.fill(colinds, 0)
+      for (j <- 0 until icols) {
+        val str = cs(i,j);
+        val ncarry = incInds(colinds, oddDims);
+        sb.append(somespaces.substring(0,fieldWidth-str.length)+str+somespaces.substring(0,ncarry));
+      }
+      if (ncols > icols) {
+        sb.append("...");
+      }
+      sb.append("\n");
     }
     sb.toString()
   }

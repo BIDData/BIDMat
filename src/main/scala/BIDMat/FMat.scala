@@ -2349,7 +2349,7 @@ object FMat {
     new FMat(nr, nc, new Array[Float](nr*nc));
   }
   
-  def apply(dims:Array[Int]):FMat = {
+  def make(dims:Array[Int]):FMat = {
     val length = dims.reduce(_*_);
     if (Mat.debugMem) {
       print("FMat"); 
@@ -2360,8 +2360,8 @@ object FMat {
     new FMat(dims, new Array[Float](length));   
   }
   
-   def apply(dims:IMat):FMat = {
-     apply(dims.data)   
+   def make(dims:IMat):FMat = {
+     make(dims.data)   
   }
 
   def apply(a:DenseMat[Float]):FMat = {
@@ -2385,7 +2385,7 @@ object FMat {
       case gg:CLMat => gg.toFMat(out)
       case dd:DMat => {Mat.copyToFloatArray(dd.data, 0, out.data, 0, dd.length)}
       case ff:FMat => {System.arraycopy(ff.data, 0, out.data, 0, ff.length)}
-      case ii:IMat => apply(ii)
+      case ii:IMat => {Mat.copyToFloatArray(ii.data, 0, out.data, 0, ii.length)}
       case ii:LMat => {Mat.copyToFloatArray(ii.data, 0, out.data, 0, ii.length)}
       case ss:SMat => ss.full(out)
       case _ => throw new RuntimeException("Unsupported source type")
@@ -2611,7 +2611,7 @@ object FMat {
     if (out.asInstanceOf[AnyRef] != null && ND.checkDims("FMat:NewOrCheckFMat", dims, out.dims.data)) {
       out.asInstanceOf[FMat]
     } else {
-    	FMat(dims)
+    	FMat.make(dims)
     }
   }
   

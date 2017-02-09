@@ -804,7 +804,7 @@ object GLMat {
   	retv;
   }
   
-   def apply(dims:Array[Int]):GLMat = {
+   def make(dims:Array[Int]):GLMat = {
     val len = dims.reduce(_*_);
     val retv = new GLMat(dims, new Pointer, len);
     if (Mat.debugMem) {
@@ -821,6 +821,8 @@ object GLMat {
     if (err != 0) throw new RuntimeException("CUDA alloc failed " + cudaGetErrorString(err));
     retv       
   }
+   
+  def make(dims:IMat):GLMat = make(dims.data);
   
   def apply(a:GMat):GLMat = {
     val rsize = a.nrows*a.ncols;
@@ -1226,7 +1228,7 @@ object GLMat {
     if (out.asInstanceOf[AnyRef] != null && ND.checkDims("GLMat newOrCheckGLMat: ", out.dims.data, dims)) {
       out.asInstanceOf[GLMat]
     } else {
-      GLMat(dims)
+      GLMat.make(dims)
     }
   }
       

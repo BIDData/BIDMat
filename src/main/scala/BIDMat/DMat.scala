@@ -1717,7 +1717,7 @@ object DMat {
     out
   }
   
-  def apply(dims:Array[Int]):DMat = {
+  def make(dims:Array[Int]):DMat = {
     val length = dims.reduce(_*_);
     if (Mat.debugMem) {
       print("DMat"); 
@@ -1728,8 +1728,8 @@ object DMat {
     new DMat(dims, new Array[Double](length));   
   }
   
-   def apply(dims:IMat):DMat = {
-     apply(dims.data)   
+   def make(dims:IMat):DMat = {
+     make(dims.data)   
   }
   
   def apply(a:Float) = delem(a)
@@ -1745,7 +1745,7 @@ object DMat {
       case gg:GDMat => gg.toDMat(out)
       case dd:DMat => {System.arraycopy(dd.data, 0, out.data, 0, dd.length)}
       case ff:FMat => {Mat.copyToDoubleArray(ff.data, 0, out.data, 0, ff.length)}
-      case ii:IMat => apply(ii)
+      case ii:IMat => {Mat.copyToDoubleArray(ii.data, 0, out.data, 0, ii.length)}
       case ii:LMat => {Mat.copyToDoubleArray(ii.data, 0, out.data, 0, ii.length)}
       case ss:SDMat => ss.full(out)
       case _ => throw new RuntimeException("Unsupported source type")
@@ -1961,7 +1961,7 @@ object DMat {
     if (out.asInstanceOf[AnyRef] != null && ND.checkDims("DMat:NewOrCheckDMat", dims, out.dims.data)) {
       out.asInstanceOf[DMat]
     } else {
-      DMat(dims)
+      DMat.make(dims)
     }
   }
   

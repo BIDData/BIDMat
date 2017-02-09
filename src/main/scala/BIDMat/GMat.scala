@@ -1986,6 +1986,11 @@ object GMat {
     jcuda.runtime.JCuda.cudaDeviceSynchronize()
     out
   }
+  
+  def rand(dims:IMat):GMat = {
+    val out = GMat.make(dims);
+    rand(out);
+  }
    
   def normrnd(mu:Float, sig:Float, out:GMat):GMat = {
     import jcuda.jcurand._
@@ -2124,7 +2129,7 @@ object GMat {
     retv        
   }   
   
-  def apply(dims:Array[Int]):GMat = {
+  def make(dims:Array[Int]):GMat = {
 	  val len = dims.reduce(_*_);
     val retv = new GMat(dims, new Pointer, len);
     if (Mat.debugMem) {
@@ -2141,6 +2146,8 @@ object GMat {
     if (err != 0) throw new RuntimeException("CUDA alloc failed " + cudaGetErrorString(err));
     retv       
   }
+  
+  def make(dims:IMat):GMat = make(dims.data);
   
   def apply(a:FMat):GMat = {
   	val rsize = a.nrows*a.ncols
@@ -2923,7 +2930,7 @@ object GMat {
     if (out.asInstanceOf[AnyRef] != null && ND.checkDims("GMat newOrCheckGMat: ", out.dims.data, dims)) {
       out.asInstanceOf[GMat]
     } else {
-      GMat(dims)
+      GMat.make(dims)
     }
   }
   

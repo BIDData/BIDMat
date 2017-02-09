@@ -28,7 +28,7 @@ class Image(val img:BufferedImage) extends Serializable {
   def toFMat:FMat= {
     val height = img.getHeight;
     val width = img.getWidth;
-    val mat = FMat(Array(4, width,  height));
+    val mat = FMat.make(Array(4, width,  height));
     val ints = new Array[Int](height*width);
     img.getRGB(0, 0, width, height, ints, 0, width);      // Should be ARGB
     val mdata = mat.data;

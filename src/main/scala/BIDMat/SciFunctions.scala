@@ -116,25 +116,25 @@ object SciFunctions {
   
   def rand(minv:Float, maxv:Float, out:FMat):FMat = FFunctions.rand(minv, maxv, out);
   def rand(m:Int, n:Int, minv:Float, maxv:Float):FMat = FFunctions.rand(minv, maxv, FMat(m, n)); 
-  def rand(dims:IMat, minv:Float, maxv:Float):FMat = FFunctions.rand(minv, maxv, FMat(dims));
+  def rand(dims:IMat, minv:Float, maxv:Float):FMat = FFunctions.rand(minv, maxv, FMat.make(dims));
   def rand(m:Int, n:Int):FMat = rand(m, n, 0, 1); 
   def rand(dims:IMat):FMat = rand(dims, 0, 1);
   def rand(out:FMat):FMat = FFunctions.rand(0.0f, 1.0f, out);
   
   def rand(minv:Double, maxv:Double, out:DMat):DMat = DFunctions.rand(minv, maxv, out); 
   def drand(m:Int, n:Int, minv:Double, maxv:Double):DMat = DFunctions.rand(minv, maxv, DMat(m, n));
-  def drand(dims:IMat, minv:Double, maxv:Double):DMat = DFunctions.rand(minv, maxv, DMat(dims));
+  def drand(dims:IMat, minv:Double, maxv:Double):DMat = DFunctions.rand(minv, maxv, DMat.make(dims));
   def drand(m:Int, n:Int):DMat = drand(m, n, 0, 1);
   def drand(dims:IMat):DMat = drand(dims, 0, 1);
   def rand(out:DMat):DMat = DFunctions.rand(0.0, 1.0, out);
   
   def rand(out:GMat):GMat = GMat.rand(out); 
-  def grand(nr:Int, nc:Int):GMat = GMat.rand(GMat(nr, nc));
-  def grand(dims:IMat):GMat = GMat.rand(GMat(dims));
+  def grand(nr:Int, nc:Int):GMat = GMat.rand(nr, nc);
+  def grand(dims:IMat):GMat = GMat.rand(dims);
  
   def rand(out:GDMat):GDMat = GDMat.rand(out);
-  def gdrand(nr:Int, nc:Int):GDMat = GDMat.rand(GDMat(nr, nc));
-  def gdrand(dims:IMat):GDMat = GDMat.rand(GDMat(dims));
+  def gdrand(nr:Int, nc:Int):GDMat = GDMat.rand(nr, nc);
+  def gdrand(dims:IMat):GDMat = GDMat.rand(dims);
   
   def rand(mat:Mat):Mat = {
     mat match {

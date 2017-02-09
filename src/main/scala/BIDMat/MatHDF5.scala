@@ -155,7 +155,7 @@ object MatHDF5 {
   	for (i <- 0 until dims.length) {idims(i) = dims(dims.length - i - 1).toInt}
   	var mdata:FMat = null;
   	if (data_class == h5class && data_size == dsize) {
-  		mdata = FMat(idims);
+  		mdata = FMat.make(idims);
   		H5Dread(data_id, data_type_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, mdata._data);
   	} else {
   		throw new RuntimeException("Bad class or data size "+data_class+" "+data_size);
