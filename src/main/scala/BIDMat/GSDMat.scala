@@ -487,7 +487,12 @@ object GSDMat {
   
   def apply(nr:Int, nc:Int, nnzx:Int):GSDMat = apply(nr, nc, nnzx, nnzx);
   
-  def apply(a:SDMat):GSDMat = fromSDMat(a, null);
+  def apply(a:SDMat):GSDMat = {
+    a match {
+      case g:GSDMat => g;
+      case _ => fromSDMat(a, null);
+    }
+  }
   
   def apply(a:SMat):GSDMat = fromSMat(a, null);
   

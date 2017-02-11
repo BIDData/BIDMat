@@ -1001,6 +1001,7 @@ object GIMat {
   
   def apply(a:IMat):GIMat = {
     a match {
+    case g:GIMat => g;
     case aa:MatrixWildcard => GIMat.wildcard
     case _ => {
     	val retv = GIMat.newOrCheckGIMat(a.nrows, a.ncols, null, a.GUID, SciFunctions.getGPU, "GIMat".##)

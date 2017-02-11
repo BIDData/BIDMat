@@ -797,11 +797,16 @@ object GLMat {
   }    
   
   def apply(a:LMat):GLMat = {
-  	val retv = GLMat.newOrCheckGLMat(a.nrows, a.ncols, null, a.GUID, "GLMat".##);
-  	val rsize = a.nrows*a.ncols;
-  	cudaMemcpy(retv.pdata, Pointer.to(a.data), 1L*rsize*Sizeof.LONG, cudaMemcpyKind.cudaMemcpyHostToDevice);
-  	cudaDeviceSynchronize();
-  	retv;
+    a match {
+      case g:GLMat => g;
+      case _ => {
+    	  val retv = GLMat.newOrCheckGLMat(a.nrows, a.ncols, null, a.GUID, "GLMat".##);
+    	  val rsize = a.nrows*a.ncols;
+    	  cudaMemcpy(retv.pdata, Pointer.to(a.data), 1L*rsize*Sizeof.LONG, cudaMemcpyKind.cudaMemcpyHostToDevice);
+    	  cudaDeviceSynchronize();
+    	  retv;
+      }
+    }
   }
   
    def make(dims:Array[Int]):GLMat = {

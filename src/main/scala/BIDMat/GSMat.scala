@@ -523,7 +523,14 @@ object GSMat {
   
   def apply(nr:Int, nc:Int, nnzx:Int):GSMat = apply(nr, nc, nnzx, nnzx)
   
-  def apply(a:SMat):GSMat = fromSMat(a, null) 
+  def apply(a:SMat):GSMat = {
+    a match {
+      case g:GSMat => g;
+      case _ => {
+    	  fromSMat(a, null);
+      }
+    }
+  }
   
   var cusparseContexts:Array[cusparseHandle] = null
   var cusparseMatDescrs:Array[cusparseMatDescr] = null

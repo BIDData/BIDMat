@@ -1473,16 +1473,21 @@ object GDMat {
   }  
   
   def apply(a:DMat):GDMat = {
-  	val rsize = a.nrows*a.ncols
-    val retv = GDMat.newOrCheckGDMat(a.nrows, a.ncols, null, a.GUID, SciFunctions.getGPU, "GDMat_DMat".##)
-  	cudaMemcpy(retv.pdata, Pointer.to(a.data), 1L*rsize*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyHostToDevice)
-  	cudaDeviceSynchronize()
-  	val err = cudaGetLastError()
-    if (err != 0) {
-    	println("device is %d" format SciFunctions.getGPU)
-    	throw new RuntimeException("CUDA error in GDMat() " + cudaGetErrorString(err))
+    a match {
+      case g:GDMat => g;
+      case _ => {
+    	  val rsize = a.nrows*a.ncols
+    			  val retv = GDMat.newOrCheckGDMat(a.nrows, a.ncols, null, a.GUID, SciFunctions.getGPU, "GDMat_DMat".##)
+    			  cudaMemcpy(retv.pdata, Pointer.to(a.data), 1L*rsize*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyHostToDevice)
+    			  cudaDeviceSynchronize()
+    			  val err = cudaGetLastError()
+    			  if (err != 0) {
+    				  println("device is %d" format SciFunctions.getGPU)
+    				  throw new RuntimeException("CUDA error in GDMat() " + cudaGetErrorString(err))
+    			  }
+    	  retv
+      }
     }
-    retv
   }
   
   def apply(a:GIMat):GDMat = {

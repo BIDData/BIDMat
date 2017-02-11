@@ -1309,6 +1309,37 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   override def mean(ind:Int):GMat = SciFunctions._mean(this, ind+1).asInstanceOf[GMat];
   override def variance(ind:Int):GMat = SciFunctions._variance(this, ind+1).asInstanceOf[GMat];
   
+  override def * (a : FMat) = GMult(GMat(a), null)
+  override def * (a : SMat) = GSMult(GSMat(a), null)
+  override def *^ (a : FMat) = GMultT(GMat(a), null)
+  override def *^ (a : SMat) = GSMultT(GSMat(a), null)
+  override def xT (a : FMat) = GMultT(GMat(a), null)
+  override def xT (a : SMat) = GSMultT(GSMat(a), null)
+  override def ^* (a : FMat) = GTMult(GMat(a), null)
+  def *+^ (a : FMat) = GMST(GMat(a), null)
+  override def Tx (a : FMat) = GTMult(GMat(a), null)
+  override def kron(a: FMat) = kron(GMat(a), null)
+  override def ⊗  (a : FMat) = kron(GMat(a), null)
+  override def + (a : FMat) = gOp(GMat(a), null, op_add)
+  override def - (a : FMat) = gOp(GMat(a), null, op_sub)
+  override def *@ (a : FMat) = gOp(GMat(a), null, op_mul)
+  override def ∘  (a : FMat) = gOp(GMat(a), null, op_mul)
+  override def /  (a : FMat) = gOp(GMat(a), null, op_div)
+  override def ^  (a : FMat) = gOp(GMat(a), null, op_pow)
+  override def ∙  (a : FMat) = dot(a)
+  override def ∙→ (a : FMat) = dotr(a)
+  
+  override def > (a : FMat) = gOp(GMat(a), null, op_gt)
+  override def < (a : FMat) = gOp(GMat(a), null, op_lt)
+  override def == (a : FMat) = gOp(GMat(a), null, op_eq)
+  override def === (a : FMat) = gOp(GMat(a), null, op_eq)
+  override def >= (a : FMat) = gOp(GMat(a), null, op_ge)
+  override def <= (a : FMat) = gOp(GMat(a), null, op_le)
+  override def != (a : FMat) = gOp(GMat(a), null, op_ne)
+  
+  override def max (a : FMat) = gOp(GMat(a), null, op_max)
+  override def min (a : FMat) = gOp(GMat(a), null, op_min)
+  
   override def + (a : Float) = gOp(GMat.elem(a), null, op_add)
   override def - (a : Float) = gOp(GMat.elem(a), null, op_sub)
   override def *@ (a : Float) = gOp(GMat.elem(a), null, op_mul)
@@ -1454,40 +1485,6 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   override def <=  (b : DMat) = Mop_LE.op(this, b, null)
   override def !=  (b : DMat) = Mop_NE.op(this, b, null)
  
- /*
-  * Specialize to FMats to help the type system. 
-  */ 
-  /*
-  def *   (b : FMat) = Mop_Times.op(this, b, null) 
-  def *^  (b : FMat) = Mop_TimesT.op(this, b, null)
-  def xT  (b : FMat) = Mop_TimesT.op(this, b, null)
-  def Tx  (b : FMat) = Mop_TTimes.op(this, b, null)
-  def ^*  (b : FMat) = Mop_TTimes.op(this, b, null)
-  def +   (b : FMat) = Mop_Plus.op(this, b, null)
-  def -   (b : FMat) = Mop_Minus.op(this, b, null)
-  def *@  (b : FMat) = Mop_ETimes.op(this, b, null)
-  def ∘   (b : FMat) = Mop_ETimes.op(this, b, null)
-  def /<  (b : FMat) = Mop_Div.op(this, b, null)
-  def \\  (b : FMat) = Mop_RSolve.op(this, b, null)
-  def ◁   (b : FMat) = Mop_Div.op(this, b, null)
-  def ▷   (b : FMat) = Mop_RSolve.op(this, b, null)
-  def /   (b : FMat) = Mop_EDiv.op(this, b, null)  
-  def ^   (b : FMat) = Mop_Pow.op(this, b, null) 
-  def ∙   (b : FMat) = Mop_Dot.op(this, b, null)
-  def ∙→  (b : FMat) = Mop_Dotr.op(this, b, null)
-  def dot (b : FMat) = Mop_Dot.op(this, b, null)
-  def dotr(b : FMat) = Mop_Dotr.op(this, b, null)
-  def \   (b : FMat) = Mop_HCat.op(this, b, null)
-  def on  (b : FMat) = Mop_VCat.op(this, b, null)
-  
-  def >   (b : FMat) = Mop_GT.op(this, b, null)
-  def <   (b : FMat) = Mop_LT.op(this, b, null)
-  def ==  (b : FMat) = Mop_EQ.op(this, b, null)
-  def === (b : FMat) = Mop_EQ.op(this, b, null)
-  def >=  (b : FMat) = Mop_GE.op(this, b, null)
-  def <=  (b : FMat) = Mop_LE.op(this, b, null)
-  def !=  (b : FMat) = Mop_NE.op(this, b, null)
-  */
   
  /*
   * Operators whose second arg is generic. 
@@ -1567,6 +1564,7 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair(omat, mat) {
     CUMAT.transpose(mat.pdata, mat.nrows, out.pdata, mat.ncols, mat.nrows, mat.ncols)
     out
   }
+	
   def *  (a : GMat) = mat.GMult(a, omat)
   def *  (a : GSMat) = mat.GSMult(a, omat)
   def *^ (a : GMat) = mat.GMultT(a, omat)
@@ -1584,29 +1582,65 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair(omat, mat) {
 	def ∘  (a : GMat) = mat.gOp(a, omat, op_mul)
 	def /  (a : GMat) = mat.gOp(a, omat, op_div)
 	def ^  (a : GMat) = mat.gOp(a, omat, op_pow)
-	def >  (b : GMat) = mat.gOp(b, omat, op_gt)
-	def <  (b : GMat) = mat.gOp(b, omat, op_lt)
-	def == (b : GMat) = mat.gOp(b, omat, op_eq)
-	def === (b : GMat) = mat.gOp(b, omat, op_eq)
-	def >= (b : GMat) = mat.gOp(b, omat, op_ge)
-	def <= (b : GMat) = mat.gOp(b, omat, op_le)
-	def != (b : GMat) = mat.gOp(b, omat, op_ne)
+	def >  (a : GMat) = mat.gOp(a, omat, op_gt)
+	def <  (a : GMat) = mat.gOp(a, omat, op_lt)
+	def == (a : GMat) = mat.gOp(a, omat, op_eq)
+	def === (a : GMat) = mat.gOp(a, omat, op_eq)
+	def >= (a : GMat) = mat.gOp(a, omat, op_ge)
+	def <= (a : GMat) = mat.gOp(a, omat, op_le)
+	def != (a : GMat) = mat.gOp(a, omat, op_ne)
 	
-  def max (b : GMat) = mat.gOp(b, omat, op_max)
-	def min (b : GMat) = mat.gOp(b, omat, op_min)
+  def max (a : GMat) = mat.gOp(a, omat, op_max)
+	def min (a : GMat) = mat.gOp(a, omat, op_min)
 	
-	def dot (b :GMat) = mat.dot(b, omat) 
-	def dotr (b :GMat) = mat.dotr(b, omat) 
-	def ∙ (b :GMat) = mat.dot(b, omat)
-	def ∙→ (b :GMat) = mat.dotr(b, omat)
+	def dot (a :GMat) = mat.dot(a, omat) 
+	def dotr (a :GMat) = mat.dotr(a, omat) 
+	def ∙ (a :GMat) = mat.dot(a, omat)
+	def ∙→ (a :GMat) = mat.dotr(a, omat)
 	def on(a : GMat) = mat.vertcat(a, omat)
 	def \ (a : GMat) = mat.horzcat(a, omat)
   
-	def checkOne(b:Seq[Int], name:String):Int = {
-    if (b.length > 1) throw new RuntimeException("GMat %s only takes one argument" format name);
-    b(0);
+	def checkOne(a:Seq[Int], name:String):Int = {
+    if (a.length > 1) throw new RuntimeException("GMat %s only takes one argument" format name);
+    a(0);
   }
 	
+	
+  def *  (a : FMat) = mat.GMult(GMat(a), omat);
+  def *  (a : SMat) = mat.GSMult(GSMat(a), omat);
+  def *^ (a : FMat) = mat.GMultT(GMat(a), omat)
+  def *^ (a : SMat) = mat.GSMultT(GSMat(a), omat)
+  def xT (a : FMat) = mat.GMultT(GMat(a), omat)
+  def xT (a : SMat) = mat.GSMultT(GSMat(a), omat)
+  def ^* (a : FMat) = mat.GTMult(GMat(a), omat)
+  def *+^ (a : FMat) = mat.GMST(GMat(a), omat)
+  def Tx (a : FMat) = mat.GTMult(GMat(a), omat)
+  def kron(a: FMat):FMat = mat.kron(GMat(a), omat)
+  def ⊗  (b : FMat) = mat.kron(b, omat)
+	def +  (a : FMat) = mat.gOp(GMat(a), omat, op_add)
+	def -  (a : FMat) = mat.gOp(GMat(a), omat, op_sub)
+	def *@ (a : FMat) = mat.gOp(GMat(a), omat, op_mul)
+	def ∘  (a : FMat) = mat.gOp(GMat(a), omat, op_mul)
+	def /  (a : FMat) = mat.gOp(GMat(a), omat, op_div)
+	def ^  (a : FMat) = mat.gOp(GMat(a), omat, op_pow)
+	def >  (a : FMat) = mat.gOp(GMat(a), omat, op_gt)
+	def <  (a : FMat) = mat.gOp(GMat(a), omat, op_lt)
+	def == (a : FMat) = mat.gOp(GMat(a), omat, op_eq)
+	def === (a : FMat) = mat.gOp(GMat(a), omat, op_eq)
+	def >= (a : FMat) = mat.gOp(GMat(a), omat, op_ge)
+	def <= (a : FMat) = mat.gOp(GMat(a), omat, op_le)
+	def != (a : FMat) = mat.gOp(GMat(a), omat, op_ne)
+	
+  def max (a : FMat) = mat.gOp(GMat(a), omat, op_max)
+	def min (a : FMat) = mat.gOp(GMat(a), omat, op_min)
+	
+	def dot (a :FMat) = mat.dot(GMat(a), omat) 
+	def dotr (a :FMat) = mat.dotr(GMat(a), omat) 
+	def ∙ (a :FMat) = mat.dot(GMat(a), omat)
+	def ∙→ (a :FMat) = mat.dotr(GMat(a), omat)
+	def on(a : FMat) = mat.vertcat(GMat(a), omat)
+	def \ (a : FMat) = mat.horzcat(GMat(a), omat)
+  
   override def * (b : Float) = mat.gOp(GMat(b), omat, op_mul)
   override def *@ (b : Float) = mat.gOp(GMat(b), omat, op_mul)
   override def ∘ (b : Float) = mat.gOp(GMat(b), omat, op_mul)
@@ -2150,18 +2184,23 @@ object GMat {
   def make(dims:IMat):GMat = make(dims.data);
   
   def apply(a:FMat):GMat = {
-  	val rsize = a.nrows*a.ncols
-    val retv = GMat.newOrCheckGMat(a.nrows, a.ncols, null, a.GUID, SciFunctions.getGPU, "GMat_FMat".##)
-  	cudaMemcpy(retv.pdata, Pointer.to(a.data), 1L*rsize*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
-  	cudaDeviceSynchronize()
-  	val err = cudaGetLastError()
-    if (err != 0) {
-    	println("device is %d" format SciFunctions.getGPU)
-    	throw new RuntimeException("CUDA error in GMat() " + cudaGetErrorString(err))
+    a match {
+      case g:GMat => g;
+      case _ => {
+    	  val rsize = a.nrows*a.ncols
+    			  val retv = GMat.newOrCheckGMat(a.nrows, a.ncols, null, a.GUID, SciFunctions.getGPU, "GMat_FMat".##)
+    			  cudaMemcpy(retv.pdata, Pointer.to(a.data), 1L*rsize*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+    			  cudaDeviceSynchronize()
+    			  val err = cudaGetLastError()
+    			  if (err != 0) {
+    				  println("device is %d" format SciFunctions.getGPU)
+    				  throw new RuntimeException("CUDA error in GMat() " + cudaGetErrorString(err))
+    			  }
+    	  retv
+      }
     }
-    retv
   }
-  
+
   def apply(a:GIMat):GMat = {
  
     val rsize = a.nrows*a.ncols
