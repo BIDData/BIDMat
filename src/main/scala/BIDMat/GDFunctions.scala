@@ -15,7 +15,7 @@ import org.apache.commons.math3.util.FastMath
 import org.apache.commons.math3.random.RandomDataGenerator;
 
 
-object DFunctions {
+object GDFunctions {
   
   def norm(a:DMat) = math.sqrt(ddot(a.length, a.data, 1, a.data, 1));
     

@@ -1716,7 +1716,7 @@ object GDMat {
   def rand(out:GDMat):GDMat = {
     import jcuda.jcurand._
     Mat.nflops += 10L*out.length
-    JCurand.curandGenerateUniformDouble(GMat.cudarng(GMat.getGPU).asInstanceOf[curandGenerator], out.pdata, out.length)
+    JCurand.curandGenerateUniformDouble(GFunctions.cudarng(GFunctions.getGPU).asInstanceOf[curandGenerator], out.pdata, out.length)
     jcuda.runtime.JCuda.cudaDeviceSynchronize()
     out
   }
@@ -1726,15 +1726,17 @@ object GDMat {
     rand(out);
   }
   
-  def rand(dims:IMat):GDMat = {
+  def rand(dims:Array[Int]):GDMat = {
 	  val out = GDMat.make(dims);
 	  rand(out);
   }
   
+  def rand(dims:IMat):GDMat = rand(dims.data);
+  
   def normrnd(mu:Double, sig:Double, out:GDMat):GDMat = {
     import jcuda.jcurand._
     Mat.nflops += 10L*out.length
-    JCurand.curandGenerateNormalDouble(GMat.cudarng(GMat.getGPU).asInstanceOf[curandGenerator], out.pdata, out.length, mu, sig)
+    JCurand.curandGenerateNormalDouble(GFunctions.cudarng(GFunctions.getGPU).asInstanceOf[curandGenerator], out.pdata, out.length, mu, sig)
     jcuda.runtime.JCuda.cudaDeviceSynchronize()
     out
   }

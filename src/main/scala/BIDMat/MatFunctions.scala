@@ -646,22 +646,22 @@ object MatFunctions {
   
   /** Accumulate (row, col, value) tuples from inds \\ vals into omat. nr and nc are row and column bounds */
   def accum(inds:GIMat, vals:GMat, omat:Mat, nrows:Int, ncols:Int):GMat = {
-    GMat.accum(inds, vals, omat, nrows, ncols):GMat
+    GFunctions.accum(inds, vals, omat, nrows, ncols):GMat
   }
   
   /** Accumulate (row, col, value) tuples from inds \\ vals. nr and nc are row and column bounds */
   def accum(inds:GIMat, vals:GMat, nrows:Int, ncols:Int):GMat = {
-    GMat.accum(inds, vals, null, nrows, ncols):GMat
+    GFunctions.accum(inds, vals, null, nrows, ncols):GMat
   }
   
   /** Accumulate (row, col, fval) tuples from inds into omat. nr and nc are row and column bounds */
   def accum(inds:GIMat, fval:Float, omat:Mat, nrows:Int, ncols:Int):GMat = {
-    GMat.accum(inds, fval, omat, nrows, ncols):GMat
+    GFunctions.accum(inds, fval, omat, nrows, ncols):GMat
   }
   
   /** Accumulate (row, col, fval) tuples from inds. nr and nc are row and column bounds */
   def accum(inds:GIMat, fval:Float, nrows:Int, ncols:Int):GMat = {
-    GMat.accum(inds, fval, null, nrows, ncols):GMat
+    GFunctions.accum(inds, fval, null, nrows, ncols):GMat
   }
   
   /** Accumulate (row, col, value) tuples from inds \\ vals into omat. nr and nc are row and column bounds */
@@ -684,13 +684,13 @@ object MatFunctions {
     GIMat.accum(inds, fval, null, nrows, ncols):GIMat
   }
     
-  def sort(keys:GMat):GMat = GMat.sort(keys)
+  def sort(keys:GMat):GMat = GFunctions.sort(keys)
   
-  def sort2(keys:GMat):(GMat, GIMat) = GMat.sort2(keys)
+  def sort2(keys:GMat):(GMat, GIMat) = GFunctions.sort2(keys)
   
-  def sortdown(keys:GMat):GMat = GMat.sortdown(keys)
+  def sortdown(keys:GMat):GMat = GFunctions.sortdown(keys)
   
-  def sortdown2(keys:GMat):(GMat, GIMat) = GMat.sortdown2(keys) 
+  def sortdown2(keys:GMat):(GMat, GIMat) = GFunctions.sortdown2(keys) 
   
   def sort(keys:Mat):Mat = {
     keys match {
@@ -736,7 +736,7 @@ object MatFunctions {
   /** Accumulate (row, col, value) tuples from inds \\ vals (generic version) into omat. nr and nc are row and column bounds */
   def accum(inds:Mat, vals:Mat, omat:Mat, nrows:Int, ncols:Int):Mat = {
     (inds, vals) match {
-    case (ginds:GIMat, gvals:GMat) => GMat.accum(ginds, gvals, omat, nrows, ncols):GMat
+    case (ginds:GIMat, gvals:GMat) => GFunctions.accum(ginds, gvals, omat, nrows, ncols):GMat
     case (ginds:GIMat, gvals:GIMat) => GIMat.accum(ginds, gvals, omat, nrows, ncols):GIMat
     case (iinds:IMat, fvals:FMat) => accum(iinds, fvals, nrows, ncols):FMat
     case (iinds:IMat, ivals:IMat) => accum(iinds, ivals, nrows, ncols):IMat
@@ -751,7 +751,7 @@ object MatFunctions {
   /** Accumulate (row, col, fval) tuples from inds (generic version) into omat. nr and nc are row and column bounds */
   def accum(inds:Mat, fval:Float, omat:Mat, nrows:Int, ncols:Int):Mat = {
     inds match {
-    case ginds:GIMat => GMat.accum(ginds, fval, omat, nrows, ncols):GMat;
+    case ginds:GIMat => GFunctions.accum(ginds, fval, omat, nrows, ncols):GMat;
     case iinds:IMat => accum(iinds, fval, nrows, ncols):FMat;
     }
   }

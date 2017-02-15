@@ -35,7 +35,7 @@ object SciFunctions {
   final val VMLturbo =   if (!Mat.useMKLRand) 0 else VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_EP   // Fastest, Lower accuracy, default error handling
 
   if (Mat.hasCUDA > 0) {
-  	GMat.initJCUDA
+  	GFunctions.initJCUDA
   	initCUDArngs
   }
   
@@ -44,29 +44,29 @@ object SciFunctions {
     Mat.checkCUDA;
   }
   
-  def initCUDArngs = GMat.initCUDArngs;
+  def initCUDArngs = GFunctions.initCUDArngs;
   
-  def initCUDArng(igpu:Int) = GMat.initCUDArng(igpu);
+  def initCUDArng(igpu:Int) = GFunctions.initCUDArng(igpu);
   
-  def resetGPU = GMat.resetGPU;
+  def resetGPU = GFunctions.resetGPU;
   
-  def resetGPUs = GMat.resetGPUs;
+  def resetGPUs = GFunctions.resetGPUs;
   
-  def initJCUDA = GMat.initJCUDA;
+  def initJCUDA = GFunctions.initJCUDA;
   
-  def setGPU(i:Int) = GMat.setGPU(i);
+  def setGPU(i:Int) = GFunctions.setGPU(i);
   
-  def getGPU:Int = GMat.getGPU;
+  def getGPU:Int = GFunctions.getGPU;
   
-  def connect(i:Int) = GMat.connect(i);
+  def connect(i:Int) = GFunctions.connect(i);
   
-  def disconnect(i:Int) = GMat.disconnect(i);
+  def disconnect(i:Int) = GFunctions.disconnect(i);
   
-  def canconnect(i:Int) = GMat.canconnect(i);
+  def canconnect(i:Int) = GFunctions.canconnect(i);
   
-  def GPUmem = GMat.GPUmem;
+  def GPUmem = GFunctions.GPUmem;
   
-  def GPUmemory = GMat.GPUmemory;
+  def GPUmemory = GFunctions.GPUmemory;
   
   def setNumThreads(n:Int) = edu.berkeley.bid.UTILS.setnumthreads(n);
   
@@ -88,13 +88,23 @@ object SciFunctions {
     }
   }
   
-  def setseed(seed:Int, igpu:Int):Unit = GMat.setseed(seed, igpu);
+  def setseed(seed:Int, igpu:Int):Unit = GFunctions.setseed(seed, igpu);
     
-  def norm(a:FMat) = FFunctions.norm(a);
+  def norm(a:FMat):Double = {
+    a match {
+      case aa:GMat => GFunctions.norm(aa);
+      case aa:FMat => FFunctions.norm(aa);
+    }
+  }
   
-  def norm(a:DMat) = math.sqrt(ddot(a.length, a.data, 1, a.data, 1))
+  def norm(a:DMat):Double = {
+    a match {
+      case aa:GDMat => GDMat.norm(aa);
+      case aa:DMat => DFunctions.norm(aa);
+    }
+  } 
   
-  def norm(a:GMat):Double = GMat.norm(a);
+  def norm(a:GMat):Double = GFunctions.norm(a);
   
   def norm(a:GDMat):Double = GDMat.norm(a);
   
@@ -102,8 +112,6 @@ object SciFunctions {
     a match {
       case aa:FMat => norm(aa)
       case aa:DMat => norm(aa)
-      case aa:GMat => norm(aa)
-      case aa:GDMat => norm(aa)
     }
   }
   
@@ -128,17 +136,17 @@ object SciFunctions {
   def drand(dims:IMat):DMat = drand(dims, 0, 1);
   def rand(out:DMat):DMat = DFunctions.rand(0.0, 1.0, out);
   
-  def rand(out:GMat):GMat = GMat.rand(out); 
-  def grand(nr:Int, nc:Int):GMat = GMat.rand(nr, nc);
-  def grand(dims:IMat):GMat = GMat.rand(dims);
+  def rand(out:GMat):GMat = GFunctions.rand(out); 
+  def grand(nr:Int, nc:Int):GMat = GFunctions.rand(Array(nr, nc));
+  def grand(dims:IMat):GMat = GFunctions.rand(dims);
  
   def rand(out:GDMat):GDMat = GDMat.rand(out);
-  def gdrand(nr:Int, nc:Int):GDMat = GDMat.rand(nr, nc);
+  def gdrand(nr:Int, nc:Int):GDMat = GDMat.rand(Array(nr, nc));
   def gdrand(dims:IMat):GDMat = GDMat.rand(dims);
   
   def rand(mat:Mat):Mat = {
     mat match {
-    case g:GMat => GMat.rand(g);
+    case g:GMat => GFunctions.rand(g);
     case gd:GDMat => GDMat.rand(gd);
     case a:FMat => rand(a);
     case d:DMat => rand(d);
@@ -155,9 +163,9 @@ object SciFunctions {
   
   def cnormrnd(mu:Float, sig:Float, m:Int, n:Int):CMat = normrnd(mu, sig, CMat(m, n));
   
-  def normrnd(mu:Float, sig:Float, out:GMat):GMat = GMat.normrnd(mu, sig, out)
-  def gnormrnd(mu:Float, sig:Float, nr:Int, nc:Int):GMat = GMat.normrnd(mu, sig, GMat(nr, nc));
-  def gndnormrnd(mu:Float, sig:Float, dims:IMat):GMat = GMat.normrnd(mu, sig, GMat(dims));
+  def normrnd(mu:Float, sig:Float, out:GMat):GMat = GFunctions.normrnd(mu, sig, out)
+  def gnormrnd(mu:Float, sig:Float, nr:Int, nc:Int):GMat = GFunctions.normrnd(mu, sig, GMat(nr, nc));
+  def gndnormrnd(mu:Float, sig:Float, dims:IMat):GMat = GFunctions.normrnd(mu, sig, GMat(dims));
   
   def normrnd(mu:Double, sig:Double, out:GDMat):GDMat = GDMat.normrnd(mu, sig, out);
   def gdnormrnd(mu:Double, sig:Double, nr:Int, nc:Int):GDMat =  GDMat.normrnd(mu, sig, GDMat(nr, nc));
@@ -176,10 +184,10 @@ object SciFunctions {
   def poissrnd(lambda:FMat, out:IMat):IMat = FFunctions.poissrnd(lambda, out);
   def poissrnd(lambda:FMat):IMat = poissrnd(lambda, IMat.make(lambda.dims));
 
-  def gpoissrnd(mu:Float, nr:Int, nc:Int):GIMat =  GMat.poissrnd(mu, GIMat(nr, nc));
-  def poissrnd(mu:GMat, out:GIMat):GIMat = GMat.poissrnd(mu, out);
-  def poissrnd(mu:GMat):GIMat = GMat.poissrnd(mu, GIMat.make(mu.dims));
-  def poissrnd(mu:Float, out:GIMat):GIMat = GMat.poissrnd(mu, out);
+  def gpoissrnd(mu:Float, nr:Int, nc:Int):GIMat =  GFunctions.poissrnd(mu, GIMat(nr, nc));
+  def poissrnd(mu:GMat, out:GIMat):GIMat = GFunctions.poissrnd(mu, out);
+  def poissrnd(mu:GMat):GIMat = GFunctions.poissrnd(mu, GIMat.make(mu.dims));
+  def poissrnd(mu:Float, out:GIMat):GIMat = GFunctions.poissrnd(mu, out);
   
   def poissrnd(lambda:Mat, out:Mat):Mat = {
     (lambda, out) match {
@@ -250,9 +258,9 @@ object SciFunctions {
     }
   }
   
-  def gamrnd(a:GMat, b:GMat, out:GMat):GMat = GMat.gamrnd(a, b, out);
+  def gamrnd(a:GMat, b:GMat, out:GMat):GMat = GFunctions.gamrnd(a, b, out);
 
-  def gamrnd(a:GMat, b:GMat):GMat = GMat.gamrnd(a, b, GMat(a.nrows, a.ncols));
+  def gamrnd(a:GMat, b:GMat):GMat = GFunctions.gamrnd(a, b, GMat(a.nrows, a.ncols));
   
   def laprnd(a:Float, b:Float, out:FMat):FMat = {
     vsRngLaplace( METHOD, stream, out.length, out.data, a, b )
@@ -390,9 +398,9 @@ object SciFunctions {
     binornd(k, p, IMat(m, n))
   }
   
-  def binornd(p:GMat, n:GIMat, out:GIMat):GIMat = GMat.binornd(p, n, out);
+  def binornd(p:GMat, n:GIMat, out:GIMat):GIMat = GFunctions.binornd(p, n, out);
 
-  def binornd(p:GMat, n:GIMat):GIMat = GMat.binornd(p, n, GIMat(p.nrows, p.ncols));
+  def binornd(p:GMat, n:GIMat):GIMat = GFunctions.binornd(p, n, GIMat(p.nrows, p.ncols));
   
   def bernrnd(p:Double, out:IMat):IMat = {
     if (Mat.useMKLRand) {
@@ -695,13 +703,13 @@ object SciFunctions {
   
   /** min, max, sum, prod, cumsum, maxi, mini for GMats with no output matrix*/
   
-  def cumsumg(a:GMat, jc:GIMat, omat:Mat):GMat = GMat.cumsumg(a, jc, omat) 
-  def maxg(a:GMat, jc:GIMat, omat:Mat, omati:Mat):(GMat,GIMat) = GMat.maxg(a, jc, omat, omati) 
-  def ming(a:GMat, jc:GIMat, omat:Mat, omati:Mat):(GMat,GIMat) = GMat.maxg(a, jc, omat, omati) 
-  def maxi2(a:GMat, omat:Mat, omati:Mat, dir:Int):(GMat,GIMat) = GMat.maxi2(a, omat, omati, dir) 
-  def mini2(a:GMat, omat:Mat, omati:Mat, dir:Int):(GMat,GIMat) = GMat.mini2(a, omat, omati, dir)
-  def maxi2(a:GMat, omat:Mat, omati:Mat):(GMat,GIMat) = GMat.maxi2(a, omat, omati, 0) 
-  def mini2(a:GMat, omat:Mat, omati:Mat):(GMat,GIMat) = GMat.mini2(a, omat, omati, 0)
+  def cumsumg(a:GMat, jc:GIMat, omat:Mat):GMat = GFunctions.cumsumg(a, jc, omat) 
+  def maxg(a:GMat, jc:GIMat, omat:Mat, omati:Mat):(GMat,GIMat) = GFunctions.maxg(a, jc, omat, omati) 
+  def ming(a:GMat, jc:GIMat, omat:Mat, omati:Mat):(GMat,GIMat) = GFunctions.maxg(a, jc, omat, omati) 
+  def maxi2(a:GMat, omat:Mat, omati:Mat, dir:Int):(GMat,GIMat) = GFunctions.maxi2(a, omat, omati, dir) 
+  def mini2(a:GMat, omat:Mat, omati:Mat, dir:Int):(GMat,GIMat) = GFunctions.mini2(a, omat, omati, dir)
+  def maxi2(a:GMat, omat:Mat, omati:Mat):(GMat,GIMat) = GFunctions.maxi2(a, omat, omati, 0) 
+  def mini2(a:GMat, omat:Mat, omati:Mat):(GMat,GIMat) = GFunctions.mini2(a, omat, omati, 0)
   
   def cumsumg(a:GIMat, jc:GIMat, omat:Mat):GIMat = GIMat.cumsumg(a, jc, omat) 
   def maxg(a:GIMat, jc:GIMat, omat:Mat, omati:Mat):(GIMat,GIMat) = GIMat.maxg(a, jc, omat, omati)
@@ -716,13 +724,13 @@ object SciFunctions {
   def mini2(a:GLMat, omat:Mat, omati:Mat):(GLMat,GIMat) = GLMat.mini2(a, omat, omati, 0)
 
   
-  def cumsumg(a:GMat, jc:GIMat):GMat = GMat.cumsumg(a, jc, null)  
-  def maxg(a:GMat, jc:GIMat) = GMat.maxg(a, jc, null, null) 
-  def ming(a:GMat, jc:GIMat) = GMat.ming(a, jc, null, null)
-  def maxi2(a:GMat, dir:Int):(GMat,GIMat) = GMat.maxi2(a, null, null, dir)  
-  def mini2(a:GMat, dir:Int):(GMat,GIMat) = GMat.mini2(a, null, null, dir)
-  def maxi2(a:GMat):(GMat,GIMat) = GMat.maxi2(a, null, null, 0)  
-  def mini2(a:GMat):(GMat,GIMat) = GMat.mini2(a, null, null, 0)
+  def cumsumg(a:GMat, jc:GIMat):GMat = GFunctions.cumsumg(a, jc, null)  
+  def maxg(a:GMat, jc:GIMat) = GFunctions.maxg(a, jc, null, null) 
+  def ming(a:GMat, jc:GIMat) = GFunctions.ming(a, jc, null, null)
+  def maxi2(a:GMat, dir:Int):(GMat,GIMat) = GFunctions.maxi2(a, null, null, dir)  
+  def mini2(a:GMat, dir:Int):(GMat,GIMat) = GFunctions.mini2(a, null, null, dir)
+  def maxi2(a:GMat):(GMat,GIMat) = GFunctions.maxi2(a, null, null, 0)  
+  def mini2(a:GMat):(GMat,GIMat) = GFunctions.mini2(a, null, null, 0)
   
   def cumsumg(a:GIMat, jc:GIMat):GIMat = GIMat.cumsumg(a, jc, null)  
   def maxg(a:GIMat, jc:GIMat) = GIMat.maxg(a, jc, null, null)
@@ -743,10 +751,10 @@ object SciFunctions {
   def maxi2(a:GDMat):(GDMat,GIMat) = GDMat.maxi2(a, null, null, 0)  
   def mini2(a:GDMat):(GDMat,GIMat) = GDMat.mini2(a, null, null, 0)
   
-  def cumsum(a:GMat, b:Mat, dir:Int) = GMat.cumsum(a, b, dir)
-  def cumsum(a:GMat, b:Mat) = GMat.cumsum(a, b, 0)
-  def cumsum(a:GMat, dir:Int) = GMat.cumsum(a, null, dir)
-  def cumsum(a:GMat) = GMat.cumsum(a, null, 0)
+  def cumsum(a:GMat, b:Mat, dir:Int) = GFunctions.cumsum(a, b, dir)
+  def cumsum(a:GMat, b:Mat) = GFunctions.cumsum(a, b, 0)
+  def cumsum(a:GMat, dir:Int) = GFunctions.cumsum(a, null, dir)
+  def cumsum(a:GMat) = GFunctions.cumsum(a, null, 0)
   
   import GMat.BinOp
   def max(a:GMat, b:GMat):GMat    = max(a, b, null)
@@ -2394,14 +2402,14 @@ object SciFunctions {
   
   def roc2(score:FMat, vpos:FMat, vneg:FMat, nxvals:Int):DMat = roc2(DMat(score), DMat(vpos), DMat(vneg),nxvals)
   
-  def applyGfun(in:GMat, omat:Mat, opn:Int, kflops:Long):GMat = GMat.applyGfun(in, omat, opn, kflops);
+  def applyGfun(in:GMat, omat:Mat, opn:Int, kflops:Long):GMat = GFunctions.applyGfun(in, omat, opn, kflops);
 
-  def applyGfun(in:GMat, opn:Int, kflops:Long):GMat = GMat.applyGfun(in, opn, kflops);
+  def applyGfun(in:GMat, opn:Int, kflops:Long):GMat = GFunctions.applyGfun(in, opn, kflops);
   
-  def applyGfun2(a:GMat, b:GMat, omat:Mat, opn:Int, kflops:Long):GMat = GMat.applyGfun2(a, b, omat, opn, kflops);
+  def applyGfun2(a:GMat, b:GMat, omat:Mat, opn:Int, kflops:Long):GMat = GFunctions.applyGfun2(a, b, omat, opn, kflops);
   
 
-  def applyGfun2(a:GMat, b:GMat, opn:Int, kflops:Long):GMat = GMat.applyGfun2(a, b, opn, kflops);
+  def applyGfun2(a:GMat, b:GMat, opn:Int, kflops:Long):GMat = GFunctions.applyGfun2(a, b, opn, kflops);
   
   import GMat.TransF
 
@@ -2644,16 +2652,11 @@ object SciFunctions {
   def trunc(in:TMat):TMat =   in.tFn(null, TFuncs.trunc, 10L)
   def sign(in:TMat):TMat =    in.tFn(null, TFuncs.sign, 1L)
   def exppsi(in:TMat):TMat =  in.tFn(null, TFuncs.exppsi, 1L)
-  
 
   
-  def LXdist(a:GMat, b:GMat, omat:GMat, p:Float):GMat = GMat.LXdist(a, b, omat, p)
+  def LXdist(a:FMat, b:FMat, omat:FMat, p:Float):FMat = GFunctions.LXdist(a, b, omat, p)
   
-  def LXdist(a:FMat, b:FMat, omat:FMat, p:Float):FMat = GMat.LXdist(a, b, omat, p)
-  
-  def LXdist(a:GMat, b:GMat, p:Float):GMat = GMat.LXdist(a, b, null, p)
-  
-  def LXdist(a:FMat, b:FMat, p:Float):FMat = GMat.LXdist(a, b, null, p)
+  def LXdist(a:FMat, b:FMat, p:Float):FMat = GFunctions.LXdist(a, b, null, p)
   
   def abs(a:Mat, b:Mat):Mat = {
     a match {
