@@ -857,22 +857,8 @@ object SciFunctions {
       case (aa:DMat, bb:DMat) => max(aa, bb, c):DMat
       case (aa:DMat, bb:FMat) => max(aa, DMat(bb), c):DMat
       case (aa:FMat, bb:DMat) => max(DMat(aa), bb, c):DMat
-      case (aa:GMat, bb:GMat) => max(aa, bb, c):GMat
-      case (aa:GIMat, bb:GIMat) => max(aa, bb, c):GIMat
-      case (aa:GLMat, bb:GLMat) => max(aa, bb, c):GLMat
       case (aa:IMat, bb:FMat) => max(FMat(aa), bb, c):FMat
       case (aa:FMat, bb:IMat) => max(aa, FMat(bb), c):FMat
-      case (aa:FMat, bb:GMat) => max(GMat(aa), bb, c):GMat
-      case (aa:GMat, bb:FMat) => max(aa, GMat(bb), c):GMat
-      case (aa:IMat, bb:GMat) => max(GMat(aa), bb, c):GMat
-      case (aa:GMat, bb:IMat) => max(aa, GMat(bb), c):GMat
-      case (aa:IMat, bb:GIMat) => max(GIMat(aa), bb, c):GIMat
-      case (aa:GIMat, bb:IMat) => max(aa, GIMat(bb), c):GIMat
-      case (aa:GDMat, bb:GDMat) => max(aa, bb, c):GDMat
-      case (aa:GDMat, bb:FMat) => max(aa, GDMat(bb), c):GDMat
-      case (aa:FMat, bb:GDMat) => max(GDMat(aa), bb, c):GDMat
-      case (aa:GDMat, bb:IMat) => max(aa, GDMat(bb), c):GDMat
-      case (aa:IMat, bb:GDMat) => max(GDMat(aa), bb, c):GDMat
     }
   }
   
@@ -884,10 +870,6 @@ object SciFunctions {
       case (aa:DMat) => max(aa, DMat.delem(b), c.asInstanceOf[Mat]):DMat;
       case (aa:IMat) => max(aa, IMat.ielem(b.toInt), c.asInstanceOf[Mat]):IMat;
       case (aa:LMat) => max(aa, LMat.lelem(b.toInt), c.asInstanceOf[Mat]):LMat;
-      case (aa:GMat) => max(aa, GMat.elem(b), c.asInstanceOf[Mat]):GMat;
-      case (aa:GDMat) => max(aa, GDMat.elem(b), c.asInstanceOf[Mat]):GDMat;
-      case (aa:GIMat) => max(aa, GIMat.elem(b.toInt), c.asInstanceOf[Mat]):GIMat;
-      case (aa:GLMat) => max(aa, GLMat.elem(b.toLong), c.asInstanceOf[Mat]):GLMat;
       case (aa:SMat) => aa.ssMatOpScalar(b, FMat.maxFun, c.asInstanceOf[Mat]):SMat;
       case (aa:SDMat) => aa.ssMatOpScalar(b, DMat.maxFun, c.asInstanceOf[Mat]):SDMat;
     }
@@ -905,22 +887,8 @@ object SciFunctions {
       case (aa:DMat, bb:DMat) => min(aa, bb, c):DMat
       case (aa:DMat, bb:FMat) => min(aa, DMat(bb), c):DMat
       case (aa:FMat, bb:DMat) => min(DMat(aa), bb, c):DMat
-      case (aa:GMat, bb:GMat) => min(aa, bb, c):GMat
-      case (aa:GIMat, bb:GIMat) => min(aa, bb, c):GIMat
-      case (aa:GLMat, bb:GLMat) => min(aa, bb, c):GLMat
       case (aa:IMat, bb:FMat) => min(FMat(aa), bb, c):FMat
       case (aa:FMat, bb:IMat) => min(aa, FMat(bb), c):FMat
-      case (aa:FMat, bb:GMat) => min(GMat(aa), bb, c):GMat
-      case (aa:GMat, bb:FMat) => min(aa, GMat(bb), c):GMat
-      case (aa:IMat, bb:GMat) => min(GMat(aa), bb, c):GMat
-      case (aa:GMat, bb:IMat) => min(aa, GMat(bb), c):GMat
-      case (aa:IMat, bb:GIMat) => min(GIMat(aa), bb, c):GIMat
-      case (aa:GIMat, bb:IMat) => min(aa, GIMat(bb), c):GIMat
-      case (aa:GDMat, bb:GDMat) => min(aa, bb, c):GDMat
-      case (aa:GDMat, bb:FMat) => min(aa, GDMat(bb), c):GDMat
-      case (aa:FMat, bb:GDMat) => min(GDMat(aa), bb, c):GDMat
-      case (aa:GDMat, bb:IMat) => min(aa, GDMat(bb), c):GDMat
-      case (aa:IMat, bb:GDMat) => min(GDMat(aa), bb, c):GDMat
     }
   }
   
@@ -932,10 +900,6 @@ object SciFunctions {
       case (aa:DMat) => min(aa, DMat.delem(b), c.asInstanceOf[Mat]):DMat;
       case (aa:IMat) => min(aa, IMat.ielem(b.toInt), c.asInstanceOf[Mat]):IMat;
       case (aa:LMat) => min(aa, LMat.lelem(b.toInt), c.asInstanceOf[Mat]):LMat;
-      case (aa:GMat) => min(aa, GMat.elem(b), c.asInstanceOf[Mat]):GMat;
-      case (aa:GDMat) => min(aa, GDMat.elem(b), c.asInstanceOf[Mat]):GDMat;
-      case (aa:GIMat) => min(aa, GIMat.elem(b.toInt), c.asInstanceOf[Mat]):GIMat;
-      case (aa:GLMat) => min(aa, GLMat.elem(b.toLong), c.asInstanceOf[Mat]):GLMat;
       case (aa:SMat) => aa.ssMatOpScalar(b, FMat.minFun, c.asInstanceOf[Mat]):SMat;
       case (aa:SDMat) => aa.ssMatOpScalar(b, DMat.minFun, c.asInstanceOf[Mat]):SDMat;
     }
@@ -951,10 +915,6 @@ object SciFunctions {
       case aa:IMat => maxi(aa, b):IMat
       case aa:LMat => maxi(aa, b):LMat
       case aa:DMat => maxi(aa, b):DMat
-      case aa:GMat => maxi(aa, b):GMat
-      case aa:GIMat => maxi(aa, b):GIMat
-      case aa:GLMat => maxi(aa, b):GLMat
-      case aa:GDMat => maxi(aa, b):GDMat
     }
   }
   
@@ -965,10 +925,6 @@ object SciFunctions {
       case aa:IMat => maxi(aa):IMat
       case aa:LMat => maxi(aa):LMat
       case aa:DMat => maxi(aa):DMat
-      case aa:GMat => maxi(aa):GMat
-      case aa:GIMat => maxi(aa):GIMat
-      case aa:GLMat => maxi(aa):GLMat
-      case aa:GDMat => maxi(aa):GDMat
     }
   }
   
@@ -978,10 +934,6 @@ object SciFunctions {
       case aa:IMat => mini(aa, b):IMat
       case aa:LMat => mini(aa, b):LMat
       case aa:DMat => mini(aa, b):DMat
-      case aa:GMat => mini(aa, b):GMat
-      case aa:GIMat => mini(aa, b):GIMat
-      case aa:GLMat => mini(aa, b):GLMat
-      case aa:GDMat => mini(aa, b):GDMat
     }
   }
   
@@ -991,10 +943,6 @@ object SciFunctions {
       case aa:IMat => mini(aa):IMat
       case aa:LMat => mini(aa):LMat
       case aa:DMat => mini(aa):DMat
-      case aa:GMat => mini(aa):GMat
-      case aa:GIMat => mini(aa):GIMat
-      case aa:GLMat => mini(aa):GLMat
-      case aa:GDMat => mini(aa):GDMat
     }
   }
   
@@ -1004,8 +952,6 @@ object SciFunctions {
       case aa:IMat => maxi2(aa, b):(IMat,IMat)
       case aa:LMat => maxi2(aa, b):(LMat,IMat)
       case aa:DMat => maxi2(aa, b):(DMat,IMat)
-      case aa:GMat => maxi2(aa, b):(GMat,GIMat)
-      case aa:GDMat => maxi2(aa, b):(GDMat,GIMat)
     }
   }
   
@@ -1015,8 +961,6 @@ object SciFunctions {
       case aa:IMat => maxi2(aa):(IMat,IMat)
       case aa:LMat => maxi2(aa):(LMat,IMat)
       case aa:DMat => maxi2(aa):(DMat,IMat)
-      case aa:GMat => maxi2(aa):(GMat,GIMat)
-      case aa:GDMat => maxi2(aa):(GDMat,GIMat)
     }
   }
   
@@ -1026,8 +970,6 @@ object SciFunctions {
       case aa:IMat => mini2(aa, b):(IMat,IMat)
       case aa:LMat => mini2(aa, b):(LMat,IMat)
       case aa:DMat => mini2(aa, b):(DMat,IMat)
-      case aa:GMat => mini2(aa, b):(GMat,GIMat)
-      case aa:GDMat => mini2(aa, b):(GDMat,GIMat)
     }
   }
   
@@ -1037,8 +979,6 @@ object SciFunctions {
       case aa:IMat => mini2(aa):(IMat,IMat)
       case aa:LMat => mini2(aa):(LMat,IMat)
       case aa:DMat => mini2(aa):(DMat,IMat)
-      case aa:GMat => mini2(aa):(GMat,GIMat)
-      case aa:GDMat => mini2(aa):(GDMat,GIMat)
     }
   } 
   
@@ -1050,10 +990,6 @@ object SciFunctions {
       case aa:DMat => sum(aa, b):DMat
       case aa:CMat => sum(aa, b):CMat
       case aa:SMat => sum(aa, b):FMat
-      case aa:GMat => sum(aa, b):GMat
-      case aa:GDMat => sum(aa, b):GDMat
-      case aa:GSMat => sum(aa, b):GMat
-      case aa:GSDMat => sum(aa, b):GDMat
       case aa:TMat => aa.sum(b, null):Mat
     }
   }
@@ -1068,10 +1004,6 @@ object SciFunctions {
       case aa:DMat=> sum(aa, b, c):DMat
       case aa:SMat=> sum(aa, b, c):FMat
       case aa:CMat => sum(aa, b, c):CMat
-      case aa:GMat => sum(aa, b, c):GMat
-      case aa:GDMat => sum(aa, b, c):GDMat
-      case aa:GSMat => sum(aa, b, c):GMat
-      case aa:GSDMat => sum(aa, b, c):GDMat
       case aa:TMat => aa.sum(b, c):Mat
     }
   }
@@ -1119,13 +1051,6 @@ object SciFunctions {
     case (aa:FMat, bb:FMat) => aa.cumsumByKey(bb);
     case (aa:FMat, bb:IMat) => aa.cumsumByKey(bb);
     case (aa:IMat, bb:IMat) => aa.cumsumByKey(bb);
-//    case (aa:IMat, bb:FMat) => aa.cumsumByKey(bb);
-    case (aa:GMat, bb:GMat) => aa.cumsumByKey(bb);
-    case (aa:GMat, bb:GIMat) => aa.cumsumByKey(bb);
-    case (aa:GIMat, bb:GIMat) => aa.cumsumByKey(bb);
-    case (aa:GIMat, bb:GMat) => aa.cumsumByKey(bb);
-    case (aa:GDMat, bb:GDMat) => aa.cumsumByKey(bb);
-    case (aa:GLMat, bb:GLMat) => aa.cumsumByKey(bb);
     }
   }
   
@@ -1153,13 +1078,6 @@ object SciFunctions {
     case (aa:FMat, bb:FMat) => aa.cumsumByKey(bb, omat);
     case (aa:FMat, bb:IMat) => aa.cumsumByKey(bb, omat);
     case (aa:IMat, bb:IMat) => aa.cumsumByKey(bb, omat);
-//    case (aa:IMat, bb:FMat) => aa.cumsumByKey(bb, omat);
-    case (aa:GMat, bb:GMat) => aa.cumsumByKey(bb, omat);
-    case (aa:GMat, bb:GIMat) => aa.cumsumByKey(bb, omat);
-    case (aa:GIMat, bb:GIMat) => aa.cumsumByKey(bb, omat);
-    case (aa:GIMat, bb:GMat) => aa.cumsumByKey(bb, omat);
-    case (aa:GDMat, bb:GDMat) => aa.cumsumByKey(bb, omat);
-    case (aa:GLMat, bb:GLMat) => aa.cumsumByKey(bb, omat);
     }
   }
     
@@ -1186,13 +1104,6 @@ object SciFunctions {
     case (aa:FMat, bb:FMat) => aa.cummaxByKey(bb);
     case (aa:FMat, bb:IMat) => aa.cummaxByKey(bb);
     case (aa:IMat, bb:IMat) => aa.cummaxByKey(bb);
-//    case (aa:IMat, bb:FMat) => aa.cummaxByKey(bb);
-    case (aa:GMat, bb:GMat) => aa.cummaxByKey(bb);
-    case (aa:GMat, bb:GIMat) => aa.cummaxByKey(bb);
-    case (aa:GIMat, bb:GIMat) => aa.cummaxByKey(bb);
-    case (aa:GIMat, bb:GMat) => aa.cummaxByKey(bb);
-    case (aa:GDMat, bb:GDMat) => aa.cummaxByKey(bb);
-    case (aa:GLMat, bb:GLMat) => aa.cummaxByKey(bb);
     }
   }
   
@@ -1220,13 +1131,6 @@ object SciFunctions {
     case (aa:FMat, bb:FMat) => aa.cummaxByKey(bb, omat);
     case (aa:FMat, bb:IMat) => aa.cummaxByKey(bb, omat);
     case (aa:IMat, bb:IMat) => aa.cummaxByKey(bb, omat);
-//    case (aa:IMat, bb:FMat) => aa.cummaxByKey(bb, omat);
-    case (aa:GMat, bb:GMat) => aa.cummaxByKey(bb, omat);
-    case (aa:GMat, bb:GIMat) => aa.cummaxByKey(bb, omat);
-    case (aa:GIMat, bb:GIMat) => aa.cummaxByKey(bb, omat);
-    case (aa:GIMat, bb:GMat) => aa.cummaxByKey(bb, omat);
-    case (aa:GDMat, bb:GDMat) => aa.cummaxByKey(bb, omat);
-    case (aa:GLMat, bb:GLMat) => aa.cummaxByKey(bb, omat);
     }
   }
 
@@ -1254,13 +1158,6 @@ object SciFunctions {
     case (aa:FMat, bb:FMat) => aa.cumminByKey(bb);
     case (aa:FMat, bb:IMat) => aa.cumminByKey(bb);
     case (aa:IMat, bb:IMat) => aa.cumminByKey(bb);
-//    case (aa:IMat, bb:FMat) => aa.cumminByKey(bb);
-    case (aa:GMat, bb:GMat) => aa.cumminByKey(bb);
-    case (aa:GMat, bb:GIMat) => aa.cumminByKey(bb);
-    case (aa:GIMat, bb:GIMat) => aa.cumminByKey(bb);
-    case (aa:GIMat, bb:GMat) => aa.cumminByKey(bb);
-    case (aa:GDMat, bb:GDMat) => aa.cumminByKey(bb);
-    case (aa:GLMat, bb:GLMat) => aa.cumminByKey(bb);
     }
   }
   
@@ -1288,13 +1185,6 @@ object SciFunctions {
     case (aa:FMat, bb:FMat) => aa.cumminByKey(bb, omat);
     case (aa:FMat, bb:IMat) => aa.cumminByKey(bb, omat);
     case (aa:IMat, bb:IMat) => aa.cumminByKey(bb, omat);
-//    case (aa:IMat, bb:FMat) => aa.cumminByKey(bb, omat);
-    case (aa:GMat, bb:GMat) => aa.cumminByKey(bb, omat);
-    case (aa:GMat, bb:GIMat) => aa.cumminByKey(bb, omat);
-    case (aa:GIMat, bb:GIMat) => aa.cumminByKey(bb, omat);
-    case (aa:GIMat, bb:GMat) => aa.cumminByKey(bb, omat);
-    case (aa:GDMat, bb:GDMat) => aa.cumminByKey(bb, omat);
-    case (aa:GLMat, bb:GLMat) => aa.cumminByKey(bb, omat);
     }
   }
   
@@ -1316,10 +1206,6 @@ object SciFunctions {
     case aa:IMat => aa._reverse(omat);
     case aa:DMat => aa._reverse(omat);
     case aa:LMat => aa._reverse(omat);
-    case aa:GMat => aa._reverse(omat);
-    case aa:GIMat => aa._reverse(omat);
-    case aa:GDMat => aa._reverse(omat);
-    case aa:GLMat => aa._reverse(omat);
     }
   }
   
@@ -1341,10 +1227,6 @@ object SciFunctions {
     case aa:IMat => aa._reverse(null);
     case aa:DMat => aa._reverse(null);
     case aa:LMat => aa._reverse(null);
-    case aa:GMat => aa._reverse(null);
-    case aa:GIMat => aa._reverse(null);
-    case aa:GDMat => aa._reverse(null);
-    case aa:GLMat => aa._reverse(null);
     }
   }
   
@@ -2663,8 +2545,6 @@ object SciFunctions {
       case aa:FMat => abs(aa, b):FMat
       case aa:CMat => abs(aa, b):FMat
       case aa:DMat => abs(aa, b):DMat
-      case aa:GMat => abs(aa, b):GMat
-      case aa:GDMat => abs(aa, b):GDMat
       case aa:TMat => abs(aa, b)
     }
   }
@@ -2673,8 +2553,6 @@ object SciFunctions {
     a match {
       case aa:FMat => sign(aa, b)
       case aa:DMat => sign(aa, b)
-      case aa:GMat => sign(aa, b)
-      case aa:GDMat => sign(aa, b)
       case aa:TMat => sign(aa, b)
     }
   }
@@ -2684,8 +2562,6 @@ object SciFunctions {
       case aa:FMat => sqrt(aa, b)
       case aa:CMat => sqrt(aa, b)
       case aa:DMat => sqrt(aa, b)
-      case aa:GMat => sqrt(aa, b)
-      case aa:GDMat => sqrt(aa, b)
       case aa:TMat => sqrt(aa, b)
     }
   }
@@ -2695,8 +2571,6 @@ object SciFunctions {
       case aa:FMat => exp(aa, b):FMat
       case aa:CMat => exp(aa, b):CMat
       case aa:DMat => exp(aa, b):DMat
-      case aa:GMat => exp(aa, b):GMat
-      case aa:GDMat => exp(aa, b):GDMat
       case aa:TMat => exp(aa, b):TMat
     }
   }
@@ -2705,8 +2579,6 @@ object SciFunctions {
     a match {
       case aa:FMat => expm1(aa, b)
       case aa:DMat => expm1(aa, b)
-      case aa:GMat => expm1(aa, b)
-      case aa:GDMat => expm1(aa, b)
       case aa:TMat => expm1(aa, b)
     }
   }
@@ -2716,8 +2588,6 @@ object SciFunctions {
       case aa:FMat => ln(aa, b)
       case aa:CMat => ln(aa, b)
       case aa:DMat => ln(aa, b)
-      case aa:GMat => ln(aa, b)
-      case aa:GDMat => ln(aa, b)
       case aa:TMat => ln(aa, b)
     }
   }
@@ -2727,8 +2597,6 @@ object SciFunctions {
       case aa:FMat => log10(aa, b)
       case aa:CMat => log10(aa, b)
       case aa:DMat => log10(aa, b)
-      case aa:GMat => log10(aa, b)
-      case aa:GDMat => log10(aa, b)
       case aa:TMat => log10(aa, b)
     }
   }
@@ -2737,8 +2605,6 @@ object SciFunctions {
     a match {
       case aa:FMat => log1p(aa, b)
       case aa:DMat => log1p(aa, b)
-      case aa:GMat => log1p(aa, b)
-      case aa:GDMat => log1p(aa, b)
       case aa:TMat => log1p(aa, b)
     }
   }
@@ -2748,8 +2614,6 @@ object SciFunctions {
       case aa:FMat => cos(aa, b)
       case aa:CMat => cos(aa, b)
       case aa:DMat => cos(aa, b)
-      case aa:GMat => cos(aa, b)
-      case aa:GDMat => cos(aa, b)
       case aa:TMat => cos(aa, b)
     }
   }
@@ -2759,8 +2623,6 @@ object SciFunctions {
       case aa:FMat => sin(aa, b)
       case aa:CMat => sin(aa, b)
       case aa:DMat => sin(aa, b)
-      case aa:GMat => sin(aa, b)
-      case aa:GDMat => sin(aa, b)
       case aa:TMat => sin(aa, b)
     }
   }
@@ -2770,8 +2632,6 @@ object SciFunctions {
       case aa:FMat => tan(aa, b)
       case aa:CMat => tan(aa, b)
       case aa:DMat => tan(aa, b)
-      case aa:GMat => tan(aa, b)
-      case aa:GDMat => tan(aa, b)
       case aa:TMat => tan(aa, b)
     }
   }
@@ -2781,8 +2641,6 @@ object SciFunctions {
       case aa:FMat => cosh(aa, b)
       case aa:CMat => cosh(aa, b)
       case aa:DMat => cosh(aa, b)
-      case aa:GMat => cosh(aa, b)
-      case aa:GDMat => cosh(aa, b)
       case aa:TMat => cosh(aa, b)
     }
   }
@@ -2792,8 +2650,6 @@ object SciFunctions {
       case aa:FMat => sinh(aa, b)
       case aa:CMat => sinh(aa, b)
       case aa:DMat => sinh(aa, b)
-      case aa:GMat => sinh(aa, b)
-      case aa:GDMat => sinh(aa, b)
       case aa:TMat => sinh(aa, b)
     }
   }
@@ -2803,8 +2659,6 @@ object SciFunctions {
       case aa:FMat => tanh(aa, b)
       case aa:CMat => tanh(aa, b)
       case aa:DMat => tanh(aa, b)
-      case aa:GMat => tanh(aa, b)
-      case aa:GDMat => tanh(aa, b)
       case aa:TMat => tanh(aa, b)
     }
   }
@@ -2814,8 +2668,6 @@ object SciFunctions {
       case aa:FMat => acos(aa, b)
       case aa:CMat => acos(aa, b)
       case aa:DMat => acos(aa, b)
-      case aa:GMat => acos(aa, b)
-      case aa:GDMat => acos(aa, b)
       case aa:TMat => acos(aa, b)
     }
   }
@@ -2825,8 +2677,6 @@ object SciFunctions {
       case aa:FMat => asin(aa, b)
       case aa:CMat => asin(aa, b)
       case aa:DMat => asin(aa, b)
-      case aa:GMat => asin(aa, b)
-      case aa:GDMat => asin(aa, b)
       case aa:TMat => asin(aa, b)
     }
   }
@@ -2836,8 +2686,6 @@ object SciFunctions {
       case aa:FMat => atan(aa, b)
       case aa:CMat => atan(aa, b)
       case aa:DMat => atan(aa, b)
-      case aa:GMat => atan(aa, b)
-      case aa:GDMat => atan(aa, b)
       case aa:TMat => atan(aa, b)
     }
   }
@@ -2847,8 +2695,6 @@ object SciFunctions {
       case aa:FMat => acosh(aa, b)
       case aa:CMat => acosh(aa, b)
       case aa:DMat => acosh(aa, b)
-      case aa:GMat => acosh(aa, b)
-      case aa:GDMat => acosh(aa, b)
       case aa:TMat => acosh(aa, b)
     }
   }
@@ -2858,8 +2704,6 @@ object SciFunctions {
       case aa:FMat => asinh(aa, b)
       case aa:CMat => asinh(aa, b)
       case aa:DMat => asinh(aa, b)
-      case aa:GMat => asinh(aa, b)
-      case aa:GDMat => asinh(aa, b)
       case aa:TMat => asinh(aa, b)
     }
   }
@@ -2869,8 +2713,6 @@ object SciFunctions {
       case aa:FMat => atanh(aa, b)
       case aa:CMat => atanh(aa, b)
       case aa:DMat => atanh(aa, b)
-      case aa:GMat => atanh(aa, b)
-      case aa:GDMat => atanh(aa, b)
       case aa:TMat => atanh(aa, b)
     }
   }
@@ -2879,8 +2721,6 @@ object SciFunctions {
     a match {
       case aa:FMat => erf(aa, b)
       case aa:DMat => erf(aa, b)
-      case aa:GMat => erf(aa, b)
-      case aa:GDMat => erf(aa, b)
       case aa:TMat => erf(aa, b)
     }
   }
@@ -2889,8 +2729,6 @@ object SciFunctions {
     a match {
       case aa:FMat => erfinv(aa, b)
       case aa:DMat => erfinv(aa, b)
-      case aa:GMat => erfinv(aa, b)
-      case aa:GDMat => erfinv(aa, b)
       case aa:TMat => erfinv(aa, b)
     }
   }
@@ -2899,8 +2737,6 @@ object SciFunctions {
     a match {
       case aa:FMat => erfc(aa, b)
       case aa:DMat => erfc(aa, b)
-      case aa:GMat => erfc(aa, b)
-      case aa:GDMat => erfc(aa, b)
       case aa:TMat => erfc(aa, b)
     }
   }
@@ -2909,8 +2745,6 @@ object SciFunctions {
     a match {
       case aa:FMat => erfcinv(aa, b)
       case aa:DMat => erfcinv(aa, b)
-      case aa:GMat => erfcinv(aa, b)
-      case aa:GDMat => erfcinv(aa, b)
       case aa:TMat => erfcinv(aa, b)
     }
   }
@@ -2919,8 +2753,6 @@ object SciFunctions {
     a match {
       case aa:FMat => gamma(aa, b)
       case aa:DMat => gamma(aa, b)
-      case aa:GMat => gamma(aa, b)
-      case aa:GDMat => gamma(aa, b)
       case aa:TMat => gamma(aa, b)
     }
   }
@@ -2931,8 +2763,6 @@ object SciFunctions {
     a match {
       case aa:FMat => gammaln(aa, b)
       case aa:DMat => gammaln(aa, b)
-      case aa:GMat => gammaln(aa, b)
-      case aa:GDMat => gammaln(aa, b)
       case aa:TMat => gammaln(aa, b)
     }
   }
@@ -2941,8 +2771,6 @@ object SciFunctions {
     a match {
       case aa:FMat => floor(aa, b)
       case aa:DMat => floor(aa, b)
-      case aa:GMat => floor(aa, b)
-      case aa:GDMat => floor(aa, b)
       case aa:TMat => floor(aa, b)
     }
   }
@@ -2951,8 +2779,6 @@ object SciFunctions {
     a match {
       case aa:FMat => ceil(aa, b)
       case aa:DMat => ceil(aa, b)
-      case aa:GMat => ceil(aa, b)
-      case aa:GDMat => ceil(aa, b)
       case aa:TMat => ceil(aa, b)
     }
   }
@@ -2961,8 +2787,6 @@ object SciFunctions {
     a match {
       case aa:FMat => round(aa, b)
       case aa:DMat => round(aa, b)
-      case aa:GMat => round(aa, b)
-      case aa:GDMat => round(aa, b)
       case aa:TMat => round(aa, b)
     }
   }
@@ -2971,8 +2795,6 @@ object SciFunctions {
     a match {
       case aa:FMat => trunc(aa, b)
       case aa:DMat => trunc(aa, b)
-      case aa:GMat => trunc(aa, b)
-      case aa:GDMat => trunc(aa, b)
       case aa:TMat => trunc(aa, b)
     }
   }
@@ -2981,8 +2803,6 @@ object SciFunctions {
     a match {
       case aa:FMat => exppsi(aa, b)
       case aa:DMat => exppsi(aa, b)
-      case aa:GMat => exppsi(aa, b)
-      case aa:GDMat => exppsi(aa, b)
       case aa:TMat => exppsi(aa, b)
     }
   }
@@ -2990,35 +2810,30 @@ object SciFunctions {
   def normcdf(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => normcdf(aa, b)
-      case aa:GMat => normcdf(aa, b)
     }
   }
  
   def normcdfinv(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => normcdfinv(aa, b)
-      case aa:GMat => normcdfinv(aa, b)
     }
   }
   
   def psi(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => psi(aa, b)
-      case aa:GMat => psi(aa, b)
     }
   }
   
   def psiinv(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => psiinv(aa, b)
-      case aa:GMat => psiinv(aa, b)
     }
   }
   
   def psifn(a:Mat, b:Mat, out:Mat):Mat = {
     (a,b) match {
       case (aa:FMat, bb:FMat) => psifn(aa, bb, out);
-      case (aa:GMat, bb:GMat) => psifn(aa, bb, out);
     }
   }
   
@@ -3028,8 +2843,6 @@ object SciFunctions {
     (a, b) match {
       case (aa:FMat, bb:FMat) => atan2(aa, bb, c)
       case (aa:DMat, bb:DMat) => atan2(aa, bb, c)
-      case (aa:GMat, bb:GMat) => atan2(aa, bb, c)
-      case (aa:GDMat, bb:GDMat) => atan2(aa, bb, c)
     }
   }
   
@@ -3037,8 +2850,6 @@ object SciFunctions {
     (a, b) match {
       case (aa:FMat, bb:FMat) => pow(aa, bb, c)
       case (aa:DMat, bb:DMat) => pow(aa, bb, c)
-      case (aa:GMat, bb:GMat) => pow(aa, bb, c)
-      case (aa:GDMat, bb:GDMat) => pow(aa, bb, c)
     }
   }
   
@@ -3055,8 +2866,6 @@ object SciFunctions {
       case aa:FMat => abs(aa):FMat
       case aa:CMat => abs(aa):FMat
       case aa:DMat => abs(aa):DMat
-      case aa:GMat => abs(aa):GMat
-      case aa:GDMat => abs(aa):GDMat
       case aa:TMat => abs(aa):TMat
     }
   }
@@ -3065,8 +2874,6 @@ object SciFunctions {
     a match {
       case aa:FMat => sign(aa)
       case aa:DMat => sign(aa)
-      case aa:GMat => sign(aa)
-      case aa:GDMat => sign(aa)
       case aa:TMat => sign(aa)
     }
   }
@@ -3076,8 +2883,6 @@ object SciFunctions {
       case aa:FMat => sqrt(aa)
       case aa:CMat => sqrt(aa)
       case aa:DMat => sqrt(aa)
-      case aa:GMat => sqrt(aa)
-      case aa:GDMat => sqrt(aa)
       case aa:TMat => sqrt(aa)
     }
   }
@@ -3087,8 +2892,6 @@ object SciFunctions {
       case aa:FMat => exp(aa)
       case aa:CMat => exp(aa)
       case aa:DMat => exp(aa)
-      case aa:GMat => exp(aa)
-      case aa:GDMat => exp(aa)
       case aa:TMat => exp(aa)
     }
   }
@@ -3097,8 +2900,6 @@ object SciFunctions {
     a match {
       case aa:FMat => expm1(aa)
       case aa:DMat => expm1(aa)
-      case aa:GMat => expm1(aa)
-      case aa:GDMat => expm1(aa)
       case aa:TMat => expm1(aa)
     }
   }
@@ -3108,8 +2909,6 @@ object SciFunctions {
       case aa:FMat => ln(aa)
       case aa:CMat => ln(aa)
       case aa:DMat => ln(aa)
-      case aa:GMat => ln(aa)
-      case aa:GDMat => ln(aa)
       case aa:TMat => ln(aa)
     }
   }
@@ -3119,8 +2918,6 @@ object SciFunctions {
       case aa:FMat => log10(aa)
       case aa:CMat => log10(aa)
       case aa:DMat => log10(aa)
-      case aa:GMat => log10(aa)
-      case aa:GDMat => log10(aa)
       case aa:TMat => log10(aa)
     }
   }
@@ -3129,8 +2926,6 @@ object SciFunctions {
     a match {
       case aa:FMat => log1p(aa)
       case aa:DMat => log1p(aa)
-      case aa:GMat => log1p(aa)
-      case aa:GDMat => log1p(aa)
       case aa:TMat => log1p(aa)
     }
   }
@@ -3140,8 +2935,6 @@ object SciFunctions {
       case aa:FMat => cos(aa)
       case aa:CMat => cos(aa)
       case aa:DMat => cos(aa)
-      case aa:GMat => cos(aa)
-      case aa:GDMat => cos(aa)
       case aa:TMat => cos(aa)
     }
   }
@@ -3151,8 +2944,6 @@ object SciFunctions {
       case aa:FMat => sin(aa)
       case aa:CMat => sin(aa)
       case aa:DMat => sin(aa)
-      case aa:GMat => sin(aa)
-      case aa:GDMat => sin(aa)
       case aa:TMat => sin(aa)
     }
   }
@@ -3162,8 +2953,6 @@ object SciFunctions {
       case aa:FMat => tan(aa)
       case aa:CMat => tan(aa)
       case aa:DMat => tan(aa)
-      case aa:GMat => tan(aa)
-      case aa:GDMat => tan(aa)
       case aa:TMat => tan(aa)
     }
   }
@@ -3173,8 +2962,6 @@ object SciFunctions {
       case aa:FMat => cosh(aa)
       case aa:CMat => cosh(aa)
       case aa:DMat => cosh(aa)
-      case aa:GMat => cosh(aa)
-      case aa:GDMat => cosh(aa)
       case aa:TMat => cosh(aa)
     }
   }
@@ -3184,8 +2971,6 @@ object SciFunctions {
       case aa:FMat => sinh(aa)
       case aa:CMat => sinh(aa)
       case aa:DMat => sinh(aa)
-      case aa:GMat => sinh(aa)
-      case aa:GDMat => sinh(aa)
       case aa:TMat => sinh(aa)
     }
   }
@@ -3195,8 +2980,7 @@ object SciFunctions {
       case aa:FMat => tanh(aa)
       case aa:CMat => tanh(aa)
       case aa:DMat => tanh(aa)
-      case aa:GMat => tanh(aa)
-      case aa:GDMat => tanh(aa)
+      case aa:TMat => tanh(aa)
     }
   }
     
@@ -3205,8 +2989,6 @@ object SciFunctions {
       case aa:FMat => acos(aa)
       case aa:CMat => acos(aa)
       case aa:DMat => acos(aa)
-      case aa:GMat => acos(aa)
-      case aa:GDMat => acos(aa)
       case aa:TMat => acos(aa)
     }
   }
@@ -3216,8 +2998,6 @@ object SciFunctions {
       case aa:FMat => asin(aa)
       case aa:CMat => asin(aa)
       case aa:DMat => asin(aa)
-      case aa:GMat => asin(aa)
-      case aa:GDMat => asin(aa)
       case aa:TMat => asin(aa)
     }
   }
@@ -3227,8 +3007,6 @@ object SciFunctions {
       case aa:FMat => atan(aa)
       case aa:CMat => atan(aa)
       case aa:DMat => atan(aa)
-      case aa:GMat => atan(aa)
-      case aa:GDMat => atan(aa)
       case aa:TMat => atan(aa)
     }
   }
@@ -3238,8 +3016,6 @@ object SciFunctions {
       case aa:FMat => acosh(aa)
       case aa:CMat => acosh(aa)
       case aa:DMat => acosh(aa)
-      case aa:GMat => acosh(aa)
-      case aa:GDMat => acosh(aa)
       case aa:TMat => acosh(aa)
     }
   }
@@ -3249,8 +3025,6 @@ object SciFunctions {
       case aa:FMat => asinh(aa)
       case aa:CMat => asinh(aa)
       case aa:DMat => asinh(aa)
-      case aa:GMat => asinh(aa)
-      case aa:GDMat => asinh(aa)
       case aa:TMat => asinh(aa)
     }
   }
@@ -3259,8 +3033,6 @@ object SciFunctions {
     a match {
       case aa:FMat => erf(aa)
       case aa:DMat => erf(aa)
-      case aa:GMat => erf(aa)
-      case aa:GDMat => erf(aa)
       case aa:TMat => erf(aa)
     }
   }
@@ -3269,8 +3041,6 @@ object SciFunctions {
     a match {
       case aa:FMat => erfinv(aa)
       case aa:DMat => erfinv(aa)
-      case aa:GMat => erfinv(aa)
-      case aa:GDMat => erfinv(aa)
       case aa:TMat => erfinv(aa)
     }
   }
@@ -3279,8 +3049,6 @@ object SciFunctions {
     a match {
       case aa:FMat => erfc(aa)
       case aa:DMat => erfc(aa)
-      case aa:GMat => erfc(aa)
-      case aa:GDMat => erfc(aa)
       case aa:TMat => erfc(aa)
     }
   }
@@ -3289,8 +3057,6 @@ object SciFunctions {
     a match {
       case aa:FMat => erfcinv(aa)
       case aa:DMat => erfcinv(aa)
-      case aa:GMat => erfcinv(aa)
-      case aa:GDMat => erfcinv(aa)
       case aa:TMat => erfcinv(aa)
     }
   }
@@ -3299,8 +3065,6 @@ object SciFunctions {
     a match {
       case aa:FMat => gamma(aa)
       case aa:DMat => gamma(aa)
-      case aa:GMat => gamma(aa)
-      case aa:GDMat => gamma(aa)
       case aa:TMat => gamma(aa)
     }
   }
@@ -3311,8 +3075,6 @@ object SciFunctions {
     a match {
       case aa:FMat => gammaln(aa)
       case aa:DMat => gammaln(aa)
-      case aa:GMat => gammaln(aa)
-      case aa:GDMat => gammaln(aa)
       case aa:TMat => gammaln(aa)
     }
   }
@@ -3321,8 +3083,6 @@ object SciFunctions {
     a match {
       case aa:FMat => floor(aa)
       case aa:DMat => floor(aa)
-      case aa:GMat => floor(aa)
-      case aa:GDMat => floor(aa)
       case aa:TMat => floor(aa)
     }
   }
@@ -3331,8 +3091,6 @@ object SciFunctions {
     a match {
       case aa:FMat => ceil(aa)
       case aa:DMat => ceil(aa)
-      case aa:GMat => ceil(aa)
-      case aa:GDMat => ceil(aa)
       case aa:TMat => ceil(aa)
     }
   }
@@ -3341,8 +3099,6 @@ object SciFunctions {
     a match {
       case aa:FMat => round(aa)
       case aa:DMat => round(aa)
-      case aa:GMat => round(aa)
-      case aa:GDMat => round(aa)
       case aa:TMat => round(aa)
     }
   }
@@ -3351,8 +3107,6 @@ object SciFunctions {
     a match {
       case aa:FMat => trunc(aa)
       case aa:DMat => trunc(aa)
-      case aa:GMat => trunc(aa)
-      case aa:GDMat => trunc(aa)
       case aa:TMat => trunc(aa)
     }
   }
@@ -3361,8 +3115,6 @@ object SciFunctions {
     a match {
       case aa:FMat => exppsi(aa)
       case aa:DMat => exppsi(aa)
-      case aa:GMat => exppsi(aa)
-      case aa:GDMat => exppsi(aa)
       case aa:TMat => exppsi(aa)
     }
   }
@@ -3370,35 +3122,30 @@ object SciFunctions {
   def normcdf(a:Mat):Mat = {
     a match {
       case aa:FMat => normcdf(aa)
-      case aa:GMat => normcdf(aa)
     }
   }
   
   def normcdfinv(a:Mat):Mat = {
     a match {
       case aa:FMat => normcdfinv(aa)
-      case aa:GMat => normcdfinv(aa)
     }
   }
   
   def psi(a:Mat):Mat = {
     a match {
       case aa:FMat => psi(aa)
-      case aa:GMat => psi(aa)
     }
   }
   
   def psiinv(a:Mat):Mat = {
     a match {
       case aa:FMat => psiinv(aa)
-      case aa:GMat => psiinv(aa)
     }
   }
   
   def psifn(a:Mat, b:Mat):Mat = {
     (a,b) match {
       case (aa:FMat, bb:FMat) => psifn(aa, bb);
-      case (aa:GMat, bb:GMat) => psifn(aa, bb);
     }
   }
   
@@ -3406,8 +3153,6 @@ object SciFunctions {
     (a, b) match {
       case (aa:FMat, bb:FMat) => atan2(aa, bb)
       case (aa:DMat, bb:DMat) => atan2(aa, bb)
-      case (aa:GMat, bb:GMat) => atan2(aa, bb)
-      case (aa:GDMat, bb:GDMat) => atan2(aa, bb)
     }
   }
   
@@ -3415,8 +3160,6 @@ object SciFunctions {
     (a, b) match {
       case (aa:FMat, bb:FMat) => pow(aa, bb)
       case (aa:DMat, bb:DMat) => pow(aa, bb)
-      case (aa:GMat, bb:GMat) => pow(aa, bb)
-      case (aa:GDMat, bb:GDMat) => pow(aa, bb)
     }
   }
 }

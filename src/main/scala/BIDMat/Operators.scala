@@ -169,10 +169,10 @@ trait Mop {
 
   def op(a:TMat, b:Mat, c:Mat):Mat = {
     b match {
-      case bb:FMat => top(a, bb, c)
-      case bb:SMat => top(a, bb, c)
-      case bb:GMat => top(a, bb, c)
-      case bb:GSMat => top(a, bb, c)
+      case bb:GMat => top(a, bb, c);
+      case bb:GSMat => top(a, bb, c);
+      case bb:FMat => top(a, bb, c);
+      case bb:SMat => top(a, bb, c);
     }
   }
 

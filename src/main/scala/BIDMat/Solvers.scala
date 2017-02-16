@@ -410,8 +410,6 @@ object Solvers {
     case af:FMat => QRdecompt(af, q, r):(FMat, FMat)
     case ad:DMat => QRdecompt(ad, q, r):(DMat, DMat)
     case ac:CMat => QRdecompt(ac, q, r):(CMat, CMat)
-    case ac:GMat => QRdecompt(ac, q, r):(GMat, GMat)
-    case ac:GDMat => QRdecompt(ac, q, r):(GDMat, GDMat)
   }
   def QRdecompt(a:Mat):(Mat, Mat) = QRdecompt(a, null, null)
 
@@ -520,8 +518,6 @@ object Solvers {
     case (af:FMat, rf:FMat) => trisolve(af, rf, omat, mode)
     case (ad:DMat, rd:DMat) => trisolve(ad, rd, omat, mode)
     case (ac:CMat, rc:CMat) => trisolve(ac, rc, omat, mode)
-    case (ac:GMat, rc:GMat) => trisolve(ac, rc, omat, mode)
-    case (ac:GDMat, rc:GDMat) => trisolve(ac, rc, omat, mode)
   }
   def trisolve(a:Mat, r:Mat):Mat = trisolve(a, r, null, "UNN")
   def trisolve(a:Mat, r:Mat, omat:Mat):Mat = trisolve(a, r, omat, "UNN")
@@ -615,8 +611,6 @@ object Solvers {
     case af:FMat => triinv(af, omat, mode)
     case ad:DMat => triinv(ad, omat, mode)
     case ac:CMat => triinv(ac, omat, mode)
-    case ac:GMat => triinv(ac, omat, mode)
-    case ac:GDMat => triinv(ac, omat, mode)
   }
   def triinv(a:Mat):Mat = triinv(a, null, "UNN")
   def triinv(a:Mat, omat:Mat):Mat = triinv(a, omat, "UNN")
