@@ -1281,7 +1281,7 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   		out
   	} else throw new RuntimeException("dimensions mismatch");
 
-  def GPUmult(b:FMat, out:Mat, btrans:Boolean) = GMat.GPUmult(this, b, out, btrans)
+  def GPUmult(b:FMat, out:Mat, btrans:Boolean) = GFunctions.GPUmult(this, b, out, btrans)
 
   def ddot(a : FMat):Double =
   	if (nrows != a.nrows || ncols != a.ncols) {

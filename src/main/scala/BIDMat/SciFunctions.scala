@@ -215,18 +215,7 @@ object SciFunctions {
     gamrnd(a, b, out);
   }
 
-  def gamrnd(shape:Float, scale:Float, out:FMat):FMat = {
-    if (Mat.useMKLRand) {
-    	vsRngGamma( METHOD, stream, out.length, out.data, shape, 0, scale );
-    } else if (Mat.useSTLRand) {
-      SGamma( METHOD, engine, out.length, out.data, shape, scale );
-    } else {
-      var i = 0;
-      while (i < out.length) {out.data(i) = acmrand.nextGamma(shape, scale).toFloat; i += 1;}
-    }
-    Mat.nflops += 20L*out.length
-    out
-  }
+  def gamrnd(shape:Float, scale:Float, out:FMat):FMat = FFunctions.gamrnd(shape, scale, out)
 
   def gamrnd(shape:Float, scale:Float, m:Int, n:Int):FMat = {
     gamrnd(shape, scale, FMat(m, n))
@@ -262,43 +251,19 @@ object SciFunctions {
 
   def gamrnd(a:GMat, b:GMat):GMat = GFunctions.gamrnd(a, b, GMat(a.nrows, a.ncols));
   
-  def laprnd(a:Float, b:Float, out:FMat):FMat = {
-    vsRngLaplace( METHOD, stream, out.length, out.data, a, b )
-    Mat.nflops += 20L*out.length
-    out
-  }
+  def laprnd(a:Float, b:Float, out:FMat):FMat = FFunctions.laprnd(a, b, out);
   
   def laprnd(a:Float, b:Float, m:Int, n:Int):FMat = {
     laprnd(a, b, FMat(m, n))
   }
 
-  def cauchyrnd(a:Float, b:Float, out:FMat):FMat = {
-  	if (Mat.useMKLRand) {
-  		vsRngCauchy( METHOD, stream, out.length, out.data, a, b );
-  	} else if (Mat.useSTLRand) {
-  	  SCauchy(METHOD, engine, out.length, out.data, a, b);
-  	} else {
-  		var i = 0; while (i < out.length) {out.data(i) = acmrand.nextCauchy(a, b).toFloat; i += 1;}
-  	}
-    Mat.nflops += 20L*out.length
-    out
-  }
+  def cauchyrnd(a:Float, b:Float, out:FMat):FMat = FFunctions.cauchyrnd(a, b, out);
   
   def cauchyrnd(a:Float, b:Float, m:Int, n:Int):FMat = {
     cauchyrnd(a, b, FMat(m, n))
   }
 
-  def exprnd(a:Float, b:Float, out:FMat):FMat = {
-    if (Mat.useMKLRand) {
-    	vsRngExponential( METHOD, stream, out.length, out.data, a, b );
-    } else if (Mat.useSTLRand) {
-      SExponential(METHOD, engine, out.length, out.data, a);
-    } else {
-  		var i = 0; while (i < out.length) {out.data(i) = acmrand.nextExponential(a).toFloat; i += 1;}      
-    }
-    Mat.nflops += 20L*out.length
-    out
-  }
+  def exprnd(a:Float, b:Float, out:FMat):FMat = FFunctions.exprnd(a, b, out);
   
   def exprnd(a:Float, m:Int, n:Int):FMat = {
     exprnd(a, 1, FMat(m, n))
@@ -336,11 +301,7 @@ object SciFunctions {
     dexprnd(a, 1, out)
   }
 
-  def betarnd(p:Float, q:Float, out:FMat):FMat = {
-    vsRngBeta( METHOD, stream, out.length, out.data, p, q, 0, 1 )
-    Mat.nflops += 20L*out.length
-    out
-  }
+  def betarnd(p:Float, q:Float, out:FMat):FMat = FFunctions.betarnd(p, q, out);
   
   def betarnd(p:Float, q:Float, m:Int, n:Int):FMat = {
     betarnd(p, q, FMat(m, n))
@@ -382,17 +343,7 @@ object SciFunctions {
     dbetarnd(p, q, DMat(m, n))
   }
 
-  def binornd(k:Int, p:Double, out:IMat):IMat = {
-    if (Mat.useMKLRand) {
-    	viRngBinomial( METHOD, stream, out.length, out.data, k, p );
-    } else if (Mat.useSTLRand) {
-      IBinomial(METHOD, engine, out.length, out.data, k, p);
-    } else {
-    	var i = 0; while (i < out.length) {out.data(i) = acmrand.nextBinomial(k, p).toInt; i += 1;}  
-    }
-    Mat.nflops += 20L*out.length
-    out
-  }
+  def binornd(k:Int, p:Double, out:IMat):IMat = FFunctions.binornd(k, p, out);
   
   def binornd(k:Int, p:Double, m:Int, n:Int):IMat = {
     binornd(k, p, IMat(m, n))
@@ -402,65 +353,25 @@ object SciFunctions {
 
   def binornd(p:GMat, n:GIMat):GIMat = GFunctions.binornd(p, n, GIMat(p.nrows, p.ncols));
   
-  def bernrnd(p:Double, out:IMat):IMat = {
-    if (Mat.useMKLRand) {
-    	viRngBernoulli( METHOD, stream, out.length, out.data, p );
-    } else if (Mat.useSTLRand) {
-      IBernoulli(METHOD, engine, out.length, out.data, p);
-    } else {
-    	var i = 0; while (i < out.length) {out.data(i) = if (acmrand.nextUniform(0,1) < p) 1 else 0; i += 1;}  
-    }
-    Mat.nflops += 20L*out.length
-    out
-  }
+  def bernrnd(p:Double, out:IMat):IMat = bernrnd(p, out);
   
   def bernrnd(p:Double, m:Int, n:Int):IMat = {
     bernrnd(p, IMat(m, n))
   }
   
-  def geornd(p:Double, out:IMat):IMat = {
-    if (Mat.useMKLRand) {
-    	viRngGeometric( METHOD, stream, out.length, out.data, p );
-    } else if (Mat.useSTLRand) {
-      IGeometric(METHOD, engine, out.length, out.data, p);
-    } else {
-    	var i = 0; while (i < out.length) {out.data(i) = acmrand.nextExponential(p).toInt; i += 1;}  
-    }
-    Mat.nflops += 20L*out.length
-    out
-  }
+  def geornd(p:Double, out:IMat):IMat = geornd(p, out);
 
   def geornd(p:Double, m:Int, n:Int):IMat = {
     geornd(p, IMat(m, n))
   }
   
-  def nbinrnd(a:Double, p:Double, out:IMat):IMat = {
-    if (Mat.useMKLRand) {
-    	viRngNegbinomial( METHOD, stream, out.length, out.data, a, p );
-    } else if (Mat.useSTLRand) {
-      INegBinomial(METHOD, engine, out.length, out.data, a.toInt, p);
-    } else {
-    	throw new RuntimeException("No pure java Negative Binomial implementation")
-    }
-    Mat.nflops += 20L*out.length
-    out
-  }	
+  def nbinrnd(a:Double, p:Double, out:IMat):IMat = FFunctions.nbinrnd(a, p, out);
   
   def nbinrnd(a:Double, p:Double, m:Int, n:Int):IMat = {
     nbinrnd(a, p, IMat(m, n))
   }	
   
-  def poissrnd(lambda:Double, out:IMat):IMat = {
-    if (Mat.useMKLRand) {
-    	viRngPoisson( METHOD, stream, out.length, out.data, lambda );
-    } else if (Mat.useSTLRand) {
-      IPoisson(METHOD, engine, out.length, out.data, lambda);
-    } else {
-    	var i = 0; while (i < out.length) {out.data(i) = acmrand.nextPoisson(lambda).toInt; i += 1;}  
-    }
-    Mat.nflops += 20L*out.length
-    out
-  }
+  def poissrnd(lambda:Double, out:IMat):IMat = FFunctions.poissrnd(lambda, out);
   
   def poissrnd(lambda:Double, m:Int, n:Int):IMat = {
     poissrnd(lambda, IMat(m, n))
@@ -771,7 +682,7 @@ object SciFunctions {
   def maxi(a:GMat, dir:Int):GMat  = a.reduceOp(null, dir, Float.MinValue, BinOp.op_max)
   def mini(a:GMat, dir:Int):GMat  = a.reduceOp(null, dir, Float.MaxValue, BinOp.op_min)
   def sum(a:GMat, dir:Int):GMat   = a.reduceOp(null, dir, 0f, BinOp.op_add)
-  def prod(a:GMat, dir:Int):GMat   = a.reduceOp(null, dir, 0f, BinOp.op_mul)
+  def prod(a:GMat, dir:Int):GMat   = a.reduceOp(null, dir, 1f, BinOp.op_mul)
  
   def maxi(a:GMat):GMat           = a.reduceOp(null, 0, Float.MinValue, BinOp.op_max)
   def mini(a:GMat):GMat           = a.reduceOp(null, 0, Float.MaxValue, BinOp.op_min)
@@ -1549,73 +1460,13 @@ object SciFunctions {
     }
   }
   
-  def LXdistance(a:FMat, b:FMat, omat:Mat, p:Float):FMat = {
-    if (a.ncols != b.ncols) {
-      throw new RuntimeException("LXdistance: ncols must match")
-    }
-    val c = FMat.newOrCheckFMat(a.nrows, b.nrows, omat, a.GUID, b.GUID, "LXdistance".##)
-    if (Mat.hasCUDA > 0) GMat.LXdist(a, b, c, p)
-    else {
-    	val tmp = DMat.newOrCheckDMat(a.nrows, 1, null, a.GUID, b.GUID, "LXdistance_1".##) 
-    	val tmp2 = DMat.newOrCheckDMat(a.nrows, 1, null, a.GUID, b.GUID, "LXdistance_2".##) 
-    	val pinv = 1.0f/p
-    	var i = 0
-    	while (i < b.nrows) { 
-    		var k = 0
-    		while (k < a.nrows) {
-    			tmp.data(k) = 0
-    			k += 1
-    		}
-    		var j = 0
-    		while (j < a.ncols) {
-    			k = 0
-    			if (p == 0f) {
-    				while (k < a.nrows) {
-    					val xx = a.data(k + j*a.nrows) - b.data(i + j*b.nrows)
-    					tmp.data(k) = math.max(tmp.data(k),math.abs(xx))
-    					k += 1
-    				}
-    			} else if (p == 1f) {
-    				while (k < a.nrows) {
-    					val xx = a.data(k + j*a.nrows) - b.data(i + j*b.nrows)
-    					tmp.data(k) += math.abs(xx)
-    					k += 1
-    				}
-    			} else {
-    				while (k < a.nrows) {
-    					val xx = a.data(k + j*a.nrows) - b.data(i + j*b.nrows)
-    					tmp2.data(k) = math.abs(xx)
-    					k += 1
-    				}
-    				doPowx(a.nrows, tmp2.data, p, tmp2.data)
-    				k = 0
-    				while (k < a.nrows) {
-    					val xx = a.data(k + j*a.nrows) - b.data(i + j*b.nrows)
-    					tmp.data(k) += tmp2.data(k)
-    					k += 1
-    				}
-    			}
-    			j += 1
-    		}
-    		k = 0
-    		val dofast = (p == 0f || p == 1f)
-    		while (k < a.nrows) {
-    			val xx = tmp.data(k)
-    			c.data(k + i*c.nrows) = if (dofast) xx.toFloat else math.pow(xx, pinv).toFloat
-    			k += 1
-    		}
-    		i += 1
-    	}
-    	Mat.nflops += 3L*a.nrows*a.ncols*b.nrows
-    	c
-    }
-  }
+  def LXdistance(a:FMat, b:FMat, omat:Mat, p:Float):FMat = FFunctions.LXdistance(a, b, omat, p);
   
   /* 
    * Double scientific functions. Most have both an MKL and non-MKL implementation.
    * The MKL implementation is used unless !Mat.useMKLRand = true. 
    */
-  
+
   val signumDFun = (x:Double) => math.signum(x);
   def sign(a:DMat, out:Mat) = applyDFun(a, out, null, signumDFun, 1L);
   def sign(a:DMat):DMat = sign(a, null);
@@ -1795,19 +1646,14 @@ object SciFunctions {
    * The MKL implementation is used unless !Mat.useMKLRand = true. 
    */
     
-  val signumFun = (x:Float) => math.signum(x).toFloat;
-  def sign(a:FMat, out:Mat) = applySFun(a, out, null, signumFun, 1L);
-  def sign(a:FMat):FMat = sign(a, null);
+  def sign(a:FMat, out:Mat) = FFunctions.sign(a, out);
+  def sign(a:FMat):FMat = FFunctions.sign(a, null);
   
-  val absFun = (x:Float) => math.abs(x)
-  val vsAbsFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAbs(n,x,y)
-  def abs(a:FMat, out:Mat) = applySFun(a, out, vsAbsFun, absFun, 1L)
-  def abs(a:FMat):FMat = abs(a, null);
+  def abs(a:FMat, out:Mat) = FFunctions.abs(a, out);
+  def abs(a:FMat):FMat = FFunctions.abs(a, null);
 
-  val vsExpFunMKL = (n:Int, a:Array[Float], b:Array[Float]) => vsExp(n, a, b)
-  val vsExpFun = (n:Int, a:Array[Float], b:Array[Float]) => {var i=0 ; while (i<n) {b(i) = math.exp(a(i)).toFloat; i+=1}}
-  def exp(a:FMat, out:Mat) = applySFunV(a, out, vsExpFunMKL, vsExpFun, 10L)
-  def exp(a:FMat):FMat = exp(a, null);
+  def exp(a:FMat, out:Mat) = FFunctions.exp(a, out);
+  def exp(a:FMat):FMat = FFunctions.exp(a, null);
   
   val expm1Fun = (x:Float) => math.expm1(x).toFloat
   val vsExpm1Fun = (n:Int, x:Array[Float], y:Array[Float]) => vsExpm1(n,x,y)

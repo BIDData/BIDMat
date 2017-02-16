@@ -695,10 +695,93 @@ object GFunctions {
     Mat.nflops += keys.length
   }
   
-  def LXdist(aa:FMat, bb:FMat, oo:FMat, p:Float):GMat = {
-    val a = GMat(aa);
-    val b = GMat(bb);
-    val omat = GMat(oo);
+  
+  def GPUmult(a:FMat, b:FMat, omat:Mat, btrans:Boolean):FMat = {
+    val bnrows = if (btrans) b.ncols else b.nrows
+    val bncols = if (btrans) b.nrows else b.ncols
+    if (a.ncols != bnrows) {
+      throw new RuntimeException("dimensions mismatch in xG")
+    } else {
+      val maxrows = 8192
+      val maxcols = 8192
+      val c = FMat.newOrCheckFMat(a.nrows, bncols, omat, a.GUID, b.GUID, "GPUmult".##)
+      val rblkk = if (Mat.hasCUDA > 1) 2 else 1
+      val cblkk = if (Mat.hasCUDA > 3) 2 else 1
+      val rblk = rblkk*(math.max(1, math.ceil(c.nrows/maxrows/rblkk).toInt))
+      val cblk = cblkk*(math.max(1, math.ceil(c.ncols/maxcols/cblkk).toInt))
+      val kblk = math.max(1, math.ceil(a.ncols/maxcols).toInt)
+      val gcrows = 32*(c.nrows/rblk/32)
+      val gccols = 32*(c.ncols/cblk/32)
+      val garows = gcrows
+      val gacols = 32*(a.ncols/kblk/32)
+      val gbrows = if (btrans) gccols else gacols
+      val gbcols = if (btrans) gacols else gccols
+      
+      val done = IMat(rblkk*cblkk,1)
+      for (ix <- 0 until rblkk) {
+        for (iy <- 0 until cblkk) {
+          Future {
+            GFunctions.setGPU(ix+iy*2)
+            val aa = new Pointer
+            val bb = new Pointer
+            val cc = new Pointer
+            var err = cudaMalloc(aa, 1L*garows*gacols*Sizeof.FLOAT);
+            if (err != 0) throw new RuntimeException("CUDA alloc failed " + cudaGetErrorString(err))
+            err = cudaMalloc(bb, 1L*gbrows*gbcols*Sizeof.FLOAT);
+            if (err != 0) throw new RuntimeException("CUDA alloc failed " + cudaGetErrorString(err))
+            err = cudaMalloc(cc, 1L*gcrows*gccols*Sizeof.FLOAT);
+            if (err != 0) throw new RuntimeException("CUDA alloc failed "+err)
+
+            var i = ix*gcrows; while (i < c.nrows) {
+              val ni = math.min(gcrows, c.nrows - i)
+              var j = iy*gccols; while (j < c.ncols) {
+                val nj = math.min(gccols, c.ncols - j)
+                var k = 0; while (k < a.ncols) {
+                  val nk = math.min(gacols, a.ncols - k)
+                  err = cudaMemcpy2D(aa, garows*Sizeof.FLOAT, Pointer.to(a.data).withByteOffset(1L*(i+k*a.nrows)*Sizeof.FLOAT), 
+                      a.nrows*Sizeof.FLOAT, ni*Sizeof.FLOAT, nk, cudaMemcpyHostToDevice)
+                  cudaDeviceSynchronize     
+                  if (err != 0) throw new RuntimeException("CUDA copy a failed "+err)
+                  if (btrans) {
+                    err = cudaMemcpy2D(bb, gbrows*Sizeof.FLOAT, Pointer.to(b.data).withByteOffset(1L*(j+k*b.nrows)*Sizeof.FLOAT), 
+                        b.nrows*Sizeof.FLOAT, nj*Sizeof.FLOAT, nk, cudaMemcpyHostToDevice)
+                  } else {
+                    err = cudaMemcpy2D(bb, gbrows*Sizeof.FLOAT, Pointer.to(b.data).withByteOffset(1L*(k+j*b.nrows)*Sizeof.FLOAT), 
+                        b.nrows*Sizeof.FLOAT, nk*Sizeof.FLOAT, nj, cudaMemcpyHostToDevice) 
+                  }
+                  cudaDeviceSynchronize
+                  if (err != 0) throw new RuntimeException("CUDA copy b failed "+err)
+
+                  cublasSgemm('n', if (btrans) 't' else 'n', ni, nj, nk, 1.0f, aa, garows, bb, gbrows, if (k==0) 0f else 1f, cc, gcrows)
+                  
+                  cudaDeviceSynchronize
+                  err = cudaGetLastError
+                  if (err != 0) throw new RuntimeException("Cublas error in xG, sgemm "+err)
+                  k += gacols
+                }
+                err = cudaMemcpy2D(Pointer.to(c.data).withByteOffset(1L*(i+j*c.nrows)*Sizeof.FLOAT), c.nrows*Sizeof.FLOAT, cc, gcrows*Sizeof.FLOAT, ni*Sizeof.FLOAT, nj, cudaMemcpyDeviceToHost) 
+                cudaDeviceSynchronize
+                if (err != 0) throw new RuntimeException("CUDA copy c failed "+err)
+                j += cblkk*gccols
+              }
+              i += rblkk*gcrows
+            }
+
+            cudaFree(cc)
+            cudaFree(bb)
+            cudaFree(aa)
+            done(ix+2*iy,0) = 1
+          }
+        }
+      }
+      while (SciFunctions.mini(done).v == 0) {Thread.`yield`}
+
+      Mat.nflops += 2L * a.nrows * a.ncols * bncols
+      c
+    }
+  }
+  
+   def LXdist(a:GMat, b:GMat, omat:GMat, p:Float):GMat = {
     if (a.ncols != b.ncols) {
       throw new RuntimeException("LXdist number of columns = number of features must match")
     }
@@ -715,5 +798,126 @@ object GFunctions {
     if (err != 0) throw new RuntimeException("LXdist scaling error "+err)
     c
   }
+
   
+  def LXdist(a:FMat, b:FMat, omat:FMat, p:Float):FMat = {
+    (a, b, omat) match {
+      case (aa:GMat, bb:GMat, oo:GMat) => LXdist(aa, bb, oo, p);
+      case _ => {
+    	  if (a.ncols != b.ncols) {
+    		  throw new RuntimeException("LXdist number of columns = number of features must match")
+    	  }
+    	  val c = FMat.newOrCheckFMat(a.nrows, b.nrows, omat, a.GUID, b.GUID, "LXdist".##);
+    	  val easyp = (p == 0f || p == 1f || p == 2f);
+    	  val takeroot = (p != 0f && p != 1f);
+    	  val maxrows = if (easyp) 8192 else 2048;
+    	  val maxcols = if (easyp) 8192 else 2048;
+    	  val rblkk = if (Mat.hasCUDA > 1) 2 else 1;
+    	  val cblkk = if (Mat.hasCUDA > 3) 2 else 1;
+    	  val rblk = rblkk*(math.max(1, math.ceil(c.nrows/maxrows/rblkk).toInt));
+    	  val cblk = cblkk*(math.max(1, math.ceil(c.ncols/maxcols/cblkk).toInt));
+    	  val kblk = math.max(1, math.ceil(a.ncols/maxcols).toInt);
+    	  val gcrows = 32*(c.nrows/rblk/32);
+    	  val gccols = 32*(c.ncols/cblk/32);
+    	  val garows = gcrows;
+    	  val gacols = 32*(a.ncols/kblk/32);
+    	  val gbrows = gccols;
+    	  val gbcols = gacols;
+
+    	  val done = IMat(rblkk*cblkk,1);
+    	  for (ix <- 0 until rblkk) {
+    		  for (iy <- 0 until cblkk) {
+    			  Future {
+    				  val ithread = ix+iy*2;
+    				  var err = 0;
+    				  GFunctions.setGPU(ithread);
+    				  val pinv = if (takeroot) GMat(1f/p) else null:GMat;
+    				  val ga = GMat(garows, gacols);
+    				  val gb = GMat(gbrows, gbcols);
+    				  val gc = GMat(gcrows, gccols);
+    				  val aa = ga.pdata;
+    				  val bb = gb.pdata;
+    				  val cc = gc.pdata;        
+    				  var i = ix*gcrows; 
+    				  while (i < c.nrows) {
+    					  val ni = math.min(gcrows, c.nrows - i);
+    					  var j = iy*gccols; 
+    					  while (j < c.ncols) {
+    						  val nj = math.min(gccols, c.ncols - j);
+    						  var k = 0;
+    						  cudaMemset(cc, 0, 1L*gcrows*gccols*Sizeof.FLOAT);
+    						  cudaDeviceSynchronize;
+    						  while (k < a.ncols) {
+    							  val nk = math.min(gacols, a.ncols - k);
+    							  err = cudaMemcpy2D(aa, garows*Sizeof.FLOAT, Pointer.to(a.data).withByteOffset(1L*(i+k*a.nrows)*Sizeof.FLOAT), 
+    									  a.nrows*Sizeof.FLOAT, ni*Sizeof.FLOAT, nk, cudaMemcpyHostToDevice);
+    							  cudaDeviceSynchronize;
+    							  if (err != 0) throw new RuntimeException("LXdist copy a failed "+err);
+    							  err = cudaMemcpy2D(bb, gbrows*Sizeof.FLOAT, Pointer.to(b.data).withByteOffset(1L*(j+k*b.nrows)*Sizeof.FLOAT), 
+    									  b.nrows*Sizeof.FLOAT, nj*Sizeof.FLOAT, nk, cudaMemcpyHostToDevice);
+    							  cudaDeviceSynchronize;
+    							  if (err != 0) throw new RuntimeException("LXdist copy b failed "+err);
+
+    							  err=CUMAT.distances(aa, garows, bb, gbrows, cc, gcrows, nk, ni, nj, p);
+
+    							  //                if (err != 0) throw new RuntimeException("CUDA error in LXdist %d thread %d %d %d %d" format (err, ithread, nk, ni, nj))
+    							  if (err != 0) println("CUDA error in LXdist %d thread %d %d %d %d" format (err, ithread, nk, ni, nj));
+    							  k += gacols;
+    						  }
+    						  if (takeroot) err = CUMAT.applyop(cc, ni, nj, pinv.pdata, 1, 1, cc, GMat.BinOp.op_pow);
+    						  if (err != 0) throw new RuntimeException("LXdist scale c failed "+err);
+    						  err = cudaMemcpy2D(Pointer.to(c.data).withByteOffset(1L*(i+j*c.nrows)*Sizeof.FLOAT), c.nrows*Sizeof.FLOAT, 
+    								  cc, gcrows*Sizeof.FLOAT, ni*Sizeof.FLOAT, nj, cudaMemcpyDeviceToHost);
+    						  cudaDeviceSynchronize;
+    						  if (err != 0) throw new RuntimeException("LXdist copy c failed "+err);
+    						  j += cblkk*gccols;
+    					  }
+    					  i += rblkk*gcrows;
+    				  }
+    				  gc.free;
+    				  gb.free;
+    				  ga.free;
+    				  if (takeroot) pinv.free
+    				  done(ithread,0) = 1
+    			  }
+    		  }
+    	  }
+    	  while (SciFunctions.mini(done).v == 0) Thread.`yield`;
+    	  GFunctions.setGPU(0);
+    	  Mat.nflops += 3L * c.nrows * c.ncols * a.ncols;
+    	  c;
+      }
+    }
+  }
+  
+  def sortdown2(a:DMat) = _sort2(a, true)
+  
+  def _sort2(a:DMat, asc:Boolean):(DMat, IMat) = {
+    if (a.ncols != 1) throw new RuntimeException("_sort2 works only on column pdata")
+    val outv = DMat.newOrCheckDMat(a.nrows, a.ncols, null, a.GUID, "_sort2_1".hashCode)
+    val outi = IMat.newOrCheckIMat(a.nrows, a.ncols, null, a.GUID, "_sort2_2".hashCode)
+    if (Mat.hasCUDA > 0) {
+      val (dmy, freebytes, allbytes) = SciFunctions.GPUmem
+      if (a.length * 26L < freebytes) {
+        var i = 0; while (i < a.nrows) {outi(i) = i; i += 1}
+        val gv = GMat(a.nrows, 2*a.ncols)
+        val gi = GIMat(outi)
+        var err = cudaMemcpy(gv.pdata, Pointer.to(a.data), 1L*a.nrows*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyHostToDevice)
+        if (err != 0) throw new RuntimeException("sortGPU copy v error %d" format err)    
+        cudaDeviceSynchronize
+        CUMAT.dsortk(gv.pdata, gi.pdata, a.nrows, if (asc) 1 else 0)
+        err = cudaMemcpy(Pointer.to(outv.data), gv.pdata, 1L*a.nrows*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyDeviceToHost)
+        if (err != 0) throw new RuntimeException("sortGPU copy v error %d" format err)
+        outi <-- gi
+        gi.free
+        gv.free
+      } else {
+        DenseMat.sort2(a, 1, false, outv, outi)
+      }
+    } else {
+      DenseMat.sort2(a, 1, false, outv, outi)
+    }
+    (outv, outi)
+  }
+
 }
