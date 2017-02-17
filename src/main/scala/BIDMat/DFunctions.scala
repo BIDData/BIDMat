@@ -231,5 +231,77 @@ object DFunctions {
   val vdErfDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdErf(n,x,y)
   def erf(a:DMat, out:Mat) = applyDFun(a, out, vdErfDFun, erfDFun, 10L)
   def erf(a:DMat):DMat = erf(a, null)
+  
+  val vdErfInvFun = (n:Int, x:Array[Double], y:Array[Double]) => vdErfInv(n,x,y)
+  def erfinv(a:DMat, out:Mat) = applyDFun(a, out, vdErfInvFun, null, 10L)
+  def erfinv(a:DMat):DMat = erfinv(a, null);
+ 
+  val erfcFun = (x:Double) => Erf.erfc(x)
+  val vdErfcFun = (n:Int, x:Array[Double], y:Array[Double]) => vdErfc(n,x,y)
+  def erfc(a:DMat, out:Mat) = applyDFun(a, out, vdErfcFun, erfcFun, 10L)
+  def erfc(a:DMat):DMat = erfc(a, null);
+    
+  val vdErfcInvdFun = (n:Int, x:Array[Double], y:Array[Double]) => vdErfcInv(n,x,y)
+  def erfcinv(a:DMat, out:Mat) = applyDFun(a, out, vdErfcInvdFun, null, 10L)
+  def erfcinv(a:DMat):DMat = erfcinv(a, null)
+  
+  val vdCdfNormDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdCdfNorm(n,x,y)
+  def normcdf(a:DMat, out:Mat) = applyDFun(a, out, vdCdfNormDFun, null, 10L)
+  def normcdf(a:DMat):DMat = normcdf(a, null)
+  
+  val vdCdfNormInvdFun = (n:Int, x:Array[Double], y:Array[Double]) => vdCdfNormInv(n,x,y)
+  def normcdfinv(a:DMat, out:Mat) = applyDFun(a, out, vdCdfNormInvdFun, null, 10L)
+  def normcdfinv(a:DMat):DMat = normcdfinv(a, null)
+  
+  val gammaDFun = (x:Double) => Gamma.gamma(x)
+  val vdTGammaDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdTGamma(n,x,y)
+  def gamma(a:DMat, out:Mat) = applyDFun(a, out, vdTGammaDFun, gammaDFun, 10L)
+  def gamma(a:DMat):DMat = gamma(a, null);
+  def Γ(a:DMat, out:Mat) = gamma(a, out);
+  def Γ(a:DMat) = gamma(a);
+  
+  val gammalnDFun = (x:Double) => Gamma.logGamma(x)
+  val vdLGammaDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdLGamma(n,x,y)
+  def gammaln(a:DMat, out:Mat) = applyDFun(a, out, vdLGammaDFun, gammalnDFun, 10L)
+  def gammaln(a:DMat):DMat = gammaln(a, null)
+
+  val ceilDFun = (x:Double) => math.ceil(x)
+  val vdCeilDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdCeil(n,x,y)  
+  def ceil(a:DMat, out:Mat) = applyDFun(a, out, vdCeilDFun, ceilDFun, 1L)
+  def ceil(a:DMat):DMat = ceil(a, null)
+  
+  val floorDFun = (x:Double) => math.floor(x)
+  val vdFloorDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdFloor(n,x,y)
+  def floor(a:DMat, out:Mat) = applyDFun(a, out, vdFloorDFun, floorDFun, 1L)
+  def floor(a:DMat):DMat = floor(a, null)
+
+  val roundDFun = (x:Double) => math.floor(x+0.5)
+  val vdRoundDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdRound(n,x,y)
+  def round(a:DMat, out:Mat) = applyDFun(a, out, vdRoundDFun, roundDFun, 1L)
+  def round(a:DMat):DMat = round(a, null)
+  
+  val truncDFun = (x:Double) => math.floor(math.abs(x))*math.signum(x)
+  val vdTruncDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdTrunc(n,x,y)
+  def trunc(a:DMat, out:Mat) = applyDFun(a, out, vdTruncDFun, truncDFun, 1L)
+  def trunc(a:DMat):DMat = trunc(a, null)
+  
+  val atan2DFun = (x:Double, y:Double) => math.atan2(x, y)
+  val vdAtan2DFun = (n:Int, x:Array[Double], y:Array[Double], z:Array[Double]) => vdAtan2(n,x,y,z)
+  def atan2(a:DMat, b:DMat, out:Mat) = applyD2Fun(a, b, out, vdAtan2DFun, atan2DFun, 10L)
+  def atan2(a:DMat, b:DMat):DMat = atan2(a, b, null)
+  
+  val powDFun = (x:Double, y:Double) => math.pow(x, y)
+  val vdPowDFun = (n:Int, x:Array[Double], y:Array[Double], z:Array[Double]) => vdPow(n,x,y,z)
+  def pow(a:DMat, b:DMat, out:Mat) = applyD2Fun(a, b, out, vdPowDFun, powDFun, 10L)
+  def pow(a:DMat, b:DMat):DMat = pow(a, b, null)
+  val vdPowxDFun = (n:Int, x:Array[Double], y:Double, z:Array[Double]) => vdPowx(n,x,y,z)
+  def powx(a:DMat, b:Double, out:Mat) = applyD2xFun(a, b, out, vdPowxDFun, powDFun, 10L)
+  def powx(a:DMat, b:Double):DMat = powx(a, b, null)
+  
+  val exppsiDFun = (x:Double)=>if (x<1.0) 0.5*x*x else x-0.5
+  def exppsi(a:DMat, out:Mat) = applyDFun(a, out, null, exppsiDFun, 3L)
+  def exppsi(a:DMat):DMat = exppsi(a, null)
+  
+
 
 }
