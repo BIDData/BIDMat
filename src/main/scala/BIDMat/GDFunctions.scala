@@ -8,8 +8,8 @@ import edu.berkeley.bid.RAND;
 import edu.berkeley.bid.RAND._;
 import edu.berkeley.bid.SLATEC;
 import java.util.Random._;
-import MatFunctions._
-import SciFunctions._
+//import MatFunctions._
+import SciState._
 import org.apache.commons.math3.special._
 import org.apache.commons.math3.util.FastMath
 import org.apache.commons.math3.random.RandomDataGenerator;

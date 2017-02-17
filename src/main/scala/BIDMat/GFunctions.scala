@@ -8,6 +8,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64
 import edu.berkeley.bid.CUMAT
+import SciState._;
 import jcuda._
 import jcuda.runtime._
 import jcuda.runtime.JCuda._
@@ -18,10 +19,7 @@ import jcuda.jcusparse._
 
 
 object GFunctions {
- 
-   var GPUSEED:Long = SciFunctions.SEED;
-   var OFFSET = 0;
-   var GPUseedSteps:Int = 10;
+
    var cudarng:Array[AnyRef] = null; 
   
    def initCUDArngs = {
@@ -60,7 +58,7 @@ object GFunctions {
   def moveGPUseed = {
     var i = 0;
     while (i < GPUseedSteps) {
-      GPUSEED = SciFunctions.myrand.nextLong();
+      GPUSEED = SciState.myrand.nextLong();
       i += 1;
     }
   }

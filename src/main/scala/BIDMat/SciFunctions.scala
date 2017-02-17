@@ -9,30 +9,12 @@ import edu.berkeley.bid.RAND._;
 import edu.berkeley.bid.SLATEC;
 import java.util.Random._;
 import MatFunctions._;
+import SciState._;
 import org.apache.commons.math3.special._
 import org.apache.commons.math3.util.FastMath
 import org.apache.commons.math3.random.RandomDataGenerator;
 
 object SciFunctions {
-  var SEED:Long = 1452434413113462553L;
-  var ISEED:Int = 1341432134;
-  var OFFSET:Long = 0;
-  var GPUSEED:Long = SEED;
-  var GPUseedSteps:Int = 10;
-  final val myrand = new java.util.Random(SEED);
-  final val acmrand = new RandomDataGenerator();
-  acmrand.reSeed(SEED);
-  // VSL random number generator initialization
-  final val BRNG:Int = if (!Mat.useMKLRand) 0 else BRNG_MCG31
-  final val METHOD:Int = 0
-  final val stream = if (Mat.useMKLRand) new VSL() else null;
-  final val errcode = if (Mat.useMKLRand) vslNewStream(stream, BRNG, ISEED) else 0;
-  final val engine = if (Mat.useSTLRand) new RAND() else null;
-  final val errcode2 = if (Mat.useSTLRand) newEngine(engine, 0, ISEED) else 0;
-  // VML mode control, controlled with setVMLmode()
-  final val VMLdefault = if (!Mat.useMKLRand) 0 else VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_HA   // Default
-  final val VMLfast =    if (!Mat.useMKLRand) 0 else VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_LA   // Faster, Low accuracy, default error handling
-  final val VMLturbo =   if (!Mat.useMKLRand) 0 else VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_EP   // Fastest, Lower accuracy, default error handling
 
   if (Mat.hasCUDA > 0) {
   	GFunctions.initJCUDA
@@ -127,14 +109,14 @@ object SciFunctions {
   def rand(dims:IMat, minv:Float, maxv:Float):FMat = FFunctions.rand(minv, maxv, FMat.make(dims));
   def rand(m:Int, n:Int):FMat = rand(m, n, 0, 1); 
   def rand(dims:IMat):FMat = rand(dims, 0, 1);
-  def rand(out:FMat):FMat = FFunctions.rand(0.0f, 1.0f, out);
+  def rand(out:FMat):FMat = rand(0.0f, 1.0f, out);
   
   def rand(minv:Double, maxv:Double, out:DMat):DMat = DFunctions.rand(minv, maxv, out); 
   def drand(m:Int, n:Int, minv:Double, maxv:Double):DMat = DFunctions.rand(minv, maxv, DMat(m, n));
   def drand(dims:IMat, minv:Double, maxv:Double):DMat = DFunctions.rand(minv, maxv, DMat.make(dims));
   def drand(m:Int, n:Int):DMat = drand(m, n, 0, 1);
   def drand(dims:IMat):DMat = drand(dims, 0, 1);
-  def rand(out:DMat):DMat = DFunctions.rand(0.0, 1.0, out);
+  def rand(out:DMat):DMat = rand(0.0, 1.0, out);
   
   def rand(out:GMat):GMat = GFunctions.rand(out); 
   def grand(nr:Int, nc:Int):GMat = GFunctions.rand(Array(nr, nc));
@@ -155,21 +137,23 @@ object SciFunctions {
  
   def normrnd(mu:Float, sig:Float, out:FMat):FMat = FFunctions.normrnd(mu, sig, out);  
   def normrnd(mu:Float, sig:Float, m:Int, n:Int):FMat = normrnd(mu, sig, FMat(m, n));
-  def normrnd(mu:Float, sig:Float, dims:IMat):FMat = normrnd(mu, sig, FMat(dims));
+  def normrnd(mu:Float, sig:Float, dims:IMat):FMat = normrnd(mu, sig, FMat.make(dims));
 
   def normrnd(mu:Double, sig:Double, out:DMat):DMat = DFunctions.normrnd(mu, sig, out);
   def dnormrnd(mu:Double, sig:Double, m:Int, n:Int):DMat = normrnd(mu, sig, DMat(m, n));
-  def normrnd(mu:Float, sig:Float, out:CMat):CMat = CFunctions.normrnd(mu, sig, out);
+  def dnormrnd(mu:Float, sig:Float, dims:IMat):DMat = normrnd(mu, sig, DMat.make(dims));  
   
+  def normrnd(mu:Float, sig:Float, out:CMat):CMat = CFunctions.normrnd(mu, sig, out);
   def cnormrnd(mu:Float, sig:Float, m:Int, n:Int):CMat = normrnd(mu, sig, CMat(m, n));
+  def cnormrnd(mu:Float, sig:Float, dims:IMat):CMat = normrnd(mu, sig, CMat.make(dims));
   
   def normrnd(mu:Float, sig:Float, out:GMat):GMat = GFunctions.normrnd(mu, sig, out)
   def gnormrnd(mu:Float, sig:Float, nr:Int, nc:Int):GMat = GFunctions.normrnd(mu, sig, GMat(nr, nc));
-  def gndnormrnd(mu:Float, sig:Float, dims:IMat):GMat = GFunctions.normrnd(mu, sig, GMat(dims));
+  def gndnormrnd(mu:Float, sig:Float, dims:IMat):GMat = GFunctions.normrnd(mu, sig, GMat.make(dims));
   
   def normrnd(mu:Double, sig:Double, out:GDMat):GDMat = GDMat.normrnd(mu, sig, out);
   def gdnormrnd(mu:Double, sig:Double, nr:Int, nc:Int):GDMat =  GDMat.normrnd(mu, sig, GDMat(nr, nc));
-  def gdndnormrnd(mu:Float, sig:Float, dims:IMat):GDMat = GDMat.normrnd(mu, sig, GDMat(dims));
+  def gdndnormrnd(mu:Float, sig:Float, dims:IMat):GDMat = GDMat.normrnd(mu, sig, GDMat.make(dims));
  
   def normrnd(mu:Double, sig:Double, out:Mat):Mat = {
     out match {
@@ -177,6 +161,7 @@ object SciFunctions {
     case a:GDMat => normrnd(mu, sig, a);
     case a:FMat => normrnd(mu.toFloat, sig.toFloat, a);
     case a:DMat => normrnd(mu, sig, a);
+    case a:CMat => normrnd(mu, sig, a);
     }
   }
 
@@ -204,39 +189,19 @@ object SciFunctions {
     }
   }
    
-  def gamrnd(a:FMat, b:FMat, out:FMat):FMat = { 
-    Random.gamrnd(a, b, out, myrand);
-  } 
-  
   def gamrnd(a:FMat, b:FMat):FMat = { 
     val nrows = math.max(a.nrows, b.nrows);
     val ncols = math.max(a.ncols, b.ncols);
     val out = FMat(nrows, ncols);
-    gamrnd(a, b, out);
+    FFunctions.gamrnd(a, b, out);
   }
 
-  def gamrnd(shape:Float, scale:Float, out:FMat):FMat = FFunctions.gamrnd(shape, scale, out)
+  def gamrnd(shape:Float, scale:Float, out:FMat):FMat = FFunctions.gamrnd(shape, scale, out);
 
-  def gamrnd(shape:Float, scale:Float, m:Int, n:Int):FMat = {
-    gamrnd(shape, scale, FMat(m, n))
-  }
-  
-  def gamrnd(shape:Double, scale:Double, out:DMat):DMat = {
-    vdRngGamma( METHOD, stream, out.length, out.data, shape, 0, scale )
-    Mat.nflops += 20L*out.length;
-      if (Mat.useMKLRand) {
-    	vdRngGamma( METHOD, stream, out.length, out.data, shape, 0, scale );
-    } else if (Mat.useSTLRand) {
-      DGamma(METHOD, engine, out.length, out.data, shape, scale);
-    } else {
-    	var i = 0; while (i < out.length) {out.data(i) = acmrand.nextGamma(shape, scale); i += 1;}  
-    }
-    out
-     
-  }
+  def gamrnd(shape:Float, scale:Float, m:Int, n:Int):FMat = gamrnd(shape, scale, FMat(m, n));
 
   def dgamrnd(shape:Double, scale:Double, m:Int, n:Int):DMat = {
-    gamrnd(shape, scale, DMat(m, n))
+    DFunctions.gamrnd(shape, scale, DMat(m, n))
   }
   
   def gamrnd(a:Mat, b:Mat, out:Mat):Mat = {
@@ -1250,70 +1215,7 @@ object SciFunctions {
   }
 
   
-  def applyDFun(a:DMat, omat:Mat, vfn:(Int, Array[Double], Array[Double])=>Unit, efn:(Double)=>Double, nflops:Long) ={
-      val out = DMat.newOrCheckDMat(a.nrows, a.ncols, omat, a.GUID, vfn.##, efn.##)
-	    if (!Mat.useMKLRand || vfn == null) {
-	      if (efn == null) {
-	        throw new RuntimeException("no Scala builtin version of this math function, sorry")
-	      } 
-	      var i = 0; val len = a.length; val odata = out.data; val adata = a.data
-	      while (i < len) {odata(i) = efn(adata(i)); i += 1}
-	    } else {
-	      vfn(a.length, a.data, out.data)
-	    }
-	    Mat.nflops += nflops*a.length
-	    out
-	  }
-
-  def applyDFunV(a:DMat, omat:Mat, vfn:(Int, Array[Double], Array[Double])=>Unit,
-                efn:(Int, Array[Double], Array[Double])=>Unit, nflops:Long) = {
-	    val out = DMat.newOrCheckDMat(a.nrows, a.ncols, omat, a.GUID, vfn.##, efn.##)
-	    if (!Mat.useMKLRand) {
-	      if (efn == null) {
-	        throw new RuntimeException("no Scala builtin version of this math function, sorry")
-	      } 
-	      efn(a.length, a.data, out.data)
-	    } else {
-	      vfn(a.length, a.data, out.data)
-	    }
-	    Mat.nflops += nflops*a.length
-	    out
-	  }
-  
-  def applySFun(a:FMat, omat:Mat, vfn:(Int, Array[Float], Array[Float])=>Unit, efn:(Float)=>Float, nflops:Long) ={
-  	val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat, a.GUID, vfn.##, efn.##)
-  	if (!Mat.useMKLRand || vfn == null) {
-  		if (efn == null) {
-  			throw new RuntimeException("no Scala builtin version of this math function, sorry")
-  		} 
-  		var i = 0; val len = a.length; val odata = out.data; val adata = a.data
-  		while (i < len) {odata(i) = efn(adata(i)); i += 1}
-  	} else {
-  		vfn(a.length, a.data, out.data)
-  	}	
-  	Mat.nflops += nflops*a.length
-  	out
-  }
-  
-  def applySlatecFun(a:FMat, omat:Mat, nfn:Int, nflops:Long) = {
-    val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat, a.GUID, nfn)
-    SLATEC.applyfun(a.data, out.data, a.length, nfn);
-    Mat.nflops += nflops*a.length
-    out
-  }
-  
-  def applySlatecFun2(a:FMat, b:FMat, omat:Mat, nfn:Int, nflops:Long) = {
-    val nr = math.max(a.nrows, b.nrows);
-    val nc = math.max(a.ncols, b.ncols);
-    val out = FMat.newOrCheckFMat(nr, nc, omat, a.GUID, b.GUID, nfn);
-    val arowi = if (a.nrows == nr) 1 else 0;
-    val browi = if (b.nrows == nr) 1 else 0;
-    val acoli = if (a.ncols == nc) a.nrows else 0;
-    val bcoli = if (b.ncols == nc) b.nrows else 0;
-    SLATEC.applyfun2(nr, nc, a.data, arowi, acoli, b.data, browi, bcoli, out.data, nr, nfn);
-    Mat.nflops += nflops*out.length
-    out
-  }
+ 
   
   def applySlatecGFun(a:GMat, omat:Mat, nfn:Int, nflops:Long) = {
     val out = GMat.newOrCheckGMat(a.nrows, a.ncols, omat, a.GUID, nfn)
@@ -1365,282 +1267,11 @@ object SciFunctions {
   	out
   }
 
-  def applySFunV(a:FMat, omat:Mat, vfn:(Int, Array[Float], Array[Float])=>Unit, 
-  		efn:(Int, Array[Float], Array[Float])=>Unit, nflops:Long) ={
-  	val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat, a.GUID, vfn.##, efn.##)
-  	if (!Mat.useMKLRand) {
-  		if (efn == null) {
-  			throw new RuntimeException("no Scala builtin version of this math function, sorry")
-  		} 
-  		efn(a.length, a.data, out.data)
-  	} else {
-  		vfn(a.length, a.data, out.data)
-  	}	
-  	Mat.nflops += nflops*a.length
-  	out
-  }
-
-  def applyD2Fun(a:DMat, b:DMat, omat:Mat, 
-  		vfn:(Int, Array[Double], Array[Double], Array[Double]) => Unit, 
-  		efn:(Double, Double)=>Double, nflops:Long):DMat = {
-  				val out = DMat.newOrCheckDMat(math.max(a.nrows, b.nrows), math.max(a.ncols, b.ncols), omat, a.GUID, b.GUID, vfn.##, efn.##)
-  				if (!Mat.useMKLRand) {
-  					if (efn == null) {
-  						throw new RuntimeException("no Scala builtin version of this math function, sorry")
-  					} 
-  					var	i = 0; val len = a.length; val odata = out.data; val adata = a.data; val bdata = b.data
-  					while	(i < len) {odata(i) = efn(adata(i), bdata(i)); i += 1}
-  				} else {
-  					vfn(a.length, a.data, b.data, out.data)
-  				}
-  				Mat.nflops += nflops*a.length
-  				out
-  		}
-
-  def applyS2Fun(a:FMat, b:FMat, omat:Mat, 
-  		vfn:(Int, Array[Float], Array[Float], Array[Float]) => Unit, 
-  		efn:(Float, Float)=>Float, nflops:Long):FMat = {
-  				val out = FMat.newOrCheckFMat(math.max(a.nrows, b.nrows), math.max(a.ncols, b.ncols), omat, a.GUID, b.GUID, vfn.##, efn.##)
-  				if (!Mat.useMKLRand) {
-  					if (efn == null) {
-  						throw new RuntimeException("no Scala builtin version of this math function, sorry")
-  					} 
-  					var	i = 0; val len = a.length; val odata = out.data; val adata = a.data; val bdata = b.data
-  					while	(i < len) {odata(i) = efn(adata(i), bdata(i)); i += 1}
-  				} else {
-  					vfn(a.length, a.data, b.data, out.data)
-  				}
-  				Mat.nflops += nflops*a.length
-  				out
-  		}
-  
-    def applyD2xFun(a:DMat, b:Double, omat:Mat, 
-  		vfn:(Int, Array[Double], Double, Array[Double]) => Unit, 
-  		efn:(Double, Double)=>Double, nflops:Long):DMat = {
-  				val out = DMat.newOrCheckDMat(a.nrows, a.ncols, omat, a.GUID, b.##, vfn.##, efn.##)
-  				if (!Mat.useMKLRand) {
-  					if (efn == null) {
-  						throw new RuntimeException("no Scala builtin version of this math function, sorry")
-  					} 
-  					var	i = 0; val len = a.length; val odata = out.data; val adata = a.data
-  					while	(i < len) {odata(i) = efn(adata(i), b); i += 1}
-  				} else {
-  					vfn(a.length, a.data, b, out.data)
-  				}
-  				Mat.nflops += nflops*a.length
-  				out
-  		}
-    
-    def applyS2xFun(a:FMat, b:Float, omat:Mat, 
-  		vfn:(Int, Array[Float], Float, Array[Float]) => Unit, 
-  		efn:(Float, Float)=>Float, nflops:Long):FMat = {
-  				val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat, a.GUID, b.##, vfn.##, efn.##)
-  				if (!Mat.useMKLRand) {
-  					if (efn == null) {
-  						throw new RuntimeException("no Scala builtin version of this math function, sorry")
-  					} 
-  					var	i = 0; val len = a.length; val odata = out.data; val adata = a.data
-  					while	(i < len) {odata(i) = efn(adata(i), b); i += 1}
-  				} else {
-  					vfn(a.length, a.data, b, out.data)
-  				}
-  				Mat.nflops += nflops*a.length
-  				out
-  		}
-  
-  def doPowx(n:Int, a:Array[Double], p:Float, r:Array[Double]) {
-    if (!Mat.useMKLRand) {
-      var i = 0
-      while (i < n) {
-        r(i) = math.pow(a(i), p)
-        i += 1
-      }
-    } else {
-      vdPowx(n, a, p, r)
-    }
-  }
+ 
   
   def LXdistance(a:FMat, b:FMat, omat:Mat, p:Float):FMat = FFunctions.LXdistance(a, b, omat, p);
   
-  /* 
-   * Double scientific functions. Most have both an MKL and non-MKL implementation.
-   * The MKL implementation is used unless !Mat.useMKLRand = true. 
-   */
-
-  val signumDFun = (x:Double) => math.signum(x);
-  def sign(a:DMat, out:Mat) = applyDFun(a, out, null, signumDFun, 1L);
-  def sign(a:DMat):DMat = sign(a, null);
-  
-  val absDFun = (x:Double) => math.abs(x)
-  val vdAbsDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdAbs(n,x,y)
-  def abs(a:DMat, out:Mat) = applyDFun(a, out, vdAbsDFun, absDFun, 1L)
-  def abs(a:DMat):DMat = abs(a, null)
-
-  val vdExpDFunMKL = (n:Int, a:Array[Double], b:Array[Double]) => vdExp(n, a, b)
-  val vdExpDFun = (n:Int, a:Array[Double], b:Array[Double]) => {var i=0 ; while (i<n) {b(i) = math.exp(a(i)); i+=1}}
-  def exp(a:DMat, out:Mat) = applyDFunV(a, out, vdExpDFunMKL, vdExpDFun, 10L)
-  def exp(a:DMat):DMat = exp(a, null)
-  
-  val expm1DFun = (x:Double) => math.expm1(x)
-  val vdExpm1DFun = (n:Int, x:Array[Double], y:Array[Double]) => vdExpm1(n,x,y)
-  def expm1(a:DMat, out:Mat) = applyDFun(a, out, vdExpm1DFun, expm1DFun, 10L)
-  def expm1(a:DMat):DMat = expm1(a, null)
-  
-  val sqrtDFun = (x:Double) => math.sqrt(x)
-  val vdSqrtDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdSqrt(n,x,y)
-  def sqrt(a:DMat, out:Mat) = applyDFun(a, out, vdSqrtDFun, sqrtDFun, 10L)
-  def sqrt(a:DMat):DMat = sqrt(a, null)
-
-  val lnDFun = (x:Double) => math.log(x)
-  val vdLnDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdLn(n,x,y)
-  def ln(a:DMat, out:Mat) = applyDFun(a, out, vdLnDFun, lnDFun, 10L)
-  def ln(a:DMat):DMat = ln(a, null)
-  
-  val log10DFun = (x:Double) => math.log10(x)
-  val vdLog10DFun = (n:Int, x:Array[Double], y:Array[Double]) => vdLog10(n,x,y)
-  def log10(a:DMat, out:Mat) = applyDFun(a, out, vdLog10DFun, log10DFun, 10L)
-  def log10(a:DMat):DMat = log10(a, null)
-  
-  val log1pDFun = (x:Double) => math.log1p(x)
-  val vdLog1pDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdLog1p(n,x,y)
-  def log1p(a:DMat, out:Mat) = applyDFun(a, out, vdLog1pDFun, log1pDFun, 10L)
-  def log1p(a:DMat):DMat = log1p(a, null)
-  
-  val cosDFun = (x:Double) => math.cos(x)
-  val vdCosDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdCos(n,x,y)
-  def cos(a:DMat, out:Mat) = applyDFun(a, out, vdCosDFun, cosDFun, 10L)
-  def cos(a:DMat):DMat = cos(a, null)
-  
-  val sinDFun = (x:Double) => math.sin(x)
-  val vdSinDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdSin(n,x,y)
-  def sin(a:DMat, out:Mat) = applyDFun(a, out, vdSinDFun, sinDFun, 10L)
-  def sin(a:DMat):DMat = sin(a, null)
-  
-  val tanDFun = (x:Double) => math.tan(x)
-  val vdTanDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdTan(n,x,y)
-  def tan(a:DMat, out:Mat) = applyDFun(a, out, vdTanDFun, tanDFun, 10L)
-  def tan(a:DMat):DMat = tan(a, null)
-  
-  val coshDFun = (x:Double) => math.cosh(x)
-  val vdCoshDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdCosh(n,x,y)
-  def cosh(a:DMat, out:Mat) = applyDFun(a, out, vdCoshDFun, coshDFun, 10L)
-  def cosh(a:DMat):DMat = cosh(a, null)
-  
-  val sinhDFun = (x:Double) => math.sinh(x)
-  val vdSinhDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdSinh(n,x,y)
-  def sinh(a:DMat, out:Mat) = applyDFun(a, out, vdSinhDFun, sinhDFun, 10L)
-  def sinh(a:DMat):DMat = sinh(a, null)
-  
-  val tanhDFun = (x:Double) => math.tanh(x)
-  val vdTanhDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdTanh(n,x,y)
-  def tanh(a:DMat, out:Mat) = applyDFun(a, out, vdTanhDFun, tanhDFun, 10L)
-  def tanh(a:DMat):DMat = tanh(a, null)
-  
-  val acosDFun = (x:Double) => math.acos(x)
-  val vdAcosDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdAcos(n,x,y)
-  def acos(a:DMat, out:Mat) = applyDFun(a, out, vdAcosDFun, acosDFun, 10L)
-  def acos(a:DMat):DMat = acos(a, null)
-
-  val asinDFun = (x:Double) => math.asin(x)
-  val vdAsinDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdAsin(n,x,y)
-  def asin(a:DMat, out:Mat) = applyDFun(a, out, vdAsinDFun, asinDFun, 10L)
-  def asin(a:DMat):DMat = asin(a, null)
-
-  val atanDFun = (x:Double) => math.atan(x)
-  val vdAtanDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdAtan(n,x,y)
-  def atan(a:DMat, out:Mat) = applyDFun(a, out, vdAtanDFun, atanDFun, 10L)
-  def atan(a:DMat):DMat = atan(a, null)
-
-  val acoshDFun = (x:Double) => FastMath.acosh(x)
-  val vdAcoshDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdAcosh(n,x,y)
-  def acosh(a:DMat, out:Mat) = applyDFun(a, out, vdAcoshDFun, acoshDFun, 10L)
-  def acosh(a:DMat):DMat = acosh(a, null)
-
-  val asinhDFun = (x:Double) => FastMath.asinh(x)
-  val vdAsinhDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdAsinh(n,x,y)
-  def asinh(a:DMat, out:Mat) = applyDFun(a, out, vdAsinhDFun, asinhDFun, 10L)
-  def asinh(a:DMat):DMat = asinh(a, null)
-  
-  val atanhDFun = (x:Double) => FastMath.atanh(x)
-  val vdAtanhDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdAtanh(n,x,y)
-  def atanh(a:DMat, out:Mat) = applyDFun(a, out, vdAtanhDFun, atanhDFun, 10L)
-  def atanh(a:DMat):DMat = atanh(a, null)
-  
-  val erfDFun = (x:Double) => Erf.erf(x)
-  val vdErfDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdErf(n,x,y)
-  def erf(a:DMat, out:Mat) = applyDFun(a, out, vdErfDFun, erfDFun, 10L)
-  def erf(a:DMat):DMat = erf(a, null)
-  
-  val vdErfInvdFun = (n:Int, x:Array[Double], y:Array[Double]) => vdErfInv(n,x,y)
-  def erfinv(a:DMat, out:Mat) = applyDFun(a, out, vdErfInvdFun, null, 10L)
-  def erfinv(a:DMat):DMat = erfinv(a, null)
-  
-  val erfcDFun = (x:Double) => Erf.erfc(x)
-  val vdErfcDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdErfc(n,x,y)
-  def erfc(a:DMat, out:Mat) = applyDFun(a, out, vdErfcDFun, erfcDFun, 10L)
-  def erfc(a:DMat):DMat = erfc(a, null)
-  
-  val vdErfcInvdFun = (n:Int, x:Array[Double], y:Array[Double]) => vdErfcInv(n,x,y)
-  def erfcinv(a:DMat, out:Mat) = applyDFun(a, out, vdErfcInvdFun, null, 10L)
-  def erfcinv(a:DMat):DMat = erfcinv(a, null)
-  
-  val vdCdfNormDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdCdfNorm(n,x,y)
-  def normcdf(a:DMat, out:Mat) = applyDFun(a, out, vdCdfNormDFun, null, 10L)
-  def normcdf(a:DMat):DMat = normcdf(a, null)
-  
-  val vdCdfNormInvdFun = (n:Int, x:Array[Double], y:Array[Double]) => vdCdfNormInv(n,x,y)
-  def normcdfinv(a:DMat, out:Mat) = applyDFun(a, out, vdCdfNormInvdFun, null, 10L)
-  def normcdfinv(a:DMat):DMat = normcdfinv(a, null)
-  
-  val gammaDFun = (x:Double) => Gamma.gamma(x)
-  val vdTGammaDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdTGamma(n,x,y)
-  def gamma(a:DMat, out:Mat) = applyDFun(a, out, vdTGammaDFun, gammaDFun, 10L)
-  def gamma(a:DMat):DMat = gamma(a, null);
-  def Γ(a:DMat, out:Mat) = gamma(a, out);
-  def Γ(a:DMat) = gamma(a);
-  
-  val gammalnDFun = (x:Double) => Gamma.logGamma(x)
-  val vdLGammaDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdLGamma(n,x,y)
-  def gammaln(a:DMat, out:Mat) = applyDFun(a, out, vdLGammaDFun, gammalnDFun, 10L)
-  def gammaln(a:DMat):DMat = gammaln(a, null)
-
-  val ceilDFun = (x:Double) => math.ceil(x)
-  val vdCeilDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdCeil(n,x,y)  
-  def ceil(a:DMat, out:Mat) = applyDFun(a, out, vdCeilDFun, ceilDFun, 1L)
-  def ceil(a:DMat):DMat = ceil(a, null)
-  
-  val floorDFun = (x:Double) => math.floor(x)
-  val vdFloorDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdFloor(n,x,y)
-  def floor(a:DMat, out:Mat) = applyDFun(a, out, vdFloorDFun, floorDFun, 1L)
-  def floor(a:DMat):DMat = floor(a, null)
-
-  val roundDFun = (x:Double) => math.floor(x+0.5)
-  val vdRoundDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdRound(n,x,y)
-  def round(a:DMat, out:Mat) = applyDFun(a, out, vdRoundDFun, roundDFun, 1L)
-  def round(a:DMat):DMat = round(a, null)
-  
-  val truncDFun = (x:Double) => math.floor(math.abs(x))*math.signum(x)
-  val vdTruncDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdTrunc(n,x,y)
-  def trunc(a:DMat, out:Mat) = applyDFun(a, out, vdTruncDFun, truncDFun, 1L)
-  def trunc(a:DMat):DMat = trunc(a, null)
-  
-  val atan2DFun = (x:Double, y:Double) => math.atan2(x, y)
-  val vdAtan2DFun = (n:Int, x:Array[Double], y:Array[Double], z:Array[Double]) => vdAtan2(n,x,y,z)
-  def atan2(a:DMat, b:DMat, out:Mat) = applyD2Fun(a, b, out, vdAtan2DFun, atan2DFun, 10L)
-  def atan2(a:DMat, b:DMat):DMat = atan2(a, b, null)
-  
-  val powDFun = (x:Double, y:Double) => math.pow(x, y)
-  val vdPowDFun = (n:Int, x:Array[Double], y:Array[Double], z:Array[Double]) => vdPow(n,x,y,z)
-  def pow(a:DMat, b:DMat, out:Mat) = applyD2Fun(a, b, out, vdPowDFun, powDFun, 10L)
-  def pow(a:DMat, b:DMat):DMat = pow(a, b, null)
-  val vdPowxDFun = (n:Int, x:Array[Double], y:Double, z:Array[Double]) => vdPowx(n,x,y,z)
-  def powx(a:DMat, b:Double, out:Mat) = applyD2xFun(a, b, out, vdPowxDFun, powDFun, 10L)
-  def powx(a:DMat, b:Double):DMat = powx(a, b, null)
-  
-  val exppsiDFun = (x:Double)=>if (x<1.0) 0.5*x*x else x-0.5
-  def exppsi(a:DMat, out:Mat) = applyDFun(a, out, null, exppsiDFun, 3L)
-  def exppsi(a:DMat):DMat = exppsi(a, null)
-  
+ 
   /* 
    * Single-precision scientific functions. Most have both an MKL and non-MKL implementation.
    * The MKL implementation is used unless !Mat.useMKLRand = true. 
@@ -1655,177 +1286,243 @@ object SciFunctions {
   def exp(a:FMat, out:Mat) = FFunctions.exp(a, out);
   def exp(a:FMat):FMat = FFunctions.exp(a, null);
   
-  val expm1Fun = (x:Float) => math.expm1(x).toFloat
-  val vsExpm1Fun = (n:Int, x:Array[Float], y:Array[Float]) => vsExpm1(n,x,y)
-  def expm1(a:FMat, out:Mat) = applySFun(a, out, vsExpm1Fun, expm1Fun, 10L)
-  def expm1(a:FMat):FMat = expm1(a, null);
-  
-  val sqrtFun = (x:Float) => math.sqrt(x).toFloat
-  val vsSqrtFun = (n:Int, x:Array[Float], y:Array[Float]) => vsSqrt(n,x,y)
-  def sqrt(a:FMat, out:Mat) = applySFun(a, out, vsSqrtFun, sqrtFun, 10L)
-  def sqrt(a:FMat):FMat = sqrt(a, null);
+  def expm1(a:FMat, out:Mat) = FFunctions.expm1(a, out);
+  def expm1(a:FMat):FMat = FFunctions.expm1(a, null);
 
-  val lnFun = (x:Float) => math.log(x).toFloat
-  val vsLnFun = (n:Int, x:Array[Float], y:Array[Float]) => vsLn(n,x,y)
-  def ln(a:FMat, out:Mat) = applySFun(a, out, vsLnFun, lnFun, 10L)
-  def ln(a:FMat):FMat = ln(a, null);
-  
-  val log10Fun = (x:Float) => math.log10(x).toFloat
-  val vsLog10Fun = (n:Int, x:Array[Float], y:Array[Float]) => vsLog10(n,x,y)
-  def log10(a:FMat, out:Mat) = applySFun(a, out, vsLog10Fun, log10Fun, 10L)
-  def log10(a:FMat):FMat = log10(a, null);
-  
-  val log1pFun = (x:Float) => math.log1p(x).toFloat
-  val vsLog1pFun = (n:Int, x:Array[Float], y:Array[Float]) => vsLog1p(n,x,y)
-  def log1p(a:FMat, out:Mat) = applySFun(a, out, vsLog1pFun, log1pFun, 10L)
-  def log1p(a:FMat):FMat = log1p(a, null);
-  
-  val cosFun = (x:Float) => math.cos(x).toFloat
-  val vsCosFun = (n:Int, x:Array[Float], y:Array[Float]) => vsCos(n,x,y)
-  def cos(a:FMat, out:Mat) = applySFun(a, out, vsCosFun, cosFun, 10L)
-  def cos(a:FMat):FMat = cos(a, null);
-  
-  val sinFun = (x:Float) => math.sin(x).toFloat
-  val vsSinFun = (n:Int, x:Array[Float], y:Array[Float]) => vsSin(n,x,y)
-  def sin(a:FMat, out:Mat) = applySFun(a, out, vsSinFun, sinFun, 10L)
-  def sin(a:FMat):FMat = sin(a, null);
-  
-  val tanFun = (x:Float) => math.tan(x).toFloat
-  val vsTanFun = (n:Int, x:Array[Float], y:Array[Float]) => vsTan(n,x,y)
-  def tan(a:FMat, out:Mat) = applySFun(a, out, vsTanFun, tanFun, 10L)
-  def tan(a:FMat):FMat = tan(a, null);
+  def sqrt(a:FMat, out:Mat) = FFunctions.sqrt(a, out);
+  def sqrt(a:FMat):FMat = FFunctions.sqrt(a, null);
 
-  val coshFun = (x:Float) => math.cosh(x).toFloat
-  val vsCoshFun = (n:Int, x:Array[Float], y:Array[Float]) => vsCosh(n,x,y)
-  def cosh(a:FMat, out:Mat) = applySFun(a, out, vsCoshFun, coshFun, 10L)
-  def cosh(a:FMat):FMat = cosh(a, null);
- 
-  val sinhFun = (x:Float) => math.sinh(x).toFloat
-  val vsSinhFun = (n:Int, x:Array[Float], y:Array[Float]) => vsSinh(n,x,y)
-  def sinh(a:FMat, out:Mat) = applySFun(a, out, vsSinhFun, sinhFun, 10L)
-  def sinh(a:FMat):FMat = sinh(a, null);
- 
-  val tanhFun = (x:Float) => math.tanh(x).toFloat
-  val vsTanhFun = (n:Int, x:Array[Float], y:Array[Float]) => vsTanh(n,x,y)
-  def tanh(a:FMat, out:Mat) = applySFun(a, out, vsTanhFun, tanhFun, 10L)
-  def tanh(a:FMat):FMat = tanh(a, null);
- 
-  val acosFun = (x:Float) => math.acos(x).toFloat
-  val vsAcosFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAcos(n,x,y)
-  def acos(a:FMat, out:Mat) = applySFun(a, out, vsAcosFun, acosFun, 10L)
-  def acos(a:FMat):FMat = acos(a, null);
- 
-  val asinFun = (x:Float) => math.asin(x).toFloat
-  val vsAsinFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAsin(n,x,y)
-  def asin(a:FMat, out:Mat) = applySFun(a, out, vsAsinFun, asinFun, 10L)
-  def asin(a:FMat):FMat = asin(a, null);
- 
-  val atanFun = (x:Float) => math.atan(x).toFloat
-  val vsAtanFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAtan(n,x,y)
-  def atan(a:FMat, out:Mat) = applySFun(a, out, vsAtanFun, atanFun, 10L)
-  def atan(a:FMat):FMat = atan(a, null);
+  def ln(a:FMat, out:Mat) = FFunctions.ln(a, out);
+  def ln(a:FMat):FMat = FFunctions.ln(a, null);
+  
+  def log10(a:FMat, out:Mat) = FFunctions.log10(a, out);
+  def log10(a:FMat):FMat = FFunctions.log10(a, null);
+  
+  def log1p(a:FMat, out:Mat) = FFunctions.log1p(a, out);
+  def log1p(a:FMat):FMat = FFunctions.log1p(a, null);
+  
+  def cos(a:FMat, out:Mat) =  FFunctions.cos(a, out);
+  def cos(a:FMat):FMat = FFunctions.cos(a, null);
 
-  val acoshFun = (x:Float) => FastMath.acosh(x).toFloat
-  val vsAcoshFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAcosh(n,x,y)
-  def acosh(a:FMat, out:Mat) = applySFun(a, out, vsAcoshFun, acoshFun, 10L)
-  def acosh(a:FMat):FMat = acosh(a, null);
+  def sin(a:FMat, out:Mat) = FFunctions.sin(a, out);
+  def sin(a:FMat):FMat = FFunctions.sin(a, null);
+  
+  def tan(a:FMat, out:Mat) = FFunctions.tan(a, out);
+  def tan(a:FMat):FMat = FFunctions.tan(a, null);
 
-  val asinhFun = (x:Float) => FastMath.asinh(x).toFloat
-  val vsAsinhFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAsinh(n,x,y)
-  def asinh(a:FMat, out:Mat) = applySFun(a, out, vsAsinhFun, asinhFun, 10L)
-  def asinh(a:FMat):FMat = asinh(a, null);
-   
-  val atanhFun = (x:Float) => FastMath.atanh(x).toFloat
-  val vsAtanhFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAtanh(n,x,y)
-  def atanh(a:FMat, out:Mat) = applySFun(a, out, vsAtanhFun, atanhFun, 10L)
-  def atanh(a:FMat):FMat = atanh(a, null);
+  def cosh(a:FMat, out:Mat) = FFunctions.cosh(a, out);
+  def cosh(a:FMat):FMat = FFunctions.cosh(a, null);
+
+  def sinh(a:FMat, out:Mat) = FFunctions.sinh(a, out);
+  def sinh(a:FMat):FMat = FFunctions.sinh(a, null);
+
+  def tanh(a:FMat, out:Mat) = FFunctions.tanh(a, out);
+  def tanh(a:FMat):FMat = FFunctions.tanh(a, null);
+
+  def acos(a:FMat, out:Mat) = FFunctions.acos(a, out);
+  def acos(a:FMat):FMat = FFunctions.acos(a, null);
+
+  def asin(a:FMat, out:Mat) = FFunctions.asin(a, out);
+  def asin(a:FMat):FMat = FFunctions.asin(a, null);
+
+  def atan(a:FMat, out:Mat) = FFunctions.atan(a, out);
+  def atan(a:FMat):FMat = FFunctions.atan(a, null);
+
+  def acosh(a:FMat, out:Mat) =  FFunctions.acosh(a, out);
+  def acosh(a:FMat):FMat = FFunctions.acosh(a, null);
+
+  def asinh(a:FMat, out:Mat) = FFunctions.asinh(a, out);
+  def asinh(a:FMat):FMat = FFunctions.asinh(a, null);
+
+  def atanh(a:FMat, out:Mat) = FFunctions.atanh(a, out);
+  def atanh(a:FMat):FMat = FFunctions.atanh(a, null);
+
+  def erf(a:FMat, out:Mat) = FFunctions.erf(a, out);
+  def erf(a:FMat):FMat = FFunctions.erf(a, null);
  
-  val erfFun = (x:Float) => Erf.erf(x).toFloat
-  val vsErfFun = (n:Int, x:Array[Float], y:Array[Float]) => vsErf(n,x,y)
-  def erf(a:FMat, out:Mat) = applySFun(a, out, vsErfFun, erfFun, 10L)
-  def erf(a:FMat):FMat = erf(a, null);
+  def erfinv(a:FMat, out:Mat) = FFunctions.erfinv(a, out);
+  def erfinv(a:FMat):FMat = FFunctions.erfinv(a, null);
+
+  def erfc(a:FMat, out:Mat) = FFunctions.erfc(a, out);
+  def erfc(a:FMat):FMat = FFunctions.erfc(a, null);
  
-  val vsErfInvFun = (n:Int, x:Array[Float], y:Array[Float]) => vsErfInv(n,x,y)
-  def erfinv(a:FMat, out:Mat) = applySFun(a, out, vsErfInvFun, null, 10L)
-  def erfinv(a:FMat):FMat = erfinv(a, null);
- 
-  val erfcFun = (x:Float) => Erf.erfc(x).toFloat
-  val vsErfcFun = (n:Int, x:Array[Float], y:Array[Float]) => vsErfc(n,x,y)
-  def erfc(a:FMat, out:Mat) = applySFun(a, out, vsErfcFun, erfcFun, 10L)
-  def erfc(a:FMat):FMat = erfc(a, null);
- 
-  val vsErfcInvFun = (n:Int, x:Array[Float], y:Array[Float]) => vsErfcInv(n,x,y)
-  def erfcinv(a:FMat, out:Mat) = applySFun(a, out, vsErfcInvFun, null, 10L)
-  def erfcinv(a:FMat):FMat = erfcinv(a, null);
- 
-  val vsCdfNormFun = (n:Int, x:Array[Float], y:Array[Float]) => vsCdfNorm(n,x,y)
-  def normcdf(a:FMat, out:Mat) = applySFun(a, out, vsCdfNormFun, null, 10L)
-  def normcdf(a:FMat):FMat = normcdf(a, null);
- 
-  val vsCdfNormInvFun = (n:Int, x:Array[Float], y:Array[Float]) => vsCdfNormInv(n,x,y)
-  def normcdfinv(a:FMat, out:Mat) = applySFun(a, out, vsCdfNormInvFun, null, 10L)
-  def normcdfinv(a:FMat):FMat = normcdfinv(a, null);
- 
-  val gammaFun = (x:Float) => Gamma.gamma(x).toFloat;
-  val vsTGammaFun = (n:Int, x:Array[Float], y:Array[Float]) => vsTGamma(n,x,y);
-  def gamma(a:FMat, out:Mat) = applySFun(a, out, vsTGammaFun, gammaFun, 10L);
-  def gamma(a:FMat):FMat = gamma(a, null);
+  def erfcinv(a:FMat, out:Mat) = FFunctions.erfcinv(a, out);
+  def erfcinv(a:FMat):FMat = FFunctions.erfcinv(a, null);
+
+  def normcdf(a:FMat, out:Mat) = FFunctions.normcdf(a, out);
+  def normcdf(a:FMat):FMat = FFunctions.normcdf(a, null);
+
+  def normcdfinv(a:FMat, out:Mat) = FFunctions.normcdfinv(a, out);
+  def normcdfinv(a:FMat):FMat = FFunctions.normcdfinv(a, null);
+
+  def gamma(a:FMat, out:Mat) = FFunctions.gamma(a, out);
+  def gamma(a:FMat):FMat = FFunctions.gamma(a, null);
  
   def Γ(a:FMat, out:Mat) = gamma(a, out);
   def Γ(a:FMat) = gamma(a);
 
-  
-  val gammalnFun = (x:Float) => Gamma.logGamma(x).toFloat
-  val vsLGammaFun = (n:Int, x:Array[Float], y:Array[Float]) => vsLGamma(n,x,y)
-  def gammaln(a:FMat, out:Mat) = applySFun(a, out, vsLGammaFun, gammalnFun, 10L)
-  def gammaln(a:FMat):FMat = gammaln(a, null);
-  
-  val ceilFun = (x:Float) => math.ceil(x).toFloat
-  val vsCeilFun = (n:Int, x:Array[Float], y:Array[Float]) => vsCeil(n,x,y)  
-  def ceil(a:FMat, out:Mat) = applySFun(a, out, vsCeilFun, ceilFun, 1L)
-  def ceil(a:FMat):FMat = ceil(a, null);
+  def gammaln(a:FMat, out:Mat) = FFunctions.gammaln(a, out);
+  def gammaln(a:FMat):FMat = FFunctions.gammaln(a, null);
+
+  def ceil(a:FMat, out:Mat) = FFunctions.ceil(a, out);
+  def ceil(a:FMat):FMat = FFunctions.ceil(a, null);
  
-  val floorFun = (x:Float) => math.floor(x).toFloat
-  val vsFloorFun = (n:Int, x:Array[Float], y:Array[Float]) => vsFloor(n,x,y)
-  def floor(a:FMat, out:Mat) = applySFun(a, out, vsFloorFun, floorFun, 1L)
-  def floor(a:FMat):FMat = floor(a, null);
+  def floor(a:FMat, out:Mat) = FFunctions.floor(a, out);
+  def floor(a:FMat):FMat = FFunctions.floor(a, null);
+
+  def round(a:FMat, out:Mat) = FFunctions.round(a, out);
+  def round(a:FMat):FMat = FFunctions.round(a, null);
+
+  def trunc(a:FMat, out:Mat) = FFunctions.trunc(a, out);
+  def trunc(a:FMat):FMat = FFunctions.trunc(a, null);
+  
+  def psi(a:FMat, out:Mat):FMat = FFunctions.psi(a, out);
+  def psi(a:FMat):FMat = FFunctions.psi(a, null);
+  
+  def psiinv(a:FMat, out:Mat):FMat = FFunctions.psiinv(a, out);
+  def psiinv(a:FMat):FMat = FFunctions.psiinv(a, null);
+  
+  def psifn(a:FMat, b:FMat, out:Mat):FMat = FFunctions.psifn(a, b, out);
+  def psifn(a:FMat, b:FMat):FMat = FFunctions.psifn(a, b, null);
+
+  def atan2(a:FMat, b:FMat, out:Mat) = FFunctions.atan2(a, b, out);
+  def atan2(a:FMat, b:FMat):FMat = FFunctions.atan2(a, b, null);
+
+  def pow(a:FMat, b:FMat, out:Mat) = FFunctions.pow(a, b, out);
+  def pow(a:FMat, b:FMat):FMat = FFunctions.pow(a, b, null);
  
-  val roundFun = (x:Float) => math.floor(x+0.5).toFloat
-  val vsRoundFun = (n:Int, x:Array[Float], y:Array[Float]) => vsRound(n,x,y)
-  def round(a:FMat, out:Mat) = applySFun(a, out, vsRoundFun, roundFun, 1L)
-  def round(a:FMat):FMat = round(a, null);
+  def powx(a:FMat, b:Float, out:Mat) = FFunctions.powx(a, b, out);
+  def powx(a:FMat, b:Float):FMat = FFunctions.powx(a, b, null);
+
+  def exppsi(a:FMat, out:Mat) = FFunctions.exppsi(a, out);
+  def exppsi(a:FMat):FMat = FFunctions.exppsi(a, null);
    
-  val truncFun = (x:Float) => (math.floor(math.abs(x))*math.signum(x)).toFloat
-  val vsTruncFun = (n:Int, x:Array[Float], y:Array[Float]) => vsTrunc(n,x,y)
-  def trunc(a:FMat, out:Mat) = applySFun(a, out, vsTruncFun, truncFun, 1L)
-  def trunc(a:FMat):FMat = trunc(a, null);
+
+  /* 
+   * Double-precision scientific functions. Most have both an MKL and non-MKL implementation.
+   * The MKL implementation is used unless !Mat.useMKLRand = true. 
+   */
+    
+  def sign(a:DMat, out:Mat) = DFunctions.sign(a, out);
+  def sign(a:DMat):DMat = DFunctions.sign(a, null);
   
-  def psi(a:FMat, out:Mat):FMat = applySlatecFun(a, out, 0, 100);
-  def psi(a:FMat):FMat = psi(a, null);
+  def abs(a:DMat, out:Mat) = DFunctions.abs(a, out);
+  def abs(a:DMat):DMat = DFunctions.abs(a, null);
+
+  def exp(a:DMat, out:Mat) = DFunctions.exp(a, out);
+  def exp(a:DMat):DMat = DFunctions.exp(a, null);
   
-  def psiinv(a:FMat, out:Mat):FMat = applySlatecFun(a, out, 1, 400);
-  def psiinv(a:FMat):FMat = psiinv(a, null);
+  def expm1(a:DMat, out:Mat) = DFunctions.expm1(a, out);
+  def expm1(a:DMat):DMat = DFunctions.expm1(a, null);
+
+  def sqrt(a:DMat, out:Mat) = DFunctions.sqrt(a, out);
+  def sqrt(a:DMat):DMat = DFunctions.sqrt(a, null);
+
+  def ln(a:DMat, out:Mat) = DFunctions.ln(a, out);
+  def ln(a:DMat):DMat = DFunctions.ln(a, null);
   
-  def psifn(a:FMat, b:FMat, out:Mat):FMat = applySlatecFun2(a, b, out, 0, 200);
-  def psifn(a:FMat, b:FMat):FMat = psifn(a, b, null);
+  def log10(a:DMat, out:Mat) = DFunctions.log10(a, out);
+  def log10(a:DMat):DMat = DFunctions.log10(a, null);
   
-  val atan2Fun = (x:Float, y:Float) => math.atan2(x, y).toFloat
-  val vsAtan2Fun = (n:Int, x:Array[Float], y:Array[Float], z:Array[Float]) => vsAtan2(n,x,y,z)
-  def atan2(a:FMat, b:FMat, out:Mat) = applyS2Fun(a, b, out, vsAtan2Fun, atan2Fun, 10L)
-  def atan2(a:FMat, b:FMat):FMat = atan2(a, b, null);
+  def log1p(a:DMat, out:Mat) = DFunctions.log1p(a, out);
+  def log1p(a:DMat):DMat = DFunctions.log1p(a, null);
+  
+  def cos(a:DMat, out:Mat) =  DFunctions.cos(a, out);
+  def cos(a:DMat):DMat = DFunctions.cos(a, null);
+
+  def sin(a:DMat, out:Mat) = DFunctions.sin(a, out);
+  def sin(a:DMat):DMat = DFunctions.sin(a, null);
+  
+  def tan(a:DMat, out:Mat) = DFunctions.tan(a, out);
+  def tan(a:DMat):DMat = DFunctions.tan(a, null);
+
+  def cosh(a:DMat, out:Mat) = DFunctions.cosh(a, out);
+  def cosh(a:DMat):DMat = DFunctions.cosh(a, null);
+
+  def sinh(a:DMat, out:Mat) = DFunctions.sinh(a, out);
+  def sinh(a:DMat):DMat = DFunctions.sinh(a, null);
+
+  def tanh(a:DMat, out:Mat) = DFunctions.tanh(a, out);
+  def tanh(a:DMat):DMat = DFunctions.tanh(a, null);
+
+  def acos(a:DMat, out:Mat) = DFunctions.acos(a, out);
+  def acos(a:DMat):DMat = DFunctions.acos(a, null);
+
+  def asin(a:DMat, out:Mat) = DFunctions.asin(a, out);
+  def asin(a:DMat):DMat = DFunctions.asin(a, null);
+
+  def atan(a:DMat, out:Mat) = DFunctions.atan(a, out);
+  def atan(a:DMat):DMat = DFunctions.atan(a, null);
+
+  def acosh(a:DMat, out:Mat) =  DFunctions.acosh(a, out);
+  def acosh(a:DMat):DMat = DFunctions.acosh(a, null);
+
+  def asinh(a:DMat, out:Mat) = DFunctions.asinh(a, out);
+  def asinh(a:DMat):DMat = DFunctions.asinh(a, null);
+
+  def atanh(a:DMat, out:Mat) = DFunctions.atanh(a, out);
+  def atanh(a:DMat):DMat = DFunctions.atanh(a, null);
+
+  def erf(a:DMat, out:Mat) = DFunctions.erf(a, out);
+  def erf(a:DMat):DMat = DFunctions.erf(a, null);
  
-  val powFun = (x:Float, y:Float) => math.pow(x, y).toFloat
-  val vsPowFun = (n:Int, x:Array[Float], y:Array[Float], z:Array[Float]) => vsPow(n,x,y,z)
-  def pow(a:FMat, b:FMat, out:Mat) = applyS2Fun(a, b, out, vsPowFun, powFun, 10L)
-  def pow(a:FMat, b:FMat):FMat = pow(a, b, null);
+  def erfinv(a:DMat, out:Mat) = DFunctions.erfinv(a, out);
+  def erfinv(a:DMat):DMat = DFunctions.erfinv(a, null);
+
+  def erfc(a:DMat, out:Mat) = DFunctions.erfc(a, out);
+  def erfc(a:DMat):DMat = DFunctions.erfc(a, null);
  
-  val vsPowxFun = (n:Int, x:Array[Float], y:Float, z:Array[Float]) => vsPowx(n,x,y,z)
-  def powx(a:FMat, b:Float, out:Mat) = applyS2xFun(a, b, out, vsPowxFun, powFun, 10L)
-  def powx(a:FMat, b:Float):FMat = powx(a, b, null);
+  def erfcinv(a:DMat, out:Mat) = DFunctions.erfcinv(a, out);
+  def erfcinv(a:DMat):DMat = DFunctions.erfcinv(a, null);
+
+  def normcdf(a:DMat, out:Mat) = DFunctions.normcdf(a, out);
+  def normcdf(a:DMat):DMat = DFunctions.normcdf(a, null);
+
+  def normcdfinv(a:DMat, out:Mat) = DFunctions.normcdfinv(a, out);
+  def normcdfinv(a:DMat):DMat = DFunctions.normcdfinv(a, null);
+
+  def gamma(a:DMat, out:Mat) = DFunctions.gamma(a, out);
+  def gamma(a:DMat):DMat = DFunctions.gamma(a, null);
+ 
+  def Γ(a:DMat, out:Mat) = gamma(a, out);
+  def Γ(a:DMat) = gamma(a);
+
+  def gammaln(a:DMat, out:Mat) = DFunctions.gammaln(a, out);
+  def gammaln(a:DMat):DMat = DFunctions.gammaln(a, null);
+
+  def ceil(a:DMat, out:Mat) = DFunctions.ceil(a, out);
+  def ceil(a:DMat):DMat = DFunctions.ceil(a, null);
+ 
+  def floor(a:DMat, out:Mat) = DFunctions.floor(a, out);
+  def floor(a:DMat):DMat = DFunctions.floor(a, null);
+
+  def round(a:DMat, out:Mat) = DFunctions.round(a, out);
+  def round(a:DMat):DMat = DFunctions.round(a, null);
+
+  def trunc(a:DMat, out:Mat) = DFunctions.trunc(a, out);
+  def trunc(a:DMat):DMat = DFunctions.trunc(a, null);
   
-  val exppsiFun = (x:Float)=>if (x<1f) 0.5f*x*x else x-0.5f
-  def exppsi(a:FMat, out:Mat) = applySFun(a, out, null, exppsiFun, 3L)
-  def exppsi(a:FMat):FMat = exppsi(a, null);
+  def psi(a:DMat, out:Mat):DMat = DFunctions.psi(a, out);
+  def psi(a:DMat):DMat = DFunctions.psi(a, null);
+  
+  def psiinv(a:DMat, out:Mat):DMat = DFunctions.psiinv(a, out);
+  def psiinv(a:DMat):DMat = DFunctions.psiinv(a, null);
+  
+  def psifn(a:DMat, b:DMat, out:Mat):DMat = DFunctions.psifn(a, b, out);
+  def psifn(a:DMat, b:DMat):DMat = DFunctions.psifn(a, b, null);
+
+  def atan2(a:DMat, b:DMat, out:Mat) = DFunctions.atan2(a, b, out);
+  def atan2(a:DMat, b:DMat):DMat = DFunctions.atan2(a, b, null);
+
+  def pow(a:DMat, b:DMat, out:Mat) = DFunctions.pow(a, b, out);
+  def pow(a:DMat, b:DMat):DMat = DFunctions.pow(a, b, null);
+ 
+  def powx(a:DMat, b:Float, out:Mat) = DFunctions.powx(a, b, out);
+  def powx(a:DMat, b:Float):DMat = DFunctions.powx(a, b, null);
+
+  def exppsi(a:DMat, out:Mat) = DFunctions.exppsi(a, out);
+  def exppsi(a:DMat):DMat = DFunctions.exppsi(a, null);
+   
 
   /* 
    * Complex single-precision scientific functions. Most have both an MKL and non-MKL implementation.
@@ -1899,28 +1596,7 @@ object SciFunctions {
   
   val vcAtanhCFun = (n:Int, x:Array[Float], y:Array[Float]) => vcAtanh(n,x,y)
   def atanh(a:CMat, out:Mat) = applyCFun(a, out, vcAtanhCFun, null, 10L)
-  def atanh(a:CMat):CMat = atanh(a, null) 
-
-
-  def setVMLmode(n:Int) = {
-    vmlSetMode(n)
-  }
-
-  def getVMLmode():Int = {
-    vmlGetMode()
-  }
-
-  def checkSizes(a:Mat, b:Mat) = {
-    if (a.nrows != b.nrows || a.ncols != b.ncols) {
-      throw new RuntimeException("argument dims mismatch")
-    }
-  }
-  
-  def checkSizes(a:Mat, b:Mat, c:DMat) = {
-    if (a.nrows != b.nrows || a.ncols != b.ncols || a.nrows != c.nrows || a.ncols != c.ncols) {
-      throw new RuntimeException("argument dims mismatch")
-    }
-  }
+  def atanh(a:CMat):CMat = atanh(a, null);
 
   def sprand(nrows:Int, ncols:Int, v:Double):SMat = {
     val ioff = Mat.ioneBased

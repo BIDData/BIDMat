@@ -26,7 +26,7 @@ object AltaVista {
 	  		val mm = HMat.loadIMat((dirname + fname) format i)
 	  		var j = 0 
 	  		while (j < mm.nrows) {	  		  
-	  		  val rr = math.floor(myrand.nextFloat * (0.9999f*nparts)).toInt
+	  		  val rr = math.floor(SciState.myrand.nextFloat * (0.9999f*nparts)).toInt
 	  		  if (mm(j, 1) > 0) {
 	  		    ninpart(rr) += 1
 	  		    maxv = math.max(maxv, 1+math.max(mm(j,0), mm(j,1)))
@@ -112,7 +112,7 @@ object AltaVista {
 	  		val ici = if (dotranspose) 1 else 0
 	  		var k = 0
 	  		while (k < mm.nrows) {
-	  			val rr = math.floor(myrand.nextFloat * (0.9999f*nparts)).toInt
+	  			val rr = math.floor(SciState.myrand.nextFloat * (0.9999f*nparts)).toInt
 	  		  if (mm(k, 1) > 0 && rr == i) {
 	  		    ii(sofar) = isinv(mm(k, ici))
 	  		    jj(sofar) = isinv(mm(k, 1-ici))

@@ -8,8 +8,7 @@ import edu.berkeley.bid.RAND;
 import edu.berkeley.bid.RAND._;
 import edu.berkeley.bid.SLATEC;
 import java.util.Random._;
-import MatFunctions._
-import SciFunctions._
+import SciState._
 import org.apache.commons.math3.special._
 import org.apache.commons.math3.util.FastMath
 import org.apache.commons.math3.random.RandomDataGenerator;
@@ -167,6 +166,9 @@ object FFunctions {
     out
   }
   
+  def gamrnd(a:FMat, b:FMat, out:FMat):FMat = { 
+    Random.gamrnd(a, b, out, myrand);
+  } 
    
   def applySFun(a:FMat, omat:Mat, vfn:(Int, Array[Float], Array[Float])=>Unit, efn:(Float)=>Float, nflops:Long) ={
     val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat, a.GUID, vfn.##, efn.##)
@@ -182,6 +184,55 @@ object FFunctions {
     Mat.nflops += nflops*a.length
     out
   }
+  
+  def applySFunV(a:FMat, omat:Mat, vfn:(Int, Array[Float], Array[Float])=>Unit, 
+  		efn:(Int, Array[Float], Array[Float])=>Unit, nflops:Long) ={
+  	val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat, a.GUID, vfn.##, efn.##)
+  	if (!Mat.useMKLRand) {
+  		if (efn == null) {
+  			throw new RuntimeException("no Scala builtin version of this math function, sorry")
+  		} 
+  		efn(a.length, a.data, out.data)
+  	} else {
+  		vfn(a.length, a.data, out.data)
+  	}	
+  	Mat.nflops += nflops*a.length
+  	out
+  }
+
+	def applyS2Fun(a:FMat, b:FMat, omat:Mat, 
+			vfn:(Int, Array[Float], Array[Float], Array[Float]) => Unit, 
+			efn:(Float, Float)=>Float, nflops:Long):FMat = {
+					val out = FMat.newOrCheckFMat(math.max(a.nrows, b.nrows), math.max(a.ncols, b.ncols), omat, a.GUID, b.GUID, vfn.##, efn.##);
+					if (!Mat.useMKLRand) {
+						if (efn == null) {
+							throw new RuntimeException("no Scala builtin version of this math function, sorry")
+						} 
+						var	i = 0; val len = a.length; val odata = out.data; val adata = a.data; val bdata = b.data;
+						while	(i < len) {odata(i) = efn(adata(i), bdata(i)); i += 1}
+					} else {
+						vfn(a.length, a.data, b.data, out.data)
+					}
+					Mat.nflops += nflops*a.length;
+					out;
+			}
+	
+	   def applyS2xFun(a:FMat, b:Float, omat:Mat, 
+  		vfn:(Int, Array[Float], Float, Array[Float]) => Unit, 
+  		efn:(Float, Float)=>Float, nflops:Long):FMat = {
+  				val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat, a.GUID, b.##, vfn.##, efn.##)
+  				if (!Mat.useMKLRand) {
+  					if (efn == null) {
+  						throw new RuntimeException("no Scala builtin version of this math function, sorry")
+  					} 
+  					var	i = 0; val len = a.length; val odata = out.data; val adata = a.data
+  					while	(i < len) {odata(i) = efn(adata(i), b); i += 1}
+  				} else {
+  					vfn(a.length, a.data, b, out.data)
+  				}
+  				Mat.nflops += nflops*a.length
+  				out
+  		}
   
   def applySlatecFun(a:FMat, omat:Mat, nfn:Int, nflops:Long) = {
     val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat, a.GUID, nfn)
@@ -394,6 +445,18 @@ object FFunctions {
   def exppsi(a:FMat, out:Mat) = applySFun(a, out, null, exppsiFun, 3L)
   def exppsi(a:FMat):FMat = exppsi(a, null);
   
+   def doPowx(n:Int, a:Array[Double], p:Float, r:Array[Double]) {
+    if (!Mat.useMKLRand) {
+      var i = 0
+      while (i < n) {
+        r(i) = math.pow(a(i), p)
+        i += 1
+      }
+    } else {
+      vdPowx(n, a, p, r)
+    }
+  }
+   
   def LXdistance(a:FMat, b:FMat, omat:Mat, p:Float):FMat = {
     if (a.ncols != b.ncols) {
       throw new RuntimeException("LXdistance: ncols must match")
