@@ -56,7 +56,53 @@ object DFunctions {
     }
     out     
   }
+   
+  def exprnd(a:Double, b:Double, out:DMat):DMat = {
+    if (Mat.useMKLRand) {
+    	vdRngExponential( METHOD, stream, out.length, out.data, a, b);
+    } else if (Mat.useSTLRand) {
+      DExponential(METHOD, engine, out.length, out.data, a);
+    } else {
+    	var i = 0; while (i < out.length) {out.data(i) = acmrand.nextExponential(a); i += 1;}  
+    }
+    Mat.nflops += 20L*out.length
+    out
+  }
   
+  def laprnd(a:Double, b:Double, out:DMat):DMat = {
+    vdRngLaplace( METHOD, stream, out.length, out.data, a, b )
+    Mat.nflops += 20L*out.length
+    out
+  }
+  
+  def cauchyrnd(a:Double, b:Double, out:DMat):DMat = {
+    if (Mat.useMKLRand) {
+    	vdRngCauchy( METHOD, stream, out.length, out.data, a, b);
+    } else if (Mat.useSTLRand) {
+      DCauchy(METHOD, engine, out.length, out.data, a, b);
+    } else {
+    	var i = 0; while (i < out.length) {out.data(i) = acmrand.nextCauchy(a, b); i += 1;}  
+    }
+    Mat.nflops += 20L*out.length
+    out
+  }
+  
+  def betarnd(p:Double, q:Double, out:DMat):DMat = {
+    vdRngBeta( METHOD, stream, out.length, out.data, p, q, 0, 1 )
+    Mat.nflops += 20L*out.length
+    out
+  }
+  
+  def poissrnd(lambda:DMat, out:IMat):IMat = {
+    checkSizes(lambda, out);
+    if (Mat.useMKLRand) {
+    	viRngPoissonV( METHOD, stream, out.length, out.data, lambda.data );
+    } else {
+    	var i = 0; while (i < out.length) {out.data(i) = acmrand.nextPoisson(lambda.data(i)).toInt; i += 1;} 
+    }
+    Mat.nflops += 20L*out.length
+    out
+  }
    
   def applyDFun(a:DMat, omat:Mat, vfn:(Int, Array[Double], Array[Double])=>Unit, efn:(Double)=>Double, nflops:Long) ={
       val out = DMat.newOrCheckDMat(a.nrows, a.ncols, omat, a.GUID, vfn.##, efn.##)

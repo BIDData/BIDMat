@@ -8,6 +8,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64
 import edu.berkeley.bid.CUMAT
+import GMat.BinOp
 import SciState._;
 import jcuda._
 import jcuda.runtime._
@@ -135,6 +136,14 @@ object GFunctions {
     println("GPU memory %3.2f%% free out of %2.1f GB" format (fm.toFloat/tm, tm*1e-9));
   }
   
+  def max(a:GMat, b:GMat, out:Mat):GMat    = a.gOp(b, out, BinOp.op_max)
+  def min(a:GMat, b:GMat, out:Mat):GMat    = a.gOp(b, out, BinOp.op_min)
+  
+  def maxi(a:GMat, dir:Int, out:Mat):GMat  = a.reduceOp(out, dir, Float.MinValue, BinOp.op_max);
+  def mini(a:GMat, dir:Int, out:Mat):GMat  = a.reduceOp(out, dir, Float.MaxValue, BinOp.op_min);
+  def sum(a:GMat, dir:Int, out:Mat):GMat   = a.reduceOp(out, dir, 0f, BinOp.op_add);
+  def prod(a:GMat, dir:Int, out:Mat):GMat  = a.reduceOp(null, 0, 1f, BinOp.op_mul);
+  
   def rand(out:GMat):GMat = {
     import jcuda.jcurand._
     Mat.nflops += 10L*out.length
@@ -183,7 +192,7 @@ object GFunctions {
     }
   }
   
-   def gamrnd(a:GMat, b:GMat, out:GMat):GMat = { 
+  def gamrnd(a:GMat, b:GMat, out:GMat):GMat = { 
     Mat.nflops += 100L*out.length;
     val atype = getMatVecType(a);
     val btype = getMatVecType(b);
@@ -193,7 +202,7 @@ object GFunctions {
   } 
     
    
-   def binornd(p:GMat, n:GIMat, out:GIMat):GIMat = { 
+   def binornd(n:GIMat, p:GMat, out:GIMat):GIMat = { 
     Mat.nflops += 300L*out.length
     val atype = getMatVecType(p);
     val ctype = getMatVecType(n);
@@ -401,7 +410,7 @@ object GFunctions {
   }
 
   
-  def cumsum(a:GMat, omat:Mat, dim0:Int):GMat = {
+  def cumsum(a:GMat, dim0:Int, omat:Mat):GMat = {
     Mat.nflops += 1L * a.length;
     val dim = if (a.nrows == 1 && dim0 == 0) 2 else math.max(1, dim0);
     if (dim == 1) {

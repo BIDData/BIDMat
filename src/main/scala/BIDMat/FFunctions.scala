@@ -16,158 +16,322 @@ import org.apache.commons.math3.random.RandomDataGenerator;
 
 object FFunctions {
   
-	def norm(a:FMat) = math.sqrt(sdot(a.length, a.data, 1, a.data, 1)).toFloat
-    
-  def rand(minv:Float, maxv:Float, out:FMat):FMat = {
-    if (Mat.useMKLRand) {
-    	vsRngUniform( METHOD, stream, out.length, out.data, minv, maxv );
-    } else if (Mat.useSTLRand) {
-    	SUniform(0, engine, out.length, out.data, minv, maxv);
-    } else {
-    	var i = 0; val len = out.length; val odata = out.data; 
-    	while (i < len) {odata(i) = myrand.nextFloat; i += 1}     
+	def norm(a:FMat) = {
+	  a match {
+	    case aa:GMat => GFunctions.norm(aa);
+	    case _       => math.sqrt(sdot(a.length, a.data, 1, a.data, 1)).toFloat;
+	  }
+	}
+	
+	def min(a:FMat, b:FMat, out:Mat) = {
+	  a match {
+	    case aa:GMat => GFunctions.min(aa, GMat(b), out);
+	    case _ => a.ffMatOpv(b, FMat.vecMinFun, out);
+	  }
+	}
+	
+	def max(a:FMat, b:FMat, out:Mat) = {
+	  a match {
+	    case aa:GMat => GFunctions.max(aa, GMat(b), out);
+	    case _ => a.ffMatOpv(b, FMat.vecMaxFun, out);
+	  }
+	}
+
+	def maxi(a:FMat, n:Int, out:Mat) = {
+	  a match {
+	    case aa:GMat => GFunctions.maxi(aa, n, out);
+	    case _ => a.ffReduceOpv(n, FMat.idFun, FMat.vecMaxFun, out);
+	  }
+	}	
+	
+  def mini(a:FMat, n:Int, out:Mat) = {
+	  a match {
+	    case aa:GMat => GFunctions.mini(aa, n, out);
+	    case _ => a.ffReduceOpv(n, FMat.idFun, FMat.vecMinFun, out);
+	  }
+	}	
+  
+  def sum(a:FMat, n:Int, out:Mat) = {
+	  a match {
+	    case aa:GMat => GFunctions.sum(aa, n, out);
+	    case _ => a.ffReduceOpv(n, FMat.idFun, FMat.vecAddFun, out);
+	  }
+	}	
+	
+  def prod(a:FMat, n:Int, out:Mat) = {
+	  a match {
+	    case aa:GMat => GFunctions.prod(aa, n, out);
+	    case _ => a.ffReduceOpv(n, FMat.idFun, FMat.vecMulFun, out);
+	  }
+	}	
+
+  def cumsum(a:FMat, n:Int, out:Mat) = {
+		  a match {
+	    case aa:GMat => GFunctions.cumsum(aa, n, out);
+	    case _ => a.ffReduceAll(n, FMat.idFun, FMat.sumFun, out);
+		  }
+  }
+  
+  def maxi2(a:FMat,d:Int):(FMat,IMat) = {
+    a match {
+      case aa:GMat => GFunctions.maxi2(aa, null, null, d);
+      case _ => {
+    	  val (m,ii)=a.ggOpt2(d,FMat.gtPred); 
+    	  (FMat(m), ii)
+      }
     }
-    Mat.nflops += 10L*out.nrows*out.ncols
-    out
+  }
+  
+  def mini2(a:FMat,d:Int):(FMat,IMat) = {
+    a match {
+      case aa:GMat => GFunctions.mini2(aa, null, null, d);
+      case _ => {
+    	  val (m,ii)=a.ggOpt2(d,FMat.ltPred); 
+    	  (FMat(m), ii)
+      }
+    }
+  }
+
+  def rand(minv:Float, maxv:Float, out:FMat):FMat = {
+    out match {
+	    case aa:GMat => {
+	      GFunctions.rand(aa);
+	      if (maxv - minv != 1.0f) {
+	        aa ~ aa * (maxv - minv);
+	      }
+	      if (minv != 0) {
+	        aa ~ aa + minv;
+	      }
+	      aa;
+	    }
+	    case _ => {
+	    	if (Mat.useMKLRand) {
+	    		vsRngUniform( METHOD, stream, out.length, out.data, minv, maxv );
+	    	} else if (Mat.useSTLRand) {
+	    		SUniform(0, engine, out.length, out.data, minv, maxv);
+	    	} else {
+	    		var i = 0; val len = out.length; val odata = out.data; 
+	    		while (i < len) {odata(i) = myrand.nextFloat; i += 1}     
+	    	}
+	    	Mat.nflops += 10L*out.nrows*out.ncols;
+	    	out;
+	    }
+    }
   }
 	
 	def normrnd(mu:Float, sig:Float, out:FMat):FMat = {
-    if (Mat.useMKLRand) {
-      vsRngGaussian(METHOD, stream, out.length, out.data, mu, sig );
-    } else if (Mat.useSTLRand) {
-      SNormal(METHOD, engine, out.length, out.data, mu, sig);
-    } else {
-      var i = 0; val len = out.length; val odata = out.data; 
-      while (i < len) {odata(i) = mu + sig*myrand.nextGaussian.toFloat; i += 1}  
-    }
-    Mat.nflops += 10L*out.length
-    out
+		out match {
+			case aa:GMat =>  GFunctions.normrnd(mu, sig, aa);
+			case _ => {
+				if (Mat.useMKLRand) {
+					vsRngGaussian(METHOD, stream, out.length, out.data, mu, sig );
+				} else if (Mat.useSTLRand) {
+					SNormal(METHOD, engine, out.length, out.data, mu, sig);
+				} else {
+					var i = 0; val len = out.length; val odata = out.data; 
+					while (i < len) {odata(i) = mu + sig*myrand.nextGaussian.toFloat; i += 1}  
+				}
+				Mat.nflops += 10L*out.length;
+				out
+			}
+		}
   }
 	
 	def poissrnd(lambda:FMat, out:IMat):IMat = {
     checkSizes(lambda, out);
-    if (Mat.useMKLRand) {
-    	viRngPoissonV( METHOD, stream, out.length, out.data, DMat(lambda).data );
-    } else if (Mat.useSTLRand) {
-      IPoissonV(METHOD, engine, out.length, out.data, lambda.data)
-    } else {
-    	var i = 0; while (i < out.length) {out.data(i) = acmrand.nextPoisson(lambda.data(i)).toInt; i += 1;}  
+    (lambda, out) match {
+      case (glambda:GMat, gout:GIMat) => GFunctions.poissrnd(glambda, gout);
+      case _ => {
+    	  if (Mat.useMKLRand) {
+    		  viRngPoissonV( METHOD, stream, out.length, out.data, DMat(lambda).data );
+    	  } else if (Mat.useSTLRand) {
+    		  IPoissonV(METHOD, engine, out.length, out.data, lambda.data)
+    	  } else {
+    		  var i = 0; while (i < out.length) {out.data(i) = acmrand.nextPoisson(lambda.data(i)).toInt; i += 1;}  
+    	  }
+    	  Mat.nflops += 20L*out.length;
+    	  out;
+      }
     }
-    Mat.nflops += 20L*out.length
-    out
+  }
+	
+	 
+  def poissrnd(lambda:Double, out:IMat):IMat = {
+    out match {
+      case gout:GIMat => GFunctions.poissrnd(GMat.elem(lambda), gout);
+      case _ => {
+    	  if (Mat.useMKLRand) {
+    		  viRngPoisson( METHOD, stream, out.length, out.data, lambda );
+    	  } else if (Mat.useSTLRand) {
+    		  IPoisson(METHOD, engine, out.length, out.data, lambda);
+    	  } else {
+    		  var i = 0; while (i < out.length) {out.data(i) = acmrand.nextPoisson(lambda).toInt; i += 1;}  
+    	  }
+    	  Mat.nflops += 20L*out.length;
+    	  out;
+      }
+    }
   }
   
    def gamrnd(shape:Float, scale:Float, out:FMat):FMat = {
-    if (Mat.useMKLRand) {
-      vsRngGamma( METHOD, stream, out.length, out.data, shape, 0, scale );
-    } else if (Mat.useSTLRand) {
-      SGamma( METHOD, engine, out.length, out.data, shape, scale );
-    } else {
-      var i = 0;
-      while (i < out.length) {out.data(i) = acmrand.nextGamma(shape, scale).toFloat; i += 1;}
-    }
-    Mat.nflops += 20L*out.length
-    out
+		 out match {
+		   case aa:GMat =>  GFunctions.gamrnd(GMat.elem(shape), GMat.elem(scale), aa);
+		   case _ => {
+			   if (Mat.useMKLRand) {
+				   vsRngGamma( METHOD, stream, out.length, out.data, shape, 0, scale );
+			   } else if (Mat.useSTLRand) {
+				   SGamma( METHOD, engine, out.length, out.data, shape, scale );
+			   } else {
+				   var i = 0;
+				   while (i < out.length) {out.data(i) = acmrand.nextGamma(shape, scale).toFloat; i += 1;}
+			   }
+			   Mat.nflops += 20L*out.length;
+			   out;
+		   }
+		 }
+  }
+   
+   def gamrnd(shape:FMat, scale:FMat, out:FMat):FMat = {
+		 (shape, scale, out) match {
+		   case (gshape:GMat, gscale:GMat, gout:GMat) => GFunctions.gamrnd(gshape, gscale, gout);
+		   case _ =>     Random.gamrnd(shape, scale, out, myrand);
+		 }
+		 out;
   }
    
   def laprnd(a:Float, b:Float, out:FMat):FMat = {
-    vsRngLaplace( METHOD, stream, out.length, out.data, a, b )
-    Mat.nflops += 20L*out.length
-    out
+	  out match {
+		  case aa:GMat =>  throw new RuntimeException("laprnd not implemented for GMats");
+		  case _ => {
+			  vsRngLaplace( METHOD, stream, out.length, out.data, a, b );
+			  Mat.nflops += 20L*out.length;
+			  out;
+		  }
+	  }
   }
   
   def cauchyrnd(a:Float, b:Float, out:FMat):FMat = {
-    if (Mat.useMKLRand) {
-      vsRngCauchy( METHOD, stream, out.length, out.data, a, b );
-    } else if (Mat.useSTLRand) {
-      SCauchy(METHOD, engine, out.length, out.data, a, b);
-    } else {
-      var i = 0; while (i < out.length) {out.data(i) = acmrand.nextCauchy(a, b).toFloat; i += 1;}
-    }
-    Mat.nflops += 20L*out.length
-    out
+		out match {
+		  case aa:GMat =>  throw new RuntimeException("cauchyrnd not implemented for GMats");
+		  case _ => {
+			  if (Mat.useMKLRand) {
+				  vsRngCauchy( METHOD, stream, out.length, out.data, a, b );
+			  } else if (Mat.useSTLRand) {
+				  SCauchy(METHOD, engine, out.length, out.data, a, b);
+			  } else {
+				  var i = 0; while (i < out.length) {out.data(i) = acmrand.nextCauchy(a, b).toFloat; i += 1;}
+			  }
+			  Mat.nflops += 20L*out.length;
+			  out;
+		  }
+		}
   }
   
   def exprnd(a:Float, b:Float, out:FMat):FMat = {
-    if (Mat.useMKLRand) {
-      vsRngExponential( METHOD, stream, out.length, out.data, a, b );
-    } else if (Mat.useSTLRand) {
-      SExponential(METHOD, engine, out.length, out.data, a);
-    } else {
-      var i = 0; while (i < out.length) {out.data(i) = acmrand.nextExponential(a).toFloat; i += 1;}      
-    }
-    Mat.nflops += 20L*out.length
-    out
+		out match {
+		  case aa:GMat =>  throw new RuntimeException("exprnd not implemented for GMats");
+		  case _ => {
+			  if (Mat.useMKLRand) {
+				  vsRngExponential( METHOD, stream, out.length, out.data, a, b );
+			  } else if (Mat.useSTLRand) {
+				  SExponential(METHOD, engine, out.length, out.data, a);
+			  } else {
+				  var i = 0; while (i < out.length) {out.data(i) = acmrand.nextExponential(a).toFloat; i += 1;}      
+			  }
+			  Mat.nflops += 20L*out.length;
+			  out;
+		  }
+		}
   }
   
   def betarnd(p:Float, q:Float, out:FMat):FMat = {
-    vsRngBeta( METHOD, stream, out.length, out.data, p, q, 0, 1 )
-    Mat.nflops += 20L*out.length
-    out
+		out match {
+		  case aa:GMat =>  throw new RuntimeException("betarnd not implemented for GMats");
+		  case _ => {
+			  vsRngBeta( METHOD, stream, out.length, out.data, p, q, 0, 1 );
+			  Mat.nflops += 20L*out.length;
+			  out;
+		  }
+		}
   }
    
   def binornd(k:Int, p:Double, out:IMat):IMat = {
-    if (Mat.useMKLRand) {
-      viRngBinomial( METHOD, stream, out.length, out.data, k, p );
-    } else if (Mat.useSTLRand) {
-      IBinomial(METHOD, engine, out.length, out.data, k, p);
-    } else {
-      var i = 0; while (i < out.length) {out.data(i) = acmrand.nextBinomial(k, p).toInt; i += 1;}  
+    out match {
+		  case aa:GIMat => GFunctions.binornd(GIMat.elem(k), GMat.elem(p), aa);
+		  case _ => {
+			  if (Mat.useMKLRand) {
+				  viRngBinomial( METHOD, stream, out.length, out.data, k, p );
+			  } else if (Mat.useSTLRand) {
+				  IBinomial(METHOD, engine, out.length, out.data, k, p);
+			  } else {
+				  var i = 0; while (i < out.length) {out.data(i) = acmrand.nextBinomial(k, p).toInt; i += 1;}  
+			  }
+			  Mat.nflops += 20L*out.length;
+			  out;
+		  }
     }
-    Mat.nflops += 20L*out.length
-    out
+  }
+  
+   def binornd(k:IMat, p:FMat, out:IMat):IMat = {
+     (k, p, out) match {
+		  case (gk:GIMat, gp:GMat, gout:GIMat) => GFunctions.binornd(gk, gp, gout);
+		  case _ => {
+			  var i = 0; while (i < out.length) {out.data(i) = acmrand.nextBinomial(k.data(i), p.data(i)).toInt; i += 1;}  
+			  Mat.nflops += 20L*out.length;
+			  out;
+		  }
+    }
   }
   
   def bernrnd(p:Double, out:IMat):IMat = {
-    if (Mat.useMKLRand) {
-      viRngBernoulli( METHOD, stream, out.length, out.data, p );
-    } else if (Mat.useSTLRand) {
-      IBernoulli(METHOD, engine, out.length, out.data, p);
-    } else {
-      var i = 0; while (i < out.length) {out.data(i) = if (acmrand.nextUniform(0,1) < p) 1 else 0; i += 1;}  
-    }
-    Mat.nflops += 20L*out.length
-    out
+		out match {
+		  case aa:GIMat =>  throw new RuntimeException("bernrnd not implemented for GMats");
+		  case _ => {
+			  if (Mat.useMKLRand) {
+				  viRngBernoulli( METHOD, stream, out.length, out.data, p );
+			  } else if (Mat.useSTLRand) {
+				  IBernoulli(METHOD, engine, out.length, out.data, p);
+			  } else {
+				  var i = 0; while (i < out.length) {out.data(i) = if (acmrand.nextUniform(0,1) < p) 1 else 0; i += 1;}  
+			  }
+			  Mat.nflops += 20L*out.length;
+			  out;
+		  }
+		}
   }
   
 	def geornd(p:Double, out:IMat):IMat = {
-    if (Mat.useMKLRand) {
-      viRngGeometric( METHOD, stream, out.length, out.data, p );
-    } else if (Mat.useSTLRand) {
-      IGeometric(METHOD, engine, out.length, out.data, p);
-    } else {
-      var i = 0; while (i < out.length) {out.data(i) = acmrand.nextExponential(p).toInt; i += 1;}  
-    }
-    Mat.nflops += 20L*out.length
-    out
+	  out match {
+			case aa:GIMat =>  throw new RuntimeException("geornd not implemented for GMats");
+			case _ => {
+				if (Mat.useMKLRand) {
+					viRngGeometric( METHOD, stream, out.length, out.data, p );
+				} else if (Mat.useSTLRand) {
+					IGeometric(METHOD, engine, out.length, out.data, p);
+				} else {
+					var i = 0; while (i < out.length) {out.data(i) = acmrand.nextExponential(p).toInt; i += 1;}  
+				}
+				Mat.nflops += 20L*out.length;
+				out;
+			}
+	  }
   }
   
   def nbinrnd(a:Double, p:Double, out:IMat):IMat = {
-    if (Mat.useMKLRand) {
-      viRngNegbinomial( METHOD, stream, out.length, out.data, a, p );
-    } else if (Mat.useSTLRand) {
-      INegBinomial(METHOD, engine, out.length, out.data, a.toInt, p);
-    } else {
-      throw new RuntimeException("No pure java Negative Binomial implementation")
-    }
-    Mat.nflops += 20L*out.length
-    out
-  } 
-  
-  def poissrnd(lambda:Double, out:IMat):IMat = {
-    if (Mat.useMKLRand) {
-      viRngPoisson( METHOD, stream, out.length, out.data, lambda );
-    } else if (Mat.useSTLRand) {
-      IPoisson(METHOD, engine, out.length, out.data, lambda);
-    } else {
-      var i = 0; while (i < out.length) {out.data(i) = acmrand.nextPoisson(lambda).toInt; i += 1;}  
-    }
-    Mat.nflops += 20L*out.length
-    out
-  }
-  
-  def gamrnd(a:FMat, b:FMat, out:FMat):FMat = { 
-    Random.gamrnd(a, b, out, myrand);
+		out match {
+		  case aa:GIMat =>  throw new RuntimeException("nbinrnd not implemented for GMats");
+		  case _ => {
+			  if (Mat.useMKLRand) {
+				  viRngNegbinomial( METHOD, stream, out.length, out.data, a, p );
+			  } else if (Mat.useSTLRand) {
+				  INegBinomial(METHOD, engine, out.length, out.data, a.toInt, p);
+			  } else {
+				  throw new RuntimeException("No pure java Negative Binomial implementation")
+			  }
+			  Mat.nflops += 20L*out.length;
+			  out;
+		  }
+		}
   } 
    
   def applySFun(a:FMat, omat:Mat, vfn:(Int, Array[Float], Array[Float])=>Unit, efn:(Float)=>Float, nflops:Long) ={

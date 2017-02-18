@@ -1350,12 +1350,6 @@ object IMat {
   
   def apply(nr:Int, nc:Int) = new IMat(nr, nc, new Array[Int](nr*nc))
   
-  def apply(a:DenseMat[Int]) = {
-    val out = new IMat(a.nrows, a.ncols, a._data) 
-    out.setGUID(a.GUID)
-    out
-  }
-  
   def make(dims:Array[Int]):IMat = {
     val out = new IMat(dims, new Array[Int](dims.reduce(_*_))); 
     out
@@ -1378,17 +1372,21 @@ object IMat {
     out.set(1f)
     out
   }
-
+  
   def apply(x:Mat):IMat = {
-    var out:IMat = null
+    val out:IMat = x match {
+      case _:GIMat | _:DMat | _:FMat | _:IMat | _:LMat => IMat.newOrCheckIMat(x.dims, null, x.GUID, "IMat".##);
+      case dd:DenseMat[Int] @ unchecked => {val out = new IMat(dd.dims.data, dd._data); out.setGUID(dd.GUID); out}
+      case _ => throw new RuntimeException("IMat apply unknown argument");
+    }
     x match {
-    case gg:GIMat => out = gg.toIMat;
-    case dd:DMat => {out = IMat.newOrCheckIMat(x.nrows, x.ncols, null, x.GUID, "IMat".##) ; Mat.copyToIntArray(dd.data, 0, out.data, 0, dd.length)};
-    case ff:FMat => {out = IMat.newOrCheckIMat(x.nrows, x.ncols, null, x.GUID, "IMat".##); Mat.copyToIntArray(ff.data, 0, out.data, 0, ff.length)};
-    case ff:LMat => {out = IMat.newOrCheckIMat(x.nrows, x.ncols, null, x.GUID, "IMat".##); Mat.copyToIntArray(ff.data, 0, out.data, 0, ff.length)};
-    case ii:IMat => {out = IMat.newOrCheckIMat(x.nrows, x.ncols, null, x.GUID, "IMat".##); System.arraycopy(ii.data, 0, out.data, 0, ii.length)};
-    case _ => throw new RuntimeException("Unsupported source type")
-  }
+      case gg:GIMat => gg.toIMat;
+      case dd:DMat => {Mat.copyToIntArray(dd.data, 0, out.data, 0, dd.length)};
+      case ff:FMat => {Mat.copyToIntArray(ff.data, 0, out.data, 0, ff.length)};
+      case ff:LMat => {Mat.copyToIntArray(ff.data, 0, out.data, 0, ff.length)};
+      case ii:IMat => {System.arraycopy(ii.data, 0, out.data, 0, ii.length)};
+      case dd:DenseMat[Int] @ unchecked => {}
+    }
     out
   }
        

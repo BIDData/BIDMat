@@ -1709,13 +1709,7 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair(omat, mat) {
 
 object DMat {
   
-  def apply(nr:Int, nc:Int) = new DMat(nr, nc, new Array[Double](nr*nc)) 
-  
-  def apply(a:DenseMat[Double]):DMat = {
-    val out = new DMat(a.nrows, a.ncols, a._data) 
-    out.setGUID(a.GUID)
-    out
-  }
+  def apply(nr:Int, nc:Int) = new DMat(nr, nc, new Array[Double](nr*nc));
   
   def make(dims:Array[Int]):DMat = {
     val length = dims.reduce(_*_);
@@ -1728,7 +1722,7 @@ object DMat {
     new DMat(dims, new Array[Double](length));   
   }
   
-   def make(dims:IMat):DMat = {
+  def make(dims:IMat):DMat = {
      make(dims.data)   
   }
   
@@ -1736,19 +1730,23 @@ object DMat {
   
   def apply(a:Int) = delem(a)
   
-  def apply(a:Double) = delem(a)
-
+  def apply(a:Double) = delem(a);
+  
   def apply(x:Mat):DMat = {
-    val out = DMat.newOrCheckDMat(x.nrows, x.ncols, null, x.GUID, "DMat".##)
+    val out:DMat = x match {
+      case _:GMat | _:GDMat | _:DMat | _:FMat | _:IMat | _:LMat | _:SDMat => DMat.newOrCheckDMat(x.dims, null, x.GUID, "DMat".##);
+      case dd:DenseMat[Double] @ unchecked => {val out = new DMat(dd.dims.data, dd._data); out.setGUID(dd.GUID); out}
+      case _ => throw new RuntimeException("DMat apply unknown argument");
+    }
     x match {
       case gg:GMat => {val ff = gg.toFMat(null); Mat.copyToDoubleArray(ff.data, 0, out.data, 0, ff.length)}
-      case gg:GDMat => gg.toDMat(out)
+      case gg:GDMat => gg.copyTo(out);
       case dd:DMat => {System.arraycopy(dd.data, 0, out.data, 0, dd.length)}
       case ff:FMat => {Mat.copyToDoubleArray(ff.data, 0, out.data, 0, ff.length)}
       case ii:IMat => {Mat.copyToDoubleArray(ii.data, 0, out.data, 0, ii.length)}
       case ii:LMat => {Mat.copyToDoubleArray(ii.data, 0, out.data, 0, ii.length)}
       case ss:SDMat => ss.full(out)
-      case _ => throw new RuntimeException("Unsupported source type")
+      case dd:DenseMat[Float] @ unchecked => {}
     }
     out
   }
@@ -1814,7 +1812,7 @@ object DMat {
   }
  
  
- def vecEQ(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
+  def vecEQ(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
     var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
     while (ci < cend) {
       c(ci) = if (a(ai) == b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
@@ -1824,7 +1822,7 @@ object DMat {
  
   def vecNE(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
     var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
-    while (ci < cend) {
+    while (ci < cend) { 
       c(ci) = if (a(ai) != b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
     }
     0

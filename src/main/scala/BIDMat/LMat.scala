@@ -1424,18 +1424,22 @@ object LMat {
     out.set(1f)
     out
   }
-
+  
   def apply(x:Mat):LMat = {
-    var out:LMat = null
+    val out:LMat = x match {
+      case _:GIMat | _:GLMat | _:DMat | _:FMat | _:IMat | _:LMat => LMat.newOrCheckLMat(x.dims, null, x.GUID, "LMat".##);
+      case dd:DenseMat[Long] @ unchecked => {val out = new LMat(dd.dims.data, dd._data); out.setGUID(dd.GUID); out}
+      case _ => throw new RuntimeException("IMat apply unknown argument");
+    }
     x match {
-    case gg:GIMat => out = gg.toLMat;
-    case gg:GLMat => out = gg.toLMat;
-    case dd:DMat => {out = LMat(x.nrows, x.ncols); Mat.copyToLongArray(dd.data, 0, out.data, 0, dd.length)};
-    case ff:FMat => {out = LMat(x.nrows, x.ncols); Mat.copyToLongArray(ff.data, 0, out.data, 0, ff.length)};
-    case ff:IMat => {out = LMat(x.nrows, x.ncols); Mat.copyToLongArray(ff.data, 0, out.data, 0, ff.length)};
-    case ii:LMat => {out = LMat(x.nrows, x.ncols); System.arraycopy(ii.data, 0, out.data, 0, ii.length)};
-    case _ => throw new RuntimeException("Unsupported source type");
-   }
+      case gg:GIMat => gg.toLMat;
+      case gg:GLMat => gg.toLMat;
+      case dd:DMat => {Mat.copyToLongArray(dd.data, 0, out.data, 0, dd.length)};
+      case ff:FMat => {Mat.copyToLongArray(ff.data, 0, out.data, 0, ff.length)};
+      case ff:LMat => {Mat.copyToLongArray(ff.data, 0, out.data, 0, ff.length)};
+      case ii:IMat => {System.arraycopy(ii.data, 0, out.data, 0, ii.length)};
+      case dd:DenseMat[Long] @ unchecked => {}
+    }
     out
   }
        

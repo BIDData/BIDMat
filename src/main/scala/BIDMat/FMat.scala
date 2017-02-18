@@ -2360,14 +2360,8 @@ object FMat {
     new FMat(dims, new Array[Float](length));   
   }
   
-   def make(dims:IMat):FMat = {
+  def make(dims:IMat):FMat = {
      make(dims.data)   
-  }
-
-  def apply(a:DenseMat[Float]):FMat = {
-    val out = new FMat(a.nrows, a.ncols, a._data)
-    out.setGUID(a.GUID)
-    out
   }
 
   def apply(a:Float) = elem(a)
@@ -2377,18 +2371,22 @@ object FMat {
   def apply(a:Double) = elem(a.toFloat)
 
   def apply(x:Mat):FMat = {
-    val out = FMat.newOrCheckFMat(x.nrows, x.ncols, null, x.GUID, "FMat".##)
+    val out:FMat = x match {
+      case _:GMat | _:GDMat | _:GIMat | _:CLMat | _:DMat | _:FMat | _:IMat | _:LMat | _:SMat => FMat.newOrCheckFMat(x.dims, null, x.GUID, "FMat".##);
+      case dd:DenseMat[Float] @ unchecked => {val out = new FMat(dd.dims.data, dd._data); out.setGUID(dd.GUID); out}
+      case _ => throw new RuntimeException("FMat apply unknown argument");
+    }
     x match {
-      case gg:GMat => gg.toFMat(out)
-      case gg:GDMat => gg.copyTo(out)
-      case gg:GIMat => gg.toFMat(out)
-      case gg:CLMat => gg.toFMat(out)
+      case gg:GMat => gg.toFMat(out);
+      case gg:GDMat => gg.copyTo(out);
+      case gg:GIMat => gg.toFMat(out);
+      case gg:CLMat => gg.toFMat(out);
       case dd:DMat => {Mat.copyToFloatArray(dd.data, 0, out.data, 0, dd.length)}
       case ff:FMat => {System.arraycopy(ff.data, 0, out.data, 0, ff.length)}
       case ii:IMat => {Mat.copyToFloatArray(ii.data, 0, out.data, 0, ii.length)}
       case ii:LMat => {Mat.copyToFloatArray(ii.data, 0, out.data, 0, ii.length)}
       case ss:SMat => ss.full(out)
-      case _ => throw new RuntimeException("Unsupported source type")
+      case dd:DenseMat[Float] @ unchecked => {}
     }
     out
   }
