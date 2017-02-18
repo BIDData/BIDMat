@@ -48,5 +48,27 @@ object SciState {
   def getVMLmode():Int = {
     vmlGetMode()
   }
+  
+  def maxdims(a:IMat, b:IMat):IMat = {
+    if (a.length != b.length) throw new RuntimeException("dims mismatch");
+    val out = IMat(1, a.length);
+    for (i <- 0 until a.length) {
+      out.data(i) = math.max(a.data(i), b.data(i));
+    }
+    out;
+  }
+  
+  def samedims(a:IMat, b:IMat):Boolean = {
+    if (a.length != b.length) {
+      false;
+    } else {
+      var good = true;
+      var i = 0;
+      while (good && i < a.length) {
+        if (a.data(i) != b.data(i)) good = false;
+      }
+      good;
+    }
+  }
 
 }

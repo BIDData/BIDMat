@@ -215,7 +215,7 @@ object GFunctions {
   } 
    
   def applyGfun(in:GMat, omat:Mat, opn:Int, kflops:Long):GMat = {
-    val out = GMat.newOrCheckGMat(in.nrows, in.ncols, omat, in.GUID, opn)
+    val out = GMat.newOrCheckGMat(in.dims, omat, in.GUID, opn)
     CUMAT.applygfun(in.pdata, out.pdata, in.nrows*in.ncols, opn)
     jcuda.runtime.JCuda.cudaDeviceSynchronize()
     Mat.nflops += kflops*in.length
@@ -223,7 +223,7 @@ object GFunctions {
   }
 
   def applyGfun(in:GMat, opn:Int, kflops:Long):GMat = {
-    val out = GMat.newOrCheckGMat(in.nrows, in.ncols, null, in.GUID, opn)
+    val out = GMat.newOrCheckGMat(in.dims, null, in.GUID, opn)
     CUMAT.applygfun(in.pdata, out.pdata, in.nrows*in.ncols, opn)
     jcuda.runtime.JCuda.cudaDeviceSynchronize()
     Mat.nflops += kflops*in.length
@@ -231,8 +231,8 @@ object GFunctions {
   }
   
   def applyGfun2(a:GMat, b:GMat, omat:Mat, opn:Int, kflops:Long):GMat = {   
-    if (a.nrows == b.nrows && a.ncols == b.ncols) {
-      val out = GMat.newOrCheckGMat(a.nrows, a.ncols, omat, a.GUID, b.GUID, opn)
+    if (samedims(a.dims, b.dims)) {
+      val out = GMat.newOrCheckGMat(a.dims, omat, a.GUID, b.GUID, opn)
       CUMAT.applygfun2(a.pdata, b.pdata, out.pdata, a.nrows*a.ncols, opn)
       jcuda.runtime.JCuda.cudaDeviceSynchronize()
       Mat.nflops += kflops*a.length
@@ -243,8 +243,8 @@ object GFunctions {
   }
   
   def applyGfun2(a:GMat, b:GMat, opn:Int, kflops:Long):GMat = {
-    if  (a.nrows == b.nrows && a.ncols == b.ncols)  {
-      val out = GMat.newOrCheckGMat(a.nrows, a.ncols, null, a.GUID, b.GUID, opn)
+    if (samedims(a.dims, b.dims))  {
+      val out = GMat.newOrCheckGMat(a.dims, null, a.GUID, b.GUID, opn)
       CUMAT.applygfun2(a.pdata, b.pdata, out.pdata, a.nrows*a.ncols, opn)
       jcuda.runtime.JCuda.cudaDeviceSynchronize()
       Mat.nflops += kflops*a.length
@@ -256,7 +256,7 @@ object GFunctions {
   
   
   def applySlatecGFun(a:GMat, omat:Mat, nfn:Int, nflops:Long) = {
-    val out = GMat.newOrCheckGMat(a.nrows, a.ncols, omat, a.GUID, nfn)
+    val out = GMat.newOrCheckGMat(a.dims, omat, a.GUID, nfn)
     SLATEC.applygfun(a.pdata, out.pdata, a.length, nfn);
     Mat.nflops += nflops*a.length
     out
@@ -279,7 +279,7 @@ object GFunctions {
   
   def norm(a:GMat) = math.sqrt(jcuda.jcublas.JCublas.cublasSdot(a.length, a.pdata, 1, a.pdata, 1))
   
-   def accumIJ(I:GIMat, J:GIMat, V:GMat, omat:Mat, nrows:Int, ncols:Int):GMat = {
+  def accumIJ(I:GIMat, J:GIMat, V:GMat, omat:Mat, nrows:Int, ncols:Int):GMat = {
     val out = GMat.newOrCheckGMat(nrows, ncols, omat, I.GUID, J.GUID, V.GUID, "GMat_accum".##)
     out.clear
     if (I.length != J.length || I.length != V.length) {

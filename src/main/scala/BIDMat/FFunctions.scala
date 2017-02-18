@@ -335,7 +335,7 @@ object FFunctions {
   } 
    
   def applySFun(a:FMat, omat:Mat, vfn:(Int, Array[Float], Array[Float])=>Unit, efn:(Float)=>Float, nflops:Long) ={
-    val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat, a.GUID, vfn.##, efn.##)
+    val out = FMat.newOrCheckFMat(a.dims, omat, a.GUID, vfn.##, efn.##)
     if (!Mat.useMKLRand || vfn == null) {
       if (efn == null) {
         throw new RuntimeException("no Scala builtin version of this math function, sorry")
@@ -351,7 +351,7 @@ object FFunctions {
   
   def applySFunV(a:FMat, omat:Mat, vfn:(Int, Array[Float], Array[Float])=>Unit, 
   		efn:(Int, Array[Float], Array[Float])=>Unit, nflops:Long) ={
-  	val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat, a.GUID, vfn.##, efn.##)
+  	val out = FMat.newOrCheckFMat(a.dims, omat, a.GUID, vfn.##, efn.##)
   	if (!Mat.useMKLRand) {
   		if (efn == null) {
   			throw new RuntimeException("no Scala builtin version of this math function, sorry")
@@ -367,7 +367,7 @@ object FFunctions {
 	def applyS2Fun(a:FMat, b:FMat, omat:Mat, 
 			vfn:(Int, Array[Float], Array[Float], Array[Float]) => Unit, 
 			efn:(Float, Float)=>Float, nflops:Long):FMat = {
-					val out = FMat.newOrCheckFMat(math.max(a.nrows, b.nrows), math.max(a.ncols, b.ncols), omat, a.GUID, b.GUID, vfn.##, efn.##);
+					val out = FMat.newOrCheckFMat(maxdims(a.dims, b.dims), omat, a.GUID, b.GUID, vfn.##, efn.##);
 					if (!Mat.useMKLRand) {
 						if (efn == null) {
 							throw new RuntimeException("no Scala builtin version of this math function, sorry")
@@ -381,25 +381,25 @@ object FFunctions {
 					out;
 			}
 	
-	   def applyS2xFun(a:FMat, b:Float, omat:Mat, 
-  		vfn:(Int, Array[Float], Float, Array[Float]) => Unit, 
-  		efn:(Float, Float)=>Float, nflops:Long):FMat = {
-  				val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat, a.GUID, b.##, vfn.##, efn.##)
-  				if (!Mat.useMKLRand) {
-  					if (efn == null) {
-  						throw new RuntimeException("no Scala builtin version of this math function, sorry")
-  					} 
-  					var	i = 0; val len = a.length; val odata = out.data; val adata = a.data
-  					while	(i < len) {odata(i) = efn(adata(i), b); i += 1}
-  				} else {
-  					vfn(a.length, a.data, b, out.data)
-  				}
-  				Mat.nflops += nflops*a.length
-  				out
-  		}
+	def applyS2xFun(a:FMat, b:Float, omat:Mat, 
+			vfn:(Int, Array[Float], Float, Array[Float]) => Unit, 
+			efn:(Float, Float)=>Float, nflops:Long):FMat = {
+					val out = FMat.newOrCheckFMat(a.dims, omat, a.GUID, b.##, vfn.##, efn.##)
+							if (!Mat.useMKLRand) {
+								if (efn == null) {
+									throw new RuntimeException("no Scala builtin version of this math function, sorry")
+								} 
+								var	i = 0; val len = a.length; val odata = out.data; val adata = a.data
+										while	(i < len) {odata(i) = efn(adata(i), b); i += 1}
+							} else {
+								vfn(a.length, a.data, b, out.data)
+							}
+					Mat.nflops += nflops*a.length
+							out
+			}
   
   def applySlatecFun(a:FMat, omat:Mat, nfn:Int, nflops:Long) = {
-    val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat, a.GUID, nfn)
+    val out = FMat.newOrCheckFMat(a.dims, omat, a.GUID, nfn)
     SLATEC.applyfun(a.data, out.data, a.length, nfn);
     Mat.nflops += nflops*a.length
     out
