@@ -1798,37 +1798,6 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair(omat, mat) {
   def !=  (b : DMat) = Mop_NE.op(mat, b, omat)
   
   /*
-   * Specialize to FMat
-   */
-  /*
-  def *   (b : FMat) = Mop_Times.op(mat, b, omat) 
-  def *^  (b : FMat) = Mop_TimesT.op(mat, b, omat)
-  def xT  (b : FMat) = Mop_TimesT.op(mat, b, omat)
-  def Tx  (b : FMat) = Mop_TTimes.op(mat, b, omat)
-  def ^*  (b : FMat) = Mop_TTimes.op(mat, b, omat)
-  def +   (b : FMat) = Mop_Plus.op(mat, b, omat)
-  def -   (b : FMat) = Mop_Minus.op(mat, b, omat)
-  def *@  (b : FMat) = Mop_ETimes.op(mat, b, omat)
-  def ∘   (b : FMat) = Mop_ETimes.op(mat, b, omat)
-  def /   (b : FMat) = Mop_EDiv.op(mat, b, omat)  
-  def ^   (b : FMat) = Mop_Pow.op(mat, b, omat) 
-  def ∙   (b : FMat) = Mop_Dot.op(mat, b, omat)
-  def ∙→  (b : FMat) = Mop_Dotr.op(mat, b, omat)
-  def dot (b : FMat) = Mop_Dot.op(mat, b, omat)
-  def dotr(b : FMat) = Mop_Dotr.op(mat, b, omat)
-  def \   (b : FMat) = Mop_HCat.op(mat, b, omat)
-  def on  (b : FMat) = Mop_VCat.op(mat, b, omat)
-
-  def >   (b : FMat) = Mop_GT.op(mat, b, omat)
-  def <   (b : FMat) = Mop_LT.op(mat, b, omat)
-  def ==  (b : FMat) = Mop_EQ.op(mat, b, omat)
-  def === (b : FMat) = Mop_EQ.op(mat, b, omat)
-  def >=  (b : FMat) = Mop_GE.op(mat, b, omat)
-  def <=  (b : FMat) = Mop_LE.op(mat, b, omat)
-  def !=  (b : FMat) = Mop_NE.op(mat, b, omat)
-  * */
-  
-  /*
    * Generics
    */
   override def *  (b : Mat):Mat = Mop_Times.op(mat, b, omat)
