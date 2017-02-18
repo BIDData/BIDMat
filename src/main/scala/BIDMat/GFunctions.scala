@@ -8,7 +8,10 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64
 import edu.berkeley.bid.CUMAT
+import edu.berkeley.bid.SLATEC;
 import GMat.BinOp
+import GMat.TransF
+import GMat.TransF2
 import SciState._;
 import jcuda._
 import jcuda.runtime._
@@ -251,6 +254,29 @@ object GFunctions {
     }
   }
   
+  
+  def applySlatecGFun(a:GMat, omat:Mat, nfn:Int, nflops:Long) = {
+    val out = GMat.newOrCheckGMat(a.nrows, a.ncols, omat, a.GUID, nfn)
+    SLATEC.applygfun(a.pdata, out.pdata, a.length, nfn);
+    Mat.nflops += nflops*a.length
+    out
+  }
+  
+  def applySlatecGFun2(a:GMat, b:GMat, omat:Mat, nfn:Int, nflops:Long) = {
+    val nr = math.max(a.nrows, b.nrows);
+    val nc = math.max(a.ncols, b.ncols);
+    val out = GMat.newOrCheckGMat(nr, nc, omat, a.GUID, b.GUID, nfn);
+    val arowi = if (a.nrows == nr) 1 else 0;
+    val browi = if (b.nrows == nr) 1 else 0;
+    val acoli = if (a.ncols == nc) a.nrows else 0;
+    val bcoli = if (b.ncols == nc) b.nrows else 0;
+    SLATEC.applygfun2(nr, nc, a.pdata, arowi, acoli, b.pdata, browi, bcoli, out.pdata, nr, nfn);
+    Mat.nflops += nflops*out.length
+    out
+  }
+ 
+  
+  
   def norm(a:GMat) = math.sqrt(jcuda.jcublas.JCublas.cublasSdot(a.length, a.pdata, 1, a.pdata, 1))
   
    def accumIJ(I:GIMat, J:GIMat, V:GMat, omat:Mat, nrows:Int, ncols:Int):GMat = {
@@ -421,6 +447,93 @@ object GFunctions {
       throw new RuntimeException("Cumsum across rows not supported yet")
     }
   }
+
+
+  def abs(in:GMat, out:Mat):GMat =     applyGfun(in, out, TransF.abs, 1L)
+  def exp(in:GMat, out:Mat):GMat =     applyGfun(in, out, TransF.exp, 10L)
+  def expm1(in:GMat, out:Mat):GMat =   applyGfun(in, out, TransF.expm1, 10L)
+  def sqrt(in:GMat, out:Mat):GMat =    applyGfun(in, out, TransF.sqrt, 10L)
+  def ln(in:GMat, out:Mat):GMat =      applyGfun(in, out, TransF.ln, 10L)
+  def log10(in:GMat, out:Mat):GMat =   applyGfun(in, out, TransF.log10, 10L)
+  def log1p(in:GMat, out:Mat):GMat =   applyGfun(in, out, TransF.log1p, 10L)
+  def cos(in:GMat, out:Mat):GMat =     applyGfun(in, out, TransF.cos, 10L)
+  def sin(in:GMat, out:Mat):GMat =     applyGfun(in, out, TransF.sin, 10L)
+  def tan(in:GMat, out:Mat):GMat =     applyGfun(in, out, TransF.tan, 10L)
+  def cosh(in:GMat, out:Mat):GMat =    applyGfun(in, out, TransF.cosh, 10L)
+  def sinh(in:GMat, out:Mat):GMat =    applyGfun(in, out, TransF.sinh, 10L)
+  def tanh(in:GMat, out:Mat):GMat =    applyGfun(in, out, TransF.tanh, 10L)
+  def acos(in:GMat, out:Mat):GMat =    applyGfun(in, out, TransF.acos, 10L)
+  def asin(in:GMat, out:Mat):GMat =    applyGfun(in, out, TransF.asin, 10L)
+  def atan(in:GMat, out:Mat):GMat =    applyGfun(in, out, TransF.atan, 10L)
+  def acosh(in:GMat, out:Mat):GMat =   applyGfun(in, out, TransF.acosh, 10L)
+  def asinh(in:GMat, out:Mat):GMat =   applyGfun(in, out, TransF.asinh, 10L)
+  def atanh(in:GMat, out:Mat):GMat =   applyGfun(in, out, TransF.atanh, 10L)
+  def erf(in:GMat, out:Mat):GMat =     applyGfun(in, out, TransF.erf, 10L)
+  def erfinv(in:GMat, out:Mat):GMat =  applyGfun(in, out, TransF.erfinv, 10L)
+  def erfc(in:GMat, out:Mat):GMat =    applyGfun(in, out, TransF.erfc, 10L)
+  def erfcinv(in:GMat, out:Mat):GMat = applyGfun(in, out, TransF.erfcinv, 10L)
+  def gammaln(in:GMat, out:Mat):GMat = applyGfun(in, out, TransF.gammaln, 10L)
+  def gamma(in:GMat, out:Mat):GMat =   applyGfun(in, out, TransF.gamma, 10L)
+  def Γ(a:GMat, out:Mat) = gamma(a, out);
+  def Γ(a:GMat) = gamma(a);
+  def ceil(in:GMat, out:Mat):GMat =    applyGfun(in, out, TransF.ceil, 10L)
+  def floor(in:GMat, out:Mat):GMat =   applyGfun(in, out, TransF.floor, 10L)
+  def round(in:GMat, out:Mat):GMat =   applyGfun(in, out, TransF.round, 10L)
+  def trunc(in:GMat, out:Mat):GMat =   applyGfun(in, out, TransF.trunc, 10L)
+  def sign(in:GMat, out:Mat):GMat =    applyGfun(in, out, TransF.sign, 1L)
+  def exppsi(in:GMat, out:Mat):GMat =  applyGfun(in, out, TransF.exppsi, 1L)
+  def normcdf(in:GMat, out:Mat):GMat =  applyGfun(in, out, TransF.normcdf, 1L)
+  def normcdfinv(in:GMat, out:Mat):GMat =  applyGfun(in, out, TransF.normcdfinv, 1L)
+  
+  def psi(a:GMat, out:Mat):GMat = applySlatecGFun(a, out, 0, 100);
+  def psi(a:GMat):GMat = psi(a, null);
+  
+  def psiinv(a:GMat, out:Mat):GMat = applySlatecGFun(a, out, 1, 400);
+  def psiinv(a:GMat):GMat = psiinv(a, null);
+  
+  def psifn(a:GMat, b:GMat, out:Mat):GMat = applySlatecGFun2(a, b, out, 0, 200);
+  def psifn(a:GMat, b:GMat):GMat = psifn(a, b, null);
+
+  
+  def atan2(a:GMat, b:GMat, out:Mat):GMat =   applyGfun2(a, b, out, TransF2.atan2, 10L)
+  def pow(a:GMat, b:GMat, out:Mat):GMat =     applyGfun2(a, b, out, TransF2.pow, 10L)
+
+  def abs(in:GMat):GMat =     applyGfun(in, TransF.abs, 10L)
+  def exp(in:GMat):GMat =     applyGfun(in, TransF.exp, 10L)
+  def expm1(in:GMat):GMat =   applyGfun(in, TransF.expm1, 10L)
+  def sqrt(in:GMat):GMat =    applyGfun(in, TransF.sqrt, 10L)
+  def ln(in:GMat):GMat =      applyGfun(in, TransF.ln, 10L)
+  def log10(in:GMat):GMat =   applyGfun(in, TransF.log10, 10L)
+  def log1p(in:GMat):GMat =   applyGfun(in, TransF.log1p, 10L)
+  def cos(in:GMat):GMat =     applyGfun(in, TransF.cos, 10L)
+  def sin(in:GMat):GMat =     applyGfun(in, TransF.sin, 10L)
+  def tan(in:GMat):GMat =     applyGfun(in, TransF.tan, 10L)
+  def cosh(in:GMat):GMat =    applyGfun(in, TransF.cosh, 10L)
+  def sinh(in:GMat):GMat =    applyGfun(in, TransF.sinh, 10L)
+  def tanh(in:GMat):GMat =    applyGfun(in, TransF.tanh, 10L)
+  def acos(in:GMat):GMat =    applyGfun(in, TransF.acos, 10L)
+  def asin(in:GMat):GMat =    applyGfun(in, TransF.asin, 10L)
+  def atan(in:GMat):GMat =    applyGfun(in, TransF.atan, 10L)
+  def acosh(in:GMat):GMat =   applyGfun(in, TransF.acosh, 10L)
+  def asinh(in:GMat):GMat =   applyGfun(in, TransF.asinh, 10L)
+  def atanh(in:GMat):GMat =   applyGfun(in, TransF.atanh, 10L)
+  def erf(in:GMat):GMat =     applyGfun(in, TransF.erf, 10L)
+  def erfinv(in:GMat):GMat =  applyGfun(in, TransF.erfinv, 10L)
+  def erfc(in:GMat):GMat =    applyGfun(in, TransF.erfc, 10L)
+  def ercinv(in:GMat):GMat =  applyGfun(in, TransF.erfcinv, 10L)
+  def gammaln(in:GMat):GMat = applyGfun(in, TransF.gammaln, 10L)
+  def gamma(in:GMat):GMat =   applyGfun(in, TransF.gamma, 10L)
+  def ceil(in:GMat):GMat =    applyGfun(in, TransF.ceil, 10L)
+  def floor(in:GMat):GMat =   applyGfun(in, TransF.floor, 10L)
+  def round(in:GMat):GMat =   applyGfun(in, TransF.round, 10L)
+  def trunc(in:GMat):GMat =   applyGfun(in, TransF.trunc, 10L)
+  def sign(in:GMat):GMat =    applyGfun(in, TransF.sign, 1L)
+  def exppsi(in:GMat):GMat =    applyGfun(in, TransF.exppsi, 1L)
+  def normcdf(in:GMat):GMat =    applyGfun(in, TransF.normcdf, 1L)
+  def normcdfinv(in:GMat):GMat =    applyGfun(in, TransF.normcdfinv, 1L)
+  
+  def atan2(a:GMat, b:GMat):GMat =   applyGfun2(a, b, TransF2.atan2, 10L)
+  def pow(a:GMat, b:GMat):GMat =     applyGfun2(a, b, TransF2.pow, 10L)
 
   def lexsort2i(a:GIMat, b:GMat, i:GIMat) {
     val ab = embedmat(a,b)

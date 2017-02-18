@@ -424,192 +424,387 @@ object FFunctions {
    */
     
   val signumFun = (x:Float) => math.signum(x).toFloat;
-  def sign(a:FMat, out:Mat) = applySFun(a, out, null, signumFun, 1L);
   def sign(a:FMat):FMat = sign(a, null);
+  def sign(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.sign(aa, out);
+      case _ => applySFun(a, out, null, signumFun, 1L);
+    }
+  }
   
-  val absFun = (x:Float) => math.abs(x)
-  val vsAbsFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAbs(n,x,y)
-  def abs(a:FMat, out:Mat) = applySFun(a, out, vsAbsFun, absFun, 1L)
+  val absFun = (x:Float) => math.abs(x);
+  val vsAbsFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAbs(n,x,y);
   def abs(a:FMat):FMat = abs(a, null);
-
-  val vsExpFunMKL = (n:Int, a:Array[Float], b:Array[Float]) => vsExp(n, a, b)
+  def abs(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.abs(aa, out);
+      case _ => applySFun(a, out, vsAbsFun, absFun, 1L);
+    }
+  }
+  
+  val vsExpFunMKL = (n:Int, a:Array[Float], b:Array[Float]) => vsExp(n, a, b);
   val vsExpFun = (n:Int, a:Array[Float], b:Array[Float]) => {var i=0 ; while (i<n) {b(i) = math.exp(a(i)).toFloat; i+=1}}
-  def exp(a:FMat, out:Mat) = applySFunV(a, out, vsExpFunMKL, vsExpFun, 10L)
   def exp(a:FMat):FMat = exp(a, null);
+  def exp(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.exp(aa, out);
+      case _ => applySFunV(a, out, vsExpFunMKL, vsExpFun, 1L);
+    }
+  }
   
-  val expm1Fun = (x:Float) => math.expm1(x).toFloat
-  val vsExpm1Fun = (n:Int, x:Array[Float], y:Array[Float]) => vsExpm1(n,x,y)
-  def expm1(a:FMat, out:Mat) = applySFun(a, out, vsExpm1Fun, expm1Fun, 10L)
+  val expm1Fun = (x:Float) => math.expm1(x).toFloat;
+  val vsExpm1Fun = (n:Int, x:Array[Float], y:Array[Float]) => vsExpm1(n,x,y);
   def expm1(a:FMat):FMat = expm1(a, null);
+  def expm1(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.expm1(aa, out);
+      case _ => applySFun(a, out, vsExpm1Fun, expm1Fun, 10L);
+    }
+  }
   
-  val sqrtFun = (x:Float) => math.sqrt(x).toFloat
-  val vsSqrtFun = (n:Int, x:Array[Float], y:Array[Float]) => vsSqrt(n,x,y)
-  def sqrt(a:FMat, out:Mat) = applySFun(a, out, vsSqrtFun, sqrtFun, 10L)
+  val sqrtFun = (x:Float) => math.sqrt(x).toFloat;
+  val vsSqrtFun = (n:Int, x:Array[Float], y:Array[Float]) => vsSqrt(n,x,y);
   def sqrt(a:FMat):FMat = sqrt(a, null);
+  def sqrt(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.sqrt(aa, out);
+      case _ => applySFun(a, out, vsSqrtFun, sqrtFun, 10L);
+    }
+  }
 
-  val lnFun = (x:Float) => math.log(x).toFloat
-  val vsLnFun = (n:Int, x:Array[Float], y:Array[Float]) => vsLn(n,x,y)
-  def ln(a:FMat, out:Mat) = applySFun(a, out, vsLnFun, lnFun, 10L)
+  val lnFun = (x:Float) => math.log(x).toFloat;
+  val vsLnFun = (n:Int, x:Array[Float], y:Array[Float]) => vsLn(n,x,y);
   def ln(a:FMat):FMat = ln(a, null);
+  def ln(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.ln(aa, out);
+      case _ => applySFun(a, out, vsLnFun, lnFun, 10L);
+    }
+  }
   
-  val log10Fun = (x:Float) => math.log10(x).toFloat
-  val vsLog10Fun = (n:Int, x:Array[Float], y:Array[Float]) => vsLog10(n,x,y)
-  def log10(a:FMat, out:Mat) = applySFun(a, out, vsLog10Fun, log10Fun, 10L)
+  val log10Fun = (x:Float) => math.log10(x).toFloat;
+  val vsLog10Fun = (n:Int, x:Array[Float], y:Array[Float]) => vsLog10(n,x,y);
   def log10(a:FMat):FMat = log10(a, null);
+  def log10(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.log10(aa, out);
+      case _ => applySFun(a, out, vsLog10Fun, log10Fun, 10L);
+    }
+  }
   
-  val log1pFun = (x:Float) => math.log1p(x).toFloat
-  val vsLog1pFun = (n:Int, x:Array[Float], y:Array[Float]) => vsLog1p(n,x,y)
-  def log1p(a:FMat, out:Mat) = applySFun(a, out, vsLog1pFun, log1pFun, 10L)
+  val log1pFun = (x:Float) => math.log1p(x).toFloat;
+  val vsLog1pFun = (n:Int, x:Array[Float], y:Array[Float]) => vsLog1p(n,x,y);
   def log1p(a:FMat):FMat = log1p(a, null);
+  def log1p(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.log1p(aa, out);
+      case _ => applySFun(a, out, vsLog1pFun, log1pFun, 10L);
+    }
+  }
   
-  val cosFun = (x:Float) => math.cos(x).toFloat
-  val vsCosFun = (n:Int, x:Array[Float], y:Array[Float]) => vsCos(n,x,y)
-  def cos(a:FMat, out:Mat) = applySFun(a, out, vsCosFun, cosFun, 10L)
+  val cosFun = (x:Float) => math.cos(x).toFloat;
+  val vsCosFun = (n:Int, x:Array[Float], y:Array[Float]) => vsCos(n,x,y);
   def cos(a:FMat):FMat = cos(a, null);
+  def cos(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.cos(aa, out);
+      case _ => applySFun(a, out, vsCosFun, cosFun, 10L);
+    }
+  }
   
-  val sinFun = (x:Float) => math.sin(x).toFloat
-  val vsSinFun = (n:Int, x:Array[Float], y:Array[Float]) => vsSin(n,x,y)
-  def sin(a:FMat, out:Mat) = applySFun(a, out, vsSinFun, sinFun, 10L)
+  val sinFun = (x:Float) => math.sin(x).toFloat;
+  val vsSinFun = (n:Int, x:Array[Float], y:Array[Float]) => vsSin(n,x,y);
   def sin(a:FMat):FMat = sin(a, null);
+  def sin(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.sin(aa, out);
+      case _ => applySFun(a, out, vsSinFun, sinFun, 10L);
+    }
+  }
   
-  val tanFun = (x:Float) => math.tan(x).toFloat
-  val vsTanFun = (n:Int, x:Array[Float], y:Array[Float]) => vsTan(n,x,y)
-  def tan(a:FMat, out:Mat) = applySFun(a, out, vsTanFun, tanFun, 10L)
+  val tanFun = (x:Float) => math.tan(x).toFloat;
+  val vsTanFun = (n:Int, x:Array[Float], y:Array[Float]) => vsTan(n,x,y);
   def tan(a:FMat):FMat = tan(a, null);
+  def tan(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.tan(aa, out);
+      case _ => applySFun(a, out, vsTanFun, tanFun, 10L);
+    }
+  }
 
-  val coshFun = (x:Float) => math.cosh(x).toFloat
-  val vsCoshFun = (n:Int, x:Array[Float], y:Array[Float]) => vsCosh(n,x,y)
-  def cosh(a:FMat, out:Mat) = applySFun(a, out, vsCoshFun, coshFun, 10L)
+  val coshFun = (x:Float) => math.cosh(x).toFloat;
+  val vsCoshFun = (n:Int, x:Array[Float], y:Array[Float]) => vsCosh(n,x,y);
   def cosh(a:FMat):FMat = cosh(a, null);
+  def cosh(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.cosh(aa, out);
+      case _ => applySFun(a, out, vsCoshFun, coshFun, 10L);
+    }
+  }
  
   val sinhFun = (x:Float) => math.sinh(x).toFloat
-  val vsSinhFun = (n:Int, x:Array[Float], y:Array[Float]) => vsSinh(n,x,y)
-  def sinh(a:FMat, out:Mat) = applySFun(a, out, vsSinhFun, sinhFun, 10L)
+  val vsSinhFun = (n:Int, x:Array[Float], y:Array[Float]) => vsSinh(n,x,y);
   def sinh(a:FMat):FMat = sinh(a, null);
+  def sinh(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.sinh(aa, out);
+      case _ => applySFun(a, out, vsSinhFun, sinhFun, 10L);
+    }
+  }
  
-  val tanhFun = (x:Float) => math.tanh(x).toFloat
-  val vsTanhFun = (n:Int, x:Array[Float], y:Array[Float]) => vsTanh(n,x,y)
-  def tanh(a:FMat, out:Mat) = applySFun(a, out, vsTanhFun, tanhFun, 10L)
+  val tanhFun = (x:Float) => math.tanh(x).toFloat;
+  val vsTanhFun = (n:Int, x:Array[Float], y:Array[Float]) => vsTanh(n,x,y);
   def tanh(a:FMat):FMat = tanh(a, null);
+  def tanh(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.tanh(aa, out);
+      case _ => applySFun(a, out, vsTanhFun, tanFun, 10L);
+    }
+  }
  
-  val acosFun = (x:Float) => math.acos(x).toFloat
-  val vsAcosFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAcos(n,x,y)
-  def acos(a:FMat, out:Mat) = applySFun(a, out, vsAcosFun, acosFun, 10L)
+  val acosFun = (x:Float) => math.acos(x).toFloat;
+  val vsAcosFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAcos(n,x,y);
   def acos(a:FMat):FMat = acos(a, null);
+  def acos(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.acos(aa, out);
+      case _ => applySFun(a, out, vsAcosFun, acosFun, 10L);
+    }
+  }
  
-  val asinFun = (x:Float) => math.asin(x).toFloat
-  val vsAsinFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAsin(n,x,y)
-  def asin(a:FMat, out:Mat) = applySFun(a, out, vsAsinFun, asinFun, 10L)
+  val asinFun = (x:Float) => math.asin(x).toFloat;
+  val vsAsinFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAsin(n,x,y);
   def asin(a:FMat):FMat = asin(a, null);
+  def asin(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.asin(aa, out);
+      case _ => applySFun(a, out, vsAsinFun, sinFun, 10L);
+    }
+  }
  
   val atanFun = (x:Float) => math.atan(x).toFloat
-  val vsAtanFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAtan(n,x,y)
-  def atan(a:FMat, out:Mat) = applySFun(a, out, vsAtanFun, atanFun, 10L)
+  val vsAtanFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAtan(n,x,y);
   def atan(a:FMat):FMat = atan(a, null);
+  def atan(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.atan(aa, out);
+      case _ => applySFun(a, out, vsAtanFun, atanFun, 10L);
+    }
+  }
 
-  val acoshFun = (x:Float) => FastMath.acosh(x).toFloat
-  val vsAcoshFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAcosh(n,x,y)
-  def acosh(a:FMat, out:Mat) = applySFun(a, out, vsAcoshFun, acoshFun, 10L)
+  val acoshFun = (x:Float) => FastMath.acosh(x).toFloat;
+  val vsAcoshFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAcosh(n,x,y);
   def acosh(a:FMat):FMat = acosh(a, null);
+  def acosh(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.acosh(aa, out);
+      case _ => applySFun(a, out, vsAcoshFun, acoshFun, 10L);
+    }
+  }
 
-  val asinhFun = (x:Float) => FastMath.asinh(x).toFloat
-  val vsAsinhFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAsinh(n,x,y)
-  def asinh(a:FMat, out:Mat) = applySFun(a, out, vsAsinhFun, asinhFun, 10L)
+  val asinhFun = (x:Float) => FastMath.asinh(x).toFloat;
+  val vsAsinhFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAsinh(n,x,y);
   def asinh(a:FMat):FMat = asinh(a, null);
+  def asinh(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.asinh(aa, out);
+      case _ => applySFun(a, out, vsAsinhFun, asinhFun, 10L);
+    }
+  }
    
-  val atanhFun = (x:Float) => FastMath.atanh(x).toFloat
-  val vsAtanhFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAtanh(n,x,y)
-  def atanh(a:FMat, out:Mat) = applySFun(a, out, vsAtanhFun, atanhFun, 10L)
+  val atanhFun = (x:Float) => FastMath.atanh(x).toFloat;
+  val vsAtanhFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAtanh(n,x,y);
   def atanh(a:FMat):FMat = atanh(a, null);
+  def atanh(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.atanh(aa, out);
+      case _ => applySFun(a, out, vsAtanhFun, atanhFun, 10L);
+    }
+  }
  
-  val erfFun = (x:Float) => Erf.erf(x).toFloat
-  val vsErfFun = (n:Int, x:Array[Float], y:Array[Float]) => vsErf(n,x,y)
-  def erf(a:FMat, out:Mat) = applySFun(a, out, vsErfFun, erfFun, 10L)
+  val erfFun = (x:Float) => Erf.erf(x).toFloat;
+  val vsErfFun = (n:Int, x:Array[Float], y:Array[Float]) => vsErf(n,x,y);
   def erf(a:FMat):FMat = erf(a, null);
+  def erf(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.erf(aa, out);
+      case _ => applySFun(a, out, vsErfFun, erfFun, 10L);
+    }
+  }
  
-  val vsErfInvFun = (n:Int, x:Array[Float], y:Array[Float]) => vsErfInv(n,x,y)
-  def erfinv(a:FMat, out:Mat) = applySFun(a, out, vsErfInvFun, null, 10L)
+  val vsErfInvFun = (n:Int, x:Array[Float], y:Array[Float]) => vsErfInv(n,x,y);
   def erfinv(a:FMat):FMat = erfinv(a, null);
+  def erfinv(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.erfinv(aa, out);
+      case _ => applySFun(a, out, vsErfInvFun, null, 10L);
+    }
+  }
  
-  val erfcFun = (x:Float) => Erf.erfc(x).toFloat
-  val vsErfcFun = (n:Int, x:Array[Float], y:Array[Float]) => vsErfc(n,x,y)
-  def erfc(a:FMat, out:Mat) = applySFun(a, out, vsErfcFun, erfcFun, 10L)
+  val erfcFun = (x:Float) => Erf.erfc(x).toFloat;
+  val vsErfcFun = (n:Int, x:Array[Float], y:Array[Float]) => vsErfc(n,x,y);
   def erfc(a:FMat):FMat = erfc(a, null);
+  def erfc(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.erfc(aa, out);
+      case _ => applySFun(a, out, vsErfcFun, erfcFun, 10L);
+    }
+  }
  
-  val vsErfcInvFun = (n:Int, x:Array[Float], y:Array[Float]) => vsErfcInv(n,x,y)
-  def erfcinv(a:FMat, out:Mat) = applySFun(a, out, vsErfcInvFun, null, 10L)
+  val vsErfcInvFun = (n:Int, x:Array[Float], y:Array[Float]) => vsErfcInv(n,x,y);
   def erfcinv(a:FMat):FMat = erfcinv(a, null);
+  def erfcinv(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.erfcinv(aa, out);
+      case _ => applySFun(a, out, vsErfcInvFun, null, 10L);
+    }
+  }
  
-  val vsCdfNormFun = (n:Int, x:Array[Float], y:Array[Float]) => vsCdfNorm(n,x,y)
-  def normcdf(a:FMat, out:Mat) = applySFun(a, out, vsCdfNormFun, null, 10L)
+  val vsCdfNormFun = (n:Int, x:Array[Float], y:Array[Float]) => vsCdfNorm(n,x,y);
   def normcdf(a:FMat):FMat = normcdf(a, null);
+  def normcdf(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.normcdf(aa, out);
+      case _ => applySFun(a, out, vsCdfNormFun, null, 10L);
+    }
+  }
  
-  val vsCdfNormInvFun = (n:Int, x:Array[Float], y:Array[Float]) => vsCdfNormInv(n,x,y)
-  def normcdfinv(a:FMat, out:Mat) = applySFun(a, out, vsCdfNormInvFun, null, 10L)
+  val vsCdfNormInvFun = (n:Int, x:Array[Float], y:Array[Float]) => vsCdfNormInv(n,x,y);
   def normcdfinv(a:FMat):FMat = normcdfinv(a, null);
+  def normcdfinv(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.normcdfinv(aa, out);
+      case _ => applySFun(a, out, vsCdfNormInvFun, null, 10L);
+    }
+  }
  
   val gammaFun = (x:Float) => Gamma.gamma(x).toFloat;
   val vsTGammaFun = (n:Int, x:Array[Float], y:Array[Float]) => vsTGamma(n,x,y);
-  def gamma(a:FMat, out:Mat) = applySFun(a, out, vsTGammaFun, gammaFun, 10L);
   def gamma(a:FMat):FMat = gamma(a, null);
+  def gamma(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.gamma(aa, out);
+      case _ => applySFun(a, out, vsTGammaFun, gammaFun, 10L);
+    }
+  }
  
   def Γ(a:FMat, out:Mat) = gamma(a, out);
   def Γ(a:FMat) = gamma(a);
 
   
-  val gammalnFun = (x:Float) => Gamma.logGamma(x).toFloat
-  val vsLGammaFun = (n:Int, x:Array[Float], y:Array[Float]) => vsLGamma(n,x,y)
-  def gammaln(a:FMat, out:Mat) = applySFun(a, out, vsLGammaFun, gammalnFun, 10L)
+  val gammalnFun = (x:Float) => Gamma.logGamma(x).toFloat;
+  val vsLGammaFun = (n:Int, x:Array[Float], y:Array[Float]) => vsLGamma(n,x,y);
   def gammaln(a:FMat):FMat = gammaln(a, null);
+   def gammaln(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.gammaln(aa, out);
+      case _ => applySFun(a, out, vsLGammaFun, gammalnFun, 10L);
+    }
+  }
   
-  val ceilFun = (x:Float) => math.ceil(x).toFloat
-  val vsCeilFun = (n:Int, x:Array[Float], y:Array[Float]) => vsCeil(n,x,y)  
-  def ceil(a:FMat, out:Mat) = applySFun(a, out, vsCeilFun, ceilFun, 1L)
+  val ceilFun = (x:Float) => math.ceil(x).toFloat;
+  val vsCeilFun = (n:Int, x:Array[Float], y:Array[Float]) => vsCeil(n,x,y);
   def ceil(a:FMat):FMat = ceil(a, null);
+   def ceil(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.ceil(aa, out);
+      case _ => applySFun(a, out, vsCeilFun, ceilFun, 1L);
+    }
+  }
  
-  val floorFun = (x:Float) => math.floor(x).toFloat
-  val vsFloorFun = (n:Int, x:Array[Float], y:Array[Float]) => vsFloor(n,x,y)
-  def floor(a:FMat, out:Mat) = applySFun(a, out, vsFloorFun, floorFun, 1L)
+  val floorFun = (x:Float) => math.floor(x).toFloat;
+  val vsFloorFun = (n:Int, x:Array[Float], y:Array[Float]) => vsFloor(n,x,y);
   def floor(a:FMat):FMat = floor(a, null);
+  def floor(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.floor(aa, out);
+      case _ => applySFun(a, out, vsFloorFun, floorFun, 1L);
+    }
+  }
  
-  val roundFun = (x:Float) => math.floor(x+0.5).toFloat
-  val vsRoundFun = (n:Int, x:Array[Float], y:Array[Float]) => vsRound(n,x,y)
-  def round(a:FMat, out:Mat) = applySFun(a, out, vsRoundFun, roundFun, 1L)
+  val roundFun = (x:Float) => math.floor(x+0.5).toFloat;
+  val vsRoundFun = (n:Int, x:Array[Float], y:Array[Float]) => vsRound(n,x,y);
   def round(a:FMat):FMat = round(a, null);
+  def round(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.round(aa, out);
+      case _ => applySFun(a, out, vsRoundFun, roundFun, 1L);
+    }
+  }
    
-  val truncFun = (x:Float) => (math.floor(math.abs(x))*math.signum(x)).toFloat
-  val vsTruncFun = (n:Int, x:Array[Float], y:Array[Float]) => vsTrunc(n,x,y)
-  def trunc(a:FMat, out:Mat) = applySFun(a, out, vsTruncFun, truncFun, 1L)
+  val truncFun = (x:Float) => (math.floor(math.abs(x))*math.signum(x)).toFloat;
+  val vsTruncFun = (n:Int, x:Array[Float], y:Array[Float]) => vsTrunc(n,x,y);
   def trunc(a:FMat):FMat = trunc(a, null);
+  def trunc(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.trunc(aa, out);
+      case _ => applySFun(a, out, vsTruncFun, truncFun, 1L);
+    }
+  }
   
-  def psi(a:FMat, out:Mat):FMat = applySlatecFun(a, out, 0, 100);
   def psi(a:FMat):FMat = psi(a, null);
+  def psi(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.psi(aa, out);
+      case _ => applySlatecFun(a, out, 0, 100);
+    }
+  }
   
-  def psiinv(a:FMat, out:Mat):FMat = applySlatecFun(a, out, 1, 400);
   def psiinv(a:FMat):FMat = psiinv(a, null);
+  def psiinv(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.psiinv(aa, out);
+      case _ => applySlatecFun(a, out, 1, 400);
+    }
+  }
   
-  def psifn(a:FMat, b:FMat, out:Mat):FMat = applySlatecFun2(a, b, out, 0, 200);
   def psifn(a:FMat, b:FMat):FMat = psifn(a, b, null);
+  def psifn(a:FMat, b:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.psifn(aa, GMat(b), out);
+      case _ => applySlatecFun2(a, b, out, 0, 200);
+    }
+  }
   
   val atan2Fun = (x:Float, y:Float) => math.atan2(x, y).toFloat
-  val vsAtan2Fun = (n:Int, x:Array[Float], y:Array[Float], z:Array[Float]) => vsAtan2(n,x,y,z)
-  def atan2(a:FMat, b:FMat, out:Mat) = applyS2Fun(a, b, out, vsAtan2Fun, atan2Fun, 10L)
+  val vsAtan2Fun = (n:Int, x:Array[Float], y:Array[Float], z:Array[Float]) => vsAtan2(n,x,y,z);
   def atan2(a:FMat, b:FMat):FMat = atan2(a, b, null);
+  def atan2(a:FMat, b:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.atan2(aa, GMat(b), out);
+      case _ => applyS2Fun(a, b, out, vsAtan2Fun, atan2Fun, 10L);
+    }
+  }
  
-  val powFun = (x:Float, y:Float) => math.pow(x, y).toFloat
-  val vsPowFun = (n:Int, x:Array[Float], y:Array[Float], z:Array[Float]) => vsPow(n,x,y,z)
-  def pow(a:FMat, b:FMat, out:Mat) = applyS2Fun(a, b, out, vsPowFun, powFun, 10L)
+  val powFun = (x:Float, y:Float) => math.pow(x, y).toFloat;
+  val vsPowFun = (n:Int, x:Array[Float], y:Array[Float], z:Array[Float]) => vsPow(n,x,y,z);
   def pow(a:FMat, b:FMat):FMat = pow(a, b, null);
+  def pow(a:FMat, b:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.pow(aa, GMat(b), out);
+      case _ => applyS2Fun(a, b, out, vsPowFun, powFun, 10L);
+    }
+  }
  
-  val vsPowxFun = (n:Int, x:Array[Float], y:Float, z:Array[Float]) => vsPowx(n,x,y,z)
-  def powx(a:FMat, b:Float, out:Mat) = applyS2xFun(a, b, out, vsPowxFun, powFun, 10L)
+  val vsPowxFun = (n:Int, x:Array[Float], y:Float, z:Array[Float]) => vsPowx(n,x,y,z);
   def powx(a:FMat, b:Float):FMat = powx(a, b, null);
+  def powx(a:FMat, b:Float, out:Mat) = {
+    a match {
+      case aa:GMat => throw new RuntimeException("powx not implemented on GPU")
+      case _ => applyS2xFun(a, b, out, vsPowxFun, powFun, 10L);
+    }
+  }
   
-  val exppsiFun = (x:Float)=>if (x<1f) 0.5f*x*x else x-0.5f
-  def exppsi(a:FMat, out:Mat) = applySFun(a, out, null, exppsiFun, 3L)
+  val exppsiFun = (x:Float)=>if (x<1f) 0.5f*x*x else x-0.5f;
   def exppsi(a:FMat):FMat = exppsi(a, null);
+  def exppsi(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.exppsi(aa, out);
+      case _ => applySFun(a, out, null, exppsiFun, 3L);
+    }
+  }
   
-   def doPowx(n:Int, a:Array[Double], p:Float, r:Array[Double]) {
+  def doPowx(n:Int, a:Array[Double], p:Float, r:Array[Double]) {
     if (!Mat.useMKLRand) {
       var i = 0
       while (i < n) {

@@ -29,5 +29,6 @@
 	<classpathentry kind="lib" path="lib/jcurand-0.8.0.jar"/>
 	<classpathentry kind="lib" path="lib/jcusolver-0.8.0.jar"/>
 	<classpathentry kind="lib" path="lib/jcusparse-0.8.0.jar"/>
+	<classpathentry kind="lib" path="lib/scala-continuations-library_2.11-1.0.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
