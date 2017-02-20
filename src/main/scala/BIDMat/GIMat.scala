@@ -137,12 +137,28 @@ class GIMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     tmp(0);
   }
  
-  override def apply(i1:IMat):GIMat = applyi(Array(i1), null);
   override def apply(i1:IMat, i2:IMat):GIMat = applyi(Array(i1, i2), null);
   override def apply(i1:IMat, i2:Int):GIMat = applyi(Array(i1, IMat.ielem(i2)), null);
   override def apply(i1:Int, i2:IMat):GIMat = applyi(Array(IMat.ielem(i1), i2), null);
   
   override def applyi(inds:Array[IMat]):GIMat = applyi(inds, null);
+  
+  override def apply(inds:IMat):GIMat = {
+  		inds match {
+  		case aa:MatrixWildcard => {
+  			val out = GIMat.newOrCheckGIMat(length, 1, null, GUID, inds.GUID, "apply(?)".##);
+  			GMat.GPUtoGPUarraycopy(pdata, 0,  out.pdata, 0, length, "GIMat IMat apply" );
+  			out
+  		}
+  		case _ => {
+  			val newinds = getIndexMat(0, inds);
+  			val out = GIMat.newOrCheckGIMat(inds.dims, null, GUID, inds.GUID, "apply IMat".##);
+  			val err = CUMAT.copyFromInds(pdata, out.pdata, safePointer(newinds), inds.length);
+  			if (err != 0) throw new RuntimeException("GIMat apply(I) error" + cudaGetErrorString(err));
+  			out;
+  		}
+  		}
+  }
  
   def applyi(inds:Array[IMat], omat:Mat):GIMat = {  
     val newdims = new Array[Int](_dims.length)

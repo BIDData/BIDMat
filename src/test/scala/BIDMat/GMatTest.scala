@@ -292,6 +292,6 @@ class GMatTest extends BIDMatSpec {
     	val bb = aa(ii);
     	bb.mytype should equal ("GMat");
     	val c = a.t;
-    	assert_approx_eq(c.data, FMat(bb).data);
+    	checkSimilar(c, bb);
     }
 }

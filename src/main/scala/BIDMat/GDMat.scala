@@ -131,7 +131,25 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     tmp(0);
   }
  
-  override def apply(i1:IMat):GDMat = applyi(Array(i1), null);
+  /** apply to an index IMat, and mirror its structure in the result */
+  
+  override def apply(inds:IMat):GDMat = {
+  		inds match {
+  		case aa:MatrixWildcard => {
+  			val out = GDMat.newOrCheckGDMat(length, 1, null, GUID, inds.GUID, "apply(?)".##);
+  			GDMat.GPUtoGPUarraycopy(pdata, 0,  out.pdata, 0, length, "GDMat IMat apply" );
+  			out
+  		}
+  		case _ => {
+  			val newinds = getIndexMat(0, inds);
+  			val out = GDMat.newOrCheckGDMat(inds.dims, null, GUID, inds.GUID, "apply IMat".##);
+  			val err = CUMATD.copyFromInds(pdata, out.pdata, safePointer(newinds), inds.length);
+  			if (err != 0) throw new RuntimeException("GDMat apply(I) error" + cudaGetErrorString(err));
+  			out;
+  		}
+  		}
+  }
+  
   override def apply(i1:IMat, i2:IMat):GDMat = applyi(Array(i1, i2), null);
   override def apply(i1:IMat, i2:Int):GDMat = applyi(Array(i1, IMat.ielem(i2)), null);
   override def apply(i1:Int, i2:IMat):GDMat = applyi(Array(IMat.ielem(i1), i2), null);

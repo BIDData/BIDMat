@@ -147,8 +147,28 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     GMat.GPUtoCPUarraycopy(pdata, indx, tmp, 0, 1, "GMat apply");
     tmp(0);
   }
+  
+    /** apply to an index IMat, and mirror its structure in the result */
+  /* should be implemented in subclasses */
+  
+  override def apply(inds:IMat):GMat = {
+    	inds match {
+    	case aa:MatrixWildcard => {
+    		val out = GMat.newOrCheckGMat(length, 1, null, GUID, inds.GUID, "apply(?)".##);
+    		GMat.GPUtoGPUarraycopy(pdata, 0,  out.pdata, 0, length, "GMat IMat apply" );
+    		out
+    	}
+    	case _ => {
+    		val newinds = getIndexMat(0, inds);
+    		val out = GMat.newOrCheckGMat(inds.dims, null, GUID, inds.GUID, "apply IMat".##);
+    		val err = CUMAT.copyFromInds(pdata, out.pdata, safePointer(newinds), inds.length);
+        if (err != 0) throw new RuntimeException("GMat apply(I) error" + cudaGetErrorString(err));
+        out;
+    	}
+    	}
+    }
  
-  override def apply(i1:IMat):GMat = applyi(Array(i1), null);
+//  override def apply(i1:IMat):GMat = applyi(Array(i1), null);
   override def apply(i1:IMat, i2:IMat):GMat = applyi(Array(i1, i2), null);
   override def apply(i1:IMat, i2:Int):GMat = applyi(Array(i1, IMat.ielem(i2)), null);
   override def apply(i1:Int, i2:IMat):GMat = applyi(Array(IMat.ielem(i1), i2), null);
