@@ -300,6 +300,10 @@ public class Machine {
 					ostr.writeInt(msg.sender);
 					ostr.writeInt(msg.tag);
 					ostr.write(msg.buf, 0, msg.size*4);		
+
+					//TODO: log
+					log(String.format("Machine %d round %d sent packet dest %d len %d bytes\n", imachine, round, dest, msg.size*4));
+
 				}
 			}	catch (Exception e) {
 				if (trace > 0) log(String.format("Machine %d round %d problem writing socket "+e+"\n", imachine, round));
@@ -348,7 +352,10 @@ public class Machine {
 					int tag0 = tag % (3*D);
 					if (!msgrecvd[src][tag0]) {
 						Msg msg = new Msg(len, src, imachine, tag);
-						istr.readFully(msg.buf, 0, len*4);
+						istr.readFully(msg.buf, 0, len*4); //len*4 is number of bytes to read
+						//TODO: log
+						log(String.format("Machine %d round %d got packet src %d len %d bytes\n", imachine, round, src, len*4));
+
 						synchronized (Machine.this) {
 							if (!msgrecvd[src][tag0]) {
 								messages[src][tag0] = msg;	
