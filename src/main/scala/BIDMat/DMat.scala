@@ -579,13 +579,13 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
   }
   
   override def copy = {
-  	val out = DMat.newOrCheckDMat(nrows, ncols, null, GUID, "copy".##)
+  	val out = DMat.newOrCheckDMat(dims, null, GUID, "copy".##)
   	System.arraycopy(data, 0, out.data, 0, length)
   	out
   }
   
   override def newcopy = {
-  	val out = DMat(nrows, ncols)
+  	val out = DMat.make(dims)
   	System.arraycopy(data, 0, out.data, 0, length)
   	out
   }

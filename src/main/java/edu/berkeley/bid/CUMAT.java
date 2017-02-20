@@ -9,13 +9,17 @@ public final class CUMAT {
         LibUtils.loadLibrary("bidmatcuda");
     }
 
-    public static native int toFloat(Pointer A, Pointer B, int N);
+    public static native int intToFloat(Pointer A, Pointer B, int N);
     
     public static native int longToFloat(Pointer A, Pointer B, int N);
     
     public static native int floatToLong(Pointer A, Pointer B, int N);
 
-    public static native int toInt(Pointer A, Pointer B, int N);
+    public static native int floatToInt(Pointer A, Pointer B, int N);
+    
+    public static native int longToInt(Pointer A, Pointer B, int N);
+    
+    public static native int intToLong(Pointer A, Pointer B, int N);
     
     public static native int initSeq(Pointer A, int nrows, int ncols, int dorows);
 

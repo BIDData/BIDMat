@@ -1221,7 +1221,7 @@ int transpose(float *in, int instride, float *out, int outstride, int nrows, int
   return 0;
 }
 
-__global__ void __toFloat(int *A, float *B, int N) {
+__global__ void __intToFloat(int *A, float *B, int N) {
   int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
   for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {
     B[i] = (float)(A[i]);
@@ -1242,18 +1242,32 @@ __global__ void __floatToLong(float *A, long long *B, int N) {
   }
 }
 
-__global__ void __toInt(float *A, int *B, int N) {
+__global__ void __floatToInt(float *A, int *B, int N) {
   int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
   for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {
     B[i] = (int)(A[i]);
   }
 }
 
-int toFloat(int *A, float *B, int N) {
+__global__ void __longToInt(long long *A, int *B, int N) {
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {
+    B[i] = (int)(A[i]);
+  }
+}
+
+__global__ void __intToLong(int *A, long long *B, int N) {
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {
+    B[i] = (long long)(A[i]);
+  }
+}
+
+int intToFloat(int *A, float *B, int N) {
   int nthreads;
   dim3 griddims;
   setsizes(N, &griddims, &nthreads);
-  __toFloat<<<griddims,nthreads>>>(A, B, N);
+  __intToFloat<<<griddims,nthreads>>>(A, B, N);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
@@ -1279,11 +1293,31 @@ int floatToLong(float *A, long long *B, int N) {
   return err;
 }
 
-int toInt(float *A, int *B, int N) {
+int floatToInt(float *A, int *B, int N) {
   int nthreads;
   dim3 griddims;
   setsizes(N, &griddims, &nthreads);
-  __toInt<<<griddims,nthreads>>>(A, B, N);
+  __floatToInt<<<griddims,nthreads>>>(A, B, N);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int longToInt(long long *A, int *B, int N) {
+  int nthreads;
+  dim3 griddims;
+  setsizes(N, &griddims, &nthreads);
+  __longToInt<<<griddims,nthreads>>>(A, B, N);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int intToLong(int *A, long long *B, int N) {
+  int nthreads;
+  dim3 griddims;
+  setsizes(N, &griddims, &nthreads);
+  __intToLong<<<griddims,nthreads>>>(A, B, N);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;

@@ -22,7 +22,7 @@ class Mat(val _dims:Array[Int]) extends ND with Serializable {
   
   val ndims = _dims.length;
   val ncols = _dims(ndims-1)
-  val nrows = _dims.slice(0,ndims-1).reduce(_*_);
+  val nrows = if (ndims == 1) 1 else _dims.slice(0,ndims-1).reduce(_*_);
   val length = nrows * ncols; 
   val llength = 1L*nrows*ncols;
   def nnz = length;

@@ -96,13 +96,17 @@ int set_lval(long long *A, long long val, int length);
 
 int full(int *ir, int *ic, float *data, float *od, int nrows, int ncols, int nnz);
 
-int toFloat(int *A, float *B, int N);
+int intToFloat(int *A, float *B, int N);
 
 int longToFloat(long long *A, float *B, int N);
 
 int floatToLong(float *A, long long *B, int N);
 
-int toInt(float *A, int *B, int N);
+int floatToInt(float *A, int *B, int N);
+
+int longToInt(long long *A, int *B, int N);
+
+int intToLong(int *A, long long *B, int N);
 
 template <typename T>
 int kron(T *A, T *B, T *C, int nrA, int ncA, int nrB, int ncB);

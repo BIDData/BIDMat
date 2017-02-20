@@ -562,19 +562,19 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   }
 
   override def copy = {
-  	val out = FMat.newOrCheckFMat(nrows, ncols, null, GUID, "copy".##)
+  	val out = FMat.newOrCheckFMat(dims, null, GUID, "copy".##)
   	System.arraycopy(data, 0, out.data, 0, length)
   	out
   }
 
   override def newcopy = {
-  	val out = FMat(nrows, ncols)
+  	val out = FMat.make(dims)
   	System.arraycopy(data, 0, out.data, 0, length)
   	out
   }
 
   def copyTo(a:FMat) = {
-    if (nrows != a.nrows || ncols != a.ncols) throw new RuntimeException("dimensions mismatch in FMat copyTo (%d, %d) and (%d, %d)" format (nrows, ncols, a.nrows, a.ncols));
+    ND.checkDims("copyTo", dims, a.dims);
     System.arraycopy(data, 0, a.data, 0, length)
     a
   }

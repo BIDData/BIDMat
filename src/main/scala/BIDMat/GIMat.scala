@@ -497,24 +497,52 @@ class GIMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     out
   }
  
-  def toFMat(omat:Mat):FMat = {
+  def toFMatRaw(omat:Mat):FMat = {
     val out = FMat.newOrCheckFMat(nrows, ncols, omat, GUID, "toFMat".##)
     cudaMemcpy(Pointer.to(out.data), pdata, 1L*nrows*ncols * Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize()
     var i = 0;
     val len = out.length
     while (i < len) {
-      val ival = java.lang.Float.floatToRawIntBits(out(i));
-      out(i) = ival.toFloat;
+      val ival = java.lang.Float.floatToRawIntBits(out.data(i));
+      out.data(i) = ival.toFloat;
+      i += 1;
+    }
+    out
+  }
+  
+  def toFMat(omat:Mat):FMat = {
+    val out = FMat.newOrCheckFMat(dims, omat, GUID, "toFMat".##);
+    val a = IMat.newOrCheckIMat(dims, null, GUID, "toFMat2".##);
+    cudaMemcpy(Pointer.to(a.data), pdata, 1L*nrows*ncols * Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost);
+    cudaDeviceSynchronize()
+    var i = 0;
+    val len = out.length
+    while (i < len) {
+      out.data(i) = a.data(i).toFloat;
       i += 1;
     }
     out
   }
     
+  def toLMatRaw():LMat = {
+    val out = LMat.newOrCheckLMat(nrows/2, ncols, null, GUID, "toLMatRaw".##);
+    cudaMemcpy(Pointer.to(out.data), pdata, 1L*length * Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost);
+    cudaDeviceSynchronize();
+    out
+  }
+  
   def toLMat():LMat = {
-    val out = LMat.newOrCheckLMat(nrows/2, ncols, null, GUID, "toLMat".##)
-    cudaMemcpy(Pointer.to(out.data), pdata, 1L*nrows*ncols * Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost);
+    val out = LMat.newOrCheckLMat(dims, null, GUID, "toLMat".##);
+    val a = IMat.newOrCheckIMat(dims, null, GUID, "toLMat2".##);
+    cudaMemcpy(Pointer.to(a.data), pdata, 1L*nrows*ncols * Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize()
+    var i = 0;
+    val len = out.length
+    while (i < len) {
+      out.data(i) = a.data(i);
+      i += 1;
+    }
     out
   }
   
@@ -532,9 +560,9 @@ class GIMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   }
   
   def copyTo(a:GMat):GMat = {
-    if (nrows != a.nrows || ncols != a.ncols)
-      throw new RuntimeException("dimensions mismatch in GMat <-- GIMat")
-    val err = CUMAT.toFloat(pdata, a.pdata, length)
+    ND.checkDims("GIMat copyTo GMat", dims, a.dims);
+    val err = CUMAT.intToFloat(pdata, a.pdata, length);
+    cudaDeviceSynchronize();
     if (err != 0) {
     	println("device is %d" format SciFunctions.getGPU)
     	throw new RuntimeException("error in copyTo " + cudaGetErrorString(err))
@@ -1030,7 +1058,7 @@ object GIMat {
   def apply(a:GMat):GIMat = {
     val rsize = a.nrows*a.ncols
     val retv = GIMat.newOrCheckGIMat(a.nrows, a.ncols, null, a.GUID, SciFunctions.getGPU, "GIMat_GMat".##)
-    var err = CUMAT.toInt(a.pdata, retv.pdata, a.length)
+    var err = CUMAT.floatToInt(a.pdata, retv.pdata, a.length)
     cudaDeviceSynchronize()
     if (err == 0) err = cudaGetLastError()
     if (err != 0) {

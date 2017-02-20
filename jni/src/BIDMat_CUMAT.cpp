@@ -54,13 +54,13 @@ extern "C" {
   }
 
 
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_toFloat 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_intToFloat 
   (JNIEnv *env, jobject obj, jobject jA, jobject jB, jint N)
   {
     int *A = (int*)getPointer(env, jA);
     float *B = (float*)getPointer(env, jB);
 
-    return toFloat(A, B, N);
+    return intToFloat(A, B, N);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_longToFloat 
@@ -81,13 +81,31 @@ extern "C" {
     return floatToLong(A, B, N);
   }
 
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_toInt 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_floatToInt 
   (JNIEnv *env, jobject obj, jobject jA, jobject jB, jint N)
   {
     float *A = (float*)getPointer(env, jA);
     int *B = (int*)getPointer(env, jB);
 
-    return toInt(A, B, N);
+    return floatToInt(A, B, N);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_longToInt
+  (JNIEnv *env, jobject obj, jobject jA, jobject jB, jint N)
+  {
+    long long *A = (long long*)getPointer(env, jA);
+    int *B = (int *)getPointer(env, jB);
+
+    return longToInt(A, B, N);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_intToLong
+  (JNIEnv *env, jobject obj, jobject jA, jobject jB, jint N)
+  {
+    int *A = (int *)getPointer(env, jA);
+    long long *B = (long long*)getPointer(env, jB);
+
+    return intToLong(A, B, N);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_initSeq
