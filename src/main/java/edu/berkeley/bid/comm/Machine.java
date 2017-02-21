@@ -527,7 +527,11 @@ public class Machine {
 		}
 	}	
 
-	public void log(String msg) {
+	static String debug="debug";
+
+	static public void log(String msg) {
+		int zero=0;
+		int error=1/zero;
 		if (network != null) {
 			synchronized (network) {
 				System.out.print(msg);	
@@ -537,3 +541,4 @@ public class Machine {
 		}
 	}
 }
+
