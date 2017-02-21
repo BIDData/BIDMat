@@ -170,7 +170,7 @@ class GMatTest extends BIDMatSpec {
 
     testBcastCols(nr, nc, (a:GMat, b:GMat) => a / b, (x:Float, y:Float)=>x/y, "support division with broadcast over cols", false);
 
-    def testScalar1(nr:Int, nc:Int, mop:(Float,GMat)=>GMat, op:(Float,Float)=>Float, msg:String) = {
+    def testScalar1(nr:Int, nc:Int, mop:(Float,FMat)=>FMat, op:(Float,Float)=>Float, msg:String) = {
     		it should msg in {
     			val a = rand(1, 1).fv;
     			val b = rand(nr, nc);
@@ -187,7 +187,7 @@ class GMatTest extends BIDMatSpec {
     		}
     }
 
-    def testScalar2(nr:Int, nc:Int, mop:(GMat,Float)=>GMat, op:(Float,Float)=>Float, msg:String) = {
+    def testScalar2(nr:Int, nc:Int, mop:(FMat,Float)=>FMat, op:(Float,Float)=>Float, msg:String) = {
     		it should msg in {
     			val a = rand(nr, nc);
     			val b = rand(1, 1).fv;
@@ -204,17 +204,17 @@ class GMatTest extends BIDMatSpec {
     		}
     }
 
-//    testScalar1(nr, nc, (a:Float, b:GMat) => a + b, (x:Float, y:Float)=>x+y, "support addition of scalar 1");
+    testScalar1(nr, nc, (a:Float, b:FMat) => a + b, (x:Float, y:Float)=>x+y, "support addition of scalar 1");
 
-//    testScalar1(nr, nc, (a:Float, b:GMat) => a *@ b, (x:Float, y:Float)=>x*y, "support multiplication of scalar 1");
+    testScalar1(nr, nc, (a:Float, b:FMat) => a *@ b, (x:Float, y:Float)=>x*y, "support multiplication of scalar 1");
 
-    testScalar2(nr, nc, (a:GMat, b:Float) => a + b, (x:Float, y:Float)=>x+y, "support addition of scalar 2");
+    testScalar2(nr, nc, (a:FMat, b:Float) => a + b, (x:Float, y:Float)=>x+y, "support addition of scalar 2");
 
-    testScalar2(nr, nc, (a:GMat, b:Float) => a *@ b, (x:Float, y:Float)=>x*y, "support multiplication of scalar 2");
+    testScalar2(nr, nc, (a:FMat, b:Float) => a *@ b, (x:Float, y:Float)=>x*y, "support multiplication of scalar 2");
 
-    testScalar2(nr, nc, (a:GMat, b:Float) => a - b, (x:Float, y:Float)=>x-y, "support subtraction of scalar 2");
+    testScalar2(nr, nc, (a:FMat, b:Float) => a - b, (x:Float, y:Float)=>x-y, "support subtraction of scalar 2");
 
-    testScalar2(nr, nc, (a:GMat, b:Float) => a / b, (x:Float, y:Float)=>x / y, "support division of scalar 2");
+    testScalar2(nr, nc, (a:FMat, b:Float) => a / b, (x:Float, y:Float)=>x / y, "support division of scalar 2");
     
     it should "support 1D element access" in {
        val a = rand(nr, nc); 
@@ -293,5 +293,61 @@ class GMatTest extends BIDMatSpec {
     	bb.mytype should equal ("GMat");
     	val c = a.t;
     	checkSimilar(c, bb);
+    }
+    
+    it should "support contents and GMat linear wildcard" in {
+    	val a = rand(nr \ nc \ nk);
+    	val aa = GMat(a);
+    	val b = a.contents;
+    	val cc = aa(?);
+    	cc.mytype should equal ("GMat");
+    	checkSimilar(cc, b);
+    }
+    
+    it should "support GMat contents and linear wildcard" in {
+    	val a = rand(nr \ nc \ nk);
+    	val aa = GMat(a);
+    	val bb = aa.contents;
+    	val c = a(?);
+    	bb.mytype should equal ("GMat");
+    	checkSimilar(c, bb);
+    }
+    
+    it should "support IMat product access" in {
+    	val a = rand(3 \ 4 \ 5);
+    	val aa = GMat(a);
+    	val i1 = 1 \ 2;
+    	val i2 = 2 \ 3;
+    	val i3 = 4 \ 3;
+    	val b = zeros(i1.length \ i2.length \ i3.length);
+    	for (i <- 0 until i1.length) {
+    	  for (j <- 0 until i2.length) {
+    	    for (k <- 0 until i3.length) {
+    	      b.data(i + i1.length * (j + i2.length * k)) = a.data(i1.data(i) + a.dims(0) * (i2.data(j) + a.dims(1) *  i3.data(k)));
+    	    }
+    	  }
+    	}
+    	val cc = aa(i1, i2, i3);
+    	cc.mytype should equal ("GMat");
+    	checkSimilar(cc, b);
+    }
+    
+    it should "support IMat product access with wildcard" in {
+    	val a = rand(3 \ 4 \ 5);
+    	val aa = GMat(a);
+    	val i1 = 1 \ 2;
+    	val i2 = ?
+    	val i3 = 4 \ 3;
+    	val b = zeros(i1.length \ a.dims(1) \ i3.length);
+    	for (i <- 0 until i1.length) {
+    	  for (j <- 0 until a.dims(1)) {
+    	    for (k <- 0 until i3.length) {
+    	      b.data(i + i1.length * (j + a.dims(1) * k)) = a.data(i1.data(i) + a.dims(0) * (j + a.dims(1) *  i3.data(k)));
+    	    }
+    	  }
+    	}
+    	val cc = aa(i1, i2, i3);
+    	cc.mytype should equal ("GMat");
+    	checkSimilar(cc, b);
     }
 }

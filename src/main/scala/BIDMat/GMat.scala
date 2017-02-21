@@ -1322,6 +1322,12 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     gOp(minusOne, null, op_mul)
   }
   
+  def + (a : GMat) = gOp(a, null, op_add)
+  def - (a : GMat) = gOp(a, null, op_sub)
+  def *@ (a : GMat) = gOp(a, null, op_mul)
+  def ∘  (a : GMat) = gOp(a, null, op_mul)
+  def /  (a : GMat) = gOp(a, null, op_div)
+  def ^  (a : GMat) = gOp(a, null, op_pow)
   def * (a : GMat) = GMult(a, null)
   def * (a : GSMat) = GSMult(a, null)
   def *^ (a : GMat) = GMultT(a, null)
@@ -1333,12 +1339,6 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   def Tx (a : GMat) = GTMult(a, null)
   def kron(a: GMat):GMat = kron(a, null)
   def ⊗  (b : GMat) = kron(b, null)
-  def + (a : GMat) = gOp(a, null, op_add)
-  def - (a : GMat) = gOp(a, null, op_sub)
-  def *@ (a : GMat) = gOp(a, null, op_mul)
-  def ∘  (a : GMat) = gOp(a, null, op_mul)
-  def /  (a : GMat) = gOp(a, null, op_div)
-  def ^  (a : GMat) = gOp(a, null, op_pow)
   def ∙  (a : GMat) = dot(a)
   def ∙→ (a : GMat) = dotr(a)
   

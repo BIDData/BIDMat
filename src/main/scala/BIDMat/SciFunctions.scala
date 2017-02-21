@@ -149,11 +149,11 @@ object SciFunctions {
   
   def normrnd(mu:Float, sig:Float, out:GMat):GMat = GFunctions.normrnd(mu, sig, out)
   def gnormrnd(mu:Float, sig:Float, nr:Int, nc:Int):GMat = GFunctions.normrnd(mu, sig, GMat(nr, nc));
-  def gndnormrnd(mu:Float, sig:Float, dims:IMat):GMat = GFunctions.normrnd(mu, sig, GMat.make(dims));
+  def gnormrnd(mu:Float, sig:Float, dims:IMat):GMat = GFunctions.normrnd(mu, sig, GMat.make(dims));
   
   def normrnd(mu:Double, sig:Double, out:GDMat):GDMat = GDFunctions.normrnd(mu, sig, out);
   def gdnormrnd(mu:Double, sig:Double, nr:Int, nc:Int):GDMat =  GDFunctions.normrnd(mu, sig, GDMat(nr, nc));
-  def gdndnormrnd(mu:Float, sig:Float, dims:IMat):GDMat = GDFunctions.normrnd(mu, sig, GDMat.make(dims));
+  def gdnormrnd(mu:Float, sig:Float, dims:IMat):GDMat = GDFunctions.normrnd(mu, sig, GDMat.make(dims));
  
   def normrnd(mu:Double, sig:Double, out:Mat):Mat = {
     out match {
@@ -169,6 +169,8 @@ object SciFunctions {
   def poissrnd(lambda:FMat):IMat = poissrnd(lambda, IMat.make(lambda.dims));
 
   def gpoissrnd(mu:Float, nr:Int, nc:Int):GIMat =  GFunctions.poissrnd(mu, GIMat(nr, nc));
+  def gpoissrnd(mu:Float, dims:IMat):GIMat =  GFunctions.poissrnd(mu, GIMat.make(dims));
+  
   def poissrnd(mu:GMat, out:GIMat):GIMat = GFunctions.poissrnd(mu, out);
   def poissrnd(mu:GMat):GIMat = GFunctions.poissrnd(mu, GIMat.make(mu.dims));
   def poissrnd(mu:Float, out:GIMat):GIMat = GFunctions.poissrnd(mu, out);
@@ -196,10 +198,12 @@ object SciFunctions {
   }
 
   def gamrnd(shape:Float, scale:Float, out:FMat):FMat = FFunctions.gamrnd(shape, scale, out);
-
   def gamrnd(shape:Float, scale:Float, m:Int, n:Int):FMat = gamrnd(shape, scale, FMat(m, n));
-
+  def gamrnd(shape:Float, scale:Float, dims:IMat):FMat = gamrnd(shape, scale, FMat.make(dims)); 
+ 
+  def gamrnd(shape:Float, scale:Float, out:DMat):DMat = DFunctions.gamrnd(shape, scale, out);
   def dgamrnd(shape:Double, scale:Double, m:Int, n:Int):DMat = DFunctions.gamrnd(shape, scale, DMat(m, n));
+  def dgamrnd(shape:Double, scale:Double, dims:IMat):DMat = DFunctions.gamrnd(shape, scale, DMat.make(dims));
   
   def gamrnd(a:Mat, b:Mat, out:Mat):Mat = {
     (a,b,out) match {

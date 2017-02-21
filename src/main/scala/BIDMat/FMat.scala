@@ -529,8 +529,9 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
       case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)
     }
 
-  def ffMatOpv(b: Mat, f:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, out:Mat) =
+  def ffMatOpv(b: Mat, f:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, optype:Int, out:Mat) =
     b match {
+      case bb:GMat => GMat(this).gOp(bb, out, optype);
       case bb:FMat => FMat(ggMatOpv(bb, f, out))
       case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)
     }
@@ -1804,9 +1805,14 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   /*
    * Basic operators on pairs of FMats. These are the compute routines.
    */
+  import GMat.BinOp._
   override def unary_-() = ffMatOpScalarv(-1f, FMat.vecMulFun, null)
-  def +  (b : FMat) = ffMatOpv(b, FMat.vecAddFun, null)
-  def -  (b : FMat) = ffMatOpv(b, FMat.vecSubFun, null)
+  def +  (b : FMat) = ffMatOpv(b, FMat.vecAddFun, op_add, null)
+  def -  (b : FMat) = ffMatOpv(b, FMat.vecSubFun, op_sub, null)
+  def *@ (b : FMat) = ffMatOpv(b, FMat.vecMulFun, op_mul, null)
+  def ∘  (b : FMat) = ffMatOpv(b, FMat.vecMulFun, op_mul, null)
+  def /  (b : FMat) = ffMatOpv(b, FMat.vecDivFun, op_div, null)
+  def ^  (b : FMat) = ffMatOpv(b, FMat.vecPowFun, op_pow, null)
   def *  (b : FMat) = fDMult(b, null)
   def *  (b : SMat) = fSMult(b, null)
   def xT  (b : SMat) = multT(b, null)
@@ -1823,26 +1829,22 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   def \\ (b : FMat) = solver(b)
   def ◁  (b : FMat) = solvel(b)
   def ▷  (b : FMat) = solver(b)
-  def ^  (b : FMat) = ffMatOpv(b, FMat.vecPowFun, null)
-  def *@ (b : FMat) = ffMatOpv(b, FMat.vecMulFun, null)
-  def ∘  (b : FMat) = ffMatOpv(b, FMat.vecMulFun, null)
-  def /  (b : FMat) = ffMatOpv(b, FMat.vecDivFun, null)
   def ∙  (b:FMat):FMat = dot(b)
   def ∙→ (b:FMat):FMat = dotr(b)
   def ∙∙ (b:FMat):Double = ddot(b)
   def ** (b : FMat) = kron(b, null)
   def ⊗  (b : FMat) = kron(b, null)
 
-  def >   (b : FMat) = ffMatOpv(b, FMat.vecGTFun, null)
-  def <   (b : FMat) = ffMatOpv(b, FMat.vecLTFun, null)
-  def ==  (b : FMat) = ffMatOpv(b, FMat.vecEQFun, null)
-  def === (b : FMat) = ffMatOpv(b, FMat.vecEQFun, null)
-  def >=  (b : FMat) = ffMatOpv(b, FMat.vecGEFun, null)
-  def <=  (b : FMat) = ffMatOpv(b, FMat.vecLEFun, null)
-  def !=  (b : FMat) = ffMatOpv(b, FMat.vecNEFun, null)
+  def >   (b : FMat) = ffMatOpv(b, FMat.vecGTFun, op_gt, null)
+  def <   (b : FMat) = ffMatOpv(b, FMat.vecLTFun, op_lt, null)
+  def ==  (b : FMat) = ffMatOpv(b, FMat.vecEQFun, op_eq, null)
+  def === (b : FMat) = ffMatOpv(b, FMat.vecEQFun, op_eq, null)
+  def >=  (b : FMat) = ffMatOpv(b, FMat.vecGEFun, op_ge, null)
+  def <=  (b : FMat) = ffMatOpv(b, FMat.vecLEFun, op_le, null)
+  def !=  (b : FMat) = ffMatOpv(b, FMat.vecNEFun, op_ne, null)
   
-  def max(b: FMat) = ffMatOpv(b, FMat.vecMaxFun, null)
-  def min(b: FMat) = ffMatOpv(b, FMat.vecMinFun, null)
+  def max(b: FMat) = ffMatOpv(b, FMat.vecMaxFun, op_max, null)
+  def min(b: FMat) = ffMatOpv(b, FMat.vecMinFun, op_min, null)
   
  
   /*
@@ -2114,6 +2116,7 @@ class FDSPair(val left:FMat, val right:SMat) extends DSPair {
 }
 
 class FPair(val omat:Mat, val mat:FMat) extends Pair(omat, mat) {
+  import GMat.BinOp._
   /*
    * Compute routines
    */
@@ -2133,12 +2136,12 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair(omat, mat) {
   def *^! (b :FMat) = mat.GPUmult(b, omat, true)
   def xG  (b :FMat) = mat.GPUmult(b, omat, false)
   def xTG (b :FMat) = mat.GPUmult(b, omat, true)
-  def +   (b : FMat) = mat.ffMatOpv(b, FMat.vecAddFun, omat)
-  def -   (b : FMat) = mat.ffMatOpv(b, FMat.vecSubFun, omat)
-  def *@  (b : FMat) = mat.ffMatOpv(b, FMat.vecMulFun, omat)
-  def ∘   (b : FMat) = mat.ffMatOpv(b, FMat.vecMulFun, omat)
-  def /   (b : FMat) = mat.ffMatOpv(b, FMat.vecDivFun, omat)
-  def ^   (b : FMat) = mat.ffMatOpv(b, FMat.vecPowFun, omat)
+  def +   (b : FMat) = mat.ffMatOpv(b, FMat.vecAddFun, op_add, omat)
+  def -   (b : FMat) = mat.ffMatOpv(b, FMat.vecSubFun, op_sub, omat)
+  def *@  (b : FMat) = mat.ffMatOpv(b, FMat.vecMulFun, op_mul, omat)
+  def ∘   (b : FMat) = mat.ffMatOpv(b, FMat.vecMulFun, op_mul, omat)
+  def /   (b : FMat) = mat.ffMatOpv(b, FMat.vecDivFun, op_div, omat)
+  def ^   (b : FMat) = mat.ffMatOpv(b, FMat.vecPowFun, op_pow, omat)
   def ∙   (b:FMat):FMat = mat.dot(b, omat)
   def ∙→  (b:FMat):FMat = mat.dotr(b, omat)
   def **  (b : FMat) = mat.kron(b, omat)
@@ -2148,16 +2151,16 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair(omat, mat) {
   def ^* (b : FDSPair) = MatFunctions.DDS(mat, b.left, b.right, omat)
   def Tx (b : FDSPair) = MatFunctions.DDS(mat, b.left, b.right, omat)
 
-  def > (b : FMat) = mat.ffMatOpv(b, FMat.vecGTFun, omat)
-  def < (b : FMat) = mat.ffMatOpv(b, FMat.vecLTFun, omat)
-  def == (b : FMat) = mat.ffMatOpv(b, FMat.vecEQFun, omat)
-  def === (b : FMat) = mat.ffMatOpv(b, FMat.vecEQFun, omat)
-  def >= (b : FMat) = mat.ffMatOpv(b, FMat.vecGEFun, omat)
-  def <= (b : FMat) = mat.ffMatOpv(b, FMat.vecLEFun, omat)
-  def != (b : FMat) = mat.ffMatOpv(b, FMat.vecNEFun, omat)
+  def > (b : FMat) = mat.ffMatOpv(b, FMat.vecGTFun, op_gt,  omat)
+  def < (b : FMat) = mat.ffMatOpv(b, FMat.vecLTFun, op_lt, omat)
+  def == (b : FMat) = mat.ffMatOpv(b, FMat.vecEQFun, op_eq, omat)
+  def === (b : FMat) = mat.ffMatOpv(b, FMat.vecEQFun, op_eq, omat)
+  def >= (b : FMat) = mat.ffMatOpv(b, FMat.vecGEFun, op_ge, omat)
+  def <= (b : FMat) = mat.ffMatOpv(b, FMat.vecLEFun, op_le, omat)
+  def != (b : FMat) = mat.ffMatOpv(b, FMat.vecNEFun, op_ne, omat)
   
-  def max (b : FMat) = mat.ffMatOpv(b, FMat.vecMaxFun, omat)
-  def min (b : FMat) = mat.ffMatOpv(b, FMat.vecMinFun, omat)
+  def max (b : FMat) = mat.ffMatOpv(b, FMat.vecMaxFun, op_max, omat)
+  def min (b : FMat) = mat.ffMatOpv(b, FMat.vecMinFun, op_min, omat)
 
   /*
    * Scalar second arguments
@@ -2397,14 +2400,20 @@ object FMat {
   	out
   }
   
-   def zeros(dims:IMat) = {
-    val out = FMat(dims)
+  def zeros(dims:IMat) = {
+    val out = FMat.make(dims)
   	out.clear
   	out
   }
 
   def ones(nr:Int, nc:Int) = {
   	val out = FMat(nr, nc)
+  	Arrays.fill(out.data, 1.0f)
+  	out
+  }
+  
+  def ones(dims:IMat) = {
+  	val out = FMat.make(dims);
   	Arrays.fill(out.data, 1.0f)
   	out
   }

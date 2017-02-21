@@ -1147,18 +1147,14 @@ object MatFunctions {
   def col(x:Tuple2[Int,Int]):FMat = col(x._1 until x._2)
   
   /** Make a float matrix of zeros of the given size. */
-  def zeros(nr:Int, nc:Int):FMat = FMat(nr,nc)
+  def zeros(nr:Int, nc:Int):FMat = FMat.zeros(nr,nc)
+  
+  def zeros(dims:IMat):FMat = FMat.zeros(dims);
 
   /** Make a float matrix of ones of the given size. */  
-  def ones(nr:Int, nc:Int):FMat = {
-    val out = FMat(nr,nc)
-    var i = 0
-    while (i < out.length) {
-      out.data(i) = 1
-      i += 1
-    }
-    out
-  }  
+  def ones(nr:Int, nc:Int):FMat = FMat.ones(nr, nc);
+  
+  def ones(dims:IMat):FMat = FMat.ones(dims);
   
   /**  Make an empty sparse matrix of ones of the given size. */
   def spzeros(nr:Int, nc:Int):SMat = {

@@ -14,6 +14,9 @@ trait ND {
   
   val _dims:Array[Int];
     
+  /** 
+   *  Product of dimensions starting at dimension i0 and stepping by step.
+   */
   def prodDimsBy(i0:Int, step:Int):Int = {
 		  var p = 1;
 		  var i = i0;
@@ -23,21 +26,25 @@ trait ND {
 		  }
 		  p;
   }
-
+  /*
+   * Total up dimensions of the array starting at i0 and stepping by step, used for printing ND arrays.
+   */
   def prodDimsByX(i0:Int, step:Int):Int = {
 		  var p = 1;
 		  var i = i0;
 		  var tot = 0;
-		  while (i < _dims.length) i += step
-				  i -= step
-				  while (i >= 0) {
-					  p *= _dims(i);
-					  tot += p;
-					  i -= step;
-				  }
+		  while (i < _dims.length) i += step;
+		  i -= step;
+		  while (i >= 0) {
+		  	p *= _dims(i);
+		  	tot += p;
+		  	i -= step;
+		  }
 		  tot
   }
-
+  /*
+   * Linearize array indices, where the indices can start at an index "start" and skip by "step".
+   */
   def linearize(inds:Array[Int], start:Int, step:Int):Int = {
 		  var loc = 0;
 		  var mult = 1;
@@ -53,6 +60,10 @@ trait ND {
 		  }
 		  loc;
   }
+  
+  /*
+   * Compute a subset of this Arrays dimensions starting at "start" and stepping by "step". 
+   */
 
   def subDims(start:Int, step:Int):Array[Int] = {
 		  val out = new Array[Int](1 + (_dims.length-start-1) / step);
@@ -63,6 +74,10 @@ trait ND {
 		  }
 		  out
   }
+  
+  /*
+   * Increment a vector of indices, and carry over if they exceed that dimension's bound
+   */
 
   def incInds(inds:Array[Int], dims:Array[Int]):Int = {
 		  var ncarry = 0;
@@ -89,6 +104,9 @@ trait ND {
       "%.5g" format v
     }
   }
+  /**
+   * Build up a CString array (for printing ND arrays)
+   */
 
   def populateCS(maxRows:Int, maxCols:Int):CSMat = {
 		  val cs = CSMat(maxRows, maxCols);
@@ -118,6 +136,10 @@ trait ND {
 
 object ND {
   
+  /** Check dimensions and throw an exception if they dont match
+   *  
+   */
+  
   def checkDims(fname:String, dims1:Array[Int], dims2:Array[Int]):Boolean = {
     if (dims1.length != dims2.length) {
       throw new RuntimeException(fname + " number of dimensions doesnt match source array");
@@ -130,7 +152,29 @@ object ND {
     return true
   }
   
+    
   def checkDims(fname:String, dims1:IMat, dims2:IMat):Boolean = checkDims(fname, dims1.data, dims2.data);
+  
+  /**
+   * Return true if dimensions match
+   */
+  
+  def compareDims(dims1:Array[Int], dims2:Array[Int]):Boolean = {
+    if (dims1.length != dims2.length) {
+      return false;
+    } else {
+    	for (i <- 0 until dims1.length) {
+    		if (dims1(i) != dims2(i)) {
+    			return false; 
+    		}
+    	}
+    	return true;
+    }
+  }
+  
+  /**
+   * Trim dimensions, i.e. remove dimensions = 1.
+   */
   
   def trimDims(dims:Array[Int]):Array[Int] = {
     var nd = 0;
@@ -152,6 +196,10 @@ object ND {
     val dd = trimDims(dims.data);
     new IMat(1, dd.length, dd);
   }
+  
+  /**
+   * Check if initial dims of dims1 are 1's. 
+   */
   
   def checkHead(dims1:Array[Int], dims2:Array[Int]):(Int, Int) = {
     var ishead = true;
@@ -177,6 +225,10 @@ object ND {
     if (matches) (nrows, ncols) else (-1, -1)
   }
   
+  /**
+   * Check if final dims of dims1 are 1's. 
+   */
+  
   def checkTail(dims1:Array[Int], dims2:Array[Int]):(Int, Int) = {
     var istail = true;
     var matches = true;
@@ -201,33 +253,54 @@ object ND {
     if (matches) (nrows, ncols) else (-1, -1)
   }
   
-  def compatibleDims(dims1:Array[Int], dims2:Array[Int], opname:String):(Int, Int, Int, Int) = {
-  	val len = dims1.reduce(_*_)
-    if (len == dims2.reduce(_*_)) {
-      ND.checkDims(opname, dims1, dims2);      
-      (len, 1, len, 1)
+  def compatibleDims(dims1:Array[Int], dims2:Array[Int], opname:String):(Int, Int, Int, Int, Int, Int) = {
+  	val len = dims1.reduce(_*_);
+  	val len2 = dims2.reduce(_*_);
+  	if (len == 1) {
+  	  (len2, 1, 0, 0, 1, 0);
+  	} else if (len2 == 1) {
+  		(len, 1, 1, 0, 0, 0);
+  	} else if (len == len2) {
+  		ND.checkDims(opname, dims1, dims2);      
+  		(len, 1, 1, 0, 1, 0);
+  	} else {
+  		val (nr, nc) = checkHead(dims1, dims2);
+  		if (nr > 0) {
+  			(nr, nc, 0, 1, 1, nr);
+  		} else {
+  			val (nr, nc) = checkHead(dims2, dims1);
+  			if (nr > 0) {
+  				(nr, nc, 1, nr, 0, 1); 
+  			} else {
+  				val (nr, nc) = checkTail(dims1, dims2);
+  				if (nr > 0) {
+  					(nr, nc, 1, 0, 1, nr);
+  				} else {
+  					val (nr, nc) = checkTail(dims2, dims1);
+  					if (nr > 0) {
+  						(nr, nc, 1, nr, 0, 1);
+  					} else {
+  						throw new RuntimeException("Operator "+opname+" incompatible dimensions")
+  					}
+  				}
+  			}
+  		}
+    }
+  }
+  
+  def maxDims(dims1:Array[Int], dims2:Array[Int]):Array[Int] = {
+    if (dims1.length >= dims2.length) {
+      val out = dims1.clone;
+      if (dims1.length == dims2.length) {
+        var i = 0;
+        while (i < dims1.length) {
+          out(i) = math.max(dims1(i), dims2(i));
+          i += 1;
+        }
+      }
+      out;
     } else {
-    	val (nr, nc) = checkHead(dims1, dims2);
-    	if (nr > 0) {
-    	  (1, nc, nr, nc)
-    	} else {
-    	  val (nr, nc) = checkHead(dims2, dims1);
-    	  if (nr > 0) {
-    	  	(nr, nc, 1, nc) 
-    	  } else {
-    	    val (nr, nc) = checkTail(dims1, dims2);
-    	    if (nr > 0) {
-    	    	(nr, 1, nr, nc)
-    	    } else {
-    	      val (nr, nc) = checkTail(dims1, dims2);
-    	      if (nr > 0) {
-    	      	(nr, nc, nr, 1)
-    	      } else {
-    	        throw new RuntimeException("Operator "+opname+" incompatible dimensions")
-    	      }
-    	    }
-    	  }
-    	}
+      dims1.clone
     }
   }
   

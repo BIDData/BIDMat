@@ -189,6 +189,55 @@ class FMatTest extends BIDMatSpec {
 
     testScalar2(nr, nc, (a:FMat, b:Float) => a / b, (x:Float, y:Float)=>x / y, "support division of scalar 2");
     
+    def testScalar1ND(nr:Int, nc:Int, mop:(Float,FMat)=>FMat, op:(Float,Float)=>Float, msg:String) = {
+    		it should msg in {
+    			val a = rand(1, 1).fv;
+    			val b = rand(nr \ nc \ nk);
+
+    			val d = zeros(nr \ nc \ nk);
+    			for (i <- 0 until nr) {
+    				for (j <- 0 until nc) {
+    				  for (k <- 0 until nk) {
+    				  	d.data(i + nr * (j + nc * k)) = op(a, b.data(i + nr * (k + nc * k)));
+    				  }
+    				}
+    			}
+    			val c = mop(a, b);
+    			checkSimilar(c, d);
+    		}
+    }
+
+    def testScalar2ND(nr:Int, nc:Int, mop:(FMat,Float)=>FMat, op:(Float,Float)=>Float, msg:String) = {
+    		it should msg in {
+    			val a = rand(nr \ nc \ nk);
+    			val b = rand(1, 1).fv;
+    			val d = zeros(nr \ nc \ nk);
+    			for (i <- 0 until nr) {
+    				for (j <- 0 until nc) {
+    					for (k <- 0 until nk) {
+    						d.data(i + nr * (j + nc * k)) = op(a.data(i + nr * (k + nc * k)), b);
+    					}
+    				}
+    			}
+    			val c = mop(a, b);
+    			checkSimilar(c, d);
+    		}
+    }
+    
+    testScalar1ND(nr, nc, (a:Float, b:FMat) => a + b, (x:Float, y:Float)=>x+y, "support addition of scalar 1 ND");
+
+    testScalar1ND(nr, nc, (a:Float, b:FMat) => a *@ b, (x:Float, y:Float)=>x*y, "support multiplication of scalar 1 ND");
+
+    testScalar2ND(nr, nc, (a:FMat, b:Float) => a + b, (x:Float, y:Float)=>x+y, "support addition of scalar 2 ND");
+
+    testScalar2ND(nr, nc, (a:FMat, b:Float) => a *@ b, (x:Float, y:Float)=>x*y, "support multiplication of scalar 2 ND");
+
+    testScalar2ND(nr, nc, (a:FMat, b:Float) => a - b, (x:Float, y:Float)=>x-y, "support subtraction of scalar 2 ND");
+
+    testScalar2ND(nr, nc, (a:FMat, b:Float) => a / b, (x:Float, y:Float)=>x / y, "support division of scalar 2 ND");
+    
+  
+    
     it should "support 1D element access" in {
        val a = rand(nr, nc); 
        assert_approx_eq(Array(a(5)), Array(a.data(5)));
@@ -238,11 +287,52 @@ class FMatTest extends BIDMatSpec {
     	checkSimilar(e, b);
     }
     
-    it should "support IMat indexing" in {
+    it should "support single IMat indexing" in {
     	val a = rand(nr, nc);
     	val ii = iones(nc, 1) * irow(0->nr) + icol(0->nc) * nr;
     	val b = a(ii);
     	val c = a.t;
+    	checkSimilar(c, b);
+    }
+    
+    it should "support contents and linear wildcard" in {
+    	val a = rand(nr \ nc \ nk);
+    	val b = a.contents;
+    	val c = a(?);
+    	checkSimilar(c, b);
+    }
+    
+    it should "support IMat product access" in {
+    	val a = rand(3 \ 4 \ 5);
+    	val i1 = 1 \ 2;
+    	val i2 = 2 \ 3;
+    	val i3 = 4 \ 3;
+    	val b = zeros(i1.length \ i2.length \ i3.length);
+    	for (i <- 0 until i1.length) {
+    	  for (j <- 0 until i2.length) {
+    	    for (k <- 0 until i3.length) {
+    	      b.data(i + i1.length * (j + i2.length * k)) = a.data(i1.data(i) + a.dims(0) * (i2.data(j) + a.dims(1) *  i3.data(k)));
+    	    }
+    	  }
+    	}
+    	val c = a(i1, i2, i3);
+    	checkSimilar(c, b);
+    }
+    
+    it should "support IMat product access with wildcard" in {
+    	val a = rand(3 \ 4 \ 5);
+    	val i1 = 1 \ 2;
+    	val i2 = ?
+    	val i3 = 4 \ 3;
+    	val b = zeros(i1.length \ a.dims(1) \ i3.length);
+    	for (i <- 0 until i1.length) {
+    	  for (j <- 0 until a.dims(1)) {
+    	    for (k <- 0 until i3.length) {
+    	      b.data(i + i1.length * (j + a.dims(1) * k)) = a.data(i1.data(i) + a.dims(0) * (j + a.dims(1) *  i3.data(k)));
+    	    }
+    	  }
+    	}
+    	val c = a(i1, i2, i3);
     	checkSimilar(c, b);
     }
 }

@@ -591,14 +591,19 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
   }
   
   override def zeros(nr:Int, nc:Int) = {
-    val out = DMat(nr, nc)
-  	out
+    DMat.zeros(nr, nc);
+  }
+    
+  override def zeros(dims:IMat) = {
+    DMat.zeros(dims);
   }
   
   override def ones(nr:Int, nc:Int) = {
-  	val out = DMat(nr, nc)
-  	Arrays.fill(out.data, 1)
-  	out
+  	DMat.ones(nr, nc)
+  }
+  
+  override def ones(dims:IMat) = {
+  	DMat.ones(dims)
   }
   
   override def one = {
@@ -1757,8 +1762,20 @@ object DMat {
     out
   }
 
+  def zeros(dims:IMat) = {
+    val out = DMat.make(dims)
+    out.clear
+    out
+  }
+   
   def ones(nr:Int, nc:Int) = {
     val out = DMat(nr, nc)
+    Arrays.fill(out.data, 1.0f)
+    out
+  }
+  
+  def ones(dims:IMat) = {
+    val out = DMat.make(dims)
     Arrays.fill(out.data, 1.0f)
     out
   }

@@ -258,7 +258,9 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
     if (nrows != a.nrows) {
       throw new RuntimeException("nrows must match")
     } else {
-      var out = DenseMat.newOrCheck(nrows, ncols+a.ncols, null, GUID, a.GUID, "\\".hashCode)
+    	val newdims = _dims.clone;
+    	newdims(dims.length-1) = ncols + a.ncols;      
+      var out = DenseMat.newOrCheck(newdims, null, GUID, a.GUID, "\\".hashCode)
       System.arraycopy(_data, 0, out._data, 0, nrows*ncols)
       System.arraycopy(a._data, 0, out._data, nrows*ncols, nrows*a.ncols)
       out
@@ -340,7 +342,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
         out
       }
       case _ => {
-        val out = DenseMat.newOrCheck(im.nrows, im.ncols, null, GUID, im.GUID, "gapply1d".hashCode)
+        val out = DenseMat.newOrCheck(im._dims, null, GUID, im.GUID, "gapply1d".hashCode)
         var i = 0
         val off = Mat.oneBased
         while (i < out.length) {
@@ -487,8 +489,10 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
 
   /** Tries to save a slice into an output matrix, but recreates it if too small. */
   def gcolslice(a:Int, b:Int, omat:Mat, c:Int):DenseMat[T] = {
-    val off = Mat.oneBased
-    val out = DenseMat.newOrCheck[T](nrows, b-a+c-off, omat, GUID, a, b-a+c-off, "gcolslice".##)
+    val off = Mat.oneBased;
+    val newdims = _dims.clone;
+    newdims(dims.length-1) = b-a;
+    val out = DenseMat.newOrCheck[T](newdims, omat, GUID, a, b-a+c-off, "gcolslice".##)
     if (a-off < 0) throw new RuntimeException("colslice index out of range %d" format (a))
     if (b-off > ncols) throw new RuntimeException("colslice index out of range %d %d" format (b, ncols))
     
@@ -878,100 +882,25 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
 
   /** General operation between two matrices. Apply op2 to corresponding elements from the input matrices. */
   def ggMatOp(aa:DenseMat[T], op2:(T,T) => T, oldmat:Mat):DenseMat[T] = {
-        if (nrows==aa.nrows && ncols==1) {
-          val out = DenseMat.newOrCheck(nrows, aa.ncols, oldmat, GUID, aa.GUID, op2.hashCode)
-          Mat.nflops += aa.length
-          var i = 0
-          while (i < aa.ncols) {
-            var j = 0
-            while (j < nrows) {
-              out._data(j+i*nrows) = op2(_data(j), aa._data(j+i*aa.nrows))
-              j += 1
-            }
-            i += 1
-          }
-          out
-        } else if (ncols==aa.ncols && nrows==1) {
-          val out = DenseMat.newOrCheck[T](aa.nrows, ncols, oldmat, GUID, aa.GUID, op2.hashCode)
-          Mat.nflops += aa.length
-          var i = 0
-          while (i < ncols) {
-            var j = 0
-            while (j < aa.nrows) {
-              out._data(j+i*aa.nrows) = op2(_data(i), aa._data(j+i*aa.nrows))
-              j += 1
-            }
-            i += 1
-          }
-          out
-        } else if (nrows==aa.nrows && aa.ncols==1) {
-          val out = DenseMat.newOrCheck[T](nrows, ncols, oldmat, GUID, aa.GUID, op2.hashCode)
-          Mat.nflops += length
-          var i = 0
-          while (i < ncols) {
-            var j = 0
-            while (j < nrows) {
-              out._data(j+i*nrows) = op2(_data(j+i*nrows), aa._data(j))
-              j += 1
-            }
-            i += 1
-          }
-          out
-        } else if (ncols==aa.ncols && aa.nrows==1) {
-          val out = DenseMat.newOrCheck[T](nrows, ncols, oldmat, GUID, aa.GUID, op2.hashCode)
-          Mat.nflops += length
-          var i = 0
-          while (i <  ncols) {
-            var j = 0
-            while (j < nrows) {
-              out._data(j+i*nrows) = op2(_data(j+i*nrows), aa._data(i))
-              j += 1
-            }
-            i += 1   
-          }
-          out
-        } else ggMatOpStrict(aa, op2, oldmat)
-      }
-
-  /** 
-   * This version applies the operator op2 with stricter dimension checking, 
-   * either dims must match or one arg must be scalar
-   */
-  def ggMatOpStrict(aa:DenseMat[T], op2:(T,T) => T, oldmat:Mat):DenseMat[T] =
-        if (nrows==aa.nrows && ncols==aa.ncols) {
-          val out = DenseMat.newOrCheck[T](nrows, ncols, oldmat, GUID, aa.GUID, op2.hashCode)
-          Mat.nflops += length
-          var i = 0
-          while (i < aa.length) {
-            out._data(i) = op2(_data(i), aa._data(i))
-            i += 1
-          }
-          out
-        } else if (aa.nrows == 1 && aa.ncols == 1) {
-          val out = DenseMat.newOrCheck[T](nrows, ncols, oldmat, GUID, aa.GUID, op2.hashCode)
-          Mat.nflops += length
-          val aval = aa._data(0)
-          var i = 0
-          while (i < length) {
-            out._data(i) = op2(_data(i), aval)
-            i += 1
-          }
-          out
-        } else if (nrows == 1 && ncols == 1) {
-          val out = DenseMat.newOrCheck[T](aa.nrows, aa.ncols, oldmat, GUID, aa.GUID, op2.hashCode)
-          Mat.nflops += aa.length
-          val aval = _data(0)
-          var i = 0
-          while (i < aa.length) {
-            out._data(i) = op2(aval, aa._data(i))
-            i += 1
-          }
-          out
-        } else throw new RuntimeException("dims incompatible");
+    val (nr, nc, istep, jstep, istepa, jstepa) = ND.compatibleDims(_dims, aa._dims, "DenseMat Op");
+    val dims = ND.maxDims(_dims, aa._dims);
+    val out = DenseMat.newOrCheck[T](dims, oldmat, GUID, aa.GUID, op2.hashCode);
+    Mat.nflops += nr * nc;
+    var j = 0;
+    while (j < nc) {
+    	var i = 0;
+    	while (i < nrows) {
+    		out._data(i+j*nr) = op2(_data(i*istep+j*jstep), aa._data(i*istepa+j*jstepa));
+    		i += 1;
+    	}
+    	j += 1;
+    }
+    out;
+  }
 
   /** Apply the binary operation op2 to the matrix and a scalar argument. */  
   def ggMatOpScalar(a:T, op2:(T,T) => T, oldmat:Mat):DenseMat[T] = {
-    val out = DenseMat.newOrCheck[T](nrows, ncols, oldmat, GUID, a.hashCode, op2.hashCode)
+    val out = DenseMat.newOrCheck[T](_dims, oldmat, GUID, a.hashCode, op2.hashCode)
     Mat.nflops += length
     var i  = 0
     while (i < length) {
@@ -985,45 +914,18 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
    * General operation between two matrices. Apply op2 to corresponding elements from the input matrices.
    * Implemented with vector operation primitives.
    */
-  def ggMatOpv(aa:DenseMat[T], opv:(Array[T],Int,Int,Array[T],Int,Int,Array[T],Int,Int,Int) => T, oldmat:Mat):DenseMat[T] = 
-        if (nrows==aa.nrows && ncols==1 && aa.ncols > 1) {
-          val out = DenseMat.newOrCheck[T](nrows, aa.ncols, oldmat, GUID, aa.GUID, opv.hashCode)
-          Mat.nflops += aa.length
-          var i = 0          
-          while (i < aa.ncols) {
-            opv(_data, 0, 1, aa._data, i*aa.nrows, 1, out._data, i*nrows, 1, nrows)
-            i += 1
-          }
-          out
-        } else if (ncols==aa.ncols && nrows==1 && aa.nrows > 1) {
-          val out = DenseMat.newOrCheck[T](aa.nrows, ncols, oldmat, GUID, aa.GUID, opv.hashCode)
-          Mat.nflops += aa.length
-          var i = 0
-          while (i < ncols) {
-            opv(_data, i, 0, aa._data, i*aa.nrows, 1, out._data, i*aa.nrows, 1, aa.nrows)
-            i += 1
-          }
-          out
-        } else if (nrows==aa.nrows && aa.ncols==1 && ncols > 1) {
-          val out = DenseMat.newOrCheck[T](nrows, ncols, oldmat, GUID, aa.GUID, opv.hashCode)
-          Mat.nflops += length
-          var i = 0
-          while (i < ncols) {
-            opv(_data, i*nrows, 1, aa._data, 0, 1, out._data, i*nrows, 1, nrows)
-            i += 1
-          }
-          out
-        } else if (ncols==aa.ncols && aa.nrows==1 && nrows > 1) {
-          val out = DenseMat.newOrCheck[T](nrows, ncols, oldmat, GUID, aa.GUID, opv.hashCode)
-          Mat.nflops += length
-          var i = 0
-          while (i < ncols) {
-            opv(_data, i*nrows, 1, aa._data, i, 0, out._data, i*nrows, 1, nrows)
-            i += 1   
-          }
-          out
-        } else ggMatOpStrictv(aa, opv, oldmat);    
-
+  def ggMatOpv(aa:DenseMat[T], opv:(Array[T],Int,Int,Array[T],Int,Int,Array[T],Int,Int,Int) => T, oldmat:Mat):DenseMat[T] = {
+  		val (nr, nc, istep, jstep, istepa, jstepa) = ND.compatibleDims(_dims, aa._dims, "DenseMat Op");
+  		val dims = ND.maxDims(_dims, aa._dims);
+  		val out = DenseMat.newOrCheck[T](dims, oldmat, GUID, aa.GUID, opv.hashCode);
+  		Mat.nflops += nr * nc;
+  		var i = 0;         
+  		while (i < nc) {
+  			opv(_data, i*jstep, istep, aa._data, i*jstepa, istepa, out._data, i*nr, 1, nr);
+  			i += 1;
+  		}
+  		out;
+  }
   // TODO
   def ggMatOpStrictv(aa:DenseMat[T], opv:(Array[T],Int,Int,Array[T],Int,Int,Array[T],Int,Int,Int) => T, oldmat:Mat):DenseMat[T] = {
         var out:DenseMat[T] = null
@@ -1895,6 +1797,24 @@ object DenseMat {
     }
   }
   
+  def newOrCheck[T](dims:Array[Int], out:Mat)
+  (implicit classTag:ClassTag[T]):DenseMat[T] = {
+    if (out.asInstanceOf[AnyRef] == null) {
+      new DenseMat[T](dims);
+    } else {
+      val omat = out.asInstanceOf[DenseMat[T]];
+      if (omat._dims.sameElements(dims)) {
+        omat; 
+      } else {
+        if (dims.reduce(_*_) <= omat._data.size) {
+          new DenseMat[T](dims, omat._data)
+        } else {
+        	new DenseMat[T](dims)
+        }
+      } 
+    }
+  }
+  
   // TODO
   def newOrCheck[T](nr:Int, nc:Int, outmat:Mat, matGuid:Long, opHash:Int)
     (implicit classTag:ClassTag[T]):DenseMat[T] = {
@@ -1907,6 +1827,23 @@ object DenseMat {
       	newOrCheck(nr, nc, res)
       } else {
         val omat = newOrCheck(nr, nc, null)
+        Mat.cache2put(key, omat)
+        omat
+      }
+    }
+  }
+  
+  def newOrCheck[T](dims:Array[Int], outmat:Mat, matGuid:Long, opHash:Int)
+    (implicit classTag:ClassTag[T]):DenseMat[T] = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheck(dims, outmat)
+    } else {
+      val key = (matGuid, opHash)
+      val res = Mat.cache2(key)
+      if (res != null) {
+      	newOrCheck(dims, res)
+      } else {
+        val omat = newOrCheck(dims, null)
         Mat.cache2put(key, omat)
         omat
       }
@@ -1930,6 +1867,23 @@ object DenseMat {
       }
     }
   }
+  
+  def newOrCheck[T](dims:Array[Int], outmat:Mat, guid1:Long, guid2:Long, opHash:Int)
+  (implicit classTag:ClassTag[T]):DenseMat[T] = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheck(dims, outmat)
+    } else {
+      val key = (guid1, guid2, opHash)
+      val res = Mat.cache3(key)
+      if (res != null) {
+      	newOrCheck(dims, res)
+      } else {
+        val omat = newOrCheck(dims, null)
+        Mat.cache3put(key, omat)
+        omat
+      }
+    }
+  }
     
   // TODO
   def newOrCheck[T](nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int)
@@ -1943,6 +1897,23 @@ object DenseMat {
       	newOrCheck(nr, nc, res)
       } else {
         val omat = newOrCheck(nr, nc, null)
+        Mat.cache4put(key, omat)
+        omat
+      }
+    }
+  }
+  
+  def newOrCheck[T](dims:Array[Int], outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int)
+  (implicit classTag:ClassTag[T]):DenseMat[T] = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheck(dims, outmat)
+    } else {
+      val key = (guid1, guid2, guid3, opHash)
+      val res = Mat.cache4(key)
+      if (res != null) {
+      	newOrCheck(dims, res)
+      } else {
+        val omat = newOrCheck(dims, null)
         Mat.cache4put(key, omat)
         omat
       }

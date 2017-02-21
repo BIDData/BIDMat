@@ -15,6 +15,7 @@ import org.apache.commons.math3.random.RandomDataGenerator;
 
 
 object FFunctions {
+  import GMat.BinOp._
   
 	def norm(a:FMat) = {
 	  a match {
@@ -26,14 +27,14 @@ object FFunctions {
 	def min(a:FMat, b:FMat, out:Mat) = {
 	  a match {
 	    case aa:GMat => GFunctions.min(aa, GMat(b), out);
-	    case _ => a.ffMatOpv(b, FMat.vecMinFun, out);
+	    case _ => a.ffMatOpv(b, FMat.vecMinFun, op_min, out);
 	  }
 	}
 	
 	def max(a:FMat, b:FMat, out:Mat) = {
 	  a match {
 	    case aa:GMat => GFunctions.max(aa, GMat(b), out);
-	    case _ => a.ffMatOpv(b, FMat.vecMaxFun, out);
+	    case _ => a.ffMatOpv(b, FMat.vecMaxFun, op_max, out);
 	  }
 	}
 
