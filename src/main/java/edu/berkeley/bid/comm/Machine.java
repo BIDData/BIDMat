@@ -53,6 +53,9 @@ public class Machine {
 
 	public Machine(Network p0, Groups groups0, int imachine0, int M0, boolean useLong0, int bufsize, boolean doSim0, int trace0, 
 			int replicate0, InetSocketAddress [] workers0) {
+		//TODO
+		log("new Machine initialized");
+
 		network = p0;
 		M = M0;
 		doSim = doSim0;
@@ -529,9 +532,10 @@ public class Machine {
 
 	static String debug="debug";
 
-	static public void log(String msg) {
+	public void log(String msg) {
 		int zero=0;
 		int error=1/zero;
+		System.out.println(error);
 		if (network != null) {
 			synchronized (network) {
 				System.out.print(msg);	
