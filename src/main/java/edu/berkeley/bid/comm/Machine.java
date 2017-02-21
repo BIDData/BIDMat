@@ -300,10 +300,6 @@ public class Machine {
 					ostr.writeInt(msg.sender);
 					ostr.writeInt(msg.tag);
 					ostr.write(msg.buf, 0, msg.size*4);		
-
-					//TODO: log
-					log(String.format("Machine %d round %d sent packet dest %d len %d bytes\n", imachine, round, dest, msg.size*4));
-
 				}
 			}	catch (Exception e) {
 				if (trace > 0) log(String.format("Machine %d round %d problem writing socket "+e+"\n", imachine, round));
@@ -352,13 +348,10 @@ public class Machine {
 					int tag0 = tag % (3*D);
 					if (!msgrecvd[src][tag0]) {
 						Msg msg = new Msg(len, src, imachine, tag);
-						istr.readFully(msg.buf, 0, len*4); //len*4 is number of bytes to read
-						//TODO: log
-						log(String.format("Machine %d round %d got packet src %d len %d bytes\n", imachine, round, src, len*4));
-
+						istr.readFully(msg.buf, 0, len*4);
 						synchronized (Machine.this) {
 							if (!msgrecvd[src][tag0]) {
-								messages[src][tag0] = msg;	
+								messages[src][tag0] = msg;
 								msgrecvd[src][tag0] = true;
 							}
 						}
@@ -388,7 +381,7 @@ public class Machine {
 				ss = new ServerSocket(socknum);
 			} catch (Exception e) {
 				throw new RuntimeException(String.format("Machine couldnt start socket listener on %d ", socknum) +e);
-			}			
+			}
 		}
 
 		public void run() {
@@ -415,7 +408,7 @@ public class Machine {
 				for (int j = 0; j < sendrow.length; j++) {
 					if (amsending[i][j]) sending = true;
 				}
-			}			
+			}
 			return sending;
 		}
 
@@ -430,10 +423,10 @@ public class Machine {
 				ss.close();
 			} catch (Exception e) {
 				throw new RuntimeException("Trouble closing listener");
-			}			
+			}
 		}
 	}
-	
+
 	public void dumptags(String s) {
 		synchronized (network) {
 			System.out.print(s);
@@ -464,11 +457,11 @@ public class Machine {
 			rbuf.rewind();
 			if (trace > 2) log(String.format("Round %d sendrecv machine %d to %d from %d tag %d done\n", round, imachine, outi, ini, tag0));
 			if (trace > 4) log(String.format("m %d th %d r %d sendrecv exit out %d in %d tag %d\n", imachine, ith, round, outi, ini, tag0));
-			return true;				
-		} else { 
+			return true;
+		} else {
 			if (trace > 4) dumptags(String.format("m %d th %d r %d enter  %d %d %d ", imachine, ith, round, outi, ini, tag0));
-			if (doSim) {					
-				for (int i = 0; i < replicate; i++) { 
+			if (doSim) {
+				for (int i = 0; i < replicate; i++) {
 					if (trace > 0) {
 						if (network.machines[outi+i*M].messages[imachine][tag] != null) log(String.format("Round %d sendrecv machine %d to %d from %d tag %d msg exists\n", round, imachine, outi, ini, tag0));
 					}
@@ -525,16 +518,15 @@ public class Machine {
 			if (trace > 4) log(String.format("m %d th %d r %d sendrecv exit out %d in %d tag %d\n", imachine, ith, round, outi, ini, tag0));
 			return success;
 		}
-	}	
+	}
 
 	public void log(String msg) {
 		if (network != null) {
 			synchronized (network) {
-				System.out.print(msg);	
+				System.out.print(msg);
 			}
 		} else {
 			System.out.print(msg);
 		}
 	}
 }
-
