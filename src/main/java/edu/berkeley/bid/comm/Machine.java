@@ -53,9 +53,6 @@ public class Machine {
 
 	public Machine(Network p0, Groups groups0, int imachine0, int M0, boolean useLong0, int bufsize, boolean doSim0, int trace0, 
 			int replicate0, InetSocketAddress [] workers0) {
-		//TODO
-		log("new Machine initialized");
-
 		network = p0;
 		M = M0;
 		doSim = doSim0;
@@ -303,10 +300,6 @@ public class Machine {
 					ostr.writeInt(msg.sender);
 					ostr.writeInt(msg.tag);
 					ostr.write(msg.buf, 0, msg.size*4);		
-
-					//TODO: log
-					log(String.format("Machine %d round %d sent packet dest %d len %d bytes\n", imachine, round, dest, msg.size*4));
-
 				}
 			}	catch (Exception e) {
 				if (trace > 0) log(String.format("Machine %d round %d problem writing socket "+e+"\n", imachine, round));
@@ -355,10 +348,7 @@ public class Machine {
 					int tag0 = tag % (3*D);
 					if (!msgrecvd[src][tag0]) {
 						Msg msg = new Msg(len, src, imachine, tag);
-						istr.readFully(msg.buf, 0, len*4); //len*4 is number of bytes to read
-						//TODO: log
-						log(String.format("Machine %d round %d got packet src %d len %d bytes\n", imachine, round, src, len*4));
-
+						istr.readFully(msg.buf, 0, len*4);
 						synchronized (Machine.this) {
 							if (!msgrecvd[src][tag0]) {
 								messages[src][tag0] = msg;	
@@ -530,19 +520,13 @@ public class Machine {
 		}
 	}	
 
-	static String debug="debug";
-
 	public void log(String msg) {
-		int zero=0;
-		int error=1/zero;
-		System.out.println(error);
 		if (network != null) {
 			synchronized (network) {
-				System.out.print(msg);	
+				System.out.print(msg);
 			}
 		} else {
 			System.out.print(msg);
 		}
 	}
 }
-
