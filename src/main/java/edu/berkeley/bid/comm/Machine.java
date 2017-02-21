@@ -351,7 +351,7 @@ public class Machine {
 						istr.readFully(msg.buf, 0, len*4);
 						synchronized (Machine.this) {
 							if (!msgrecvd[src][tag0]) {
-								messages[src][tag0] = msg;
+								messages[src][tag0] = msg;	
 								msgrecvd[src][tag0] = true;
 							}
 						}
@@ -381,7 +381,7 @@ public class Machine {
 				ss = new ServerSocket(socknum);
 			} catch (Exception e) {
 				throw new RuntimeException(String.format("Machine couldnt start socket listener on %d ", socknum) +e);
-			}
+			}			
 		}
 
 		public void run() {
@@ -408,7 +408,7 @@ public class Machine {
 				for (int j = 0; j < sendrow.length; j++) {
 					if (amsending[i][j]) sending = true;
 				}
-			}
+			}			
 			return sending;
 		}
 
@@ -423,10 +423,10 @@ public class Machine {
 				ss.close();
 			} catch (Exception e) {
 				throw new RuntimeException("Trouble closing listener");
-			}
+			}			
 		}
 	}
-
+	
 	public void dumptags(String s) {
 		synchronized (network) {
 			System.out.print(s);
@@ -457,11 +457,11 @@ public class Machine {
 			rbuf.rewind();
 			if (trace > 2) log(String.format("Round %d sendrecv machine %d to %d from %d tag %d done\n", round, imachine, outi, ini, tag0));
 			if (trace > 4) log(String.format("m %d th %d r %d sendrecv exit out %d in %d tag %d\n", imachine, ith, round, outi, ini, tag0));
-			return true;
-		} else {
+			return true;				
+		} else { 
 			if (trace > 4) dumptags(String.format("m %d th %d r %d enter  %d %d %d ", imachine, ith, round, outi, ini, tag0));
-			if (doSim) {
-				for (int i = 0; i < replicate; i++) {
+			if (doSim) {					
+				for (int i = 0; i < replicate; i++) { 
 					if (trace > 0) {
 						if (network.machines[outi+i*M].messages[imachine][tag] != null) log(String.format("Round %d sendrecv machine %d to %d from %d tag %d msg exists\n", round, imachine, outi, ini, tag0));
 					}
@@ -518,12 +518,12 @@ public class Machine {
 			if (trace > 4) log(String.format("m %d th %d r %d sendrecv exit out %d in %d tag %d\n", imachine, ith, round, outi, ini, tag0));
 			return success;
 		}
-	}
+	}	
 
 	public void log(String msg) {
 		if (network != null) {
 			synchronized (network) {
-				System.out.print(msg);
+				System.out.print(msg);	
 			}
 		} else {
 			System.out.print(msg);
