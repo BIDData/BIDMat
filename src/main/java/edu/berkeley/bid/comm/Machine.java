@@ -1,8 +1,6 @@
 package edu.berkeley.bid.comm;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -521,12 +519,18 @@ public class Machine {
 	}	
 
 	public void log(String msg) {
-		if (network != null) {
-			synchronized (network) {
-				System.out.print(msg);
+		File f=new File("\\log");
+		try {
+			BufferedWriter bw = new BufferedWriter(new FileWriter(f));
+			if (network != null) {
+				synchronized (network) {
+					bw.append(msg);
+				}
+			} else {
+				bw.append(msg);
 			}
-		} else {
-			System.out.print(msg);
+		}catch (Exception e){
+			System.out.println("file not found");
 		}
 	}
 }
