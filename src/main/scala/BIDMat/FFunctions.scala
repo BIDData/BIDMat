@@ -25,16 +25,32 @@ object FFunctions {
 	}
 	
 	def min(a:FMat, b:FMat, out:Mat) = {
-	  a match {
-	    case aa:GMat => GFunctions.min(aa, GMat(b), out);
+	  (a, b) match {
+	    case (aa:GMat, bb:FMat) => GFunctions.min(aa, GMat(b), out);
+	    case (aa:FMat, bb:GMat) => GFunctions.min(GMat(a), bb, out);
 	    case _ => a.ffMatOpv(b, FMat.vecMinFun, op_min, out);
 	  }
 	}
 	
 	def max(a:FMat, b:FMat, out:Mat) = {
-	  a match {
-	    case aa:GMat => GFunctions.max(aa, GMat(b), out);
+	  (a, b) match {
+	    case (aa:GMat, bb:FMat) => GFunctions.max(aa, GMat(b), out);
+	    case (aa:FMat, bb:GMat) => GFunctions.max(GMat(a), bb, out);
 	    case _ => a.ffMatOpv(b, FMat.vecMaxFun, op_max, out);
+	  }
+	}
+	
+  def min(a:FMat, b:Float, out:Mat) = {
+	  a match {
+	    case aa:GMat=> GFunctions.min(aa, GMat.elem(b), out);
+	    case _ => a.ffMatOpScalarv(b, FMat.vecMinFun, out);
+	  }
+	}
+	
+	def max(a:FMat, b:Float, out:Mat) = {
+	  a match {
+	    case aa:GMat=> GFunctions.max(aa, GMat.elem(b), out);
+	    case _ => a.ffMatOpScalarv(b, FMat.vecMaxFun, out);
 	  }
 	}
 

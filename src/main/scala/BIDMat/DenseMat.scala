@@ -967,7 +967,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
   
   // TODO
   def ggMatOpScalarv(a:T, opv:(Array[T],Int,Int,Array[T],Int,Int,Array[T],Int,Int,Int) => T, oldmat:Mat):DenseMat[T] = {
-    val out = DenseMat.newOrCheck[T](nrows, ncols, oldmat, GUID, a.hashCode, opv.##)
+    val out = DenseMat.newOrCheck[T](_dims, oldmat, GUID, a.hashCode, opv.##)
     Mat.nflops += length
     val aa = new Array[T](1)
     aa(0) = a

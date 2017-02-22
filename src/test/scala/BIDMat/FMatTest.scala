@@ -198,7 +198,7 @@ class FMatTest extends BIDMatSpec {
     			for (i <- 0 until nr) {
     				for (j <- 0 until nc) {
     				  for (k <- 0 until nk) {
-    				  	d.data(i + nr * (j + nc * k)) = op(a, b.data(i + nr * (k + nc * k)));
+    				  	d.data(i + nr * (j + nc * k)) = op(a, b.data(i + nr * (j + nc * k)));
     				  }
     				}
     			}
@@ -215,7 +215,7 @@ class FMatTest extends BIDMatSpec {
     			for (i <- 0 until nr) {
     				for (j <- 0 until nc) {
     					for (k <- 0 until nk) {
-    						d.data(i + nr * (j + nc * k)) = op(a.data(i + nr * (k + nc * k)), b);
+    						d.data(i + nr * (j + nc * k)) = op(a.data(i + nr * (j + nc * k)), b);
     					}
     				}
     			}
@@ -334,5 +334,75 @@ class FMatTest extends BIDMatSpec {
     	}
     	val c = a(i1, i2, i3);
     	checkSimilar(c, b);
+    }
+    
+    it should "support IMat wildcard constant update" in {
+    	val a = rand(3 \ 4 \ 5);
+    	val b = zeros(a.dims);
+    	val c = 2f;
+    	for (i <- 0 until a.dims(0)) {
+    	  for (j <- 0 until a.dims(1)) {
+    	    for (k <- 0 until a.dims(2)) {
+    	      val ii = i+ a.dims(0) * (j + a.dims(1) * k);
+    	      b.data(ii) = c;
+    	    }
+    	  }
+    	}
+    	a(?) = c;
+    	checkSimilar(a, b);
+    }
+    
+    it should "support IMat wildcard column update" in {
+    	val a = rand(3 \ 4 \ 5);
+    	val b = zeros(a.dims);
+    	val c = col(0->a.length);
+    	for (i <- 0 until a.dims(0)) {
+    	  for (j <- 0 until a.dims(1)) {
+    	    for (k <- 0 until a.dims(2)) {
+    	      val ii = i+ a.dims(0) * (j + a.dims(1) * k);
+    	      b.data(ii) = c.data(ii);
+    	    }
+    	  }
+    	}
+    	a(?) = c;
+    	checkSimilar(a, b);
+    }
+    
+    it should "support IMat product update" in {
+    	val a = rand(3 \ 4 \ 5);
+    	val c = a + 0f;
+    	val i1 = 1 \ 2;
+    	val i2 = 2 \ 3;
+    	val i3 = 4 \ 3;
+    	val b = zeros(i1.length \ i2.length \ i3.length);
+    	b(?) = col(0->b.length);
+    	for (i <- 0 until i1.length) {
+    	  for (j <- 0 until i2.length) {
+    	    for (k <- 0 until i3.length) {
+    	      a.data(i1.data(i) + a.dims(0) * (i2.data(j) + a.dims(1) *  i3.data(k))) = b.data(i + i1.length * (j + i2.length * k));
+    	    }
+    	  }
+    	}
+      c(i1, i2, i3) = b;
+    	checkSimilar(a, c);
+    }
+    
+    it should "support IMat product update with wildcard" in {
+    	val a = rand(3 \ 4 \ 5);
+    	val c = a + 0f;
+    	val i1 = 1 \ 2;
+    	val i2 = ?
+    	val i3 = 4 \ 3;
+    	val b = zeros(i1.length \ a.dims(1) \ i3.length);
+    	b(?) = col(0->b.length);
+    	for (i <- 0 until i1.length) {
+    	  for (j <- 0 until a.dims(1)) {
+    	    for (k <- 0 until i3.length) {
+    	      a.data(i1.data(i) + a.dims(0) * (j + a.dims(1) *  i3.data(k))) = b.data(i + i1.length * (j + a.dims(1) * k));
+    	    }
+    	  }
+    	}
+    	c(i1, i2, i3) = b;
+    	checkSimilar(a, c);
     }
 }

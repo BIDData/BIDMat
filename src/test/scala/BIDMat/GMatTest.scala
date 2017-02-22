@@ -216,6 +216,57 @@ class GMatTest extends BIDMatSpec {
 
     testScalar2(nr, nc, (a:FMat, b:Float) => a / b, (x:Float, y:Float)=>x / y, "support division of scalar 2");
     
+    def testScalar1ND(nr:Int, nc:Int, mop:(Float,FMat)=>FMat, op:(Float,Float)=>Float, msg:String) = {
+    		it should msg in {
+    			val a = rand(1, 1).fv;
+    			val b = rand(nr \ nc \ nk);
+    			val bb = GMat(b);
+    			val d = zeros(nr \ nc \ nk);
+    			for (i <- 0 until nr) {
+    				for (j <- 0 until nc) {
+    				  for (k <- 0 until nk) {
+    				  	d.data(i + nr * (j + nc * k)) = op(a, b.data(i + nr * (j + nc * k)));
+    				  }
+    				}
+    			}
+    			val cc = mop(a, bb);
+    			cc.mytype should equal ("GMat");
+    			checkSimilar(cc, d);
+    		}
+    }
+
+    def testScalar2ND(nr:Int, nc:Int, mop:(FMat,Float)=>FMat, op:(Float,Float)=>Float, msg:String) = {
+    		it should msg in {
+    			val a = rand(nr \ nc \ nk);
+    			val b = rand(1, 1).fv;
+    			val aa = GMat(a);
+    			val d = zeros(nr \ nc \ nk);
+    			for (i <- 0 until nr) {
+    				for (j <- 0 until nc) {
+    					for (k <- 0 until nk) {
+    						d.data(i + nr * (j + nc * k)) = op(a.data(i + nr * (j + nc * k)), b);
+    					}
+    				}
+    			}
+    			val cc = mop(aa, b);
+    			cc.mytype should equal ("GMat");
+    			checkSimilar(cc, d);
+    		}
+    }
+    
+    testScalar1ND(nr, nc, (a:Float, b:FMat) => a + b, (x:Float, y:Float)=>x+y, "support addition of scalar 1 ND");
+
+    testScalar1ND(nr, nc, (a:Float, b:FMat) => a *@ b, (x:Float, y:Float)=>x*y, "support multiplication of scalar 1 ND");
+
+    testScalar2ND(nr, nc, (a:FMat, b:Float) => a + b, (x:Float, y:Float)=>x+y, "support addition of scalar 2 ND");
+
+    testScalar2ND(nr, nc, (a:FMat, b:Float) => a *@ b, (x:Float, y:Float)=>x*y, "support multiplication of scalar 2 ND");
+
+    testScalar2ND(nr, nc, (a:FMat, b:Float) => a - b, (x:Float, y:Float)=>x-y, "support subtraction of scalar 2 ND");
+
+    testScalar2ND(nr, nc, (a:FMat, b:Float) => a / b, (x:Float, y:Float)=>x / y, "support division of scalar 2 ND");
+    
+    
     it should "support 1D element access" in {
        val a = rand(nr, nc); 
        val aa = GMat(a);

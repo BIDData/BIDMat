@@ -875,7 +875,7 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     }	else throw new RuntimeException("dimensions mismatch")
   }
   
-  def kron(aa:GMat, oldmat:Mat):GMat = {
+  override def kron(aa:FMat, oldmat:Mat):GMat = {
     val a = GMat(aa);
     val out = GMat.newOrCheckGMat(nrows * a.nrows, ncols * a.ncols, oldmat, GUID, a.GUID, "kron".##);
     Mat.nflops += 1L * out.nrows * out.ncols;
@@ -884,19 +884,15 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     out;
   }
   
-  def gOp(aa:GMat, oldmat:Mat, op:Int):GMat = {
+  def gOp(aa:FMat, oldmat:Mat, op:Int):GMat = {
     val a = GMat(aa);
-    if ((nrows == a.nrows && ncols == a.ncols) ||
-        (nrows == a.nrows && (a.ncols == 1 || ncols == 1)) ||
-        (ncols == a.ncols && (a.nrows == 1 || nrows == 1)) ||
-        (a.ncols == 1 && a.nrows == 1) ||
-        (ncols == 1 && nrows == 1)) {
-    	val out = GMat.newOrCheckGMat(math.max(nrows, a.nrows), math.max(ncols, a.ncols), oldmat, GUID, a.GUID, op)
-      Mat.nflops += scala.math.max(length, a.length)
-      val err = CUMAT.applyop(pdata, nrows, ncols, a.pdata, a.nrows, a.ncols, out.pdata, op)
-      if (err != 0) {throw new RuntimeException("CUDA kernel error %d in CUMAT.applyop"  format err)}
-      out
-    }	else throw new RuntimeException("dimensions mismatch (%d, %d) (%d, %d)" format (nrows, ncols, a.nrows, a.ncols))
+    val (nr, nc, nra, nca) = ND.compatibleGDims(_dims, aa._dims, "DenseMat Op");
+    val dims = ND.maxDims(_dims, aa._dims);
+    val out = GMat.newOrCheckGMat(dims, oldmat, GUID, aa.GUID, op.hashCode);
+    Mat.nflops += scala.math.max(length, a.length);
+    val err = CUMAT.applyop(pdata, nr, nc, a.pdata, nra, nca, out.pdata, op);
+    if (err != 0) {throw new RuntimeException("CUDA kernel error %d in CUMAT.applyop"  format err)}
+    out
   }
   
   override def dot (aa:FMat, oldmat:Mat):GMat = {
