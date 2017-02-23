@@ -483,6 +483,52 @@ class FMatTest extends BIDMatSpec {
     		}
     }
     
+     def testReduce2D(reducer:(FMat, Int)=>FMat, fn:(Float, Float)=>Float, axis:Int, msg:String) = {
+    		it should msg in {
+    			val a = rand(nr, nc);
+    			val b = if (axis <= 1) {
+    			  zeros(1, nc);
+    			} else {
+    			  zeros(nr, 1);
+    			}
+    			for (i <- 0 until nr) {
+    			  for (j <- 0 until nc) {
+    				  if (axis <= 1) {
+    				    if (i == 0) {
+    				    	b.data(j) = a.data(i + nr * j);
+    				    } else {
+    				    	b.data(j) = fn(b.data(j), a.data(i + nr * j));
+    				    }
+    				  } else {
+     				    if (j == 0) {
+    				    	b.data(i) = a.data(i + nr * j);
+    				    } else {
+    				    	b.data(i) = fn(b.data(i), a.data(i + nr * j));
+    				    }   				    
+    				  }
+    			  }
+    			}
+    			val c = reducer(a, axis);
+    			checkSimilar(b, c);
+    		}
+    } 
+     
+    testReduce2D((a:FMat, n:Int) => sum(a, n), (x:Float, y:Float)=>x+y, 1, "support 2D column sum");
+    
+    testReduce2D((a:FMat, n:Int) => prod(a, n), (x:Float, y:Float)=>x*y, 1, "support 2D column product");
+    
+    testReduce2D((a:FMat, n:Int) => amax(a, n), (x:Float, y:Float)=>math.max(x,y), 1, "support 2D column max");
+    
+    testReduce2D((a:FMat, n:Int) => amin(a, n), (x:Float, y:Float)=>math.min(x,y), 1, "support 2D column min");
+    
+    testReduce2D((a:FMat, n:Int) => sum(a, n), (x:Float, y:Float)=>x+y, 2, "support 2D row sum");
+    
+    testReduce2D((a:FMat, n:Int) => prod(a, n), (x:Float, y:Float)=>x*y, 2, "support 2D row product");
+    
+    testReduce2D((a:FMat, n:Int) => amax(a, n), (x:Float, y:Float)=>math.max(x,y), 2, "support 2D row max");
+    
+    testReduce2D((a:FMat, n:Int) => amin(a, n), (x:Float, y:Float)=>math.min(x,y), 2, "support 2D row min");
+    
     import org.apache.commons.math3.analysis._
         
     import org.apache.commons.math3.analysis.function._

@@ -880,32 +880,17 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
   def prod(inds:Array[Int]):IMat = reduce(inds, SciFunctions.prod, "prod")
   def maxi(inds:Array[Int]):IMat = reduce(inds, SciFunctions.maxi, "maxi")
   def mini(inds:Array[Int]):IMat = reduce(inds, SciFunctions.mini, "mini")
+  def amax(inds:Array[Int]):IMat = reduce(inds, SciFunctions.maxi, "amax")
+  def amin(inds:Array[Int]):IMat = reduce(inds, SciFunctions.mini, "amin") 
   
-   /** Shortcuts for the above */
+  /** reduce on several dimensions, potentially very expensive */
   
-  override def sum(i1:Int, i2:Int):IMat = sum(Array(i1, i2));
-  override def sum(i1:Int, i2:Int, i3:Int):IMat = sum(Array(i1, i2, i3));
-  override def sum(i1:Int, i2:Int, i3:Int, i4:Int):IMat = sum(Array(i1, i2, i3, i4));
-  override def sum(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):IMat = sum(Array(i1, i2, i3, i4, i5));
-  override def sum(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):IMat = sum(Array(i1, i2, i3, i4, i5, i6));
-  
-  override def prod(i1:Int, i2:Int):IMat = prod(Array(i1, i2));
-  override def prod(i1:Int, i2:Int, i3:Int):IMat = prod(Array(i1, i2, i3));
-  override def prod(i1:Int, i2:Int, i3:Int, i4:Int):IMat = prod(Array(i1, i2, i3, i4));
-  override def prod(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):IMat = prod(Array(i1, i2, i3, i4, i5));
-  override def prod(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):IMat = prod(Array(i1, i2, i3, i4, i5, i6));
-  
-  override def maxi(i1:Int, i2:Int):IMat = maxi(Array(i1, i2));
-  override def maxi(i1:Int, i2:Int, i3:Int):IMat = maxi(Array(i1, i2, i3));
-  override def maxi(i1:Int, i2:Int, i3:Int, i4:Int):IMat = maxi(Array(i1, i2, i3, i4));
-  override def maxi(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):IMat = maxi(Array(i1, i2, i3, i4, i5));
-  override def maxi(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):IMat = maxi(Array(i1, i2, i3, i4, i5, i6));
-  
-  override def mini(i1:Int, i2:Int):IMat = mini(Array(i1, i2));
-  override def mini(i1:Int, i2:Int, i3:Int):IMat = mini(Array(i1, i2, i3));
-  override def mini(i1:Int, i2:Int, i3:Int, i4:Int):IMat = mini(Array(i1, i2, i3, i4));
-  override def mini(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):IMat = mini(Array(i1, i2, i3, i4, i5));
-  override def mini(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):IMat = mini(Array(i1, i2, i3, i4, i5, i6));
+  override def sum(inds:IMat):IMat = reduce(inds.data, SciFunctions.sum, "sum")
+  override def prod(inds:IMat):IMat = reduce(inds.data, SciFunctions.prod, "prod")
+  override def maxi(inds:IMat):IMat = reduce(inds.data, SciFunctions.maxi, "maxi")
+  override def mini(inds:IMat):IMat = reduce(inds.data, SciFunctions.mini, "mini")
+  override def amax(inds:IMat):IMat = reduce(inds.data, SciFunctions.maxi, "amax")
+  override def amin(inds:IMat):IMat = reduce(inds.data, SciFunctions.mini, "amin")
 
   
   override def * (b : Int) = iMult(IMat.ielem(b), null)

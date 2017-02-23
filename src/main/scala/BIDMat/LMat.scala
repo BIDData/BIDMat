@@ -858,6 +858,8 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
   override def prod(ind:Int):LMat = iiReduceOpv(ind+1, LMat.idFun, LMat.vecMulFun, null);
   override def maxi(ind:Int):LMat = iiReduceOpv(ind+1, LMat.idFun, LMat.vecMaxFun, null);
   override def mini(ind:Int):LMat = iiReduceOpv(ind+1, LMat.idFun, LMat.vecMinFun, null);
+  override def amax(ind:Int):LMat = iiReduceOpv(ind+1, LMat.idFun, LMat.vecMaxFun, null);
+  override def amin(ind:Int):LMat = iiReduceOpv(ind+1, LMat.idFun, LMat.vecMinFun, null);
   
   /** reduce on several dimensions, potentially very expensive */
   
@@ -865,34 +867,15 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
   def prod(inds:Array[Int]):LMat = reduce(inds, SciFunctions.prod, "prod")
   def maxi(inds:Array[Int]):LMat = reduce(inds, SciFunctions.maxi, "maxi")
   def mini(inds:Array[Int]):LMat = reduce(inds, SciFunctions.mini, "mini")
-  
-   /** Shortcuts for the above */
-  
-  override def sum(i1:Int, i2:Int):LMat = sum(Array(i1, i2));
-  override def sum(i1:Int, i2:Int, i3:Int):LMat = sum(Array(i1, i2, i3));
-  override def sum(i1:Int, i2:Int, i3:Int, i4:Int):LMat = sum(Array(i1, i2, i3, i4));
-  override def sum(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):LMat = sum(Array(i1, i2, i3, i4, i5));
-  override def sum(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):LMat = sum(Array(i1, i2, i3, i4, i5, i6));
-  
-  override def prod(i1:Int, i2:Int):LMat = prod(Array(i1, i2));
-  override def prod(i1:Int, i2:Int, i3:Int):LMat = prod(Array(i1, i2, i3));
-  override def prod(i1:Int, i2:Int, i3:Int, i4:Int):LMat = prod(Array(i1, i2, i3, i4));
-  override def prod(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):LMat = prod(Array(i1, i2, i3, i4, i5));
-  override def prod(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):LMat = prod(Array(i1, i2, i3, i4, i5, i6));
-  
-  override def maxi(i1:Int, i2:Int):LMat = maxi(Array(i1, i2));
-  override def maxi(i1:Int, i2:Int, i3:Int):LMat = maxi(Array(i1, i2, i3));
-  override def maxi(i1:Int, i2:Int, i3:Int, i4:Int):LMat = maxi(Array(i1, i2, i3, i4));
-  override def maxi(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):LMat = maxi(Array(i1, i2, i3, i4, i5));
-  override def maxi(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):LMat = maxi(Array(i1, i2, i3, i4, i5, i6));
-  
-  override def mini(i1:Int, i2:Int):LMat = mini(Array(i1, i2));
-  override def mini(i1:Int, i2:Int, i3:Int):LMat = mini(Array(i1, i2, i3));
-  override def mini(i1:Int, i2:Int, i3:Int, i4:Int):LMat = mini(Array(i1, i2, i3, i4));
-  override def mini(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):LMat = mini(Array(i1, i2, i3, i4, i5));
-  override def mini(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):LMat = mini(Array(i1, i2, i3, i4, i5, i6));
- 
+  def amax(inds:Array[Int]):LMat = reduce(inds, SciFunctions.maxi, "amax")
+  def amin(inds:Array[Int]):LMat = reduce(inds, SciFunctions.mini, "amin") 
 
+  override def sum(inds:IMat):LMat = reduce(inds.data, SciFunctions.sum, "sum")
+  override def prod(inds:IMat):LMat = reduce(inds.data, SciFunctions.prod, "prod")
+  override def maxi(inds:IMat):LMat = reduce(inds.data, SciFunctions.maxi, "maxi")
+  override def mini(inds:IMat):LMat = reduce(inds.data, SciFunctions.mini, "mini")
+  override def amax(inds:IMat):LMat = reduce(inds.data, SciFunctions.maxi, "amax")
+  override def amin(inds:IMat):LMat = reduce(inds.data, SciFunctions.mini, "amin") 
   
   //Scalar operators
   def \ (b: Long) = horzcat(LMat.lelem(b))

@@ -269,6 +269,8 @@ class Mat(val _dims:Array[Int]) extends ND with Serializable {
   def prod(b : IMat):Mat = notImplemented0("prod")
   def maxi(b : IMat):Mat = notImplemented0("maxi")
   def mini(b : IMat):Mat = notImplemented0("mini")
+  def amax(b : IMat):Mat = notImplemented0("maxi")
+  def amin(b : IMat):Mat = notImplemented0("mini")
   def mean(b : IMat):Mat = notImplemented0("mean")
   def variance(b : IMat):Mat = notImplemented0("variance")
   
@@ -287,32 +289,14 @@ class Mat(val _dims:Array[Int]) extends ND with Serializable {
   def prod(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):Mat = notImplemented0("prod");  
   
   def maxi(i1:Int):Mat = notImplemented0("maxi");
-  def maxi(i1:Int, i2:Int):Mat = notImplemented0("maxi");
-  def maxi(i1:Int, i2:Int, i3:Int):Mat = notImplemented0("maxi");  
-  def maxi(i1:Int, i2:Int, i3:Int, i4:Int):Mat = notImplemented0("maxi");   
-  def maxi(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):Mat = notImplemented0("maxi");   
-  def maxi(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):Mat = notImplemented0("maxi");  
+  def amax(i1:Int):Mat = notImplemented0("amax"); 
     
   def mini(i1:Int):Mat = notImplemented0("mini");
-  def mini(i1:Int, i2:Int):Mat = notImplemented0("mini");
-  def mini(i1:Int, i2:Int, i3:Int):Mat = notImplemented0("mini");  
-  def mini(i1:Int, i2:Int, i3:Int, i4:Int):Mat = notImplemented0("mini");   
-  def mini(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):Mat = notImplemented0("mini");   
-  def mini(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):Mat = notImplemented0("mini");  
+  def amin(i1:Int):Mat = notImplemented0("amin");
   
-  def mean(i1:Int):Mat = notImplemented0("mean");
-  def mean(i1:Int, i2:Int):Mat = notImplemented0("mean");
-  def mean(i1:Int, i2:Int, i3:Int):Mat = notImplemented0("mean");  
-  def mean(i1:Int, i2:Int, i3:Int, i4:Int):Mat = notImplemented0("mean");   
-  def mean(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):Mat = notImplemented0("mean");   
-  def mean(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):Mat = notImplemented0("mean");  
+  def mean(i1:Int):Mat = notImplemented0("mean");  
   
   def variance(i1:Int):Mat = notImplemented0("variance");
-  def variance(i1:Int, i2:Int):Mat = notImplemented0("variance");
-  def variance(i1:Int, i2:Int, i3:Int):Mat = notImplemented0("variance");  
-  def variance(i1:Int, i2:Int, i3:Int, i4:Int):Mat = notImplemented0("variance");   
-  def variance(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):Mat = notImplemented0("variance");   
-  def variance(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):Mat = notImplemented0("variance");  
   
   def *  (b : Float):Mat = notImplemented1("*", b)
   def +  (b : Float):Mat = notImplemented1("+", b)

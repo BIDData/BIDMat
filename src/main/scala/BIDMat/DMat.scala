@@ -1186,6 +1186,8 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
   override def prod(ind:Int):DMat = ddReduceOpv(ind+1, DMat.idFun, DMat.vecMulFun, null);
   override def maxi(ind:Int):DMat = ddReduceOpv(ind+1, DMat.idFun, DMat.vecMaxFun, null);
   override def mini(ind:Int):DMat = ddReduceOpv(ind+1, DMat.idFun, DMat.vecMinFun, null);
+  override def amax(ind:Int):DMat = ddReduceOpv(ind+1, DMat.idFun, DMat.vecMaxFun, null);
+  override def amin(ind:Int):DMat = ddReduceOpv(ind+1, DMat.idFun, DMat.vecMinFun, null);
   override def mean(ind:Int):DMat = SciFunctions._mean(this, ind+1).asInstanceOf[DMat];
   override def variance(ind:Int):DMat = SciFunctions._variance(this, ind+1).asInstanceOf[DMat];
   
@@ -1197,44 +1199,18 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
   def variance(inds:Array[Int]):DMat = reduce(inds, SciFunctions.variance, "variance")
   def maxi(inds:Array[Int]):DMat = reduce(inds, SciFunctions.maxi, "maxi")
   def mini(inds:Array[Int]):DMat = reduce(inds, SciFunctions.mini, "mini")
+  def amax(inds:Array[Int]):DMat = reduce(inds, SciFunctions.maxi, "amax")
+  def amin(inds:Array[Int]):DMat = reduce(inds, SciFunctions.mini, "amin")
   
-   /** Shortcuts for the above */
-  
-  override def sum(i1:Int, i2:Int):DMat = sum(Array(i1, i2));
-  override def sum(i1:Int, i2:Int, i3:Int):DMat = sum(Array(i1, i2, i3));
-  override def sum(i1:Int, i2:Int, i3:Int, i4:Int):DMat = sum(Array(i1, i2, i3, i4));
-  override def sum(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):DMat = sum(Array(i1, i2, i3, i4, i5));
-  override def sum(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):DMat = sum(Array(i1, i2, i3, i4, i5, i6));
-  
-  override def prod(i1:Int, i2:Int):DMat = prod(Array(i1, i2));
-  override def prod(i1:Int, i2:Int, i3:Int):DMat = prod(Array(i1, i2, i3));
-  override def prod(i1:Int, i2:Int, i3:Int, i4:Int):DMat = prod(Array(i1, i2, i3, i4));
-  override def prod(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):DMat = prod(Array(i1, i2, i3, i4, i5));
-  override def prod(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):DMat = prod(Array(i1, i2, i3, i4, i5, i6));
-  
-  override def maxi(i1:Int, i2:Int):DMat = maxi(Array(i1, i2));
-  override def maxi(i1:Int, i2:Int, i3:Int):DMat = maxi(Array(i1, i2, i3));
-  override def maxi(i1:Int, i2:Int, i3:Int, i4:Int):DMat = maxi(Array(i1, i2, i3, i4));
-  override def maxi(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):DMat = maxi(Array(i1, i2, i3, i4, i5));
-  override def maxi(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):DMat = maxi(Array(i1, i2, i3, i4, i5, i6));
-  
-  override def mini(i1:Int, i2:Int):DMat = mini(Array(i1, i2));
-  override def mini(i1:Int, i2:Int, i3:Int):DMat = mini(Array(i1, i2, i3));
-  override def mini(i1:Int, i2:Int, i3:Int, i4:Int):DMat = mini(Array(i1, i2, i3, i4));
-  override def mini(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):DMat = mini(Array(i1, i2, i3, i4, i5));
-  override def mini(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):DMat = mini(Array(i1, i2, i3, i4, i5, i6));
-  
-  override def mean(i1:Int, i2:Int):DMat = mean(Array(i1, i2));
-  override def mean(i1:Int, i2:Int, i3:Int):DMat = mean(Array(i1, i2, i3));
-  override def mean(i1:Int, i2:Int, i3:Int, i4:Int):DMat = mean(Array(i1, i2, i3, i4));
-  override def mean(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):DMat = mean(Array(i1, i2, i3, i4, i5));
-  override def mean(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):DMat = mean(Array(i1, i2, i3, i4, i5, i6));
-  
-  override def variance(i1:Int, i2:Int):DMat = variance(Array(i1, i2));
-  override def variance(i1:Int, i2:Int, i3:Int):DMat = variance(Array(i1, i2, i3));
-  override def variance(i1:Int, i2:Int, i3:Int, i4:Int):DMat = variance(Array(i1, i2, i3, i4));
-  override def variance(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):DMat = variance(Array(i1, i2, i3, i4, i5));
-  override def variance(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):DMat = variance(Array(i1, i2, i3, i4, i5, i6));
+  override def sum(inds:IMat):DMat = reduce(inds.data, SciFunctions.sum, "sum")
+  override def prod(inds:IMat):DMat = reduce(inds.data, SciFunctions.prod, "prod")
+  override def mean(inds:IMat):DMat = reduce(inds.data, SciFunctions.mean, "mean")
+  override def variance(inds:IMat):DMat = reduce(inds.data, SciFunctions.variance, "variance")
+  override def maxi(inds:IMat):DMat = reduce(inds.data, SciFunctions.maxi, "maxi")
+  override def mini(inds:IMat):DMat = reduce(inds.data, SciFunctions.mini, "mini")
+  override def amax(inds:IMat):DMat = reduce(inds.data, SciFunctions.maxi, "amax")
+  override def amin(inds:IMat):DMat = reduce(inds.data, SciFunctions.mini, "amin")
+
 
   override def *  (b : Double) = fDMult(DMat.delem(b), null)
   override def +  (b : Double) = ddMatOpScalarv(b, DMat.vecAddFun, null)

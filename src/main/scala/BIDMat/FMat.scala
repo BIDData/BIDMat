@@ -651,6 +651,8 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   override def prod(ind:Int):FMat = ffReduceOpv(ind+1, FMat.idFun, FMat.vecMulFun, null);
   override def maxi(ind:Int):FMat = ffReduceOpv(ind+1, FMat.idFun, FMat.vecMaxFun, null);
   override def mini(ind:Int):FMat = ffReduceOpv(ind+1, FMat.idFun, FMat.vecMinFun, null);
+  override def amax(ind:Int):FMat = ffReduceOpv(ind+1, FMat.idFun, FMat.vecMaxFun, null);
+  override def amin(ind:Int):FMat = ffReduceOpv(ind+1, FMat.idFun, FMat.vecMinFun, null);
   override def mean(ind:Int):FMat = SciFunctions._mean(this, ind+1).asInstanceOf[FMat];
   override def variance(ind:Int):FMat = SciFunctions._variance(this, ind+1).asInstanceOf[FMat];
   
@@ -662,45 +664,17 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   def variance(inds:Array[Int]):FMat = reduce(inds, SciFunctions.variance, "variance")
   def maxi(inds:Array[Int]):FMat = reduce(inds, SciFunctions.maxi, "maxi")
   def mini(inds:Array[Int]):FMat = reduce(inds, SciFunctions.mini, "mini")
-  
-   /** Shortcuts for the above */
-  
-  override def sum(i1:Int, i2:Int):FMat = sum(Array(i1, i2));
-  override def sum(i1:Int, i2:Int, i3:Int):FMat = sum(Array(i1, i2, i3));
-  override def sum(i1:Int, i2:Int, i3:Int, i4:Int):FMat = sum(Array(i1, i2, i3, i4));
-  override def sum(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):FMat = sum(Array(i1, i2, i3, i4, i5));
-  override def sum(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):FMat = sum(Array(i1, i2, i3, i4, i5, i6));
-  
-  override def prod(i1:Int, i2:Int):FMat = prod(Array(i1, i2));
-  override def prod(i1:Int, i2:Int, i3:Int):FMat = prod(Array(i1, i2, i3));
-  override def prod(i1:Int, i2:Int, i3:Int, i4:Int):FMat = prod(Array(i1, i2, i3, i4));
-  override def prod(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):FMat = prod(Array(i1, i2, i3, i4, i5));
-  override def prod(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):FMat = prod(Array(i1, i2, i3, i4, i5, i6));
-  
-  override def maxi(i1:Int, i2:Int):FMat = maxi(Array(i1, i2));
-  override def maxi(i1:Int, i2:Int, i3:Int):FMat = maxi(Array(i1, i2, i3));
-  override def maxi(i1:Int, i2:Int, i3:Int, i4:Int):FMat = maxi(Array(i1, i2, i3, i4));
-  override def maxi(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):FMat = maxi(Array(i1, i2, i3, i4, i5));
-  override def maxi(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):FMat = maxi(Array(i1, i2, i3, i4, i5, i6));
-  
-  override def mini(i1:Int, i2:Int):FMat = mini(Array(i1, i2));
-  override def mini(i1:Int, i2:Int, i3:Int):FMat = mini(Array(i1, i2, i3));
-  override def mini(i1:Int, i2:Int, i3:Int, i4:Int):FMat = mini(Array(i1, i2, i3, i4));
-  override def mini(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):FMat = mini(Array(i1, i2, i3, i4, i5));
-  override def mini(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):FMat = mini(Array(i1, i2, i3, i4, i5, i6));
-  
-  override def mean(i1:Int, i2:Int):FMat = mean(Array(i1, i2));
-  override def mean(i1:Int, i2:Int, i3:Int):FMat = mean(Array(i1, i2, i3));
-  override def mean(i1:Int, i2:Int, i3:Int, i4:Int):FMat = mean(Array(i1, i2, i3, i4));
-  override def mean(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):FMat = mean(Array(i1, i2, i3, i4, i5));
-  override def mean(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):FMat = mean(Array(i1, i2, i3, i4, i5, i6));
-  
-  override def variance(i1:Int, i2:Int):FMat = variance(Array(i1, i2));
-  override def variance(i1:Int, i2:Int, i3:Int):FMat = variance(Array(i1, i2, i3));
-  override def variance(i1:Int, i2:Int, i3:Int, i4:Int):FMat = variance(Array(i1, i2, i3, i4));
-  override def variance(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):FMat = variance(Array(i1, i2, i3, i4, i5));
-  override def variance(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):FMat = variance(Array(i1, i2, i3, i4, i5, i6));
- 
+  def amax(inds:Array[Int]):FMat = reduce(inds, SciFunctions.maxi, "amax")
+  def amin(inds:Array[Int]):FMat = reduce(inds, SciFunctions.mini, "amin")
+
+  override def sum(inds:IMat):FMat = reduce(inds.data, SciFunctions.sum, "sum")
+  override def prod(inds:IMat):FMat = reduce(inds.data, SciFunctions.prod, "prod")
+  override def mean(inds:IMat):FMat = reduce(inds.data, SciFunctions.mean, "mean")
+  override def variance(inds:IMat):FMat = reduce(inds.data, SciFunctions.variance, "variance")
+  override def maxi(inds:IMat):FMat = reduce(inds.data, SciFunctions.maxi, "maxi")
+  override def mini(inds:IMat):FMat = reduce(inds.data, SciFunctions.mini, "mini")
+  override def amax(inds:IMat):FMat = reduce(inds.data, SciFunctions.maxi, "amax")
+  override def amin(inds:IMat):FMat = reduce(inds.data, SciFunctions.mini, "amin") 
 
   def fDMultHelper(a:FMat, out:FMat, istart:Int, iend:Int) = {
   	var i = istart
@@ -2419,47 +2393,47 @@ object FMat {
   }
 
   def vecDiv(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
-    while (ci < cend) {
-      c(ci) = a(ai) / b(bi);  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
+    while (i < n) {
+      c(ci) = a(ai) / b(bi);  ai += ainc; bi += binc;  ci += cinc; i += 1;
     }
     0f
   }
 
   def vecAdd(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
-    var ai = a0; var bi = b0; var ci = c0; var i = 0
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
     while (i < n) {
-      c(ci) = a(ai) + b(bi);  ai += ainc; bi += binc;  ci += cinc; i += 1
+      c(ci) = a(ai) + b(bi);  ai += ainc; bi += binc;  ci += cinc; i += 1;
     }
     0
   }
 
   def vecSub(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
-    while (ci < cend) {
-      c(ci) = a(ai) - b(bi);  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
+    while (i < n) {
+      c(ci) = a(ai) - b(bi);  ai += ainc; bi += binc;  ci += cinc; i += 1;
     }
     0
   }
 
   def vecMul(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
-    while (ci < cend) {
-      c(ci) = a(ai) * b(bi);  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
+    while (i < n) {
+      c(ci) = a(ai) * b(bi);  ai += ainc; bi += binc;  ci += cinc; i += 1;
     }
     0
   }
 
   def vecPow(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
-    while (ci < cend) {
-      c(ci) = math.pow(a(ai), b(bi)).toFloat;  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0; 
+    while (i < n) {
+      c(ci) = math.pow(a(ai), b(bi)).toFloat;  ai += ainc; bi += binc;  ci += cinc; i += 1;
     }
     0
   }
 
   def vecMax(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
-    var ai = a0; var bi = b0; var ci = c0; var i = 0
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
     while (i < n) {
       c(ci) = math.max(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc; i += 1
     }
@@ -2467,7 +2441,7 @@ object FMat {
   }
 
  def vecMin(a:Array[Float], a0:Int, ainc:Int, b:Array[Float], b0:Int, binc:Int, c:Array[Float], c0:Int, cinc:Int, n:Int):Float = {
-    var ai = a0; var bi = b0; var ci = c0; var i = 0
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
     while (i < n) {
       c(ci) = math.min(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc; i += 1
     }
