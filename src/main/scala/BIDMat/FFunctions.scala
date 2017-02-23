@@ -10,6 +10,7 @@ import edu.berkeley.bid.SLATEC;
 import java.util.Random._;
 import SciState._
 import org.apache.commons.math3.special._
+import org.apache.commons.math3.distribution._
 import org.apache.commons.math3.util.FastMath
 import org.apache.commons.math3.random.RandomDataGenerator;
 
@@ -649,12 +650,13 @@ object FFunctions {
     }
   }
  
+  val erfinvFun = (x:Float) => Erf.erfInv(x).toFloat;
   val vsErfInvFun = (n:Int, x:Array[Float], y:Array[Float]) => vsErfInv(n,x,y);
   def erfinv(a:FMat):FMat = erfinv(a, null);
   def erfinv(a:FMat, out:Mat) = {
     a match {
       case aa:GMat => GFunctions.erfinv(aa, out);
-      case _ => applySFun(a, out, vsErfInvFun, null, 10L);
+      case _ => applySFun(a, out, vsErfInvFun, erfinvFun, 10L);
     }
   }
  
@@ -668,30 +670,34 @@ object FFunctions {
     }
   }
  
+  val erfcInvFun = (x:Float) => Erf.erfcInv(x).toFloat;
   val vsErfcInvFun = (n:Int, x:Array[Float], y:Array[Float]) => vsErfcInv(n,x,y);
   def erfcinv(a:FMat):FMat = erfcinv(a, null);
   def erfcinv(a:FMat, out:Mat) = {
     a match {
       case aa:GMat => GFunctions.erfcinv(aa, out);
-      case _ => applySFun(a, out, vsErfcInvFun, null, 10L);
+      case _ => applySFun(a, out, vsErfcInvFun, erfcInvFun, 10L);
     }
   }
  
+  val _normalDistribution = new NormalDistribution();
+  val normcdfFun = (x:Float)=>_normalDistribution.cumulativeProbability(x).toFloat;
   val vsCdfNormFun = (n:Int, x:Array[Float], y:Array[Float]) => vsCdfNorm(n,x,y);
   def normcdf(a:FMat):FMat = normcdf(a, null);
   def normcdf(a:FMat, out:Mat) = {
     a match {
       case aa:GMat => GFunctions.normcdf(aa, out);
-      case _ => applySFun(a, out, vsCdfNormFun, null, 10L);
+      case _ => applySFun(a, out, vsCdfNormFun, normcdfFun, 10L);
     }
   }
  
+  val normcdfinvFun = (x:Float)=>_normalDistribution.inverseCumulativeProbability(x).toFloat;
   val vsCdfNormInvFun = (n:Int, x:Array[Float], y:Array[Float]) => vsCdfNormInv(n,x,y);
   def normcdfinv(a:FMat):FMat = normcdfinv(a, null);
   def normcdfinv(a:FMat, out:Mat) = {
     a match {
       case aa:GMat => GFunctions.normcdfinv(aa, out);
-      case _ => applySFun(a, out, vsCdfNormInvFun, null, 10L);
+      case _ => applySFun(a, out, vsCdfNormInvFun, normcdfinvFun, 10L);
     }
   }
  
