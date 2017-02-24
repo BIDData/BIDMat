@@ -647,14 +647,14 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   
   /** standard reducers on one dimension */
   
-  override def sum(ind:Int):FMat = ffReduceOpv(ind+1, FMat.idFun, FMat.vecAddFun, null);
-  override def prod(ind:Int):FMat = ffReduceOpv(ind+1, FMat.idFun, FMat.vecMulFun, null);
-  override def maxi(ind:Int):FMat = ffReduceOpv(ind+1, FMat.idFun, FMat.vecMaxFun, null);
-  override def mini(ind:Int):FMat = ffReduceOpv(ind+1, FMat.idFun, FMat.vecMinFun, null);
-  override def amax(ind:Int):FMat = ffReduceOpv(ind+1, FMat.idFun, FMat.vecMaxFun, null);
-  override def amin(ind:Int):FMat = ffReduceOpv(ind+1, FMat.idFun, FMat.vecMinFun, null);
-  override def mean(ind:Int):FMat = SciFunctions._mean(this, ind+1).asInstanceOf[FMat];
-  override def variance(ind:Int):FMat = SciFunctions._variance(this, ind+1).asInstanceOf[FMat];
+  override def sum(ind:Int):FMat = ffReduceOpv(ind, FMat.idFun, FMat.vecAddFun, null);
+  override def prod(ind:Int):FMat = ffReduceOpv(ind, FMat.idFun, FMat.vecMulFun, null);
+  override def maxi(ind:Int):FMat = ffReduceOpv(ind, FMat.idFun, FMat.vecMaxFun, null);
+  override def mini(ind:Int):FMat = ffReduceOpv(ind, FMat.idFun, FMat.vecMinFun, null);
+  override def amax(ind:Int):FMat = ffReduceOpv(ind, FMat.idFun, FMat.vecMaxFun, null);
+  override def amin(ind:Int):FMat = ffReduceOpv(ind, FMat.idFun, FMat.vecMinFun, null);
+  override def mean(ind:Int):FMat = SciFunctions._mean(this, ind).asInstanceOf[FMat];
+  override def variance(ind:Int):FMat = SciFunctions._variance(this, ind).asInstanceOf[FMat];
   
   /** reduce on several dimensions, potentially very expensive */
   

@@ -145,7 +145,7 @@ object GFunctions {
   def maxi(a:GMat, dir:Int, out:Mat):GMat  = a.reduceOp(out, dir, Float.MinValue, BinOp.op_max);
   def mini(a:GMat, dir:Int, out:Mat):GMat  = a.reduceOp(out, dir, Float.MaxValue, BinOp.op_min);
   def sum(a:GMat, dir:Int, out:Mat):GMat   = a.reduceOp(out, dir, 0f, BinOp.op_add);
-  def prod(a:GMat, dir:Int, out:Mat):GMat  = a.reduceOp(null, 0, 1f, BinOp.op_mul);
+  def prod(a:GMat, dir:Int, out:Mat):GMat  = a.reduceOp(out, dir, 1f, BinOp.op_mul);
   
   def rand(out:GMat):GMat = {
     import jcuda.jcurand._

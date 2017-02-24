@@ -244,66 +244,98 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
  
   /** ND sliced updates */
   
+  override def update(inds:IMat, vv:FMat):GMat = updatei(inds, GMat(vv));
+  
   override def update(iv:IMat, jv:IMat, b:FMat):FMat = updatei(Array(iv, jv), GMat(b));
   override def update(iv:IMat, j:Int, b:FMat):FMat = updatei(Array(iv, IMat.ielem(j)), GMat(b));
   override def update(i:Int, jv:IMat, b:FMat):FMat = updatei(Array(IMat.ielem(i), jv), GMat(b));
  
- override def update(i1:IMat, vv:Float):FMat = updatei(Array(i1), vv);
- override def update(i1:IMat, i2:IMat, vv:Float):FMat = updatei(Array(i1, i2), vv);
+//  override def update(i1:IMat, vv:Float):FMat = updatei(Array(i1), vv);
+  override def update(i1:IMat, i2:IMat, vv:Float):FMat = updatei(Array(i1, i2), vv);
  
- override def updatei(inds:Array[IMat], vv:FMat):GMat = updatei(inds, GMat(vv));
- 
- def updatei(inds:Array[IMat], vv:GMat):GMat = {
-    if (inds.length != _dims.length) {
-      throw new RuntimeException("GMat update wrong number of dims")
-    }
-    val newdims = new Array[Int](_dims.length)
-    val newinds = new Array[GIMat](_dims.length)
-    var j = 0
-    for (i <- 0 until _dims.length) {
-      inds(i) match {
-        case aa:MatrixWildcard => {
-          newdims(i) = _dims(i); 
-        }
-        case _ => {
-          newdims(i) = inds(i).length;
-          newinds(i) = getIndexMat(i, inds(i));
-        }
-      }
-    }
-    ND.checkDims("GND update:", ND.trimDims(newdims), ND.trimDims(vv._dims));
-    inds.length match {
-    case 1 => {
-      val err = CUMAT.copyToInds(vv.pdata, pdata, safePointer(newinds(0)), newdims(0));
-      if (err != 0) throw new RuntimeException("GMat update (I, J) error" + cudaGetErrorString(err));
-    }
-    case 2 => {
-      val err = CUMAT.copyToInds2D(vv.pdata, vv.dims(0), pdata, dims(0), 
-          safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1));
-      if (err != 0) throw new RuntimeException("GMat update (I, J) error" + cudaGetErrorString(err));
-    }
-    case 3 => {
-      val err = CUMAT.copyToInds3D(vv.pdata, vv.dims(0), vv.dims(1), pdata, dims(0), dims(1), 
-          safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1), safePointer(newinds(2)), newdims(2));
-      if (err != 0) throw new RuntimeException("GMat update (I, J, K) error" + cudaGetErrorString(err));
-    }
-    case 4 => {
-      val err = CUMAT.copyToInds4D(vv.pdata, vv.dims(0), vv.dims(1), vv.dims(2), pdata, dims(0), dims(1), dims(2),
-          safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1), safePointer(newinds(2)), newdims(2), safePointer(newinds(3)), newdims(3));
-      if (err != 0) throw new RuntimeException("GMat udpate (I, J, K, L) error" + cudaGetErrorString(err));
-    }
-    case _ => throw new RuntimeException("GMat slice access with more than 4 indices not supported");
-    }
-    this
-  }
+  override def updatei(inds:Array[IMat], vv:FMat):GMat = updatei(inds, GMat(vv));
   
+  def updatei(inds:IMat, vv:GMat):GMat = {
+		val newinds = getIndexMat(0, inds);
+		val err = inds match {
+		case aa:MatrixWildcard => {
+			if (vv.length != length) throw new RuntimeException("GMat column update length mismatch")
+			CUMAT.copyToInds(vv.pdata, pdata, safePointer(newinds), length);
+		}
+		case _ => {
+			if (inds.length != vv.length) throw new RuntimeException("GMat column update length mismatch")
+			CUMAT.copyToInds(vv.pdata, pdata, safePointer(newinds), inds.length);
+		}
+		}
+		if (err != 0) throw new RuntimeException("GMat update (I)=v error " + cudaGetErrorString(err));
+		this;
+  }
+
+  def updatei(inds:Array[IMat], vv:GMat):GMat = {
+		 if (inds.length > 2 && inds.length != _dims.length) throw new RuntimeException("GMat update dims must match")
+		 val newdims = new Array[Int](inds.length)
+		 val newinds = new Array[GIMat](inds.length)
+		 var j = 0
+		 for (i <- 0 until inds.length) {
+			 inds(i) match {
+			 case aa:MatrixWildcard => {
+				 newdims(i) = _dims(i); 
+			 }
+			 case _ => {
+				 newdims(i) = inds(i).length;
+				 newinds(i) = getIndexMat(i, inds(i));
+			 }
+			 }
+		 }
+		 ND.checkDims("GMat update:", ND.trimDims(newdims), ND.trimDims(vv._dims));
+		 inds.length match {
+		 case 1 => {
+			 val err = CUMAT.copyToInds(vv.pdata, pdata, safePointer(newinds(0)), newdims(0));
+			 if (err != 0) throw new RuntimeException("GMat update (I)=V error " + cudaGetErrorString(err));
+		 }
+		 case 2 => {
+			 val err = CUMAT.copyToInds2D(vv.pdata, vv.dims(0), pdata, nrows, 
+					 safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1));
+			 if (err != 0) throw new RuntimeException("GMat update (I, J)=V error " + cudaGetErrorString(err));
+		 }
+		 case 3 => {
+			 val err = CUMAT.copyToInds3D(vv.pdata, vv.dims(0), vv.dims(1), pdata, dims(0), dims(1), 
+					 safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1), safePointer(newinds(2)), newdims(2));
+			 if (err != 0) throw new RuntimeException("GMat update (I, J, K)=V error " + cudaGetErrorString(err));
+		 }
+		 case 4 => {
+			 val err = CUMAT.copyToInds4D(vv.pdata, vv.dims(0), vv.dims(1), vv.dims(2), pdata, dims(0), dims(1), dims(2),
+					 safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1), safePointer(newinds(2)), newdims(2), safePointer(newinds(3)), newdims(3));
+			 if (err != 0) throw new RuntimeException("GMat udpate (I, J, K, L)=V error " + cudaGetErrorString(err));
+		 }
+		 case _ => throw new RuntimeException("GMat slice access with more than 4 indices not supported");
+		 }
+		 this
+ }
+  
+  override def update(inds:IMat, vv:Float):GMat = {
+    val newinds = getIndexMat(0, inds);
+    val err = inds match {
+        case aa:MatrixWildcard => {
+          CUMAT.fillToInds(vv, pdata, safePointer(newinds), length);
+        }
+        case _ => {
+        	CUMAT.fillToInds(vv, pdata, safePointer(newinds), inds.length);
+        }
+    }
+    if (err != 0) throw new RuntimeException("GMat update (I)=v error " + cudaGetErrorString(err));
+    this;
+ }
+ 
   override def updatei(inds:Array[IMat], vv:Float):GMat = {
-    val newdims = new Array[Int](_dims.length);
-    val newinds = new Array[GIMat](_dims.length);
-    for (i <- 0 until _dims.length) {
+		if (inds.length > 2 && inds.length != _dims.length) throw new RuntimeException("GMat update dims must match");
+		val mydims = if (inds.length == 2) Array(nrows, ncols) else _dims;
+    val newdims = new Array[Int](inds.length);
+    val newinds = new Array[GIMat](inds.length);
+    for (i <- 0 until inds.length) {
       inds(i) match {
         case aa:MatrixWildcard => {
-          newdims(i) = _dims(i); 
+          newdims(i) = mydims(i); 
         }
         case _ => {
           newdims(i) = inds(i).length;
@@ -312,24 +344,20 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
       }
     }
     inds.length match {
-    case 1 => {
-      val err = CUMAT.fillToInds(vv, pdata, safePointer(newinds(0)), newdims(0));
-      if (err != 0) throw new RuntimeException("GMat update (I, J) error" + cudaGetErrorString(err));
-    }
     case 2 => {
-      val err = CUMAT.fillToInds2D(vv,  pdata, dims(0), 
+      val err = CUMAT.fillToInds2D(vv,  pdata, nrows, 
           safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1));
-      if (err != 0) throw new RuntimeException("GMat update (I, J) error" + cudaGetErrorString(err));
+      if (err != 0) throw new RuntimeException("GMat update (I, J)=v error " + cudaGetErrorString(err));
     }
     case 3 => {
       val err = CUMAT.fillToInds3D(vv, pdata, dims(0), dims(1), 
           safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1), safePointer(newinds(2)), newdims(2));
-      if (err != 0) throw new RuntimeException("GMat update (I, J, K) error" + cudaGetErrorString(err));
+      if (err != 0) throw new RuntimeException("GMat update (I, J, K)=v error " + cudaGetErrorString(err));
     }
     case 4 => {
       val err = CUMAT.fillToInds4D(vv, pdata, dims(0), dims(1), dims(2),
           safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1), safePointer(newinds(2)), newdims(2), safePointer(newinds(3)), newdims(3));
-      if (err != 0) throw new RuntimeException("GMat udpate (I, J, K, L) error" + cudaGetErrorString(err));
+      if (err != 0) throw new RuntimeException("GMat udpate (I, J, K, L)=v error " + cudaGetErrorString(err));
     }
     case _ => throw new RuntimeException("GMat slice access with more than 4 indices not supported");
     }
@@ -455,9 +483,9 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   }
 
   /** transpose */
-  override def transpose(dims:Array[Int]):FMat = transpose(MatFunctions.irow(dims))
+  override def transpose(dims:Array[Int]):GMat = transpose(MatFunctions.irow(dims))
 
-  override def transpose(perm:IMat):FMat = { 
+  override def transpose(perm:IMat):GMat = { 
     val nd = _dims.length
     if (perm.length != nd) { 
       throw new RuntimeException("FND transpose bad permutation ")
@@ -1309,6 +1337,23 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   
   override def reverse(omat:Mat):GMat = _reverse(omat);
   
+  def reduce(inds:Array[Int], fctn:(GMat)=>GMat, opname:String):GMat = {
+    val alldims = MatFunctions.izeros(_dims.length,1)
+    val xinds = new IMat(inds.length, 1, inds)
+    val xdims = new IMat(_dims.length, 1, _dims)
+    alldims(xinds) = 1
+    if (alldims.data.reduce(_+_) != inds.length) {
+      throw new RuntimeException(opname+ " indices arent a legal subset of dims")
+    }
+    val restinds = MatFunctions.find(alldims == 0)
+    val tmp = transpose((xinds on restinds).data)
+    val tmpF = new GMat(xdims(xinds).data.reduce(_*_), xdims(restinds).data.reduce(_*_), tmp.pdata, length)
+    val reduced:GMat = fctn(tmpF);
+    val newdims = MatFunctions.iones(inds.length,1) on xdims(restinds);
+    val out1 = new GMat(newdims.data, reduced.pdata, reduced.length)
+    out1.transpose(MatFunctions.invperm(xinds on restinds).data)
+  }
+  
   /*
    * Basic compute routines on pairs of GMats
    */
@@ -1349,13 +1394,33 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   def max (b : GMat) = gOp(b, null, op_max)
   def min (b : GMat) = gOp(b, null, op_min)
 
-  override def sum(ind:Int):GMat = reduceOp(null, ind+1, 0f, op_add);
-  override def prod(ind:Int):GMat = reduceOp(null, ind+1, 1f, op_mul);
-  override def maxi(ind:Int):GMat = reduceOp(null, ind+1, Float.MinValue, op_max);
-  override def mini(ind:Int):GMat = reduceOp(null, ind+1, Float.MaxValue, op_min);
-  override def mean(ind:Int):GMat = SciFunctions._mean(this, ind+1).asInstanceOf[GMat];
-  override def variance(ind:Int):GMat = SciFunctions._variance(this, ind+1).asInstanceOf[GMat];
+  override def sum(ind:Int):GMat = reduceOp(null, ind, 0f, op_add);
+  override def prod(ind:Int):GMat = reduceOp(null, ind, 1f, op_mul);
+  override def maxi(ind:Int):GMat = reduceOp(null, ind, Float.MinValue, op_max);
+  override def amin(ind:Int):GMat = reduceOp(null, ind, Float.MaxValue, op_min);
+  override def amax(ind:Int):GMat = reduceOp(null, ind, Float.MinValue, op_max);
+  override def mini(ind:Int):GMat = reduceOp(null, ind, Float.MaxValue, op_min); 
+  override def mean(ind:Int):GMat = SciFunctions._mean(this, ind).asInstanceOf[GMat];
+  override def variance(ind:Int):GMat = SciFunctions._variance(this, ind).asInstanceOf[GMat];
   
+  override def sum(inds:Array[Int]):FMat = reduce(inds, (a:GMat) => GFunctions.sum(a,1,null), "sum");
+  override def prod(inds:Array[Int]):FMat = reduce(inds, (a:GMat) => GFunctions.prod(a,1,null), "prod");
+  override def mean(inds:Array[Int]):FMat = reduce(inds, (a:GMat) => SciFunctions.mean(a, 1), "mean")
+  override def variance(inds:Array[Int]):FMat = reduce(inds, (a:GMat) => SciFunctions.variance(a,1), "variance")
+  override def maxi(inds:Array[Int]):FMat = reduce(inds, (a:GMat) => GFunctions.maxi(a,1,null), "maxi")
+  override def mini(inds:Array[Int]):FMat = reduce(inds, (a:GMat) => GFunctions.mini(a,1,null), "mini")
+  override def amax(inds:Array[Int]):FMat = reduce(inds, (a:GMat) => GFunctions.maxi(a,1,null), "amax")
+  override def amin(inds:Array[Int]):FMat = reduce(inds, (a:GMat) => GFunctions.mini(a,1,null), "amin")
+
+  override def sum(inds:IMat):FMat = reduce(inds.data, (a:GMat) => GFunctions.sum(a,1,null), "sum");
+  override def prod(inds:IMat):FMat = reduce(inds.data, (a:GMat) => GFunctions.prod(a,1,null), "prod");
+  override def mean(inds:IMat):FMat = reduce(inds.data, (a:GMat) => SciFunctions.mean(a, 1), "mean")
+  override def variance(inds:IMat):FMat = reduce(inds.data, (a:GMat) => SciFunctions.variance(a,1), "variance")
+  override def maxi(inds:IMat):FMat = reduce(inds.data, (a:GMat) => GFunctions.maxi(a,1,null), "maxi")
+  override def mini(inds:IMat):FMat = reduce(inds.data, (a:GMat) => GFunctions.mini(a,1,null), "mini")
+  override def amax(inds:IMat):FMat = reduce(inds.data, (a:GMat) => GFunctions.maxi(a,1,null), "amax")
+  override def amin(inds:IMat):FMat = reduce(inds.data, (a:GMat) => GFunctions.mini(a,1,null), "amin")
+
   override def * (a : FMat) = GMult(GMat(a), null)
   override def * (a : SMat) = GSMult(GSMat(a), null)
   override def *^ (a : FMat) = GMultT(GMat(a), null)
