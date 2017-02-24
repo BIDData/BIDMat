@@ -529,6 +529,33 @@ class FMatTest extends BIDMatSpec {
     
     testReduce2D((a:FMat, n:Int) => amin(a, n), (x:Float, y:Float)=>math.min(x,y), 2, "support 2D row min");
     
+    def testReduce4D(reducer:(FMat, IMat)=>FMat, fn:(Float, Float)=>Float, dims:IMat, msg:String) = {
+    		it should msg in {
+    			val adims = nr \ nc \ nk \ nl;
+    			val bdims = adims.copy;
+    			bdims(dims) = 1;
+    			val a = rand(adims);
+    			val b = zeros(bdims);
+    			for (i <- 0 until nr) {
+    			  for (j <- 0 until nc) {
+    				  for (k <- 0 until nk) {
+    				  	for (l <- 0 until nl) {
+    				  	  val i0 = if (bdims(0) == 1) 0 else i;
+    				  	  val j0 = if (bdims(1) == 1) 0 else j;
+    				  	  val k0 = if (bdims(2) == 1) 0 else k;
+    				  	  val l0 = if (bdims(3) == 1) 0 else l;
+    				  	  if (((i == 0) || bdims(0) > 1) && ((j == 0) || bdims(1) > 1) && ((k == 0) || bdims(2) > 1) && ((l == 0) || bdims(3) > 1)) {
+    				  	    b.data(i0 + bdims(0) * (j0 + bdims(1) * (k0 + bdims(2) * l0))) = a.data(i + nr * (j + nc * (k + nk * l)));
+    				  	  }
+    				  	}	    
+    				  }
+    			  }
+    			}
+    			val c = reducer(a, dims);
+    			checkSimilar(b, c);
+    		}
+    } 
+    
     import org.apache.commons.math3.analysis._
         
     import org.apache.commons.math3.analysis.function._
