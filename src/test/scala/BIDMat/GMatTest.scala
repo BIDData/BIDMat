@@ -613,22 +613,6 @@ class GMatTest extends BIDMatSpec {
     	cc(i1, i2) = b;
     	checkSimilar(a, cc);
     }
-       
-    def testFunction2D(mop:(FMat)=>FMat, op:(Float)=>Float, offset:Float, msg:String) = {
-    		it should msg in {
-    			assume(Mat.hasCUDA > 0);
-    			val a = rand(nr \ nc);
-    			a ~ a + offset;
-    			val aa = GMat(a);
-    			val b = zeros(nr \ nc);
-    			for (i <- 0 until a.length) {
-    				b.data(i) = op(a.data(i));
-    			}
-    			val cc = mop(aa);
-    			cc.mytype should equal ("GMat");
-    			checkSimilar(b, cc);
-    		}
-    }
     
      def testReduce2D(reducer:(FMat, Int)=>FMat, fn:(Float, Float)=>Float, axis:Int, msg:String) = {
     		it should msg in {
@@ -727,6 +711,22 @@ class GMatTest extends BIDMatSpec {
     
     import org.apache.commons.math3.distribution._
     
+    def testFunction2D(mop:(FMat)=>FMat, op:(Float)=>Float, offset:Float, msg:String) = {
+    		it should msg in {
+    			assume(Mat.hasCUDA > 0);
+    			val a = rand(nr \ nc);
+    			a ~ a + offset;
+    			val aa = GMat(a);
+    			val b = zeros(nr \ nc);
+    			for (i <- 0 until a.length) {
+    				b.data(i) = op(a.data(i));
+    			}
+    			val cc = mop(aa);
+    			cc.mytype should equal ("GMat");
+    			checkSimilar(b, cc);
+    		}
+    }
+    
     def testFunction2Dclass(mop:(FMat)=>FMat, fnclass:UnivariateFunction, offset:Float, msg:String) = {
     		it should msg in {
     			assume(Mat.hasCUDA > 0);
@@ -739,6 +739,19 @@ class GMatTest extends BIDMatSpec {
     			}
     			val cc = mop(aa);
     			checkSimilar(b, cc);
+    		}
+    }
+   
+    def testFunction2Dg(mop:(FMat)=>FMat, offset:Float, msg:String, eps:Float=1e-4f) = {
+    		it should msg in {
+    			assume(Mat.hasCUDA > 0);
+    			val a = rand(nr \ nc);
+    			a ~ a + offset;
+    			val aa = GMat(a);
+    			val b = mop(a);
+    			val bb = mop(aa);
+    			bb.mytype should equal ("GMat");    			
+    			checkSimilar(b, bb, eps);
     		}
     }
     
@@ -788,14 +801,19 @@ class GMatTest extends BIDMatSpec {
         
     testFunction2D((a:FMat) => erfc(a), (x:Float)=>Erf.erfc(x).toFloat, -0.5f, "support 2D erfc function");
     
+    testFunction2D((a:FMat) => gamma(a), (x:Float)=>Gamma.gamma(x).toFloat, 0f, "support 2D gamma function");
+    
+    testFunction2D((a:FMat) => gammaln(a), (x:Float)=>Gamma.logGamma(x).toFloat, 0f, "support 2D gammaln function");
+    
     val _normalDistribution = new NormalDistribution();
     
     testFunction2D((a:FMat) => normcdf(a), (x:Float)=>_normalDistribution.cumulativeProbability(x).toFloat, -0.5f, "support 2D normcdf function");
 
     testFunction2D((a:FMat) => normcdfinv(a), (x:Float)=>_normalDistribution.inverseCumulativeProbability(x).toFloat, 0f, "support 2D normcdfinv function");
-
-    testFunction2D((a:FMat) => gamma(a), (x:Float)=>Gamma.gamma(x).toFloat, 0f, "support 2D gamma function");
     
-    testFunction2D((a:FMat) => gammaln(a), (x:Float)=>Gamma.logGamma(x).toFloat, 0f, "support 2D gammaln function");
+    testFunction2Dg((a:FMat)=> psi(a), 0f, "support 2D psi function", 1e-1f) 
+    
+    testFunction2Dg((a:FMat)=> psiinv(a), 0f, "support 2D psiinv function", 1e-1f) 
+
 }
 

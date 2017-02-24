@@ -176,13 +176,14 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   override def applyi(inds:Array[IMat]):GMat = applyi(inds, null);
  
   def applyi(inds:Array[IMat], omat:Mat):GMat = { 
-    if (inds.length > 2 && inds.length != _dims.length) throw new RuntimeException("GMat applyi dims must match")
+    if (inds.length > 2 && inds.length != _dims.length) throw new RuntimeException("GMat applyi dims must match");
+    val mydims = if (inds.length == 1) Array(length) else  if (inds.length == 2) Array(nrows, ncols) else _dims;
     val newdims = new Array[Int](inds.length)
     val newinds = new Array[GIMat](inds.length)
     for (i <- 0 until inds.length) {
       inds(i) match {
         case aa:MatrixWildcard => {
-          newdims(i) = _dims(i); 
+          newdims(i) = mydims(i); 
         }
         case _ => {
           newdims(i) = inds(i).length;
@@ -194,23 +195,23 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     inds.length match {
     case 1 => {
         val err = CUMAT.copyFromInds(pdata, out.pdata, safePointer(newinds(0)), newdims(0));
-        if (err != 0) throw new RuntimeException("GND apply(I) error" + cudaGetErrorString(err));
+        if (err != 0) throw new RuntimeException("GMat apply(I) error" + cudaGetErrorString(err));
       }
       case 2 => {
         val err = CUMAT.copyFromInds2D(pdata, dims(0), out.pdata, newdims(0), safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1));
-        if (err != 0) throw new RuntimeException("GND apply(I, J) error" + cudaGetErrorString(err));
+        if (err != 0) throw new RuntimeException("GMat apply(I, J) error" + cudaGetErrorString(err));
       }
       case 3 => {
         val err = CUMAT.copyFromInds3D(pdata, dims(0), dims(1), out.pdata, newdims(0), newdims(1), 
             safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1), safePointer(newinds(2)), newdims(2));
-        if (err != 0) throw new RuntimeException("GND apply(I, J, K) error" + cudaGetErrorString(err));
+        if (err != 0) throw new RuntimeException("GMat apply(I, J, K) error" + cudaGetErrorString(err));
       }
       case 4 => {
         val err = CUMAT.copyFromInds4D(pdata, dims(0), dims(1), dims(2), out.pdata, newdims(0), newdims(1), newdims(2),
             safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1), safePointer(newinds(2)), newdims(2), safePointer(newinds(3)), newdims(3));
-        if (err != 0) throw new RuntimeException("GND apply(I, J, K, L) error" + cudaGetErrorString(err));
+        if (err != 0) throw new RuntimeException("GMat apply(I, J, K, L) error" + cudaGetErrorString(err));
       }   
-      case _ => throw new RuntimeException("GND slice access with more than 4 indices not supported");
+      case _ => throw new RuntimeException("GMat slice access with more than 4 indices not supported");
     }
     out;
   }

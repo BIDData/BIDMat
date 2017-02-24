@@ -534,8 +534,9 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
       case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)	
     }
 
-  def ddMatOpv(b: Mat, f:(Array[Double],Int,Int,Array[Double],Int,Int,Array[Double],Int,Int,Int) => Double, out:Mat) = 
+  def ddMatOpv(b: Mat, f:(Array[Double],Int,Int,Array[Double],Int,Int,Array[Double],Int,Int,Int) => Double, optype:Int, out:Mat) = 
     b match {
+      case bb:GDMat => GDMat(this).gOp(bb, out, optype);
       case bb:DMat => DMat(ggMatOpv(bb, f, out))
       case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)	
     }
@@ -1119,6 +1120,7 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
   /*
    * Routines to operate on two DMats. These are the compute routines.
    */
+  import GMat.BinOp._
   override def unary_- () = ddMatOpScalarv(-1, DMat.vecMulFun, null)
   def *  (b : DMat) = fDMult(b, null)
   def *  (b : SDMat) = fSMult(b, null)
@@ -1130,29 +1132,31 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
   def ^* (b : DMat) = Tmult(b, null)
   def /< (b : DMat) = solvel(b)
   def \\ (b : DMat) = solver(b)
-  def ^  (b : DMat) = ddMatOp(b, DMat.powFun, null)
 
-  def +  (b : DMat) = ddMatOpv(b, DMat.vecAddFun, null)
-  def -  (b : DMat) = ddMatOpv(b, DMat.vecSubFun, null)
-  def *@ (b : DMat) = ddMatOpv(b, DMat.vecMulFun, null)
-  def /  (b : DMat) = ddMatOpv(b, DMat.vecDivFun, null)
-  def ∘  (b : DMat) = ddMatOpv(b, DMat.vecMulFun, null)
+
+  def +  (b : DMat) = ddMatOpv(b, DMat.vecAddFun, op_add, null)
+  def -  (b : DMat) = ddMatOpv(b, DMat.vecSubFun, op_sub, null)
+  def *@ (b : DMat) = ddMatOpv(b, DMat.vecMulFun, op_mul, null)
+  def /  (b : DMat) = ddMatOpv(b, DMat.vecDivFun, op_div, null)
+  def ∘  (b : DMat) = ddMatOpv(b, DMat.vecMulFun, op_mul, null)
+  def ^  (b : DMat) = ddMatOpv(b, DMat.vecPowFun, op_pow, null)
+    
   def ∙  (b : DMat):DMat = dot(b)
   def ∙→ (b : DMat):DMat = dotr(b)
   def ∙∙ (b : DMat):Double = ddot(b)
   def ** (b : DMat) = kron(b, null)
   def ⊗  (b : DMat) = kron(b, null)
 
-  def >   (b : DMat) = ddMatOp(b, DMat.gtFun, null)
-  def <   (b : DMat) = ddMatOp(b, DMat.ltFun, null)
-  def ==  (b : DMat) = ddMatOp(b, DMat.eqFun, null)
-  def === (b : DMat) = ddMatOp(b, DMat.eqFun, null)
-  def >=  (b : DMat) = ddMatOp(b, DMat.geFun, null)
-  def <=  (b : DMat) = ddMatOp(b, DMat.leFun, null)
-  def !=  (b : DMat) = ddMatOp(b, DMat.neFun, null)
+  def >   (b : DMat) = ddMatOpv(b, DMat.vecGTFun, op_gt, null)
+  def <   (b : DMat) = ddMatOpv(b, DMat.vecLTFun, op_lt, null)
+  def ==  (b : DMat) = ddMatOpv(b, DMat.vecEQFun, op_eq, null)
+  def === (b : DMat) = ddMatOpv(b, DMat.vecEQFun, op_eq, null)
+  def >=  (b : DMat) = ddMatOpv(b, DMat.vecGEFun, op_ge, null)
+  def <=  (b : DMat) = ddMatOpv(b, DMat.vecLEFun, op_le, null)
+  def !=  (b : DMat) = ddMatOpv(b, DMat.vecNEFun, op_ne, null)
   
-  def max(b: DMat) = ddMatOpv(b, DMat.vecMaxFun, null)
-  def min(b: DMat) = ddMatOpv(b, DMat.vecMinFun, null)
+  def max(b: DMat) = ddMatOpv(b, DMat.vecMaxFun, op_max, null)
+  def min(b: DMat) = ddMatOpv(b, DMat.vecMinFun, op_min, null)
   
   def checkOne(b:Seq[Int], name:String):Int = {
     if (b.length > 1) throw new RuntimeException("DMat %s only takes one argument" format name);
@@ -1465,7 +1469,7 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
 }
 
 class DPair (val omat:Mat, val mat:DMat) extends Pair(omat, mat) {
-  
+	import GMat.BinOp._
   override def t:DMat = mat.tt(omat)
   /*
    * Compute routines
@@ -1478,12 +1482,12 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair(omat, mat) {
   def xT (b : DMat) = mat.multT(b, omat)
   def ^* (b : DMat) = mat.Tmult(b, omat)
   def Tx (b : DMat) = mat.Tmult(b, omat)
-  def + (b : DMat) = mat.ddMatOpv(b, DMat.vecAddFun, omat)
-  def - (b : DMat) = mat.ddMatOpv(b, DMat.vecSubFun, omat)
-  def *@ (b : DMat) = mat.ddMatOpv(b, DMat.vecMulFun, omat)
-  def ∘  (b : DMat) = mat.ddMatOpv(b, DMat.vecMulFun, omat)
-  def /  (b : DMat) = mat.ddMatOpv(b, DMat.vecDivFun, omat)
-  def ^ (b : DMat) = mat.ddMatOp(b, DMat.powFun, null) 
+  def + (b : DMat) = mat.ddMatOpv(b, DMat.vecAddFun, op_add, omat)
+  def - (b : DMat) = mat.ddMatOpv(b, DMat.vecSubFun, op_sub, omat)
+  def *@ (b : DMat) = mat.ddMatOpv(b, DMat.vecMulFun, op_mul, omat)
+  def ∘  (b : DMat) = mat.ddMatOpv(b, DMat.vecMulFun, op_mul, omat)
+  def /  (b : DMat) = mat.ddMatOpv(b, DMat.vecDivFun, op_div, omat)
+  def ^ (b : DMat) = mat.ddMatOpv(b, DMat.vecPowFun, op_pow, omat) 
   def dot (b :DMat) = mat.dot(b, omat)
   def dotr (b :DMat) = mat.dotr(b, omat)
   def ∙  (b :DMat) = mat.dot(b, omat)
@@ -1491,15 +1495,15 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair(omat, mat) {
   def ** (b : DMat) = mat.kron(b, omat)
   def ⊗  (b : DMat) = mat.kron(b, omat)
 
-  def > (b : DMat) = mat.ddMatOp(b, DMat.gtFun, omat)
-  def < (b : DMat) = mat.ddMatOp(b, DMat.ltFun, omat)
-  def == (b : DMat) = mat.ddMatOp(b, DMat.eqFun, omat)
-  def === (b : DMat) = mat.ddMatOp(b, DMat.eqFun, omat)
-  def >= (b : DMat) = mat.ddMatOp(b, DMat.geFun, omat)
-  def <= (b : DMat) = mat.ddMatOp(b, DMat.leFun, omat)
-  def != (b : DMat) = mat.ddMatOp(b, DMat.neFun, omat)
-  def max (b : DMat) = mat.ddMatOp(b, DMat.maxFun, omat)
-  def min (b : DMat) = mat.ddMatOp(b, DMat.minFun, omat)
+  def > (b : DMat) = mat.ddMatOpv(b, DMat.vecGTFun, op_gt, omat)
+  def < (b : DMat) = mat.ddMatOpv(b, DMat.vecLTFun, op_lt, omat)
+  def == (b : DMat) = mat.ddMatOpv(b, DMat.vecEQFun, op_eq, omat)
+  def === (b : DMat) = mat.ddMatOpv(b, DMat.vecEQFun, op_eq, omat)
+  def >= (b : DMat) = mat.ddMatOpv(b, DMat.vecGEFun, op_ge, omat)
+  def <= (b : DMat) = mat.ddMatOpv(b, DMat.vecLEFun, op_le, omat)
+  def != (b : DMat) = mat.ddMatOpv(b, DMat.vecNEFun, op_ne, omat)
+  def max (b : DMat) = mat.ddMatOpv(b, DMat.vecMaxFun, op_max, omat)
+  def min (b : DMat) = mat.ddMatOpv(b, DMat.vecMinFun, op_min, omat)
   
   override def * (b : Float) = mat.fDMult(DMat.delem(b), omat)
   override def + (b : Float) = mat.ddMatOpScalarv(b, DMat.vecAddFun, omat)
@@ -1788,6 +1792,14 @@ object DMat {
     0
   }
   
+  def vecPow(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
+    while (i < n) {
+      c(ci) = math.pow(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc; i += 1;
+    }
+    0
+  }
+  
   def vecMax(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
     var ai = a0; var bi = b0; var ci = c0; var i = 0;
     while (i < n) {
@@ -1865,6 +1877,7 @@ object DMat {
   val vecSubFun = (vecSub _) 
   val vecMulFun = (vecMul _)
   val vecDivFun = (vecDiv _)
+  val vecPowFun = (vecPow _)
   val vecMaxFun = (vecMax _)
   val vecMinFun = (vecMin _)
   

@@ -500,19 +500,6 @@ class DMatTest extends BIDMatSpec {
     	c(i1, i2) = b;
     	checkSimilar(a, c);
     }
-       
-    def testFunction2D(mop:(DMat)=>DMat, op:(Double)=>Double, offset:Double, msg:String) = {
-    		it should msg in {
-    			val a = drand(nr \ nc);
-    			a ~ a + offset;
-    			val b = dzeros(nr \ nc);
-    			for (i <- 0 until a.length) {
-    				b.data(i) = op(a.data(i));
-    			}
-    			val c = mop(a);
-    			checkSimilar(b, c);
-    		}
-    }
     
      def testReduce2D(reducer:(DMat, Int)=>DMat, fn:(Double, Double)=>Double, axis:Int, msg:String) = {
     		it should msg in {
@@ -596,6 +583,19 @@ class DMatTest extends BIDMatSpec {
     testReduce4D((a:DMat, n:IMat) => a.amax(n), (x:Double, y:Double)=>math.max(x,y), 1\2, "support 4D max");
     
     testReduce4D((a:DMat, n:IMat) => a.amin(n), (x:Double, y:Double)=>math.min(x,y), 0\3, "support 4D min");
+         
+    def testFunction2D(mop:(DMat)=>DMat, op:(Double)=>Double, offset:Double, msg:String) = {
+    		it should msg in {
+    			val a = drand(nr \ nc);
+    			a ~ a + offset;
+    			val b = dzeros(nr \ nc);
+    			for (i <- 0 until a.length) {
+    				b.data(i) = op(a.data(i));
+    			}
+    			val c = mop(a);
+    			checkSimilar(b, c);
+    		}
+    }
     
     import org.apache.commons.math3.analysis._
         
@@ -664,13 +664,13 @@ class DMatTest extends BIDMatSpec {
         
     testFunction2D((a:DMat) => erfc(a), (x:Double)=>Erf.erfc(x), -0.5, "support 2D erfc function");
     
+    testFunction2D((a:DMat) => gamma(a), (x:Double)=>Gamma.gamma(x), 0.0, "support 2D gamma function");
+    
+    testFunction2D((a:DMat) => gammaln(a), (x:Double)=>Gamma.logGamma(x), 0.0, "support 2D gammaln function");
+    
     val _normalDistribution = new NormalDistribution();
     
     testFunction2D((a:DMat) => normcdf(a), (x:Double)=>_normalDistribution.cumulativeProbability(x), -0.5, "support 2D normcdf function");
 
     testFunction2D((a:DMat) => normcdfinv(a), (x:Double)=>_normalDistribution.inverseCumulativeProbability(x), 0.0, "support 2D normcdfinv function");
-
-    testFunction2D((a:DMat) => gamma(a), (x:Double)=>Gamma.gamma(x), 0.0, "support 2D gamma function");
-    
-    testFunction2D((a:DMat) => gammaln(a), (x:Double)=>Gamma.logGamma(x), 0.0, "support 2D gammaln function");
 }

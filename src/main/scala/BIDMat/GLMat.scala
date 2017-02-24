@@ -461,18 +461,15 @@ class GLMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     out
   }
   
-  def GIop(a:GLMat, oldmat:Mat, op:Int):GLMat = {
-    if ((nrows == a.nrows && ncols == a.ncols) ||
-        (nrows == a.nrows && (a.ncols == 1 || ncols == 1)) ||
-        (ncols == a.ncols && (a.nrows == 1 || nrows == 1)) ||
-        (a.ncols == 1 && a.nrows == 1) ||
-        (ncols == 1 && nrows == 1)) {
-    	val out = GLMat.newOrCheckGLMat(math.max(nrows, a.nrows), math.max(ncols, a.ncols), oldmat, GUID, a.GUID, op)
-      Mat.nflops += scala.math.max(length, a.length)
-      CUMAT.applylop(pdata, nrows, ncols, a.pdata, a.nrows, a.ncols, out.pdata, op)
-      cudaDeviceSynchronize
-      out
-    }	else throw new RuntimeException("dimensions mismatch")
+   def GIop(aa:LMat, oldmat:Mat, op:Int):GLMat = {
+    val a = GLMat(aa);
+    val (nr, nc, nra, nca) = ND.compatibleGDims(_dims, aa._dims, "DenseMat Op");
+    val dims = ND.maxDims(_dims, aa._dims);
+    val out = GLMat.newOrCheckGLMat(dims, oldmat, GUID, aa.GUID, op.hashCode);
+    Mat.nflops += scala.math.max(length, a.length);
+    val err = CUMAT.applylop(pdata, nr, nc, a.pdata, nra, nca, out.pdata, op);
+    if (err != 0) {throw new RuntimeException("CUDA kernel error %d in CUMAT.applylop"  format err)}
+    out
   }
   
   

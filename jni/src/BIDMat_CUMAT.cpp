@@ -441,6 +441,16 @@ extern "C" {
     return fillToIndsLong(A, B, I, length);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_fillToIndsDouble
+  (JNIEnv *env, jobject obj, jdouble dA, jobject jB, jobject jI, jlong length) 
+  {
+    long long *B = (long long *)getPointer(env, jB);
+    int *I = (int*)getPointer(env, jI);
+    long long A = *((long long *)(& dA));
+
+    return fillToIndsLong(A, B, I, length);
+  }
+
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_fillToInds2DLong
   (JNIEnv *env, jobject obj, jfloat A, jobject jB, jint ldb,

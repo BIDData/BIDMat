@@ -57,6 +57,8 @@ public final class CUMAT {
     
     public static native int fillToIndsLong(long A, Pointer B, Pointer I, long len);
     
+    public static native int fillToIndsDouble(double A, Pointer B, Pointer I, long len);
+    
     public static native int fillToInds2DLong(long A, Pointer B, int ldb, Pointer I, int nrows, Pointer J, int ncols);
 
     public static native int fillToInds3DLong(long A, Pointer B, int ldb, int rdb, Pointer I, int nrows, Pointer J, int ncols, Pointer K, int nd);
