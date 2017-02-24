@@ -15,10 +15,10 @@ class FMatTest extends BIDMatSpec {
     val nk = 30;  
     val nl = 40;
     
-    def checkSimilar(a:FMat, b:FMat) = {
+    def checkSimilar(a:FMat, b:FMat, eps:Float = 1e-4f) = {
       a.dims.length should equal (b.dims.length) ;
       a.dims.data should equal (b.dims.data);
-      assert_approx_eq(a.data, b.data);
+      assert_approx_eq(a.data, b.data, eps);
     }
     
     "An FMat" should "support matrix transpose" in {
@@ -32,7 +32,6 @@ class FMatTest extends BIDMatSpec {
     	}
     	checkSimilar(c, b);
     }
-
 
     it should "support matrix multiplication" in {
     	val a = rand(nr, nk);
@@ -529,7 +528,7 @@ class FMatTest extends BIDMatSpec {
     
     testReduce2D((a:FMat, n:Int) => amin(a, n), (x:Float, y:Float)=>math.min(x,y), 2, "support 2D row min");
     
-    def testReduce4D(reducer:(FMat, IMat)=>FMat, fn:(Float, Float)=>Float, dims:IMat, msg:String) = {
+    def testReduce4D(reducer:(FMat, IMat)=>FMat, fn:(Float, Float)=>Float, dims:IMat, msg:String, eps:Float = 1e-4f) = {
     		it should msg in {
     			val adims = nr \ nc \ nk \ nl;
     			val bdims = adims.copy;
@@ -544,17 +543,27 @@ class FMatTest extends BIDMatSpec {
     				  	  val j0 = if (bdims(1) == 1) 0 else j;
     				  	  val k0 = if (bdims(2) == 1) 0 else k;
     				  	  val l0 = if (bdims(3) == 1) 0 else l;
+    				  	  val bi = i0 + bdims(0) * (j0 + bdims(1) * (k0 + bdims(2) * l0));
+    				  	  val ai = i + nr * (j + nc * (k + nk * l));
     				  	  if (((i == 0) || bdims(0) > 1) && ((j == 0) || bdims(1) > 1) && ((k == 0) || bdims(2) > 1) && ((l == 0) || bdims(3) > 1)) {
-    				  	    b.data(i0 + bdims(0) * (j0 + bdims(1) * (k0 + bdims(2) * l0))) = a.data(i + nr * (j + nc * (k + nk * l)));
+    				  	    b.data(bi) = a.data(ai);
+    				  	  } else {
+    				  	    b.data(bi) = fn(b.data(bi), a.data(ai));
     				  	  }
     				  	}	    
     				  }
     			  }
     			}
     			val c = reducer(a, dims);
-    			checkSimilar(b, c);
+    			checkSimilar(b, c, eps);
     		}
     } 
+    
+    testReduce4D((a:FMat, n:IMat) => a.sum(n), (x:Float, y:Float)=>x+y, 1\3, "support 4D sum", 1e-2f);
+    
+    testReduce4D((a:FMat, n:IMat) => a.amax(n), (x:Float, y:Float)=>math.max(x,y), 1\2, "support 4D max");
+    
+    testReduce4D((a:FMat, n:IMat) => a.amin(n), (x:Float, y:Float)=>math.min(x,y), 0\3, "support 4D min");
     
     import org.apache.commons.math3.analysis._
         

@@ -490,7 +490,7 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   override def transpose(perm:IMat):FMat = { 
     val nd = _dims.length
     if (perm.length != nd) { 
-      throw new RuntimeException("FND transpose bad permutation ")
+      throw new RuntimeException("FMat transpose bad permutation length %d, %d" format (perm.length, nd));
     }
     val xdims = irow(_dims)
     val iperm = invperm(perm)
@@ -634,15 +634,15 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
     val xinds = new IMat(inds.length, 1, inds)
     val xdims = new IMat(_dims.length, 1, _dims)
     alldims(xinds) = 1
-    if (SciFunctions.sum(alldims).v != inds.length) {
+    if (alldims.data.reduce(_+_) != inds.length) {
       throw new RuntimeException(opname+ " indices arent a legal subset of dims")
     }
-    val restdims = find(alldims == 0)
-    val tmp = transpose((xinds on restdims).data)
-    val tmpF = new FMat(SciFunctions.prod(xdims(xinds)).v, SciFunctions.prod(xdims(restdims)).v, tmp.data)
+    val restinds = MatFunctions.find(alldims == 0)
+    val tmp = transpose((xinds on restinds).data)
+    val tmpF = new FMat(xdims(xinds).data.reduce(_*_), xdims(restinds).data.reduce(_*_), tmp.data)
     val tmpSum:FMat = fctn(tmpF)
-    val out1 = new FMat((iones(inds.length,1) on xdims(restdims)).data, tmpSum.data)
-    out1.transpose(invperm(xinds on restdims).data)
+    val out1 = new FMat((iones(inds.length,1) on xdims(restinds)).data, tmpSum.data)
+    out1.transpose(invperm(xinds on restinds).data)
   }
   
   /** standard reducers on one dimension */
