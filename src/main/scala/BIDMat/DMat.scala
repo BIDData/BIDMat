@@ -471,7 +471,7 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
   override def transpose(perm:IMat):DMat = { 
     val nd = _dims.length
     if (perm.length != nd) { 
-      throw new RuntimeException("FND transpose bad permutation ")
+      throw new RuntimeException("DMat transpose bad permutation ")
     }
     val xdims = MatFunctions.irow(_dims)
     val iperm = MatFunctions.invperm(perm)
@@ -1169,27 +1169,27 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
     val xinds = new IMat(inds.length, 1, inds)
     val xdims = new IMat(_dims.length, 1, _dims)
     alldims(xinds) = 1
-    if (SciFunctions.sum(alldims).v != inds.length) {
+    if (alldims.data.reduce(_+_) != inds.length) {
       throw new RuntimeException(opname+ " indices arent a legal subset of dims")
     }
-    val restdims = find(alldims == 0)
-    val tmp = transpose((xinds on restdims).data)
-    val tmpF = new DMat(SciFunctions.prod(xdims(xinds)).v, SciFunctions.prod(xdims(restdims)).v, tmp.data)
-    val tmpSum:DMat = fctn(tmpF)
-    val out1 = new DMat((iones(inds.length,1) on xdims(restdims)).data, tmpSum.data)
-    out1.transpose(MatFunctions.invperm(xinds on restdims).data)
+    val restinds = MatFunctions.find(alldims == 0);
+    val tmp = transpose((xinds on restinds).data);
+    val tmpF = new DMat(xdims(xinds).data.reduce(_*_), xdims(restinds).data.reduce(_*_), tmp.data);
+    val tmpSum:DMat = fctn(tmpF);
+    val out1 = new DMat((iones(inds.length,1) on xdims(restinds)).data, tmpSum.data);
+    out1.transpose(MatFunctions.invperm(xinds on restinds).data);
   }
   
   /** standard reducers on one dimension */
   
-  override def sum(ind:Int):DMat = ddReduceOpv(ind+1, DMat.idFun, DMat.vecAddFun, null);
-  override def prod(ind:Int):DMat = ddReduceOpv(ind+1, DMat.idFun, DMat.vecMulFun, null);
-  override def maxi(ind:Int):DMat = ddReduceOpv(ind+1, DMat.idFun, DMat.vecMaxFun, null);
-  override def mini(ind:Int):DMat = ddReduceOpv(ind+1, DMat.idFun, DMat.vecMinFun, null);
-  override def amax(ind:Int):DMat = ddReduceOpv(ind+1, DMat.idFun, DMat.vecMaxFun, null);
-  override def amin(ind:Int):DMat = ddReduceOpv(ind+1, DMat.idFun, DMat.vecMinFun, null);
-  override def mean(ind:Int):DMat = SciFunctions._mean(this, ind+1).asInstanceOf[DMat];
-  override def variance(ind:Int):DMat = SciFunctions._variance(this, ind+1).asInstanceOf[DMat];
+  override def sum(ind:Int):DMat = ddReduceOpv(ind, DMat.idFun, DMat.vecAddFun, null);
+  override def prod(ind:Int):DMat = ddReduceOpv(ind, DMat.idFun, DMat.vecMulFun, null);
+  override def maxi(ind:Int):DMat = ddReduceOpv(ind, DMat.idFun, DMat.vecMaxFun, null);
+  override def mini(ind:Int):DMat = ddReduceOpv(ind, DMat.idFun, DMat.vecMinFun, null);
+  override def amax(ind:Int):DMat = ddReduceOpv(ind, DMat.idFun, DMat.vecMaxFun, null);
+  override def amin(ind:Int):DMat = ddReduceOpv(ind, DMat.idFun, DMat.vecMinFun, null);
+  override def mean(ind:Int):DMat = SciFunctions._mean(this, ind).asInstanceOf[DMat];
+  override def variance(ind:Int):DMat = SciFunctions._variance(this, ind).asInstanceOf[DMat];
   
   /** reduce on several dimensions, potentially very expensive */
   
@@ -1755,41 +1755,41 @@ object DMat {
     Arrays.fill(out.data, 1.0f)
     out
   }
-   
-  def vecDiv(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
-    while (ci < cend) {
-      c(ci) = a(ai) / b(bi);  ai += ainc; bi += binc;  ci += cinc
-    }
-    0
-  }
     
   def vecAdd(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var i = 0
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
     while (i < n) {
-      c(ci) = a(ai) + b(bi);  ai += ainc; bi += binc;  ci += cinc; i += 1
+      c(ci) = a(ai) + b(bi);  ai += ainc; bi += binc;  ci += cinc; i += 1;
     }
     0
   }
   
   def vecSub(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
-    while (ci < cend) {
-      c(ci) = a(ai) - b(bi);  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
+    while (i < n) {
+      c(ci) = a(ai) - b(bi);  ai += ainc; bi += binc;  ci += cinc; i += 1;
     }
     0
   }
   
   def vecMul(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
-    while (ci < cend) {
-      c(ci) = a(ai) * b(bi);  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
+    while (i < n) {
+      c(ci) = a(ai) * b(bi);  ai += ainc; bi += binc;  ci += cinc; i += 1;
+    }
+    0
+  }
+  
+  def vecDiv(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
+    while (i < n) {
+      c(ci) = a(ai) / b(bi);  ai += ainc; bi += binc;  ci += cinc; i += 1;
     }
     0
   }
   
   def vecMax(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var i = 0
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
     while (i < n) {
       c(ci) = math.max(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc; i += 1
     }
@@ -1806,55 +1806,55 @@ object DMat {
  
  
   def vecEQ(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
-    while (ci < cend) {
-      c(ci) = if (a(ai) == b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
+    while (i < n) {
+      c(ci) = if (a(ai) == b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc; i += 1;
     }
     0
   }
  
   def vecNE(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
-    while (ci < cend) { 
-      c(ci) = if (a(ai) != b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
+    while (i < n) { 
+      c(ci) = if (a(ai) != b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc; i += 1;
     }
     0
   }
   
    def vecGT(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
-    while (ci < cend) {
-      c(ci) = if (a(ai) > b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
+    while (i < n) {
+      c(ci) = if (a(ai) > b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc; i += 1;
     }
     0
   }
  
   def vecLT(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
-    while (ci < cend) {
-      c(ci) = if (a(ai) < b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
+    while (i < n) {
+      c(ci) = if (a(ai) < b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc; i += 1;
     }
     0
   }
    def vecGE(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
-    while (ci < cend) {
-      c(ci) = if (a(ai) >= b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
+    while (i < n) {
+      c(ci) = if (a(ai) >= b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc; i += 1;
     }
     0
   }
  
   def vecLE(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
-    while (ci < cend) {
-      c(ci) = if (a(ai) <= b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
+    while (i < n) {
+      c(ci) = if (a(ai) <= b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc; i += 1;
     }
     0
   }
   
   def vecSum(a:Array[Double], a0:Int, ainc:Int, c:Array[Double], c0:Int, n:Int):Double = {
-    var ai = a0; var aend = a0 + n * ainc; var sum = 0.0;
-    while (ai < aend) {
+    var ai = a0; var sum = 0.0; var i = 0;
+    while (i < n) {
       sum += a(ai);  ai += ainc; 
     }
     c(c0) = sum;

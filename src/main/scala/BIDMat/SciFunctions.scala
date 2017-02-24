@@ -327,11 +327,16 @@ object SciFunctions {
   def maxi(a:FMat, out:Mat) = FFunctions.maxi(a, 0, out);
   def mini(a:FMat, out:Mat):FMat = FFunctions.mini(a, 0, out);
   def amax(a:FMat, out:Mat) = FFunctions.maxi(a, 0, out);
-  def amin(a:FMat, out:Mat):FMat = FFunctions.mini(a, 0, out);  
+  def amin(a:FMat, out:Mat):FMat = FFunctions.mini(a, 0, out); 
+  
   /** min, max, sum, prod, cumsum, maxi, mini for DMats with no output */
   
   def min(a:DMat, b:DMat) = a.ddMatOpv(b, DMat.vecMinFun, null)
   def max(a:DMat, b:DMat) = a.ddMatOpv(b, DMat.vecMaxFun, null)
+  def min(a:DMat, b:Double) = a.ddMatOpv(DMat.delem(b), DMat.vecMinFun, null)
+  def max(a:DMat, b:Double) = a.ddMatOpv(DMat.delem(b), DMat.vecMaxFun, null)
+  def min(a:Double, b:DMat) = b.ddMatOpv(DMat.delem(a), DMat.vecMinFun, null)
+  def max(a:Double, b:DMat) = b.ddMatOpv(DMat.delem(a), DMat.vecMaxFun, null)
   def sum(a:DMat, n:Int) = a.ddReduceOpv(n, DMat.idFun, DMat.vecAddFun, null)
   def prod(a:DMat, n:Int) = a.ddReduceOpv(n, DMat.idFun, DMat.vecMulFun, null)
   def cumsum(a:DMat, n:Int) = a.ddReduceAll(n, DMat.idFun, DMat.sumFun, null)
@@ -357,6 +362,10 @@ object SciFunctions {
   
   def min(a:DMat, b:DMat, out:Mat) = a.ddMatOpv(b, DMat.vecMinFun, out)
   def max(a:DMat, b:DMat, out:Mat) = a.ddMatOpv(b, DMat.vecMaxFun, out)
+  def min(a:DMat, b:Double, out:Mat) = a.ddMatOpv(DMat.delem(b), DMat.vecMinFun, out)
+  def max(a:DMat, b:Double, out:Mat) = a.ddMatOpv(DMat.delem(b), DMat.vecMaxFun, out)
+  def min(a:Double, b:DMat, out:Mat) = b.ddMatOpv(DMat.delem(a), DMat.vecMinFun, out)
+  def max(a:Double, b:DMat, out:Mat) = b.ddMatOpv(DMat.delem(a), DMat.vecMaxFun, out)
   def sum(a:DMat, n:Int, out:Mat) = a.ddReduceOpv(n, DMat.idFun, DMat.vecAddFun, out)
   def prod(a:DMat, n:Int, out:Mat) = a.ddReduceOpv(n, DMat.idFun, DMat.vecMulFun, out)
   def cumsum(a:DMat, n:Int, out:Mat) = a.ddReduceAll(n, DMat.idFun, DMat.sumFun, out)

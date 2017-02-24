@@ -1039,20 +1039,16 @@ object MatFunctions {
   }
 
   /** Make a double matrix of zeros of the given dimensions. */
-  def dzeros(nr:Int, nc:Int):DMat = {
-    DMat.newOrCheckDMat(nr, nc, null)
-  }
+  def dzeros(nr:Int, nc:Int):DMat = DMat.zeros(nr, nc);
   
   /** Make a double matrix of ones with the given dimensions. */
-  def dones(nr:Int, nc:Int):DMat = {
-    val out = DMat(nr,nc)
-    var i = 0
-    while (i < out.length) {
-      out.data(i) = 1
-      i += 1
-    }
-    out
-  }
+  def dones(nr:Int, nc:Int):DMat = DMat.ones(nr, nc);
+  
+  /** Make a double matrix of zeros of the given dimensions. */
+  def dzeros(dims:IMat):DMat = DMat.zeros(dims);
+  
+  /** Make a double matrix of ones with the given dimensions. */
+  def dones(dims:IMat):DMat = DMat.ones(dims);
 
   /** Make a float row matrix from an array of Floats. */
   def row(x:Array[Float]):FMat = {

@@ -273,13 +273,14 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
 
   def updatei(inds:Array[IMat], vv:GMat):GMat = {
 		 if (inds.length > 2 && inds.length != _dims.length) throw new RuntimeException("GMat update dims must match")
+		 val mydims = if (inds.length == 2) Array(nrows, ncols) else _dims;
 		 val newdims = new Array[Int](inds.length)
 		 val newinds = new Array[GIMat](inds.length)
 		 var j = 0
 		 for (i <- 0 until inds.length) {
 			 inds(i) match {
 			 case aa:MatrixWildcard => {
-				 newdims(i) = _dims(i); 
+				 newdims(i) = mydims(i); 
 			 }
 			 case _ => {
 				 newdims(i) = inds(i).length;
@@ -289,10 +290,6 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
 		 }
 		 ND.checkDims("GMat update:", ND.trimDims(newdims), ND.trimDims(vv._dims));
 		 inds.length match {
-		 case 1 => {
-			 val err = CUMAT.copyToInds(vv.pdata, pdata, safePointer(newinds(0)), newdims(0));
-			 if (err != 0) throw new RuntimeException("GMat update (I)=V error " + cudaGetErrorString(err));
-		 }
 		 case 2 => {
 			 val err = CUMAT.copyToInds2D(vv.pdata, vv.dims(0), pdata, nrows, 
 					 safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1));
@@ -359,7 +356,7 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
           safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1), safePointer(newinds(2)), newdims(2), safePointer(newinds(3)), newdims(3));
       if (err != 0) throw new RuntimeException("GMat udpate (I, J, K, L)=v error " + cudaGetErrorString(err));
     }
-    case _ => throw new RuntimeException("GMat slice access with more than 4 indices not supported");
+    case _ => throw new RuntimeException("GMat slice update with more than 4 indices not supported");
     }
     this
   }

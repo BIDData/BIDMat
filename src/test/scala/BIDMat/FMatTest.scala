@@ -431,7 +431,7 @@ class FMatTest extends BIDMatSpec {
     	checkSimilar(a, b);
     }
     
-    it should "support IMat product update" in {
+    it should "support 3D IMat product update" in {
     	val a = rand(3 \ 4 \ 5);
     	val c = a + 0f;
     	val i1 = 1 \ 2;
@@ -450,7 +450,7 @@ class FMatTest extends BIDMatSpec {
     	checkSimilar(a, c);
     }
     
-    it should "support IMat product update with wildcard" in {
+    it should "support 3D IMat product update with wildcard" in {
     	val a = rand(3 \ 4 \ 5);
     	val c = a + 0f;
     	val i1 = 1 \ 2;
@@ -466,6 +466,38 @@ class FMatTest extends BIDMatSpec {
     	  }
     	}
     	c(i1, i2, i3) = b;
+    	checkSimilar(a, c);
+    }
+    
+    it should "support 2D IMat product update" in {
+    	val a = rand(3 \ 4 \ 5);
+    	val c = a + 0f;
+    	val i1 = 1 \ 2;
+    	val i2 = 2 \ 3;
+    	val b = zeros(i1.length \ i2.length);
+    	b(?) = col(0->b.length);
+    	for (i <- 0 until i1.length) {
+    	  for (j <- 0 until i2.length) {
+    		  a.data(i1.data(i) + a.nrows * i2.data(j)) = b.data(i + i1.length * j);
+    	  }
+    	}
+      c(i1, i2) = b;
+    	checkSimilar(a, c);
+    }
+    
+    it should "support 2D IMat product update with wildcard" in {
+    	val a = rand(3 \ 4 \ 5);
+    	val c = a + 0f;
+    	val i1 = 1 \ 2;
+    	val i2 = ?
+    	val b = zeros(i1.length \ a.ncols);
+    	b(?) = col(0->b.length);
+    	for (i <- 0 until i1.length) {
+    	  for (j <- 0 until a.ncols) {
+    		  a.data(i1.data(i) + a.nrows * j) = b.data(i + i1.length * j);
+    	  }
+    	}
+    	c(i1, i2) = b;
     	checkSimilar(a, c);
     }
        
