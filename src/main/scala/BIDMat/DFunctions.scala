@@ -19,6 +19,94 @@ object DFunctions {
   
   def norm(a:DMat) = math.sqrt(ddot(a.length, a.data, 1, a.data, 1));
   
+    /** Sort a set of keys ascending along a given direction '''dir''': 1=columns, 2=rows, 0=smart. */
+  def sort(keys:DMat, dir:Int):DMat = {
+    DMat(DenseMat.sort(keys, dir, true))
+  }
+  
+  /** Sort a set of keys ascending. */
+  def sort(keys:DMat):DMat = {
+    keys match {
+//    case gkeys:DGMat => GDFunctions.sort(gkeys);
+    case _ => DMat(DenseMat.sort(keys, 0, true))
+    }
+  }
+
+  /** Sort a set of keys ascending, and return sorted keys and indices. */
+  def sort2(keys:DMat):(DMat, IMat) = {
+    keys match {
+//      case gkeys:GDMat => GDFunctions.sort2(gkeys)
+      case _ => {val (d,i) = DenseMat.sort2(keys, true); (DMat(d), i)}
+    }
+  }
+  
+  /** Sort a set of keys and return sorted keys and indices along a given direction: 1=columns, 2=rows, 0=smart */
+  def sort2(keys:DMat, dir:Int):(DMat, IMat) = {val (d,i) = DenseMat.sort2(keys, dir, true); (DMat(d), i)}
+  
+  /** Sort a set of keys descending along a given direction: 1=columns, 2=rows, 0=smart. */
+  def sortdown(keys:DMat, dir:Int):DMat = DMat(DenseMat.sort(keys, dir, false))
+  
+  /** Sort a set of keys descending. */
+  def sortdown(keys:DMat):DMat = {
+    keys match {
+//      case gkeys:GDMat => GDFunctions.sortdown(gkeys);
+      case _ => DMat(DenseMat.sort(keys, 0, false))
+    }
+  }
+  
+  /** Sort a set of keys descending and return sorted keys and indices. */
+  def sortdown2(keys:DMat):(DMat, IMat) = {
+     keys match {
+//       case gkeys:GDMat => GDFunctions.sortdown2(gkeys);
+       case _ => {val (d,i) = DenseMat.sort2(keys, false); (DMat(d), i)}
+     }
+  }
+  
+  /** Sort a set of keys descending and return sorted keys and indices along a given direction: 1=columns, 2=rows, 0=smart */
+  def sortdown2(keys:DMat, dir:Int):(DMat, IMat) = {val (d,i) = DenseMat.sort2(keys, dir, false); (DMat(d), i)}
+  
+  /** Lexicographically sort rows ascending */
+  def sortrows(rows:DMat):(DMat, IMat) = { val ii = DenseMat.isortlex(rows, true); (rows(ii, MatFunctions.?), ii) }
+  
+  /** Lexicographically sort rows descending */
+  def sortrowsdown(rows:DMat):(DMat, IMat) = { val ii = DenseMat.isortlex(rows, false); (rows(ii, MatFunctions.?), ii) }
+  
+  /** Lexicographially sort with an index array, and return it. '''a''' is not modified */
+  def isortlex(a:DMat):IMat = DenseMat.isortlex(a, true)
+  
+  /** Lexicographially sort descending with an index array, and return it. '''a''' is not modified */
+  def isortlexdown(a:DMat):IMat = DenseMat.isortlex(a, false)
+  
+   /** Accumulate (row, col, value) tuples from inds \\ vals. nr and nc are row and column bounds */
+  def accum(inds:IMat, vals:DMat, nr:Int, nc:Int):DMat = {
+    (inds, vals) match {
+      case (ginds:GIMat, fvals:DMat) => GDFunctions.accum(ginds, GDMat(fvals), null, nr, nc);
+      case (finds:IMat, gvals:GDMat) => GDFunctions.accum(GIMat(finds), gvals, null, nr, nc);
+      case _ => DMat(DenseMat.accum(inds, vals, nr, nc))
+    }
+  }
+  
+  /** Accumulate (row, col, value) tuples from inds \\ vals. nr is row and bounds, ncols = 1 */
+  
+  def accum(inds:IMat, vals:DMat, nr:Int):DMat = accum(inds, vals, nr, 1);
+  
+  /** Accumulate (row, value) tuples from inds \\ vals. Inds can be a vector or two-column matrix */
+  def accum(inds:IMat, vals:DMat) = DMat(DenseMat.accum(inds, vals, 0, 0))
+  
+  /** Accumulate (row, col, value) tuples from inds \\ vals. nr and nc are row and column bounds */
+  def accum(inds:IMat, v:Double, nr:Int, nc:Int) = {
+    inds match {
+      case ginds:GIMat => GDFunctions.accum(ginds, v, null, nr, nc);
+      case _ => DMat(DenseMat.accum(inds, DMat.delem(v), nr, nc));
+    }
+  }   
+  
+  /** Accumulate (row, col, value) tuples from inds \\ vals. nr is row and bounds, ncols = 1 */
+  def accum(inds:IMat, v:Double, nr:Int):DMat = accum(inds, v, nr, 1);
+  
+  /** Accumulate (row, value) tuples from inds \\ vals. Inds can be a vector or two-column matrix */
+  def accum(inds:IMat, v:Double) = DMat(DenseMat.accum(inds, DMat.delem(v), 0, 0))
+  
    /** min, max, sum, prod, cumsum, maxi, mini for DMats with output matrix*/
   
   import GMat.BinOp._

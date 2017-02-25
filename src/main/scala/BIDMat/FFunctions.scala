@@ -24,6 +24,94 @@ object FFunctions {
 	    case _       => math.sqrt(sdot(a.length, a.data, 1, a.data, 1)).toFloat;
 	  }
 	}
+  
+  /** Sort a set of keys ascending along a given direction '''dir''': 1=columns, 2=rows, 0=smart. */
+  def sort(keys:FMat, dir:Int):FMat = {
+    FMat(DenseMat.sort(keys, dir, true))
+  }
+  
+  /** Sort a set of keys ascending. */
+  def sort(keys:FMat):FMat = {
+	  keys match {
+	  case gkeys:GMat => GFunctions.sort(gkeys);
+	  case _ => FMat(DenseMat.sort(keys, 0, true))
+	  }
+  }
+
+  /** Sort a set of keys ascending, and return sorted keys and indices. */
+  def sort2(keys:FMat):(FMat, IMat) = {
+    keys match {
+      case gkeys:GMat => GFunctions.sort2(gkeys)
+      case _ => {val (d,i) = DenseMat.sort2(keys, true); (FMat(d), i)}
+    }
+  }
+  
+  /** Sort a set of keys and return sorted keys and indices along a given direction: 1=columns, 2=rows, 0=smart */
+  def sort2(keys:FMat, dir:Int):(FMat, IMat) = {val (d,i) = DenseMat.sort2(keys, dir, true); (FMat(d), i)}
+  
+  /** Sort a set of keys descending along a given direction: 1=columns, 2=rows, 0=smart. */
+  def sortdown(keys:FMat, dir:Int):FMat = FMat(DenseMat.sort(keys, dir, false))
+  
+  /** Sort a set of keys descending. */
+  def sortdown(keys:FMat):FMat = {
+    keys match {
+      case gkeys:GMat => GFunctions.sortdown(gkeys);
+      case _ => FMat(DenseMat.sort(keys, 0, false))
+    }
+  }
+  
+  /** Sort a set of keys descending and return sorted keys and indices. */
+  def sortdown2(keys:FMat):(FMat, IMat) = {
+     keys match {
+       case gkeys:GMat => GFunctions.sortdown2(gkeys);
+       case _ => {val (d,i) = DenseMat.sort2(keys, false); (FMat(d), i)}
+     }
+  }
+  
+  /** Sort a set of keys descending and return sorted keys and indices along a given direction: 1=columns, 2=rows, 0=smart */
+  def sortdown2(keys:FMat, dir:Int):(FMat, IMat) = {val (d,i) = DenseMat.sort2(keys, dir, false); (FMat(d), i)}
+  
+  /** Lexicographically sort rows ascending */
+  def sortrows(rows:FMat):(FMat, IMat) = { val ii = DenseMat.isortlex(rows, true); (rows(ii, MatFunctions.?), ii) }
+  
+  /** Lexicographically sort rows descending */
+  def sortrowsdown(rows:FMat):(FMat, IMat) = { val ii = DenseMat.isortlex(rows, false); (rows(ii, MatFunctions.?), ii) }
+  
+  /** Lexicographially sort with an index array, and return it. '''a''' is not modified */
+  def isortlex(a:FMat):IMat = DenseMat.isortlex(a, true)
+  
+  /** Lexicographially sort descending with an index array, and return it. '''a''' is not modified */
+  def isortlexdown(a:FMat):IMat = DenseMat.isortlex(a, false)
+  
+  /** Accumulate (row, col, value) tuples from inds \\ vals. nr and nc are row and column bounds */
+  def accum(inds:IMat, vals:FMat, nr:Int, nc:Int) = {
+    (inds, vals) match {
+      case (ginds:GIMat, fvals:FMat) => GFunctions.accum(ginds, GMat(fvals), null, nr, nc);
+      case (finds:IMat, gvals:GMat) => GFunctions.accum(GIMat(finds), gvals, null, nr, nc);
+      case _ => FMat(DenseMat.accum(inds, vals, nr, nc))
+    }
+  }
+  
+  /** Accumulate (row, col, value) tuples from inds \\ vals. nr is row and bounds, ncols = 1 */
+  
+  def accum(inds:IMat, vals:FMat, nr:Int):FMat = accum(inds, vals, nr, 1);
+  
+  /** Accumulate (row, value) tuples from inds \\ vals. Inds can be a vector or two-column matrix */
+  def accum(inds:IMat, vals:FMat) = FMat(DenseMat.accum(inds, vals, 0, 0))
+  
+  /** Accumulate (row, col, value) tuples from inds \\ vals. nr and nc are row and column bounds */
+  def accum(inds:IMat, v:Float, nr:Int, nc:Int) = {
+    inds match {
+      case ginds:GIMat => GFunctions.accum(ginds, v, null, nr, nc);
+      case _ => FMat(DenseMat.accum(inds, FMat.elem(v), nr, nc));
+    }
+  }   
+  
+  /** Accumulate (row, col, value) tuples from inds \\ vals. nr is row and bounds, ncols = 1 */
+  def accum(inds:IMat, v:Float, nr:Int):FMat = accum(inds, v, nr, 1);
+  
+  /** Accumulate (row, value) tuples from inds \\ vals. Inds can be a vector or two-column matrix */
+  def accum(inds:IMat, v:Float) = FMat(DenseMat.accum(inds, FMat.elem(v), 0, 0))
 	
 	def min(a:FMat, b:FMat, out:Mat) = {
 	  (a, b) match {
