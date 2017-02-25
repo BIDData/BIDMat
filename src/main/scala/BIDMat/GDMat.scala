@@ -172,7 +172,7 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
         }
       }
     }
-    val out = GDMat.newOrCheckGDMat(newdims, omat, GUID, ND.hashGUIDs(inds), "apply".##);
+    val out = GDMat.newOrCheckGDMat(newdims, omat, GUID, ND.hashGUIDs(inds), "GDMat.apply".##);
     inds.length match {
     case 1 => {
         val err = CUMATD.copyFromInds(pdata, out.pdata, safePointer(newinds(0)), newdims(0));

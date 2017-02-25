@@ -730,10 +730,10 @@ class GIMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   def on(a : GIMat) = vertcat(a, null)
   def \ (a : GIMat) = horzcat(a, null)
   
-  override def sum(ind:IMat):GIMat = reduceOp(null, checkOne(ind,"sum")+1, 0, op_add);
-  override def prod(ind:IMat):GIMat = reduceOp(null, checkOne(ind,"prod")+1, 1, op_mul);
-  override def maxi(ind:IMat):GIMat = reduceOp(null, checkOne(ind,"maxi")+1, Int.MinValue, op_max);
-  override def mini(ind:IMat):GIMat = reduceOp(null, checkOne(ind,"mini")+1, Int.MaxValue, op_min);
+  override def sum(ind:IMat):GIMat = reduceOp(null, checkOne(ind,"sum"), 0, op_add);
+  override def prod(ind:IMat):GIMat = reduceOp(null, checkOne(ind,"prod"), 1, op_mul);
+  override def maxi(ind:IMat):GIMat = reduceOp(null, checkOne(ind,"maxi"), Int.MinValue, op_max);
+  override def mini(ind:IMat):GIMat = reduceOp(null, checkOne(ind,"mini"), Int.MaxValue, op_min);
 
   
   override def + (a : Float) = GIop(GIMat(a.toInt), null, op_add)

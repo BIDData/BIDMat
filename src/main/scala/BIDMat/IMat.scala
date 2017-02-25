@@ -867,12 +867,12 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
   
   /** standard reducers on one dimension */
   
-  override def sum(ind:Int):IMat = iiReduceOpv(ind+1, IMat.idFun, IMat.vecAddFun, null);
-  override def prod(ind:Int):IMat = iiReduceOpv(ind+1, IMat.idFun, IMat.vecMulFun, null);
-  override def maxi(ind:Int):IMat = iiReduceOpv(ind+1, IMat.idFun, IMat.vecMaxFun, null);
-  override def mini(ind:Int):IMat = iiReduceOpv(ind+1, IMat.idFun, IMat.vecMinFun, null);
-  override def mean(ind:Int):IMat = SciFunctions._mean(this, ind+1).asInstanceOf[IMat];
-  override def variance(ind:Int):IMat = SciFunctions._variance(this, ind+1).asInstanceOf[IMat];
+  override def sum(ind:Int):IMat = iiReduceOpv(ind, IMat.idFun, IMat.vecAddFun, null);
+  override def prod(ind:Int):IMat = iiReduceOpv(ind, IMat.idFun, IMat.vecMulFun, null);
+  override def maxi(ind:Int):IMat = iiReduceOpv(ind, IMat.idFun, IMat.vecMaxFun, null);
+  override def mini(ind:Int):IMat = iiReduceOpv(ind, IMat.idFun, IMat.vecMinFun, null);
+  override def mean(ind:Int):IMat = SciFunctions._mean(this, ind).asInstanceOf[IMat];
+  override def variance(ind:Int):IMat = SciFunctions._variance(this, ind).asInstanceOf[IMat];
   
   /** reduce on several dimensions, potentially very expensive */
   
