@@ -583,6 +583,70 @@ class DMatTest extends BIDMatSpec {
     testReduce4D((a:DMat, n:IMat) => a.amax(n), (x:Double, y:Double)=>math.max(x,y), 1\2, "support 4D max");
     
     testReduce4D((a:DMat, n:IMat) => a.amin(n), (x:Double, y:Double)=>math.min(x,y), 0\3, "support 4D min");
+    
+       
+    it should "support 2D vector accum" in {
+      val nr = 100;
+      val nc = 10;
+      val ne = 1000;
+      val inds = int(rand(ne,2)*@row(nr,nc));
+      val vals = drand(ne,1);
+      val c = dzeros(nr, nc);
+      for (i <- 0 until ne) {
+        val ii = inds(i, 0);
+        val jj = inds(i, 1);
+        val vv = vals(i, 0);
+        c(ii, jj) = c(ii, jj) + vv;
+      }
+      val b = accum(inds, vals, nr, nc);
+      checkSimilar(b, c);
+    }
+    
+    it should "support 2D scalar accum" in {
+      val nr = 100;
+      val nc = 10;
+      val ne = 1000;
+      val inds = int(rand(ne,2)*@row(nr,nc));
+      val vv = 0.234
+      val c = dzeros(nr, nc);
+      for (i <- 0 until ne) {
+        val ii = inds(i, 0);
+        val jj = inds(i, 1);
+        c(ii, jj) = c(ii, jj) + vv;
+      }
+      val b = accum(inds, vv, nr, nc);
+      checkSimilar(b, c);
+    }
+     
+    it should "support 1D vector accum" in {
+      val nr = 100;
+      val ne = 1000;
+      val inds = int(rand(ne,1)*nr);
+      val vals = drand(ne,1);
+      val c = dzeros(nr, 1);
+      for (i <- 0 until ne) {
+        val ii = inds(i, 0);
+        val vv = vals(i, 0);
+        c(ii, 0) = c(ii, 0) + vv;
+      }
+      val b = accum(inds, vals, nr);
+      checkSimilar(b, c);
+    }
+    
+    it should "support 1D scalar accum" in {
+      val nr = 100;
+      val ne = 1000;
+      val inds = int(rand(ne,1)*@nr);
+      val vv = 0.234
+      val c = dzeros(nr, 1);
+      for (i <- 0 until ne) {
+        val ii = inds(i, 0);
+        c(ii, 0) = c(ii, 0) + vv;
+      }
+      val b = accum(inds, vv, nr);
+      checkSimilar(b, c);
+    }
+    
          
     def testFunction2D(mop:(DMat)=>DMat, op:(Double)=>Double, offset:Double, msg:String) = {
     		it should msg in {

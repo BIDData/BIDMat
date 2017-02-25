@@ -69,7 +69,7 @@ class FMatTest extends BIDMatSpec {
     def testEwise(nr:Int, nc:Int, mop:(FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String) = {
     		it should msg in {
     			val a = rand(nr, nc);
-    			val b = rand(nr, nc);  
+    			val b = rand(nr, nc) + 0.01f;  
     			val c = mop(a,b);
     			val d = zeros(nr, nc);
     			for (i <- 0 until nc) {
@@ -96,8 +96,8 @@ class FMatTest extends BIDMatSpec {
 
     def testBcastRows(nr:Int, nc:Int, mop:(FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String, reverse:Boolean = true) = {
     		it should msg in {  
-    			val a = rand(nr, nc);
-    			val b = rand(1, nc);
+    			val a = rand(nr, nc) + 0.01f;
+    			val b = rand(1, nc) + 0.01f;
     			val d = zeros(nr, nc);
     			for (i <- 0 until nc) {
     				for (j <- 0 until nr) {
@@ -128,8 +128,8 @@ class FMatTest extends BIDMatSpec {
     
     def testBcastRows4D(nr:Int, nc:Int, mop:(FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String, reverse:Boolean = true) = {
     		it should msg in {  
-    			val a = rand(nr \ nc \ nk \ nl);
-    			val b = rand(1 \ 1 \ nk \ nl);
+    			val a = rand(nr \ nc \ nk \ nl) + 0.01f;
+    			val b = rand(1 \ 1 \ nk \ nl) + 0.01f;
     			val d = zeros(a.dims);
     			for (i <- 0 until nr) {
     				for (j <- 0 until nc) {
@@ -163,8 +163,8 @@ class FMatTest extends BIDMatSpec {
 
     def testBcastCols(nr:Int, nc:Int, mop:(FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String, reverse:Boolean = true) = {
     		it should msg in {
-    			val a = rand(nr, nc);
-    			val b = rand(nr, 1);
+    			val a = rand(nr, nc) + 0.01f;
+    			val b = rand(nr, 1) + 0.01f;
     			val d = zeros(nr, nc);
     			for (i <- 0 until nc) {
     				for (j <- 0 until nr) {
@@ -500,7 +500,69 @@ class FMatTest extends BIDMatSpec {
     	c(i1, i2) = b;
     	checkSimilar(a, c);
     }
-       
+    
+    it should "support 2D vector accum" in {
+      val nr = 100;
+      val nc = 10;
+      val ne = 1000;
+      val inds = int(rand(ne,2)*@row(nr,nc));
+      val vals = rand(ne,1);
+      val c = zeros(nr, nc);
+      for (i <- 0 until ne) {
+        val ii = inds(i, 0);
+        val jj = inds(i, 1);
+        val vv = vals(i, 0);
+        c(ii, jj) = c(ii, jj) + vv;
+      }
+      val b = accum(inds, vals, nr, nc);
+      checkSimilar(b, c);
+    }
+    
+    it should "support 2D scalar accum" in {
+      val nr = 100;
+      val nc = 10;
+      val ne = 1000;
+      val inds = int(rand(ne,2)*@row(nr,nc));
+      val vv = 0.234f
+      val c = zeros(nr, nc);
+      for (i <- 0 until ne) {
+        val ii = inds(i, 0);
+        val jj = inds(i, 1);
+        c(ii, jj) = c(ii, jj) + vv;
+      }
+      val b = accum(inds, vv, nr, nc);
+      checkSimilar(b, c);
+    }
+     
+    it should "support 1D vector accum" in {
+      val nr = 100;
+      val ne = 1000;
+      val inds = int(rand(ne,1)*nr);
+      val vals = rand(ne,1);
+      val c = zeros(nr, 1);
+      for (i <- 0 until ne) {
+        val ii = inds(i, 0);
+        val vv = vals(i, 0);
+        c(ii, 0) = c(ii, 0) + vv;
+      }
+      val b = accum(inds, vals, nr);
+      checkSimilar(b, c);
+    }
+    
+    it should "support 1D scalar accum" in {
+      val nr = 100;
+      val ne = 1000;
+      val inds = int(rand(ne,1)*@nr);
+      val vv = 0.234f
+      val c = zeros(nr, 1);
+      for (i <- 0 until ne) {
+        val ii = inds(i, 0);
+        c(ii, 0) = c(ii, 0) + vv;
+      }
+      val b = accum(inds, vv, nr);
+      checkSimilar(b, c);
+    }
+    
     def testFunction2D(mop:(FMat)=>FMat, op:(Float)=>Float, offset:Float, msg:String) = {
     		it should msg in {
     			val a = rand(nr \ nc);

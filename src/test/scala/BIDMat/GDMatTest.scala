@@ -703,6 +703,80 @@ class GDMatTest extends BIDMatSpec {
     
     testReduce4D((a:DMat, n:IMat) => a.amin(n), (x:Double, y:Double)=>math.min(x,y), 0\3, "support 4D min");
     
+          
+    it should "support 2D vector accum" in {
+      val nr = 100;
+      val nc = 10;
+      val ne = 1000;
+      val inds = int(rand(ne,2)*@row(nr,nc));
+      val vals = drand(ne,1);
+      val ginds = GIMat(inds);
+      val gvals = GDMat(vals);
+      val c = dzeros(nr, nc);
+      for (i <- 0 until ne) {
+        val ii = inds(i, 0);
+        val jj = inds(i, 1);
+        val vv = vals(i, 0);
+        c(ii, jj) = c(ii, jj) + vv;
+      }
+      val bb = accum(ginds, gvals, nr, nc);
+      bb.mytype should equal ("GDMat");
+      checkSimilar(bb, c);
+    }
+    
+    it should "support 2D scalar accum" in {
+      val nr = 100;
+      val nc = 10;
+      val ne = 1000;
+      val inds = int(rand(ne,2)*@row(nr,nc));
+      val ginds = GIMat(inds);
+      val vv = 0.234
+      val c = dzeros(nr, nc);
+      for (i <- 0 until ne) {
+        val ii = inds(i, 0);
+        val jj = inds(i, 1);
+        c(ii, jj) = c(ii, jj) + vv;
+      }
+      val bb = accum(ginds, vv, nr, nc);
+      bb.mytype should equal ("GDMat");
+      checkSimilar(bb, c);
+    }
+     
+    it should "support 1D vector accum" in {
+      val nr = 100;
+      val ne = 1000;
+      val inds = int(rand(ne,1)*nr);
+      val vals = rand(ne,1);
+      val ginds = GIMat(inds);
+      val gvals = GDMat(vals);
+      val c = dzeros(nr, 1);
+      for (i <- 0 until ne) {
+        val ii = inds(i, 0);
+        val vv = vals(i, 0);
+        c(ii, 0) = c(ii, 0) + vv;
+      }
+      val bb = accum(ginds, gvals, nr);
+      bb.mytype should equal ("GDMat");
+      checkSimilar(bb, c);
+    }
+    
+    it should "support 1D scalar accum" in {
+      val nr = 100;
+      val ne = 1000;
+      val inds = int(rand(ne,1)*@nr);
+      val ginds = GIMat(inds);
+      val vv = 0.234
+      val c = dzeros(nr, 1);
+      for (i <- 0 until ne) {
+        val ii = inds(i, 0);
+        c(ii, 0) = c(ii, 0) + vv;
+      }
+      val bb = accum(ginds, vv, nr);
+      bb.mytype should equal ("GDMat");
+      checkSimilar(bb, c);
+    }
+    
+    
     import org.apache.commons.math3.analysis._
         
     import org.apache.commons.math3.analysis.function._
