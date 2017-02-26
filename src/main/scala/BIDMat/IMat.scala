@@ -1368,7 +1368,7 @@ object IMat {
       case _ => throw new RuntimeException("IMat apply unknown argument");
     }
     x match {
-      case gg:GIMat => gg.toIMat;
+      case gg:GIMat => GIMat.GPUtoCPUarraycopy(gg.pdata, 0, out.data, 0, gg.length, "IMat apply");
       case dd:DMat => {Mat.copyToIntArray(dd.data, 0, out.data, 0, dd.length)};
       case ff:FMat => {Mat.copyToIntArray(ff.data, 0, out.data, 0, ff.length)};
       case ff:LMat => {Mat.copyToIntArray(ff.data, 0, out.data, 0, ff.length)};

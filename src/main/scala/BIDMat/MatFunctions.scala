@@ -360,7 +360,7 @@ object MatFunctions {
   def sortdown(keys:FMat, dir:Int):FMat = FFunctions.sortdown(keys, dir);
   
   /** Sort a set of keys descending. */
-  def sortdown(keys:FMat):FMat = FFunctions.sort(keys);
+  def sortdown(keys:FMat):FMat = FFunctions.sortdown(keys);
   
   /** Sort a set of keys descending and return sorted keys and indices. */
   def sortdown2(keys:FMat):(FMat, IMat) = FFunctions.sortdown2(keys);
@@ -386,6 +386,79 @@ object MatFunctions {
   
   def unique(a:FMat):(FMat) = {val (ii, jj) = DenseMat.unique2(if (math.min(a.nrows,a.ncols) > 1) a(?) else a) ; a(ii)}  
   
+  
+  
+  /** Find non-zero linear indices */
+  def find(a:DMat) = a.find
+  
+  /** Find non-zero (row, col) indices */
+  def find2(a:DMat) = a.find2 
+  
+  /** Find non-zero (row, col, value) tuples */
+  def find3(a:DMat) = a.find3
+  
+   /** Accumulate (row, col, value) tuples from inds \\ vals. nr and nc are row and column bounds */
+  def accum(inds:IMat, vals:DMat, nr:Int, nc:Int) = DFunctions.accum(inds, vals, nr, nc);
+  
+  /** Accumulate (row, col, value) tuples from inds \\ vals. nr is row and bounds, ncols = 1 */
+  def accum(inds:IMat, vals:DMat, nr:Int) = DFunctions.accum(inds, vals, nr);
+  
+  /** Accumulate (row, value) tuples from inds \\ vals. Inds can be a vector or two-column matrix */
+  def accum(inds:IMat, vals:DMat) = DFunctions.accum(inds, vals);
+  
+  /** Accumulate (row, col, value) tuples from inds \\ vals. nr and nc are row and column bounds */
+  def accum(inds:IMat, v:Double, nr:Int, nc:Int) = DFunctions.accum(inds, v, nr, nc);
+  
+  /** Accumulate (row, col, value) tuples from inds \\ vals. nr is row and bounds, ncols = 1 */
+  def accum(inds:IMat, v:Double, nr:Int) = DFunctions.accum(inds, v, nr);
+  
+  /** Accumulate (row, value) tuples from inds \\ vals. Inds can be a vector or two-column matrix */
+  def accum(inds:IMat, v:Double) = DFunctions.accum(inds, v);
+  
+  /** Sort a set of key/ind pairs ascending. */
+  def sort(a:DMat, ind:Int):DMat = DFunctions.sort(a, ind);
+  
+  /** Sort a set of keys ascending. */
+  def sort(a:DMat):DMat = DFunctions.sort(a);
+  
+  /** Sort a set of keys ascending, and return sorted keys and indices. */
+  def sort2(a:DMat):(DMat, IMat) = DFunctions.sort2(a);
+  
+  /** Sort a set of keys and return sorted keys and indices along a given direction: 1=columns, 2=rows, 0=smart */
+  def sort2(a:DMat,dir:Int):(DMat, IMat) = DFunctions.sort2(a, dir);
+  
+  /** Sort a set of key/ind pairs descending. */
+  def sortdown(a:DMat, ind:Int):DMat = DFunctions.sortdown(a, ind);
+  
+  /** Sort a set of keys descending, and return sorted keys and indices. */
+  def sortdown(a:DMat):DMat = DFunctions.sortdown(a);
+  
+  /** Sort a set of keys descending, and return sorted keys and indices. */
+  def sortdown2(a:DMat):(DMat, IMat) = DFunctions.sortdown2(a);
+  
+  /** Sort a set of keys descending and return sorted keys and indices along a given direction: 1=columns, 2=rows, 0=smart */
+  def sortdown2(a:DMat, dir:Int):(DMat, IMat) = DFunctions.sortdown2(a, dir);
+  
+  /** Lexicographically sort some rows ascending */
+  def sortrows(a:DMat):(DMat, IMat) = DFunctions.sortrows(a);
+  
+  /** Lexicographically sort some rows descending */
+  def sortrowsdown(a:DMat):(DMat, IMat) = DFunctions.sortrowsdown(a);
+  
+  /** Lexicographically sort some rows ascending, return only the indices */
+  def isortlex(a:DMat):IMat = DFunctions.isortlex(a);
+  
+  /** Lexicographically sort some rows descending, return only the indices */
+  def isortlexdown(a:DMat):IMat = DFunctions.isortlexdown(a);
+  
+  /** Find unique rows. Return: (b,ii,jj) s.t. b=uniquerows(a), b=a(ii,?), a=b(jj,?)  */
+  def uniquerows(a:DMat):(DMat, IMat, IMat) = { val (ii, jj) = DenseMat.uniquerows2(a) ; (a(ii,?), ii, jj)}
+  
+  /** Find unique elements. Return: (b,ii,jj) s.t. b=unique(a), b=a(ii,?), a=b(jj,?)  */
+  def unique3(a:DMat):(DMat, IMat, IMat) = {val (ii, jj) =  DenseMat.unique2(if (math.min(a.nrows,a.ncols) > 1) a(?) else a) ; (a(ii), ii, jj)}
+  
+  def unique(a:DMat):(DMat) = {val (ii, jj) =  DenseMat.unique2(if (math.min(a.nrows,a.ncols) > 1) a(?) else a) ; a(ii)}
+
   /** Find non-zero linear indices */
   def find(a:IMat) = a.find 
   
@@ -454,78 +527,6 @@ object MatFunctions {
   
   def unique(a:IMat):(IMat) = {val (ii, jj) = DenseMat.unique2(if (math.min(a.nrows,a.ncols) > 1) a(?) else a) ; a(ii)}
   
-  
-  /** Find non-zero linear indices */
-  def find(a:DMat) = a.find
-  
-  /** Find non-zero (row, col) indices */
-  def find2(a:DMat) = a.find2 
-  
-  /** Find non-zero (row, col, value) tuples */
-  def find3(a:DMat) = a.find3
-  
-   /** Accumulate (row, col, value) tuples from inds \\ vals. nr and nc are row and column bounds */
-  def accum(inds:IMat, vals:DMat, nr:Int, nc:Int) = DFunctions.accum(inds, vals, nr, nc);
-  
-  /** Accumulate (row, col, value) tuples from inds \\ vals. nr is row and bounds, ncols = 1 */
-  def accum(inds:IMat, vals:DMat, nr:Int) = DFunctions.accum(inds, vals, nr);
-  
-  /** Accumulate (row, value) tuples from inds \\ vals. Inds can be a vector or two-column matrix */
-  def accum(inds:IMat, vals:DMat) = DFunctions.accum(inds, vals);
-  
-  /** Accumulate (row, col, value) tuples from inds \\ vals. nr and nc are row and column bounds */
-  def accum(inds:IMat, v:Double, nr:Int, nc:Int) = DFunctions.accum(inds, v, nr, nc);
-  
-  /** Accumulate (row, col, value) tuples from inds \\ vals. nr is row and bounds, ncols = 1 */
-  def accum(inds:IMat, v:Double, nr:Int) = DFunctions.accum(inds, v, nr);
-  
-  /** Accumulate (row, value) tuples from inds \\ vals. Inds can be a vector or two-column matrix */
-  def accum(inds:IMat, v:Double) = DFunctions.accum(inds, v);
-  
-  /** Sort a set of key/ind pairs ascending. */
-  def sort(a:DMat, ind:Int):DMat = DMat(DenseMat.sort(a, ind, true))
-  
-  /** Sort a set of keys ascending. */
-  def sort(a:DMat):DMat = DMat(DenseMat.sort(a, 0, true))
-  
-  /** Sort a set of keys ascending, and return sorted keys and indices. */
-  def sort2(a:DMat):(DMat, IMat) = {val (d,i) = DenseMat.sort2(a, true); (DMat(d), i)}
-  
-  /** Sort a set of keys and return sorted keys and indices along a given direction: 1=columns, 2=rows, 0=smart */
-  def sort2(a:DMat,dir:Int):(DMat, IMat) = {val (d,i) = DenseMat.sort2(a, dir, true); (DMat(d), i)}
-  
-  /** Sort a set of key/ind pairs descending. */
-  def sortdown(a:DMat, ind:Int):DMat = DMat(DenseMat.sort(a, ind, false))
-  
-  /** Sort a set of keys descending, and return sorted keys and indices. */
-  def sortdown(a:DMat):DMat = DMat(DenseMat.sort(a, 0, false))
-  
-  /** Sort a set of keys descending, and return sorted keys and indices. */
-  def sortdown2(a:DMat):(DMat, IMat) = {val (d,i) = DenseMat.sort2(a, false); (DMat(d), i)}
-  
-  /** Sort a set of keys descending and return sorted keys and indices along a given direction: 1=columns, 2=rows, 0=smart */
-  def sortdown2(a:DMat, dir:Int):(DMat, IMat) = {val (d,i) = DenseMat.sort2(a, dir, false); (DMat(d), i)}
-  
-  /** Lexicographically sort some rows ascending */
-  def sortrows(a:DMat):(DMat, IMat) = { val ii = DenseMat.isortlex(a, true); (a(ii,?), ii) }
-  
-  /** Lexicographically sort some rows descending */
-  def sortrowsdown(a:DMat):(DMat, IMat) = { val ii = DenseMat.isortlex(a, false); (a(ii,?), ii) }
-  
-  /** Lexicographically sort some rows ascending, return only the indices */
-  def isortlex(a:DMat):IMat = DenseMat.isortlex(a, true)
-  
-  /** Lexicographically sort some rows descending, return only the indices */
-  def isortlexdown(a:DMat):IMat = DenseMat.isortlex(a, false)
-  
-  /** Find unique rows. Return: (b,ii,jj) s.t. b=uniquerows(a), b=a(ii,?), a=b(jj,?)  */
-  def uniquerows(a:DMat):(DMat, IMat, IMat) = { val (ii, jj) = DenseMat.uniquerows2(a) ; (a(ii,?), ii, jj)}
-  
-  /** Find unique elements. Return: (b,ii,jj) s.t. b=unique(a), b=a(ii,?), a=b(jj,?)  */
-  def unique3(a:DMat):(DMat, IMat, IMat) = {val (ii, jj) =  DenseMat.unique2(if (math.min(a.nrows,a.ncols) > 1) a(?) else a) ; (a(ii), ii, jj)}
-  
-  def unique(a:DMat):(DMat) = {val (ii, jj) =  DenseMat.unique2(if (math.min(a.nrows,a.ncols) > 1) a(?) else a) ; a(ii)}
-
     /** Find non-zero linear indices */
   def find(a:LMat) = a.find  
   

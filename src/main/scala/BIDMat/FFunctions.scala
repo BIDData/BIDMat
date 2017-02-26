@@ -27,7 +27,12 @@ object FFunctions {
   
   /** Sort a set of keys ascending along a given direction '''dir''': 1=columns, 2=rows, 0=smart. */
   def sort(keys:FMat, dir:Int):FMat = {
-    FMat(DenseMat.sort(keys, dir, true))
+    keys match {
+      case gkeys:GMat => if (dir < 2) {
+    	  GFunctions.sort(gkeys);
+      } else throw new RuntimeException("GPU sort across columns not supported");
+      case _ => FMat(DenseMat.sort(keys, dir, true));
+    }
   }
   
   /** Sort a set of keys ascending. */
@@ -47,10 +52,24 @@ object FFunctions {
   }
   
   /** Sort a set of keys and return sorted keys and indices along a given direction: 1=columns, 2=rows, 0=smart */
-  def sort2(keys:FMat, dir:Int):(FMat, IMat) = {val (d,i) = DenseMat.sort2(keys, dir, true); (FMat(d), i)}
+  def sort2(keys:FMat, dir:Int):(FMat, IMat) = {
+		  keys match {
+		  case gkeys:GMat => if (dir < 2) {
+    	  GFunctions.sort2(gkeys);
+      } else throw new RuntimeException("GPU sort across columns not supported");
+      case _ => {val (d,i) = DenseMat.sort2(keys, dir, true); (FMat(d), i)}
+		  }
+  }
   
   /** Sort a set of keys descending along a given direction: 1=columns, 2=rows, 0=smart. */
-  def sortdown(keys:FMat, dir:Int):FMat = FMat(DenseMat.sort(keys, dir, false))
+  def sortdown(keys:FMat, dir:Int):FMat = {
+		  keys match {
+		  case gkeys:GMat => if (dir < 2) {
+			  GFunctions.sortdown(gkeys);
+		  } else throw new RuntimeException("GPU sort across columns not supported");
+		  case _ =>  FMat(DenseMat.sort(keys, dir, false));
+		  }
+  }
   
   /** Sort a set of keys descending. */
   def sortdown(keys:FMat):FMat = {
@@ -68,8 +87,15 @@ object FFunctions {
      }
   }
   
-  /** Sort a set of keys descending and return sorted keys and indices along a given direction: 1=columns, 2=rows, 0=smart */
-  def sortdown2(keys:FMat, dir:Int):(FMat, IMat) = {val (d,i) = DenseMat.sort2(keys, dir, false); (FMat(d), i)}
+    /** Sort a set of keys and return sorted keys and indices along a given direction: 1=columns, 2=rows, 0=smart */
+  def sortdown2(keys:FMat, dir:Int):(FMat, IMat) = {
+		  keys match {
+		  case gkeys:GMat => if (dir < 2) {
+    	  GFunctions.sortdown2(gkeys);
+      } else throw new RuntimeException("GPU sort across columns not supported");
+      case _ => {val (d,i) = DenseMat.sort2(keys, dir, false); (FMat(d), i)}
+		  }
+  }
   
   /** Lexicographically sort rows ascending */
   def sortrows(rows:FMat):(FMat, IMat) = { val ii = DenseMat.isortlex(rows, true); (rows(ii, MatFunctions.?), ii) }

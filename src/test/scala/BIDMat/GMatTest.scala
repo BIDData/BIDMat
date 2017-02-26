@@ -775,6 +775,89 @@ class GMatTest extends BIDMatSpec {
       checkSimilar(bb, c);
     }
     
+       
+    it should "support 2D cumsum in columns" in {
+      val nr = 10;
+      val nc = 20;
+      val a = rand(nr, nc);
+      val c = zeros(nr, nc);
+      val aa = GMat(a);
+      for (j <- 0 until nc) {
+        c(0, j) = a(0, j);
+        for (i <- 1 until nr) {
+          c(i, j) = c(i-1, j) + a(i, j);
+        }
+      }
+      val bb = cumsum(aa, 1);
+      bb.mytype should equal ("GMat");
+      checkSimilar(bb, c);
+    }
+    
+    def randomizeCols(a:FMat):FMat = {
+      val b = a.copy;
+      val r = rand(a.nrows, a.ncols);
+      for (j <- 0 until a.ncols) {
+        for (i <- 0 until a.nrows-1) {
+          val indx = i + math.min(a.nrows - i - 1, math.floor((b.nrows - i) * r(i, j))).toInt;
+          val tmp = b(i, j);
+          b(i, j) = b(indx, j);
+          b(indx, j) = tmp;
+        }
+      }
+      b;
+    }
+    
+    it should "support 2D sort in columns" in {
+      val nr = 10;
+      val nc = 20;
+      val a = rand(nr, nc);
+      val b = cumsum(a, 1);
+      val c = randomizeCols(b);
+      val cc = GMat(c);
+      val dd = sort(cc);
+      dd.mytype should equal ("GMat");
+      checkSimilar(b, dd);
+    }
+    
+    def randomizeColsAndInds(a:FMat):(FMat, IMat) = {
+      val b = a.copy;
+      val bi = icol(0->b.nrows) * iones(1, b.ncols);
+      val r = rand(a.nrows, a.ncols);
+      for (j <- 0 until a.ncols) {
+        for (i <- 0 until a.nrows-1) {
+          val indx = i + math.min(a.nrows - i - 1, math.floor((b.nrows - i) * r(i, j))).toInt;
+          val tmp = b(i, j);
+          b(i, j) = b(indx, j);
+          b(indx, j) = tmp;
+          val itmp = bi(i, j);
+          bi(i, j) = bi(indx, j);
+          bi(indx, j) = itmp;
+        }
+      }
+      (b, bi);
+    }
+    
+    it should "support 2D sort2 in columns" in {
+      val nr = 10;
+      val nc = 20;
+      val a = rand(nr, nc);
+      val b = cumsum(a, 1);
+      val (c, ci) = randomizeColsAndInds(b);
+      val cc = GMat(c);
+      val (dd, ddi) = sort2(cc);
+      dd.mytype should equal ("GMat");
+      val di = IMat(ddi);
+      checkSimilar(b, dd);
+      var matches = true;
+      for (j <- 0 until nc) {
+        for (i <- 0 until nr) {
+          matches = matches && (di(ci(i, j), j) == i);
+        }
+      }
+      matches should equal (true);
+    }
+    
+    
     import org.apache.commons.math3.analysis._
         
     import org.apache.commons.math3.analysis.function._

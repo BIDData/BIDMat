@@ -18,38 +18,51 @@ import org.apache.commons.math3.random.RandomDataGenerator;
 object DFunctions {
   
   def norm(a:DMat) = math.sqrt(ddot(a.length, a.data, 1, a.data, 1));
-  
-    /** Sort a set of keys ascending along a given direction '''dir''': 1=columns, 2=rows, 0=smart. */
+    
+  /** Sort a set of keys ascending along a given direction '''dir''': 1=columns, 2=rows, 0=smart. */
   def sort(keys:DMat, dir:Int):DMat = {
-    DMat(DenseMat.sort(keys, dir, true))
+    keys match {
+      case gkeys:GDMat => throw new RuntimeException("GPU sort on Doubles not supported");
+      case _ => DMat(DenseMat.sort(keys, dir, true));
+    }
   }
   
   /** Sort a set of keys ascending. */
   def sort(keys:DMat):DMat = {
-    keys match {
-//    case gkeys:DGMat => GDFunctions.sort(gkeys);
-    case _ => DMat(DenseMat.sort(keys, 0, true))
-    }
+	  keys match {
+	  case gkeys:GDMat => throw new RuntimeException("GPU sort on Doubles not supported");
+	  case _ => DMat(DenseMat.sort(keys, 0, true))
+	  }
   }
 
   /** Sort a set of keys ascending, and return sorted keys and indices. */
   def sort2(keys:DMat):(DMat, IMat) = {
     keys match {
-//      case gkeys:GDMat => GDFunctions.sort2(gkeys)
+      case gkeys:GDMat => throw new RuntimeException("GPU sort on Doubles not supported");
       case _ => {val (d,i) = DenseMat.sort2(keys, true); (DMat(d), i)}
     }
   }
   
   /** Sort a set of keys and return sorted keys and indices along a given direction: 1=columns, 2=rows, 0=smart */
-  def sort2(keys:DMat, dir:Int):(DMat, IMat) = {val (d,i) = DenseMat.sort2(keys, dir, true); (DMat(d), i)}
+  def sort2(keys:DMat, dir:Int):(DMat, IMat) = {
+		  keys match {
+		  case gkeys:GDMat => throw new RuntimeException("GPU sort on Doubles not supported");
+      case _ => {val (d,i) = DenseMat.sort2(keys, dir, true); (DMat(d), i)}
+		  }
+  }
   
   /** Sort a set of keys descending along a given direction: 1=columns, 2=rows, 0=smart. */
-  def sortdown(keys:DMat, dir:Int):DMat = DMat(DenseMat.sort(keys, dir, false))
+  def sortdown(keys:DMat, dir:Int):DMat = {
+		  keys match {
+		  case gkeys:GDMat => throw new RuntimeException("GPU sort on Doubles not supported");
+		  case _ =>  DMat(DenseMat.sort(keys, dir, false));
+		  }
+  }
   
   /** Sort a set of keys descending. */
   def sortdown(keys:DMat):DMat = {
     keys match {
-//      case gkeys:GDMat => GDFunctions.sortdown(gkeys);
+      case gkeys:GDMat => throw new RuntimeException("GPU sort on Doubles not supported");
       case _ => DMat(DenseMat.sort(keys, 0, false))
     }
   }
@@ -57,13 +70,18 @@ object DFunctions {
   /** Sort a set of keys descending and return sorted keys and indices. */
   def sortdown2(keys:DMat):(DMat, IMat) = {
      keys match {
-//       case gkeys:GDMat => GDFunctions.sortdown2(gkeys);
+       case gkeys:GDMat => throw new RuntimeException("GPU sort on Doubles not supported");
        case _ => {val (d,i) = DenseMat.sort2(keys, false); (DMat(d), i)}
      }
   }
   
-  /** Sort a set of keys descending and return sorted keys and indices along a given direction: 1=columns, 2=rows, 0=smart */
-  def sortdown2(keys:DMat, dir:Int):(DMat, IMat) = {val (d,i) = DenseMat.sort2(keys, dir, false); (DMat(d), i)}
+    /** Sort a set of keys and return sorted keys and indices along a given direction: 1=columns, 2=rows, 0=smart */
+  def sortdown2(keys:DMat, dir:Int):(DMat, IMat) = {
+		  keys match {
+		  case gkeys:GDMat => throw new RuntimeException("GPU sort on Doubles not supported");
+      case _ => {val (d,i) = DenseMat.sort2(keys, dir, false); (DMat(d), i)}
+		  }
+  }
   
   /** Lexicographically sort rows ascending */
   def sortrows(rows:DMat):(DMat, IMat) = { val ii = DenseMat.isortlex(rows, true); (rows(ii, MatFunctions.?), ii) }
@@ -76,6 +94,7 @@ object DFunctions {
   
   /** Lexicographially sort descending with an index array, and return it. '''a''' is not modified */
   def isortlexdown(a:DMat):IMat = DenseMat.isortlex(a, false)
+  
   
    /** Accumulate (row, col, value) tuples from inds \\ vals. nr and nc are row and column bounds */
   def accum(inds:IMat, vals:DMat, nr:Int, nc:Int):DMat = {
