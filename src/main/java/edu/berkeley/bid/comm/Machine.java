@@ -6,6 +6,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -48,6 +49,9 @@ public class Machine {
     public Hashtable<SockWriter, Future<?>> writers;
     public Hashtable<SockReader, Future<?>> readers;
     Network network;
+
+    public ArrayList<Bandwidth> sentSockHistory = new ArrayList<>();   //Tracks the sock message history
+    public ArrayList<Bandwidth> recvSockHistory = new ArrayList<>();   //Tracks the sock message history
 
     public Machine(Network p0, Groups groups0, int imachine0, int M0, boolean useLong0, int bufsize, boolean doSim0, int trace0,
                    int replicate0, InetSocketAddress[] workers0) {
@@ -302,9 +306,13 @@ public class Machine {
                     ostr.writeInt(msg.size);
                     ostr.writeInt(msg.sender);
                     ostr.writeInt(msg.tag);
+                    //TODO: check this part
+                    long startTime = System.currentTimeMillis();
                     ostr.write(msg.buf, 0, msg.size * 4);
-                    //TODO: add log here
-                    System.out.printf("SEND: machine:%d round:%d dst:%d size:%d bytes\n", imachine, round, dest, msg.size*4);
+                    //if there is exception when writing, the record will not be logged
+                    long endTime = System.currentTimeMillis();
+                    sentSockHistory.add(
+                            new Bandwidth(imachine, imachine, round, dest, msg.size*4, startTime, endTime));
 
                 }
             } catch (Exception e) {
@@ -359,10 +367,12 @@ public class Machine {
                     int tag0 = tag % (3 * D);
                     if (!msgrecvd[src][tag0]) {
                         Msg msg = new Msg(len, src, imachine, tag);
+                        //TODO: check this part
+                        long startTime = System.currentTimeMillis();
                         istr.readFully(msg.buf, 0, len * 4);
-                        //TODO: add log here
-                        System.out.printf("RECV: machine:%d round:%d src:%d size:%d bytes\n", imachine, round, src, len*4);
-
+                        long endTime = System.currentTimeMillis();
+                        recvSockHistory.add(
+                                new Bandwidth(imachine, round, src, imachine, len*4, startTime, endTime));
                         synchronized (Machine.this) {
                             if (!msgrecvd[src][tag0]) {
                                 messages[src][tag0] = msg;
