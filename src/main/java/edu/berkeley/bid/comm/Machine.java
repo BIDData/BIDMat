@@ -307,10 +307,10 @@ public class Machine {
                     ostr.writeInt(msg.sender);
                     ostr.writeInt(msg.tag);
                     //TODO: check this part
-                    long startTime = System.currentTimeMillis();
+                    long startTime = System.nanoTime();
                     ostr.write(msg.buf, 0, msg.size * 4);
                     //if there is exception when writing, the record will not be logged
-                    long endTime = System.currentTimeMillis();
+                    long endTime = System.nanoTime();
                     sentSockHistory.add(
                             new Bandwidth(imachine, imachine, round, dest, msg.size*4, startTime, endTime));
 
@@ -368,9 +368,9 @@ public class Machine {
                     if (!msgrecvd[src][tag0]) {
                         Msg msg = new Msg(len, src, imachine, tag);
                         //TODO: check this part
-                        long startTime = System.currentTimeMillis();
+                        long startTime = System.nanoTime();
                         istr.readFully(msg.buf, 0, len * 4);
-                        long endTime = System.currentTimeMillis();
+                        long endTime = System.nanoTime();
                         recvSockHistory.add(
                                 new Bandwidth(imachine, round, src, imachine, len*4, startTime, endTime));
                         synchronized (Machine.this) {
