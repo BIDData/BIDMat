@@ -159,8 +159,8 @@ class GMatTest extends BIDMatSpec {
      def testBcastRows4D(nr:Int, nc:Int, mop:(FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String, reverse:Boolean = true) = {
     		it should msg in {  
     			assume(Mat.hasCUDA > 0);
-    			val a = rand(nr \ nc \ nk \ nl);
-    			val b = rand(1 \ 1 \ nk \ nl);
+    			val a = rand(nr \ nc \ nk \ nl) + 0.01f;
+    			val b = rand(1 \ 1 \ nk \ nl) + 0.01f;
     			val aa = GMat(a);
     			val bb = GMat(b);
     			val d = zeros(a.dims);
