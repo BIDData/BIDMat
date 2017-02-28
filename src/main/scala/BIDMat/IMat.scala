@@ -468,7 +468,7 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
   override def transpose(perm:IMat):IMat = { 
     val nd = _dims.length
     if (perm.length != nd) { 
-      throw new RuntimeException("FND transpose bad permutation ")
+      throw new RuntimeException("IMat transpose bad permutation ")
     }
     val xdims = MatFunctions.irow(_dims)
     val iperm = MatFunctions.invperm(perm)
@@ -574,6 +574,14 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
   
   override def iones(m:Int, n:Int) = {
     IMat.iones(m,n)
+  }
+  
+   override def izeros(dims:IMat) = {
+    IMat.izeros(dims)
+  }
+  
+  override def iones(dims:IMat) = {
+    IMat.iones(dims)
   }
     
   override def clearUpper(off:Int) = setUpper(0, off)
@@ -856,12 +864,12 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
     val xinds = new IMat(inds.length, 1, inds)
     val xdims = new IMat(_dims.length, 1, _dims)
     alldims(xinds) = 1
-    if (SciFunctions.sum(alldims).v != inds.length) {
+    if (alldims.data.reduce(_+_) != inds.length) {
       throw new RuntimeException(opname+ " indices arent a legal subset of dims")
     }
-    val restdims = find(alldims == 0)
+    val restdims = MatFunctions.find(alldims == 0)
     val tmp = transpose((xinds on restdims).data)
-    val tmpF = new IMat(SciFunctions.prod(xdims(xinds)).v, SciFunctions.prod(xdims(restdims)).v, tmp.data)
+    val tmpF = new IMat(xdims(xinds).data.reduce(_*_), xdims(restdims).data.reduce(_*_), tmp.data)
     val tmpSum:IMat = fctn(tmpF)
     val out1 = new IMat((iones(inds.length,1) on xdims(restdims)).data, tmpSum.data)
     out1.transpose(MatFunctions.invperm(xinds on restdims).data)
@@ -1358,6 +1366,18 @@ object IMat {
   def iones(m:Int, n:Int) = {
     val out = IMat(m,n)
     out.set(1f)
+    out
+  }
+  
+  def izeros(dims:IMat) = {
+    val out = IMat.make(dims)
+    out.clear
+    out
+  }
+  
+  def iones(dims:IMat) = {
+    val out = IMat(dims);
+    out.set(1)
     out
   }
   

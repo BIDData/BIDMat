@@ -13,7 +13,7 @@ class IMatWildcard extends IMat(0,0,null) with MatrixWildcard
 
 object MatFunctions {
 
-  var currentTimeWasThen:Long = 0
+  var currentTimeWasThen:Long = 0L
   
   var lastFlops:Long = 0
 
@@ -1180,20 +1180,16 @@ object MatFunctions {
   }
   
   /** Make an integer matrix of zeros of the given dimensions. */
-  def izeros(nr:Int, nc:Int):IMat = {
-    IMat(nr,nc)
-  }
+  def izeros(nr:Int, nc:Int):IMat = IMat.izeros(nr, nc);
   
   /** Make an integer matrix of ones of the given dimensions. */
-  def iones(nr:Int, nc:Int):IMat = {
-    val out = IMat(nr,nc)
-    var i = 0
-    while (i < out.length) {
-      out.data(i) = 1
-      i += 1
-    }
-    out
-  }
+  def iones(nr:Int, nc:Int):IMat = IMat.iones(nr, nc);
+  
+  /** Make an integer matrix of zeros of the given dimensions. */
+  def izeros(dims:IMat):IMat = IMat.izeros(dims);
+  
+  /** Make an integer matrix of ones of the given dimensions. */
+  def iones(dims:IMat):IMat = IMat.iones(dims);
   
   /** Make an integer row vector from a range. */
   def lrow(x:Range):LMat = {

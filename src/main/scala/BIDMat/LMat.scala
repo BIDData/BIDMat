@@ -841,12 +841,12 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
     val xinds = new IMat(inds.length, 1, inds)
     val xdims = new IMat(_dims.length, 1, _dims)
     alldims(xinds) = 1
-    if (SciFunctions.sum(alldims).v != inds.length) {
+    if (alldims.data.reduce(_+_) != inds.length) {
       throw new RuntimeException(opname+ " indices arent a legal subset of dims")
     }
-    val restdims = find(alldims == 0)
+    val restdims = MatFunctions.find(alldims == 0)
     val tmp = transpose((xinds on restdims).data)
-    val tmpF = new LMat(SciFunctions.prod(xdims(xinds)).v, SciFunctions.prod(xdims(restdims)).v, tmp.data)
+    val tmpF = new LMat(xdims(xinds).data.reduce(_*_), xdims(restdims).data.reduce(_*_), tmp.data)
     val tmpSum:LMat = fctn(tmpF)
     val out1 = new LMat((iones(inds.length,1) on xdims(restdims)).data, tmpSum.data)
     out1.transpose(MatFunctions.invperm(xinds on restdims).data)

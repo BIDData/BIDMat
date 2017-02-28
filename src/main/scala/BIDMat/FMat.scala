@@ -695,7 +695,7 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
 
   def fDMult(a:FMat, outmat:Mat):FMat = {
     if (ncols == 1 && nrows == 1){
-      val out = FMat.newOrCheckFMat(a.nrows, a.ncols, outmat, GUID, a.GUID, "dMult".##)
+      val out = FMat.newOrCheckFMat(a.dims, outmat, GUID, a.GUID, "dMult".##)
       Mat.nflops += a.length
       var i = 0
       val dvar = data(0)
@@ -705,7 +705,7 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
       }
       out
     } else if (a.ncols == 1 && a.nrows == 1){
-      val out = FMat.newOrCheckFMat(nrows, ncols, outmat, GUID, a.GUID, "dMult".##)
+      val out = FMat.newOrCheckFMat(dims, outmat, GUID, a.GUID, "dMult".##)
       Mat.nflops += length
       var i = 0
       val dvar = a.data(0)

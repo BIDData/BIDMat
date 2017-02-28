@@ -21,5 +21,5 @@ abstract class BIDMatSpec extends FlatSpec
       case (x, y) => x should equal (y +- eps)
     }
   }
-
+ 
 }

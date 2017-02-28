@@ -704,6 +704,7 @@ class GMatTest extends BIDMatSpec {
     testReduce4D((a:FMat, n:IMat) => a.amin(n), (x:Float, y:Float)=>math.min(x,y), 0\3, "support 4D min");
           
     it should "support 2D vector accum" in {
+    	assume(Mat.hasCUDA > 0);
       val nr = 100;
       val nc = 10;
       val ne = 1000;
@@ -724,6 +725,7 @@ class GMatTest extends BIDMatSpec {
     }
     
     it should "support 2D scalar accum" in {
+    	assume(Mat.hasCUDA > 0);
       val nr = 100;
       val nc = 10;
       val ne = 1000;
@@ -742,6 +744,7 @@ class GMatTest extends BIDMatSpec {
     }
      
     it should "support 1D vector accum" in {
+    	assume(Mat.hasCUDA > 0);
       val nr = 100;
       val ne = 1000;
       val inds = int(rand(ne,1)*nr);
@@ -760,6 +763,7 @@ class GMatTest extends BIDMatSpec {
     }
     
     it should "support 1D scalar accum" in {
+    	assume(Mat.hasCUDA > 0);
       val nr = 100;
       val ne = 1000;
       val inds = int(rand(ne,1)*@nr);
@@ -777,6 +781,7 @@ class GMatTest extends BIDMatSpec {
     
        
     it should "support 2D cumsum in columns" in {
+    	assume(Mat.hasCUDA > 0);
       val nr = 10;
       val nc = 20;
       val a = rand(nr, nc);
@@ -808,6 +813,7 @@ class GMatTest extends BIDMatSpec {
     }
     
     it should "support 2D sort in columns" in {
+    	assume(Mat.hasCUDA > 0);
       val nr = 10;
       val nc = 20;
       val a = rand(nr, nc);
@@ -838,6 +844,7 @@ class GMatTest extends BIDMatSpec {
     }
     
     it should "support 2D sort2 in columns" in {
+    	assume(Mat.hasCUDA > 0);
       val nr = 10;
       val nc = 20;
       val a = rand(nr, nc);
@@ -855,6 +862,18 @@ class GMatTest extends BIDMatSpec {
         }
       }
       matches should equal (true);
+    }   
+       
+    it should "support FMat conversion" in {
+    	assume(Mat.hasCUDA > 0);
+      val nr = 10;
+      val nc = 20;
+      val a = rand(nr, nc);
+      val aa = GMat(a);
+      val b = FMat(a);
+      aa.mytype should equal ("GMat");
+      b.mytype should equal ("FMat");
+      checkSimilar(a, b);
     }
     
     

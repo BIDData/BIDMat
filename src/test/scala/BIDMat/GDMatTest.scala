@@ -705,6 +705,7 @@ class GDMatTest extends BIDMatSpec {
     
           
     it should "support 2D vector accum" in {
+    	assume(Mat.hasCUDA > 0);
       val nr = 100;
       val nc = 10;
       val ne = 1000;
@@ -725,6 +726,7 @@ class GDMatTest extends BIDMatSpec {
     }
     
     it should "support 2D scalar accum" in {
+    	assume(Mat.hasCUDA > 0);
       val nr = 100;
       val nc = 10;
       val ne = 1000;
@@ -743,6 +745,7 @@ class GDMatTest extends BIDMatSpec {
     }
      
     it should "support 1D vector accum" in {
+    	assume(Mat.hasCUDA > 0);
       val nr = 100;
       val ne = 1000;
       val inds = int(rand(ne,1)*nr);
@@ -761,6 +764,7 @@ class GDMatTest extends BIDMatSpec {
     }
     
     it should "support 1D scalar accum" in {
+    	assume(Mat.hasCUDA > 0);
       val nr = 100;
       val ne = 1000;
       val inds = int(rand(ne,1)*@nr);
@@ -774,6 +778,33 @@ class GDMatTest extends BIDMatSpec {
       val bb = accum(ginds, vv, nr);
       bb.mytype should equal ("GDMat");
       checkSimilar(bb, c);
+    }
+    
+           
+    it should "support DMat conversion" in {
+    	assume(Mat.hasCUDA > 0);
+      val nr = 10;
+      val nc = 20;
+      val a = drand(nr, nc);
+      val aa = GDMat(a);
+      val b = DMat(aa);
+      aa.mytype should equal ("GDMat");
+      b.mytype should equal ("DMat");
+      checkSimilar(a, b);
+    }
+    
+    
+    it should "support GMat conversion" in {
+    	assume(Mat.hasCUDA > 0);
+      val nr = 10;
+      val nc = 20;
+      val a = drand(nr, nc);
+      val aa = GDMat(a);
+      val bb = GMat(aa);
+      val cc = GDMat(bb);
+      aa.mytype should equal ("GDMat");
+      bb.mytype should equal ("GMat");
+      checkSimilar(a, cc, 1e-3);
     }
     
     

@@ -647,6 +647,167 @@ class DMatTest extends BIDMatSpec {
       checkSimilar(b, c);
     }
     
+    
+    it should "support 2D cumsum in columns" in {
+      val nr = 10;
+      val nc = 20;
+      val a = drand(nr, nc);
+      val c = dzeros(nr, nc);
+      for (j <- 0 until nc) {
+        c(0, j) = a(0, j);
+        for (i <- 1 until nr) {
+          c(i, j) = c(i-1, j) + a(i, j);
+        }
+      }
+      val b = cumsum(a, 1);
+      checkSimilar(b, c);
+    }
+    
+    it should "support 2D cumsum in rows" in {
+      val nr = 10;
+      val nc = 20;
+      val a = drand(nr, nc);
+      val c = dzeros(nr, nc);
+      for (i <- 0 until nr) {
+        c(i, 0) = a(i, 0);
+      }
+      for (j <- 1 until nc) {
+        for (i <- 0 until nr) {
+          c(i, j) = c(i, j-1) + a(i, j);
+        }
+      }
+      val b = cumsum(a, 2);
+      checkSimilar(b, c);
+    }
+    
+    def randomizeCols(a:DMat):DMat = {
+      val b = a.copy;
+      val r = drand(a.nrows, a.ncols);
+      for (j <- 0 until a.ncols) {
+        for (i <- 0 until a.nrows-1) {
+          val indx = i + math.min(a.nrows - i - 1, math.floor((b.nrows - i) * r(i, j))).toInt;
+          val tmp = b(i, j);
+          b(i, j) = b(indx, j);
+          b(indx, j) = tmp;
+        }
+      }
+      b;
+    }
+    
+    it should "support 2D sort in columns" in {
+      val nr = 10;
+      val nc = 20;
+      val a = drand(nr, nc);
+      val b = cumsum(a, 1);
+      val c = randomizeCols(b);
+      val d = sort(c, 1);
+      checkSimilar(b, d);
+    }
+    
+    def randomizeRows(a:DMat):DMat = {
+      val b = a.copy;
+      val r = drand(a.nrows, a.ncols);
+      for (i <- 0 until a.nrows) {
+        for (j <- 0 until a.ncols-1) {
+          val jindx = j + math.min(b.ncols - j - 1, math.floor((b.ncols - j) * r(i, j))).toInt;
+          val tmp = b(i, j);
+          b(i, j) = b(i, jindx);
+          b(i, jindx) = tmp;
+        }
+      }
+      b;
+    }
+    
+    it should "support 2D sort in rows" in {
+      val nr = 10;
+      val nc = 20;
+      val a = drand(nr, nc);
+      val b = cumsum(a, 2);
+      val c = randomizeRows(b);
+      val d = sort(c, 2);
+      checkSimilar(b, d);
+    }
+    
+    def randomizeColsAndInds(a:DMat):(DMat, IMat) = {
+      val b = a.copy;
+      val bi = icol(0->b.nrows) * iones(1, b.ncols);
+      val r = drand(a.nrows, a.ncols);
+      for (j <- 0 until a.ncols) {
+        for (i <- 0 until a.nrows-1) {
+          val indx = i + math.min(a.nrows - i - 1, math.floor((b.nrows - i) * r(i, j))).toInt;
+          val tmp = b(i, j);
+          b(i, j) = b(indx, j);
+          b(indx, j) = tmp;
+          val itmp = bi(i, j);
+          bi(i, j) = bi(indx, j);
+          bi(indx, j) = itmp;
+        }
+      }
+      (b, bi);
+    }
+    
+    it should "support 2D sort2 in columns" in {
+      val nr = 10;
+      val nc = 20;
+      val a = drand(nr, nc);
+      val b = cumsum(a, 1);
+      val (c, ci) = randomizeColsAndInds(b);
+      val (d, di) = sort2(c, 1);
+      checkSimilar(b, d);
+      var matches = true;
+      for (j <- 0 until nc) {
+        for (i <- 0 until nr) {
+          matches = matches && (di(ci(i, j), j) == i);
+        }
+      }
+      matches should equal (true);
+    }
+    
+    def randomizeRowsAndInds(a:DMat):(DMat, IMat) = {
+      val b = a.copy;
+      val bi = iones(b.nrows, 1) * irow(0->b.ncols);
+      val r = drand(a.nrows, a.ncols);
+      for (i <- 0 until a.nrows) {
+        for (j <- 0 until a.ncols-1) {
+          val jindx = j + math.min(b.ncols - j - 1, math.floor((b.ncols - j) * r(i, j))).toInt;
+          val tmp = b(i, j);
+          b(i, j) = b(i, jindx);
+          b(i, jindx) = tmp;
+          val itmp = bi(i, j);
+          bi(i, j) = bi(i, jindx);
+          bi(i, jindx) = itmp;
+        }
+      }
+      (b, bi);
+    }
+    
+    it should "support 2D sort2 in rows" in {
+      val nr = 10;
+      val nc = 20;
+      val a = drand(nr, nc);
+      val b = cumsum(a, 2);
+      val (c, ci) = randomizeRowsAndInds(b);
+      val (d, di) = sort2(c, 2);
+      checkSimilar(b, d);
+      var matches = true;
+      for (i <- 0 until nr) {
+    	  for (j <- 0 until nc) {
+          matches = matches && (di(i, ci(i, j)) == j);
+        }
+      }
+      matches should equal (true);
+    }
+    
+    it should "support FMat conversion" in {
+      val nr = 10;
+      val nc = 20;
+      val a = drand(nr, nc);
+      val b = FMat(a);
+      val c = DMat(b);
+      b.mytype should equal ("FMat");
+      c.mytype should equal ("DMat");
+      checkSimilar(a, c);
+    }
          
     def testFunction2D(mop:(DMat)=>DMat, op:(Double)=>Double, offset:Double, msg:String) = {
     		it should msg in {
