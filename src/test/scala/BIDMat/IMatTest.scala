@@ -792,5 +792,27 @@ class IMatTest extends BIDMatSpec {
     testReduce4D((a:IMat, n:IMat) => a.amax(n), (x:Int, y:Int)=>math.max(x,y), 1\2, "support 4D max");
     
     testReduce4D((a:IMat, n:IMat) => a.amin(n), (x:Int, y:Int)=>math.min(x,y), 0\3, "support 4D min");
+    
+    it should "support FMat conversion" in {
+      val nr = 10;
+      val nc = 20;
+      val a = irand(nr, nc);
+      val b = FMat(a);
+      val c = IMat(b);
+      b.mytype should equal ("FMat");
+      c.mytype should equal ("IMat");
+      checkSimilar(a, c);
+    }
+    
+    it should "support DMat conversion" in {
+      val nr = 10;
+      val nc = 20;
+      val a = irand(nr, nc);
+      val b = DMat(a);
+      val c = IMat(b);
+      b.mytype should equal ("DMat");
+      c.mytype should equal ("IMat");
+      checkSimilar(a, c);
+    }
   
 }
