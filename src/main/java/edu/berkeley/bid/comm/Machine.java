@@ -576,7 +576,7 @@ public class Machine {
         }
     }
 
-    void printThoughput(){
+    public void printThoughput(){
         int totalBytes = 0;
         System.out.println("SENT:");
         for(Bandwidth b: sentSockHistory){
