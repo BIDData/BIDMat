@@ -785,6 +785,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
         case a:Float => Arrays.fill(_data.asInstanceOf[Array[Float]], 0, length, 0)
         case a:Double => Arrays.fill(_data.asInstanceOf[Array[Double]], 0, length, 0)
         case a:Int => Arrays.fill(_data.asInstanceOf[Array[Int]], 0, length, 0)
+        case a:Long => Arrays.fill(_data.asInstanceOf[Array[Long]], 0, length, 0)
         case _ => Arrays.fill(_data.asInstanceOf[Array[AnyRef]], 0, length, null)
       }
     }

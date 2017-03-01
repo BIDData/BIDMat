@@ -1403,7 +1403,7 @@ object LMat {
   }
   
   def apply(a:DenseMat[Long]) = {
-    val out = new LMat(Array(a.nrows, a.ncols), a._data) 
+    val out = new LMat(a._dims, a._data) 
     out.setGUID(a.GUID)
     out
   }

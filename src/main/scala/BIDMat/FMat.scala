@@ -1878,6 +1878,24 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   
   override def min  (b : Int) = ffMatOpScalar(b.toFloat, FMat.minFun, null)
   override def max  (b : Int) = ffMatOpScalar(b.toFloat, FMat.maxFun, null)
+  
+  override def *  (b : Long) = fDMult(FMat.elem(b), null)
+  override def +  (b : Long) = ffMatOpScalarv(b, FMat.vecAddFun, null)
+  override def -  (b : Long) = ffMatOpScalarv(b, FMat.vecSubFun, null)
+  override def *@ (b : Long) = ffMatOpScalarv(b, FMat.vecMulFun, null)
+  override def ∘  (b : Long) = ffMatOpScalarv(b, FMat.vecMulFun, null)
+  override def /  (b : Long) = ffMatOpScalarv(b, FMat.vecDivFun, null)
+  override def ^  (b : Long) = ffMatOpScalarv(b, FMat.vecPowFun, null)
+  override def >   (b : Long) = ffMatOpScalarv(b, FMat.vecGTFun, null)
+  override def <   (b : Long) = ffMatOpScalarv(b, FMat.vecLTFun, null)
+  override def ==  (b : Long) = ffMatOpScalarv(b, FMat.vecEQFun, null)
+  override def === (b : Long) = ffMatOpScalarv(b, FMat.vecEQFun, null)
+  override def >=  (b : Long) = ffMatOpScalarv(b, FMat.vecGEFun, null)
+  override def <=  (b : Long) = ffMatOpScalarv(b, FMat.vecLEFun, null)
+  override def !=  (b : Long) = ffMatOpScalarv(b, FMat.vecNEFun, null)
+  
+  override def min  (b : Long) = ffMatOpScalar(b.toFloat, FMat.minFun, null)
+  override def max  (b : Long) = ffMatOpScalar(b.toFloat, FMat.maxFun, null)
 
   def \ (b: FMat) = horzcat(b)
   def \ (b: Float) = horzcat(FMat.elem(b))
