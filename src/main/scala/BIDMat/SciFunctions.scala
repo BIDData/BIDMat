@@ -235,24 +235,15 @@ object SciFunctions {
 
   def betarnd(p:Float, q:Float, out:FMat):FMat = FFunctions.betarnd(p, q, out);
   def betarnd(p:Float, q:Float, m:Int, n:Int):FMat = betarnd(p, q, FMat(m, n));
-   
-  def laprnd(a:Double, b:Double, out:DMat):DMat = DFunctions.laprnd(a, b, out);
-  def dlaprnd(a:Double, b:Double, m:Int, n:Int):DMat = laprnd(a, b, DMat(m, n));
-  
-  def cauchyrnd(a:Double, b:Double, out:DMat):DMat = cauchyrnd(a, b, out);
-  def dcauchyrnd(a:Double, b:Double, m:Int, n:Int):DMat = cauchyrnd(a, b, DMat(m, n));
-
-  def betarnd(p:Double, q:Double, out:DMat):DMat = DFunctions.betarnd(p, q, out);
-  def dbetarnd(p:Double, q:Double, m:Int, n:Int):DMat = betarnd(p, q, DMat(m, n));
   
   def binornd(k:Int, p:Double, out:IMat):IMat = FFunctions.binornd(k, p, out);
   def binornd(k:IMat, p:FMat, out:IMat):IMat = FFunctions.binornd(k, p, out);
   def binornd(k:Int, p:Double, m:Int, n:Int):IMat = binornd(k, p, IMat(m, n));
   
-  def bernrnd(p:Double, out:IMat):IMat = bernrnd(p, out);
+  def bernrnd(p:Double, out:IMat):IMat = FFunctions.bernrnd(p, out);
   def bernrnd(p:Double, m:Int, n:Int):IMat =  bernrnd(p, IMat(m, n));
 
-  def geornd(p:Double, out:IMat):IMat = geornd(p, out);
+  def geornd(p:Double, out:IMat):IMat = FFunctions.geornd(p, out);
   def geornd(p:Double, m:Int, n:Int):IMat = geornd(p, IMat(m, n));
   
   def nbinrnd(a:Double, p:Double, out:IMat):IMat = FFunctions.nbinrnd(a, p, out);
@@ -262,6 +253,15 @@ object SciFunctions {
   def poissrnd(lambda:Double, m:Int, n:Int):IMat = poissrnd(lambda, IMat(m, n));
   def poissrnd(lambda:DMat, out:IMat):IMat = DFunctions.poissrnd(lambda, out);
   def poissrnd(lambda:DMat):IMat = poissrnd(lambda, IMat(lambda.nrows, lambda.ncols));
+   
+  def laprnd(a:Double, b:Double, out:DMat):DMat = DFunctions.laprnd(a, b, out);
+  def dlaprnd(a:Double, b:Double, m:Int, n:Int):DMat = laprnd(a, b, DMat(m, n));
+  
+  def cauchyrnd(a:Double, b:Double, out:DMat):DMat = DFunctions.cauchyrnd(a, b, out);
+  def dcauchyrnd(a:Double, b:Double, m:Int, n:Int):DMat = cauchyrnd(a, b, DMat(m, n));
+
+  def betarnd(p:Double, q:Double, out:DMat):DMat = DFunctions.betarnd(p, q, out);
+  def dbetarnd(p:Double, q:Double, m:Int, n:Int):DMat = betarnd(p, q, DMat(m, n));
   
   def randperm(n:Int):IMat = {
     val (dmy, rp) = sort2(rand(1,n))
@@ -1465,29 +1465,29 @@ object SciFunctions {
   def atanh(a:CMat):CMat = CFunctions.atanh(a, null);
 
   def sprand(nrows:Int, ncols:Int, v:Double):SMat = {
-    val ioff = Mat.ioneBased
-    val out = SMat(nrows, ncols, math.max(math.min(nrows*ncols, 200),(1.5*v*nrows*ncols).intValue))
-    Mat.nflops += (5L*nrows*ncols*v).toLong
-    val vec = geornd(v, 1, out.nnz)
-    val vals = rand(1, out.nnz)
-    var irow = vec.data(0).intValue
-    var ipos = 0
-    var i = 0
-    out.jc(0) = ioff
+    val ioff = Mat.ioneBased;
+    val out = SMat(nrows, ncols, math.max(math.min(nrows*ncols, 200),(1.5*v*nrows*ncols).intValue));
+    Mat.nflops += (5L*nrows*ncols*v).toLong;
+    val vec = geornd(v, 1, out.nnz);
+    val vals = rand(1, out.nnz);
+    var irow = vec.data(0).intValue;
+    var ipos = 0;
+    var i = 0;
+    out.jc(0) = ioff;
     while (i < ncols) {
-      while (irow < nrows && ipos < out.nnz-1) {
-  	out.data(ipos) = vals.data(ipos)
-  	out.ir(ipos) = irow+ioff
-  	ipos += 1
-  	irow += 1 + vec.data(ipos).intValue
-      }    
-      irow = irow - nrows
-      out.jc(i+1) = ipos+ioff
-      i += 1
+    	while (irow < nrows && ipos < out.nnz-1) {
+    		out.data(ipos) = vals.data(ipos);
+    		out.ir(ipos) = irow+ioff;
+    		ipos += 1;
+    		irow += 1 + vec.data(ipos).intValue;
+    	}    
+    	irow = irow - nrows;
+    	out.jc(i+1) = ipos+ioff;
+    	i += 1;
     }
     SMat(out.sparseTrim)
   }
-  
+
   /*
    * Generate a random sparse matrix with specified row and column distributions.
    * The column distribution is sampled first to get the number of elements in each column.
