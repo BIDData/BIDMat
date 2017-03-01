@@ -298,6 +298,7 @@ public class Machine {
             Socket socket = null;
 //			log(String.format("M %d W %d Running writer %s\n", imachine, dest, this.toString()));
             try {
+                long startTime = System.nanoTime();
                 socket = new Socket();
                 socket.connect(workers[dest], sendTimeout);
                 if (socket.isConnected()) {
@@ -307,7 +308,6 @@ public class Machine {
                     ostr.writeInt(msg.sender);
                     ostr.writeInt(msg.tag);
                     //TODO: check this part
-                    long startTime = System.nanoTime();
                     ostr.write(msg.buf, 0, msg.size * 4);
                     //if there is exception when writing, the record will not be logged
                     long endTime = System.nanoTime();
@@ -349,6 +349,7 @@ public class Machine {
             if (trace > 2) log(String.format("Machine %d round %d got a packet\n", imachine, round));
             try {
                 DataInputStream istr = new DataInputStream(socket.getInputStream());
+                long startTime = System.nanoTime();
                 int len = istr.readInt();
                 int src = istr.readInt();
                 int tag = istr.readInt();
@@ -368,7 +369,6 @@ public class Machine {
                     if (!msgrecvd[src][tag0]) {
                         Msg msg = new Msg(len, src, imachine, tag);
                         //TODO: check this part
-                        long startTime = System.nanoTime();
                         istr.readFully(msg.buf, 0, len * 4);
                         long endTime = System.nanoTime();
                         recvSockHistory.add(

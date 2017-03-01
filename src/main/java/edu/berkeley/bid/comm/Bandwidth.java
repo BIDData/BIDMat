@@ -34,9 +34,9 @@ public class Bandwidth {
         //logging
 //        System.out.printf("iMachine: %d, round: %d, src: %d, dst: %d, \n" +
 //                        "size: %d B, startTime: %d ms, endTime: %d ms\n" +
-//                        "duration: %d ms, bandwidth: %f KB/s",
+//                        "duration: %d ms, bandwidth: %f KB/s\n",
 //                iMachine, round, src, dst, size, startTime, endTime, duration, bandwidth);
-        System.out.printf("src: %d, dst: %d, size: %d B, duration: %d ms, bandwidth: %f KB/s",
+        System.out.printf("src: %d, dst: %d, size: %d B, duration: %d ms, bandwidth: %f KB/s\n",
                 src, dst, size, duration, bandwidth);
     }
 
