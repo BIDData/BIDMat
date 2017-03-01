@@ -575,4 +575,31 @@ public class Machine {
                 System.out.println(msg);
         }
     }
+
+    void printThoughput(){
+        int totalBytes = 0;
+        System.out.println("SENT:");
+        for(Bandwidth b: sentSockHistory){
+            totalBytes += b.size;
+            long millis = b.startTime / 1000000;
+            long second = (millis / 1000) % 60;
+            long minute = (millis / (1000 * 60)) % 60;
+            long hour = (millis / (1000 * 60 * 60)) % 24;
+
+            String time = String.format("%02d:%02d:%02d:%d", hour, minute, second, millis);
+            System.out.println("time: "+time+" total bytes: "+totalBytes);
+        }
+
+        System.out.println("RECV:");
+        for(Bandwidth b: recvSockHistory){
+            totalBytes += b.size;
+            long millis = b.startTime / 1000000;
+            long second = (millis / 1000) % 60;
+            long minute = (millis / (1000 * 60)) % 60;
+            long hour = (millis / (1000 * 60 * 60)) % 24;
+
+            String time = String.format("%02d:%02d:%02d:%d", hour, minute, second, millis);
+            System.out.println("time: "+time+" total bytes: "+totalBytes);
+        }
+    }
 }

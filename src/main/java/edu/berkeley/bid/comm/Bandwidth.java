@@ -1,5 +1,8 @@
 package edu.berkeley.bid.comm;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+
 /**
  * Created by qualiali on 26/02/2017.
  */
@@ -39,5 +42,7 @@ public class Bandwidth {
         System.out.printf("src: %d, dst: %d, size: %d B, duration: %d ms, bandwidth: %f KB/s\n",
                 src, dst, size, duration, bandwidth);
     }
+
+
 
 }
