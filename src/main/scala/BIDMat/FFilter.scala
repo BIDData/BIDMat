@@ -995,5 +995,11 @@ object FFilter {
 	}
 	
 	def FFilter2Ddn(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int):FFilter = FFilter2Ddn(w, h, din, dout, nstride, npad, 0);
+	
+	def xavier(f:FFilter):FFilter = {
+	  val scale = f.inDims.data.reduce(_*_);
+	  FFunctions.normrnd(0, 1/math.sqrt(scale).toFloat, f);
+	  f;
+	}
 
 }

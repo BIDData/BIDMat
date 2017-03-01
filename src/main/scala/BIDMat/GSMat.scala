@@ -324,16 +324,16 @@ class GSMat(nr0:Int, nc0:Int, nnz1:Int, @transient var pir:Pointer, @transient v
   
   def ~ (b: GMat) = new GPair(this, b)
   
-  override def ^*(a:GMat) = SDTMult(a, null)
-  override def Tx(a:GMat) = SDTMult(a, null)
+  def ^*(a:GMat) = SDTMult(a, null)
+  def Tx(a:GMat) = SDTMult(a, null)
   
   // NOTE: GSMat op GMat is an *Edge or Scalar* operation only, and acts only on the non-zeros of the matrix
-  /* Shouldnt be needed any more
-  def +  (a:GMat) = GSDop(a, null, BinOp.op_add);
-  def -  (a:GMat) = GSDop(a, null, BinOp.op_sub);
-  def *@ (a:GMat) = GSDop(a, null, BinOp.op_mul);
-  def ∘  (a:GMat) = GSDop(a, null, BinOp.op_mul);
-  def /  (a:GMat) = GSDop(a, null, BinOp.op_div);
+
+  def +  (a : GMat):GSMat = GSDop(a, null, BinOp.op_add);
+  def -  (a : GMat):GSMat = GSDop(a, null, BinOp.op_sub);
+  def *@ (a : GMat):GSMat = GSDop(a, null, BinOp.op_mul);
+  def ∘  (a : GMat):GSMat = GSDop(a, null, BinOp.op_mul);
+  def /  (a : GMat):GSMat = GSDop(a, null, BinOp.op_div);
   
   def != (a : GMat):GSMat = GSDop(a, null, BinOp.op_ne);
   def >  (a : GMat):GSMat = GSDop(a, null, BinOp.op_gt);
@@ -341,9 +341,27 @@ class GSMat(nr0:Int, nc0:Int, nnz1:Int, @transient var pir:Pointer, @transient v
   def <= (a : GMat):GSMat = GSDop(a, null, BinOp.op_le);  
   def >= (a : GMat):GSMat = GSDop(a, null, BinOp.op_ge);  
   def == (a : GMat):GSMat = GSDop(a, null, BinOp.op_eq);
+  
   def max (a : GMat):GSMat = GSDop(a, null, BinOp.op_max);  
   def min (a : GMat):GSMat = GSDop(a, null, BinOp.op_min);
-  * */
+
+  override def ^*(a:FMat) = SDTMult(GMat(a), null)
+  override def Tx(a:FMat) = SDTMult(GMat(a), null)
+  override def +  (a : FMat):GSMat = GSDop(GMat(a), null, BinOp.op_add);
+  override def -  (a : FMat):GSMat = GSDop(GMat(a), null, BinOp.op_sub);
+  override def *@ (a : FMat):GSMat = GSDop(GMat(a), null, BinOp.op_mul);
+  override def ∘  (a : FMat):GSMat = GSDop(GMat(a), null, BinOp.op_mul);
+  override def /  (a : FMat):GSMat = GSDop(GMat(a), null, BinOp.op_div);
+  
+  override def != (a : FMat):GSMat = GSDop(GMat(a), null, BinOp.op_ne);
+  override def >  (a : FMat):GSMat = GSDop(GMat(a), null, BinOp.op_gt);
+  override def <  (a : FMat):GSMat = GSDop(GMat(a), null, BinOp.op_lt);  
+  override def <= (a : FMat):GSMat = GSDop(GMat(a), null, BinOp.op_le);  
+  override def >= (a : FMat):GSMat = GSDop(GMat(a), null, BinOp.op_ge);  
+  override def == (a : FMat):GSMat = GSDop(GMat(a), null, BinOp.op_eq);
+  
+  override def max (a : FMat):GSMat = GSDop(GMat(a), null, BinOp.op_max);  
+  override def min (a : FMat):GSMat = GSDop(GMat(a), null, BinOp.op_min)
   
   override def +  (b : Float):GSMat = GSDop(GMat(b), null, BinOp.op_add);
   override def -  (b : Float):GSMat = GSDop(GMat(b), null, BinOp.op_sub);

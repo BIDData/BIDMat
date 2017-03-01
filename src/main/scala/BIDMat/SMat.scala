@@ -366,12 +366,6 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], val da
   def ∘ (b : SMat) = ssMatOp(b, SMat.mulFun, null)
   def /  (b : SMat) = ssMatOp(b, SMat.divFun, null)
   
-  def + (b : FMat) = ssMatOpD(b, SMat.sumFun, null)
-  def - (b : FMat) = ssMatOpD(b, SMat.subFun, null)
-  def *@ (b : FMat) = ssMatOpD(b, SMat.mulFun, null)
-  def ∘ (b : FMat) = ssMatOpD(b, SMat.mulFun, null)
-  def /  (b : FMat) = ssMatOpD(b, SMat.divFun, null)
-  
   def > (b : SMat) = ssMatOp(b, SMat.gtFun, null)
   def < (b : SMat) = ssMatOp(b, SMat.ltFun, null)
   def == (b : SMat) = ssMatOp(b, SMat.eqFun, null)
@@ -379,12 +373,31 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], val da
   def >= (b : SMat) = ssMatOp(b, SMat.geFun, null)
   def <= (b : SMat) = ssMatOp(b, SMat.leFun, null)
   def != (b : SMat) = ssMatOp(b, SMat.neFun, null)
+  
+  def min(b : SMat) = ssMatOp(b, SMat.minFun, null)
+  def max(b : SMat) = ssMatOp(b, SMat.maxFun, null)
+  
+  def + (b : FMat) = ssMatOpD(b, SMat.sumFun, null)
+  def - (b : FMat) = ssMatOpD(b, SMat.subFun, null)
+  def *@ (b : FMat) = ssMatOpD(b, SMat.mulFun, null)
+  def ∘ (b : FMat) = ssMatOpD(b, SMat.mulFun, null)
+  def /  (b : FMat) = ssMatOpD(b, SMat.divFun, null)
+  
+  def > (b : FMat) = ssMatOpD(b, SMat.gtFun, null)
+  def < (b : FMat) = ssMatOpD(b, SMat.ltFun, null)
+  def == (b : FMat) = ssMatOpD(b, SMat.eqFun, null)
+  def === (b : FMat) = ssMatOpD(b, SMat.eqFun, null)
+  def >= (b : FMat) = ssMatOpD(b, SMat.geFun, null)
+  def <= (b : FMat) = ssMatOpD(b, SMat.leFun, null)
+  def != (b : FMat) = ssMatOpD(b, SMat.neFun, null)
+  
+  def min(b : FMat) = ssMatOpD(b, SMat.minFun, null)
+  def max(b : FMat) = ssMatOpD(b, SMat.maxFun, null)
+
     
   def \ (b: SMat) = horzcat(b)
   def on (b: SMat) = vertcat(b)
-  
-  def max(b: SMat) = ssMatOp(b, SMat.maxFun, null)
-  def min(b: SMat) = ssMatOp(b, SMat.minFun, null)
+
   
   def checkOne(b:Seq[Int], name:String):Int = {
     if (b.length > 1) throw new RuntimeException("FMat %s only takes one argument" format name);
@@ -539,39 +552,6 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], val da
   def <=  (b : CMat) = Mop_LE.op(this, b, null)
   def !=  (b : CMat) = Mop_NE.op(this, b, null)
    
- /*
-  * Specialize to GMats to help the type system. 
-  */ 
-  def *   (b : GMat) = Mop_Times.op(this, b, null) 
-  def *^  (b : GMat) = Mop_TimesT.op(this, b, null)
-  def xT  (b : GMat) = Mop_TimesT.op(this, b, null)
-  def Tx  (b : GMat) = Mop_TTimes.op(this, b, null)
-  def ^*  (b : GMat) = Mop_TTimes.op(this, b, null)
-  def +   (b : GMat) = Mop_Plus.op(this, b, null)
-  def -   (b : GMat) = Mop_Minus.op(this, b, null)
-  def *@  (b : GMat) = Mop_ETimes.op(this, b, null)
-  def ∘   (b : GMat) = Mop_ETimes.op(this, b, null)
-  def /   (b : GMat) = Mop_EDiv.op(this, b, null)  
-  def /<  (b : GMat) = Mop_Div.op(this, b, null)
-  def \\  (b : GMat) = Mop_RSolve.op(this, b, null)
-  def ◁   (b : GMat) = Mop_Div.op(this, b, null)
-  def ▷   (b : GMat) = Mop_RSolve.op(this, b, null)
-  def ^   (b : GMat) = Mop_Pow.op(this, b, null) 
-  def ∙   (b : GMat) = Mop_Dot.op(this, b, null)
-  def ∙∙  (b : GMat) = Mop_Dotr.op(this, b, null)
-  def dot (b : GMat) = Mop_Dot.op(this, b, null)
-  def dotr(b : GMat) = Mop_Dotr.op(this, b, null)
-  def \   (b : GMat) = Mop_HCat.op(this, b, null)
-  def on  (b : GMat) = Mop_VCat.op(this, b, null)
-  
-  def >   (b : GMat) = Mop_GT.op(this, b, null)
-  def <   (b : GMat) = Mop_LT.op(this, b, null)
-  def ==  (b : GMat) = Mop_EQ.op(this, b, null)
-  def === (b : GMat) = Mop_EQ.op(this, b, null)
-  def >=  (b : GMat) = Mop_GE.op(this, b, null)
-  def <=  (b : GMat) = Mop_LE.op(this, b, null)
-  def !=  (b : GMat) = Mop_NE.op(this, b, null)
-  
  /*
   * Operators whose second arg is generic. 
   */ 

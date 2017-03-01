@@ -7,7 +7,7 @@ public final class UTILS {
     private UTILS() {}
 
     static {
-      LibUtils.loadLibrary("bidmatcpu", true);
+//      LibUtils.loadLibrary("bidmatcpu", true);
     }
     
     public static native int hasMKL();
