@@ -106,6 +106,9 @@ object MatFunctions {
   /** implicit to convert ints to 1x1 IMats */
   implicit def int2IMat(x:Int):IMat = IMat.ielem(x)
   
+  /** implicit to convert longs to 1x1 LMats */
+  implicit def long2LMat(x:Long):LMat = LMat.lelem(x)
+  
 //  implicit def dbl2CMat(x:Double):CMat = CMat.celem(x.asInstanceOf[Float],0)
   
   /** implicit to convert ranges to IMats */
@@ -163,7 +166,20 @@ object MatFunctions {
 
     }
   }
+
+    /** Convert to the corresponding long type */
+  def long(a:FMat):LMat = LMat(a);
   
+  def long(a:DMat):LMat = LMat(a);
+  
+  def long(a:IMat):LMat = LMat(a);
+  
+  def long(a:GMat):LMat = GLMat(a);
+  
+  def long(a:GIMat):LMat = GLMat(a);
+  
+  def long(a:Mat):Mat = LMat(a);
+    
    /** Convert to the corresponding float type */
   def float(a:IMat):FMat = {
     FMat(a);
@@ -1248,21 +1264,17 @@ object MatFunctions {
     lcol(args.toList)
   }
   
-  /** Make an integer matrix of zeros of the given dimensions. */
-  def lzeros(nr:Int, nc:Int):LMat = {
-    LMat(nr,nc)
-  }
+  /** Make a long matrix of zeros of the given dimensions. */
+  def lzeros(nr:Int, nc:Int):LMat = LMat.lzeros(nr,nc);
   
-  /** Make an integer matrix of ones of the given dimensions. */
-  def lones(nr:Int, nc:Int):LMat = {
-    val out = LMat(nr,nc)
-    var i = 0
-    while (i < out.length) {
-      out.data(i) = 1
-      i += 1
-    }
-    out
-  }
+  /** Make a long matrix of ones of the given dimensions. */
+  def lones(nr:Int, nc:Int):LMat = LMat.lones(nr, nc)
+  
+  /** Make a long matrix of zeros of the given dimensions. */
+  def lzeros(dims:IMat):LMat = LMat.lzeros(dims)
+  
+  /** Make a long matrix of ones of the given dimensions. */
+  def lones(dims:IMat):LMat = LMat.lones(dims)
 
   /** Make a string row vector from a list of strings. */  
   def csrow(x:List[String]):CSMat = {

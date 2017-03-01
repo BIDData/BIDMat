@@ -484,12 +484,14 @@ class GLMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     }  
   }
   
-  def toLMat():LMat = {
-    val out = LMat.newOrCheckLMat(nrows, ncols, null, GUID, "toLMat".##)
+  def toLMat(omat:Mat):LMat = {
+    val out = LMat.newOrCheckLMat(nrows, ncols, omat, GUID, "toLMat".##)
     cudaMemcpy(Pointer.to(out.data), pdata, 1L*nrows*ncols * Sizeof.LONG, cudaMemcpyKind.cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize()
     out
   }
+  
+  def toLMat():LMat = toLMat(null);
   
   def copyTo(out:LMat):LMat = {
     val a = out.recycle(nrows, ncols, 0)

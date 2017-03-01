@@ -472,8 +472,8 @@ class GIMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     out
   }
   
-  def toLMat():LMat = {
-    val out = LMat.newOrCheckLMat(dims, null, GUID, "toLMat".##);
+  def toLMat(omat:Mat):LMat = {
+    val out = LMat.newOrCheckLMat(dims, omat, GUID, "toLMat".##);
     val a = IMat.newOrCheckIMat(dims, null, GUID, "toLMat2".##);
     cudaMemcpy(Pointer.to(a.data), pdata, 1L*nrows*ncols * Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize()

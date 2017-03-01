@@ -51,6 +51,12 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
     	out
     }
   }
+  
+  override def contents():LMat = {
+    val out = new LMat(length, 1, data);
+    out.setGUID(MurmurHash3.mix(MurmurHash3.mix(length, 1), (GUID*7897889).toInt));
+    out
+  }
     
   override def set(v:Float):LMat = {
     Arrays.fill(data,0,length,v.toLong)
@@ -557,6 +563,14 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
   override def ones(nr:Int, nc:Int) = {
   	FMat.ones(nr, nc)
   }
+  
+  override def zeros(dims:IMat) = {
+  	FMat.zeros(dims)
+  }
+  
+  override def ones(dims:IMat) = {
+  	FMat.ones(dims)
+  }
      
   override def izeros(m:Int, n:Int) = {
     IMat.izeros(m,n)
@@ -564,6 +578,14 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
   
   override def iones(m:Int, n:Int) = {
     IMat.iones(m,n)
+  }
+  
+  override def izeros(dims:IMat) = {
+    IMat.izeros(dims)
+  }
+  
+  override def iones(dims:IMat) = {
+    IMat.iones(dims)
   }
     
   override def clearUpper(off:Int) = setUpper(0, off)
@@ -1396,15 +1418,27 @@ object LMat {
   
   def apply(a:GLMat) = a.toLMat
   
-  def izeros(m:Int, n:Int) = {
-    val out = IMat(m,n)
+  def lzeros(m:Int, n:Int) = {
+    val out = LMat(m,n)
     out.clear
     out
   }
   
-  def iones(m:Int, n:Int) = {
-    val out = IMat(m,n)
-    out.set(1f)
+  def lones(m:Int, n:Int) = {
+    val out = LMat(m,n)
+    out.set(1L)
+    out
+  }
+  
+  def lzeros(dims:IMat) = {
+    val out = LMat.make(dims)
+    out.clear
+    out
+  }
+  
+  def lones(dims:IMat) = {
+    val out = LMat.make(dims)
+    out.set(1L)
     out
   }
   
@@ -1415,8 +1449,8 @@ object LMat {
       case _ => throw new RuntimeException("IMat apply unknown argument");
     }
     x match {
-      case gg:GIMat => gg.toLMat;
-      case gg:GLMat => gg.toLMat;
+      case gg:GIMat => gg.toLMat(out);
+      case gg:GLMat => gg.toLMat(out);
       case dd:DMat => {Mat.copyToLongArray(dd.data, 0, out.data, 0, dd.length)};
       case ff:FMat => {Mat.copyToLongArray(ff.data, 0, out.data, 0, ff.length)};
       case ff:LMat => {Mat.copyToLongArray(ff.data, 0, out.data, 0, ff.length)};
