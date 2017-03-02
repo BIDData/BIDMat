@@ -908,8 +908,7 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
   override def - (b : Int) = iiMatOpScalarv(b, IMat.vecSubFun, null)
   override def *@ (b : Int) = iiMatOpScalarv(b, IMat.vecMulFun, null)
   override def ∘  (b : Int) = iiMatOpScalarv(b, IMat.vecMulFun, null)
-
-//  def /@ (b : Int) = mat.iiMatOpScalarv(b, IMat.fVecDiv _, null)
+  override def / (b : Int) = iiMatOpScalarv(b, IMat.vecDivFun, null)
 //  def ^ (b : Int) = mat.iiMatOpScalar(b, (x:Float, y:Float) => math.pow(x,y).toFloat, null)
 
   override def > (b : Int) = iiMatOpScalarv(b, IMat.vecGTFun, null)
@@ -921,6 +920,13 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
   
   override def min  (b : Int) = iiMatOpScalarv(b, IMat.vecMinFun, null)
   override def max  (b : Int) = iiMatOpScalarv(b, IMat.vecMaxFun, null)
+  
+  override def * (b : Float) = iMult(IMat.ielem(b.toInt), null)
+  override def + (b : Float) = iiMatOpScalarv(b.toInt, IMat.vecAddFun, null)
+  override def - (b : Float) = iiMatOpScalarv(b.toInt, IMat.vecSubFun, null)
+  override def *@ (b : Float) = iiMatOpScalarv(b.toInt, IMat.vecMulFun, null)
+  override def ∘  (b : Float) = iiMatOpScalarv(b.toInt, IMat.vecMulFun, null)
+  override def / (b : Float) = iiMatOpScalarv(b.toInt, IMat.vecDivFun, null)
   
   override def > (b : Float) = iiMatOpScalarv(b.toInt, IMat.vecGTFun, null)
   override def < (b : Float) = iiMatOpScalarv(b.toInt, IMat.vecLTFun, null)
@@ -1407,9 +1413,9 @@ object IMat {
   }
   
   def vecSub(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
-    while (ci < cend) {
-      c(ci) = a(ai) - b(bi);  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0
+    while (i < n) {
+      c(ci) = a(ai) - b(bi);  ai += ainc; bi += binc;  ci += cinc; i += 1
     }
     0
   }
@@ -1423,9 +1429,9 @@ object IMat {
   }
   
   def vecDiv(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
-        while (ci < cend) {
-          c(ci) = a(ai) / b(bi);  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0
+        while (i < n) {
+          c(ci) = a(ai) / b(bi);  ai += ainc; bi += binc;  ci += cinc; i += 1
         }
     0
 	}
@@ -1447,49 +1453,49 @@ object IMat {
   }
   
    def vecEQ(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
-    while (ci < cend) {
-      c(ci) = if (a(ai) == b(bi)) 1 else 0;  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0
+    while (i < n) {
+      c(ci) = if (a(ai) == b(bi)) 1 else 0;  ai += ainc; bi += binc;  ci += cinc; i += 1
     }
     0
   }
  
   def vecNE(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
-    while (ci < cend) {
-      c(ci) = if (a(ai) != b(bi)) 1 else 0;  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0
+    while (i < n) {
+      c(ci) = if (a(ai) != b(bi)) 1 else 0;  ai += ainc; bi += binc;  ci += cinc; i += 1
     }
     0
   }
   
    def vecGT(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
-    while (ci < cend) {
-      c(ci) = if (a(ai) > b(bi)) 1 else 0;  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0
+    while (i < n) {
+      c(ci) = if (a(ai) > b(bi)) 1 else 0;  ai += ainc; bi += binc;  ci += cinc; i += 1
     }
     0
   }
  
   def vecLT(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
-    while (ci < cend) {
-      c(ci) = if (a(ai) < b(bi)) 1 else 0;  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0
+    while (i < n) {
+      c(ci) = if (a(ai) < b(bi)) 1 else 0;  ai += ainc; bi += binc;  ci += cinc; i += 1
     }
     0
   }
   
   def vecGE(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
-    while (ci < cend) {
-      c(ci) = if (a(ai) >= b(bi)) 1 else 0;  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0
+    while (i < n) {
+      c(ci) = if (a(ai) >= b(bi)) 1 else 0;  ai += ainc; bi += binc;  ci += cinc; i += 1
     }
     0
   }
  
   def vecLE(a:Array[Int], a0:Int, ainc:Int, b:Array[Int], b0:Int, binc:Int, c:Array[Int], c0:Int, cinc:Int, n:Int):Int = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
-    while (ci < cend) {
-      c(ci) = if (a(ai) <= b(bi)) 1 else 0;  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0
+    while (i < n) {
+      c(ci) = if (a(ai) <= b(bi)) 1 else 0;  ai += ainc; bi += binc;  ci += cinc; i += 1
     }
     0
   }

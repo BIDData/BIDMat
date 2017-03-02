@@ -395,6 +395,15 @@ extern "C" {
     return fillToInds(A, B, I, length);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_fillToIndsInt
+  (JNIEnv *env, jobject obj, jint A, jobject jB, jobject jI, jlong length) 
+  {
+    float *B = (float*)getPointer(env, jB);
+    int *I = (int*)getPointer(env, jI);
+
+    return fillToInds(*((float *)(&A)), B, I, length);
+  }
+
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_fillToInds2D
   (JNIEnv *env, jobject obj, jfloat A, jobject jB, jint ldb,

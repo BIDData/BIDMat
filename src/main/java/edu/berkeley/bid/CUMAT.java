@@ -55,6 +55,14 @@ public final class CUMAT {
     
     public static native int fillToInds4D(float A, Pointer B, int ldb, int rdb, int tdb, Pointer I, int nrows, Pointer J, int ncols, Pointer K, int nk, Pointer L, int nl);
     
+    public static native int fillToIndsInt(float A, Pointer B, Pointer I, long len);
+    
+    public static native int fillToInds2DInt(float A, Pointer B, int ldb, Pointer I, int nrows, Pointer J, int ncols);
+    
+    public static native int fillToInds3DInt(float A, Pointer B, int ldb, int rdb, Pointer I, int nrows, Pointer J, int ncols, Pointer K, int nd);
+    
+    public static native int fillToInds4DInt(float A, Pointer B, int ldb, int rdb, int tdb, Pointer I, int nrows, Pointer J, int ncols, Pointer K, int nk, Pointer L, int nl);
+    
     public static native int fillToIndsLong(long A, Pointer B, Pointer I, long len);
     
     public static native int fillToIndsDouble(double A, Pointer B, Pointer I, long len);
