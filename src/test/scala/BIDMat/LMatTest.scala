@@ -650,7 +650,7 @@ class LMatTest extends BIDMatSpec {
     it should "support 2D sort2 in columns" in {
       val nr = 10;
       val nc = 20;
-      val a = lrand(nr, nc, 10000);
+      val a = lrand(nr, nc, 100000);
       val b = cumsum(a, 1);
       val (c, ci) = randomizeColsAndInds(b);
       val (d, di) = sort2(c, 1);
