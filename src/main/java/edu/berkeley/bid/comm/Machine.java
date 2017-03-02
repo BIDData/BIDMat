@@ -50,8 +50,8 @@ public class Machine {
     public Hashtable<SockReader, Future<?>> readers;
     Network network;
 
-    public ArrayList<Bandwidth> sentSockHistory = new ArrayList<>();   //Tracks the sock message history
-    public ArrayList<Bandwidth> recvSockHistory = new ArrayList<>();   //Tracks the sock message history
+    public Bandwidth sentSockHistory = new Bandwidth();   //Tracks the sock message history
+    public Bandwidth recvSockHistory = new Bandwidth();   //Tracks the sock message history
 
     public Machine(Network p0, Groups groups0, int imachine0, int M0, boolean useLong0, int bufsize, boolean doSim0, int trace0,
                    int replicate0, InetSocketAddress[] workers0) {
@@ -311,9 +311,7 @@ public class Machine {
                     ostr.write(msg.buf, 0, msg.size * 4);
                     //if there is exception when writing, the record will not be logged
                     long endTime = System.nanoTime();
-                    sentSockHistory.add(
-                            new Bandwidth(imachine, imachine, round, dest, msg.size*4, startTime, endTime));
-
+                    sentSockHistory.addRecord(imachine, imachine, round, dest, msg.size*4, startTime, endTime);
                 }
             } catch (Exception e) {
                 if (trace > 0)
@@ -371,8 +369,7 @@ public class Machine {
                         //TODO: check this part
                         istr.readFully(msg.buf, 0, len * 4);
                         long endTime = System.nanoTime();
-                        recvSockHistory.add(
-                                new Bandwidth(imachine, round, src, imachine, len*4, startTime, endTime));
+                        recvSockHistory.addRecord(imachine, round, src, imachine, len*4, startTime, endTime);
                         synchronized (Machine.this) {
                             if (!msgrecvd[src][tag0]) {
                                 messages[src][tag0] = msg;
@@ -579,27 +576,9 @@ public class Machine {
     public void printThroughput(){
         int totalBytes = 0;
         System.out.println("SENT:");
-        for(Bandwidth b: sentSockHistory){
-            totalBytes += b.size;
-            long millis = b.startTime / 1000000;
-            long second = (millis / 1000) % 60;
-            long minute = (millis / (1000 * 60)) % 60;
-            long hour = (millis / (1000 * 60 * 60)) % 24;
-
-            String time = String.format("%02d:%02d:%02d:%d", hour, minute, second, millis);
-            System.out.println("time: "+time+" total bytes: "+totalBytes);
-        }
+        sentSockHistory.printRecords();
 
         System.out.println("RECV:");
-        for(Bandwidth b: recvSockHistory){
-            totalBytes += b.size;
-            long millis = b.startTime / 1000000;
-            long second = (millis / 1000) % 60;
-            long minute = (millis / (1000 * 60)) % 60;
-            long hour = (millis / (1000 * 60 * 60)) % 24;
-
-            String time = String.format("%02d:%02d:%02d:%d", hour, minute, second, millis);
-            System.out.println("time: "+time+" total bytes: "+totalBytes);
-        }
+        recvSockHistory.printRecords();
     }
 }
