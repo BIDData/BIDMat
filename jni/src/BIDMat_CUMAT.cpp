@@ -416,6 +416,17 @@ extern "C" {
     return fillToInds2D(A, B, ldb, I, nrows, J, ncols);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_fillToInds2DInt
+  (JNIEnv *env, jobject obj, jint A, jobject jB, jint ldb,
+   jobject jI, jint nrows, jobject jJ, jint ncols) 
+  {
+    float *B = (float*)getPointer(env, jB);
+    int *I = (int*)getPointer(env, jI);
+    int *J = (int*)getPointer(env, jJ);
+
+    return fillToInds2D(*((float *)(&A)), B, ldb, I, nrows, J, ncols);
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_fillToInds3D
   (JNIEnv *env, jobject obj, jfloat A, jobject jB, jint ldb, jint rdb, 
    jobject jI, jint nrows, jobject jJ, jint ncols, jobject jK, jint nk) 
@@ -426,6 +437,18 @@ extern "C" {
     int *K = (int*)getPointer(env, jK);
 
     return fillToInds3D(A, B, ldb, rdb, I, nrows, J, ncols, K, nk);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_fillToInds3DInt
+  (JNIEnv *env, jobject obj, jint A, jobject jB, jint ldb, jint rdb, 
+   jobject jI, jint nrows, jobject jJ, jint ncols, jobject jK, jint nk) 
+  {
+    float *B = (float*)getPointer(env, jB);
+    int *I = (int*)getPointer(env, jI);
+    int *J = (int*)getPointer(env, jJ);
+    int *K = (int*)getPointer(env, jK);
+
+    return fillToInds3D(*((float *)(&A)), B, ldb, rdb, I, nrows, J, ncols, K, nk);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_fillToInds4D
@@ -439,6 +462,19 @@ extern "C" {
     int *L = (int*)getPointer(env, jL);
 
     return fillToInds4D(A, B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_fillToInds4DInt
+  (JNIEnv *env, jobject obj, jint A, jobject jB, jint ldb, jint rdb, jint tdb, 
+   jobject jI, jint nrows, jobject jJ, jint ncols, jobject jK, jint nk, jobject jL, jint nl) 
+  {
+    float *B = (float*)getPointer(env, jB);
+    int *I = (int*)getPointer(env, jI);
+    int *J = (int*)getPointer(env, jJ);
+    int *K = (int*)getPointer(env, jK);
+    int *L = (int*)getPointer(env, jL);
+
+    return fillToInds4D(*((float *)(&A)), B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_fillToIndsLong

@@ -298,7 +298,6 @@ class GIMatTest extends BIDMatSpec {
     testScalar2ND(nr, nc, (a:IMat, b:Int) => min(a,b), (x:Int, y:Int)=>math.min(x,y), "support min of scalar 2 3D");
 
     testScalar2ND(nr, nc, (a:IMat, b:Int) => max(a,b), (x:Int, y:Int)=>math.max(x,y), "support max of scalar 2 3D");
-  
     
     it should "support 1D element access" in {
        val a = irand(nr, nc); 
@@ -467,6 +466,8 @@ class GIMatTest extends BIDMatSpec {
     	val i3 = 4 \ 3;
     	val b = izeros(i1.length \ i2.length \ i3.length);
     	b(?) = icol(0->b.length);
+    	val bb = GIMat(b);
+      val cc = GIMat(c);
     	for (i <- 0 until i1.length) {
     	  for (j <- 0 until i2.length) {
     	    for (k <- 0 until i3.length) {
@@ -474,8 +475,9 @@ class GIMatTest extends BIDMatSpec {
     	    }
     	  }
     	}
-      c(i1, i2, i3) = b;
-    	checkSimilar(a, c);
+      cc(i1, i2, i3) = bb;
+      cc.mytype should equal ("GIMat");
+    	checkSimilar(a, cc);
     }
     
     it should "support 3D IMat product update with wildcard" in {
@@ -486,6 +488,8 @@ class GIMatTest extends BIDMatSpec {
     	val i3 = 4 \ 3;
     	val b = izeros(i1.length \ a.dims(1) \ i3.length);
     	b(?) = icol(0->b.length);
+    	val bb = GIMat(b);
+      val cc = GIMat(c);
     	for (i <- 0 until i1.length) {
     	  for (j <- 0 until a.dims(1)) {
     	    for (k <- 0 until i3.length) {
@@ -493,8 +497,9 @@ class GIMatTest extends BIDMatSpec {
     	    }
     	  }
     	}
-    	c(i1, i2, i3) = b;
-    	checkSimilar(a, c);
+    	cc(i1, i2, i3) = bb;
+    	cc.mytype should equal ("GIMat");
+    	checkSimilar(a, cc);
     }
     
     it should "support 2D IMat product update" in {
@@ -504,13 +509,16 @@ class GIMatTest extends BIDMatSpec {
     	val i2 = 2 \ 3;
     	val b = izeros(i1.length \ i2.length);
     	b(?) = icol(0->b.length);
+    	val bb = GIMat(b);
+      val cc = GIMat(c);
     	for (i <- 0 until i1.length) {
     	  for (j <- 0 until i2.length) {
     		  a.data(i1.data(i) + a.nrows * i2.data(j)) = b.data(i + i1.length * j);
     	  }
     	}
-      c(i1, i2) = b;
-    	checkSimilar(a, c);
+      cc(i1, i2) = bb;
+      cc.mytype should equal ("GIMat");
+    	checkSimilar(a, cc);
     }
     
     it should "support 2D IMat product update with wildcard" in {
@@ -520,13 +528,16 @@ class GIMatTest extends BIDMatSpec {
     	val i2 = ?
     	val b = izeros(i1.length \ a.ncols);
     	b(?) = icol(0->b.length);
+    	val bb = GIMat(b);
+    	val cc = GIMat(c);
     	for (i <- 0 until i1.length) {
     	  for (j <- 0 until a.ncols) {
     		  a.data(i1.data(i) + a.nrows * j) = b.data(i + i1.length * j);
     	  }
     	}
-    	c(i1, i2) = b;
-    	checkSimilar(a, c);
+    	cc(i1, i2) = bb;
+    	cc.mytype should equal ("GIMat");
+    	checkSimilar(a, cc);
     }
     
     it should "support 2D vector accum" in {
@@ -535,6 +546,8 @@ class GIMatTest extends BIDMatSpec {
       val ne = 1000;
       val inds = int(rand(ne,2)*@row(nr,nc));
       val vals = irand(ne,1);
+      val ginds = GIMat(inds);
+      val gvals = GIMat(vals);
       val c = izeros(nr, nc);
       for (i <- 0 until ne) {
         val ii = inds(i, 0);
@@ -542,8 +555,9 @@ class GIMatTest extends BIDMatSpec {
         val vv = vals(i, 0);
         c(ii, jj) = c(ii, jj) + vv;
       }
-      val b = accum(inds, vals, nr, nc);
-      checkSimilar(b, c);
+      val bb = accum(ginds, gvals, nr, nc);
+      bb.mytype should equal ("GIMat");
+      checkSimilar(bb, c);
     }
     
     it should "support 2D scalar accum" in {
@@ -551,6 +565,7 @@ class GIMatTest extends BIDMatSpec {
       val nc = 10;
       val ne = 1000;
       val inds = int(rand(ne,2)*@row(nr,nc));
+      val ginds = GIMat(inds);
       val vv = 17
       val c = izeros(nr, nc);
       for (i <- 0 until ne) {
@@ -558,8 +573,9 @@ class GIMatTest extends BIDMatSpec {
         val jj = inds(i, 1);
         c(ii, jj) = c(ii, jj) + vv;
       }
-      val b = accum(inds, vv, nr, nc);
-      checkSimilar(b, c);
+      val bb = accum(ginds, vv, nr, nc);
+      bb.mytype should equal ("GIMat");      
+      checkSimilar(bb, c);
     }
      
     it should "support 1D vector accum" in {
@@ -567,30 +583,35 @@ class GIMatTest extends BIDMatSpec {
       val ne = 1000;
       val inds = int(rand(ne,1)*nr);
       val vals = irand(ne,1);
+      val ginds = GIMat(inds);
+      val gvals = GIMat(vals);
       val c = izeros(nr, 1);
       for (i <- 0 until ne) {
         val ii = inds(i, 0);
         val vv = vals(i, 0);
         c(ii, 0) = c(ii, 0) + vv;
       }
-      val b = accum(inds, vals, nr);
-      checkSimilar(b, c);
+      val bb = accum(ginds, gvals, nr);
+      bb.mytype should equal ("GIMat"); 
+      checkSimilar(bb, c);
     }
     
     it should "support 1D scalar accum" in {
       val nr = 100;
       val ne = 1000;
       val inds = int(rand(ne,1)*@nr);
+      val ginds = GIMat(inds);
       val vv = 19
       val c = izeros(nr, 1);
       for (i <- 0 until ne) {
         val ii = inds(i, 0);
         c(ii, 0) = c(ii, 0) + vv;
       }
-      val b = accum(inds, vv, nr);
-      checkSimilar(b, c);
+      val bb = accum(ginds, vv, nr);
+      bb.mytype should equal ("GIMat"); 
+      checkSimilar(bb, c);
     }
-    
+    /*
     it should "support 2D cumsum in columns" in {
       val nr = 10;
       val nc = 20;
@@ -857,6 +878,6 @@ class GIMatTest extends BIDMatSpec {
       b.mytype should equal ("DMat");
       c.mytype should equal ("IMat");
       checkSimilar(a, c);
-    }
+    } */
   
 }
