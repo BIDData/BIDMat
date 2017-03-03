@@ -713,19 +713,6 @@ class FMatTest extends BIDMatSpec {
       matches should equal (true);
     }
     
-    def testFunction2D(mop:(FMat)=>FMat, op:(Float)=>Float, offset:Float, msg:String) = {
-    		it should msg in {
-    			val a = rand(nr \ nc);
-    			a ~ a + offset;
-    			val b = zeros(nr \ nc);
-    			for (i <- 0 until a.length) {
-    				b.data(i) = op(a.data(i));
-    			}
-    			val c = mop(a);
-    			checkSimilar(b, c);
-    		}
-    }
-    
      def testReduce2D(reducer:(FMat, Int)=>FMat, fn:(Float, Float)=>Float, axis:Int, msg:String) = {
     		it should msg in {
     			val a = rand(nr, nc);
@@ -808,6 +795,30 @@ class FMatTest extends BIDMatSpec {
     testReduce4D((a:FMat, n:IMat) => a.amax(n), (x:Float, y:Float)=>math.max(x,y), 1\2, "support 4D max");
     
     testReduce4D((a:FMat, n:IMat) => a.amin(n), (x:Float, y:Float)=>math.min(x,y), 0\3, "support 4D min");
+    
+    it should "support 4D convolution" in {
+      val a = rand(8\16\16\8);
+      val b = FFilter2Ddn(3,3,8,8,1,1);
+      b.xavier;
+      val c = b * a;
+      FFilter.im2colThreshold = 100;
+      val d = b * a;
+      FFilter.im2colThreshold = 0;
+      checkSimilar(c, d);
+    }
+    
+    def testFunction2D(mop:(FMat)=>FMat, op:(Float)=>Float, offset:Float, msg:String) = {
+    		it should msg in {
+    			val a = rand(nr \ nc);
+    			a ~ a + offset;
+    			val b = zeros(nr \ nc);
+    			for (i <- 0 until a.length) {
+    				b.data(i) = op(a.data(i));
+    			}
+    			val c = mop(a);
+    			checkSimilar(b, c);
+    		}
+    }
     
     import org.apache.commons.math3.analysis._
         

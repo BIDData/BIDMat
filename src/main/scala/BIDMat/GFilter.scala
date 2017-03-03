@@ -34,6 +34,18 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
   var bwdFilterAlgo = cudnnConvolutionBwdFilterAlgo.CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
   var bwdDataAlgo = cudnnConvolutionBwdDataAlgo.CUDNN_CONVOLUTION_BWD_DATA_ALGO_1;
   
+  def setNHWC = {
+		  tensorFormat = cudnnTensorFormat.CUDNN_TENSOR_NHWC;
+      convType = cudnnConvolutionMode.CUDNN_CROSS_CORRELATION;
+      fwdAlgo = cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
+  }
+  
+  def setNCHW = {
+		  tensorFormat = cudnnTensorFormat.CUDNN_TENSOR_NCHW;
+      convType = cudnnConvolutionMode.CUDNN_CROSS_CORRELATION;
+      fwdAlgo = cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_GEMM;
+  }
+  
 	def convolve(a:GMat, omat:Mat, doclear:Boolean):GMat = {
     val bdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad, outPad);
     val hmm = ND.hashIMat(stride, ND.hashIMat(pad));
@@ -204,6 +216,14 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
 	override def ^* (a:GMat):GMat = {
 			convolveT(a);
 	}
+		
+	def xavier(scale:Float):GFilter = GFilter.xavier(this, scale);
+	
+	def xavier:GFilter = GFilter.xavier(this, 1f);
+
+	override def transpose(p:IMat):GFilter = {
+	  new GFilter(inDims, outDims, stride, pad, outPad, _transpose(p).pdata);
+	}
 }
 
 object GFilter {
@@ -317,5 +337,11 @@ object GFilter {
   }
   
   def GFilter2Ddn(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int):GFilter = GFilter2Ddn(w, h, din, dout, nstride, npad, 0);
+  
+  def xavier(f:GFilter, fscale:Float):GFilter = {
+	  val scale = f.inDims.data.reduce(_*_);
+	  GFunctions.normrnd(0, fscale/math.sqrt(scale).toFloat, f);
+	  f;
+	}
 
 }

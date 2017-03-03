@@ -2058,7 +2058,21 @@ object MatFunctions {
   def show (mat:IMat, title:String):BufferedImage = {show(Image(mat), title)}
   
   def show (mat:FMat, title:String):BufferedImage = {show(Image(mat), title)}
-
+  
+  def FFilter1D(w:Int, nstride:Int, npad:Int, noutpad:Int):FFilter = FFilter.FFilter1D(w, nstride, npad, noutpad);  
+  def FFilter1D(w:Int, nstride:Int, npad:Int):FFilter = FFilter.FFilter1D(w, nstride, npad, 0);
+  def FFilter2D(w:Int, h:Int, nstride:Int, npad:Int, noutpad:Int):FFilter = FFilter.FFilter2D(w, h, nstride, npad, noutpad);
+  def FFilter2D(w:Int, h:Int, nstride:Int, npad:Int):FFilter = FFilter.FFilter2D(w, h, nstride, npad, 0);
+  def FFilter2Dd(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int, noutpad:Int):FFilter = FFilter.FFilter2Dd(w, h, din, dout, nstride, npad);
+  def FFilter2Dd(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int):FFilter = FFilter.FFilter2Dd(w, h, din, dout, nstride, 0);
+  def FFilter2Ddn(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int, noutpad:Int):FFilter = FFilter.FFilter2Ddn(w, h, din, dout, nstride, npad, noutpad);
+  def FFilter2Ddn(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int):FFilter = FFilter.FFilter2Ddn(w, h, din, dout, nstride, npad, 0);
+  
+  def xavier(x:FFilter) = FFilter.xavier(x, 1f);
+  def xavier(x:FFilter, scale:Float)  = FFilter.xavier(x, scale);
+  
+  def stringPerm(a:String, b:String):IMat = ND.stringPerm(a, b);
+  
   final val ? = new IMatWildcard
 }
 

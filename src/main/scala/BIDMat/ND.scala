@@ -403,6 +403,18 @@ object ND {
       throw new RuntimeException("ND.permute: bad permutation");
     }
   }
+  
+  def stringPerm(a:String, b:String):IMat = {
+    val len = a.length;
+    if (len != b.length) throw new RuntimeException("stringPerm strings must be the same length");
+    val out = izeros(1, len);
+    var i = 0;
+    while (i < len) {
+      out.data(i) = len - a.indexOf(b.charAt(len - i - 1)) - 1;
+      i += 1;
+    }
+    out;
+  }
 }
 
 

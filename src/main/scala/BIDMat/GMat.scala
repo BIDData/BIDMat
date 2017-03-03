@@ -473,20 +473,24 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   override def reshapeView(newdims:Array[Int]):FMat = {
     if (newdims.reduce(_*_) == length) {
       val out = new GMat(newdims, pdata, llength);
-      out.setGUID(MurmurHash3_x64_64(Array(GUID), "reshapeView".##));
+      out.setGUID(MurmurHash3_x64_64(newdims.map(_.toLong) :+ GUID, "reshapeView".##));
       out
     } else {
-      throw new RuntimeException("FMat reshapeView total length doesnt match")
+      throw new RuntimeException("GMat reshapeView total length doesnt match")
     }
   }
+  
+  override def reshapeView(adims:IMat):FMat = reshapeView(adims.data);
 
   /** transpose */
-  override def transpose(dims:Array[Int]):GMat = transpose(MatFunctions.irow(dims))
+  override def transpose(dims:Array[Int]):GMat = _transpose(MatFunctions.irow(dims));
 
-  override def transpose(perm:IMat):GMat = { 
+  override def transpose(perm:IMat):GMat = _transpose(perm);
+  
+  override def _transpose(perm:IMat):GMat = { 
     val nd = _dims.length
     if (perm.length != nd) { 
-      throw new RuntimeException("FND transpose bad permutation ")
+      throw new RuntimeException("GMat transpose bad permutation ")
     }
     val xdims = MatFunctions.irow(_dims)
     val iperm = MatFunctions.invperm(perm)

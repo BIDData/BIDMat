@@ -60,7 +60,7 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
     	out
     }
   }
-
+  
 
   def i:CMat = CMat.imag(this)
 
@@ -477,17 +477,21 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   override def reshapeView(newdims:Array[Int]):FMat = {
     if (newdims.reduce(_*_) == length) {
       val out = FMat(newdims, data);
-      out.setGUID(MurmurHash3_x64_64(Array(GUID), "reshapeView".##));
+      out.setGUID(MurmurHash3_x64_64(newdims.map(_.toLong) :+ GUID, "reshapeView".##));
       out
     } else {
       throw new RuntimeException("FMat reshapeView total length doesnt match")
     }
   }
+  
+  override def reshapeView(adims:IMat):FMat = reshapeView(adims.data);
 
   /** transpose */
-  override def transpose(dims:Array[Int]):FMat = transpose(irow(dims))
+  override def transpose(dims:Array[Int]):FMat = _transpose(irow(dims))
+  
+  override def transpose(perm:IMat):FMat = _transpose(perm);
 
-  override def transpose(perm:IMat):FMat = { 
+  def _transpose(perm:IMat):FMat = { 
     val nd = _dims.length
     if (perm.length != nd) { 
       throw new RuntimeException("FMat transpose bad permutation length %d, %d" format (perm.length, nd));

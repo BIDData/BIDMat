@@ -918,7 +918,14 @@ FMat((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 	override def ^* (a:FMat):FMat = {
 			convolveT(a);
 	}
-
+	
+	def xavier(scale:Float):FFilter = FFilter.xavier(this, scale);
+	
+	def xavier:FFilter = FFilter.xavier(this, 1f);
+	
+	override def transpose(p:IMat):FFilter = {
+	  new FFilter(inDims, outDims, stride, pad, outPad, _transpose(p).data);
+	}
 }
 
 
@@ -996,9 +1003,9 @@ object FFilter {
 	
 	def FFilter2Ddn(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int):FFilter = FFilter2Ddn(w, h, din, dout, nstride, npad, 0);
 	
-	def xavier(f:FFilter):FFilter = {
+	def xavier(f:FFilter, fscale:Float):FFilter = {
 	  val scale = f.inDims.data.reduce(_*_);
-	  FFunctions.normrnd(0, 1/math.sqrt(scale).toFloat, f);
+	  FFunctions.normrnd(0, fscale/math.sqrt(scale).toFloat, f);
 	  f;
 	}
 

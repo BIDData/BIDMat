@@ -876,6 +876,39 @@ class GMatTest extends BIDMatSpec {
       checkSimilar(a, b);
     }
     
+    import jcuda.jcudnn._
+    import jcuda.jcudnn.JCudnn._
+    
+    it should "support 4D convolution with NHWC tensors" in {
+      val a = rand(8\16\16\8);
+      val b = FFilter2Ddn(3,3,8,8,1,1);
+      b.xavier;
+      val aa = GMat(a);
+      val bb = GFilter(b);
+      bb.setNHWC;
+      val c = b * a;
+      val dd = bb * aa;
+      dd.mytype should equal ("GMat");
+      checkSimilar(c, dd);
+    }
+    
+    it should "support 4D convolution with NCHW tensors" in {
+      val a = rand(8\16\16\8);
+      val b = FFilter2Ddn(3,3,8,8,1,1);
+      b.xavier;
+      val aa = GMat(a);
+      val bb = GFilter(b);
+      val perm = stringPerm("NHWC", "NCHW");
+      val iperm = stringPerm("NCHW", "NHWC");
+      aa(?) = aa.transpose(perm)(?);
+      bb(?) = bb.transpose(perm)(?);
+      bb.setNCHW;
+      val c = b * a;
+      val dd = (bb * aa);
+      dd(?) = dd.reshapeView(dd.dims(perm)).transpose(iperm)(?);
+      dd.mytype should equal ("GMat");
+      checkSimilar(c, dd);
+    }
     
     import org.apache.commons.math3.analysis._
         
