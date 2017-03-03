@@ -890,7 +890,7 @@ class FMatTest extends BIDMatSpec {
       val a = rand(8\16\16\8);
       val b = FFilter2Ddn(3,3,8,8,1,1);
       b.xavier;
-      BIDMat.FFilter.im2colThreshold = 0;
+      BIDMat.FFilter.im2colThreshold = 0; 
       val c = b * a;
       BIDMat.FFilter.im2colThreshold = 100;
       val d = b * a;
