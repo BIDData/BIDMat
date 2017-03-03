@@ -796,17 +796,6 @@ class FMatTest extends BIDMatSpec {
     
     testReduce4D((a:FMat, n:IMat) => a.amin(n), (x:Float, y:Float)=>math.min(x,y), 0\3, "support 4D min");
     
-    it should "support 4D convolution" in {
-      val a = rand(8\16\16\8);
-      val b = FFilter2Ddn(3,3,8,8,1,1);
-      b.xavier;
-      val c = b * a;
-      FFilter.im2colThreshold = 100;
-      val d = b * a;
-      FFilter.im2colThreshold = 0;
-      checkSimilar(c, d);
-    }
-    
     def testFunction2D(mop:(FMat)=>FMat, op:(Float)=>Float, offset:Float, msg:String) = {
     		it should msg in {
     			val a = rand(nr \ nc);
@@ -896,4 +885,16 @@ class FMatTest extends BIDMatSpec {
     testFunction2D((a:FMat) => gamma(a), (x:Float)=>Gamma.gamma(x).toFloat, 0f, "support 2D gamma function");
     
     testFunction2D((a:FMat) => gammaln(a), (x:Float)=>Gamma.logGamma(x).toFloat, 0f, "support 2D gammaln function");
+    
+    it should "support 4D convolution" in {
+      val a = rand(8\16\16\8);
+      val b = FFilter2Ddn(3,3,8,8,1,1);
+      b.xavier;
+      BIDMat.FFilter.im2colThreshold = 0;
+      val c = b * a;
+      BIDMat.FFilter.im2colThreshold = 100;
+      val d = b * a;
+      BIDMat.FFilter.im2colThreshold = 0;
+      checkSimilar(c, d);
+    }
 }
