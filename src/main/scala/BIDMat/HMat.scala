@@ -1017,16 +1017,23 @@ object HMat {
   }
 
   def loadSMat(gin:DataInput, omat:Mat):SMat = {
-    val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
-    val hints = new Array[Int](4)
-    readSomeInts(gin, hints, buff, 4)
-    val ftype = hints(0)
-    val nrows = hints(1)
-    val ncols = hints(2)
-    val nnz = hints(3)
+    val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)    
+    val hints = new Array[Int](1);
+    readSomeInts(gin, hints, buff, 1);
+    val ftype = hints(0);
     if (ftype != 231 && ftype != 331) {
       throw new RuntimeException("loadSMat expected type field 231 or 331 but was %d" format ftype)
     }
+    loadSMatX(gin, omat, buff, ftype);
+  }
+    
+    
+  def loadSMatX(gin:DataInput, omat:Mat, buff:ByteBuffer, ftype:Int):SMat = {
+    val hints = new Array[Int](3);
+    readSomeInts(gin, hints, buff, 3);
+    val nrows = hints(0);
+    val ncols = hints(1);
+    val nnz = hints(2);
     val norows:Boolean = (ftype/100 == 3)
     val out = if (norows) {
       SMat.SnoRows(nrows, ncols, nnz)
