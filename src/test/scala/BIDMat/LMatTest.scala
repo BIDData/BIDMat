@@ -184,8 +184,8 @@ class LMatTest extends BIDMatSpec {
 
     def testScalar1(nr:Int, nc:Int, mop:(Long,LMat)=>LMat, op:(Long,Long)=>Long, msg:String) = {
     		it should msg in {
-    			val a = lrand(1, 1).v;
-    			val b = lrand(nr, nc);
+    			val a = lrand(1, 1).v + 1;
+    			val b = lrand(nr, nc) + 1;
     			val d = lzeros(nr, nc);
     			for (i <- 0 until nc) {
     				for (j <- 0 until nr) {
@@ -199,8 +199,8 @@ class LMatTest extends BIDMatSpec {
 
     def testScalar2(nr:Int, nc:Int, mop:(LMat,Long)=>LMat, op:(Long,Long)=>Long, msg:String) = {
     		it should msg in {
-    			val a = lrand(nr, nc);
-    			val b = lrand(1, 1).v;
+    			val a = lrand(nr, nc) + 1;
+    			val b = lrand(1, 1).v + 1;
     			val d = lzeros(nr, nc);
     			for (i <- 0 until nc) {
     				for (j <- 0 until nr) {
@@ -235,7 +235,7 @@ class LMatTest extends BIDMatSpec {
     def testScalar1ND(nr:Int, nc:Int, mop:(Long,LMat)=>LMat, op:(Long,Long)=>Long, msg:String) = {
     		it should msg in {
     			val a = lrand(1, 1).v;
-    			val b = lrand(nr \ nc \ nk);
+    			val b = lrand(nr \ nc \ nk) + 1;
     			val d = lzeros(nr \ nc \ nk);
     			for (i <- 0 until nr) {
     				for (j <- 0 until nc) {
@@ -252,7 +252,7 @@ class LMatTest extends BIDMatSpec {
     def testScalar2ND(nr:Int, nc:Int, mop:(LMat,Long)=>LMat, op:(Long,Long)=>Long, msg:String) = {
     		it should msg in {
     			val a = lrand(nr \ nc \ nk);
-    			val b = lrand(1, 1).v;
+    			val b = lrand(1, 1).v + 1;
     			val d = lzeros(nr \ nc \ nk);
     			for (i <- 0 until nr) {
     				for (j <- 0 until nc) {

@@ -21,8 +21,10 @@ class IMatTest extends BIDMatSpec {
       a.data should equal (b.data);
     }
     
-    def irand(nr:Int, nc:Int) = int(100*rand(nr,nc));
-    def irand(dims:IMat) = int(100*rand(dims));
+    def irand(nr:Int, nc:Int, scale:Int):IMat = int(scale*rand(nr,nc));
+    def irand(dims:IMat, scale:Int):IMat = int(scale*rand(dims));
+    def irand(nr:Int, nc:Int):IMat = irand(nr, nc, 100);
+    def irand(dims:IMat):IMat = irand(dims, 100);
     
     "An IMat" should "support matrix transpose" in {
     	val a = irand(nr, nc);
@@ -182,8 +184,8 @@ class IMatTest extends BIDMatSpec {
 
     def testScalar1(nr:Int, nc:Int, mop:(Int,IMat)=>IMat, op:(Int,Int)=>Int, msg:String) = {
     		it should msg in {
-    			val a = irand(1, 1).v;
-    			val b = irand(nr, nc);
+    			val a = irand(1, 1).v + 1;
+    			val b = irand(nr, nc) + 1;
     			val d = izeros(nr, nc);
     			for (i <- 0 until nc) {
     				for (j <- 0 until nr) {
@@ -197,8 +199,8 @@ class IMatTest extends BIDMatSpec {
 
     def testScalar2(nr:Int, nc:Int, mop:(IMat,Int)=>IMat, op:(Int,Int)=>Int, msg:String) = {
     		it should msg in {
-    			val a = irand(nr, nc);
-    			val b = irand(1, 1).v;
+    			val a = irand(nr, nc) + 1;
+    			val b = irand(1, 1).v + 1;
     			val d = izeros(nr, nc);
     			for (i <- 0 until nc) {
     				for (j <- 0 until nr) {
@@ -648,7 +650,7 @@ class IMatTest extends BIDMatSpec {
     it should "support 2D sort2 in columns" in {
       val nr = 10;
       val nc = 20;
-      val a = irand(nr, nc);
+      val a = irand(nr, nc, 10000);
       val b = cumsum(a, 1);
       val (c, ci) = randomizeColsAndInds(b);
       val (d, di) = sort2(c, 1);
