@@ -156,7 +156,7 @@ object MatFunctions {
     a;
   }
   
-  def int(a:Mat):Mat = {
+  def int(a:Mat):IMat = {
     a match {
       case ga:GMat => GIMat(ga);
       case gi:GIMat => gi;
@@ -178,7 +178,7 @@ object MatFunctions {
   
   def long(a:GIMat):LMat = GLMat(a);
   
-  def long(a:Mat):Mat = LMat(a);
+  def long(a:Mat):LMat = LMat(a);
     
    /** Convert to the corresponding float type */
   def float(a:IMat):FMat = {
@@ -201,7 +201,7 @@ object MatFunctions {
     GMat(a);
   }
   
-  def float(a:Mat):Mat = {
+  def float(a:Mat):FMat = {
     a match {
     case ga:GMat => ga;
     case gi:GIMat => GMat(gi);
@@ -691,7 +691,7 @@ object MatFunctions {
     } 
   }
   
-  def sort2(keys:Mat):(Mat, Mat) = {
+  def sort2(keys:Mat):(Mat, IMat) = {
     keys match {
     case a:GMat => sort2(a);
     case a:FMat => sort2(a);
@@ -701,7 +701,7 @@ object MatFunctions {
     } 
   }
   
-  def sortdown2(keys:Mat):(Mat, Mat) = {
+  def sortdown2(keys:Mat):(Mat, IMat) = {
     keys match {
     case a:GMat => sortdown2(a);
     case a:FMat => sortdown2(a);
@@ -2029,6 +2029,9 @@ object MatFunctions {
 
   def saveTMat(fname:String, m:TMat) = HMat.saveTMat(fname, m)    
   def saveTMat(fname:String, m:TMat, compressed:Int) = HMat.saveTMat(fname, m, compressed)
+  
+  def saveMat(fname:String, m:Mat) = HMat.saveMat(fname, m)    
+  def saveMat(fname:String, m:Mat, compressed:Int) = HMat.saveMat(fname, m, compressed)
 
   def loadIDX(fname:String, compressed:Int) = HMat.loadIDX(fname, compressed)
   def loadIDX(fname:String) = HMat.loadIDX(fname, 0)

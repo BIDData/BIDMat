@@ -68,39 +68,19 @@ object HMat {
     HDFSIOinstance.writeMat(fname, m, compress);    
   }
   
-  def HDFSwriteND(fname:String, m:ND, compress:Int):Unit = {
-    checkHDFSloaded;
-    HDFSIOinstance.writeND(fname, m, compress);    
-  }
-  
   def HDFSreadMat(fname:String, omat:Mat):Mat = {
   	checkHDFSloaded;
     HDFSIOinstance.readMat(fname, omat);    
   }
   
-  def HDFSreadND(fname:String, ond:ND):ND = {
-    checkHDFSloaded;
-    HDFSIOinstance.readND(fname, ond);    
-  }
-  
-  def HDFSwriteMats(fname:String, m:Array[ND], compress:Int):Unit = {
+  def HDFSwriteMats(fname:String, m:Array[Mat], compress:Int):Unit = {
     checkHDFSloaded;
     HDFSIOinstance.writeMats(fname, m, compress);    
   }
   
-  def HDFSwriteNDs(fname:String, m:Array[ND], compress:Int):Unit = {
-    checkHDFSloaded;
-    HDFSIOinstance.writeNDs(fname, m, compress);    
-  }
-  
-  def HDFSreadMats(fname:String, omat:Array[ND]):Array[ND] = {
+  def HDFSreadMats(fname:String, omat:Array[Mat]):Array[Mat] = {
     checkHDFSloaded;
     HDFSIOinstance.readMats(fname, omat);    
-  }
-  
-  def HDFSreadFNDs(fname:String, ond:Array[ND]):Array[ND] = {
-    checkHDFSloaded;
-    HDFSIOinstance.readNDs(fname, ond);    
   }
   
   def getInputStream(fname:String, compressed:Int):DataInputStream = {
@@ -698,15 +678,6 @@ object HMat {
     }
   }
 
-  def saveFND(fname:String, m:FMat, compressed:Int=0):Unit = {
-    if (fname.startsWith("hdfs:")) {
-      HDFSwriteND(fname, m, compressed)
-    } else {
-    	val gout = getOutputStream(fname, compressed);
-    	saveFND(gout, m);
-    	gout.close;
-    }
-  }
     
   def saveFND(gout:DataOutput, m:FMat):Unit = {
     val dims = m.dims;
@@ -770,7 +741,7 @@ object HMat {
    
   def loadFND(fname:String, omat:Mat, compressed:Int):FMat = {
 	  if (fname.startsWith("hdfs:")) {
-		  HDFSreadND(fname, omat).asInstanceOf[FMat];
+		  HDFSreadMat(fname, omat).asInstanceOf[FMat];
     } else {
       val gin = getInputStream(fname, compressed)
       val out = loadFND(gin, omat)
