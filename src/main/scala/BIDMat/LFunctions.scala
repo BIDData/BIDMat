@@ -48,88 +48,88 @@ object LFunctions {
   /** Accumulate (row, value) tuples from inds \\ vals. Inds can be a vector or two-column matrix */
   def accum(inds:IMat, v:Long) = LMat(DenseMat.accum(inds, LMat.lelem(v), 0, 0));
   
-	def min(a:IMat, b:IMat, out:Mat) = {
+	def min(a:LMat, b:LMat, out:Mat) = {
 	  (a, b) match {
-	    case (aa:GIMat, bb:IMat) => GIFunctions.min(aa, GIMat(b), out);
-	    case (aa:IMat, bb:GIMat) => GIFunctions.min(GIMat(a), bb, out);
-	    case _ => a.iiMatOpv(b, IMat.vecMinFun, op_min, out);
+	    case (aa:GLMat, bb:LMat) => GLFunctions.min(aa, GLMat(b), out);
+	    case (aa:LMat, bb:GLMat) => GLFunctions.min(GLMat(a), bb, out);
+	    case _ => a.iiMatOpv(b, LMat.vecMinFun, op_min, out);
 	  }
 	}
 	
-	def max(a:IMat, b:IMat, out:Mat) = {
+	def max(a:LMat, b:LMat, out:Mat) = {
 	  (a, b) match {
-	    case (aa:GIMat, bb:IMat) => GIFunctions.max(aa, GIMat(b), out);
-	    case (aa:IMat, bb:GIMat) => GIFunctions.max(GIMat(a), bb, out);
-	    case _ => a.iiMatOpv(b, IMat.vecMaxFun, op_max, out);
+	    case (aa:GLMat, bb:LMat) => GLFunctions.max(aa, GLMat(b), out);
+	    case (aa:LMat, bb:GLMat) => GLFunctions.max(GLMat(a), bb, out);
+	    case _ => a.iiMatOpv(b, LMat.vecMaxFun, op_max, out);
 	  }
 	}
 	
-  def min(a:IMat, b:Int, out:Mat) = {
+  def min(a:LMat, b:Int, out:Mat) = {
 	  a match {
-	    case aa:GIMat=> GIFunctions.min(aa, GIMat.elem(b), out);
-	    case _ => a.iiMatOpScalarv(b, IMat.vecMinFun, out);
+	    case aa:GLMat=> GLFunctions.min(aa, GLMat.elem(b), out);
+	    case _ => a.iiMatOpScalarv(b, LMat.vecMinFun, out);
 	  }
 	}
 	
-	def max(a:IMat, b:Int, out:Mat) = {
+	def max(a:LMat, b:Int, out:Mat) = {
 	  a match {
-	    case aa:GIMat=> GIFunctions.max(aa, GIMat.elem(b), out);
-	    case _ => a.iiMatOpScalarv(b, IMat.vecMaxFun, out);
+	    case aa:GLMat=> GLFunctions.max(aa, GLMat.elem(b), out);
+	    case _ => a.iiMatOpScalarv(b, LMat.vecMaxFun, out);
 	  }
 	}
 
-	def maxi(a:IMat, n:Int, out:Mat) = {
+	def maxi(a:LMat, n:Int, out:Mat) = {
 	  a match {
-	    case aa:GIMat => GIFunctions.maxi(aa, n, out);
-	    case _ => a.iiReduceOpv(n, IMat.idFun, IMat.vecMaxFun, out);
+	    case aa:GLMat => GLFunctions.maxi(aa, n, out);
+	    case _ => a.iiReduceOpv(n, LMat.idFun, LMat.vecMaxFun, out);
 	  }
 	}	
 	
-  def mini(a:IMat, n:Int, out:Mat) = {
+  def mini(a:LMat, n:Int, out:Mat) = {
 	  a match {
-	    case aa:GIMat => GIFunctions.mini(aa, n, out);
-	    case _ => a.iiReduceOpv(n, IMat.idFun, IMat.vecMinFun, out);
+	    case aa:GLMat => GLFunctions.mini(aa, n, out);
+	    case _ => a.iiReduceOpv(n, LMat.idFun, LMat.vecMinFun, out);
 	  }
 	}	
   
-  def sum(a:IMat, n:Int, out:Mat) = {
+  def sum(a:LMat, n:Int, out:Mat) = {
 	  a match {
-	    case aa:GIMat => GIFunctions.sum(aa, n, out);
-	    case _ => a.iiReduceOpv(n, IMat.idFun, IMat.vecAddFun, out);
+	    case aa:GLMat => GLFunctions.sum(aa, n, out);
+	    case _ => a.iiReduceOpv(n, LMat.idFun, LMat.vecAddFun, out);
 	  }
 	}	
 	
-  def prod(a:IMat, n:Int, out:Mat) = {
+  def prod(a:LMat, n:Int, out:Mat) = {
 	  a match {
-	    case aa:GIMat => GIFunctions.prod(aa, n, out);
-	    case _ => a.iiReduceOpv(n, IMat.idFun, IMat.vecMulFun, out);
+	    case aa:GLMat => GLFunctions.prod(aa, n, out);
+	    case _ => a.iiReduceOpv(n, LMat.idFun, LMat.vecMulFun, out);
 	  }
 	}	
 
   
-  def cumsum(a:IMat, n:Int, out:Mat) = {
+  def cumsum(a:LMat, n:Int, out:Mat) = {
 		  a match {
-//	    case aa:GIMat => GIFunctions.cumsum(aa, n, out);
-	    case _ => a.iiReduceAll(n, IMat.idFun, IMat.sumFun, out);
+//	    case aa:GLMat => GLFunctions.cumsum(aa, n, out);
+	    case _ => a.iiReduceAll(n, LMat.idFun, LMat.sumFun, out);
 		  }
   }
   
-  def maxi2(a:IMat,d:Int):(IMat,IMat) = {
+  def maxi2(a:LMat,d:Int):(LMat,IMat) = {
     a match {
-      case aa:GIMat => GIFunctions.maxi2(aa, null, null, d);
+      case aa:GLMat => GLFunctions.maxi2(aa, null, null, d);
       case _ => {
-    	  val (m,ii)=a.ggOpt2(d,IMat.gtPred); 
-    	  (IMat(m), ii)
+    	  val (m,ii)=a.ggOpt2(d,LMat.gtPred); 
+    	  (LMat(m), ii)
       }
     }
   }
   
-  def mini2(a:IMat,d:Int):(IMat,IMat) = {
+  def mini2(a:LMat,d:Int):(LMat,IMat) = {
     a match {
-      case aa:GIMat => GIFunctions.mini2(aa, null, null, d);
+      case aa:GLMat => GLFunctions.mini2(aa, null, null, d);
       case _ => {
-    	  val (m,ii)=a.ggOpt2(d,IMat.ltPred); 
-    	  (IMat(m), ii)
+    	  val (m,ii)=a.ggOpt2(d,LMat.ltPred); 
+    	  (LMat(m), ii)
       }
     }
   }

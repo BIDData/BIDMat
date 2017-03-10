@@ -528,16 +528,17 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
     out
   }
   
-  def ddMatOp(b: Mat, f:(Double, Double) => Double, out:Mat) = 
+/*  def ddMatOp(b: Mat, f:(Double, Double) => Double, out:Mat) = 
     b match {
       case bb:DMat => DMat(ggMatOp(bb, f, out))
       case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)	
-    }
+    } */
 
   def ddMatOpv(b: Mat, f:(Array[Double],Int,Int,Array[Double],Int,Int,Array[Double],Int,Int,Int) => Double, optype:Int, out:Mat) = 
-    b match {
-      case bb:GDMat => GDMat(this).gOp(bb, out, optype);
-      case bb:DMat => DMat(ggMatOpv(bb, f, out))
+    (this, b) match {
+      case (aa:GDMat, bb:DMat) => aa.gOp(bb, out, optype);
+      case (aa:DMat, bb:GDMat) => GDMat(this).gOp(bb, out, optype);
+      case (aa:DMat, bb:DMat) => DMat(ggMatOpv(bb, f, out));
       case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)	
     }
 

@@ -527,16 +527,19 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   override def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int):FMat = transpose(Array(i1, i2, i3, i4, i5, i6, i7, i8))
   
   
-  def ffMatOp(b: Mat, f:(Float, Float) => Float, out:Mat):FMat =
-    b match {
-      case bb:FMat => FMat(ggMatOp(bb, f, out))
+  def ffMatOp(b: Mat, f:(Float, Float) => Float, optype:Int, out:Mat):FMat =
+  (this, b) match {
+      case (aa:GMat, bb:FMat) => aa.gOp(bb, out, optype);
+      case (aa:FMat, bb:GMat) => GMat(this).gOp(bb, out, optype);
+      case (aa:FMat, bb:FMat) => FMat(ggMatOp(bb, f, out));
       case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)
     }
 
-  def ffMatOpv(b: Mat, f:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, optype:Int, out:Mat) =
-    b match {
-      case bb:GMat => GMat(this).gOp(bb, out, optype);
-      case bb:FMat => FMat(ggMatOpv(bb, f, out))
+  def ffMatOpv(b: Mat, f:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, optype:Int, out:Mat):FMat =
+    (this, b) match {
+      case (aa:GMat, bb:FMat) => aa.gOp(bb, out, optype);
+      case (aa:FMat, bb:GMat) => GMat(this).gOp(bb, out, optype);
+      case (aa:FMat, bb:FMat) => FMat(ggMatOpv(bb, f, out));
       case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)
     }
 
@@ -2142,7 +2145,6 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair(omat, mat) {
   def ∙→  (b:FMat):FMat = mat.dotr(b, omat)
   def **  (b : FMat) = mat.kron(b, omat)
   def ⊗   (b : FMat) = mat.kron(b, omat)
-
 
   def ^* (b : FDSPair) = MatFunctions.DDS(mat, b.left, b.right, omat)
   def Tx (b : FDSPair) = MatFunctions.DDS(mat, b.left, b.right, omat)

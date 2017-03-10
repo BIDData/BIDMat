@@ -158,7 +158,9 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], val da
   
   def ssMatOpScalar(b: Float, f:(Float, Float) => Float, omat:Mat) = SMat(sgMatOpScalar(b, f, omat))
   
-  def ssReduceOp(n:Int, f1:(Float) => Float, f2:(Float, Float) => Float, omat:Mat) = FMat(sgReduceOp(n, f1, f2, omat))
+  def ssReduceOp(n:Int, f1:(Float) => Float, f2:(Float, Float) => Float, omat:Mat) = {
+    FMat(sgReduceOp(n, f1, f2, omat));
+  }
   
   def horzcat(a:FMat):FMat = FMat(MatFunctions.full(this).ghorzcat(a))
   

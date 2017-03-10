@@ -501,17 +501,18 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
   override def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int):IMat = transpose(Array(i1, i2, i3, i4, i5, i6, i7, i8))
   
  
-  def iiMatOp(b: Mat, f:(Int, Int) => Int, old:Mat):IMat = 
+/*  def iiMatOp(b: Mat, f:(Int, Int) => Int, old:Mat):IMat = 
     b match {
       case bb:IMat => IMat(ggMatOp(bb, f, old))
       case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)	
-    }
+    }*/
   
   def iiMatOpv(b: Mat, f:(Array[Int],Int,Int,Array[Int],Int,Int,Array[Int],Int,Int,Int) => Int, optype:Int, out:Mat):IMat = 
-    b match {
-    case bb:GIMat => GIMat(this).GIop(bb, out, optype);
-      case bb:IMat => IMat(ggMatOpv(bb, f, out));
-      case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)	
+    (this, b) match {
+    case (aa:GIMat, bb:IMat) => aa.GIop(bb, out, optype);
+    case (aa:IMat, bb:GIMat) => GIMat(this).GIop(bb, out, optype);
+    case (aa:IMat, bb:IMat) => IMat(ggMatOpv(bb, f, out));
+    case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)	
     }
   
   def iiMatOpScalar(b: Int, f:(Int, Int) => Int, old:Mat) = IMat(ggMatOpScalar(b, f, old))

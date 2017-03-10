@@ -505,16 +505,18 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
   override def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int):LMat = transpose(Array(i1, i2, i3, i4, i5, i6, i7, i8))
   
   
-  def iiMatOp(b: Mat, f:(Long, Long) => Long, old:Mat):LMat = 
+/*  def iiMatOp(b: Mat, f:(Long, Long) => Long, old:Mat):LMat = 
     b match {
       case bb:LMat => LMat(ggMatOp(bb, f, old))
       case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)	
-    }
+    }*/
   
-  def iiMatOpv(b: Mat, f:(Array[Long],Int,Int,Array[Long],Int,Int,Array[Long],Int,Int,Int) => Long, old:Mat):LMat = 
-    b match {
-      case bb:LMat => LMat(ggMatOpv(bb, f, old))
-      case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)	
+  def iiMatOpv(b: Mat, f:(Array[Long],Int,Int,Array[Long],Int,Int,Array[Long],Int,Int,Int) => Long, optype:Int, out:Mat):LMat = 
+    (this, b) match {
+    case (aa:GLMat, bb:LMat) => aa.GIop(bb, out, optype);
+    case (aa:LMat, bb:GLMat) => GLMat(this).GIop(bb, out, optype);
+    case (aa:LMat, bb:LMat) => LMat(ggMatOpv(bb, f, out));
+    case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)	
     }
   
   def iiMatOpScalar(b: Long, f:(Long, Long) => Long, old:Mat) = LMat(ggMatOpScalar(b, f, old))
@@ -819,23 +821,25 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
   def reverse:LMat = _reverse(null);
   
   def reverse(omat:Mat):LMat = _reverse(omat);
+  
+  import GMat.BinOp._
   /*
    * Operators with two LMat args
    */
   override def unary_- () = iiMatOpScalarv(-1, LMat.vecMulFun, null)
   def *  (b : LMat) = iMult(b, null)	
-  def +  (b : LMat) = iiMatOpv(b, LMat.vecAddFun, null)
-  def -  (b : LMat) = iiMatOpv(b, LMat.vecSubFun, null)
-  def *@ (b : LMat) = iiMatOpv(b, LMat.vecMulFun, null)
-  def ∘  (b : LMat) = iiMatOpv(b, LMat.vecMulFun, null)
-  def /  (b : LMat) = iiMatOpv(b, LMat.vecDivFun, null)
-  def >   (b : LMat) = iiMatOpv(b, LMat.vecGTFun, null)
-  def <   (b : LMat) = iiMatOpv(b, LMat.vecLTFun, null)
-  def ==  (b : LMat) = iiMatOpv(b, LMat.vecEQFun, null)
-  def === (b : LMat) = iiMatOpv(b, LMat.vecEQFun, null)
-  def >=  (b : LMat) = iiMatOpv(b, LMat.vecGEFun, null)
-  def <=  (b : LMat) = iiMatOpv(b, LMat.vecLEFun, null)
-  def !=  (b : LMat) = iiMatOpv(b, LMat.vecNEFun, null)
+  def +  (b : LMat) = iiMatOpv(b, LMat.vecAddFun, op_add, null)
+  def -  (b : LMat) = iiMatOpv(b, LMat.vecSubFun, op_sub, null)
+  def *@ (b : LMat) = iiMatOpv(b, LMat.vecMulFun, op_mul, null)
+  def ∘  (b : LMat) = iiMatOpv(b, LMat.vecMulFun, op_mul, null)
+  def /  (b : LMat) = iiMatOpv(b, LMat.vecDivFun, op_div, null)
+  def >   (b : LMat) = iiMatOpv(b, LMat.vecGTFun, op_gt, null)
+  def <   (b : LMat) = iiMatOpv(b, LMat.vecLTFun, op_lt, null)
+  def ==  (b : LMat) = iiMatOpv(b, LMat.vecEQFun, op_eq, null)
+  def === (b : LMat) = iiMatOpv(b, LMat.vecEQFun, op_eq, null)
+  def >=  (b : LMat) = iiMatOpv(b, LMat.vecGEFun, op_ge, null)
+  def <=  (b : LMat) = iiMatOpv(b, LMat.vecLEFun, op_le, null)
+  def !=  (b : LMat) = iiMatOpv(b, LMat.vecNEFun, op_ne, null)
   def ∙  (b : LMat):LMat = dot(b)
   def ∙→ (b : LMat):LMat = dotr(b)
   def ∙∙ (b : LMat):Double = ddot(b)
@@ -844,8 +848,8 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
   def \ (b: LMat) = horzcat(b)
   def on (b: LMat) = vertcat(b)
   
-  def max(b: LMat) = iiMatOpv(b, LMat.vecMaxFun, null)
-  def min(b: LMat) = iiMatOpv(b, LMat.vecMinFun, null)
+  def max(b: LMat) = iiMatOpv(b, LMat.vecMaxFun, op_max, null)
+  def min(b: LMat) = iiMatOpv(b, LMat.vecMinFun, op_min, null)
   
    def checkOne(b:Seq[Int], name:String):Int = {
     if (b.length > 1) throw new RuntimeException("LMat %s only takes one argument" format name);
@@ -1176,16 +1180,17 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
 
 class LPair(val omat:Mat, val mat:LMat) extends Pair(omat, mat) {
   
+  import GMat.BinOp._
   override def t:LMat = mat.tt(omat)
   
   def * (b : LMat) = mat.iMult(b, omat) 
   def * (b : SMat) = mat.iMult(b, omat) 
 //  def xT  (b : SMat) = mat.multT(b, omat)
-  def + (b : LMat) = mat.iiMatOpv(b, LMat.vecAddFun, omat)
-  def - (b : LMat) = mat.iiMatOpv(b, LMat.vecSubFun, omat)
-  def *@ (b : LMat) = mat.iiMatOpv(b, LMat.vecMulFun, omat)
-  def ∘  (b : LMat) = mat.iiMatOpv(b, LMat.vecMulFun, omat)
-  def / (b : LMat) = mat.iiMatOpv(b, LMat.vecDivFun, omat)
+  def + (b : LMat) = mat.iiMatOpv(b, LMat.vecAddFun, op_add, omat)
+  def - (b : LMat) = mat.iiMatOpv(b, LMat.vecSubFun, op_sub, omat)
+  def *@ (b : LMat) = mat.iiMatOpv(b, LMat.vecMulFun, op_mul, omat)
+  def ∘  (b : LMat) = mat.iiMatOpv(b, LMat.vecMulFun, op_mul, omat)
+  def / (b : LMat) = mat.iiMatOpv(b, LMat.vecDivFun, op_div, omat)
   def dot (b : LMat) = mat.dot(b);
   def ∙ (b : LMat) = mat.dot(b);
   def dotr (b : LMat) = mat.dotr(b);
@@ -1195,15 +1200,15 @@ class LPair(val omat:Mat, val mat:LMat) extends Pair(omat, mat) {
 //  def /@ (b : IMat) = mat.iiMatOpv(b, IMat.fVecDiv _, omat)  
 //  def ^ (b : IMat) = mat.iiMatOp(b, (x:Float, y:Float) => math.pow(x,y).toFloat, omat)  
 
-  def > (b : LMat) = mat.iiMatOpv(b, LMat.vecGTFun, omat)
-  def < (b : LMat) = mat.iiMatOpv(b, LMat.vecLTFun, omat)
-  def == (b : LMat) = mat.iiMatOpv(b, LMat.vecEQFun, omat)
-  def === (b : LMat) = mat.iiMatOpv(b, LMat.vecEQFun, omat)
-  def >= (b : LMat) = mat.iiMatOpv(b, LMat.vecGEFun, omat)
-  def <= (b : LMat) = mat.iiMatOpv(b, LMat.vecLEFun, omat)
-  def != (b : LMat) = mat.iiMatOpv(b, LMat.vecNEFun, omat) 
-  def max (b : LMat) = mat.iiMatOpv(b, LMat.vecMaxFun, omat)
-  def min (b : LMat) = mat.iiMatOpv(b, LMat.vecMinFun, omat) 
+  def > (b : LMat) = mat.iiMatOpv(b, LMat.vecGTFun, op_gt, omat)
+  def < (b : LMat) = mat.iiMatOpv(b, LMat.vecLTFun, op_lt, omat)
+  def == (b : LMat) = mat.iiMatOpv(b, LMat.vecEQFun, op_eq, omat)
+  def === (b : LMat) = mat.iiMatOpv(b, LMat.vecEQFun, op_eq, omat)
+  def >= (b : LMat) = mat.iiMatOpv(b, LMat.vecGEFun, op_ge, omat)
+  def <= (b : LMat) = mat.iiMatOpv(b, LMat.vecLEFun, op_le, omat)
+  def != (b : LMat) = mat.iiMatOpv(b, LMat.vecNEFun, op_ne, omat) 
+  def max (b : LMat) = mat.iiMatOpv(b, LMat.vecMaxFun, op_max, omat)
+  def min (b : LMat) = mat.iiMatOpv(b, LMat.vecMinFun, op_min, omat) 
   
   def checkOne(b:Seq[Int], name:String):Int = {
     if (b.length > 1) throw new RuntimeException("IMat %s only takes one argument" format name);

@@ -343,7 +343,7 @@ class GSMat(nr0:Int, nc0:Int, nnz1:Int, @transient var pir:Pointer, @transient v
   def == (a : GMat):GSMat = GSDop(a, null, BinOp.op_eq);
   
   def max (a : GMat):GSMat = GSDop(a, null, BinOp.op_max);  
-  def min (a : GMat):GSMat = GSDop(a, null, BinOp.op_min);
+  def sum (a : GMat):GSMat = GSDop(a, null, BinOp.op_min);
 
   override def ^*(a:FMat) = SDTMult(GMat(a), null)
   override def Tx(a:FMat) = SDTMult(GMat(a), null)

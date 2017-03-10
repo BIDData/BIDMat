@@ -460,73 +460,73 @@ object SciFunctions {
   
   /** min, max, sum, prod, cumsum, maxi, mini for LMats with no output matrix*/
   
-  def min (a:LMat, b:LMat) = a.iiMatOpv(b, LMat.vecMinFun, null)
-  def max (a:LMat, b:LMat) = a.iiMatOpv(b, LMat.vecMaxFun, null)
-  def sum(a:LMat, n:Int) = a.iiReduceOpv(n, LMat.idFun, LMat.vecAddFun, null)
-  def prod(a:LMat, n:Int) = a.iiReduceOpv(n, LMat.idFun, LMat.vecMulFun, null)
-  def cumsum(a:LMat, n:Int) = a.iiReduceAll(n, LMat.idFun, LMat.sumFun, null)
-  def maxi(a:LMat, n:Int) = a.iiReduceOpv(n, LMat.idFun, LMat.vecMaxFun, null)
-  def mini(a:LMat, n:Int):LMat = a.iiReduceOpv(n, LMat.idFun, LMat.vecMinFun, null)
-  def amax(a:LMat, n:Int) = a.iiReduceOpv(n, LMat.idFun, LMat.vecMaxFun, null)
-  def amin(a:LMat, n:Int):LMat = a.iiReduceOpv(n, LMat.idFun, LMat.vecMinFun, null)
+  def min (a:LMat, b:LMat) = LFunctions.min(a, b, null)
+  def max (a:LMat, b:LMat) = LFunctions.max(a, b, null)
+  def sum(a:LMat, n:Int) = LFunctions.sum(a, n, null)
+  def prod(a:LMat, n:Int) = LFunctions.prod(a, n, null)
+  def cumsum(a:LMat, n:Int) = LFunctions.cumsum(a, n, null)
+  def maxi(a:LMat, n:Int) = LFunctions.maxi(a, n, null)
+  def mini(a:LMat, n:Int):LMat = LFunctions.mini(a, n, null)
+  def amax(a:LMat, n:Int) = LFunctions.maxi(a, n, null)
+  def amin(a:LMat, n:Int):LMat = LFunctions.mini(a, n, null)
   
-  def sum(a:LMat) = a.iiReduceOpv(0, LMat.idFun, LMat.vecAddFun, null)
-  def prod(a:LMat) = a.iiReduceOpv(0, LMat.idFun, LMat.vecMulFun, null)
-  def cumsum(a:LMat) = a.iiReduceAll(0, LMat.idFun, LMat.sumFun, null)
-  def maxi(a:LMat) = a.iiReduceOpv(0, LMat.idFun, LMat.vecMaxFun, null)
-  def mini(a:LMat):LMat = a.iiReduceOpv(0, LMat.idFun, LMat.vecMinFun, null)
-  def amax(a:LMat) = a.iiReduceOpv(0, LMat.idFun, LMat.vecMaxFun, null)
-  def amin(a:LMat):LMat = a.iiReduceOpv(0, LMat.idFun, LMat.vecMinFun, null)
+  def sum(a:LMat) = LFunctions.sum(a, 0, null)
+  def prod(a:LMat) = LFunctions.sum(a, 0, null)
+  def cumsum(a:LMat) = LFunctions.prod(a, 0, null)
+  def maxi(a:LMat) = LFunctions.maxi(a, 0, null)
+  def mini(a:LMat):LMat = LFunctions.mini(a, 0, null)
+  def amax(a:LMat) = LFunctions.maxi(a, 0, null)
+  def amin(a:LMat):LMat = LFunctions.mini(a, 0, null)
   
-  def maxi2(a:LMat,d:Int):(LMat,IMat) = {val (m,ii)=a.ggOpt2(d,LMat.gtPred); (LMat(m), ii)}
-  def mini2(a:LMat,d:Int):(LMat,IMat) = {val (m,ii)=a.ggOpt2(d,LMat.ltPred); (LMat(m), ii)}
-  def maxi2(a:LMat):(LMat,IMat) = {val (m,ii)=a.ggOpt2(0,LMat.gtPred); (LMat(m), ii)}
-  def mini2(a:LMat):(LMat,IMat) = {val (m,ii)=a.ggOpt2(0,LMat.ltPred); (LMat(m), ii)}
+  def maxi2(a:LMat,d:Int):(LMat,IMat) = LFunctions.maxi2(a, d);
+  def mini2(a:LMat,d:Int):(LMat,IMat) = LFunctions.mini2(a, d);
+  def maxi2(a:LMat):(LMat,IMat) = LFunctions.maxi2(a, 0);
+  def mini2(a:LMat):(LMat,IMat) = LFunctions.mini2(a, 0);
   
   /** min, max, sum, prod, cumsum, maxi, mini for LMats with output matrix*/
   
-  def min (a:LMat, b:LMat, out:Mat) = a.iiMatOpv(b, LMat.vecMinFun, out)
-  def max (a:LMat, b:LMat, out:Mat) = a.iiMatOpv(b, LMat.vecMaxFun, out)
-  def sum(a:LMat, n:Int, out:Mat) = a.iiReduceOpv(n, LMat.idFun, LMat.vecAddFun, out)
-  def prod(a:LMat, n:Int, out:Mat) = a.iiReduceOpv(n, LMat.idFun, LMat.vecMulFun, out)
-  def cumsum(a:LMat, n:Int, out:Mat) = a.iiReduceAll(n, LMat.idFun, LMat.sumFun, out)
-  def maxi(a:LMat, n:Int, out:Mat) = a.iiReduceOpv(n, LMat.idFun, LMat.vecMaxFun, out)
-  def mini(a:LMat, n:Int, out:Mat):LMat = a.iiReduceOpv(n, LMat.idFun, LMat.vecMinFun, out)
-  def amax(a:LMat, n:Int, out:Mat) = a.iiReduceOpv(n, LMat.idFun, LMat.vecMaxFun, out)
-  def amin(a:LMat, n:Int, out:Mat):LMat = a.iiReduceOpv(n, LMat.idFun, LMat.vecMinFun, out)
+  def min (a:LMat, b:LMat, out:Mat) = LFunctions.min(a, b, out);
+  def max (a:LMat, b:LMat, out:Mat) = LFunctions.max(a, b, out);
+  def sum(a:LMat, n:Int, out:Mat) = LFunctions.sum(a, n, out);
+  def prod(a:LMat, n:Int, out:Mat) = LFunctions.prod(a, n, out);
+  def cumsum(a:LMat, n:Int, out:Mat) = LFunctions.cumsum(a, n, out);
+  def maxi(a:LMat, n:Int, out:Mat) = LFunctions.maxi(a, n, out);
+  def mini(a:LMat, n:Int, out:Mat) = LFunctions.mini(a, n, out);
+  def amax(a:LMat, n:Int, out:Mat) = LFunctions.maxi(a, n, out);
+  def amin(a:LMat, n:Int, out:Mat) = LFunctions.min(a, n, out);
   
-  def sum(a:LMat, out:Mat) = a.iiReduceOpv(0, LMat.idFun, LMat.vecAddFun, out)
-  def prod(a:LMat, out:Mat) = a.iiReduceOpv(0, LMat.idFun, LMat.vecMulFun, out)
-  def cumsum(a:LMat, out:Mat) = a.iiReduceAll(0, LMat.idFun, LMat.sumFun, out)
-  def maxi(a:LMat, out:Mat) = a.iiReduceOpv(0, LMat.idFun, LMat.vecMaxFun, out)
-  def mini(a:LMat, out:Mat):LMat = a.iiReduceOpv(0, LMat.idFun, LMat.vecMinFun, out)
-  def amax(a:LMat, out:Mat) = a.iiReduceOpv(0, LMat.idFun, LMat.vecMaxFun, out)
-  def amin(a:LMat, out:Mat):LMat = a.iiReduceOpv(0, LMat.idFun, LMat.vecMinFun, out)
+  def sum(a:LMat, out:Mat) = LFunctions.sum(a, 0, out);
+  def prod(a:LMat, out:Mat) = LFunctions.prod(a, 0, out);
+  def cumsum(a:LMat, out:Mat) = LFunctions.cumsum(a, 0, out);
+  def maxi(a:LMat, out:Mat) = LFunctions.maxi(a, 0, out);
+  def mini(a:LMat, out:Mat) = LFunctions.mini(a, 0, out);
+  def amax(a:LMat, out:Mat) = LFunctions.maxi(a, 0, out);
+  def amin(a:LMat, out:Mat) = LFunctions.mini(a, 0, out);
   
   /** min, max, sum, prod, maxi, mini for SMats with no output matrix*/
   
-  def min(a:SMat, b:SMat) = a.ssMatOp(b, FMat.minFun, null)
-  def max(a:SMat, b:SMat) = a.ssMatOp(b, FMat.maxFun, null)
-  def sum(a:SMat, n:Int) = a.ssReduceOp(n, FMat.idFun, FMat.sumFun, null)
-  def maxi(a:SMat, n:Int) = a.ssReduceOp(n, FMat.idFun, FMat.maxFun, null)
-  def mini(a:SMat, n:Int) = a.ssReduceOp(n, FMat.idFun, FMat.minFun, null)
-  def amax(a:SMat, n:Int) = a.ssReduceOp(n, FMat.idFun, FMat.maxFun, null)
-  def amin(a:SMat, n:Int) = a.ssReduceOp(n, FMat.idFun, FMat.minFun, null)
+  def min(a:SMat, b:SMat) = SFunctions.min(a, b);
+  def max(a:SMat, b:SMat) = SFunctions.min(a, b);
+  def sum(a:SMat, n:Int) = SFunctions.sum(a, n);
+  def maxi(a:SMat, n:Int) = SFunctions.maxi(a, n);
+  def mini(a:SMat, n:Int) = SFunctions.mini(a, n);
+  def amax(a:SMat, n:Int) = SFunctions.maxi(a, n);
+  def amin(a:SMat, n:Int) = SFunctions.mini(a, n);
   
-  def sum(a:SMat) = a.ssReduceOp(0, FMat.idFun, FMat.sumFun, null)
-  def maxi(a:SMat) = a.ssReduceOp(0, FMat.idFun, FMat.maxFun, null)
-  def mini(a:SMat) = a.ssReduceOp(0, FMat.idFun, FMat.minFun, null)
-  def amax(a:SMat) = a.ssReduceOp(0, FMat.idFun, FMat.maxFun, null)
-  def amin(a:SMat) = a.ssReduceOp(0, FMat.idFun, FMat.minFun, null)
+  def sum(a:SMat) = SFunctions.sum(a, 0);
+  def maxi(a:SMat) = SFunctions.maxi(a, 0);
+  def mini(a:SMat) = SFunctions.mini(a, 0);
+  def amax(a:SMat) = SFunctions.maxi(a, 0);
+  def amin(a:SMat) = SFunctions.mini(a, 0);
   
-  def min(a:SMat, b:Float) = a.ssMatOpScalar(b, FMat.minFun, null)
-  def max(a:SMat, b:Float) = a.ssMatOpScalar(b, FMat.maxFun, null)
-  def min(b:Float, a:SMat) = a.ssMatOpScalar(b, FMat.minFun, null)
-  def max(b:Float, a:SMat) = a.ssMatOpScalar(b, FMat.maxFun, null)
-  def min(a:SMat, b:Float, omat:Mat) = a.ssMatOpScalar(b, FMat.minFun, omat)
-  def max(a:SMat, b:Float, omat:Mat) = a.ssMatOpScalar(b, FMat.maxFun, omat)
-  def min(b:Float, a:SMat, omat:Mat) = a.ssMatOpScalar(b, FMat.minFun, omat)
-  def max(b:Float, a:SMat, omat:Mat) = a.ssMatOpScalar(b, FMat.maxFun, omat)
+  def min(a:SMat, b:Float) = SFunctions.min(a, b);
+  def max(a:SMat, b:Float) = SFunctions.max(a, b);
+  def min(b:Float, a:SMat) = SFunctions.min(a, b);
+  def max(b:Float, a:SMat) = SFunctions.max(a, b);
+  def min(a:SMat, b:Float, omat:Mat) = SFunctions.min(a, b, omat);
+  def max(a:SMat, b:Float, omat:Mat) = SFunctions.max(a, b, omat);
+  def min(b:Float, a:SMat, omat:Mat) = SFunctions.min(a, b, omat);
+  def max(b:Float, a:SMat, omat:Mat) = SFunctions.max(a, b, omat);
   
   def countnz(a:SMat, omat:Mat) = a.countnz(0, omat)
   def countnz(a:SMat, n:Int, omat:Mat) = a.countnz(n, omat)
@@ -535,60 +535,59 @@ object SciFunctions {
   
   /** min, max, sum, prod, cumsum, maxi, mini for SMats with output matrix*/
 
-  def sum(a:SMat, n:Int, omat:Mat) = a.ssReduceOp(n, FMat.idFun, FMat.sumFun, omat)
-  def maxi(a:SMat, n:Int, omat:Mat) = a.ssReduceOp(n, FMat.idFun, FMat.maxFun, omat)
-  def mini(a:SMat, n:Int, omat:Mat) = a.ssReduceOp(n, FMat.idFun, FMat.minFun, omat)
-  def sum(a:SMat, omat:Mat) = a.ssReduceOp(0, FMat.idFun, FMat.sumFun, omat)
-  def maxi(a:SMat, omat:Mat) = a.ssReduceOp(0, FMat.idFun, FMat.maxFun, omat)
-  def mini(a:SMat, omat:Mat) = a.ssReduceOp(0, FMat.idFun, FMat.minFun, omat)
-  def amax(a:SMat, omat:Mat) = a.ssReduceOp(0, FMat.idFun, FMat.maxFun, omat)
-  def amin(a:SMat, omat:Mat) = a.ssReduceOp(0, FMat.idFun, FMat.minFun, omat)
+  def sum(a:SMat, n:Int, omat:Mat) = SFunctions.sum(a, n, omat);
+  def maxi(a:SMat, n:Int, omat:Mat) = SFunctions.maxi(a, n, omat);
+  def mini(a:SMat, n:Int, omat:Mat) = SFunctions.mini(a, n, omat);
+  def sum(a:SMat, omat:Mat) = SFunctions.sum(a, omat);
+  def maxi(a:SMat, omat:Mat) = SFunctions.maxi(a, omat);
+  def mini(a:SMat, omat:Mat) = SFunctions.mini(a, omat);
+  def amax(a:SMat, omat:Mat) = SFunctions.amax(a, omat);
+  def amin(a:SMat, omat:Mat) = SFunctions.amin(a, omat);
   
   /** min, max, sum, maxi, mini for SDMats with no output matrix*/
   
-  def min(a:SDMat, b:SDMat) = a.ssMatOp(b, DMat.minFun, null)
-  def max(a:SDMat, b:SDMat) = a.ssMatOp(b, DMat.maxFun, null)
-  def sum(a:SDMat, n:Int) = a.ssReduceOp(n, DMat.idFun, DMat.sumFun, null)
-  def maxi(a:SDMat, n:Int) = a.ssReduceOp(n, DMat.idFun, DMat.maxFun, null)
-  def mini(a:SDMat, n:Int) = a.ssReduceOp(n, DMat.idFun, DMat.minFun, null)
-  def amax(a:SDMat, n:Int) = a.ssReduceOp(n, DMat.idFun, DMat.maxFun, null)
-  def amin(a:SDMat, n:Int) = a.ssReduceOp(n, DMat.idFun, DMat.minFun, null)
+  def min(a:SDMat, b:SDMat) = SDFunctions.min(a, b);
+  def max(a:SDMat, b:SDMat) = SDFunctions.max(a, b);
+  def sum(a:SDMat, n:Int) = SDFunctions.sum(a, n);
+  def maxi(a:SDMat, n:Int) = SDFunctions.maxi(a, n);
+  def mini(a:SDMat, n:Int) = SDFunctions.mini(a, n);
+  def amax(a:SDMat, n:Int) = SDFunctions.maxi(a, n);
+  def amin(a:SDMat, n:Int) = SDFunctions.mini(a, n);
   
-  def sum(a:SDMat) = a.ssReduceOp(0, DMat.idFun, DMat.sumFun, null)
-  def maxi(a:SDMat) = a.ssReduceOp(0, DMat.idFun, DMat.maxFun, null)
-  def mini(a:SDMat) = a.ssReduceOp(0, DMat.idFun, DMat.minFun, null)
-  def amax(a:SDMat) = a.ssReduceOp(0, DMat.idFun, DMat.maxFun, null)
-  def amin(a:SDMat) = a.ssReduceOp(0, DMat.idFun, DMat.minFun, null)
+  def sum(a:SDMat) = SDFunctions.sum(a);
+  def maxi(a:SDMat) = SDFunctions.maxi(a);
+  def mini(a:SDMat) = SDFunctions.mini(a);
+  def amax(a:SDMat) = SDFunctions.maxi(a);
+  def amin(a:SDMat) = SDFunctions.mini(a);
   
   /** min, max, sum, maxi, mini for SDMats with output matrix*/
   
-  def sum(a:SDMat, n:Int, omat:Mat) = a.ssReduceOp(n, DMat.idFun, DMat.sumFun, omat)
-  def maxi(a:SDMat, n:Int, omat:Mat) = a.ssReduceOp(n, DMat.idFun, DMat.maxFun, omat)
-  def mini(a:SDMat, n:Int, omat:Mat) = a.ssReduceOp(n, DMat.idFun, DMat.minFun, omat)
-  def amax(a:SDMat, n:Int, omat:Mat) = a.ssReduceOp(n, DMat.idFun, DMat.maxFun, omat)
-  def amin(a:SDMat, n:Int, omat:Mat) = a.ssReduceOp(n, DMat.idFun, DMat.minFun, omat)
+  def sum(a:SDMat, n:Int, omat:Mat) = SDFunctions.sum(a, n, omat);
+  def maxi(a:SDMat, n:Int, omat:Mat) = SDFunctions.sum(a, n, omat);
+  def mini(a:SDMat, n:Int, omat:Mat) = SDFunctions.sum(a, n, omat);
+  def amax(a:SDMat, n:Int, omat:Mat) = SDFunctions.sum(a, n, omat);
+  def amin(a:SDMat, n:Int, omat:Mat) = SDFunctions.sum(a, n, omat);
   
-  def sum(a:SDMat, omat:Mat) = a.ssReduceOp(0, DMat.idFun, DMat.sumFun, omat)
-  def maxi(a:SDMat, omat:Mat) = a.ssReduceOp(0, DMat.idFun, DMat.maxFun, omat)
-  def mini(a:SDMat, omat:Mat) = a.ssReduceOp(0, DMat.idFun, DMat.minFun, omat)
-  def amax(a:SDMat, omat:Mat) = a.ssReduceOp(0, DMat.idFun, DMat.maxFun, omat)
-  def amin(a:SDMat, omat:Mat) = a.ssReduceOp(0, DMat.idFun, DMat.minFun, omat)
+  def sum(a:SDMat, omat:Mat) = SDFunctions.sum(a, omat);
+  def maxi(a:SDMat, omat:Mat) = SDFunctions.maxi(a, omat);
+  def mini(a:SDMat, omat:Mat) = SDFunctions.mini(a, omat);
+  def amax(a:SDMat, omat:Mat) = SDFunctions.maxi(a, omat);
+  def amin(a:SDMat, omat:Mat) = SDFunctions.mini(a, omat);
   
-  def countnz(a:SDMat, omat:Mat) = a.countnz(0, omat)
-  def countnz(a:SDMat, n:Int, omat:Mat) = a.countnz(n, omat)
-  def countnz(a:SDMat) = a.countnz(0, null)
-  def countnz(a:SDMat, n:Int) = a.countnz(n, null)
+  def countnz(a:SDMat, omat:Mat) = SDFunctions.countnz(a, omat);
+  def countnz(a:SDMat, n:Int, omat:Mat) = SDFunctions.countnz(a, n, omat);
+  def countnz(a:SDMat) = SDFunctions.countnz(a);
+  def countnz(a:SDMat, n:Int) = SDFunctions.countnz(a);
   
   
-  
-  def min(a:SDMat, b:Double, omat:Mat) = a.ssMatOpScalar(b, DMat.minFun, omat)
-  def max(a:SDMat, b:Double, omat:Mat) = a.ssMatOpScalar(b, DMat.maxFun, omat)
-  def min(b:Double, a:SDMat, omat:Mat) = a.ssMatOpScalar(b, DMat.minFun, omat)
-  def max(b:Double, a:SDMat, omat:Mat) = a.ssMatOpScalar(b, DMat.maxFun, omat)
-  def min(a:SDMat, b:Double) = a.ssMatOpScalar(b, DMat.minFun, null)
-  def max(a:SDMat, b:Double) = a.ssMatOpScalar(b, DMat.maxFun, null)
-  def min(b:Double, a:SDMat) = a.ssMatOpScalar(b, DMat.minFun, null)
-  def max(b:Double, a:SDMat) = a.ssMatOpScalar(b, DMat.maxFun, null)
+  def min(a:SDMat, b:Double, omat:Mat) = SDFunctions.min(a, b, omat);
+  def max(a:SDMat, b:Double, omat:Mat) = SDFunctions.max(a, b, omat);
+  def min(b:Double, a:SDMat, omat:Mat) = SDFunctions.min(a, b, omat);
+  def max(b:Double, a:SDMat, omat:Mat) = SDFunctions.max(a, b, omat);
+  def min(a:SDMat, b:Double) = SDFunctions.min(a, b);
+  def max(a:SDMat, b:Double) = SDFunctions.max(a, b);
+  def min(b:Double, a:SDMat) = SDFunctions.min(a, b);
+  def max(b:Double, a:SDMat) = SDFunctions.min(a, b);
   
   def sum(a:CMat, n:Int) = a.ccReduceOpv(n, CMat.vecAddFun, null)
   def sum(a:CMat, n:Int, c:Mat) = a.ccReduceOpv(n, CMat.vecAddFun, c)
