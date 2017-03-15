@@ -606,7 +606,7 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], val da
   }
   
   override def copy:SMat = {
-    copyTo(null)
+    copyTo(null:SMat)
   }
   
   def copyTo(ss:SMat):SMat = {

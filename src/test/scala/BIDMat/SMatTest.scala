@@ -9,297 +9,233 @@ import org.scalatest.prop._;
 import org.junit.runner.RunWith
 
 @RunWith(classOf[JUnitRunner])
-class FMatTest extends BIDMatSpec {
+class SMatTest extends BIDMatSpec {
     val nr = 10;
     val nc = 20;
     val nk = 30;  
     val nl = 40;
     
-    def checkSimilar(a:FMat, b:FMat, eps:Float = 1e-4f) = {
+    def checkSimilar(a:FMat, b:FMat, eps:Float = 1e-4f):Unit = {
       a.dims.length should equal (b.dims.length) ;
       a.dims.data should equal (b.dims.data);
       assert_approx_eq(a.data, b.data, eps);
     }
     
-    "An FMat" should "support matrix transpose" in {
-    	val a = rand(nr, nc);
-    	val b = rand(nc, nr);
-    	val c = a.t;
-    	for (i <- 0 until nr) {
-    		for (j <- 0 until nc) {
-    			b.data(j + i * nc) = a.data(i + j * nr);
-    		}
-    	}
-    	checkSimilar(c, b);
+    def checkSimilar(a:SMat, b:FMat):Unit = {
+      a.check;
+      checkSimilar(full(a), b);
+    }
+    
+    def checkSimilar(a:SMat, b:SMat):Unit = {
+      a.check;
+      b.check;
+      checkSimilar(full(a), full(b));
+    }
+    
+    "An SMat" should "support matrix transpose" in {
+    	val a = sprand(nr, nc, 0.1f);
+    	val b = a.t;
+    	val c = full(a).t;
+    	checkSimilar(b, c);
     }
 
     it should "support matrix multiplication" in {
-    	val a = rand(nr, nk);
+    	val a = sprand(nr, nk, 0.2f);
     	val b = rand(nk, nc);
-    	val d = zeros(nr, nc);
     	val c = a * b;
-    	for (i <- 0 until nr) {
-    		for (j <- 0 until nc) {
-    			var sum = 0f;
-    			for (k <- 0 until nk) {
-    				sum += a.data(i + k * nr) * b.data(k + j * nk);
-    			}
-    			d.data(i + j * nr) = sum;
-    		}
-    	}
-    	checkSimilar(c, d)
+    	val d = full(a) * b;  	
+    	checkSimilar(c, d);
+    	val bt = b.t;
+    	val at = a.t;
+    	val ct = bt * at;
+    	val dt = bt * full(at);
+    	checkSimilar(ct, dt);
     }  
 
     it should "support matrix *^" in {
     	val a = rand(nr, nk);
-    	val b = rand(nc, nk);
-    	val c = a * (b.t);
-    	val d = a *^ b;
+    	val b = sprand(nc, nk, 0.2f);
+    	val c = a *^ b;
+    	val d = a *^ full(b);
     	checkSimilar(c, d)
     }  
   
     it should "support matrix ^*" in {
-    	val a = rand(nk, nr);
+    	val a = sprand(nk, nr, 0.2f);
     	val b = rand(nk, nc);
     	val c = a ^* b;
-    	val d = (a.t) * b;
+    	val d = (full(a).t) * b;
     	checkSimilar(c, d)
     }
-    
-    def testEwise(nr:Int, nc:Int, mop:(FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String) = {
+
+    def testEwise(nr:Int, nc:Int, mop:(SMat,SMat)=>SMat, op:(Float,Float)=>Float, msg:String) = {
     		it should msg in {
-    			val a = rand(nr, nc);
-    			val b = rand(nr, nc) + 0.01f;  
-    			val c = mop(a,b);
-    			val d = zeros(nr, nc);
-    			for (i <- 0 until nc) {
-    				for (j <- 0 until nr) {
-    					d.data(j + nr * i) = op(a.data(j + nr * i), b.data(j + nr * i));
-    				}
+    			val a = sprand(nr, nc, 0.2f);
+    			val b = a.copy
+    			b.contents <-- rand(b.nnz,1);
+    			val c = mop(a,b);                      // Sparse-sparse op will remove zeros...
+    			val d = a.copy;
+    			for (i <- 0 until a.nnz) {
+    				d.data(i) = op(a.data(i), b.data(i));
     			}
-    			checkSimilar(c, d);
+    			val dd = SMat(d.sparseTrim);
+    			checkSimilar(c, dd); 
     		}
     }
 
-    testEwise(nr, nc, (a:FMat, b:FMat) => a + b, (x:Float, y:Float)=>x+y, "support elementwise addition");  
+    testEwise(nr, nc, (a:SMat, b:SMat) => a + b, (x:Float, y:Float)=>x+y, "support elementwise addition");  
 
-    testEwise(nr, nc, (a:FMat, b:FMat) => a *@ b, (x:Float, y:Float)=>x*y, "support elementwise multiplication"); 
+    testEwise(nr, nc, (a:SMat, b:SMat) => a *@ b, (x:Float, y:Float)=>x*y, "support elementwise multiplication"); 
 
-    testEwise(nr, nc, (a:FMat, b:FMat) => a - b, (x:Float, y:Float)=>x-y, "support elementwise subtraction");
+    testEwise(nr, nc, (a:SMat, b:SMat) => a - b, (x:Float, y:Float)=>x-y, "support elementwise subtraction");
 
-    testEwise(nr, nc, (a:FMat, b:FMat) => a / b, (x:Float, y:Float)=>x/y, "support elementwise division");
+    testEwise(nr, nc, (a:SMat, b:SMat) => a / b, (x:Float, y:Float)=>x/y, "support elementwise division");
     
-    testEwise(nr, nc, (a:FMat, b:FMat) => min(a,b), (x:Float, y:Float)=> math.min(x,y), "support elementwise min");
+    testEwise(nr, nc, (a:SMat, b:SMat) => a > b, (x:Float, y:Float)=> if (x > y) 1.0f else 0f, "support elementwise gt");
     
-    testEwise(nr, nc, (a:FMat, b:FMat) => max(a,b), (x:Float, y:Float)=> math.max(x,y), "support elementwise max");
+    testEwise(nr, nc, (a:SMat, b:SMat) => a < b, (x:Float, y:Float)=> if (x < y) 1.0f else 0f, "support elementwise lt");
+        
+    testEwise(nr, nc, (a:SMat, b:SMat) => a >= b, (x:Float, y:Float)=> if (x >= y) 1.0f else 0f, "support elementwise ge");
+            
+    testEwise(nr, nc, (a:SMat, b:SMat) => a <= b, (x:Float, y:Float)=> if (x <= y) 1.0f else 0f, "support elementwise le");
+                
+    testEwise(nr, nc, (a:SMat, b:SMat) => a == b, (x:Float, y:Float)=> if (x == y) 1.0f else 0f, "support elementwise eq");
+                    
+    testEwise(nr, nc, (a:SMat, b:SMat) => a != b, (x:Float, y:Float)=> if (x != y) 1.0f else 0f, "support elementwise ne");
+    
+    testEwise(nr, nc, (a:SMat, b:SMat) => min(a,b), (x:Float, y:Float)=> math.min(x,y), "support elementwise min");
+    
+    testEwise(nr, nc, (a:SMat, b:SMat) => max(a,b), (x:Float, y:Float)=> math.max(x,y), "support elementwise max");
 
-
-    def testBcastRows(nr:Int, nc:Int, mop:(FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String, reverse:Boolean = true) = {
+    
+    def testBcastRows(nr:Int, nc:Int, mop:(SMat,FMat)=>SMat, op:(Float,Float)=>Float, msg:String) = {
     		it should msg in {  
-    			val a = rand(nr, nc) + 0.01f;
+    			val a = sprand(nr, nc, 0.2f);
     			val b = rand(1, nc) + 0.01f;
-    			val d = zeros(nr, nc);
+    			val d = a.copy;
     			for (i <- 0 until nc) {
-    				for (j <- 0 until nr) {
-    					d.data(j + i * nr) = op(a.data(j + i * nr), b.data(i));
+    			  val j0 = a.jc(i)-Mat.ioneBased;
+    			  val j1 = a.jc(i+1)-Mat.ioneBased;
+    				for (j <- j0 until j1) {
+    					d.data(j) = op(a.data(j), b.data(i));
     				}
     			}
     			val c = mop(a, b);
-    			checkSimilar(c, d);
-    			if (reverse) {
-    				val e = mop(b, a);
-    				checkSimilar(e, d);
-    			}
+    			val dd = SMat(d.sparseTrim);
+    			checkSimilar(c, dd);
     		}
     }
 
-    testBcastRows(nr, nc, (a:FMat, b:FMat) => a + b, (x:Float, y:Float)=>x+y, "support addition with broadcast over rows");
+    testBcastRows(nr, nc, (a:SMat, b:FMat) => a + b, (x:Float, y:Float)=>x+y, "support addition with broadcast over rows");
 
-    testBcastRows(nr, nc, (a:FMat, b:FMat) => a *@ b, (x:Float, y:Float)=>x*y, "support multiplication with broadcast over rows");
+    testBcastRows(nr, nc, (a:SMat, b:FMat) => a *@ b, (x:Float, y:Float)=>x*y, "support multiplication with broadcast over rows");
 
-    testBcastRows(nr, nc, (a:FMat, b:FMat) => a - b, (x:Float, y:Float)=>x-y, "support subtraction with broadcast over rows", false);
+    testBcastRows(nr, nc, (a:SMat, b:FMat) => a - b, (x:Float, y:Float)=>x-y, "support subtraction with broadcast over rows");
 
-    testBcastRows(nr, nc, (a:FMat, b:FMat) => a / b, (x:Float, y:Float)=>x/y, "support division with broadcast over rows", false);
+    testBcastRows(nr, nc, (a:SMat, b:FMat) => a / b, (x:Float, y:Float)=>x/y, "support division with broadcast over rows");
     
-    testBcastRows(nr, nc, (a:FMat, b:FMat) => min(a,b), (x:Float, y:Float)=> math.min(x,y), "support min with broadcast over rows");
-    
-    testBcastRows(nr, nc, (a:FMat, b:FMat) => max(a,b), (x:Float, y:Float)=> math.max(x,y), "support max with broadcast over rows");
-    
-    
-    def testBcastRows4D(nr:Int, nc:Int, mop:(FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String, reverse:Boolean = true) = {
-    		it should msg in {  
-    			val a = rand(nr \ nc \ nk \ nl) + 0.01f;
-    			val b = rand(1 \ 1 \ nk \ nl) + 0.01f;
-    			val d = zeros(a.dims);
-    			for (i <- 0 until nr) {
-    				for (j <- 0 until nc) {
-    					for (k <- 0 until nk) {
-    					  for (l <- 0 until nl) {
-    					  	d.data(i + nr * (j + nc * (k + nk * l))) = op(a.data(i + nr * (j + nc * (k + nk * l))), b.data(k + nk * l));
-    					  }
-    					}
-    				}
-    			}
-    			val c = mop(a, b);
-    			checkSimilar(c, d);
-    			if (reverse) {
-    				val e = mop(b, a);
-    				checkSimilar(e, d);
-    			}
-    		}
-    }
+    testBcastRows(nr, nc, (a:SMat, b:FMat) => a > b, (x:Float, y:Float)=> if (x > y) 1f else 0f, "support > with broadcast over rows");
 
-    testBcastRows4D(nr, nc, (a:FMat, b:FMat) => a + b, (x:Float, y:Float)=>x+y, "support addition with broadcast over rows 4D");
+    testBcastRows(nr, nc, (a:SMat, b:FMat) => a < b, (x:Float, y:Float)=> if (x < y) 1f else 0f, "support < with broadcast over rows");
 
-    testBcastRows4D(nr, nc, (a:FMat, b:FMat) => a *@ b, (x:Float, y:Float)=>x*y, "support multiplication with broadcast over rows 4D");
+    testBcastRows(nr, nc, (a:SMat, b:FMat) => a >= b, (x:Float, y:Float)=> if (x >= y) 1f else 0f, "support >= with broadcast over rows");
 
-    testBcastRows4D(nr, nc, (a:FMat, b:FMat) => a - b, (x:Float, y:Float)=>x-y, "support subtraction with broadcast over rows 4D", false);
+    testBcastRows(nr, nc, (a:SMat, b:FMat) => a <= b, (x:Float, y:Float)=> if (x <= y) 1f else 0f, "support <= with broadcast over rows");
 
-    testBcastRows4D(nr, nc, (a:FMat, b:FMat) => a / b, (x:Float, y:Float)=>x/y, "support division with broadcast over rows 4D", false);
-    
-    testBcastRows4D(nr, nc, (a:FMat, b:FMat) => min(a,b), (x:Float, y:Float)=> math.min(x,y), "support min with broadcast over rows 4D");
-    
-    testBcastRows4D(nr, nc, (a:FMat, b:FMat) => max(a,b), (x:Float, y:Float)=> math.max(x,y), "support max with broadcast over rows 4D");
+    testBcastRows(nr, nc, (a:SMat, b:FMat) => a == b, (x:Float, y:Float)=> if (x == y) 1f else 0f, "support == with broadcast over rows");
 
-    def testBcastCols(nr:Int, nc:Int, mop:(FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String, reverse:Boolean = true) = {
+    testBcastRows(nr, nc, (a:SMat, b:FMat) => a != b, (x:Float, y:Float)=> if (x != y) 1f else 0f, "support != with broadcast over rows");
+                        
+    def testBcastCols(nr:Int, nc:Int, mop:(SMat,FMat)=>SMat, op:(Float,Float)=>Float, msg:String, reverse:Boolean = true) = {
     		it should msg in {
-    			val a = rand(nr, nc) + 0.01f;
+    			val a = sprand(nr, nc, 0.2f);
     			val b = rand(nr, 1) + 0.01f;
-    			val d = zeros(nr, nc);
+    			val d = a.copy;
     			for (i <- 0 until nc) {
-    				for (j <- 0 until nr) {
-    					d.data(j + i * nr) = op(a.data(j + i * nr), b.data(j));
+    			  val j0 = a.jc(i)-Mat.ioneBased;
+    			  val j1 = a.jc(i+1)-Mat.ioneBased;
+    				for (j <- j0 until j1) {
+    				  val irow = a.ir(j)-Mat.ioneBased;
+    					d.data(j) = op(a.data(j), b.data(irow));
     				}
     			}
     			val c = mop(a, b);
-    			checkSimilar(c, d);
-    			if (reverse) {
-    				val e = mop(b, a);
-    				checkSimilar(e, d);
-    			}
+    			val dd = SMat(d.sparseTrim);
+    			checkSimilar(c, dd);
     		}
     }
 
 
-    testBcastCols(nr, nc, (a:FMat, b:FMat) => a + b, (x:Float, y:Float)=>x+y, "support addition with broadcast over cols");
+    testBcastCols(nr, nc, (a:SMat, b:FMat) => a + b, (x:Float, y:Float)=>x+y, "support addition with broadcast over cols");
 
-    testBcastCols(nr, nc, (a:FMat, b:FMat) => a *@ b, (x:Float, y:Float)=>x*y, "support multiplication with broadcast over cols");
+    testBcastCols(nr, nc, (a:SMat, b:FMat) => a *@ b, (x:Float, y:Float)=>x*y, "support multiplication with broadcast over cols");
 
-    testBcastCols(nr, nc, (a:FMat, b:FMat) => a - b, (x:Float, y:Float)=>x-y, "support subtraction with broadcast over cols", false);
+    testBcastCols(nr, nc, (a:SMat, b:FMat) => a - b, (x:Float, y:Float)=>x-y, "support subtraction with broadcast over cols", false);
 
-    testBcastCols(nr, nc, (a:FMat, b:FMat) => a / b, (x:Float, y:Float)=>x/y, "support division with broadcast over cols", false);
+    testBcastCols(nr, nc, (a:SMat, b:FMat) => a / b, (x:Float, y:Float)=>x/y, "support division with broadcast over cols", false);
     
-    testBcastCols(nr, nc, (a:FMat, b:FMat) => min(a,b), (x:Float, y:Float)=> math.min(x,y), "support min with broadcast over cols");
-    
-    testBcastCols(nr, nc, (a:FMat, b:FMat) => max(a,b), (x:Float, y:Float)=> math.max(x,y), "support max with broadcast over cols");
+    testBcastCols(nr, nc, (a:SMat, b:FMat) => a > b, (x:Float, y:Float)=> if (x > y) 1f else 0f, "support > with broadcast over cols");
 
-    def testScalar1(nr:Int, nc:Int, mop:(Float,FMat)=>FMat, op:(Float,Float)=>Float, msg:String) = {
+    testBcastCols(nr, nc, (a:SMat, b:FMat) => a < b, (x:Float, y:Float)=> if (x < y) 1f else 0f, "support < with broadcast over cols");
+
+    testBcastCols(nr, nc, (a:SMat, b:FMat) => a >= b, (x:Float, y:Float)=> if (x >= y) 1f else 0f, "support >= with broadcast over cols");
+
+    testBcastCols(nr, nc, (a:SMat, b:FMat) => a <= b, (x:Float, y:Float)=> if (x <= y) 1f else 0f, "support <= with broadcast over cols");
+
+    testBcastCols(nr, nc, (a:SMat, b:FMat) => a == b, (x:Float, y:Float)=> if (x == y) 1f else 0f, "support == with broadcast over cols");
+
+    testBcastCols(nr, nc, (a:SMat, b:FMat) => a != b, (x:Float, y:Float)=> if (x != y) 1f else 0f, "support != with broadcast over cols");
+    
+    def testScalar1(nr:Int, nc:Int, mop:(Float,SMat)=>SMat, op:(Float,Float)=>Float, msg:String) = {
     		it should msg in {
     			val a = rand(1, 1).fv;
-    			val b = rand(nr, nc);
-
-    			val d = zeros(nr, nc);
-    			for (i <- 0 until nc) {
-    				for (j <- 0 until nr) {
-    					d.data(j + i * nr) = op(a, b.data(j + i * nr));
-    				}
+    			val b = sprand(nr, nc, 0.2f);
+    			val d = b.copy;
+    			for (i <- 0 until b.nnz) {
+    				d.data(i) = op(a, b.data(i));
     			}
     			val c = mop(a, b);
-    			checkSimilar(c, d);
+    			val dd = SMat(d.sparseTrim);
+    			checkSimilar(c, dd);
     		}
     }
 
-    def testScalar2(nr:Int, nc:Int, mop:(FMat,Float)=>FMat, op:(Float,Float)=>Float, msg:String) = {
+    def testScalar2(nr:Int, nc:Int, mop:(SMat,Float)=>SMat, op:(Float,Float)=>Float, msg:String) = {
     		it should msg in {
-    			val a = rand(nr, nc);
+    			val a = sprand(nr, nc, 0.2f);
     			val b = rand(1, 1).fv;
-    			val d = zeros(nr, nc);
-    			for (i <- 0 until nc) {
-    				for (j <- 0 until nr) {
-    					d.data(j + i * nr) = op(a.data(j + i * nr), b);
-    				}
+    			val d = a.copy;
+    			for (i <- 0 until a.nnz) {
+    				d.data(i) = op(a.data(i), b);
     			}
     			val c = mop(a, b);
-    			checkSimilar(c, d);
+    			val dd = SMat(d.sparseTrim);
+    			checkSimilar(c, dd);
     		}
     }
 
-    testScalar1(nr, nc, (a:Float, b:FMat) => a + b, (x:Float, y:Float)=>x+y, "support addition of scalar 1");
+//    testScalar1(nr, nc, (a:Float, b:SMat) => a + b, (x:Float, y:Float)=>x+y, "support addition of scalar 1");
 
-    testScalar1(nr, nc, (a:Float, b:FMat) => a *@ b, (x:Float, y:Float)=>x*y, "support multiplication of scalar 1");
+//    testScalar1(nr, nc, (a:Float, b:SMat) => a *@ b, (x:Float, y:Float)=>x*y, "support multiplication of scalar 1");
     
-    testScalar1(nr, nc, (a:Float, b:FMat) => min(a, b), (x:Float, y:Float)=>math.min(x,y), "support min of scalar 1");
+    testScalar1(nr, nc, (a:Float, b:SMat) => min(a, b), (x:Float, y:Float)=>math.min(x,y), "support min of scalar 1");
     
-    testScalar1(nr, nc, (a:Float, b:FMat) => max(a, b), (x:Float, y:Float)=>math.max(x,y), "support max of scalar 1");
-
-    testScalar2(nr, nc, (a:FMat, b:Float) => a + b, (x:Float, y:Float)=>x+y, "support addition of scalar 2");
-
-    testScalar2(nr, nc, (a:FMat, b:Float) => a *@ b, (x:Float, y:Float)=>x*y, "support multiplication of scalar 2");
-
-    testScalar2(nr, nc, (a:FMat, b:Float) => a - b, (x:Float, y:Float)=>x-y, "support subtraction of scalar 2");
-
-    testScalar2(nr, nc, (a:FMat, b:Float) => a / b, (x:Float, y:Float)=>x / y, "support division of scalar 2");
+    testScalar1(nr, nc, (a:Float, b:SMat) => max(a, b), (x:Float, y:Float)=>math.max(x,y), "support max of scalar 1");
     
-    testScalar2(nr, nc, (a:FMat, b:Float) => min(a, b), (x:Float, y:Float)=> math.min(x,y), "support min of scalar 2");
 
-    testScalar2(nr, nc, (a:FMat, b:Float) => max(a, b), (x:Float, y:Float)=> math.max(x,y), "support max of scalar 2");
+    testScalar2(nr, nc, (a:SMat, b:Float) => a + b, (x:Float, y:Float)=>x+y, "support addition of scalar 2");
+
+    testScalar2(nr, nc, (a:SMat, b:Float) => a *@ b, (x:Float, y:Float)=>x*y, "support multiplication of scalar 2");
+
+    testScalar2(nr, nc, (a:SMat, b:Float) => a - b, (x:Float, y:Float)=>x-y, "support subtraction of scalar 2");
+
+    testScalar2(nr, nc, (a:SMat, b:Float) => a / b, (x:Float, y:Float)=>x / y, "support division of scalar 2");
     
-    def testScalar1ND(nr:Int, nc:Int, mop:(Float,FMat)=>FMat, op:(Float,Float)=>Float, msg:String) = {
-    		it should msg in {
-    			val a = rand(1, 1).fv;
-    			val b = rand(nr \ nc \ nk);
+    testScalar2(nr, nc, (a:SMat, b:Float) => min(a, b), (x:Float, y:Float)=> math.min(x,y), "support min of scalar 2");
 
-    			val d = zeros(nr \ nc \ nk);
-    			for (i <- 0 until nr) {
-    				for (j <- 0 until nc) {
-    				  for (k <- 0 until nk) {
-    				  	d.data(i + nr * (j + nc * k)) = op(a, b.data(i + nr * (j + nc * k)));
-    				  }
-    				}
-    			}
-    			val c = mop(a, b);
-    			checkSimilar(c, d);
-    		}
-    }
-
-    def testScalar2ND(nr:Int, nc:Int, mop:(FMat,Float)=>FMat, op:(Float,Float)=>Float, msg:String) = {
-    		it should msg in {
-    			val a = rand(nr \ nc \ nk);
-    			val b = rand(1, 1).fv;
-    			val d = zeros(nr \ nc \ nk);
-    			for (i <- 0 until nr) {
-    				for (j <- 0 until nc) {
-    					for (k <- 0 until nk) {
-    						d.data(i + nr * (j + nc * k)) = op(a.data(i + nr * (j + nc * k)), b);
-    					}
-    				}
-    			}
-    			val c = mop(a, b);
-    			checkSimilar(c, d);
-    		}
-    }
-    
-    testScalar1ND(nr, nc, (a:Float, b:FMat) => a + b, (x:Float, y:Float)=>x+y, "support addition of scalar 1 3D");
-
-    testScalar1ND(nr, nc, (a:Float, b:FMat) => a *@ b, (x:Float, y:Float)=>x*y, "support multiplication of scalar 1 3D");
-    
-    testScalar1ND(nr, nc, (a:Float, b:FMat) => min(a,b), (x:Float, y:Float)=>math.min(x,y), "support min of scalar 1 3D");
-
-    testScalar1ND(nr, nc, (a:Float, b:FMat) => max(a,b), (x:Float, y:Float)=>math.max(x,y), "support max of scalar 1 3D");
-
-    testScalar2ND(nr, nc, (a:FMat, b:Float) => a + b, (x:Float, y:Float)=>x+y, "support addition of scalar 2 3D");
-
-    testScalar2ND(nr, nc, (a:FMat, b:Float) => a *@ b, (x:Float, y:Float)=>x*y, "support multiplication of scalar 2 3D");
-
-    testScalar2ND(nr, nc, (a:FMat, b:Float) => a - b, (x:Float, y:Float)=>x-y, "support subtraction of scalar 2 3D");
-
-    testScalar2ND(nr, nc, (a:FMat, b:Float) => a / b, (x:Float, y:Float)=>x / y, "support division of scalar 2 3D");
-    
-    testScalar2ND(nr, nc, (a:FMat, b:Float) => min(a,b), (x:Float, y:Float)=>math.min(x,y), "support min of scalar 2 3D");
-
-    testScalar2ND(nr, nc, (a:FMat, b:Float) => max(a,b), (x:Float, y:Float)=>math.max(x,y), "support max of scalar 2 3D");
-    
+    testScalar2(nr, nc, (a:SMat, b:Float) => max(a, b), (x:Float, y:Float)=> math.max(x,y), "support max of scalar 2");
   
+ /*
     
     it should "support 1D element access" in {
        val a = rand(nr, nc); 
@@ -310,17 +246,7 @@ class FMatTest extends BIDMatSpec {
        val a = rand(nr, nc); 
        assert_approx_eq(Array(a(2,3)), Array(a.data(2 + 3 * nr)));
     }
-       
-    it should "support 3D element access" in {
-       val a = rand(nr \ nc \ nk); 
-       assert_approx_eq(Array(a(2, 3, 4)), Array(a.data(2 + 3 * nr + 4 * nr * nc)));
-    }
-    
-    it should "support 4D element access" in {
-       val a = rand(nr \ nc \ nk \ nl); 
-       assert_approx_eq(Array(a(2, 3, 4, 5)), Array(a.data(2 + nr * (3 + nc * (4 + nk * 5)))));
-    }
-    
+  
     it should "support 2D vertical stacking and slicing" in {
     	val a = rand(nr, nc);
     	val b = rand(nr, nk);
@@ -430,45 +356,7 @@ class FMatTest extends BIDMatSpec {
     	a(?) = c;
     	checkSimilar(a, b);
     }
-    
-    it should "support 3D IMat product update" in {
-    	val a = rand(3 \ 4 \ 5);
-    	val c = a + 0f;
-    	val i1 = 1 \ 2;
-    	val i2 = 2 \ 3;
-    	val i3 = 4 \ 3;
-    	val b = zeros(i1.length \ i2.length \ i3.length);
-    	b(?) = col(0->b.length);
-    	for (i <- 0 until i1.length) {
-    	  for (j <- 0 until i2.length) {
-    	    for (k <- 0 until i3.length) {
-    	      a.data(i1.data(i) + a.dims(0) * (i2.data(j) + a.dims(1) *  i3.data(k))) = b.data(i + i1.length * (j + i2.length * k));
-    	    }
-    	  }
-    	}
-      c(i1, i2, i3) = b;
-    	checkSimilar(a, c);
-    }
-    
-    it should "support 3D IMat product update with wildcard" in {
-    	val a = rand(3 \ 4 \ 5);
-    	val c = a + 0f;
-    	val i1 = 1 \ 2;
-    	val i2 = ?
-    	val i3 = 4 \ 3;
-    	val b = zeros(i1.length \ a.dims(1) \ i3.length);
-    	b(?) = col(0->b.length);
-    	for (i <- 0 until i1.length) {
-    	  for (j <- 0 until a.dims(1)) {
-    	    for (k <- 0 until i3.length) {
-    	      a.data(i1.data(i) + a.dims(0) * (j + a.dims(1) *  i3.data(k))) = b.data(i + i1.length * (j + a.dims(1) * k));
-    	    }
-    	  }
-    	}
-    	c(i1, i2, i3) = b;
-    	checkSimilar(a, c);
-    }
-    
+ 
     it should "support 2D IMat product update" in {
     	val a = rand(3 \ 4 \ 5);
     	val c = a + 0f;
@@ -897,5 +785,5 @@ class FMatTest extends BIDMatSpec {
       BIDMat.FFilter.im2colThreshold = 0;
       checkSimilar(c, d);
     }
-
+    */
 }
