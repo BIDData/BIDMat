@@ -410,16 +410,11 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], val da
     if (b.length > 1) throw new RuntimeException("FMat %s only takes one argument" format name);
     b(0);
   }
-  
-  override def sum(ind:IMat):FMat = ssReduceOp(checkOne(ind,"sum")+1, FMat.idFun, FMat.sumFun, null);
-  override def maxi(ind:IMat):FMat = ssReduceOp(checkOne(ind,"maxi")+1, FMat.idFun, FMat.maxFun, null);
-  override def mini(ind:IMat):FMat = ssReduceOp(checkOne(ind,"mini")+1, FMat.idFun, FMat.minFun, null);
-  override def mean(ind:IMat):FMat = SciFunctions._mean(this, checkOne(ind,"mean")+1).asInstanceOf[FMat];
-  override def variance(ind:IMat):FMat = SciFunctions._variance(this, checkOne(ind,"variance")+1).asInstanceOf[FMat];
 
-  override def sum(ind:Int):FMat = ssReduceOp(ind+1, FMat.idFun, FMat.sumFun, null);
-  override def maxi(ind:Int):FMat = ssReduceOp(ind+1, FMat.idFun, FMat.maxFun, null);
-  override def mini(ind:Int):FMat = ssReduceOp(ind+1, FMat.idFun, FMat.minFun, null);
+  override def sum(ind:Int):FMat = ssReduceOp(ind, FMat.idFun, FMat.sumFun, null);
+  override def prod(ind:Int):FMat = ssReduceOp(ind, FMat.idFun, FMat.mulFun, null);
+  override def maxi(ind:Int):FMat = ssReduceOp(ind, FMat.idFun, FMat.maxFun, null);
+  override def mini(ind:Int):FMat = ssReduceOp(ind, FMat.idFun, FMat.minFun, null);
   override def mean(ind:Int):FMat = SciFunctions._mean(this, ind+1).asInstanceOf[FMat];
   override def variance(ind:Int):FMat = SciFunctions._variance(this, ind+1).asInstanceOf[FMat];
 
@@ -758,12 +753,6 @@ object SMat {
   		res
   }
   
-  def apply(a:SparseMat[Float]):SMat = {
-    val m = new SMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a._data); 
-    m.setGUID(a.GUID); 
-    m
-  }
-  
   def apply(a:SDMat) = a.toSMat
   
   def apply(nrows:Int, ncols:Int, arows:Array[Int], acols:Array[Int], avals:Array[Float]) = {
@@ -781,6 +770,11 @@ object SMat {
     case aa:SMat => aa
     case aa:FMat => MatFunctions.sparse(aa)
     case aa:SDMat => aa.toSMat
+    case aa:SparseMat[Float] @unchecked => {
+    	val m = new SMat(a.nrows, a.ncols, a.nnz, aa.ir, aa.jc, aa._data); 
+    	m.setGUID(a.GUID); 
+    	m     
+    }
   }
   
   val sumFun = (x:Float, y:Float) => x + y

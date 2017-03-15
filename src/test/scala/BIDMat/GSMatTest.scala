@@ -9,77 +9,101 @@ import org.scalatest.prop._;
 import org.junit.runner.RunWith
 
 @RunWith(classOf[JUnitRunner])
-class SMatTest extends BIDMatSpec {
+class GSMatTest extends BIDMatSpec {
     val nr = 10;
     val nc = 20;
     val nk = 30;  
     val nl = 40;
     
     def checkSimilar(a:FMat, b:FMat, eps:Float = 1e-4f):Unit = {
+    	val aa = FMat(a);
+      val bb = FMat(b);
       a.dims.length should equal (b.dims.length) ;
       a.dims.data should equal (b.dims.data);
-      assert_approx_eq(a.data, b.data, eps);
+      assert_approx_eq(aa.data, bb.data, eps);
     }
     
     def checkSimilar(a:SMat, b:FMat):Unit = {
-      a.check;
-      checkSimilar(full(a), b);
+      val aa = SMat(a);
+      val bb = FMat(b);
+      aa.check;
+      checkSimilar(full(aa), bb);
     }
     
     def checkSimilar(a:SMat, b:SMat):Unit = {
-      a.check;
-      b.check;
-      checkSimilar(full(a), full(b));
+    	val aa = SMat(a);
+    	val bb = SMat(b);
+      aa.check;
+      bb.check;
+      checkSimilar(full(aa), full(bb));
     }
     
-    "An SMat" should "support matrix transpose" in {
+    "A GSMat" should "support matrix transpose" in {
     	val a = sprand(nr, nc, 0.1f);
-    	val b = a.t;
+    	val aa = GSMat(a);
+    	val bb = aa.t;
+    	bb.mytype should equal ("GSMat");
     	val c = full(a).t;
-    	checkSimilar(b, c);
+    	checkSimilar(SMat(bb), c);
     }
 
     it should "support matrix multiplication" in {
     	val a = sprand(nr, nk, 0.2f);
     	val b = rand(nk, nc);
-    	val c = a * b;
+    	val aa = GSMat(a);
+    	val bb = GMat(b);
+    	val cc = aa * bb;
+    	cc.mytype should equal ("GMat");
     	val d = full(a) * b;  	
-    	checkSimilar(c, d);
+    	checkSimilar(cc, d);
     	val bt = b.t;
     	val at = a.t;
-    	val ct = bt * at;
+    	val aat = GSMat(at);
+    	val bbt = GMat(bt);
+    	val cct = bbt * aat;
     	val dt = bt * full(at);
-    	checkSimilar(ct, dt);
+    	cct.mytype should equal ("GMat");
+    	checkSimilar(cct, dt);
     }  
 
     it should "support matrix *^" in {
     	val a = rand(nr, nk);
     	val b = sprand(nc, nk, 0.2f);
-    	val c = a *^ b;
+    	val aa = GMat(a);
+    	val bb = GSMat(b);
+    	val cc = aa *^ bb;
     	val d = a *^ full(b);
-    	checkSimilar(c, d)
+    	cc.mytype should equal ("GMat");
+    	checkSimilar(cc, d)
     }  
   
     it should "support matrix ^*" in {
     	val a = sprand(nk, nr, 0.2f);
     	val b = rand(nk, nc);
-    	val c = a ^* b;
+    	val aa = GSMat(a);
+    	val bb = GMat(b);
+    	val cc = aa ^* bb;
     	val d = (full(a).t) * b;
-    	checkSimilar(c, d)
+    	cc.mytype should equal ("GMat");
+    	checkSimilar(cc, d)
     }
+
 
     def testEwise(nr:Int, nc:Int, mop:(SMat,SMat)=>SMat, op:(Float,Float)=>Float, msg:String) = {
     		it should msg in {
     			val a = sprand(nr, nc, 0.2f);
+    			val aa = GSMat(a);
     			val b = a.copy
     			b.contents <-- rand(b.nnz,1);
-    			val c = mop(a,b);                      // Sparse-sparse op will remove zeros...
+    			val bb = GSMat(b);
+    			val cc = mop(aa,bb);                      // Sparse-sparse op will remove zeros...
     			val d = a.copy;
     			for (i <- 0 until a.nnz) {
     				d.data(i) = op(a.data(i), b.data(i));
     			}
     			val dd = SMat(d.sparseTrim);
-    			checkSimilar(c, dd); 
+    			cc.mytype should equal ("GSMat");
+    			checkSimilar(cc, dd); 
     		}
     }
 
@@ -107,6 +131,7 @@ class SMatTest extends BIDMatSpec {
     
     testEwise(nr, nc, (a:SMat, b:SMat) => max(a,b), (x:Float, y:Float)=> math.max(x,y), "support elementwise max");
 
+    /*
     
     def testBcastRows(nr:Int, nc:Int, mop:(SMat,FMat)=>SMat, op:(Float,Float)=>Float, msg:String) = {
     		it should msg in {  
@@ -318,5 +343,5 @@ class SMatTest extends BIDMatSpec {
     testReduce2D((a:SMat, n:Int) => amax(a, n), (x:Float, y:Float)=>math.max(x,y), 2, Float.MinValue, "support 2D row max");
     
     testReduce2D((a:SMat, n:Int) => amin(a, n), (x:Float, y:Float)=>math.min(x,y), 2, Float.MaxValue, "support 2D row min");
-  
+  */
 }
