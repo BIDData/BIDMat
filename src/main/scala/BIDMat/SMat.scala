@@ -694,9 +694,7 @@ class SPair (val omat:Mat, val mat:SMat) extends Pair(omat, mat) {
   def * (b : SMat):SMat = mat.SSMult(b, omat)
   def Tx (b : FMat):FMat = mat.Tmult(b, omat)
   def ^* (b : FMat):FMat = mat.Tmult(b, omat)
-  override def * (b : Mat):FMat = mat.SMult(b, omat)
-  override def Tx (b : Mat):Mat = b match {case bb:FMat => mat.Tmult(bb, omat)}
-  override def ^* (b : Mat):Mat = b match {case bb:FMat => mat.Tmult(bb, omat)}
+
   
   def + (b : SMat) = mat.sAdd(b, omat)
   def - (b : SMat) = mat.ssMatOpS(b, SMat.subFun, op_sub, omat)
@@ -727,6 +725,10 @@ class SPair (val omat:Mat, val mat:SMat) extends Pair(omat, mat) {
   def != (b : FMat) = mat.ssMatOpD(b, SMat.neFun, op_ne, omat)
   def max (b : FMat) = mat.ssMatOpD(b, SMat.maxFun, op_max, omat)
   def min (b : FMat) = mat.ssMatOpD(b, SMat.minFun, op_min, omat)
+  
+  override def * (b : Mat):FMat = mat.SMult(b, omat)
+  override def Tx (b : Mat):Mat = b match {case bb:FMat => mat.Tmult(bb, omat)}
+  override def ^* (b : Mat):Mat = b match {case bb:FMat => mat.Tmult(bb, omat)}
   
    def checkOne(b:Seq[Int], name:String):Int = {
     if (b.length > 1) throw new RuntimeException("FMat %s only takes one argument" format name);

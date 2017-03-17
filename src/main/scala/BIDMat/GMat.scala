@@ -1678,7 +1678,7 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair(omat, mat) {
     CUMAT.transpose(mat.pdata, mat.nrows, out.pdata, mat.ncols, mat.nrows, mat.ncols)
     out
   }
-	
+/*	
   def *  (a : GMat) = mat.GMult(a, omat)
   def *  (a : GSMat) = mat.GSMult(a, omat)
   def *^ (a : GMat) = mat.GMultT(a, omat)
@@ -1713,6 +1713,7 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair(omat, mat) {
 	def ∙→ (a :GMat) = mat.dotr(a, omat)
 	def on(a : GMat) = mat.vertcat(a, omat)
 	def \ (a : GMat) = mat.horzcat(a, omat)
+	*/
   
 	def checkOne(a:Seq[Int], name:String):Int = {
     if (a.length > 1) throw new RuntimeException("GMat %s only takes one argument" format name);
