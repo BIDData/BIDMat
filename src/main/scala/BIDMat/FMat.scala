@@ -2589,6 +2589,7 @@ object FMat {
   val maxFun = (x:Float, y:Float) => math.max(x, y)
   val minFun = (x:Float, y:Float) => math.min(x, y)
   val sumFun = (x:Float, y:Float) => x + y
+  val mulFun = (x:Float, y:Float) => x * y
   val idFun = (x:Float) => x
 
   val gtPred = (x:Float, y:Float) => (x > y)

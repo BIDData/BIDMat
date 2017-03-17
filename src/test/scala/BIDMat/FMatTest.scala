@@ -61,11 +61,11 @@ class FMatTest extends BIDMatSpec {
     it should "support matrix ^*" in {
     	val a = rand(nk, nr);
     	val b = rand(nk, nc);
-    	val c = (a.t) * b;
-    	val d = a ^* b;
+    	val c = a ^* b;
+    	val d = (a.t) * b;
     	checkSimilar(c, d)
     }
-
+    
     def testEwise(nr:Int, nc:Int, mop:(FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String) = {
     		it should msg in {
     			val a = rand(nr, nc);
@@ -897,4 +897,5 @@ class FMatTest extends BIDMatSpec {
       BIDMat.FFilter.im2colThreshold = 0;
       checkSimilar(c, d);
     }
+
 }

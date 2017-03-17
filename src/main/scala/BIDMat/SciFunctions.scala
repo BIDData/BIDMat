@@ -506,7 +506,7 @@ object SciFunctions {
   /** min, max, sum, prod, maxi, mini for SMats with no output matrix*/
   
   def min(a:SMat, b:SMat) = SFunctions.min(a, b);
-  def max(a:SMat, b:SMat) = SFunctions.min(a, b);
+  def max(a:SMat, b:SMat) = SFunctions.max(a, b);
   def sum(a:SMat, n:Int) = SFunctions.sum(a, n);
   def maxi(a:SMat, n:Int) = SFunctions.maxi(a, n);
   def mini(a:SMat, n:Int) = SFunctions.mini(a, n);
