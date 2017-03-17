@@ -4,8 +4,8 @@ object SFunctions {
   /** min, max, sum, prod, maxi, mini for SMats with no output matrix*/
   import GMat.BinOp._
   
-  def min(a:SMat, b:SMat) =  a.ssMatOp(b, FMat.minFun, null)
-  def max(a:SMat, b:SMat) = a.ssMatOp(b, FMat.maxFun, null)  
+  def min(a:SMat, b:SMat) =  a.ssMatOpS(b, FMat.minFun, op_min, null)
+  def max(a:SMat, b:SMat) = a.ssMatOpS(b, FMat.maxFun, op_max, null)  
   
   def sum(a:SMat, n:Int, omat:Mat):FMat = {
     a match {

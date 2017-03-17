@@ -15,6 +15,11 @@ class GSMatTest extends BIDMatSpec {
     val nk = 30;  
     val nl = 40;
     
+    override def beforeAll {
+    	Mat.checkMKL(false)
+    	Mat.checkCUDA(true)
+    }
+    
     def checkSimilar(a:FMat, b:FMat, eps:Float = 1e-4f):Unit = {
     	val aa = FMat(a);
       val bb = FMat(b);
@@ -102,7 +107,7 @@ class GSMatTest extends BIDMatSpec {
     				d.data(i) = op(a.data(i), b.data(i));
     			}
     			val dd = SMat(d.sparseTrim);
-    			cc.mytype should equal ("GSMat");
+    			cc.mytype should equal ("SMat");
     			checkSimilar(cc, dd); 
     		}
     }
@@ -131,12 +136,14 @@ class GSMatTest extends BIDMatSpec {
     
     testEwise(nr, nc, (a:SMat, b:SMat) => max(a,b), (x:Float, y:Float)=> math.max(x,y), "support elementwise max");
 
-    /*
+    
     
     def testBcastRows(nr:Int, nc:Int, mop:(SMat,FMat)=>SMat, op:(Float,Float)=>Float, msg:String) = {
     		it should msg in {  
     			val a = sprand(nr, nc, 0.2f);
     			val b = rand(1, nc) + 0.01f;
+    			val aa = GSMat(a);
+    			val bb = GMat(b);
     			val d = a.copy;
     			for (i <- 0 until nc) {
     			  val j0 = a.jc(i)-Mat.ioneBased;
@@ -145,9 +152,10 @@ class GSMatTest extends BIDMatSpec {
     					d.data(j) = op(a.data(j), b.data(i));
     				}
     			}
-    			val c = mop(a, b);
+    			val cc = mop(aa, bb);
     			val dd = SMat(d.sparseTrim);
-    			checkSimilar(c, dd);
+    			cc.mytype should equal ("GSMat");
+    			checkSimilar(cc, dd);
     		}
     }
 
@@ -170,11 +178,14 @@ class GSMatTest extends BIDMatSpec {
     testBcastRows(nr, nc, (a:SMat, b:FMat) => a == b, (x:Float, y:Float)=> if (x == y) 1f else 0f, "support == with broadcast over rows");
 
     testBcastRows(nr, nc, (a:SMat, b:FMat) => a != b, (x:Float, y:Float)=> if (x != y) 1f else 0f, "support != with broadcast over rows");
-                        
+         
+     
     def testBcastCols(nr:Int, nc:Int, mop:(SMat,FMat)=>SMat, op:(Float,Float)=>Float, msg:String, reverse:Boolean = true) = {
     		it should msg in {
     			val a = sprand(nr, nc, 0.2f);
     			val b = rand(nr, 1) + 0.01f;
+    			val aa = GSMat(a);
+    			val bb = GMat(b);
     			val d = a.copy;
     			for (i <- 0 until nc) {
     			  val j0 = a.jc(i)-Mat.ioneBased;
@@ -184,9 +195,10 @@ class GSMatTest extends BIDMatSpec {
     					d.data(j) = op(a.data(j), b.data(irow));
     				}
     			}
-    			val c = mop(a, b);
+    			val cc = mop(aa, bb);
     			val dd = SMat(d.sparseTrim);
-    			checkSimilar(c, dd);
+    			cc.mytype should equal ("GSMat");
+    			checkSimilar(cc, dd);
     		}
     }
 
@@ -211,17 +223,22 @@ class GSMatTest extends BIDMatSpec {
 
     testBcastCols(nr, nc, (a:SMat, b:FMat) => a != b, (x:Float, y:Float)=> if (x != y) 1f else 0f, "support != with broadcast over cols");
     
+
+    
     def testScalar1(nr:Int, nc:Int, mop:(Float,SMat)=>SMat, op:(Float,Float)=>Float, msg:String) = {
     		it should msg in {
     			val a = rand(1, 1).fv;
     			val b = sprand(nr, nc, 0.2f);
+    			val bb = GSMat(b);
+    			
     			val d = b.copy;
     			for (i <- 0 until b.nnz) {
     				d.data(i) = op(a, b.data(i));
     			}
-    			val c = mop(a, b);
+    			val cc = mop(a, bb);
     			val dd = SMat(d.sparseTrim);
-    			checkSimilar(c, dd);
+    			cc.mytype should equal ("GSMat");
+    			checkSimilar(cc, dd);
     		}
     }
 
@@ -229,13 +246,15 @@ class GSMatTest extends BIDMatSpec {
     		it should msg in {
     			val a = sprand(nr, nc, 0.2f);
     			val b = rand(1, 1).fv;
+    			val aa = GSMat(a);
     			val d = a.copy;
     			for (i <- 0 until a.nnz) {
     				d.data(i) = op(a.data(i), b);
     			}
-    			val c = mop(a, b);
+    			val cc = mop(aa, b);
     			val dd = SMat(d.sparseTrim);
-    			checkSimilar(c, dd);
+    			cc.mytype should equal ("GSMat");
+    			checkSimilar(cc, dd);
     		}
     }
 
@@ -260,48 +279,11 @@ class GSMatTest extends BIDMatSpec {
 
     testScalar2(nr, nc, (a:SMat, b:Float) => max(a, b), (x:Float, y:Float)=> math.max(x,y), "support max of scalar 2");
   
- 
-    it should "support 2D element access" in {
-       val a = sprand(nr, nc, 0.2f);
-       val aa = full(a);
-       aa(3,5) = 7f;
-       val b = sparse(aa);
-       val x = b(3, 5);
-       assert_approx_eq(Array(x), Array(7f));
-    }
-  
-    it should "support 2D vertical stacking and slicing" in {
-    	val a = sprand(nr, nc, 0.2f);
-    	val b = sprand(nr, nk, 0.2f);
-    	val c = sprand(nr, nc, 0.2f);
-    	val d = a \ b \ c;
-    	val inds = irow(nc -> (nc + nk));
-    	val e = d(?, inds);
-    	checkSimilar(e, b);
-    }
-    
-    it should "support 2D vertical stacking and colslice" in {
-    	val a = sprand(nr, nc, 0.2f);
-    	val b = sprand(nr, nk, 0.2f);
-    	val c = sprand(nr, nc, 0.2f);
-    	val d = a \ b \ c;
-    	val e = d.colslice(nc, nc+nk);
-    	checkSimilar(e, b);
-    }
-
-    it should "support 2D horizontal stacking and slicing" in {
-    	val a = sprand(nr, nc, 0.2f);
-    	val b = sprand(nk, nc, 0.2f);
-    	val c = sprand(nr, nc, 0.2f);
-    	val d = a on b on c;
-    	val inds = irow(nr -> (nr + nk));
-    	val e = d(inds, ?);
-    	checkSimilar(e, b);
-    }
     
      def testReduce2D(reducer:(SMat, Int)=>FMat, fn:(Float, Float)=>Float, axis:Int, initval:Float, msg:String) = {
     		it should msg in {
     			val a = sprand(nr, nc, 0.2f);
+    			val aa = GSMat(a);
     			val b = if (axis <= 1) {
     			  zeros(1, nc);
     			} else {
@@ -323,25 +305,14 @@ class GSMatTest extends BIDMatSpec {
     					}
     				}
     			}
-    			val c = reducer(a, axis);
-    			checkSimilar(b, c);
+    			val cc = reducer(aa, axis);
+    			cc.mytype should equal ("GMat");
+    			checkSimilar(cc, b);
     		}
     } 
      
     testReduce2D((a:SMat, n:Int) => sum(a, n), (x:Float, y:Float)=>x+y, 1, 0f, "support 2D column sum");
     
-//    testReduce2D((a:SMat, n:Int) => prod(a, n), (x:Float, y:Float)=>x*y, 1, 1f, "support 2D column product");
-    
-    testReduce2D((a:SMat, n:Int) => amax(a, n), (x:Float, y:Float)=>math.max(x,y), 1, Float.MinValue, "support 2D column max");
-    
-//    testReduce2D((a:SMat, n:Int) => amin(a, n), (x:Float, y:Float)=>math.min(x,y), 1, Float.MaxValue, "support 2D column min");
-    
     testReduce2D((a:SMat, n:Int) => sum(a, n), (x:Float, y:Float)=>x+y, 2, 0f, "support 2D row sum");
-    
-//    testReduce2D((a:SMat, n:Int) => prod(a, n), (x:Float, y:Float)=>x*y, 2, 1f, "support 2D row product");
-    
-    testReduce2D((a:SMat, n:Int) => amax(a, n), (x:Float, y:Float)=>math.max(x,y), 2, Float.MinValue, "support 2D row max");
-    
-    testReduce2D((a:SMat, n:Int) => amin(a, n), (x:Float, y:Float)=>math.min(x,y), 2, Float.MaxValue, "support 2D row min");
-  */
+  
 }

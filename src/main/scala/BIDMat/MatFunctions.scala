@@ -1488,31 +1488,36 @@ object MatFunctions {
   }
 
   def DDS(a:FMat,b:FMat,c:SMat,omat:Mat):SMat = {
-    if (a.nrows != b.nrows) {
-      throw new RuntimeException("nrows of dense A and B must match")
-    } else if (c.nrows != a.ncols || c.ncols != b.ncols) {
-      throw new RuntimeException("dims of C must match A'*B")
-    } else {
-      val out = SMat.newOrCheckSMat(c.nrows, c.ncols, c.nnz, omat, a.GUID, b.GUID, c.GUID, "DDS".##)     
-//      println("DDS %d %d %d, %d %d %d %d" format (c.nrows, c.ncols, c.nnz, a.GUID, b.GUID, c.GUID, out.GUID))
-      Mat.nflops += 2L * c.nnz * a.nrows
-      val ioff = Mat.ioneBased
-      out.jc(0) = ioff
-      if (c.nnz > 100000 && Mat.numThreads > 1) {
-        val done = IMat(1,Mat.numThreads)
-        for (i <- 0 until Mat.numThreads) {
-          Future {
-          	val istart = i*c.ncols/Mat.numThreads
-          	val iend = (i+1)*c.ncols/Mat.numThreads
-          	DDShelper(a, b, c, out, istart, iend, ioff)
-          	done(i) = 1
-          }
-        }
-        while (SciFunctions.sum(done).v < Mat.numThreads) {Thread.`yield`()}
-      } else {
-      	DDShelper(a, b, c, out, 0, c.ncols, ioff)
+    (a,b,c) match {
+      case (aa:GMat, bb:GMat, cc:GSMat) => GSMat.DDS(aa,bb,cc,omat);
+      case _ => {
+    	  if (a.nrows != b.nrows) {
+    		  throw new RuntimeException("nrows of dense A and B must match")
+    	  } else if (c.nrows != a.ncols || c.ncols != b.ncols) {
+    		  throw new RuntimeException("dims of C must match A'*B")
+    	  } else {
+    		  val out = SMat.newOrCheckSMat(c.nrows, c.ncols, c.nnz, omat, a.GUID, b.GUID, c.GUID, "DDS".##);     
+    		  //      println("DDS %d %d %d, %d %d %d %d" format (c.nrows, c.ncols, c.nnz, a.GUID, b.GUID, c.GUID, out.GUID));
+    		  Mat.nflops += 2L * c.nnz * a.nrows;
+    		  val ioff = Mat.ioneBased;
+    		  out.jc(0) = ioff;
+    		  if (c.nnz > 100000 && Mat.numThreads > 1) {
+    			  val done = IMat(1,Mat.numThreads);
+    			  for (i <- 0 until Mat.numThreads) {
+    				  Future {
+    					  val istart = i*c.ncols/Mat.numThreads;
+    					  val iend = (i+1)*c.ncols/Mat.numThreads;
+    					  DDShelper(a, b, c, out, istart, iend, ioff);
+    					  done(i) = 1;
+    				  }
+    			  }
+    			  while (SciFunctions.sum(done).v < Mat.numThreads) {Thread.`yield`()}
+    		  } else {
+    			  DDShelper(a, b, c, out, 0, c.ncols, ioff)
+    		  }
+    		  out;
+    	  }
       }
-      out
     }
   }
   

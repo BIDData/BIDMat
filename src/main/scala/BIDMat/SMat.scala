@@ -152,9 +152,30 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], val da
 
   def countnz(n:Int, omat:Mat) = gcountnz(n, omat)
        
-  def ssMatOp(b: SMat, f:(Float, Float) => Float, omat:Mat) = SMat(sgMatOp(b, f, omat))
+  def ssMatOpS(b: SMat, f:(Float, Float) => Float, op:Int, omat:Mat):SMat = {
+    b match {
+      case bb:GSMat =>  SMat(SMat(this).sgMatOp(SMat(b), f, omat)); 
+      case _ => SMat(SMat(this).sgMatOp(b, f, omat));    
+    }
+  }
   
-  def ssMatOpD(b: FMat, f:(Float, Float) => Float, omat:Mat) = SMat(sgMatOpD(b, f, omat))
+  def ssMatOpD(b: FMat, f:(Float, Float) => Float, op:Int, omat:Mat):SMat = {
+		(this, b) match {
+		  case (aa:SMat, bb:GMat) => GSMat(this).GSDop(bb, null, op);
+		  case (aa:GSMat, bb:FMat) => aa.GSDop(GMat(bb), null, op);
+		  case _ => SMat(sgMatOpD(b, f, omat));
+		}
+  }
+  
+   def ssMatOp(b: Mat, f:(Float, Float) => Float, op:Int, omat:Mat):Mat = {
+		(this, b) match {
+		  case (aa:GSMat, bb:FMat) => aa.GSDop(GMat(bb), null, op)
+		  case (aa:GSMat, bb:SMat) => SMat(sgMatOp(SMat(bb), f, omat));
+		  case (aa:SMat, bb:GMat) => GSMat(this).GSDop(bb, null, op);
+		  case (aa:SMat, bb:SMat) => SMat(sgMatOp(SMat(bb), f, omat));
+		  case (aa:SMat, bb:FMat) => SMat(sgMatOpD(bb, f, omat));
+		}
+  }
   
   def ssMatOpScalar(b: Float, f:(Float, Float) => Float, omat:Mat) = SMat(sgMatOpScalar(b, f, omat))
   
@@ -302,8 +323,11 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], val da
   		out
   	}
   
-   
   def sAdd(b:SMat, omat:Mat):SMat = {
+    SMat(this).sAdd0(SMat(b), omat);
+  }
+   
+  def sAdd0(b:SMat, omat:Mat):SMat = {
     Mat.nflops += nnz + b.nnz
     if (nrows==b.nrows && ncols==b.ncols) {
       b.explicitInds
@@ -356,45 +380,46 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], val da
     }
   }
   
+  import GMat.BinOp._
 
   override def unary_- () = ssMatOpScalar(-1, SMat.mulFun, null)
   def + (b : SMat) = sAdd(b, null)
-  def - (b : SMat) = ssMatOp(b, SMat.subFun, null)
+  def - (b : SMat) = ssMatOpS(b, SMat.subFun, op_sub, null)
   def * (b : FMat):FMat = SMult(b, null)
   def Tx (b : FMat):FMat = Tmult(b, null)
   def ^* (b : FMat):FMat = Tmult(b, null)
   def * (b : SMat) = SSMult(b, null)
-  def *@ (b : SMat) = ssMatOp(b, SMat.mulFun, null)
-  def ∘ (b : SMat) = ssMatOp(b, SMat.mulFun, null)
-  def /  (b : SMat) = ssMatOp(b, SMat.divFun, null)
+  def *@ (b : SMat) = ssMatOpS(b, SMat.mulFun, op_mul, null)
+  def ∘ (b : SMat) = ssMatOpS(b, SMat.mulFun, op_mul, null)
+  def /  (b : SMat) = ssMatOpS(b, SMat.divFun, op_div, null)
   
-  def > (b : SMat) = ssMatOp(b, SMat.gtFun, null)
-  def < (b : SMat) = ssMatOp(b, SMat.ltFun, null)
-  def == (b : SMat) = ssMatOp(b, SMat.eqFun, null)
-  def === (b : SMat) = ssMatOp(b, SMat.eqFun, null)
-  def >= (b : SMat) = ssMatOp(b, SMat.geFun, null)
-  def <= (b : SMat) = ssMatOp(b, SMat.leFun, null)
-  def != (b : SMat) = ssMatOp(b, SMat.neFun, null)
+  def > (b : SMat) = ssMatOpS(b, SMat.gtFun, op_gt, null)
+  def < (b : SMat) = ssMatOpS(b, SMat.ltFun, op_lt, null)
+  def == (b : SMat) = ssMatOpS(b, SMat.eqFun, op_eq, null)
+  def === (b : SMat) = ssMatOpS(b, SMat.eqFun, op_eq, null)
+  def >= (b : SMat) = ssMatOpS(b, SMat.geFun, op_ge, null)
+  def <= (b : SMat) = ssMatOpS(b, SMat.leFun, op_le, null)
+  def != (b : SMat) = ssMatOpS(b, SMat.neFun, op_ne, null)
   
-  def min(b : SMat) = ssMatOp(b, SMat.minFun, null)
-  def max(b : SMat) = ssMatOp(b, SMat.maxFun, null)
+  def min(b : SMat) = ssMatOpS(b, SMat.minFun, op_min, null)
+  def max(b : SMat) = ssMatOpS(b, SMat.maxFun, op_max, null)
   
-  def + (b : FMat) = ssMatOpD(b, SMat.sumFun, null)
-  def - (b : FMat) = ssMatOpD(b, SMat.subFun, null)
-  def *@ (b : FMat) = ssMatOpD(b, SMat.mulFun, null)
-  def ∘ (b : FMat) = ssMatOpD(b, SMat.mulFun, null)
-  def /  (b : FMat) = ssMatOpD(b, SMat.divFun, null)
+  def + (b : FMat) = ssMatOpD(b, SMat.sumFun, op_add, null)
+  def - (b : FMat) = ssMatOpD(b, SMat.subFun, op_sub, null)
+  def *@ (b : FMat) = ssMatOpD(b, SMat.mulFun, op_mul, null)
+  def ∘ (b : FMat) = ssMatOpD(b, SMat.mulFun, op_mul, null)
+  def /  (b : FMat) = ssMatOpD(b, SMat.divFun, op_div, null)
   
-  def > (b : FMat) = ssMatOpD(b, SMat.gtFun, null)
-  def < (b : FMat) = ssMatOpD(b, SMat.ltFun, null)
-  def == (b : FMat) = ssMatOpD(b, SMat.eqFun, null)
-  def === (b : FMat) = ssMatOpD(b, SMat.eqFun, null)
-  def >= (b : FMat) = ssMatOpD(b, SMat.geFun, null)
-  def <= (b : FMat) = ssMatOpD(b, SMat.leFun, null)
-  def != (b : FMat) = ssMatOpD(b, SMat.neFun, null)
+  def > (b : FMat) = ssMatOpD(b, SMat.gtFun, op_gt, null)
+  def < (b : FMat) = ssMatOpD(b, SMat.ltFun, op_lt, null)
+  def == (b : FMat) = ssMatOpD(b, SMat.eqFun, op_eq, null)
+  def === (b : FMat) = ssMatOpD(b, SMat.eqFun, op_eq, null)
+  def >= (b : FMat) = ssMatOpD(b, SMat.geFun, op_ge, null)
+  def <= (b : FMat) = ssMatOpD(b, SMat.leFun, op_le, null)
+  def != (b : FMat) = ssMatOpD(b, SMat.neFun, op_ne, null)
   
-  def min(b : FMat) = ssMatOpD(b, SMat.minFun, null)
-  def max(b : FMat) = ssMatOpD(b, SMat.maxFun, null)
+  def min(b : FMat) = ssMatOpD(b, SMat.minFun, op_min, null)
+  def max(b : FMat) = ssMatOpD(b, SMat.maxFun, op_max, null)
 
     
   def \ (b: SMat) = horzcat(b)
@@ -552,6 +577,32 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], val da
  /*
   * Operators whose second arg is generic. 
   */ 
+  /*
+  def + (b : SMat) = sAdd(b, null)
+  def - (b : Mat) = ssMatOp(b, SMat.subFun, op_sub, null)
+  def * (b : FMat):FMat = SMult(b, null)
+  def Tx (b : FMat):FMat = Tmult(b, null)
+  def ^* (b : FMat):FMat = Tmult(b, null)
+  def * (b : SMat) = SSMult(b, null);
+  
+  def *@ (b : Mat) = ssMatOp(b, SMat.mulFun, op_mul, null)
+  def ∘ (b : Mat) = ssMatOp(b, SMat.mulFun, op_mul, null)
+  def /  (b : Mat) = ssMatOp(b, SMat.divFun, op_div, null)
+  
+  def > (b : Mat) = ssMatOp(b, SMat.gtFun, op_gt, null)
+  def < (b : Mat) = ssMatOp(b, SMat.ltFun, op_lt, null)
+  def == (b : Mat) = ssMatOp(b, SMat.eqFun, op_eq, null)
+  def === (b : Mat) = ssMatOp(b, SMat.eqFun, op_eq, null)
+  def >= (b : Mat) = ssMatOp(b, SMat.geFun, op_ge, null)
+  def <= (b : Mat) = ssMatOp(b, SMat.leFun, op_le, null)
+  def != (b : Mat) = ssMatOp(b, SMat.neFun, op_ne, null)
+  
+  def min(b : Mat) = ssMatOp(b, SMat.minFun, op_min, null)
+  def max(b : Mat) = ssMatOp(b, SMat.maxFun, op_max, null)
+    
+  def \ (b: Mat) = horzcat(b)
+  def on (b: Mat) = vertcat(b) */
+  
   override def *  (b : Mat) = Mop_Times.op(this, b, null)
   override def *^ (b : Mat) = Mop_TimesT.op(this, b, null)
   override def xT (b : Mat) = Mop_TimesT.op(this, b, null)
@@ -637,6 +688,8 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], val da
 }
 
 class SPair (val omat:Mat, val mat:SMat) extends Pair(omat, mat) {
+  import GMat.BinOp._
+  
   def * (b : FMat):FMat = mat.SMult(b, omat)
   def * (b : SMat):SMat = mat.SSMult(b, omat)
   def Tx (b : FMat):FMat = mat.Tmult(b, omat)
@@ -646,34 +699,34 @@ class SPair (val omat:Mat, val mat:SMat) extends Pair(omat, mat) {
   override def ^* (b : Mat):Mat = b match {case bb:FMat => mat.Tmult(bb, omat)}
   
   def + (b : SMat) = mat.sAdd(b, omat)
-  def - (b : SMat) = mat.ssMatOp(b, SMat.subFun, omat)
-  def *@ (b : SMat) = mat.ssMatOp(b, SMat.mulFun, omat)
-  def /  (b : SMat) = mat.ssMatOp(b, SMat.divFun, omat)
+  def - (b : SMat) = mat.ssMatOpS(b, SMat.subFun, op_sub, omat)
+  def *@ (b : SMat) = mat.ssMatOpS(b, SMat.mulFun, op_mul, omat)
+  def /  (b : SMat) = mat.ssMatOpS(b, SMat.divFun, op_div, omat)
   
-  def + (b : FMat) = mat.ssMatOpD(b, SMat.sumFun, omat)
-  def - (b : FMat) = mat.ssMatOpD(b, SMat.subFun, omat)
-  def *@ (b : FMat) = mat.ssMatOpD(b, SMat.mulFun, omat)
-  def /  (b : FMat) = mat.ssMatOpD(b, SMat.divFun, omat)
+  def + (b : FMat) = mat.ssMatOpD(b, SMat.sumFun, op_add, omat)
+  def - (b : FMat) = mat.ssMatOpD(b, SMat.subFun, op_sub, omat)
+  def *@ (b : FMat) = mat.ssMatOpD(b, SMat.mulFun, op_mul, omat)
+  def /  (b : FMat) = mat.ssMatOpD(b, SMat.divFun, op_div, omat)
   
-  def > (b : SMat) = mat.ssMatOp(b, SMat.gtFun, omat)
-  def < (b : SMat) = mat.ssMatOp(b, SMat.ltFun, omat)
-  def == (b : SMat) = mat.ssMatOp(b, SMat.eqFun, omat)
-  def === (b : SMat) = mat.ssMatOp(b, SMat.eqFun, omat)
-  def >= (b : SMat) = mat.ssMatOp(b, SMat.geFun, omat)
-  def <= (b : SMat) = mat.ssMatOp(b, SMat.leFun, omat)
-  def != (b : SMat) = mat.ssMatOp(b, SMat.neFun, omat)
-  def max (b : SMat) = mat.ssMatOp(b, SMat.maxFun, omat)
-  def min (b : SMat) = mat.ssMatOp(b, SMat.minFun, omat)
+  def > (b : SMat) = mat.ssMatOpS(b, SMat.gtFun, op_gt, omat)
+  def < (b : SMat) = mat.ssMatOpS(b, SMat.ltFun, op_lt, omat)
+  def == (b : SMat) = mat.ssMatOpS(b, SMat.eqFun, op_eq, omat)
+  def === (b : SMat) = mat.ssMatOpS(b, SMat.eqFun, op_eq, omat)
+  def >= (b : SMat) = mat.ssMatOpS(b, SMat.geFun, op_ge, omat)
+  def <= (b : SMat) = mat.ssMatOpS(b, SMat.leFun, op_le, omat)
+  def != (b : SMat) = mat.ssMatOpS(b, SMat.neFun, op_ne, omat)
+  def max (b : SMat) = mat.ssMatOpS(b, SMat.maxFun, op_max, omat)
+  def min (b : SMat) = mat.ssMatOpS(b, SMat.minFun, op_min, omat)
   
-  def > (b : FMat) = mat.ssMatOpD(b, SMat.gtFun, omat)
-  def < (b : FMat) = mat.ssMatOpD(b, SMat.ltFun, omat)
-  def == (b : FMat) = mat.ssMatOpD(b, SMat.eqFun, omat)
-  def === (b : FMat) = mat.ssMatOpD(b, SMat.eqFun, omat)
-  def >= (b : FMat) = mat.ssMatOpD(b, SMat.geFun, omat)
-  def <= (b : FMat) = mat.ssMatOpD(b, SMat.leFun, omat)
-  def != (b : FMat) = mat.ssMatOpD(b, SMat.neFun, omat)
-  def max (b : FMat) = mat.ssMatOpD(b, SMat.maxFun, omat)
-  def min (b : FMat) = mat.ssMatOpD(b, SMat.minFun, omat)
+  def > (b : FMat) = mat.ssMatOpD(b, SMat.gtFun, op_gt, omat)
+  def < (b : FMat) = mat.ssMatOpD(b, SMat.ltFun, op_lt, omat)
+  def == (b : FMat) = mat.ssMatOpD(b, SMat.eqFun, op_eq, omat)
+  def === (b : FMat) = mat.ssMatOpD(b, SMat.eqFun, op_eq, omat)
+  def >= (b : FMat) = mat.ssMatOpD(b, SMat.geFun, op_ge, omat)
+  def <= (b : FMat) = mat.ssMatOpD(b, SMat.leFun, op_le, omat)
+  def != (b : FMat) = mat.ssMatOpD(b, SMat.neFun, op_ne, omat)
+  def max (b : FMat) = mat.ssMatOpD(b, SMat.maxFun, op_max, omat)
+  def min (b : FMat) = mat.ssMatOpD(b, SMat.minFun, op_min, omat)
   
    def checkOne(b:Seq[Int], name:String):Int = {
     if (b.length > 1) throw new RuntimeException("FMat %s only takes one argument" format name);
