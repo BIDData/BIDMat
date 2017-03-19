@@ -699,8 +699,16 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   		i += 1
   	}
   }
+  
+  def fDMult(b:FMat, outmat:Mat):FMat = {
+    (this, b) match {
+      case (aa:GMat, bb:FMat) => aa.GMult(b, outmat);
+      case (aa:FMat, bb:GMat) => GMat(aa).GMult(bb, outmat);
+      case _ => fDMultFF(b, outmat);
+    }
+  }
 
-  def fDMult(a:FMat, outmat:Mat):FMat = {
+  def fDMultFF(a:FMat, outmat:Mat):FMat = {
     if (ncols == 1 && nrows == 1){
       val out = FMat.newOrCheckFMat(a.dims, outmat, GUID, a.GUID, "dMult".##)
       Mat.nflops += a.length
@@ -1179,8 +1187,16 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
         i += 1
     }
   }
+  
+   def multT(b:FMat, outmat:Mat):FMat = {
+    (this, b) match {
+      case (aa:GMat, bb:FMat) => aa.GMultT(b, outmat);
+      case (aa:FMat, bb:GMat) => GMat(aa).GMultT(bb, outmat);
+      case _ => multTFF(b, outmat);
+    }
+  }
 
-  def multT(a:FMat, outmat:Mat):FMat = {
+  def multTFF(a:FMat, outmat:Mat):FMat = {
     if (ncols == a.ncols) {
     	val out = FMat.newOrCheckFMat(nrows, a.nrows, outmat, GUID, a.GUID, "multT".##)
     	if (!Mat.useMKL) {
@@ -1209,8 +1225,16 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
       throw new RuntimeException("xT dimensions mismatch")
     }
   }
+  
+  def Tmult(b:FMat, outmat:Mat):FMat = {
+    (this, b) match {
+      case (aa:GMat, bb:FMat) => aa.GTMult(b, outmat);
+      case (aa:FMat, bb:GMat) => GMat(aa).GTMult(bb, outmat);
+      case _ => TmultFF(b, outmat);
+    }
+  }
 
-  def Tmult(a:FMat, outmat:Mat):FMat = {
+  def TmultFF(a:FMat, outmat:Mat):FMat = {
     if (nrows == a.nrows) {
     	val out = FMat.newOrCheckFMat(ncols, a.ncols, outmat, GUID, a.GUID, "Tmult".##)
     	sgemm(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans,

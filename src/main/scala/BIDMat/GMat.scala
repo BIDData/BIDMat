@@ -973,6 +973,11 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   	  }
   	}
   
+  override def ddot(a:FMat):Double = {
+    val am:Mat = a;
+    ddot(am);
+  }
+  
   def reduceOp(oldmat:Mat, dir:Int, initval:Float, op:Int):GMat = {
     if (dir == 1 || (dir == 0 && nrows > 1)) {
       val out = GMat.newOrCheckGMat(1, ncols, oldmat, GUID, 1, op) 
