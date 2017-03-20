@@ -40,8 +40,8 @@ public class Bandwidth {
             this.duration = endTime - startTime;
             this.bandwidth = size / 1024.0 / duration * 1000000000;
 
-            System.out.printf("src: %d, dst: %d, size: %d B, duration: %d ms, bandwidth: %f KB/s\n",
-                    src, dst, size, duration, bandwidth);
+            // System.out.printf("src: %d, dst: %d, size: %d B, duration: %d ms, bandwidth: %f KB/s\n",
+            //         src, dst, size, duration, bandwidth);
         }
     }
 
