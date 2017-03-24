@@ -229,6 +229,12 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   override def update(iv:IMat, jv:IMat, b:DMat):DMat = updatei(Array(iv, jv), GDMat(b));
   override def update(iv:IMat, j:Int, b:DMat):DMat = updatei(Array(iv, IMat.ielem(j)), GDMat(b));
   override def update(i:Int, jv:IMat, b:DMat):DMat = updatei(Array(IMat.ielem(i), jv), GDMat(b));
+  
+  /** ND sliced updates with generic RHS */
+  override def update(iv:IMat, b:Mat):DMat = updatei(Array(iv), GDMat(b));  
+  override def update(iv:IMat, jv:IMat, b:Mat):DMat = updatei(Array(iv, jv), GDMat(b));
+  override def update(iv:IMat, j:Int, b:Mat):DMat = updatei(Array(iv, IMat.ielem(j)), GDMat(b));
+  override def update(i:Int, jv:IMat, b:Mat):DMat = updatei(Array(IMat.ielem(i), jv), GDMat(b));
  
   override def update(i1:IMat, vv:Double):DMat = updatei(Array(i1), vv);
   override def update(i1:IMat, i2:IMat, vv:Double):DMat = updatei(Array(i1, i2), vv);

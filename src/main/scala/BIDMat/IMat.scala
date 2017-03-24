@@ -1390,7 +1390,8 @@ object IMat {
   
   def apply(x:Mat):IMat = {
     val out:IMat = x match {
-      case _:GIMat | _:DMat | _:FMat | _:IMat | _:LMat => IMat.newOrCheckIMat(x.dims, null, x.GUID, "IMat".##);
+      case _:GIMat | _:DMat | _:FMat | _:LMat => IMat.newOrCheckIMat(x.dims, null, x.GUID, "IMat".##);
+      case ff:IMat => ff;
       case dd:DenseMat[Int] @ unchecked => {val out = new IMat(dd.dims.data, dd._data); out.setGUID(dd.GUID); out}
       case _ => throw new RuntimeException("IMat apply unknown argument");
     }
@@ -1399,7 +1400,7 @@ object IMat {
       case dd:DMat => {Mat.copyToIntArray(dd.data, 0, out.data, 0, dd.length)};
       case ff:FMat => {Mat.copyToIntArray(ff.data, 0, out.data, 0, ff.length)};
       case ff:LMat => {Mat.copyToIntArray(ff.data, 0, out.data, 0, ff.length)};
-      case ii:IMat => {System.arraycopy(ii.data, 0, out.data, 0, ii.length)};
+      case _:IMat => {}
       case dd:DenseMat[Int] @ unchecked => {}
     }
     out

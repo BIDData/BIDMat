@@ -250,6 +250,12 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   override def update(iv:IMat, jv:IMat, b:FMat):FMat = updatei(Array(iv, jv), GMat(b));
   override def update(iv:IMat, j:Int, b:FMat):FMat = updatei(Array(iv, IMat.ielem(j)), GMat(b));
   override def update(i:Int, jv:IMat, b:FMat):FMat = updatei(Array(IMat.ielem(i), jv), GMat(b));
+  
+  override def update(inds:IMat, vv:Mat):FMat = updatei(inds, GMat(vv));
+  
+  override def update(iv:IMat, jv:IMat, b:Mat):FMat = updatei(Array(iv, jv), GMat(b));
+  override def update(iv:IMat, j:Int, b:Mat):FMat = updatei(Array(iv, IMat.ielem(j)), GMat(b));
+  override def update(i:Int, jv:IMat, b:Mat):FMat = updatei(Array(IMat.ielem(i), jv), GMat(b));
  
 //  override def update(i1:IMat, vv:Float):FMat = updatei(Array(i1), vv);
   override def update(i1:IMat, i2:IMat, vv:Float):FMat = updatei(Array(i1, i2), vv);

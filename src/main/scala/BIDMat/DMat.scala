@@ -1720,14 +1720,15 @@ object DMat {
   
   def apply(x:Mat):DMat = {
     val out:DMat = x match {
-      case _:GMat | _:GDMat | _:DMat | _:FMat | _:IMat | _:LMat | _:SDMat => DMat.newOrCheckDMat(x.dims, null, x.GUID, "DMat".##);
+      case _:GMat | _:GDMat | _:FMat | _:IMat | _:LMat | _:SDMat => DMat.newOrCheckDMat(x.dims, null, x.GUID, "DMat".##);
+      case ff:DMat => ff;
       case dd:DenseMat[Double] @ unchecked => {val out = new DMat(dd.dims.data, dd._data); out.setGUID(dd.GUID); out}
       case _ => throw new RuntimeException("DMat apply unknown argument");
     }
     x match {
       case gg:GMat => {val ff = gg.toFMat(null); Mat.copyToDoubleArray(ff.data, 0, out.data, 0, ff.length)}
       case gg:GDMat => gg.copyTo(out);
-      case dd:DMat => {System.arraycopy(dd.data, 0, out.data, 0, dd.length)}
+      case _:DMat => {}
       case ff:FMat => {Mat.copyToDoubleArray(ff.data, 0, out.data, 0, ff.length)}
       case ii:IMat => {Mat.copyToDoubleArray(ii.data, 0, out.data, 0, ii.length)}
       case ii:LMat => {Mat.copyToDoubleArray(ii.data, 0, out.data, 0, ii.length)}

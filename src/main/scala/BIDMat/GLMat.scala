@@ -232,6 +232,11 @@ class GLMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   override def update(iv:IMat, jv:IMat, b:LMat):LMat = updatei(Array(iv, jv), GLMat(b));
   override def update(iv:IMat, j:Int, b:LMat):LMat = updatei(Array(iv, IMat.ielem(j)), GLMat(b));
   override def update(i:Int, jv:IMat, b:LMat):LMat = updatei(Array(IMat.ielem(i), jv), GLMat(b));
+  
+  /* Generic RHS */
+  override def update(iv:IMat, jv:IMat, b:Mat):LMat = updatei(Array(iv, jv), GLMat(b));
+  override def update(iv:IMat, j:Int, b:Mat):LMat = updatei(Array(iv, IMat.ielem(j)), GLMat(b));
+  override def update(i:Int, jv:IMat, b:Mat):LMat = updatei(Array(IMat.ielem(i), jv), GLMat(b));
  
   override def update(i1:IMat, vv:Long):LMat = updatei(Array(i1), vv);
   override def update(i1:IMat, i2:IMat, vv:Long):LMat = updatei(Array(i1, i2), vv);

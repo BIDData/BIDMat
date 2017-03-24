@@ -233,6 +233,12 @@ class GIMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   override def update(iv:IMat, jv:IMat, b:IMat):IMat = updatei(Array(iv, jv), GIMat(b));
   override def update(iv:IMat, j:Int, b:IMat):IMat = updatei(Array(iv, IMat.ielem(j)), GIMat(b));
   override def update(i:Int, jv:IMat, b:IMat):IMat = updatei(Array(IMat.ielem(i), jv), GIMat(b));
+  
+  /* generic RHS */
+  override def update(inds:IMat, vv:Mat):GIMat = updatei(inds, GIMat(vv));
+  override def update(iv:IMat, jv:IMat, b:Mat):IMat = updatei(Array(iv, jv), GIMat(b));
+  override def update(iv:IMat, j:Int, b:Mat):IMat = updatei(Array(iv, IMat.ielem(j)), GIMat(b));
+  override def update(i:Int, jv:IMat, b:Mat):IMat = updatei(Array(IMat.ielem(i), jv), GIMat(b));
 
   override def update(i1:IMat, i2:IMat, vv:Int):IMat = updatei(Array(i1, i2), vv);
  
