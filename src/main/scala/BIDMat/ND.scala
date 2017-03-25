@@ -198,7 +198,8 @@ object ND {
   }
   
   /**
-   * Check if initial dims of dims1 are 1's. 
+   * For the initial run of dims1 = 1, save the product of dims2 into nrows. The remaining dims must match
+   * between dims1 and dims2 and their product is saved into ncols.
    */
   
   def checkHead(dims1:Array[Int], dims2:Array[Int]):(Int, Int) = {
@@ -220,7 +221,9 @@ object ND {
   }
   
   /**
-   * Check if final dims of dims1 are 1's. 
+   * For the final run of dims1 = 1, save the product of dims2 into ncols. The remaining dims must match
+   * between dims1 and dims2 and their product is saved into nrowss.
+   * 
    */
   
   def checkTail(dims1:Array[Int], dims2:Array[Int]):(Int, Int) = {
@@ -240,6 +243,17 @@ object ND {
     }
     if (matches) (nrows, ncols) else (-1, -1)
   }
+  
+  /* 
+   * check whether dims match or if one array can be used to broadcast a row or col into the other. 
+   * Return (nr, nc, ainc, arinc, binc, brinc)
+   *   nr = row dimension
+   *   nc = col dimension
+   *   ainc = element (column) increment for first matrix
+   *   arinc = row increment for first matrix
+   *   binc = element (n) increment for second matrix
+   *   brinc = row increment for second matrix
+   */
   
   def compatibleDims(dims1:Array[Int], dims2:Array[Int], opname:String):(Int, Int, Int, Int, Int, Int) = {
   	val len = dims1.reduce(_*_);
@@ -276,6 +290,15 @@ object ND {
     }
   }
   
+  /* 
+   * check whether dims match or if one array can be used to broadcast a row or col into the other. 
+   * Return (nra, nca, nrb, ncb)
+   *   nra = row dimension of a
+   *   nca = col dimension of a
+   *   nrb = row dimension of b
+   *   ncb = col dimension of b
+   */
+  
   def compatibleGDims(dims1:Array[Int], dims2:Array[Int], opname:String):(Int, Int, Int, Int) = {
   	val len = dims1.reduce(_*_);
   	val len2 = dims2.reduce(_*_);
@@ -303,7 +326,7 @@ object ND {
   					if (nr > 0) {
   						(nr, nc, nr, 1);
   					} else {
-  						throw new RuntimeException("Operator "+opname+" incompatible dimensions")
+  						throw new RuntimeException("Operator "+opname+" incompatible dimensions ("+dims1.toString+")   ("+ dims2.toString+")")
   					}
   				}
   			}
