@@ -244,6 +244,17 @@ object ND {
     if (matches) (nrows, ncols) else (-1, -1)
   }
   
+    
+  def printDims(a:Array[Int]):String = {
+    val s = new java.lang.StringBuilder;
+    s.append("("+a(0).toString);
+    for (i <- 1 until a.length) {
+      s.append(","+a(i).toString);
+    }
+    s.append(")");
+    s.toString
+  }
+  
   /* 
    * check whether dims match or if one array can be used to broadcast a row or col into the other. 
    * Return (nr, nc, ainc, arinc, binc, brinc)
@@ -282,7 +293,7 @@ object ND {
   					if (nr > 0) {
   						(nr, nc, 1, nr, 1, 0);
   					} else {
-  						throw new RuntimeException("Operator "+opname+" incompatible dimensions")
+  						throw new RuntimeException("Operator "+opname+" incompatible dimensions "+printDims(dims1) +"  "+ printDims(dims2));
   					}
   				}
   			}
@@ -326,7 +337,7 @@ object ND {
   					if (nr > 0) {
   						(nr, nc, nr, 1);
   					} else {
-  						throw new RuntimeException("Operator "+opname+" incompatible dimensions ("+dims1.toString+")   ("+ dims2.toString+")")
+  						throw new RuntimeException("Operator "+opname+" incompatible dimensions "+printDims(dims1) +"  "+ printDims(dims2));
   					}
   				}
   			}
