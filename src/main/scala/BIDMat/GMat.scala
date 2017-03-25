@@ -2009,7 +2009,7 @@ object GMat {
   }
   
   def zeros(dims:IMat) = {
-    val out = GMat(dims);
+    val out = make(dims);
     out.clear;
     out
   }
@@ -2021,7 +2021,7 @@ object GMat {
   }
   
   def ones(dims:IMat) = {
-    val out = GMat(dims);
+    val out = make(dims);
     out.set(1f);
     out
   }
