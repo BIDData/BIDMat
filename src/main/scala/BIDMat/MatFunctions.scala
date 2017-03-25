@@ -1595,11 +1595,14 @@ object MatFunctions {
     out;
   }
   
-  def oneHot(c:IMat, ncats:Int):SMat = cat2sparse(c, ncats);
-  def oneHot(c:IMat):SMat = cat2sparse(c, 0);
+  def oneHot(c:IMat, ncats:Int):SMat = {
+    c match {
+      case cc:GIMat => GSMat.oneHot(cc, ncats);
+      case _ => cat2sparse(c, ncats);
+    }
+  }
   
-  def oneHot(c:GIMat, ncats:Int):GSMat = GSMat.oneHot(c, ncats);
-  def oneHot(c:GIMat):GSMat = GSMat.oneHot(c, 0);
+  def oneHot(c:IMat):SMat = oneHot(c, 0);
   
   def oneHot(c:Mat, ncats:Int):Mat = {
     c match {
