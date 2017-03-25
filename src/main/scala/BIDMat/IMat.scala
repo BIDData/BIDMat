@@ -68,9 +68,21 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
     this
   }
   
-  def horzcat(b: IMat) = IMat(ghorzcat(b))
+  def horzcat(b: IMat):IMat = {
+    (this, b) match {
+      case (aa:IMat, bb:GIMat) => GIMat(aa).horzcat(bb, null);
+      case (aa:GIMat, bb:IMat) => aa.horzcat(GIMat(bb), null);
+      case _ => IMat(ghorzcat(b));
+    }
+  }
   
-  def vertcat(b: IMat) = IMat(gvertcat(b))
+  def vertcat(b: IMat):IMat = {
+  	(this, b) match {
+      case (aa:IMat, bb:GIMat) => GIMat(aa).vertcat(bb, null);
+      case (aa:GIMat, bb:IMat) => aa.vertcat(GIMat(bb), null);
+      case _ => IMat(gvertcat(b));
+  	}
+  }
   
   override def nnz:Int = {
     var count:Int = 0
