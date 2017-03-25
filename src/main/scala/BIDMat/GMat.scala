@@ -550,6 +550,8 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   
   override def ones(nr:Int, nc:Int) = GMat.ones(nr, nc);
   
+  override def ones(dims:IMat) = GMat.ones(dims);
+  
   override def zero = GMat.zeros(1, 1);
   
   override def one = GMat.ones(1, 1);
@@ -558,8 +560,16 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     GIMat.izeros(m,n)
   }
   
+  override def izeros(dims:IMat) = {
+    GIMat.izeros(dims);
+  }
+  
   override def iones(m:Int, n:Int) = {
     GIMat.iones(m,n)
+  }
+  
+  override def iones(dims:IMat) = {
+    GIMat.iones(dims)
   }
   
   def horzcat(aa:FMat, omat:Mat) = {

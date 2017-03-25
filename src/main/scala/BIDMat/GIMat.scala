@@ -1063,10 +1063,22 @@ object GIMat {
     out
   }
   
+  def izeros(dims:IMat):GIMat = {
+    val out = make(dims);
+    out.clear;
+    out;
+  }
+  
   def iones(m:Int, n:Int):GIMat = {
     val out = GIMat(m,n)
     out.set(1)
     out
+  }
+  
+  def iones(dims:IMat):GIMat = {
+    val out = make(dims);
+    out.set(1);
+    out;
   }
   
    def GPUtoGPUarraycopy(a:Pointer, aoffset:Int,  b:Pointer, boffset:Int, len:Int, msg:String ) = {

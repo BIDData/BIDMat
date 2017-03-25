@@ -609,9 +609,17 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   override def zeros(nr:Int, nc:Int, nnz:Int) = {
     FMat.zeros(nr, nc)
   }
-
+  
+  override def zeros(dims:IMat) = {
+    FMat.zeros(dims)
+  }
+  
   override def ones(nr:Int, nc:Int) = {
   	FMat.ones(nr, nc)
+  }
+  
+  override def ones(dims:IMat) = {
+  	FMat.ones(dims)
   }
   
   override def one = {
@@ -625,9 +633,17 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   override def izeros(m:Int, n:Int) = {
     IMat.izeros(m,n)
   }
+  
+  override def izeros(dims:IMat) = {
+    IMat.izeros(dims)
+  }
 
   override def iones(m:Int, n:Int) = {
     IMat.iones(m,n)
+  }
+  
+  override def iones(dims:IMat) = {
+    IMat.iones(dims)
   }
 
   override def clearUpper(off:Int) = setUpper(0, off)
