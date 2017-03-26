@@ -3,8 +3,10 @@ import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.LAPACK._
 import java.util.Arrays
 
-case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, nc, data0) {
+case class CMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float](dims0, data) {
 
+  def this(nr:Int, nc:Int, data:Array[Float]) = this(Array(nr, nc), data);
+  
   override def dv:Double =
     if (nrows > 1 || ncols > 1) {
       throw new RuntimeException("Matrix should be 1x1 to extract value")
@@ -59,14 +61,6 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   override def apply(i:Int, jv:IMat):CMat = {
   	applyx(IMat.ielem(i), jv)
   }
-
-  override def apply(a:Mat):CMat = applyx(a.asInstanceOf[IMat])
-    
-  override def apply(a:Mat, b:Mat):CMat = applyx(a.asInstanceOf[IMat], b.asInstanceOf[IMat])
-  
-  override def apply(a:Mat, b:Int):CMat = applyx(a.asInstanceOf[IMat], IMat.ielem(b))
-  
-  override def apply(a:Int, b:Mat):CMat = applyx(IMat.ielem(a), b.asInstanceOf[IMat])
   
   def update(I:IMat, V:CMat) = updatex(I, V)
   
@@ -83,14 +77,6 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   override def update(I:IMat, j:Int, V:Mat) = updatex(I, IMat.ielem(j), V.asInstanceOf[CMat])
   
   override def update(i:Int, J:IMat, V:Mat) = updatex(IMat.ielem(i), J, V.asInstanceOf[CMat])
-  
-  override def update(I:Mat, V:Mat) = updatex(I.asInstanceOf[IMat], V.asInstanceOf[CMat])
-  
-  override def update(I:Mat, J:Mat, V:Mat) = updatex(I.asInstanceOf[IMat], J.asInstanceOf[IMat], V.asInstanceOf[CMat])
-    
-  override def update(I:Mat, j:Int, V:Mat) = updatex(I.asInstanceOf[IMat], IMat.ielem(j), V.asInstanceOf[CMat])
-  
-  override def update(i:Int, J:Mat, V:Mat) = updatex(IMat.ielem(i), J.asInstanceOf[IMat], V.asInstanceOf[CMat])
 
   def update(r0:Int, c0:Int, v:CMat):CMat = {
     val off = Mat.oneBased
@@ -1194,7 +1180,7 @@ case class CMat(nr:Int, nc:Int, data0:Array[Float]) extends DenseMat[Float](nr, 
   }
 }
 
-class CPair (val omat:Mat, val mat:CMat) extends Pair {
+class CPair (val omat:Mat, val mat:CMat) extends Pair(omat, mat) {
   
   override def t:CMat = CMat(mat.gt(omat))
   
@@ -1248,8 +1234,29 @@ class CPair (val omat:Mat, val mat:CMat) extends Pair {
 
 object CMat {
   
-  def apply(nr:Int, nc:Int) = new CMat(nr, nc, new Array[Float](2*nr*nc))
+  def apply(nr:Int, nc:Int) = {
+    if (Mat.debugMem) {
+      println("CMat %d %d" format (nr, nc))
+      if (nr*nc*2 > Mat.debugMemThreshold) throw new RuntimeException("CMat alloc too large");
+    }
+    new CMat(nr, nc, new Array[Float](2*nr*nc));
+  }
   
+  def make(dims:Array[Int]):CMat = {
+    val length = 2*dims.reduce(_*_);
+    if (Mat.debugMem) {
+      print("CMat"); 
+      dims.foreach((x) => print(" %d" format x));
+      println("");
+      if (length > Mat.debugMemThreshold) throw new RuntimeException("FMat alloc too large");
+    }
+    new CMat(dims, new Array[Float](length));   
+  }
+  
+   def make(dims:IMat):CMat = {
+     make(dims.data)   
+  }
+   
   def real(a:FMat):CMat = {
     val out = CMat.newOrCheckCMat(a.nrows, a.ncols, null, a.GUID, "real".##)
     var i = 0

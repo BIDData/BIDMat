@@ -100,7 +100,7 @@ object IDict {
     val (outy, ia, ib) = uniquerows(grams)
     val countsy = accum(ib, if (counts == null) drow(1.0) else counts, outy.nrows, 1)
     if (countsort) {    	
-    	val (countsz, ip) = GMat.sortdown2(countsy)
+    	val (countsz, ip) = GFunctions.sortdown2(countsy)
     	IDict(outy(ip, ?), countsz)
     } else {
       IDict(outy, countsy)

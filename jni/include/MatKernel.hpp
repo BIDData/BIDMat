@@ -48,6 +48,8 @@ int sdopcol(int nrows, int ncols, int nnz, double *A, int *Aic, double *B, int l
 
 int copyToInds(float *A, float *B, int *I, long long len);
 
+int copyToIndsLong(long long *A, long long *B, int *I, long long len);
+
 int copyFromInds(float *A, float *B, int *I, long long len);
 
 int copyToInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols);
@@ -58,9 +60,25 @@ int copyToInds4D(float *A, int lda, int rda, int tda, float *B, int ldb, int rdb
 
 int copyToInds2DLong(long long *A, int lda, long long *B, int ldb, int *I, int nrows, int *J, int ncols);
 
+int copyToInds3DLong(long long *A, int lda, int rda, long long *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk);
+
+int copyToInds4DLong(long long *A, int lda, int rda, int tda, long long *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl);
+
+int fillToInds(float A, float *B, int *I, long long len);
+
 int fillToInds2D(float A, float *B, int ldb, int *I, int nrows, int *J, int ncols);
 
+int fillToInds3D(float A, float *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk);
+
+int fillToInds4D(float A, float *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl);
+
+int fillToIndsLong(long long A, long long *B, int *I, long long len);
+
 int fillToInds2DLong(long long A, long long *B, int ldb, int *I, int nrows, int *J, int ncols);
+
+int fillToInds3DLong(long long A, long long *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk);
+
+int fillToInds4DLong(long long A, long long *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl);
 
 int copyFromInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols);
 
@@ -78,13 +96,17 @@ int set_lval(long long *A, long long val, int length);
 
 int full(int *ir, int *ic, float *data, float *od, int nrows, int ncols, int nnz);
 
-int toFloat(int *A, float *B, int N);
+int intToFloat(int *A, float *B, int N);
 
 int longToFloat(long long *A, float *B, int N);
 
 int floatToLong(float *A, long long *B, int N);
 
-int toInt(float *A, int *B, int N);
+int floatToInt(float *A, int *B, int N);
+
+int longToInt(long long *A, int *B, int N);
+
+int intToLong(int *A, long long *B, int N);
 
 template <typename T>
 int kron(T *A, T *B, T *C, int nrA, int ncA, int nrB, int ncB);

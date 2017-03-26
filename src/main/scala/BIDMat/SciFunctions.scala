@@ -8,34 +8,16 @@ import edu.berkeley.bid.RAND;
 import edu.berkeley.bid.RAND._;
 import edu.berkeley.bid.SLATEC;
 import java.util.Random._;
-import MatFunctions._
+import MatFunctions._;
+import SciState._;
 import org.apache.commons.math3.special._
 import org.apache.commons.math3.util.FastMath
 import org.apache.commons.math3.random.RandomDataGenerator;
 
 object SciFunctions {
-  var SEED:Long = 1452434413113462553L;
-  var ISEED:Int = 1341432134;
-  var OFFSET:Long = 0;
-  var GPUSEED:Long = SEED;
-  var GPUseedSteps:Int = 10;
-  final val myrand = new java.util.Random(SEED);
-  final val acmrand = new RandomDataGenerator();
-  acmrand.reSeed(SEED);
-  // VSL random number generator initialization
-  final val BRNG:Int = if (!Mat.useMKLRand) 0 else BRNG_MCG31
-  final val METHOD:Int = 0
-  final val stream = if (Mat.useMKLRand) new VSL() else null;
-  final val errcode = if (Mat.useMKLRand) vslNewStream(stream, BRNG, ISEED) else 0;
-  final val engine = if (Mat.useSTLRand) new RAND() else null;
-  final val errcode2 = if (Mat.useSTLRand) newEngine(engine, 0, ISEED) else 0;
-  // VML mode control, controlled with setVMLmode()
-  final val VMLdefault = if (!Mat.useMKLRand) 0 else VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_HA   // Default
-  final val VMLfast =    if (!Mat.useMKLRand) 0 else VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_LA   // Faster, Low accuracy, default error handling
-  final val VMLturbo =   if (!Mat.useMKLRand) 0 else VMLMODE.VML_ERRMODE_DEFAULT | VMLMODE.VML_EP   // Fastest, Lower accuracy, default error handling
 
   if (Mat.hasCUDA > 0) {
-  	GMat.initJCUDA
+  	GFunctions.initJCUDA
   	initCUDArngs
   }
   
@@ -44,29 +26,29 @@ object SciFunctions {
     Mat.checkCUDA;
   }
   
-  def initCUDArngs = GMat.initCUDArngs;
+  def initCUDArngs = GFunctions.initCUDArngs;
   
-  def initCUDArng(igpu:Int) = GMat.initCUDArng(igpu);
+  def initCUDArng(igpu:Int) = GFunctions.initCUDArng(igpu);
   
-  def resetGPU = GMat.resetGPU;
+  def resetGPU = GFunctions.resetGPU;
   
-  def resetGPUs = GMat.resetGPUs;
+  def resetGPUs = GFunctions.resetGPUs;
   
-  def initJCUDA = GMat.initJCUDA;
+  def initJCUDA = GFunctions.initJCUDA;
   
-  def setGPU(i:Int) = GMat.setGPU(i);
+  def setGPU(i:Int) = GFunctions.setGPU(i);
   
-  def getGPU:Int = GMat.getGPU;
+  def getGPU:Int = GFunctions.getGPU;
   
-  def connect(i:Int) = GMat.connect(i);
+  def connect(i:Int) = GFunctions.connect(i);
   
-  def disconnect(i:Int) = GMat.disconnect(i);
+  def disconnect(i:Int) = GFunctions.disconnect(i);
   
-  def canconnect(i:Int) = GMat.canconnect(i);
+  def canconnect(i:Int) = GFunctions.canconnect(i);
   
-  def GPUmem = GMat.GPUmem;
+  def GPUmem = GFunctions.GPUmem;
   
-  def GPUmemory = GMat.GPUmemory;
+  def GPUmemory = GFunctions.GPUmemory;
   
   def setNumThreads(n:Int) = edu.berkeley.bid.UTILS.setnumthreads(n);
   
@@ -88,22 +70,30 @@ object SciFunctions {
     }
   }
   
-  def setseed(seed:Int, igpu:Int):Unit = GMat.setseed(seed, igpu);
+  def setseed(seed:Int, igpu:Int):Unit = GFunctions.setseed(seed, igpu);
     
-  def norm(a:FMat) = math.sqrt(sdot(a.length, a.data, 1, a.data, 1)).toFloat
+  def norm(a:FMat):Double = {
+    a match {
+      case aa:GMat => GFunctions.norm(aa);
+      case aa:FMat => FFunctions.norm(aa);
+    }
+  }
   
-  def norm(a:DMat) = math.sqrt(ddot(a.length, a.data, 1, a.data, 1))
+  def norm(a:DMat):Double = {
+    a match {
+      case aa:GDMat => GDFunctions.norm(aa);
+      case aa:DMat => DFunctions.norm(aa);
+    }
+  } 
   
-  def norm(a:GMat):Double = GMat.norm(a);
+  def norm(a:GMat):Double = GFunctions.norm(a);
   
-  def norm(a:GDMat):Double = GDMat.norm(a);
+  def norm(a:GDMat):Double = GDFunctions.norm(a);
   
   def norm (a:Mat):Double = {
     a match {
       case aa:FMat => norm(aa)
       case aa:DMat => norm(aa)
-      case aa:GMat => norm(aa)
-      case aa:GDMat => norm(aa)
     }
   }
   
@@ -114,237 +104,83 @@ object SciFunctions {
     sum(acopy)
   }  
   
-  def rand(minv:Float, maxv:Float, out:FMat):FMat = {
-    if (Mat.useMKLRand) {
-    	vsRngUniform( METHOD, stream, out.length, out.data, minv, maxv );
-    } else if (Mat.useSTLRand) {
-    	SUniform(0, engine, out.length, out.data, minv, maxv);
-    } else {
-    	var i = 0; val len = out.length; val odata = out.data; 
-    	while (i < len) {odata(i) = myrand.nextFloat; i += 1}     
-    }
-    Mat.nflops += 10L*out.nrows*out.ncols
-    out
-  }
+  def rand(minv:Float, maxv:Float, out:FMat):FMat = FFunctions.rand(minv, maxv, out);
+  def rand(m:Int, n:Int, minv:Float, maxv:Float):FMat = FFunctions.rand(minv, maxv, FMat(m, n)); 
+  def rand(dims:IMat, minv:Float, maxv:Float):FMat = FFunctions.rand(minv, maxv, FMat.make(dims));
+  def rand(m:Int, n:Int):FMat = rand(m, n, 0, 1); 
+  def rand(dims:IMat):FMat = rand(dims, 0, 1);
+  def rand(out:FMat):FMat = rand(0.0f, 1.0f, out);
   
-  def rand(m:Int, n:Int, minv:Float, maxv:Float):FMat = rand(minv, maxv, FMat(m, n))
-  
-  def rand(m:Int, n:Int):FMat = rand(m, n, 0, 1)
-  
-  def rand(out:FMat):FMat = rand(0.0f, 1.0f, out)
-  
-  def rand(minv:Double, maxv:Double, out:DMat):DMat = {
-	if (Mat.useMKLRand) {
-    	vdRngUniform( METHOD, stream, out.length, out.data, minv, maxv );
-    } else if (Mat.useSTLRand) {
-    	DUniform(0, engine, out.length, out.data, minv, maxv);
-    } else {
-      var i = 0; val len = out.length; val odata = out.data; 
-      while (i < len) {odata(i) = myrand.nextDouble; i += 1}     
-    } 
-    Mat.nflops += 10L*out.nrows*out.ncols
-    out
-  }
-  
-  def drand(m:Int, n:Int, minv:Double, maxv:Double):DMat = rand(minv, maxv, DMat(m, n));
-  
+  def rand(minv:Double, maxv:Double, out:DMat):DMat = DFunctions.rand(minv, maxv, out); 
+  def drand(m:Int, n:Int, minv:Double, maxv:Double):DMat = DFunctions.rand(minv, maxv, DMat(m, n));
+  def drand(dims:IMat, minv:Double, maxv:Double):DMat = DFunctions.rand(minv, maxv, DMat.make(dims));
   def drand(m:Int, n:Int):DMat = drand(m, n, 0, 1);
-  
+  def drand(dims:IMat):DMat = drand(dims, 0, 1);
   def rand(out:DMat):DMat = rand(0.0, 1.0, out);
   
-  def rand(out:GMat):GMat = GMat.rand(out);
-  
-  def grand(nr:Int, nc:Int):GMat = {
-    val out = GMat(nr, nc)
-    GMat.rand(out)
-  } 
-  
-  def gndrand(dims:IMat):GND = {
-    val out = GND(dims);
-    GND.rand(out);
-    out
-  } 
-  
-  def rand(g:GND):GND = {
-    GND.rand(g);
-    g
-  }
-  
-  def rand(dims:IMat):FND = {
-    val out = FND(dims);
-    FND.rand(out);
-    out
-  } 
-  
-  def rand(f:FND):FND = {
-    FND.rand(f);
-    f
-  }
-  
-  def rand(out:GDMat):GDMat = GDMat.rand(out)
-  
-  def gdrand(nr:Int, nc:Int):GDMat = {
-    val out = GDMat(nr, nc);
-    rand(out);
-    out
-  }
+  def rand(out:GMat):GMat = GFunctions.rand(out); 
+  def grand(nr:Int, nc:Int):GMat = GFunctions.rand(Array(nr, nc));
+  def grand(dims:IMat):GMat = GFunctions.rand(dims);
+ 
+  def rand(out:GDMat):GDMat = GDFunctions.rand(out);
+  def gdrand(nr:Int, nc:Int):GDMat = GDFunctions.rand(Array(nr, nc));
+  def gdrand(dims:IMat):GDMat = GDFunctions.rand(dims);
   
   def rand(mat:Mat):Mat = {
     mat match {
-      case a:FMat => rand(a);
-      case d:DMat => rand(d);
-      case g:GMat => GMat.rand(g);
-      case gd:GDMat => GDMat.rand(gd);
-    }
-  }
-  
-  def rand(mat:ND):ND = {
-    mat match {
-      case a:Mat => rand(a);
-      case g:GND => rand(g);
-      case g:FND => rand(g);
+    case g:GMat => GFunctions.rand(g);
+    case gd:GDMat => GDFunctions.rand(gd);
+    case a:FMat => rand(a);
+    case d:DMat => rand(d);
     }
   }
  
-  def normrnd(mu:Float, sig:Float, out:FMat):FMat = {
-    if (Mat.useMKLRand) {
-      vsRngGaussian(METHOD, stream, out.length, out.data, mu, sig );
-    } else if (Mat.useSTLRand) {
-      SNormal(METHOD, engine, out.length, out.data, mu, sig);
-    } else {
-      var i = 0; val len = out.length; val odata = out.data; 
-      while (i < len) {odata(i) = mu + sig*myrand.nextGaussian.toFloat; i += 1}  
-    }
-    Mat.nflops += 10L*out.length
-    out
-  }
+  def normrnd(mu:Float, sig:Float, out:FMat):FMat = FFunctions.normrnd(mu, sig, out);  
+  def normrnd(mu:Float, sig:Float, m:Int, n:Int):FMat = normrnd(mu, sig, FMat(m, n));
+  def normrnd(mu:Float, sig:Float, dims:IMat):FMat = normrnd(mu, sig, FMat.make(dims));
+
+  def normrnd(mu:Double, sig:Double, out:DMat):DMat = DFunctions.normrnd(mu, sig, out);
+  def dnormrnd(mu:Double, sig:Double, m:Int, n:Int):DMat = normrnd(mu, sig, DMat(m, n));
+  def dnormrnd(mu:Float, sig:Float, dims:IMat):DMat = normrnd(mu, sig, DMat.make(dims));  
   
-  def normrnd(mu:Float, sig:Float, m:Int, n:Int):FMat = {
-    normrnd(mu, sig, FMat(m, n))
-  }
+  def normrnd(mu:Float, sig:Float, out:CMat):CMat = CFunctions.normrnd(mu, sig, out);
+  def cnormrnd(mu:Float, sig:Float, m:Int, n:Int):CMat = normrnd(mu, sig, CMat(m, n));
+  def cnormrnd(mu:Float, sig:Float, dims:IMat):CMat = normrnd(mu, sig, CMat.make(dims));
   
-  def normrnd(mu:Double, sig:Double, out:DMat):DMat = {
-    if (Mat.useMKLRand) {
-    	vdRngGaussian( METHOD, stream, out.length, out.data, mu, sig );
-    } else if (Mat.useSTLRand) {
-      DNormal(METHOD, engine, out.length, out.data, mu, sig);
-    } else {
-      var i = 0; val len = out.length; val odata = out.data; 
-      while (i < len) {odata(i) = mu + sig*myrand.nextGaussian; i += 1}  
-    }
-    Mat.nflops += 10L*out.length
-    out
-  }
+  def normrnd(mu:Float, sig:Float, out:GMat):GMat = GFunctions.normrnd(mu, sig, out)
+  def gnormrnd(mu:Float, sig:Float, nr:Int, nc:Int):GMat = GFunctions.normrnd(mu, sig, GMat(nr, nc));
+  def gnormrnd(mu:Float, sig:Float, dims:IMat):GMat = GFunctions.normrnd(mu, sig, GMat.make(dims));
   
-  def dnormrnd(mu:Double, sig:Double, m:Int, n:Int):DMat = {
-    normrnd(mu, sig, DMat(m, n))
-  }
-  
-  def normrnd(mu:Float, sig:Float, out:CMat):CMat = {
-    if (!Mat.useMKLRand) {
-      var i = 0; val len = out.length; val odata = out.data; 
-      while (i < 2*len) {odata(i) = mu + sig*myrand.nextGaussian.toFloat; i += 1}  
-    } else {
-      vsRngGaussian(METHOD, stream, 2*out.length, out.data, mu, sig )
-    }
-    Mat.nflops += 10L*out.length
-    out  
-  }
-  
-  def cnormrnd(mu:Float, sig:Float, m:Int, n:Int):CMat = {
-    normrnd(mu, sig, CMat(m, n))
-  }
-  
-  def normrnd(mu:Float, sig:Float, out:GMat):GMat = GMat.normrnd(mu, sig, out)
-  
-  def gnormrnd(mu:Float, sig:Float, nr:Int, nc:Int):GMat = {
-    val out = GMat(nr, nc)
-    GMat.normrnd(mu, sig, out)
-  }
-  
-  def normrnd(mu:Double, sig:Double, out:GDMat):GDMat = GDMat.normrnd(mu, sig, out);
-  
-  def gdnormrnd(mu:Double, sig:Double, nr:Int, nc:Int):GDMat = {
-    val out = GDMat(nr, nc);
-    GDMat.normrnd(mu, sig, out);
-    out
-  }
-  
-  def gndnormrnd(mu:Float, sig:Float, dims:IMat):GND = {
-    val out = GND(dims);
-    GND.normrnd(mu, sig, out);
-    out
-  } 
-  
-  def normrnd(mu:Float, sig:Float, g:GND):GND = {
-    GND.normrnd(mu, sig, g);
-    g
-  }
-  
-  def normrnd(mu:Float, sig:Float, dims:IMat):FND = {
-    val out = FND(dims);
-    FND.normrnd(mu, sig, out);
-    out
-  } 
-  
-  def normrnd(mu:Float, sig:Float, f:FND):FND = {
-    FND.normrnd(mu, sig, f);
-    f
-  }
-  
+  def normrnd(mu:Double, sig:Double, out:GDMat):GDMat = GDFunctions.normrnd(mu, sig, out);
+  def gdnormrnd(mu:Double, sig:Double, nr:Int, nc:Int):GDMat =  GDFunctions.normrnd(mu, sig, GDMat(nr, nc));
+  def gdnormrnd(mu:Float, sig:Float, dims:IMat):GDMat = GDFunctions.normrnd(mu, sig, GDMat.make(dims));
+ 
   def normrnd(mu:Double, sig:Double, out:Mat):Mat = {
     out match {
-      case a:FMat => normrnd(mu.toFloat, sig.toFloat, a);
-      case a:DMat => normrnd(mu, sig, a);
-      case a:GMat => normrnd(mu.toFloat, sig.toFloat, a);
-      case a:GDMat => normrnd(mu, sig, a);
+    case a:GMat => normrnd(mu.toFloat, sig.toFloat, a);
+    case a:GDMat => normrnd(mu, sig, a);
+    case a:FMat => normrnd(mu.toFloat, sig.toFloat, a);
+    case a:DMat => normrnd(mu, sig, a);
+    case a:CMat => normrnd(mu, sig, a);
     }
   }
+
+  def poissrnd(lambda:FMat, out:IMat):IMat = FFunctions.poissrnd(lambda, out);
+  def poissrnd(lambda:FMat):IMat = poissrnd(lambda, IMat.make(lambda.dims));
   
-  def normrnd(mu:Double, sig:Double, out:ND):ND = {
-    out match {
-      case a:Mat => normrnd(mu, sig, a);
-      case a:FND => normrnd(mu.toFloat, sig.toFloat, a);
-      case a:GND => normrnd(mu.toFloat, sig.toFloat, a);
-    }
-  }
+  def poissrnd(lambda:Float, out:IMat):IMat = FFunctions.poissrnd(lambda, out);
+
+  def gpoissrnd(mu:Float, nr:Int, nc:Int):GIMat =  GFunctions.poissrnd(mu, GIMat(nr, nc));
+  def gpoissrnd(mu:Float, dims:IMat):GIMat =  GFunctions.poissrnd(mu, GIMat.make(dims));
   
-  def poissrnd(lambda:FMat, out:IMat):IMat = {
-    checkSizes(lambda, out);
-    if (Mat.useMKLRand) {
-    	viRngPoissonV( METHOD, stream, out.length, out.data, DMat(lambda).data );
-    } else if (Mat.useSTLRand) {
-      IPoissonV(METHOD, engine, out.length, out.data, lambda.data)
-    } else {
-    	var i = 0; while (i < out.length) {out.data(i) = acmrand.nextPoisson(lambda.data(i)).toInt; i += 1;}  
-    }
-    Mat.nflops += 20L*out.length
-    out
-  }
-  
-  def poissrnd(lambda:FMat):IMat = {
-    poissrnd(lambda, IMat(lambda.nrows, lambda.ncols))
-  }
-  
-  def gpoissrnd(mu:Float, nr:Int, nc:Int):GIMat = {
-    val out = GIMat(nr, nc);
-    GMat.poissrnd(mu, out);
-    out
-  }
-  
-  def poissrnd(mu:GMat, out:GIMat):GIMat = GMat.poissrnd(mu, out);
-  
-  def poissrnd(mu:GMat):GIMat = {
-    val out = GIMat(mu.nrows, mu.ncols);
-    GMat.poissrnd(mu, out);
-  }
-  
-  def poissrnd(mu:Float, out:GIMat):GIMat = GMat.poissrnd(mu, out);
+  def poissrnd(mu:GMat, out:GIMat):GIMat = GFunctions.poissrnd(mu, out);
+  def poissrnd(mu:GMat):GIMat = GFunctions.poissrnd(mu, GIMat.make(mu.dims));
+  def poissrnd(mu:Float, out:GIMat):GIMat = GFunctions.poissrnd(mu, out);
   
   def poissrnd(lambda:Mat, out:Mat):Mat = {
     (lambda, out) match {
-      case (a:FMat, b:IMat) => poissrnd(a, b);
       case (a:GMat, b:GIMat) => poissrnd(a, b);
+      case (a:FMat, b:IMat) => poissrnd(a, b);
     }
   }
 
@@ -356,459 +192,402 @@ object SciFunctions {
     }
   }
    
-  def gamrnd(a:FMat, b:FMat, out:FMat):FMat = { 
-    Random.gamrnd(a, b, out, myrand);
-  } 
-  
   def gamrnd(a:FMat, b:FMat):FMat = { 
     val nrows = math.max(a.nrows, b.nrows);
     val ncols = math.max(a.ncols, b.ncols);
     val out = FMat(nrows, ncols);
-    gamrnd(a, b, out);
+    FFunctions.gamrnd(a, b, out);
   }
 
-  def gamrnd(shape:Float, scale:Float, out:FMat):FMat = {
-    if (Mat.useMKLRand) {
-    	vsRngGamma( METHOD, stream, out.length, out.data, shape, 0, scale );
-    } else if (Mat.useSTLRand) {
-      SGamma( METHOD, engine, out.length, out.data, shape, scale );
-    } else {
-      var i = 0;
-      while (i < out.length) {out.data(i) = acmrand.nextGamma(shape, scale).toFloat; i += 1;}
-    }
-    Mat.nflops += 20L*out.length
-    out
-  }
-
-  def gamrnd(shape:Float, scale:Float, m:Int, n:Int):FMat = {
-    gamrnd(shape, scale, FMat(m, n))
-  }
-  
-  def gamrnd(shape:Double, scale:Double, out:DMat):DMat = {
-    vdRngGamma( METHOD, stream, out.length, out.data, shape, 0, scale )
-    Mat.nflops += 20L*out.length;
-      if (Mat.useMKLRand) {
-    	vdRngGamma( METHOD, stream, out.length, out.data, shape, 0, scale );
-    } else if (Mat.useSTLRand) {
-      DGamma(METHOD, engine, out.length, out.data, shape, scale);
-    } else {
-    	var i = 0; while (i < out.length) {out.data(i) = acmrand.nextGamma(shape, scale); i += 1;}  
-    }
-    out
-     
-  }
-
-  def dgamrnd(shape:Double, scale:Double, m:Int, n:Int):DMat = {
-    gamrnd(shape, scale, DMat(m, n))
-  }
+  def gamrnd(shape:Float, scale:Float, out:FMat):FMat = FFunctions.gamrnd(shape, scale, out);
+  def gamrnd(shape:Float, scale:Float, m:Int, n:Int):FMat = gamrnd(shape, scale, FMat(m, n));
+  def gamrnd(shape:Float, scale:Float, dims:IMat):FMat = gamrnd(shape, scale, FMat.make(dims)); 
+ 
+  def gamrnd(shape:Float, scale:Float, out:DMat):DMat = DFunctions.gamrnd(shape, scale, out);
+  def dgamrnd(shape:Double, scale:Double, m:Int, n:Int):DMat = DFunctions.gamrnd(shape, scale, DMat(m, n));
+  def dgamrnd(shape:Double, scale:Double, dims:IMat):DMat = DFunctions.gamrnd(shape, scale, DMat.make(dims));
   
   def gamrnd(a:Mat, b:Mat, out:Mat):Mat = {
-    (a,b,out) match {
-      case (a:GMat, b:GMat, out:GMat) => gamrnd(a,b,out)
-      case (a:FMat, b:FMat, out:FMat) => gamrnd(a,b,out)
-      case _ => throw new RuntimeException("Error in genericGammaRand, arguments do not match any of the cases")
+    (a,b) match {
+      case (a:GMat, b:GMat) => GFunctions.gamrnd(a,b,out.asInstanceOf[GMat])
+      case (a:FMat, b:FMat) => FFunctions.gamrnd(a,b,out.asInstanceOf[FMat]);
+      case _ => throw new RuntimeException("Error in gamrnd, arguments do not match any of the cases")
     }
   }
   
-  def gamrnd(a:GMat, b:GMat, out:GMat):GMat = GMat.gamrnd(a, b, out);
+  def gamrnd(a:GMat, b:GMat, out:GMat):GMat = GFunctions.gamrnd(a, b, out);
+  def gamrnd(a:GMat, b:GMat):GMat = GFunctions.gamrnd(a, b, GMat(a.nrows, a.ncols));
+  
+  def laprnd(a:Float, b:Float, out:FMat):FMat = FFunctions.laprnd(a, b, out);
+  def laprnd(a:Float, b:Float, m:Int, n:Int):FMat = laprnd(a, b, FMat(m, n));
 
-  def gamrnd(a:GMat, b:GMat):GMat = GMat.gamrnd(a, b, GMat(a.nrows, a.ncols));
-  
-  def laprnd(a:Float, b:Float, out:FMat):FMat = {
-    vsRngLaplace( METHOD, stream, out.length, out.data, a, b )
-    Mat.nflops += 20L*out.length
-    out
-  }
-  
-  def laprnd(a:Float, b:Float, m:Int, n:Int):FMat = {
-    laprnd(a, b, FMat(m, n))
-  }
+  def cauchyrnd(a:Float, b:Float, out:FMat):FMat = FFunctions.cauchyrnd(a, b, out);
+  def cauchyrnd(a:Float, b:Float, m:Int, n:Int):FMat = cauchyrnd(a, b, FMat(m, n));
 
-  def cauchyrnd(a:Float, b:Float, out:FMat):FMat = {
-  	if (Mat.useMKLRand) {
-  		vsRngCauchy( METHOD, stream, out.length, out.data, a, b );
-  	} else if (Mat.useSTLRand) {
-  	  SCauchy(METHOD, engine, out.length, out.data, a, b);
-  	} else {
-  		var i = 0; while (i < out.length) {out.data(i) = acmrand.nextCauchy(a, b).toFloat; i += 1;}
-  	}
-    Mat.nflops += 20L*out.length
-    out
-  }
-  
-  def cauchyrnd(a:Float, b:Float, m:Int, n:Int):FMat = {
-    cauchyrnd(a, b, FMat(m, n))
-  }
+  def exprnd(a:Float, b:Float, out:FMat):FMat = FFunctions.exprnd(a, b, out);
+  def exprnd(a:Float, m:Int, n:Int):FMat = exprnd(a, 1, FMat(m, n));
+  def exprnd(a:Float, b:Float, m:Int, n:Int):FMat = exprnd(a, b, FMat(m, n));
+  def exprnd(a:Float, out:FMat):FMat = exprnd(a, 1, out);
+  def exprnd(a:Double, v:Int, out:DMat):DMat = DFunctions.exprnd(a, v, out);
+  def exprnd(a:Double, out:DMat):DMat = exprnd(a, 1, out); 
+  def dexprnd(a:Double, m:Int, n:Int):DMat = exprnd(a, 1, DMat(m, n));
+  def dexprnd(a:Double, b:Int, m:Int, n:Int):DMat = exprnd(a, b, DMat(m, n));
 
-  def exprnd(a:Float, b:Float, out:FMat):FMat = {
-    if (Mat.useMKLRand) {
-    	vsRngExponential( METHOD, stream, out.length, out.data, a, b );
-    } else if (Mat.useSTLRand) {
-      SExponential(METHOD, engine, out.length, out.data, a);
-    } else {
-  		var i = 0; while (i < out.length) {out.data(i) = acmrand.nextExponential(a).toFloat; i += 1;}      
-    }
-    Mat.nflops += 20L*out.length
-    out
-  }
+  def betarnd(p:Float, q:Float, out:FMat):FMat = FFunctions.betarnd(p, q, out);
+  def betarnd(p:Float, q:Float, m:Int, n:Int):FMat = betarnd(p, q, FMat(m, n));
   
-  def exprnd(a:Float, m:Int, n:Int):FMat = {
-    exprnd(a, 1, FMat(m, n))
-  }
+  def binornd(k:Int, p:Double, out:IMat):IMat = FFunctions.binornd(k, p, out);
+  def binornd(k:IMat, p:FMat, out:IMat):IMat = FFunctions.binornd(k, p, out);
+  def binornd(k:Int, p:Double, m:Int, n:Int):IMat = binornd(k, p, IMat(m, n));
+  
+  def bernrnd(p:Double, out:IMat):IMat = FFunctions.bernrnd(p, out);
+  def bernrnd(p:Double, m:Int, n:Int):IMat =  bernrnd(p, IMat(m, n));
 
-  def exprnd(a:Float, b:Float, m:Int, n:Int):FMat = {
-    exprnd(a, b, FMat(m, n))
-  }
+  def geornd(p:Double, out:IMat):IMat = FFunctions.geornd(p, out);
+  def geornd(p:Double, m:Int, n:Int):IMat = geornd(p, IMat(m, n));
   
-  def exprnd(a:Float, out:FMat):FMat = {
-    exprnd(a, 1, out)
-  }
+  def nbinrnd(a:Double, p:Double, out:IMat):IMat = FFunctions.nbinrnd(a, p, out);
+  def nbinrnd(a:Double, p:Double, m:Int, n:Int):IMat = nbinrnd(a, p, IMat(m, n));
   
-  def dexprnd(a:Double, b:Double, out:DMat):DMat = {
-    if (Mat.useMKLRand) {
-    	vdRngExponential( METHOD, stream, out.length, out.data, a, b);
-    } else if (Mat.useSTLRand) {
-      DExponential(METHOD, engine, out.length, out.data, a);
-    } else {
-    	var i = 0; while (i < out.length) {out.data(i) = acmrand.nextExponential(a); i += 1;}  
-    }
-    Mat.nflops += 20L*out.length
-    out
-  }
+  def poissrnd(lambda:Double, out:IMat):IMat = FFunctions.poissrnd(lambda, out);
+  def poissrnd(lambda:Double, m:Int, n:Int):IMat = poissrnd(lambda, IMat(m, n));
+  def poissrnd(lambda:DMat, out:IMat):IMat = DFunctions.poissrnd(lambda, out);
+  def poissrnd(lambda:DMat):IMat = poissrnd(lambda, IMat(lambda.nrows, lambda.ncols));
+   
+  def laprnd(a:Double, b:Double, out:DMat):DMat = DFunctions.laprnd(a, b, out);
+  def dlaprnd(a:Double, b:Double, m:Int, n:Int):DMat = laprnd(a, b, DMat(m, n));
   
-  def dexprnd(a:Double, m:Int, n:Int):DMat = {
-    dexprnd(a, 1, DMat(m, n))
-  }
+  def cauchyrnd(a:Double, b:Double, out:DMat):DMat = DFunctions.cauchyrnd(a, b, out);
+  def dcauchyrnd(a:Double, b:Double, m:Int, n:Int):DMat = cauchyrnd(a, b, DMat(m, n));
 
-  def dexprnd(a:Double, b:Double, m:Int, n:Int):DMat = {
-    dexprnd(a, b, DMat(m, n))
-  }
-  
-  def dexprnd(a:Double, out:DMat):DMat = {
-    dexprnd(a, 1, out)
-  }
-
-  def betarnd(p:Float, q:Float, out:FMat):FMat = {
-    vsRngBeta( METHOD, stream, out.length, out.data, p, q, 0, 1 )
-    Mat.nflops += 20L*out.length
-    out
-  }
-  
-  def betarnd(p:Float, q:Float, m:Int, n:Int):FMat = {
-    betarnd(p, q, FMat(m, n))
-  }
-  
-  def dlaprnd(a:Double, b:Double, out:DMat):DMat = {
-    vdRngLaplace( METHOD, stream, out.length, out.data, a, b )
-    Mat.nflops += 20L*out.length
-    out
-  }
-  
-  def dlaprnd(a:Double, b:Double, m:Int, n:Int):DMat = {
-    dlaprnd(a, b, DMat(m, n))
-  }
-
-  def dcauchyrnd(a:Double, b:Double, out:DMat):DMat = {
-    if (Mat.useMKLRand) {
-    	vdRngCauchy( METHOD, stream, out.length, out.data, a, b);
-    } else if (Mat.useSTLRand) {
-      DCauchy(METHOD, engine, out.length, out.data, a, b);
-    } else {
-    	var i = 0; while (i < out.length) {out.data(i) = acmrand.nextCauchy(a, b); i += 1;}  
-    }
-    Mat.nflops += 20L*out.length
-    out
-  }
-  
-  def dcauchyrnd(a:Double, b:Double, m:Int, n:Int):DMat = {
-    dcauchyrnd(a, b, DMat(m, n))
-  }
-
-  def dbetarnd(p:Double, q:Double, out:DMat):DMat = {
-    vdRngBeta( METHOD, stream, out.length, out.data, p, q, 0, 1 )
-    Mat.nflops += 20L*out.length
-    out
-  }
-  
-  def dbetarnd(p:Double, q:Double, m:Int, n:Int):DMat = {
-    dbetarnd(p, q, DMat(m, n))
-  }
-
-  def binornd(k:Int, p:Double, out:IMat):IMat = {
-    if (Mat.useMKLRand) {
-    	viRngBinomial( METHOD, stream, out.length, out.data, k, p );
-    } else if (Mat.useSTLRand) {
-      IBinomial(METHOD, engine, out.length, out.data, k, p);
-    } else {
-    	var i = 0; while (i < out.length) {out.data(i) = acmrand.nextBinomial(k, p).toInt; i += 1;}  
-    }
-    Mat.nflops += 20L*out.length
-    out
-  }
-  
-  def binornd(k:Int, p:Double, m:Int, n:Int):IMat = {
-    binornd(k, p, IMat(m, n))
-  }
-  
-  def binornd(p:GMat, n:GIMat, out:GIMat):GIMat = GMat.binornd(p, n, out);
-
-  def binornd(p:GMat, n:GIMat):GIMat = GMat.binornd(p, n, GIMat(p.nrows, p.ncols));
-  
-  def bernrnd(p:Double, out:IMat):IMat = {
-    if (Mat.useMKLRand) {
-    	viRngBernoulli( METHOD, stream, out.length, out.data, p );
-    } else if (Mat.useSTLRand) {
-      IBernoulli(METHOD, engine, out.length, out.data, p);
-    } else {
-    	var i = 0; while (i < out.length) {out.data(i) = if (acmrand.nextUniform(0,1) < p) 1 else 0; i += 1;}  
-    }
-    Mat.nflops += 20L*out.length
-    out
-  }
-  
-  def bernrnd(p:Double, m:Int, n:Int):IMat = {
-    bernrnd(p, IMat(m, n))
-  }
-  
-  def geornd(p:Double, out:IMat):IMat = {
-    if (Mat.useMKLRand) {
-    	viRngGeometric( METHOD, stream, out.length, out.data, p );
-    } else if (Mat.useSTLRand) {
-      IGeometric(METHOD, engine, out.length, out.data, p);
-    } else {
-    	var i = 0; while (i < out.length) {out.data(i) = acmrand.nextExponential(p).toInt; i += 1;}  
-    }
-    Mat.nflops += 20L*out.length
-    out
-  }
-
-  def geornd(p:Double, m:Int, n:Int):IMat = {
-    geornd(p, IMat(m, n))
-  }
-  
-  def nbinrnd(a:Double, p:Double, out:IMat):IMat = {
-    if (Mat.useMKLRand) {
-    	viRngNegbinomial( METHOD, stream, out.length, out.data, a, p );
-    } else if (Mat.useSTLRand) {
-      INegBinomial(METHOD, engine, out.length, out.data, a.toInt, p);
-    } else {
-    	throw new RuntimeException("No pure java Negative Binomial implementation")
-    }
-    Mat.nflops += 20L*out.length
-    out
-  }	
-  
-  def nbinrnd(a:Double, p:Double, m:Int, n:Int):IMat = {
-    nbinrnd(a, p, IMat(m, n))
-  }	
-  
-  def poissrnd(lambda:Double, out:IMat):IMat = {
-    if (Mat.useMKLRand) {
-    	viRngPoisson( METHOD, stream, out.length, out.data, lambda );
-    } else if (Mat.useSTLRand) {
-      IPoisson(METHOD, engine, out.length, out.data, lambda);
-    } else {
-    	var i = 0; while (i < out.length) {out.data(i) = acmrand.nextPoisson(lambda).toInt; i += 1;}  
-    }
-    Mat.nflops += 20L*out.length
-    out
-  }
-  
-  def poissrnd(lambda:Double, m:Int, n:Int):IMat = {
-    poissrnd(lambda, IMat(m, n))
-  }
-  
-  def poissrnd(lambda:DMat, out:IMat):IMat = {
-    checkSizes(lambda, out);
-    if (Mat.useMKLRand) {
-    	viRngPoissonV( METHOD, stream, out.length, out.data, lambda.data );
-    } else {
-    	var i = 0; while (i < out.length) {out.data(i) = acmrand.nextPoisson(lambda.data(i)).toInt; i += 1;} 
-    }
-    Mat.nflops += 20L*out.length
-    out
-  }
-  
-  def poissrnd(lambda:DMat):IMat = {
-    poissrnd(lambda, IMat(lambda.nrows, lambda.ncols))
-  }
+  def betarnd(p:Double, q:Double, out:DMat):DMat = DFunctions.betarnd(p, q, out);
+  def dbetarnd(p:Double, q:Double, m:Int, n:Int):DMat = betarnd(p, q, DMat(m, n));
   
   def randperm(n:Int):IMat = {
     val (dmy, rp) = sort2(rand(1,n))
     rp
   }
   
-  def min(a:DMat, b:DMat) = a.ddMatOpv(b, DMat.vecMinFun, null)
-  def max(a:DMat, b:DMat) = a.ddMatOpv(b, DMat.vecMaxFun, null)
-  def sum(a:DMat, n:Int) = a.ddReduceOpv(n, DMat.idFun, DMat.vecAddFun, null)
-  def prod(a:DMat, n:Int) = a.ddReduceOpv(n, DMat.idFun, DMat.vecMulFun, null)
-  def cumsum(a:DMat, n:Int) = a.ddReduceAll(n, DMat.idFun, DMat.sumFun, null)
-  def maxi(a:DMat, n:Int) = a.ddReduceOpv(n, DMat.idFun, DMat.vecMaxFun, null)
-  def mini(a:DMat, n:Int):DMat = a.ddReduceOpv(n, DMat.idFun, DMat.vecMinFun, null)
-  def sum(a:DMat) = a.ddReduceOpv(0, DMat.idFun, DMat.vecAddFun, null)
-  def prod(a:DMat) = a.ddReduceOpv(0, DMat.idFun, DMat.vecMulFun, null)
-  def cumsum(a:DMat) = a.ddReduceAll(0, DMat.idFun, DMat.sumFun, null)
-  def maxi(a:DMat) = a.ddReduceOpv(0, DMat.idFun, DMat.vecMaxFun, null)
-  def mini(a:DMat):DMat = a.ddReduceOpv(0, DMat.idFun, DMat.vecMinFun, null)
-  def maxi2(a:DMat,d:Int):(DMat,IMat) = {val (m,ii)=a.ggOpt2(d,DMat.gtPred); (DMat(m), ii)}
-  def mini2(a:DMat,d:Int):(DMat,IMat) = {val (m,ii)=a.ggOpt2(d,DMat.ltPred); (DMat(m), ii)}
-  def maxi2(a:DMat):(DMat,IMat) = {val (m,ii)=a.ggOpt2(0,DMat.gtPred); (DMat(m), ii)}
-  def mini2(a:DMat):(DMat,IMat) = {val (m,ii)=a.ggOpt2(0,DMat.ltPred); (DMat(m), ii)}
+  /** min, max for FMats with no output */
   
-  def min(a:DMat, b:DMat, out:Mat) = a.ddMatOpv(b, DMat.vecMinFun, out)
-  def max(a:DMat, b:DMat, out:Mat) = a.ddMatOpv(b, DMat.vecMaxFun, out)
-  def sum(a:DMat, n:Int, out:Mat) = a.ddReduceOpv(n, DMat.idFun, DMat.vecAddFun, out)
-  def prod(a:DMat, n:Int, out:Mat) = a.ddReduceOpv(n, DMat.idFun, DMat.vecMulFun, out)
-  def cumsum(a:DMat, n:Int, out:Mat) = a.ddReduceAll(n, DMat.idFun, DMat.sumFun, out)
-  def maxi(a:DMat, n:Int, out:Mat) = a.ddReduceOpv(n, DMat.idFun, DMat.vecMaxFun, out)
-  def mini(a:DMat, n:Int, out:Mat):DMat = a.ddReduceOpv(n, DMat.idFun, DMat.vecMinFun, out)
-  def sum(a:DMat, out:Mat) = a.ddReduceOpv(0, DMat.idFun, DMat.vecAddFun, out)
-  def prod(a:DMat, out:Mat) = a.ddReduceOpv(0, DMat.idFun, DMat.vecMulFun, out)
-  def cumsum(a:DMat, out:Mat) = a.ddReduceAll(0, DMat.idFun, DMat.sumFun, out)
-  def maxi(a:DMat, out:Mat) = a.ddReduceOpv(0, DMat.idFun, DMat.vecMaxFun, out)
-  def mini(a:DMat, out:Mat):DMat = a.ddReduceOpv(0, DMat.idFun, DMat.vecMinFun, out)
+  def min(a:FMat, b:FMat) = FFunctions.min(a, b, null);
+  def max(a:FMat, b:FMat) = FFunctions.max(a, b, null);
   
-  def min(a:FMat, b:FMat) = a.ffMatOpv(b, FMat.vecMinFun, null)
-  def max(a:FMat, b:FMat) = a.ffMatOpv(b, FMat.vecMaxFun, null)
-  def sum(a:FMat, n:Int) = a.ffReduceOpv(n, FMat.idFun, FMat.vecAddFun, null)
-  def prod(a:FMat, n:Int) = a.ffReduceOpv(n, FMat.idFun, FMat.vecMulFun, null)
-  def cumsum(a:FMat, n:Int) = a.ffReduceAll(n, FMat.idFun, FMat.sumFun, null)
-  def maxi(a:FMat, n:Int) = a.ffReduceOpv(n, FMat.idFun, FMat.vecMaxFun, null)
-  def mini(a:FMat, n:Int):FMat = a.ffReduceOpv(n, FMat.idFun, FMat.vecMinFun, null)
-  def sum(a:FMat) = a.ffReduceOpv(0, FMat.idFun, FMat.vecAddFun, null)
-  def prod(a:FMat) = a.ffReduceOpv(0, FMat.idFun, FMat.vecMulFun, null)
-  def cumsum(a:FMat) = a.ffReduceAll(0, FMat.idFun, FMat.sumFun, null)
-  def maxi(a:FMat) = a.ffReduceOpv(0, FMat.idFun, FMat.vecMaxFun, null)
-  def mini(a:FMat):FMat = a.ffReduceOpv(0, FMat.idFun, FMat.vecMinFun, null)
-  def maxi2(a:FMat,d:Int):(FMat,IMat) = {val (m,ii)=a.ggOpt2(d,FMat.gtPred); (FMat(m), ii)}
-  def mini2(a:FMat,d:Int):(FMat,IMat) = {val (m,ii)=a.ggOpt2(d,FMat.ltPred); (FMat(m), ii)}
-  def maxi2(a:FMat):(FMat,IMat) = {val (m,ii)=a.ggOpt2(0,FMat.gtPred); (FMat(m), ii)}
-  def mini2(a:FMat):(FMat,IMat) = {val (m,ii)=a.ggOpt2(0,FMat.ltPred); (FMat(m), ii)}
+  def min(a:FMat, b:Float) = FFunctions.min(a, b, null);
+  def max(a:FMat, b:Float) = FFunctions.max(a, b, null);
   
-  def min(a:FMat, b:FMat, out:Mat) = a.ffMatOpv(b, FMat.vecMinFun, out)
-  def max(a:FMat, b:FMat, out:Mat) = a.ffMatOpv(b, FMat.vecMaxFun, out)
-  def sum(a:FMat, n:Int, out:Mat) = a.ffReduceOpv(n, FMat.idFun, FMat.vecAddFun, out)
-  def prod(a:FMat, n:Int, out:Mat) = a.ffReduceOpv(n, FMat.idFun, FMat.vecMulFun, out)
-  def cumsum(a:FMat, n:Int, out:Mat) = a.ffReduceAll(n, FMat.idFun, FMat.sumFun, out)
-  def maxi(a:FMat, n:Int, out:Mat) = a.ffReduceOpv(n, FMat.idFun, FMat.vecMaxFun, out)
-  def mini(a:FMat, n:Int, out:Mat):FMat = a.ffReduceOpv(n, FMat.idFun, FMat.vecMinFun, out)
-  def sum(a:FMat, out:Mat) = a.ffReduceOpv(0, FMat.idFun, FMat.vecAddFun, out)
-  def prod(a:FMat, out:Mat) = a.ffReduceOpv(0, FMat.idFun, FMat.vecMulFun, out)
-  def cumsum(a:FMat, out:Mat) = a.ffReduceAll(0, FMat.idFun, FMat.sumFun, out)
-  def maxi(a:FMat, out:Mat) = a.ffReduceOpv(0, FMat.idFun, FMat.vecMaxFun, out)
-  def mini(a:FMat, out:Mat):FMat = a.ffReduceOpv(0, FMat.idFun, FMat.vecMinFun, out)
+  def min(a:Float, b:FMat) = FFunctions.min(b, a, null);
+  def max(a:Float, b:FMat) = FFunctions.max(b, a, null);
   
-  def min (a:IMat, b:IMat) = a.iiMatOpv(b, IMat.vecMinFun, null)
-  def max (a:IMat, b:IMat) = a.iiMatOpv(b, IMat.vecMaxFun, null)
-  def sum(a:IMat, n:Int) = a.iiReduceOpv(n, IMat.idFun, IMat.vecAddFun, null)
-  def prod(a:IMat, n:Int) = a.iiReduceOpv(n, IMat.idFun, IMat.vecMulFun, null)
-  def cumsum(a:IMat, n:Int) = a.iiReduceAll(n, IMat.idFun, IMat.sumFun, null)
-  def maxi(a:IMat, n:Int) = a.iiReduceOpv(n, IMat.idFun, IMat.vecMaxFun, null)
-  def mini(a:IMat, n:Int):IMat = a.iiReduceOpv(n, IMat.idFun, IMat.vecMinFun, null)
-  def sum(a:IMat) = a.iiReduceOpv(0, IMat.idFun, IMat.vecAddFun, null)
-  def prod(a:IMat) = a.iiReduceOpv(0, IMat.idFun, IMat.vecMulFun, null)
-  def cumsum(a:IMat) = a.iiReduceAll(0, IMat.idFun, IMat.sumFun, null)
-  def maxi(a:IMat) = a.iiReduceOpv(0, IMat.idFun, IMat.vecMaxFun, null)
-  def mini(a:IMat):IMat = a.iiReduceOpv(0, IMat.idFun, IMat.vecMinFun, null)
-  def maxi2(a:IMat,d:Int):(IMat,IMat) = {val (m,ii)=a.ggOpt2(d,IMat.gtPred); (IMat(m), ii)}
-  def mini2(a:IMat,d:Int):(IMat,IMat) = {val (m,ii)=a.ggOpt2(d,IMat.ltPred); (IMat(m), ii)}
-  def maxi2(a:IMat):(IMat,IMat) = {val (m,ii)=a.ggOpt2(0,IMat.gtPred); (IMat(m), ii)}
-  def mini2(a:IMat):(IMat,IMat) = {val (m,ii)=a.ggOpt2(0,IMat.ltPred); (IMat(m), ii)}
+  /** min, max for FMats with output matrix*/
   
-  def min (a:IMat, b:IMat, out:Mat) = a.iiMatOpv(b, IMat.vecMinFun, out)
-  def max (a:IMat, b:IMat, out:Mat) = a.iiMatOpv(b, IMat.vecMaxFun, out)
-  def sum(a:IMat, n:Int, out:Mat) = a.iiReduceOpv(n, IMat.idFun, IMat.vecAddFun, out)
-  def prod(a:IMat, n:Int, out:Mat) = a.iiReduceOpv(n, IMat.idFun, IMat.vecMulFun, out)
-  def cumsum(a:IMat, n:Int, out:Mat) = a.iiReduceAll(n, IMat.idFun, IMat.sumFun, out)
-  def maxi(a:IMat, n:Int, out:Mat) = a.iiReduceOpv(n, IMat.idFun, IMat.vecMaxFun, out)
-  def mini(a:IMat, n:Int, out:Mat):IMat = a.iiReduceOpv(n, IMat.idFun, IMat.vecMinFun, out)
-  def sum(a:IMat, out:Mat) = a.iiReduceOpv(0, IMat.idFun, IMat.vecAddFun, out)
-  def prod(a:IMat, out:Mat) = a.iiReduceOpv(0, IMat.idFun, IMat.vecMulFun, out)
-  def cumsum(a:IMat, out:Mat) = a.iiReduceAll(0, IMat.idFun, IMat.sumFun, out)
-  def maxi(a:IMat, out:Mat) = a.iiReduceOpv(0, IMat.idFun, IMat.vecMaxFun, out)
-  def mini(a:IMat, out:Mat):IMat = a.iiReduceOpv(0, IMat.idFun, IMat.vecMinFun, out)
+  def min(a:FMat, b:FMat, out:Mat) = FFunctions.min(a, b, out);
+  def max(a:FMat, b:FMat, out:Mat) = FFunctions.max(a, b, out);
   
-  def min (a:LMat, b:LMat) = a.iiMatOpv(b, LMat.vecMinFun, null)
-  def max (a:LMat, b:LMat) = a.iiMatOpv(b, LMat.vecMaxFun, null)
-  def sum(a:LMat, n:Int) = a.iiReduceOpv(n, LMat.idFun, LMat.vecAddFun, null)
-  def prod(a:LMat, n:Int) = a.iiReduceOpv(n, LMat.idFun, LMat.vecMulFun, null)
-  def cumsum(a:LMat, n:Int) = a.iiReduceAll(n, LMat.idFun, LMat.sumFun, null)
-  def maxi(a:LMat, n:Int) = a.iiReduceOpv(n, LMat.idFun, LMat.vecMaxFun, null)
-  def mini(a:LMat, n:Int):LMat = a.iiReduceOpv(n, LMat.idFun, LMat.vecMinFun, null)
-  def sum(a:LMat) = a.iiReduceOpv(0, LMat.idFun, LMat.vecAddFun, null)
-  def prod(a:LMat) = a.iiReduceOpv(0, LMat.idFun, LMat.vecMulFun, null)
-  def cumsum(a:LMat) = a.iiReduceAll(0, LMat.idFun, LMat.sumFun, null)
-  def maxi(a:LMat) = a.iiReduceOpv(0, LMat.idFun, LMat.vecMaxFun, null)
-  def mini(a:LMat):LMat = a.iiReduceOpv(0, LMat.idFun, LMat.vecMinFun, null)
-  def maxi2(a:LMat,d:Int):(LMat,IMat) = {val (m,ii)=a.ggOpt2(d,LMat.gtPred); (LMat(m), ii)}
-  def mini2(a:LMat,d:Int):(LMat,IMat) = {val (m,ii)=a.ggOpt2(d,LMat.ltPred); (LMat(m), ii)}
-  def maxi2(a:LMat):(LMat,IMat) = {val (m,ii)=a.ggOpt2(0,LMat.gtPred); (LMat(m), ii)}
-  def mini2(a:LMat):(LMat,IMat) = {val (m,ii)=a.ggOpt2(0,LMat.ltPred); (LMat(m), ii)}
+  def min(a:FMat, b:Float, out:Mat) = FFunctions.min(a, b, out);
+  def max(a:FMat, b:Float, out:Mat) = FFunctions.max(a, b, out);
   
-  def min (a:LMat, b:LMat, out:Mat) = a.iiMatOpv(b, LMat.vecMinFun, out)
-  def max (a:LMat, b:LMat, out:Mat) = a.iiMatOpv(b, LMat.vecMaxFun, out)
-  def sum(a:LMat, n:Int, out:Mat) = a.iiReduceOpv(n, LMat.idFun, LMat.vecAddFun, out)
-  def prod(a:LMat, n:Int, out:Mat) = a.iiReduceOpv(n, LMat.idFun, LMat.vecMulFun, out)
-  def cumsum(a:LMat, n:Int, out:Mat) = a.iiReduceAll(n, LMat.idFun, LMat.sumFun, out)
-  def maxi(a:LMat, n:Int, out:Mat) = a.iiReduceOpv(n, LMat.idFun, LMat.vecMaxFun, out)
-  def mini(a:LMat, n:Int, out:Mat):LMat = a.iiReduceOpv(n, LMat.idFun, LMat.vecMinFun, out)
-  def sum(a:LMat, out:Mat) = a.iiReduceOpv(0, LMat.idFun, LMat.vecAddFun, out)
-  def prod(a:LMat, out:Mat) = a.iiReduceOpv(0, LMat.idFun, LMat.vecMulFun, out)
-  def cumsum(a:LMat, out:Mat) = a.iiReduceAll(0, LMat.idFun, LMat.sumFun, out)
-  def maxi(a:LMat, out:Mat) = a.iiReduceOpv(0, LMat.idFun, LMat.vecMaxFun, out)
-  def mini(a:LMat, out:Mat):LMat = a.iiReduceOpv(0, LMat.idFun, LMat.vecMinFun, out)
+  def min(a:Float, b:FMat, out:Mat) = FFunctions.min(b, a, out);
+  def max(a:Float, b:FMat, out:Mat) = FFunctions.max(b, a, out);
   
-  def min(a:SDMat, b:SDMat) = a.ssMatOp(b, DMat.minFun, null)
-  def max(a:SDMat, b:SDMat) = a.ssMatOp(b, DMat.maxFun, null)
-  def sum(a:SDMat, n:Int) = a.ssReduceOp(n, DMat.idFun, DMat.sumFun, null)
-  def maxi(a:SDMat, n:Int) = a.ssReduceOp(n, DMat.idFun, DMat.maxFun, null)
-  def mini(a:SDMat, n:Int) = a.ssReduceOp(n, DMat.idFun, DMat.minFun, null)
-  def sum(a:SDMat) = a.ssReduceOp(0, DMat.idFun, DMat.sumFun, null)
-  def maxi(a:SDMat) = a.ssReduceOp(0, DMat.idFun, DMat.maxFun, null)
-  def mini(a:SDMat) = a.ssReduceOp(0, DMat.idFun, DMat.minFun, null)
+  /** reducers for FMats with no output */
   
-  def sum(a:SDMat, n:Int, omat:Mat) = a.ssReduceOp(n, DMat.idFun, DMat.sumFun, omat)
-  def maxi(a:SDMat, n:Int, omat:Mat) = a.ssReduceOp(n, DMat.idFun, DMat.maxFun, omat)
-  def mini(a:SDMat, n:Int, omat:Mat) = a.ssReduceOp(n, DMat.idFun, DMat.minFun, omat)
-  def sum(a:SDMat, omat:Mat) = a.ssReduceOp(0, DMat.idFun, DMat.sumFun, omat)
-  def maxi(a:SDMat, omat:Mat) = a.ssReduceOp(0, DMat.idFun, DMat.maxFun, omat)
-  def mini(a:SDMat, omat:Mat) = a.ssReduceOp(0, DMat.idFun, DMat.minFun, omat)
-  def countnz(a:SDMat, omat:Mat) = a.countnz(0, omat)
-  def countnz(a:SDMat, n:Int, omat:Mat) = a.countnz(n, omat)
-  def countnz(a:SDMat) = a.countnz(0, null)
-  def countnz(a:SDMat, n:Int) = a.countnz(n, null)
+  def sum(a:FMat, n:Int) = FFunctions.sum(a, n, null);
+  def prod(a:FMat, n:Int) = FFunctions.prod(a, n, null);
+  def maxi(a:FMat, n:Int) = FFunctions.maxi(a, n, null);
+  def mini(a:FMat, n:Int) = FFunctions.mini(a, n, null);
+  def amax(a:FMat, n:Int) = FFunctions.maxi(a, n, null);
+  def amin(a:FMat, n:Int) = FFunctions.mini(a, n, null);
+  def cumsum(a:FMat, n:Int) = FFunctions.cumsum(a, n, null);
   
-  def min(a:SMat, b:SMat) = a.ssMatOp(b, FMat.minFun, null)
-  def max(a:SMat, b:SMat) = a.ssMatOp(b, FMat.maxFun, null)
-  def sum(a:SMat, n:Int) = a.ssReduceOp(n, FMat.idFun, FMat.sumFun, null)
-  def maxi(a:SMat, n:Int) = a.ssReduceOp(n, FMat.idFun, FMat.maxFun, null)
-  def mini(a:SMat, n:Int) = a.ssReduceOp(n, FMat.idFun, FMat.minFun, null)
-  def sum(a:SMat) = a.ssReduceOp(0, FMat.idFun, FMat.sumFun, null)
-  def maxi(a:SMat) = a.ssReduceOp(0, FMat.idFun, FMat.maxFun, null)
-  def mini(a:SMat) = a.ssReduceOp(0, FMat.idFun, FMat.minFun, null)
-  def min(a:SMat, b:Float) = a.ssMatOpScalar(b, FMat.minFun, null)
-  def max(a:SMat, b:Float) = a.ssMatOpScalar(b, FMat.maxFun, null)
-  def min(b:Float, a:SMat) = a.ssMatOpScalar(b, FMat.minFun, null)
-  def max(b:Float, a:SMat) = a.ssMatOpScalar(b, FMat.maxFun, null)
-  def min(a:SMat, b:Float, omat:Mat) = a.ssMatOpScalar(b, FMat.minFun, omat)
-  def max(a:SMat, b:Float, omat:Mat) = a.ssMatOpScalar(b, FMat.maxFun, omat)
-  def min(b:Float, a:SMat, omat:Mat) = a.ssMatOpScalar(b, FMat.minFun, omat)
-  def max(b:Float, a:SMat, omat:Mat) = a.ssMatOpScalar(b, FMat.maxFun, omat)
+  def sum(a:FMat) = FFunctions.sum(a, 0, null);
+  def prod(a:FMat) = FFunctions.prod(a, 0, null);
+  def maxi(a:FMat) = FFunctions.maxi(a, 0, null);
+  def mini(a:FMat):FMat = FFunctions.mini(a, 0, null);
+  def amax(a:FMat) = FFunctions.maxi(a, 0, null);
+  def amin(a:FMat):FMat = FFunctions.mini(a, 0, null);
+  def cumsum(a:FMat) = FFunctions.cumsum(a, 0, null);
+  
+  def maxi2(a:FMat,d:Int):(FMat,IMat) = FFunctions.maxi2(a, d);
+  def mini2(a:FMat,d:Int):(FMat,IMat) = FFunctions.mini2(a, d);
+  def maxi2(a:FMat):(FMat,IMat) = FFunctions.maxi2(a, 0);
+  def mini2(a:FMat):(FMat,IMat) = FFunctions.mini2(a, 0);
+
+  /** Reducers for FMats with output */
+  
+  def sum(a:FMat, n:Int, out:Mat) = FFunctions.sum(a, n, out);
+  def prod(a:FMat, n:Int, out:Mat) = FFunctions.prod(a, n, out);
+  def maxi(a:FMat, n:Int, out:Mat) = FFunctions.maxi(a, n, out);
+  def mini(a:FMat, n:Int, out:Mat) = FFunctions.mini(a, n, out);
+  def amax(a:FMat, n:Int, out:Mat) = FFunctions.maxi(a, n, out);
+  def amin(a:FMat, n:Int, out:Mat) = FFunctions.mini(a, n, out);
+  def cumsum(a:FMat, n:Int, out:Mat) = FFunctions.cumsum(a, n, out);
+  
+  def sum(a:FMat, out:Mat) = FFunctions.sum(a, 0, out);
+  def prod(a:FMat, out:Mat) = FFunctions.prod(a, 0, out);
+  def cumsum(a:FMat, out:Mat) = FFunctions.cumsum(a, 0, out);
+  def maxi(a:FMat, out:Mat) = FFunctions.maxi(a, 0, out);
+  def mini(a:FMat, out:Mat):FMat = FFunctions.mini(a, 0, out);
+  def amax(a:FMat, out:Mat) = FFunctions.maxi(a, 0, out);
+  def amin(a:FMat, out:Mat):FMat = FFunctions.mini(a, 0, out); 
+  
+  /** min, max, for DMats with no output matrix*/
+  
+  def min(a:DMat, b:DMat) = DFunctions.min(a, b, null);
+  def max(a:DMat, b:DMat) = DFunctions.max(a, b, null);
+  
+  def min(a:DMat, b:Double) = DFunctions.min(a, b, null);
+  def max(a:DMat, b:Double) = DFunctions.max(a, b, null);
+  
+  def min(a:Double, b:DMat) = DFunctions.min(b, a, null);
+  def max(a:Double, b:DMat) = DFunctions.max(b, a, null);  
+  
+  /** min, max, for DMats with output matrix*/
+  
+  def min(a:DMat, b:DMat, out:Mat) = DFunctions.min(a, b, out);
+  def max(a:DMat, b:DMat, out:Mat) = DFunctions.max(a, b, out);
+  
+  def min(a:DMat, b:Double, out:Mat) = DFunctions.min(a, b, out);
+  def max(a:DMat, b:Double, out:Mat) = DFunctions.max(a, b, out);
+  
+  def min(a:Double, b:DMat, out:Mat) = DFunctions.min(b, a, out);
+  def max(a:Double, b:DMat, out:Mat) = DFunctions.max(b, a, out);
+  
+  /** reducers for DMats with no output */
+  
+  def sum(a:DMat, n:Int) = DFunctions.sum(a, n, null);
+  def prod(a:DMat, n:Int) = DFunctions.prod(a, n, null);
+  def maxi(a:DMat, n:Int) = DFunctions.maxi(a, n, null);
+  def mini(a:DMat, n:Int) = DFunctions.mini(a, n, null);
+  def amax(a:DMat, n:Int) = DFunctions.maxi(a, n, null);
+  def amin(a:DMat, n:Int) = DFunctions.mini(a, n, null);
+  def cumsum(a:DMat, n:Int) = DFunctions.cumsum(a, n, null);
+  
+  def sum(a:DMat) = DFunctions.sum(a, 0, null);
+  def prod(a:DMat) = DFunctions.prod(a, 0, null);
+  def maxi(a:DMat) = DFunctions.maxi(a, 0, null);
+  def mini(a:DMat) = DFunctions.mini(a, 0, null);
+  def amax(a:DMat) = DFunctions.maxi(a, 0, null);
+  def amin(a:DMat) = DFunctions.mini(a, 0, null);
+  def cumsum(a:DMat) = DFunctions.cumsum(a, 0, null);
+  
+  def maxi2(a:DMat,d:Int):(DMat,IMat) = DFunctions.maxi2(a, d);
+  def mini2(a:DMat,d:Int):(DMat,IMat) = DFunctions.mini2(a, d);
+  def maxi2(a:DMat):(DMat,IMat) = DFunctions.maxi2(a, 0);
+  def mini2(a:DMat):(DMat,IMat) = DFunctions.mini2(a, 0);
+  
+  /** reducers for DMats with output matrix*/
+  
+  def sum(a:DMat, n:Int, out:Mat) = DFunctions.sum(a, n, out);
+  def prod(a:DMat, n:Int, out:Mat) = DFunctions.prod(a, n, out);
+  def maxi(a:DMat, n:Int, out:Mat) = DFunctions.maxi(a, n, out);
+  def mini(a:DMat, n:Int, out:Mat) = DFunctions.mini(a, n, out);
+  def amax(a:DMat, n:Int, out:Mat) = DFunctions.maxi(a, n, out);
+  def amin(a:DMat, n:Int, out:Mat) = DFunctions.mini(a, n, out);
+  def cumsum(a:DMat, n:Int, out:Mat) = DFunctions.cumsum(a, n, out);
+  
+  def sum(a:DMat, out:Mat) = DFunctions.sum(a, 0, out);
+  def prod(a:DMat, out:Mat) = DFunctions.prod(a, 0, out);
+  def cumsum(a:DMat, out:Mat) = DFunctions.cumsum(a, 0, out);
+  def maxi(a:DMat, out:Mat) = DFunctions.maxi(a, 0, out);
+  def mini(a:DMat, out:Mat) = DFunctions.mini(a, 0, out);
+  def amax(a:DMat, out:Mat) = DFunctions.maxi(a, 0, out);
+  def amin(a:DMat, out:Mat) = DFunctions.mini(a, 0, out);
+ 
+  
+  /** min, max for IMats with no output matrix*/
+  
+  def min (a:IMat, b:IMat) = IFunctions.min(a, b, null);
+  def max (a:IMat, b:IMat) = IFunctions.max(a, b, null);
+  
+  def min (a:IMat, b:Int) = IFunctions.min(a, b, null);
+  def max (a:IMat, b:Int) = IFunctions.max(a, b, null);
+  
+  def min (a:Int, b:IMat) = IFunctions.min(b, a, null);
+  def max (a:Int, b:IMat) = IFunctions.max(b, a, null);
+  
+    /** min, max for IMats with output matrix*/
+  
+  def min (a:IMat, b:IMat, out:Mat) = IFunctions.min(a, b, out);
+  def max (a:IMat, b:IMat, out:Mat) = IFunctions.max(a, b, out);
+  
+  def min (a:IMat, b:Int, out:Mat) = IFunctions.min(a, b, out);
+  def max (a:IMat, b:Int, out:Mat) = IFunctions.max(a, b, out);
+  
+  def min (b:Int, a:IMat, out:Mat) = IFunctions.min(a, b, out);
+  def max (b:Int, a:IMat, out:Mat) = IFunctions.max(a, b, out);
+ 
+  /** reducers for IMats with no output matrix*/
+  
+  def sum(a:IMat, n:Int) = IFunctions.sum(a, n, null);
+  def prod(a:IMat, n:Int) = IFunctions.prod(a, n, null);
+  def cumsum(a:IMat, n:Int) = IFunctions.cumsum(a, n, null);
+  def maxi(a:IMat, n:Int) = IFunctions.maxi(a, n, null);
+  def mini(a:IMat, n:Int) = IFunctions.mini(a, n, null);
+  def amax(a:IMat, n:Int) = IFunctions.maxi(a, n, null);
+  def amin(a:IMat, n:Int) = IFunctions.mini(a, n, null);
+  
+  def sum(a:IMat) = IFunctions.sum(a, 0, null);
+  def prod(a:IMat) = IFunctions.prod(a, 0, null);
+  def cumsum(a:IMat) = IFunctions.cumsum(a, 0, null);
+  def maxi(a:IMat) = IFunctions.maxi(a, 0, null);
+  def mini(a:IMat) = IFunctions.mini(a, 0, null);
+  def amax(a:IMat) = IFunctions.maxi(a, 0, null);
+  def amin(a:IMat) = IFunctions.mini(a, 0, null);
+  
+  def maxi2(a:IMat,d:Int):(IMat,IMat) = IFunctions.maxi2(a, d);
+  def mini2(a:IMat,d:Int):(IMat,IMat) = IFunctions.mini2(a, d);
+  def maxi2(a:IMat):(IMat,IMat) = IFunctions.maxi2(a, 0);
+  def mini2(a:IMat):(IMat,IMat) = IFunctions.mini2(a, 0);
+  
+  /** reducers for IMats with output matrix*/
+
+  def sum(a:IMat, n:Int, out:Mat) = IFunctions.sum(a, n, out);
+  def prod(a:IMat, n:Int, out:Mat) = IFunctions.prod(a, n, out);
+  def cumsum(a:IMat, n:Int, out:Mat) = IFunctions.cumsum(a, n, out);
+  def maxi(a:IMat, n:Int, out:Mat) = IFunctions.maxi(a, n, out);
+  def mini(a:IMat, n:Int, out:Mat) = IFunctions.mini(a, n, out);
+  def amax(a:IMat, n:Int, out:Mat) = IFunctions.maxi(a, n, out);
+  def amin(a:IMat, n:Int, out:Mat) = IFunctions.mini(a, n, out);
+  
+  def sum(a:IMat, out:Mat) = IFunctions.sum(a, 0, out);
+  def prod(a:IMat, out:Mat) = IFunctions.prod(a, 0, out);
+  def cumsum(a:IMat, out:Mat) = IFunctions.cumsum(a, 0, out);
+  def maxi(a:IMat, out:Mat) = IFunctions.maxi(a, 0, out);
+  def mini(a:IMat, out:Mat) = IFunctions.mini(a, 0, out);
+  def amax(a:IMat, out:Mat) = IFunctions.maxi(a, 0, out);
+  def amin(a:IMat, out:Mat) = IFunctions.mini(a, 0, out);
+  
+  /** min, max, sum, prod, cumsum, maxi, mini for LMats with no output matrix*/
+  
+  def min (a:LMat, b:LMat) = LFunctions.min(a, b, null)
+  def max (a:LMat, b:LMat) = LFunctions.max(a, b, null)
+  def sum(a:LMat, n:Int) = LFunctions.sum(a, n, null)
+  def prod(a:LMat, n:Int) = LFunctions.prod(a, n, null)
+  def cumsum(a:LMat, n:Int) = LFunctions.cumsum(a, n, null)
+  def maxi(a:LMat, n:Int) = LFunctions.maxi(a, n, null)
+  def mini(a:LMat, n:Int):LMat = LFunctions.mini(a, n, null)
+  def amax(a:LMat, n:Int) = LFunctions.maxi(a, n, null)
+  def amin(a:LMat, n:Int):LMat = LFunctions.mini(a, n, null)
+  
+  def sum(a:LMat) = LFunctions.sum(a, 0, null)
+  def prod(a:LMat) = LFunctions.sum(a, 0, null)
+  def cumsum(a:LMat) = LFunctions.prod(a, 0, null)
+  def maxi(a:LMat) = LFunctions.maxi(a, 0, null)
+  def mini(a:LMat):LMat = LFunctions.mini(a, 0, null)
+  def amax(a:LMat) = LFunctions.maxi(a, 0, null)
+  def amin(a:LMat):LMat = LFunctions.mini(a, 0, null)
+  
+  def maxi2(a:LMat,d:Int):(LMat,IMat) = LFunctions.maxi2(a, d);
+  def mini2(a:LMat,d:Int):(LMat,IMat) = LFunctions.mini2(a, d);
+  def maxi2(a:LMat):(LMat,IMat) = LFunctions.maxi2(a, 0);
+  def mini2(a:LMat):(LMat,IMat) = LFunctions.mini2(a, 0);
+  
+  /** min, max, sum, prod, cumsum, maxi, mini for LMats with output matrix*/
+  
+  def min (a:LMat, b:LMat, out:Mat) = LFunctions.min(a, b, out);
+  def max (a:LMat, b:LMat, out:Mat) = LFunctions.max(a, b, out);
+  def sum(a:LMat, n:Int, out:Mat) = LFunctions.sum(a, n, out);
+  def prod(a:LMat, n:Int, out:Mat) = LFunctions.prod(a, n, out);
+  def cumsum(a:LMat, n:Int, out:Mat) = LFunctions.cumsum(a, n, out);
+  def maxi(a:LMat, n:Int, out:Mat) = LFunctions.maxi(a, n, out);
+  def mini(a:LMat, n:Int, out:Mat) = LFunctions.mini(a, n, out);
+  def amax(a:LMat, n:Int, out:Mat) = LFunctions.maxi(a, n, out);
+  def amin(a:LMat, n:Int, out:Mat) = LFunctions.min(a, n, out);
+  
+  def sum(a:LMat, out:Mat) = LFunctions.sum(a, 0, out);
+  def prod(a:LMat, out:Mat) = LFunctions.prod(a, 0, out);
+  def cumsum(a:LMat, out:Mat) = LFunctions.cumsum(a, 0, out);
+  def maxi(a:LMat, out:Mat) = LFunctions.maxi(a, 0, out);
+  def mini(a:LMat, out:Mat) = LFunctions.mini(a, 0, out);
+  def amax(a:LMat, out:Mat) = LFunctions.maxi(a, 0, out);
+  def amin(a:LMat, out:Mat) = LFunctions.mini(a, 0, out);
+  
+  /** min, max, sum, prod, maxi, mini for SMats with no output matrix*/
+  
+  def min(a:SMat, b:SMat) = SFunctions.min(a, b);
+  def max(a:SMat, b:SMat) = SFunctions.max(a, b);
+  def sum(a:SMat, n:Int) = SFunctions.sum(a, n);
+  def maxi(a:SMat, n:Int) = SFunctions.maxi(a, n);
+  def mini(a:SMat, n:Int) = SFunctions.mini(a, n);
+  def amax(a:SMat, n:Int) = SFunctions.maxi(a, n);
+  def amin(a:SMat, n:Int) = SFunctions.mini(a, n);
+  
+  def sum(a:SMat) = SFunctions.sum(a, 0);
+  def maxi(a:SMat) = SFunctions.maxi(a, 0);
+  def mini(a:SMat) = SFunctions.mini(a, 0);
+  def amax(a:SMat) = SFunctions.maxi(a, 0);
+  def amin(a:SMat) = SFunctions.mini(a, 0);
+  
+  def min(a:SMat, b:Float) = SFunctions.min(a, b);
+  def max(a:SMat, b:Float) = SFunctions.max(a, b);
+  def min(b:Float, a:SMat) = SFunctions.min(a, b);
+  def max(b:Float, a:SMat) = SFunctions.max(a, b);
+  def min(a:SMat, b:Float, omat:Mat) = SFunctions.min(a, b, omat);
+  def max(a:SMat, b:Float, omat:Mat) = SFunctions.max(a, b, omat);
+  def min(b:Float, a:SMat, omat:Mat) = SFunctions.min(a, b, omat);
+  def max(b:Float, a:SMat, omat:Mat) = SFunctions.max(a, b, omat);
+  
   def countnz(a:SMat, omat:Mat) = a.countnz(0, omat)
   def countnz(a:SMat, n:Int, omat:Mat) = a.countnz(n, omat)
   def countnz(a:SMat) = a.countnz(0, null)
   def countnz(a:SMat, n:Int) = a.countnz(n, null)
+  
+  /** min, max, sum, prod, cumsum, maxi, mini for SMats with output matrix*/
 
-  def sum(a:SMat, n:Int, omat:Mat) = a.ssReduceOp(n, FMat.idFun, FMat.sumFun, omat)
-  def maxi(a:SMat, n:Int, omat:Mat) = a.ssReduceOp(n, FMat.idFun, FMat.maxFun, omat)
-  def mini(a:SMat, n:Int, omat:Mat) = a.ssReduceOp(n, FMat.idFun, FMat.minFun, omat)
-  def sum(a:SMat, omat:Mat) = a.ssReduceOp(0, FMat.idFun, FMat.sumFun, omat)
-  def maxi(a:SMat, omat:Mat) = a.ssReduceOp(0, FMat.idFun, FMat.maxFun, omat)
-  def mini(a:SMat, omat:Mat) = a.ssReduceOp(0, FMat.idFun, FMat.minFun, omat)
-  def min(a:SDMat, b:Double) = a.ssMatOpScalar(b, DMat.minFun, null)
-  def max(a:SDMat, b:Double) = a.ssMatOpScalar(b, DMat.maxFun, null)
-  def min(b:Double, a:SDMat) = a.ssMatOpScalar(b, DMat.minFun, null)
-  def max(b:Double, a:SDMat) = a.ssMatOpScalar(b, DMat.maxFun, null)
+  def sum(a:SMat, n:Int, omat:Mat) = SFunctions.sum(a, n, omat);
+  def maxi(a:SMat, n:Int, omat:Mat) = SFunctions.maxi(a, n, omat);
+  def mini(a:SMat, n:Int, omat:Mat) = SFunctions.mini(a, n, omat);
+  def sum(a:SMat, omat:Mat) = SFunctions.sum(a, omat);
+  def maxi(a:SMat, omat:Mat) = SFunctions.maxi(a, omat);
+  def mini(a:SMat, omat:Mat) = SFunctions.mini(a, omat);
+  def amax(a:SMat, omat:Mat) = SFunctions.amax(a, omat);
+  def amin(a:SMat, omat:Mat) = SFunctions.amin(a, omat);
+  
+  /** min, max, sum, maxi, mini for SDMats with no output matrix*/
+  
+  def min(a:SDMat, b:SDMat) = SDFunctions.min(a, b);
+  def max(a:SDMat, b:SDMat) = SDFunctions.max(a, b);
+  def sum(a:SDMat, n:Int) = SDFunctions.sum(a, n);
+  def maxi(a:SDMat, n:Int) = SDFunctions.maxi(a, n);
+  def mini(a:SDMat, n:Int) = SDFunctions.mini(a, n);
+  def amax(a:SDMat, n:Int) = SDFunctions.maxi(a, n);
+  def amin(a:SDMat, n:Int) = SDFunctions.mini(a, n);
+  
+  def sum(a:SDMat) = SDFunctions.sum(a);
+  def maxi(a:SDMat) = SDFunctions.maxi(a);
+  def mini(a:SDMat) = SDFunctions.mini(a);
+  def amax(a:SDMat) = SDFunctions.maxi(a);
+  def amin(a:SDMat) = SDFunctions.mini(a);
+  
+  /** min, max, sum, maxi, mini for SDMats with output matrix*/
+  
+  def sum(a:SDMat, n:Int, omat:Mat) = SDFunctions.sum(a, n, omat);
+  def maxi(a:SDMat, n:Int, omat:Mat) = SDFunctions.sum(a, n, omat);
+  def mini(a:SDMat, n:Int, omat:Mat) = SDFunctions.sum(a, n, omat);
+  def amax(a:SDMat, n:Int, omat:Mat) = SDFunctions.sum(a, n, omat);
+  def amin(a:SDMat, n:Int, omat:Mat) = SDFunctions.sum(a, n, omat);
+  
+  def sum(a:SDMat, omat:Mat) = SDFunctions.sum(a, omat);
+  def maxi(a:SDMat, omat:Mat) = SDFunctions.maxi(a, omat);
+  def mini(a:SDMat, omat:Mat) = SDFunctions.mini(a, omat);
+  def amax(a:SDMat, omat:Mat) = SDFunctions.maxi(a, omat);
+  def amin(a:SDMat, omat:Mat) = SDFunctions.mini(a, omat);
+  
+  def countnz(a:SDMat, omat:Mat) = SDFunctions.countnz(a, omat);
+  def countnz(a:SDMat, n:Int, omat:Mat) = SDFunctions.countnz(a, n, omat);
+  def countnz(a:SDMat) = SDFunctions.countnz(a);
+  def countnz(a:SDMat, n:Int) = SDFunctions.countnz(a);
+  
+  
+  def min(a:SDMat, b:Double, omat:Mat) = SDFunctions.min(a, b, omat);
+  def max(a:SDMat, b:Double, omat:Mat) = SDFunctions.max(a, b, omat);
+  def min(b:Double, a:SDMat, omat:Mat) = SDFunctions.min(a, b, omat);
+  def max(b:Double, a:SDMat, omat:Mat) = SDFunctions.max(a, b, omat);
+  def min(a:SDMat, b:Double) = SDFunctions.min(a, b);
+  def max(a:SDMat, b:Double) = SDFunctions.max(a, b);
+  def min(b:Double, a:SDMat) = SDFunctions.min(a, b);
+  def max(b:Double, a:SDMat) = SDFunctions.min(a, b);
   
   def sum(a:CMat, n:Int) = a.ccReduceOpv(n, CMat.vecAddFun, null)
   def sum(a:CMat, n:Int, c:Mat) = a.ccReduceOpv(n, CMat.vecAddFun, c)
@@ -822,89 +601,35 @@ object SciFunctions {
     }
   }
   
-  def cumsumg(a:GMat, jc:GIMat, omat:Mat):GMat = GMat.cumsumg(a, jc, omat) 
-  def maxg(a:GMat, jc:GIMat, omat:Mat, omati:Mat):(GMat,GIMat) = GMat.maxg(a, jc, omat, omati) 
-  def ming(a:GMat, jc:GIMat, omat:Mat, omati:Mat):(GMat,GIMat) = GMat.maxg(a, jc, omat, omati) 
-  def maxi2(a:GMat, omat:Mat, omati:Mat, dir:Int):(GMat,GIMat) = GMat.maxi2(a, omat, omati, dir) 
-  def mini2(a:GMat, omat:Mat, omati:Mat, dir:Int):(GMat,GIMat) = GMat.mini2(a, omat, omati, dir)
-  def maxi2(a:GMat, omat:Mat, omati:Mat):(GMat,GIMat) = GMat.maxi2(a, omat, omati, 0) 
-  def mini2(a:GMat, omat:Mat, omati:Mat):(GMat,GIMat) = GMat.mini2(a, omat, omati, 0)
+  /** min, max, sum, prod, cumsum, maxi, mini for GMats with no output matrix*/
   
-  def cumsumg(a:GIMat, jc:GIMat, omat:Mat):GIMat = GIMat.cumsumg(a, jc, omat) 
-  def maxg(a:GIMat, jc:GIMat, omat:Mat, omati:Mat):(GIMat,GIMat) = GIMat.maxg(a, jc, omat, omati)
-  def maxi2(a:GIMat, omat:Mat, omati:Mat, dir:Int):(GIMat,GIMat) = GIMat.maxi2(a, omat, omati, dir) 
-  def mini2(a:GIMat, omat:Mat, omati:Mat, dir:Int):(GIMat,GIMat) = GIMat.mini2(a, omat, omati, dir)
-  def maxi2(a:GIMat, omat:Mat, omati:Mat):(GIMat,GIMat) = GIMat.maxi2(a, omat, omati, 0) 
-  def mini2(a:GIMat, omat:Mat, omati:Mat):(GIMat,GIMat) = GIMat.mini2(a, omat, omati, 0)
+  def cumsumg(a:GMat, jc:GIMat, omat:Mat):GMat = GFunctions.cumsumg(a, jc, omat) 
+  def maxg(a:GMat, jc:GIMat, omat:Mat, omati:Mat):(GMat,GIMat) = GFunctions.maxg(a, jc, omat, omati) 
+  def ming(a:GMat, jc:GIMat, omat:Mat, omati:Mat):(GMat,GIMat) = GFunctions.maxg(a, jc, omat, omati) 
   
-  def maxi2(a:GLMat, omat:Mat, omati:Mat, dir:Int):(GLMat,GIMat) = GLMat.maxi2(a, omat, omati, dir) 
-  def mini2(a:GLMat, omat:Mat, omati:Mat, dir:Int):(GLMat,GIMat) = GLMat.mini2(a, omat, omati, dir)
-  def maxi2(a:GLMat, omat:Mat, omati:Mat):(GLMat,GIMat) = GLMat.maxi2(a, omat, omati, 0) 
-  def mini2(a:GLMat, omat:Mat, omati:Mat):(GLMat,GIMat) = GLMat.mini2(a, omat, omati, 0)
-
+  def cumsumg(a:GIMat, jc:GIMat, omat:Mat):GIMat = GIFunctions.cumsumg(a, jc, omat) 
+  def maxg(a:GIMat, jc:GIMat, omat:Mat, omati:Mat):(GIMat,GIMat) = GIFunctions.maxg(a, jc, omat, omati)
+  def ming(a:GIMat, jc:GIMat, omat:Mat, omati:Mat):(GIMat,GIMat) = GIFunctions.ming(a, jc, omat, omati) 
   
-  def cumsumg(a:GMat, jc:GIMat):GMat = GMat.cumsumg(a, jc, null)  
-  def maxg(a:GMat, jc:GIMat) = GMat.maxg(a, jc, null, null) 
-  def ming(a:GMat, jc:GIMat) = GMat.ming(a, jc, null, null)
-  def maxi2(a:GMat, dir:Int):(GMat,GIMat) = GMat.maxi2(a, null, null, dir)  
-  def mini2(a:GMat, dir:Int):(GMat,GIMat) = GMat.mini2(a, null, null, dir)
-  def maxi2(a:GMat):(GMat,GIMat) = GMat.maxi2(a, null, null, 0)  
-  def mini2(a:GMat):(GMat,GIMat) = GMat.mini2(a, null, null, 0)
+  def cumsumg(a:GMat, jc:GIMat):GMat = GFunctions.cumsumg(a, jc, null)  
+  def maxg(a:GMat, jc:GIMat) = GFunctions.maxg(a, jc, null, null) 
+  def ming(a:GMat, jc:GIMat) = GFunctions.ming(a, jc, null, null)
   
-  def cumsumg(a:GIMat, jc:GIMat):GIMat = GIMat.cumsumg(a, jc, null)  
-  def maxg(a:GIMat, jc:GIMat) = GIMat.maxg(a, jc, null, null)
+  def cumsumg(a:GIMat, jc:GIMat):GIMat = GIFunctions.cumsumg(a, jc, null)  
+  def maxg(a:GIMat, jc:GIMat) = GIFunctions.maxg(a, jc, null, null)
+  def ming(a:GIMat, jc:GIMat) = GIFunctions.ming(a, jc, null, null)
   
-  def cumsumg(a:GDMat, jc:GIMat, omat:Mat):GDMat = GDMat.cumsumg(a, jc, omat) 
-  def maxg(a:GDMat, jc:GIMat, omat:Mat, omati:Mat):(GDMat,GIMat) = GDMat.maxg(a, jc, omat, omati) 
-  def ming(a:GDMat, jc:GIMat, omat:Mat, omati:Mat):(GDMat,GIMat) = GDMat.maxg(a, jc, omat, omati) 
-  def maxi2(a:GDMat, omat:Mat, omati:Mat, dir:Int):(GDMat,GIMat) = GDMat.maxi2(a, omat, omati, dir) 
-  def mini2(a:GDMat, omat:Mat, omati:Mat, dir:Int):(GDMat,GIMat) = GDMat.mini2(a, omat, omati, dir)
-  def maxi2(a:GDMat, omat:Mat, omati:Mat):(GDMat,GIMat) = GDMat.maxi2(a, omat, omati, 0) 
-  def mini2(a:GDMat, omat:Mat, omati:Mat):(GDMat,GIMat) = GDMat.mini2(a, omat, omati, 0)
+  def cumsumg(a:GDMat, jc:GIMat, omat:Mat):GDMat = GDFunctions.cumsumg(a, jc, omat) 
+  def maxg(a:GDMat, jc:GIMat, omat:Mat, omati:Mat):(GDMat,GIMat) = GDFunctions.maxg(a, jc, omat, omati) 
+  def ming(a:GDMat, jc:GIMat, omat:Mat, omati:Mat):(GDMat,GIMat) = GDFunctions.maxg(a, jc, omat, omati) 
   
-  def cumsumg(a:GDMat, jc:GIMat):GDMat = GDMat.cumsumg(a, jc, null)  
-  def maxg(a:GDMat, jc:GIMat) = GDMat.maxg(a, jc, null, null) 
-  def ming(a:GDMat, jc:GIMat) = GDMat.ming(a, jc, null, null)
-  def maxi2(a:GDMat, dir:Int):(GDMat,GIMat) = GDMat.maxi2(a, null, null, dir)  
-  def mini2(a:GDMat, dir:Int):(GDMat,GIMat) = GDMat.mini2(a, null, null, dir)
-  def maxi2(a:GDMat):(GDMat,GIMat) = GDMat.maxi2(a, null, null, 0)  
-  def mini2(a:GDMat):(GDMat,GIMat) = GDMat.mini2(a, null, null, 0)
-     
-  def max(a:Mat, b:Mat):Mat = max(a, b, null)
-  def min(a:Mat, b:Mat):Mat = min(a, b, null)
+  def cumsumg(a:GDMat, jc:GIMat):GDMat = GDFunctions.cumsumg(a, jc, null)  
+  def maxg(a:GDMat, jc:GIMat) = GDFunctions.maxg(a, jc, null, null) 
+  def ming(a:GDMat, jc:GIMat) = GDFunctions.ming(a, jc, null, null)
   
-  def cumsum(a:GMat, b:Mat, dir:Int) = GMat.cumsum(a, b, dir)
-  def cumsum(a:GMat, b:Mat) = GMat.cumsum(a, b, 0)
-  def cumsum(a:GMat, dir:Int) = GMat.cumsum(a, null, dir)
-  def cumsum(a:GMat) = GMat.cumsum(a, null, 0)
+//  import GMat.BinOp
   
-  def max(a:FND, b:FND):FND = a.max(b);
-  def max(a:FND, b:Float):FND = a.max(b);
-  def max(b:Float, a:FND):FND = a.max(b); 
-  def max(a:FND, b:FND, c:ND):FND = a.max(b, c);
-  def max(a:FND, b:Float, c:ND):FND = a.max(b, c);
-  def max(b:Float, a:FND, c:ND):FND = a.max(b, c);
-  
-  def min(a:FND, b:FND):FND = a.min(b);
-  def min(a:FND, b:Float):FND = a.min(b);
-  def min(b:Float, a:FND):FND = a.min(b); 
-  def min(a:FND, b:FND, c:ND):FND = a.min(b, c);
-  def min(a:FND, b:Float, c:ND):FND = a.min(b, c);
-  def min(b:Float, a:FND, c:ND):FND = a.min(b, c);
-  
-  def max(a:GND, b:GND):GND = a.max(b);
-  def max(a:GND, b:Float):GND = a.max(b);
-  def max(b:Float, a:GND):GND = a.max(b); 
-  def max(a:GND, b:GND, c:ND):GND = a.max(b, c);
-  def max(a:GND, b:Float, c:ND):GND = a.max(b, c);
-  def max(b:Float, a:GND, c:ND):GND = a.max(b, c);
-  
-  def min(a:GND, b:GND):GND = a.min(b);
-  def min(a:GND, b:Float):GND = a.min(b);
-  def min(b:Float, a:GND):GND = a.min(b); 
-  def min(a:GND, b:GND, c:ND):GND = a.min(b, c);
-  def min(a:GND, b:Float, c:ND):GND = a.min(b, c);
-  def min(b:Float, a:GND, c:ND):GND = a.min(b, c);
+  /* Generic max with output matrix */
   
   def max(a:Mat, b:Mat, c:Mat):Mat = {
     (a, b) match {
@@ -914,24 +639,33 @@ object SciFunctions {
       case (aa:DMat, bb:DMat) => max(aa, bb, c):DMat
       case (aa:DMat, bb:FMat) => max(aa, DMat(bb), c):DMat
       case (aa:FMat, bb:DMat) => max(DMat(aa), bb, c):DMat
-      case (aa:GMat, bb:GMat) => max(aa, bb, c):GMat
-      case (aa:GIMat, bb:GIMat) => max(aa, bb, c):GIMat
-      case (aa:GLMat, bb:GLMat) => max(aa, bb, c):GLMat
       case (aa:IMat, bb:FMat) => max(FMat(aa), bb, c):FMat
       case (aa:FMat, bb:IMat) => max(aa, FMat(bb), c):FMat
-      case (aa:FMat, bb:GMat) => max(GMat(aa), bb, c):GMat
-      case (aa:GMat, bb:FMat) => max(aa, GMat(bb), c):GMat
-      case (aa:IMat, bb:GMat) => max(GMat(aa), bb, c):GMat
-      case (aa:GMat, bb:IMat) => max(aa, GMat(bb), c):GMat
-      case (aa:IMat, bb:GIMat) => max(GIMat(aa), bb, c):GIMat
-      case (aa:GIMat, bb:IMat) => max(aa, GIMat(bb), c):GIMat
-      case (aa:GDMat, bb:GDMat) => max(aa, bb, c):GDMat
-      case (aa:GDMat, bb:FMat) => max(aa, GDMat(bb), c):GDMat
-      case (aa:FMat, bb:GDMat) => max(GDMat(aa), bb, c):GDMat
-      case (aa:GDMat, bb:IMat) => max(aa, GDMat(bb), c):GDMat
-      case (aa:IMat, bb:GDMat) => max(GDMat(aa), bb, c):GDMat
     }
   }
+  
+  /* Generic max with no output matrix */
+  
+  def max(a:Mat, b:Mat):Mat = max(a, b, null);
+  
+  /* specialize float args */
+  
+  def max(a:Mat, b:Float, c:Mat):Mat = {
+    a match {
+      case (aa:FMat) => max(aa, FMat.elem(b), c):FMat;
+      case (aa:DMat) => max(aa, DMat.delem(b), c):DMat;
+      case (aa:IMat) => max(aa, IMat.ielem(b.toInt), c):IMat;
+      case (aa:LMat) => max(aa, LMat.lelem(b.toInt), c):LMat;
+      case (aa:SMat) => max(aa, b, c):SMat;
+      case (aa:SDMat) => max(aa, b.toDouble, c):SDMat;
+    }
+  }
+  
+  def max(a:Float, b:Mat, c:Mat):Mat = max(b, a, c);  
+  
+  def max(a:Mat, b:Float):Mat = max(a, b, null);  
+  def max(a:Float, b:Mat):Mat = max(b, a, null);
+
   
   def min(a:Mat, b:Mat, c:Mat):Mat = {
     (a, b) match {
@@ -941,24 +675,27 @@ object SciFunctions {
       case (aa:DMat, bb:DMat) => min(aa, bb, c):DMat
       case (aa:DMat, bb:FMat) => min(aa, DMat(bb), c):DMat
       case (aa:FMat, bb:DMat) => min(DMat(aa), bb, c):DMat
-      case (aa:GMat, bb:GMat) => min(aa, bb, c):GMat
-      case (aa:GIMat, bb:GIMat) => min(aa, bb, c):GIMat
-      case (aa:GLMat, bb:GLMat) => min(aa, bb, c):GLMat
       case (aa:IMat, bb:FMat) => min(FMat(aa), bb, c):FMat
       case (aa:FMat, bb:IMat) => min(aa, FMat(bb), c):FMat
-      case (aa:FMat, bb:GMat) => min(GMat(aa), bb, c):GMat
-      case (aa:GMat, bb:FMat) => min(aa, GMat(bb), c):GMat
-      case (aa:IMat, bb:GMat) => min(GMat(aa), bb, c):GMat
-      case (aa:GMat, bb:IMat) => min(aa, GMat(bb), c):GMat
-      case (aa:IMat, bb:GIMat) => min(GIMat(aa), bb, c):GIMat
-      case (aa:GIMat, bb:IMat) => min(aa, GIMat(bb), c):GIMat
-      case (aa:GDMat, bb:GDMat) => min(aa, bb, c):GDMat
-      case (aa:GDMat, bb:FMat) => min(aa, GDMat(bb), c):GDMat
-      case (aa:FMat, bb:GDMat) => min(GDMat(aa), bb, c):GDMat
-      case (aa:GDMat, bb:IMat) => min(aa, GDMat(bb), c):GDMat
-      case (aa:IMat, bb:GDMat) => min(GDMat(aa), bb, c):GDMat
     }
   }
+  
+  def min(a:Mat, b:Mat):Mat = min(a, b, null);
+  
+  def min(a:Mat, b:Float, c:Mat):Mat = {
+    a match {
+      case (aa:FMat) => min(aa, FMat.elem(b), c):FMat;
+      case (aa:DMat) => min(aa, DMat.delem(b), c):DMat;
+      case (aa:IMat) => min(aa, IMat.ielem(b.toInt), c):IMat;
+      case (aa:LMat) => min(aa, LMat.lelem(b.toInt), c):LMat;
+      case (aa:SMat) => min(aa, b, c):SMat;
+      case (aa:SDMat) => min(aa, b, c):SDMat;
+    }
+  }
+  
+  def min(a:Float, b:Mat, c:Mat):Mat = min(b, a, c);  
+  def min(a:Mat, b:Float):Mat = min(a, b, null);  
+  def min(a:Float, b:Mat):Mat = min(b, a, null);
    
   def maxi(a:Mat, b:Int):Mat = {
     a match {
@@ -966,26 +703,21 @@ object SciFunctions {
       case aa:IMat => maxi(aa, b):IMat
       case aa:LMat => maxi(aa, b):LMat
       case aa:DMat => maxi(aa, b):DMat
-      case aa:GMat => maxi(aa, b):GMat
-      case aa:GIMat => maxi(aa, b):GIMat
-      case aa:GLMat => maxi(aa, b):GLMat
-      case aa:GDMat => maxi(aa, b):GDMat
     }
   }
   
-    
+  def amax(a:Mat, b:Int):Mat = maxi(a, b);  
+  
   def maxi(a:Mat):Mat = {
     a match {
       case aa:FMat => maxi(aa):FMat
       case aa:IMat => maxi(aa):IMat
       case aa:LMat => maxi(aa):LMat
       case aa:DMat => maxi(aa):DMat
-      case aa:GMat => maxi(aa):GMat
-      case aa:GIMat => maxi(aa):GIMat
-      case aa:GLMat => maxi(aa):GLMat
-      case aa:GDMat => maxi(aa):GDMat
     }
   }
+  
+  def amax(a:Mat):Mat = maxi(a); 
   
   def mini(a:Mat, b:Int):Mat = {
     a match {
@@ -993,12 +725,10 @@ object SciFunctions {
       case aa:IMat => mini(aa, b):IMat
       case aa:LMat => mini(aa, b):LMat
       case aa:DMat => mini(aa, b):DMat
-      case aa:GMat => mini(aa, b):GMat
-      case aa:GIMat => mini(aa, b):GIMat
-      case aa:GLMat => mini(aa, b):GLMat
-      case aa:GDMat => mini(aa, b):GDMat
     }
   }
+  
+  def amin(a:Mat, b:Int):Mat = mini(a, b); 
   
   def mini(a:Mat):Mat = {
     a match {
@@ -1006,12 +736,10 @@ object SciFunctions {
       case aa:IMat => mini(aa):IMat
       case aa:LMat => mini(aa):LMat
       case aa:DMat => mini(aa):DMat
-      case aa:GMat => mini(aa):GMat
-      case aa:GIMat => mini(aa):GIMat
-      case aa:GLMat => mini(aa):GLMat
-      case aa:GDMat => mini(aa):GDMat
     }
   }
+  
+  def amin(a:Mat):Mat = mini(a); 
   
   def maxi2(a:Mat, b:Int):(Mat,Mat) = {
     a match {
@@ -1019,8 +747,6 @@ object SciFunctions {
       case aa:IMat => maxi2(aa, b):(IMat,IMat)
       case aa:LMat => maxi2(aa, b):(LMat,IMat)
       case aa:DMat => maxi2(aa, b):(DMat,IMat)
-      case aa:GMat => maxi2(aa, b):(GMat,GIMat)
-      case aa:GDMat => maxi2(aa, b):(GDMat,GIMat)
     }
   }
   
@@ -1030,8 +756,6 @@ object SciFunctions {
       case aa:IMat => maxi2(aa):(IMat,IMat)
       case aa:LMat => maxi2(aa):(LMat,IMat)
       case aa:DMat => maxi2(aa):(DMat,IMat)
-      case aa:GMat => maxi2(aa):(GMat,GIMat)
-      case aa:GDMat => maxi2(aa):(GDMat,GIMat)
     }
   }
   
@@ -1041,8 +765,6 @@ object SciFunctions {
       case aa:IMat => mini2(aa, b):(IMat,IMat)
       case aa:LMat => mini2(aa, b):(LMat,IMat)
       case aa:DMat => mini2(aa, b):(DMat,IMat)
-      case aa:GMat => mini2(aa, b):(GMat,GIMat)
-      case aa:GDMat => mini2(aa, b):(GDMat,GIMat)
     }
   }
   
@@ -1052,8 +774,6 @@ object SciFunctions {
       case aa:IMat => mini2(aa):(IMat,IMat)
       case aa:LMat => mini2(aa):(LMat,IMat)
       case aa:DMat => mini2(aa):(DMat,IMat)
-      case aa:GMat => mini2(aa):(GMat,GIMat)
-      case aa:GDMat => mini2(aa):(GDMat,GIMat)
     }
   } 
   
@@ -1065,10 +785,6 @@ object SciFunctions {
       case aa:DMat => sum(aa, b):DMat
       case aa:CMat => sum(aa, b):CMat
       case aa:SMat => sum(aa, b):FMat
-      case aa:GMat => sum(aa, b):GMat
-      case aa:GDMat => sum(aa, b):GDMat
-      case aa:GSMat => sum(aa, b):GMat
-      case aa:GSDMat => sum(aa, b):GDMat
       case aa:TMat => aa.sum(b, null):Mat
     }
   }
@@ -1083,10 +799,6 @@ object SciFunctions {
       case aa:DMat=> sum(aa, b, c):DMat
       case aa:SMat=> sum(aa, b, c):FMat
       case aa:CMat => sum(aa, b, c):CMat
-      case aa:GMat => sum(aa, b, c):GMat
-      case aa:GDMat => sum(aa, b, c):GDMat
-      case aa:GSMat => sum(aa, b, c):GMat
-      case aa:GSDMat => sum(aa, b, c):GDMat
       case aa:TMat => aa.sum(b, c):Mat
     }
   }
@@ -1134,13 +846,6 @@ object SciFunctions {
     case (aa:FMat, bb:FMat) => aa.cumsumByKey(bb);
     case (aa:FMat, bb:IMat) => aa.cumsumByKey(bb);
     case (aa:IMat, bb:IMat) => aa.cumsumByKey(bb);
-//    case (aa:IMat, bb:FMat) => aa.cumsumByKey(bb);
-    case (aa:GMat, bb:GMat) => aa.cumsumByKey(bb);
-    case (aa:GMat, bb:GIMat) => aa.cumsumByKey(bb);
-    case (aa:GIMat, bb:GIMat) => aa.cumsumByKey(bb);
-    case (aa:GIMat, bb:GMat) => aa.cumsumByKey(bb);
-    case (aa:GDMat, bb:GDMat) => aa.cumsumByKey(bb);
-    case (aa:GLMat, bb:GLMat) => aa.cumsumByKey(bb);
     }
   }
   
@@ -1168,13 +873,6 @@ object SciFunctions {
     case (aa:FMat, bb:FMat) => aa.cumsumByKey(bb, omat);
     case (aa:FMat, bb:IMat) => aa.cumsumByKey(bb, omat);
     case (aa:IMat, bb:IMat) => aa.cumsumByKey(bb, omat);
-//    case (aa:IMat, bb:FMat) => aa.cumsumByKey(bb, omat);
-    case (aa:GMat, bb:GMat) => aa.cumsumByKey(bb, omat);
-    case (aa:GMat, bb:GIMat) => aa.cumsumByKey(bb, omat);
-    case (aa:GIMat, bb:GIMat) => aa.cumsumByKey(bb, omat);
-    case (aa:GIMat, bb:GMat) => aa.cumsumByKey(bb, omat);
-    case (aa:GDMat, bb:GDMat) => aa.cumsumByKey(bb, omat);
-    case (aa:GLMat, bb:GLMat) => aa.cumsumByKey(bb, omat);
     }
   }
     
@@ -1201,13 +899,6 @@ object SciFunctions {
     case (aa:FMat, bb:FMat) => aa.cummaxByKey(bb);
     case (aa:FMat, bb:IMat) => aa.cummaxByKey(bb);
     case (aa:IMat, bb:IMat) => aa.cummaxByKey(bb);
-//    case (aa:IMat, bb:FMat) => aa.cummaxByKey(bb);
-    case (aa:GMat, bb:GMat) => aa.cummaxByKey(bb);
-    case (aa:GMat, bb:GIMat) => aa.cummaxByKey(bb);
-    case (aa:GIMat, bb:GIMat) => aa.cummaxByKey(bb);
-    case (aa:GIMat, bb:GMat) => aa.cummaxByKey(bb);
-    case (aa:GDMat, bb:GDMat) => aa.cummaxByKey(bb);
-    case (aa:GLMat, bb:GLMat) => aa.cummaxByKey(bb);
     }
   }
   
@@ -1235,13 +926,6 @@ object SciFunctions {
     case (aa:FMat, bb:FMat) => aa.cummaxByKey(bb, omat);
     case (aa:FMat, bb:IMat) => aa.cummaxByKey(bb, omat);
     case (aa:IMat, bb:IMat) => aa.cummaxByKey(bb, omat);
-//    case (aa:IMat, bb:FMat) => aa.cummaxByKey(bb, omat);
-    case (aa:GMat, bb:GMat) => aa.cummaxByKey(bb, omat);
-    case (aa:GMat, bb:GIMat) => aa.cummaxByKey(bb, omat);
-    case (aa:GIMat, bb:GIMat) => aa.cummaxByKey(bb, omat);
-    case (aa:GIMat, bb:GMat) => aa.cummaxByKey(bb, omat);
-    case (aa:GDMat, bb:GDMat) => aa.cummaxByKey(bb, omat);
-    case (aa:GLMat, bb:GLMat) => aa.cummaxByKey(bb, omat);
     }
   }
 
@@ -1269,13 +953,6 @@ object SciFunctions {
     case (aa:FMat, bb:FMat) => aa.cumminByKey(bb);
     case (aa:FMat, bb:IMat) => aa.cumminByKey(bb);
     case (aa:IMat, bb:IMat) => aa.cumminByKey(bb);
-//    case (aa:IMat, bb:FMat) => aa.cumminByKey(bb);
-    case (aa:GMat, bb:GMat) => aa.cumminByKey(bb);
-    case (aa:GMat, bb:GIMat) => aa.cumminByKey(bb);
-    case (aa:GIMat, bb:GIMat) => aa.cumminByKey(bb);
-    case (aa:GIMat, bb:GMat) => aa.cumminByKey(bb);
-    case (aa:GDMat, bb:GDMat) => aa.cumminByKey(bb);
-    case (aa:GLMat, bb:GLMat) => aa.cumminByKey(bb);
     }
   }
   
@@ -1303,13 +980,6 @@ object SciFunctions {
     case (aa:FMat, bb:FMat) => aa.cumminByKey(bb, omat);
     case (aa:FMat, bb:IMat) => aa.cumminByKey(bb, omat);
     case (aa:IMat, bb:IMat) => aa.cumminByKey(bb, omat);
-//    case (aa:IMat, bb:FMat) => aa.cumminByKey(bb, omat);
-    case (aa:GMat, bb:GMat) => aa.cumminByKey(bb, omat);
-    case (aa:GMat, bb:GIMat) => aa.cumminByKey(bb, omat);
-    case (aa:GIMat, bb:GIMat) => aa.cumminByKey(bb, omat);
-    case (aa:GIMat, bb:GMat) => aa.cumminByKey(bb, omat);
-    case (aa:GDMat, bb:GDMat) => aa.cumminByKey(bb, omat);
-    case (aa:GLMat, bb:GLMat) => aa.cumminByKey(bb, omat);
     }
   }
   
@@ -1331,10 +1001,6 @@ object SciFunctions {
     case aa:IMat => aa._reverse(omat);
     case aa:DMat => aa._reverse(omat);
     case aa:LMat => aa._reverse(omat);
-    case aa:GMat => aa._reverse(omat);
-    case aa:GIMat => aa._reverse(omat);
-    case aa:GDMat => aa._reverse(omat);
-    case aa:GLMat => aa._reverse(omat);
     }
   }
   
@@ -1356,10 +1022,6 @@ object SciFunctions {
     case aa:IMat => aa._reverse(null);
     case aa:DMat => aa._reverse(null);
     case aa:LMat => aa._reverse(null);
-    case aa:GMat => aa._reverse(null);
-    case aa:GIMat => aa._reverse(null);
-    case aa:GDMat => aa._reverse(null);
-    case aa:GLMat => aa._reverse(null);
     }
   }
   
@@ -1401,6 +1063,14 @@ object SciFunctions {
   
   def mean(a:GMat):GMat = {
     _mean(a, 0).asInstanceOf[GMat]
+  }
+  
+  def mean(a:GDMat, dim0:Int):GDMat = {
+    _mean(a, dim0).asInstanceOf[GDMat]
+  }
+  
+  def mean(a:GDMat):GDMat = {
+    _mean(a, 0).asInstanceOf[GDMat]
   }
   
   def mean(a:Mat, b:Int):Mat = _mean(a,b)
@@ -1455,6 +1125,14 @@ object SciFunctions {
   def variance(a:GMat):GMat = {
     _variance(a, 0).asInstanceOf[GMat]
   }
+  
+  def variance(a:GDMat, dim0:Int):GDMat = {
+    _variance(a, dim0).asInstanceOf[GDMat]
+  }
+  
+  def variance(a:GDMat):GDMat = {
+    _variance(a, 0).asInstanceOf[GDMat]
+  }
      
   def variance(a:Mat, dim:Int) = _variance(a, dim)
   
@@ -1471,910 +1149,344 @@ object SciFunctions {
     }
   }
 
+  def LXdistance(a:FMat, b:FMat, omat:Mat, p:Float):FMat = FFunctions.LXdistance(a, b, omat, p);
   
-  def applyDFun(a:DMat, omat:Mat, vfn:(Int, Array[Double], Array[Double])=>Unit, efn:(Double)=>Double, nflops:Long) ={
-      val out = DMat.newOrCheckDMat(a.nrows, a.ncols, omat, a.GUID, vfn.##, efn.##)
-	    if (!Mat.useMKLRand || vfn == null) {
-	      if (efn == null) {
-	        throw new RuntimeException("no Scala builtin version of this math function, sorry")
-	      } 
-	      var i = 0; val len = a.length; val odata = out.data; val adata = a.data
-	      while (i < len) {odata(i) = efn(adata(i)); i += 1}
-	    } else {
-	      vfn(a.length, a.data, out.data)
-	    }
-	    Mat.nflops += nflops*a.length
-	    out
-	  }
-
-  def applyDFunV(a:DMat, omat:Mat, vfn:(Int, Array[Double], Array[Double])=>Unit,
-                efn:(Int, Array[Double], Array[Double])=>Unit, nflops:Long) = {
-	    val out = DMat.newOrCheckDMat(a.nrows, a.ncols, omat, a.GUID, vfn.##, efn.##)
-	    if (!Mat.useMKLRand) {
-	      if (efn == null) {
-	        throw new RuntimeException("no Scala builtin version of this math function, sorry")
-	      } 
-	      efn(a.length, a.data, out.data)
-	    } else {
-	      vfn(a.length, a.data, out.data)
-	    }
-	    Mat.nflops += nflops*a.length
-	    out
-	  }
-  
-  def applySFun(a:FMat, omat:Mat, vfn:(Int, Array[Float], Array[Float])=>Unit, efn:(Float)=>Float, nflops:Long) ={
-  	val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat, a.GUID, vfn.##, efn.##)
-  	if (!Mat.useMKLRand || vfn == null) {
-  		if (efn == null) {
-  			throw new RuntimeException("no Scala builtin version of this math function, sorry")
-  		} 
-  		var i = 0; val len = a.length; val odata = out.data; val adata = a.data
-  		while (i < len) {odata(i) = efn(adata(i)); i += 1}
-  	} else {
-  		vfn(a.length, a.data, out.data)
-  	}	
-  	Mat.nflops += nflops*a.length
-  	out
-  }
-  
-  def applySlatecFun(a:FMat, omat:Mat, nfn:Int, nflops:Long) = {
-    val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat, a.GUID, nfn)
-    SLATEC.applyfun(a.data, out.data, a.length, nfn);
-    Mat.nflops += nflops*a.length
-    out
-  }
-  
-  def applySlatecFun2(a:FMat, b:FMat, omat:Mat, nfn:Int, nflops:Long) = {
-    val nr = math.max(a.nrows, b.nrows);
-    val nc = math.max(a.ncols, b.ncols);
-    val out = FMat.newOrCheckFMat(nr, nc, omat, a.GUID, b.GUID, nfn);
-    val arowi = if (a.nrows == nr) 1 else 0;
-    val browi = if (b.nrows == nr) 1 else 0;
-    val acoli = if (a.ncols == nc) a.nrows else 0;
-    val bcoli = if (b.ncols == nc) b.nrows else 0;
-    SLATEC.applyfun2(nr, nc, a.data, arowi, acoli, b.data, browi, bcoli, out.data, nr, nfn);
-    Mat.nflops += nflops*out.length
-    out
-  }
-  
-  def applySlatecGFun(a:GMat, omat:Mat, nfn:Int, nflops:Long) = {
-    val out = GMat.newOrCheckGMat(a.nrows, a.ncols, omat, a.GUID, nfn)
-    SLATEC.applygfun(a.data, out.data, a.length, nfn);
-    Mat.nflops += nflops*a.length
-    out
-  }
-  
-  def applySlatecGFun2(a:GMat, b:GMat, omat:Mat, nfn:Int, nflops:Long) = {
-    val nr = math.max(a.nrows, b.nrows);
-    val nc = math.max(a.ncols, b.ncols);
-    val out = GMat.newOrCheckGMat(nr, nc, omat, a.GUID, b.GUID, nfn);
-    val arowi = if (a.nrows == nr) 1 else 0;
-    val browi = if (b.nrows == nr) 1 else 0;
-    val acoli = if (a.ncols == nc) a.nrows else 0;
-    val bcoli = if (b.ncols == nc) b.nrows else 0;
-    SLATEC.applygfun2(nr, nc, a.data, arowi, acoli, b.data, browi, bcoli, out.data, nr, nfn);
-    Mat.nflops += nflops*out.length
-    out
-  }
-  
-  def applyFNDfun(a:FND, omat:ND, vfn:(Int, Array[Float], Array[Float])=>Unit, efn:(Float)=>Float, nflops:Long) ={
-    val out = FND.newOrCheckFND(a.dims, omat, a.GUID, vfn.##, efn.##)
-    if (!Mat.useMKLRand || vfn == null) {
-      if (efn == null) {
-        throw new RuntimeException("no Scala builtin version of this math function, sorry")
-      } 
-      var i = 0; val len = a.length; val odata = out.data; val adata = a.data
-      while (i < len) {odata(i) = efn(adata(i)); i += 1}
-    } else {
-      vfn(a.length, a.data, out.data)
-    } 
-    Mat.nflops += nflops*a.length
-    out
-  }
-
-  def applyCFun(a:CMat, omat:Mat, vfn:(Int, Array[Float], Array[Float])=>Unit, efn:(Float,Float)=>(Float,Float), nflops:Long) ={
-  	val out = CMat.newOrCheckCMat(a.nrows, a.ncols, omat, a.GUID, vfn.##, efn.##)
-  	if (!Mat.useMKLRand || vfn == null) {
-  		if (efn == null) {
-  			throw new RuntimeException("no Scala builtin version of this math function, sorry")
-  		} 
-  		var i = 0; val len = a.length; val odata = out.data; val adata = a.data
-  		while (i < 2*len) {val (x,y) = efn(adata(i),adata(i+1)); odata(i) = x; odata(i+1) = y; i += 2}
-  	} else {
-  		vfn(a.length, a.data, out.data)
-  	}	
-  	Mat.nflops += nflops*a.length
-  	out
-  }
-
-  def applyCSFun(a:CMat, omat:Mat, vfn:(Int, Array[Float], Array[Float])=>Unit, efn:(Float,Float)=>Float, nflops:Long) ={
-  	val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat, a.GUID, vfn.##, efn.##)
-  	if (!Mat.useMKLRand || vfn == null) {
-  		if (efn == null) {
-  			throw new RuntimeException("no Scala builtin version of this math function, sorry")
-  		} 
-  		var i = 0; val len = a.length; val odata = out.data; val adata = a.data
-  		while (i < len) {odata(i)= efn(adata(2*i),adata(2*i+1)); i += 1}
-  	} else {
-  		vfn(a.length, a.data, out.data)
-  	}	
-  	Mat.nflops += nflops*a.length
-  	out
-  }
-
-  def applySFunV(a:FMat, omat:Mat, vfn:(Int, Array[Float], Array[Float])=>Unit, 
-  		efn:(Int, Array[Float], Array[Float])=>Unit, nflops:Long) ={
-  	val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat, a.GUID, vfn.##, efn.##)
-  	if (!Mat.useMKLRand) {
-  		if (efn == null) {
-  			throw new RuntimeException("no Scala builtin version of this math function, sorry")
-  		} 
-  		efn(a.length, a.data, out.data)
-  	} else {
-  		vfn(a.length, a.data, out.data)
-  	}	
-  	Mat.nflops += nflops*a.length
-  	out
-  }
-  
-  def applyFNDfunV(a:FND, omat:ND, vfn:(Int, Array[Float], Array[Float])=>Unit, 
-      efn:(Int, Array[Float], Array[Float])=>Unit, nflops:Long) ={
-    val out = FND.newOrCheckFND(a.dims, omat, a.GUID, vfn.##, efn.##)
-    if (!Mat.useMKLRand) {
-      if (efn == null) {
-        throw new RuntimeException("no Scala builtin version of this math function, sorry")
-      } 
-      efn(a.length, a.data, out.data)
-    } else {
-      vfn(a.length, a.data, out.data)
-    } 
-    Mat.nflops += nflops*a.length
-    out
-  }
-
-  def applyD2Fun(a:DMat, b:DMat, omat:Mat, 
-  		vfn:(Int, Array[Double], Array[Double], Array[Double]) => Unit, 
-  		efn:(Double, Double)=>Double, nflops:Long):DMat = {
-  				val out = DMat.newOrCheckDMat(math.max(a.nrows, b.nrows), math.max(a.ncols, b.ncols), omat, a.GUID, b.GUID, vfn.##, efn.##)
-  				if (!Mat.useMKLRand) {
-  					if (efn == null) {
-  						throw new RuntimeException("no Scala builtin version of this math function, sorry")
-  					} 
-  					var	i = 0; val len = a.length; val odata = out.data; val adata = a.data; val bdata = b.data
-  					while	(i < len) {odata(i) = efn(adata(i), bdata(i)); i += 1}
-  				} else {
-  					vfn(a.length, a.data, b.data, out.data)
-  				}
-  				Mat.nflops += nflops*a.length
-  				out
-  		}
-
-  def applyS2Fun(a:FMat, b:FMat, omat:Mat, 
-  		vfn:(Int, Array[Float], Array[Float], Array[Float]) => Unit, 
-  		efn:(Float, Float)=>Float, nflops:Long):FMat = {
-  				val out = FMat.newOrCheckFMat(math.max(a.nrows, b.nrows), math.max(a.ncols, b.ncols), omat, a.GUID, b.GUID, vfn.##, efn.##)
-  				if (!Mat.useMKLRand) {
-  					if (efn == null) {
-  						throw new RuntimeException("no Scala builtin version of this math function, sorry")
-  					} 
-  					var	i = 0; val len = a.length; val odata = out.data; val adata = a.data; val bdata = b.data
-  					while	(i < len) {odata(i) = efn(adata(i), bdata(i)); i += 1}
-  				} else {
-  					vfn(a.length, a.data, b.data, out.data)
-  				}
-  				Mat.nflops += nflops*a.length
-  				out
-  		}
-  
-   def applyFND2fun(a:FND, b:FND, omat:ND, 
-      vfn:(Int, Array[Float], Array[Float], Array[Float]) => Unit, 
-      efn:(Float, Float)=>Float, nflops:Long):FND = {
-          val out = FND.newOrCheckFND(max(a.dims, b.dims), omat, a.GUID, b.GUID, vfn.##, efn.##)
-          if (!Mat.useMKLRand) {
-            if (efn == null) {
-              throw new RuntimeException("no Scala builtin version of this math function, sorry")
-            } 
-            var i = 0; val len = a.length; val odata = out.data; val adata = a.data; val bdata = b.data
-            while (i < len) {odata(i) = efn(adata(i), bdata(i)); i += 1}
-          } else {
-            vfn(a.length, a.data, b.data, out.data)
-          }
-          Mat.nflops += nflops*a.length
-          out
-      }
-  
-    def applyD2xFun(a:DMat, b:Double, omat:Mat, 
-  		vfn:(Int, Array[Double], Double, Array[Double]) => Unit, 
-  		efn:(Double, Double)=>Double, nflops:Long):DMat = {
-  				val out = DMat.newOrCheckDMat(a.nrows, a.ncols, omat, a.GUID, b.##, vfn.##, efn.##)
-  				if (!Mat.useMKLRand) {
-  					if (efn == null) {
-  						throw new RuntimeException("no Scala builtin version of this math function, sorry")
-  					} 
-  					var	i = 0; val len = a.length; val odata = out.data; val adata = a.data
-  					while	(i < len) {odata(i) = efn(adata(i), b); i += 1}
-  				} else {
-  					vfn(a.length, a.data, b, out.data)
-  				}
-  				Mat.nflops += nflops*a.length
-  				out
-  		}
-    
-    def applyS2xFun(a:FMat, b:Float, omat:Mat, 
-  		vfn:(Int, Array[Float], Float, Array[Float]) => Unit, 
-  		efn:(Float, Float)=>Float, nflops:Long):FMat = {
-  				val out = FMat.newOrCheckFMat(a.nrows, a.ncols, omat, a.GUID, b.##, vfn.##, efn.##)
-  				if (!Mat.useMKLRand) {
-  					if (efn == null) {
-  						throw new RuntimeException("no Scala builtin version of this math function, sorry")
-  					} 
-  					var	i = 0; val len = a.length; val odata = out.data; val adata = a.data
-  					while	(i < len) {odata(i) = efn(adata(i), b); i += 1}
-  				} else {
-  					vfn(a.length, a.data, b, out.data)
-  				}
-  				Mat.nflops += nflops*a.length
-  				out
-  		}
-    
-    
-  def applyFND2xfun(a:FND, b:Float, omat:ND, 
-      vfn:(Int, Array[Float], Float, Array[Float]) => Unit, 
-      efn:(Float, Float)=>Float, nflops:Long):FND = {
-          val out = FND.newOrCheckFND(a.dims, omat, a.GUID, b.##, vfn.##, efn.##)
-          if (!Mat.useMKLRand) {
-            if (efn == null) {
-              throw new RuntimeException("no Scala builtin version of this math function, sorry")
-            } 
-            var i = 0; val len = a.length; val odata = out.data; val adata = a.data
-            while (i < len) {odata(i) = efn(adata(i), b); i += 1}
-          } else {
-            vfn(a.length, a.data, b, out.data)
-          }
-          Mat.nflops += nflops*a.length
-          out
-      }
-  
-  def doPowx(n:Int, a:Array[Double], p:Float, r:Array[Double]) {
-    if (!Mat.useMKLRand) {
-      var i = 0
-      while (i < n) {
-        r(i) = math.pow(a(i), p)
-        i += 1
-      }
-    } else {
-      vdPowx(n, a, p, r)
-    }
-  }
-  
-  def LXdistance(a:FMat, b:FMat, omat:Mat, p:Float):FMat = {
-    if (a.ncols != b.ncols) {
-      throw new RuntimeException("LXdistance: ncols must match")
-    }
-    val c = FMat.newOrCheckFMat(a.nrows, b.nrows, omat, a.GUID, b.GUID, "LXdistance".##)
-    if (Mat.hasCUDA > 0) GMat.LXdist(a, b, c, p)
-    else {
-    	val tmp = DMat.newOrCheckDMat(a.nrows, 1, null, a.GUID, b.GUID, "LXdistance_1".##) 
-    	val tmp2 = DMat.newOrCheckDMat(a.nrows, 1, null, a.GUID, b.GUID, "LXdistance_2".##) 
-    	val pinv = 1.0f/p
-    	var i = 0
-    	while (i < b.nrows) { 
-    		var k = 0
-    		while (k < a.nrows) {
-    			tmp.data(k) = 0
-    			k += 1
-    		}
-    		var j = 0
-    		while (j < a.ncols) {
-    			k = 0
-    			if (p == 0f) {
-    				while (k < a.nrows) {
-    					val xx = a.data(k + j*a.nrows) - b.data(i + j*b.nrows)
-    					tmp.data(k) = math.max(tmp.data(k),math.abs(xx))
-    					k += 1
-    				}
-    			} else if (p == 1f) {
-    				while (k < a.nrows) {
-    					val xx = a.data(k + j*a.nrows) - b.data(i + j*b.nrows)
-    					tmp.data(k) += math.abs(xx)
-    					k += 1
-    				}
-    			} else {
-    				while (k < a.nrows) {
-    					val xx = a.data(k + j*a.nrows) - b.data(i + j*b.nrows)
-    					tmp2.data(k) = math.abs(xx)
-    					k += 1
-    				}
-    				doPowx(a.nrows, tmp2.data, p, tmp2.data)
-    				k = 0
-    				while (k < a.nrows) {
-    					val xx = a.data(k + j*a.nrows) - b.data(i + j*b.nrows)
-    					tmp.data(k) += tmp2.data(k)
-    					k += 1
-    				}
-    			}
-    			j += 1
-    		}
-    		k = 0
-    		val dofast = (p == 0f || p == 1f)
-    		while (k < a.nrows) {
-    			val xx = tmp.data(k)
-    			c.data(k + i*c.nrows) = if (dofast) xx.toFloat else math.pow(xx, pinv).toFloat
-    			k += 1
-    		}
-    		i += 1
-    	}
-    	Mat.nflops += 3L*a.nrows*a.ncols*b.nrows
-    	c
-    }
-  }
-  
-  /* 
-   * Double scientific functions. Most have both an MKL and non-MKL implementation.
-   * The MKL implementation is used unless !Mat.useMKLRand = true. 
-   */
-  
-  val signumDFun = (x:Double) => math.signum(x);
-  def sign(a:DMat, out:Mat) = applyDFun(a, out, null, signumDFun, 1L);
-  def sign(a:DMat):DMat = sign(a, null);
-  
-  val absDFun = (x:Double) => math.abs(x)
-  val vdAbsDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdAbs(n,x,y)
-  def abs(a:DMat, out:Mat) = applyDFun(a, out, vdAbsDFun, absDFun, 1L)
-  def abs(a:DMat):DMat = abs(a, null)
-
-  val vdExpDFunMKL = (n:Int, a:Array[Double], b:Array[Double]) => vdExp(n, a, b)
-  val vdExpDFun = (n:Int, a:Array[Double], b:Array[Double]) => {var i=0 ; while (i<n) {b(i) = math.exp(a(i)); i+=1}}
-  def exp(a:DMat, out:Mat) = applyDFunV(a, out, vdExpDFunMKL, vdExpDFun, 10L)
-  def exp(a:DMat):DMat = exp(a, null)
-  
-  val expm1DFun = (x:Double) => math.expm1(x)
-  val vdExpm1DFun = (n:Int, x:Array[Double], y:Array[Double]) => vdExpm1(n,x,y)
-  def expm1(a:DMat, out:Mat) = applyDFun(a, out, vdExpm1DFun, expm1DFun, 10L)
-  def expm1(a:DMat):DMat = expm1(a, null)
-  
-  val sqrtDFun = (x:Double) => math.sqrt(x)
-  val vdSqrtDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdSqrt(n,x,y)
-  def sqrt(a:DMat, out:Mat) = applyDFun(a, out, vdSqrtDFun, sqrtDFun, 10L)
-  def sqrt(a:DMat):DMat = sqrt(a, null)
-
-  val lnDFun = (x:Double) => math.log(x)
-  val vdLnDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdLn(n,x,y)
-  def ln(a:DMat, out:Mat) = applyDFun(a, out, vdLnDFun, lnDFun, 10L)
-  def ln(a:DMat):DMat = ln(a, null)
-  
-  val log10DFun = (x:Double) => math.log10(x)
-  val vdLog10DFun = (n:Int, x:Array[Double], y:Array[Double]) => vdLog10(n,x,y)
-  def log10(a:DMat, out:Mat) = applyDFun(a, out, vdLog10DFun, log10DFun, 10L)
-  def log10(a:DMat):DMat = log10(a, null)
-  
-  val log1pDFun = (x:Double) => math.log1p(x)
-  val vdLog1pDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdLog1p(n,x,y)
-  def log1p(a:DMat, out:Mat) = applyDFun(a, out, vdLog1pDFun, log1pDFun, 10L)
-  def log1p(a:DMat):DMat = log1p(a, null)
-  
-  val cosDFun = (x:Double) => math.cos(x)
-  val vdCosDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdCos(n,x,y)
-  def cos(a:DMat, out:Mat) = applyDFun(a, out, vdCosDFun, cosDFun, 10L)
-  def cos(a:DMat):DMat = cos(a, null)
-  
-  val sinDFun = (x:Double) => math.sin(x)
-  val vdSinDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdSin(n,x,y)
-  def sin(a:DMat, out:Mat) = applyDFun(a, out, vdSinDFun, sinDFun, 10L)
-  def sin(a:DMat):DMat = sin(a, null)
-  
-  val tanDFun = (x:Double) => math.tan(x)
-  val vdTanDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdTan(n,x,y)
-  def tan(a:DMat, out:Mat) = applyDFun(a, out, vdTanDFun, tanDFun, 10L)
-  def tan(a:DMat):DMat = tan(a, null)
-  
-  val coshDFun = (x:Double) => math.cosh(x)
-  val vdCoshDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdCosh(n,x,y)
-  def cosh(a:DMat, out:Mat) = applyDFun(a, out, vdCoshDFun, coshDFun, 10L)
-  def cosh(a:DMat):DMat = cosh(a, null)
-  
-  val sinhDFun = (x:Double) => math.sinh(x)
-  val vdSinhDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdSinh(n,x,y)
-  def sinh(a:DMat, out:Mat) = applyDFun(a, out, vdSinhDFun, sinhDFun, 10L)
-  def sinh(a:DMat):DMat = sinh(a, null)
-  
-  val tanhDFun = (x:Double) => math.tanh(x)
-  val vdTanhDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdTanh(n,x,y)
-  def tanh(a:DMat, out:Mat) = applyDFun(a, out, vdTanhDFun, tanhDFun, 10L)
-  def tanh(a:DMat):DMat = tanh(a, null)
-  
-  val acosDFun = (x:Double) => math.acos(x)
-  val vdAcosDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdAcos(n,x,y)
-  def acos(a:DMat, out:Mat) = applyDFun(a, out, vdAcosDFun, acosDFun, 10L)
-  def acos(a:DMat):DMat = acos(a, null)
-
-  val asinDFun = (x:Double) => math.asin(x)
-  val vdAsinDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdAsin(n,x,y)
-  def asin(a:DMat, out:Mat) = applyDFun(a, out, vdAsinDFun, asinDFun, 10L)
-  def asin(a:DMat):DMat = asin(a, null)
-
-  val atanDFun = (x:Double) => math.atan(x)
-  val vdAtanDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdAtan(n,x,y)
-  def atan(a:DMat, out:Mat) = applyDFun(a, out, vdAtanDFun, atanDFun, 10L)
-  def atan(a:DMat):DMat = atan(a, null)
-
-  val acoshDFun = (x:Double) => FastMath.acosh(x)
-  val vdAcoshDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdAcosh(n,x,y)
-  def acosh(a:DMat, out:Mat) = applyDFun(a, out, vdAcoshDFun, acoshDFun, 10L)
-  def acosh(a:DMat):DMat = acosh(a, null)
-
-  val asinhDFun = (x:Double) => FastMath.asinh(x)
-  val vdAsinhDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdAsinh(n,x,y)
-  def asinh(a:DMat, out:Mat) = applyDFun(a, out, vdAsinhDFun, asinhDFun, 10L)
-  def asinh(a:DMat):DMat = asinh(a, null)
-  
-  val atanhDFun = (x:Double) => FastMath.atanh(x)
-  val vdAtanhDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdAtanh(n,x,y)
-  def atanh(a:DMat, out:Mat) = applyDFun(a, out, vdAtanhDFun, atanhDFun, 10L)
-  def atanh(a:DMat):DMat = atanh(a, null)
-  
-  val erfDFun = (x:Double) => Erf.erf(x)
-  val vdErfDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdErf(n,x,y)
-  def erf(a:DMat, out:Mat) = applyDFun(a, out, vdErfDFun, erfDFun, 10L)
-  def erf(a:DMat):DMat = erf(a, null)
-  
-  val vdErfInvdFun = (n:Int, x:Array[Double], y:Array[Double]) => vdErfInv(n,x,y)
-  def erfinv(a:DMat, out:Mat) = applyDFun(a, out, vdErfInvdFun, null, 10L)
-  def erfinv(a:DMat):DMat = erfinv(a, null)
-  
-  val erfcDFun = (x:Double) => Erf.erfc(x)
-  val vdErfcDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdErfc(n,x,y)
-  def erfc(a:DMat, out:Mat) = applyDFun(a, out, vdErfcDFun, erfcDFun, 10L)
-  def erfc(a:DMat):DMat = erfc(a, null)
-  
-  val vdErfcInvdFun = (n:Int, x:Array[Double], y:Array[Double]) => vdErfcInv(n,x,y)
-  def erfcinv(a:DMat, out:Mat) = applyDFun(a, out, vdErfcInvdFun, null, 10L)
-  def erfcinv(a:DMat):DMat = erfcinv(a, null)
-  
-  val vdCdfNormDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdCdfNorm(n,x,y)
-  def normcdf(a:DMat, out:Mat) = applyDFun(a, out, vdCdfNormDFun, null, 10L)
-  def normcdf(a:DMat):DMat = normcdf(a, null)
-  
-  val vdCdfNormInvdFun = (n:Int, x:Array[Double], y:Array[Double]) => vdCdfNormInv(n,x,y)
-  def norminv(a:DMat, out:Mat) = applyDFun(a, out, vdCdfNormInvdFun, null, 10L)
-  def norminv(a:DMat):DMat = norminv(a, null)
-  
-  val gammaDFun = (x:Double) => Gamma.gamma(x)
-  val vdTGammaDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdTGamma(n,x,y)
-  def gamma(a:DMat, out:Mat) = applyDFun(a, out, vdTGammaDFun, gammaDFun, 10L)
-  def gamma(a:DMat):DMat = gamma(a, null);
-  def Γ(a:DMat, out:Mat) = gamma(a, out);
-  def Γ(a:DMat) = gamma(a);
-  
-  val gammalnDFun = (x:Double) => Gamma.logGamma(x)
-  val vdLGammaDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdLGamma(n,x,y)
-  def gammaln(a:DMat, out:Mat) = applyDFun(a, out, vdLGammaDFun, gammalnDFun, 10L)
-  def gammaln(a:DMat):DMat = gammaln(a, null)
-
-  val ceilDFun = (x:Double) => math.ceil(x)
-  val vdCeilDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdCeil(n,x,y)  
-  def ceil(a:DMat, out:Mat) = applyDFun(a, out, vdCeilDFun, ceilDFun, 1L)
-  def ceil(a:DMat):DMat = ceil(a, null)
-  
-  val floorDFun = (x:Double) => math.floor(x)
-  val vdFloorDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdFloor(n,x,y)
-  def floor(a:DMat, out:Mat) = applyDFun(a, out, vdFloorDFun, floorDFun, 1L)
-  def floor(a:DMat):DMat = floor(a, null)
-
-  val roundDFun = (x:Double) => math.floor(x+0.5)
-  val vdRoundDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdRound(n,x,y)
-  def round(a:DMat, out:Mat) = applyDFun(a, out, vdRoundDFun, roundDFun, 1L)
-  def round(a:DMat):DMat = round(a, null)
-  
-  val truncDFun = (x:Double) => math.floor(math.abs(x))*math.signum(x)
-  val vdTruncDFun = (n:Int, x:Array[Double], y:Array[Double]) => vdTrunc(n,x,y)
-  def trunc(a:DMat, out:Mat) = applyDFun(a, out, vdTruncDFun, truncDFun, 1L)
-  def trunc(a:DMat):DMat = trunc(a, null)
-  
-  val atan2DFun = (x:Double, y:Double) => math.atan2(x, y)
-  val vdAtan2DFun = (n:Int, x:Array[Double], y:Array[Double], z:Array[Double]) => vdAtan2(n,x,y,z)
-  def atan2(a:DMat, b:DMat, out:Mat) = applyD2Fun(a, b, out, vdAtan2DFun, atan2DFun, 10L)
-  def atan2(a:DMat, b:DMat):DMat = atan2(a, b, null)
-  
-  val powDFun = (x:Double, y:Double) => math.pow(x, y)
-  val vdPowDFun = (n:Int, x:Array[Double], y:Array[Double], z:Array[Double]) => vdPow(n,x,y,z)
-  def pow(a:DMat, b:DMat, out:Mat) = applyD2Fun(a, b, out, vdPowDFun, powDFun, 10L)
-  def pow(a:DMat, b:DMat):DMat = pow(a, b, null)
-  val vdPowxDFun = (n:Int, x:Array[Double], y:Double, z:Array[Double]) => vdPowx(n,x,y,z)
-  def powx(a:DMat, b:Double, out:Mat) = applyD2xFun(a, b, out, vdPowxDFun, powDFun, 10L)
-  def powx(a:DMat, b:Double):DMat = powx(a, b, null)
-  
-  val exppsiDFun = (x:Double)=>if (x<1.0) 0.5*x*x else x-0.5
-  def exppsi(a:DMat, out:Mat) = applyDFun(a, out, null, exppsiDFun, 3L)
-  def exppsi(a:DMat):DMat = exppsi(a, null)
-  
+ 
   /* 
    * Single-precision scientific functions. Most have both an MKL and non-MKL implementation.
    * The MKL implementation is used unless !Mat.useMKLRand = true. 
    */
     
-  val signumFun = (x:Float) => math.signum(x).toFloat;
-  def sign(a:FMat, out:Mat) = applySFun(a, out, null, signumFun, 1L);
-  def sign(a:FMat):FMat = sign(a, null);
-  def sign(a:FND, out:ND):FND = applyFNDfun(a, out, null, signumFun, 1L);
-  def sign(a:FND):FND = sign(a, null);
+  def sign(a:FMat, out:Mat) = FFunctions.sign(a, out);
+  def sign(a:FMat):FMat = FFunctions.sign(a, null);
   
-  val absFun = (x:Float) => math.abs(x)
-  val vsAbsFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAbs(n,x,y)
-  def abs(a:FMat, out:Mat) = applySFun(a, out, vsAbsFun, absFun, 1L)
-  def abs(a:FMat):FMat = abs(a, null);
-  def abs(a:FND, out:ND):FND = applyFNDfun(a, out, vsAbsFun, absFun, 1L);
-  def abs(a:FND):FND = abs(a, null);
+  def abs(a:FMat, out:Mat) = FFunctions.abs(a, out);
+  def abs(a:FMat):FMat = FFunctions.abs(a, null);
 
-  val vsExpFunMKL = (n:Int, a:Array[Float], b:Array[Float]) => vsExp(n, a, b)
-  val vsExpFun = (n:Int, a:Array[Float], b:Array[Float]) => {var i=0 ; while (i<n) {b(i) = math.exp(a(i)).toFloat; i+=1}}
-  def exp(a:FMat, out:Mat) = applySFunV(a, out, vsExpFunMKL, vsExpFun, 10L)
-  def exp(a:FMat):FMat = exp(a, null);
-  def exp(a:FND, out:ND):FND = applyFNDfunV(a, out, vsExpFunMKL, vsExpFun, 10L);
-  def exp(a:FND):FND = exp(a, null);
+  def exp(a:FMat, out:Mat) = FFunctions.exp(a, out);
+  def exp(a:FMat):FMat = FFunctions.exp(a, null);
   
-  val expm1Fun = (x:Float) => math.expm1(x).toFloat
-  val vsExpm1Fun = (n:Int, x:Array[Float], y:Array[Float]) => vsExpm1(n,x,y)
-  def expm1(a:FMat, out:Mat) = applySFun(a, out, vsExpm1Fun, expm1Fun, 10L)
-  def expm1(a:FMat):FMat = expm1(a, null);
-  def expm1(a:FND, out:ND):FND = applyFNDfun(a, out, vsExpm1Fun, expm1Fun, 10L);
-  def expm1(a:FND):FND = expm1(a, null);
-  
-  val sqrtFun = (x:Float) => math.sqrt(x).toFloat
-  val vsSqrtFun = (n:Int, x:Array[Float], y:Array[Float]) => vsSqrt(n,x,y)
-  def sqrt(a:FMat, out:Mat) = applySFun(a, out, vsSqrtFun, sqrtFun, 10L)
-  def sqrt(a:FMat):FMat = sqrt(a, null);
-  def sqrt(a:FND, out:ND):FND = applyFNDfun(a, out, vsSqrtFun, sqrtFun, 10L);
-  def sqrt(a:FND):FND = sqrt(a, null);
+  def expm1(a:FMat, out:Mat) = FFunctions.expm1(a, out);
+  def expm1(a:FMat):FMat = FFunctions.expm1(a, null);
 
-  val lnFun = (x:Float) => math.log(x).toFloat
-  val vsLnFun = (n:Int, x:Array[Float], y:Array[Float]) => vsLn(n,x,y)
-  def ln(a:FMat, out:Mat) = applySFun(a, out, vsLnFun, lnFun, 10L)
-  def ln(a:FMat):FMat = ln(a, null);
-  def ln(a:FND, out:ND):FND = applyFNDfun(a, out, vsLnFun, lnFun, 10L);
-  def ln(a:FND):FND = ln(a, null);
-  
-  val log10Fun = (x:Float) => math.log10(x).toFloat
-  val vsLog10Fun = (n:Int, x:Array[Float], y:Array[Float]) => vsLog10(n,x,y)
-  def log10(a:FMat, out:Mat) = applySFun(a, out, vsLog10Fun, log10Fun, 10L)
-  def log10(a:FMat):FMat = log10(a, null);
-  def log10(a:FND, out:ND):FND = applyFNDfun(a, out, vsLog10Fun, log10Fun, 10L);
-  def log10(a:FND):FND = log10(a, null);
-  
-  val log1pFun = (x:Float) => math.log1p(x).toFloat
-  val vsLog1pFun = (n:Int, x:Array[Float], y:Array[Float]) => vsLog1p(n,x,y)
-  def log1p(a:FMat, out:Mat) = applySFun(a, out, vsLog1pFun, log1pFun, 10L)
-  def log1p(a:FMat):FMat = log1p(a, null);
-  def log1p(a:FND, out:ND):FND = applyFNDfun(a, out, vsLog1pFun, log1pFun, 10L);
-  def log1p(a:FND):FND = log1p(a, null);
-  
-  val cosFun = (x:Float) => math.cos(x).toFloat
-  val vsCosFun = (n:Int, x:Array[Float], y:Array[Float]) => vsCos(n,x,y)
-  def cos(a:FMat, out:Mat) = applySFun(a, out, vsCosFun, cosFun, 10L)
-  def cos(a:FMat):FMat = cos(a, null);
-  def cos(a:FND, out:ND):FND = applyFNDfun(a, out, vsCosFun, cosFun, 10L);
-  def cos(a:FND):FND = cos(a, null);
-  
-  val sinFun = (x:Float) => math.sin(x).toFloat
-  val vsSinFun = (n:Int, x:Array[Float], y:Array[Float]) => vsSin(n,x,y)
-  def sin(a:FMat, out:Mat) = applySFun(a, out, vsSinFun, sinFun, 10L)
-  def sin(a:FMat):FMat = sin(a, null);
-  def sin(a:FND, out:ND):FND = applyFNDfun(a, out, vsSinFun, sinFun, 10L);
-  def sin(a:FND):FND = sin(a, null);
-  
-  val tanFun = (x:Float) => math.tan(x).toFloat
-  val vsTanFun = (n:Int, x:Array[Float], y:Array[Float]) => vsTan(n,x,y)
-  def tan(a:FMat, out:Mat) = applySFun(a, out, vsTanFun, tanFun, 10L)
-  def tan(a:FMat):FMat = tan(a, null);
-  def tan(a:FND, out:ND):FND = applyFNDfun(a, out, vsTanFun, tanFun, 10L);
-  def tan(a:FND):FND = tan(a, null);
-  
-  val coshFun = (x:Float) => math.cosh(x).toFloat
-  val vsCoshFun = (n:Int, x:Array[Float], y:Array[Float]) => vsCosh(n,x,y)
-  def cosh(a:FMat, out:Mat) = applySFun(a, out, vsCoshFun, coshFun, 10L)
-  def cosh(a:FMat):FMat = cosh(a, null);
-  def cosh(a:FND, out:ND):FND = applyFNDfun(a, out, vsCoshFun, coshFun, 10L);
-  def cosh(a:FND):FND = cosh(a, null);
-  
-  val sinhFun = (x:Float) => math.sinh(x).toFloat
-  val vsSinhFun = (n:Int, x:Array[Float], y:Array[Float]) => vsSinh(n,x,y)
-  def sinh(a:FMat, out:Mat) = applySFun(a, out, vsSinhFun, sinhFun, 10L)
-  def sinh(a:FMat):FMat = sinh(a, null);
-  def sinh(a:FND, out:ND):FND = applyFNDfun(a, out, vsSinhFun, sinhFun, 10L);
-  def sinh(a:FND):FND = sinh(a, null);
-  
-  val tanhFun = (x:Float) => math.tanh(x).toFloat
-  val vsTanhFun = (n:Int, x:Array[Float], y:Array[Float]) => vsTanh(n,x,y)
-  def tanh(a:FMat, out:Mat) = applySFun(a, out, vsTanhFun, tanhFun, 10L)
-  def tanh(a:FMat):FMat = tanh(a, null);
-  def tanh(a:FND, out:ND):FND = applyFNDfun(a, out, vsTanhFun, tanhFun, 10L);
-  def tanh(a:FND):FND = tanh(a, null);
-  
-  val acosFun = (x:Float) => math.acos(x).toFloat
-  val vsAcosFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAcos(n,x,y)
-  def acos(a:FMat, out:Mat) = applySFun(a, out, vsAcosFun, acosFun, 10L)
-  def acos(a:FMat):FMat = acos(a, null);
-  def acos(a:FND, out:ND):FND = applyFNDfun(a, out, vsAcosFun, acosFun, 10L);
-  def acos(a:FND):FND = acos(a, null);
+  def sqrt(a:FMat, out:Mat) = FFunctions.sqrt(a, out);
+  def sqrt(a:FMat):FMat = FFunctions.sqrt(a, null);
 
-  val asinFun = (x:Float) => math.asin(x).toFloat
-  val vsAsinFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAsin(n,x,y)
-  def asin(a:FMat, out:Mat) = applySFun(a, out, vsAsinFun, asinFun, 10L)
-  def asin(a:FMat):FMat = asin(a, null);
-  def asin(a:FND, out:ND):FND = applyFNDfun(a, out, vsAsinFun, asinFun, 10L);
-  def asin(a:FND):FND = asin(a, null);
+  def ln(a:FMat, out:Mat) = FFunctions.ln(a, out);
+  def ln(a:FMat):FMat = FFunctions.ln(a, null);
+  
+  def log10(a:FMat, out:Mat) = FFunctions.log10(a, out);
+  def log10(a:FMat):FMat = FFunctions.log10(a, null);
+  
+  def log1p(a:FMat, out:Mat) = FFunctions.log1p(a, out);
+  def log1p(a:FMat):FMat = FFunctions.log1p(a, null);
+  
+  def cos(a:FMat, out:Mat) =  FFunctions.cos(a, out);
+  def cos(a:FMat):FMat = FFunctions.cos(a, null);
 
-  val atanFun = (x:Float) => math.atan(x).toFloat
-  val vsAtanFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAtan(n,x,y)
-  def atan(a:FMat, out:Mat) = applySFun(a, out, vsAtanFun, atanFun, 10L)
-  def atan(a:FMat):FMat = atan(a, null);
-  def atan(a:FND, out:ND):FND = applyFNDfun(a, out, vsAtanFun, atanFun, 10L);
-  def atan(a:FND):FND = atan(a, null);
+  def sin(a:FMat, out:Mat) = FFunctions.sin(a, out);
+  def sin(a:FMat):FMat = FFunctions.sin(a, null);
+  
+  def tan(a:FMat, out:Mat) = FFunctions.tan(a, out);
+  def tan(a:FMat):FMat = FFunctions.tan(a, null);
 
-  val acoshFun = (x:Float) => FastMath.acosh(x).toFloat
-  val vsAcoshFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAcosh(n,x,y)
-  def acosh(a:FMat, out:Mat) = applySFun(a, out, vsAcoshFun, acoshFun, 10L)
-  def acosh(a:FMat):FMat = acosh(a, null);
-  def acosh(a:FND, out:ND):FND = applyFNDfun(a, out, vsAcoshFun, acoshFun, 10L);
-  def acosh(a:FND):FND = acosh(a, null);
+  def cosh(a:FMat, out:Mat) = FFunctions.cosh(a, out);
+  def cosh(a:FMat):FMat = FFunctions.cosh(a, null);
 
-  val asinhFun = (x:Float) => FastMath.asinh(x).toFloat
-  val vsAsinhFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAsinh(n,x,y)
-  def asinh(a:FMat, out:Mat) = applySFun(a, out, vsAsinhFun, asinhFun, 10L)
-  def asinh(a:FMat):FMat = asinh(a, null);
-  def asinh(a:FND, out:ND):FND = applyFNDfun(a, out, vsAsinhFun, asinhFun, 10L);
-  def asinh(a:FND):FND = asinh(a, null);
-  
-  val atanhFun = (x:Float) => FastMath.atanh(x).toFloat
-  val vsAtanhFun = (n:Int, x:Array[Float], y:Array[Float]) => vsAtanh(n,x,y)
-  def atanh(a:FMat, out:Mat) = applySFun(a, out, vsAtanhFun, atanhFun, 10L)
-  def atanh(a:FMat):FMat = atanh(a, null);
-  def atanh(a:FND, out:ND):FND = applyFNDfun(a, out, vsAtanhFun, atanhFun, 10L);
-  def atanh(a:FND):FND = atanh(a, null);
-  
-  val erfFun = (x:Float) => Erf.erf(x).toFloat
-  val vsErfFun = (n:Int, x:Array[Float], y:Array[Float]) => vsErf(n,x,y)
-  def erf(a:FMat, out:Mat) = applySFun(a, out, vsErfFun, erfFun, 10L)
-  def erf(a:FMat):FMat = erf(a, null);
-  def erf(a:FND, out:ND):FND = applyFNDfun(a, out, vsErfFun, erfFun, 10L);
-  def erf(a:FND):FND = erf(a, null);
-  
-  val vsErfInvFun = (n:Int, x:Array[Float], y:Array[Float]) => vsErfInv(n,x,y)
-  def erfinv(a:FMat, out:Mat) = applySFun(a, out, vsErfInvFun, null, 10L)
-  def erfinv(a:FMat):FMat = erfinv(a, null);
-  def erfinv(a:FND, out:ND):FND = applyFNDfun(a, out, vsErfInvFun, null, 10L);
-  def erfinv(a:FND):FND = erfinv(a, null);
-  
-  val erfcFun = (x:Float) => Erf.erfc(x).toFloat
-  val vsErfcFun = (n:Int, x:Array[Float], y:Array[Float]) => vsErfc(n,x,y)
-  def erfc(a:FMat, out:Mat) = applySFun(a, out, vsErfcFun, erfcFun, 10L)
-  def erfc(a:FMat):FMat = erfc(a, null);
-  def erfc(a:FND, out:ND):FND = applyFNDfun(a, out, vsErfcFun, erfcFun, 10L);
-  def erfc(a:FND):FND = erfc(a, null);
-  
-  val vsErfcInvFun = (n:Int, x:Array[Float], y:Array[Float]) => vsErfcInv(n,x,y)
-  def erfcinv(a:FMat, out:Mat) = applySFun(a, out, vsErfcInvFun, null, 10L)
-  def erfcinv(a:FMat):FMat = erfcinv(a, null);
-  def erfcinv(a:FND, out:ND):FND = applyFNDfun(a, out, vsErfcInvFun, null, 10L);
-  def erfcinv(a:FND):FND = erfcinv(a, null);
-  
-  val vsCdfNormFun = (n:Int, x:Array[Float], y:Array[Float]) => vsCdfNorm(n,x,y)
-  def normcdf(a:FMat, out:Mat) = applySFun(a, out, vsCdfNormFun, null, 10L)
-  def normcdf(a:FMat):FMat = normcdf(a, null);
-  def normcdf(a:FND, out:ND):FND = applyFNDfun(a, out, vsCdfNormFun, null, 10L);
-  def normcdf(a:FND):FND = normcdf(a, null);
-  
-  val vsCdfNormInvFun = (n:Int, x:Array[Float], y:Array[Float]) => vsCdfNormInv(n,x,y)
-  def norminv(a:FMat, out:Mat) = applySFun(a, out, vsCdfNormInvFun, null, 10L)
-  def norminv(a:FMat):FMat = norminv(a, null);
-  def norminv(a:FND, out:ND):FND = applyFNDfun(a, out, vsCdfNormInvFun, null, 10L);
-  def norminv(a:FND):FND = norminv(a, null);
-  
-  val gammaFun = (x:Float) => Gamma.gamma(x).toFloat;
-  val vsTGammaFun = (n:Int, x:Array[Float], y:Array[Float]) => vsTGamma(n,x,y);
-  def gamma(a:FMat, out:Mat) = applySFun(a, out, vsTGammaFun, gammaFun, 10L);
-  def gamma(a:FMat):FMat = gamma(a, null);
-  def gamma(a:FND, out:ND):FND = applyFNDfun(a, out, vsTGammaFun, gammaFun, 10L);
-  def gamma(a:FND):FND = gamma(a, null);
+  def sinh(a:FMat, out:Mat) = FFunctions.sinh(a, out);
+  def sinh(a:FMat):FMat = FFunctions.sinh(a, null);
+
+  def tanh(a:FMat, out:Mat) = FFunctions.tanh(a, out);
+  def tanh(a:FMat):FMat = FFunctions.tanh(a, null);
+
+  def acos(a:FMat, out:Mat) = FFunctions.acos(a, out);
+  def acos(a:FMat):FMat = FFunctions.acos(a, null);
+
+  def asin(a:FMat, out:Mat) = FFunctions.asin(a, out);
+  def asin(a:FMat):FMat = FFunctions.asin(a, null);
+
+  def atan(a:FMat, out:Mat) = FFunctions.atan(a, out);
+  def atan(a:FMat):FMat = FFunctions.atan(a, null);
+
+  def acosh(a:FMat, out:Mat) =  FFunctions.acosh(a, out);
+  def acosh(a:FMat):FMat = FFunctions.acosh(a, null);
+
+  def asinh(a:FMat, out:Mat) = FFunctions.asinh(a, out);
+  def asinh(a:FMat):FMat = FFunctions.asinh(a, null);
+
+  def atanh(a:FMat, out:Mat) = FFunctions.atanh(a, out);
+  def atanh(a:FMat):FMat = FFunctions.atanh(a, null);
+
+  def erf(a:FMat, out:Mat) = FFunctions.erf(a, out);
+  def erf(a:FMat):FMat = FFunctions.erf(a, null);
+ 
+  def erfinv(a:FMat, out:Mat) = FFunctions.erfinv(a, out);
+  def erfinv(a:FMat):FMat = FFunctions.erfinv(a, null);
+
+  def erfc(a:FMat, out:Mat) = FFunctions.erfc(a, out);
+  def erfc(a:FMat):FMat = FFunctions.erfc(a, null);
+ 
+  def erfcinv(a:FMat, out:Mat) = FFunctions.erfcinv(a, out);
+  def erfcinv(a:FMat):FMat = FFunctions.erfcinv(a, null);
+
+  def normcdf(a:FMat, out:Mat) = FFunctions.normcdf(a, out);
+  def normcdf(a:FMat):FMat = FFunctions.normcdf(a, null);
+
+  def normcdfinv(a:FMat, out:Mat) = FFunctions.normcdfinv(a, out);
+  def normcdfinv(a:FMat):FMat = FFunctions.normcdfinv(a, null);
+
+  def gamma(a:FMat, out:Mat) = FFunctions.gamma(a, out);
+  def gamma(a:FMat):FMat = FFunctions.gamma(a, null);
+ 
   def Γ(a:FMat, out:Mat) = gamma(a, out);
   def Γ(a:FMat) = gamma(a);
-  def Γ(a:FND, out:ND) = gamma(a, out);
-  def Γ(a:FND) = gamma(a);
-  
-  val gammalnFun = (x:Float) => Gamma.logGamma(x).toFloat
-  val vsLGammaFun = (n:Int, x:Array[Float], y:Array[Float]) => vsLGamma(n,x,y)
-  def gammaln(a:FMat, out:Mat) = applySFun(a, out, vsLGammaFun, gammalnFun, 10L)
-  def gammaln(a:FMat):FMat = gammaln(a, null);
-  def gammaln(a:FND, out:ND):FND = applyFNDfun(a, out, vsLGammaFun, gammalnFun, 10L);
-  def gammaln(a:FND):FND = gammaln(a, null);
 
+  def gammaln(a:FMat, out:Mat) = FFunctions.gammaln(a, out);
+  def gammaln(a:FMat):FMat = FFunctions.gammaln(a, null);
 
-  val ceilFun = (x:Float) => math.ceil(x).toFloat
-  val vsCeilFun = (n:Int, x:Array[Float], y:Array[Float]) => vsCeil(n,x,y)  
-  def ceil(a:FMat, out:Mat) = applySFun(a, out, vsCeilFun, ceilFun, 1L)
-  def ceil(a:FMat):FMat = ceil(a, null);
-  def ceil(a:FND, out:ND):FND = applyFNDfun(a, out, vsCeilFun, ceilFun, 10L);
-  def ceil(a:FND):FND = ceil(a, null);
+  def ceil(a:FMat, out:Mat) = FFunctions.ceil(a, out);
+  def ceil(a:FMat):FMat = FFunctions.ceil(a, null);
+ 
+  def floor(a:FMat, out:Mat) = FFunctions.floor(a, out);
+  def floor(a:FMat):FMat = FFunctions.floor(a, null);
 
-  
-  val floorFun = (x:Float) => math.floor(x).toFloat
-  val vsFloorFun = (n:Int, x:Array[Float], y:Array[Float]) => vsFloor(n,x,y)
-  def floor(a:FMat, out:Mat) = applySFun(a, out, vsFloorFun, floorFun, 1L)
-  def floor(a:FMat):FMat = floor(a, null);
-  def floor(a:FND, out:ND):FND = applyFNDfun(a, out, vsFloorFun, floorFun, 10L);
-  def floor(a:FND):FND = floor(a, null);
+  def round(a:FMat, out:Mat) = FFunctions.round(a, out);
+  def round(a:FMat):FMat = FFunctions.round(a, null);
 
+  def trunc(a:FMat, out:Mat) = FFunctions.trunc(a, out);
+  def trunc(a:FMat):FMat = FFunctions.trunc(a, null);
+  
+  def psi(a:FMat, out:Mat):FMat = FFunctions.psi(a, out);
+  def psi(a:FMat):FMat = FFunctions.psi(a, null);
+  
+  def psiinv(a:FMat, out:Mat):FMat = FFunctions.psiinv(a, out);
+  def psiinv(a:FMat):FMat = FFunctions.psiinv(a, null);
+  
+  def psifn(a:FMat, b:FMat, out:Mat):FMat = FFunctions.psifn(a, b, out);
+  def psifn(a:FMat, b:FMat):FMat = FFunctions.psifn(a, b, null);
 
-  val roundFun = (x:Float) => math.floor(x+0.5).toFloat
-  val vsRoundFun = (n:Int, x:Array[Float], y:Array[Float]) => vsRound(n,x,y)
-  def round(a:FMat, out:Mat) = applySFun(a, out, vsRoundFun, roundFun, 1L)
-  def round(a:FMat):FMat = round(a, null);
-  def round(a:FND, out:ND):FND = applyFNDfun(a, out, vsRoundFun, roundFun, 10L);
-  def round(a:FND):FND = round(a, null);
+  def atan2(a:FMat, b:FMat, out:Mat) = FFunctions.atan2(a, b, out);
+  def atan2(a:FMat, b:FMat):FMat = FFunctions.atan2(a, b, null);
 
+  def pow(a:FMat, b:FMat, out:Mat) = FFunctions.pow(a, b, out);
+  def pow(a:FMat, b:FMat):FMat = FFunctions.pow(a, b, null);
+ 
+  def powx(a:FMat, b:Float, out:Mat) = FFunctions.powx(a, b, out);
+  def powx(a:FMat, b:Float):FMat = FFunctions.powx(a, b, null);
+
+  def exppsi(a:FMat, out:Mat) = FFunctions.exppsi(a, out);
+  def exppsi(a:FMat):FMat = FFunctions.exppsi(a, null);
+   
+
+  /* 
+   * Double-precision scientific functions. Most have both an MKL and non-MKL implementation.
+   * The MKL implementation is used unless !Mat.useMKLRand = true. 
+   */
+    
+  def sign(a:DMat, out:Mat) = DFunctions.sign(a, out);
+  def sign(a:DMat):DMat = DFunctions.sign(a, null);
   
-  val truncFun = (x:Float) => (math.floor(math.abs(x))*math.signum(x)).toFloat
-  val vsTruncFun = (n:Int, x:Array[Float], y:Array[Float]) => vsTrunc(n,x,y)
-  def trunc(a:FMat, out:Mat) = applySFun(a, out, vsTruncFun, truncFun, 1L)
-  def trunc(a:FMat):FMat = trunc(a, null);
-  def trunc(a:FND, out:ND):FND = applyFNDfun(a, out, vsTruncFun, truncFun, 10L);
-  def trunc(a:FND):FND = trunc(a, null);
+  def abs(a:DMat, out:Mat) = DFunctions.abs(a, out);
+  def abs(a:DMat):DMat = DFunctions.abs(a, null);
+
+  def exp(a:DMat, out:Mat) = DFunctions.exp(a, out);
+  def exp(a:DMat):DMat = DFunctions.exp(a, null);
   
-  def psi(a:FMat, out:Mat):FMat = applySlatecFun(a, out, 0, 100);
-  def psi(a:FMat):FMat = psi(a, null);
+  def expm1(a:DMat, out:Mat) = DFunctions.expm1(a, out);
+  def expm1(a:DMat):DMat = DFunctions.expm1(a, null);
+
+  def sqrt(a:DMat, out:Mat) = DFunctions.sqrt(a, out);
+  def sqrt(a:DMat):DMat = DFunctions.sqrt(a, null);
+
+  def ln(a:DMat, out:Mat) = DFunctions.ln(a, out);
+  def ln(a:DMat):DMat = DFunctions.ln(a, null);
   
-  def psiinv(a:FMat, out:Mat):FMat = applySlatecFun(a, out, 1, 400);
-  def psiinv(a:FMat):FMat = psiinv(a, null);
+  def log10(a:DMat, out:Mat) = DFunctions.log10(a, out);
+  def log10(a:DMat):DMat = DFunctions.log10(a, null);
   
-  def psifn(a:FMat, b:FMat, out:Mat):FMat = applySlatecFun2(a, b, out, 0, 200);
-  def psifn(a:FMat, b:FMat):FMat = psifn(a, b, null);
+  def log1p(a:DMat, out:Mat) = DFunctions.log1p(a, out);
+  def log1p(a:DMat):DMat = DFunctions.log1p(a, null);
   
-  val atan2Fun = (x:Float, y:Float) => math.atan2(x, y).toFloat
-  val vsAtan2Fun = (n:Int, x:Array[Float], y:Array[Float], z:Array[Float]) => vsAtan2(n,x,y,z)
-  def atan2(a:FMat, b:FMat, out:Mat) = applyS2Fun(a, b, out, vsAtan2Fun, atan2Fun, 10L)
-  def atan2(a:FMat, b:FMat):FMat = atan2(a, b, null);
-  def atan2(a:FND, b:FND, out:ND):FND = applyFND2fun(a, b, out, vsAtan2Fun, atan2Fun, 10L);
-  def atan2(a:FND, b:FND):FND = atan2(a, b, null);
+  def cos(a:DMat, out:Mat) =  DFunctions.cos(a, out);
+  def cos(a:DMat):DMat = DFunctions.cos(a, null);
+
+  def sin(a:DMat, out:Mat) = DFunctions.sin(a, out);
+  def sin(a:DMat):DMat = DFunctions.sin(a, null);
   
+  def tan(a:DMat, out:Mat) = DFunctions.tan(a, out);
+  def tan(a:DMat):DMat = DFunctions.tan(a, null);
+
+  def cosh(a:DMat, out:Mat) = DFunctions.cosh(a, out);
+  def cosh(a:DMat):DMat = DFunctions.cosh(a, null);
+
+  def sinh(a:DMat, out:Mat) = DFunctions.sinh(a, out);
+  def sinh(a:DMat):DMat = DFunctions.sinh(a, null);
+
+  def tanh(a:DMat, out:Mat) = DFunctions.tanh(a, out);
+  def tanh(a:DMat):DMat = DFunctions.tanh(a, null);
+
+  def acos(a:DMat, out:Mat) = DFunctions.acos(a, out);
+  def acos(a:DMat):DMat = DFunctions.acos(a, null);
+
+  def asin(a:DMat, out:Mat) = DFunctions.asin(a, out);
+  def asin(a:DMat):DMat = DFunctions.asin(a, null);
+
+  def atan(a:DMat, out:Mat) = DFunctions.atan(a, out);
+  def atan(a:DMat):DMat = DFunctions.atan(a, null);
+
+  def acosh(a:DMat, out:Mat) =  DFunctions.acosh(a, out);
+  def acosh(a:DMat):DMat = DFunctions.acosh(a, null);
+
+  def asinh(a:DMat, out:Mat) = DFunctions.asinh(a, out);
+  def asinh(a:DMat):DMat = DFunctions.asinh(a, null);
+
+  def atanh(a:DMat, out:Mat) = DFunctions.atanh(a, out);
+  def atanh(a:DMat):DMat = DFunctions.atanh(a, null);
+
+  def erf(a:DMat, out:Mat) = DFunctions.erf(a, out);
+  def erf(a:DMat):DMat = DFunctions.erf(a, null);
+ 
+  def erfinv(a:DMat, out:Mat) = DFunctions.erfinv(a, out);
+  def erfinv(a:DMat):DMat = DFunctions.erfinv(a, null);
+
+  def erfc(a:DMat, out:Mat) = DFunctions.erfc(a, out);
+  def erfc(a:DMat):DMat = DFunctions.erfc(a, null);
+ 
+  def erfcinv(a:DMat, out:Mat) = DFunctions.erfcinv(a, out);
+  def erfcinv(a:DMat):DMat = DFunctions.erfcinv(a, null);
+
+  def normcdf(a:DMat, out:Mat) = DFunctions.normcdf(a, out);
+  def normcdf(a:DMat):DMat = DFunctions.normcdf(a, null);
+
+  def normcdfinv(a:DMat, out:Mat) = DFunctions.normcdfinv(a, out);
+  def normcdfinv(a:DMat):DMat = DFunctions.normcdfinv(a, null);
+
+  def gamma(a:DMat, out:Mat) = DFunctions.gamma(a, out);
+  def gamma(a:DMat):DMat = DFunctions.gamma(a, null);
+ 
+  def Γ(a:DMat, out:Mat) = gamma(a, out);
+  def Γ(a:DMat) = gamma(a);
+
+  def gammaln(a:DMat, out:Mat) = DFunctions.gammaln(a, out);
+  def gammaln(a:DMat):DMat = DFunctions.gammaln(a, null);
+
+  def ceil(a:DMat, out:Mat) = DFunctions.ceil(a, out);
+  def ceil(a:DMat):DMat = DFunctions.ceil(a, null);
+ 
+  def floor(a:DMat, out:Mat) = DFunctions.floor(a, out);
+  def floor(a:DMat):DMat = DFunctions.floor(a, null);
+
+  def round(a:DMat, out:Mat) = DFunctions.round(a, out);
+  def round(a:DMat):DMat = DFunctions.round(a, null);
+
+  def trunc(a:DMat, out:Mat) = DFunctions.trunc(a, out);
+  def trunc(a:DMat):DMat = DFunctions.trunc(a, null);
   
-  val powFun = (x:Float, y:Float) => math.pow(x, y).toFloat
-  val vsPowFun = (n:Int, x:Array[Float], y:Array[Float], z:Array[Float]) => vsPow(n,x,y,z)
-  def pow(a:FMat, b:FMat, out:Mat) = applyS2Fun(a, b, out, vsPowFun, powFun, 10L)
-  def pow(a:FMat, b:FMat):FMat = pow(a, b, null);
-  def pow(a:FND, b:FND, out:ND):FND = applyFND2fun(a, b, out, vsPowFun, powFun, 10L);
-  def pow(a:FND, b:FND):FND = pow(a, b, null);
+  /* Need to build the SLATEC natives for these. 
+   * 
+  def psi(a:DMat, out:Mat):DMat = DFunctions.psi(a, out);
+  def psi(a:DMat):DMat = DFunctions.psi(a, null);
   
-  val vsPowxFun = (n:Int, x:Array[Float], y:Float, z:Array[Float]) => vsPowx(n,x,y,z)
-  def powx(a:FMat, b:Float, out:Mat) = applyS2xFun(a, b, out, vsPowxFun, powFun, 10L)
-  def powx(a:FMat, b:Float):FMat = powx(a, b, null);
-  def powx(a:FND, b:Float, out:ND):FND = applyFND2xfun(a, b, out, vsPowxFun, powFun, 10L);
-  def powx(a:FND, b:Float):FND = powx(a, b, null);
+  def psiinv(a:DMat, out:Mat):DMat = DFunctions.psiinv(a, out);
+  def psiinv(a:DMat):DMat = DFunctions.psiinv(a, null);
   
-  val exppsiFun = (x:Float)=>if (x<1f) 0.5f*x*x else x-0.5f
-  def exppsi(a:FMat, out:Mat) = applySFun(a, out, null, exppsiFun, 3L)
-  def exppsi(a:FMat):FMat = exppsi(a, null);
-  def exppsi(a:FND, out:ND):FND = applyFNDfun(a, out, null, exppsiFun, 3L);
-  def exppsi(a:FND):FND = exppsi(a, null);
+  def psifn(a:DMat, b:DMat, out:Mat):DMat = DFunctions.psifn(a, b, out);
+  def psifn(a:DMat, b:DMat):DMat = DFunctions.psifn(a, b, null);
+  * */
+
+  def atan2(a:DMat, b:DMat, out:Mat) = DFunctions.atan2(a, b, out);
+  def atan2(a:DMat, b:DMat):DMat = DFunctions.atan2(a, b, null);
+
+  def pow(a:DMat, b:DMat, out:Mat) = DFunctions.pow(a, b, out);
+  def pow(a:DMat, b:DMat):DMat = DFunctions.pow(a, b, null);
+ 
+  def powx(a:DMat, b:Float, out:Mat) = DFunctions.powx(a, b, out);
+  def powx(a:DMat, b:Float):DMat = DFunctions.powx(a, b, null);
+
+  def exppsi(a:DMat, out:Mat) = DFunctions.exppsi(a, out);
+  def exppsi(a:DMat):DMat = DFunctions.exppsi(a, null);
+   
 
   /* 
    * Complex single-precision scientific functions. Most have both an MKL and non-MKL implementation.
    * The MKL implementation is used unless Mat.useMKLRand = false. 
    */
   
-  val vcAbsCFun = (n:Int, x:Array[Float], y:Array[Float]) => vcAbs(n,x,y)
-  def abs(a:CMat, out:Mat) = applyCSFun(a, out, vcAbsCFun, null, 1L)
-  def abs(a:CMat):FMat = abs(a, null)
+  def abs(a:CMat, out:Mat) = CFunctions.abs(a, out);
+  def abs(a:CMat):FMat = CFunctions.abs(a, null);
 
-  val vcExpCFun = (n:Int, a:Array[Float], b:Array[Float]) => vcExp(n, a, b)
-  def exp(a:CMat, out:Mat) = applyCFun(a, out, vcExpCFun, null, 10L)
-  def exp(a:CMat):CMat = exp(a, null)
+  def exp(a:CMat, out:Mat) = CFunctions.exp(a, out);
+  def exp(a:CMat):CMat = CFunctions.exp(a, null);
 
+  def sqrt(a:CMat, out:Mat) = CFunctions.sqrt(a, out);
+  def sqrt(a:CMat):CMat = CFunctions.sqrt(a, null);
+
+  def ln(a:CMat, out:Mat) = CFunctions.ln(a, out);
+  def ln(a:CMat):CMat = CFunctions.ln(a, null);
   
-  val vcSqrtCFun = (n:Int, x:Array[Float], y:Array[Float]) => vcSqrt(n,x,y)
-  def sqrt(a:CMat, out:Mat) = applyCFun(a, out, vcSqrtCFun, null, 10L)
-  def sqrt(a:CMat):CMat = sqrt(a, null)
-
-  val vcLnCFun = (n:Int, x:Array[Float], y:Array[Float]) => vcLn(n,x,y)
-  def ln(a:CMat, out:Mat) = applyCFun(a, out, vcLnCFun, null, 10L)
-  def ln(a:CMat):CMat = ln(a, null)
+  def log10(a:CMat, out:Mat) = CFunctions.log10(a, out);
+  def log10(a:CMat):CMat = CFunctions.log10(a, null);
   
-  val vcLog10CFun = (n:Int, x:Array[Float], y:Array[Float]) => vcLog10(n,x,y)
-  def log10(a:CMat, out:Mat) = applyCFun(a, out, vcLog10CFun, null, 10L)
-  def log10(a:CMat):CMat = log10(a, null)
+  def cos(a:CMat, out:Mat) =  CFunctions.cos(a, out);
+  def cos(a:CMat):CMat = CFunctions.cos(a, null);
+
+  def sin(a:CMat, out:Mat) = CFunctions.sin(a, out);
+  def sin(a:CMat):CMat = CFunctions.sin(a, null);
   
-  val vcCosCFun = (n:Int, x:Array[Float], y:Array[Float]) => vcCos(n,x,y)
-  def cos(a:CMat, out:Mat) = applyCFun(a, out, vcCosCFun, null, 10L)
-  def cos(a:CMat):CMat = cos(a, null)
-  
-  val vcSinCFun = (n:Int, x:Array[Float], y:Array[Float]) => vcSin(n,x,y)
-  def sin(a:CMat, out:Mat) = applyCFun(a, out, vcSinCFun, null, 10L)
-  def sin(a:CMat):CMat = sin(a, null)
-  
-  val vcTanCFun = (n:Int, x:Array[Float], y:Array[Float]) => vcTan(n,x,y)
-  def tan(a:CMat, out:Mat) = applyCFun(a, out, vcTanCFun, null, 10L)
-  def tan(a:CMat):CMat = tan(a, null)
-  
-  val vcCoshCFun = (n:Int, x:Array[Float], y:Array[Float]) => vcCosh(n,x,y)
-  def cosh(a:CMat, out:Mat) = applyCFun(a, out, vcCoshCFun, null, 10L)
-  def cosh(a:CMat):CMat = cosh(a, null)
+  def tan(a:CMat, out:Mat) = CFunctions.tan(a, out);
+  def tan(a:CMat):CMat = CFunctions.tan(a, null);
 
-  val vcSinhCFun = (n:Int, x:Array[Float], y:Array[Float]) => vcSinh(n,x,y)
-  def sinh(a:CMat, out:Mat) = applyCFun(a, out, vcSinhCFun, null, 10L)
-  def sinh(a:CMat):CMat = sinh(a, null)
-  
-  val vcTanhCFun = (n:Int, x:Array[Float], y:Array[Float]) => vcTanh(n,x,y)
-  def tanh(a:CMat, out:Mat) = applyCFun(a, out, vcTanhCFun, null, 10L)
-  def tanh(a:CMat):CMat = tanh(a, null)
-  
-  val vcAcosCFun = (n:Int, x:Array[Float], y:Array[Float]) => vcAcos(n,x,y)
-  def acos(a:CMat, out:Mat) = applyCFun(a, out, vcAcosCFun, null, 10L)
-  def acos(a:CMat):CMat = acos(a, null)
+  def cosh(a:CMat, out:Mat) = CFunctions.cosh(a, out);
+  def cosh(a:CMat):CMat = CFunctions.cosh(a, null);
 
-  val vcAsinCFun = (n:Int, x:Array[Float], y:Array[Float]) => vcAsin(n,x,y)
-  def asin(a:CMat, out:Mat) = applyCFun(a, out, vcAsinCFun, null, 10L)
-  def asin(a:CMat):CMat = asin(a, null)
+  def sinh(a:CMat, out:Mat) = CFunctions.sinh(a, out);
+  def sinh(a:CMat):CMat = CFunctions.sinh(a, null);
 
-  val vcAtanCFun = (n:Int, x:Array[Float], y:Array[Float]) => vcAtan(n,x,y)
-  def atan(a:CMat, out:Mat) = applyCFun(a, out, vcAtanCFun, null, 10L)
-  def atan(a:CMat):CMat = atan(a, null)
+  def tanh(a:CMat, out:Mat) = CFunctions.tanh(a, out);
+  def tanh(a:CMat):CMat = CFunctions.tanh(a, null);
 
-  val vcAcoshCFun = (n:Int, x:Array[Float], y:Array[Float]) => vcAcosh(n,x,y)
-  def acosh(a:CMat, out:Mat) = applyCFun(a, out, vcAcoshCFun, null, 10L)
-  def acosh(a:CMat):CMat = acosh(a, null)
+  def acos(a:CMat, out:Mat) = CFunctions.acos(a, out);
+  def acos(a:CMat):CMat = CFunctions.acos(a, null);
 
-  val vcAsinhCFun = (n:Int, x:Array[Float], y:Array[Float]) => vcAsinh(n,x,y)
-  def asinh(a:CMat, out:Mat) = applyCFun(a, out, vcAsinhCFun, null, 10L)
-  def asinh(a:CMat):CMat = asinh(a, null)
-  
-  val vcAtanhCFun = (n:Int, x:Array[Float], y:Array[Float]) => vcAtanh(n,x,y)
-  def atanh(a:CMat, out:Mat) = applyCFun(a, out, vcAtanhCFun, null, 10L)
-  def atanh(a:CMat):CMat = atanh(a, null) 
+  def asin(a:CMat, out:Mat) = CFunctions.asin(a, out);
+  def asin(a:CMat):CMat = CFunctions.asin(a, null);
 
+  def atan(a:CMat, out:Mat) = CFunctions.atan(a, out);
+  def atan(a:CMat):CMat = CFunctions.atan(a, null);
 
-  def setVMLmode(n:Int) = {
-    vmlSetMode(n)
-  }
+  def acosh(a:CMat, out:Mat) =  CFunctions.acosh(a, out);
+  def acosh(a:CMat):CMat = CFunctions.acosh(a, null);
 
-  def getVMLmode():Int = {
-    vmlGetMode()
-  }
+  def asinh(a:CMat, out:Mat) = CFunctions.asinh(a, out);
+  def asinh(a:CMat):CMat = CFunctions.asinh(a, null);
 
-  private def checkSizes(a:Mat, b:Mat) = {
-    if (a.nrows != b.nrows || a.ncols != b.ncols) {
-      throw new RuntimeException("argument dims mismatch")
-    }
-  }
-  
-  private def checkSizes(a:Mat, b:Mat, c:DMat) = {
-    if (a.nrows != b.nrows || a.ncols != b.ncols || a.nrows != c.nrows || a.ncols != c.ncols) {
-      throw new RuntimeException("argument dims mismatch")
-    }
-  }
+  def atanh(a:CMat, out:Mat) = CFunctions.atanh(a, out);
+  def atanh(a:CMat):CMat = CFunctions.atanh(a, null);
 
   def sprand(nrows:Int, ncols:Int, v:Double):SMat = {
-    val ioff = Mat.ioneBased
-    val out = SMat(nrows, ncols, math.max(math.min(nrows*ncols, 200),(1.5*v*nrows*ncols).intValue))
-    Mat.nflops += (5L*nrows*ncols*v).toLong
-    val vec = geornd(v, 1, out.nnz)
-    val vals = rand(1, out.nnz)
-    var irow = vec.data(0).intValue
-    var ipos = 0
-    var i = 0
-    out.jc(0) = ioff
+    val ioff = Mat.ioneBased;
+    val out = SMat(nrows, ncols, math.max(math.min(nrows*ncols, 200),(1.5*v*nrows*ncols).intValue));
+    Mat.nflops += (5L*nrows*ncols*v).toLong;
+    val vec = geornd(v, 1, out.nnz);
+    val vals = rand(1, out.nnz);
+    var irow = vec.data(0).intValue;
+    var ipos = 0;
+    var i = 0;
+    out.jc(0) = ioff;
     while (i < ncols) {
-      while (irow < nrows && ipos < out.nnz-1) {
-  	out.data(ipos) = vals.data(ipos)
-  	out.ir(ipos) = irow+ioff
-  	ipos += 1
-  	irow += 1 + vec.data(ipos).intValue
-      }    
-      irow = irow - nrows
-      out.jc(i+1) = ipos+ioff
-      i += 1
+    	while (irow < nrows && ipos < out.nnz-1) {
+    		out.data(ipos) = vals.data(ipos);
+    		out.ir(ipos) = irow+ioff;
+    		ipos += 1;
+    		irow += 1 + vec.data(ipos).intValue;
+    	}    
+    	irow = irow - nrows;
+    	out.jc(i+1) = ipos+ioff;
+    	i += 1;
     }
     SMat(out.sparseTrim)
   }
-  
+
   /*
    * Generate a random sparse matrix with specified row and column distributions.
    * The column distribution is sampled first to get the number of elements in each column.
@@ -2382,98 +1494,27 @@ object SciFunctions {
    * for column i. 
    */ 
   
-  def sprand(nrows:Int, ncols:Int, rowdistr:(Int)=>IMat, coldistr:(Int)=>IMat):SMat = {
-    val ioff = Mat.ioneBased
-    val colsizes = coldistr(ncols)
-    val innz = sum(colsizes).v
-    val irows = rowdistr(innz)
-    Mat.nflops += 5L*innz
-    val mat = IMat.newOrCheckIMat(innz, 2, null, 0, "sprand".hashCode)
-    var i = 0
-    var ipos = 0
-    while (i < ncols) {
-      var j = 0
-      while (j < colsizes(i)) {
-        mat(ipos, 0) = i
-        mat(ipos, 1) = irows(ipos)
-        ipos += 1
-        j += 1
-      }
-      i += 1 
-    }                   // We have an unsorted list of elements with repetition. Now make a sparse matrix from them. 
-    sortlex(mat)
-    val (bptrs, iptrs) = countDistinct(mat)
-    val nnz = bptrs.length    
-    val out = SMat.newOrCheckSMat(nrows, ncols, nnz, null, 0, "sprand_1".hashCode)
-    i = 0
-    var oldcol = 0
-    var countcol = 0
-    out.jc(0) = ioff
-    while (i < nnz) {
-      val bp = bptrs(i)
-      out.ir(i) = mat(bp,1)+ioff
-      if (i < nnz-1) out.data(i) = bptrs(i+1) - bp else out.data(i) = iptrs.length - bp
-      if (oldcol != mat(bp,0)) {
-        var j = oldcol+1
-        while (j <= mat(bp,0)) {
-          out.jc(j) = i+ioff
-          j += 1
-        }
-        oldcol = mat(bp,0)
-      }
-    	i += 1
-    }
-    var j = oldcol+1
-    while (j <= ncols) {
-    	out.jc(j) = i+ioff
-    	j += 1
-    }
-    out
-  }
+  def sprand(nrows:Int, ncols:Int, rowdistr:(Int)=>IMat, coldistr:(Int)=>IMat):SMat = Random.sprand(nrows, ncols, rowdistr, coldistr);
   
   /*
    * Returns a generator for power-law samples with exponent -1 in the range 0...range-1
    */
   
-  def simplePowerLaw(range:Float):(Int)=>IMat = {
-    val alpha = math.log(range)
-    (n:Int) => {
-      val v = rand(n,1)
-      v ~ (-alpha)*v
-      exp(v, v)
-      v ~ range * v
-      v ~ v - 0.9
-      IMat(v)
-    }
-  }
+  def simplePowerLaw(range:Float):(Int)=>IMat = Random.simplePowerLaw(range);
   
   /*
    * Returns a generator for Pareto samples in the range low>0...high>0. 
    * alpha must not be zero.
    */
   
-  def paretoGen(low:Int, high:Int, alpha:Double):(Int)=>IMat = {
-    val la = math.exp(math.log(low)*alpha)
-    val ha = math.exp(math.log(high)*alpha)
-    val hala = ha*la
-    (n:Int) => {
-      val v = rand(n,1)
-      v ~ ((la - ha)/hala) * v
-      v ~ v + (ha/hala)
-      powx(v, -1/alpha, v)
-      IMat(v)
-    }
-  }
+  def paretoGen(low:Int, high:Int, alpha:Double):(Int)=>IMat = Random.paretoGen(low, high, alpha);
   
   /*
    * Power-law sparse random matrices with alpha =-1 exponents for row and column distributions. 
    * The density argument determines the approximate mean sum per column.
    */
   
-  def powrand(nrows:Int, ncols:Int, dens:Float = 10) = {
-    val v = dens*math.log(dens)
-    sprand(nrows, ncols, simplePowerLaw(nrows), simplePowerLaw((math.max(dens, dens*math.log(v))).toInt))
-  }
+  def powrand(nrows:Int, ncols:Int, dens:Float = 10) = Random.powrand(nrows, ncols, dens);
   
   /**
    * histc takes a sorted a and b, and returns an IMat "out" of size b.length s.t. out(i) is the count of 
@@ -2558,269 +1599,8 @@ object SciFunctions {
   }
   
   def roc2(score:FMat, vpos:FMat, vneg:FMat, nxvals:Int):DMat = roc2(DMat(score), DMat(vpos), DMat(vneg),nxvals)
-  
-  def applyGfun(in:GMat, omat:Mat, opn:Int, kflops:Long):GMat = GMat.applyGfun(in, omat, opn, kflops);
-
-  def applyGfun(in:GMat, opn:Int, kflops:Long):GMat = GMat.applyGfun(in, opn, kflops);
-  
-  def applyGfun2(a:GMat, b:GMat, omat:Mat, opn:Int, kflops:Long):GMat = GMat.applyGfun2(a, b, omat, opn, kflops);
-  
-
-  def applyGfun2(a:GMat, b:GMat, opn:Int, kflops:Long):GMat = GMat.applyGfun2(a, b, opn, kflops);
-  
-  def applyGNDfun(in:GND, omat:ND, opn:Int, kflops:Long):GND = GND.applyGNDfun(in, omat, opn, kflops);
-
-  def applyGNDfun(in:GND, opn:Int, kflops:Long):GND = GND.applyGNDfun(in, opn, kflops);
-  
-  def applyGNDfun2(a:GND, b:GND, omat:ND, opn:Int, kflops:Long):GND = GND.applyGNDfun2(a, b, omat, opn, kflops);
-  
-  def applyGNDfun2(a:GND, b:GND, opn:Int, kflops:Long):GND = GND.applyGNDfun2(a, b, opn, kflops);
-  
-  import GMat.TransF
-
-  def abs(in:GMat, out:Mat):GMat =     applyGfun(in, out, TransF.abs, 1L)
-  def exp(in:GMat, out:Mat):GMat =     applyGfun(in, out, TransF.exp, 10L)
-  def expm1(in:GMat, out:Mat):GMat =   applyGfun(in, out, TransF.expm1, 10L)
-  def sqrt(in:GMat, out:Mat):GMat =    applyGfun(in, out, TransF.sqrt, 10L)
-  def ln(in:GMat, out:Mat):GMat =      applyGfun(in, out, TransF.ln, 10L)
-  def log10(in:GMat, out:Mat):GMat =   applyGfun(in, out, TransF.log10, 10L)
-  def log1p(in:GMat, out:Mat):GMat =   applyGfun(in, out, TransF.log1p, 10L)
-  def cos(in:GMat, out:Mat):GMat =     applyGfun(in, out, TransF.cos, 10L)
-  def sin(in:GMat, out:Mat):GMat =     applyGfun(in, out, TransF.sin, 10L)
-  def tan(in:GMat, out:Mat):GMat =     applyGfun(in, out, TransF.tan, 10L)
-  def cosh(in:GMat, out:Mat):GMat =    applyGfun(in, out, TransF.cosh, 10L)
-  def sinh(in:GMat, out:Mat):GMat =    applyGfun(in, out, TransF.sinh, 10L)
-  def tanh(in:GMat, out:Mat):GMat =    applyGfun(in, out, TransF.tanh, 10L)
-  def acos(in:GMat, out:Mat):GMat =    applyGfun(in, out, TransF.acos, 10L)
-  def asin(in:GMat, out:Mat):GMat =    applyGfun(in, out, TransF.asin, 10L)
-  def atan(in:GMat, out:Mat):GMat =    applyGfun(in, out, TransF.atan, 10L)
-  def acosh(in:GMat, out:Mat):GMat =   applyGfun(in, out, TransF.acosh, 10L)
-  def asinh(in:GMat, out:Mat):GMat =   applyGfun(in, out, TransF.asinh, 10L)
-  def atanh(in:GMat, out:Mat):GMat =   applyGfun(in, out, TransF.atanh, 10L)
-  def erf(in:GMat, out:Mat):GMat =     applyGfun(in, out, TransF.erf, 10L)
-  def erfinv(in:GMat, out:Mat):GMat =  applyGfun(in, out, TransF.erfinv, 10L)
-  def erfc(in:GMat, out:Mat):GMat =    applyGfun(in, out, TransF.erfc, 10L)
-  def ercinv(in:GMat, out:Mat):GMat =  applyGfun(in, out, TransF.erfcinv, 10L)
-  def gammaln(in:GMat, out:Mat):GMat = applyGfun(in, out, TransF.gammaln, 10L)
-  def gamma(in:GMat, out:Mat):GMat =   applyGfun(in, out, TransF.gamma, 10L)
-  def Γ(a:GMat, out:Mat) = gamma(a, out);
-  def Γ(a:GMat) = gamma(a);
-  def ceil(in:GMat, out:Mat):GMat =    applyGfun(in, out, TransF.ceil, 10L)
-  def floor(in:GMat, out:Mat):GMat =   applyGfun(in, out, TransF.floor, 10L)
-  def round(in:GMat, out:Mat):GMat =   applyGfun(in, out, TransF.round, 10L)
-  def trunc(in:GMat, out:Mat):GMat =   applyGfun(in, out, TransF.trunc, 10L)
-  def sign(in:GMat, out:Mat):GMat =    applyGfun(in, out, TransF.sign, 1L)
-  def exppsi(in:GMat, out:Mat):GMat =  applyGfun(in, out, TransF.exppsi, 1L)
-  def normcdf(in:GMat, out:Mat):GMat =  applyGfun(in, out, TransF.normcdf, 1L)
-  def normcdfinv(in:GMat, out:Mat):GMat =  applyGfun(in, out, TransF.normcdfinv, 1L)
-  
-  def psi(a:GMat, out:Mat):GMat = applySlatecGFun(a, out, 0, 100);
-  def psi(a:GMat):GMat = psi(a, null);
-  
-  def psiinv(a:GMat, out:Mat):GMat = applySlatecGFun(a, out, 1, 400);
-  def psiinv(a:GMat):GMat = psiinv(a, null);
-  
-  def psifn(a:GMat, b:GMat, out:Mat):GMat = applySlatecGFun2(a, b, out, 0, 200);
-  def psifn(a:GMat, b:GMat):GMat = psifn(a, b, null);
-  
-  import GMat.TransF2
-  
-  def atan2(a:GMat, b:GMat, out:Mat):GMat =   applyGfun2(a, b, out, TransF2.atan2, 10L)
-  def pow(a:GMat, b:GMat, out:Mat):GMat =     applyGfun2(a, b, out, TransF2.pow, 10L)
-
-  def abs(in:GMat):GMat =     applyGfun(in, TransF.abs, 10L)
-  def exp(in:GMat):GMat =     applyGfun(in, TransF.exp, 10L)
-  def expm1(in:GMat):GMat =   applyGfun(in, TransF.expm1, 10L)
-  def sqrt(in:GMat):GMat =    applyGfun(in, TransF.sqrt, 10L)
-  def ln(in:GMat):GMat =      applyGfun(in, TransF.ln, 10L)
-  def log10(in:GMat):GMat =   applyGfun(in, TransF.log10, 10L)
-  def log1p(in:GMat):GMat =   applyGfun(in, TransF.log1p, 10L)
-  def cos(in:GMat):GMat =     applyGfun(in, TransF.cos, 10L)
-  def sin(in:GMat):GMat =     applyGfun(in, TransF.sin, 10L)
-  def tan(in:GMat):GMat =     applyGfun(in, TransF.tan, 10L)
-  def cosh(in:GMat):GMat =    applyGfun(in, TransF.cosh, 10L)
-  def sinh(in:GMat):GMat =    applyGfun(in, TransF.sinh, 10L)
-  def tanh(in:GMat):GMat =    applyGfun(in, TransF.tanh, 10L)
-  def acos(in:GMat):GMat =    applyGfun(in, TransF.acos, 10L)
-  def asin(in:GMat):GMat =    applyGfun(in, TransF.asin, 10L)
-  def atan(in:GMat):GMat =    applyGfun(in, TransF.atan, 10L)
-  def acosh(in:GMat):GMat =   applyGfun(in, TransF.acosh, 10L)
-  def asinh(in:GMat):GMat =   applyGfun(in, TransF.asinh, 10L)
-  def atanh(in:GMat):GMat =   applyGfun(in, TransF.atanh, 10L)
-  def erf(in:GMat):GMat =     applyGfun(in, TransF.erf, 10L)
-  def erfinv(in:GMat):GMat =  applyGfun(in, TransF.erfinv, 10L)
-  def erfc(in:GMat):GMat =    applyGfun(in, TransF.erfc, 10L)
-  def ercinv(in:GMat):GMat =  applyGfun(in, TransF.erfcinv, 10L)
-  def gammaln(in:GMat):GMat = applyGfun(in, TransF.gammaln, 10L)
-  def gamma(in:GMat):GMat =   applyGfun(in, TransF.gamma, 10L)
-  def ceil(in:GMat):GMat =    applyGfun(in, TransF.ceil, 10L)
-  def floor(in:GMat):GMat =   applyGfun(in, TransF.floor, 10L)
-  def round(in:GMat):GMat =   applyGfun(in, TransF.round, 10L)
-  def trunc(in:GMat):GMat =   applyGfun(in, TransF.trunc, 10L)
-  def sign(in:GMat):GMat =    applyGfun(in, TransF.sign, 1L)
-  def exppsi(in:GMat):GMat =    applyGfun(in, TransF.exppsi, 1L)
-  def normcdf(in:GMat):GMat =    applyGfun(in, TransF.normcdf, 1L)
-  def normcdfinv(in:GMat):GMat =    applyGfun(in, TransF.normcdfinv, 1L)
-  
-  def atan2(a:GMat, b:GMat):GMat =   applyGfun2(a, b, TransF2.atan2, 10L)
-  def pow(a:GMat, b:GMat):GMat =     applyGfun2(a, b, TransF2.pow, 10L)
-  
-  
-  def abs(in:GND, out:ND):GND =     applyGNDfun(in, out, TransF.abs, 1L)
-  def exp(in:GND, out:ND):GND =     applyGNDfun(in, out, TransF.exp, 10L)
-  def expm1(in:GND, out:ND):GND =   applyGNDfun(in, out, TransF.expm1, 10L)
-  def sqrt(in:GND, out:ND):GND =    applyGNDfun(in, out, TransF.sqrt, 10L)
-  def ln(in:GND, out:ND):GND =      applyGNDfun(in, out, TransF.ln, 10L)
-  def log10(in:GND, out:ND):GND =   applyGNDfun(in, out, TransF.log10, 10L)
-  def log1p(in:GND, out:ND):GND =   applyGNDfun(in, out, TransF.log1p, 10L)
-  def cos(in:GND, out:ND):GND =     applyGNDfun(in, out, TransF.cos, 10L)
-  def sin(in:GND, out:ND):GND =     applyGNDfun(in, out, TransF.sin, 10L)
-  def tan(in:GND, out:ND):GND =     applyGNDfun(in, out, TransF.tan, 10L)
-  def cosh(in:GND, out:ND):GND =    applyGNDfun(in, out, TransF.cosh, 10L)
-  def sinh(in:GND, out:ND):GND =    applyGNDfun(in, out, TransF.sinh, 10L)
-  def tanh(in:GND, out:ND):GND =    applyGNDfun(in, out, TransF.tanh, 10L)
-  def acos(in:GND, out:ND):GND =    applyGNDfun(in, out, TransF.acos, 10L)
-  def asin(in:GND, out:ND):GND =    applyGNDfun(in, out, TransF.asin, 10L)
-  def atan(in:GND, out:ND):GND =    applyGNDfun(in, out, TransF.atan, 10L)
-  def acosh(in:GND, out:ND):GND =   applyGNDfun(in, out, TransF.acosh, 10L)
-  def asinh(in:GND, out:ND):GND =   applyGNDfun(in, out, TransF.asinh, 10L)
-  def atanh(in:GND, out:ND):GND =   applyGNDfun(in, out, TransF.atanh, 10L)
-  def erf(in:GND, out:ND):GND =     applyGNDfun(in, out, TransF.erf, 10L)
-  def erfinv(in:GND, out:ND):GND =  applyGNDfun(in, out, TransF.erfinv, 10L)
-  def erfc(in:GND, out:ND):GND =    applyGNDfun(in, out, TransF.erfc, 10L)
-  def erfcinv(in:GND, out:ND):GND =  applyGNDfun(in, out, TransF.erfcinv, 10L)
-  def gammaln(in:GND, out:ND):GND = applyGNDfun(in, out, TransF.gammaln, 10L)
-  def gamma(in:GND, out:ND):GND =   applyGNDfun(in, out, TransF.gamma, 10L)
-  def Γ(a:GND, out:ND) = gamma(a, out);
-  def Γ(a:GND) = gamma(a);
-  def ceil(in:GND, out:ND):GND =    applyGNDfun(in, out, TransF.ceil, 10L)
-  def floor(in:GND, out:ND):GND =   applyGNDfun(in, out, TransF.floor, 10L)
-  def round(in:GND, out:ND):GND =   applyGNDfun(in, out, TransF.round, 10L)
-  def trunc(in:GND, out:ND):GND =   applyGNDfun(in, out, TransF.trunc, 10L)
-  def sign(in:GND, out:ND):GND =    applyGNDfun(in, out, TransF.sign, 1L)
-  def exppsi(in:GND, out:ND):GND =  applyGNDfun(in, out, TransF.exppsi, 1L)
-  
-  def atan2(a:GND, b:GND, out:ND):GND =   applyGNDfun2(a, b, out, TransF2.atan2, 10L)
-  def pow(a:GND, b:GND, out:ND):GND =     applyGNDfun2(a, b, out, TransF2.pow, 10L)
-
-  def abs(in:GND):GND =     applyGNDfun(in, TransF.abs, 10L)
-  def exp(in:GND):GND =     applyGNDfun(in, TransF.exp, 10L)
-  def expm1(in:GND):GND =   applyGNDfun(in, TransF.expm1, 10L)
-  def sqrt(in:GND):GND =    applyGNDfun(in, TransF.sqrt, 10L)
-  def ln(in:GND):GND =      applyGNDfun(in, TransF.ln, 10L)
-  def log10(in:GND):GND =   applyGNDfun(in, TransF.log10, 10L)
-  def log1p(in:GND):GND =   applyGNDfun(in, TransF.log1p, 10L)
-  def cos(in:GND):GND =     applyGNDfun(in, TransF.cos, 10L)
-  def sin(in:GND):GND =     applyGNDfun(in, TransF.sin, 10L)
-  def tan(in:GND):GND =     applyGNDfun(in, TransF.tan, 10L)
-  def cosh(in:GND):GND =    applyGNDfun(in, TransF.cosh, 10L)
-  def sinh(in:GND):GND =    applyGNDfun(in, TransF.sinh, 10L)
-  def tanh(in:GND):GND =    applyGNDfun(in, TransF.tanh, 10L)
-  def acos(in:GND):GND =    applyGNDfun(in, TransF.acos, 10L)
-  def asin(in:GND):GND =    applyGNDfun(in, TransF.asin, 10L)
-  def atan(in:GND):GND =    applyGNDfun(in, TransF.atan, 10L)
-  def acosh(in:GND):GND =   applyGNDfun(in, TransF.acosh, 10L)
-  def asinh(in:GND):GND =   applyGNDfun(in, TransF.asinh, 10L)
-  def atanh(in:GND):GND =   applyGNDfun(in, TransF.atanh, 10L)
-  def erf(in:GND):GND =     applyGNDfun(in, TransF.erf, 10L)
-  def erfinv(in:GND):GND =  applyGNDfun(in, TransF.erfinv, 10L)
-  def erfc(in:GND):GND =    applyGNDfun(in, TransF.erfc, 10L)
-  def ercinv(in:GND):GND =  applyGNDfun(in, TransF.erfcinv, 10L)
-  def gammaln(in:GND):GND = applyGNDfun(in, TransF.gammaln, 10L)
-  def gamma(in:GND):GND =   applyGNDfun(in, TransF.gamma, 10L)
-  def ceil(in:GND):GND =    applyGNDfun(in, TransF.ceil, 10L)
-  def floor(in:GND):GND =   applyGNDfun(in, TransF.floor, 10L)
-  def round(in:GND):GND =   applyGNDfun(in, TransF.round, 10L)
-  def trunc(in:GND):GND =   applyGNDfun(in, TransF.trunc, 10L)
-  def sign(in:GND):GND =    applyGNDfun(in, TransF.sign, 1L)
-  def exppsi(in:GND):GND =    applyGNDfun(in, TransF.exppsi, 1L)
-  
-  def atan2(a:GND, b:GND):GND =   applyGNDfun2(a, b, TransF2.atan2, 10L)
-  def pow(a:GND, b:GND):GND =     applyGNDfun2(a, b, TransF2.pow, 10L)
-  
-  def applyGDfun(in:GDMat, omat:Mat, opn:Int, kflops:Long):GDMat = GDMat.applyGDfun(in, omat, opn, kflops);
-
-  def applyGDfun(in:GDMat, opn:Int, kflops:Long):GDMat = GDMat.applyGDfun(in, opn, kflops);
-  
-  def applyGDfun2(a:GDMat, b:GDMat, omat:Mat, opn:Int, kflops:Long):GDMat = GDMat.applyGDfun2(a, b, omat, opn, kflops);
-
-  def applyGDfun2(a:GDMat, b:GDMat, opn:Int, kflops:Long):GDMat = GDMat.applyGDfun2(a, b, opn, kflops);
     
   import GMat.TransF
-
-  def abs(in:GDMat, out:Mat):GDMat =     applyGDfun(in, out, TransF.abs, 1L)
-  def exp(in:GDMat, out:Mat):GDMat =     applyGDfun(in, out, TransF.exp, 10L)
-  def expm1(in:GDMat, out:Mat):GDMat =   applyGDfun(in, out, TransF.expm1, 10L)
-  def sqrt(in:GDMat, out:Mat):GDMat =    applyGDfun(in, out, TransF.sqrt, 10L)
-  def ln(in:GDMat, out:Mat):GDMat =      applyGDfun(in, out, TransF.ln, 10L)
-  def log10(in:GDMat, out:Mat):GDMat =   applyGDfun(in, out, TransF.log10, 10L)
-  def log1p(in:GDMat, out:Mat):GDMat =   applyGDfun(in, out, TransF.log1p, 10L)
-  def cos(in:GDMat, out:Mat):GDMat =     applyGDfun(in, out, TransF.cos, 10L)
-  def sin(in:GDMat, out:Mat):GDMat =     applyGDfun(in, out, TransF.sin, 10L)
-  def tan(in:GDMat, out:Mat):GDMat =     applyGDfun(in, out, TransF.tan, 10L)
-  def cosh(in:GDMat, out:Mat):GDMat =    applyGDfun(in, out, TransF.cosh, 10L)
-  def sinh(in:GDMat, out:Mat):GDMat =    applyGDfun(in, out, TransF.sinh, 10L)
-  def tanh(in:GDMat, out:Mat):GDMat =    applyGDfun(in, out, TransF.tanh, 10L)
-  def acos(in:GDMat, out:Mat):GDMat =    applyGDfun(in, out, TransF.acos, 10L)
-  def asin(in:GDMat, out:Mat):GDMat =    applyGDfun(in, out, TransF.asin, 10L)
-  def atan(in:GDMat, out:Mat):GDMat =    applyGDfun(in, out, TransF.atan, 10L)
-  def acosh(in:GDMat, out:Mat):GDMat =   applyGDfun(in, out, TransF.acosh, 10L)
-  def asinh(in:GDMat, out:Mat):GDMat =   applyGDfun(in, out, TransF.asinh, 10L)
-  def atanh(in:GDMat, out:Mat):GDMat =   applyGDfun(in, out, TransF.atanh, 10L)
-  def erf(in:GDMat, out:Mat):GDMat =     applyGDfun(in, out, TransF.erf, 10L)
-  def erfinv(in:GDMat, out:Mat):GDMat =  applyGDfun(in, out, TransF.erfinv, 10L)
-  def erfc(in:GDMat, out:Mat):GDMat =    applyGDfun(in, out, TransF.erfc, 10L)
-  def ercinv(in:GDMat, out:Mat):GDMat =  applyGDfun(in, out, TransF.erfcinv, 10L)
-  def gammaln(in:GDMat, out:Mat):GDMat = applyGDfun(in, out, TransF.gammaln, 10L)
-  def gamma(in:GDMat, out:Mat):GDMat =   applyGDfun(in, out, TransF.gamma, 10L)
-  def Γ(a:GDMat, out:Mat) = gamma(a, out);
-  def ceil(in:GDMat, out:Mat):GDMat =    applyGDfun(in, out, TransF.ceil, 10L)
-  def floor(in:GDMat, out:Mat):GDMat =   applyGDfun(in, out, TransF.floor, 10L)
-  def round(in:GDMat, out:Mat):GDMat =   applyGDfun(in, out, TransF.round, 10L)
-  def trunc(in:GDMat, out:Mat):GDMat =   applyGDfun(in, out, TransF.trunc, 10L)
-  def sign(in:GDMat, out:Mat):GDMat =    applyGDfun(in, out, TransF.sign, 1L)
-  def exppsi(in:GDMat, out:Mat):GDMat =  applyGDfun(in, out, TransF.exppsi, 1L)
-  
-  import GMat.TransF2
-  
-  def atan2(a:GDMat, b:GDMat, out:Mat):GDMat =   applyGDfun2(a, b, out, TransF2.atan2, 10L)
-  def pow(a:GDMat, b:GDMat, out:Mat):GDMat =     applyGDfun2(a, b, out, TransF2.pow, 10L)
-
-  def abs(in:GDMat):GDMat =     applyGDfun(in, TransF.abs, 10L)
-  def exp(in:GDMat):GDMat =     applyGDfun(in, TransF.exp, 10L)
-  def expm1(in:GDMat):GDMat =   applyGDfun(in, TransF.expm1, 10L)
-  def sqrt(in:GDMat):GDMat =    applyGDfun(in, TransF.sqrt, 10L)
-  def ln(in:GDMat):GDMat =      applyGDfun(in, TransF.ln, 10L)
-  def log10(in:GDMat):GDMat =   applyGDfun(in, TransF.log10, 10L)
-  def log1p(in:GDMat):GDMat =   applyGDfun(in, TransF.log1p, 10L)
-  def cos(in:GDMat):GDMat =     applyGDfun(in, TransF.cos, 10L)
-  def sin(in:GDMat):GDMat =     applyGDfun(in, TransF.sin, 10L)
-  def tan(in:GDMat):GDMat =     applyGDfun(in, TransF.tan, 10L)
-  def cosh(in:GDMat):GDMat =    applyGDfun(in, TransF.cosh, 10L)
-  def sinh(in:GDMat):GDMat =    applyGDfun(in, TransF.sinh, 10L)
-  def tanh(in:GDMat):GDMat =    applyGDfun(in, TransF.tanh, 10L)
-  def acos(in:GDMat):GDMat =    applyGDfun(in, TransF.acos, 10L)
-  def asin(in:GDMat):GDMat =    applyGDfun(in, TransF.asin, 10L)
-  def atan(in:GDMat):GDMat =    applyGDfun(in, TransF.atan, 10L)
-  def acosh(in:GDMat):GDMat =   applyGDfun(in, TransF.acosh, 10L)
-  def asinh(in:GDMat):GDMat =   applyGDfun(in, TransF.asinh, 10L)
-  def atanh(in:GDMat):GDMat =   applyGDfun(in, TransF.atanh, 10L)
-  def erf(in:GDMat):GDMat =     applyGDfun(in, TransF.erf, 10L)
-  def erfinv(in:GDMat):GDMat =  applyGDfun(in, TransF.erfinv, 10L)
-  def erfc(in:GDMat):GDMat =    applyGDfun(in, TransF.erfc, 10L)
-  def ercinv(in:GDMat):GDMat =  applyGDfun(in, TransF.erfcinv, 10L)
-  def gammaln(in:GDMat):GDMat = applyGDfun(in, TransF.gammaln, 10L)
-  def gamma(in:GDMat):GDMat =   applyGDfun(in, TransF.gamma, 10L)
-  def Γ(a:GDMat) = gamma(a);
-  def ceil(in:GDMat):GDMat =    applyGDfun(in, TransF.ceil, 10L)
-  def floor(in:GDMat):GDMat =   applyGDfun(in, TransF.floor, 10L)
-  def round(in:GDMat):GDMat =   applyGDfun(in, TransF.round, 10L)
-  def trunc(in:GDMat):GDMat =   applyGDfun(in, TransF.trunc, 10L)
-  def sign(in:GDMat):GDMat =    applyGDfun(in, TransF.sign, 1L)
-  def exppsi(in:GDMat):GDMat =    applyGDfun(in, TransF.exppsi, 1L)
-  
-  def atan2(a:GDMat, b:GDMat):GDMat =   applyGDfun2(a, b, TransF2.atan2, 10L)
-  def pow(a:GDMat, b:GDMat):GDMat =     applyGDfun2(a, b, TransF2.pow, 10L)
   
   import TMat.TFuncs
   def abs(in:TMat, out:Mat):TMat =     in.tFn(out, TFuncs.abs, 1L)
@@ -2889,139 +1669,26 @@ object SciFunctions {
   def trunc(in:TMat):TMat =   in.tFn(null, TFuncs.trunc, 10L)
   def sign(in:TMat):TMat =    in.tFn(null, TFuncs.sign, 1L)
   def exppsi(in:TMat):TMat =  in.tFn(null, TFuncs.exppsi, 1L)
+
   
-  import GMat.BinOp
-  def max(a:GMat, b:GMat):GMat    = max(a, b, null)
-  def min(a:GMat, b:GMat):GMat    = min(a, b, null)
-  def max(a:GIMat, b:GIMat):GIMat    = max(a, b, null)
-  def min(a:GIMat, b:GIMat):GIMat    = min(a, b, null)
-  def max(a:GLMat, b:GLMat):GLMat    = max(a, b, null)
-  def min(a:GLMat, b:GLMat):GLMat    = min(a, b, null)
-  def max(a:GMat, b:FMat):GMat    = max(a, b, null)
-  def min(a:GMat, b:FMat):GMat    = min(a, b, null)
-  def max(a:FMat, b:GMat):GMat    = max(a, b, null)
-  def min(a:FMat, b:GMat):GMat    = min(a, b, null)
-    
-  def maxi(a:GMat, dir:Int):GMat  = a.reduceOp(null, dir, Float.MinValue, BinOp.op_max)
-  def mini(a:GMat, dir:Int):GMat  = a.reduceOp(null, dir, Float.MaxValue, BinOp.op_min)
-  def sum(a:GMat, dir:Int):GMat   = a.reduceOp(null, dir, 0f, BinOp.op_add)
-  def prod(a:GMat, dir:Int):GMat   = a.reduceOp(null, dir, 0f, BinOp.op_mul)
- 
-  def maxi(a:GMat):GMat           = a.reduceOp(null, 0, Float.MinValue, BinOp.op_max)
-  def mini(a:GMat):GMat           = a.reduceOp(null, 0, Float.MaxValue, BinOp.op_min)
-  def sum(a:GMat):GMat            = a.reduceOp(null, 0, 0f, BinOp.op_add)
-  def prod(a:GMat):GMat            = a.reduceOp(null, 0, 1f, BinOp.op_mul)
+  def LXdist(a:FMat, b:FMat, omat:FMat, p:Float):FMat = GFunctions.LXdist(a, b, omat, p)
   
-  def max(a:GMat, b:GMat, out:Mat):GMat    = a.gOp(b, out, BinOp.op_max)
-  def min(a:GMat, b:GMat, out:Mat):GMat    = a.gOp(b, out, BinOp.op_min)
-  def max(a:GIMat, b:GIMat, out:Mat):GIMat = a.GIop(b, out, BinOp.op_max)
-  def min(a:GIMat, b:GIMat, out:Mat):GIMat = a.GIop(b, out, BinOp.op_min)
-  def max(a:GLMat, b:GLMat, out:Mat):GLMat = a.GIop(b, out, BinOp.op_max)
-  def min(a:GLMat, b:GLMat, out:Mat):GLMat = a.GIop(b, out, BinOp.op_min)
-  def max(a:GMat, b:FMat, out:Mat):GMat    = a.gOp(GMat(b), out, BinOp.op_max)
-  def min(a:GMat, b:FMat, out:Mat):GMat    = a.gOp(GMat(b), out, BinOp.op_min)
-  def max(a:FMat, b:GMat, out:Mat):GMat    = GMat(a).gOp(b, out, BinOp.op_max)
-  def min(a:FMat, b:GMat, out:Mat):GMat    = GMat(a).gOp(b, out, BinOp.op_min)
-  def max(a:GMat, b:Float, out:Mat):GMat    = a.gOp(GMat.elem(b), out, BinOp.op_max)
-  def min(a:GMat, b:Float, out:Mat):GMat    = a.gOp(GMat.elem(b), out, BinOp.op_min)
-  def max(a:Float, b:GMat, out:Mat):GMat    = GMat.elem(a).gOp(b, out, BinOp.op_max)
-  def min(a:Float, b:GMat, out:Mat):GMat    = GMat.elem(a).gOp(b, out, BinOp.op_min)  
-  
-  def maxi(a:GMat, dir:Int, out:Mat):GMat  = a.reduceOp(out, dir, Float.MinValue, BinOp.op_max)
-  def mini(a:GMat, dir:Int, out:Mat):GMat  = a.reduceOp(out, dir, Float.MaxValue, BinOp.op_min)
-  def sum(a:GMat, dir:Int, out:Mat):GMat   = a.reduceOp(out, dir, 0f, BinOp.op_add)
-  def maxi(a:GMat, out:Mat):GMat           = a.reduceOp(out, 0, Float.MinValue, BinOp.op_max)
-  def mini(a:GMat, out:Mat):GMat           = a.reduceOp(out, 0, Float.MaxValue, BinOp.op_min)
-  def sum(a:GMat, out:Mat):GMat            = a.reduceOp(out, 0, 0f, BinOp.op_add)
-  
-  def maxi(a:GIMat, dir:Int):GIMat  = a.reduceOp(null, dir, Int.MinValue, BinOp.op_max)
-  def mini(a:GIMat, dir:Int):GIMat  = a.reduceOp(null, dir, Int.MaxValue, BinOp.op_min)
-  def sum(a:GIMat, dir:Int):GIMat   = a.reduceOp(null, dir, 0, BinOp.op_add)
-  def maxi(a:GIMat):GIMat           = a.reduceOp(null, 0, Int.MinValue, BinOp.op_max)
-  def mini(a:GIMat):GIMat           = a.reduceOp(null, 0, Int.MaxValue, BinOp.op_min)
-  def sum(a:GIMat):GIMat            = a.reduceOp(null, 0, 0, BinOp.op_add)
-  
-  def maxi(a:GLMat, dir:Int):GLMat  = a.reduceOp(null, dir, Long.MinValue, BinOp.op_max)
-  def mini(a:GLMat, dir:Int):GLMat  = a.reduceOp(null, dir, Long.MaxValue, BinOp.op_min)
-  def sum(a:GLMat, dir:Int):GLMat   = a.reduceOp(null, dir, 0, BinOp.op_add)
-  def maxi(a:GLMat):GLMat           = a.reduceOp(null, 0, Long.MinValue, BinOp.op_max)
-  def mini(a:GLMat):GLMat           = a.reduceOp(null, 0, Long.MaxValue, BinOp.op_min)
-  def sum(a:GLMat):GLMat            = a.reduceOp(null, 0, 0, BinOp.op_add)
-     
-  def sum(a:GSMat) = a.sum(0, null)
-  def sum(a:GSMat, n:Int) = a.sum(n, null)
-  def sum(a:GSMat, n:Int, omat:Mat) = a.sum(n, omat)
-  
-  def max(a:GDMat, b:GDMat):GDMat    = max(a, b, null)
-  def min(a:GDMat, b:GDMat):GDMat    = min(a, b, null)
-  def max(a:GDMat, b:FMat):GDMat    = max(a, b, null)
-  def min(a:GDMat, b:FMat):GDMat    = min(a, b, null)
-  def max(a:FMat, b:GDMat):GDMat    = max(a, b, null)
-  def min(a:FMat, b:GDMat):GDMat    = min(a, b, null)
-  def maxi(a:GDMat, dir:Int):GDMat  = a.reduceOp(null, dir, Double.MinValue, BinOp.op_max)
-  def mini(a:GDMat, dir:Int):GDMat  = a.reduceOp(null, dir, Double.MaxValue, BinOp.op_min)
-  def sum(a:GDMat, dir:Int):GDMat   = a.reduceOp(null, dir, 0.0, BinOp.op_add)
-  def maxi(a:GDMat):GDMat           = a.reduceOp(null, 0, Double.MinValue, BinOp.op_max)
-  def mini(a:GDMat):GDMat           = a.reduceOp(null, 0, Double.MaxValue, BinOp.op_min)
-  def sum(a:GDMat):GDMat            = a.reduceOp(null, 0, 0.0, BinOp.op_add)
-  
-  def max(a:GDMat, b:GDMat, out:Mat):GDMat    = a.gOp(b, out, BinOp.op_max)
-  def min(a:GDMat, b:GDMat, out:Mat):GDMat    = a.gOp(b, out, BinOp.op_min)
-  def max(a:GDMat, b:FMat, out:Mat):GDMat    = a.gOp(GDMat(b), out, BinOp.op_max)
-  def min(a:GDMat, b:FMat, out:Mat):GDMat    = a.gOp(GDMat(b), out, BinOp.op_min)
-  def max(a:FMat, b:GDMat, out:Mat):GDMat    = GDMat(a).gOp(b, out, BinOp.op_max)
-  def min(a:FMat, b:GDMat, out:Mat):GDMat    = GDMat(a).gOp(b, out, BinOp.op_min)
-  def maxi(a:GDMat, dir:Int, out:Mat):GDMat  = a.reduceOp(out, dir, Double.MinValue, BinOp.op_max)
-  def mini(a:GDMat, dir:Int, out:Mat):GDMat  = a.reduceOp(out, dir, Double.MaxValue, BinOp.op_min)
-  def sum(a:GDMat, dir:Int, out:Mat):GDMat   = a.reduceOp(out, dir, 0.0, BinOp.op_add)
-  def maxi(a:GDMat, out:Mat):GDMat           = a.reduceOp(out, 0, Double.MinValue, BinOp.op_max)
-  def mini(a:GDMat, out:Mat):GDMat           = a.reduceOp(out, 0, Double.MaxValue, BinOp.op_min)
-  def sum(a:GDMat, out:Mat):GDMat            = a.reduceOp(out, 0, 0.0, BinOp.op_add)
-     
-  def sum(a:GSDMat) = a.sum(0, null);
-  def sum(a:GSDMat, n:Int) = a.sum(n, null);
-  def sum(a:GSDMat, n:Int, omat:Mat) = a.sum(n, omat);
-  
-  def LXdist(a:GMat, b:GMat, omat:GMat, p:Float):GMat = GMat.LXdist(a, b, omat, p)
-  
-  def LXdist(a:FMat, b:FMat, omat:FMat, p:Float):FMat = GMat.LXdist(a, b, omat, p)
-  
-  def LXdist(a:GMat, b:GMat, p:Float):GMat = GMat.LXdist(a, b, null, p)
-  
-  def LXdist(a:FMat, b:FMat, p:Float):FMat = GMat.LXdist(a, b, null, p)
+  def LXdist(a:FMat, b:FMat, p:Float):FMat = GFunctions.LXdist(a, b, null, p)
   
   def abs(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => abs(aa, b):FMat
       case aa:CMat => abs(aa, b):FMat
       case aa:DMat => abs(aa, b):DMat
-      case aa:GMat => abs(aa, b):GMat
-      case aa:GDMat => abs(aa, b):GDMat
       case aa:TMat => abs(aa, b)
     }
   }
-  
-  def abs(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => abs(aa, b):FND
-      case aa:GND => abs(aa, b):GND
-    }
-  }
-  
+ 
   def sign(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => sign(aa, b)
       case aa:DMat => sign(aa, b)
-      case aa:GMat => sign(aa, b)
-      case aa:GDMat => sign(aa, b)
       case aa:TMat => sign(aa, b)
-    }
-  }
-  
-  def sign(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => sign(aa, b):FND
-      case aa:GND => sign(aa, b):GND
     }
   }
        
@@ -3030,16 +1697,7 @@ object SciFunctions {
       case aa:FMat => sqrt(aa, b)
       case aa:CMat => sqrt(aa, b)
       case aa:DMat => sqrt(aa, b)
-      case aa:GMat => sqrt(aa, b)
-      case aa:GDMat => sqrt(aa, b)
       case aa:TMat => sqrt(aa, b)
-    }
-  }
-  
-  def sqrt(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => sqrt(aa, b):FND
-      case aa:GND => sqrt(aa, b):GND
     }
   }
   
@@ -3048,33 +1706,15 @@ object SciFunctions {
       case aa:FMat => exp(aa, b):FMat
       case aa:CMat => exp(aa, b):CMat
       case aa:DMat => exp(aa, b):DMat
-      case aa:GMat => exp(aa, b):GMat
-      case aa:GDMat => exp(aa, b):GDMat
       case aa:TMat => exp(aa, b):TMat
     }
   }
-  
-  def exp(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => exp(aa, b):FND
-      case aa:GND => exp(aa, b):GND
-    }
-  }
-  
+
   def expm1(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => expm1(aa, b)
       case aa:DMat => expm1(aa, b)
-      case aa:GMat => expm1(aa, b)
-      case aa:GDMat => expm1(aa, b)
       case aa:TMat => expm1(aa, b)
-    }
-  }
-  
-  def expm1(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => expm1(aa, b):FND
-      case aa:GND => expm1(aa, b):GND
     }
   }
   
@@ -3083,16 +1723,7 @@ object SciFunctions {
       case aa:FMat => ln(aa, b)
       case aa:CMat => ln(aa, b)
       case aa:DMat => ln(aa, b)
-      case aa:GMat => ln(aa, b)
-      case aa:GDMat => ln(aa, b)
       case aa:TMat => ln(aa, b)
-    }
-  }
-  
-  def ln(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => ln(aa, b):FND
-      case aa:GND => ln(aa, b):GND
     }
   }
   
@@ -3101,16 +1732,7 @@ object SciFunctions {
       case aa:FMat => log10(aa, b)
       case aa:CMat => log10(aa, b)
       case aa:DMat => log10(aa, b)
-      case aa:GMat => log10(aa, b)
-      case aa:GDMat => log10(aa, b)
       case aa:TMat => log10(aa, b)
-    }
-  }
-  
-  def log10(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => log10(aa, b):FND
-      case aa:GND => log10(aa, b):GND
     }
   }
     
@@ -3118,34 +1740,16 @@ object SciFunctions {
     a match {
       case aa:FMat => log1p(aa, b)
       case aa:DMat => log1p(aa, b)
-      case aa:GMat => log1p(aa, b)
-      case aa:GDMat => log1p(aa, b)
       case aa:TMat => log1p(aa, b)
     }
   }
-  
-  def log1p(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => log1p(aa, b):FND
-      case aa:GND => log1p(aa, b):GND
-    }
-  }
-  
+ 
   def cos(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => cos(aa, b)
       case aa:CMat => cos(aa, b)
       case aa:DMat => cos(aa, b)
-      case aa:GMat => cos(aa, b)
-      case aa:GDMat => cos(aa, b)
       case aa:TMat => cos(aa, b)
-    }
-  }
-    
-  def cos(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => cos(aa, b):FND
-      case aa:GND => cos(aa, b):GND
     }
   }
   
@@ -3154,16 +1758,7 @@ object SciFunctions {
       case aa:FMat => sin(aa, b)
       case aa:CMat => sin(aa, b)
       case aa:DMat => sin(aa, b)
-      case aa:GMat => sin(aa, b)
-      case aa:GDMat => sin(aa, b)
       case aa:TMat => sin(aa, b)
-    }
-  }
-    
-  def sin(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => sin(aa, b):FND
-      case aa:GND => sin(aa, b):GND
     }
   }
   
@@ -3172,34 +1767,16 @@ object SciFunctions {
       case aa:FMat => tan(aa, b)
       case aa:CMat => tan(aa, b)
       case aa:DMat => tan(aa, b)
-      case aa:GMat => tan(aa, b)
-      case aa:GDMat => tan(aa, b)
       case aa:TMat => tan(aa, b)
     }
   }
-  
-  def tan(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => tan(aa, b):FND
-      case aa:GND => tan(aa, b):GND
-    }
-  }
-    
+   
   def cosh(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => cosh(aa, b)
       case aa:CMat => cosh(aa, b)
       case aa:DMat => cosh(aa, b)
-      case aa:GMat => cosh(aa, b)
-      case aa:GDMat => cosh(aa, b)
       case aa:TMat => cosh(aa, b)
-    }
-  }
-    
-  def cosh(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => cosh(aa, b):FND
-      case aa:GND => cosh(aa, b):GND
     }
   }
      
@@ -3208,246 +1785,120 @@ object SciFunctions {
       case aa:FMat => sinh(aa, b)
       case aa:CMat => sinh(aa, b)
       case aa:DMat => sinh(aa, b)
-      case aa:GMat => sinh(aa, b)
-      case aa:GDMat => sinh(aa, b)
       case aa:TMat => sinh(aa, b)
     }
   }
-    
-  def sinh(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => sinh(aa, b):FND
-      case aa:GND => sinh(aa, b):GND
-    }
-  }
-      
+     
   def tanh(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => tanh(aa, b)
       case aa:CMat => tanh(aa, b)
       case aa:DMat => tanh(aa, b)
-      case aa:GMat => tanh(aa, b)
-      case aa:GDMat => tanh(aa, b)
       case aa:TMat => tanh(aa, b)
     }
   }
-  
-  def tanh(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => tanh(aa, b):FND
-      case aa:GND => tanh(aa, b):GND
-    }
-  }
-    
+   
   def acos(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => acos(aa, b)
       case aa:CMat => acos(aa, b)
       case aa:DMat => acos(aa, b)
-      case aa:GMat => acos(aa, b)
-      case aa:GDMat => acos(aa, b)
       case aa:TMat => acos(aa, b)
     }
   }
-  
-  def acos(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => acos(aa, b):FND
-      case aa:GND => acos(aa, b):GND
-    }
-  }
-      
+     
   def asin(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => asin(aa, b)
       case aa:CMat => asin(aa, b)
       case aa:DMat => asin(aa, b)
-      case aa:GMat => asin(aa, b)
-      case aa:GDMat => asin(aa, b)
       case aa:TMat => asin(aa, b)
     }
   }
-  
-  def asin(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => asin(aa, b):FND
-      case aa:GND => asin(aa, b):GND
-    }
-  }
-  
+ 
   def atan(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => atan(aa, b)
       case aa:CMat => atan(aa, b)
       case aa:DMat => atan(aa, b)
-      case aa:GMat => atan(aa, b)
-      case aa:GDMat => atan(aa, b)
       case aa:TMat => atan(aa, b)
     }
   }
-  
-  def atan(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => atan(aa, b):FND
-      case aa:GND => atan(aa, b):GND
-    }
-  }
-  
+
   def acosh(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => acosh(aa, b)
       case aa:CMat => acosh(aa, b)
       case aa:DMat => acosh(aa, b)
-      case aa:GMat => acosh(aa, b)
-      case aa:GDMat => acosh(aa, b)
       case aa:TMat => acosh(aa, b)
     }
   }
-  
-  def acosh(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => acosh(aa, b):FND
-      case aa:GND => acosh(aa, b):GND
-    }
-  }
-  
+ 
   def asinh(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => asinh(aa, b)
       case aa:CMat => asinh(aa, b)
       case aa:DMat => asinh(aa, b)
-      case aa:GMat => asinh(aa, b)
-      case aa:GDMat => asinh(aa, b)
       case aa:TMat => asinh(aa, b)
     }
   }
-  
-  def asinh(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => asinh(aa, b):FND
-      case aa:GND => asinh(aa, b):GND
-    }
-  }
-  
+ 
   def atanh(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => atanh(aa, b)
       case aa:CMat => atanh(aa, b)
       case aa:DMat => atanh(aa, b)
-      case aa:GMat => atanh(aa, b)
-      case aa:GDMat => atanh(aa, b)
       case aa:TMat => atanh(aa, b)
     }
   }
-  
-  def atanh(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => atanh(aa, b):FND
-      case aa:GND => atanh(aa, b):GND
-    }
-  }
-  
+ 
   def erf(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => erf(aa, b)
       case aa:DMat => erf(aa, b)
-      case aa:GMat => erf(aa, b)
-      case aa:GDMat => erf(aa, b)
       case aa:TMat => erf(aa, b)
     }
   }
   
-  def erf(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => erf(aa, b):FND
-      case aa:GND => erf(aa, b):GND
-    }
-  }
-   
   def erfinv(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => erfinv(aa, b)
       case aa:DMat => erfinv(aa, b)
-      case aa:GMat => erfinv(aa, b)
-      case aa:GDMat => erfinv(aa, b)
       case aa:TMat => erfinv(aa, b)
     }
   }
   
-  def erfinv(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => erfinv(aa, b):FND
-      case aa:GND => erfinv(aa, b):GND
-    }
-  }
-    
   def erfc(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => erfc(aa, b)
       case aa:DMat => erfc(aa, b)
-      case aa:GMat => erfc(aa, b)
-      case aa:GDMat => erfc(aa, b)
       case aa:TMat => erfc(aa, b)
     }
   }
   
-  def erfc(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => erfc(aa, b):FND
-      case aa:GND => erfc(aa, b):GND
-    }
-  }
-   
   def erfcinv(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => erfcinv(aa, b)
       case aa:DMat => erfcinv(aa, b)
-      case aa:GMat => erfcinv(aa, b)
-      case aa:GDMat => erfcinv(aa, b)
       case aa:TMat => erfcinv(aa, b)
     }
   }
-  
-  def erfcinv(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => erfcinv(aa, b):FND
-      case aa:GND => erfcinv(aa, b):GND
-    }
-  }
-  
+ 
   def gamma(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => gamma(aa, b)
       case aa:DMat => gamma(aa, b)
-      case aa:GMat => gamma(aa, b)
-      case aa:GDMat => gamma(aa, b)
       case aa:TMat => gamma(aa, b)
     }
   }
-  
-  def gamma(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => gamma(aa, b):FND
-      case aa:GND => gamma(aa, b):GND
-    }
-  }
-  
+ 
   def Γ(a:Mat, out:Mat) = gamma(a, out);
     
   def gammaln(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => gammaln(aa, b)
       case aa:DMat => gammaln(aa, b)
-      case aa:GMat => gammaln(aa, b)
-      case aa:GDMat => gammaln(aa, b)
       case aa:TMat => gammaln(aa, b)
-    }
-  }
-  
-  def gammaln(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => gammaln(aa, b):FND
-      case aa:GND => gammaln(aa, b):GND
     }
   }
   
@@ -3455,16 +1906,7 @@ object SciFunctions {
     a match {
       case aa:FMat => floor(aa, b)
       case aa:DMat => floor(aa, b)
-      case aa:GMat => floor(aa, b)
-      case aa:GDMat => floor(aa, b)
       case aa:TMat => floor(aa, b)
-    }
-  }
-    
-  def floor(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => floor(aa, b):FND
-      case aa:GND => floor(aa, b):GND
     }
   }
   
@@ -3472,102 +1914,61 @@ object SciFunctions {
     a match {
       case aa:FMat => ceil(aa, b)
       case aa:DMat => ceil(aa, b)
-      case aa:GMat => ceil(aa, b)
-      case aa:GDMat => ceil(aa, b)
       case aa:TMat => ceil(aa, b)
     }
   }
-   
-  def ceil(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => ceil(aa, b):FND
-      case aa:GND => ceil(aa, b):GND
-    }
-  }
-   
+
   def round(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => round(aa, b)
       case aa:DMat => round(aa, b)
-      case aa:GMat => round(aa, b)
-      case aa:GDMat => round(aa, b)
       case aa:TMat => round(aa, b)
     }
   }
-  
-  def round(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => round(aa, b):FND
-      case aa:GND => round(aa, b):GND
-    }
-  }
-  
+ 
   def trunc(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => trunc(aa, b)
       case aa:DMat => trunc(aa, b)
-      case aa:GMat => trunc(aa, b)
-      case aa:GDMat => trunc(aa, b)
       case aa:TMat => trunc(aa, b)
     }
   }
-  
-  def trunc(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => trunc(aa, b):FND
-      case aa:GND => trunc(aa, b):GND
-    }
-  }
-  
+ 
   def exppsi(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => exppsi(aa, b)
       case aa:DMat => exppsi(aa, b)
-      case aa:GMat => exppsi(aa, b)
-      case aa:GDMat => exppsi(aa, b)
       case aa:TMat => exppsi(aa, b)
     }
   }
-  
+ 
   def normcdf(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => normcdf(aa, b)
-      case aa:GMat => normcdf(aa, b)
     }
   }
-  
+ 
   def normcdfinv(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => normcdfinv(aa, b)
-      case aa:GMat => normcdfinv(aa, b)
-    }
-  }
-  
-  def exppsi(a:ND, b:ND):ND = {
-    a match {
-      case aa:FND => exppsi(aa, b):FND
-      case aa:GND => exppsi(aa, b):GND
     }
   }
   
   def psi(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => psi(aa, b)
-      case aa:GMat => psi(aa, b)
     }
   }
   
   def psiinv(a:Mat, b:Mat):Mat = {
     a match {
       case aa:FMat => psiinv(aa, b)
-      case aa:GMat => psiinv(aa, b)
     }
   }
   
   def psifn(a:Mat, b:Mat, out:Mat):Mat = {
     (a,b) match {
       case (aa:FMat, bb:FMat) => psifn(aa, bb, out);
-      case (aa:GMat, bb:GMat) => psifn(aa, bb, out);
     }
   }
   
@@ -3577,8 +1978,6 @@ object SciFunctions {
     (a, b) match {
       case (aa:FMat, bb:FMat) => atan2(aa, bb, c)
       case (aa:DMat, bb:DMat) => atan2(aa, bb, c)
-      case (aa:GMat, bb:GMat) => atan2(aa, bb, c)
-      case (aa:GDMat, bb:GDMat) => atan2(aa, bb, c)
     }
   }
   
@@ -3586,8 +1985,6 @@ object SciFunctions {
     (a, b) match {
       case (aa:FMat, bb:FMat) => pow(aa, bb, c)
       case (aa:DMat, bb:DMat) => pow(aa, bb, c)
-      case (aa:GMat, bb:GMat) => pow(aa, bb, c)
-      case (aa:GDMat, bb:GDMat) => pow(aa, bb, c)
     }
   }
   
@@ -3604,36 +2001,23 @@ object SciFunctions {
       case aa:FMat => abs(aa):FMat
       case aa:CMat => abs(aa):FMat
       case aa:DMat => abs(aa):DMat
-      case aa:GMat => abs(aa):GMat
-      case aa:GDMat => abs(aa):GDMat
       case aa:TMat => abs(aa):TMat
     }
   }
-  
-  def abs(a:ND):ND = {
-    a match {
-      case aa:FND => abs(aa):FND
-      case aa:GND => abs(aa):GND
-    }
-  }
-  
+ 
   def sign(a:Mat):Mat = {
     a match {
       case aa:FMat => sign(aa)
       case aa:DMat => sign(aa)
-      case aa:GMat => sign(aa)
-      case aa:GDMat => sign(aa)
       case aa:TMat => sign(aa)
     }
   }
-       
+     
   def sqrt(a:Mat):Mat = {
     a match {
       case aa:FMat => sqrt(aa)
       case aa:CMat => sqrt(aa)
       case aa:DMat => sqrt(aa)
-      case aa:GMat => sqrt(aa)
-      case aa:GDMat => sqrt(aa)
       case aa:TMat => sqrt(aa)
     }
   }
@@ -3643,8 +2027,6 @@ object SciFunctions {
       case aa:FMat => exp(aa)
       case aa:CMat => exp(aa)
       case aa:DMat => exp(aa)
-      case aa:GMat => exp(aa)
-      case aa:GDMat => exp(aa)
       case aa:TMat => exp(aa)
     }
   }
@@ -3653,8 +2035,6 @@ object SciFunctions {
     a match {
       case aa:FMat => expm1(aa)
       case aa:DMat => expm1(aa)
-      case aa:GMat => expm1(aa)
-      case aa:GDMat => expm1(aa)
       case aa:TMat => expm1(aa)
     }
   }
@@ -3664,8 +2044,6 @@ object SciFunctions {
       case aa:FMat => ln(aa)
       case aa:CMat => ln(aa)
       case aa:DMat => ln(aa)
-      case aa:GMat => ln(aa)
-      case aa:GDMat => ln(aa)
       case aa:TMat => ln(aa)
     }
   }
@@ -3675,8 +2053,6 @@ object SciFunctions {
       case aa:FMat => log10(aa)
       case aa:CMat => log10(aa)
       case aa:DMat => log10(aa)
-      case aa:GMat => log10(aa)
-      case aa:GDMat => log10(aa)
       case aa:TMat => log10(aa)
     }
   }
@@ -3685,8 +2061,6 @@ object SciFunctions {
     a match {
       case aa:FMat => log1p(aa)
       case aa:DMat => log1p(aa)
-      case aa:GMat => log1p(aa)
-      case aa:GDMat => log1p(aa)
       case aa:TMat => log1p(aa)
     }
   }
@@ -3696,8 +2070,6 @@ object SciFunctions {
       case aa:FMat => cos(aa)
       case aa:CMat => cos(aa)
       case aa:DMat => cos(aa)
-      case aa:GMat => cos(aa)
-      case aa:GDMat => cos(aa)
       case aa:TMat => cos(aa)
     }
   }
@@ -3707,8 +2079,6 @@ object SciFunctions {
       case aa:FMat => sin(aa)
       case aa:CMat => sin(aa)
       case aa:DMat => sin(aa)
-      case aa:GMat => sin(aa)
-      case aa:GDMat => sin(aa)
       case aa:TMat => sin(aa)
     }
   }
@@ -3718,8 +2088,6 @@ object SciFunctions {
       case aa:FMat => tan(aa)
       case aa:CMat => tan(aa)
       case aa:DMat => tan(aa)
-      case aa:GMat => tan(aa)
-      case aa:GDMat => tan(aa)
       case aa:TMat => tan(aa)
     }
   }
@@ -3729,8 +2097,6 @@ object SciFunctions {
       case aa:FMat => cosh(aa)
       case aa:CMat => cosh(aa)
       case aa:DMat => cosh(aa)
-      case aa:GMat => cosh(aa)
-      case aa:GDMat => cosh(aa)
       case aa:TMat => cosh(aa)
     }
   }
@@ -3740,8 +2106,6 @@ object SciFunctions {
       case aa:FMat => sinh(aa)
       case aa:CMat => sinh(aa)
       case aa:DMat => sinh(aa)
-      case aa:GMat => sinh(aa)
-      case aa:GDMat => sinh(aa)
       case aa:TMat => sinh(aa)
     }
   }
@@ -3751,8 +2115,7 @@ object SciFunctions {
       case aa:FMat => tanh(aa)
       case aa:CMat => tanh(aa)
       case aa:DMat => tanh(aa)
-      case aa:GMat => tanh(aa)
-      case aa:GDMat => tanh(aa)
+      case aa:TMat => tanh(aa)
     }
   }
     
@@ -3761,8 +2124,6 @@ object SciFunctions {
       case aa:FMat => acos(aa)
       case aa:CMat => acos(aa)
       case aa:DMat => acos(aa)
-      case aa:GMat => acos(aa)
-      case aa:GDMat => acos(aa)
       case aa:TMat => acos(aa)
     }
   }
@@ -3772,8 +2133,6 @@ object SciFunctions {
       case aa:FMat => asin(aa)
       case aa:CMat => asin(aa)
       case aa:DMat => asin(aa)
-      case aa:GMat => asin(aa)
-      case aa:GDMat => asin(aa)
       case aa:TMat => asin(aa)
     }
   }
@@ -3783,8 +2142,6 @@ object SciFunctions {
       case aa:FMat => atan(aa)
       case aa:CMat => atan(aa)
       case aa:DMat => atan(aa)
-      case aa:GMat => atan(aa)
-      case aa:GDMat => atan(aa)
       case aa:TMat => atan(aa)
     }
   }
@@ -3794,8 +2151,6 @@ object SciFunctions {
       case aa:FMat => acosh(aa)
       case aa:CMat => acosh(aa)
       case aa:DMat => acosh(aa)
-      case aa:GMat => acosh(aa)
-      case aa:GDMat => acosh(aa)
       case aa:TMat => acosh(aa)
     }
   }
@@ -3805,8 +2160,6 @@ object SciFunctions {
       case aa:FMat => asinh(aa)
       case aa:CMat => asinh(aa)
       case aa:DMat => asinh(aa)
-      case aa:GMat => asinh(aa)
-      case aa:GDMat => asinh(aa)
       case aa:TMat => asinh(aa)
     }
   }
@@ -3815,8 +2168,6 @@ object SciFunctions {
     a match {
       case aa:FMat => erf(aa)
       case aa:DMat => erf(aa)
-      case aa:GMat => erf(aa)
-      case aa:GDMat => erf(aa)
       case aa:TMat => erf(aa)
     }
   }
@@ -3825,8 +2176,6 @@ object SciFunctions {
     a match {
       case aa:FMat => erfinv(aa)
       case aa:DMat => erfinv(aa)
-      case aa:GMat => erfinv(aa)
-      case aa:GDMat => erfinv(aa)
       case aa:TMat => erfinv(aa)
     }
   }
@@ -3835,8 +2184,6 @@ object SciFunctions {
     a match {
       case aa:FMat => erfc(aa)
       case aa:DMat => erfc(aa)
-      case aa:GMat => erfc(aa)
-      case aa:GDMat => erfc(aa)
       case aa:TMat => erfc(aa)
     }
   }
@@ -3845,8 +2192,6 @@ object SciFunctions {
     a match {
       case aa:FMat => erfcinv(aa)
       case aa:DMat => erfcinv(aa)
-      case aa:GMat => erfcinv(aa)
-      case aa:GDMat => erfcinv(aa)
       case aa:TMat => erfcinv(aa)
     }
   }
@@ -3855,8 +2200,6 @@ object SciFunctions {
     a match {
       case aa:FMat => gamma(aa)
       case aa:DMat => gamma(aa)
-      case aa:GMat => gamma(aa)
-      case aa:GDMat => gamma(aa)
       case aa:TMat => gamma(aa)
     }
   }
@@ -3867,8 +2210,6 @@ object SciFunctions {
     a match {
       case aa:FMat => gammaln(aa)
       case aa:DMat => gammaln(aa)
-      case aa:GMat => gammaln(aa)
-      case aa:GDMat => gammaln(aa)
       case aa:TMat => gammaln(aa)
     }
   }
@@ -3877,8 +2218,6 @@ object SciFunctions {
     a match {
       case aa:FMat => floor(aa)
       case aa:DMat => floor(aa)
-      case aa:GMat => floor(aa)
-      case aa:GDMat => floor(aa)
       case aa:TMat => floor(aa)
     }
   }
@@ -3887,8 +2226,6 @@ object SciFunctions {
     a match {
       case aa:FMat => ceil(aa)
       case aa:DMat => ceil(aa)
-      case aa:GMat => ceil(aa)
-      case aa:GDMat => ceil(aa)
       case aa:TMat => ceil(aa)
     }
   }
@@ -3897,8 +2234,6 @@ object SciFunctions {
     a match {
       case aa:FMat => round(aa)
       case aa:DMat => round(aa)
-      case aa:GMat => round(aa)
-      case aa:GDMat => round(aa)
       case aa:TMat => round(aa)
     }
   }
@@ -3907,8 +2242,6 @@ object SciFunctions {
     a match {
       case aa:FMat => trunc(aa)
       case aa:DMat => trunc(aa)
-      case aa:GMat => trunc(aa)
-      case aa:GDMat => trunc(aa)
       case aa:TMat => trunc(aa)
     }
   }
@@ -3917,8 +2250,6 @@ object SciFunctions {
     a match {
       case aa:FMat => exppsi(aa)
       case aa:DMat => exppsi(aa)
-      case aa:GMat => exppsi(aa)
-      case aa:GDMat => exppsi(aa)
       case aa:TMat => exppsi(aa)
     }
   }
@@ -3926,35 +2257,32 @@ object SciFunctions {
   def normcdf(a:Mat):Mat = {
     a match {
       case aa:FMat => normcdf(aa)
-      case aa:GMat => normcdf(aa)
+      case aa:DMat => normcdf(aa)
     }
   }
   
   def normcdfinv(a:Mat):Mat = {
     a match {
       case aa:FMat => normcdfinv(aa)
-      case aa:GMat => normcdfinv(aa)
+      case aa:DMat => normcdfinv(aa)
     }
   }
   
   def psi(a:Mat):Mat = {
     a match {
       case aa:FMat => psi(aa)
-      case aa:GMat => psi(aa)
     }
   }
   
   def psiinv(a:Mat):Mat = {
     a match {
       case aa:FMat => psiinv(aa)
-      case aa:GMat => psiinv(aa)
     }
   }
   
   def psifn(a:Mat, b:Mat):Mat = {
     (a,b) match {
       case (aa:FMat, bb:FMat) => psifn(aa, bb);
-      case (aa:GMat, bb:GMat) => psifn(aa, bb);
     }
   }
   
@@ -3962,8 +2290,6 @@ object SciFunctions {
     (a, b) match {
       case (aa:FMat, bb:FMat) => atan2(aa, bb)
       case (aa:DMat, bb:DMat) => atan2(aa, bb)
-      case (aa:GMat, bb:GMat) => atan2(aa, bb)
-      case (aa:GDMat, bb:GDMat) => atan2(aa, bb)
     }
   }
   
@@ -3971,8 +2297,6 @@ object SciFunctions {
     (a, b) match {
       case (aa:FMat, bb:FMat) => pow(aa, bb)
       case (aa:DMat, bb:DMat) => pow(aa, bb)
-      case (aa:GMat, bb:GMat) => pow(aa, bb)
-      case (aa:GDMat, bb:GDMat) => pow(aa, bb)
     }
   }
 }

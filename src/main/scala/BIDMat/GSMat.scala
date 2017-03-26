@@ -11,16 +11,15 @@ import scala.util.hashing.MurmurHash3
 import GMat._
 import java.io._
 
-case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @transient var ic:Pointer, @transient var jc:Pointer, @transient var data:Pointer, val realnnz:Int) extends Mat(nr, nc) {
-	
-  def getdata() = data;	
+class GSMat(nr0:Int, nc0:Int, nnz1:Int, @transient var pir:Pointer, @transient var pic:Pointer, @transient var pjc:Pointer, 
+    @transient var pdata:Pointer, val realnnz:Int) extends SMat(nr0, nc0, nnz1, null, null, null) {
 
   override def mytype = "GSMat"
     
   override def nnz = nnz0
   
   override def contents:GMat = {
-    val out = new GMat(nnz, 1, data, realnnz);
+    val out = new GMat(nnz, 1, pdata, realnnz);
     out.setGUID(MurmurHash3.mix(MurmurHash3.mix(nnz, 1), (GUID*7897889).toInt));
     out
   }
@@ -39,10 +38,10 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
     val gpu = SciFunctions.getGPU;
     SciFunctions.setGPU(myGPU);
     val tmp = GSMat(saveMe);
-    data = tmp.data;
-    ir = tmp.ir;
-    ic = tmp.ic;
-    jc = tmp.jc;
+    pdata = tmp.pdata;
+    pir = tmp.pir;
+    pic = tmp.pic;
+    pjc = tmp.pjc;
     SciFunctions.setGPU(gpu);
     saveMe = null;
   }
@@ -52,11 +51,11 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
     val tmpcols = IMat(nnz0,1)
     val tmprows = IMat(nnz0,1)
     val tmpdata = FMat(nnz0,1)
-    var err = JCublas.cublasGetVector(nnz0, Sizeof.INT, ir, 1, Pointer.to(tmprows.data), 1)
+    var err = JCublas.cublasGetVector(nnz0, Sizeof.INT, pir, 1, Pointer.to(tmprows.data), 1)
     cudaDeviceSynchronize
-    if (err == 0) err = cublasGetVector(nnz0, Sizeof.FLOAT, data, 1, Pointer.to(tmpdata.data), 1)
+    if (err == 0) err = cublasGetVector(nnz0, Sizeof.FLOAT, pdata, 1, Pointer.to(tmpdata.data), 1)
     cudaDeviceSynchronize
-    if (err == 0) err = cublasGetVector(nnz0, Sizeof.INT, ic, 1, Pointer.to(tmpcols.data), 1)    
+    if (err == 0) err = cublasGetVector(nnz0, Sizeof.INT, pic, 1, Pointer.to(tmpcols.data), 1)    
     cudaDeviceSynchronize
     if (err == 0) err = cublasGetError()
     if (err != 0) {
@@ -72,13 +71,13 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
   
   def copy(omat:Mat, key1:Long, key2:Int):GSMat = {
     val out = GSMat.newOrCheckGSMat(nrows, ncols, nnz, realnnz, omat, GUID, key1, key2)
-    var err = cudaMemcpy(out.jc, jc, 1L * Sizeof.INT * (ncols+1), cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    var err = cudaMemcpy(out.pjc, pjc, 1L * Sizeof.INT * (ncols+1), cudaMemcpyKind.cudaMemcpyDeviceToDevice)
     cudaDeviceSynchronize()
-    if (err == 0) err = cudaMemcpy(out.ir, ir, 1L * Sizeof.INT * nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    if (err == 0) err = cudaMemcpy(out.pir, pir, 1L * Sizeof.INT * nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
     cudaDeviceSynchronize()
-    if (err == 0) err = cudaMemcpy(out.ic, ic, 1L * Sizeof.INT * nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    if (err == 0) err = cudaMemcpy(out.pic, pic, 1L * Sizeof.INT * nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
     cudaDeviceSynchronize()
-    if (err == 0) err = cudaMemcpy(out.data, data, 1L * Sizeof.FLOAT * nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    if (err == 0) err = cudaMemcpy(out.pdata, pdata, 1L * Sizeof.FLOAT * nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
     cudaDeviceSynchronize()
     if (err != 0) {
         println("device is %d" format SciFunctions.getGPU)
@@ -89,25 +88,25 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
   
   override def colslice(col1:Int, col2:Int, omat:Mat):GSMat = {
     val locs = IMat(2,1);
-    cudaMemcpy(Pointer.to(locs.data), jc.withByteOffset(col1 * Sizeof.INT), Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost);
-    cudaMemcpy(Pointer.to(locs.data).withByteOffset(Sizeof.INT), jc.withByteOffset(col2 * Sizeof.INT), Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost);
+    cudaMemcpy(Pointer.to(locs.data), pjc.withByteOffset(col1 * Sizeof.INT), Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost);
+    cudaMemcpy(Pointer.to(locs.data).withByteOffset(Sizeof.INT), pjc.withByteOffset(col2 * Sizeof.INT), Sizeof.INT, cudaMemcpyKind.cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize();
     val starti = locs(0);
     val endi = locs(1);
     val newnnz = endi - starti;
     val newncols = col2 - col1;
     val out = GSMat.newOrCheckGSMat(nrows, newncols, newnnz, newnnz, omat, GUID, col1, col2, "colslice".##);
-    var err = cudaMemcpy(out.jc, jc.withByteOffset(col1 * Sizeof.INT), 1L * Sizeof.INT * (newncols+1), cudaMemcpyKind.cudaMemcpyDeviceToDevice);
+    var err = cudaMemcpy(out.pjc, pjc.withByteOffset(col1 * Sizeof.INT), 1L * Sizeof.INT * (newncols+1), cudaMemcpyKind.cudaMemcpyDeviceToDevice);
     cudaDeviceSynchronize();
-    if (err == 0) err = cudaMemcpy(out.ir, ir.withByteOffset(starti*Sizeof.INT), 1L * Sizeof.INT * newnnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    if (err == 0) err = cudaMemcpy(out.pir, pir.withByteOffset(starti*Sizeof.INT), 1L * Sizeof.INT * newnnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
     cudaDeviceSynchronize();
-    if (err == 0) err = cudaMemcpy(out.ic, ic.withByteOffset(starti*Sizeof.INT), 1L * Sizeof.INT * newnnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    if (err == 0) err = cudaMemcpy(out.pic, pic.withByteOffset(starti*Sizeof.INT), 1L * Sizeof.INT * newnnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
     cudaDeviceSynchronize();
-    if (err == 0) err = cudaMemcpy(out.data, data.withByteOffset(starti*Sizeof.FLOAT), 1L * Sizeof.FLOAT * newnnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    if (err == 0) err = cudaMemcpy(out.pdata, pdata.withByteOffset(starti*Sizeof.FLOAT), 1L * Sizeof.FLOAT * newnnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
     cudaDeviceSynchronize();
-    val tjc = new GIMat(newncols+1, 1, out.jc, newncols + 1);
+    val tjc = new GIMat(newncols+1, 1, out.pjc, newncols + 1);
     tjc ~ tjc - starti;
-    val cc = new GIMat(newnnz, 1, out.ic, newnnz);
+    val cc = new GIMat(newnnz, 1, out.pic, newnnz);
     cc ~ cc - col1;
     if (err != 0) {
         println("device is %d" format SciFunctions.getGPU)
@@ -121,11 +120,11 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
   def toSMat():SMat = { 
     val out = SMat.newOrCheckSMat(nrows, ncols, nnz, null, GUID, "toSMat".##)
     val tmpcols = IMat.newOrCheckIMat(nnz, 1, null, GUID, "toSMat_tmp".##).data
-    var err = JCublas.cublasGetVector(nnz, Sizeof.INT, ir, 1, Pointer.to(out.ir), 1)
+    var err = JCublas.cublasGetVector(nnz, Sizeof.INT, pir, 1, Pointer.to(out.ir), 1)
     cudaDeviceSynchronize
-    if (err == 0) err = JCublas.cublasGetVector(nnz, Sizeof.FLOAT, data, 1, Pointer.to(out.data), 1)
+    if (err == 0) err = JCublas.cublasGetVector(nnz, Sizeof.FLOAT, pdata, 1, Pointer.to(out.data), 1)
     cudaDeviceSynchronize
-    if (err == 0) JCublas.cublasGetVector(nnz, Sizeof.INT, ic, 1, Pointer.to(tmpcols), 1)
+    if (err == 0) JCublas.cublasGetVector(nnz, Sizeof.INT, pic, 1, Pointer.to(tmpcols), 1)
     cudaDeviceSynchronize
     if (err == 0) err = cublasGetError()
     if (err != 0) {
@@ -139,16 +138,16 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
     out
   }
   
-  def copyTo(out:SMat) = { 
+  override def copyTo(out:SMat) = { 
     if (nrows != out.nrows && ncols != out.ncols && nnz != out.nnz) {
       throw new RuntimeException("GSMAT.copyTo dimensions mismatch")
     }
     val tmpcols = IMat.newOrCheckIMat(nnz, 1, null, GUID, "copyTo_tmp".##).data
-    var err = JCublas.cublasGetVector(nnz, Sizeof.INT, ir, 1, Pointer.to(out.ir), 1)
+    var err = JCublas.cublasGetVector(nnz, Sizeof.INT, pir, 1, Pointer.to(out.ir), 1)
     cudaDeviceSynchronize
-    if (err == 0) err = JCublas.cublasGetVector(nnz, Sizeof.FLOAT, data, 1, Pointer.to(out.data), 1)
+    if (err == 0) err = JCublas.cublasGetVector(nnz, Sizeof.FLOAT, pdata, 1, Pointer.to(out.data), 1)
     cudaDeviceSynchronize
-    if (err == 0) JCublas.cublasGetVector(nnz, Sizeof.INT, ic, 1, Pointer.to(tmpcols), 1)
+    if (err == 0) JCublas.cublasGetVector(nnz, Sizeof.INT, pic, 1, Pointer.to(tmpcols), 1)
     cudaDeviceSynchronize
     if (err == 0) err = cublasGetError()
     if (err != 0) {
@@ -169,7 +168,7 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
   }
   
   override def clear = {
-  	var err = cudaMemset(data, 0, Sizeof.FLOAT*nnz)
+  	var err = cudaMemset(pdata, 0, Sizeof.FLOAT*nnz)
   	cudaDeviceSynchronize  	
     if (err == 0) err = cudaGetLastError()
     if (err != 0) {
@@ -187,8 +186,8 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
     GMat.zeros(m,n)
   }
   
-  override def zeros(dims:IMat):GND = {
-    GND.zeros(dims)
+  override def zeros(dims:IMat):GMat = {
+    GMat.zeros(dims)
   }
   
   override def zeros(m:Int, n:Int, nnz:Int) = {
@@ -199,17 +198,17 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
     GIMat.iones(m,n)
   }
   
-  def full(omat:Mat):GMat = {
+  override def full(omat:Mat):GMat = {
     val out = GMat.newOrCheckGMat(nrows, ncols, omat, GUID, "full".##)
     out.clear
-    var err = CUMAT.full(ir, ic, data, out.data, nrows, ncols, nnz)  
+    var err = CUMAT.full(pir, pic, pdata, out.pdata, nrows, ncols, nnz)  
     cudaDeviceSynchronize()
     if (err == 0) err = cudaGetLastError
     if (err != 0) throw new RuntimeException(("GPU %d full kernel error "+cudaGetErrorString(err)) format SciFunctions.getGPU)
     out
   }
   
-  def full():GMat = full(null):GMat
+  override def full():GMat = full(null):GMat
   
   var cacheT:GSMat = null
   override def t():GSMat = {
@@ -219,10 +218,10 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
   }
   
   override def free() = {
-    JCublas.cublasFree(data)
-    JCublas.cublasFree(ic)
-    JCublas.cublasFree(ir)
-    JCublas.cublasFree(jc)
+    JCublas.cublasFree(pdata)
+    JCublas.cublasFree(pic)
+    JCublas.cublasFree(pir)
+    JCublas.cublasFree(pjc)
     cudaDeviceSynchronize
     this
   }
@@ -230,7 +229,7 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
   override def recycle(nr:Int, nc:Int, nnzx:Int):GSMat = {
       //println("Being recycle")
     if (realnnz >= nnzx) {  
-      new GSMat(nr, nc, nnzx, ir, ic, jc, data, realnnz)
+      new GSMat(nr, nc, nnzx, pir, pic, pjc, pdata, realnnz)
     } else {
 //      free
       if (Mat.useGPUcache) {
@@ -248,7 +247,7 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
     val out = GMat.newOrCheckGMat(if (nn==1) 1 else nrows, if (nn==1) ncols else 1, oldmat, GUID, n, "sum".##)
     out.clear
     Mat.nflops += nnz
-    val err = CUMAT.spsum(nrows, ncols, nnz, ir, ic, data, out.data, nn)
+    val err = CUMAT.spsum(nrows, ncols, nnz, pir, pic, pdata, out.pdata, nn)
     if (err != 0) {
     	println("device is %d" format SciFunctions.getGPU)
     	throw new RuntimeException("Cuda error in GSMAT.sum " + cudaGetErrorString(err))
@@ -269,8 +268,8 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
     val one = FMat.ones(1,1);
     var err = JCusparse.cusparseScsrmm(handle, cusparseOperation.CUSPARSE_OPERATION_TRANSPOSE, 
         ncols, a.ncols, nrows, nnz, 
-        Pointer.to(one.data), descra,	data, jc, ir, a.data, a.nrows, 
-        Pointer.to(zero.data), out.data, out.nrows);
+        Pointer.to(one.data), descra,	pdata, pjc, pir, a.pdata, a.nrows, 
+        Pointer.to(zero.data), out.pdata, out.nrows);
     cudaDeviceSynchronize;
     if (err == 0) err = cudaGetLastError;
     if (err != 0) {
@@ -294,8 +293,8 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
     val one = FMat.ones(1,1);
     var err = JCusparse.cusparseScsrmm(handle, cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE,
         ncols, a.ncols, nrows, nnz, 
-        Pointer.to(one.data), descra,	data, jc, ir, a.data, a.nrows, 
-        Pointer.to(zero.data), out.data, out.nrows)
+        Pointer.to(one.data), descra,	pdata, pjc, pir, a.pdata, a.nrows, 
+        Pointer.to(zero.data), out.pdata, out.nrows)
     cudaDeviceSynchronize
     if (err == 0) err = cudaGetLastError
     if (err != 0) {
@@ -316,32 +315,36 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
     Mat.nflops += nnz;
     val out = copy(omat, b.GUID, op);
     if (b.ncols > 1) {
-    	CUMAT.sdoprow(nrows, ncols, nnz, out.data, out.ic, b.data, b.length, op);
+    	CUMAT.sdoprow(nrows, ncols, nnz, out.pdata, out.pic, b.pdata, b.length, op);
     } else {
-      CUMAT.sdopcol(nrows, ncols, nnz, out.data, out.ir, b.data, b.length, op);
+      CUMAT.sdopcol(nrows, ncols, nnz, out.pdata, out.pir, b.pdata, b.length, op);
     }
     out
   }
   
   def ~ (b: GMat) = new GPair(this, b)
   
-  def ^*(a:GMat) = SDTMult(a, null)
-  def Tx(a:GMat) = SDTMult(a, null)
+  override def *(a:FMat) = SDMult(GMat(a), null);
+  override def ^*(a:FMat) = SDTMult(GMat(a), null);
+  override def Tx(a:FMat) = SDTMult(GMat(a), null);
   
   // NOTE: GSMat op GMat is an *Edge or Scalar* operation only, and acts only on the non-zeros of the matrix
-   
-  def +  (a:GMat) = GSDop(a, null, BinOp.op_add);
-  def -  (a:GMat) = GSDop(a, null, BinOp.op_sub);
-  def *@ (a:GMat) = GSDop(a, null, BinOp.op_mul);
-  def ∘  (a:GMat) = GSDop(a, null, BinOp.op_mul);
-  def /  (a:GMat) = GSDop(a, null, BinOp.op_div);
+
+  override def +  (a : FMat):GSMat = GSDop(GMat(a), null, BinOp.op_add);
+  override def -  (a : FMat):GSMat = GSDop(GMat(a), null, BinOp.op_sub);
+  override def *@ (a : FMat):GSMat = GSDop(GMat(a), null, BinOp.op_mul);
+  override def ∘  (a : FMat):GSMat = GSDop(GMat(a), null, BinOp.op_mul);
+  override def /  (a : FMat):GSMat = GSDop(GMat(a), null, BinOp.op_div);
   
-  def != (a : GMat):GSMat = GSDop(a, null, BinOp.op_ne);
-  def >  (a : GMat):GSMat = GSDop(a, null, BinOp.op_gt);
-  def <  (a : GMat):GSMat = GSDop(a, null, BinOp.op_lt);  
-  def <= (a : GMat):GSMat = GSDop(a, null, BinOp.op_le);  
-  def >= (a : GMat):GSMat = GSDop(a, null, BinOp.op_ge);  
-  def == (a : GMat):GSMat = GSDop(a, null, BinOp.op_eq);
+  override def != (a : FMat):GSMat = GSDop(GMat(a), null, BinOp.op_ne);
+  override def >  (a : FMat):GSMat = GSDop(GMat(a), null, BinOp.op_gt);
+  override def <  (a : FMat):GSMat = GSDop(GMat(a), null, BinOp.op_lt);  
+  override def <= (a : FMat):GSMat = GSDop(GMat(a), null, BinOp.op_le);  
+  override def >= (a : FMat):GSMat = GSDop(GMat(a), null, BinOp.op_ge);  
+  override def == (a : FMat):GSMat = GSDop(GMat(a), null, BinOp.op_eq);
+  
+  override def max (a : FMat):GSMat = GSDop(GMat(a), null, BinOp.op_max);  
+  override def min (a : FMat):GSMat = GSDop(GMat(a), null, BinOp.op_min)
   
   override def +  (b : Float):GSMat = GSDop(GMat(b), null, BinOp.op_add);
   override def -  (b : Float):GSMat = GSDop(GMat(b), null, BinOp.op_sub);
@@ -355,6 +358,38 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
   override def <= (b : Float):GSMat = GSDop(GMat(b), null, BinOp.op_le);  
   override def >= (b : Float):GSMat = GSDop(GMat(b), null, BinOp.op_ge);  
   override def == (b : Float):GSMat = GSDop(GMat(b), null, BinOp.op_eq);
+  override def max (b : Float):GSMat = GSDop(GMat(b), null, BinOp.op_max);  
+  override def min (b : Float):GSMat = GSDop(GMat(b), null, BinOp.op_min);
+  
+  override def +  (b : Double):GSMat = GSDop(GMat(b), null, BinOp.op_add);
+  override def -  (b : Double):GSMat = GSDop(GMat(b), null, BinOp.op_sub);
+  override def *@ (b : Double):GSMat = GSDop(GMat(b), null, BinOp.op_mul);
+  override def ∘  (b : Double):GSMat = GSDop(GMat(b), null, BinOp.op_mul);
+  override def /  (b : Double):GSMat = GSDop(GMat(b), null, BinOp.op_div);
+  
+  override def != (b : Double):GSMat = GSDop(GMat(b), null, BinOp.op_ne);
+  override def >  (b : Double):GSMat = GSDop(GMat(b), null, BinOp.op_gt);
+  override def <  (b : Double):GSMat = GSDop(GMat(b), null, BinOp.op_lt);  
+  override def <= (b : Double):GSMat = GSDop(GMat(b), null, BinOp.op_le);  
+  override def >= (b : Double):GSMat = GSDop(GMat(b), null, BinOp.op_ge);  
+  override def == (b : Double):GSMat = GSDop(GMat(b), null, BinOp.op_eq);
+  override def max (b : Double):GSMat = GSDop(GMat(b), null, BinOp.op_max);  
+  override def min (b : Double):GSMat = GSDop(GMat(b), null, BinOp.op_min);
+  
+  override def +  (b : Int):GSMat = GSDop(GMat(b), null, BinOp.op_add);
+  override def -  (b : Int):GSMat = GSDop(GMat(b), null, BinOp.op_sub);
+  override def *@ (b : Int):GSMat = GSDop(GMat(b), null, BinOp.op_mul);
+  override def ∘  (b : Int):GSMat = GSDop(GMat(b), null, BinOp.op_mul);
+  override def /  (b : Int):GSMat = GSDop(GMat(b), null, BinOp.op_div);
+  
+  override def != (b : Int):GSMat = GSDop(GMat(b.toFloat), null, BinOp.op_ne);
+  override def >  (b : Int):GSMat = GSDop(GMat(b.toFloat), null, BinOp.op_gt);
+  override def <  (b : Int):GSMat = GSDop(GMat(b.toFloat), null, BinOp.op_lt);  
+  override def <= (b : Int):GSMat = GSDop(GMat(b.toFloat), null, BinOp.op_le);  
+  override def >= (b : Int):GSMat = GSDop(GMat(b.toFloat), null, BinOp.op_ge);  
+  override def == (b : Int):GSMat = GSDop(GMat(b.toFloat), null, BinOp.op_eq);
+  override def max (b : Int):GSMat = GSDop(GMat(b.toFloat), null, BinOp.op_max);  
+  override def min (b : Int):GSMat = GSDop(GMat(b.toFloat), null, BinOp.op_min);
   
   override def *  (b : Mat) = Mop_Times.op(this, b, null)
   override def *^ (b : Mat) = Mop_TimesT.op(this, b, null)
@@ -377,24 +412,26 @@ case class GSMat(nr:Int, nc:Int, var nnz0:Int, @transient var ir:Pointer, @trans
   
 }
 
-class GSPair (val omat:Mat, val mat:GSMat) extends Pair {
-  def * (a:GMat) = mat.SDMult(a, omat)
-	def Tx (a:GMat) = mat.SDTMult(a, omat)
-	def ^* (a:GMat) = mat.SDTMult(a, omat)
+class GSPair (val omat:Mat, val mat:GSMat) extends Pair(omat, mat) {
+  def * (a:FMat) = mat.SDMult(GMat(a), omat)
+	def Tx (a:FMat) = mat.SDTMult(GMat(a), omat)
+	def ^* (a:FMat) = mat.SDTMult(GMat(a), omat)
 	
-	def +  (a:GMat) = mat.GSDop(a, omat, BinOp.op_add);
-  def -  (a:GMat) = mat.GSDop(a, omat, BinOp.op_sub);
-  def *@ (a:GMat) = mat.GSDop(a, omat, BinOp.op_mul);
-  def ∘  (a:GMat) = mat.GSDop(a, omat, BinOp.op_mul);
-  def /  (a:GMat) = mat.GSDop(a, omat, BinOp.op_div);
+	def +  (a:FMat) = mat.GSDop(GMat(a), omat, BinOp.op_add);
+  def -  (a:FMat) = mat.GSDop(GMat(a), omat, BinOp.op_sub);
+  def *@ (a:FMat) = mat.GSDop(GMat(a), omat, BinOp.op_mul);
+  def ∘  (a:FMat) = mat.GSDop(GMat(a), omat, BinOp.op_mul);
+  def /  (a:FMat) = mat.GSDop(GMat(a), omat, BinOp.op_div);
   
-  def != (a : GMat):GSMat = mat.GSDop(a, omat, BinOp.op_ne);
-  def >  (a : GMat):GSMat = mat.GSDop(a, omat, BinOp.op_gt);
-  def <  (a : GMat):GSMat = mat.GSDop(a, omat, BinOp.op_lt);  
-  def <= (a : GMat):GSMat = mat.GSDop(a, omat, BinOp.op_le);  
-  def >= (a : GMat):GSMat = mat.GSDop(a, omat, BinOp.op_ge);  
-  def == (a : GMat):GSMat = mat.GSDop(a, omat, BinOp.op_eq);
-	
+  def != (a : FMat):GSMat = mat.GSDop(GMat(a), omat, BinOp.op_ne);
+  def >  (a : FMat):GSMat = mat.GSDop(GMat(a), omat, BinOp.op_gt);
+  def <  (a : FMat):GSMat = mat.GSDop(GMat(a), omat, BinOp.op_lt);  
+  def <= (a : FMat):GSMat = mat.GSDop(GMat(a), omat, BinOp.op_le);  
+  def >= (a : FMat):GSMat = mat.GSDop(GMat(a), omat, BinOp.op_ge);  
+  def == (a : FMat):GSMat = mat.GSDop(GMat(a), omat, BinOp.op_eq);
+  def max (a : FMat):GSMat = mat.GSDop(GMat(a), omat, BinOp.op_max);  
+  def min (a : FMat):GSMat = mat.GSDop(GMat(a), omat, BinOp.op_min);
+  
   override def +  (a:Float) = mat.GSDop(GMat(a), omat, BinOp.op_add);
   override def -  (a:Float) = mat.GSDop(GMat(a), omat, BinOp.op_sub);
   override def *@ (a:Float) = mat.GSDop(GMat(a), omat, BinOp.op_mul);
@@ -407,7 +444,41 @@ class GSPair (val omat:Mat, val mat:GSMat) extends Pair {
   override def <= (a : Float):GSMat = mat.GSDop(GMat(a), omat, BinOp.op_le);  
   override def >= (a : Float):GSMat = mat.GSDop(GMat(a), omat, BinOp.op_ge);  
   override def == (a : Float):GSMat = mat.GSDop(GMat(a), omat, BinOp.op_eq);
-	
+  override def max (a : Float):GSMat = mat.GSDop(GMat(a), omat, BinOp.op_max);  
+  override def min (a : Float):GSMat = mat.GSDop(GMat(a), omat, BinOp.op_min);
+  
+  
+  override def +  (a:Int) = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_add);
+  override def -  (a:Int) = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_sub);
+  override def *@ (a:Int) = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_mul);
+  override def ∘  (a:Int) = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_mul);
+  override def /  (a:Int) = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_div);
+  
+  override def != (a : Int):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_ne);
+  override def >  (a : Int):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_gt);
+  override def <  (a : Int):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_lt);  
+  override def <= (a : Int):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_le);  
+  override def >= (a : Int):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_ge);  
+  override def == (a : Int):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_eq);
+  override def max (a : Int):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_max);  
+  override def min (a : Int):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_min);
+  
+  
+  override def +  (a:Double) = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_add);
+  override def -  (a:Double) = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_sub);
+  override def *@ (a:Double) = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_mul);
+  override def ∘  (a:Double) = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_mul);
+  override def /  (a:Double) = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_div);
+  
+  override def != (a : Double):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_ne);
+  override def >  (a : Double):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_gt);
+  override def <  (a : Double):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_lt);  
+  override def <= (a : Double):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_le);  
+  override def >= (a : Double):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_ge);  
+  override def == (a : Double):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_eq);
+  override def max (a : Double):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_max);  
+  override def min (a : Double):GSMat = mat.GSDop(GMat(a.toFloat), omat, BinOp.op_min);
+  
   override def ^* (b : Mat) = Mop_TTimes.op(mat, b, omat)
 	override def Tx (b : Mat) = Mop_TTimes.op(mat, b, omat)
 	override def *  (b : Mat) = Mop_Times.op(mat, b, omat)
@@ -438,10 +509,10 @@ object GSMat {
     val realnnzy = math.max(1, realnnzx);
     val out = new GSMat(nr, nc, nnzx, new Pointer(), new Pointer(), new Pointer(), new Pointer(), realnnzy) 
     if (Mat.debugMem) println("GSMat %d %d %d, %d %f" format (nr, nc, nnzx, SciFunctions.getGPU, SciFunctions.GPUmem._1))
-    err = JCublas.cublasAlloc(out.realnnz, Sizeof.INT, out.ir)
-    if (err == 0) err = JCublas.cublasAlloc(out.realnnz, Sizeof.INT, out.ic)
-    if (err == 0) err = JCublas.cublasAlloc(out.ncols+1, Sizeof.INT, out.jc)
-    if (err == 0) err = JCublas.cublasAlloc(out.realnnz, Sizeof.FLOAT, out.data)
+    err = JCublas.cublasAlloc(out.realnnz, Sizeof.INT, out.pir)
+    if (err == 0) err = JCublas.cublasAlloc(out.realnnz, Sizeof.INT, out.pic)
+    if (err == 0) err = JCublas.cublasAlloc(out.ncols+1, Sizeof.INT, out.pjc)
+    if (err == 0) err = JCublas.cublasAlloc(out.realnnz, Sizeof.FLOAT, out.pdata)
     cudaDeviceSynchronize
     if (err == 0) err = cudaGetLastError
     if (err != 0) {
@@ -453,7 +524,14 @@ object GSMat {
   
   def apply(nr:Int, nc:Int, nnzx:Int):GSMat = apply(nr, nc, nnzx, nnzx)
   
-  def apply(a:SMat):GSMat = fromSMat(a, null) 
+  def apply(a:SMat):GSMat = {
+    a match {
+      case g:GSMat => g;
+      case _ => {
+    	  fromSMat(a, null);
+      }
+    }
+  }
   
   var cusparseContexts:Array[cusparseHandle] = null
   var cusparseMatDescrs:Array[cusparseMatDescr] = null
@@ -536,13 +614,13 @@ object GSMat {
     out.nnz0 = a.nnz;
     var err = 0;
     val handle = GSMat.getHandle;
-    cudaMemcpy(out.data, Pointer.to(a.data), 1L*a.nnz*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice);
+    cudaMemcpy(out.pdata, Pointer.to(a.data), 1L*a.nnz*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice);
     if (Mat.ioneBased == 1) {
-      cudaMemcpy(out.ir, Pointer.to(SparseMat.decInds(a.ir)), 1L*a.nnz*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice);
-      cudaMemcpy(out.jc, Pointer.to(SparseMat.decInds(a.jc)), 1L*(a.ncols+1)*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice);
+      cudaMemcpy(out.pir, Pointer.to(SparseMat.decInds(a.ir)), 1L*a.nnz*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice);
+      cudaMemcpy(out.pjc, Pointer.to(SparseMat.decInds(a.jc)), 1L*(a.ncols+1)*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice);
     } else {
-      cudaMemcpy(out.ir, Pointer.to(a.ir), 1L*a.nnz*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice);
-      cudaMemcpy(out.jc, Pointer.to(a.jc), 1L*(a.ncols+1)*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice);
+      cudaMemcpy(out.pir, Pointer.to(a.ir), 1L*a.nnz*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice);
+      cudaMemcpy(out.pjc, Pointer.to(a.jc), 1L*(a.ncols+1)*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice);
     }
     cudaDeviceSynchronize;
     if (err == 0) err = cudaGetLastError;
@@ -550,7 +628,7 @@ object GSMat {
         println("device is %d" format SciFunctions.getGPU);
         throw new RuntimeException("Cuda copy error in GSMAT.fromSMat " + cudaGetErrorString(err));
     }
-    if (err == 0) err = JCusparse.cusparseXcsr2coo(handle, out.jc, out.nnz, out.ncols, out.ic, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO)
+    if (err == 0) err = JCusparse.cusparseXcsr2coo(handle, out.pjc, out.nnz, out.ncols, out.pic, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO)
     cudaDeviceSynchronize
     if (err == 0) err = cudaGetLastError
     if (err != 0) {
@@ -567,14 +645,14 @@ object GSMat {
 //    println("DDS %d %d %d %d %f" format (C.nnz, C.GUID, C.myGPU, SciFunctions.getGPU, SciFunctions.GPUmem._1))
     val out = GSMat.newOrCheckGSMat(C.nrows, C.ncols, C.nnz, C.realnnz, oldmat, A.GUID, B.GUID, C.GUID, "DDS".##)
 //    println("DDS1 %d %d %d %d %f" format (out.nnz, out.GUID, out.myGPU, SciFunctions.getGPU, SciFunctions.GPUmem._1))
-    var err = cudaMemcpy(out.ir, C.ir, 1L * Sizeof.INT * C.nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    var err = cudaMemcpy(out.pir, C.pir, 1L * Sizeof.INT * C.nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
     cudaDeviceSynchronize()
     if (err != 0) throw new RuntimeException(("GPU %d DDS row copy error "+cudaGetErrorString(err)) format SciFunctions.getGPU)
-    err = cudaMemcpy(out.ic, C.ic, 1L * Sizeof.INT * C.nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    err = cudaMemcpy(out.pic, C.pic, 1L * Sizeof.INT * C.nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
     cudaDeviceSynchronize()
     if (err != 0) throw new RuntimeException(("GPU %d DDS column copy error "+cudaGetErrorString(err)) format SciFunctions.getGPU)
     out.clear;
-    err = CUMAT.dds(A.nrows, C.nnz, A.data, B.data, C.ir, C.ic, out.data)
+    err = CUMAT.dds(A.nrows, C.nnz, A.pdata, B.pdata, C.pir, C.pic, out.pdata)
     if (err != 0) throw new RuntimeException(("GPU %d DDS kernel error "+cudaGetErrorString(err)) format SciFunctions.getGPU)
     Mat.nflops += 2L * C.nnz * A.nrows
     out    
@@ -587,11 +665,11 @@ object GSMat {
 //    println("DDS %d %d %d %d %f" format (C.nnz, C.GUID, C.myGPU, SciFunctions.getGPU, SciFunctions.GPUmem._1))
     val out = GSMat.newOrCheckGSMat(C.nrows, C.ncols, C.nnz, C.realnnz, oldmat, A.GUID, B.GUID, C.GUID, "DDS".##)
 //    println("DDS1 %d %d %d %d %f" format (out.nnz, out.GUID, out.myGPU, SciFunctions.getGPU, SciFunctions.GPUmem._1))
-    var err = cudaMemcpy(out.ir, C.ir, 1L * Sizeof.INT * C.nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    var err = cudaMemcpy(out.pir, C.pir, 1L * Sizeof.INT * C.nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
     cudaDeviceSynchronize()
     if (err != 0) throw new RuntimeException(("GPU %d DDS column copy error "+cudaGetErrorString(err)) format SciFunctions.getGPU)
     out.clear;
-    err = CUMAT.dds0(A.nrows, C.ncols, A.data, B.data, C.ir, C.jc, out.data)
+    err = CUMAT.dds0(A.nrows, C.ncols, A.pdata, B.pdata, C.pir, C.pjc, out.pdata)
     if (err != 0) throw new RuntimeException(("GPU %d DDS kernel error "+cudaGetErrorString(err)) format SciFunctions.getGPU)
     Mat.nflops += 2L * C.nnz * A.nrows
     out    
@@ -600,16 +678,16 @@ object GSMat {
   def oneHot(c:GIMat, ncats0:Int):GSMat = {
       val ncats = if (ncats0 == 0) (SciFunctions.maxi(c).dv.toInt + 1) else ncats0;
 		  val out = GSMat.newOrCheckGSMat(ncats, c.length, c.length, c.length, null, c.GUID, ncats, "oneHot".##);
-		  var err = cudaMemcpy(out.ir, c.data, 1L * Sizeof.INT * c.length, cudaMemcpyKind.cudaMemcpyDeviceToDevice);
+		  var err = cudaMemcpy(out.pir, c.pdata, 1L * Sizeof.INT * c.length, cudaMemcpyKind.cudaMemcpyDeviceToDevice);
 		  cudaDeviceSynchronize();
 		  if (err == 0) err = cudaGetLastError();
 		  if (err != 0) throw new RuntimeException(("GPU %d oneHot row copy error "+cudaGetErrorString(err)) format SciFunctions.getGPU);
-		  err = CUMAT.setval(out.data, 1f, c.length);
+		  err = CUMAT.setval(out.pdata, 1f, c.length);
       if (err != 0) throw new RuntimeException(("GPU %d oneHot set error "+cudaGetErrorString(err)) format SciFunctions.getGPU);
-      err = CUMAT.initSeq(out.ic, 1, c.length, 0);
+      err = CUMAT.initSeq(out.pic, 1, c.length, 0);
       if (err != 0) throw new RuntimeException(("GPU %d oneHot col set error "+cudaGetErrorString(err)) format SciFunctions.getGPU);
       val handle = GSMat.getHandle;
-      if (err == 0) err = JCusparse.cusparseXcoo2csr(handle, out.ic, out.nnz, out.ncols, out.jc, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO);
+      if (err == 0) err = JCusparse.cusparseXcoo2csr(handle, out.pic, out.nnz, out.ncols, out.pjc, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO);
       cudaDeviceSynchronize;
       if (err == 0) err = cudaGetLastError;
       out
@@ -618,16 +696,16 @@ object GSMat {
   def nHot(c:GIMat, ncats0:Int):GSMat = {
       val ncats = if (ncats0 == 0) (SciFunctions.maxi(c.contents).dv.toInt + 1) else ncats0;
 		  val out = GSMat.newOrCheckGSMat(ncats, c.ncols, c.length, c.length, null, c.GUID, ncats, "nHot".##);
-		  var err = cudaMemcpy(out.ir, c.data, 1L * Sizeof.INT * c.length, cudaMemcpyKind.cudaMemcpyDeviceToDevice);
+		  var err = cudaMemcpy(out.pir, c.pdata, 1L * Sizeof.INT * c.length, cudaMemcpyKind.cudaMemcpyDeviceToDevice);
 		  cudaDeviceSynchronize();
 		  if (err == 0) err = cudaGetLastError();
 		  if (err != 0) throw new RuntimeException(("GPU %d nHot row copy error "+cudaGetErrorString(err)) format SciFunctions.getGPU);
-		  err = CUMAT.setval(out.data, 1f, c.length);
+		  err = CUMAT.setval(out.pdata, 1f, c.length);
       if (err != 0) throw new RuntimeException(("GPU %d nHot set error "+cudaGetErrorString(err)) format SciFunctions.getGPU);
-      err = CUMAT.initSeq(out.ic, c.nrows, c.ncols, 0);
+      err = CUMAT.initSeq(out.pic, c.nrows, c.ncols, 0);
       if (err != 0) throw new RuntimeException(("GPU %d nHot col set error "+cudaGetErrorString(err)) format SciFunctions.getGPU);
       val handle = GSMat.getHandle;
-      if (err == 0) err = JCusparse.cusparseXcoo2csr(handle, out.ic, out.nnz, out.ncols, out.jc, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO);
+      if (err == 0) err = JCusparse.cusparseXcoo2csr(handle, out.pic, out.nnz, out.ncols, out.pjc, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO);
       cudaDeviceSynchronize;
       if (err == 0) err = cudaGetLastError;
       out

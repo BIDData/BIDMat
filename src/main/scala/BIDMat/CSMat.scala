@@ -1,7 +1,9 @@
 package BIDMat
 import Mat._
 
-case class CSMat(override val nrows:Int, override val ncols:Int, override val data:Array[String]) extends DenseMat[String](nrows, ncols, data) {	
+case class CSMat(dims0:Array[Int], val data:Array[String]) extends DenseMat[String](dims0, data) {	
+  
+  def this(nr:Int, nc:Int, data:Array[String]) = this(Array(nr, nc), data);
  
 	override def t:CSMat = CSMat(gt(null))
 	
@@ -20,12 +22,6 @@ case class CSMat(override val nrows:Int, override val ncols:Int, override val da
 	override def apply(a:Int, b:IMat):CSMat = CSMat(gapply(a, b))	
 		
 	override def apply(a:IMat, b:Int):CSMat = CSMat(gapply(a, b))	
-		  
-  override def apply(a:Mat, b:Mat):CSMat = CSMat(gapply(a.asInstanceOf[IMat], b.asInstanceOf[IMat]))
-  
-  override def apply(a:Mat, b:Int):CSMat = CSMat(gapply(a.asInstanceOf[IMat], b))
-  
-  override def apply(a:Int, b:Mat):CSMat = CSMat(gapply(a, b.asInstanceOf[IMat]))
   
   
   def update(i:Int, b:String):String = _update(i, b)
@@ -52,15 +48,6 @@ case class CSMat(override val nrows:Int, override val ncols:Int, override val da
   override def update(iv:IMat, j:Int, b:Mat):CSMat = CSMat(_update(iv, IMat.ielem(j), b.asInstanceOf[CSMat]))
 
   override def update(i:Int, jv:IMat, b:Mat):CSMat = CSMat(_update(IMat.ielem(i), jv, b.asInstanceOf[CSMat]))
-   
-  override def update(iv:Mat, b:Mat):CSMat = CSMat(_update(iv.asInstanceOf[IMat], b.asInstanceOf[CSMat]))
-  
-  override def update(iv:Mat, jv:Mat, b:Mat):CSMat = CSMat(_update(iv.asInstanceOf[IMat], jv.asInstanceOf[IMat], b.asInstanceOf[CSMat]))
-
-  override def update(iv:Mat, j:Int, b:Mat):CSMat = CSMat(_update(iv.asInstanceOf[IMat], IMat.ielem(j), b.asInstanceOf[CSMat]))
-
-  override def update(i:Int, jv:Mat, b:Mat):CSMat = CSMat(_update(IMat.ielem(i), jv.asInstanceOf[IMat], b.asInstanceOf[CSMat]))
-  
   
   
   def update(iv:Mat, b:String):CSMat = CSMat(_update(iv.asInstanceOf[IMat], b))
@@ -78,7 +65,7 @@ case class CSMat(override val nrows:Int, override val ncols:Int, override val da
 	def ccReduceOp(n:Int, f1:(String) => String, f2:(String, String) => String, old:CSMat) = CSMat(ggReduceOp(n, f1, f2, old))
 	
 	override def printOne(i:Int):String = {
-	  val v = data(i)
+	  val v = _data(i)
 	  if (v != null)
 		  v.toString()
 		else	
@@ -220,7 +207,7 @@ object CSMat {
   
     def apply(nr:Int, nc:Int):CSMat = new CSMat(nr, nc, new Array[String](nr*nc))
 
-    def apply(a:DenseMat[String]):CSMat = new CSMat(a.nrows, a.ncols, a.data) 
+    def apply(a:DenseMat[String]):CSMat = new CSMat(a.nrows, a.ncols, a._data) 
     
     def apply(a:SBMat) = a.toCSMat
     

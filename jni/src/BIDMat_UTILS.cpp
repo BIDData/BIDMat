@@ -378,7 +378,6 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_UTILS_im2col
   float * bdata  = (float*)(env->GetPrimitiveArrayCritical(jbdata, JNI_FALSE));
   float * cdata  = (float*)(env->GetPrimitiveArrayCritical(jcdata, JNI_FALSE));
   int * stride  =  (int*)(env->GetPrimitiveArrayCritical(jstride, JNI_FALSE));
-
   int celldim = 1;
   for (int i = 0; i < ndims; i++) {celldim *= idims[i];}
   

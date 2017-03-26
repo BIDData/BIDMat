@@ -5,83 +5,165 @@ import jcuda.NativePointerObject
 import edu.berkeley.bid.UTILS
 
 @SerialVersionUID(100L)
-class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
-  override val nrows = nr
-  override val ncols = nc
+class Mat(val _dims:Array[Int]) extends ND with Serializable {
   
-  def llength = 1L*nr*nc
+  def this(nr:Int, nc:Int) = this(Array(nr, nc));
+  
+  def mytype = "Mat";
+  
+  var _idims:IMat = null
+   
+  def dims = {
+    if (_idims.asInstanceOf[IMat] == null) {
+      _idims = new IMat(1, _dims.length, _dims);
+    }
+    _idims;
+  }
+  
+  val ndims = _dims.length;
+  val ncols = _dims(ndims-1)
+  val nrows = if (ndims == 1) 1 else _dims.slice(0,ndims-1).reduce(_*_);
+  val length = nrows * ncols; 
+  val llength = 1L*nrows*ncols;
+  def nnz = length;
  
-  
   private var _GUID = Mat.myrand.nextLong
+  def GUID = _GUID;
+  def setGUID(v:Long) {
+    _GUID = v;
+  }
+  
+  def dv:Double = {
+    throw new RuntimeException("dv not implemented for "+this.mytype)
+  }
+  
+  def fv:Float = {
+    throw new RuntimeException("fv not implemented for "+this.mytype)
+  }
   
   def notImplemented0(s:String):Mat = { 
-    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
+    throw new RuntimeException(s+" not implemented for "+this.mytype)
+  } 
+  
+  def notImplemented1(s:String,that:Float):Mat = { 
+    throw new RuntimeException(s+" not implemented for "+this.mytype+" and Float")
   }
   
-   def notImplemented0ND(s:String):ND = { 
-    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
+  def notImplemented1(s:String,that:Int):Mat = { 
+    throw new RuntimeException(s+" not implemented for "+this.mytype+" and Int")
   }
   
-  def notImplemented1(s:String,that:ND):ND = { 
-    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and "+that.mytype)
+  def notImplemented1(s:String,that:Double):Mat = { 
+    throw new RuntimeException(s+" not implemented for "+this.mytype+" and Double")
   }
   
   def notImplemented1(s:String,that:Mat):Mat = { 
-    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and "+that.mytype)
+    throw new RuntimeException(s+" not implemented for "+this.mytype+" and Double")
   }
-  
-  def notImplemented2(s:String,that:Float):Mat = { 
-    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and Float")
-  }
-  
-  def notImplemented2(s:String,that:Int):Mat = { 
-    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and Int")
-  }
-  
-  def notImplemented2(s:String,that:Double):Mat = { 
-    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype+" and Double")
-  }
-  
-  def notImplementedf(s:String):Float = { 
-    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
-  }
-  
-  def notImplementedd(s:String):Double = { 
-    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
-  }
-  
-  def notImplementedi(s:String):Int = { 
-    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
-  }
-  
-  def notImplementedl(s:String):Long = { 
-    throw new RuntimeException("operator "+s+" not implemented for "+this.mytype)
-  }
-  
-  def applyf(indx:Int):Float  = throw new RuntimeException("1D access not supported for "+this.mytype);
-  
-  def apply(i1:Mat, i2:Mat, i3:Mat):ND = throw new RuntimeException("3D access not supported for "+this.mytype);
-  def apply(i1:Mat, i2:Mat, i3:Mat, i4:Mat):ND = throw new RuntimeException("4D access not supported for "+this.mytype);
-  
-  def update(i1:Mat, i2:Mat, vv:ND):ND = throw new RuntimeException("2D updates not supported for "+this.mytype);
-  def update(i1:Mat, i2:Mat, i3:Mat, vv:ND):ND = throw new RuntimeException("3D updates not supported for "+this.mytype);
-  def update(i1:Mat, i2:Mat, i3:Mat, i4:Mat, vv:ND):ND = throw new RuntimeException("4D access not supported for "+this.mytype);
-  
+    
   def t = notImplemented0("t")  
   
-  override def mytype = "Mat"
+  def apply(i1:IMat):Mat = notImplemented0("1D slice");
+  def apply(i1:IMat, i2:IMat):Mat = notImplemented0("2D slice");
+  def apply(i1:IMat, i2:IMat, i3:IMat):Mat = notImplemented0("3D slice");
+  def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat):Mat = notImplemented0("4D slice");
+  def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat):Mat = notImplemented0("5D slice");
+  def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat):Mat = notImplemented0("6D slice");
+  def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat):Mat = notImplemented0("7D slice");
+  def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat):Mat = notImplemented0("8D slice");
+  def apply(i1:IMat, i2:Int):Mat = notImplemented0("2D slice");
+  def apply(i1:Int, i2:IMat):Mat = notImplemented0("2D slice");
+    
+  def update(i1:IMat, v:Mat):Mat = notImplemented0("1D update");
+  def update(i1:IMat, i2:IMat, v:Mat):Mat = notImplemented0("2D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, v:Mat):Mat = notImplemented0("3D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, v:Mat):Mat = notImplemented0("4D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, v:Mat):Mat = notImplemented0("5D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, v:Mat):Mat = notImplemented0("6D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, v:Mat):Mat = notImplemented0("7D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, v:Mat):Mat = notImplemented0("8D update");
+  def update(i1:IMat, i2:Int, v:Mat):Mat = notImplemented0("2D update");
+  def update(i1:Int, i2:IMat, v:Mat):Mat = notImplemented0("2D update");
+  
+  def update(i1:IMat, v:Float):Mat = notImplemented0("1D update");
+  def update(i1:IMat, i2:IMat, v:Float):Mat = notImplemented0("2D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, v:Float):Mat = notImplemented0("3D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, v:Float):Mat = notImplemented0("4D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, v:Float):Mat = notImplemented0("5D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, v:Float):Mat = notImplemented0("6D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, v:Float):Mat = notImplemented0("7D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, v:Float):Mat = notImplemented0("8D update");  
+  
+  def update(i1:Int, v:Float):Mat = notImplemented0("1D update");
+  def update(i1:Int, i2:Int, v:Float):Mat = notImplemented0("2D update");
+  def update(i1:Int, i2:IMat, v:Float):Mat = notImplemented0("2D update");
+  def update(i1:IMat, i2:Int, v:Float):Mat = notImplemented0("2D update");
+  
+  def update(i1:IMat, v:Double):Mat = notImplemented0("1D update");
+  def update(i1:IMat, i2:IMat, v:Double):Mat = notImplemented0("2D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, v:Double):Mat = notImplemented0("3D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, v:Double):Mat = notImplemented0("4D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, v:Double):Mat = notImplemented0("5D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, v:Double):Mat = notImplemented0("6D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, v:Double):Mat = notImplemented0("7D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, v:Double):Mat = notImplemented0("8D update");  
+  
+  def update(i1:Int, v:Double):Mat = notImplemented0("1D update");
+  def update(i1:Int, i2:Int, v:Double):Mat = notImplemented0("2D update");
+  def update(i1:Int, i2:IMat, v:Double):Mat = notImplemented0("2D update");
+  def update(i1:IMat, i2:Int, v:Double):Mat = notImplemented0("2D update");
+  
+  def update(i1:IMat, v:Int):Mat = notImplemented0("1D update");
+  def update(i1:IMat, i2:IMat, v:Int):Mat = notImplemented0("2D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, v:Int):Mat = notImplemented0("3D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, v:Int):Mat = notImplemented0("4D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, v:Int):Mat = notImplemented0("5D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, v:Int):Mat = notImplemented0("6D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, v:Int):Mat = notImplemented0("7D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, v:Int):Mat = notImplemented0("8D update");  
+  
+  def update(i1:Int, v:Int):Mat = notImplemented0("1D update");
+  def update(i1:Int, i2:Int, v:Int):Mat = notImplemented0("2D update");
+  def update(i1:Int, i2:IMat, v:Int):Mat = notImplemented0("2D update");
+  def update(i1:IMat, i2:Int, v:Int):Mat = notImplemented0("2D update");
+  
+  def update(i1:IMat, v:Long):Mat = notImplemented0("1D update");
+  def update(i1:IMat, i2:IMat, v:Long):Mat = notImplemented0("2D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, v:Long):Mat = notImplemented0("3D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, v:Long):Mat = notImplemented0("4D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, v:Long):Mat = notImplemented0("5D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, v:Long):Mat = notImplemented0("6D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, v:Long):Mat = notImplemented0("7D update");
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, v:Long):Mat = notImplemented0("8D update");  
+  
+  def update(i1:Int, v:Long):Mat = notImplemented0("1D update");
+  def update(i1:Int, i2:Int, v:Long):Mat = notImplemented0("2D update");
+  def update(i1:Int, i2:IMat, v:Long):Mat = notImplemented0("2D update");
+  def update(i1:IMat, i2:Int, v:Long):Mat = notImplemented0("2D update"); 
+  
   def copyTo(a:Mat) = notImplemented0("copyTo");
   def copy = notImplemented0("copy");
   def newcopy = notImplemented0("newcopy");
   def set(v:Float) = notImplemented0("set");
   def set(v:Double) = notImplemented0("set");
+
   def zeros(nr:Int, nc:Int) = notImplemented0("zeros");
-  def zeros(dims0:IMat) = notImplemented0ND("zeros");
-  def zeros = notImplemented0("zeros");
+  def zeros(dims:IMat) = notImplemented0("zeros");
+  def zero = notImplemented0("zero");
+  def zerosLike = notImplemented0("zerosLike");
+  def zeros(nr:Int, nc:Int, nnz:Int):Mat = zeros(nr, nc);
+   
   def ones(nr:Int, nc:Int) = notImplemented0("ones");
-  def ones(dims0:IMat) = ones(dims0(0), dims0(1));
+  def ones(dims:IMat) = notImplemented0("ones");
+  def one = notImplemented0("one");
+  def onesLike = notImplemented0("onesLike");
+  def ones(nr:Int, nc:Int, nnz:Int):Mat = ones(nr, nc);
+
   def izeros(nr:Int, nc:Int) = notImplemented0("izeros");
+  def izeros(dims:IMat) = notImplemented0("izeros");
   def iones(nr:Int, nc:Int) = notImplemented0("iones");
+  def iones(dims:IMat) = notImplemented0("iones");
+  
   def clear = notImplemented0("clear");
   def clearUpper(i:Int) = notImplemented0("clearUpper");
   def clearLower(i:Int) = notImplemented0("clearLower"); 
@@ -90,127 +172,38 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
   def free = notImplemented0("free");
   def view(nr:Int, nc:Int):Mat = notImplemented0("view");
   def view(nr:Int, nc:Int, setGUID:Boolean):Mat = notImplemented0("view");
-    
-  def nnz:Int = {notImplemented0("nnz"); 0}
-  def zeros(nr:Int, nc:Int, nnz:Int):Mat = zeros(nr, nc);
+  
   def recycle(nr:Int, nc:Int, nnz:Int):Mat = notImplemented0("recycle");
   def contents:Mat = notImplemented0("contents");
-  def colslice(a:Int, b:Int, out:Mat):Mat = notImplemented0("colslice");
-  def colslice(a:Int, b:Int, out:Mat, c:Int):Mat = notImplemented0("colslice");
-  def colslice(a:Int, b:Int, out:Mat, c:Int, pb:Boolean):Mat = colslice(a, b, out, c);
+  
+  def colslice(a:Int, b:Int):Mat = notImplemented0("colslice");
+  def colslice(a:Int, b:Int, m:Mat):Mat = notImplemented0("colslice");
+  def colslice(a:Int, b:Int, m:Mat, c:Int):Mat = notImplemented0("colslice");
+  def colslice(a:Int, b:Int, m:Mat, c:Int, pb:Boolean):Mat = notImplemented0("colslice");
+
   def rowslice(a:Int, b:Int, out:Mat):Mat = notImplemented0("rowslice");
   def rowslice(a:Int, b:Int, out:Mat, c:Int):Mat = notImplemented0("rowslice");
-  def colslice(a:Int, b:Int):Mat = notImplemented0("colslice");
   def rowslice(a:Int, b:Int):Mat = notImplemented0("rowslice");
   
-  def colslice(a:Int, b:Int, out:ND):ND = notImplemented0("colslice");
-  def colslice(a:Int, b:Int, out:ND, c:Int):ND = notImplemented0("colslice");
-  
-  def apply(a:IMat):Mat = notImplemented0("linear array access");
-  def apply(a:IMat, b:IMat):Mat = notImplemented0("block array access");
-  def apply(a:IMat, b:Int):Mat = notImplemented0("block array access");	
-  def apply(a:Int, b:IMat):Mat = notImplemented0("block array access");
-  
-  def apply(a:GIMat):Mat = notImplemented0("linear array access");
-  def apply(a:GIMat, b:GIMat):Mat = notImplemented0("block array access");
-  def apply(a:GIMat, b:Int):Mat = notImplemented0("block array access");	
-  def apply(a:Int, b:GIMat):Mat = notImplemented0("block array access");
-  
-  def apply(a:IMat, b:GIMat):Mat = notImplemented0("block array access");
-  def apply(a:GIMat, b:IMat):Mat = notImplemented0("block array access");
-  
-  def apply(a:Mat):Mat = notImplemented0("linear array access");
-  def apply(a:Mat, b:Int):Mat = notImplemented0("block array access");
-  def apply(a:Int, b:Mat):Mat = notImplemented0("block array access");
-  def apply(a:Mat, b:Mat):Mat = notImplemented0("block array access");
-  
-  def update(a:IMat, b:Mat) = notImplemented0("linear update");
-  def update(a:IMat, b:IMat, m:Mat) = notImplemented0("block update");
-  def update(a:IMat, b:Int, m:Mat) = notImplemented0("block update");	
-  def update(a:Int, b:IMat, m:Mat) = notImplemented0("block update");
-  
-  def update(a:IMat, b:Int) = notImplemented0("linear update");
-  def update(a:IMat, b:IMat, c:Int) = notImplemented0("block update");
-  def update(a:IMat, b:Int, c:Int) = notImplemented0("block update");   
-  def update(a:Int, b:IMat, c:Int) = notImplemented0("block update"); 
-    
-  def update(a:IMat, b:Float) = notImplemented0("linear update");
-  def update(a:IMat, b:IMat, c:Float) = notImplemented0("block update");
-  def update(a:IMat, b:Int, c:Float) = notImplemented0("block update");   
-  def update(a:Int, b:IMat, c:Float) = notImplemented0("block update");
-  
-  def update(a:IMat, b:Double) = notImplemented0("linear update");
-  def update(a:IMat, b:IMat, c:Double) = notImplemented0("block update");
-  def update(a:IMat, b:Int, c:Double) = notImplemented0("block update");   
-  def update(a:Int, b:IMat, c:Double) = notImplemented0("block update");
-  
-  def update(a:IMat, b:Long) = notImplemented0("linear update");
-  def update(a:IMat, b:IMat, c:Long) = notImplemented0("block update");
-  def update(a:IMat, b:Int, c:Long) = notImplemented0("block update");   
-  def update(a:Int, b:IMat, c:Long) = notImplemented0("block update");
+  def reshape(newdims:Int*):Mat = notImplemented0("reshape");
+  def reshape(newdims:Array[Int]):Mat = notImplemented0("reshape");
+  def reshape(newdims:IMat):Mat = notImplemented0("reshape");
 
-  def update(a:GIMat, b:Mat) = notImplemented0("linear update");
-  def update(a:GIMat, b:GIMat, m:Mat) = notImplemented0("block update");
-  def update(a:GIMat, b:Int, m:Mat) = notImplemented0("block update");	
-  def update(a:Int, b:GIMat, m:Mat) = notImplemented0("block update");
-  def update(a:GIMat, b:IMat, m:Mat) = notImplemented0("block update");
-  def update(a:IMat, b:GIMat, m:Mat) = notImplemented0("block update");
+  def reshapeView(newdims:Int*):Mat  = notImplemented0("reshapeView");
+  def reshapeView(newdims:Array[Int]):Mat = notImplemented0("reshapeView");
+  def reshapeView(newdims:IMat):Mat = notImplemented0("reshapeView");
   
-  def update(a:GIMat, b:Int) = notImplemented0("linear update");
-  def update(a:GIMat, b:GIMat, c:Int) = notImplemented0("block update");
-  def update(a:GIMat, b:Int, c:Int) = notImplemented0("block update");  
-  def update(a:Int, b:GIMat, c:Int) = notImplemented0("block update");
-  def update(a:GIMat, b:IMat, c:Int) = notImplemented0("block update");
-  def update(a:IMat, b:GIMat, c:Int) = notImplemented0("block update");
+  def transpose(dims:Array[Int]):Mat = notImplemented0("transpose");
+  def transpose(dims:IMat):Mat = notImplemented0("transpose");
+  def transpose(d1:Int, d2:Int):Mat = notImplemented0("transpose");
+  def transpose(d1:Int, d2:Int, d3:Int):Mat = notImplemented0("transpose");
+  def transpose(d1:Int, d2:Int, d3:Int, d4:Int):Mat = notImplemented0("transpose");
+  def transpose(d1:Int, d2:Int, d3:Int, d4:Int, d5:Int):Mat = notImplemented0("transpose");
+  def transpose(d1:Int, d2:Int, d3:Int, d4:Int, d5:Int, d6:Int):Mat = notImplemented0("transpose"); 
+  def transpose(d1:Int, d2:Int, d3:Int, d4:Int, d5:Int, d6:Int, d7:Int):Mat = notImplemented0("transpose"); 
+  def transpose(d1:Int, d2:Int, d3:Int, d4:Int, d5:Int, d6:Int, d7:Int, d8:Int):Mat = notImplemented0("transpose"); 
+   
   
-  def update(a:GIMat, b:Float) = notImplemented0("linear update");
-  def update(a:GIMat, b:GIMat, c:Float) = notImplemented0("block update");
-  def update(a:GIMat, b:Int, c:Float) = notImplemented0("block update");  
-  def update(a:Int, b:GIMat, c:Float) = notImplemented0("block update");
-  def update(a:GIMat, b:IMat, c:Float) = notImplemented0("block update");
-  def update(a:IMat, b:GIMat, c:Float) = notImplemented0("block update");
-  
-  def update(a:GIMat, b:Double) = notImplemented0("linear update");
-  def update(a:GIMat, b:GIMat, c:Double) = notImplemented0("block update");
-  def update(a:GIMat, b:Int, c:Double) = notImplemented0("block update");  
-  def update(a:Int, b:GIMat, c:Double) = notImplemented0("block update");
-  def update(a:GIMat, b:IMat, c:Double) = notImplemented0("block update");
-  def update(a:IMat, b:GIMat, c:Double) = notImplemented0("block update");
-  
-  def update(a:Mat, v:Mat):Mat = notImplemented0("linear update");
-  def update(a:Mat, b:Mat, v:Mat):Mat = notImplemented0("block update");
-  def update(a:Mat, b:Int, v:Mat):Mat = notImplemented0("block update");
-  def update(a:Int, b:Mat, v:Mat):Mat = notImplemented0("block update");
-  
-  def update(a:Mat, v:Int):Mat = notImplemented0("linear update");
-  def update(a:Mat, b:Mat, v:Int):Mat = notImplemented0("block update");
-  def update(a:Mat, b:Int, v:Int):Mat = notImplemented0("block update");
-  def update(a:Int, b:Mat, v:Int):Mat = notImplemented0("block update");
-  
-  def update(a:Mat, v:Float):Mat = notImplemented0("linear update");
-  def update(a:Mat, b:Mat, v:Float):Mat = notImplemented0("block update");
-  def update(a:Mat, b:Int, v:Float):Mat = notImplemented0("block update");
-  def update(a:Int, b:Mat, v:Float):Mat = notImplemented0("block update");
-  
-  def update(a:Mat, v:Double):Mat = notImplemented0("linear update");
-  def update(a:Mat, b:Mat, v:Double):Mat = notImplemented0("block update");
-  def update(a:Mat, b:Int, v:Double):Mat = notImplemented0("block update");
-  def update(a:Int, b:Mat, v:Double):Mat = notImplemented0("block update");
-  
-  def update(a:Mat, v:Long):Mat = notImplemented0("linear update");
-  def update(a:Mat, b:Mat, v:Long):Mat = notImplemented0("block update");
-  def update(a:Mat, b:Int, v:Long):Mat = notImplemented0("block update");
-  def update(a:Int, b:Mat, v:Long):Mat = notImplemented0("block update");
-  
-  def update(a:Int, v:Float):Mat = notImplemented0("linear update");
-  def update(a:Int, v:Double):Mat = notImplemented0("linear update");
-  def update(a:Int, v:Int):Mat = notImplemented0("linear update");
-  def update(a:Int, v:Long):Mat = notImplemented0("linear update");
-  
-  def update(a:Int, b:Int, v:Float):Mat = notImplemented0("update");
-  def update(a:Int, b:Int, v:Double):Mat = notImplemented0("update");
-  def update(a:Int, b:Int, v:Int):Mat = notImplemented0("update");
-  def update(a:Int, b:Int, v:Long):Mat = notImplemented0("update");  
   def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):Mat =
     notImplemented0("tileMult");
   def tileMultNT(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:Mat, broff:Int, bcoff:Int, c:Mat, croff:Int, ccoff:Int):Mat =
@@ -227,18 +220,17 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
   def vecAdd(fromi:Int, to:Mat, toi:Int, height:Int):Mat = {
   		notImplemented0("vecAdd");
   }
-  
+
   def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, reps:Int, aoff:Int, lda:Int, astep:Int, 
       b:Mat, boff:Int, ldb:Int, bstep:Int, c:Mat, coff:Int, ldc:Int, cstep:Int):Mat = notImplemented0("blockGemm");
-  
-  def copyTo(a:ND):ND = notImplemented1("<--", a);
-  
-  val asMat:Mat = this;
 
   def madd(a:Mat, b:Mat, at:Boolean, bt:Boolean):Mat = notImplemented1("update", a);
   def madd(a:Mat, b:Mat):Mat = notImplemented1("update", a);
   
   def unary_-():Mat = notImplemented1("-", this)
+  
+  def <-- (b : Mat):Mat = b.copyTo(this)
+  
   def +  (b : Mat):Mat = notImplemented1("+", b)
   def -  (b : Mat):Mat = notImplemented1("-", b)
   def *  (b : Mat):Mat = notImplemented1("*", b)
@@ -269,107 +261,120 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
   def === (b : Mat):Mat = notImplemented1("===", b)
   def != (b : Mat):Mat = notImplemented1("!=", b)
   
-  def <-- (b : Mat):Mat = b.copyTo(this)
   def \ (b : Mat):Mat = notImplemented1("\\", b)
   def on (b : Mat):Mat = notImplemented1("on", b)
   
-  def *  (b : Float):Mat = notImplemented2("*", b)
-  def +  (b : Float):Mat = notImplemented2("+", b)
-  def -  (b : Float):Mat = notImplemented2("-", b)
-  def *@ (b : Float):Mat = notImplemented2("*@", b)
-  def ∘  (b : Float):Mat = notImplemented2("∘", b)
-  def / (b : Float):Mat = notImplemented2("/", b)
-  def ^  (b : Float):Mat = notImplemented2("^", b)
+  def max(b : Mat):Mat = notImplemented1("max", b)
+  def min(b : Mat):Mat = notImplemented1("min", b)
   
-  def >  (b : Float):Mat = notImplemented2(">", b)
-  def <  (b : Float):Mat = notImplemented2("<", b)
-  def >= (b : Float):Mat = notImplemented2(">=", b)
-  def <= (b : Float):Mat = notImplemented2("<=", b)
-  def == (b : Float):Mat = notImplemented2("==", b)
-  def === (b : Float):Mat = notImplemented2("===", b)
-  def != (b : Float):Mat = notImplemented2("!=", b)
+   def sum(b : IMat):Mat = notImplemented0("sum")
+  def prod(b : IMat):Mat = notImplemented0("prod")
+  def maxi(b : IMat):Mat = notImplemented0("maxi")
+  def mini(b : IMat):Mat = notImplemented0("mini")
+  def amax(b : IMat):Mat = notImplemented0("maxi")
+  def amin(b : IMat):Mat = notImplemented0("mini")
+  def mean(b : IMat):Mat = notImplemented0("mean")
+  def variance(b : IMat):Mat = notImplemented0("variance")
   
-  def *  (b : Int):Mat = notImplemented2("*", b)
-  def +  (b : Int):Mat = notImplemented2("+", b)
-  def -  (b : Int):Mat = notImplemented2("-", b)
-  def *@ (b : Int):Mat = notImplemented2("*@", b)
-  def ∘  (b : Int):Mat = notImplemented2("∘", b)
-  def / (b : Int):Mat = notImplemented2("/", b)
-  def ^  (b : Int):Mat = notImplemented2("^", b)
+  def sum(i1:Int):Mat = notImplemented0("sum");
+  def sum(i1:Int, i2:Int):Mat = notImplemented0("sum");
+  def sum(i1:Int, i2:Int, i3:Int):Mat = notImplemented0("sum");  
+  def sum(i1:Int, i2:Int, i3:Int, i4:Int):Mat = notImplemented0("sum");   
+  def sum(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):Mat = notImplemented0("sum");   
+  def sum(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):Mat = notImplemented0("sum");  
   
-  def >  (b : Int):Mat = notImplemented2(">", b)
-  def <  (b : Int):Mat = notImplemented2("<", b)
-  def >= (b : Int):Mat = notImplemented2(">=", b)
-  def <= (b : Int):Mat = notImplemented2("<=", b)
-  def == (b : Int):Mat = notImplemented2("==", b)
-  def === (b : Int):Mat = notImplemented2("===", b)
-  def != (b : Int):Mat = notImplemented2("!=", b)
+  def prod(i1:Int):Mat = notImplemented0("prod");
+  def prod(i1:Int, i2:Int):Mat = notImplemented0("prod");
+  def prod(i1:Int, i2:Int, i3:Int):Mat = notImplemented0("prod");  
+  def prod(i1:Int, i2:Int, i3:Int, i4:Int):Mat = notImplemented0("prod");   
+  def prod(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):Mat = notImplemented0("prod");   
+  def prod(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):Mat = notImplemented0("prod");  
   
-  def + (b : Long):Mat = notImplemented2("+", b)
-  def - (b : Long):Mat = notImplemented2("-", b)
-  def * (b : Long):Mat = notImplemented2("*", b)
-  def *@ (b : Long):Mat = notImplemented2("*@", b)
-  def ∘  (b : Long):Mat = notImplemented2("∘", b)
-  def /  (b : Long):Mat = notImplemented2("/", b)
-  def ^ (b : Long):Mat   = notImplemented2("^", b)
-  
-  def > (b : Long):Mat = notImplemented2(">", b)
-  def < (b : Long):Mat = notImplemented2("<", b)
-  def >= (b : Long):Mat = notImplemented2(">=", b)
-  def <= (b : Long):Mat = notImplemented2("<=", b)
-  def == (b : Long):Mat = notImplemented2("==", b)
-  def === (b : Long):Mat = notImplemented2("===", b)
-  def != (b : Long):Mat = notImplemented2("!=", b)
-  
-  def *  (b : Double):Mat = notImplemented2("*", b)
-  def +  (b : Double):Mat = notImplemented2("+", b)
-  def -  (b : Double):Mat = notImplemented2("-", b)
-  def *@ (b : Double):Mat = notImplemented2("*@", b)
-  def ∘  (b : Double):Mat = notImplemented2("∘", b)
-  def / (b : Double):Mat = notImplemented2("/", b)
-  def ^  (b : Double):Mat = notImplemented2("^", b)
-  
-  def >  (b : Double):Mat = notImplemented2(">", b)
-  def <  (b : Double):Mat = notImplemented2("<", b)
-  def >= (b : Double):Mat = notImplemented2(">=", b)
-  def <= (b : Double):Mat = notImplemented2("<=", b)
-  def == (b : Double):Mat = notImplemented2("==", b)
-  def === (b : Double):Mat = notImplemented2("===", b)
-  def != (b : Double):Mat = notImplemented2("!=", b)
-  
-  def +  (b : ND):ND = notImplemented1("+", b)
-  def -  (b : ND):ND = notImplemented1("-", b)
-  def *  (b : ND):ND = notImplemented1("*", b)
-  def *^ (b : ND):ND = notImplemented1("*^", b)
-  def xT (b : ND):ND = notImplemented1("*", b)
-  def Tx (b : ND):ND = notImplemented1("*", b)
-  def ^* (b : ND):ND = notImplemented1("^*", b)
-  def ** (b : ND):ND = notImplemented1("**", b)
-  def ⊗  (b : ND):ND = notImplemented1("⊗", b)       // unicode 8855, 0x2297
-  def /< (b : ND):ND = notImplemented1("/<", b)
-  def ∘  (b : ND):ND = notImplemented1("∘", b)        // unicode 8728, 0x2218 
-  def *@ (b : ND):ND = notImplemented1("*@", b)
-  def /  (b : ND):ND = notImplemented1("/", b)
-  def \\ (b : ND):ND = notImplemented1("\\\\", b)
-  def ^  (b : ND):ND = notImplemented1("^", b) 
-  def ◁  (b : ND):ND = notImplemented1("◁", b)        // unicode 9665, 0x25C1 
-  def ▷  (b : ND):ND = notImplemented1("▷", b)        // unicode 9666, 0x25C2
-  def dot (b : ND):ND = notImplemented1("dot", b)
-  def dotr (b : ND):ND = notImplemented1("dotr", b) 
-  def ∙ (b : ND):ND = notImplemented1("dot", b)       // unicode 8729, 0x2219 
-  def ∙→ (b : ND):ND = notImplemented1("dotr", b)     // unicode (8729, 8594) (0x2219, 0x2192)
+  def maxi(i1:Int):Mat = notImplemented0("maxi");
+  def amax(i1:Int):Mat = notImplemented0("amax"); 
     
-  def >  (b : ND):ND = notImplemented1(">", b)
-  def <  (b : ND):ND = notImplemented1("<", b)
-  def >= (b : ND):ND = notImplemented1(">=", b)
-  def <= (b : ND):ND = notImplemented1("<=", b)
-  def == (b : ND):ND = notImplemented1("==", b)
-  def === (b : ND):ND = notImplemented1("===", b)
-  def != (b : ND):ND = notImplemented1("!=", b)
+  def mini(i1:Int):Mat = notImplemented0("mini");
+  def amin(i1:Int):Mat = notImplemented0("amin");
   
-//  def <-- (b : ND):ND = b.copyTo(this)
-  def \ (b : ND):ND = notImplemented1("\\", b)
-  def on (b : ND):ND = notImplemented1("on", b)
+  def mean(i1:Int):Mat = notImplemented0("mean");  
+  
+  def variance(i1:Int):Mat = notImplemented0("variance");
+  
+  def *  (b : Float):Mat = notImplemented1("*", b)
+  def +  (b : Float):Mat = notImplemented1("+", b)
+  def -  (b : Float):Mat = notImplemented1("-", b)
+  def *@ (b : Float):Mat = notImplemented1("*@", b)
+  def ∘  (b : Float):Mat = notImplemented1("∘", b)
+  def / (b : Float):Mat = notImplemented1("/", b)
+  def ^  (b : Float):Mat = notImplemented1("^", b)
+  
+  def >  (b : Float):Mat = notImplemented1(">", b)
+  def <  (b : Float):Mat = notImplemented1("<", b)
+  def >= (b : Float):Mat = notImplemented1(">=", b)
+  def <= (b : Float):Mat = notImplemented1("<=", b)
+  def == (b : Float):Mat = notImplemented1("==", b)
+  def === (b : Float):Mat = notImplemented1("===", b)
+  def != (b : Float):Mat = notImplemented1("!=", b)
+  
+  def max(b : Float):Mat = notImplemented1("max", b)
+  def min(b : Float):Mat = notImplemented1("min", b)
+  
+  def *  (b : Int):Mat = notImplemented1("*", b)
+  def +  (b : Int):Mat = notImplemented1("+", b)
+  def -  (b : Int):Mat = notImplemented1("-", b)
+  def *@ (b : Int):Mat = notImplemented1("*@", b)
+  def ∘  (b : Int):Mat = notImplemented1("∘", b)
+  def / (b : Int):Mat = notImplemented1("/", b)
+  def ^  (b : Int):Mat = notImplemented1("^", b)
+  
+  def >  (b : Int):Mat = notImplemented1(">", b)
+  def <  (b : Int):Mat = notImplemented1("<", b)
+  def >= (b : Int):Mat = notImplemented1(">=", b)
+  def <= (b : Int):Mat = notImplemented1("<=", b)
+  def == (b : Int):Mat = notImplemented1("==", b)
+  def === (b : Int):Mat = notImplemented1("===", b)
+  def != (b : Int):Mat = notImplemented1("!=", b)
+  
+  def max(b : Int):Mat = notImplemented1("max", b)
+  def min(b : Int):Mat = notImplemented1("min", b)
+  
+  def + (b : Long):Mat = notImplemented1("+", b)
+  def - (b : Long):Mat = notImplemented1("-", b)
+  def * (b : Long):Mat = notImplemented1("*", b)
+  def *@ (b : Long):Mat = notImplemented1("*@", b)
+  def ∘  (b : Long):Mat = notImplemented1("∘", b)
+  def /  (b : Long):Mat = notImplemented1("/", b)
+  def ^ (b : Long):Mat   = notImplemented1("^", b)
+  
+  def > (b : Long):Mat = notImplemented1(">", b)
+  def < (b : Long):Mat = notImplemented1("<", b)
+  def >= (b : Long):Mat = notImplemented1(">=", b)
+  def <= (b : Long):Mat = notImplemented1("<=", b)
+  def == (b : Long):Mat = notImplemented1("==", b)
+  def === (b : Long):Mat = notImplemented1("===", b)
+  def != (b : Long):Mat = notImplemented1("!=", b)
+  
+  def max(b : Long):Mat = notImplemented1("max", b)
+  def min(b : Long):Mat = notImplemented1("min", b)
+  
+  def *  (b : Double):Mat = notImplemented1("*", b)
+  def +  (b : Double):Mat = notImplemented1("+", b)
+  def -  (b : Double):Mat = notImplemented1("-", b)
+  def *@ (b : Double):Mat = notImplemented1("*@", b)
+  def ∘  (b : Double):Mat = notImplemented1("∘", b)
+  def / (b : Double):Mat = notImplemented1("/", b)
+  def ^  (b : Double):Mat = notImplemented1("^", b)
+  
+  def >  (b : Double):Mat = notImplemented1(">", b)
+  def <  (b : Double):Mat = notImplemented1("<", b)
+  def >= (b : Double):Mat = notImplemented1(">=", b)
+  def <= (b : Double):Mat = notImplemented1("<=", b)
+  def == (b : Double):Mat = notImplemented1("==", b)
+  def === (b : Double):Mat = notImplemented1("===", b)
+  def != (b : Double):Mat = notImplemented1("!=", b)
+  
+  def max(b : Double):Mat = notImplemented1("max", b)
+  def min(b : Double):Mat = notImplemented1("min", b)
   
   
   def ddot (b : Mat):Double = {notImplemented1("ddot", b); 0}
@@ -379,77 +384,75 @@ class Mat(nr:Int, nc:Int) extends ND(Array(nr, nc)) with Serializable {
   def ^* (b : DSPair):Mat = notImplemented0("^*")
   def Tx (b : DSPair):Mat = notImplemented0("Tx")
   def @@ (b : Mat):DSPair = (this, b) match {
-    case (aa:FMat, bb:SMat) => new FDSPair(aa, bb) 
     case (aa:GMat, bb:GSMat) => new GDSPair(aa, bb)
+    case (aa:FMat, bb:SMat) => new FDSPair(aa, bb) 
   }
   
   def ~ (b : Mat):Pair = b match {
-    case bb:FMat => new FPair(this, bb)
-    case bb:DMat => new DPair(this, bb)
-    case bb:IMat => new IPair(this, bb)
-    case bb:SMat => new SPair(this, bb)
-    case bb:SDMat => new SDPair(this, bb)
-    case bb:CMat => new CPair(this, bb)
-    case bb:GMat => new GPair(this, bb)
-    case bb:GIMat => new GIPair(this, bb)
-    case bb:GDMat => new GDPair(this, bb)
-    case bb:GLMat => new GLPair(this, bb)
+  case bb:GMat => new GPair(this, bb)
+  case bb:GIMat => new GIPair(this, bb)
+  case bb:GDMat => new GDPair(this, bb)
+  case bb:GLMat => new GLPair(this, bb)
+  case bb:FMat => new FPair(this, bb)
+  case bb:DMat => new DPair(this, bb)
+  case bb:IMat => new IPair(this, bb)
+  case bb:SMat => new SPair(this, bb)
+  case bb:SDMat => new SDPair(this, bb)
+  case bb:CMat => new CPair(this, bb)
+
   }
-    
-  def ~ (b:ND):Pair = this ~ b.asInstanceOf[Mat]
   
 }
 
 abstract class DSPair extends Serializable {}
 
-abstract class Pair extends NDPair {
+abstract class Pair(omat:Mat, mat:Mat) extends Serializable {
   
   def notImplemented0(s:String):Mat = { 
     throw new RuntimeException("operator "+s+" not implemented for "+this)
   }
   
-  def notImplemented1(s:String,that:Mat):Mat = { 
-    throw new RuntimeException("operator "+s+" not implemented for "+this+" and "+that.mytype)
-  }
-  
-  def notImplemented1(s:String,that:ND):Mat = { 
-    throw new RuntimeException("operator "+s+" not implemented for "+this+" and "+that.mytype)
-  }
-  
   def t = notImplemented0("t")
   
-  def + (b : Mat):Mat = notImplemented1("+", b)
-  def - (b : Mat):Mat = notImplemented1("-", b)
-  def * (b : Mat):Mat = notImplemented1("*", b)
-  def xT (b : Mat):Mat = notImplemented1("xT", b)
+  def notImplemented1(s:String,that:Mat):Mat = { 
+    throw new RuntimeException(s+" not implemented for "+mat.mytype+" and Int")
+  }
+  
+  def +  (b : Mat):Mat = notImplemented1("+", b)
+  def -  (b : Mat):Mat = notImplemented1("-", b)
+  def *  (b : Mat):Mat = notImplemented1("*", b)
   def *^ (b : Mat):Mat = notImplemented1("*^", b)
-  def Tx (b : Mat):Mat = notImplemented1("Tx", b)
-  def ^* (b : Mat):Mat = notImplemented1("*^", b)
+  def xT (b : Mat):Mat = notImplemented1("*", b)
+  def Tx (b : Mat):Mat = notImplemented1("*", b)
+  def ^* (b : Mat):Mat = notImplemented1("^*", b)
+  def ** (b : Mat):Mat = notImplemented1("**", b)
+  def ⊗  (b : Mat):Mat = notImplemented1("⊗", b)       // unicode 8855, 0x2297
   def /< (b : Mat):Mat = notImplemented1("/<", b)
+  def ∘  (b : Mat):Mat = notImplemented1("∘", b)        // unicode 8728, 0x2218 
   def *@ (b : Mat):Mat = notImplemented1("*@", b)
-  def ∘  (b : Mat):Mat = notImplemented1("∘", b)
   def /  (b : Mat):Mat = notImplemented1("/", b)
   def \\ (b : Mat):Mat = notImplemented1("\\\\", b)
-  def ^ (b : Mat):Mat = notImplemented1("^", b) 
-  def ◁ (b : Mat):Mat = notImplemented1("◁", b)
-  def ▷ (b : Mat):Mat = notImplemented1("▷", b)
+  def ^  (b : Mat):Mat = notImplemented1("^", b) 
+  def ◁  (b : Mat):Mat = notImplemented1("◁", b)        // unicode 9665, 0x25C1 
+  def ▷  (b : Mat):Mat = notImplemented1("▷", b)        // unicode 9666, 0x25C2
   def dot (b : Mat):Mat = notImplemented1("dot", b)
-  def dotr (b : Mat):Mat = notImplemented1("dotr", b)
-  def ∙ (b : Mat):Mat = notImplemented1("dot", b)
-  def ∙→ (b : Mat):Mat = notImplemented1("dotr", b)
-  def ** (b : Mat):Mat = notImplemented1("**", b)
-  def ⊗  (b : Mat):Mat = notImplemented1("⊗", b) 
-  
-  def > (b : Mat):Mat = notImplemented1(">", b)
-  def < (b : Mat):Mat = notImplemented1("<", b)
+  def dotr (b : Mat):Mat = notImplemented1("dotr", b) 
+  def ∙ (b : Mat):Mat = notImplemented1("dot", b)       // unicode 8729, 0x2219 
+  def ∙→ (b : Mat):Mat = notImplemented1("dotr", b)     // unicode (8729, 8594) (0x2219, 0x2192)
+    
+  def >  (b : Mat):Mat = notImplemented1(">", b)
+  def <  (b : Mat):Mat = notImplemented1("<", b)
   def >= (b : Mat):Mat = notImplemented1(">=", b)
   def <= (b : Mat):Mat = notImplemented1("<=", b)
   def == (b : Mat):Mat = notImplemented1("==", b)
   def === (b : Mat):Mat = notImplemented1("===", b)
   def != (b : Mat):Mat = notImplemented1("!=", b)
   
-  def \ (b : Mat):Mat = notImplemented1("\\", b)
-  def on (b : Mat):Mat = notImplemented1("on", b)
+  def max(b : Mat):Mat = notImplemented1("max", b)
+  def min(b : Mat):Mat = notImplemented1("min", b)
+  
+  def \ (b : Mat):Mat = notImplemented1("max", b)
+  def on(b : Mat):Mat = notImplemented1("min", b)
   
   def + (b : Float):Mat = notImplemented0("+")
   def - (b : Float):Mat = notImplemented0("-")
@@ -478,6 +481,9 @@ abstract class Pair extends NDPair {
   def == (b : Float):Mat = notImplemented0("==")
   def === (b : Float):Mat = notImplemented0("===")
   def != (b : Float):Mat = notImplemented0("!=")
+  
+  def max(b : Float):Mat = notImplemented0("max")
+  def min(b : Float):Mat = notImplemented0("min")
   
   def \ (b : Float):Mat = notImplemented0("\\")
   def on (b : Float):Mat = notImplemented0("on")
@@ -511,6 +517,9 @@ abstract class Pair extends NDPair {
   def === (b : Int):Mat = notImplemented0("===")
   def != (b : Int):Mat = notImplemented0("!=")
   
+  def max(b : Int):Mat = notImplemented0("max")
+  def min(b : Int):Mat = notImplemented0("min")
+  
   def \ (b : Int):Mat = notImplemented0("\\")
   def on (b : Int):Mat = notImplemented0("on")
   
@@ -542,6 +551,9 @@ abstract class Pair extends NDPair {
   def === (b : Long):Mat = notImplemented0("===")
   def != (b : Long):Mat = notImplemented0("!=")
   
+  def max(b : Long):Mat = notImplemented0("max")
+  def min(b : Long):Mat = notImplemented0("min")
+  
   def \ (b : Long):Mat = notImplemented0("\\")
   def on (b : Long):Mat = notImplemented0("on")
   
@@ -572,43 +584,12 @@ abstract class Pair extends NDPair {
   def == (b : Double):Mat = notImplemented0("==")
   def === (b : Double):Mat = notImplemented0("===")
   def != (b : Double):Mat = notImplemented0("!=")
+ 
+  def max(b : Double):Mat = notImplemented0("max")
+  def min(b : Double):Mat = notImplemented0("min")
   
   def \ (b : Double):Mat = notImplemented0("\\")
   def on (b : Double):Mat = notImplemented0("on")
-  
-  
-  def + (b : ND):Mat = notImplemented1("+", b)
-  def - (b : ND):Mat = notImplemented1("-", b)
-  def * (b : ND):Mat = notImplemented1("*", b)
-  def xT (b : ND):Mat = notImplemented1("xT", b)
-  def *^ (b : ND):Mat = notImplemented1("*^", b)
-  def Tx (b : ND):Mat = notImplemented1("Tx", b)
-  def ^* (b : ND):Mat = notImplemented1("*^", b)
-  def /< (b : ND):Mat = notImplemented1("/<", b)
-  def *@ (b : ND):Mat = notImplemented1("*@", b)
-  def ∘  (b : ND):Mat = notImplemented1("∘", b)
-  def /  (b : ND):Mat = notImplemented1("/", b)
-  def \\ (b : ND):Mat = notImplemented1("\\\\", b)
-  def ^ (b : ND):Mat = notImplemented1("^", b) 
-  def ◁ (b : ND):Mat = notImplemented1("◁", b)
-  def ▷ (b : ND):Mat = notImplemented1("▷", b)
-  def dot (b : ND):Mat = notImplemented1("dot", b)
-  def dotr (b : ND):Mat = notImplemented1("dotr", b)
-  def ∙ (b : ND):Mat = notImplemented1("dot", b)
-  def ∙→ (b : ND):Mat = notImplemented1("dotr", b)
-  def ** (b : ND):Mat = notImplemented1("**", b)
-  def ⊗  (b : ND):Mat = notImplemented1("⊗", b) 
-  
-  def > (b : ND):Mat = notImplemented1(">", b)
-  def < (b : ND):Mat = notImplemented1("<", b)
-  def >= (b : ND):Mat = notImplemented1(">=", b)
-  def <= (b : ND):Mat = notImplemented1("<=", b)
-  def == (b : ND):Mat = notImplemented1("==", b)
-  def === (b : ND):Mat = notImplemented1("===", b)
-  def != (b : ND):Mat = notImplemented1("!=", b)
-  
-  def \ (b : ND):Mat = notImplemented1("\\", b)
-  def on (b : ND):Mat = notImplemented1("on", b)
   
 
 }
@@ -788,7 +769,6 @@ object Mat {
     _cache2.clear
     _cache3.clear
     _cache4.clear
-    ND.clearCaches
   }
   
   def trimCache2(ithread:Int) = {

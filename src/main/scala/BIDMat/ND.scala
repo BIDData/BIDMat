@@ -10,77 +10,13 @@ import scala.collection.mutable.HashMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import edu.berkeley.bid.MurmurHash3
 
-@SerialVersionUID(100L)
-abstract class ND(protected val _dims:Array[Int]) extends Serializable { 
-
-  final val length = _dims.reduce(_*_);
+trait ND { 
   
-  val ncols = _dims(_dims.length-1);
-  
-  val nrows = {
-    var p = 1;
-    var i = 0;
-    while (i < _dims.length - 1) {
-      p *= _dims(i);
-      i += 1;
-    }
-    p;
-  }
-  
-  def dims = new IMat(1, _dims.length, _dims.clone);
-  
-  def mytype = "ND"
-  
-  def dim(i:Int):Int = _dims(i);
-
-  def size() = length;
-  
-  def zeros(nr:Int, nc:Int):Mat
-  
-  def zeros(dims:IMat):ND;
-  
-  def zeros:ND;
-  
-  def ones(dims:IMat):ND;
-  
-  def clear:ND;
-  
-  def set(v:Float):ND;
-
-  private var _GUID = Mat.myrand.nextLong;
-  
-  def setGUID(v:Long):Unit = {_GUID = v};
-  
-  def GUID:Long = _GUID;
-
-  
-  def applyf(i:Int):Float;
-  
-  def apply(ii:Mat):Mat;
-  
-  def apply(i1:Mat, i2:Mat):ND;
-  def apply(i1:Mat, i2:Mat, i3:Mat):ND;
-  def apply(i1:Mat, i2:Mat, i3:Mat, i4:Mat):ND;
-  
-  def update(inds:Mat, vv:Mat):ND;
-  
-  def update(i1:Mat, i2:Mat, vv:ND):ND;
-  def update(i1:Mat, i2:Mat, i3:Mat, vv:ND):ND;
-  def update(i1:Mat, i2:Mat, i3:Mat, i4:Mat, vv:ND):ND;
-  
-  def colslice(a:Int, b:Int, out:ND):ND;
-  def colslice(a:Int, b:Int, out:ND, c:Int):ND;
-  def colslice(a:Int, b:Int):ND;
-  
-  def printOne(i:Int):String = {
-    val v = applyf(i)
-    if (v % 1 == 0 && math.abs(v) < 1e10) {       
-      "%d" format v.intValue
-    } else {
-      "%.5g" format v
-    }
-  }
+  val _dims:Array[Int];
     
+  /** 
+   *  Product of dimensions starting at dimension i0 and stepping by step.
+   */
   def prodDimsBy(i0:Int, step:Int):Int = {
 		  var p = 1;
 		  var i = i0;
@@ -90,21 +26,25 @@ abstract class ND(protected val _dims:Array[Int]) extends Serializable {
 		  }
 		  p;
   }
-
+  /*
+   * Total up dimensions of the array starting at i0 and stepping by step, used for printing ND arrays.
+   */
   def prodDimsByX(i0:Int, step:Int):Int = {
 		  var p = 1;
 		  var i = i0;
 		  var tot = 0;
-		  while (i < _dims.length) i += step
-				  i -= step
-				  while (i >= 0) {
-					  p *= _dims(i);
-					  tot += p;
-					  i -= step;
-				  }
+		  while (i < _dims.length) i += step;
+		  i -= step;
+		  while (i >= 0) {
+		  	p *= _dims(i);
+		  	tot += p;
+		  	i -= step;
+		  }
 		  tot
   }
-
+  /*
+   * Linearize array indices, where the indices can start at an index "start" and skip by "step".
+   */
   def linearize(inds:Array[Int], start:Int, step:Int):Int = {
 		  var loc = 0;
 		  var mult = 1;
@@ -120,6 +60,10 @@ abstract class ND(protected val _dims:Array[Int]) extends Serializable {
 		  }
 		  loc;
   }
+  
+  /*
+   * Compute a subset of this Arrays dimensions starting at "start" and stepping by "step". 
+   */
 
   def subDims(start:Int, step:Int):Array[Int] = {
 		  val out = new Array[Int](1 + (_dims.length-start-1) / step);
@@ -130,6 +74,10 @@ abstract class ND(protected val _dims:Array[Int]) extends Serializable {
 		  }
 		  out
   }
+  
+  /*
+   * Increment a vector of indices, and carry over if they exceed that dimension's bound
+   */
 
   def incInds(inds:Array[Int], dims:Array[Int]):Int = {
 		  var ncarry = 0;
@@ -145,6 +93,20 @@ abstract class ND(protected val _dims:Array[Int]) extends Serializable {
       }
 		  ncarry
   }
+  
+  def applyf(indx:Int):Float  = throw new RuntimeException("1D access not supported");
+      
+  def printOne(i:Int):String = {
+    val v = applyf(i)
+    if (v % 1 == 0 && math.abs(v) < 1e10) {       
+      "%d" format v.intValue
+    } else {
+      "%.5g" format v
+    }
+  }
+  /**
+   * Build up a CString array (for printing ND arrays)
+   */
 
   def populateCS(maxRows:Int, maxCols:Int):CSMat = {
 		  val cs = CSMat(maxRows, maxCols);
@@ -169,236 +131,14 @@ abstract class ND(protected val _dims:Array[Int]) extends Serializable {
 		  }
 		  cs;
   }
-   
-  final val somespaces = "                                             "
-  
-  override def toString:String = {
-		val sb:StringBuilder = new StringBuilder();
-    val nChars = Mat.terminalWidth-4;
-    val ncols = prodDimsBy(1,2);
-    val nrows = prodDimsByX(0,2);
-    val maxRows = math.min(20000/nChars, nrows);
-    var maxCols = math.min(nChars, ncols);
-    var fieldWidth = 4;
-    val cs = populateCS(maxRows, maxCols);
-    val ws = new IMat(maxRows, maxCols, cs.data.map(_.length));
-    var icols = 0;
-    val colinds = new Array[Int](_dims.length / 2);
-    val oddDims = subDims(1, 2);
-    while (icols < maxCols) {
-    	var newWidth = fieldWidth;
-    	for (j <- 0 until maxRows) newWidth = math.max(newWidth, 2+(cs(j, icols).length));
-    			if ((icols+1)*newWidth < nChars) {
-    				fieldWidth = newWidth;
-    				icols += 1;
-    			} else {
-    				maxCols = icols;
-    			}
-    }     
-    for (i <- 0 until maxRows) {
-    	Arrays.fill(colinds, 0)
-    	for (j <- 0 until icols) {
-    		val str = cs(i,j);
-    		val ncarry = incInds(colinds, oddDims);
-    		sb.append(somespaces.substring(0,fieldWidth-str.length)+str+somespaces.substring(0,ncarry));
-    	}
-    	if (ncols > icols) {
-    		sb.append("...");
-    	}
-    	sb.append("\n");
-    }
-    sb.toString()
-  }
-  
-  def dv:Double = throw new RuntimeException("operator dv not implemented for "+this.mytype);
-  
-  def fv:Float = throw new RuntimeException("operator dv not implemented for "+this.mytype);
-  
-  def unary_-():ND
-  
-  val asMat:Mat
-  
-  def + (b : ND):ND
-  def - (b : ND):ND 
-  def * (b : ND):ND   
-  def *@ (b : ND):ND 
-  def ∘  (b : ND):ND 
-  def /  (b : ND):ND 
-  def ^ (b : ND):ND 
-  
-  def > (b : ND):ND
-  def < (b : ND):ND
-  def >= (b : ND):ND 
-  def <= (b : ND):ND
-  def == (b : ND):ND 
-  def === (b : ND):ND 
-  def != (b : ND):ND 
-  
-  
-  def + (b : Float):ND 
-  def - (b : Float):ND 
-  def * (b : Float):ND 
-  def *@ (b : Float):ND
-  def ∘  (b : Float):ND
-  def /  (b : Float):ND 
-  def ^ (b : Float):ND 
-  
-  def > (b : Float):ND
-  def < (b : Float):ND 
-  def >= (b : Float):ND 
-  def <= (b : Float):ND 
-  def == (b : Float):ND 
-  def === (b : Float):ND 
-  def != (b : Float):ND 
-  
-  def + (b : Double):ND 
-  def - (b : Double):ND 
-  def * (b : Double):ND 
-  def *@ (b : Double):ND 
-  def ∘  (b : Double):ND 
-  def /  (b : Double):ND 
-  def ^ (b : Double):ND  
-  
-  def > (b : Double):ND 
-  def < (b : Double):ND 
-  def >= (b : Double):ND 
-  def <= (b : Double):ND 
-  def == (b : Double):ND 
-  def === (b : Double):ND 
-  def != (b : Double):ND 
-  
-  
-  def + (b : Int):ND 
-  def - (b : Int):ND 
-  def * (b : Int):ND 
-  def *@ (b : Int):ND 
-  def ∘  (b : Int):ND 
-  def /  (b : Int):ND 
-  def ^ (b : Int):ND  
-  
-  def > (b : Int):ND 
-  def < (b : Int):ND 
-  def >= (b : Int):ND 
-  def <= (b : Int):ND 
-  def == (b : Int):ND 
-  def === (b : Int):ND 
-  def != (b : Int):ND 
-  
-  
-  def + (b : Long):ND 
-  def - (b : Long):ND 
-  def * (b : Long):ND 
-  def *@ (b : Long):ND 
-  def ∘  (b : Long):ND 
-  def /  (b : Long):ND 
-  def ^ (b : Long):ND   
-  
-  def > (b : Long):ND 
-  def < (b : Long):ND 
-  def >= (b : Long):ND 
-  def <= (b : Long):ND 
-  def == (b : Long):ND 
-  def === (b : Long):ND 
-  def != (b : Long):ND 
-  
-  def copyTo(a:ND):ND 
-
-  def <-- (a:ND) = {
-    a.copyTo(this)
-  }
-  
-  def ~ (a:ND):NDPair 
-}
-
-abstract class NDPair extends Serializable {
-  
-  def + (b : ND):ND
-  def - (b : ND):ND 
-  def * (b : ND):ND  
-  def *^ (b : ND):ND
-  def *@ (b : ND):ND 
-  def ∘  (b : ND):ND 
-  def /  (b : ND):ND 
-  def ^ (b : ND):ND 
-  
-  def > (b : ND):ND
-  def < (b : ND):ND
-  def >= (b : ND):ND 
-  def <= (b : ND):ND
-  def == (b : ND):ND 
-  def === (b : ND):ND 
-  def != (b : ND):ND 
-
-  
-  def + (b : Float):ND 
-  def - (b : Float):ND 
-  def * (b : Float):ND  
-  def *@ (b : Float):ND
-  def ∘  (b : Float):ND
-  def /  (b : Float):ND 
-  def ^ (b : Float):ND 
-  
-  def > (b : Float):ND
-  def < (b : Float):ND 
-  def >= (b : Float):ND 
-  def <= (b : Float):ND 
-  def == (b : Float):ND 
-  def === (b : Float):ND 
-  def != (b : Float):ND 
-  
-  
-  def + (b : Int):ND 
-  def - (b : Int):ND 
-  def * (b : Int):ND  
-  def *@ (b : Int):ND 
-  def ∘  (b : Int):ND 
-  def /  (b : Int):ND 
-  def ^ (b : Int):ND  
-  
-  def > (b : Int):ND 
-  def < (b : Int):ND 
-  def >= (b : Int):ND 
-  def <= (b : Int):ND 
-  def == (b : Int):ND 
-  def === (b : Int):ND 
-  def != (b : Int):ND 
-  
-  
-  def + (b : Long):ND 
-  def - (b : Long):ND 
-  def * (b : Long):ND  
-  def *@ (b : Long):ND 
-  def ∘  (b : Long):ND 
-  def /  (b : Long):ND 
-  def ^ (b : Long):ND   
-  
-  def > (b : Long):ND 
-  def < (b : Long):ND 
-  def >= (b : Long):ND 
-  def <= (b : Long):ND 
-  def == (b : Long):ND 
-  def === (b : Long):ND 
-  def != (b : Long):ND 
-
-  
-  def + (b : Double):ND 
-  def - (b : Double):ND 
-  def * (b : Double):ND  
-  def *@ (b : Double):ND 
-  def ∘  (b : Double):ND 
-  def /  (b : Double):ND 
-  def ^ (b : Double):ND  
-  
-  def > (b : Double):ND 
-  def < (b : Double):ND 
-  def >= (b : Double):ND 
-  def <= (b : Double):ND 
-  def == (b : Double):ND 
-  def === (b : Double):ND 
-  def != (b : Double):ND 
+ 
 }
 
 object ND {
+  
+  /** Check dimensions and throw an exception if they dont match
+   *  
+   */
   
   def checkDims(fname:String, dims1:Array[Int], dims2:Array[Int]):Boolean = {
     if (dims1.length != dims2.length) {
@@ -412,7 +152,29 @@ object ND {
     return true
   }
   
+    
   def checkDims(fname:String, dims1:IMat, dims2:IMat):Boolean = checkDims(fname, dims1.data, dims2.data);
+  
+  /**
+   * Return true if dimensions match
+   */
+  
+  def compareDims(dims1:Array[Int], dims2:Array[Int]):Boolean = {
+    if (dims1.length != dims2.length) {
+      return false;
+    } else {
+    	for (i <- 0 until dims1.length) {
+    		if (dims1(i) != dims2(i)) {
+    			return false; 
+    		}
+    	}
+    	return true;
+    }
+  }
+  
+  /**
+   * Trim dimensions, i.e. remove dimensions = 1.
+   */
   
   def trimDims(dims:Array[Int]):Array[Int] = {
     var nd = 0;
@@ -435,29 +197,34 @@ object ND {
     new IMat(1, dd.length, dd);
   }
   
+  /**
+   * For the initial run of dims1 = 1, save the product of dims2 into nrows. The remaining dims must match
+   * between dims1 and dims2 and their product is saved into ncols.
+   */
+  
   def checkHead(dims1:Array[Int], dims2:Array[Int]):(Int, Int) = {
     var ishead = true;
     var matches = true;
     var nrows = 1
     var ncols = 1
     for (i <- 0 until dims1.length) {
-      if (ishead) {
-        if (dims1(i) == 1) {
-          nrows *= dims2(i);
-        } else {
-          ishead = false;
-        }
-      }
-      if (!ishead) {
-        if (dims1(i) == dims2(i)) {
-          ncols *= dims1(i);
-        } else {
-          matches = false;
-        }
+      if (ishead && dims1(i) == 1) {
+      	nrows *= dims2(i);
+      } else if (dims1(i) == dims2(i)) {
+      	ishead = false;
+      	ncols *= dims1(i);
+      } else {
+      	matches = false;
       }
     }
     if (matches) (nrows, ncols) else (-1, -1)
   }
+  
+  /**
+   * For the final run of dims1 = 1, save the product of dims2 into ncols. The remaining dims must match
+   * between dims1 and dims2 and their product is saved into nrowss.
+   * 
+   */
   
   def checkTail(dims1:Array[Int], dims2:Array[Int]):(Int, Int) = {
     var istail = true;
@@ -465,51 +232,132 @@ object ND {
     var nrows = 1
     var ncols = 1
     for (i <- (dims1.length - 1) to 0 by -1 ) {
-      if (istail) {
-        if (dims1(i) == 1) {
-          ncols *= dims2(i);
-        } else {
-          istail = false;
-        }
-      }
-      if (!istail) {
-        if (dims1(i) == dims2(i)) {
-          nrows *= dims1(i);
-        } else {
-          matches = false;
-        }
+      if (istail && dims1(i) == 1) {
+      	ncols *= dims2(i);
+      } else if (dims1(i) == dims2(i)) {
+      	istail = false;
+      	nrows *= dims1(i);
+      } else {
+      	matches = false;
       }
     }
     if (matches) (nrows, ncols) else (-1, -1)
   }
   
-  def compatibleDims(dims1:Array[Int], dims2:Array[Int], opname:String):(Int, Int, Int, Int) = {
-  	val len = dims1.reduce(_*_)
-    if (len == dims2.reduce(_*_)) {
-      ND.checkDims(opname, dims1, dims2);      
-      (len, 1, len, 1)
+    
+  def printDims(a:Array[Int]):String = {
+    val s = new java.lang.StringBuilder;
+    s.append("("+a(0).toString);
+    for (i <- 1 until a.length) {
+      s.append(","+a(i).toString);
+    }
+    s.append(")");
+    s.toString
+  }
+  
+  /* 
+   * check whether dims match or if one array can be used to broadcast a row or col into the other. 
+   * Return (nr, nc, ainc, arinc, binc, brinc)
+   *   nr = row dimension
+   *   nc = col dimension
+   *   ainc = element (column) increment for first matrix
+   *   arinc = row increment for first matrix
+   *   binc = element (n) increment for second matrix
+   *   brinc = row increment for second matrix
+   */
+  
+  def compatibleDims(dims1:Array[Int], dims2:Array[Int], opname:String):(Int, Int, Int, Int, Int, Int) = {
+  	val len = dims1.reduce(_*_);
+  	val len2 = dims2.reduce(_*_);
+  	if (len == 1) {
+  	  (len2, 1, 0, 0, 1, 0);
+  	} else if (len2 == 1) {
+  		(len, 1, 1, 0, 0, 0);
+  	} else if (len == len2) {
+  		ND.checkDims(opname, dims1, dims2);      
+  		(len, 1, 1, 0, 1, 0);
+  	} else {
+  		val (nr, nc) = checkHead(dims1, dims2);
+  		if (nr > 0) {
+  			(nr, nc, 0, 1, 1, nr);
+  		} else {
+  			val (nr, nc) = checkHead(dims2, dims1);
+  			if (nr > 0) {
+  				(nr, nc, 1, nr, 0, 1); 
+  			} else {
+  				val (nr, nc) = checkTail(dims1, dims2);
+  				if (nr > 0) {
+  					(nr, nc, 1, 0, 1, nr);
+  				} else {
+  					val (nr, nc) = checkTail(dims2, dims1);
+  					if (nr > 0) {
+  						(nr, nc, 1, nr, 1, 0);
+  					} else {
+  						throw new RuntimeException("Operator "+opname+" incompatible dimensions "+printDims(dims1) +"  "+ printDims(dims2));
+  					}
+  				}
+  			}
+  		}
+    }
+  }
+  
+  /* 
+   * check whether dims match or if one array can be used to broadcast a row or col into the other. 
+   * Return (nra, nca, nrb, ncb)
+   *   nra = row dimension of a
+   *   nca = col dimension of a
+   *   nrb = row dimension of b
+   *   ncb = col dimension of b
+   */
+  
+  def compatibleGDims(dims1:Array[Int], dims2:Array[Int], opname:String):(Int, Int, Int, Int) = {
+  	val len = dims1.reduce(_*_);
+  	val len2 = dims2.reduce(_*_);
+  	if (len == 1) {
+  		(1, 1, len2, 1);
+  	} else if (len2 == 1) {
+  		(len, 1, 1, 1);
+  	} else if (len == len2) {
+  		ND.checkDims(opname, dims1, dims2);      
+  		(len, 1, len, 1);
+  	} else {
+  		val (nr, nc) = checkHead(dims1, dims2);
+  		if (nr > 0) {
+  			(1, nc, nr, nc);
+  		} else {
+  			val (nr, nc) = checkHead(dims2, dims1);
+  			if (nr > 0) {
+  				(nr, nc, 1, nc); 
+  			} else {
+  				val (nr, nc) = checkTail(dims1, dims2);
+  				if (nr > 0) {
+  					(nr, 1, nr, nc);
+  				} else {
+  					val (nr, nc) = checkTail(dims2, dims1);
+  					if (nr > 0) {
+  						(nr, nc, nr, 1);
+  					} else {
+  						throw new RuntimeException("Operator "+opname+" incompatible dimensions "+printDims(dims1) +"  "+ printDims(dims2));
+  					}
+  				}
+  			}
+  		}
+  	}
+  }  
+  
+  def maxDims(dims1:Array[Int], dims2:Array[Int]):Array[Int] = {
+    if (dims1.length >= dims2.length) {
+      val out = dims1.clone;
+      if (dims1.length == dims2.length) {
+        var i = 0;
+        while (i < dims1.length) {
+          out(i) = math.max(dims1(i), dims2(i));
+          i += 1;
+        }
+      }
+      out;
     } else {
-    	val (nr, nc) = checkHead(dims1, dims2);
-    	if (nr > 0) {
-    	  (1, nc, nr, nc)
-    	} else {
-    	  val (nr, nc) = checkHead(dims2, dims1);
-    	  if (nr > 0) {
-    	  	(nr, nc, 1, nc) 
-    	  } else {
-    	    val (nr, nc) = checkTail(dims1, dims2);
-    	    if (nr > 0) {
-    	    	(nr, 1, nr, nc)
-    	    } else {
-    	      val (nr, nc) = checkTail(dims1, dims2);
-    	      if (nr > 0) {
-    	      	(nr, nc, nr, 1)
-    	      } else {
-    	        throw new RuntimeException("Operator "+opname+" incompatible dimensions")
-    	      }
-    	    }
-    	  }
-    	}
+      dims2.clone
     }
   }
   
@@ -521,7 +369,19 @@ object ND {
   	MurmurHash3.MurmurHash3_x64_64(inds.map(_.toLong), 0x3142341)
   }
   
-  def linearize(inds:Array[Int], dims:IMat):Int = {
+  def hashIMat(a:IMat, start:Int):Int = {
+    var i = 0; 
+    var hv = start;
+    while (i < a.length) {
+      hv = scala.util.hashing.MurmurHash3.mix(hv, a.data(i));
+      i += 1;
+    }
+    hv;
+  }
+  
+  def hashIMat(a:IMat):Int = hashIMat(a, 23412154);
+  
+  def linearize(inds:Array[Int], dims:Array[Int]):Int = {
     if (inds.length != dims.length) {
       throw new RuntimeException("Dimension of indices dont match array dimension")
     }
@@ -577,68 +437,18 @@ object ND {
       throw new RuntimeException("ND.permute: bad permutation");
     }
   }
-
-  private val _cache2 = HashMap.empty[Tuple2[Long,Int], ND]              // NDrix caches
   
-  private val _cache3 = HashMap.empty[Tuple3[Long,Long,Int], ND]
-  
-  private val _cache4 = HashMap.empty[Tuple4[Long,Long,Long,Int], ND]
-  
-  def cache2(key:Tuple2[Long,Int]):ND = {
-    _cache2.synchronized {
-    	if (_cache2.contains(key)) {
-    		_cache2(key)
-    	} else {
-    		null
-    	}
+  def stringPerm(a:String, b:String):IMat = {
+    val len = a.length;
+    if (len != b.length) throw new RuntimeException("stringPerm strings must be the same length");
+    val out = izeros(1, len);
+    var i = 0;
+    while (i < len) {
+      out.data(i) = len - a.indexOf(b.charAt(len - i - 1)) - 1;
+      i += 1;
     }
+    out;
   }
-  
-  def cache3(key:Tuple3[Long,Long,Int]):ND = {
-    _cache3.synchronized {
-    	if (_cache3.contains(key)) {
-    		_cache3(key)
-    	} else {
-    		null
-    	}
-    }
-  }
-  
-    
-  def cache4(key:Tuple4[Long,Long,Long,Int]):ND = {
-    _cache4.synchronized {
-    	if (_cache4.contains(key)) {
-    		_cache4(key)
-    	} else {
-    		null
-    	}
-    }
-  }
-  
-  def cache2put(key:Tuple2[Long,Int], m:ND):Unit = {
-    _cache2.synchronized {
-    	_cache2(key) = m
-    }
-  }
-  
-  def cache3put(key:Tuple3[Long,Long,Int], m:ND):Unit = {
-  	_cache3.synchronized {
-  		_cache3(key) = m
-  	}
-  }
-  
-  def cache4put(key:Tuple4[Long,Long,Long,Int], m:ND):Unit = {
-  	_cache4.synchronized {
-  		_cache4(key) = m
-  	}
-  }
-  
-  def clearCaches = {
-    _cache2.clear
-    _cache3.clear
-    _cache4.clear
-  }
-
 }
 
 

@@ -3,7 +3,7 @@ package BIDMat
 import edu.berkeley.bid.SPBLAS._
 import scala.util.hashing.MurmurHash3
 
-case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0:Array[Double]) extends SparseMat[Double](nr, nc, nnz1, ir0, jc0, data0) {
+case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], val data:Array[Double]) extends SparseMat[Double](nr, nc, nnz1, ir0, jc0, data) {
 
   def getdata() = data;	
   
@@ -27,18 +27,12 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
 
   override def apply(a:Int, b:IMat):SDMat = SDMat(gapply(a, b));
   
-  override def apply(a:Mat, b:Mat):SDMat = SDMat(gapply(a.asInstanceOf[IMat], b.asInstanceOf[IMat]));
-  
-  override def apply(a:Mat, b:Int):SDMat = SDMat(gapply(a.asInstanceOf[IMat], b));
-  
-  override def apply(a:Int, b:Mat):SDMat = SDMat(gapply(a, b.asInstanceOf[IMat]));
-  
   override def colslice(a:Int, b:Int, out:Mat):SDMat = SDMat(gcolslice(a, b, out));
   
   override def colslice(a:Int, b:Int):SDMat = SDMat(gcolslice(a, b, null));
   
   override def contents:DMat = {
-    val out = DMat(nnz, 1, this.data);
+    val out = new DMat(nnz, 1, this.data);
     out.setGUID(MurmurHash3.mix(MurmurHash3.mix(nnz, 1), (GUID*7897889).toInt));
     out  
   }
@@ -132,7 +126,7 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
 	  	jc0 = SparseMat.incInds(jc)
 	  	ir0 = SparseMat.incInds(ir)
 	  }
-	  dcscmm("T", nrows, a.ncols, ncols, 1.0f, "GLNF", data, ir0, jc0, a.data, a.nrows, 0f, out.data, out.nrows) 
+	  dcscmm("T", nrows, a.ncols, ncols, 1.0, "GLNF", data, ir0, jc0, a.data, a.nrows, 0.0, out.data, out.nrows) 
 	  Mat.nflops += 2L * nnz * a.ncols
 	  out
   }
@@ -183,40 +177,102 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
   	}
 
   
-  def + (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => x + y, null)
-  def - (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => x - y, null)
+  def + (b : SDMat) = ssMatOp(b, SDMat.sumFun, null)
+  def - (b : SDMat) = ssMatOp(b, SDMat.subFun, null)
   def * (b : DMat):DMat = SMult(b, null)
   def Tx (b : DMat):DMat = Tmult(b, null)
   def *  (b : SDMat) = SSMult(b, null)
-  def *@ (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => x * y, null)
-  def ∘  (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => x * y, null)
-  def /  (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => x / y, null)
+  def *@ (b : SDMat) = ssMatOp(b, SDMat.mulFun, null)
+  def ∘  (b : SDMat) = ssMatOp(b, SDMat.mulFun, null)
+  def /  (b : SDMat) = ssMatOp(b, SDMat.divFun, null)
   
-  def + (b : DMat) = ssMatOpD(b, (x:Double, y:Double) => x + y, null)
-  def - (b : DMat) = ssMatOpD(b, (x:Double, y:Double) => x - y, null)
-  def *@ (b : DMat) = ssMatOpD(b, (x:Double, y:Double) => x * y, null)
-  def /@ (b : DMat) = ssMatOpD(b, (x:Double, y:Double) => x / y, null)
+  def + (b : DMat) = ssMatOpD(b, SDMat.sumFun, null)
+  def - (b : DMat) = ssMatOpD(b, SDMat.subFun, null)
+  def *@ (b : DMat) = ssMatOpD(b, SDMat.mulFun, null)
+  def / (b : DMat) = ssMatOpD(b, SDMat.divFun, null)
   
-  def > (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => if (x > y) 1.0 else 0.0, null)
-  def < (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => if (x < y) 1.0 else 0.0, null)
-  def == (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => if (x == y) 1.0 else 0.0, null)
-  def === (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => if (x == y) 1.0 else 0.0, null)
-  def >= (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => if (x >= y) 1.0 else 0.0, null)
-  def <= (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => if (x <= y) 1.0 else 0.0, null)
-  def != (b : SDMat) = ssMatOp(b, (x:Double, y:Double) => if (x != y) 1.0 else 0.0, null)
+  def > (b : SDMat) = ssMatOp(b, SDMat.gtFun, null)
+  def < (b : SDMat) = ssMatOp(b, SDMat.ltFun, null)
+  def == (b : SDMat) = ssMatOp(b, SDMat.eqFun, null)
+  def === (b : SDMat) = ssMatOp(b, SDMat.eqFun, null)
+  def >= (b : SDMat) = ssMatOp(b, SDMat.geFun, null)
+  def <= (b : SDMat) = ssMatOp(b, SDMat.leFun, null)
+  def != (b : SDMat) = ssMatOp(b, SDMat.neFun, null)
   
-  override def + (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => x + y, null)
-  override def - (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => x - y, null)
-  override def *@ (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => x * y, null)
-  override def ∘  (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => x * y, null)
-  override def /  (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => x / y, null)
+  def max (b : SDMat) = ssMatOp(b, SDMat.maxFun, null)
+  def min (b : SDMat) = ssMatOp(b, SDMat.minFun, null)
   
-  override def > (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => if (x > y) 1.0 else 0.0, null)
-  override def < (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => if (x < y) 1.0 else 0.0, null)
-  override def == (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => if (x == y) 1.0 else 0.0, null)
-  override def >= (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => if (x >= y) 1.0 else 0.0, null)
-  override def <= (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => if (x <= y) 1.0 else 0.0, null)
-  override def != (b : Double) = ssMatOpScalar(b, (x:Double, y:Double) => if (x != y) 1.0 else 0.0, null)
+   def checkOne(b:Seq[Int], name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("FMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  def checkOne(b:IMat, name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("FMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  override def sum(ind:IMat):DMat = ssReduceOp(checkOne(ind,"sum")+1, DMat.idFun, DMat.sumFun, null);
+  override def maxi(ind:IMat):DMat = ssReduceOp(checkOne(ind,"maxi")+1, DMat.idFun, DMat.maxFun, null);
+  override def mini(ind:IMat):DMat = ssReduceOp(checkOne(ind,"mini")+1, DMat.idFun, DMat.minFun, null);
+  override def mean(ind:IMat):DMat = SciFunctions._mean(this, checkOne(ind,"mean")+1).asInstanceOf[DMat];
+  override def variance(ind:IMat):DMat = SciFunctions._variance(this, checkOne(ind,"variance")+1).asInstanceOf[DMat];
+
+  override def sum(ind:Int):DMat = ssReduceOp(ind+1, DMat.idFun, DMat.sumFun, null);
+  override def maxi(ind:Int):DMat = ssReduceOp(ind+1, DMat.idFun, DMat.maxFun, null);
+  override def mini(ind:Int):DMat = ssReduceOp(ind+1, DMat.idFun, DMat.minFun, null);
+  override def mean(ind:Int):DMat = SciFunctions._mean(this, ind+1).asInstanceOf[DMat];
+  override def variance(ind:Int):DMat = SciFunctions._variance(this, ind+1).asInstanceOf[DMat];
+  
+  
+  override def + (b : Double) = ssMatOpScalar(b, SDMat.sumFun, null)
+  override def - (b : Double) = ssMatOpScalar(b, SDMat.subFun, null)
+  override def *@ (b : Double) = ssMatOpScalar(b, SDMat.mulFun, null)
+  override def ∘  (b : Double) = ssMatOpScalar(b, SDMat.mulFun, null)
+  override def /  (b : Double) = ssMatOpScalar(b, SDMat.divFun, null)
+  
+  override def > (b : Double) = ssMatOpScalar(b, SDMat.gtFun, null)
+  override def < (b : Double) = ssMatOpScalar(b, SDMat.ltFun, null)
+  override def == (b : Double) = ssMatOpScalar(b, SDMat.eqFun, null)
+  override def >= (b : Double) = ssMatOpScalar(b, SDMat.geFun, null)
+  override def <= (b : Double) = ssMatOpScalar(b, SDMat.leFun, null)
+  override def != (b : Double) = ssMatOpScalar(b, SDMat.neFun, null)
+  
+  override def max (b : Double) = ssMatOpScalar(b, SDMat.maxFun, null)
+  override def min (b : Double) = ssMatOpScalar(b, SDMat.minFun, null)
+  
+  override def + (b : Float) = ssMatOpScalar(b, SDMat.sumFun, null)
+  override def - (b : Float) = ssMatOpScalar(b, SDMat.subFun, null)
+  override def *@ (b : Float) = ssMatOpScalar(b, SDMat.mulFun, null)
+  override def ∘  (b : Float) = ssMatOpScalar(b, SDMat.mulFun, null)
+  override def /  (b : Float) = ssMatOpScalar(b, SDMat.divFun, null)
+  
+  override def > (b : Float) = ssMatOpScalar(b, SDMat.gtFun, null)
+  override def < (b : Float) = ssMatOpScalar(b, SDMat.ltFun, null)
+  override def == (b : Float) = ssMatOpScalar(b, SDMat.eqFun, null)
+  override def >= (b : Float) = ssMatOpScalar(b, SDMat.geFun, null)
+  override def <= (b : Float) = ssMatOpScalar(b, SDMat.leFun, null)
+  override def != (b : Float) = ssMatOpScalar(b, SDMat.neFun, null)
+  
+  override def max (b : Float) = ssMatOpScalar(b, SDMat.maxFun, null)
+  override def min (b : Float) = ssMatOpScalar(b, SDMat.minFun, null)
+  
+  
+  override def + (b : Int) = ssMatOpScalar(b, SDMat.sumFun, null)
+  override def - (b : Int) = ssMatOpScalar(b, SDMat.subFun, null)
+  override def *@ (b : Int) = ssMatOpScalar(b, SDMat.mulFun, null)
+  override def ∘  (b : Int) = ssMatOpScalar(b, SDMat.mulFun, null)
+  override def /  (b : Int) = ssMatOpScalar(b, SDMat.divFun, null)
+  
+  override def > (b : Int) = ssMatOpScalar(b, SDMat.gtFun, null)
+  override def < (b : Int) = ssMatOpScalar(b, SDMat.ltFun, null)
+  override def == (b : Int) = ssMatOpScalar(b, SDMat.eqFun, null)
+  override def >= (b : Int) = ssMatOpScalar(b, SDMat.geFun, null)
+  override def <= (b : Int) = ssMatOpScalar(b, SDMat.leFun, null)
+  override def != (b : Int) = ssMatOpScalar(b, SDMat.neFun, null)
+  
+  override def max (b : Int) = ssMatOpScalar(b, SDMat.maxFun, null)
+  override def min (b : Int) = ssMatOpScalar(b, SDMat.minFun, null)
   
   def \ (b: SDMat) = horzcat(b)
   def on (b: SDMat) = vertcat(b)
@@ -239,23 +295,103 @@ case class SDMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], data0
   }
 }
 
-class SDPair (val omat:Mat, val mat:SDMat) extends Pair{
+class SDPair (val omat:Mat, val mat:SDMat) extends Pair(omat, mat) {
 	def * (b : DMat):DMat = mat.SMult(b, omat)
 	def * (b : SDMat):SDMat = mat.SSMult(b, omat)
   def Tx (b : DMat):DMat = mat.Tmult(b, omat)
   override def * (b : Mat):DMat = mat.SMult(b, omat)
   
-  def + (b : SDMat) = mat.ssMatOp(b, (x:Double, y:Double) => x + y, omat)
-  def - (b : SDMat) = mat.ssMatOp(b, (x:Double, y:Double) => x - y, omat)
-  def *@ (b : SDMat) = mat.ssMatOp(b, (x:Double, y:Double) => x * y, omat)
-  def ∘  (b : SDMat) = mat.ssMatOp(b, (x:Double, y:Double) => x * y, omat)
-  def /  (b : SDMat) = mat.ssMatOp(b, (x:Double, y:Double) => x / y, omat)
+  def + (b : SDMat) = mat.ssMatOp(b, SDMat.sumFun, omat)
+  def - (b : SDMat) = mat.ssMatOp(b, SDMat.subFun, omat)
+  def *@ (b : SDMat) = mat.ssMatOp(b, SDMat.mulFun, omat)
+  def ∘  (b : SDMat) = mat.ssMatOp(b, SDMat.mulFun, omat)
+  def /  (b : SDMat) = mat.ssMatOp(b, SDMat.divFun, omat)
   
-  def + (b : DMat) = mat.ssMatOpD(b, (x:Double, y:Double) => x + y, omat)
-  def - (b : DMat) = mat.ssMatOpD(b, (x:Double, y:Double) => x - y, omat)
-  def *@ (b : DMat) = mat.ssMatOpD(b, (x:Double, y:Double) => x * y, omat)
-  def ∘  (b : DMat) = mat.ssMatOpD(b, (x:Double, y:Double) => x * y, omat)
-  def /  (b : DMat) = mat.ssMatOpD(b, (x:Double, y:Double) => x / y, omat)
+  def > (b : SDMat) = mat.ssMatOp(b, SDMat.gtFun, omat)
+  def < (b : SDMat) = mat.ssMatOp(b, SDMat.ltFun, omat)
+  def == (b : SDMat) = mat.ssMatOp(b, SDMat.eqFun, omat)
+  def === (b : SDMat) = mat.ssMatOp(b, SDMat.eqFun, omat)
+  def >= (b : SDMat) = mat.ssMatOp(b, SDMat.geFun, omat)
+  def <= (b : SDMat) = mat.ssMatOp(b, SDMat.leFun, omat)
+  def != (b : SDMat) = mat.ssMatOp(b, SDMat.neFun, omat)
+  
+  def max (b : SDMat) = mat.ssMatOp(b, SDMat.maxFun, omat)
+  def min (b : SDMat) = mat.ssMatOp(b, SDMat.minFun, omat)
+  
+  def checkOne(b:Seq[Int], name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("FMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  def checkOne(b:IMat, name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("FMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  def + (b : DMat) = mat.ssMatOpD(b, SDMat.sumFun, omat)
+  def - (b : DMat) = mat.ssMatOpD(b, SDMat.subFun, omat)
+  def *@ (b : DMat) = mat.ssMatOpD(b, SDMat.mulFun, omat)
+  def ∘  (b : DMat) = mat.ssMatOpD(b, SDMat.mulFun, omat)
+  def /  (b : DMat) = mat.ssMatOpD(b, SDMat.divFun, omat)
+  
+  def > (b : DMat) = mat.ssMatOpD(b, SDMat.gtFun, omat)
+  def < (b : DMat) = mat.ssMatOpD(b, SDMat.ltFun, omat)
+  def == (b : DMat) = mat.ssMatOpD(b, SDMat.eqFun, omat)
+  def === (b : DMat) = mat.ssMatOpD(b, SDMat.eqFun, omat)
+  def >= (b : DMat) = mat.ssMatOpD(b, SDMat.geFun, omat)
+  def <= (b : DMat) = mat.ssMatOpD(b, SDMat.leFun, omat)
+  def != (b : DMat) = mat.ssMatOpD(b, SDMat.neFun, omat)
+  
+  def max (b : DMat) = mat.ssMatOpD(b, SDMat.maxFun, omat)
+  def min (b : DMat) = mat.ssMatOpD(b, SDMat.minFun, omat)
+  
+  override def + (b : Double) = mat.ssMatOpScalar(b, SDMat.sumFun, omat)
+  override def - (b : Double) = mat.ssMatOpScalar(b, SDMat.subFun, omat)
+  override def *@ (b : Double) = mat.ssMatOpScalar(b, SDMat.mulFun, omat)
+  override def ∘  (b : Double) = mat.ssMatOpScalar(b, SDMat.mulFun, omat)
+  override def /  (b : Double) = mat.ssMatOpScalar(b, SDMat.divFun, omat)
+  
+  override def > (b : Double) = mat.ssMatOpScalar(b, SDMat.gtFun, omat)
+  override def < (b : Double) = mat.ssMatOpScalar(b, SDMat.ltFun, omat)
+  override def == (b : Double) = mat.ssMatOpScalar(b, SDMat.eqFun, omat)
+  override def >= (b : Double) = mat.ssMatOpScalar(b, SDMat.geFun, omat)
+  override def <= (b : Double) = mat.ssMatOpScalar(b, SDMat.leFun, omat)
+  override def != (b : Double) = mat.ssMatOpScalar(b, SDMat.neFun, omat)
+  
+  override def max (b : Double) = mat.ssMatOpScalar(b, SDMat.maxFun, omat)
+  override def min (b : Double) = mat.ssMatOpScalar(b, SDMat.minFun, omat)
+  
+  override def + (b : Float) = mat.ssMatOpScalar(b, SDMat.sumFun, omat)
+  override def - (b : Float) = mat.ssMatOpScalar(b, SDMat.subFun, omat)
+  override def *@ (b : Float) = mat.ssMatOpScalar(b, SDMat.mulFun, omat)
+  override def ∘  (b : Float) = mat.ssMatOpScalar(b, SDMat.mulFun, omat)
+  override def /  (b : Float) = mat.ssMatOpScalar(b, SDMat.divFun, omat)
+  
+  override def > (b : Float) = mat.ssMatOpScalar(b, SDMat.gtFun, omat)
+  override def < (b : Float) = mat.ssMatOpScalar(b, SDMat.ltFun, omat)
+  override def == (b : Float) = mat.ssMatOpScalar(b, SDMat.eqFun, omat)
+  override def >= (b : Float) = mat.ssMatOpScalar(b, SDMat.geFun, omat)
+  override def <= (b : Float) = mat.ssMatOpScalar(b, SDMat.leFun, omat)
+  override def != (b : Float) = mat.ssMatOpScalar(b, SDMat.neFun, omat)
+  
+  override def max (b : Float) = mat.ssMatOpScalar(b, SDMat.maxFun, omat)
+  override def min (b : Float) = mat.ssMatOpScalar(b, SDMat.minFun, omat)
+  
+  override def + (b : Int) = mat.ssMatOpScalar(b, SDMat.sumFun, omat)
+  override def - (b : Int) = mat.ssMatOpScalar(b, SDMat.subFun, omat)
+  override def *@ (b : Int) = mat.ssMatOpScalar(b, SDMat.mulFun, omat)
+  override def ∘  (b : Int) = mat.ssMatOpScalar(b, SDMat.mulFun, omat)
+  override def /  (b : Int) = mat.ssMatOpScalar(b, SDMat.divFun, omat)
+  
+  override def > (b : Int) = mat.ssMatOpScalar(b, SDMat.gtFun, omat)
+  override def < (b : Int) = mat.ssMatOpScalar(b, SDMat.ltFun, omat)
+  override def == (b : Int) = mat.ssMatOpScalar(b, SDMat.eqFun, omat)
+  override def >= (b : Int) = mat.ssMatOpScalar(b, SDMat.geFun, omat)
+  override def <= (b : Int) = mat.ssMatOpScalar(b, SDMat.leFun, omat)
+  override def != (b : Int) = mat.ssMatOpScalar(b, SDMat.neFun, omat)
+  
+  override def max (b : Int) = mat.ssMatOpScalar(b, SDMat.maxFun, omat)
+  override def min (b : Int) = mat.ssMatOpScalar(b, SDMat.minFun, omat)
 }
 
 object SDMat {
@@ -268,25 +404,42 @@ object SDMat {
     new SDMat(nr, nc, nnz0, new Array[Int](nnz0), new Array[Int](nc+1), new Array[Double](nnz0)) 
   }
   
-  def apply(a:SparseMat[Double]):SDMat = new SDMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a.data) 
+  def apply(a:SparseMat[Double]):SDMat = new SDMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a._data) 
   
   def apply(a:SMat) = a.toSDMat
   
   def apply(nrows:Int, ncols:Int, arows:Array[Int], acols:Array[Int], avals:Array[Double]) = {
     val a = SparseMat.sparseImpl(arows, acols, avals, nrows, ncols, arows.size)
-    new SDMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a.data)
+    new SDMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a._data)
   }
   
   def apply(nrows:Int, ncols:Int, arows:IMat, acols:IMat, avals:DMat) = {
     val a = SparseMat.sparseImpl(arows.data, acols.data, avals.data, nrows, ncols, arows.length)
-    new SDMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a.data)
+    new SDMat(a.nrows, a.ncols, a.nnz, a.ir, a.jc, a._data)
   }
   
   def apply(a:Mat) = a match {
-    case aa:SMat => aa.toSDMat
     case aa:GSMat => aa.toSMat.toSDMat
+    case aa:SMat => aa.toSDMat
     case aa:SDMat => aa
   }
+  
+  val sumFun = (x:Double, y:Double) => x + y
+  val subFun = (x:Double, y:Double) => x - y
+  val mulFun = (x:Double, y:Double) => x * y
+  val divFun = (x:Double, y:Double) => x / y
+    
+  val gtFun = (x:Double, y:Double) => if (x > y) 1.0 else 0.0
+  val geFun = (x:Double, y:Double) => if (x >= y) 1.0 else 0.0
+  val ltFun = (x:Double, y:Double) => if (x < y) 1.0 else 0.0
+  val leFun = (x:Double, y:Double) => if (x <= y) 1.0 else 0.0
+  val eqFun = (x:Double, y:Double) => if (x == y) 1.0 else 0.0
+  val neFun = (x:Double, y:Double) => if (x != y) 1.0 else 0.0
+  val powFun = (x:Double, y:Double) => math.pow(x,y)
+  
+  val maxFun = (x:Double, y:Double) => math.max(x, y)
+  val minFun = (x:Double, y:Double) => math.min(x, y)
+  val idFun = (x:Double) => x
   
    def SnoRows(nr:Int, nc:Int, nnz0:Int):SDMat = {
     if (Mat.debugMem) {

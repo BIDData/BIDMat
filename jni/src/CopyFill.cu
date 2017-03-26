@@ -20,7 +20,16 @@ __global__ void __copyToInds(float *A, float *B, int *I, long long len) {
   int step = blockDim.x * gridDim.x * gridDim.y;
   long long i;
   for (i = tid; i < len; i += step) {
-    A[I[i]] = B[i];
+    B[I[i]] = A[i];
+  }
+}
+
+__global__ void __copyToIndsX(float *A, float *B, long long len) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  int step = blockDim.x * gridDim.x * gridDim.y;
+  long long i;
+  for (i = tid; i < len; i += step) {
+    B[i] = A[i];
   }
 }
 
@@ -28,7 +37,107 @@ int copyToInds(float *A, float *B, int *I, long long len) {
   int nthreads;
   dim3 griddims;
   setsizes(len, &griddims, &nthreads);
-  __copyToInds<<<griddims,nthreads>>>(A, B, I, len);
+  if (I == NULL) {
+    __copyToIndsX<<<griddims,nthreads>>>(A, B, len);
+  } else {
+    __copyToInds<<<griddims,nthreads>>>(A, B, I, len);
+  }
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+__global__ void __copyToIndsLong(long long *A, long long *B, int *I, long long len) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  int step = blockDim.x * gridDim.x * gridDim.y;
+  long long i;
+  for (i = tid; i < len; i += step) {
+    B[I[i]] = A[i];
+  }
+}
+
+__global__ void __copyToIndsLongX(long long *A, long long *B, long long len) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  int step = blockDim.x * gridDim.x * gridDim.y;
+  long long i;
+  for (i = tid; i < len; i += step) {
+    B[i] = A[i];
+  }
+}
+
+int copyToIndsLong(long long *A, long long *B, int *I, long long len) {
+  int nthreads;
+  dim3 griddims;
+  setsizes(len, &griddims, &nthreads);
+  if (I == NULL) {
+    __copyToIndsLongX<<<griddims,nthreads>>>(A, B, len);
+  } else {
+    __copyToIndsLong<<<griddims,nthreads>>>(A, B, I, len);
+  }
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+__global__ void __fillToInds(float A, float *B, int *I, long long len) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  int step = blockDim.x * gridDim.x * gridDim.y;
+  long long i;
+  for (i = tid; i < len; i += step) {
+    B[I[i]] = A;
+  }
+}
+
+__global__ void __fillToIndsX(float A, float *B, long long len) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  int step = blockDim.x * gridDim.x * gridDim.y;
+  long long i;
+  for (i = tid; i < len; i += step) {
+      B[i] = A;
+  }
+}
+
+int fillToInds(float A, float *B, int *I, long long len) {
+  int nthreads;
+  dim3 griddims;
+  setsizes(len, &griddims, &nthreads);
+  if (I == NULL) {
+    __fillToIndsX<<<griddims,nthreads>>>(A, B, len);
+  } else {
+    __fillToInds<<<griddims,nthreads>>>(A, B, I, len);
+  }
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+__global__ void __fillToIndsLong(long long A, long long *B, int *I, long long len) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  int step = blockDim.x * gridDim.x * gridDim.y;
+  long long i;
+  for (i = tid; i < len; i += step) {
+    B[I[i]] = A;
+  }
+}
+
+__global__ void __fillToIndsLongX(long long A, long long *B, long long len) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  int step = blockDim.x * gridDim.x * gridDim.y;
+  long long i;
+  for (i = tid; i < len; i += step) {
+    B[i] = A;
+  }
+}
+
+int fillToIndsLong(long long A, long long *B, int *I, long long len) {
+  int nthreads;
+  dim3 griddims;
+  setsizes(len, &griddims, &nthreads);
+  if (I == NULL) {
+    __fillToIndsLongX<<<griddims,nthreads>>>(A, B, len);
+  } else {
+    __fillToIndsLong<<<griddims,nthreads>>>(A, B, I, len);
+  }
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
@@ -191,6 +300,132 @@ int copyToInds3D(float *A, int lda, int rda, float *B, int ldb, int rdb, int *I,
   return err;
 }
 
+__global__ void __copyToInds3DLong(long long *A, int lda, int rda, long long *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk) {
+  int ii = threadIdx.x + blockDim.x * blockIdx.x;
+  int jj = threadIdx.y + blockDim.y * blockIdx.y;
+  int kk = threadIdx.z + blockDim.z * blockIdx.z;
+  int i, j, k, mapi, mapj, mapk;
+  for (k = kk; k < nk; k += blockDim.z * gridDim.z) {
+    mapk = k;
+    if (K != NULL) mapk = K[k];
+    for (j = jj; j < ncols; j += blockDim.y * gridDim.y) {
+      mapj = j;
+      if (J != NULL) mapj = J[j];
+      if (I != NULL) {
+        for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
+          mapi = I[i];
+          B[mapi + ldb * (mapj + rdb * mapk)] = A[i + lda * (j + rda * k)];
+        }
+      } else {
+        for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
+          mapi = i;
+          B[mapi + ldb * (mapj + rdb * mapk)] = A[i + lda * (j + rda * k)];
+        }
+      }
+    }
+  }
+}
+
+int copyToInds3DLong(long long *A, int lda, int rda, long long *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk) {
+  int ntx, nty, ntz, nbx, nby, nbz;
+  ntx = min(nrows, 1024);
+  nbx = min((nrows - 1) / ntx + 1, 1024);
+  nty = min(ncols, 1024/ntx);
+  nby = min((ncols - 1) / nty + 1, 1024);
+  ntz = min(nk, 1024/ntx/nty);
+  nbz = min((nk - 1) / ntz + 1, 1024);
+  dim3 blockdims(ntx, nty, ntz);
+  dim3 griddims(nbx, nby, nbz);
+  __copyToInds3DLong<<<griddims,blockdims>>>(A, lda, rda, B, ldb, rdb, I, nrows, J, ncols, K, nk);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+__global__ void __fillToInds3D(float A, float *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk) {
+  int ii = threadIdx.x + blockDim.x * blockIdx.x;
+  int jj = threadIdx.y + blockDim.y * blockIdx.y;
+  int kk = threadIdx.z + blockDim.z * blockIdx.z;
+  int i, j, k, mapi, mapj, mapk;
+  for (k = kk; k < nk; k += blockDim.z * gridDim.z) {
+    mapk = k;
+    if (K != NULL) mapk = K[k];
+    for (j = jj; j < ncols; j += blockDim.y * gridDim.y) {
+      mapj = j;
+      if (J != NULL) mapj = J[j];
+      if (I != NULL) {
+        for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
+          mapi = I[i];
+          B[mapi + ldb * (mapj + rdb * mapk)] = A;
+        }
+      } else {
+        for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
+          mapi = i;
+          B[mapi + ldb * (mapj + rdb * mapk)] = A;
+        }
+      }
+    }
+  }
+}
+
+int fillToInds3D(float A, float *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk) {
+  int ntx, nty, ntz, nbx, nby, nbz;
+  ntx = min(nrows, 1024);
+  nbx = min((nrows - 1) / ntx + 1, 1024);
+  nty = min(ncols, 1024/ntx);
+  nby = min((ncols - 1) / nty + 1, 1024);
+  ntz = min(nk, 1024/ntx/nty);
+  nbz = min((nk - 1) / ntz + 1, 1024);
+  dim3 blockdims(ntx, nty, ntz);
+  dim3 griddims(nbx, nby, nbz);
+  __fillToInds3D<<<griddims,blockdims>>>(A, B, ldb, rdb, I, nrows, J, ncols, K, nk);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+__global__ void __fillToInds3DLong(long long A, long long *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk) {
+  int ii = threadIdx.x + blockDim.x * blockIdx.x;
+  int jj = threadIdx.y + blockDim.y * blockIdx.y;
+  int kk = threadIdx.z + blockDim.z * blockIdx.z;
+  int i, j, k, mapi, mapj, mapk;
+  for (k = kk; k < nk; k += blockDim.z * gridDim.z) {
+    mapk = k;
+    if (K != NULL) mapk = K[k];
+    for (j = jj; j < ncols; j += blockDim.y * gridDim.y) {
+      mapj = j;
+      if (J != NULL) mapj = J[j];
+      if (I != NULL) {
+        for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
+          mapi = I[i];
+          B[mapi + ldb * (mapj + rdb * mapk)] = A;
+        }
+      } else {
+        for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
+          mapi = i;
+          B[mapi + ldb * (mapj + rdb * mapk)] = A;
+        }
+      }
+    }
+  }
+}
+
+int fillToInds3DLong(long long A, long long *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk) {
+  int ntx, nty, ntz, nbx, nby, nbz;
+  ntx = min(nrows, 1024);
+  nbx = min((nrows - 1) / ntx + 1, 1024);
+  nty = min(ncols, 1024/ntx);
+  nby = min((ncols - 1) / nty + 1, 1024);
+  ntz = min(nk, 1024/ntx/nty);
+  nbz = min((nk - 1) / ntz + 1, 1024);
+  dim3 blockdims(ntx, nty, ntz);
+  dim3 griddims(nbx, nby, nbz);
+  __fillToInds3DLong<<<griddims,blockdims>>>(A, B, ldb, rdb, I, nrows, J, ncols, K, nk);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
 __global__ void __copyToInds4D(float *A, int lda, int rda, int tda, float *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl, int ntk, int nbk, int ntl, int nbl) {
   int ii = threadIdx.x + blockDim.x * blockIdx.x;
   int jj = threadIdx.y + blockDim.y * blockIdx.y;
@@ -238,6 +473,162 @@ int copyToInds4D(float *A, int lda, int rda, int tda, float *B, int ldb, int rdb
   dim3 blockdims(ntx, nty, ntk * ntl);
   dim3 griddims(nbx, nby, nbk * nbl);
   __copyToInds4D<<<griddims,blockdims>>>(A, lda, rda, tda, B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl, ntk, nbk, ntl, nbl);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+__global__ void __copyToInds4DLong(long long *A, int lda, int rda, int tda, long long *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl, int ntk, int nbk, int ntl, int nbl) {
+  int ii = threadIdx.x + blockDim.x * blockIdx.x;
+  int jj = threadIdx.y + blockDim.y * blockIdx.y;
+  int tk = threadIdx.z / ntk;
+  int tl = threadIdx.z - tk * ntk;
+  int bk = blockIdx.z / nbk;
+  int bl = blockIdx.z - bk * nbk;
+  int kk = tk + ntk * bk;
+  int ll = tl + ntl * bl;
+  int i, j, k, l, mapi, mapj, mapk, mapl;
+  for (l = ll; l < nl; l += ntl * nbl) {
+    mapl = l;
+    if (L != NULL) mapl = L[l];
+    for (k = kk; k < nk; k += ntk * nbk) {
+      mapk = k;
+      if (K != NULL) mapk = K[k];
+      for (j = jj; j < ncols; j += blockDim.y * gridDim.y) {
+        mapj = j;
+        if (J != NULL) mapj = J[j];
+        if (I != NULL) {
+          for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
+            mapi = I[i];
+            B[mapi + ldb * (mapj + rdb * (mapk + tdb * mapl))] = A[i + lda * (j + rda * (k + tda * l))];
+          }
+        } else {
+          for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
+            B[i + ldb * (mapj + rdb * (mapk + tdb * mapl))] = A[i + lda * (j + rda * (k + tda * l))];
+          }
+        }
+      }
+    }
+  }
+}
+
+int copyToInds4DLong(long long *A, int lda, int rda, int tda, long long *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl) {
+  int ntx, nty, ntk, ntl, nbx, nby, nbk, nbl;
+  ntx = min(nrows, 1024);
+  nbx = min((nrows - 1) / ntx + 1, 1024);
+  nty = min(ncols, 1024/ntx);
+  nby = min((ncols - 1) / nty + 1, 1024);
+  ntk = min(nk, 1024/ntx/nty);
+  nbk = min((nk - 1) / ntk + 1, 255);
+  ntl = min(nl, 1024/ntx/nty/ntk);
+  nbl = min((nl - 1) / ntl + 1, 255);
+  dim3 blockdims(ntx, nty, ntk * ntl);
+  dim3 griddims(nbx, nby, nbk * nbl);
+  __copyToInds4DLong<<<griddims,blockdims>>>(A, lda, rda, tda, B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl, ntk, nbk, ntl, nbl);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+__global__ void __fillToInds4D(float A, float *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl, int ntk, int nbk, int ntl, int nbl) {
+  int ii = threadIdx.x + blockDim.x * blockIdx.x;
+  int jj = threadIdx.y + blockDim.y * blockIdx.y;
+  int tk = threadIdx.z / ntk;
+  int tl = threadIdx.z - tk * ntk;
+  int bk = blockIdx.z / nbk;
+  int bl = blockIdx.z - bk * nbk;
+  int kk = tk + ntk * bk;
+  int ll = tl + ntl * bl;
+  int i, j, k, l, mapi, mapj, mapk, mapl;
+  for (l = ll; l < nl; l += ntl * nbl) {
+    mapl = l;
+    if (L != NULL) mapl = L[l];
+    for (k = kk; k < nk; k += ntk * nbk) {
+      mapk = k;
+      if (K != NULL) mapk = K[k];
+      for (j = jj; j < ncols; j += blockDim.y * gridDim.y) {
+        mapj = j;
+        if (J != NULL) mapj = J[j];
+        if (I != NULL) {
+          for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
+            mapi = I[i];
+            B[mapi + ldb * (mapj + rdb * (mapk + tdb * mapl))] = A;
+          }
+        } else {
+          for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
+            B[i + ldb * (mapj + rdb * (mapk + tdb * mapl))] = A;
+          }
+        }
+      }
+    }
+  }
+}
+
+int fillToInds4D(float A, float *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl) {
+  int ntx, nty, ntk, ntl, nbx, nby, nbk, nbl;
+  ntx = min(nrows, 1024);
+  nbx = min((nrows - 1) / ntx + 1, 1024);
+  nty = min(ncols, 1024/ntx);
+  nby = min((ncols - 1) / nty + 1, 1024);
+  ntk = min(nk, 1024/ntx/nty);
+  nbk = min((nk - 1) / ntk + 1, 255);
+  ntl = min(nl, 1024/ntx/nty/ntk);
+  nbl = min((nl - 1) / ntl + 1, 255);
+  dim3 blockdims(ntx, nty, ntk * ntl);
+  dim3 griddims(nbx, nby, nbk * nbl);
+  __fillToInds4D<<<griddims,blockdims>>>(A, B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl, ntk, nbk, ntl, nbl);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+__global__ void __fillToInds4DLong(long long A, long long *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl, int ntk, int nbk, int ntl, int nbl) {
+  int ii = threadIdx.x + blockDim.x * blockIdx.x;
+  int jj = threadIdx.y + blockDim.y * blockIdx.y;
+  int tk = threadIdx.z / ntk;
+  int tl = threadIdx.z - tk * ntk;
+  int bk = blockIdx.z / nbk;
+  int bl = blockIdx.z - bk * nbk;
+  int kk = tk + ntk * bk;
+  int ll = tl + ntl * bl;
+  int i, j, k, l, mapi, mapj, mapk, mapl;
+  for (l = ll; l < nl; l += ntl * nbl) {
+    mapl = l;
+    if (L != NULL) mapl = L[l];
+    for (k = kk; k < nk; k += ntk * nbk) {
+      mapk = k;
+      if (K != NULL) mapk = K[k];
+      for (j = jj; j < ncols; j += blockDim.y * gridDim.y) {
+        mapj = j;
+        if (J != NULL) mapj = J[j];
+        if (I != NULL) {
+          for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
+            mapi = I[i];
+            B[mapi + ldb * (mapj + rdb * (mapk + tdb * mapl))] = A;
+          }
+        } else {
+          for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
+            B[i + ldb * (mapj + rdb * (mapk + tdb * mapl))] = A;
+          }
+        }
+      }
+    }
+  }
+}
+
+int fillToInds4DLong(long long A, long long *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl) {
+  int ntx, nty, ntk, ntl, nbx, nby, nbk, nbl;
+  ntx = min(nrows, 1024);
+  nbx = min((nrows - 1) / ntx + 1, 1024);
+  nty = min(ncols, 1024/ntx);
+  nby = min((ncols - 1) / nty + 1, 1024);
+  ntk = min(nk, 1024/ntx/nty);
+  nbk = min((nk - 1) / ntk + 1, 255);
+  ntl = min(nl, 1024/ntx/nty/ntk);
+  nbl = min((nl - 1) / ntl + 1, 255);
+  dim3 blockdims(ntx, nty, ntk * ntl);
+  dim3 griddims(nbx, nby, nbk * nbl);
+  __fillToInds4DLong<<<griddims,blockdims>>>(A, B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl, ntk, nbk, ntl, nbl);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
@@ -882,7 +1273,7 @@ int transpose(float *in, int instride, float *out, int outstride, int nrows, int
   return 0;
 }
 
-__global__ void __toFloat(int *A, float *B, int N) {
+__global__ void __intToFloat(int *A, float *B, int N) {
   int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
   for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {
     B[i] = (float)(A[i]);
@@ -903,18 +1294,32 @@ __global__ void __floatToLong(float *A, long long *B, int N) {
   }
 }
 
-__global__ void __toInt(float *A, int *B, int N) {
+__global__ void __floatToInt(float *A, int *B, int N) {
   int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
   for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {
     B[i] = (int)(A[i]);
   }
 }
 
-int toFloat(int *A, float *B, int N) {
+__global__ void __longToInt(long long *A, int *B, int N) {
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {
+    B[i] = (int)(A[i]);
+  }
+}
+
+__global__ void __intToLong(int *A, long long *B, int N) {
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {
+    B[i] = (long long)(A[i]);
+  }
+}
+
+int intToFloat(int *A, float *B, int N) {
   int nthreads;
   dim3 griddims;
   setsizes(N, &griddims, &nthreads);
-  __toFloat<<<griddims,nthreads>>>(A, B, N);
+  __intToFloat<<<griddims,nthreads>>>(A, B, N);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
@@ -940,11 +1345,31 @@ int floatToLong(float *A, long long *B, int N) {
   return err;
 }
 
-int toInt(float *A, int *B, int N) {
+int floatToInt(float *A, int *B, int N) {
   int nthreads;
   dim3 griddims;
   setsizes(N, &griddims, &nthreads);
-  __toInt<<<griddims,nthreads>>>(A, B, N);
+  __floatToInt<<<griddims,nthreads>>>(A, B, N);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int longToInt(long long *A, int *B, int N) {
+  int nthreads;
+  dim3 griddims;
+  setsizes(N, &griddims, &nthreads);
+  __longToInt<<<griddims,nthreads>>>(A, B, N);
+  cudaDeviceSynchronize();
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int intToLong(int *A, long long *B, int N) {
+  int nthreads;
+  dim3 griddims;
+  setsizes(N, &griddims, &nthreads);
+  __intToLong<<<griddims,nthreads>>>(A, B, N);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;

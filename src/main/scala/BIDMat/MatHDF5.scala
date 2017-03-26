@@ -136,7 +136,7 @@ object MatHDF5 {
   	var mdata:DenseMat[T] = null;
   	if (data_class == h5class && data_size == dsize) {
   		mdata = new DenseMat[T](dims(1).intValue, dims(0).intValue);
-  		H5Dread(data_id, data_type_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, mdata.data);
+  		H5Dread(data_id, data_type_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, mdata._data);
   	} else {
   		throw new RuntimeException("Bad class or data size "+data_class+" "+data_size);
   	}
@@ -145,7 +145,7 @@ object MatHDF5 {
   	mdata;
   }
 
-  def getFND(fid:Int, varname:String, h5class:Int, dsize:Int):FND = {
+  def getFND(fid:Int, varname:String, h5class:Int, dsize:Int):FMat = {
   	val data_id = H5Dopen(fid, varname, H5P_DEFAULT);
   	val data_type_id = H5Dget_type(data_id);
   	val data_class = H5Tget_class(data_type_id);
@@ -153,10 +153,10 @@ object MatHDF5 {
   	val dims = getMatDims(data_id);
   	val idims = new Array[Int](dims.length);
   	for (i <- 0 until dims.length) {idims(i) = dims(dims.length - i - 1).toInt}
-  	var mdata:FND = null;
+  	var mdata:FMat = null;
   	if (data_class == h5class && data_size == dsize) {
-  		mdata = FND(idims);
-  		H5Dread(data_id, data_type_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, mdata.data);
+  		mdata = FMat.make(idims);
+  		H5Dread(data_id, data_type_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, mdata._data);
   	} else {
   		throw new RuntimeException("Bad class or data size "+data_class+" "+data_size);
   	}
@@ -233,7 +233,7 @@ object MatHDF5 {
   		H5Dclose(ir_id);
   	}
   	H5Tclose(convert_ints);
-  	H5Dread(data_id, data_type_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, sdata.data);
+  	H5Dread(data_id, data_type_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, sdata._data);
   	H5Tclose(data_type_id);
   	H5Dclose(data_id);
   	sdata
@@ -348,7 +348,7 @@ object MatHDF5 {
   	val dplist_id = H5Pcreate(H5P_DATASET_CREATE);
   	setCompressionPlist(dplist_id, dims)
   	val dataset_id = H5Dcreate(fid, "/"+aname, h5class, filespace_id, H5P_DEFAULT, dplist_id, H5P_DEFAULT);
-  	H5Dwrite(dataset_id, h5class, H5S_ALL, H5S_ALL, H5P_DEFAULT, a.data);
+  	H5Dwrite(dataset_id, h5class, H5S_ALL, H5S_ALL, H5P_DEFAULT, a._data);
   	H5Pclose(dplist_id);
   	putStringAttr(dataset_id, "MATLAB_class", matclass);
   	val ref = H5Rcreate(dataset_id, ".", H5R_OBJECT, -1);
@@ -357,7 +357,7 @@ object MatHDF5 {
   	ref
   }
 
-  def putFND(fid:Int, a:FND, aname:String, h5class:Int, matclass:String):Array[Byte] = {
+  def putFND(fid:Int, a:FMat, aname:String, h5class:Int, matclass:String):Array[Byte] = {
   	val dims = a.dims.data.map(_.toLong);
   	val filespace_id = H5Screate_simple(dims.length, dims, null);
   	val dplist_id = H5Pcreate(H5P_DATASET_CREATE);
@@ -466,7 +466,7 @@ object MatHDF5 {
 
   	val dataspace_id = H5Screate_simple(1, dims, null);
   	val data_id = H5Dcreate(group_id, "data", nativeClass, dataspace_id, H5P_DEFAULT, dplist_id, H5P_DEFAULT);
-  	H5Dwrite(data_id, nativeClass, H5S_ALL, H5S_ALL, H5P_DEFAULT, a.data);
+  	H5Dwrite(data_id, nativeClass, H5S_ALL, H5S_ALL, H5P_DEFAULT, a._data);
   	H5Dclose(data_id);
   	H5Sclose(dataspace_id);
   	H5Pclose(dplist_id);
@@ -498,14 +498,20 @@ object MatHDF5 {
   def putMat(fid:Int, a:AnyRef, aname:String):Array[Byte] = { 
   	a match { 
   	case aa:DMat => putDenseMat[Double](fid, aa, aname, H5T_NATIVE_DOUBLE, "double")
-  	case aa:FMat => putDenseMat[Float](fid, aa, aname, H5T_NATIVE_FLOAT, "single")
+  	case aa:FMat => {
+  	  if (aa.dims.length == 2) {
+  		  putDenseMat[Float](fid, aa, aname, H5T_NATIVE_FLOAT, "single")
+  	  } else {
+  		  putFND(fid, aa, aname, H5T_NATIVE_FLOAT, "single")
+  	  }
+  	}
   	case aa:IMat => putDenseMat[Int](fid, aa, aname, H5T_NATIVE_INT, "int32")
   	case aa:SBMat => putSparseMat[Byte](fid, aa, aname, H5T_NATIVE_CHAR, "int8")
   	case aa:SMat => putSparseMat[Float](fid, aa, aname, H5T_NATIVE_FLOAT, "single")
   	case aa:SDMat => putSparseMat[Double](fid, aa, aname, H5T_NATIVE_DOUBLE, "double")
   	case aa:CSMat => putCellMat(fid, aname, aa)
   	case aa:String => putMatString(fid, aname, aa)
-  	case aa:FND => putFND(fid, aa, aname, H5T_NATIVE_FLOAT, "single")
+
   	case _ => throw new RuntimeException("unsupported matrix type to save")
   	}
   }

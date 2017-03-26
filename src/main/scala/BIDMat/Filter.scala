@@ -10,7 +10,7 @@ trait Filter {
   val stride:IMat;
   val outPad:IMat;
   
-  def computeFlops(in:ND, stride:IMat, pad:IMat):Long = {
+  def computeFlops(in:Mat, stride:IMat, pad:IMat):Long = {
     var i = 0;
     var flops = 2L;
     while (i < stride.length) {
@@ -18,22 +18,6 @@ trait Filter {
       i += 1;
     }
     flops;
-  }
-  
-  def notImplemented0ND(s:String):ND = { 
-    throw new RuntimeException("operator "+s+" not implemented for Filter")
-  }
-  
-  def notImplemented1ND(s:String, a:ND):ND = { 
-    throw new RuntimeException("operator "+s+" not implemented for Filter and "+a.mytype)
-  }
-  
-  def notImplemented2ND(s:String, a:ND, b:ND):ND = { 
-    throw new RuntimeException("operator "+s+" not implemented for Filter and "+a.mytype+" and "+b.mytype)
-  }
-  
-  def ^* (a:ND):ND = {
-    notImplemented1ND("^*", a);
   }
 
 }
@@ -59,18 +43,6 @@ object Filter {
     val indims = (imageDims - foutDims - outPad*2 + 1) *@ stride - pad*2 + finDims - 1;
     (if (compress) ND.trimDims(indims) else indims);   
   }
-  
-  def hashIMat(a:IMat, start:Int):Int = {
-    var i = 0; 
-    var hv = start;
-    while (i < a.length) {
-      hv = MurmurHash3.mix(hv, a.data(i));
-      i += 1;
-    }
-    hv;
-  }
-  
-  def hashIMat(a:IMat):Int = hashIMat(a, 23412154);
   
   final val forward = 1;
   final val backwardGradient = 2;

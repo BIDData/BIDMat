@@ -1,7 +1,7 @@
 package BIDMat
 
 class SparseMat[@specialized(Double,Float) T]
-(nr: Int, nc: Int, var nnz0:Int, var ir:Array[Int], val jc:Array[Int], val data:Array[T])
+(nr: Int, nc: Int, var nnz0:Int, var ir:Array[Int], val jc:Array[Int], val _data:Array[T])
 (implicit manifest:Manifest[T], numeric:Numeric[T]) extends Mat(nr, nc) {
   
   override def nnz = nnz0
@@ -30,13 +30,13 @@ class SparseMat[@specialized(Double,Float) T]
     } else {
       ix = r+ioff - jc(c)
     }    
-    if (ix >= 0) data(ix) else numeric.zero
+    if (ix >= 0) _data(ix) else numeric.zero
   }	
   
   def indexOf2(a:T):(Int, Int) = {
     val off = Mat.oneBased
     val ioff = Mat.ioneBased
-    val i = data.indexOf(a)
+    val i = _data.indexOf(a)
     var j = 0
     while (jc(j)-ioff <= i) j += 1
     (ir(i) - ioff + off, j-1+off)
@@ -72,7 +72,7 @@ class SparseMat[@specialized(Double,Float) T]
     } else {
       ix = r+ioff - jc(c)
     } 
-    if (ix >= 0) data(ix) = v 
+    if (ix >= 0) _data(ix) = v 
     else throw new RuntimeException("Can't set missing values")
   }		
   
@@ -97,7 +97,7 @@ class SparseMat[@specialized(Double,Float) T]
   def gt:SparseMat[T] = {
     explicitInds
     val ic = SparseMat.uncompressInds(jc, ncols, ir);
-    SparseMat.sparseImpl[T](ic, if (Mat.ioneBased==1) SparseMat.decInds(ir) else ir, data, ncols, nrows, nnz)
+    SparseMat.sparseImpl[T](ic, if (Mat.ioneBased==1) SparseMat.decInds(ir) else ir, _data, ncols, nrows, nnz)
   }
   
   def gcountnz(n:Int, omat:Mat):IMat = {
@@ -106,7 +106,7 @@ class SparseMat[@specialized(Double,Float) T]
     if (dir == 1) {
       var i = 0
       while (i < ncols) {
-        out.data(i) = jc(i+1)-jc(i)
+        out._data(i) = jc(i+1)-jc(i)
         i += 1
       }
     } else {
@@ -114,7 +114,7 @@ class SparseMat[@specialized(Double,Float) T]
       out.clear
       var i = 0
       while (i < nnz) {
-        out.data(ir(i)-ioff) += 1
+        out._data(ir(i)-ioff) += 1
         i += 1
       }    
     }
@@ -143,14 +143,14 @@ class SparseMat[@specialized(Double,Float) T]
         var j = jc(i)-ioff
       	while (j < jc(i+1)-ioff) {
       	  if (out.ir != null) out.ir(ip) = ir(j)
-      	  out.data(ip) = data(j)
+      	  out._data(ip) = _data(j)
       	  ip += 1
       	  j += 1
       	}
         j = a.jc(i)-ioff
       	while (j < a.jc(i+1)-ioff) {
       	  if (out.ir != null) out.ir(ip) = a.ir(j) + nrows
-      	  out.data(ip) = a.data(j)
+      	  out._data(ip) = a._data(j)
       	  ip += 1
       	  j += 1
       	}
@@ -176,8 +176,8 @@ class SparseMat[@specialized(Double,Float) T]
         SparseMat.newOrCheck(nrows, ncols+a.ncols, nnz+a.nnz, null, true, GUID, a.GUID, "on".hashCode)
       }
       var ip = 0
-      System.arraycopy(data, 0, out.data, 0, nnz)
-      System.arraycopy(a.data, 0, out.data, nnz, a.nnz)
+      System.arraycopy(_data, 0, out._data, 0, nnz)
+      System.arraycopy(a._data, 0, out._data, nnz, a.nnz)
       if (out.ir != null) {
       	System.arraycopy(ir, 0, out.ir, 0, nnz)
       	System.arraycopy(a.ir, 0, out.ir, nnz, a.nnz)
@@ -201,12 +201,12 @@ class SparseMat[@specialized(Double,Float) T]
       var j = jc(i)-ioff
       if (ir != null) {
       	while (j < jc(i+1)-ioff) {
-      		out.data(j) = ir(j)-ioff+off + i*nrows
+      		out._data(j) = ir(j)-ioff+off + i*nrows
       		j += 1
       	}
       } else {
         while (j < jc(i+1)-ioff) {
-      		out.data(j) = j-jc(i)+ioff+off + i*nrows
+      		out._data(j) = j-jc(i)+ioff+off + i*nrows
       		j += 1
       	}
       }
@@ -227,21 +227,21 @@ class SparseMat[@specialized(Double,Float) T]
       var j = jc(i)-ioff
       if (ir != null) {
       	while (j < jc(i+1)-ioff) {
-      		iout.data(j) = ir(j)-ioff+off
+      		iout._data(j) = ir(j)-ioff+off
       		j += 1
       	}
       } else {
         while (j < jc(i+1)-ioff) {
-      		iout.data(j) = j-jc(i)+ioff+off
+      		iout._data(j) = j-jc(i)+ioff+off
       		j += 1
       	}
       }
       i += 1
     }
     if (off == 0) {
-    	System.arraycopy(SparseMat.uncompressInds(jc, ncols, ir), 0, jout.data, 0, nnz)
+    	System.arraycopy(SparseMat.uncompressInds(jc, ncols, ir), 0, jout._data, 0, nnz)
     } else {
-    	SparseMat.incInds(SparseMat.uncompressInds(jc, ncols, ir), jout.data)
+    	SparseMat.incInds(SparseMat.uncompressInds(jc, ncols, ir), jout._data)
     }
     (iout, jout)
   }
@@ -251,7 +251,7 @@ class SparseMat[@specialized(Double,Float) T]
   def gfind3:(IMat, IMat, DenseMat[T]) = {
     val vout = DenseMat.newOrCheck(nnz, 1, null, GUID, "gfind3_3".hashCode)
     val (iout, jout) = gfind2
-    System.arraycopy(data, 0, vout.data, 0, nnz)
+    System.arraycopy(_data, 0, vout._data, 0, nnz)
     (iout, jout, vout)
   }  
   /*
@@ -284,7 +284,7 @@ class SparseMat[@specialized(Double,Float) T]
   		while (i < out.ncols) {
   			val istep = jc(colinds(i)-off+1) - jc(colinds(i)-off)
   			if (ir != null) System.arraycopy(ir, jc(colinds(i)-off)-ioff, out.ir, inext, istep)
-  			System.arraycopy(data, jc(colinds(i)-off)-ioff, out.data, inext, istep)
+  			System.arraycopy(_data, jc(colinds(i)-off)-ioff, out._data, inext, istep)
   			inext += istep
   			out.jc(i+1) = inext+ioff
   			i += 1
@@ -300,11 +300,11 @@ class SparseMat[@specialized(Double,Float) T]
   	  var i = 0; 
   	  while (i < iv.length) {
   	    smat.ir(i) = i+ioff
-  	    im.data(i) = iv.data(i)
+  	    im._data(i) = iv._data(i)
   	    i+=1
   	  }
-  	  Mat.ilexsort2(im.data, smat.ir)
-  	  SparseMat.compressInds(im.data, nrows, smat.jc, iv.length)
+  	  Mat.ilexsort2(im._data, smat.ir)
+  	  SparseMat.compressInds(im._data, nrows, smat.jc, iv.length)
   		val colinds = DenseMat.getInds(jv, ncols) 
   		var tnnz = 0
   		i = 0
@@ -323,11 +323,11 @@ class SparseMat[@specialized(Double,Float) T]
   		while (i < colsize) {
   			var j = jc(colinds(i)-off)-ioff
   			while (j < jc(colinds(i)-off+1)-ioff) {
-  				val dval = data(j)
+  				val dval = _data(j)
   				var k = smat.jc(ir(j)-ioff) - ioff
   				while (k < smat.jc(ir(j)+1-ioff)-ioff) {
   					out.ir(tnnz) = smat.ir(k)
-  					out.data(tnnz) = dval
+  					out._data(tnnz) = dval
   					tnnz += 1
   					k += 1
   				}
@@ -357,7 +357,7 @@ class SparseMat[@specialized(Double,Float) T]
     val istart = jc(a-off)-ioff
     val iend = jc(b-off)-ioff
     System.arraycopy(ir, istart, out.ir, 0, iend-istart)
-    System.arraycopy(data, istart, out.data, 0, iend-istart)
+    System.arraycopy(_data, istart, out._data, 0, iend-istart)
     var i = 0
     while (i <= b-a) {
       out.jc(i) = jc(i+a) - jc(a) + ioff
@@ -412,7 +412,7 @@ class SparseMat[@specialized(Double,Float) T]
       while (innz >= jc(icol+1)-ioff) icol += 1
       fieldWidth = math.max(fieldWidth, if (ir != null) 2+printOne(ir(innz)).length else 2+printOne(jc(icol+1)-jc(icol)).length)
       fieldWidth = math.max(fieldWidth, 2+printOne(icol).length)
-      fieldWidth = math.max(fieldWidth, 2+printOne(data(innz)).length)
+      fieldWidth = math.max(fieldWidth, 2+printOne(_data(innz)).length)
       innz += 1
     }
     innz = 0;
@@ -424,7 +424,7 @@ class SparseMat[@specialized(Double,Float) T]
       sb.append("("+somespaces.substring(0,fieldWidth-str.length)+str);
       str = printOne(icol);
       sb.append(","+somespaces.substring(0,fieldWidth-str.length)+str);
-      str = printOne(data(innz));
+      str = printOne(_data(innz));
       sb.append(")"+somespaces.substring(0,fieldWidth-str.length)+str+"\n");
       innz += 1
     }
@@ -452,12 +452,12 @@ class SparseMat[@specialized(Double,Float) T]
       	var j = a.jc(i)-ioff
       	while (j < a.jc(i+1)-ioff) {
       	  val ind = a.ir(j)-ioff
-      	  val tval = a.data(j)
+      	  val tval = a._data(j)
       	  var k = jc(ind)-ioff
       	  myflops += 2*(jc(ind+1)-ioff - k)
       	  while (k < jc(ind+1)-ioff) {
       	    val indx = ir(k)-ioff + i0
-      	    data(indx) = numeric.plus(data(indx), numeric.times(tval, data(k)))
+      	    _data(indx) = numeric.plus(_data(indx), numeric.times(tval, _data(k)))
       	    k += 1
       	  }
       	  j += 1
@@ -487,15 +487,15 @@ class SparseMat[@specialized(Double,Float) T]
       		while (ia < jc(i+1)-ioff && ib < b.jc(i+1)-ioff) {
       			if (ir(ia) < b.ir(ib)) {
       				out.ir(nzc) = ir(ia)
-      				out.data(nzc) = op2(data(ia), numeric.zero)
+      				out._data(nzc) = op2(_data(ia), numeric.zero)
       				ia += 1
       			} else if (ir(ia) > b.ir(ib)) {
       				out.ir(nzc) = b.ir(ib)
-      				out.data(nzc) = op2(numeric.zero, b.data(ib))
+      				out._data(nzc) = op2(numeric.zero, b._data(ib))
       				ib += 1
       			} else {
       				out.ir(nzc) = ir(ia)
-      				out.data(nzc) = op2(data(ia), b.data(ib))
+      				out._data(nzc) = op2(_data(ia), b._data(ib))
       				ia += 1
       				ib += 1
       			}
@@ -503,13 +503,13 @@ class SparseMat[@specialized(Double,Float) T]
       		}
       		while (ia < jc(i+1)-ioff) {
       			out.ir(nzc) = ir(ia)
-      			out.data(nzc) = op2(data(ia), numeric.zero)
+      			out._data(nzc) = op2(_data(ia), numeric.zero)
       			ia += 1
       			nzc += 1
       		}
       		while (ib < b.jc(i+1)-ioff) {
       			out.ir(nzc) = b.ir(ib)
-      			out.data(nzc) = op2(numeric.zero, b.data(ib))
+      			out._data(nzc) = op2(numeric.zero, b._data(ib))
       			ib += 1
       			nzc += 1
       		}
@@ -539,19 +539,19 @@ class SparseMat[@specialized(Double,Float) T]
     			if (b.nrows == 1 && b.ncols == 1) {
     				while (ia < jc(i+1)-ioff) {
     				  out.ir(ia) = ir(ia)
-    					out.data(ia) = op2(data(ia), b.data(0))
+    					out._data(ia) = op2(_data(ia), b._data(0))
     					ia += 1
     				}
     			} else if (b.nrows == 1) {    				
     				while (ia < jc(i+1)-ioff) {
     					out.ir(ia) = ir(ia)
-    					out.data(ia) = op2(data(ia), b.data(i))
+    					out._data(ia) = op2(_data(ia), b._data(i))
     					ia += 1
     				}
     			} else if (b.ncols == 1) {
     				while (ia < jc(i+1)-ioff) {
     					out.ir(ia) = ir(ia)
-    					out.data(ia) = op2(data(ia), b.data(ir(ia)-ioff))
+    					out._data(ia) = op2(_data(ia), b._data(ir(ia)-ioff))
     					ia += 1
     				}
     			}
@@ -573,18 +573,18 @@ class SparseMat[@specialized(Double,Float) T]
   			var ia = jc(i)-ioff
   			var ib = b.jc(i)-ioff
   			while (ia < jc(i+1)-ioff && ib < b.jc(i+1)-ioff) {
-  				out.data(nzc) = op2(data(ia), b.data(ib))
+  				out._data(nzc) = op2(_data(ia), b._data(ib))
   				ia += 1
   				ib += 1
   				nzc += 1
   			}
   			while (ia < jc(i+1)-ioff) {
-  				out.data(nzc) = op2(data(ia), numeric.zero)
+  				out._data(nzc) = op2(_data(ia), numeric.zero)
   				ia += 1
   				nzc += 1
   			}
   			while (ib < b.jc(i+1)-ioff) {
-  				out.data(nzc) = op2(numeric.zero, b.data(ib))
+  				out._data(nzc) = op2(numeric.zero, b._data(ib))
   				ib += 1
   				nzc += 1
   			}
@@ -602,10 +602,10 @@ class SparseMat[@specialized(Double,Float) T]
   			var j = 0
   			var acc = op1(numeric.zero)
   			while (j < nnz) { 
-  				acc = op2(acc, data(j))
+  				acc = op2(acc, _data(j))
   				j += 1
   			}
-  			out.data(0) = acc
+  			out._data(0) = acc
   			out
   		} else if (dim == 1) {
   			val out = DenseMat.newOrCheck(1, ncols, omat, GUID, 1, op2.hashCode)
@@ -614,10 +614,10 @@ class SparseMat[@specialized(Double,Float) T]
   				var acc = op1(numeric.zero)
   				var j = jc(i)-ioff
   				while (j < jc(i+1)-ioff) { 
-  					acc = op2(acc, data(j))
+  					acc = op2(acc, _data(j))
   					j += 1
   				}
-  				out.data(i) = acc
+  				out._data(i) = acc
   				i += 1
   			}
   			out
@@ -627,7 +627,7 @@ class SparseMat[@specialized(Double,Float) T]
   			if (ir != null) {
   				var j = 0
   				while (j < nnz) { 
-  					out.data(ir(j)-ioff) = op2(out.data(ir(j)-ioff), data(j))
+  					out._data(ir(j)-ioff) = op2(out._data(ir(j)-ioff), _data(j))
   					j += 1
   				}
   			} else {
@@ -635,7 +635,7 @@ class SparseMat[@specialized(Double,Float) T]
   				while (i < ncols) { 
   					var j = jc(i)
   					while (j < jc(i+1)) { 
-  						out.data(j-jc(i)) = op2(out.data(j-jc(i)), data(j-ioff))
+  						out._data(j-jc(i)) = op2(out._data(j-jc(i)), _data(j-ioff))
   						j += 1
   					}
   					i += 1
@@ -648,7 +648,7 @@ class SparseMat[@specialized(Double,Float) T]
   
   def ssMatOpOne(b:DenseMat[T], op2:(T,T) => T, omat:Mat):SparseMat[T] =	
     if (b.nrows == 1 && b.ncols == 1) {
-      sgMatOpScalar(b.data(0), op2, omat)
+      sgMatOpScalar(b._data(0), op2, omat)
     } else throw new RuntimeException("dims incompatible")
   
   def sgMatOpScalar(b:T, op2:(T,T) => T, outmat:Mat):SparseMat[T] = {
@@ -656,7 +656,7 @@ class SparseMat[@specialized(Double,Float) T]
     var i = 0
     out.jc(0) = jc(0)
     while (i < nnz) {
-      out.data(i) = op2(data(i), b)
+      out._data(i) = op2(_data(i), b)
       if (ir != null) out.ir(i) = ir(i)
       i += 1
     } 
@@ -675,7 +675,7 @@ class SparseMat[@specialized(Double,Float) T]
     while (i < ncols) {
       var j = jc(i)
       while (j < jc(i+1)) {
-      	if (numeric.signum(data(j-ioff)) != 0) nzc += 1
+      	if (numeric.signum(_data(j-ioff)) != 0) nzc += 1
       	j += 1
       }
       i += 1
@@ -691,8 +691,8 @@ class SparseMat[@specialized(Double,Float) T]
       while (i < ncols) {
     	var j = lastjc
     	while (j < jc(i+1)-ioff) {
-    	  if (numeric.signum(data(j)) != 0) {
-    	    out.data(nzc) = data(j)
+    	  if (numeric.signum(_data(j)) != 0) {
+    	    out._data(nzc) = _data(j)
     	    if (ir != null) out.ir(nzc) = ir(j)
     	    nzc += 1
     	  }
@@ -749,7 +749,7 @@ class SparseMat[@specialized(Double,Float) T]
     	val cols = SparseMat.uncompressInds(jc, ncols, ir)
     	var i = 0
     	while (i < nnz) {
-    		out.data(ir(i)-ioff + nrows*cols(i)) = data(i)
+    		out._data(ir(i)-ioff + nrows*cols(i)) = _data(i)
     		i += 1
     	}
     } else {
@@ -757,7 +757,7 @@ class SparseMat[@specialized(Double,Float) T]
     	while (i < ncols) {
     	  var j = jc(i)-ioff
     	  while (j < jc(i+1)-ioff) {
-    	  	out.data(j-jc(i)+ioff + nrows*i) = data(j)
+    	  	out._data(j-jc(i)+ioff + nrows*i) = _data(j)
     	  	j += 1
     	  }
     		i += 1
@@ -775,14 +775,14 @@ class SparseMat[@specialized(Double,Float) T]
   	  	new Array[Int](nnz)
   	  }
   	}
-  	val data0 = if (data.size >= nnz) data else {
+  	val _data0 = if (_data.size >= nnz) _data else {
   		if (Mat.useCache) {
   			new Array[T]((Mat.recycleGrow*nnz).toInt)
   		} else {
   		  new Array[T](nnz)
   		}  	
   	}
-  	new SparseMat[T](nr, nc, nnz, ir0, jc0, data0)    
+  	new SparseMat[T](nr, nc, nnz, ir0, jc0, _data0)    
   }
 
 }
@@ -844,10 +844,10 @@ object SparseMat {
     		i += 1;
     	}
     	val isort = BIDMat.Mat.ilexsort2(ocols, orows);
-    	i = 0; while (i < orows.length) {out.data(i) = vals(isort(i)); i+=1};
-    	remdups(orows, ocols, out.data);
+    	i = 0; while (i < orows.length) {out._data(i) = vals(isort(i)); i+=1};
+    	remdups(orows, ocols, out._data);
     }	else {
-    	i = 0; while (i < vals.length) {out.data(i) = vals(i); i+=1};
+    	i = 0; while (i < vals.length) {out._data(i) = vals(i); i+=1};
       nnz;
     }
     SparseMat.compressInds(ocols, ncols, out.jc, igood);   
@@ -928,7 +928,7 @@ object SparseMat {
       }
     } else {
       val omat = oldmat.asInstanceOf[SparseMat[T]];
-      if (omat.nrows == nr && omat.ncols == nc && nnz <= omat.data.length) {
+      if (omat.nrows == nr && omat.ncols == nc && nnz <= omat._data.length) {
         omat.nnz0 = nnz
         omat
       } else {

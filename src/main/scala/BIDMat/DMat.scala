@@ -4,11 +4,31 @@ import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.LAPACK._
 import edu.berkeley.bid.SPBLAS
 import scala.util.hashing.MurmurHash3
+import edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64
 import java.util.Arrays
 
-case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr, nc, data0) {
+case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Double](dims0, data) {
+  
+  /** 2D Constructor */
+  def this(nr:Int, nc:Int, data:Array[Double]) = this(Array(nr, nc), data);
 
+  override def mytype = "DMat";
+  
   def getdata() = data
+  
+  override def dv:Double =
+    if (nrows > 1 || ncols > 1) {
+      throw new RuntimeException("Matrix should be 1x1 to extract value")
+    } else {
+      data(0)
+    }
+  
+  override def fv:Float =
+    if (nrows > 1 || ncols > 1) {
+      throw new RuntimeException("Matrix should be 1x1 to extract value")
+    } else {
+      data(0).toFloat
+    }
   
   override def set(v:Float):DMat = {
     Arrays.fill(data,0,length,v)
@@ -28,22 +48,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
     }
     out
   }
-  
-  override def dv:Double =
-    if (nrows > 1 || ncols > 1) {
-      throw new RuntimeException("Matrix should be 1x1 to extract value")
-    } else {
-      data(0)
-    }
-  
-    override def fv:Float =
-    if (nrows > 1 || ncols > 1) {
-      throw new RuntimeException("Matrix should be 1x1 to extract value")
-    } else {
-      data(0).toFloat
-    }
 
-  override def mytype = "DMat";
   
   override def view(nr:Int, nc:Int):DMat = {
     if (1L * nr * nc > data.length) {
@@ -95,119 +100,408 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
 
   def find3:(IMat, IMat, DMat) = { val (ii, jj, vv) = gfind3 ; (ii, jj, DMat(vv)) }
 
-  override def apply(a:IMat):DMat = DMat(gapply(a))
+  /** 1D and 2D element access */
+  
+  override def apply(i1:Int):Double = gapply(i1);  
+  override def apply(i1:Int, i2:Int):Double = gapply(i1, i2);
+  
+   /** linearized access */
+  
+  def applyv(inds:Array[Int]):Double = {
+    val indx = ND.linearize(inds, _dims);
+    data(indx);
+  } 
+  
+  def apply(i1:Int, i2:Int, i3:Int):Double = applyv(Array(i1, i2, i3));
+  def apply(i1:Int, i2:Int, i3:Int, i4:Int):Double = applyv(Array(i1, i2, i3, i4));
+  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):Double = applyv(Array(i1, i2, i3, i4, i5));
+  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):Double = applyv(Array(i1, i2, i3, i4, i5, i6));
+  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int):Double = applyv(Array(i1, i2, i3, i4, i5, i6, i7));
+  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int):Double = applyv(Array(i1, i2, i3, i4, i5, i6, i7, i8));
+  
+  /** Basic 2D slicing with IMats and Ints */
+  
+  override def apply(a:IMat, b:IMat):DMat = DMat(gapply(a, b));
+  override def apply(a:IMat, b:Int):DMat = DMat(gapply(a, b));
+  override def apply(a:Int, b:IMat):DMat = DMat(gapply(a, b));
+  
+  /** n-dimensional slicing */
+  
+  override def apply(i1:IMat, i2:IMat, i3:IMat):DMat = applyi(Array(i1, i2, i3));
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat):DMat = applyi(Array(i1, i2, i3, i4));
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat):DMat = applyi(Array(i1, i2, i3, i4, i5));
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat):DMat = applyi(Array(i1, i2, i3, i4, i5, i6));
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat):DMat = applyi(Array(i1, i2, i3, i4, i5, i6, i7));
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat):DMat = applyi(Array(i1, i2, i3, i4, i5, i6, i7, i8));
+  
+  /** apply to an index IMat, and mirror its structure in the result */
+  
+  override def apply(inds:IMat):DMat = {
+      inds match {
+      case aa:MatrixWildcard => {
+        val out = DMat.newOrCheckDMat(length, 1, null, GUID, inds.GUID, "apply(?)".##);
+        System.arraycopy(data, 0, out.data, 0, length);
+        out
+      }
+      case _ => {
+        val out = DMat.newOrCheckDMat(inds.dims, null, GUID, inds.GUID, "apply IMat".##);
+        var i = 0;
+        while (i < inds.length) {
+          out.data(i) = data(inds.data(i));
+          i += 1;
+        }
+        out;
+      }
+      }
+    }
+  
+    /** apply to set of Index matrices */
+  
+  def applyHelper(inds:Array[IMat], out:DMat, offset0:Int, outoffset0:Int, inum:Int):Unit = {
+    val mat:IMat = inds(inum);
+    val offset = offset0 * _dims(inum);
+    val outoffset = outoffset0 * out._dims(inum);
+    if (inum == 0) {
+      if (mat.asInstanceOf[AnyRef] == null) {
+        System.arraycopy(data, offset, out.data, outoffset, _dims(inum));
+      } else {
+        var i = 0;
+        while (i < mat.length) {
+          out.data(outoffset + i) = data(mat.data(i) + offset);
+          i += 1;
+        }
+      }
+    } else {
+      if (mat.asInstanceOf[AnyRef] == null) {
+        var i = 0;
+        while (i < _dims(inum)) {
+          applyHelper(inds, out, offset + i, outoffset + i, inum-1);
+          i += 1;
+        }
+      } else {
+        var i = 0;
+        while (i < mat.length) {
+          applyHelper (inds, out, offset + mat.data(i), outoffset + i, inum-1);
+          i += 1;
+        }
+      }
+    }
+  }
+  
+  def apply(inds0:List[IMat]):DMat = applyi(inds0.toArray);
+  
+  def applyi(inds:Array[IMat]):DMat = {  
+    val newdims = new Array[Int](_dims.length)
+    val newinds = new Array[IMat](_dims.length)
+    var j = 0
+    for (i <- 0 until _dims.length) {
+      inds(i) match {
+        case aa:MatrixWildcard => {
+          newdims(i) = _dims(i); 
+        }
+        case _ => {
+          newdims(i) = inds(i).length;
+          newinds(i) = inds(i)
+        }
+      }
+    }
+    val out = DMat.newOrCheckDMat(newdims, null, GUID, ND.hashGUIDs(inds), "apply".##);
+    applyHelper(newinds, out, 0, 0, inds.length-1)
+    out
+  }
+ 
+  /** Basic 1D/2D updating with Ints */
+  /* these need to be implemented in subclasses */
 
-  override def apply(a:IMat, b:IMat):DMat = DMat(gapply(a, b))	
-
-  override def apply(a:IMat, b:Int):DMat = DMat(gapply(a, b))	
-
-  override def apply(a:Int, b:IMat):DMat = DMat(gapply(a, b))
-  
-  override def apply(a:Mat):DMat = DMat(gapply(a.asInstanceOf[IMat]))
-  
-  override def apply(a:Mat, b:Mat):DMat = DMat(gapply(a.asInstanceOf[IMat], b.asInstanceOf[IMat]))
-  
-  override def apply(a:Mat, b:Int):DMat = DMat(gapply(a.asInstanceOf[IMat], b))
-  
-  override def apply(a:Int, b:Mat):DMat = DMat(gapply(a, b.asInstanceOf[IMat]))
-  
-  override def colslice(a:Int, b:Int, out:Mat) = DMat(gcolslice(a, b, out, Mat.oneBased))
-  
-  override def colslice(a:Int, b:Int, out:Mat, c:Int) = DMat(gcolslice(a, b, out, c))
-  
-  override def rowslice(a:Int, b:Int, out:Mat) = DMat(growslice(a, b, out, Mat.oneBased))
-  
-  override def rowslice(a:Int, b:Int, out:Mat, c:Int) = DMat(growslice(a, b, out, c))
-
-  
   override def update(i:Int, b:Double):DMat = {_update(i, b); this}
-  
   override def update(i:Int, j:Int, b:Double):DMat = {_update(i, j, b); this}
   
-  override def update(i:Int, b:Float):DMat = {_update(i, b.toDouble); this}
+  /** Basic 2D sliced updating with Ints and IMats */
   
-  override def update(i:Int, j:Int, b:Float):DMat = {_update(i, j, b.toDouble); this}
+  override def update(iv:IMat, b:Double):DMat = DMat(_update(iv, b));
+  override def update(iv:IMat, jv:IMat, b:Double):DMat = DMat(_update(iv, jv, b));
   
-  override def update(i:Int, b:Int):DMat = {_update(i, b.toDouble); this}
+  def update(iv:IMat, jv:IMat, b:DMat):DMat = DMat(_update(iv, jv, b));
   
-  override def update(i:Int, j:Int, b:Int):DMat = {_update(i, j, b.toDouble); this}
+  /* not needed in subclasses */
   
-  
-  override def update(iv:IMat, b:Double):DMat = DMat(_update(iv, b))
-  
-  override def update(iv:IMat, jv:IMat, b:Double):DMat = DMat(_update(iv, jv, b))
-  
-  override def update(i:Int, jv:IMat, b:Double):DMat = DMat(_update(IMat.ielem(i), jv, b))
-  
-  override def update(iv:IMat, j:Int, b:Double):DMat = DMat(_update(iv, IMat.ielem(j), b))
-  
-  override def update(iv:Mat, b:Double):DMat = DMat(_update(iv.asInstanceOf[IMat], b))
-  
-  override def update(iv:Mat, jv:Mat, b:Double):DMat = DMat(_update(iv.asInstanceOf[IMat], jv.asInstanceOf[IMat], b))
+  override def update(i:Int, b:Float):DMat = update(i, b.toDouble);
+  override def update(i:Int, j:Int, b:Float):DMat = update(i, j, b.toDouble);
+  override def update(i:Int, b:Int):DMat = update(i, b.toDouble); 
+  override def update(i:Int, j:Int, b:Int):DMat = update(i, j, b.toDouble); 
 
-  override def update(i:Int, jv:Mat, b:Double):DMat = DMat(_update(IMat.ielem(i), jv.asInstanceOf[IMat], b))
-  
-  override def update(iv:Mat, j:Int, b:Double):DMat = DMat(_update(iv.asInstanceOf[IMat], IMat.ielem(j), b))
-  
-  
-  override def update(iv:IMat, b:Float):DMat = DMat(_update(iv, b.toDouble))
-  
-  override def update(iv:IMat, jv:IMat, b:Float):DMat = DMat(_update(iv, jv, b.toDouble))
-  
-  override def update(i:Int, jv:IMat, b:Float):DMat = DMat(_update(IMat.ielem(i), jv, b.toDouble))
-  
-  override def update(iv:IMat, j:Int, b:Float):DMat = DMat(_update(iv, IMat.ielem(j), b.toDouble))
-  
-  override def update(iv:Mat, b:Float):DMat = DMat(_update(iv.asInstanceOf[IMat], b.toDouble))
-  
-  override def update(iv:Mat, jv:Mat, b:Float):DMat = DMat(_update(iv.asInstanceOf[IMat], jv.asInstanceOf[IMat], b.toDouble))
+  override def update(i:Int, jv:IMat, b:Double):DMat = update(IMat.ielem(i), jv, b);
+  override def update(iv:IMat, j:Int, b:Double):DMat = update(iv, IMat.ielem(j), b);
 
-  override def update(i:Int, jv:Mat, b:Float):DMat = DMat(_update(IMat.ielem(i), jv.asInstanceOf[IMat], b.toDouble))
+  override def update(iv:IMat, b:Float):DMat = update(iv, b.toDouble);
+  override def update(iv:IMat, jv:IMat, b:Float):DMat = update(iv, jv, b.toDouble);
+  override def update(i:Int, jv:IMat, b:Float):DMat = update(IMat.ielem(i), jv, b.toDouble);
+  override def update(iv:IMat, j:Int, b:Float):DMat = update(iv, IMat.ielem(j), b.toDouble);
+
+  override def update(iv:IMat, b:Int):DMat = update(iv, b.toDouble);
+  override def update(iv:IMat, jv:IMat, b:Int):DMat = update(iv, jv, b.toDouble);
+  override def update(i:Int, jv:IMat, b:Int):DMat = update(IMat.ielem(i), jv, b.toDouble);
+  override def update(iv:IMat, j:Int, b:Int):DMat = update(iv, IMat.ielem(j), b.toDouble);
+
+  def update(iv:IMat, j:Int, b:DMat):DMat = update(iv, IMat.ielem(j), b);
+  def update(i:Int, jv:IMat, b:DMat):DMat = update(IMat.ielem(i), jv, b);
+
+  override def update(iv:IMat, b:Mat):DMat = update(iv, DMat(b));
+  override def update(iv:IMat, jv:IMat, b:Mat):DMat = update(iv, jv, DMat(b));
+  override def update(iv:IMat, j:Int, b:Mat):DMat = update(iv, IMat.ielem(j), DMat(b));
+  override def update(i:Int, jv:IMat, b:Mat):DMat = update(IMat.ielem(i), jv, DMat(b));
+
+  /** ND single element updates */
   
-  override def update(iv:Mat, j:Int, b:Float):DMat = DMat(_update(iv.asInstanceOf[IMat], IMat.ielem(j), b.toDouble))
+  def update(i1:Int, i2:Int, i3:Int, vv:Double):DMat = updatev(Array(i1, i2, i3), vv)
+  def update(i1:Int, i2:Int, i3:Int, i4:Int, vv:Double):DMat = updatev(Array(i1, i2, i3, i4), vv)
+  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, vv:Double):DMat = updatev(Array(i1, i2, i3, i4, i5), vv)
+  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, vv:Double):DMat = updatev(Array(i1, i2, i3, i4, i5, i6), vv)
+  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, vv:Double):DMat = updatev(Array(i1, i2, i3, i4, i5, i6, i7), vv)
+  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int, vv:Double):DMat = updatev(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv)
  
-    
-  override def update(iv:IMat, b:Int):DMat = DMat(_update(iv, b.toDouble))
+  /** General ND sliced updating with IMats */
   
-  override def update(iv:IMat, jv:IMat, b:Int):DMat = DMat(_update(iv, jv, b.toDouble))
+  def update(i1:IMat, i2:IMat, i3:IMat, vv:DMat):DMat = updatei(Array(i1, i2, i3), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:DMat):DMat = updatei(Array(i1, i2, i3, i4), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:DMat):DMat = updatei(Array(i1, i2, i3, i4, i5), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:DMat):DMat = updatei(Array(i1, i2, i3, i4, i5, i6), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:DMat):DMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:DMat):DMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv)
   
-  override def update(i:Int, jv:IMat, b:Int):DMat = DMat(_update(IMat.ielem(i), jv, b.toDouble))
+  override def update(i1:IMat, i2:IMat, i3:IMat, vv:Mat):DMat = updatei(Array(i1, i2, i3), DMat(vv))
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:Mat):DMat = updatei(Array(i1, i2, i3, i4), DMat(vv))
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:Mat):DMat = updatei(Array(i1, i2, i3, i4, i5), DMat(vv))
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:Mat):DMat = updatei(Array(i1, i2, i3, i4, i5, i6), DMat(vv))
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:Mat):DMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7), DMat(vv))
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:Mat):DMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7, i8), DMat(vv))
   
-  override def update(iv:IMat, j:Int, b:Int):DMat = DMat(_update(iv, IMat.ielem(j), b.toDouble))
-  
-  override def update(iv:Mat, b:Int):DMat = DMat(_update(iv.asInstanceOf[IMat], b.toDouble))
-  
-  override def update(iv:Mat, jv:Mat, b:Int):DMat = DMat(_update(iv.asInstanceOf[IMat], jv.asInstanceOf[IMat], b.toDouble))
+  override def update(i1:IMat, i2:IMat, i3:IMat, vv:Double):DMat = updatei(Array(i1, i2, i3), vv)
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:Double):DMat = updatei(Array(i1, i2, i3, i4), vv)
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:Double):DMat = updatei(Array(i1, i2, i3, i4, i5), vv)
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:Double):DMat = updatei(Array(i1, i2, i3, i4, i5, i6), vv)
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:Double):DMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7), vv)
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:Double):DMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv)
+ 
 
-  override def update(i:Int, jv:Mat, b:Int):DMat = DMat(_update(IMat.ielem(i), jv.asInstanceOf[IMat], b.toDouble))
+  def update(inds:IMat, vv:DMat):DMat = {
+    inds match {
+    case aa:MatrixWildcard => {
+      if (vv.length == length) {
+        System.arraycopy(vv.data, 0, data, 0, length);
+        this;
+      } else {
+        throw new RuntimeException("update(?) RHS dimension doesnt match")
+      }
+    }
+    case _ => {
+      if (inds.nrows == vv.nrows && inds.ncols == vv.ncols) {
+        var i = 0;
+        while (i < inds.length) {
+          data(inds.data(i)) = vv.data(i);
+          i += 1;
+        }
+      this;
+      } else {
+        throw new RuntimeException("update(ii) RHS dimensions dont match")
+      }
+    }
+    }
+  }
   
-  override def update(iv:Mat, j:Int, b:Int):DMat = DMat(_update(iv.asInstanceOf[IMat], IMat.ielem(j), b.toDouble))
+  def update(inds:List[Int], v:Double):DMat = updatev(inds.toArray, v)
   
+  def updatev(inds:Array[Int], v:Double):DMat = {
+    val indx = ND.linearize(inds, dims.data); 
+    data(indx) = v
+    this
+  }
   
-  def update(iv:IMat, b:DMat):DMat = DMat(_update(iv, b))
+ 
+  def updateHelper(inds:Array[IMat], vv:DMat, newdims:Array[Int], offset0:Int, voffset0:Int, inum:Int):Unit = {
+    val mat:IMat = inds(inum);
+    val offset = offset0 * _dims(inum);
+    val voffset = voffset0 * newdims(inum);
+    if (inum == 0) {
+      if (mat.asInstanceOf[AnyRef] == null) {
+        System.arraycopy(vv.data, voffset, data, offset, _dims(inum));
+      } else {
+        var i = 0;
+        while (i < mat.length) {
+          data(offset + mat.data(i)) = vv.data(i + voffset);
+          i += 1;
+        }
+      }
+    } else {
+      if (mat.asInstanceOf[AnyRef] == null) {
+        var i = 0;
+        while (i < _dims(inum)) {
+          updateHelper(inds, vv, newdims, offset + i, voffset + i, inum-1);
+          i += 1;
+        }
+      } else {
+        var i = 0;
+        while (i < mat.length) {
+          updateHelper (inds, vv, newdims, offset + mat.data(i), voffset + i, inum-1);
+          i += 1;
+        }
+      }
+    }
+  }
   
-  def update(iv:IMat, jv:IMat, b:DMat):DMat = DMat(_update(iv, jv, b))
+  def updatei(inds:Array[IMat], vv:DMat):DMat = {
+    if (inds.length != _dims.length) {
+      throw new RuntimeException("DMat update wrong number of dims")
+    }
+    val newdims = new Array[Int](_dims.length)
+    val newinds = new Array[IMat](_dims.length)
+    var j = 0
+    for (i <- 0 until _dims.length) {
+      inds(i) match {
+        case aa:MatrixWildcard => {
+          newdims(i) = _dims(i); 
+        }
+        case _ => {
+          newdims(i) = inds(i).length;
+          newinds(i) = inds(i)
+        }
+      }
+    }
+    ND.checkDims("DMat update:", ND.trimDims(newdims), ND.trimDims(vv._dims))
+    updateHelper(newinds, vv, newdims, 0, 0, inds.length-1)
+    this
+  }
+  
 
-  def update(iv:IMat, j:Int, b:DMat):DMat = DMat(_update(iv, IMat.ielem(j), b))
-
-  def update(i:Int, jv:IMat, b:DMat):DMat = DMat(_update(IMat.ielem(i), jv, b))
+  def updateHelper(inds:Array[IMat], v:Double, offset0:Int, inum:Int):Unit = {
+    val mat:IMat = inds(inum);
+    val offset = offset0 * _dims(inum);
+    if (inum == 0) {
+      mat match {
+      case aa:MatrixWildcard => {
+        Arrays.fill(data, offset, offset + _dims(inum), v);
+      }
+      case _ => {
+        var i = 0;
+        while (i < mat.length) {
+          data(offset + mat.data(i)) = v
+          i += 1;
+        }
+      }
+      }
+    } else {
+      mat match {
+      case aa:MatrixWildcard => {
+        var i = 0;
+        while (i < _dims(inum)) {
+          updateHelper(inds, v, offset + i, inum-1);
+          i += 1;
+        }
+      }
+      case _ => {
+        var i = 0;
+        while (i < mat.length) {
+          updateHelper (inds, v, offset + mat.data(i),  inum-1);
+          i += 1;
+        }
+      }
+      }
+    }
+  }
   
+  def updatei(inds:Array[IMat], v:Double):DMat = {
+    val newdims = new Array[Int](dims.length)
+    for (i <- 0 until dims.length) {
+      newdims(i) = inds(i) match {case aa:MatrixWildcard => _dims(i); case _ => inds(i).length}
+    }
+    updateHelper(inds, v, 0, inds.length-1)
+    this
+  }
   
-  override def update(iv:IMat, b:Mat):DMat = DMat(_update(iv, b.asInstanceOf[DMat]))
+   /** Column slicing. Actually slices all but the last dimension */
+
+  override def colslice(a:Int, b:Int):DMat = {
+    val newdims = dims.data.clone;
+    newdims(dims.length-1) = b-a;
+    val out = DMat.newOrCheckDMat(newdims, null, GUID, a, b, "colslice".##)
+    colslice(a, b, out)
+    out
+  }
+  override def colslice(a:Int, b:Int, out:Mat) = DMat(gcolslice(a, b, out, Mat.oneBased))
+  override def colslice(a:Int, b:Int, out:Mat, c:Int) = DMat(gcolslice(a, b, out, c));
+  override def colslice(a:Int, b:Int, out:Mat, c:Int, pb:Boolean) = DMat(gcolslice(a, b, out, c));
+
+  override def rowslice(a:Int, b:Int, out:Mat) = DMat(growslice(a, b, out, Mat.oneBased))
+  override def rowslice(a:Int, b:Int, out:Mat, c:Int) = DMat(growslice(a, b, out, c));
+  override def rowslice(a:Int, b:Int):DMat = {
+    val out = DMat.newOrCheckDMat(b-a, ncols, null, GUID, a, b, "rowslice".##)
+    rowslice(a, b, out)
+    out
+  }
   
-  override def update(iv:IMat, jv:IMat, b:Mat):DMat = DMat(_update(iv, jv, b.asInstanceOf[DMat]))
+    /** reshaping */
 
-  override def update(iv:IMat, j:Int, b:Mat):DMat = DMat(_update(iv, IMat.ielem(j), b.asInstanceOf[DMat]))
-
-  override def update(i:Int, jv:IMat, b:Mat):DMat = DMat(_update(IMat.ielem(i), jv, b.asInstanceOf[DMat]))
-   
-  override def update(iv:Mat, b:Mat):DMat = DMat(_update(iv.asInstanceOf[IMat], b.asInstanceOf[DMat]))
+  override def reshape(newdims:Int*):DMat = reshape(newdims.toArray)
   
-  override def update(iv:Mat, jv:Mat, b:Mat):DMat = DMat(_update(iv.asInstanceOf[IMat], jv.asInstanceOf[IMat], b.asInstanceOf[DMat]))
+  override def reshape(newdims:Array[Int]):DMat = {
+    if (newdims.reduce(_*_) == length) {
+      val out = DMat.newOrCheckDMat(newdims, null, GUID, ND.hashInts(newdims), "reshape".##)
+      System.arraycopy(data, 0, out.data, 0, length)
+      out
+    } else {
+      throw new RuntimeException("DMat reshape total length doesnt match")
+    }
+  }
+  
+  override def reshapeView(newdims:Int*):DMat = reshapeView(newdims.toArray)
+  
+  override def reshapeView(newdims:Array[Int]):DMat = {
+    if (newdims.reduce(_*_) == length) {
+      val out = DMat(newdims, data);
+      out.setGUID(MurmurHash3_x64_64(Array(GUID), "reshapeView".##));
+      out
+    } else {
+      throw new RuntimeException("DMat reshapeView total length doesnt match")
+    }
+  }
 
-  override def update(iv:Mat, j:Int, b:Mat):DMat = DMat(_update(iv.asInstanceOf[IMat], IMat.ielem(j), b.asInstanceOf[DMat]))
+  /** transpose */
+  override def transpose(dims:Array[Int]):DMat = transpose(MatFunctions.irow(dims))
 
-  override def update(i:Int, jv:Mat, b:Mat):DMat = DMat(_update(IMat.ielem(i), jv.asInstanceOf[IMat], b.asInstanceOf[DMat]))
+  override def transpose(perm:IMat):DMat = { 
+    val nd = _dims.length
+    if (perm.length != nd) { 
+      throw new RuntimeException("DMat transpose bad permutation ")
+    }
+    val xdims = MatFunctions.irow(_dims)
+    val iperm = MatFunctions.invperm(perm)
+    val pdims = xdims(perm).data
+    var out = DMat.newOrCheckDMat(pdims, null, GUID, ND.hashInts(pdims), "transpose".##)
+    var out2 = DMat.newOrCheckDMat(pdims, null, GUID, ND.hashInts(pdims), "transpose1".##)
+    System.arraycopy(data, 0, out.data, 0, length)
+    for (i <- (nd - 1) until 0 by -1) { 
+      if (iperm(i) != i) { 
+        val (d1, d2, d3) = ND.getDims(i, iperm, xdims)
+        if (d1 > 1 && d2 > 1) { 
+ //         println("spermute %d %d %d" format (d1,d2,d3))
+          dpermute(d1, d2, d3, out.data, out2.data)
+          val tmp = out2
+          out2 = out
+          out = tmp
+        }
+        ND.rotate(i, iperm, xdims)
+      } 
+    }
+    out
+  }
+  
+  override def transpose(i1:Int, i2:Int):DMat = transpose(Array(i1, i2))
+  override def transpose(i1:Int, i2:Int, i3:Int):DMat = transpose(Array(i1, i2, i3))
+  override def transpose(i1:Int, i2:Int, i3:Int, i4:Int):DMat = transpose(Array(i1, i2, i3, i4))
+  override def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):DMat = transpose(Array(i1, i2, i3, i4, i5))
+  override def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):DMat = transpose(Array(i1, i2, i3, i4, i5, i6))
+  override def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int):DMat = transpose(Array(i1, i2, i3, i4, i5, i6, i7))
+  override def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int):DMat = transpose(Array(i1, i2, i3, i4, i5, i6, i7, i8))
   
   
   def quickdists(b:DMat) = {
@@ -234,15 +528,17 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
     out
   }
   
-  def ddMatOp(b: Mat, f:(Double, Double) => Double, out:Mat) = 
+/*  def ddMatOp(b: Mat, f:(Double, Double) => Double, out:Mat) = 
     b match {
       case bb:DMat => DMat(ggMatOp(bb, f, out))
       case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)	
-    }
+    } */
 
-  def ddMatOpv(b: Mat, f:(Array[Double],Int,Int,Array[Double],Int,Int,Array[Double],Int,Int,Int) => Double, out:Mat) = 
-    b match {
-      case bb:DMat => DMat(ggMatOpv(bb, f, out))
+  def ddMatOpv(b: Mat, f:(Array[Double],Int,Int,Array[Double],Int,Int,Array[Double],Int,Int,Int) => Double, optype:Int, out:Mat) = 
+    (this, b) match {
+      case (aa:GDMat, bb:DMat) => aa.gOp(bb, out, optype);
+      case (aa:DMat, bb:GDMat) => GDMat(this).gOp(bb, out, optype);
+      case (aa:DMat, bb:DMat) => DMat(ggMatOpv(bb, f, out));
       case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)	
     }
 
@@ -276,35 +572,48 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
       throw new RuntimeException("DMat copyTo dimensions mismatch")
     }
   	a match {
-  	  case out:DMat => System.arraycopy(data, 0, out.data, 0, length)
-  	  case out:FMat => {Mat.copyToFloatArray(data, 0, out.data, 0, length)}
-  	  case out:IMat => {Mat.copyToIntArray(data, 0, out.data, 0, length)}
-  	  case out:GDMat => out.copyFrom(this)
+  	case out:GDMat => out.copyFrom(this);
+  	case out:DMat => System.arraycopy(data, 0, out.data, 0, length);
+  	case out:FMat => {Mat.copyToFloatArray(data, 0, out.data, 0, length)};
+  	case out:IMat => {Mat.copyToIntArray(data, 0, out.data, 0, length)};
   	}
   	a
   }
   
   override def copy = {
-  	val out = DMat.newOrCheckDMat(nrows, ncols, null, GUID, "copy".##)
+  	val out = DMat.newOrCheckDMat(dims, null, GUID, "copy".##)
   	System.arraycopy(data, 0, out.data, 0, length)
   	out
   }
   
   override def newcopy = {
-  	val out = DMat(nrows, ncols)
+  	val out = DMat.make(dims)
   	System.arraycopy(data, 0, out.data, 0, length)
   	out
   }
   
   override def zeros(nr:Int, nc:Int) = {
-    val out = DMat(nr, nc)
-  	out
+    DMat.zeros(nr, nc);
+  }
+    
+  override def zeros(dims:IMat) = {
+    DMat.zeros(dims);
   }
   
   override def ones(nr:Int, nc:Int) = {
-  	val out = DMat(nr, nc)
-  	Arrays.fill(out.data, 1)
-  	out
+  	DMat.ones(nr, nc)
+  }
+  
+  override def ones(dims:IMat) = {
+  	DMat.ones(dims)
+  }
+  
+  override def one = {
+    DMat.ones(1, 1)
+  }
+  
+  override def zero = {
+    DMat.zeros(1, 1)
   }
   
   override def izeros(m:Int, n:Int) = {
@@ -324,7 +633,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
 
   def fDMult(aa:DMat, outmat:Mat):DMat = {
   	if (ncols == 1 && nrows == 1) {
-  		val out = DMat.newOrCheckDMat(aa.nrows, aa.ncols, outmat, GUID, aa.GUID, "dMult".##)
+  		val out = DMat.newOrCheckDMat(aa.dims, outmat, GUID, aa.GUID, "dMult".##)
   		Mat.nflops += aa.length
   		var i = 0
   		val dvar = data(0)
@@ -334,7 +643,7 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   		}			    
   		out			  
   	} else if (aa.ncols == 1 && aa.nrows == 1) {
-  		val out = DMat.newOrCheckDMat(nrows, ncols, outmat, GUID, aa.GUID, "dMult".##)
+  		val out = DMat.newOrCheckDMat(dims, outmat, GUID, aa.GUID, "dMult".##)
   		Mat.nflops += length
   		var i = 0
   		val dvar = aa.data(0)
@@ -806,12 +1115,13 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
     } else if (data.size >= nr*nc) {
       new DMat(nr, nc, data)
     } else {
-      DMat(nr, nc, new Array[Double]((nr*nc*Mat.recycleGrow).toInt))
+      new DMat(nr, nc, new Array[Double]((nr*nc*Mat.recycleGrow).toInt))
     }  
   }
   /*
    * Routines to operate on two DMats. These are the compute routines.
    */
+  import GMat.BinOp._
   override def unary_- () = ddMatOpScalarv(-1, DMat.vecMulFun, null)
   def *  (b : DMat) = fDMult(b, null)
   def *  (b : SDMat) = fSMult(b, null)
@@ -823,26 +1133,89 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   def ^* (b : DMat) = Tmult(b, null)
   def /< (b : DMat) = solvel(b)
   def \\ (b : DMat) = solver(b)
-  def ^  (b : DMat) = ddMatOp(b, DMat.powFun, null)
 
-  def +  (b : DMat) = ddMatOpv(b, DMat.vecAddFun, null)
-  def -  (b : DMat) = ddMatOpv(b, DMat.vecSubFun, null)
-  def *@ (b : DMat) = ddMatOpv(b, DMat.vecMulFun, null)
-  def /  (b : DMat) = ddMatOpv(b, DMat.vecDivFun, null)
-  def ∘  (b : DMat) = ddMatOpv(b, DMat.vecMulFun, null)
+
+  def +  (b : DMat) = ddMatOpv(b, DMat.vecAddFun, op_add, null)
+  def -  (b : DMat) = ddMatOpv(b, DMat.vecSubFun, op_sub, null)
+  def *@ (b : DMat) = ddMatOpv(b, DMat.vecMulFun, op_mul, null)
+  def /  (b : DMat) = ddMatOpv(b, DMat.vecDivFun, op_div, null)
+  def ∘  (b : DMat) = ddMatOpv(b, DMat.vecMulFun, op_mul, null)
+  def ^  (b : DMat) = ddMatOpv(b, DMat.vecPowFun, op_pow, null)
+    
   def ∙  (b : DMat):DMat = dot(b)
   def ∙→ (b : DMat):DMat = dotr(b)
   def ∙∙ (b : DMat):Double = ddot(b)
   def ** (b : DMat) = kron(b, null)
   def ⊗  (b : DMat) = kron(b, null)
 
-  def >   (b : DMat) = ddMatOp(b, DMat.gtFun, null)
-  def <   (b : DMat) = ddMatOp(b, DMat.ltFun, null)
-  def ==  (b : DMat) = ddMatOp(b, DMat.eqFun, null)
-  def === (b : DMat) = ddMatOp(b, DMat.eqFun, null)
-  def >=  (b : DMat) = ddMatOp(b, DMat.geFun, null)
-  def <=  (b : DMat) = ddMatOp(b, DMat.leFun, null)
-  def !=  (b : DMat) = ddMatOp(b, DMat.neFun, null)
+  def >   (b : DMat) = ddMatOpv(b, DMat.vecGTFun, op_gt, null)
+  def <   (b : DMat) = ddMatOpv(b, DMat.vecLTFun, op_lt, null)
+  def ==  (b : DMat) = ddMatOpv(b, DMat.vecEQFun, op_eq, null)
+  def === (b : DMat) = ddMatOpv(b, DMat.vecEQFun, op_eq, null)
+  def >=  (b : DMat) = ddMatOpv(b, DMat.vecGEFun, op_ge, null)
+  def <=  (b : DMat) = ddMatOpv(b, DMat.vecLEFun, op_le, null)
+  def !=  (b : DMat) = ddMatOpv(b, DMat.vecNEFun, op_ne, null)
+  
+  def max(b: DMat) = ddMatOpv(b, DMat.vecMaxFun, op_max, null)
+  def min(b: DMat) = ddMatOpv(b, DMat.vecMinFun, op_min, null)
+  
+  def checkOne(b:Seq[Int], name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("DMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+  def checkOne(b:IMat, name:String):Int = {
+    if (b.length > 1) throw new RuntimeException("DMat %s only takes one argument" format name);
+    b(0);
+  }
+  
+ def reduce(inds:Array[Int], fctn:(DMat)=>DMat, opname:String):DMat = {
+    val alldims = izeros(_dims.length,1)
+    val xinds = new IMat(inds.length, 1, inds)
+    val xdims = new IMat(_dims.length, 1, _dims)
+    alldims(xinds) = 1
+    if (alldims.data.reduce(_+_) != inds.length) {
+      throw new RuntimeException(opname+ " indices arent a legal subset of dims")
+    }
+    val restinds = MatFunctions.find(alldims == 0);
+    val tmp = transpose((xinds on restinds).data);
+    val tmpF = new DMat(xdims(xinds).data.reduce(_*_), xdims(restinds).data.reduce(_*_), tmp.data);
+    val tmpSum:DMat = fctn(tmpF);
+    val out1 = new DMat((iones(inds.length,1) on xdims(restinds)).data, tmpSum.data);
+    out1.transpose(MatFunctions.invperm(xinds on restinds).data);
+  }
+  
+  /** standard reducers on one dimension */
+  
+  override def sum(ind:Int):DMat = ddReduceOpv(ind, DMat.idFun, DMat.vecAddFun, null);
+  override def prod(ind:Int):DMat = ddReduceOpv(ind, DMat.idFun, DMat.vecMulFun, null);
+  override def maxi(ind:Int):DMat = ddReduceOpv(ind, DMat.idFun, DMat.vecMaxFun, null);
+  override def mini(ind:Int):DMat = ddReduceOpv(ind, DMat.idFun, DMat.vecMinFun, null);
+  override def amax(ind:Int):DMat = ddReduceOpv(ind, DMat.idFun, DMat.vecMaxFun, null);
+  override def amin(ind:Int):DMat = ddReduceOpv(ind, DMat.idFun, DMat.vecMinFun, null);
+  override def mean(ind:Int):DMat = SciFunctions._mean(this, ind).asInstanceOf[DMat];
+  override def variance(ind:Int):DMat = SciFunctions._variance(this, ind).asInstanceOf[DMat];
+  
+  /** reduce on several dimensions, potentially very expensive */
+  
+  def sum(inds:Array[Int]):DMat = reduce(inds, SciFunctions.sum, "sum")
+  def prod(inds:Array[Int]):DMat = reduce(inds, SciFunctions.prod, "prod")
+  def mean(inds:Array[Int]):DMat = reduce(inds, SciFunctions.mean, "mean")
+  def variance(inds:Array[Int]):DMat = reduce(inds, SciFunctions.variance, "variance")
+  def maxi(inds:Array[Int]):DMat = reduce(inds, SciFunctions.maxi, "maxi")
+  def mini(inds:Array[Int]):DMat = reduce(inds, SciFunctions.mini, "mini")
+  def amax(inds:Array[Int]):DMat = reduce(inds, SciFunctions.maxi, "amax")
+  def amin(inds:Array[Int]):DMat = reduce(inds, SciFunctions.mini, "amin")
+  
+  override def sum(inds:IMat):DMat = reduce(inds.data, SciFunctions.sum, "sum")
+  override def prod(inds:IMat):DMat = reduce(inds.data, SciFunctions.prod, "prod")
+  override def mean(inds:IMat):DMat = reduce(inds.data, SciFunctions.mean, "mean")
+  override def variance(inds:IMat):DMat = reduce(inds.data, SciFunctions.variance, "variance")
+  override def maxi(inds:IMat):DMat = reduce(inds.data, SciFunctions.maxi, "maxi")
+  override def mini(inds:IMat):DMat = reduce(inds.data, SciFunctions.mini, "mini")
+  override def amax(inds:IMat):DMat = reduce(inds.data, SciFunctions.maxi, "amax")
+  override def amin(inds:IMat):DMat = reduce(inds.data, SciFunctions.mini, "amin")
+
 
   override def *  (b : Double) = fDMult(DMat.delem(b), null)
   override def +  (b : Double) = ddMatOpScalarv(b, DMat.vecAddFun, null)
@@ -859,6 +1232,9 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   override def <=  (b : Double) = ddMatOpScalar(b, DMat.leFun, null)
   override def !=  (b : Double) = ddMatOpScalar(b, DMat.neFun, null) 
   
+  override def min  (b : Double) = ddMatOpScalar(b, DMat.minFun, null)
+  override def max  (b : Double) = ddMatOpScalar(b, DMat.maxFun, null) 
+  
   override def *  (b : Float) = fDMult(DMat.delem(b), null)
   override def +  (b : Float) = ddMatOpScalarv(b, DMat.vecAddFun, null)
   override def -  (b : Float) = ddMatOpScalarv(b, DMat.vecSubFun, null)
@@ -874,6 +1250,9 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   override def <=  (b : Float) = ddMatOpScalar(b, DMat.leFun, null)
   override def !=  (b : Float) = ddMatOpScalar(b, DMat.neFun, null)
   
+  override def min  (b : Float) = ddMatOpScalar(b, DMat.minFun, null)
+  override def max  (b : Float) = ddMatOpScalar(b, DMat.maxFun, null)
+  
   override def *  (b : Int) = fDMult(DMat.delem(b), null)
   override def +  (b : Int) = ddMatOpScalarv(b, DMat.vecAddFun, null)
   override def -  (b : Int) = ddMatOpScalarv(b, DMat.vecSubFun, null)
@@ -888,6 +1267,9 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   override def >=  (b : Int) = ddMatOpScalar(b, DMat.geFun, null)
   override def <=  (b : Int) = ddMatOpScalar(b, DMat.leFun, null)
   override def !=  (b : Int) = ddMatOpScalar(b, DMat.neFun, null)
+  
+  override def min  (b : Int) = ddMatOpScalar(b, DMat.minFun, null)
+  override def max  (b : Int) = ddMatOpScalar(b, DMat.maxFun, null)
 
   def \ (b: DMat) = DMat(ghorzcat(b))
   def \ (b:Double) = DMat(ghorzcat(DMat.delem(b)))
@@ -938,7 +1320,8 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   def >=  (b : IMat) = Mop_GE.op(this, b, null)
   def <=  (b : IMat) = Mop_LE.op(this, b, null)
   def !=  (b : IMat) = Mop_NE.op(this, b, null)
-   
+  def max  (b : IMat) = Mop_Max.op(this, b, null)
+  def min  (b : IMat) = Mop_Min.op(this, b, null)   
  /*
   * Specialize to FMats to help the type system. 
   */ 
@@ -973,7 +1356,8 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   def >=  (b : FMat) = Mop_GE.op(this, b, null)
   def <=  (b : FMat) = Mop_LE.op(this, b, null)
   def !=  (b : FMat) = Mop_NE.op(this, b, null)
- 
+  def max  (b : FMat) = Mop_Max.op(this, b, null)
+  def min  (b : FMat) = Mop_Min.op(this, b, null)
  /*
   * Specialize to CMats to help the type system. 
   */ 
@@ -1008,6 +1392,8 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   def >=  (b : CMat) = Mop_GE.op(this, b, null)
   def <=  (b : CMat) = Mop_LE.op(this, b, null)
   def !=  (b : CMat) = Mop_NE.op(this, b, null)
+  def max  (b : CMat) = Mop_Max.op(this, b, null)
+  def min  (b : CMat) = Mop_Min.op(this, b, null)
    
  /*
   * Specialize to GMats to help the type system. 
@@ -1043,7 +1429,8 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   def >=  (b : GMat) = Mop_GE.op(this, b, null)
   def <=  (b : GMat) = Mop_LE.op(this, b, null)
   def !=  (b : GMat) = Mop_NE.op(this, b, null)
-  
+  def max  (b : GMat) = Mop_Max.op(this, b, null)
+  def min  (b : GMat) = Mop_Min.op(this, b, null)
  /*
   * Operators whose second arg is generic. 
   */ 
@@ -1078,11 +1465,12 @@ case class DMat(nr:Int, nc:Int, data0:Array[Double]) extends DenseMat[Double](nr
   override def ==  (b : Mat) = Mop_EQ.op(this, b, null)
   override def === (b : Mat) = Mop_EQ.op(this, b, null) 
   override def !=  (b : Mat) = Mop_NE.op(this, b, null)
-
+  override def max  (b : Mat) = Mop_Max.op(this, b, null)
+  override def min  (b : Mat) = Mop_Min.op(this, b, null)
 }
 
-class DPair (val omat:Mat, val mat:DMat) extends Pair{
-  
+class DPair (val omat:Mat, val mat:DMat) extends Pair(omat, mat) {
+	import GMat.BinOp._
   override def t:DMat = mat.tt(omat)
   /*
    * Compute routines
@@ -1095,12 +1483,12 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   def xT (b : DMat) = mat.multT(b, omat)
   def ^* (b : DMat) = mat.Tmult(b, omat)
   def Tx (b : DMat) = mat.Tmult(b, omat)
-  def + (b : DMat) = mat.ddMatOpv(b, DMat.vecAddFun, omat)
-  def - (b : DMat) = mat.ddMatOpv(b, DMat.vecSubFun, omat)
-  def *@ (b : DMat) = mat.ddMatOpv(b, DMat.vecMulFun, omat)
-  def ∘  (b : DMat) = mat.ddMatOpv(b, DMat.vecMulFun, omat)
-  def /  (b : DMat) = mat.ddMatOpv(b, DMat.vecDivFun, omat)
-  def ^ (b : DMat) = mat.ddMatOp(b, DMat.powFun, null) 
+  def + (b : DMat) = mat.ddMatOpv(b, DMat.vecAddFun, op_add, omat)
+  def - (b : DMat) = mat.ddMatOpv(b, DMat.vecSubFun, op_sub, omat)
+  def *@ (b : DMat) = mat.ddMatOpv(b, DMat.vecMulFun, op_mul, omat)
+  def ∘  (b : DMat) = mat.ddMatOpv(b, DMat.vecMulFun, op_mul, omat)
+  def /  (b : DMat) = mat.ddMatOpv(b, DMat.vecDivFun, op_div, omat)
+  def ^ (b : DMat) = mat.ddMatOpv(b, DMat.vecPowFun, op_pow, omat) 
   def dot (b :DMat) = mat.dot(b, omat)
   def dotr (b :DMat) = mat.dotr(b, omat)
   def ∙  (b :DMat) = mat.dot(b, omat)
@@ -1108,13 +1496,15 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   def ** (b : DMat) = mat.kron(b, omat)
   def ⊗  (b : DMat) = mat.kron(b, omat)
 
-  def > (b : DMat) = mat.ddMatOp(b, DMat.gtFun, omat)
-  def < (b : DMat) = mat.ddMatOp(b, DMat.ltFun, omat)
-  def == (b : DMat) = mat.ddMatOp(b, DMat.eqFun, omat)
-  def === (b : DMat) = mat.ddMatOp(b, DMat.eqFun, omat)
-  def >= (b : DMat) = mat.ddMatOp(b, DMat.geFun, omat)
-  def <= (b : DMat) = mat.ddMatOp(b, DMat.leFun, omat)
-  def != (b : DMat) = mat.ddMatOp(b, DMat.neFun, omat)  
+  def > (b : DMat) = mat.ddMatOpv(b, DMat.vecGTFun, op_gt, omat)
+  def < (b : DMat) = mat.ddMatOpv(b, DMat.vecLTFun, op_lt, omat)
+  def == (b : DMat) = mat.ddMatOpv(b, DMat.vecEQFun, op_eq, omat)
+  def === (b : DMat) = mat.ddMatOpv(b, DMat.vecEQFun, op_eq, omat)
+  def >= (b : DMat) = mat.ddMatOpv(b, DMat.vecGEFun, op_ge, omat)
+  def <= (b : DMat) = mat.ddMatOpv(b, DMat.vecLEFun, op_le, omat)
+  def != (b : DMat) = mat.ddMatOpv(b, DMat.vecNEFun, op_ne, omat)
+  def max (b : DMat) = mat.ddMatOpv(b, DMat.vecMaxFun, op_max, omat)
+  def min (b : DMat) = mat.ddMatOpv(b, DMat.vecMinFun, op_min, omat)
   
   override def * (b : Float) = mat.fDMult(DMat.delem(b), omat)
   override def + (b : Float) = mat.ddMatOpScalarv(b, DMat.vecAddFun, omat)
@@ -1131,7 +1521,9 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   override def >= (b : Float) = mat.ddMatOpScalar(b, DMat.geFun, omat)
   override def <= (b : Float) = mat.ddMatOpScalar(b, DMat.leFun, omat)
   override def != (b : Float) = mat.ddMatOpScalar(b, DMat.neFun, omat) 
-
+  override def max (b : Float) = mat.ddMatOpScalar(b, DMat.maxFun, omat)
+  override def min (b : Float) = mat.ddMatOpScalar(b, DMat.minFun, omat)
+  
   override def * (b : Double) = mat.fDMult(DMat.delem(b), omat) 
   override def + (b : Double) = mat.ddMatOpScalarv(b, DMat.vecAddFun, omat)
   override def - (b : Double) = mat.ddMatOpScalarv(b, DMat.vecSubFun, omat)
@@ -1147,6 +1539,8 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   override def >= (b : Double) = mat.ddMatOpScalar(b, DMat.geFun, omat)
   override def <= (b : Double) = mat.ddMatOpScalar(b, DMat.leFun, omat)
   override def != (b : Double) = mat.ddMatOpScalar(b, DMat.neFun, omat) 
+  override def max (b : Double) = mat.ddMatOpScalar(b, DMat.maxFun, omat)
+  override def min (b : Double) = mat.ddMatOpScalar(b, DMat.minFun, omat)
   
   override def * (b : Int) = mat.fDMult(DMat.delem(b), omat) 
   override def + (b : Int) = mat.ddMatOpScalarv(b, DMat.vecAddFun, omat)
@@ -1163,6 +1557,8 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   override def >= (b : Int) = mat.ddMatOpScalar(b, DMat.geFun, omat)
   override def <= (b : Int) = mat.ddMatOpScalar(b, DMat.leFun, omat)
   override def != (b : Int) = mat.ddMatOpScalar(b, DMat.neFun, omat)
+  override def max (b : Int) = mat.ddMatOpScalar(b, DMat.maxFun, omat)
+  override def min (b : Int) = mat.ddMatOpScalar(b, DMat.minFun, omat)
   
   /*
    * Specialize to IMat
@@ -1194,7 +1590,8 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   def >=  (b : IMat) = Mop_GE.op(mat, b, omat)
   def <=  (b : IMat) = Mop_LE.op(mat, b, omat)
   def !=  (b : IMat) = Mop_NE.op(mat, b, omat)
-  
+  def max  (b : IMat) = Mop_Max.op(mat, b, omat)
+  def min  (b : IMat) = Mop_Min.op(mat, b, omat)  
   /*
    * Specialize to FMat
    */
@@ -1225,7 +1622,8 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   def >=  (b : FMat) = Mop_GE.op(mat, b, omat)
   def <=  (b : FMat) = Mop_LE.op(mat, b, omat)
   def !=  (b : FMat) = Mop_NE.op(mat, b, omat)
-  
+  def max  (b : FMat) = Mop_Max.op(mat, b, omat)
+  def min  (b : FMat) = Mop_Min.op(mat, b, omat) 
   /*
    * Specialize to GMat
    */
@@ -1256,7 +1654,8 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   def >=  (b : GMat) = Mop_GE.op(mat, b, omat)
   def <=  (b : GMat) = Mop_LE.op(mat, b, omat)
   def !=  (b : GMat) = Mop_NE.op(mat, b, omat)
-  
+  def max  (b : GMat) = Mop_Max.op(mat, b, omat)
+  def min  (b : GMat) = Mop_Min.op(mat, b, omat) 
   /*
    * Generics
    */
@@ -1291,73 +1690,120 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair{
   override def ==  (b : Mat):Mat = Mop_EQ.op(mat, b, omat)
   override def === (b : Mat):Mat = Mop_EQ.op(mat, b, omat) 
   override def !=  (b : Mat):Mat = Mop_NE.op(mat, b, omat)
+  override def max  (b : Mat):Mat = Mop_Min.op(mat, b, omat)
 }
 
 object DMat {
   
-  def apply(nr:Int, nc:Int) = new DMat(nr, nc, new Array[Double](nr*nc)) 
+  def apply(nr:Int, nc:Int) = new DMat(nr, nc, new Array[Double](nr*nc));
   
-  def apply(a:DenseMat[Double]):DMat = {
-    val out = new DMat(a.nrows, a.ncols, a.data) 
-    out.setGUID(a.GUID)
-    out
+  def make(dims:Array[Int]):DMat = {
+    val length = dims.reduce(_*_);
+    if (Mat.debugMem) {
+      print("DMat"); 
+      dims.foreach((x) => print(" %d" format x));
+      println("");
+      if (length > Mat.debugMemThreshold) throw new RuntimeException("FMat alloc too large");
+    }
+    new DMat(dims, new Array[Double](length));   
+  }
+  
+  def make(dims:IMat):DMat = {
+     make(dims.data)   
   }
   
   def apply(a:Float) = delem(a)
   
   def apply(a:Int) = delem(a)
   
-  def apply(a:Double) = delem(a)
-
+  def apply(a:Double) = delem(a);
+  
   def apply(x:Mat):DMat = {
-    val out = DMat.newOrCheckDMat(x.nrows, x.ncols, null, x.GUID, "DMat".##)
+    val out:DMat = x match {
+      case _:GMat | _:GDMat | _:FMat | _:IMat | _:LMat | _:SDMat => DMat.newOrCheckDMat(x.dims, null, x.GUID, "DMat".##);
+      case ff:DMat => ff;
+      case dd:DenseMat[Double] @ unchecked => {val out = new DMat(dd.dims.data, dd._data); out.setGUID(dd.GUID); out}
+      case _ => throw new RuntimeException("DMat apply unknown argument");
+    }
     x match {
-      case dd:DMat => {System.arraycopy(dd.data, 0, out.data, 0, dd.length)}
+      case gg:GMat => {val ff = gg.toFMat(null); Mat.copyToDoubleArray(ff.data, 0, out.data, 0, ff.length)}
+      case gg:GDMat => gg.copyTo(out);
+      case _:DMat => {}
       case ff:FMat => {Mat.copyToDoubleArray(ff.data, 0, out.data, 0, ff.length)}
       case ii:IMat => {Mat.copyToDoubleArray(ii.data, 0, out.data, 0, ii.length)}
       case ii:LMat => {Mat.copyToDoubleArray(ii.data, 0, out.data, 0, ii.length)}
       case ss:SDMat => ss.full(out)
-      case gg:GMat => {val ff = gg.toFMat(null); Mat.copyToDoubleArray(ff.data, 0, out.data, 0, ff.length)}
-      case gg:GDMat => gg.toDMat(out)
-      case _ => throw new RuntimeException("Unsupported source type")
+      case dd:DenseMat[Float] @ unchecked => {}
     }
     out
   }
+  
+  def zeros(nr:Int, nc:Int) = {
+    val out = DMat(nr, nc)
+    out.clear
+    out
+  }
+
+  def zeros(dims:IMat) = {
+    val out = DMat.make(dims)
+    out.clear
+    out
+  }
    
-  def vecDiv(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
-    while (ci < cend) {
-      c(ci) = a(ai) / b(bi);  ai += ainc; bi += binc;  ci += cinc
-    }
-    0
+  def ones(nr:Int, nc:Int) = {
+    val out = DMat(nr, nc)
+    Arrays.fill(out.data, 1.0f)
+    out
+  }
+  
+  def ones(dims:IMat) = {
+    val out = DMat.make(dims)
+    Arrays.fill(out.data, 1.0f)
+    out
   }
     
   def vecAdd(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var i = 0
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
     while (i < n) {
-      c(ci) = a(ai) + b(bi);  ai += ainc; bi += binc;  ci += cinc; i += 1
+      c(ci) = a(ai) + b(bi);  ai += ainc; bi += binc;  ci += cinc; i += 1;
     }
     0
   }
   
   def vecSub(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
-    while (ci < cend) {
-      c(ci) = a(ai) - b(bi);  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
+    while (i < n) {
+      c(ci) = a(ai) - b(bi);  ai += ainc; bi += binc;  ci += cinc; i += 1;
     }
     0
   }
   
   def vecMul(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
-    while (ci < cend) {
-      c(ci) = a(ai) * b(bi);  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
+    while (i < n) {
+      c(ci) = a(ai) * b(bi);  ai += ainc; bi += binc;  ci += cinc; i += 1;
+    }
+    0
+  }
+  
+  def vecDiv(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
+    while (i < n) {
+      c(ci) = a(ai) / b(bi);  ai += ainc; bi += binc;  ci += cinc; i += 1;
+    }
+    0
+  }
+  
+  def vecPow(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
+    while (i < n) {
+      c(ci) = math.pow(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc; i += 1;
     }
     0
   }
   
   def vecMax(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var i = 0
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
     while (i < n) {
       c(ci) = math.max(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc; i += 1
     }
@@ -1373,56 +1819,56 @@ object DMat {
   }
  
  
- def vecEQ(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
-    while (ci < cend) {
-      c(ci) = if (a(ai) == b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
+  def vecEQ(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
+    while (i < n) {
+      c(ci) = if (a(ai) == b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc; i += 1;
     }
     0
   }
  
   def vecNE(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
-    while (ci < cend) {
-      c(ci) = if (a(ai) != b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
+    while (i < n) { 
+      c(ci) = if (a(ai) != b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc; i += 1;
     }
     0
   }
   
    def vecGT(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
-    while (ci < cend) {
-      c(ci) = if (a(ai) > b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
+    while (i < n) {
+      c(ci) = if (a(ai) > b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc; i += 1;
     }
     0
   }
  
   def vecLT(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
-    while (ci < cend) {
-      c(ci) = if (a(ai) < b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
+    while (i < n) {
+      c(ci) = if (a(ai) < b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc; i += 1;
     }
     0
   }
    def vecGE(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
-    while (ci < cend) {
-      c(ci) = if (a(ai) >= b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
+    while (i < n) {
+      c(ci) = if (a(ai) >= b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc; i += 1;
     }
     0
   }
  
   def vecLE(a:Array[Double], a0:Int, ainc:Int, b:Array[Double], b0:Int, binc:Int, c:Array[Double], c0:Int, cinc:Int, n:Int):Double = {
-    var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n * cinc;
-    while (ci < cend) {
-      c(ci) = if (a(ai) <= b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc
+    var ai = a0; var bi = b0; var ci = c0; var i = 0;
+    while (i < n) {
+      c(ci) = if (a(ai) <= b(bi)) 1f else 0f;  ai += ainc; bi += binc;  ci += cinc; i += 1;
     }
     0
   }
   
   def vecSum(a:Array[Double], a0:Int, ainc:Int, c:Array[Double], c0:Int, n:Int):Double = {
-    var ai = a0; var aend = a0 + n * ainc; var sum = 0.0;
-    while (ai < aend) {
+    var ai = a0; var sum = 0.0; var i = 0;
+    while (i < n) {
       sum += a(ai);  ai += ainc; 
     }
     c(c0) = sum;
@@ -1433,6 +1879,7 @@ object DMat {
   val vecSubFun = (vecSub _) 
   val vecMulFun = (vecMul _)
   val vecDivFun = (vecDiv _)
+  val vecPowFun = (vecPow _)
   val vecMaxFun = (vecMax _)
   val vecMinFun = (vecMin _)
   
@@ -1516,6 +1963,15 @@ object DMat {
     }
   }
   
+  def newOrCheckDMat(dims:Array[Int], out:Mat):DMat = {
+    if (out.asInstanceOf[AnyRef] != null && ND.checkDims("DMat:NewOrCheckDMat", dims, out.dims.data)) {
+      out.asInstanceOf[DMat]
+    } else {
+      DMat.make(dims)
+    }
+  }
+  
+  def newOrCheckDMat(dims:IMat, out:Mat):DMat = newOrCheckDMat(dims.data, out);
     
   def newOrCheckDMat(nr:Int, nc:Int, outmat:Mat, matGuid:Long, opHash:Int):DMat = {
     if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
@@ -1533,6 +1989,24 @@ object DMat {
     }
   }
   
+   def newOrCheckDMat(dims:Array[Int], out:Mat, matGuid:Long, opHash:Int):DMat = {
+    if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
+      newOrCheckDMat(dims, out)
+    } else {
+      val key = (matGuid, opHash)
+      val res = Mat.cache2(key)
+      if (res != null) {
+        newOrCheckDMat(dims, res)
+      } else {
+        val omat = newOrCheckDMat(dims, null)
+        Mat.cache2put(key, omat)
+        omat
+      }
+    }
+  }
+  
+  def newOrCheckDMat(dims:IMat, out:Mat, matGuid:Long, opHash:Int):DMat = newOrCheckDMat(dims.data, out, matGuid, opHash);
+  
   def newOrCheckDMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, opHash:Int):DMat = {
     if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
       newOrCheckDMat(nr, nc, outmat)
@@ -1548,6 +2022,24 @@ object DMat {
       }
     }
   }
+  
+  def newOrCheckDMat(dims:Array[Int], out:Mat, guid1:Long, guid2:Long, opHash:Int):DMat = {
+    if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
+      newOrCheckDMat(dims, out)
+    } else {
+      val key = (guid1, guid2, opHash)
+      val res = Mat.cache3(key)
+      if (res != null) {
+        newOrCheckDMat(dims, res)
+      } else {
+        val omat = newOrCheckDMat(dims, null)
+        Mat.cache3put(key, omat)
+        omat
+      }
+    }
+  }
+  
+  def newOrCheckDMat(dims:IMat, out:Mat, guid1:Long, guid2:Long, opHash:Int):DMat = newOrCheckDMat(dims.data, out, guid1, guid2, opHash);
     
   def newOrCheckDMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):DMat = {
     if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
@@ -1565,7 +2057,24 @@ object DMat {
     }
   }
  
+  def newOrCheckDMat(dims:Array[Int], out:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):DMat = {
+    if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
+      newOrCheckDMat(dims, out)
+    } else {
+      val key = (guid1, guid2, guid3, opHash)
+      val res = Mat.cache4(key)
+      if (res != null) {
+        newOrCheckDMat(dims, res)
+      } else {
+        val omat = newOrCheckDMat(dims, null)
+        Mat.cache4put(key, omat)
+        omat
+      }
+    }
+  }
   
+  def newOrCheckDMat(dims:IMat, out:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):DMat = newOrCheckDMat(dims.data, out, guid1, guid2, guid3, opHash);
+
 }
 
 

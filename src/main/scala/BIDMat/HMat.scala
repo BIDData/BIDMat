@@ -29,55 +29,6 @@ import net.jpountz.lz4._
  * Notes: Matrix I/O routines are now based on DataInput and DataOutput classes to provide direct support for HDFS. 
  */
 
-case class HMat(nr:Int, nc:Int, fileList:List[String], varname:String, blkinds:Array[Int], catdim:Int) extends Mat(nr, nc) {
-
-  var fnameCache:String = null
-
-  var fmatCache:Mat = null
-  
-  override def mytype = "HMat"
-  
-  override def apply(a:IMat, b:IMat) = applyx(a,b)
-  
-  override def apply(a:Mat, b:Mat) = applyx(a.asInstanceOf[IMat], b.asInstanceOf[IMat])
-// Implement slicing from a hard disk matrix
-  def applyx(a:IMat, b:IMat):Mat = { 
-    var ilast:Int = 0
-    def findindx(ind:Int):Int = {
-    	while (ilast >= 0 && ind < blkinds(ilast)) ilast -= 1
-    	while (ilast < blkinds.length && ind >= blkinds(ilast)) ilast += 1
-    	if (ilast >= 0 && blkinds(ilast) <= ind && blkinds(ilast+1) > ind) {
-    		ilast
-    	} else {
-    		-1
-      }
-    }
-    
-    val locs = IMat(1,b.length)
-    var i = 0
-    var iblk = 0
-    var out:Mat = null
-    while (i <= b.length) {
-    	if (i < b.length) locs(i) = findindx(b(i))
-    	if (i == b.length || locs(i) != locs(iblk)) {
-    		if (fnameCache == null || fileList(locs(iblk)) != fnameCache) {
-    			fmatCache = MatHDF5.hload(fileList(locs(iblk)), varname).asInstanceOf[Mat] 
-    			fnameCache = fileList(locs(iblk))
-    		}
-      	val newmat = fmatCache(a, b(MatFunctions.irow(iblk->i)))
-      	if (out.asInstanceOf[AnyRef] != null) {
-    	  	out = out \ newmat
-        } else {
-          out = newmat
-        }
-        iblk = i + 1
-      }
-      i += 1
-    }
-    out
-  }
-}
-
 object HMat {
   
   val byteOrder = ByteOrder.LITTLE_ENDIAN
@@ -117,39 +68,19 @@ object HMat {
     HDFSIOinstance.writeMat(fname, m, compress);    
   }
   
-  def HDFSwriteND(fname:String, m:ND, compress:Int):Unit = {
-    checkHDFSloaded;
-    HDFSIOinstance.writeND(fname, m, compress);    
-  }
-  
   def HDFSreadMat(fname:String, omat:Mat):Mat = {
   	checkHDFSloaded;
     HDFSIOinstance.readMat(fname, omat);    
   }
   
-  def HDFSreadND(fname:String, ond:ND):ND = {
-    checkHDFSloaded;
-    HDFSIOinstance.readND(fname, ond);    
-  }
-  
-  def HDFSwriteMats(fname:String, m:Array[ND], compress:Int):Unit = {
+  def HDFSwriteMats(fname:String, m:Array[Mat], compress:Int):Unit = {
     checkHDFSloaded;
     HDFSIOinstance.writeMats(fname, m, compress);    
   }
   
-  def HDFSwriteNDs(fname:String, m:Array[ND], compress:Int):Unit = {
-    checkHDFSloaded;
-    HDFSIOinstance.writeNDs(fname, m, compress);    
-  }
-  
-  def HDFSreadMats(fname:String, omat:Array[ND]):Array[ND] = {
+  def HDFSreadMats(fname:String, omat:Array[Mat]):Array[Mat] = {
     checkHDFSloaded;
     HDFSIOinstance.readMats(fname, omat);    
-  }
-  
-  def HDFSreadFNDs(fname:String, ond:Array[ND]):Array[ND] = {
-    checkHDFSloaded;
-    HDFSIOinstance.readNDs(fname, ond);    
   }
   
   def getInputStream(fname:String, compressed:Int):DataInputStream = {
@@ -297,8 +228,8 @@ object HMat {
   def loadMat(fname:String, omat:Mat, compressed:Int):Mat = {
     val gin = getInputStream(fname, compressed)
     val buff = ByteBuffer.allocate(1024).order(byteOrder)
-    val hints = new Array[Int](4)
-    readSomeInts(gin, hints, buff, 4)
+    val hints = new Array[Int](1)
+    readSomeInts(gin, hints, buff, 1)
     val ftype = hints(0)
     gin.close
     ftype match {
@@ -315,12 +246,15 @@ object HMat {
       case 301 => loadSBMat(fname, compressed)
       case 302 => loadCSMat(fname, compressed)
       case 401 => loadTMat(fname, compressed)
+      case 430 => loadFND(fname, compressed)
+      case 530 => loadFND(fname, compressed)
+      case 630 => loadFND(fname, compressed)
+      case 730 => loadFND(fname, compressed)
+      case 830 => loadFND(fname, compressed)
+      case 930 => loadFND(fname, compressed)
+      case 1030 => loadFND(fname, compressed)
     }
   }
-  
-  def loadMat(fname:String):Mat = loadMat(fname, null, 0)
-  
-  def loadMat(fname:String, omat:Mat):Mat = loadMat(fname, omat, 0)
   
   def saveMat(fname:String, m:Mat, compressed:Int=0):Unit = {
     m match {
@@ -386,14 +320,29 @@ object HMat {
 		  out
 	  }
   }
-
+  
   def loadFMat(gin:DataInput, omat:Mat):FMat = {
 	  val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder);
-	  val hints = new Array[Int](4);
-	  readSomeInts(gin, hints, buff, 4);
+	  val hints = new Array[Int](1);
+	  readSomeInts(gin, hints, buff, 1);
 	  val ftype = hints(0);
-	  val nrows = hints(1);
-	  val ncols = hints(2);
+	  ftype match {
+	    case 130 => loadFMatX(gin, omat, buff, ftype);
+	    case 430 => loadFNDX(gin, omat, buff, ftype)
+      case 530 => loadFNDX(gin, omat, buff, ftype)
+      case 630 => loadFNDX(gin, omat, buff, ftype)
+      case 730 => loadFNDX(gin, omat, buff, ftype)
+      case 830 => loadFNDX(gin, omat, buff, ftype)
+      case 930 => loadFNDX(gin, omat, buff, ftype)
+      case 1030 => loadFNDX(gin, omat, buff, ftype)
+	  }
+  }
+
+  def loadFMatX(gin:DataInput, omat:Mat, buff:ByteBuffer, ftype:Int):FMat = {
+	  val hints = new Array[Int](3);
+	  readSomeInts(gin, hints, buff, 3);
+	  val nrows = hints(0);
+	  val ncols = hints(1);
 	  if (ftype != 130) {
 		  throw new RuntimeException("loadFMat expected type field 130 but was %d" format ftype);
 	  }
@@ -461,15 +410,27 @@ object HMat {
   }
 
   def loadIMat(gin:DataInput, omat:Mat):IMat = {
-    val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
-    val hints = new Array[Int](4)
-    readSomeInts(gin, hints, buff, 4)
-    val ftype = hints(0)
-    val nrows = hints(1)
-    val ncols = hints(2)
-    if (ftype != 110) {
-      throw new RuntimeException("loadIMat expected type field 110 but was %d" format ftype)
+    val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder);
+    val hints = new Array[Int](1);
+    readSomeInts(gin, hints, buff, 1);
+    val ftype = hints(0);
+    ftype match {
+      case 110 => loadIMatX(gin, omat, buff, ftype);
+      case 410 => loadINDX(gin, omat, buff, ftype)
+      case 510 => loadINDX(gin, omat, buff, ftype)
+      case 610 => loadINDX(gin, omat, buff, ftype)
+      case 710 => loadINDX(gin, omat, buff, ftype)
+      case 810 => loadINDX(gin, omat, buff, ftype)
+      case 910 => loadINDX(gin, omat, buff, ftype)
+      case 1010 => loadINDX(gin, omat, buff, ftype)
     }
+  }
+    
+  def loadIMatX(gin:DataInput, omat:Mat, buff:ByteBuffer, ftype:Int) = {
+    val hints = new Array[Int](3);
+    readSomeInts(gin, hints, buff, 3);
+    val nrows = hints(0)
+    val ncols = hints(1)
     val out = IMat.newOrCheckIMat(nrows, ncols, omat)
     readSomeInts(gin, out.data, buff, ncols*nrows)
     out
@@ -530,17 +491,29 @@ object HMat {
       out
     }
   }
-
-  def loadLMat(gin:DataInput, omat:Mat):LMat = {
-    val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
-    val hints = new Array[Int](4)
-    readSomeInts(gin, hints, buff, 4)
-    val ftype = hints(0)
-    val nrows = hints(1)
-    val ncols = hints(2)
-    if (ftype != 120) {
-      throw new RuntimeException("loadLMat expected type field 120 but was %d" format ftype)
+  
+   def loadLMat(gin:DataInput, omat:Mat):LMat = {
+    val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder);
+    val hints = new Array[Int](1);
+    readSomeInts(gin, hints, buff, 1);
+    val ftype = hints(0);
+    ftype match {
+      case 120 => loadLMatX(gin, omat, buff, ftype);
+      case 420 => loadLNDX(gin, omat, buff, ftype)
+      case 520 => loadLNDX(gin, omat, buff, ftype)
+      case 620 => loadLNDX(gin, omat, buff, ftype)
+      case 720 => loadLNDX(gin, omat, buff, ftype)
+      case 820 => loadLNDX(gin, omat, buff, ftype)
+      case 920 => loadLNDX(gin, omat, buff, ftype)
+      case 1020 => loadLNDX(gin, omat, buff, ftype)
     }
+  }
+
+  def loadLMatX(gin:DataInput, omat:Mat, buff:ByteBuffer, ftype:Int):LMat = {
+    val hints = new Array[Int](3)
+    readSomeInts(gin, hints, buff, 3)
+    val nrows = hints(0)
+    val ncols = hints(1)
     val out = LMat.newOrCheckLMat(nrows, ncols, omat)
     readSomeLongs(gin, out.data, buff, ncols*nrows)
     out
@@ -601,25 +574,37 @@ object HMat {
       out
     }
   }
-
-  def loadDMat(gin:DataInput, omat:Mat):DMat = {
-    val bytebuff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
-    val hints = new Array[Int](4)
-    readSomeInts(gin, hints, bytebuff, 4)
-    val ftype = hints(0)
-    val nrows = hints(1)
-    val ncols = hints(2)
-    if (ftype != 140) {
-      throw new RuntimeException("loadDMat expected type field 140 but was %d" format ftype)
+  
+   def loadDMat(gin:DataInput, omat:Mat):DMat = {
+    val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder);
+    val hints = new Array[Int](1);
+    readSomeInts(gin, hints, buff, 1);
+    val ftype = hints(0);
+    ftype match {
+      case 140 => loadDMatX(gin, omat, buff, ftype);
+      case 440 => loadDNDX(gin, omat, buff, ftype)
+      case 540 => loadDNDX(gin, omat, buff, ftype)
+      case 640 => loadDNDX(gin, omat, buff, ftype)
+      case 740 => loadDNDX(gin, omat, buff, ftype)
+      case 840 => loadDNDX(gin, omat, buff, ftype)
+      case 940 => loadDNDX(gin, omat, buff, ftype)
+      case 1040 => loadDNDX(gin, omat, buff, ftype)
     }
+  }
+
+  def loadDMatX(gin:DataInput, omat:Mat, bytebuff:ByteBuffer, ftype:Int):DMat = {
+    val hints = new Array[Int](3)
+    readSomeInts(gin, hints, bytebuff, 3)
+    val nrows = hints(0)
+    val ncols = hints(1)
     val out = DMat.newOrCheckDMat(nrows, ncols, omat)
     readSomeDoubles(gin, out.data, bytebuff, ncols*nrows)
     out
   } 
   
-  def loadIDX(fname:String):FND = loadIDX(fname, 0);
+  def loadIDX(fname:String):FMat = loadIDX(fname, 0);
   
-  def loadIDX(fname:String, compressed:Int, byteOrder:ByteOrder=ByteOrder.BIG_ENDIAN):FND = {
+  def loadIDX(fname:String, compressed:Int, byteOrder:ByteOrder=ByteOrder.BIG_ENDIAN):FMat = {
     val gin = getInputStream(fname, compressed);
     val bytebuff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder);
     val magicnum = new Array[Int](1);
@@ -633,12 +618,12 @@ object HMat {
     val length = dims.reduce(_*_);
     val result = mtype match {
       case 0xD => {
-        val out = FND(dims);
+        val out = FMat.make(dims);
         readSomeFloats(gin, out.data, bytebuff, length);
         out;
       }      
       case 0x8 => {
-        val out = FND(dims);
+        val out = FMat.make(dims);
         val btmp = new Array[Byte](length);
         readSomeBytes(gin, btmp, length);
         var i = 0;
@@ -649,7 +634,7 @@ object HMat {
         out;
       }
       case 0x9 => {
-        val out = FND(dims);
+        val out = FMat.make(dims);
         val btmp = new Array[Byte](length);
         readSomeBytes(gin, btmp, length);
         Mat.copyToFloatArray(btmp, 0, out.data, 0, length);
@@ -677,29 +662,24 @@ object HMat {
   }
   
   def saveFMat(gout:DataOutput, m:FMat) = {
-  	val hints = new Array[Int](4);
-  	val tbuf = ByteBuffer.allocate(16).order(byteOrder);
-  	hints(0) = 130; // 1=dense, 3=float
-  	hints(1) = m.nrows;
-  	hints(2) = m.ncols;
-  	hints(3) = 0;
-  	writeSomeInts(gout, hints, tbuf, 4);
-  	val bsize = 4*m.ncols*m.nrows;
-  	val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder);
-  	writeSomeFloats(gout, m.data, buff, m.nrows*m.ncols);
-  }
-
-  def saveFND(fname:String, m:FND, compressed:Int=0):Unit = {
-    if (fname.startsWith("hdfs:")) {
-      HDFSwriteND(fname, m, compressed)
+    if (m.dims.length != 2) {
+      saveFND(gout, m);
     } else {
-    	val gout = getOutputStream(fname, compressed);
-    	saveFND(gout, m);
-    	gout.close;
+    	val hints = new Array[Int](4);
+    	val tbuf = ByteBuffer.allocate(16).order(byteOrder);
+    	hints(0) = 130; // 1=dense, 3=float
+    	hints(1) = m.nrows;
+    	hints(2) = m.ncols;
+    	hints(3) = 0;
+    	writeSomeInts(gout, hints, tbuf, 4);
+    	val bsize = 4*m.ncols*m.nrows;
+    	val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder);
+    	writeSomeFloats(gout, m.data, buff, m.nrows*m.ncols);
     }
   }
+
     
-  def saveFND(gout:DataOutput, m:FND):Unit = {
+  def saveFND(gout:DataOutput, m:FMat):Unit = {
     val dims = m.dims;
     val ndims = dims.length;
     val hints = new Array[Int](1);
@@ -713,10 +693,55 @@ object HMat {
     val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder);
     writeSomeFloats(gout, m.data, buff, m.length);
   }
-    
-  def loadFND(fname:String, omat:ND, compressed:Int):FND = {
+   
+  def saveIND(gout:DataOutput, m:IMat):Unit = {
+    val dims = m.dims;
+    val ndims = dims.length;
+    val hints = new Array[Int](1);
+    val tbuf = ByteBuffer.allocate(dims.length*4).order(byteOrder);
+    hints(0) = 10 + 100 * (ndims + 3);
+    writeSomeInts(gout, hints, tbuf, 1);
+    writeSomeInts(gout, dims.data, tbuf, ndims);
+    hints(0) = 0;
+    writeSomeInts(gout, hints, tbuf, 1);
+    val bsize = 4*m.length;
+    val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder);
+    writeSomeInts(gout, m.data, buff, m.length);
+  }
+  
+  def saveDND(gout:DataOutput, m:DMat):Unit = {
+    val dims = m.dims;
+    val ndims = dims.length;
+    val hints = new Array[Int](1);
+    val tbuf = ByteBuffer.allocate(dims.length*4).order(byteOrder);
+    hints(0) = 40 + 100 * (ndims + 3);
+    writeSomeInts(gout, hints, tbuf, 1);
+    writeSomeInts(gout, dims.data, tbuf, ndims);
+    hints(0) = 0;
+    writeSomeInts(gout, hints, tbuf, 1);
+    val bsize = 4*m.length;
+    val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder);
+    writeSomeDoubles(gout, m.data, buff, m.length);
+  }
+  
+  def saveLND(gout:DataOutput, m:LMat):Unit = {
+    val dims = m.dims;
+    val ndims = dims.length;
+    val hints = new Array[Int](1);
+    val tbuf = ByteBuffer.allocate(dims.length*4).order(byteOrder);
+    hints(0) = 20 + 100 * (ndims + 3);
+    writeSomeInts(gout, hints, tbuf, 1);
+    writeSomeInts(gout, dims.data, tbuf, ndims);
+    hints(0) = 0;
+    writeSomeInts(gout, hints, tbuf, 1);
+    val bsize = 4*m.length;
+    val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder);
+    writeSomeLongs(gout, m.data, buff, m.length);
+  }
+   
+  def loadFND(fname:String, omat:Mat, compressed:Int):FMat = {
 	  if (fname.startsWith("hdfs:")) {
-		  HDFSreadND(fname, omat).asInstanceOf[FND];
+		  HDFSreadMat(fname, omat).asInstanceOf[FMat];
     } else {
       val gin = getInputStream(fname, compressed)
       val out = loadFND(gin, omat)
@@ -724,18 +749,63 @@ object HMat {
       out
     }
   } 
+  
+  def loadFND(fname:String, omat:Mat):FMat = loadFND(fname, omat, 0);
+  
+  def loadFND(fname:String, compressed:Int):FMat = loadFND(fname, null, compressed);
     
-  def loadFND(gin:DataInput, omat:ND):FND  = {
+  def loadFND(gin:DataInput, omat:Mat):FMat  = {
     val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder);
     val hints = new Array[Int](1);
     readSomeInts(gin, hints, buff, 1);
-    if (hints(0) % 100 != 30) throw new RuntimeException("loadFND: bad type code " + hints(0));
-    val ndims = hints(0) / 100 - 3;
+    loadFNDX(gin, omat, buff, hints(0));
+  }
+    
+  def loadFNDX(gin:DataInput, omat:Mat, buff:ByteBuffer, ftype:Int) = {
+    if (ftype % 100 != 30) throw new RuntimeException("loadFND: bad type code " + ftype);
+    val ndims = ftype / 100 - 3;
     val dims = new Array[Int](ndims);
     readSomeInts(gin, dims, buff, ndims);
+    val hints = new Array[Int](1);
     readSomeInts(gin, hints, buff, 1);
-    val out = FND.newOrCheckFND(dims, omat);
+    val out = FMat.newOrCheckFMat(dims, omat);
     readSomeFloats(gin, out.data, buff, out.length);
+    out;
+  }
+  
+  def loadINDX(gin:DataInput, omat:Mat, buff:ByteBuffer, ftype:Int) = {
+    if (ftype % 100 != 10) throw new RuntimeException("loadIND: bad type code " + ftype);
+    val ndims = ftype / 100 - 3;
+    val dims = new Array[Int](ndims);
+    readSomeInts(gin, dims, buff, ndims);
+    val hints = new Array[Int](1);
+    readSomeInts(gin, hints, buff, 1);
+    val out = IMat.newOrCheckIMat(dims, omat);
+    readSomeInts(gin, out.data, buff, out.length);
+    out;
+  }
+  
+  def loadDNDX(gin:DataInput, omat:Mat, buff:ByteBuffer, ftype:Int) = {
+    if (ftype % 100 != 40) throw new RuntimeException("loadDND: bad type code " + ftype);
+    val ndims = ftype / 100 - 3;
+    val dims = new Array[Int](ndims);
+    readSomeInts(gin, dims, buff, ndims);
+    val hints = new Array[Int](1);
+    readSomeInts(gin, hints, buff, 1);
+    val out = DMat.newOrCheckDMat(dims, omat);
+    readSomeDoubles(gin, out.data, buff, out.length);
+    out;
+  }
+  
+  def loadLNDX(gin:DataInput, omat:Mat, buff:ByteBuffer, ftype:Int) = {
+    if (ftype % 100 != 20) throw new RuntimeException("loadLND: bad type code " + ftype);
+    val ndims = ftype / 100 - 3;
+    val dims = new Array[Int](ndims);
+    readSomeInts(gin, dims, buff, ndims);
+    val hints = new Array[Int](1);
+    readSomeInts(gin, hints, buff, 1);
+    val out = LMat.newOrCheckLMat(dims, omat);
+    readSomeLongs(gin, out.data, buff, out.length);
     out;
   }
   
@@ -772,16 +842,20 @@ object HMat {
   }
 
   def saveIMat(gout:DataOutput, m:IMat):Unit = {
-    val hints = new Array[Int](4)
-    val tbuf = ByteBuffer.allocate(16).order(byteOrder)
-    hints(0) = 110 // 1=dense, 1=int
-    hints(1) = m.nrows
-    hints(2) = m.ncols
-    hints(3) = 0
-    writeSomeInts(gout, hints, tbuf, 4)
-    val bsize = 4*m.ncols*m.nrows
-    val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder)
-    writeSomeInts(gout, m.data, buff, m.nrows*m.ncols)
+    if (m.dims.length != 2) {
+      saveIND(gout, m);
+    } else {
+    	val hints = new Array[Int](4);
+    	val tbuf = ByteBuffer.allocate(16).order(byteOrder);
+    	hints(0) = 110; // 1=dense, 1=int
+    	hints(1) = m.nrows;
+    	hints(2) = m.ncols;
+    	hints(3) = 0;
+    	writeSomeInts(gout, hints, tbuf, 4);
+    	val bsize = 4*m.ncols*m.nrows;
+    	val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder);
+    	writeSomeInts(gout, m.data, buff, m.nrows*m.ncols)
+    }
   }
   
   def saveIMatTxt(fname:String, m:IMat, compressed:Int=0, delim:String="\t"):Unit = {
@@ -817,16 +891,20 @@ object HMat {
   }
 
   def saveLMat(gout:DataOutput, m:LMat):Unit = {
-    val hints = new Array[Int](4)
-    val tbuf = ByteBuffer.allocate(16).order(byteOrder)
-    hints(0) = 120 // 1=dense, 2=long
-    hints(1) = m.nrows
-    hints(2) = m.ncols
-    hints(3) = 0
-    writeSomeInts(gout, hints, tbuf, 4)
-    val bsize = 4*m.ncols*m.nrows
-    val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder)
-    writeSomeLongs(gout, m.data, buff, m.nrows*m.ncols)
+    if (m.dims.length != 2) {
+      saveLND(gout, m);
+    } else {
+    	val hints = new Array[Int](4);
+    	val tbuf = ByteBuffer.allocate(16).order(byteOrder);
+    	hints(0) = 120; // 1=dense, 2=long
+    	hints(1) = m.nrows;
+    	hints(2) = m.ncols;
+    	hints(3) = 0;
+    	writeSomeInts(gout, hints, tbuf, 4);
+    	val bsize = 4*m.ncols*m.nrows;
+    	val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder);
+    	writeSomeLongs(gout, m.data, buff, m.nrows*m.ncols)
+    }
   }
   
   def saveLMatTxt(fname:String, m:LMat, compressed:Int=0, delim:String="\t"):Unit = {
@@ -862,16 +940,20 @@ object HMat {
   }
 
   def saveDMat(gout:DataOutput, m:DMat):Unit = {
-    val hints = new Array[Int](4)
-    val tbuf = ByteBuffer.allocate(16).order(byteOrder)
-    hints(0) = 140 // 1=dense, 4=double
-    hints(1) = m.nrows
-    hints(2) = m.ncols
-    hints(3) = 0
-    writeSomeInts(gout, hints, tbuf, 4)
-    val bsize = 8*m.ncols*m.nrows
-    val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder)
-    writeSomeDoubles(gout, m.data, buff, m.nrows*m.ncols)
+    if (m.dims.length != 2) {
+      saveDND(gout, m);
+    } else {
+    	val hints = new Array[Int](4);
+    	val tbuf = ByteBuffer.allocate(16).order(byteOrder);
+    	hints(0) = 140; // 1=dense, 4=double
+    	hints(1) = m.nrows;
+    	hints(2) = m.ncols;
+    	hints(3) = 0;
+    	writeSomeInts(gout, hints, tbuf, 4);
+    	val bsize = 8*m.ncols*m.nrows;
+    	val buff = ByteBuffer.allocate(if (bsize > 0 && bsize < DEFAULT_BUFSIZE) bsize else DEFAULT_BUFSIZE).order(byteOrder);
+    	writeSomeDoubles(gout, m.data, buff, m.nrows*m.ncols);
+    }
   }
   
   def saveDMatTxt(fname:String, m:DMat, compressed:Int=0, delim:String="\t"):Unit = {
@@ -906,16 +988,23 @@ object HMat {
   }
 
   def loadSMat(gin:DataInput, omat:Mat):SMat = {
-    val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)
-    val hints = new Array[Int](4)
-    readSomeInts(gin, hints, buff, 4)
-    val ftype = hints(0)
-    val nrows = hints(1)
-    val ncols = hints(2)
-    val nnz = hints(3)
+    val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder)    
+    val hints = new Array[Int](1);
+    readSomeInts(gin, hints, buff, 1);
+    val ftype = hints(0);
     if (ftype != 231 && ftype != 331) {
       throw new RuntimeException("loadSMat expected type field 231 or 331 but was %d" format ftype)
     }
+    loadSMatX(gin, omat, buff, ftype);
+  }
+    
+    
+  def loadSMatX(gin:DataInput, omat:Mat, buff:ByteBuffer, ftype:Int):SMat = {
+    val hints = new Array[Int](3);
+    readSomeInts(gin, hints, buff, 3);
+    val nrows = hints(0);
+    val ncols = hints(1);
+    val nnz = hints(2);
     val norows:Boolean = (ftype/100 == 3)
     val out = if (norows) {
       SMat.SnoRows(nrows, ncols, nnz)
@@ -1339,7 +1428,7 @@ object HMat {
 	  while(i<len) {
 	      val data = new Array[Float](nr(i)*nc(i))
 	      readSomeFloats(gin, data, buff, nr(i)*nc(i));
-	      mats(i) = FMat(nr(i),nc(i),data)
+	      mats(i) = new FMat(nr(i),nc(i),data)
 	      i+=1
 	  }
 	  TMat(nrows,ncols,y,x,mats);
@@ -1469,62 +1558,6 @@ object HMat {
     a
   }
   
-  def apply(dirname:String, filepat:String, varname:String, catd:Int) { 
-    var files:ListBuffer[String] = new ListBuffer[String]
-    val dir:File = new File(dirname)
-    val slen = dir.getName.length + 1
-    
-    def searchDir(dir:File) {
-      for (f <- dir.listFiles) {
-        if (f.isDirectory) {
-	      searchDir(f)
-        } else { 
-          if (f.getName.substring(slen).matches(filepat)) { 
-            files.append(f.getName)
-          }
-        }
-      }
-    }
-
-    searchDir(dir)
-    val blkinds = new Array[Int](files.length+1)
-    var i = 0
-    var nrows = -1
-    var ncols = -1
-    files.foreach((fn:String) => { 
-      val (nr, nc) = MatHDF5.readMat2Dims(fn, varname)
-      if (catd == 2) { 
-        if (nrows >= 0) { 
-          if (nr != nrows) { 
-            throw new RuntimeException("incorrect number of rows in file "+fn)
-          }
-        } else { 
-          nrows = nr.asInstanceOf[Int]
-        }
-        blkinds(i+1) = blkinds(i) + nc.asInstanceOf[Int]
-        i += 1
-      } else if (catd == 1) { 
-        if (ncols >= 0) { 
-          if (nc != 1) { 
-            throw new RuntimeException("incorrect number of cols in file "+fn)
-          }
-        } else { 
-          ncols = 1
-        }
-        blkinds(i+1) = blkinds(i) + nr.asInstanceOf[Int]
-        i += 1
-      }
-    })
-    if (catd == 2) { 
-      HMat(nrows, blkinds(files.length), files.toList, varname, blkinds, 2)
-    } else {
-      if (catd == 1) { 
-      	HMat(blkinds(files.length), ncols, files.toList, varname, blkinds, 1)
-      } else {
-      	throw new RuntimeException("cat dimension must be 1 or 2")
-      }
-    }
-  }
 }
 
 

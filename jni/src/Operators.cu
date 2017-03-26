@@ -275,8 +275,10 @@ __device__ double dfn_exppsi(double a) {return (a<1.0) ? 0.5*a*a : a-0.5;}
 
 __device__ double dfn_atan2(double a, double b) {return atan2(a, b);}
 __device__ double dfn_pow(double a, double b) {return pow(a, b);}
+__device__ double dfn_normcdf(double a) {return normcdf(a);}
+__device__ double dfn_normcdfinv(double a) {return normcdfinv(a);}
 
-__device__ const dfntype dfctns[35] = {
+__device__ const dfntype dfctns[37] = {
     dfn_abs,
     dfn_exp,
     dfn_expm1,
@@ -311,7 +313,9 @@ __device__ const dfntype dfctns[35] = {
     dfn_j1,
     dfn_y0,
     dfn_y1,
-    dfn_exppsi};
+    dfn_exppsi,
+    dfn_normcdf,
+    dfn_normcdfinv};
 
 __device__ const doptype dfctns2[2] = {
     dfn_atan2,
