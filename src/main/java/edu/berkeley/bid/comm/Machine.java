@@ -15,7 +15,7 @@ import java.util.Hashtable;
 import java.util.Enumeration;
 
 public class Machine {
-	/* Machine Configuration Variables */	
+	/* Machine Configuration Variables */
 	public final int D;                                               // Depth of the network
 	public final int M;                                               // Number of Machines
 	public final int imachine;                                        // My identity
@@ -40,7 +40,7 @@ public class Machine {
 	public ByteBuffer [] sendbuf;                                     // buffers, one for each destination in a group
 	public ByteBuffer [] recbuf;
 	public IVec finalMap;                                             // Map from to --> up at layer D-1
-	public Msg [][] messages;                                         // Message queue 
+	public Msg [][] messages;                                         // Message queue
 	public boolean [][] msgrecvd;                                     // Receiver status
 	public boolean [][] amsending;                                    // Sender status
 	public ExecutorService executor;
@@ -51,7 +51,7 @@ public class Machine {
 	public Hashtable<SockReader, Future<?>> readers;
 	Network network;
 
-	public Machine(Network p0, Groups groups0, int imachine0, int M0, boolean useLong0, int bufsize, boolean doSim0, int trace0, 
+	public Machine(Network p0, Groups groups0, int imachine0, int M0, boolean useLong0, int bufsize, boolean doSim0, int trace0,
 			int replicate0, InetSocketAddress [] workers0) {
 		network = p0;
 		M = M0;
@@ -78,7 +78,7 @@ public class Machine {
 		for (int level = 0; level < D; level++) {
 			int k = groups.nodesInGroup(imachine, level).length;
 			maxk = Math.max(maxk, k);
-		} 
+		}
 		sendbuf = new ByteBuffer[maxk];
 		recbuf = new ByteBuffer[maxk];
 		for (int i = 0; i < maxk; i++) {
@@ -105,10 +105,10 @@ public class Machine {
 			cumk *= k;
 		}
 	}
-	
+
 	public void start(int maxk) {
 		executor = Executors.newFixedThreadPool(maxk+6); // set to 1 for sequential messaging.
-		sockExecutor = Executors.newFixedThreadPool(4+4*maxk); 
+		sockExecutor = Executors.newFixedThreadPool(4+4*maxk);
 		for (int level = 0; level < D; level++) {
 			layers[level].executor = executor;
 		}
@@ -124,12 +124,12 @@ public class Machine {
 		}
 		if (executor != null) executor.shutdownNow();
 	}
-	
+
 	public void waitForComms() {
 		waitForReads();
 		waitForWrites();
 	}
-	
+
 	public void waitForReads() {
 		Enumeration<SockReader> se = readers.keys();
 		while (se.hasMoreElements()) {
@@ -148,7 +148,7 @@ public class Machine {
 			}
 		}
 	}
-	
+
 	public void waitForWrites() {
 		Enumeration<SockWriter> se = writers.keys();
 		while (se.hasMoreElements()) {
@@ -231,6 +231,10 @@ public class Machine {
 		return reduce(new Vec(tov), stride, round).data;
 	}
 
+	public float [] reduce(float [] tov, int tovlength, int stride, int round) {
+		return reduce(new Vec(tov, tovlength), stride, round).data;
+	}
+
 	public Vec configReduce(IVec toi, IVec fromi, Vec tov0, int stride, int round0) {
 //		clearFlags();
 		round = round0;
@@ -252,6 +256,10 @@ public class Machine {
 
 	public float [] configReduce(int [] toi, int [] fromi, float [] tov, int stride, int round) {
 		return configReduce(new IVec(toi), new IVec(fromi), new Vec(tov), stride, round).data;
+	}
+
+	public float [] configReduce(int [] toi, int [] fromi, float [] tov, int tovlength, int stride, int round) {
+		return configReduce(new IVec(toi), new IVec(fromi), new Vec(tov, tovlength), stride, round).data;
 	}
 
 	public Vec configReduce(LVec toi, LVec fromi, Vec tov0, int stride, int round0) {
@@ -276,7 +284,9 @@ public class Machine {
 		return configReduce(new LVec(toi), new LVec(fromi), new Vec(tov), stride, round).data;
 	}
 
-
+	public float [] configReduce(long [] toi, long [] fromi, float [] tov, int tovlength, int stride, int round) {
+		return configReduce(new LVec(toi), new LVec(fromi), new Vec(tov, tovlength), stride, round).data;
+	}
 
 	public class SockWriter implements Runnable {
 		int dest;
@@ -299,7 +309,7 @@ public class Machine {
 					ostr.writeInt(msg.size);
 					ostr.writeInt(msg.sender);
 					ostr.writeInt(msg.tag);
-					ostr.write(msg.buf, 0, msg.size*4);		
+					ostr.write(msg.buf, 0, msg.size*4);
 				}
 			}	catch (Exception e) {
 				if (trace > 0) log(String.format("Machine %d round %d problem writing socket "+e+"\n", imachine, round));
@@ -351,7 +361,7 @@ public class Machine {
 						istr.readFully(msg.buf, 0, len*4);
 						synchronized (Machine.this) {
 							if (!msgrecvd[src][tag0]) {
-								messages[src][tag0] = msg;	
+								messages[src][tag0] = msg;
 								msgrecvd[src][tag0] = true;
 							}
 						}
@@ -381,7 +391,7 @@ public class Machine {
 				ss = new ServerSocket(socknum);
 			} catch (Exception e) {
 				throw new RuntimeException(String.format("Machine couldnt start socket listener on %d ", socknum) +e);
-			}			
+			}
 		}
 
 		public void run() {
@@ -408,7 +418,7 @@ public class Machine {
 				for (int j = 0; j < sendrow.length; j++) {
 					if (amsending[i][j]) sending = true;
 				}
-			}			
+			}
 			return sending;
 		}
 
@@ -423,10 +433,10 @@ public class Machine {
 				ss.close();
 			} catch (Exception e) {
 				throw new RuntimeException("Trouble closing listener");
-			}			
+			}
 		}
 	}
-	
+
 	public void dumptags(String s) {
 		synchronized (network) {
 			System.out.print(s);
@@ -457,11 +467,11 @@ public class Machine {
 			rbuf.rewind();
 			if (trace > 2) log(String.format("Round %d sendrecv machine %d to %d from %d tag %d done\n", round, imachine, outi, ini, tag0));
 			if (trace > 4) log(String.format("m %d th %d r %d sendrecv exit out %d in %d tag %d\n", imachine, ith, round, outi, ini, tag0));
-			return true;				
-		} else { 
+			return true;
+		} else {
 			if (trace > 4) dumptags(String.format("m %d th %d r %d enter  %d %d %d ", imachine, ith, round, outi, ini, tag0));
-			if (doSim) {					
-				for (int i = 0; i < replicate; i++) { 
+			if (doSim) {
+				for (int i = 0; i < replicate; i++) {
 					if (trace > 0) {
 						if (network.machines[outi+i*M].messages[imachine][tag] != null) log(String.format("Round %d sendrecv machine %d to %d from %d tag %d msg exists\n", round, imachine, outi, ini, tag0));
 					}
@@ -502,8 +512,10 @@ public class Machine {
 			Boolean success = true;
 			if (trace > 4) dumptags(String.format("m %d th %d r %d later  %d %d %d ", imachine, ith, round, outi, ini, tag0));
 			if (waiting >= recvTimeout) {
-				log(String.format("m %d th %d r %d ", imachine, ith, round));
-				log(String.format("Round %d sendrecv machine %d to %d from %d tag %d timed out\n", round, imachine, outi, ini, tag0));
+				if (trace > 0) {
+					log(String.format("m %d th %d r %d ", imachine, ith, round));
+					log(String.format("Round %d sendrecv machine %d to %d from %d tag %d timed out\n", round, imachine, outi, ini, tag0));
+				}
 				success = false;
 			}
 			for (int i = 0; i < replicate; i++) {
@@ -518,12 +530,12 @@ public class Machine {
 			if (trace > 4) log(String.format("m %d th %d r %d sendrecv exit out %d in %d tag %d\n", imachine, ith, round, outi, ini, tag0));
 			return success;
 		}
-	}	
+	}
 
 	public void log(String msg) {
 		if (network != null) {
 			synchronized (network) {
-				System.out.print(msg);	
+				System.out.print(msg);
 			}
 		} else {
 			System.out.print(msg);

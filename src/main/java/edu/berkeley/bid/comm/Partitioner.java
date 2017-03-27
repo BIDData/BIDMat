@@ -15,7 +15,7 @@ public class Partitioner {
 		int r = (v - ibase) / cumk;
 		return r % k;
 	}
-	
+
 	public IVec part(IVec v) {
 		IVec parts = new IVec(v.size());
 		for (int i = 0; i < v.size(); i++) {
@@ -24,7 +24,7 @@ public class Partitioner {
 		}
 		return parts;
 	}
-	
+
 	// Take the input indices and map them to values in 0..(k-1) using the partition map
 	public IVec part(LVec v) {
 		IVec parts = new IVec(v.size());
@@ -34,8 +34,8 @@ public class Partitioner {
 		}
 		return parts;
 	}
-	
-	// Take the input indices, a partition map defined by part() above, and return k IVec's containing the partitioned indices. 
+
+	// Take the input indices, a partition map defined by part() above, and return k IVec's containing the partitioned indices.
 	// Optionally return k IVecs in "mapback" that specify the indices in the original vector for partition indices.
 	public IVec [] partition(IVec vv, IVec part, IVec [] mapback) {
 		if (part.size() != vv.size()) {
@@ -74,7 +74,7 @@ public class Partitioner {
 		}
 		return parts;
 	}
-	
+
 	public LVec [] partition(LVec vv, IVec part, IVec [] mapback) {
 		if (part.size() != vv.size()) {
 			throw new RuntimeException(String.format("matrix partition: mismatched lengths %d %d", part.size(), vv.size()));
@@ -112,7 +112,7 @@ public class Partitioner {
 		}
 		return parts;
 	}
-	
+
 	public Vec [] partition(Vec vv, IVec part, IVec partsizes, int stride) {
 		if (part.size()*stride != vv.size()) {
 			throw new RuntimeException(String.format("matrix partition: mismatched lengths %d %d",part.size()*stride, vv.size()));
@@ -135,7 +135,7 @@ public class Partitioner {
 		}
 		return parts;
 	}
-	
+
 	public void merge(Vec vv, int stride, Vec [] parts, IVec [] mapback) {
 		for (int i = 0; i < vv.length; i++) {
 			vv.data[i] = 0;
@@ -154,5 +154,5 @@ public class Partitioner {
 			}
 		}
 	}
-	
+
 }

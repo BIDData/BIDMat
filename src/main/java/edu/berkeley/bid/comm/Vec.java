@@ -6,27 +6,32 @@ import java.lang.StringBuffer;
 public class Vec {
 	public float[] data;
 	public int length;
-	
+
 	public Vec(int n) {
 		data = new float[n];
 		length = n;
 	}
-	
+
 	public Vec(float [] d) {
 		data = d;
 		length = d.length;
-	} 
-	
+	}
+
+	public Vec(float [] d, int length0) {
+		data = d;
+		length = length0;
+	}
+
 	static public Vec row(float... d) {
 		Vec out = new Vec(d.length);
 		out.data = d;
 		return out;
 	}
-	
+
 	public int size() {
-		return data.length;
+		return length;
 	}
-	
+
 	@Override public String toString() {
 		StringBuffer out = new StringBuffer();
 		out.append("Vec (");
@@ -38,13 +43,13 @@ public class Vec {
 		out.append(")");
 		return out.toString();
 	}
-	
+
 	public void clear() {
 		for (int i = 0; i < length; i++) {
 			data[i] = 0;
 		}
 	}
-	
+
 	public int nnz() {
 		int nn = 0;
 		for (int i = 0; i < length; i++) {
@@ -52,7 +57,7 @@ public class Vec {
 		}
 		return nn;
 	}
-	
+
 	public void addTo(Vec b, IVec map) {
 		if (length != map.length) {
 			throw new RuntimeException("addTo dimensions mismatch "+length+" "+map.length);
@@ -64,7 +69,7 @@ public class Vec {
 			bd[md[i]] += ad[i];
 		}
 	}
-	
+
 	public void addTo(Vec b, IVec map, int stride) {
 		if (length != map.length * stride) {
 			throw new RuntimeException("addTo dimensions mismatch "+length+" "+(map.length*stride));
@@ -80,7 +85,7 @@ public class Vec {
 			}
 		}
 	}
-	
+
 	public Vec mapFrom(IVec map) {
 		Vec out = new Vec(map.size());
 		for (int i = 0; i < out.size(); i++) {
@@ -88,7 +93,7 @@ public class Vec {
 		}
 		return out;
 	}
-	
+
 	public Vec mapFrom(IVec map, int stride) {
 		Vec out = new Vec(map.size() * stride);
 		for (int i = 0; i < map.size(); i++) {
@@ -100,5 +105,5 @@ public class Vec {
 		}
 		return out;
 	}
-	
+
 }
