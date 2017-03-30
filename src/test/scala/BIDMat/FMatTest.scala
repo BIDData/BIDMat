@@ -66,6 +66,55 @@ class FMatTest extends BIDMatSpec {
     	checkSimilar(c, d)
     }
     
+    it should "support matrix transpose in place" in {
+    	val a = rand(nr, nc);
+    	val b = rand(nc, nr);
+    	val c = zeros(nc, nr)
+    	(c ~ a) . t;
+    	for (i <- 0 until nr) {
+    		for (j <- 0 until nc) {
+    			b.data(j + i * nc) = a.data(i + j * nr);
+    		}
+    	}
+    	checkSimilar(c, b);
+    }
+
+    it should "support matrix multiplication in place" in {
+    	val a = rand(nr, nk);
+    	val b = rand(nk, nc);
+    	val c = zeros(nr, nc);
+    	val d = zeros(nr, nc);
+      c ~ a * b;
+    	for (i <- 0 until nr) {
+    		for (j <- 0 until nc) {
+    			var sum = 0f;
+    			for (k <- 0 until nk) {
+    				sum += a.data(i + k * nr) * b.data(k + j * nk);
+    			}
+    			d.data(i + j * nr) = sum;
+    		}
+    	}
+    	checkSimilar(c, d)
+    }  
+
+    it should "support matrix *^ in place" in {
+    	val a = rand(nr, nk);
+    	val b = rand(nc, nk);
+    	val d = zeros(nr, nc);
+    	val c = a * (b.t);
+    	d ~ a *^ b;
+    	checkSimilar(c, d)
+    }  
+  
+    it should "support matrix ^* in place" in {
+    	val a = rand(nk, nr);
+    	val b = rand(nk, nc);
+    	val c = zeros(nr, nc);
+    	c ~ a ^* b;
+    	val d = (a.t) * b;
+    	checkSimilar(c, d)
+    }
+    
     def testEwise(nr:Int, nc:Int, mop:(FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String) = {
     		it should msg in {
     			val a = rand(nr, nc);
@@ -92,6 +141,30 @@ class FMatTest extends BIDMatSpec {
     testEwise(nr, nc, (a:FMat, b:FMat) => min(a,b), (x:Float, y:Float)=> math.min(x,y), "support elementwise min");
     
     testEwise(nr, nc, (a:FMat, b:FMat) => max(a,b), (x:Float, y:Float)=> math.max(x,y), "support elementwise max");
+    
+    def testEwiseInPlace(nr:Int, nc:Int, mop:(FMat,FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String) = {
+    		it should msg in {
+    			val a = rand(nr, nc);
+    			val b = rand(nr, nc) + 0.01f;  
+    			val c= zeros(nr, nc);
+    			mop(c,a,b);
+    			val d = zeros(nr, nc);
+    			for (i <- 0 until nc) {
+    				for (j <- 0 until nr) {
+    					d.data(j + nr * i) = op(a.data(j + nr * i), b.data(j + nr * i));
+    				}
+    			}
+    			checkSimilar(c, d);
+    		}
+    }
+
+    testEwiseInPlace(nr, nc, (c:FMat, a:FMat, b:FMat) => c ~ a + b, (x:Float, y:Float)=>x+y, "support elementwise addition in place");  
+
+    testEwiseInPlace(nr, nc, (c:FMat, a:FMat, b:FMat) => c ~ a *@ b, (x:Float, y:Float)=>x*y, "support elementwise multiplication in place"); 
+
+    testEwiseInPlace(nr, nc, (c:FMat, a:FMat, b:FMat) => c ~ a - b, (x:Float, y:Float)=>x-y, "support elementwise subtraction in place");
+
+    testEwiseInPlace(nr, nc, (c:FMat, a:FMat, b:FMat) => c ~ a / b, (x:Float, y:Float)=>x/y, "support elementwise division in place");
 
 
     def testBcastRows(nr:Int, nc:Int, mop:(FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String, reverse:Boolean = true) = {
@@ -124,6 +197,35 @@ class FMatTest extends BIDMatSpec {
     testBcastRows(nr, nc, (a:FMat, b:FMat) => min(a,b), (x:Float, y:Float)=> math.min(x,y), "support min with broadcast over rows");
     
     testBcastRows(nr, nc, (a:FMat, b:FMat) => max(a,b), (x:Float, y:Float)=> math.max(x,y), "support max with broadcast over rows");
+    
+    def testBcastRowsInPlace(nr:Int, nc:Int, mop:(FMat,FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String, reverse:Boolean = true) = {
+    		it should msg in {  
+    			val a = rand(nr, nc) + 0.01f;
+    			val b = rand(1, nc) + 0.01f;
+    			val d = zeros(nr, nc);
+    			val c = zeros(nr, nc);
+    			val e = zeros(nr, nc);
+    			for (i <- 0 until nc) {
+    				for (j <- 0 until nr) {
+    					d.data(j + i * nr) = op(a.data(j + i * nr), b.data(i));
+    				}
+    			}
+    			mop(c, a, b);
+    			checkSimilar(c, d);
+    			if (reverse) {
+    				mop(e, b, a);
+    				checkSimilar(e, d);
+    			}
+    		}
+    }
+
+    testBcastRowsInPlace(nr, nc, (c:FMat, a:FMat, b:FMat) => c ~ a + b, (x:Float, y:Float)=>x+y, "support addition with broadcast over rows in place");
+
+    testBcastRowsInPlace(nr, nc, (c:FMat, a:FMat, b:FMat) => c ~ a *@ b, (x:Float, y:Float)=>x*y, "support multiplication with broadcast over rows in place");
+
+    testBcastRowsInPlace(nr, nc, (c:FMat, a:FMat, b:FMat) => c ~ a - b, (x:Float, y:Float)=>x-y, "support subtraction with broadcast over rows in place", false);
+
+    testBcastRowsInPlace(nr, nc, (c:FMat, a:FMat, b:FMat) => c ~ a / b, (x:Float, y:Float)=>x/y, "support division with broadcast over rows in place", false);
     
     
     def testBcastRows4D(nr:Int, nc:Int, mop:(FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String, reverse:Boolean = true) = {
@@ -160,6 +262,40 @@ class FMatTest extends BIDMatSpec {
     testBcastRows4D(nr, nc, (a:FMat, b:FMat) => min(a,b), (x:Float, y:Float)=> math.min(x,y), "support min with broadcast over rows 4D");
     
     testBcastRows4D(nr, nc, (a:FMat, b:FMat) => max(a,b), (x:Float, y:Float)=> math.max(x,y), "support max with broadcast over rows 4D");
+    
+    def testBcastRows4DinPlace(nr:Int, nc:Int, mop:(FMat,FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String, reverse:Boolean = true) = {
+    		it should msg in {  
+    			val a = rand(nr \ nc \ nk \ nl) + 0.01f;
+    			val b = rand(1 \ 1 \ nk \ nl) + 0.01f;
+    			val d = zeros(a.dims);
+    			val c = zeros(a.dims);
+    			val e = zeros(a.dims);
+    			for (i <- 0 until nr) {
+    				for (j <- 0 until nc) {
+    					for (k <- 0 until nk) {
+    					  for (l <- 0 until nl) {
+    					  	d.data(i + nr * (j + nc * (k + nk * l))) = op(a.data(i + nr * (j + nc * (k + nk * l))), b.data(k + nk * l));
+    					  }
+    					}
+    				}
+    			}
+    			mop(c, a, b);
+    			checkSimilar(c, d);
+    			if (reverse) {
+    				mop(e, b, a);
+    				checkSimilar(e, d);
+    			}
+    		}
+    }
+
+    testBcastRows4DinPlace(nr, nc, (c:FMat, a:FMat, b:FMat) => c ~ a + b, (x:Float, y:Float)=>x+y, "support addition with broadcast over rows 4D in place");
+
+    testBcastRows4DinPlace(nr, nc, (c:FMat, a:FMat, b:FMat) => c ~ a *@ b, (x:Float, y:Float)=>x*y, "support multiplication with broadcast over rows 4D in place");
+
+    testBcastRows4DinPlace(nr, nc, (c:FMat, a:FMat, b:FMat) => c ~ a - b, (x:Float, y:Float)=>x-y, "support subtraction with broadcast over rows 4D in place", false);
+
+    testBcastRows4DinPlace(nr, nc, (c:FMat, a:FMat, b:FMat) => c ~ a / b, (x:Float, y:Float)=>x/y, "support division with broadcast over rows 4D in place", false);
+    
 
     def testBcastCols(nr:Int, nc:Int, mop:(FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String, reverse:Boolean = true) = {
     		it should msg in {
@@ -192,7 +328,38 @@ class FMatTest extends BIDMatSpec {
     testBcastCols(nr, nc, (a:FMat, b:FMat) => min(a,b), (x:Float, y:Float)=> math.min(x,y), "support min with broadcast over cols");
     
     testBcastCols(nr, nc, (a:FMat, b:FMat) => max(a,b), (x:Float, y:Float)=> math.max(x,y), "support max with broadcast over cols");
+    
+    def testBcastColsInPlace(nr:Int, nc:Int, mop:(FMat,FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String, reverse:Boolean = true) = {
+    		it should msg in {
+    			val a = rand(nr, nc) + 0.01f;
+    			val b = rand(nr, 1) + 0.01f;
+    			val d = zeros(nr, nc);
+    			val c = zeros(nr, nc);
+    			val e = zeros(nr, nc);
+    			for (i <- 0 until nc) {
+    				for (j <- 0 until nr) {
+    					d.data(j + i * nr) = op(a.data(j + i * nr), b.data(j));
+    				}
+    			}
+    			mop(c, a, b);
+    			checkSimilar(c, d);
+    			if (reverse) {
+    				mop(e, b, a);
+    				checkSimilar(e, d);
+    			}
+    		}
+    }
 
+
+    testBcastColsInPlace(nr, nc, (c:FMat, a:FMat, b:FMat) => c ~ a + b, (x:Float, y:Float)=>x+y, "support addition with broadcast over cols in place");
+
+    testBcastColsInPlace(nr, nc, (c:FMat, a:FMat, b:FMat) => c ~ a *@ b, (x:Float, y:Float)=>x*y, "support multiplication with broadcast over cols in place");
+
+    testBcastColsInPlace(nr, nc, (c:FMat, a:FMat, b:FMat) => c ~ a - b, (x:Float, y:Float)=>x-y, "support subtraction with broadcast over cols in place", false);
+
+    testBcastColsInPlace(nr, nc, (c:FMat, a:FMat, b:FMat) => c ~ a / b, (x:Float, y:Float)=>x/y, "support division with broadcast over cols in place", false);
+
+ 
     def testScalar1(nr:Int, nc:Int, mop:(Float,FMat)=>FMat, op:(Float,Float)=>Float, msg:String) = {
     		it should msg in {
     			val a = rand(1, 1).fv;
@@ -243,6 +410,52 @@ class FMatTest extends BIDMatSpec {
     testScalar2(nr, nc, (a:FMat, b:Float) => min(a, b), (x:Float, y:Float)=> math.min(x,y), "support min of scalar 2");
 
     testScalar2(nr, nc, (a:FMat, b:Float) => max(a, b), (x:Float, y:Float)=> math.max(x,y), "support max of scalar 2");
+    
+    
+    def testScalar1inPlace(nr:Int, nc:Int, mop:(FMat,Float,FMat)=>FMat, op:(Float,Float)=>Float, msg:String) = {
+    		it should msg in {
+    			val a = rand(1, 1).fv;
+    			val b = rand(nr, nc);
+    			val c = zeros(nr, nc);
+    			val d = zeros(nr, nc);
+    			for (i <- 0 until nc) {
+    				for (j <- 0 until nr) {
+    					d.data(j + i * nr) = op(a, b.data(j + i * nr));
+    				}
+    			}
+    			mop(c, a, b);
+    			checkSimilar(c, d);
+    		}
+    }
+
+    def testScalar2inPlace(nr:Int, nc:Int, mop:(FMat,FMat,Float)=>FMat, op:(Float,Float)=>Float, msg:String) = {
+    		it should msg in {
+    			val a = rand(nr, nc);
+    			val b = rand(1, 1).fv;
+    			val c = zeros(nr, nc);
+    			val d = zeros(nr, nc);
+    			for (i <- 0 until nc) {
+    				for (j <- 0 until nr) {
+    					d.data(j + i * nr) = op(a.data(j + i * nr), b);
+    				}
+    			}
+    			mop(c, a, b);
+    			checkSimilar(c, d);
+    		}
+    }
+
+    testScalar1inPlace(nr, nc, (c:FMat, a:Float, b:FMat) => c ~ a + b, (x:Float, y:Float)=>x+y, "support addition of scalar 1 in place");
+
+    testScalar1inPlace(nr, nc, (c:FMat, a:Float, b:FMat) => c ~ a *@ b, (x:Float, y:Float)=>x*y, "support multiplication of scalar 1 in place");
+
+    testScalar2inPlace(nr, nc, (c:FMat, a:FMat, b:Float) => c ~ a + b, (x:Float, y:Float)=>x+y, "support addition of scalar 2 in place");
+
+    testScalar2inPlace(nr, nc, (c:FMat, a:FMat, b:Float) => c ~ a *@ b, (x:Float, y:Float)=>x*y, "support multiplication of scalar 2 in place");
+
+    testScalar2inPlace(nr, nc, (c:FMat, a:FMat, b:Float) => c ~ a - b, (x:Float, y:Float)=>x-y, "support subtraction of scalar 2 in place");
+
+    testScalar2inPlace(nr, nc, (c:FMat, a:FMat, b:Float) => c ~ a / b, (x:Float, y:Float)=>x / y, "support division of scalar 2 in place");
+    
     
     def testScalar1ND(nr:Int, nc:Int, mop:(Float,FMat)=>FMat, op:(Float,Float)=>Float, msg:String) = {
     		it should msg in {
@@ -298,7 +511,57 @@ class FMatTest extends BIDMatSpec {
     testScalar2ND(nr, nc, (a:FMat, b:Float) => min(a,b), (x:Float, y:Float)=>math.min(x,y), "support min of scalar 2 3D");
 
     testScalar2ND(nr, nc, (a:FMat, b:Float) => max(a,b), (x:Float, y:Float)=>math.max(x,y), "support max of scalar 2 3D");
+ 
     
+    
+    def testScalar1NDinPlace(nr:Int, nc:Int, mop:(FMat,Float,FMat)=>FMat, op:(Float,Float)=>Float, msg:String) = {
+    		it should msg in {
+    			val a = rand(1, 1).fv;
+    			val b = rand(nr \ nc \ nk);
+    			val c = zeros(b.dims);
+    			val d = zeros(nr \ nc \ nk);
+    			for (i <- 0 until nr) {
+    				for (j <- 0 until nc) {
+    				  for (k <- 0 until nk) {
+    				  	d.data(i + nr * (j + nc * k)) = op(a, b.data(i + nr * (j + nc * k)));
+    				  }
+    				}
+    			}
+    			mop(c, a, b);
+    			checkSimilar(c, d);
+    		}
+    }
+
+    def testScalar2NDinPlace(nr:Int, nc:Int, mop:(FMat,FMat,Float)=>FMat, op:(Float,Float)=>Float, msg:String) = {
+    		it should msg in {
+    			val a = rand(nr \ nc \ nk);
+    			val b = rand(1, 1).fv;
+    			val c = zeros(a.dims);
+    			val d = zeros(nr \ nc \ nk);
+    			for (i <- 0 until nr) {
+    				for (j <- 0 until nc) {
+    					for (k <- 0 until nk) {
+    						d.data(i + nr * (j + nc * k)) = op(a.data(i + nr * (j + nc * k)), b);
+    					}
+    				}
+    			}
+    			mop(c, a, b);
+    			checkSimilar(c, d);
+    		}
+    }
+    
+    testScalar1NDinPlace(nr, nc, (c:FMat, a:Float, b:FMat) => c ~ a + b, (x:Float, y:Float)=>x+y, "support addition of scalar 1 3D in place");
+
+    testScalar1NDinPlace(nr, nc, (c:FMat, a:Float, b:FMat) => c ~ a *@ b, (x:Float, y:Float)=>x*y, "support multiplication of scalar 1 3D in place");
+
+    testScalar2NDinPlace(nr, nc, (c:FMat, a:FMat, b:Float) => c ~ a + b, (x:Float, y:Float)=>x+y, "support addition of scalar 2 3D in place");
+
+    testScalar2NDinPlace(nr, nc, (c:FMat, a:FMat, b:Float) => c ~ a *@ b, (x:Float, y:Float)=>x*y, "support multiplication of scalar 2 3D in place");
+
+    testScalar2NDinPlace(nr, nc, (c:FMat, a:FMat, b:Float) => c ~ a - b, (x:Float, y:Float)=>x-y, "support subtraction of scalar 2 3D in place");
+
+    testScalar2NDinPlace(nr, nc, (c:FMat, a:FMat, b:Float) => c ~ a / b, (x:Float, y:Float)=>x / y, "support division of scalar 2 3D in place");
+ 
   
     
     it should "support 1D element access" in {
