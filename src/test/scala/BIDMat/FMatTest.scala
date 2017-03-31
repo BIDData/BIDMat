@@ -263,6 +263,7 @@ class FMatTest extends BIDMatSpec {
     
     testBcastRows4D(nr, nc, (a:FMat, b:FMat) => max(a,b), (x:Float, y:Float)=> math.max(x,y), "support max with broadcast over rows 4D");
     
+    
     def testBcastRows4DinPlace(nr:Int, nc:Int, mop:(FMat,FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String, reverse:Boolean = true) = {
     		it should msg in {  
     			val a = rand(nr \ nc \ nk \ nl) + 0.01f;
@@ -328,6 +329,7 @@ class FMatTest extends BIDMatSpec {
     testBcastCols(nr, nc, (a:FMat, b:FMat) => min(a,b), (x:Float, y:Float)=> math.min(x,y), "support min with broadcast over cols");
     
     testBcastCols(nr, nc, (a:FMat, b:FMat) => max(a,b), (x:Float, y:Float)=> math.max(x,y), "support max with broadcast over cols");
+    
     
     def testBcastColsInPlace(nr:Int, nc:Int, mop:(FMat,FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String, reverse:Boolean = true) = {
     		it should msg in {

@@ -358,6 +358,7 @@ class GMatTest extends BIDMatSpec {
 
 	def testBcastCols(nr:Int, nc:Int, mop:(FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String, reverse:Boolean = true) = {
 			it should msg in {
+				assume(Mat.hasCUDA > 0);
 				val a = rand(nr, nc);
 				val b = rand(nr, 1);
 				val aa = GMat(a);
@@ -1286,6 +1287,7 @@ class GMatTest extends BIDMatSpec {
 	testFunction2Dg((a:FMat)=> psiinv(a), 0f, "support 2D psiinv function", 1e-1f) 
 
 	it should "support 4D convolution with NHWC tensors" in {
+		assume(Mat.hasCUDA > 0);
 		val a = rand(8\16\16\8);
 		val b = FFilter2Ddn(3,3,8,8,1,1);
 		b.xavier;
@@ -1299,6 +1301,7 @@ class GMatTest extends BIDMatSpec {
 	}
 
 	it should "support 4D convolution with NCHW tensors" in {
+		assume(Mat.hasCUDA > 0);
 		val a = rand(8\16\16\8);
 		val b = FFilter2Ddn(3,3,8,8,1,1);
 		b.xavier;
