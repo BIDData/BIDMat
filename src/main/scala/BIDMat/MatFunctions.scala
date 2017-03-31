@@ -1309,29 +1309,37 @@ object MatFunctions {
   /** Make a single-precision matrix of zeros in GPU memory. */
   def gzeros(nr:Int, nc:Int):GMat = GMat.zeros(nr, nc)
   
+  def gzeros(dims:IMat):GMat = GMat.zeros(dims);
+  
   /** Make a double-precision matrix of zeros in GPU memory. */
   def gdzeros(nr:Int, nc:Int):GDMat = GDMat.zeros(nr, nc);
   
+  def gdzeros(dims:IMat):GDMat = GDMat.zeros(dims);
+  
   /** Make an integer matrix of zeros in GPU memory. */
-  def gizeros(nr:Int, nc:Int):GIMat = GIMat.izeros(nr, nc)
+  def gizeros(nr:Int, nc:Int):GIMat = GIMat.izeros(nr, nc);
+  
+  def gizeros(dims:IMat):GIMat = GIMat.izeros(dims);
   
   /** Make a long matrix of zeros in GPU memory. */
-  def glzeros(nr:Int, nc:Int):GLMat = GLMat.lzeros(nr, nc)
+  def glzeros(nr:Int, nc:Int):GLMat = GLMat.lzeros(nr, nc);
+  
+  def glzeros(dims:IMat):GLMat = GLMat.lzeros(dims);
    
   /** Make a float matrix of ones in GPU memory. */
-  def gones(nr:Int, nc:Int):GMat = {
-    GMat.ones(nr,nc)
-  }
+  def gones(nr:Int, nc:Int):GMat = GMat.ones(nr,nc);
   
+  def gones(dims:IMat):GMat = GMat.ones(dims);
+
   /** Make an integer matrix of ones in GPU memory. */
-  def giones(nr:Int, nc:Int):GIMat = {
-    GIMat.iones(nr,nc)
-  }
+  def giones(nr:Int, nc:Int):GIMat = GIMat.iones(nr,nc);
+  
+  def giones(dims:IMat):GIMat = GIMat.iones(dims);
   
   /** Make a long matrix of ones in GPU memory. */
-  def glones(nr:Int, nc:Int):GLMat = {
-    GLMat.lones(nr,nc)
-  }
+  def glones(nr:Int, nc:Int):GLMat = GLMat.lones(nr,nc);
+  
+  def glones(dims:IMat):GLMat = GLMat.lones(dims);
 
   /** Legacy function to make a placeholder matrix with no storage. */
   def blank = new Mat(0,0)
