@@ -85,6 +85,7 @@ class IMatTest extends BIDMatSpec {
 		}
 		checkSimilar(c, d)
 	}  
+
 	def testEwise(nr:Int, nc:Int, mop:(IMat,IMat)=>IMat, op:(Int,Int)=>Int, msg:String) = {
 			it should msg in {
 				val a = irand(nr, nc);
@@ -403,7 +404,7 @@ class IMatTest extends BIDMatSpec {
 	def testScalar2inPlace(nr:Int, nc:Int, mop:(IMat,IMat,Int)=>IMat, op:(Int,Int)=>Int, msg:String) = {
 			it should msg in {
 				val a = irand(nr, nc);
-				val b = irand(1, 1).v;
+				val b = irand(1, 1).v + 1;
 				val c = izeros(nr, nc);
 				val d = izeros(nr, nc);
 				for (i <- 0 until nc) {

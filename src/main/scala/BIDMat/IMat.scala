@@ -1137,7 +1137,7 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
   override def === (b : Mat) = Mop_EQ.op(this, b, null) 
   override def !=  (b : Mat) = Mop_NE.op(this, b, null)
   
-  def ~ (b : IMat):IPair = new IPair(this, b)
+  def ~ (b : IMat):IPair = new IPair(this, b);
   
   override def ~ (b: Mat):Pair = 
     b match {

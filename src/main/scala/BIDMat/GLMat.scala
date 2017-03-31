@@ -698,7 +698,7 @@ class GLMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
 
 }
 
-class GLPair (val omat:Mat, val mat:GLMat) extends Pair (omat, mat){
+class GLPair (omat:Mat, override val mat:GLMat) extends LPair (omat, mat){
     import GIMat.BinOp._
 
 	override def t = {

@@ -1965,8 +1965,8 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
 
   override def ~ (b: Mat):Pair =
     b match {
-    case db:FMat => new FPair(this, db)
-    case sb:SMat => new SPair(this, sb)
+    case db:FMat => new FPair(this, db);
+    case sb:SMat => new SPair(this, sb);
     case _ => throw new RuntimeException("mismatched types for operator ~")
   }
 

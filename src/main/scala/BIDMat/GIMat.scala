@@ -848,11 +848,13 @@ class GIMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   override def !=  (b : Mat) = Mop_NE.op(this, b, null)
          
   
-  def ~ (b: GIMat) = new GIPair(this, b)
+  def ~ (b: GIMat) = new GIPair(this, b);
+  override def ~ (b: IMat):IPair = new GIPair(this, GIMat(b));
+  override def ~ (b: Mat):Pair = new GIPair(this, GIMat(b));
 
 }
 
-class GIPair (val omat:Mat, val mat:GIMat) extends Pair (omat, mat){
+class GIPair (omat:Mat, override val mat:GIMat) extends IPair (omat, mat){
     import GIMat.BinOp._
 
 	override def t = {

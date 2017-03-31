@@ -1659,7 +1659,10 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
    */
   def ~ (b: GMat) = new GPair(this, b)
   def ~ (b: GSMat) = new GSPair(this, b)
-  override def ~ (b: Mat):Pair = b match {
+  override def ~ (b: FMat):FPair = new GPair(this, GMat(b));
+  
+  override def ~ (b: Mat):Pair = 
+    b match {
     case t:TMat => new GTPair(this,t)
     case bb:GMat => new GPair(this, bb)
     case bb:GSMat => new GSPair(this, bb)
@@ -1691,7 +1694,7 @@ class GDSPair(val left:GMat, val right:GSMat) extends DSPair {}
 /*
  * GPair is the result of a~b
  */
-class GPair(val omat:Mat, val mat:GMat) extends Pair(omat, mat) {
+class GPair(omat:Mat, override val mat:GMat) extends FPair(omat, mat) {
 	import GMat.BinOp._
 	
 	override def t = {
@@ -1742,38 +1745,38 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair(omat, mat) {
   }
 	
 	
-  def *  (a : FMat) = mat.GMult(GMat(a), omat);
-  def *  (a : SMat) = mat.GSMult(GSMat(a), omat);
-  def *^ (a : FMat) = mat.GMultT(GMat(a), omat)
-  def *^ (a : SMat) = mat.GSMultT(GSMat(a), omat)
-  def xT (a : FMat) = mat.GMultT(GMat(a), omat)
-  def xT (a : SMat) = mat.GSMultT(GSMat(a), omat)
-  def ^* (a : FMat) = mat.GTMult(GMat(a), omat)
+  override def *  (a : FMat) = mat.GMult(GMat(a), omat);
+  override def *  (a : SMat) = mat.GSMult(GSMat(a), omat);
+  override def *^ (a : FMat) = mat.GMultT(GMat(a), omat)
+  override def *^ (a : SMat) = mat.GSMultT(GSMat(a), omat)
+  override def xT (a : FMat) = mat.GMultT(GMat(a), omat)
+  override def xT (a : SMat) = mat.GSMultT(GSMat(a), omat)
+  override def ^* (a : FMat) = mat.GTMult(GMat(a), omat)
   def *+^ (a : FMat) = mat.GMST(GMat(a), omat)
-  def Tx (a : FMat) = mat.GTMult(GMat(a), omat)
+  override def Tx (a : FMat) = mat.GTMult(GMat(a), omat)
   def kron(a: FMat):FMat = mat.kron(GMat(a), omat)
-  def ⊗  (b : FMat) = mat.kron(b, omat)
-	def +  (a : FMat) = mat.gOp(GMat(a), omat, op_add)
-	def -  (a : FMat) = mat.gOp(GMat(a), omat, op_sub)
-	def *@ (a : FMat) = mat.gOp(GMat(a), omat, op_mul)
-	def ∘  (a : FMat) = mat.gOp(GMat(a), omat, op_mul)
-	def /  (a : FMat) = mat.gOp(GMat(a), omat, op_div)
-	def ^  (a : FMat) = mat.gOp(GMat(a), omat, op_pow)
-	def >  (a : FMat) = mat.gOp(GMat(a), omat, op_gt)
-	def <  (a : FMat) = mat.gOp(GMat(a), omat, op_lt)
-	def == (a : FMat) = mat.gOp(GMat(a), omat, op_eq)
-	def === (a : FMat) = mat.gOp(GMat(a), omat, op_eq)
-	def >= (a : FMat) = mat.gOp(GMat(a), omat, op_ge)
-	def <= (a : FMat) = mat.gOp(GMat(a), omat, op_le)
-	def != (a : FMat) = mat.gOp(GMat(a), omat, op_ne)
+  override def ⊗  (b : FMat) = mat.kron(b, omat)
+	override def +  (a : FMat) = mat.gOp(GMat(a), omat, op_add)
+	override def -  (a : FMat) = mat.gOp(GMat(a), omat, op_sub)
+	override def *@ (a : FMat) = mat.gOp(GMat(a), omat, op_mul)
+	override def ∘  (a : FMat) = mat.gOp(GMat(a), omat, op_mul)
+	override def /  (a : FMat) = mat.gOp(GMat(a), omat, op_div)
+	override def ^  (a : FMat) = mat.gOp(GMat(a), omat, op_pow)
+	override def >  (a : FMat) = mat.gOp(GMat(a), omat, op_gt)
+	override def <  (a : FMat) = mat.gOp(GMat(a), omat, op_lt)
+	override def == (a : FMat) = mat.gOp(GMat(a), omat, op_eq)
+	override def === (a : FMat) = mat.gOp(GMat(a), omat, op_eq)
+	override def >= (a : FMat) = mat.gOp(GMat(a), omat, op_ge)
+	override def <= (a : FMat) = mat.gOp(GMat(a), omat, op_le)
+	override def != (a : FMat) = mat.gOp(GMat(a), omat, op_ne)
 	
-  def max (a : FMat) = mat.gOp(GMat(a), omat, op_max)
-	def min (a : FMat) = mat.gOp(GMat(a), omat, op_min)
+  override def max (a : FMat) = mat.gOp(GMat(a), omat, op_max)
+	override def min (a : FMat) = mat.gOp(GMat(a), omat, op_min)
 	
-	def dot (a :FMat) = mat.dot(GMat(a), omat) 
-	def dotr (a :FMat) = mat.dotr(GMat(a), omat) 
-	def ∙ (a :FMat) = mat.dot(GMat(a), omat)
-	def ∙→ (a :FMat) = mat.dotr(GMat(a), omat)
+	override def dot (a :FMat) = mat.dot(GMat(a), omat) 
+	override def dotr (a :FMat) = mat.dotr(GMat(a), omat) 
+	override def ∙ (a :FMat) = mat.dot(GMat(a), omat)
+	override def ∙→ (a :FMat) = mat.dotr(GMat(a), omat)
 	def on(a : FMat) = mat.vertcat(GMat(a), omat)
 	def \ (a : FMat) = mat.horzcat(GMat(a), omat)
   
@@ -1849,60 +1852,60 @@ class GPair(val omat:Mat, val mat:GMat) extends Pair(omat, mat) {
   /*
    * Specialize to IMat
    */
-  def *   (b : IMat) = Mop_Times.op(mat, b, omat) 
-  def *^  (b : IMat) = Mop_TimesT.op(mat, b, omat)
-  def xT  (b : IMat) = Mop_TimesT.op(mat, b, omat)
-  def Tx  (b : IMat) = Mop_TTimes.op(mat, b, omat)
-  def ^*  (b : IMat) = Mop_TTimes.op(mat, b, omat)
-  def +   (b : IMat) = Mop_Plus.op(mat, b, omat)
-  def -   (b : IMat) = Mop_Minus.op(mat, b, omat)
-  def *@  (b : IMat) = Mop_ETimes.op(mat, b, omat)
-  def ∘   (b : IMat) = Mop_ETimes.op(mat, b, omat)
-  def /   (b : IMat) = Mop_EDiv.op(mat, b, omat)  
-  def ^   (b : IMat) = Mop_Pow.op(mat, b, omat) 
-  def ∙   (b : IMat) = Mop_Dot.op(mat, b, omat)
-  def ∙→  (b : IMat) = Mop_Dotr.op(mat, b, omat)
-  def dot (b : IMat) = Mop_Dot.op(mat, b, omat)
-  def dotr(b : IMat) = Mop_Dotr.op(mat, b, omat)
-  def \   (b : IMat) = Mop_HCat.op(mat, b, omat)
-  def on  (b : IMat) = Mop_VCat.op(mat, b, omat)
+  override def *   (b : IMat) = Mop_Times.op(mat, b, omat) 
+  override def *^  (b : IMat) = Mop_TimesT.op(mat, b, omat)
+  override def xT  (b : IMat) = Mop_TimesT.op(mat, b, omat)
+  override def Tx  (b : IMat) = Mop_TTimes.op(mat, b, omat)
+  override def ^*  (b : IMat) = Mop_TTimes.op(mat, b, omat)
+  override def +   (b : IMat) = Mop_Plus.op(mat, b, omat)
+  override def -   (b : IMat) = Mop_Minus.op(mat, b, omat)
+  override def *@  (b : IMat) = Mop_ETimes.op(mat, b, omat)
+  override def ∘   (b : IMat) = Mop_ETimes.op(mat, b, omat)
+  override def /   (b : IMat) = Mop_EDiv.op(mat, b, omat)  
+  override def ^   (b : IMat) = Mop_Pow.op(mat, b, omat) 
+  override def ∙   (b : IMat) = Mop_Dot.op(mat, b, omat)
+  override def ∙→  (b : IMat) = Mop_Dotr.op(mat, b, omat)
+  override def dot (b : IMat) = Mop_Dot.op(mat, b, omat)
+  override def dotr(b : IMat) = Mop_Dotr.op(mat, b, omat)
+  override def \   (b : IMat) = Mop_HCat.op(mat, b, omat)
+  override def on  (b : IMat) = Mop_VCat.op(mat, b, omat)
 
-  def >   (b : IMat) = Mop_GT.op(mat, b, omat)
-  def <   (b : IMat) = Mop_LT.op(mat, b, omat)
-  def ==  (b : IMat) = Mop_EQ.op(mat, b, omat)
-  def === (b : IMat) = Mop_EQ.op(mat, b, omat)
-  def >=  (b : IMat) = Mop_GE.op(mat, b, omat)
-  def <=  (b : IMat) = Mop_LE.op(mat, b, omat)
-  def !=  (b : IMat) = Mop_NE.op(mat, b, omat)
+  override def >   (b : IMat) = Mop_GT.op(mat, b, omat)
+  override def <   (b : IMat) = Mop_LT.op(mat, b, omat)
+  override def ==  (b : IMat) = Mop_EQ.op(mat, b, omat)
+  override def === (b : IMat) = Mop_EQ.op(mat, b, omat)
+  override def >=  (b : IMat) = Mop_GE.op(mat, b, omat)
+  override def <=  (b : IMat) = Mop_LE.op(mat, b, omat)
+  override def !=  (b : IMat) = Mop_NE.op(mat, b, omat)
   
   /*
    * Specialize to DMat
    */
-  def *   (b : DMat) = Mop_Times.op(mat, b, omat) 
-  def *^  (b : DMat) = Mop_TimesT.op(mat, b, omat)
-  def xT  (b : DMat) = Mop_TimesT.op(mat, b, omat)
-  def Tx  (b : DMat) = Mop_TTimes.op(mat, b, omat)
-  def ^*  (b : DMat) = Mop_TTimes.op(mat, b, omat)
-  def +   (b : DMat) = Mop_Plus.op(mat, b, omat)
-  def -   (b : DMat) = Mop_Minus.op(mat, b, omat)
-  def *@  (b : DMat) = Mop_ETimes.op(mat, b, omat)
-  def ∘   (b : DMat) = Mop_ETimes.op(mat, b, omat)
-  def /   (b : DMat) = Mop_EDiv.op(mat, b, omat)  
-  def ^   (b : DMat) = Mop_Pow.op(mat, b, omat) 
-  def ∙   (b : DMat) = Mop_Dot.op(mat, b, omat)
-  def ∙→  (b : DMat) = Mop_Dotr.op(mat, b, omat)
-  def dot (b : DMat) = Mop_Dot.op(mat, b, omat)
-  def dotr(b : DMat) = Mop_Dotr.op(mat, b, omat)
-  def \   (b : DMat) = Mop_HCat.op(mat, b, omat)
-  def on  (b : DMat) = Mop_VCat.op(mat, b, omat)
+  override def *   (b : DMat) = Mop_Times.op(mat, b, omat) 
+  override def *^  (b : DMat) = Mop_TimesT.op(mat, b, omat)
+  override def xT  (b : DMat) = Mop_TimesT.op(mat, b, omat)
+  override def Tx  (b : DMat) = Mop_TTimes.op(mat, b, omat)
+  override def ^*  (b : DMat) = Mop_TTimes.op(mat, b, omat)
+  override def +   (b : DMat) = Mop_Plus.op(mat, b, omat)
+  override def -   (b : DMat) = Mop_Minus.op(mat, b, omat)
+  override def *@  (b : DMat) = Mop_ETimes.op(mat, b, omat)
+  override def ∘   (b : DMat) = Mop_ETimes.op(mat, b, omat)
+  override def /   (b : DMat) = Mop_EDiv.op(mat, b, omat)  
+  override def ^   (b : DMat) = Mop_Pow.op(mat, b, omat) 
+  override def ∙   (b : DMat) = Mop_Dot.op(mat, b, omat)
+  override def ∙→  (b : DMat) = Mop_Dotr.op(mat, b, omat)
+  override def dot (b : DMat) = Mop_Dot.op(mat, b, omat)
+  override def dotr(b : DMat) = Mop_Dotr.op(mat, b, omat)
+  override def \   (b : DMat) = Mop_HCat.op(mat, b, omat)
+  override def on  (b : DMat) = Mop_VCat.op(mat, b, omat)
 
-  def >   (b : DMat) = Mop_GT.op(mat, b, omat)
-  def <   (b : DMat) = Mop_LT.op(mat, b, omat)
-  def ==  (b : DMat) = Mop_EQ.op(mat, b, omat)
-  def === (b : DMat) = Mop_EQ.op(mat, b, omat)
-  def >=  (b : DMat) = Mop_GE.op(mat, b, omat)
-  def <=  (b : DMat) = Mop_LE.op(mat, b, omat)
-  def !=  (b : DMat) = Mop_NE.op(mat, b, omat)
+  override def >   (b : DMat) = Mop_GT.op(mat, b, omat)
+  override def <   (b : DMat) = Mop_LT.op(mat, b, omat)
+  override def ==  (b : DMat) = Mop_EQ.op(mat, b, omat)
+  override def === (b : DMat) = Mop_EQ.op(mat, b, omat)
+  override def >=  (b : DMat) = Mop_GE.op(mat, b, omat)
+  override def <=  (b : DMat) = Mop_LE.op(mat, b, omat)
+  override def !=  (b : DMat) = Mop_NE.op(mat, b, omat)
   
   /*
    * Generics
