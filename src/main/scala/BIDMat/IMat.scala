@@ -723,20 +723,25 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
   }
   
   def cumsumByKey(keys:IMat, omat:Mat):IMat = {
-    if (nrows != keys.nrows || ncols != keys.ncols) 
-      throw new RuntimeException("cumsumKey dimensions mismatch");
-    val out = IMat.newOrCheckIMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumByKey".##);
-    Mat.nflops += 2L*length;
-    if (nrows == 1) {
-      cumsumKeyLinear(keys, out, 0, length);
-    } else {
-      var i = 0;
-      while (i < ncols) {
-        cumsumKeyLinear(keys, out, i*nrows, (i+1)*nrows);
-        i += 1;
+    (this, keys) match {
+      case (gme:GIMat, gkeys:GIMat) => gme.cumsumByKey(gkeys, omat);
+      case _ => {
+    	  if (nrows != keys.nrows || ncols != keys.ncols) 
+    		  throw new RuntimeException("cumsumKey dimensions mismatch");
+    	  val out = IMat.newOrCheckIMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumByKey".##);
+    	  Mat.nflops += 2L*length;
+    	  if (nrows == 1) {
+    		  cumsumKeyLinear(keys, out, 0, length);
+    	  } else {
+    		  var i = 0;
+    		  while (i < ncols) {
+    			  cumsumKeyLinear(keys, out, i*nrows, (i+1)*nrows);
+    			  i += 1;
+    		  }
+    	  }   
+    	  out
       }
-    }   
-    out
+    }
   }
   
   def cumsumByKey(keys:IMat):IMat = cumsumByKey(keys, null);
@@ -754,20 +759,25 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
   }
   
   def cummaxByKey(keys:IMat, omat:Mat):IMat = {
-    if (nrows != keys.nrows || ncols != keys.ncols) 
-      throw new RuntimeException("cummaxKey dimensions mismatch");
-    val out = IMat.newOrCheckIMat(nrows, ncols, omat, GUID, keys.GUID, "cummaxKey".##);
-    Mat.nflops += 2L*length;
-    if (nrows == 1) {
-      cummaxKeyLinear(keys, out, 0, length);
-    } else {
-      var i = 0;
-      while (i < ncols) {
-        cummaxKeyLinear(keys, out, i*nrows, (i+1)*nrows);
-        i += 1;
-      }
-    }   
-    out
+		  (this, keys) match {
+		  case (gme:GIMat, gkeys:GIMat) => gme.cummaxByKey(gkeys, omat);
+		  case _ => {
+			  if (nrows != keys.nrows || ncols != keys.ncols) 
+				  throw new RuntimeException("cummaxKey dimensions mismatch");
+			  val out = IMat.newOrCheckIMat(nrows, ncols, omat, GUID, keys.GUID, "cummaxKey".##);
+			  Mat.nflops += 2L*length;
+			  if (nrows == 1) {
+				  cummaxKeyLinear(keys, out, 0, length);
+			  } else {
+				  var i = 0;
+				  while (i < ncols) {
+					  cummaxKeyLinear(keys, out, i*nrows, (i+1)*nrows);
+					  i += 1;
+				  }
+			  }   
+			  out;
+		  }
+		  }
   }
   
   def cummaxByKey(keys:IMat):IMat = cummaxByKey(keys, null);
@@ -784,20 +794,25 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
   }
   
   def cumminByKey(keys:IMat, omat:Mat):IMat = {
-    if (nrows != keys.nrows || ncols != keys.ncols) 
-      throw new RuntimeException("cumminKey dimensions mismatch");
-    val out = IMat.newOrCheckIMat(nrows, ncols, omat, GUID, keys.GUID, "cumminKey".##);
-    Mat.nflops += 2L*length;
-    if (nrows == 1) {
-      cumminKeyLinear(keys, out, 0, length);
-    } else {
-      var i = 0;
-      while (i < ncols) {
-        cumminKeyLinear(keys, out, i*nrows, (i+1)*nrows);
-        i += 1;
-      }
-    }   
-    out
+		  (this, keys) match {
+		  case (gme:GIMat, gkeys:GIMat) => gme.cumminByKey(gkeys, omat);
+		  case _ => {
+			  if (nrows != keys.nrows || ncols != keys.ncols) 
+				  throw new RuntimeException("cumminKey dimensions mismatch");
+			  val out = IMat.newOrCheckIMat(nrows, ncols, omat, GUID, keys.GUID, "cumminKey".##);
+			  Mat.nflops += 2L*length;
+			  if (nrows == 1) {
+				  cumminKeyLinear(keys, out, 0, length);
+			  } else {
+				  var i = 0;
+				  while (i < ncols) {
+					  cumminKeyLinear(keys, out, i*nrows, (i+1)*nrows);
+					  i += 1;
+				  }
+			  }   
+			  out;
+		  }
+		  }
   }
   
   def cumminByKey(keys:IMat):IMat = cumminByKey(keys, null);
