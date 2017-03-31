@@ -21,11 +21,11 @@ class GMatTest extends BIDMatSpec {
 	}
 
 	def checkSimilar(aa:FMat, bb:FMat, eps:Float = 1e-4f) = {
-		val a = FMat(aa);
-		val b = FMat(bb);
-		a.dims.length should equal (b.dims.length) ;
-		a.dims.data should equal (b.dims.data);
-		assert_approx_eq(a.data, b.data, eps);
+			val a = FMat(aa);
+			val b = FMat(bb);
+			a.dims.length should equal (b.dims.length) ;
+			a.dims.data should equal (b.dims.data);
+			assert_approx_eq(a.data, b.data, eps);
 	}
 
 	"A GMat" should "support matrix transpose" in {
@@ -150,22 +150,22 @@ class GMatTest extends BIDMatSpec {
 	}
 
 	def testEwise(nr:Int, nc:Int, mop:(FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String) = {
-		it should msg in {
-			assume(Mat.hasCUDA > 0);
-			val a = rand(nr, nc);
-			val b = rand(nr, nc);  
-			val aa = GMat(a);
-			val bb = GMat(b);
-			val cc = mop(aa,bb);
-			val d = zeros(nr, nc);
-			for (i <- 0 until nc) {
-				for (j <- 0 until nr) {
-					d.data(j + nr * i) = op(a.data(j + nr * i), b.data(j + nr * i));
+			it should msg in {
+				assume(Mat.hasCUDA > 0);
+				val a = rand(nr, nc);
+				val b = rand(nr, nc);  
+				val aa = GMat(a);
+				val bb = GMat(b);
+				val cc = mop(aa,bb);
+				val d = zeros(nr, nc);
+				for (i <- 0 until nc) {
+					for (j <- 0 until nr) {
+						d.data(j + nr * i) = op(a.data(j + nr * i), b.data(j + nr * i));
+					}
 				}
+				cc.mytype should equal ("GMat");
+				checkSimilar(cc, d);
 			}
-			cc.mytype should equal ("GMat");
-			checkSimilar(cc, d);
-		}
 	}
 
 	testEwise(nr, nc, (a:FMat, b:FMat) => a + b, (x:Float, y:Float)=>x+y, "support elementwise addition");  
@@ -182,22 +182,22 @@ class GMatTest extends BIDMatSpec {
 
 
 	def testEwiseInPlace(nr:Int, nc:Int, mop:(FMat,FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String) = {
-		it should msg in {
-			assume(Mat.hasCUDA > 0);
-			val a = rand(nr, nc);
-			val b = rand(nr, nc) + 0.01f; 
-			val aa = GMat(a);
-			val bb = GMat(b);    			
-			val cc = gzeros(nr, nc);
-			mop(cc,aa,bb);
-			val d = zeros(nr, nc);
-			for (i <- 0 until nc) {
-				for (j <- 0 until nr) {
-					d.data(j + nr * i) = op(a.data(j + nr * i), b.data(j + nr * i));
+			it should msg in {
+				assume(Mat.hasCUDA > 0);
+				val a = rand(nr, nc);
+				val b = rand(nr, nc) + 0.01f; 
+				val aa = GMat(a);
+				val bb = GMat(b);    			
+				val cc = gzeros(nr, nc);
+				mop(cc,aa,bb);
+				val d = zeros(nr, nc);
+				for (i <- 0 until nc) {
+					for (j <- 0 until nr) {
+						d.data(j + nr * i) = op(a.data(j + nr * i), b.data(j + nr * i));
+					}
 				}
+				checkSimilar(cc, d);
 			}
-			checkSimilar(cc, d);
-		}
 	}
 
 	testEwiseInPlace(nr, nc, (c:FMat, a:FMat, b:FMat) => c ~ a + b, (x:Float, y:Float)=>x+y, "support elementwise addition in place");  
@@ -210,27 +210,27 @@ class GMatTest extends BIDMatSpec {
 
 
 	def testBcastRows(nr:Int, nc:Int, mop:(FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String, reverse:Boolean = true) = {
-		it should msg in {  
-			assume(Mat.hasCUDA > 0);
-			val a = rand(nr, nc);
-			val b = rand(1, nc);
-			val aa = GMat(a);
-			val bb = GMat(b);
-			val d = zeros(nr, nc);
-			for (i <- 0 until nc) {
-				for (j <- 0 until nr) {
-					d.data(j + i * nr) = op(a.data(j + i * nr), b.data(i));
+			it should msg in {  
+				assume(Mat.hasCUDA > 0);
+				val a = rand(nr, nc);
+				val b = rand(1, nc);
+				val aa = GMat(a);
+				val bb = GMat(b);
+				val d = zeros(nr, nc);
+				for (i <- 0 until nc) {
+					for (j <- 0 until nr) {
+						d.data(j + i * nr) = op(a.data(j + i * nr), b.data(i));
+					}
+				}
+				val cc = mop(aa, bb);
+				cc.mytype should equal ("GMat");
+				checkSimilar(cc, d);
+				if (reverse) {
+					val ee = mop(bb, aa);
+					ee.mytype should equal ("GMat");
+					checkSimilar(ee, d);
 				}
 			}
-			val cc = mop(aa, bb);
-			cc.mytype should equal ("GMat");
-			checkSimilar(cc, d);
-			if (reverse) {
-				val ee = mop(bb, aa);
-				ee.mytype should equal ("GMat");
-				checkSimilar(ee, d);
-			}
-		}
 	}
 
 	testBcastRows(nr, nc, (a:FMat, b:FMat) => a + b, (x:Float, y:Float)=>x+y, "support addition with broadcast over rows");
@@ -247,27 +247,27 @@ class GMatTest extends BIDMatSpec {
 
 
 	def testBcastRowsInPlace(nr:Int, nc:Int, mop:(FMat,FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String, reverse:Boolean = true) = {
-		it should msg in {  
-			assume(Mat.hasCUDA > 0);
-			val a = rand(nr, nc) + 0.01f;
-			val b = rand(1, nc) + 0.01f;
-			val aa = GMat(a);
-			val bb = GMat(b);
-			val d = zeros(nr, nc);
-			val cc = gzeros(nr, nc);
-			val ee = gzeros(nr, nc);
-			for (i <- 0 until nc) {
-				for (j <- 0 until nr) {
-					d.data(j + i * nr) = op(a.data(j + i * nr), b.data(i));
+			it should msg in {  
+				assume(Mat.hasCUDA > 0);
+				val a = rand(nr, nc) + 0.01f;
+				val b = rand(1, nc) + 0.01f;
+				val aa = GMat(a);
+				val bb = GMat(b);
+				val d = zeros(nr, nc);
+				val cc = gzeros(nr, nc);
+				val ee = gzeros(nr, nc);
+				for (i <- 0 until nc) {
+					for (j <- 0 until nr) {
+						d.data(j + i * nr) = op(a.data(j + i * nr), b.data(i));
+					}
+				}
+				mop(cc, aa, bb);
+				checkSimilar(cc, d);
+				if (reverse) {
+					mop(ee, bb, aa);
+					checkSimilar(ee, d);
 				}
 			}
-			mop(cc, aa, bb);
-			checkSimilar(cc, d);
-			if (reverse) {
-				mop(ee, bb, aa);
-				checkSimilar(ee, d);
-			}
-		}
 	}
 
 	testBcastRowsInPlace(nr, nc, (c:FMat, a:FMat, b:FMat) => c ~ a + b, (x:Float, y:Float)=>x+y, "support addition with broadcast over rows in place");
@@ -280,30 +280,30 @@ class GMatTest extends BIDMatSpec {
 
 
 	def testBcastRows4D(nr:Int, nc:Int, mop:(FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String, reverse:Boolean = true) = {
-		it should msg in {  
-			assume(Mat.hasCUDA > 0);
-			val a = rand(nr \ nc \ nk \ nl) + 0.01f;
-			val b = rand(1 \ 1 \ nk \ nl) + 0.01f;
-			val aa = GMat(a);
-			val bb = GMat(b);
-			val d = zeros(a.dims);
-			for (i <- 0 until nr) {
-				for (j <- 0 until nc) {
-					for (k <- 0 until nk) {
-						for (l <- 0 until nl) {
-							d.data(i + nr * (j + nc * (k + nk * l))) = op(a.data(i + nr * (j + nc * (k + nk * l))), b.data(k + nk * l));
+			it should msg in {  
+				assume(Mat.hasCUDA > 0);
+				val a = rand(nr \ nc \ nk \ nl) + 0.01f;
+				val b = rand(1 \ 1 \ nk \ nl) + 0.01f;
+				val aa = GMat(a);
+				val bb = GMat(b);
+				val d = zeros(a.dims);
+				for (i <- 0 until nr) {
+					for (j <- 0 until nc) {
+						for (k <- 0 until nk) {
+							for (l <- 0 until nl) {
+								d.data(i + nr * (j + nc * (k + nk * l))) = op(a.data(i + nr * (j + nc * (k + nk * l))), b.data(k + nk * l));
+							}
 						}
 					}
 				}
+				val cc = mop(aa, bb);
+				cc.mytype should equal ("GMat");
+				checkSimilar(cc, d);
+				if (reverse) {
+					val ee = mop(bb, aa);
+					checkSimilar(ee, d);
+				}
 			}
-			val cc = mop(aa, bb);
-			cc.mytype should equal ("GMat");
-			checkSimilar(cc, d);
-			if (reverse) {
-				val ee = mop(bb, aa);
-				checkSimilar(ee, d);
-			}
-		}
 	}
 
 	testBcastRows4D(nr, nc, (a:FMat, b:FMat) => a + b, (x:Float, y:Float)=>x+y, "support addition with broadcast over rows 4D");
@@ -319,31 +319,31 @@ class GMatTest extends BIDMatSpec {
 	testBcastRows4D(nr, nc, (a:FMat, b:FMat) => max(a,b), (x:Float, y:Float)=> math.max(x,y), "support max with broadcast over rows 4D");
 
 	def testBcastRows4DinPlace(nr:Int, nc:Int, mop:(FMat,FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String, reverse:Boolean = true) = {
-		it should msg in { 
-			assume(Mat.hasCUDA > 0);
-			val a = rand(nr \ nc \ nk \ nl) + 0.01f;
-			val b = rand(1 \ 1 \ nk \ nl) + 0.01f;
-			val aa = GMat(a);
-			val bb = GMat(b);
-			val d = zeros(a.dims);
-			val cc = gzeros(a.dims);
-			val ee = gzeros(a.dims);
-			for (i <- 0 until nr) {
-				for (j <- 0 until nc) {
-					for (k <- 0 until nk) {
-						for (l <- 0 until nl) {
-							d.data(i + nr * (j + nc * (k + nk * l))) = op(a.data(i + nr * (j + nc * (k + nk * l))), b.data(k + nk * l));
+			it should msg in { 
+				assume(Mat.hasCUDA > 0);
+				val a = rand(nr \ nc \ nk \ nl) + 0.01f;
+				val b = rand(1 \ 1 \ nk \ nl) + 0.01f;
+				val aa = GMat(a);
+				val bb = GMat(b);
+				val d = zeros(a.dims);
+				val cc = gzeros(a.dims);
+				val ee = gzeros(a.dims);
+				for (i <- 0 until nr) {
+					for (j <- 0 until nc) {
+						for (k <- 0 until nk) {
+							for (l <- 0 until nl) {
+								d.data(i + nr * (j + nc * (k + nk * l))) = op(a.data(i + nr * (j + nc * (k + nk * l))), b.data(k + nk * l));
+							}
 						}
 					}
 				}
+				mop(cc, aa, bb);
+				checkSimilar(cc, d);
+				if (reverse) {
+					mop(ee, bb, aa);
+					checkSimilar(ee, d);
+				}
 			}
-			mop(cc, aa, bb);
-			checkSimilar(cc, d);
-			if (reverse) {
-				mop(ee, bb, aa);
-				checkSimilar(ee, d);
-			}
-		}
 	}
 
 	testBcastRows4DinPlace(nr, nc, (c:FMat, a:FMat, b:FMat) => c ~ a + b, (x:Float, y:Float)=>x+y, "support addition with broadcast over rows 4D in place");
@@ -357,26 +357,26 @@ class GMatTest extends BIDMatSpec {
 
 
 	def testBcastCols(nr:Int, nc:Int, mop:(FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String, reverse:Boolean = true) = {
-		it should msg in {
-			val a = rand(nr, nc);
-			val b = rand(nr, 1);
-			val aa = GMat(a);
-			val bb = GMat(b);
-			val d = zeros(nr, nc);
-			for (i <- 0 until nc) {
-				for (j <- 0 until nr) {
-					d.data(j + i * nr) = op(a.data(j + i * nr), b.data(j));
+			it should msg in {
+				val a = rand(nr, nc);
+				val b = rand(nr, 1);
+				val aa = GMat(a);
+				val bb = GMat(b);
+				val d = zeros(nr, nc);
+				for (i <- 0 until nc) {
+					for (j <- 0 until nr) {
+						d.data(j + i * nr) = op(a.data(j + i * nr), b.data(j));
+					}
+				}
+				val cc = mop(aa, bb);
+				cc.mytype should equal ("GMat");
+				checkSimilar(cc, d);
+				if (reverse) {
+					val ee = mop(bb, aa);
+					ee.mytype should equal ("GMat");
+					checkSimilar(ee, d);
 				}
 			}
-			val cc = mop(aa, bb);
-			cc.mytype should equal ("GMat");
-			checkSimilar(cc, d);
-			if (reverse) {
-				val ee = mop(bb, aa);
-				ee.mytype should equal ("GMat");
-				checkSimilar(ee, d);
-			}
-		}
 	}
 
 	testBcastCols(nr, nc, (a:FMat, b:FMat) => a + b, (x:Float, y:Float)=>x+y, "support addition with broadcast over cols");
@@ -393,27 +393,27 @@ class GMatTest extends BIDMatSpec {
 
 
 	def testBcastColsInPlace(nr:Int, nc:Int, mop:(FMat,FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String, reverse:Boolean = true) = {
-		it should msg in {
-			assume(Mat.hasCUDA > 0);
-			val a = rand(nr, nc) + 0.01f;
-			val b = rand(nr, 1) + 0.01f;
-			val aa = GMat(a);
-			val bb = GMat(b);
-			val d = zeros(nr, nc);
-			val cc = gzeros(nr, nc);
-			val ee = gzeros(nr, nc);
-			for (i <- 0 until nc) {
-				for (j <- 0 until nr) {
-					d.data(j + i * nr) = op(a.data(j + i * nr), b.data(j));
+			it should msg in {
+				assume(Mat.hasCUDA > 0);
+				val a = rand(nr, nc) + 0.01f;
+				val b = rand(nr, 1) + 0.01f;
+				val aa = GMat(a);
+				val bb = GMat(b);
+				val d = zeros(nr, nc);
+				val cc = gzeros(nr, nc);
+				val ee = gzeros(nr, nc);
+				for (i <- 0 until nc) {
+					for (j <- 0 until nr) {
+						d.data(j + i * nr) = op(a.data(j + i * nr), b.data(j));
+					}
+				}
+				mop(cc, aa, bb);
+				checkSimilar(cc, d);
+				if (reverse) {
+					mop(ee, bb, aa);
+					checkSimilar(ee, d);
 				}
 			}
-			mop(cc, aa, bb);
-			checkSimilar(cc, d);
-			if (reverse) {
-				mop(ee, bb, aa);
-				checkSimilar(ee, d);
-			}
-		}
 	}
 
 
@@ -427,39 +427,39 @@ class GMatTest extends BIDMatSpec {
 
 
 	def testScalar1(nr:Int, nc:Int, mop:(Float,FMat)=>FMat, op:(Float,Float)=>Float, msg:String) = {
-		it should msg in {
-			assume(Mat.hasCUDA > 0);
-			val a = rand(1, 1).fv;
-			val b = rand(nr, nc);
-			val bb = GMat(b);
-			val d = zeros(nr, nc);
-			for (i <- 0 until nc) {
-				for (j <- 0 until nr) {
-					d.data(j + i * nr) = op(a, b.data(j + i * nr));
+			it should msg in {
+				assume(Mat.hasCUDA > 0);
+				val a = rand(1, 1).fv;
+				val b = rand(nr, nc);
+				val bb = GMat(b);
+				val d = zeros(nr, nc);
+				for (i <- 0 until nc) {
+					for (j <- 0 until nr) {
+						d.data(j + i * nr) = op(a, b.data(j + i * nr));
+					}
 				}
+				val cc = mop(a, bb);
+				cc.mytype should equal ("GMat");
+				checkSimilar(cc, d);
 			}
-			val cc = mop(a, bb);
-			cc.mytype should equal ("GMat");
-			checkSimilar(cc, d);
-		}
 	}
 
 	def testScalar2(nr:Int, nc:Int, mop:(FMat,Float)=>FMat, op:(Float,Float)=>Float, msg:String) = {
-		it should msg in {
-			assume(Mat.hasCUDA > 0);
-			val a = rand(nr, nc);
-			val b = rand(1, 1).fv;
-			val aa = GMat(a);
-			val d = zeros(nr, nc);
-			for (i <- 0 until nc) {
-				for (j <- 0 until nr) {
-					d.data(j + i * nr) = op(a.data(j + i * nr), b);
+			it should msg in {
+				assume(Mat.hasCUDA > 0);
+				val a = rand(nr, nc);
+				val b = rand(1, 1).fv;
+				val aa = GMat(a);
+				val d = zeros(nr, nc);
+				for (i <- 0 until nc) {
+					for (j <- 0 until nr) {
+						d.data(j + i * nr) = op(a.data(j + i * nr), b);
+					}
 				}
+				val cc = mop(aa, b);
+				cc.mytype should equal ("GMat");
+				checkSimilar(cc, d);
 			}
-			val cc = mop(aa, b);
-			cc.mytype should equal ("GMat");
-			checkSimilar(cc, d);
-		}
 	}
 
 	testScalar1(nr, nc, (a:Float, b:FMat) => a + b, (x:Float, y:Float)=>x+y, "support addition of scalar 1");
@@ -483,44 +483,92 @@ class GMatTest extends BIDMatSpec {
 	testScalar2(nr, nc, (a:FMat, b:Float) => max(a, b), (x:Float, y:Float)=> math.max(x,y), "support max of scalar 2");
 
 
-	def testScalar1ND(nr:Int, nc:Int, mop:(Float,FMat)=>FMat, op:(Float,Float)=>Float, msg:String) = {
-		it should msg in {
-			assume(Mat.hasCUDA > 0);
-			val a = rand(1, 1).fv;
-			val b = rand(nr \ nc \ nk);
-			val bb = GMat(b);
-			val d = zeros(nr \ nc \ nk);
-			for (i <- 0 until nr) {
-				for (j <- 0 until nc) {
-					for (k <- 0 until nk) {
-						d.data(i + nr * (j + nc * k)) = op(a, b.data(i + nr * (j + nc * k)));
+	def testScalar1inPlace(nr:Int, nc:Int, mop:(FMat,Float,FMat)=>FMat, op:(Float,Float)=>Float, msg:String) = {
+			it should msg in {
+				assume(Mat.hasCUDA > 0);
+				val a = rand(1, 1).fv;
+				val b = rand(nr, nc);
+				val bb = GMat(b);
+				val cc = gzeros(nr, nc);
+				val d = zeros(nr, nc);
+				for (i <- 0 until nc) {
+					for (j <- 0 until nr) {
+						d.data(j + i * nr) = op(a, b.data(j + i * nr));
 					}
 				}
+				mop(cc, a, bb);
+				checkSimilar(cc, d);
 			}
-			val cc = mop(a, bb);
-			cc.mytype should equal ("GMat");
-			checkSimilar(cc, d);
-		}
+	}
+
+	def testScalar2inPlace(nr:Int, nc:Int, mop:(FMat,FMat,Float)=>FMat, op:(Float,Float)=>Float, msg:String) = {
+			it should msg in {
+				assume(Mat.hasCUDA > 0);
+				val a = rand(nr, nc);
+				val b = rand(1, 1).fv;
+				val aa = GMat(a);
+				val cc = gzeros(nr, nc);
+				val d = zeros(nr, nc);
+				for (i <- 0 until nc) {
+					for (j <- 0 until nr) {
+						d.data(j + i * nr) = op(a.data(j + i * nr), b);
+					}
+				}
+				mop(cc, aa, b);
+				checkSimilar(cc, d);
+			}
+	}
+
+	testScalar1inPlace(nr, nc, (c:FMat, a:Float, b:FMat) => c ~ a + b, (x:Float, y:Float)=>x+y, "support addition of scalar 1 in place");
+
+	testScalar1inPlace(nr, nc, (c:FMat, a:Float, b:FMat) => c ~ a *@ b, (x:Float, y:Float)=>x*y, "support multiplication of scalar 1 in place");
+
+	testScalar2inPlace(nr, nc, (c:FMat, a:FMat, b:Float) => c ~ a + b, (x:Float, y:Float)=>x+y, "support addition of scalar 2 in place");
+
+	testScalar2inPlace(nr, nc, (c:FMat, a:FMat, b:Float) => c ~ a *@ b, (x:Float, y:Float)=>x*y, "support multiplication of scalar 2 in place");
+
+	testScalar2inPlace(nr, nc, (c:FMat, a:FMat, b:Float) => c ~ a - b, (x:Float, y:Float)=>x-y, "support subtraction of scalar 2 in place");
+
+	testScalar2inPlace(nr, nc, (c:FMat, a:FMat, b:Float) => c ~ a / b, (x:Float, y:Float)=>x / y, "support division of scalar 2 in place");
+
+	def testScalar1ND(nr:Int, nc:Int, mop:(Float,FMat)=>FMat, op:(Float,Float)=>Float, msg:String) = {
+			it should msg in {
+				assume(Mat.hasCUDA > 0);
+				val a = rand(1, 1).fv;
+				val b = rand(nr \ nc \ nk);
+				val bb = GMat(b);
+				val d = zeros(nr \ nc \ nk);
+				for (i <- 0 until nr) {
+					for (j <- 0 until nc) {
+						for (k <- 0 until nk) {
+							d.data(i + nr * (j + nc * k)) = op(a, b.data(i + nr * (j + nc * k)));
+						}
+					}
+				}
+				val cc = mop(a, bb);
+				cc.mytype should equal ("GMat");
+				checkSimilar(cc, d);
+			}
 	}
 
 	def testScalar2ND(nr:Int, nc:Int, mop:(FMat,Float)=>FMat, op:(Float,Float)=>Float, msg:String) = {
-		it should msg in {
-			assume(Mat.hasCUDA > 0);
-			val a = rand(nr \ nc \ nk);
-			val b = rand(1, 1).fv;
-			val aa = GMat(a);
-			val d = zeros(nr \ nc \ nk);
-			for (i <- 0 until nr) {
-				for (j <- 0 until nc) {
-					for (k <- 0 until nk) {
-						d.data(i + nr * (j + nc * k)) = op(a.data(i + nr * (j + nc * k)), b);
+			it should msg in {
+				assume(Mat.hasCUDA > 0);
+				val a = rand(nr \ nc \ nk);
+				val b = rand(1, 1).fv;
+				val aa = GMat(a);
+				val d = zeros(nr \ nc \ nk);
+				for (i <- 0 until nr) {
+					for (j <- 0 until nc) {
+						for (k <- 0 until nk) {
+							d.data(i + nr * (j + nc * k)) = op(a.data(i + nr * (j + nc * k)), b);
+						}
 					}
 				}
+				val cc = mop(aa, b);
+				cc.mytype should equal ("GMat");
+				checkSimilar(cc, d);
 			}
-			val cc = mop(aa, b);
-			cc.mytype should equal ("GMat");
-			checkSimilar(cc, d);
-		}
 	}
 
 	testScalar1ND(nr, nc, (a:Float, b:FMat) => a + b, (x:Float, y:Float)=>x+y, "support addition of scalar 1 ND");
@@ -543,6 +591,60 @@ class GMatTest extends BIDMatSpec {
 	testScalar2ND(nr, nc, (a:FMat, b:Float) => min(a,b), (x:Float, y:Float)=>math.min(x,y), "support min of scalar 2 3D");
 
 	testScalar2ND(nr, nc, (a:FMat, b:Float) => max(a,b), (x:Float, y:Float)=>math.max(x,y), "support max of scalar 2 3D");
+	
+	    
+	def testScalar1NDinPlace(nr:Int, nc:Int, mop:(FMat,Float,FMat)=>FMat, op:(Float,Float)=>Float, msg:String) = {
+    		it should msg in {
+    			assume(Mat.hasCUDA > 0);
+    			val a = rand(1, 1).fv;
+    			val b = rand(nr \ nc \ nk);
+    			val bb = GMat(b);
+    			val cc = gzeros(b.dims);
+    			val d = zeros(nr \ nc \ nk);
+    			for (i <- 0 until nr) {
+    				for (j <- 0 until nc) {
+    				  for (k <- 0 until nk) {
+    				  	d.data(i + nr * (j + nc * k)) = op(a, b.data(i + nr * (j + nc * k)));
+    				  }
+    				}
+    			}
+    			mop(cc, a, bb);
+    			checkSimilar(cc, d);
+    		}
+    }
+
+    def testScalar2NDinPlace(nr:Int, nc:Int, mop:(FMat,FMat,Float)=>FMat, op:(Float,Float)=>Float, msg:String) = {
+    		it should msg in {
+    			assume(Mat.hasCUDA > 0);
+    			val a = rand(nr \ nc \ nk);
+    			val b = rand(1, 1).fv;
+    			val aa = GMat(a);
+    			val cc = gzeros(a.dims);
+    			val d = zeros(nr \ nc \ nk);
+    			for (i <- 0 until nr) {
+    				for (j <- 0 until nc) {
+    					for (k <- 0 until nk) {
+    						d.data(i + nr * (j + nc * k)) = op(a.data(i + nr * (j + nc * k)), b);
+    					}
+    				}
+    			}
+    			mop(cc, aa, b);
+    			checkSimilar(cc, d);
+    		}
+    }
+    
+    testScalar1NDinPlace(nr, nc, (c:FMat, a:Float, b:FMat) => c ~ a + b, (x:Float, y:Float)=>x+y, "support addition of scalar 1 3D in place");
+
+    testScalar1NDinPlace(nr, nc, (c:FMat, a:Float, b:FMat) => c ~ a *@ b, (x:Float, y:Float)=>x*y, "support multiplication of scalar 1 3D in place");
+
+    testScalar2NDinPlace(nr, nc, (c:FMat, a:FMat, b:Float) => c ~ a + b, (x:Float, y:Float)=>x+y, "support addition of scalar 2 3D in place");
+
+    testScalar2NDinPlace(nr, nc, (c:FMat, a:FMat, b:Float) => c ~ a *@ b, (x:Float, y:Float)=>x*y, "support multiplication of scalar 2 3D in place");
+
+    testScalar2NDinPlace(nr, nc, (c:FMat, a:FMat, b:Float) => c ~ a - b, (x:Float, y:Float)=>x-y, "support subtraction of scalar 2 3D in place");
+
+    testScalar2NDinPlace(nr, nc, (c:FMat, a:FMat, b:Float) => c ~ a / b, (x:Float, y:Float)=>x / y, "support division of scalar 2 3D in place");
+ 
 
 	it should "support 1D element access" in {
 		assume(Mat.hasCUDA > 0);
@@ -809,36 +911,36 @@ class GMatTest extends BIDMatSpec {
 	}
 
 	def testReduce2D(reducer:(FMat, Int)=>FMat, fn:(Float, Float)=>Float, axis:Int, msg:String) = {
-		it should msg in {
-			assume(Mat.hasCUDA > 0);
-			val a = rand(nr, nc);
-			val aa = GMat(a);
-			val b = if (axis <= 1) {
-				zeros(1, nc);
-			} else {
-				zeros(nr, 1);
-			}
-			for (i <- 0 until nr) {
-				for (j <- 0 until nc) {
-					if (axis <= 1) {
-						if (i == 0) {
-							b.data(j) = a.data(i + nr * j);
+			it should msg in {
+				assume(Mat.hasCUDA > 0);
+				val a = rand(nr, nc);
+				val aa = GMat(a);
+				val b = if (axis <= 1) {
+					zeros(1, nc);
+				} else {
+					zeros(nr, 1);
+				}
+				for (i <- 0 until nr) {
+					for (j <- 0 until nc) {
+						if (axis <= 1) {
+							if (i == 0) {
+								b.data(j) = a.data(i + nr * j);
+							} else {
+								b.data(j) = fn(b.data(j), a.data(i + nr * j));
+							}
 						} else {
-							b.data(j) = fn(b.data(j), a.data(i + nr * j));
+							if (j == 0) {
+								b.data(i) = a.data(i + nr * j);
+							} else {
+								b.data(i) = fn(b.data(i), a.data(i + nr * j));
+							}   				    
 						}
-					} else {
-						if (j == 0) {
-							b.data(i) = a.data(i + nr * j);
-						} else {
-							b.data(i) = fn(b.data(i), a.data(i + nr * j));
-						}   				    
 					}
 				}
+				val cc = reducer(aa, axis);
+				cc.mytype should equal ("GMat");
+				checkSimilar(b, cc);
 			}
-			val cc = reducer(aa, axis);
-			cc.mytype should equal ("GMat");
-			checkSimilar(b, cc);
-		}
 	} 
 
 	testReduce2D((a:FMat, n:Int) => sum(a, n), (x:Float, y:Float)=>x+y, 1, "support 2D column sum");
@@ -858,37 +960,37 @@ class GMatTest extends BIDMatSpec {
 	testReduce2D((a:FMat, n:Int) => amin(a, n), (x:Float, y:Float)=>math.min(x,y), 2, "support 2D row min");
 
 	def testReduce4D(reducer:(FMat, IMat)=>FMat, fn:(Float, Float)=>Float, dims:IMat, msg:String, eps:Float = 1e-4f) = {
-		it should msg in {
-			assume(Mat.hasCUDA > 0);
-			val adims = nr \ nc \ nk \ nl;
-			val bdims = adims.copy;
-			bdims(dims) = 1;
-			val a = rand(adims);
-			val aa = GMat(a);
-			val b = zeros(bdims);
-			for (i <- 0 until nr) {
-				for (j <- 0 until nc) {
-					for (k <- 0 until nk) {
-						for (l <- 0 until nl) {
-							val i0 = if (bdims(0) == 1) 0 else i;
-							val j0 = if (bdims(1) == 1) 0 else j;
-							val k0 = if (bdims(2) == 1) 0 else k;
-							val l0 = if (bdims(3) == 1) 0 else l;
-							val bi = i0 + bdims(0) * (j0 + bdims(1) * (k0 + bdims(2) * l0));
-							val ai = i + nr * (j + nc * (k + nk * l));
-							if (((i == 0) || bdims(0) > 1) && ((j == 0) || bdims(1) > 1) && ((k == 0) || bdims(2) > 1) && ((l == 0) || bdims(3) > 1)) {
-								b.data(bi) = a.data(ai);
-							} else {
-								b.data(bi) = fn(b.data(bi), a.data(ai));
-							}
-						}	    
+			it should msg in {
+				assume(Mat.hasCUDA > 0);
+				val adims = nr \ nc \ nk \ nl;
+				val bdims = adims.copy;
+				bdims(dims) = 1;
+				val a = rand(adims);
+				val aa = GMat(a);
+				val b = zeros(bdims);
+				for (i <- 0 until nr) {
+					for (j <- 0 until nc) {
+						for (k <- 0 until nk) {
+							for (l <- 0 until nl) {
+								val i0 = if (bdims(0) == 1) 0 else i;
+								val j0 = if (bdims(1) == 1) 0 else j;
+								val k0 = if (bdims(2) == 1) 0 else k;
+								val l0 = if (bdims(3) == 1) 0 else l;
+								val bi = i0 + bdims(0) * (j0 + bdims(1) * (k0 + bdims(2) * l0));
+								val ai = i + nr * (j + nc * (k + nk * l));
+								if (((i == 0) || bdims(0) > 1) && ((j == 0) || bdims(1) > 1) && ((k == 0) || bdims(2) > 1) && ((l == 0) || bdims(3) > 1)) {
+									b.data(bi) = a.data(ai);
+								} else {
+									b.data(bi) = fn(b.data(bi), a.data(ai));
+								}
+							}	    
+						}
 					}
 				}
+				val cc = reducer(aa, dims);
+				cc.mytype should equal ("GMat");
+				checkSimilar(b, cc, eps);
 			}
-			val cc = reducer(aa, dims);
-			cc.mytype should equal ("GMat");
-			checkSimilar(b, cc, eps);
-		}
 	} 
 
 	testReduce4D((a:FMat, n:IMat) => a.sum(n), (x:Float, y:Float)=>x+y, 1\3, "support 4D sum", 1e-2f);
@@ -1020,21 +1122,21 @@ class GMatTest extends BIDMatSpec {
 	}
 
 	def randomizeColsAndInds(a:FMat):(FMat, IMat) = {
-		val b = a.copy;
-		val bi = icol(0->b.nrows) * iones(1, b.ncols);
-		val r = rand(a.nrows, a.ncols);
-		for (j <- 0 until a.ncols) {
-			for (i <- 0 until a.nrows-1) {
-				val indx = i + math.min(a.nrows - i - 1, math.floor((b.nrows - i) * r(i, j))).toInt;
-				val tmp = b(i, j);
-				b(i, j) = b(indx, j);
-				b(indx, j) = tmp;
-				val itmp = bi(i, j);
-				bi(i, j) = bi(indx, j);
-				bi(indx, j) = itmp;
+			val b = a.copy;
+			val bi = icol(0->b.nrows) * iones(1, b.ncols);
+			val r = rand(a.nrows, a.ncols);
+			for (j <- 0 until a.ncols) {
+				for (i <- 0 until a.nrows-1) {
+					val indx = i + math.min(a.nrows - i - 1, math.floor((b.nrows - i) * r(i, j))).toInt;
+					val tmp = b(i, j);
+					b(i, j) = b(indx, j);
+					b(indx, j) = tmp;
+					val itmp = bi(i, j);
+					bi(i, j) = bi(indx, j);
+					bi(indx, j) = itmp;
+				}
 			}
-		}
-		(b, bi);
+			(b, bi);
 	}
 
 	it should "support 2D sort2 in columns" in {
@@ -1080,47 +1182,47 @@ class GMatTest extends BIDMatSpec {
 	import org.apache.commons.math3.distribution._
 
 	def testFunction2D(mop:(FMat)=>FMat, op:(Float)=>Float, offset:Float, msg:String) = {
-		it should msg in {
-			assume(Mat.hasCUDA > 0);
-			val a = rand(nr \ nc);
-			a ~ a + offset;
-			val aa = GMat(a);
-			val b = zeros(nr \ nc);
-			for (i <- 0 until a.length) {
-				b.data(i) = op(a.data(i));
+			it should msg in {
+				assume(Mat.hasCUDA > 0);
+				val a = rand(nr \ nc);
+				a ~ a + offset;
+				val aa = GMat(a);
+				val b = zeros(nr \ nc);
+				for (i <- 0 until a.length) {
+					b.data(i) = op(a.data(i));
+				}
+				val cc = mop(aa);
+				cc.mytype should equal ("GMat");
+				checkSimilar(b, cc);
 			}
-			val cc = mop(aa);
-			cc.mytype should equal ("GMat");
-			checkSimilar(b, cc);
-		}
 	}
 
 	def testFunction2Dclass(mop:(FMat)=>FMat, fnclass:UnivariateFunction, offset:Float, msg:String) = {
-		it should msg in {
-			assume(Mat.hasCUDA > 0);
-			val a = rand(nr \ nc);
-			a ~ a + offset;
-			val aa = GMat(a);
-			val b = zeros(nr \ nc);
-			for (i <- 0 until a.length) {
-				b.data(i) = fnclass.value(a.data(i)).toFloat;
+			it should msg in {
+				assume(Mat.hasCUDA > 0);
+				val a = rand(nr \ nc);
+				a ~ a + offset;
+				val aa = GMat(a);
+				val b = zeros(nr \ nc);
+				for (i <- 0 until a.length) {
+					b.data(i) = fnclass.value(a.data(i)).toFloat;
+				}
+				val cc = mop(aa);
+				checkSimilar(b, cc);
 			}
-			val cc = mop(aa);
-			checkSimilar(b, cc);
-		}
 	}
 
 	def testFunction2Dg(mop:(FMat)=>FMat, offset:Float, msg:String, eps:Float=1e-4f) = {
-		it should msg in {
-			assume(Mat.hasCUDA > 0);
-			val a = rand(nr \ nc);
-			a ~ a + offset;
-			val aa = GMat(a);
-			val b = mop(a);
-			val bb = mop(aa);
-			bb.mytype should equal ("GMat");    			
-			checkSimilar(b, bb, eps);
-		}
+			it should msg in {
+				assume(Mat.hasCUDA > 0);
+				val a = rand(nr \ nc);
+				a ~ a + offset;
+				val aa = GMat(a);
+				val b = mop(a);
+				val bb = mop(aa);
+				bb.mytype should equal ("GMat");    			
+				checkSimilar(b, bb, eps);
+			}
 	}
 
 	testFunction2D((a:FMat) => abs(a), (x:Float)=>math.abs(x), -0.5f, "support 2D abs function");

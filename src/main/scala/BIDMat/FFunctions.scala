@@ -158,14 +158,14 @@ object FFunctions {
   def min(a:FMat, b:Float, out:Mat) = {
 	  a match {
 	    case aa:GMat=> GFunctions.min(aa, GMat.elem(b), out);
-	    case _ => a.ffMatOpScalarv(b, FMat.vecMinFun, out);
+	    case _ => a.ffMatOpScalarv(b, FMat.vecMinFun, op_min, out);
 	  }
 	}
 	
 	def max(a:FMat, b:Float, out:Mat) = {
 	  a match {
 	    case aa:GMat=> GFunctions.max(aa, GMat.elem(b), out);
-	    case _ => a.ffMatOpScalarv(b, FMat.vecMaxFun, out);
+	    case _ => a.ffMatOpScalarv(b, FMat.vecMaxFun, op_max, out);
 	  }
 	}
 
