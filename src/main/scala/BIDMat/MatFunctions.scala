@@ -137,11 +137,17 @@ object MatFunctions {
   
   /** Convert to the corresponding integral type */
   def int(a:FMat):IMat = {
-    IMat(a);
+    a match {
+      case aa:GMat => GIMat(aa);
+      case _ => IMat(a);
+    }
   }
   
   def int(a:DMat):IMat = {
-    IMat(a);
+    a match {
+      case aa:GDMat => GIMat(aa);
+      case _ => IMat(a);
+    }
   }
   
   def int(a:IMat):IMat = {
@@ -168,25 +174,54 @@ object MatFunctions {
   }
 
     /** Convert to the corresponding long type */
-  def long(a:FMat):LMat = LMat(a);
+  def long(a:FMat):LMat = {
+    a match {
+      case aa:GMat => GLMat(aa);
+      case _ => LMat(a);
+    }
+  }
   
-  def long(a:DMat):LMat = LMat(a);
+  def long(a:DMat):LMat = {
+    a match {
+      case aa:GDMat => GLMat(aa);
+      case _ => LMat(a);
+    }
+  }
   
-  def long(a:IMat):LMat = LMat(a);
+  def long(a:IMat):LMat = {
+    a match {
+      case aa:GIMat => GLMat(aa);
+      case _ => LMat(a);
+    }
+  }
   
   def long(a:GMat):LMat = GLMat(a);
   
   def long(a:GIMat):LMat = GLMat(a);
   
-  def long(a:Mat):LMat = LMat(a);
+  def long(a:Mat):LMat = {
+    a match {
+      case aa:GMat => GLMat(aa);
+      case aa:GIMat => GLMat(aa);
+      case aa:GDMat => GLMat(aa);
+      case aa:GLMat => aa;
+      case _ => LMat(a);
+    }
+  }
     
    /** Convert to the corresponding float type */
   def float(a:IMat):FMat = {
-    FMat(a);
+    a match {
+      case aa:GIMat => GMat(aa);
+      case _ => FMat(a);
+    }
   }
   
   def float(a:DMat):FMat = {
-    FMat(a);
+    a match {
+      case aa:GDMat => GMat(aa);
+      case _ => FMat(a);
+    }
   }
   
   def float(a:FMat):FMat = {
@@ -205,10 +240,10 @@ object MatFunctions {
     a match {
     case ga:GMat => ga;
     case gi:GIMat => GMat(gi);
+    case gg:GDMat => GMat(gg);
+    case gg:GLMat => GMat(gg);
     case fa:FMat => fa;
-    case da:DMat => FMat(da);
-    case ia:IMat => FMat(ia);
-
+    case _ => FMat(a);
     }
   }
   
