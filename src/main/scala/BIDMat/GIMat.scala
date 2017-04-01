@@ -1054,10 +1054,12 @@ object GIMat {
   }
   
   def elem(a:Int):GIMat = {
-    val out = GIMat(1, 1)
+    val out = GIMat.newOrCheckGIMat(1, 1, null, a.##, SciFunctions.getGPU, "GIMat_elem".##)
     out.set(a)
     out
   }
+  
+  def ielem(a:Int) = elem(a);
   
   def izeros(m:Int, n:Int):GIMat = {
     val out = GIMat(m,n)

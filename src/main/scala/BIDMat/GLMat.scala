@@ -883,6 +883,8 @@ object GLMat {
     out
   }
   
+  def lelem(a:Long):GLMat = elem(a);
+  
   def lzeros(m:Int, n:Int):GLMat = {
     val out = GLMat(m,n)
     out.clear
