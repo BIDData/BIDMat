@@ -24,7 +24,11 @@ trait Filter {
   
   def convolveT(b:Mat, omat:Mat, doclear:Boolean):Mat = {b};
   
-  def convolveM(a:Mat, b:Mat, doclear:Boolean):Mat = {a}
+  def convolveM(a:Mat, b:Mat, doclear:Boolean):Mat = {a};
+  
+  def xavier(scale:Float):Filter = this;
+  
+  def xavier:Filter = this;
   
   def copy:Filter = this;
 

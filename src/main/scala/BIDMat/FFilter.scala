@@ -936,9 +936,9 @@ FMat((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 			convolveT(a);
 	}
 	
-	def xavier(scale:Float):FFilter = FFilter.xavier(this, scale);
+	override def xavier(scale:Float):FFilter = FFilter.xavier(this, scale);
 	
-	def xavier:FFilter = FFilter.xavier(this, 1f);
+	override def xavier:FFilter = FFilter.xavier(this, 1f);
 	
 	override def transpose(p:IMat):FFilter = {
 	  new FFilter(inDims, outDims, stride, pad, outPad, _transpose(p).data);

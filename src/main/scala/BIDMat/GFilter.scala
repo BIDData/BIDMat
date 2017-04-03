@@ -235,9 +235,9 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
 			convolveT(a);
 	}
 		
-	def xavier(scale:Float):GFilter = GFilter.xavier(this, scale);
+	override def xavier(scale:Float):GFilter = GFilter.xavier(this, scale);
 	
-	def xavier:GFilter = GFilter.xavier(this, 1f);
+	override def xavier:GFilter = GFilter.xavier(this, 1f);
 
 	override def transpose(p:IMat):GFilter = {
 	  new GFilter(inDims, outDims, stride, pad, outPad, _transpose(p).pdata);
