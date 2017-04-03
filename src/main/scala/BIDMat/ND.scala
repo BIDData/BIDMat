@@ -379,6 +379,18 @@ object ND {
     hv;
   }
   
+  def hash2(a:Long, b:Int) = {
+		  MurmurHash3.MurmurHash3_x64_64(Array(a), b)
+  }
+  
+  def hash3(a:Long, b:Long, c:Int) = {
+		  MurmurHash3.MurmurHash3_x64_64(Array(a, b), c)
+  }
+  
+  def hashn(a:Array[Long], c:Int) = {
+		  MurmurHash3.MurmurHash3_x64_64(a, c)
+  }
+  
   def hashIMat(a:IMat):Int = hashIMat(a, 23412154);
   
   def linearize(inds:Array[Int], dims:Array[Int]):Int = {

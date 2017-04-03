@@ -863,18 +863,20 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
 
   
   def reduce(inds:Array[Int], fctn:(LMat)=>LMat, opname:String):LMat = {
-    val alldims = izeros(_dims.length,1)
-    val xinds = new IMat(inds.length, 1, inds)
-    val xdims = new IMat(_dims.length, 1, _dims)
-    alldims(xinds) = 1
+    val alldims = izeros(_dims.length,1);
+    val xinds = new IMat(inds.length, 1, inds);
+    val xdims = new IMat(_dims.length, 1, _dims);
+    alldims(xinds) = 1;
     if (alldims.data.reduce(_+_) != inds.length) {
-      throw new RuntimeException(opname+ " indices arent a legal subset of dims")
+      throw new RuntimeException(opname+ " indices arent a legal subset of dims");
     }
-    val restdims = MatFunctions.find(alldims == 0)
-    val tmp = transpose((xinds on restdims).data)
-    val tmpF = new LMat(xdims(xinds).data.reduce(_*_), xdims(restdims).data.reduce(_*_), tmp.data)
-    val tmpSum:LMat = fctn(tmpF)
-    val out1 = new LMat((iones(inds.length,1) on xdims(restdims)).data, tmpSum.data)
+    val restdims = MatFunctions.find(alldims == 0);
+    val tmp = transpose((xinds on restdims).data);
+    val tmpF = new LMat(xdims(xinds).data.reduce(_*_), xdims(restdims).data.reduce(_*_), tmp.data);
+    tmpF.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce"+opname).##));
+    val tmpSum:LMat = fctn(tmpF);
+    val out1 = new LMat((iones(inds.length,1) on xdims(restdims)).data, tmpSum.data);
+    out1.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce2"+opname).##));
     out1.transpose(MatFunctions.invperm(xinds on restdims).data)
   }
   

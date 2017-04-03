@@ -1180,8 +1180,10 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
     val restinds = MatFunctions.find(alldims == 0);
     val tmp = transpose((xinds on restinds).data);
     val tmpF = new DMat(xdims(xinds).data.reduce(_*_), xdims(restinds).data.reduce(_*_), tmp.data);
+    tmpF.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce"+opname).##));
     val tmpSum:DMat = fctn(tmpF);
     val out1 = new DMat((iones(inds.length,1) on xdims(restinds)).data, tmpSum.data);
+    out1.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce2"+opname).##));
     out1.transpose(MatFunctions.invperm(xinds on restinds).data);
   }
   

@@ -663,18 +663,21 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   override def clearLower = setLower(0, 0)
   
   def reduce(inds:Array[Int], fctn:(FMat)=>FMat, opname:String):FMat = {
-    val alldims = izeros(_dims.length,1)
-    val xinds = new IMat(inds.length, 1, inds)
-    val xdims = new IMat(_dims.length, 1, _dims)
-    alldims(xinds) = 1
+    val alldims = izeros(_dims.length,1);
+    val xinds = new IMat(inds.length, 1, inds);
+    val xdims = new IMat(_dims.length, 1, _dims);
+    alldims(xinds) = 1;
     if (alldims.data.reduce(_+_) != inds.length) {
       throw new RuntimeException(opname+ " indices arent a legal subset of dims")
     }
-    val restinds = MatFunctions.find(alldims == 0)
-    val tmp = transpose((xinds on restinds).data)
-    val tmpF = new FMat(xdims(xinds).data.reduce(_*_), xdims(restinds).data.reduce(_*_), tmp.data)
-    val tmpSum:FMat = fctn(tmpF)
-    val out1 = new FMat((iones(inds.length,1) on xdims(restinds)).data, tmpSum.data)
+    val restinds = MatFunctions.find(alldims == 0);
+    val tmp = transpose((xinds on restinds).data);
+    val tmpF = new FMat(xdims(xinds).data.reduce(_*_), xdims(restinds).data.reduce(_*_), tmp.data);
+    tmpF.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce"+opname).##));
+    val tmpSum:FMat = fctn(tmpF);
+    val pdims = iones(inds.length,1) on xdims(restinds);
+    val out1 = new FMat(pdims.data, tmpSum.data);
+    out1.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce2"+opname).##));
     out1.transpose(invperm(xinds on restinds).data)
   }
   

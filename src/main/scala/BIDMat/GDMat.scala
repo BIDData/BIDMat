@@ -883,20 +883,21 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   }
   
   def reduce(inds:Array[Int], fctn:(GDMat)=>GDMat, opname:String):GDMat = {
-    val alldims = MatFunctions.izeros(_dims.length,1)
-    val xinds = new IMat(inds.length, 1, inds)
-    val xdims = new IMat(_dims.length, 1, _dims)
-    alldims(xinds) = 1
+    val alldims = MatFunctions.izeros(_dims.length,1);
+    val xinds = new IMat(inds.length, 1, inds);
+    val xdims = new IMat(_dims.length, 1, _dims);
+    alldims(xinds) = 1;
     if (alldims.data.reduce(_+_) != inds.length) {
-      throw new RuntimeException(opname+ " indices arent a legal subset of dims")
+      throw new RuntimeException(opname+ " indices arent a legal subset of dims");
     }
-    val restinds = MatFunctions.find(alldims == 0)
-    val tmp = transpose((xinds on restinds).data)
-    val tmpF = new GDMat(xdims(xinds).data.reduce(_*_), xdims(restinds).data.reduce(_*_), tmp.pdata, length)
+    val restinds = MatFunctions.find(alldims == 0);
+    val tmp = transpose((xinds on restinds).data);
+    val tmpF = new GDMat(xdims(xinds).data.reduce(_*_), xdims(restinds).data.reduce(_*_), tmp.pdata, length);
+    tmpF.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce"+opname).##));
     val reduced:GDMat = fctn(tmpF);
     val newdims = MatFunctions.iones(inds.length,1) on xdims(restinds);
-    val out1 = new GDMat(newdims.data, reduced.pdata, reduced.length)
-    out1.transpose(MatFunctions.invperm(xinds on restinds).data)
+    val out1 = new GDMat(newdims.data, reduced.pdata, reduced.length);
+    out1.transpose(MatFunctions.invperm(xinds on restinds).data);
   }
   
   /*
