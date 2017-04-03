@@ -199,6 +199,24 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
   
   def convolveM(a:GMat, b:GMat):GMat = convolveM(a, b, true);
   
+  override def convolve(b:Mat, omat:Mat, doclear:Boolean):Mat = {
+			b match {
+			case (bb:GMat) => convolve(bb, omat, doclear);
+			}
+	}
+
+	override def convolveT(b:Mat, omat:Mat, doclear:Boolean):Mat = {
+			b match {
+			case (bb:GMat) => convolveT(bb, omat, doclear);
+			}
+	}
+
+	override def convolveM(a:Mat, b:Mat, doclear:Boolean):Mat = {
+			(a, b) match {
+			case (aa:GMat, bb:GMat) => convolveM(aa, bb, doclear);
+			}
+	}
+  
   override def copy:GFilter = {
 		val out = new GFilter(inDims.copy, outDims.copy, stride.copy, pad.copy, outPad.copy, new Pointer);
 		val len = 1L*length*Sizeof.FLOAT

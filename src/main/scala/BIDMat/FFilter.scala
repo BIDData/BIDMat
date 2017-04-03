@@ -183,6 +183,23 @@ FMat((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0) with Filter {
 		a;
 	}
 	
+	override def convolve(b:Mat, omat:Mat, doclear:Boolean):Mat = {
+			b match {
+			case (bb:FMat) => convolve(bb, omat, doclear);
+			}
+	}
+
+	override def convolveT(b:Mat, omat:Mat, doclear:Boolean):Mat = {
+			b match {
+			case (bb:FMat) => convolveT(bb, omat, doclear);
+			}
+	}
+
+	override def convolveM(a:Mat, b:Mat, doclear:Boolean):Mat = {
+			(a, b) match {
+			case (aa:FMat, bb:FMat) => convolveM(aa, bb, doclear);
+			}
+	}
 	// Convolution using global 1x1 Convolutions. 
 
 	def _fast_convolve(a:FMat, b:FMat, idim:Int, astart:Int, bstart:Int, fstart:Int, convType:Int) {

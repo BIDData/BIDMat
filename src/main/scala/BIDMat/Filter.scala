@@ -19,6 +19,14 @@ trait Filter {
     }
     flops;
   }
+    
+  def convolve(a:Mat, omat:Mat, doclear:Boolean):Mat = {a};
+  
+  def convolveT(b:Mat, omat:Mat, doclear:Boolean):Mat = {b};
+  
+  def convolveM(a:Mat, b:Mat, doclear:Boolean):Mat = {a}
+  
+  def copy:Filter = this;
 
 }
 
@@ -43,7 +51,7 @@ object Filter {
     val indims = (imageDims - foutDims - outPad*2 + 1) *@ stride - pad*2 + finDims - 1;
     (if (compress) ND.trimDims(indims) else indims);   
   }
-  
+  	  
   final val forward = 1;
   final val backwardGradient = 2;
   final val backwardModel = 3;
