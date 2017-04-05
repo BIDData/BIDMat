@@ -6,7 +6,7 @@
   <groupId>BIDMat</groupId>
   <artifactId>BIDMat</artifactId>
   <packaging>jar</packaging>
-  <version>2.0.0-cuda8.0beta</version>
+  <version>2.0.1-cuda8.0beta</version>
   <name>BIDMat</name>
   <description>BIDMat performs matrix operations</description>
   <properties>
@@ -296,6 +296,11 @@
       <groupId>com.jsuereth</groupId>
       <artifactId>scala-arm_2.11</artifactId>
       <version>1.4</version>
+    </dependency>
+    <dependency>
+      <groupId>IScala</groupId>
+      <artifactId>IScala</artifactId>
+      <version>1.0.0</version>
     </dependency>
   </dependencies> 
   <build>

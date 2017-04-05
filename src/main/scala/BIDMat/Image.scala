@@ -157,7 +157,8 @@ object Image {
 		  		} else if (mat.dims(0) == 3) {
 		  			val im = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 		  			while (i < height*width) {
-		  				ints(i) = (((((mdata(3*i).asInstanceOf[Int] & 0xff) << 8) +               // R
+		  				ints(i) = ((((
+		  				    (mdata(3*i).asInstanceOf[Int] & 0xff) << 8) +               // R
 		  						(mdata(3*i+1).asInstanceOf[Int] & 0xff)) << 8) +             // G
 		  						(mdata(3*i+2).asInstanceOf[Int] & 0xff));                      // B
 		  				i += 1;
@@ -166,7 +167,8 @@ object Image {
 		  		} else if (mat.dims(0) == 4) {
 		  			val im = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		  			while (i < height*width) {
-		  				ints(i) = (((((((mdata(4*i+3).asInstanceOf[Int] & 0xff) << 8) +           // A
+		  				ints(i) = ((((((
+		  				    (mdata(4*i+3).asInstanceOf[Int] & 0xff) << 8) +           // A
 		  						(mdata(4*i+0).asInstanceOf[Int] & 0xff)) << 8) +           // R
 		  						(mdata(4*i+1).asInstanceOf[Int] & 0xff)) << 8) +             // G
 		  						(mdata(4*i+2).asInstanceOf[Int] & 0xff));                      // B
