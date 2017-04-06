@@ -72,6 +72,42 @@ case class CSMat(dims0:Array[Int], val data:Array[String]) extends DenseMat[Stri
 		  "NULL"
 	}
 	
+	def toIMat:IMat = {
+	  val out = IMat.newOrCheckIMat(nrows, ncols, null, GUID, "CSMat.toIMat".##);
+	  var i = 0;
+	  while (i < length) {
+	    out.data(i) = data(i).toInt;
+	  }
+	  out
+	}
+	
+  def toFMat:FMat = {
+	  val out = FMat.newOrCheckFMat(nrows, ncols, null, GUID, "CSMat.toFMat".##);
+	  var i = 0;
+	  while (i < length) {
+	    out.data(i) = data(i).toFloat;
+	  }
+	  out;
+	}
+  
+  def toDMat:DMat = {
+	  val out = DMat.newOrCheckDMat(nrows, ncols, null, GUID, "CSMat.toDMat".##);
+	  var i = 0;
+	  while (i < length) {
+	    out.data(i) = data(i).toDouble;
+	  }
+	  out;
+	}
+  
+  def toLMat:LMat = {
+	  val out = LMat.newOrCheckLMat(nrows, ncols, null, GUID, "CSMat.toLMat".##);
+	  var i = 0;
+	  while (i < length) {
+	    out.data(i) = data(i).toLong;
+	  }
+	  out;
+	}
+	
 	/* 
 	 * Trait to implement binary operations on dense matrices
 	 */
