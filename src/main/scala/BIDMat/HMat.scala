@@ -1336,8 +1336,9 @@ object HMat {
   def saveCSMat(fname:String, m:CSMat, compressed:Int=0):Unit = {
      if (fname.startsWith("hdfs:")) {
       HDFSwriteMat(fname, m, compressed)
-    }
-    else {
+    } else if (fname.endsWith(".txt")) {
+      saveCSMatTxt(fname, m, compressed);
+    } else {
       val gout = getOutputStream(fname, compressed);
       saveCSMat(gout, m)
       gout.close
@@ -1379,6 +1380,25 @@ object HMat {
       }
     }
   } 
+  
+  def saveCSMatTxt(fname:String, m:CSMat, compressed:Int=0, delim:String="\t"):Unit = {
+    val gout = getOutputStream(fname, compressed)
+    val fout = new BufferedWriter(new OutputStreamWriter(gout.asInstanceOf[DataOutputStream]))
+    var i = 0
+    while (i < m.nrows) {
+      if (m.ncols > 0) {
+        fout.write(m(i,0))
+      }
+      var j = 1
+      while (j < m.ncols) {
+        fout.write(delim + m(i,j))
+        j += 1
+      }
+      fout.write("\n")
+      i += 1
+    }
+    fout.close
+  }
   
   def saveTMat(fname:String, m:TMat, compressed:Int=0):Unit = {
      /*if (fname.startsWith("hdfs:")) {
