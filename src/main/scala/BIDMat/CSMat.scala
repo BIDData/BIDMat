@@ -213,6 +213,18 @@ object CSMat {
     
     def apply(a:List[String]) = new CSMat(1, a.length, a.toArray)
     
+    def newOrCheckCSMat(nr:Int, nc:Int, outmat:Mat):CSMat = {
+    if (outmat.asInstanceOf[AnyRef] == null || (outmat.nrows == 0 && outmat.ncols == 0)) {
+      CSMat(nr, nc)
+    } else {
+      if (outmat.nrows != nr || outmat.ncols != nc) {
+        outmat.recycle(nr, nc, 0).asInstanceOf[CSMat]
+      } else {
+      	outmat.asInstanceOf[CSMat]
+      }
+    }
+  }
+    
     def cselem(x:String) = {
     	val out = CSMat(1,1)
     	out.data(0) = x

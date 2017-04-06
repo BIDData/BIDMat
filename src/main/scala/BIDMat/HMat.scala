@@ -1100,7 +1100,7 @@ object HMat {
   }
   
 
-  def loadCSMatTxt(fname:String, compressed:Int=0):CSMat = {
+  def loadCSMatTxt2(fname:String, compressed:Int=0):CSMat = {
   	val gin = getInputStream(fname, compressed);
   	val buf = new ArrayBuffer[String];
   	val istream = new BufferedReader(new InputStreamReader(gin));
@@ -1112,12 +1112,41 @@ object HMat {
   	cs
   }
   
+  def loadCSMatTxt(fname:String, omat:Mat, compressed:Int):CSMat = {
+    val fin = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed).asInstanceOf[DataInputStream]))
+    var nrows = 0;
+    var firstline = fin.readLine();
+    val parts = firstline.split("[\t ,:]+");
+    while (firstline != null && firstline.length > 0) {
+      firstline = fin.readLine()
+      nrows += 1  
+    }
+    fin.close
+    val din = new BufferedReader(new InputStreamReader(getInputStream(fname, compressed).asInstanceOf[DataInputStream]))
+    val ncols = parts.length
+    val out = CSMat.newOrCheckCSMat(nrows, ncols, omat)
+    var irow = 0;
+    while (irow < nrows) {
+    	val parts = din.readLine().split("[\t ,:]+");
+      if (irow >= 0) {
+      	var icol = 0;
+      	while (icol < ncols) {
+      		out.data(irow + icol*out.nrows) = parts(icol);
+      		icol += 1;
+      	}   
+      }
+    	irow += 1;
+    } 
+    din.close
+    out    
+  }
+  
   
   def loadCSMat(fname:String, compressed:Int=0):CSMat = {
     if (fname.startsWith("hdfs:")) {
       HDFSreadMat(fname, null).asInstanceOf[CSMat];
     } else if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
-  		loadCSMatTxt(fname, compressed);
+  		loadCSMatTxt(fname, null, compressed);
     } else {
       val gin = getInputStream(fname, compressed);
       val out = loadCSMat(gin, null);
