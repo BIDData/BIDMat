@@ -1336,7 +1336,7 @@ object HMat {
   def saveCSMat(fname:String, m:CSMat, compressed:Int=0):Unit = {
      if (fname.startsWith("hdfs:")) {
       HDFSwriteMat(fname, m, compressed)
-    } else if (fname.endsWith(".txt")) {
+    } else if (fname.endsWith(".txt") || fname.endsWith(".txt.gz") || fname.endsWith(".txt.lz4")) {
       saveCSMatTxt(fname, m, compressed);
     } else {
       val gout = getOutputStream(fname, compressed);
