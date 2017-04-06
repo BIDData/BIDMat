@@ -77,6 +77,7 @@ case class CSMat(dims0:Array[Int], val data:Array[String]) extends DenseMat[Stri
 	  var i = 0;
 	  while (i < length) {
 	    out.data(i) = data(i).toInt;
+	    i += 1;
 	  }
 	  out
 	}
@@ -86,6 +87,7 @@ case class CSMat(dims0:Array[Int], val data:Array[String]) extends DenseMat[Stri
 	  var i = 0;
 	  while (i < length) {
 	    out.data(i) = data(i).toFloat;
+	    i += 1;
 	  }
 	  out;
 	}
@@ -95,6 +97,7 @@ case class CSMat(dims0:Array[Int], val data:Array[String]) extends DenseMat[Stri
 	  var i = 0;
 	  while (i < length) {
 	    out.data(i) = data(i).toDouble;
+	    i += 1;
 	  }
 	  out;
 	}
@@ -104,6 +107,7 @@ case class CSMat(dims0:Array[Int], val data:Array[String]) extends DenseMat[Stri
 	  var i = 0;
 	  while (i < length) {
 	    out.data(i) = data(i).toLong;
+	    i += 1;
 	  }
 	  out;
 	}
