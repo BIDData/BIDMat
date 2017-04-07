@@ -625,29 +625,28 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     out
   }
   
-  def dot (a:GDMat, oldmat:Mat):GDMat = 
-  	if (nrows != a.nrows || ncols != a.ncols) {
-  		throw new RuntimeException("dot dims not compatible")
-  	} else {
-  		val out = GDMat.newOrCheckGDMat(1, ncols, oldmat, GUID, a.GUID, "dot".##) 
-  		Mat.nflops += 2L * length
-  	  val err = CUMAT.reducebin1dop(nrows, ncols, pdata, a.pdata, out.pdata, op_mul, op_add)
-  	  if (err != 0) {throw new RuntimeException("GMult: CUDA kernel error in CUMAT.reducebin1op " + cudaGetErrorString(err))}
-  	  out
+  def dot (a:GDMat, oldmat:Mat):GDMat = {
+  		ND.checkDims("dot", dims, a.dims);
+  		val odims = iones(1,dims.length-1) \ a.ncols;
+  		val out = GDMat.newOrCheckGDMat(odims, oldmat, GUID, a.GUID, "dot".##);
+  		Mat.nflops += 2L * length;
+  		val err = CUMAT.reducebin1dop(nrows, ncols, pdata, a.pdata, out.pdata, op_mul, op_add);
+  		if (err != 0) {throw new RuntimeException("GDMat dot: CUDA kernel error in CUMAT.reducebin1op " + cudaGetErrorString(err))}
+  		out;
   	}
   
   def dot (a:GDMat):GDMat = dot(a, null)
   
-  def dotr (a:GDMat, oldmat:Mat):GDMat = 
-  	if (nrows != a.nrows || ncols != a.ncols) {
-  		throw new RuntimeException("dotr dims not compatible")
-  	} else {
-  		val out = GDMat.newOrCheckGDMat(nrows, 1, oldmat, GUID, a.GUID, "dotr".##) 
-  		Mat.nflops += 2L * length
-  	  val err = CUMAT.reducebin2dop(nrows, ncols, pdata, a.pdata, out.pdata, op_mul, op_add)
-  	  if (err != 0) {throw new RuntimeException("GMult: CUDA kernel error in CUMAT.reducebin2op " + cudaGetErrorString(err))}
-  	  out
-  	}
+  def dotr (a:GDMat, oldmat:Mat):GDMat = {
+  	ND.checkDims("dotr", dims, a.dims);
+  	val odims = a.dims.copy;
+  	odims(odims.length-1) = 1;
+  	val out = GDMat.newOrCheckGDMat(odims, oldmat, GUID, a.GUID, "dotr".##);
+  	Mat.nflops += 2L * length;
+  	val err = CUMAT.reducebin2dop(nrows, ncols, pdata, a.pdata, out.pdata, op_mul, op_add);
+  	if (err != 0) {throw new RuntimeException("GDMat dotr: CUDA kernel error in CUMAT.reducebin2op " + cudaGetErrorString(err))}
+  	out;
+  }
   
   def dotr (a:GDMat):GDMat = dotr(a, null)
   

@@ -625,6 +625,8 @@ object Mat {
   var recycleGrow = 1.2            // For caching, amount to grow re-allocated matrices
   
   var hasCUDA = 0                  // Number of available CUDA GPUs
+  
+  var hasCUDNN = false;            // Is CUDNN available? 
 
   var cudartVersion = 0;
   
@@ -935,6 +937,7 @@ object Mat {
   			}
   			SciFunctions.initCUDArngs
   		}
+  		GFilter.initHandles(verbose);
   }
 
   def checkOpenCL():Unit = checkOpenCL(false)

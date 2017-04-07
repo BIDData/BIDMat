@@ -941,32 +941,29 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     out
   }
   
-  override def dot (aa:FMat, oldmat:Mat):GMat = {
-		  val a = GMat(aa);
-		  if (nrows != a.nrows || ncols != a.ncols) {
-			  throw new RuntimeException("dot dims not compatible")
-		  } else {
-			  val out = GMat.newOrCheckGMat(1, ncols, oldmat, GUID, a.GUID, "dot".##) 
-					  Mat.nflops += 2L * length
-					  val err = CUMAT.reducebin1op(nrows, ncols, pdata, a.pdata, out.pdata, op_mul, op_add)
-					  if (err != 0) {throw new RuntimeException("GMult: CUDA kernel error in CUMAT.reducebin1op " + cudaGetErrorString(err))}
-			  out
-		  }
+  override def dot(aa:FMat, oldmat:Mat):GMat = {
+  		val a = GMat(aa);
+  		ND.checkDims("dot", dims, a.dims);
+  		val odims = iones(1,dims.length-1) \ a.ncols;
+  		val out = GMat.newOrCheckGMat(odims, oldmat, GUID, a.GUID, "dot".##);
+  		Mat.nflops += 2L * length;
+  		val err = CUMAT.reducebin1op(nrows, ncols, pdata, a.pdata, out.pdata, op_mul, op_add);
+  		if (err != 0) {throw new RuntimeException("GMat dot: CUDA kernel error in CUMAT.reducebin1op " + cudaGetErrorString(err))}
+  		out;
   }
   
   override def dot (a:FMat):GMat = dot(a, null)
   
   override def dotr (aa:FMat, oldmat:Mat):GMat = {
     val a = GMat(aa);
-	  if (nrows != a.nrows || ncols != a.ncols)   {
-		  throw new RuntimeException("dotr dims not compatible")
-	  } else {
-		  val out = GMat.newOrCheckGMat(nrows, 1, oldmat, GUID, a.GUID, "dotr".##) 
-				  Mat.nflops += 2L * length
-				  val err = CUMAT.reducebin2op(nrows, ncols, pdata, a.pdata, out.pdata, op_mul, op_add)
-				  if (err != 0) {throw new RuntimeException("GMult: CUDA kernel error in CUMAT.reducebin2op " + cudaGetErrorString(err))}
-		  out
-	  }
+    ND.checkDims("dotr", dims, a.dims);
+    val odims = a.dims.copy;
+    odims(odims.length-1) = 1;
+    val out = GMat.newOrCheckGMat(odims, oldmat, GUID, a.GUID, "dotr".##);
+    Mat.nflops += 2L * length;
+    val err = CUMAT.reducebin2op(nrows, ncols, pdata, a.pdata, out.pdata, op_mul, op_add);
+    if (err != 0) {throw new RuntimeException("GMat dotr: CUDA kernel error in CUMAT.reducebin2op " + cudaGetErrorString(err))}
+    out;
   }
   
   override def dotr (a:FMat):GMat = dotr(a, null)

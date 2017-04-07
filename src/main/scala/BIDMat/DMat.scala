@@ -875,36 +875,33 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
   override def ddot(a:Mat):Double = ddot(a.asInstanceOf[DMat])
   
   def dot(a:DMat, omat:Mat):DMat = {
-   	if (nrows != a.nrows || ncols != a.ncols) {
-  		throw new RuntimeException("dot dims not compatible")
-   	}	else {
-   		val out = DMat.newOrCheckDMat(1, ncols, null, GUID, a.GUID, "dot".##)
-   		if (!Mat.useMKL || length < 512) {
-   			gdot(a, out)
-   		} else {
-   			Mat.nflops += 2L * length
-   			ddotm(nrows, ncols, data, nrows, a.data, nrows, out.data)
-   		}
-   		out
-   	}
+  	ND.checkDims("dot", dims, a.dims);
+  	val odims = iones(1,dims.length-1) \ a.ncols;
+  	val out = DMat.newOrCheckDMat(odims, null, GUID, a.GUID, "dot".##);
+  	if (!Mat.useMKL || length < 512) {
+  		gdot(a, out);
+  	} else {
+  		Mat.nflops += 2L * length;
+  		ddotm(nrows, ncols, data, nrows, a.data, nrows, out.data);
+  	}
+  	out;
   }
   
   def dot(a:DMat):DMat = dot(a, null)
   
   def dotr(a:DMat, omat:Mat):DMat = {
-   	if (nrows != a.nrows || ncols != a.ncols) {
-  		throw new RuntimeException("dotr dims not compatible")
-   	}	else {
-   		val out = DMat.newOrCheckDMat(nrows, 1, omat, GUID, a.GUID, "dotr".##)
-   		out.clear
-   		if (!Mat.useMKL || length < 512) {
-   			gdotr(a, out)
-   		} else {
-   			Mat.nflops += 2L * length
-   			ddotr(nrows, ncols, data, nrows, a.data, nrows, out.data)
-   		}
-   		out
-   	}
+  	ND.checkDims("dotr", dims, a.dims);
+  	val odims = a.dims.copy;
+  	odims(odims.length-1) = 1;
+  	val out = DMat.newOrCheckDMat(odims, omat, GUID, a.GUID, "dotr".##);
+  	out.clear;
+  	if (!Mat.useMKL || length < 512) {
+  		gdotr(a, out);
+  	} else {
+  		Mat.nflops += 2L * length;
+  		ddotr(nrows, ncols, data, nrows, a.data, nrows, out.data);
+  	}
+  	out;
   }
   
   def dotr(a:DMat):DMat = dotr(a, null)

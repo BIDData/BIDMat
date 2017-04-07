@@ -262,27 +262,33 @@ object GFilter {
     out;
   }
   
-  def initHandles = {
+  def initHandles(verbose:Boolean = false) = {
 		GFilter.synchronized { 
 			if (!cudnnContextsInitialized) {
-				val thisGPU = SciFunctions.getGPU
-						val nGPUs = Mat.hasCUDA
-						cudnnContexts = new Array[cudnnHandle](nGPUs)
-						for (i <- 0 until nGPUs) {
-							SciFunctions.setGPU(i)
-							cudnnContexts(i) = new cudnnHandle()
-							val err = cudnnCreate(cudnnContexts(i));
-							if (err != 0) throw new RuntimeException("Cudnn initialization error %d on GPU %d" format (err, i));
-						}  
-				SciFunctions.setGPU(thisGPU)
-				cudnnContextsInitialized = true
+				val thisGPU = SciFunctions.getGPU;
+			  try {
+			  	val nGPUs = Mat.hasCUDA;
+			  	cudnnContexts = new Array[cudnnHandle](nGPUs);
+			  	for (i <- 0 until nGPUs) {
+			  		SciFunctions.setGPU(i);
+			  		cudnnContexts(i) = new cudnnHandle();
+			  		val err = cudnnCreate(cudnnContexts(i));
+			  		if (err != 0 && verbose) println("Cudnn initialization error %d on GPU %d" format (err, i));
+			  		if (err != 0) throw new RuntimeException("");
+			  	}  
+			  	cudnnContextsInitialized = true;
+			  	Mat.hasCUDNN = true;
+			  } catch {
+			    case e:Exception => println("No CUDNN available ")
+			  }
+			  SciFunctions.setGPU(thisGPU);
 			}
 		}
   }
 
 
   def getHandle = {
-		if (!cudnnContextsInitialized) initHandles
+		if (!cudnnContextsInitialized) initHandles(false);
 		cudnnContexts(SciFunctions.getGPU)
   }
   
