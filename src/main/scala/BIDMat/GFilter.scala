@@ -46,6 +46,13 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       fwdAlgo = cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_GEMM;
   }
   
+  def setTensorFormat(tformat:Int) = {
+    tformat match {
+      case cudnnTensorFormat.CUDNN_TENSOR_NCHW => setNCHW;
+      case cudnnTensorFormat.CUDNN_TENSOR_NHWC => setNHWC;
+    }
+  }
+  
 	def convolve(a:GMat, omat:Mat, doclear:Boolean):GMat = {
     val bdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad, outPad);
     val hmm = ND.hashIMat(stride, ND.hashIMat(pad));
@@ -78,8 +85,8 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       
 //      println("workspace size = %d" format workspaceSizeInBytes)
 
-      var err = cudnnConvolutionForward(GFilter.getHandle, GFilter.myone, adesc, a.pdata, fdesc, pdata, convdesc, 
-          fwdAlgo, workspace.pdata, workspaceSizeInBytes, if (doclear) GFilter.myzero else GFilter.myone, bdesc, b.pdata);
+      var err = cudnnConvolutionForward(GFilter.getHandle, GFilter.ONE, adesc, a.pdata, fdesc, pdata, convdesc, 
+          fwdAlgo, workspace.pdata, workspaceSizeInBytes, if (doclear) GFilter.ZERO else GFilter.ONE, bdesc, b.pdata);
       
       cudaDeviceSynchronize;
       if (err == 0) err = cudaGetLastError();
@@ -128,8 +135,8 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       
 //      println("workspace size = %d" format workspaceSizeInBytes)
 
-      var err = cudnnConvolutionBackwardData(GFilter.getHandle, GFilter.myone, fdesc, pdata, bdesc, b.pdata, convdesc, 
-          bwdDataAlgo, workspace.pdata, workspaceSizeInBytes, if (doclear) GFilter.myzero else GFilter.myone, adesc, a.pdata);
+      var err = cudnnConvolutionBackwardData(GFilter.getHandle, GFilter.ONE, fdesc, pdata, bdesc, b.pdata, convdesc, 
+          bwdDataAlgo, workspace.pdata, workspaceSizeInBytes, if (doclear) GFilter.ZERO else GFilter.ONE, adesc, a.pdata);
       
       cudaDeviceSynchronize;
       if (err == 0) err = cudaGetLastError();
@@ -181,8 +188,8 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       
 //      println("workspace size = %d" format workspaceSizeInBytes)
 
-      var err = cudnnConvolutionBackwardFilter(GFilter.getHandle, GFilter.myone, adesc, a.pdata, bdesc, b.pdata, convdesc, 
-          bwdFilterAlgo, workspace.pdata, workspaceSizeInBytes, if (doclear) GFilter.myzero else GFilter.myone, fdesc, pdata);
+      var err = cudnnConvolutionBackwardFilter(GFilter.getHandle, GFilter.ONE, adesc, a.pdata, bdesc, b.pdata, convdesc, 
+          bwdFilterAlgo, workspace.pdata, workspaceSizeInBytes, if (doclear) GFilter.ZERO else GFilter.ONE, fdesc, pdata);
       
       cudaDeviceSynchronize;
       if (err == 0) err = cudaGetLastError();
@@ -247,13 +254,8 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
 object GFilter {
   var cudnnContexts:Array[cudnnHandle] = null
   var cudnnContextsInitialized = false
-  val _myone = new Array[Float](1);
-  val _myzero = new Array[Float](1);
-  _myone(0) = 1f;
-  _myzero(0) = 0f;
-  val myone = Pointer.to(_myone);
-  val myzero = Pointer.to(_myzero);
-  
+  val ONE = Pointer.to(Array(1f));
+  val ZERO = Pointer.to(Array(0f));
   
   def apply(a:FFilter):GFilter = {
     val outnd = GMat.newOrCheckGMat(a.dims, null, a.GUID, "GFilter".##);
