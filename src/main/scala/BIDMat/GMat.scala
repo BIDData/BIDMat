@@ -459,9 +459,9 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   
     /** reshaping */
 
-  override def reshape(newdims:Int*):FMat = reshape(newdims.toArray)
+  override def reshape(newdims:Int*):GMat = reshape(newdims.toArray)
   
-  override def reshape(newdims:Array[Int]):FMat = {
+  override def reshape(newdims:Array[Int]):GMat = {
     if (newdims.reduce(_*_) == length) {
       val out = GMat.newOrCheckGMat(newdims, null, GUID, ND.hashInts(newdims), "reshape".##);
       cudaMemcpy(out.pdata, pdata, 1L*llength*Sizeof.FLOAT, cudaMemcpyDeviceToDevice);
@@ -474,9 +474,9 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     }
   }
   
-  override def reshapeView(newdims:Int*):FMat = reshapeView(newdims.toArray)
+  override def reshapeView(newdims:Int*):GMat = reshapeView(newdims.toArray)
   
-  override def reshapeView(newdims:Array[Int]):FMat = {
+  override def reshapeView(newdims:Array[Int]):GMat = {
     if (newdims.reduce(_*_) == length) {
       val out = new GMat(newdims, pdata, llength);
       out.setGUID(MurmurHash3_x64_64(newdims.map(_.toLong) :+ GUID, "reshapeView".##));
@@ -486,7 +486,7 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     }
   }
   
-  override def reshapeView(adims:IMat):FMat = reshapeView(adims.data);
+  override def reshapeView(adims:IMat):GMat = reshapeView(adims.data);
 
   /** transpose */
   override def transpose(dims:Array[Int]):GMat = _transpose(MatFunctions.irow(dims));
@@ -519,6 +519,16 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
       } 
     }
     out
+  }
+  
+  override def fromNHWCtoNCHW:GMat = {
+    if (dims.length != 4) throw new RuntimeException("fromNHWCtoNCHW ndims must be 4");
+    transpose(MatFunctions.irow(1,2,0,3)).reshapeView(dims);
+  }
+  
+  override def fromNCHWtoNHWC:GMat = {
+    if (dims.length != 4) throw new RuntimeException("fromNCHWtoNHWC ndims must be 4");
+    reshapeView(MatFunctions.irow(dims(1), dims(2), dims(0), dims(3))).transpose(MatFunctions.irow(2,0,1,3));
   }
   
   override def clear = {

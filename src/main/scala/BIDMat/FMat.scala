@@ -527,6 +527,17 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   override def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int):FMat = transpose(Array(i1, i2, i3, i4, i5, i6, i7, i8))
   
   
+  def fromNHWCtoNCHW:FMat = {
+    if (dims.length != 4) throw new RuntimeException("fromNHWCtoNCHW ndims must be 4");
+    transpose(irow(1,2,0,3)).reshapeView(dims);
+  }
+  
+  def fromNCHWtoNHWC:FMat = {
+    if (dims.length != 4) throw new RuntimeException("fromNCHWtoNHWC ndims must be 4");
+    reshapeView(irow(dims(1), dims(2), dims(0), dims(3))).transpose(irow(2,0,1,3));
+  }
+  
+  
   def ffMatOp(b: Mat, f:(Float, Float) => Float, optype:Int, out:Mat):FMat =
   (this, b) match {
       case (aa:GMat, bb:FMat) => aa.gOp(bb, out, optype);

@@ -9,6 +9,7 @@ trait Filter {
   val pad:IMat;
   val stride:IMat;
   val outPad:IMat;
+  val dataDims:IMat;
   
   def computeFlops(in:Mat, stride:IMat, pad:IMat):Long = {
     var i = 0;

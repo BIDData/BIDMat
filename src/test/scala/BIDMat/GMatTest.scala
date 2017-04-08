@@ -1293,7 +1293,6 @@ class GMatTest extends BIDMatSpec {
 		b.xavier;
 		val aa = GMat(a);
 		val bb = GFilter(b);
-		bb.setNHWC;
 		val c = b * a;
 		val dd = bb * aa;
 		dd.mytype should equal ("GMat");
@@ -1307,14 +1306,11 @@ class GMatTest extends BIDMatSpec {
 		b.xavier;
 		val aa = GMat(a);
 		val bb = GFilter(b);
-		val perm = stringPerm("NHWC", "NCHW");
-		val iperm = stringPerm("NCHW", "NHWC");
-		aa(?) = aa.transpose(perm)(?);
-		bb(?) = bb.transpose(perm)(?);
-		bb.setNCHW;
+		val aax = aa.fromNHWCtoNCHW;
+		val bbx = bb.toNCHW;
 		val c = b * a;
-		val dd = (bb * aa);
-		dd(?) = dd.reshapeView(dd.dims(perm)).transpose(iperm)(?);
+		val ddx = (bbx * aax);
+		val dd = ddx.fromNCHWtoNHWC;
 		dd.mytype should equal ("GMat");
 		checkSimilar(c, dd);
 	}

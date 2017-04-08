@@ -6,6 +6,7 @@ import jcuda.runtime.JCuda._
 import jcuda.jcudnn._
 import jcuda.jcudnn.JCudnn._
 import jcuda.runtime.cudaMemcpyKind._
+import edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64
 
 //
 // Basic GPU convolutional Filter class.
@@ -19,18 +20,19 @@ import jcuda.runtime.cudaMemcpyKind._
 
 
 @SerialVersionUID(100L)
-class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat, data0:Pointer) extends
-  GMat((inDims0(0,0->(inDims0.length-1)) \ outDims0(0)).data, data0, inDims0.data.reduce(_*_)) with Filter {
+class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat, dataDims0:IMat, data0:Pointer) extends
+  GMat(dataDims0.data, data0, dataDims0.data.reduce(_*_)) with Filter {
 
 	val inDims = inDims0;
 	val outDims = outDims0;
 	val stride = if (stride0.asInstanceOf[AnyRef] != null) stride0 else iones(1, inDims.length);
 	val pad = if (pad0.asInstanceOf[AnyRef] != null) pad0 else izeros(1,inDims.length);
 	val outPad = if (outPad0.asInstanceOf[AnyRef] != null) outPad0 else izeros(1,inDims.length);
+	val dataDims = dataDims0;
 	var dataType = cudnnDataType.CUDNN_DATA_FLOAT;
-	var tensorFormat = cudnnTensorFormat.CUDNN_TENSOR_NCHW;
+	var tensorFormat = cudnnTensorFormat.CUDNN_TENSOR_NHWC;
   var convType = cudnnConvolutionMode.CUDNN_CROSS_CORRELATION;
-  var fwdAlgo = cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_GEMM;
+  var fwdAlgo = cudnnConvolutionFwdAlgo.CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
   var bwdFilterAlgo = cudnnConvolutionBwdFilterAlgo.CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
   var bwdDataAlgo = cudnnConvolutionBwdDataAlgo.CUDNN_CONVOLUTION_BWD_DATA_ALGO_1;
   
@@ -225,7 +227,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
 	}
   
   override def copy:GFilter = {
-		val out = new GFilter(inDims.copy, outDims.copy, stride.copy, pad.copy, outPad.copy, new Pointer);
+		val out = new GFilter(inDims.copy, outDims.copy, stride.copy, pad.copy, outPad.copy, dataDims.copy, new Pointer);
 		val len = 1L*length*Sizeof.FLOAT
 		cudaMalloc(out.pdata, len);
 		cudaDeviceSynchronize;
@@ -233,6 +235,32 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
 		cudaDeviceSynchronize;
 		out;
 	}
+  
+  def toNCHW:GFilter = {
+		if (dims.length != 4) throw new RuntimeException("fromNHWCtoNCHW ndims must be 4");
+		if (tensorFormat == cudnnTensorFormat.CUDNN_TENSOR_NCHW) {
+			return this;
+		} else {
+			val tmp = transpose(MatFunctions.irow(1,2,0,3));
+			val out = new GFilter(inDims.copy, outDims.copy, stride.copy, pad.copy, outPad.copy, dataDims.copy, tmp.pdata);
+			out.setNCHW;
+			out.setGUID(MurmurHash3_x64_64(Array(GUID), "fromNHWCtoNCHW".##));
+			out
+		}
+	}
+  
+  def toNHWC:GFilter = {
+    if (dims.length != 4) throw new RuntimeException("fromNCHWtoNHWC ndims must be 4");
+    if (tensorFormat == cudnnTensorFormat.CUDNN_TENSOR_NHWC) {
+    	return this;
+    } else {
+    	val tmp = reshapeView(MatFunctions.irow(dims(1), dims(2), dims(0), dims(3))).transpose(MatFunctions.irow(2,0,1,3));
+    	val out = new GFilter(inDims.copy, outDims.copy, stride.copy, pad.copy, outPad.copy, dataDims.copy, tmp.pdata);
+    	out.setNHWC;
+    	out.setGUID(MurmurHash3_x64_64(Array(GUID), "fromNHWCtoNCHW".##));
+    	out;
+    }
+  }
   
   override def * (a:GMat):GMat = {
 			convolve(a);
@@ -247,7 +275,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
 	override def xavier:GFilter = GFilter.xavier(this, 1f);
 
 	override def transpose(p:IMat):GFilter = {
-	  new GFilter(inDims, outDims, stride, pad, outPad, _transpose(p).pdata);
+	  new GFilter(inDims, outDims, stride, pad, outPad, dataDims(dataDims.length-1) \ dataDims(0->(dataDims.length-1)), _transpose(p).pdata);
 	}
 }
 
@@ -260,7 +288,7 @@ object GFilter {
   def apply(a:FFilter):GFilter = {
     val outnd = GMat.newOrCheckGMat(a.dims, null, a.GUID, "GFilter".##);
     outnd <-- a;
-    val out = new GFilter(a.inDims, a.outDims, a.stride, a.pad, a.outPad, outnd.pdata);
+    val out = new GFilter(a.inDims, a.outDims, a.stride, a.pad, a.outPad, a.dataDims, outnd.pdata);
     out;
   }
   
@@ -300,7 +328,7 @@ object GFilter {
     val stride = irow(nstride);
     val pad = irow(npad);
     val outPad = irow(noutpad);
-    val out = new GFilter(inDims, outDims, stride, pad, outPad, new Pointer);
+    val out = new GFilter(inDims, outDims, stride, pad, outPad, irow(w,1),new Pointer);
     cudaMalloc(out.pdata, 1L*w*Sizeof.FLOAT);
     cudaDeviceSynchronize;
     out
@@ -314,7 +342,7 @@ object GFilter {
     val stride = irow(1, nstride);
     val pad = irow(0, npad);
     val outPad = irow(0, noutpad);
-    val out = new GFilter(inDims, outDims, stride, pad, outPad, new Pointer);
+    val out = new GFilter(inDims, outDims, stride, pad, outPad, irow(din, w, dout), new Pointer);
     cudaMalloc(out.pdata, 1L*w*din*dout*Sizeof.FLOAT);
     cudaDeviceSynchronize;
     out    
@@ -328,7 +356,7 @@ object GFilter {
     val stride = irow(nstride, nstride);
     val pad = irow(npad, npad);
     val outPad = irow(noutpad, noutpad);
-    val out = new GFilter(inDims, outDims, stride, pad, outPad, new Pointer);
+    val out = new GFilter(inDims, outDims, stride, pad, outPad, irow(w, h), new Pointer);
     cudaMalloc(out.pdata, 1L*w*h*Sizeof.FLOAT);
     cudaDeviceSynchronize;
     out
@@ -342,7 +370,7 @@ object GFilter {
     val stride = irow(1, nstride, nstride);
     val pad = irow(0, npad, npad);
     val outPad = irow(0, noutpad, noutpad);
-    val out = new GFilter(inDims, outDims, stride, pad, outPad, new Pointer);
+    val out = new GFilter(inDims, outDims, stride, pad, outPad, irow(din, w, h, dout), new Pointer);
     cudaMalloc(out.pdata, 1L*din*dout*w*h*Sizeof.FLOAT);
     cudaDeviceSynchronize;
     out
@@ -356,7 +384,7 @@ object GFilter {
     val stride = irow(1, nstride, nstride, 1);
     val pad = irow(0, npad, npad, 0);
     val outPad = irow(0, noutpad, noutpad, 0);
-    val out = new GFilter(inDims, outDims, stride, pad, outPad, new Pointer);
+    val out = new GFilter(inDims, outDims, stride, pad, outPad, irow(din, w, h, dout), new Pointer);
     cudaMalloc(out.pdata, 1L*din*dout*w*h*Sizeof.FLOAT);
     cudaDeviceSynchronize;
     out
