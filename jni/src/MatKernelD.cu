@@ -325,10 +325,10 @@ int copyToInds3D(double *A, int lda, int rda, double *B, int ldb, int rdb, int *
 __global__ void __copyToInds4D(double *A, int lda, int rda, int tda, double *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl, int ntk, int nbk, int ntl, int nbl) {
   int ii = threadIdx.x + blockDim.x * blockIdx.x;
   int jj = threadIdx.y + blockDim.y * blockIdx.y;
-  int tk = threadIdx.z / ntk;
-  int tl = threadIdx.z - tk * ntk;
-  int bk = blockIdx.z / nbk;
-  int bl = blockIdx.z - bk * nbk;
+  int tk = threadIdx.z / ntl;
+  int tl = threadIdx.z - tk * ntl;
+  int bk = blockIdx.z / nbl;
+  int bl = blockIdx.z - bk * nbl;
   int kk = tk + ntk * bk;
   int ll = tl + ntl * bl;
   int i, j, k, l, mapi, mapj, mapk, mapl;
@@ -524,10 +524,10 @@ int fillToInds3D(double A, double *B, int ldb, int rdb, int *I, int nrows, int *
 __global__ void __fillToInds4D(double A, double *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl, int ntk, int nbk, int ntl, int nbl) {
   int ii = threadIdx.x + blockDim.x * blockIdx.x;
   int jj = threadIdx.y + blockDim.y * blockIdx.y;
-  int tk = threadIdx.z / ntk;
-  int tl = threadIdx.z - tk * ntk;
-  int bk = blockIdx.z / nbk;
-  int bl = blockIdx.z - bk * nbk;
+  int tk = threadIdx.z / ntl;
+  int tl = threadIdx.z - tk * ntl;
+  int bk = blockIdx.z / nbl;
+  int bl = blockIdx.z - bk * nbl;
   int kk = tk + ntk * bk;
   int ll = tl + ntl * bl;
   int i, j, k, l, mapi, mapj, mapk, mapl;
@@ -706,10 +706,10 @@ int copyFromInds3D(double *A, int lda, int rda, double *B, int ldb, int rdb, int
 __global__ void __copyFromInds4D(double *A, int lda, int rda, int tda, double *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl, int ntk, int nbk, int ntl, int nbl) {
   int ii = threadIdx.x + blockDim.x * blockIdx.x;
   int jj = threadIdx.y + blockDim.y * blockIdx.y;
-  int tk = threadIdx.z / ntk;
-  int tl = threadIdx.z - tk * ntk;
-  int bk = blockIdx.z / nbk;
-  int bl = blockIdx.z - bk * nbk;
+  int tk = threadIdx.z / ntl;
+  int tl = threadIdx.z - tk * ntl;
+  int bk = blockIdx.z / nbl;
+  int bl = blockIdx.z - bk * nbl;
   int kk = tk + ntk * bk;
   int ll = tl + ntl * bl;
   int i, j, k, l, mapi, mapj, mapk, mapl;

@@ -429,10 +429,10 @@ int fillToInds3DLong(long long A, long long *B, int ldb, int rdb, int *I, int nr
 __global__ void __copyToInds4D(float *A, int lda, int rda, int tda, float *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl, int ntk, int nbk, int ntl, int nbl) {
   int ii = threadIdx.x + blockDim.x * blockIdx.x;
   int jj = threadIdx.y + blockDim.y * blockIdx.y;
-  int tk = threadIdx.z / ntk;
-  int tl = threadIdx.z - tk * ntk;
-  int bk = blockIdx.z / nbk;
-  int bl = blockIdx.z - bk * nbk;
+  int tk = threadIdx.z / ntl;
+  int tl = threadIdx.z - tk * ntl;
+  int bk = blockIdx.z / nbl;
+  int bl = blockIdx.z - bk * nbl;
   int kk = tk + ntk * bk;
   int ll = tl + ntl * bl;
   int i, j, k, l, mapi, mapj, mapk, mapl;
@@ -481,10 +481,10 @@ int copyToInds4D(float *A, int lda, int rda, int tda, float *B, int ldb, int rdb
 __global__ void __copyToInds4DLong(long long *A, int lda, int rda, int tda, long long *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl, int ntk, int nbk, int ntl, int nbl) {
   int ii = threadIdx.x + blockDim.x * blockIdx.x;
   int jj = threadIdx.y + blockDim.y * blockIdx.y;
-  int tk = threadIdx.z / ntk;
-  int tl = threadIdx.z - tk * ntk;
-  int bk = blockIdx.z / nbk;
-  int bl = blockIdx.z - bk * nbk;
+  int tk = threadIdx.z / ntl;
+  int tl = threadIdx.z - tk * ntl;
+  int bk = blockIdx.z / nbl;
+  int bl = blockIdx.z - bk * nbl;
   int kk = tk + ntk * bk;
   int ll = tl + ntl * bl;
   int i, j, k, l, mapi, mapj, mapk, mapl;
@@ -533,10 +533,10 @@ int copyToInds4DLong(long long *A, int lda, int rda, int tda, long long *B, int 
 __global__ void __fillToInds4D(float A, float *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl, int ntk, int nbk, int ntl, int nbl) {
   int ii = threadIdx.x + blockDim.x * blockIdx.x;
   int jj = threadIdx.y + blockDim.y * blockIdx.y;
-  int tk = threadIdx.z / ntk;
-  int tl = threadIdx.z - tk * ntk;
-  int bk = blockIdx.z / nbk;
-  int bl = blockIdx.z - bk * nbk;
+  int tk = threadIdx.z / ntl;
+  int tl = threadIdx.z - tk * ntl;
+  int bk = blockIdx.z / nbl;
+  int bl = blockIdx.z - bk * nbl;
   int kk = tk + ntk * bk;
   int ll = tl + ntl * bl;
   int i, j, k, l, mapi, mapj, mapk, mapl;
@@ -585,10 +585,10 @@ int fillToInds4D(float A, float *B, int ldb, int rdb, int tdb, int *I, int nrows
 __global__ void __fillToInds4DLong(long long A, long long *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl, int ntk, int nbk, int ntl, int nbl) {
   int ii = threadIdx.x + blockDim.x * blockIdx.x;
   int jj = threadIdx.y + blockDim.y * blockIdx.y;
-  int tk = threadIdx.z / ntk;
-  int tl = threadIdx.z - tk * ntk;
-  int bk = blockIdx.z / nbk;
-  int bl = blockIdx.z - bk * nbk;
+  int tk = threadIdx.z / ntl;
+  int tl = threadIdx.z - tk * ntl;
+  int bk = blockIdx.z / nbl;
+  int bl = blockIdx.z - bk * nbl;
   int kk = tk + ntk * bk;
   int ll = tl + ntl * bl;
   int i, j, k, l, mapi, mapj, mapk, mapl;
@@ -825,10 +825,10 @@ int copyFromInds3D(float *A, int lda, int rda, float *B, int ldb, int rdb, int *
 __global__ void __copyFromInds4D(float *A, int lda, int rda, int tda, float *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl, int ntk, int nbk, int ntl, int nbl) {
   int ii = threadIdx.x + blockDim.x * blockIdx.x;
   int jj = threadIdx.y + blockDim.y * blockIdx.y;
-  int tk = threadIdx.z / ntk;
-  int tl = threadIdx.z - tk * ntk;
-  int bk = blockIdx.z / nbk;
-  int bl = blockIdx.z - bk * nbk;
+  int tk = threadIdx.z / ntl;
+  int tl = threadIdx.z - tk * ntl;
+  int bk = blockIdx.z / nbl;
+  int bl = blockIdx.z - bk * nbl;
   int kk = tk + ntk * bk;
   int ll = tl + ntl * bl;
   int i, j, k, l, mapi, mapj, mapk, mapl;
@@ -868,6 +868,7 @@ int copyFromInds4D(float *A, int lda, int rda, int tda, float *B, int ldb, int r
   nbl = min((nl - 1) / ntl + 1, 255);
   dim3 blockdims(ntx, nty, ntk * ntl);
   dim3 griddims(nbx, nby, nbk * nbl);
+
   __copyFromInds4D<<<griddims,blockdims>>>(A, lda, rda, tda, B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl, ntk, nbk, ntl, nbl);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
