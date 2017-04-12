@@ -26,6 +26,8 @@ import edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64
 @SerialVersionUID(100L)
 class FFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat, dataDims0:IMat, data0:Array[Float]) extends
 FMat(dataDims0.data, data0) with Filter {
+  
+	override def mytype = "FFilter";
 
 	val inDims = inDims0;
 	val outDims = outDims0;
