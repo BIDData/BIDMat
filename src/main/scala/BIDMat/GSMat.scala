@@ -71,19 +71,7 @@ class GSMat(nr0:Int, nc0:Int, nnz1:Int, @transient var pir:Pointer, @transient v
   
   def copy(omat:Mat, key1:Long, key2:Int):GSMat = {
     val out = GSMat.newOrCheckGSMat(nrows, ncols, nnz, realnnz, omat, GUID, key1, key2)
-    var err = cudaMemcpy(out.pjc, pjc, 1L * Sizeof.INT * (ncols+1), cudaMemcpyKind.cudaMemcpyDeviceToDevice)
-    cudaDeviceSynchronize()
-    if (err == 0) err = cudaMemcpy(out.pir, pir, 1L * Sizeof.INT * nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
-    cudaDeviceSynchronize()
-    if (err == 0) err = cudaMemcpy(out.pic, pic, 1L * Sizeof.INT * nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
-    cudaDeviceSynchronize()
-    if (err == 0) err = cudaMemcpy(out.pdata, pdata, 1L * Sizeof.FLOAT * nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
-    cudaDeviceSynchronize()
-    if (err != 0) {
-        println("device is %d" format SciFunctions.getGPU)
-        throw new RuntimeException("Cuda error in GSMAT.toString " + cudaGetErrorString(err))
-    }
-    out    
+    copyTo(out)
   }
   
   override def colslice(col1:Int, col2:Int, omat:Mat):GSMat = {
@@ -161,9 +149,26 @@ class GSMat(nr0:Int, nc0:Int, nnz1:Int, @transient var pir:Pointer, @transient v
     out
   }
   
+  override def copyTo(out:GSMat) = {
+    var err = cudaMemcpy(out.pjc, pjc, 1L * Sizeof.INT * (ncols+1), cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize()
+    if (err == 0) err = cudaMemcpy(out.pir, pir, 1L * Sizeof.INT * nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize()
+    if (err == 0) err = cudaMemcpy(out.pic, pic, 1L * Sizeof.INT * nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize()
+    if (err == 0) err = cudaMemcpy(out.pdata, pdata, 1L * Sizeof.FLOAT * nnz, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+    cudaDeviceSynchronize()
+    if (err != 0) {
+        println("device is %d" format SciFunctions.getGPU)
+        throw new RuntimeException("Cuda error in GSMAT.copyTo " + cudaGetErrorString(err))
+    }
+    out
+  }
+
   override def copyTo(omat:Mat) = {
     omat match {
-      case out:SMat => copyTo(out);
+      case gs:GSMat => copyTo(gs)
+      case s:SMat => copyTo(s)
     }
   }
   
@@ -191,7 +196,7 @@ class GSMat(nr0:Int, nc0:Int, nnz1:Int, @transient var pir:Pointer, @transient v
   }
   
   override def zeros(m:Int, n:Int, nnz:Int) = {
-    new GSMat(m, n, 0, new Pointer, new Pointer, new Pointer, new Pointer, 0);
+    GSMat(m, n, nnz)
   }
   
   override def iones(m:Int, n:Int) = {
