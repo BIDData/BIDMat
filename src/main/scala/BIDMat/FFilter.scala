@@ -3,6 +3,7 @@ import BIDMat.MatFunctions._;
 import edu.berkeley.bid.CBLAS._;
 import edu.berkeley.bid.UTILS
 import SciFunctions._;
+import edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64
 
 //
 // Basic CPU convolutional Filter class.
@@ -964,6 +965,12 @@ object FFilter {
 
 	def apply(indims:IMat, outdims:IMat, stride:IMat, pad:IMat, dataDims:IMat):FFilter = {
 			new FFilter(indims, outdims, stride, pad, null, indims(0,0->(indims.length-1)) \ outdims(0), new Array[Float]((indims dotr outdims).v))
+	}
+	
+  def apply(g:GFilter):FFilter = {
+			val out = new FFilter(g.inDims, g.outDims, g.stride, g.pad, g.outPad, g.dataDims, new Array[Float](g.length));
+			out.setGUID(MurmurHash3_x64_64(Array(g.GUID), "FFilter apply".##));
+			out;
 	}
 
 	def FFilter1D(w:Int, nstride:Int, npad:Int, noutpad:Int):FFilter = {

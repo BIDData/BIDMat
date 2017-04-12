@@ -32,6 +32,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
 	var dataType = cudnnDataType.CUDNN_DATA_FLOAT;
 	var tensorFormat = cudnnTensorFormat.CUDNN_TENSOR_NHWC;
   var convType = cudnnConvolutionMode.CUDNN_CROSS_CORRELATION;
+//  var convType = cudnnConvolutionMode.CUDNN_CONVOLUTION;
 
   val fwdAlgo = Array(0);
   val bwdDataAlgo = Array(0);
@@ -291,6 +292,7 @@ object GFilter {
     val outnd = GMat.newOrCheckGMat(a.dims, null, a.GUID, "GFilter".##);
     outnd <-- a;
     val out = new GFilter(a.inDims, a.outDims, a.stride, a.pad, a.outPad, a.dataDims, outnd.pdata);
+    out.setGUID(MurmurHash3_x64_64(Array(a.GUID), "GFilter apply".##));
     out;
   }
   
