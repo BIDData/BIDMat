@@ -1,12 +1,13 @@
 package edu.berkeley.bid.comm;
 
+import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 /**
  * Created by qualiali on 26/02/2017.
  */
-public class Bandwidth {
+public class Bandwidth implements Serializable{
 
     public int totalSize = 0;
 
