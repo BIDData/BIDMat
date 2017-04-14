@@ -292,8 +292,10 @@ object GFilter {
   
   def apply(a:FFilter):GFilter = {
     val outnd = GMat.newOrCheckGMat(a.dims, null, a.GUID, "GFilter".##);
-    outnd <-- a;
     val out = new GFilter(a.inDims, a.outDims, a.stride, a.pad, a.outPad, a.dataDims, outnd.pdata);
+    GMat.CPUtoGPUarraycopy(a.data, 0, out.pdata, 0, a.length, "GFilter apply");
+    out.tensorFormat = a.tensorFormat;
+    out.convType = a.convType;
     out.setGUID(MurmurHash3_x64_64(Array(a.GUID), "GFilter apply".##));
     out;
   }

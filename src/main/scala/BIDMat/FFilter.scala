@@ -4,6 +4,8 @@ import edu.berkeley.bid.CBLAS._;
 import edu.berkeley.bid.UTILS
 import SciFunctions._;
 import edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64
+import jcuda.jcudnn._
+import jcuda.jcudnn.JCudnn._
 
 //
 // Basic CPU convolutional Filter class.
@@ -35,6 +37,9 @@ FMat(dataDims0.data, data0) with Filter {
 	val pad = if (pad0.asInstanceOf[AnyRef] != null) pad0 else izeros(1,inDims.length);
 	val outPad = if (outPad0.asInstanceOf[AnyRef] != null) outPad0 else izeros(1,inDims.length);
 	val dataDims = dataDims0;
+	var tensorFormat = cudnnTensorFormat.CUDNN_TENSOR_NHWC;
+	var convType = cudnnConvolutionMode.CUDNN_CROSS_CORRELATION;
+
 	var timer = 0f;
 
 	def convolve(a:FMat, omat:Mat, doclear:Boolean):FMat = {
@@ -970,10 +975,13 @@ object FFilter {
 	}
 	
   def apply(g:GFilter):FFilter = {
-			val out = new FFilter(g.inDims, g.outDims, g.stride, g.pad, g.outPad, g.dataDims, new Array[Float](g.length));
-			GMat.GPUtoCPUarraycopy(g.pdata, 0, out.data, 0, g.length, "FFilter apply");
-			out.setGUID(MurmurHash3_x64_64(Array(g.GUID), "FFilter apply".##));
-			out;
+          val outnd = FMat.newOrCheckFMat(g.dims, null, g.GUID, "FFilter".##);
+          val out = new FFilter(g.inDims, g.outDims, g.stride, g.pad, g.outPad, g.dataDims, outnd.data);
+          GMat.GPUtoCPUarraycopy(g.pdata, 0, out.data, 0, g.length, "FFilter apply");
+          out.tensorFormat = g.tensorFormat;
+          out.convType = g.convType;
+          out.setGUID(MurmurHash3_x64_64(Array(g.GUID), "FFilter apply".##));
+          out;
 	}
 
 	def FFilter1D(w:Int, nstride:Int, npad:Int, noutpad:Int):FFilter = {
