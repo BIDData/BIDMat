@@ -62,8 +62,8 @@ else
     BIDMAT_ROOT=`readlink "${BIDMAT_ROOT}"`
 fi
 BIDMAT_ROOT=`dirname "$BIDMAT_ROOT"`
-BIDMAT_ROOT=`cd "$BIDMAT_ROOT/../..";pwd`
-BIDMAT_ROOT="$( echo ${BIDMAT_ROOT} | sed s+/cygdrive/c+c:+ )" 
+BIDMAT_ROOT=`cd "$BIDMAT_ROOT/../..";pwd -P`
+BIDMAT_ROOT="$( echo ${BIDMAT_ROOT} | sed 's+/cygdrive/\(.\)+\1:+' )" 
 
 if [ "$OS" = "apple" ] ; then
     ICC_ROOT="/opt/intel/compilers_and_libraries/mac"
@@ -230,6 +230,9 @@ else
     fi
 elif [ "$OS" = "windows" ] ; then
     CUDA_HOME="$CUDA_PATH"
+    if [ "$BLASROOT" = "" ] ; then
+        BLASROOT=${MKLROOT}
+    fi
     BLAS_ROOT="$BLASROOT"
     RANDSRC="VSL"
     CC="icl"

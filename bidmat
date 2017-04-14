@@ -17,7 +17,7 @@ else
 fi
 BIDMAT_ROOT=`dirname "$BIDMAT_ROOT"`
 pushd "${BIDMAT_ROOT}" > /dev/null
-BIDMAT_ROOT=`pwd`
+BIDMAT_ROOT=`pwd -P`
 BIDMAT_ROOT="$( echo ${BIDMAT_ROOT} | sed 's+/cygdrive/\(.\)+\1:+' )"
 JCUDA_LIBDIR=${BIDMAT_ROOT}/lib
 JOCL_LIBDIR=${BIDMAT_ROOT}/lib
