@@ -233,7 +233,13 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
   
   override def copy:GFilter = {
 		val out = new GFilter(inDims.copy, outDims.copy, stride.copy, pad.copy, outPad.copy, dataDims.copy, new Pointer);
-		val len = 1L*length*Sizeof.FLOAT
+		val len = 1L*length*Sizeof.FLOAT;
+		if (Mat.debugMem) {
+			 println("GFilter %d %d, %d %f" format (nrows, ncols, SciFunctions.getGPU, SciFunctions.GPUmem._1))
+			 if (length > Mat.debugMemThreshold) throw new RuntimeException("GFilter alloc too large");
+    }
+		out.convType = convType;
+		out.tensorFormat = tensorFormat;
 		cudaMalloc(out.pdata, len);
 		cudaDeviceSynchronize;
 		cudaMemcpy(out.pdata, pdata, len, cudaMemcpyDeviceToDevice);
@@ -330,15 +336,25 @@ object GFilter {
 		cudnnContexts(SciFunctions.getGPU)
   }
   
+  def apply(inDims:IMat,outDims:IMat, stride:IMat, pad:IMat, outPad:IMat, dataDims:IMat) = {
+		  val len = dataDims.data.reduce(_*_);
+		  if (Mat.debugMem) {
+			  println("GFilter %d %d %f" format (len, SciFunctions.getGPU, SciFunctions.GPUmem._1))
+			  if (len > Mat.debugMemThreshold) throw new RuntimeException("GFilter alloc too large");
+		  }
+		  val out = new GFilter(inDims, outDims, stride, pad, outPad, dataDims,new Pointer);
+		  cudaMalloc(out.pdata, 1L*len*Sizeof.FLOAT);
+		  cudaDeviceSynchronize;
+		  out;
+  }
+  
   def GFilter1D(w:Int, nstride:Int, npad:Int, noutpad:Int):GFilter = {
     val inDims = irow(w);
     val outDims = irow(1);
     val stride = irow(nstride);
     val pad = irow(npad);
     val outPad = irow(noutpad);
-    val out = new GFilter(inDims, outDims, stride, pad, outPad, irow(w,1),new Pointer);
-    cudaMalloc(out.pdata, 1L*w*Sizeof.FLOAT);
-    cudaDeviceSynchronize;
+    val out = GFilter(inDims, outDims, stride, pad, outPad, irow(w, 1));
     out
   }
   
@@ -350,9 +366,7 @@ object GFilter {
     val stride = irow(1, nstride);
     val pad = irow(0, npad);
     val outPad = irow(0, noutpad);
-    val out = new GFilter(inDims, outDims, stride, pad, outPad, irow(din, w, dout), new Pointer);
-    cudaMalloc(out.pdata, 1L*w*din*dout*Sizeof.FLOAT);
-    cudaDeviceSynchronize;
+    val out = GFilter(inDims, outDims, stride, pad, outPad, irow(din, w, dout));
     out    
   }
   
@@ -364,9 +378,7 @@ object GFilter {
     val stride = irow(nstride, nstride);
     val pad = irow(npad, npad);
     val outPad = irow(noutpad, noutpad);
-    val out = new GFilter(inDims, outDims, stride, pad, outPad, irow(w, h), new Pointer);
-    cudaMalloc(out.pdata, 1L*w*h*Sizeof.FLOAT);
-    cudaDeviceSynchronize;
+    val out = GFilter(inDims, outDims, stride, pad, outPad, irow(w, h));
     out
   }
   
@@ -378,9 +390,7 @@ object GFilter {
     val stride = irow(1, nstride, nstride);
     val pad = irow(0, npad, npad);
     val outPad = irow(0, noutpad, noutpad);
-    val out = new GFilter(inDims, outDims, stride, pad, outPad, irow(din, w, h, dout), new Pointer);
-    cudaMalloc(out.pdata, 1L*din*dout*w*h*Sizeof.FLOAT);
-    cudaDeviceSynchronize;
+    val out = GFilter(inDims, outDims, stride, pad, outPad, irow(din, w, h, dout));
     out
   }
   
@@ -392,9 +402,7 @@ object GFilter {
     val stride = irow(1, nstride, nstride, 1);
     val pad = irow(0, npad, npad, 0);
     val outPad = irow(0, noutpad, noutpad, 0);
-    val out = new GFilter(inDims, outDims, stride, pad, outPad, irow(din, w, h, dout), new Pointer);
-    cudaMalloc(out.pdata, 1L*din*dout*w*h*Sizeof.FLOAT);
-    cudaDeviceSynchronize;
+    val out = GFilter(inDims, outDims, stride, pad, outPad, irow(din, w, h, dout));
     out
   }
   

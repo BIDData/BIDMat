@@ -2434,7 +2434,7 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair(omat, mat) {
 object FMat {
 
   def apply(nr:Int, nc:Int) = {
-    if (Mat.debugMem) {
+    if (Mat.debugCPUmem) {
       println("FMat %d %d" format (nr, nc))
       if (nr*nc > Mat.debugMemThreshold) throw new RuntimeException("FMat alloc too large");
     }
@@ -2443,7 +2443,7 @@ object FMat {
   
   def make(dims:Array[Int]):FMat = {
     val length = dims.reduce(_*_);
-    if (Mat.debugMem) {
+    if (Mat.debugCPUmem) {
       print("FMat"); 
       dims.foreach((x) => print(" %d" format x));
       println("");

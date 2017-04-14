@@ -1698,7 +1698,7 @@ object DMat {
   
   def make(dims:Array[Int]):DMat = {
     val length = dims.reduce(_*_);
-    if (Mat.debugMem) {
+    if (Mat.debugCPUmem) {
       print("DMat"); 
       dims.foreach((x) => print(" %d" format x));
       println("");

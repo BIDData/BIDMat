@@ -14,7 +14,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
   
   def this(dims0:Array[Int])(implicit manifest:ClassTag[T]) = this(
 		  {
-	       if (Mat.debugMem) {
+	       if (Mat.debugCPUmem) {
 	    	   val len = dims0.reduce(_*_);
 	    	   println("DenseMat %d" format len);
 	    	   if (len > Mat.debugMemThreshold) throw new RuntimeException("DenseMat alloc too large");
@@ -24,7 +24,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
       new Array[T](dims0.reduce(_*_)));
   
   def this(nr:Int, nc:Int)(implicit manifest:ClassTag[T]) = {
-	  this({if (Mat.debugMem) {
+	  this({if (Mat.debugCPUmem) {
 		  println("DenseMat %d %d" format (nr, nc))
 		  if (nr*nc > Mat.debugMemThreshold) throw new RuntimeException("DenseMat alloc too large");
 	  }

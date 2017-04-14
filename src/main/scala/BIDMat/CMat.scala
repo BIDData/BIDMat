@@ -1235,7 +1235,7 @@ class CPair (val omat:Mat, val mat:CMat) extends Pair(omat, mat) {
 object CMat {
   
   def apply(nr:Int, nc:Int) = {
-    if (Mat.debugMem) {
+    if (Mat.debugCPUmem) {
       println("CMat %d %d" format (nr, nc))
       if (nr*nc*2 > Mat.debugMemThreshold) throw new RuntimeException("CMat alloc too large");
     }
@@ -1244,7 +1244,7 @@ object CMat {
   
   def make(dims:Array[Int]):CMat = {
     val length = 2*dims.reduce(_*_);
-    if (Mat.debugMem) {
+    if (Mat.debugCPUmem) {
       print("CMat"); 
       dims.foreach((x) => print(" %d" format x));
       println("");

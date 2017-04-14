@@ -1380,9 +1380,23 @@ class IPair(val omat:Mat, val mat:IMat) extends Pair(omat, mat) {
 
 object IMat {
   
-  def apply(nr:Int, nc:Int) = new IMat(nr, nc, new Array[Int](nr*nc))
+  def apply(nr:Int, nc:Int) = {
+    if (Mat.debugCPUmem) {
+      print("IMat %d %d " format (nr, nc));
+      val len = nr * nc;
+      if (len > Mat.debugMemThreshold) throw new RuntimeException("IMat alloc too large");
+    }
+    new IMat(nr, nc, new Array[Int](nr*nc));
+  }
   
   def make(dims:Array[Int]):IMat = {
+    if (Mat.debugCPUmem) {
+      print("IMat"); 
+      dims.foreach((x) => print(" %d" format x));
+      println("");     
+      val len = dims.reduce(_*_);
+      if (len > Mat.debugMemThreshold) throw new RuntimeException("IMat alloc too large");
+    }
     val out = new IMat(dims, new Array[Int](dims.reduce(_*_))); 
     out
   }

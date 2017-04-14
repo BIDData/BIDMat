@@ -645,6 +645,8 @@ object Mat {
   var useSTLRand = false;
     
   var debugMem = false             // Debug GPU mem calls
+
+  var debugCPUmem = false          // Debug CPU mem calls
   
   var debugMemThreshold = 1000;
   
