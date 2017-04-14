@@ -971,6 +971,7 @@ object FFilter {
 	
   def apply(g:GFilter):FFilter = {
 			val out = new FFilter(g.inDims, g.outDims, g.stride, g.pad, g.outPad, g.dataDims, new Array[Float](g.length));
+			GMat.GPUtoCPUarraycopy(g.pdata, 0, out.data, 0, g.length, "FFilter apply");
 			out.setGUID(MurmurHash3_x64_64(Array(g.GUID), "FFilter apply".##));
 			out;
 	}
