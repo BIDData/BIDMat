@@ -17,6 +17,11 @@ public class Vec {
 		length = d.length;
 	} 
 	
+	public Vec(float [] d, int length0) {
+		data = d;
+		length = length0;
+	}
+
 	static public Vec row(float... d) {
 		Vec out = new Vec(d.length);
 		out.data = d;
@@ -24,7 +29,7 @@ public class Vec {
 	}
 	
 	public int size() {
-		return data.length;
+		return length;
 	}
 	
 	@Override public String toString() {
