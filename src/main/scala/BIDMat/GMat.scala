@@ -954,7 +954,8 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   override def dot(aa:FMat, oldmat:Mat):GMat = {
   		val a = GMat(aa);
   		ND.checkDims("dot", dims, a.dims);
-  		val odims = iones(1,dims.length-1) \ a.ncols;
+  		val odims = IMat.iones(1, dims.length) 
+  		odims(dims.length-1) = a.ncols;
   		val out = GMat.newOrCheckGMat(odims, oldmat, GUID, a.GUID, "dot".##);
   		Mat.nflops += 2L * length;
   		val err = CUMAT.reducebin1op(nrows, ncols, pdata, a.pdata, out.pdata, op_mul, op_add);
@@ -2275,7 +2276,9 @@ object GMat {
     }
   }
   
-  def newOrCheckGMat(dims:IMat, out:Mat, g1:Long, g2:Long, opHash:Int):GMat = newOrCheckGMat(dims.data, out, g1, g2, opHash);
+  def newOrCheckGMat(dims0:IMat, out:Mat, g1:Long, g2:Long, opHash:Int):GMat = {
+    newOrCheckGMat(dims0.data, out, g1, g2, opHash);
+  }
     
   def newOrCheckGMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):GMat = {
     val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
