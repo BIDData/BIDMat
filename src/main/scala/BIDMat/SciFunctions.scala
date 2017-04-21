@@ -184,10 +184,10 @@ object SciFunctions {
     }
   }
 
-  def getMatVecType(m:Mat):Int = { 
-    if (m.nrows == 1) { 
+  def getMatVecType(m:Mat):Int = {
+    if (m.nrows == 1) {
       if (m.ncols == 1) 0 else 2;
-    } else { 
+    } else {
       if (m.ncols == 1) 1 else 3;
     }
   }
@@ -1518,7 +1518,7 @@ object SciFunctions {
   
   /**
    * histc takes a sorted a and b, and returns an IMat "out" of size b.length s.t. out(i) is the count of 
-   * elements < b(i+1), and >= b(i) if i > 0. 
+   * elements < b(i+1), and >= b(i) if i > 0.
    */
 
   def histc(a:DMat, b:DMat):IMat = {
@@ -1566,7 +1566,7 @@ object SciFunctions {
   
   /**
    * ROC curve function for multiple scores. Each row of "score" represents an ordering. 
-   * A ROC curve is computed for each column. 
+   * A ROC curve is computed for each column.
    */
   
    def roc2(score:DMat, vpos0:DMat, vneg0:DMat, nxvals:Int):DMat = {
@@ -1599,6 +1599,18 @@ object SciFunctions {
   }
   
   def roc2(score:FMat, vpos:FMat, vneg:FMat, nxvals:Int):DMat = roc2(DMat(score), DMat(vpos), DMat(vneg),nxvals)
+
+  def softmax(values:FMat, out:FMat):FMat = {
+    out ~ values - maxi(values)
+    exp(out, out)
+    out ~ out / sum(out)
+    out
+  }
+
+  def softmax(values:FMat):FMat = {
+    val out = values.zeros(values.dims)
+    softmax(values, out)
+  }
     
   import GMat.TransF
   
