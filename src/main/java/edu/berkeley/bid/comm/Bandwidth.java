@@ -59,7 +59,8 @@ public class Bandwidth implements Serializable{
     }
 
     public void printRecords(){
-        for(Record r: records){
+	System.out.println("Worker Progress:");
+	for(Record r: records){
             long millis = r.startTime / 1000000;
             long second = (millis / 1000) % 60;
             long minute = (millis / (1000 * 60)) % 60;
