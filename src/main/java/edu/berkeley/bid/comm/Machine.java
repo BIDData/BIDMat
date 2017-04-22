@@ -50,8 +50,8 @@ public class Machine {
     public Hashtable<SockReader, Future<?>> readers;
     Network network;
 
-    public Bandwidth sentSockHistory = new Bandwidth();   //Tracks the sock message history
-    public Bandwidth recvSockHistory = new Bandwidth();   //Tracks the sock message history
+    public WorkerProgress sentSockHistory = new WorkerProgress();   //Tracks the sock message history
+    public WorkerProgress recvSockHistory = new WorkerProgress();   //Tracks the sock message history
 
     public Machine(Network p0, Groups groups0, int imachine0, int M0, boolean useLong0, int bufsize, boolean doSim0, int trace0,
                    int replicate0, InetSocketAddress[] workers0) {
@@ -571,14 +571,5 @@ public class Machine {
         } else {
                 System.out.println(msg);
         }
-    }
-
-    public void printThroughput(){
-        int totalBytes = 0;
-        System.out.println("SENT:");
-        sentSockHistory.printRecords();
-
-        System.out.println("RECV:");
-        recvSockHistory.printRecords();
     }
 }

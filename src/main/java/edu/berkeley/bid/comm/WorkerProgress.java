@@ -7,7 +7,7 @@ import java.util.ArrayList;
 /**
  * Created by qualiali on 26/02/2017.
  */
-public class Bandwidth implements Serializable{
+public class WorkerProgress implements Serializable{
 
     public int totalSize = 0;
 
