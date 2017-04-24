@@ -1,7 +1,7 @@
 
 #include <jni.h>
 #ifndef __arm__          // Need a working Lapack first
-#ifdef __arm__
+#if defined(__arm__) || defined(__aarch64__)
 #include <lapacke.h>
 #else
 #include <mkl.h>
