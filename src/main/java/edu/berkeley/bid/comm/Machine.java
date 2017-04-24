@@ -50,8 +50,7 @@ public class Machine {
     public Hashtable<SockReader, Future<?>> readers;
     Network network;
 
-    public WorkerProgress sentSockHistory = new WorkerProgress();   //Tracks the sock message history
-    public WorkerProgress recvSockHistory = new WorkerProgress();   //Tracks the sock message history
+    public WorkerProgress workerProgress = new WorkerProgress();   //Tracks the sock message history
 
     public Machine(Network p0, Groups groups0, int imachine0, int M0, boolean useLong0, int bufsize, boolean doSim0, int trace0,
                    int replicate0, InetSocketAddress[] workers0) {
@@ -311,7 +310,7 @@ public class Machine {
                     ostr.write(msg.buf, 0, msg.size * 4);
                     //if there is exception when writing, the record will not be logged
                     long endTime = System.nanoTime();
-                    sentSockHistory.addRecord(imachine, imachine, round, dest, msg.size*4, startTime, endTime);
+                    workerProgress.addSend(msg.size*4);
                 }
             } catch (Exception e) {
                 if (trace > 0)
@@ -369,7 +368,7 @@ public class Machine {
                         //TODO: check this part
                         istr.readFully(msg.buf, 0, len * 4);
                         long endTime = System.nanoTime();
-                        recvSockHistory.addRecord(imachine, round, src, imachine, len*4, startTime, endTime);
+                        workerProgress.addRecv(len*4);
                         synchronized (Machine.this) {
                             if (!msgrecvd[src][tag0]) {
                                 messages[src][tag0] = msg;

@@ -7,67 +7,65 @@ import java.util.ArrayList;
 /**
  * Created by qualiali on 26/02/2017.
  */
-public class WorkerProgress implements Serializable{
+public class WorkerProgress implements Serializable {
 
-    public int totalSize = 0;
+    int sentSize = 0;
+    int recvSize = 0;
+    int lastSentSize = 0;
+    int lastRecvSize = 0;
 
-    public ArrayList<Record> records = new ArrayList<>();
 
-    class Record{
-        public int iMachine;           //machine's identity
-        public int round;              //
-        public int src;                 //src machine no
-        public int dst;                 //dst machine no
-        public int size;                //size of socket message in bytes
-        public long startTime;           //start time in nano seconds
-        public long endTime;             //end time in nano seconds
-        public long duration;           //time spent on sending the socket, in ns
-        public double bandwidth;        //bandwidth, in KB/s
+    ArrayList<Long> timestamps = new ArrayList<>();
+    ArrayList<Double> sentBandwidthHistory = new ArrayList<>();
+    ArrayList<Double> recvBandwidthHistory = new ArrayList<>();
 
-        public Record(int iMachine,
-                     int round,
-                     int src,
-                     int dst,
-                     int size,
-                     long startTime,
-                     long endTime) {
-            this.iMachine = iMachine;
-            this.round = round;
-            this.src = src;
-            this.dst = dst;
-            this.size = size;
-            this.startTime = startTime;
-            this.endTime = endTime;
-            this.duration = endTime - startTime;
-            this.bandwidth = size / 1024.0 / duration * 1000000000;
-
-            // System.out.printf("src: %d, dst: %d, size: %d B, duration: %d ms, bandwidth: %f KB/s\n",
-            //         src, dst, size, duration, bandwidth);
-        }
+    public void addSentBandwidth(double bandwidth){
+        sentBandwidthHistory.add(bandwidth);
     }
 
-    public void addRecord(int iMachine,
-                     int round,
-                     int src,
-                     int dst,
-                     int size,
-                     long startTime,
-                     long endTime){
-        records.add(
-            new Record(iMachine, round, src, dst, size, startTime, endTime));
-        totalSize += size;
+    public void addRecvBandwidth(double bandwidth){
+        recvBandwidthHistory.add(bandwidth);
     }
 
-    public void printRecords(){
-	System.out.println("Worker Progress:");
-	for(Record r: records){
-            long millis = r.startTime / 1000000;
-            long second = (millis / 1000) % 60;
-            long minute = (millis / (1000 * 60)) % 60;
-            long hour = (millis / (1000 * 60 * 60)) % 24;
+    public void addSend(int size) {
+        sentSize += size;
+    }
 
-            String time = String.format("%02d:%02d:%02d:%d", hour, minute, second, millis);
-            System.out.println("time: "+time+" total bytes: "+r.size);
-        }
+    public void addRecv(int size){
+        recvSize += size;
+    }
+
+    public void addTimestamp (long timestamp){
+        long lastTimestamp = timestamps.get(timestamps.size()-1);
+        timestamps.add(timestamp);
+        long interval = lastTimestamp - timestamp;
+        int sentSizeIncrement = sentSize - lastSentSize;
+        int recvSizeIncrement = recvSize - lastRecvSize;
+        lastSentSize = sentSize;
+        lastRecvSize = recvSize;
+        double sentBandwidth = sentSizeIncrement/1024.0/1024/(interval/1000.0);
+        double recvBandwidth = recvSizeIncrement/1024.0/1024/(interval/1000.0);
+        sentBandwidthHistory.add(sentBandwidth);
+        recvBandwidthHistory.add(recvBandwidth);
+    }
+
+    public String toString() {
+        String output = "";
+        output += "Worker Progress:";
+
+        long lastTimestamp = timestamps.get(timestamps.size()-1);
+        long millis = lastTimestamp / 1000000;
+        long second = (lastTimestamp / 1000) % 60;
+        long minute = (lastTimestamp / (1000 * 60)) % 60;
+        long hour = (lastTimestamp / (1000 * 60 * 60)) % 24;
+        String time = String.format("%02d:%02d:%02d:%d", hour, minute, second, millis);
+        double sentBandwidth = sentBandwidthHistory.get(sentBandwidthHistory.size()-1);
+        double recvBandwidth = recvBandwidthHistory.get(recvBandwidthHistory.size()-1);
+        output += String.format("Time: %s, Sent: %.2f MB/s, Recv: %.2f Mb/s", time, sentBandwidth, recvBandwidth);
+        return output;
+    }
+
+    public void printProgress(){
+        System.out.println(this.toString());
     }
 }
