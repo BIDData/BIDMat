@@ -18,6 +18,12 @@ public class WorkerProgress implements Serializable {
     ArrayList<Double> sentBandwidthHistory = new ArrayList<>();
     ArrayList<Double> recvBandwidthHistory = new ArrayList<>();
 
+    public WorkerProgress(){
+	timestamps.add(System.currentTimeMillis());
+    	sentBandwidthHistory.add(0.0);
+	recvBandwidthHistory.add(0.0);
+    }
+
     public void addSentBandwidth(double bandwidth){
         sentBandwidthHistory.add(bandwidth);
     }
@@ -37,7 +43,7 @@ public class WorkerProgress implements Serializable {
     public void addTimestamp (long timestamp){
         long lastTimestamp = timestamps.get(timestamps.size()-1);
         timestamps.add(timestamp);
-        long interval = lastTimestamp - timestamp;
+        long interval = timestamp - lastTimestamp;
         int sentSizeIncrement = sentSize - lastSentSize;
         int recvSizeIncrement = recvSize - lastRecvSize;
         lastSentSize = sentSize;
