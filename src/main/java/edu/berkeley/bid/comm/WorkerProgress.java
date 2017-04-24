@@ -13,7 +13,7 @@ public class WorkerProgress implements Serializable{
 
     public ArrayList<Record> records = new ArrayList<>();
 
-    class Record{
+    class Record implements Serializable{
         public int iMachine;           //machine's identity
         public int round;              //
         public int src;                 //src machine no
