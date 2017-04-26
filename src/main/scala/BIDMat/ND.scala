@@ -142,11 +142,11 @@ object ND {
   
   def checkDims(fname:String, dims1:Array[Int], dims2:Array[Int]):Boolean = {
     if (dims1.length != dims2.length) {
-      throw new RuntimeException(fname + " number of dimensions doesnt match source array");
+      throw new RuntimeException(fname + " number of dimensions doesnt match source array %d %d" format (dims1.length, dims2.length));
     }
     for (i <- 0 until dims1.length) {
       if (dims1(i) != dims2(i)) {
-        throw new RuntimeException(fname + " mismatch in dimension " + i)
+        throw new RuntimeException(fname + " mismatch in dimension %d, %s %s" format (i, dims1.toString, dims2.toString));
       }
     }
     return true
