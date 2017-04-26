@@ -146,7 +146,7 @@ object ND {
     }
     for (i <- 0 until dims1.length) {
       if (dims1(i) != dims2(i)) {
-        throw new RuntimeException(fname + " mismatch in dimension %d, %s %s" format (i, dims1.toString, dims2.toString));
+        throw new RuntimeException(fname + " mismatch in dimension %d, %s %s" format (i, printDims(dims1), printDims(dims2)));
       }
     }
     return true
