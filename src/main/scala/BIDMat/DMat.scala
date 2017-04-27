@@ -1989,7 +1989,7 @@ object DMat {
   }
   
    def newOrCheckDMat(dims:Array[Int], out:Mat, matGuid:Long, opHash:Int):DMat = {
-    if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
+    if (out.asInstanceOf[AnyRef] != null || !Mat.useCache) {
       newOrCheckDMat(dims, out)
     } else {
       val key = (matGuid, opHash)
@@ -2023,7 +2023,7 @@ object DMat {
   }
   
   def newOrCheckDMat(dims:Array[Int], out:Mat, guid1:Long, guid2:Long, opHash:Int):DMat = {
-    if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
+    if (out.asInstanceOf[AnyRef] != null || !Mat.useCache) {
       newOrCheckDMat(dims, out)
     } else {
       val key = (guid1, guid2, opHash)
@@ -2057,7 +2057,7 @@ object DMat {
   }
  
   def newOrCheckDMat(dims:Array[Int], out:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):DMat = {
-    if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
+    if (out.asInstanceOf[AnyRef] != null || !Mat.useCache) {
       newOrCheckDMat(dims, out)
     } else {
       val key = (guid1, guid2, guid3, opHash)

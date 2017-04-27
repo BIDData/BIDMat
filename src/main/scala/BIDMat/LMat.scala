@@ -1675,7 +1675,7 @@ object LMat {
   }
   
    def newOrCheckLMat(dims:Array[Int], out:Mat, matGuid:Long, opHash:Int):LMat = {
-    if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
+    if (out.asInstanceOf[AnyRef] != null || !Mat.useCache) {
       newOrCheckLMat(dims, out)
     } else {
       val key = (matGuid, opHash)
@@ -1710,7 +1710,7 @@ object LMat {
   }
   
     def newOrCheckLMat(dims:Array[Int], out:Mat, guid1:Long, guid2:Long, opHash:Int):LMat = {
-    if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
+    if (out.asInstanceOf[AnyRef] != null || !Mat.useCache) {
       newOrCheckLMat(dims, out)
     } else {
       val key = (guid1, guid2, opHash)
@@ -1745,7 +1745,7 @@ object LMat {
   }
   
    def newOrCheckLMat(dims:Array[Int], out:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):LMat = {
-    if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
+    if (out.asInstanceOf[AnyRef] != null || !Mat.useCache) {
       newOrCheckLMat(dims, out)
     } else {
       val key = (guid1, guid2, guid3, opHash)

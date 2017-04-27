@@ -2732,7 +2732,7 @@ object FMat {
   }
       
   def newOrCheckFMat(dims:Array[Int], out:Mat, matGuid:Long, opHash:Int):FMat = {
-    if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
+    if (out.asInstanceOf[AnyRef] != null || !Mat.useCache) {
       newOrCheckFMat(dims, out)
     } else {
       val key = (matGuid, opHash)
@@ -2767,7 +2767,7 @@ object FMat {
   }
   
    def newOrCheckFMat(dims:Array[Int], out:Mat, guid1:Long, guid2:Long, opHash:Int):FMat = {
-    if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
+    if (out.asInstanceOf[AnyRef] != null || !Mat.useCache) {
       newOrCheckFMat(dims, out)
     } else {
       val key = (guid1, guid2, opHash)
@@ -2801,7 +2801,7 @@ object FMat {
   }
   
   def newOrCheckFMat(dims:Array[Int], out:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):FMat = {
-    if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
+    if (out.asInstanceOf[AnyRef] != null || !Mat.useCache) {
       newOrCheckFMat(dims, out)
     } else {
       val key = (guid1, guid2, guid3, opHash)
