@@ -652,10 +652,10 @@ object SciFunctions {
   
   def max(a:Mat, b:Float, c:Mat):Mat = {
     a match {
-      case (aa:FMat) => max(aa, FMat.elem(b), c):FMat;
-      case (aa:DMat) => max(aa, DMat.delem(b), c):DMat;
-      case (aa:IMat) => max(aa, IMat.ielem(b.toInt), c):IMat;
-      case (aa:LMat) => max(aa, LMat.lelem(b.toInt), c):LMat;
+      case (aa:FMat) => max(aa, b, c):FMat;
+      case (aa:DMat) => max(aa, b, c):DMat;
+      case (aa:IMat) => max(aa, b.toInt, c):IMat;
+      case (aa:LMat) => max(aa, b.toLong, c):LMat;
       case (aa:SMat) => max(aa, b, c):SMat;
       case (aa:SDMat) => max(aa, b.toDouble, c):SDMat;
     }
@@ -684,10 +684,10 @@ object SciFunctions {
   
   def min(a:Mat, b:Float, c:Mat):Mat = {
     a match {
-      case (aa:FMat) => min(aa, FMat.elem(b), c):FMat;
-      case (aa:DMat) => min(aa, DMat.delem(b), c):DMat;
-      case (aa:IMat) => min(aa, IMat.ielem(b.toInt), c):IMat;
-      case (aa:LMat) => min(aa, LMat.lelem(b.toInt), c):LMat;
+      case (aa:FMat) => min(aa, b, c):FMat;
+      case (aa:DMat) => min(aa, b, c):DMat;
+      case (aa:IMat) => min(aa, b.toInt, c):IMat;
+      case (aa:LMat) => min(aa, b.toLong, c):LMat;
       case (aa:SMat) => min(aa, b, c):SMat;
       case (aa:SDMat) => min(aa, b, c):SDMat;
     }
