@@ -263,6 +263,12 @@ object SciFunctions {
   def betarnd(p:Double, q:Double, out:DMat):DMat = DFunctions.betarnd(p, q, out);
   def dbetarnd(p:Double, q:Double, m:Int, n:Int):DMat = betarnd(p, q, DMat(m, n));
   
+  def multinomialrnd(p:FMat):IMat = {
+    val pr = rand(p.zeros(1, p.ncols));
+    val cc = int(sum(pr > cumsum(p)))
+    min(cc, p.nrows-1);
+  }
+  
   def randperm(n:Int):IMat = {
     val (dmy, rp) = sort2(rand(1,n))
     rp
