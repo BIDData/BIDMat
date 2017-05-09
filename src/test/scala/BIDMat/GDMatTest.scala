@@ -88,6 +88,30 @@ class GDMatTest extends BIDMatSpec {
     	dd.mytype should equal ("GDMat");
     	checkSimilar(c, dd)
     }
+    
+  it should "support matrix dot" in {
+		assume(Mat.hasCUDA > 0);
+		val a = drand(nr, nc);
+		val b = drand(nr, nc);
+		val aa = GDMat(a);
+		val bb = GDMat(b);
+		val c = a dot b;
+		val dd = aa dot bb;
+		dd.mytype should equal ("GDMat");
+		checkSimilar(c, dd)
+	}
+  
+  it should "support matrix dotr" in {
+		assume(Mat.hasCUDA > 0);
+		val a = drand(nr, nc);
+		val b = drand(nr, nc);
+		val aa = GDMat(a);
+		val bb = GDMat(b);
+		val c = a dotr b;
+		val dd = aa dotr bb;
+		dd.mytype should equal ("GDMat");
+		checkSimilar(c, dd)
+	}
 
     def testEwise(nr:Int, nc:Int, mop:(DMat,DMat)=>DMat, op:(Double,Double)=>Double, msg:String) = {
     		it should msg in {

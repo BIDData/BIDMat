@@ -597,6 +597,7 @@ GENSPOPERATION(double,doptype,doperators)
 #define GENREDUCE1OP(ATYPE,OPTYPE,OPARRAY)							    \
 __global__ void __reduce1op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE initval, int opn) {	    \
   OPTYPE op = OPARRAY[opn];									    \
+  int imax = min(nrows, blockDim.x);                              \
   int basecol = threadIdx.y + blockDim.y * blockIdx.x;						    \
   ATYPE v;											    \
   for (int icol = basecol; icol < ncols; icol += blockDim.y * gridDim.x) {			    \
@@ -605,9 +606,9 @@ __global__ void __reduce1op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE init
     for (int i = threadIdx.x + blockDim.x; i < nrows; i += blockDim.x) {			    \
       v = op(v, A[i + icol * nrows]);								    \
     }												    \
-    for (int i = 1; i < blockDim.x; i *= 2) {							    \
+    for (int i = 1; i < imax; i *= 2) {							    \
       ATYPE vtmp = __shfl_down(v, i);                                     \
-      if (threadIdx.x + i < blockDim.x) {                                \
+      if (threadIdx.x + i < imax) {                                \
         v = op(v, vtmp);								    \
       }                                                   \
     }												    \
@@ -703,13 +704,14 @@ GENREDUCE1OPY(double)
 __global__ void __reducebin1op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE *C, int opb, int opr) { \
   OPTYPE opbf = OPARRAY[opb];									    \
   OPTYPE oprf = OPARRAY[opr];									    \
+  int imax = min(nrows, blockDim.x);                                  \
   int basecol = threadIdx.y + blockDim.y * blockIdx.x;						    \
   for (int icol = basecol; icol < ncols; icol += blockDim.y * gridDim.x) {			    \
     ATYPE v = 0;										    \
     for (int i = threadIdx.x; i < nrows; i += blockDim.x) {					    \
       v = oprf(v, opbf(A[i + icol * nrows], B[i + icol * nrows]));				    \
     }												    \
-    for (int i = 1; i < blockDim.x; i *= 2) {							    \
+    for (int i = 1; i < imax; i *= 2) {							    \
       v = oprf(v, __shfl_down(v, i));								    \
     }												    \
     if (threadIdx.x == 0) {									    \
@@ -723,6 +725,7 @@ __global__ void __reducebin1op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE *
   __shared__ ATYPE parts[32][33];								    \
   OPTYPE opbf = OPARRAY[opb];									    \
   OPTYPE oprf = OPARRAY[opr];									    \
+  int imax = min(nrows, blockDim.x);                                  \
   for (int icol = threadIdx.y + blockIdx.x * blockDim.y; icol < ncols; icol += blockDim.y * gridDim.x) { \
     ATYPE v = 0;										    \
     for (int irow = threadIdx.x; irow < nrows; irow += blockDim.x) {				    \
@@ -731,7 +734,7 @@ __global__ void __reducebin1op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE *
     parts[threadIdx.x][threadIdx.y] = v;							    \
     __syncthreads();										    \
     for (int i = 1; i < blockDim.x; i *= 2) {							    \
-      if (i + threadIdx.x < blockDim.x) {							    \
+      if (i + threadIdx.x < imax) {							    \
         parts[threadIdx.x][threadIdx.y] = oprf(parts[threadIdx.x][threadIdx.y], parts[i + threadIdx.x][threadIdx.y]); \
       }												    \
     }												    \
@@ -756,7 +759,7 @@ GENREDUCEBIN1OPX(double,doptype,doperators)
 
 #define GENREDUCEBIN1OPY(ATYPE)									    \
 int reducebin1op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE *C, int opb, int opr) {	    \
-  int blkx = min(32, nrows);									    \
+  int blkx = 32;									    \
   int blky = min(32, ncols);									    \
   int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));	    \
   const dim3 blkdims(blkx,blky,1);								    \
@@ -799,7 +802,7 @@ int reduce2op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE initval, int opn) 
   if (nrows == 1) {										    \
     reducevec<ATYPE>(ncols, A, B, opn);								    \
   } else {											    \
-    int blkx = min(32, nrows);									    \
+    int blkx = 32;                                            \
     int blky = min(32, ncols);									    \
     int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));	    \
     const dim3 blkdims(blkx,blky,1);								    \
@@ -843,7 +846,7 @@ __global__ void __reducebin2op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE *
 }												    \
 												    \
 int reducebin2op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE *C, int opb, int opr) {	    \
-  int blkx = min(32, nrows);									    \
+  int blkx = 32;									    \
   int blky = min(32, ncols);									    \
   int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));	    \
   const dim3 blkdims(blkx,blky,1);								    \

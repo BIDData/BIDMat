@@ -88,6 +88,30 @@ class GMatTest extends BIDMatSpec {
 		dd.mytype should equal ("GMat");
 		checkSimilar(c, dd)
 	}
+	
+  it should "support matrix dot" in {
+		assume(Mat.hasCUDA > 0);
+		val a = rand(nk, nc);
+		val b = rand(nk, nc);
+		val aa = GMat(a);
+		val bb = GMat(b);
+		val c = a dot b;
+		val dd = aa dot bb;
+		dd.mytype should equal ("GMat");
+		checkSimilar(c, dd)
+	}
+  
+  it should "support matrix dotr" in {
+		assume(Mat.hasCUDA > 0);
+		val a = rand(nk, nc);
+		val b = rand(nk, nc);
+		val aa = GMat(a);
+		val bb = GMat(b);
+		val c = a dotr b;
+		val dd = aa dotr bb;
+		dd.mytype should equal ("GMat");
+		checkSimilar(c, dd)
+	}
 
 	it should "support matrix transpose in place" in {
 		assume(Mat.hasCUDA > 0);

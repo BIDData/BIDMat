@@ -627,7 +627,8 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   
   def dot (a:GDMat, oldmat:Mat):GDMat = {
   		ND.checkDims("dot", dims, a.dims);
-  		val odims = iones(1,dims.length-1) \ a.ncols;
+  		val odims = IMat.iones(1, dims.length); 
+  		odims(dims.length-1) = a.ncols;
   		val out = GDMat.newOrCheckGDMat(odims, oldmat, GUID, a.GUID, "dot".##);
   		Mat.nflops += 2L * length;
   		val err = CUMAT.reducebin1dop(nrows, ncols, pdata, a.pdata, out.pdata, op_mul, op_add);
@@ -1644,7 +1645,7 @@ object GDMat {
     }
   }
   
-  def newOrCheckGDMat(dims:IMat, out:Mat, g1:Long, opHash:Int):GDMat = newOrCheckGDMat(dims.data, out, g1, opHash);
+  def newOrCheckGDMat(dims0:IMat, out:Mat, g1:Long, opHash:Int):GDMat = newOrCheckGDMat(dims0.data, out, g1, opHash);
   
   def newOrCheckGDMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, opHash:Int):GDMat = {
     val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache ) {
@@ -1682,7 +1683,7 @@ object GDMat {
     }
   }
   
-  def newOrCheckGDMat(dims:IMat, out:Mat, g1:Long, g2:Long, opHash:Int):GDMat = newOrCheckGDMat(dims.data, out, g1, g2, opHash);
+  def newOrCheckGDMat(dims0:IMat, out:Mat, g1:Long, g2:Long, opHash:Int):GDMat = newOrCheckGDMat(dims0.data, out, g1, g2, opHash);
     
     
   def newOrCheckGDMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):GDMat = {
@@ -1721,7 +1722,7 @@ object GDMat {
     }
   }
   
-  def newOrCheckGDMat(dims:IMat, out:Mat, g1:Long, g2:Long, g3:Long, opHash:Int):GDMat = newOrCheckGDMat(dims.data, out, g1, g2, g3, opHash);
+  def newOrCheckGDMat(dims0:IMat, out:Mat, g1:Long, g2:Long, g3:Long, opHash:Int):GDMat = newOrCheckGDMat(dims0.data, out, g1, g2, g3, opHash);
   
 }
 

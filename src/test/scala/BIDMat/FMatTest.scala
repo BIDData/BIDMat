@@ -115,6 +115,37 @@ class FMatTest extends BIDMatSpec {
     	checkSimilar(c, d)
     }
     
+    it should "support matrix dot" in {
+    	val a = rand(nr, nc);
+    	val b = rand(nr, nc);
+    	val c = zeros(1, nc);
+    	for (i <- 0 until nc) {
+    		var ss = 0f;
+    		for (j <- 0 until nr) {
+    			ss += a.data(j + i*nr) * b.data(j + i*nr);
+    		}
+    		c.data(i) = ss;
+    	}
+    	val d = a dot b;
+    	checkSimilar(c, d);
+    }
+    
+    it should "support matrix dotr" in {
+    	val a = rand(nr, nc);
+    	val b = rand(nr, nc);
+    	val c = zeros(nr, 1);
+    	for (i <- 0 until nr) {
+    		var ss = 0f;
+    		for (j <- 0 until nc) {
+    			ss += a.data(i + j*nr) * b.data(i + j*nr);
+    		}
+    		c.data(i) = ss;
+    	}
+    	val d = a dotr b;
+    	checkSimilar(c, d);
+    }
+
+    
     def testEwise(nr:Int, nc:Int, mop:(FMat,FMat)=>FMat, op:(Float,Float)=>Float, msg:String) = {
     		it should msg in {
     			val a = rand(nr, nc);

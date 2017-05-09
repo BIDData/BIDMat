@@ -954,7 +954,7 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   override def dot(aa:FMat, oldmat:Mat):GMat = {
   		val a = GMat(aa);
   		ND.checkDims("dot", dims, a.dims);
-  		val odims = IMat.iones(1, dims.length) 
+  		val odims = IMat.iones(1, dims.length); 
   		odims(dims.length-1) = a.ncols;
   		val out = GMat.newOrCheckGMat(odims, oldmat, GUID, a.GUID, "dot".##);
   		Mat.nflops += 2L * length;

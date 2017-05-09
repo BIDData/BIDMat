@@ -65,6 +65,36 @@ class DMatTest extends BIDMatSpec {
     	val d = a ^* b;
     	checkSimilar(c, d)
     }
+    
+    it should "support matrix dot" in {
+    	val a = drand(nr, nc);
+    	val b = drand(nr, nc);
+    	val c = dzeros(1, nc);
+    	for (i <- 0 until nc) {
+    		var ss = 0.0;
+    		for (j <- 0 until nr) {
+    			ss += a.data(j + i*nr) * b.data(j + i*nr);
+    		}
+    		c.data(i) = ss;
+    	}
+    	val d = a dot b;
+    	checkSimilar(c, d);
+    }
+    
+    it should "support matrix dotr" in {
+    	val a = drand(nr, nc);
+    	val b = drand(nr, nc);
+    	val c = dzeros(nr, 1);
+    	for (i <- 0 until nr) {
+    		var ss = 0.0;
+    		for (j <- 0 until nc) {
+    			ss += a.data(i + j*nr) * b.data(i + j*nr);
+    		}
+    		c.data(i) = ss;
+    	}
+    	val d = a dotr b;
+    	checkSimilar(c, d);
+    }
 
     def testEwise(nr:Int, nc:Int, mop:(DMat,DMat)=>DMat, op:(Double,Double)=>Double, msg:String) = {
     		it should msg in {
