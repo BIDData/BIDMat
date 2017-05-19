@@ -1522,6 +1522,40 @@ object SciFunctions {
   
   def powrand(nrows:Int, ncols:Int, dens:Float = 10) = Random.powrand(nrows, ncols, dens);
   
+  
+  
+  def linterp(schedule:FMat, npoints:Int) = {
+  	val out = zeros(1, npoints);
+  	var i = 0;
+  	var isched = 0;
+  	while (i < npoints) {
+  		val vv = i*1.0f/npoints;
+  		while (isched+1 < schedule.nrows && vv > schedule(isched+1, 0)) {
+  			isched += 1;
+  		}
+  		val frac = (vv - schedule(isched, 0))/(schedule(isched+1, 0)-schedule(isched, 0));
+  		out.data(i) = frac * schedule(isched+1, 1) + (1-frac) * schedule(isched, 1);
+  		i += 1;
+  	}
+  	out;
+  };
+  
+  def loginterp(schedule:FMat, npoints:Int) = {
+  	val out = zeros(1, npoints);
+  	var i = 0;
+  	var isched = 0;
+  	while (i < npoints) {
+  		val vv = i*1.0f/npoints;
+  		while (isched+1 < schedule.nrows && vv > schedule(isched+1, 0)) {
+  			isched += 1;
+  		}
+  		val frac = (vv - schedule(isched, 0))/(schedule(isched+1, 0)-schedule(isched, 0));
+  		out.data(i) = math.exp(frac * math.log(schedule(isched+1, 1)) + (1-frac) * math.log(schedule(isched, 1))).toFloat;
+  		i += 1;
+  	}
+  	out;
+  };
+
   /**
    * histc takes a sorted a and b, and returns an IMat "out" of size b.length s.t. out(i) is the count of 
    * elements < b(i+1), and >= b(i) if i > 0. 
