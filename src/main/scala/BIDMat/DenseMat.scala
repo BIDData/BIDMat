@@ -937,7 +937,10 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
         } else if (nrows == 1 && ncols == 1) {
         	out = DenseMat.newOrCheck[T](aa.nrows, aa.ncols, oldmat, GUID, aa.GUID, opv.hashCode)
         	mylen = aa.length
-        } else throw new RuntimeException("dims incompatible")
+        } else {
+          throw new RuntimeException("dims incompatible (%s, %s)".format(
+            Arrays.toString(dims.data), Arrays.toString(aa.dims.data)))
+        }
         if (mylen > 100000 && Mat.numThreads > 1) {
         	val done = IMat(1, Mat.numThreads)
         	for (ithread<- 0 until Mat.numThreads) {

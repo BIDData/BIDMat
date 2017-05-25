@@ -231,6 +231,10 @@ public class Machine {
 		return reduce(new Vec(tov), stride, round).data;
 	}
 
+	public float [] reduce(float [] tov, int tovlength, int stride, int round) {
+		return reduce(new Vec(tov, tovlength), stride, round).data;
+	}
+
 	public Vec configReduce(IVec toi, IVec fromi, Vec tov0, int stride, int round0) {
 //		clearFlags();
 		round = round0;
@@ -252,6 +256,10 @@ public class Machine {
 
 	public float [] configReduce(int [] toi, int [] fromi, float [] tov, int stride, int round) {
 		return configReduce(new IVec(toi), new IVec(fromi), new Vec(tov), stride, round).data;
+	}
+
+	public float [] configReduce(int [] toi, int [] fromi, float [] tov, int tovlength, int stride, int round) {
+		return configReduce(new IVec(toi), new IVec(fromi), new Vec(tov, tovlength), stride, round).data;
 	}
 
 	public Vec configReduce(LVec toi, LVec fromi, Vec tov0, int stride, int round0) {
@@ -276,7 +284,9 @@ public class Machine {
 		return configReduce(new LVec(toi), new LVec(fromi), new Vec(tov), stride, round).data;
 	}
 
-
+	public float [] configReduce(long [] toi, long [] fromi, float [] tov, int tovlength, int stride, int round) {
+		return configReduce(new LVec(toi), new LVec(fromi), new Vec(tov, tovlength), stride, round).data;
+	}
 
 	public class SockWriter implements Runnable {
 		int dest;
@@ -502,8 +512,10 @@ public class Machine {
 			Boolean success = true;
 			if (trace > 4) dumptags(String.format("m %d th %d r %d later  %d %d %d ", imachine, ith, round, outi, ini, tag0));
 			if (waiting >= recvTimeout) {
+				if (trace > 0) {
 				log(String.format("m %d th %d r %d ", imachine, ith, round));
 				log(String.format("Round %d sendrecv machine %d to %d from %d tag %d timed out\n", round, imachine, outi, ini, tag0));
+				}
 				success = false;
 			}
 			for (int i = 0; i < replicate; i++) {

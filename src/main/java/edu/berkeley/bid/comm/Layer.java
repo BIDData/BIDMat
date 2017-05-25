@@ -125,7 +125,7 @@ public class Layer {
 			try {
 				futures[i].get();
 			} catch (Exception e) {
-				if (trace > 0) log("config\n%s" + Msg.printStack(e));
+				if (trace > 0) log("config exception:\n" + Msg.printStack(e));
 			}
 		}
 		timeoutf.cancel(true);

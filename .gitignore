@@ -1,0 +1,8 @@
+lib/*.jar
+*.rej
+*.so
+target
+project
+*.o
+*.incl
+logs
