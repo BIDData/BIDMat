@@ -39,6 +39,9 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
   val fwdAlgo = Array(0);
   val bwdDataAlgo = Array(0);
   val bwdFilterAlgo = Array(0);
+  var fwdTrained = false;
+  var bwdDataTrained = false;
+  var bwdFilterTrained = false;
   
   def setNHWC = {
 		  tensorFormat = cudnnTensorFormat.CUDNN_TENSOR_NHWC;
@@ -80,8 +83,11 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       val cstatus = cudnnSetConvolution2dDescriptor(convdesc, pad(2), pad(1), stride(2), stride(1), 1, 1, convType);
       if (cstatus > 0) throw new RuntimeException("Error setting convolution descriptor for forward convolution %d" format cstatus);
       
-      val gstatus = cudnnGetConvolutionForwardAlgorithm(GFilter.getHandle, adesc, fdesc, convdesc, bdesc, cudnnConvolutionFwdPreference.CUDNN_CONVOLUTION_FWD_PREFER_FASTEST, 0, fwdAlgo)
-      if (gstatus > 0) throw new RuntimeException("Error getting best algorithm for forward convolution %d" format gstatus);
+      if (!fwdTrained) {
+      	val gstatus = cudnnGetConvolutionForwardAlgorithm(GFilter.getHandle, adesc, fdesc, convdesc, bdesc, cudnnConvolutionFwdPreference.CUDNN_CONVOLUTION_FWD_PREFER_FASTEST, 0, fwdAlgo);
+      	if (gstatus > 0) throw new RuntimeException("Error getting best algorithm for forward convolution %d" format gstatus);
+      	fwdTrained = true;
+      }
        
       val _workspaceSizeInBytes = new Array[Long](1);
       var wserr = cudnnGetConvolutionForwardWorkspaceSize(GFilter.getHandle, adesc, fdesc, convdesc, bdesc, fwdAlgo(0), _workspaceSizeInBytes);
@@ -133,8 +139,11 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       val cstatus = cudnnSetConvolution2dDescriptor(convdesc, pad(2), pad(1), stride(2), stride(1), 1, 1, convType);
       if (cstatus > 0) throw new RuntimeException("Error setting convolution descriptor for backward data convolution %d" format cstatus);
       
-      val gstatus = cudnnGetConvolutionBackwardDataAlgorithm(GFilter.getHandle, fdesc, bdesc, convdesc, adesc, cudnnConvolutionBwdDataPreference.CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST, 0, bwdDataAlgo)
-      if (gstatus > 0) throw new RuntimeException("Error getting best algorithm for backward data convolution %d" format gstatus);
+      if (!bwdDataTrained) {
+      	val gstatus = cudnnGetConvolutionBackwardDataAlgorithm(GFilter.getHandle, fdesc, bdesc, convdesc, adesc, cudnnConvolutionBwdDataPreference.CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST, 0, bwdDataAlgo);
+      	if (gstatus > 0) throw new RuntimeException("Error getting best algorithm for backward data convolution %d" format gstatus);
+      	bwdDataTrained = true;
+      }
  
       val _workspaceSizeInBytes = new Array[Long](1);
       var wserr = cudnnGetConvolutionBackwardDataWorkspaceSize(GFilter.getHandle, fdesc, bdesc, convdesc, adesc, bwdDataAlgo(0), _workspaceSizeInBytes);
@@ -187,8 +196,11 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       val cstatus = cudnnSetConvolution2dDescriptor(convdesc, pad(2), pad(1), stride(2), stride(1), 1, 1, convType);
       if (cstatus > 0) throw new RuntimeException("Error setting convolution descriptor for backward filter convolution %d" format cstatus);
       
-      val gstatus = cudnnGetConvolutionBackwardFilterAlgorithm(GFilter.getHandle, adesc, bdesc, convdesc, fdesc, cudnnConvolutionBwdFilterPreference.CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST, 0, bwdFilterAlgo)
-      if (gstatus > 0) throw new RuntimeException("Error getting best algorithm for backward filter convolution %d" format gstatus);
+      if (!bwdFilterTrained) {
+      	val gstatus = cudnnGetConvolutionBackwardFilterAlgorithm(GFilter.getHandle, adesc, bdesc, convdesc, fdesc, cudnnConvolutionBwdFilterPreference.CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST, 0, bwdFilterAlgo);
+      	if (gstatus > 0) throw new RuntimeException("Error getting best algorithm for backward filter convolution %d" format gstatus);
+      	bwdFilterTrained = true;
+      }
       
       val _workspaceSizeInBytes = new Array[Long](1);
       var wserr = cudnnGetConvolutionBackwardFilterWorkspaceSize(GFilter.getHandle, adesc, bdesc, convdesc, fdesc, bwdFilterAlgo(0), _workspaceSizeInBytes);
