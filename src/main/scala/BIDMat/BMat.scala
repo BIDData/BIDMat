@@ -1465,7 +1465,7 @@ object BMat {
       case dd:DMat => {Mat.copyToByteArray(dd.data, 0, out.data, 0, dd.length)};
       case ff:FMat => {Mat.copyToByteArray(ff.data, 0, out.data, 0, ff.length)};
       case ff:BMat => {};
-      case ii:IMat => {System.arraycopy(ii.data, 0, out.data, 0, ii.length)};
+      case ii:IMat => {Mat.copyToByteArray(ii.data, 0, out.data, 0, ii.length)};
       case dd:DenseMat[Byte] @ unchecked => {}
     }
     out
