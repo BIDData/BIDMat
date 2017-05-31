@@ -2004,7 +2004,7 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   def ~ (b : FMat):FPair = new FPair(this, b)
   def ~ (b : SMat):SPair = new SPair(this, b)
 
-  override def ~ (b: Mat):Pair =
+  override def ~ (b: Mat):BIDMat.Pair =
     b match {
     case db:FMat => new FPair(this, db);
     case sb:SMat => new SPair(this, sb);

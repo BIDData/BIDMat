@@ -6,3 +6,4 @@ project
 *.o
 *.incl
 logs
+/bin

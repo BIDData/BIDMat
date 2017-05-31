@@ -114,12 +114,12 @@ case class SBMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], val d
   
   override def ~ (b: Mat):Pair = 
     b match {
-    case db:SBMat => new BPair(this, db)
+    case db:SBMat => new SBPair(this, db)
     case _ => throw new RuntimeException("mismatched types for operator ~")
   }
 }
 
-class BPair (val omat:Mat, val mat:SBMat) extends Pair(omat, mat) {
+class SBPair (val omat:Mat, val mat:SBMat) extends BIDMat.Pair(omat, mat) {
   
   def > (b : Byte) = mat.bSBMatOpScalar(b, (x:Byte, y:Byte) => if (x > y) 1 else 0, omat)
   def < (b : Byte) = mat.bSBMatOpScalar(b, (x:Byte, y:Byte) => if (x < y) 1 else 0, omat)

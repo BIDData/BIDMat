@@ -5,11 +5,11 @@ import edu.berkeley.bid.CBLAS._
 import scala.util.hashing.MurmurHash3
 import edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64
 
-case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](dims0, data) { 
+case class BMat(dims0:Array[Int], val data:Array[Byte]) extends DenseMat[Byte](dims0, data) { 
   
-  def this(nr:Int, nc:Int, data:Array[Long]) = this(Array(nr, nc), data);
+  def this(nr:Int, nc:Int, data:Array[Byte]) = this(Array(nr, nc), data);
     
-  override def mytype = "LMat";
+  override def mytype = "BMat";
  
   override def dv:Double =
   		if (nrows > 1 || ncols > 1) {
@@ -25,47 +25,43 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
   			data(0).toFloat
   		}
     
-  override def t:LMat = tt(null)
+  override def t:BMat = tt(null)
   
-  def t(omat:Mat):LMat = tt(omat)
+  def t(omat:Mat):BMat = tt(omat)
   
-  def tt(omat:Mat):LMat = {
-    val out = LMat.newOrCheckLMat(ncols, nrows, omat, GUID, "t".##)      
-    if (!Mat.useMKL) { 
-      gt(out)
-    } else {
-      lomatcopy("C", "T", nrows, ncols, data, nrows, out.data, ncols)
-    }
-    out
+  def tt(omat:Mat):BMat = {
+    val out = BMat.newOrCheckBMat(ncols, nrows, omat, GUID, "t".##);    
+    gt(out);
+    out;
   }
   
-  override def view(nr:Int, nc:Int):LMat = {
+  override def view(nr:Int, nc:Int):BMat = {
     if (1L * nr * nc > data.length) {
       throw new RuntimeException("view dimensions too large")
     }
     if (nr == nrows && nc == ncols) {
       this
     } else {
-    	val out = new LMat(nr, nc, data);
+    	val out = new BMat(nr, nc, data);
     	out.setGUID(MurmurHash3.mix(MurmurHash3.mix(nr, nc), (GUID*3145341).toInt));
     	out
     }
   }
   
-  override def contents():LMat = {
-    val out = new LMat(length, 1, data);
+  override def contents():BMat = {
+    val out = new BMat(length, 1, data);
     out.setGUID(MurmurHash3.mix(MurmurHash3.mix(length, 1), (GUID*7897889).toInt));
     out
   }
     
-  override def set(v:Float):LMat = {
-    Arrays.fill(data,0,length,v.toLong)
+  override def set(v:Float):BMat = {
+    Arrays.fill(data,0,length,v.toByte)
     this
   }
   
-  def horzcat(b: LMat) = LMat(ghorzcat(b))
+  def horzcat(b: BMat) = BMat(ghorzcat(b))
   
-  def vertcat(b: LMat) = LMat(gvertcat(b))
+  def vertcat(b: BMat) = BMat(gvertcat(b))
   
   override def nnz:Int = {
     var count:Int = 0
@@ -92,55 +88,55 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
     out
   }
   
-  def find3:(IMat, IMat, LMat) = { val (ii, jj, vv) = gfind3 ; (ii, jj, LMat(vv)) }
+  def find3:(IMat, IMat, BMat) = { val (ii, jj, vv) = gfind3 ; (ii, jj, BMat(vv)) }
 
 
  /** n-dimensional element access */
   
-  override def apply(i1:Int):Long = gapply(i1);  
-  override def apply(i1:Int, i2:Int):Long = gapply(i1, i2);
-  def apply(i1:Int, i2:Int, i3:Int):Long = applyv(Array(i1, i2, i3));
-  def apply(i1:Int, i2:Int, i3:Int, i4:Int):Long = applyv(Array(i1, i2, i3, i4));
-  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):Long = applyv(Array(i1, i2, i3, i4, i5));
-  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):Long = applyv(Array(i1, i2, i3, i4, i5, i6));
-  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int):Long = applyv(Array(i1, i2, i3, i4, i5, i6, i7));
-  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int):Long = applyv(Array(i1, i2, i3, i4, i5, i6, i7, i8));
+  override def apply(i1:Int):Byte = gapply(i1);  
+  override def apply(i1:Int, i2:Int):Byte = gapply(i1, i2);
+  def apply(i1:Int, i2:Int, i3:Int):Byte = applyv(Array(i1, i2, i3));
+  def apply(i1:Int, i2:Int, i3:Int, i4:Int):Byte = applyv(Array(i1, i2, i3, i4));
+  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):Byte = applyv(Array(i1, i2, i3, i4, i5));
+  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):Byte = applyv(Array(i1, i2, i3, i4, i5, i6));
+  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int):Byte = applyv(Array(i1, i2, i3, i4, i5, i6, i7));
+  def apply(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int):Byte = applyv(Array(i1, i2, i3, i4, i5, i6, i7, i8));
   
   /** linearized access */
   
-  def applyv(inds:Array[Int]):Long = {
+  def applyv(inds:Array[Int]):Byte = {
     val indx = ND.linearize(inds, _dims);
     data(indx)
   }
   
   /** Basic 2D slicing with IMats and Ints */
   
-  override def apply(a:IMat, b:IMat):LMat = LMat(gapply(a, b));
-  override def apply(a:IMat, b:Int):LMat = LMat(gapply(a, b));
-  override def apply(a:Int, b:IMat):LMat = LMat(gapply(a, b));
+  override def apply(a:IMat, b:IMat):BMat = BMat(gapply(a, b));
+  override def apply(a:IMat, b:Int):BMat = BMat(gapply(a, b));
+  override def apply(a:Int, b:IMat):BMat = BMat(gapply(a, b));
   
   /** n-dimensional slicing */
   
-  override def apply(i1:IMat, i2:IMat, i3:IMat):LMat = applyi(Array(i1, i2, i3));
-  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat):LMat = applyi(Array(i1, i2, i3, i4));
-  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat):LMat = applyi(Array(i1, i2, i3, i4, i5));
-  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat):LMat = applyi(Array(i1, i2, i3, i4, i5, i6));
-  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat):LMat = applyi(Array(i1, i2, i3, i4, i5, i6, i7));
-  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat):LMat = applyi(Array(i1, i2, i3, i4, i5, i6, i7, i8));
+  override def apply(i1:IMat, i2:IMat, i3:IMat):BMat = applyi(Array(i1, i2, i3));
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat):BMat = applyi(Array(i1, i2, i3, i4));
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat):BMat = applyi(Array(i1, i2, i3, i4, i5));
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat):BMat = applyi(Array(i1, i2, i3, i4, i5, i6));
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat):BMat = applyi(Array(i1, i2, i3, i4, i5, i6, i7));
+  override def apply(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat):BMat = applyi(Array(i1, i2, i3, i4, i5, i6, i7, i8));
   
  
   
   /** apply to an index IMat, and mirror its structure in the result */
   
-  override def apply(inds:IMat):LMat = {
+  override def apply(inds:IMat):BMat = {
       inds match {
       case aa:MatrixWildcard => {
-        val out = LMat.newOrCheckLMat(length, 1, null, GUID, inds.GUID, "apply(?)".##);
+        val out = BMat.newOrCheckBMat(length, 1, null, GUID, inds.GUID, "apply(?)".##);
         System.arraycopy(data, 0, out.data, 0, length);
         out
       }
       case _ => {
-        val out = LMat.newOrCheckLMat(inds.dims, null, GUID, inds.GUID, "apply IMat".##);
+        val out = BMat.newOrCheckBMat(inds.dims, null, GUID, inds.GUID, "apply IMat".##);
         var i = 0;
         while (i < inds.length) {
           out.data(i) = data(inds.data(i));
@@ -153,7 +149,7 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
   
     /** apply to set of Index matrices */
   
-  def applyHelper(inds:Array[IMat], out:LMat, offset0:Int, outoffset0:Int, inum:Int):Unit = {
+  def applyHelper(inds:Array[IMat], out:BMat, offset0:Int, outoffset0:Int, inum:Int):Unit = {
     val mat:IMat = inds(inum);
     val offset = offset0 * _dims(inum);
     val outoffset = outoffset0 * out._dims(inum);
@@ -184,9 +180,9 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
     }
   }
   
-  def apply(inds0:List[IMat]):LMat = applyi(inds0.toArray);
+  def apply(inds0:List[IMat]):BMat = applyi(inds0.toArray);
   
-  def applyi(inds:Array[IMat]):LMat = {  
+  def applyi(inds:Array[IMat]):BMat = {  
     val newdims = new Array[Int](_dims.length)
     val newinds = new Array[IMat](_dims.length)
     var j = 0
@@ -201,89 +197,89 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
         }
       }
     }
-    val out = LMat.newOrCheckLMat(newdims, null, GUID, ND.hashGUIDs(inds), "apply".##);
+    val out = BMat.newOrCheckBMat(newdims, null, GUID, ND.hashGUIDs(inds), "apply".##);
     applyHelper(newinds, out, 0, 0, inds.length-1)
     out
   }
  
     /** Basic 2D updating with Ints */
-  override def update(i:Int, b:Long):LMat = {_update(i, b); this}
-  override def update(i:Int, j:Int, b:Long):LMat = {_update(i, j, b); this}
+  def update(i:Int, b:Byte):BMat = {_update(i, b); this}
+  def update(i:Int, j:Int, b:Byte):BMat = {_update(i, j, b); this}
   
-  override def update(iv:IMat, b:Long):LMat = LMat(_update(iv, b));
-  override def update(iv:IMat, jv:IMat, b:Long):LMat = LMat(_update(iv, jv, b));
-  override def update(i:Int, jv:IMat, b:Long):LMat = LMat(_update(IMat.ielem(i), jv, b));
-  override def update(iv:IMat, j:Int, b:Long):LMat = LMat(_update(iv, IMat.ielem(j), b));
+  def update(iv:IMat, b:Byte):BMat = BMat(_update(iv, b));
+  def update(iv:IMat, jv:IMat, b:Byte):BMat = BMat(_update(iv, jv, b));
+  def update(i:Int, jv:IMat, b:Byte):BMat = BMat(_update(IMat.ielem(i), jv, b));
+  def update(iv:IMat, j:Int, b:Byte):BMat = BMat(_update(iv, IMat.ielem(j), b));
   
-  def update(iv:IMat, jv:IMat, b:LMat):LMat = LMat(_update(iv, jv, b));
-  def update(iv:IMat, j:Int, b:LMat):LMat = LMat(_update(iv, IMat.ielem(j), b));
-  def update(i:Int, jv:IMat, b:LMat):LMat = LMat(_update(IMat.ielem(i), jv, b));
+  def update(iv:IMat, jv:IMat, b:BMat):BMat = BMat(_update(iv, jv, b));
+  def update(iv:IMat, j:Int, b:BMat):BMat = BMat(_update(iv, IMat.ielem(j), b));
+  def update(i:Int, jv:IMat, b:BMat):BMat = BMat(_update(IMat.ielem(i), jv, b));
   
-  override def update(i:Int, b:Float):LMat = update(i, b.toLong); 
-  override def update(i:Int, j:Int, b:Float):LMat = update(i, j, b.toLong); 
-  override def update(i:Int, b:Double):LMat = update(i, b.toLong); 
-  override def update(i:Int, j:Int, b:Double):LMat = update(i, j, b.toLong);
-  override def update(i:Int, b:Int):LMat = update(i, b); 
-  override def update(i:Int, j:Int, b:Int):LMat = update(i, j, b); 
+  override def update(i:Int, b:Float):BMat = update(i, b.toByte); 
+  override def update(i:Int, j:Int, b:Float):BMat = update(i, j, b.toByte); 
+  override def update(i:Int, b:Double):BMat = update(i, b.toByte); 
+  override def update(i:Int, j:Int, b:Double):BMat = update(i, j, b.toByte);
+  override def update(i:Int, b:Int):BMat = update(i, b); 
+  override def update(i:Int, j:Int, b:Int):BMat = update(i, j, b); 
   
   /** Basic 2D sliced updating with Ints and IMats */
  
-  override def update(iv:IMat, b:Float):LMat = update(iv, b.toLong);
-  override def update(iv:IMat, jv:IMat, b:Float):LMat = update(iv, jv, b.toLong);
-  override def update(i:Int, jv:IMat, b:Float):LMat = update(IMat.ielem(i), jv, b.toLong);
-  override def update(iv:IMat, j:Int, b:Float):LMat = update(iv, IMat.ielem(j), b.toLong);
+  override def update(iv:IMat, b:Float):BMat = update(iv, b.toByte);
+  override def update(iv:IMat, jv:IMat, b:Float):BMat = update(iv, jv, b.toByte);
+  override def update(i:Int, jv:IMat, b:Float):BMat = update(IMat.ielem(i), jv, b.toByte);
+  override def update(iv:IMat, j:Int, b:Float):BMat = update(iv, IMat.ielem(j), b.toByte);
 
-  override def update(iv:IMat, b:Double):LMat = update(iv, b.toLong);
-  override def update(iv:IMat, jv:IMat, b:Double):LMat = update(iv, jv, b.toLong);
-  override def update(i:Int, jv:IMat, b:Double):LMat = update(IMat.ielem(i), jv, b.toLong);
-  override def update(iv:IMat, j:Int, b:Double):LMat = update(iv, IMat.ielem(j), b.toLong);
+  override def update(iv:IMat, b:Double):BMat = update(iv, b.toByte);
+  override def update(iv:IMat, jv:IMat, b:Double):BMat = update(iv, jv, b.toByte);
+  override def update(i:Int, jv:IMat, b:Double):BMat = update(IMat.ielem(i), jv, b.toByte);
+  override def update(iv:IMat, j:Int, b:Double):BMat = update(iv, IMat.ielem(j), b.toByte);
 
-  override def update(iv:IMat, b:Int):LMat = update(iv, b.toLong);
-  override def update(iv:IMat, jv:IMat, b:Int):LMat = update(iv, jv, b.toLong);
-  override def update(i:Int, jv:IMat, b:Int):LMat = update(IMat.ielem(i), jv, b.toLong);
-  override def update(iv:IMat, j:Int, b:Int):LMat = update(iv, IMat.ielem(j), b.toLong);
+  override def update(iv:IMat, b:Int):BMat = update(iv, b.toByte);
+  override def update(iv:IMat, jv:IMat, b:Int):BMat = update(iv, jv, b.toByte);
+  override def update(i:Int, jv:IMat, b:Int):BMat = update(IMat.ielem(i), jv, b.toByte);
+  override def update(iv:IMat, j:Int, b:Int):BMat = update(iv, IMat.ielem(j), b.toByte);
 
   /** Generic slicing */
   
-  override def update(iv:IMat, b:Mat):LMat = update(iv, LMat(b));
-  override def update(iv:IMat, jv:IMat, b:Mat):LMat = update(iv, jv, LMat(b));
-  override def update(iv:IMat, j:Int, b:Mat):LMat = update(iv, IMat.ielem(j), LMat(b));
-  override def update(i:Int, jv:IMat, b:Mat):LMat = update(IMat.ielem(i), jv, LMat(b));
+  override def update(iv:IMat, b:Mat):BMat = update(iv, BMat(b));
+  override def update(iv:IMat, jv:IMat, b:Mat):BMat = update(iv, jv, BMat(b));
+  override def update(iv:IMat, j:Int, b:Mat):BMat = update(iv, IMat.ielem(j), BMat(b));
+  override def update(i:Int, jv:IMat, b:Mat):BMat = update(IMat.ielem(i), jv, BMat(b));
 
   /** ND single element updates */
   
-  def update(i1:Int, i2:Int, i3:Int, vv:Long):LMat = updatev(Array(i1, i2, i3), vv)
-  def update(i1:Int, i2:Int, i3:Int, i4:Int, vv:Long):LMat = updatev(Array(i1, i2, i3, i4), vv)
-  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, vv:Long):LMat = updatev(Array(i1, i2, i3, i4, i5), vv)
-  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, vv:Long):LMat = updatev(Array(i1, i2, i3, i4, i5, i6), vv)
-  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, vv:Long):LMat = updatev(Array(i1, i2, i3, i4, i5, i6, i7), vv)
-  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int, vv:Long):LMat = updatev(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv)
+  def update(i1:Int, i2:Int, i3:Int, vv:Byte):BMat = updatev(Array(i1, i2, i3), vv)
+  def update(i1:Int, i2:Int, i3:Int, i4:Int, vv:Byte):BMat = updatev(Array(i1, i2, i3, i4), vv)
+  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, vv:Byte):BMat = updatev(Array(i1, i2, i3, i4, i5), vv)
+  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, vv:Byte):BMat = updatev(Array(i1, i2, i3, i4, i5, i6), vv)
+  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, vv:Byte):BMat = updatev(Array(i1, i2, i3, i4, i5, i6, i7), vv)
+  def update(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int, vv:Byte):BMat = updatev(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv)
  
   /** General ND sliced updating with IMats */
   
-  def update(i1:IMat, i2:IMat, i3:IMat, vv:LMat):LMat = updatei(Array(i1, i2, i3), vv)
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:LMat):LMat = updatei(Array(i1, i2, i3, i4), vv)
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:LMat):LMat = updatei(Array(i1, i2, i3, i4, i5), vv)
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:LMat):LMat = updatei(Array(i1, i2, i3, i4, i5, i6), vv)
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:LMat):LMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7), vv)
-  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:LMat):LMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, vv:BMat):BMat = updatei(Array(i1, i2, i3), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:BMat):BMat = updatei(Array(i1, i2, i3, i4), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:BMat):BMat = updatei(Array(i1, i2, i3, i4, i5), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:BMat):BMat = updatei(Array(i1, i2, i3, i4, i5, i6), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:BMat):BMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:BMat):BMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv)
   
-  override def update(i1:IMat, i2:IMat, i3:IMat, vv:Mat):LMat = updatei(Array(i1, i2, i3), vv.asInstanceOf[LMat])
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:Mat):LMat = updatei(Array(i1, i2, i3, i4), vv.asInstanceOf[LMat])
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:Mat):LMat = updatei(Array(i1, i2, i3, i4, i5), vv.asInstanceOf[LMat])
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:Mat):LMat = updatei(Array(i1, i2, i3, i4, i5, i6), vv.asInstanceOf[LMat])
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:Mat):LMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7), vv.asInstanceOf[LMat])
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:Mat):LMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv.asInstanceOf[LMat])
+  override def update(i1:IMat, i2:IMat, i3:IMat, vv:Mat):BMat = updatei(Array(i1, i2, i3), vv.asInstanceOf[BMat])
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:Mat):BMat = updatei(Array(i1, i2, i3, i4), vv.asInstanceOf[BMat])
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:Mat):BMat = updatei(Array(i1, i2, i3, i4, i5), vv.asInstanceOf[BMat])
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:Mat):BMat = updatei(Array(i1, i2, i3, i4, i5, i6), vv.asInstanceOf[BMat])
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:Mat):BMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7), vv.asInstanceOf[BMat])
+  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:Mat):BMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv.asInstanceOf[BMat])
   
-  override def update(i1:IMat, i2:IMat, i3:IMat, vv:Long):LMat = updatei(Array(i1, i2, i3), vv)
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:Long):LMat = updatei(Array(i1, i2, i3, i4), vv)
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:Long):LMat = updatei(Array(i1, i2, i3, i4, i5), vv)
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:Long):LMat = updatei(Array(i1, i2, i3, i4, i5, i6), vv)
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:Long):LMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7), vv)
-  override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:Long):LMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, vv:Byte):BMat = updatei(Array(i1, i2, i3), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, vv:Byte):BMat = updatei(Array(i1, i2, i3, i4), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, vv:Byte):BMat = updatei(Array(i1, i2, i3, i4, i5), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:Byte):BMat = updatei(Array(i1, i2, i3, i4, i5, i6), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, vv:Byte):BMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7), vv)
+  def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, i7:IMat, i8:IMat, vv:Byte):BMat = updatei(Array(i1, i2, i3, i4, i5, i6, i7, i8), vv)
  
 
-  def update(inds:IMat, vv:LMat):LMat = {
+  def update(inds:IMat, vv:BMat):BMat = {
     inds match {
     case aa:MatrixWildcard => {
       if (vv.length == length) {
@@ -308,16 +304,16 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
     }
   }
   
-  def update(inds:List[Int], v:Long):LMat = updatev(inds.toArray, v)
+  def update(inds:List[Int], v:Byte):BMat = updatev(inds.toArray, v)
   
-  def updatev(inds:Array[Int], v:Long):LMat = {
+  def updatev(inds:Array[Int], v:Byte):BMat = {
     val indx = ND.linearize(inds, dims.data); 
     data(indx) = v
     this
   }
   
  
-  def updateHelper(inds:Array[IMat], vv:LMat, newdims:Array[Int], offset0:Int, voffset0:Int, inum:Int):Unit = {
+  def updateHelper(inds:Array[IMat], vv:BMat, newdims:Array[Int], offset0:Int, voffset0:Int, inum:Int):Unit = {
     val mat:IMat = inds(inum);
     val offset = offset0 * _dims(inum);
     val voffset = voffset0 * newdims(inum);
@@ -348,9 +344,9 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
     }
   }
   
-  def updatei(inds:Array[IMat], vv:LMat):LMat = {
+  def updatei(inds:Array[IMat], vv:BMat):BMat = {
     if (inds.length != _dims.length) {
-      throw new RuntimeException("LMat update wrong number of dims")
+      throw new RuntimeException("BMat update wrong number of dims")
     }
     val newdims = new Array[Int](_dims.length)
     val newinds = new Array[IMat](_dims.length)
@@ -366,13 +362,13 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
         }
       }
     }
-    ND.checkDims("LMat update:", ND.trimDims(newdims), ND.trimDims(vv._dims))
+    ND.checkDims("BMat update:", ND.trimDims(newdims), ND.trimDims(vv._dims))
     updateHelper(newinds, vv, newdims, 0, 0, inds.length-1)
     this
   }
   
 
-  def updateHelper(inds:Array[IMat], v:Long, offset0:Int, inum:Int):Unit = {
+  def updateHelper(inds:Array[IMat], v:Byte, offset0:Int, inum:Int):Unit = {
     val mat:IMat = inds(inum);
     val offset = offset0 * _dims(inum);
     if (inum == 0) {
@@ -408,7 +404,7 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
     }
   }
   
-  def updatei(inds:Array[IMat], v:Long):LMat = {
+  def updatei(inds:Array[IMat], v:Byte):BMat = {
     val newdims = new Array[Int](dims.length)
     for (i <- 0 until dims.length) {
       newdims(i) = inds(i) match {case aa:MatrixWildcard => _dims(i); case _ => inds(i).length}
@@ -420,21 +416,21 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
     
   /** Column slicing. Actually slices all but the last dimension */
 
-  override def colslice(a:Int, b:Int):LMat = {
+  override def colslice(a:Int, b:Int):BMat = {
     val newdims = dims.data.clone;
     newdims(dims.length-1) = b-a;
-    val out = LMat.newOrCheckLMat(newdims, null, GUID, a, b, "colslice".##)
+    val out = BMat.newOrCheckBMat(newdims, null, GUID, a, b, "colslice".##)
     colslice(a, b, out)
     out
   }
-  override def colslice(a:Int, b:Int, out:Mat) = LMat(gcolslice(a, b, out, Mat.oneBased))
-  override def colslice(a:Int, b:Int, out:Mat, c:Int) = LMat(gcolslice(a, b, out, c));
-  override def colslice(a:Int, b:Int, out:Mat, c:Int, pb:Boolean) = LMat(gcolslice(a, b, out, c));
+  override def colslice(a:Int, b:Int, out:Mat) = BMat(gcolslice(a, b, out, Mat.oneBased))
+  override def colslice(a:Int, b:Int, out:Mat, c:Int) = BMat(gcolslice(a, b, out, c));
+  override def colslice(a:Int, b:Int, out:Mat, c:Int, pb:Boolean) = BMat(gcolslice(a, b, out, c));
 
-  override def rowslice(a:Int, b:Int, out:Mat) = LMat(growslice(a, b, out, Mat.oneBased))
-  override def rowslice(a:Int, b:Int, out:Mat, c:Int) = LMat(growslice(a, b, out, c));
-  override def rowslice(a:Int, b:Int):LMat = {
-    val out = LMat.newOrCheckLMat(b-a, ncols, null, GUID, a, b, "rowslice".##)
+  override def rowslice(a:Int, b:Int, out:Mat) = BMat(growslice(a, b, out, Mat.oneBased))
+  override def rowslice(a:Int, b:Int, out:Mat, c:Int) = BMat(growslice(a, b, out, c));
+  override def rowslice(a:Int, b:Int):BMat = {
+    val out = BMat.newOrCheckBMat(b-a, ncols, null, GUID, a, b, "rowslice".##)
     rowslice(a, b, out)
     out
   }
@@ -442,11 +438,11 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
    
   /** reshaping */
 
-  override def reshape(newdims:Int*):LMat = reshape(newdims.toArray)
+  override def reshape(newdims:Int*):BMat = reshape(newdims.toArray)
   
-  override def reshape(newdims:Array[Int]):LMat = {
+  override def reshape(newdims:Array[Int]):BMat = {
     if (newdims.reduce(_*_) == length) {
-      val out = LMat.newOrCheckLMat(newdims, null, GUID, ND.hashInts(newdims), "reshape".##)
+      val out = BMat.newOrCheckBMat(newdims, null, GUID, ND.hashInts(newdims), "reshape".##)
       System.arraycopy(data, 0, out.data, 0, length)
       out
     } else {
@@ -454,11 +450,11 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
     }
   }
   
-  override def reshapeView(newdims:Int*):LMat = reshapeView(newdims.toArray)
+  override def reshapeView(newdims:Int*):BMat = reshapeView(newdims.toArray)
   
-  override def reshapeView(newdims:Array[Int]):LMat = {
+  override def reshapeView(newdims:Array[Int]):BMat = {
     if (newdims.reduce(_*_) == length) {
-      val out = LMat(newdims, data);
+      val out = BMat(newdims, data);
       out.setGUID(MurmurHash3_x64_64(Array(GUID), "reshapeView".##));
       out
     } else {
@@ -467,9 +463,37 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
   }
 
   /** transpose */
-  override def transpose(dims:Array[Int]):LMat = transpose(MatFunctions.irow(dims))
+  override def transpose(dims:Array[Int]):BMat = transpose(MatFunctions.irow(dims))
 
-  override def transpose(perm:IMat):LMat = { 
+  
+  def btranspose(nr:Int, nc:Int, a:Array[Byte], aoff:Int, b:Array[Byte], boff:Int) = {
+    // nr and nc are rows and columns for the destination matrix. 
+    var i = 0;
+    while (i < nc) {
+      val inr = i*nr;
+      var j = 0;
+      var jnc = 0;
+      while (j < nr) {
+        b(boff + j + inr) = a(aoff + i + jnc);
+        j += 1;
+        jnc += nc;
+      }
+      i += 1;
+    }
+  }
+  
+  def bpermute(m:Int, n:Int, k:Int, a:Array[Byte], b:Array[Byte]) = {
+    val step = m*n;
+    var i = 0;
+    var offset = 0;
+    while (i < k) {
+      btranspose(m, n, a, offset, b, offset);
+      i += 1;
+      offset += step;
+    }
+  }
+  
+  override def transpose(perm:IMat):BMat = { 
     val nd = _dims.length
     if (perm.length != nd) { 
       throw new RuntimeException("FND transpose bad permutation ")
@@ -477,15 +501,15 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
     val xdims = MatFunctions.irow(_dims)
     val iperm = MatFunctions.invperm(perm)
     val pdims = xdims(perm).data
-    var out = LMat.newOrCheckLMat(pdims, null, GUID, ND.hashInts(pdims), "transpose".##)
-    var out2 =LMat.newOrCheckLMat(pdims, null, GUID, ND.hashInts(pdims), "transpose1".##)
+    var out = BMat.newOrCheckBMat(pdims, null, GUID, ND.hashInts(pdims), "transpose".##)
+    var out2 =BMat.newOrCheckBMat(pdims, null, GUID, ND.hashInts(pdims), "transpose1".##)
     System.arraycopy(data, 0, out.data, 0, length)
     for (i <- (nd - 1) until 0 by -1) { 
       if (iperm(i) != i) { 
         val (d1, d2, d3) = ND.getDims(i, iperm, xdims)
         if (d1 > 1 && d2 > 1) { 
  //         println("spermute %d %d %d" format (d1,d2,d3))
-          lpermute(d1, d2, d3, out.data, out2.data)
+          bpermute(d1, d2, d3, out.data, out2.data)
           val tmp = out2
           out2 = out
           out = tmp
@@ -496,41 +520,39 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
     out
   }
   
-  override def transpose(i1:Int, i2:Int):LMat = transpose(Array(i1, i2))
-  override def transpose(i1:Int, i2:Int, i3:Int):LMat = transpose(Array(i1, i2, i3))
-  override def transpose(i1:Int, i2:Int, i3:Int, i4:Int):LMat = transpose(Array(i1, i2, i3, i4))
-  override def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):LMat = transpose(Array(i1, i2, i3, i4, i5))
-  override def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):LMat = transpose(Array(i1, i2, i3, i4, i5, i6))
-  override def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int):LMat = transpose(Array(i1, i2, i3, i4, i5, i6, i7))
-  override def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int):LMat = transpose(Array(i1, i2, i3, i4, i5, i6, i7, i8))
+  override def transpose(i1:Int, i2:Int):BMat = transpose(Array(i1, i2))
+  override def transpose(i1:Int, i2:Int, i3:Int):BMat = transpose(Array(i1, i2, i3))
+  override def transpose(i1:Int, i2:Int, i3:Int, i4:Int):BMat = transpose(Array(i1, i2, i3, i4))
+  override def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int):BMat = transpose(Array(i1, i2, i3, i4, i5))
+  override def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int):BMat = transpose(Array(i1, i2, i3, i4, i5, i6))
+  override def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int):BMat = transpose(Array(i1, i2, i3, i4, i5, i6, i7))
+  override def transpose(i1:Int, i2:Int, i3:Int, i4:Int, i5:Int, i6:Int, i7:Int, i8:Int):BMat = transpose(Array(i1, i2, i3, i4, i5, i6, i7, i8))
   
   
-/*  def iiMatOp(b: Mat, f:(Long, Long) => Long, old:Mat):LMat = 
+/*  def iiMatOp(b: Mat, f:(Byte, Byte) => Byte, old:Mat):BMat = 
     b match {
-      case bb:LMat => LMat(ggMatOp(bb, f, old))
+      case bb:BMat => BMat(ggMatOp(bb, f, old))
       case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)	
     }*/
   
-  def iiMatOpv(b: Mat, f:(Array[Long],Int,Int,Array[Long],Int,Int,Array[Long],Int,Int,Int) => Long, optype:Int, out:Mat):LMat = 
+  def iiMatOpv(b: Mat, f:(Array[Byte],Int,Int,Array[Byte],Int,Int,Array[Byte],Int,Int,Int) => Byte, optype:Int, out:Mat):BMat = 
     (this, b) match {
-    case (aa:GLMat, bb:LMat) => aa.GIop(bb, out, optype);
-    case (aa:LMat, bb:GLMat) => GLMat(this).GIop(bb, out, optype);
-    case (aa:LMat, bb:LMat) => LMat(ggMatOpv(bb, f, out));
+    case (aa:BMat, bb:BMat) => BMat(ggMatOpv(bb, f, out));
     case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)	
     }
   
-  def iiMatOpScalar(b: Long, f:(Long, Long) => Long, old:Mat) = LMat(ggMatOpScalar(b, f, old))
+  def iiMatOpScalar(b: Byte, f:(Byte, Byte) => Byte, old:Mat) = BMat(ggMatOpScalar(b, f, old))
   
-  def iiMatOpScalarv(b: Long, f:(Array[Long],Int,Int,Array[Long],Int,Int,Array[Long],Int,Int,Int) => Long, old:Mat) = LMat(ggMatOpScalarv(b, f, old))
+  def iiMatOpScalarv(b: Byte, f:(Array[Byte],Int,Int,Array[Byte],Int,Int,Array[Byte],Int,Int,Int) => Byte, old:Mat) = BMat(ggMatOpScalarv(b, f, old))
   
-  def iiReduceOp(n:Int, f1:(Long) => Long, f2:(Long, Long) => Long, old:Mat) = LMat(ggReduceOp(n, f1, f2, old))	
+  def iiReduceOp(n:Int, f1:(Byte) => Byte, f2:(Byte, Byte) => Byte, old:Mat) = BMat(ggReduceOp(n, f1, f2, old))	
   
-  def iiReduceOpv(n:Int, f1:(Long) => Long, f2:(Array[Long],Int,Int,Array[Long],Int,Int,Array[Long],Int,Int,Int) => Long, old:Mat) = 
-    LMat(ggReduceOpv(n, f1, f2, old))
+  def iiReduceOpv(n:Int, f1:(Byte) => Byte, f2:(Array[Byte],Int,Int,Array[Byte],Int,Int,Array[Byte],Int,Int,Int) => Byte, old:Mat) = 
+    BMat(ggReduceOpv(n, f1, f2, old))
   
-  def iiReduceAll(n:Int, f1:(Long) => Long, f2:(Long, Long) => Long, old:Mat) = LMat(ggReduceAll(n, f1, f2, old))
+  def iiReduceAll(n:Int, f1:(Byte) => Byte, f2:(Byte, Byte) => Byte, old:Mat) = BMat(ggReduceAll(n, f1, f2, old))
   
-  def iiReduceAllv(n:Int, f:(Array[Long],Int,Int,Array[Long],Int,Int,Array[Long],Int,Int,Int) => Long, old:Mat) = LMat(ggReduceAllv(n, f, old))
+  def iiReduceAllv(n:Int, f:(Array[Byte],Int,Int,Array[Byte],Int,Int,Array[Byte],Int,Int,Int) => Byte, old:Mat) = BMat(ggReduceAllv(n, f, old))
   
   override def printOne(i:Int):String = {
     val v = data(i)
@@ -540,20 +562,20 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
   override def copyTo(a:Mat) = {
   	a match {
   	  case out:IMat => System.arraycopy(data, 0, out.data, 0, length)
-  	  case out:LMat => System.arraycopy(data, 0, out.data, 0, length)
+  	  case out:BMat => System.arraycopy(data, 0, out.data, 0, length)
 //  	  case aa:GIMat => aa.copyFrom(this)
   	}
   	a
   }
   
   override def copy = {
-  	val out = LMat.newOrCheckLMat(nrows, ncols, null, GUID, "copy".##)
+  	val out = BMat.newOrCheckBMat(nrows, ncols, null, GUID, "copy".##)
   	System.arraycopy(data, 0, out.data, 0, length)
   	out
   }
   
   override def newcopy = {
-  	val out = LMat(nrows, ncols)
+  	val out = BMat(nrows, ncols)
   	System.arraycopy(data, 0, out.data, 0, length)
   	out
   }
@@ -597,31 +619,31 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
   override def clearLower = setLower(0, 0)
 
   
-  def iMult(a0:Mat, omat:Mat):LMat = 
+  def iMult(a0:Mat, omat:Mat):BMat = 
     a0 match {
-    case a:LMat =>
+    case a:BMat =>
        if (ncols == 1 && nrows == 1) {
-	    	val out = LMat.newOrCheckLMat(a.nrows, a.ncols, omat, GUID, a0.GUID, "iMult".##)
+	    	val out = BMat.newOrCheckBMat(a.nrows, a.ncols, omat, GUID, a0.GUID, "iMult".##)
 	    	Mat.nflops += a.length
-	    	var i = 0
-	    	val dvar = data(0)
+	    	var i = 0;
+	    	val dvar = data(0);
 	    	while (i < a.length) {
-	    		out.data(i) = dvar * a.data(i)
+	    		out.data(i) = (dvar * a.data(i)).toByte;
 	    		i += 1
 	    	}			    
 	    	out			  
 	    } else if (a.ncols == 1 && a.nrows == 1) {
-	    	val out = LMat.newOrCheckLMat(nrows, ncols, omat, GUID, a0.GUID, "iMult".##)
+	    	val out = BMat.newOrCheckBMat(nrows, ncols, omat, GUID, a0.GUID, "iMult".##)
 	    	Mat.nflops += length
 	    	var i = 0
 	    	val dvar = a.data(0)
 	    	while (i < length) {
-	    		out.data(i) = dvar * data(i)
+	    		out.data(i) = (dvar * data(i)).toByte;
 	    		i += 1
 	    	}			    
 	    	out			  
 	    } else if (ncols == a.nrows) {
-	      val out = LMat.newOrCheckLMat(nrows, a.ncols, omat, GUID, a0.GUID, "iMult".##)
+	      val out = BMat.newOrCheckBMat(nrows, a.ncols, omat, GUID, a0.GUID, "iMult".##)
 	      out.clear
 	    	Mat.nflops += 2L * length * a.ncols
 	    	for (i <- 0 until a.ncols)
@@ -629,8 +651,8 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
 	    			var k = 0
 	    			val dval = a.data(j + i*ncols)
 	    			while (k < nrows) {
-	    				out.data(k+i*nrows) += data(k+j*nrows)*dval
-	    				k += 1
+	    				out.data(k+i*nrows) = (out.data(k+i*nrows) + data(k+j*nrows)*dval).toByte;
+	    				k += 1;
 	    			}
 	    		}
 	    	out
@@ -638,7 +660,7 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
     case _ => throw new RuntimeException("unsupported arg to * "+a0)
   }
   
-  def ddot(a : LMat):Double = 
+  def ddot(a : BMat):Double = 
   	if (nrows != a.nrows || ncols != a.ncols) {
   		throw new RuntimeException("ddot dims not compatible")
   	} else {
@@ -652,35 +674,35 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
   		v
   	}
   
-  override def ddot(a:Mat):Double = ddot(a.asInstanceOf[LMat])
+  override def ddot(a:Mat):Double = ddot(a.asInstanceOf[BMat])
   
-  def dot(a:LMat, omat:Mat):LMat = {
+  def dot(a:BMat, omat:Mat):BMat = {
    	if (nrows != a.nrows || ncols != a.ncols) {
   		throw new RuntimeException("dot dims not compatible")
    	}	else {
-   		val out = LMat.newOrCheckLMat(1, ncols, omat, GUID, a.GUID, "dot".##)
+   		val out = BMat.newOrCheckBMat(1, ncols, omat, GUID, a.GUID, "dot".##)
    		gdot(a, out)
    		out
    	}
   }
   
-  def dot(a:LMat):LMat = dot(a, null)
+  def dot(a:BMat):BMat = dot(a, null)
   
-  def dotr(a:LMat, omat:Mat):LMat = {
+  def dotr(a:BMat, omat:Mat):BMat = {
    	if (nrows != a.nrows || ncols != a.ncols) {
   		throw new RuntimeException("dot dims not compatible")
    	}	else {
-   		val out = LMat.newOrCheckLMat(nrows, 1, omat, GUID, a.GUID, "dotr".##)
+   		val out = BMat.newOrCheckBMat(nrows, 1, omat, GUID, a.GUID, "dotr".##)
    		out.clear
    		gdotr(a, out)
    		out
    	}
   }
   
-  def dotr(a:LMat):LMat = dotr(a, null)
+  def dotr(a:BMat):BMat = dotr(a, null)
   
-  def kron(b: LMat, oldmat:Mat):LMat = {
-	  val out = LMat.newOrCheckLMat(nrows*b.nrows, ncols*b.ncols, oldmat, GUID, b.GUID, "kron".##)
+  def kron(b: BMat, oldmat:Mat):BMat = {
+	  val out = BMat.newOrCheckBMat(nrows*b.nrows, ncols*b.ncols, oldmat, GUID, b.GUID, "kron".##)
 	  var i = 0 
 	  while (i < ncols){
 	  	var j = 0 
@@ -689,7 +711,7 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
 	  		while (k < nrows) {
 	  			var m = 0 
 	  			while (m < b.nrows) {
-	          out.data(m + b.nrows*(k + nrows*(j + b.ncols*i))) = data(k + i*nrows) * b.data(m + j*b.nrows)
+	          out.data(m + b.nrows*(k + nrows*(j + b.ncols*i))) = (data(k + i*nrows) * b.data(m + j*b.nrows)).toByte;
 	          m += 1
 	        }
 	        k += 1
@@ -702,23 +724,23 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
 	  out
 	}
   
-  def kron(a:LMat):LMat = kron(a, null);
+  def kron(a:BMat):BMat = kron(a, null);
   
-  def cumsumKeyLinear(keys:LMat, out:LMat, istart:Int, iend:Int) = {
+  def cumsumKeyLinear(keys:BMat, out:BMat, istart:Int, iend:Int) = {
     var i = istart;
-    var sum = 0L;
+    var sum = 0;
     while (i < iend) {
       sum += data(i);
-      out.data(i) = sum;
+      out.data(i) = sum.toByte;
       if (i + 1 < iend && keys(i) != keys(i+1)) sum = 0;
       i += 1;
     }    
   }
   
-  def cumsumByKey(keys:LMat, omat:Mat):LMat = {
+  def cumsumByKey(keys:BMat, omat:Mat):BMat = {
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cumsumKey dimensions mismatch");
-    val out = LMat.newOrCheckLMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
+    val out = BMat.newOrCheckBMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
     Mat.nflops += 2L*length;
     if (nrows == 1) {
       cumsumKeyLinear(keys, out, 0, length);
@@ -732,23 +754,23 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
     out
   }
   
-  def cumsumByKey(keys:LMat):LMat = cumsumByKey(keys, null);
+  def cumsumByKey(keys:BMat):BMat = cumsumByKey(keys, null);
   
-  def cummaxKeyLinear(keys:LMat, out:LMat, istart:Int, iend:Int) = {
+  def cummaxKeyLinear(keys:BMat, out:BMat, istart:Int, iend:Int) = {
     var i = istart;
-    var sum = Long.MinValue;
+    var sum = Byte.MinValue;
     while (i < iend) {
-      sum = math.max(sum, data(i));
+      sum = math.max(sum, data(i)).toByte;
       out.data(i) = sum;
-      if (i + 1 < iend && keys(i) != keys(i+1)) sum = Long.MinValue;
+      if (i + 1 < iend && keys(i) != keys(i+1)) sum = Byte.MinValue;
       i += 1;
     }    
   }
   
-  def cummaxByKey(keys:LMat, omat:Mat):LMat = {
+  def cummaxByKey(keys:BMat, omat:Mat):BMat = {
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cummaxKey dimensions mismatch");
-    val out = LMat.newOrCheckLMat(nrows, ncols, omat, GUID, keys.GUID, "cummaxKey".##);
+    val out = BMat.newOrCheckBMat(nrows, ncols, omat, GUID, keys.GUID, "cummaxKey".##);
     Mat.nflops += 2L*length;
     if (nrows == 1) {
       cummaxKeyLinear(keys, out, 0, length);
@@ -762,23 +784,23 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
     out
   }
   
-  def cummaxByKey(keys:LMat):LMat = cummaxByKey(keys, null);
+  def cummaxByKey(keys:BMat):BMat = cummaxByKey(keys, null);
   
-  def cumminKeyLinear(keys:LMat, out:LMat, istart:Int, iend:Int) = {
+  def cumminKeyLinear(keys:BMat, out:BMat, istart:Int, iend:Int) = {
     var i = istart;
-    var sum = Long.MaxValue;
+    var sum = Byte.MaxValue;
     while (i < iend) {
-      sum = math.min(sum, data(i));
+      sum = math.min(sum, data(i)).toByte;
       out.data(i) = sum;
-      if (i + 1 < iend && keys(i) != keys(i+1)) sum = Long.MaxValue;
+      if (i + 1 < iend && keys(i) != keys(i+1)) sum = Byte.MaxValue;
       i += 1;
     }    
   }
   
-  def cumminByKey(keys:LMat, omat:Mat):LMat = {
+  def cumminByKey(keys:BMat, omat:Mat):BMat = {
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cumminKey dimensions mismatch");
-    val out = LMat.newOrCheckLMat(nrows, ncols, omat, GUID, keys.GUID, "cumminKey".##);
+    val out = BMat.newOrCheckBMat(nrows, ncols, omat, GUID, keys.GUID, "cumminKey".##);
     Mat.nflops += 2L*length;
     if (nrows == 1) {
       cumminKeyLinear(keys, out, 0, length);
@@ -792,10 +814,10 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
     out
   }
   
-  def cumminByKey(keys:LMat):LMat = cumminByKey(keys, null);
+  def cumminByKey(keys:BMat):BMat = cumminByKey(keys, null);
 
   
-  def reverseLinear(out:LMat, istart:Int, iend:Int) = {
+  def reverseLinear(out:BMat, istart:Int, iend:Int) = {
     var i = istart;
     var sum = 0f;
     while (i < iend) {
@@ -804,8 +826,8 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
     }    
   }
   
-  def _reverse(omat:Mat):LMat = {
-    val out = LMat.newOrCheckLMat(nrows, ncols, omat, GUID,  "reverse".##);
+  def _reverse(omat:Mat):BMat = {
+    val out = BMat.newOrCheckBMat(nrows, ncols, omat, GUID,  "reverse".##);
     if (nrows == 1) {
       reverseLinear(out, 0, length);
     } else {
@@ -818,51 +840,51 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
     out
   }
   
-  def reverse:LMat = _reverse(null);
+  def reverse:BMat = _reverse(null);
   
-  def reverse(omat:Mat):LMat = _reverse(omat);
+  def reverse(omat:Mat):BMat = _reverse(omat);
   
   import GMat.BinOp._
   /*
-   * Operators with two LMat args
+   * Operators with two BMat args
    */
-  override def unary_- () = iiMatOpScalarv(-1, LMat.vecMulFun, null)
-  def *  (b : LMat) = iMult(b, null)	
-  def +  (b : LMat) = iiMatOpv(b, LMat.vecAddFun, op_add, null)
-  def -  (b : LMat) = iiMatOpv(b, LMat.vecSubFun, op_sub, null)
-  def *@ (b : LMat) = iiMatOpv(b, LMat.vecMulFun, op_mul, null)
-  def ∘  (b : LMat) = iiMatOpv(b, LMat.vecMulFun, op_mul, null)
-  def /  (b : LMat) = iiMatOpv(b, LMat.vecDivFun, op_div, null)
-  def >   (b : LMat) = iiMatOpv(b, LMat.vecGTFun, op_gt, null)
-  def <   (b : LMat) = iiMatOpv(b, LMat.vecLTFun, op_lt, null)
-  def ==  (b : LMat) = iiMatOpv(b, LMat.vecEQFun, op_eq, null)
-  def === (b : LMat) = iiMatOpv(b, LMat.vecEQFun, op_eq, null)
-  def >=  (b : LMat) = iiMatOpv(b, LMat.vecGEFun, op_ge, null)
-  def <=  (b : LMat) = iiMatOpv(b, LMat.vecLEFun, op_le, null)
-  def !=  (b : LMat) = iiMatOpv(b, LMat.vecNEFun, op_ne, null)
-  def ∙  (b : LMat):LMat = dot(b)
-  def ∙→ (b : LMat):LMat = dotr(b)
-  def ∙∙ (b : LMat):Double = ddot(b)
-  def ** (b : LMat) = kron(b, null)
-  def ⊗  (b : LMat) = kron(b, null)
-  def \ (b: LMat) = horzcat(b)
-  def on (b: LMat) = vertcat(b)
+  override def unary_- () = iiMatOpScalarv(-1, BMat.vecMulFun, null)
+  def *  (b : BMat) = iMult(b, null)	
+  def +  (b : BMat) = iiMatOpv(b, BMat.vecAddFun, op_add, null)
+  def -  (b : BMat) = iiMatOpv(b, BMat.vecSubFun, op_sub, null)
+  def *@ (b : BMat) = iiMatOpv(b, BMat.vecMulFun, op_mul, null)
+  def ∘  (b : BMat) = iiMatOpv(b, BMat.vecMulFun, op_mul, null)
+  def /  (b : BMat) = iiMatOpv(b, BMat.vecDivFun, op_div, null)
+  def >   (b : BMat) = iiMatOpv(b, BMat.vecGTFun, op_gt, null)
+  def <   (b : BMat) = iiMatOpv(b, BMat.vecLTFun, op_lt, null)
+  def ==  (b : BMat) = iiMatOpv(b, BMat.vecEQFun, op_eq, null)
+  def === (b : BMat) = iiMatOpv(b, BMat.vecEQFun, op_eq, null)
+  def >=  (b : BMat) = iiMatOpv(b, BMat.vecGEFun, op_ge, null)
+  def <=  (b : BMat) = iiMatOpv(b, BMat.vecLEFun, op_le, null)
+  def !=  (b : BMat) = iiMatOpv(b, BMat.vecNEFun, op_ne, null)
+  def ∙  (b : BMat):BMat = dot(b)
+  def ∙→ (b : BMat):BMat = dotr(b)
+  def ∙∙ (b : BMat):Double = ddot(b)
+  def ** (b : BMat) = kron(b, null)
+  def ⊗  (b : BMat) = kron(b, null)
+  def \ (b: BMat) = horzcat(b)
+  def on (b: BMat) = vertcat(b)
   
-  def max(b: LMat) = iiMatOpv(b, LMat.vecMaxFun, op_max, null)
-  def min(b: LMat) = iiMatOpv(b, LMat.vecMinFun, op_min, null)
+  def max(b: BMat) = iiMatOpv(b, BMat.vecMaxFun, op_max, null)
+  def min(b: BMat) = iiMatOpv(b, BMat.vecMinFun, op_min, null)
   
    def checkOne(b:Seq[Int], name:String):Int = {
-    if (b.length > 1) throw new RuntimeException("LMat %s only takes one argument" format name);
+    if (b.length > 1) throw new RuntimeException("BMat %s only takes one argument" format name);
     b(0);
   }
   
   def checkOne(b:IMat, name:String):Int = {
-    if (b.length > 1) throw new RuntimeException("LMat %s only takes one argument" format name);
+    if (b.length > 1) throw new RuntimeException("BMat %s only takes one argument" format name);
     b(0);
   }
 
   
-  def reduce(inds:Array[Int], fctn:(LMat)=>LMat, opname:String):LMat = {
+  def reduce(inds:Array[Int], fctn:(BMat)=>BMat, opname:String):BMat = {
     val alldims = izeros(_dims.length,1);
     val xinds = new IMat(inds.length, 1, inds);
     val xdims = new IMat(_dims.length, 1, _dims);
@@ -872,113 +894,97 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
     }
     val restdims = MatFunctions.find(alldims == 0);
     val tmp = transpose((xinds on restdims).data);
-    val tmpF = new LMat(xdims(xinds).data.reduce(_*_), xdims(restdims).data.reduce(_*_), tmp.data);
+    val tmpF = new BMat(xdims(xinds).data.reduce(_*_), xdims(restdims).data.reduce(_*_), tmp.data);
     tmpF.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce"+opname).##));
-    val tmpSum:LMat = fctn(tmpF);
-    val out1 = new LMat((iones(inds.length,1) on xdims(restdims)).data, tmpSum.data);
+    val tmpSum:BMat = fctn(tmpF);
+    val out1 = new BMat((iones(inds.length,1) on xdims(restdims)).data, tmpSum.data);
     out1.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce2"+opname).##));
     out1.transpose(MatFunctions.invperm(xinds on restdims).data)
   }
   
   /** standard reducers on one dimension */
   
-  override def sum(ind:Int):LMat =iiReduceOpv(ind+1, LMat.idFun, LMat.vecAddFun, null);
-  override def prod(ind:Int):LMat = iiReduceOpv(ind+1, LMat.idFun, LMat.vecMulFun, null);
-  override def maxi(ind:Int):LMat = iiReduceOpv(ind+1, LMat.idFun, LMat.vecMaxFun, null);
-  override def mini(ind:Int):LMat = iiReduceOpv(ind+1, LMat.idFun, LMat.vecMinFun, null);
-  override def amax(ind:Int):LMat = iiReduceOpv(ind+1, LMat.idFun, LMat.vecMaxFun, null);
-  override def amin(ind:Int):LMat = iiReduceOpv(ind+1, LMat.idFun, LMat.vecMinFun, null);
-  
-  /** reduce on several dimensions, potentially very expensive */
-  
-  def sum(inds:Array[Int]):LMat = reduce(inds, SciFunctions.sum, "sum")
-  def prod(inds:Array[Int]):LMat = reduce(inds, SciFunctions.prod, "prod")
-  def maxi(inds:Array[Int]):LMat = reduce(inds, SciFunctions.maxi, "maxi")
-  def mini(inds:Array[Int]):LMat = reduce(inds, SciFunctions.mini, "mini")
-  def amax(inds:Array[Int]):LMat = reduce(inds, SciFunctions.maxi, "amax")
-  def amin(inds:Array[Int]):LMat = reduce(inds, SciFunctions.mini, "amin") 
-
-  override def sum(inds:IMat):LMat = reduce(inds.data, SciFunctions.sum, "sum")
-  override def prod(inds:IMat):LMat = reduce(inds.data, SciFunctions.prod, "prod")
-  override def maxi(inds:IMat):LMat = reduce(inds.data, SciFunctions.maxi, "maxi")
-  override def mini(inds:IMat):LMat = reduce(inds.data, SciFunctions.mini, "mini")
-  override def amax(inds:IMat):LMat = reduce(inds.data, SciFunctions.maxi, "amax")
-  override def amin(inds:IMat):LMat = reduce(inds.data, SciFunctions.mini, "amin") 
+  override def sum(ind:Int):BMat =iiReduceOpv(ind+1, BMat.idFun, BMat.vecAddFun, null);
+  override def prod(ind:Int):BMat = iiReduceOpv(ind+1, BMat.idFun, BMat.vecMulFun, null);
+  override def maxi(ind:Int):BMat = iiReduceOpv(ind+1, BMat.idFun, BMat.vecMaxFun, null);
+  override def mini(ind:Int):BMat = iiReduceOpv(ind+1, BMat.idFun, BMat.vecMinFun, null);
+  override def amax(ind:Int):BMat = iiReduceOpv(ind+1, BMat.idFun, BMat.vecMaxFun, null);
+  override def amin(ind:Int):BMat = iiReduceOpv(ind+1, BMat.idFun, BMat.vecMinFun, null);
   
   //Scalar operators
-  def \ (b: Long) = horzcat(LMat.lelem(b))
-  def on (b: Long) = vertcat(LMat.lelem(b)) 
-  override def * (b : Long) = iMult(LMat.lelem(b), null)
-  override def + (b : Long) = iiMatOpScalarv(b, LMat.vecAddFun, null)
-  override def - (b : Long) = iiMatOpScalarv(b, LMat.vecSubFun, null)
-  override def *@ (b : Long) = iiMatOpScalarv(b, LMat.vecMulFun, null)
-  override def ∘  (b : Long) = iiMatOpScalarv(b, LMat.vecMulFun, null)
+  def \ (b: Byte) = horzcat(BMat.belem(b))
+  def on (b: Byte) = vertcat(BMat.belem(b)) 
+  def * (b : Byte) = iMult(BMat.belem(b), null)
+  def + (b : Byte) = iiMatOpScalarv(b, BMat.vecAddFun, null)
+  def - (b : Byte) = iiMatOpScalarv(b, BMat.vecSubFun, null)
+  def *@ (b : Byte) = iiMatOpScalarv(b, BMat.vecMulFun, null)
+  def ∘  (b : Byte) = iiMatOpScalarv(b, BMat.vecMulFun, null)
   
-  override def > (b : Long) = iiMatOpScalarv(b, LMat.vecGTFun, null)
-  override def < (b : Long) = iiMatOpScalarv(b, LMat.vecLTFun, null)
-  override def == (b : Long) = iiMatOpScalarv(b, LMat.vecEQFun, null)
-  override def >= (b : Long) = iiMatOpScalarv(b, LMat.vecGEFun, null)
-  override def <= (b : Long) = iiMatOpScalarv(b, LMat.vecLEFun, null)
-  override def != (b : Long) = iiMatOpScalarv(b, LMat.vecNEFun, null)
+  def > (b : Byte) = iiMatOpScalarv(b, BMat.vecGTFun, null)
+  def < (b : Byte) = iiMatOpScalarv(b, BMat.vecLTFun, null)
+  def == (b : Byte) = iiMatOpScalarv(b, BMat.vecEQFun, null)
+  def >= (b : Byte) = iiMatOpScalarv(b, BMat.vecGEFun, null)
+  def <= (b : Byte) = iiMatOpScalarv(b, BMat.vecLEFun, null)
+  def != (b : Byte) = iiMatOpScalarv(b, BMat.vecNEFun, null)
   
-  override def max (b : Long) = iiMatOpScalarv(b, LMat.vecMaxFun, null)
-  override def min (b : Long) = iiMatOpScalarv(b, LMat.vecMinFun, null)
-  
-  
-  def \ (b: Int) = horzcat(LMat.lelem(b))
-  def on (b: Int) = vertcat(LMat.lelem(b)) 
-  override def * (b : Int) = iMult(LMat.lelem(b), null)
-  override def + (b : Int) = iiMatOpScalarv(b, LMat.vecAddFun, null)
-  override def - (b : Int) = iiMatOpScalarv(b, LMat.vecSubFun, null)
-  override def *@ (b : Int) = iiMatOpScalarv(b, LMat.vecMulFun, null)
-  override def ∘  (b : Int) = iiMatOpScalarv(b, LMat.vecMulFun, null)
-  
-  override def > (b : Int) = iiMatOpScalarv(b, LMat.vecGTFun, null)
-  override def < (b : Int) = iiMatOpScalarv(b, LMat.vecLTFun, null)
-  override def == (b : Int) = iiMatOpScalarv(b, LMat.vecEQFun, null)
-  override def >= (b : Int) = iiMatOpScalarv(b, LMat.vecGEFun, null)
-  override def <= (b : Int) = iiMatOpScalarv(b, LMat.vecLEFun, null)
-  override def != (b : Int) = iiMatOpScalarv(b, LMat.vecNEFun, null)
-  override def max (b : Int) = iiMatOpScalarv(b, LMat.vecMaxFun, null)
-  override def min (b : Int) = iiMatOpScalarv(b, LMat.vecMinFun, null)
+  def max (b : Byte) = iiMatOpScalarv(b, BMat.vecMaxFun, null)
+  def min (b : Byte) = iiMatOpScalarv(b, BMat.vecMinFun, null)
   
   
-  def \ (b: Float) = horzcat(LMat.lelem(b.toLong))
-  def on (b: Float) = vertcat(LMat.lelem(b.toLong)) 
-  override def * (b : Float) = iMult(LMat.lelem(b.toLong), null)
-  override def + (b : Float) = iiMatOpScalarv(b.toLong, LMat.vecAddFun, null)
-  override def - (b : Float) = iiMatOpScalarv(b.toLong, LMat.vecSubFun, null)
-  override def *@ (b : Float) = iiMatOpScalarv(b.toLong, LMat.vecMulFun, null)
-  override def ∘  (b : Float) = iiMatOpScalarv(b.toLong, LMat.vecMulFun, null)
+  def \ (b: Int) = horzcat(BMat.belem(b.toByte))
+  def on (b: Int) = vertcat(BMat.belem(b.toByte)) 
+  override def * (b : Int) = iMult(BMat.belem(b.toByte), null)
+  override def + (b : Int) = iiMatOpScalarv(b.toByte, BMat.vecAddFun, null)
+  override def - (b : Int) = iiMatOpScalarv(b.toByte, BMat.vecSubFun, null)
+  override def *@ (b : Int) = iiMatOpScalarv(b.toByte, BMat.vecMulFun, null)
+  override def ∘  (b : Int) = iiMatOpScalarv(b.toByte, BMat.vecMulFun, null)
+  
+  override def > (b : Int) = iiMatOpScalarv(b.toByte, BMat.vecGTFun, null)
+  override def < (b : Int) = iiMatOpScalarv(b.toByte, BMat.vecLTFun, null)
+  override def == (b : Int) = iiMatOpScalarv(b.toByte, BMat.vecEQFun, null)
+  override def >= (b : Int) = iiMatOpScalarv(b.toByte, BMat.vecGEFun, null)
+  override def <= (b : Int) = iiMatOpScalarv(b.toByte, BMat.vecLEFun, null)
+  override def != (b : Int) = iiMatOpScalarv(b.toByte, BMat.vecNEFun, null)
+  override def max (b : Int) = iiMatOpScalarv(b.toByte, BMat.vecMaxFun, null)
+  override def min (b : Int) = iiMatOpScalarv(b.toByte, BMat.vecMinFun, null)
+  
+  
+  def \ (b: Float) = horzcat(BMat.belem(b.toByte))
+  def on (b: Float) = vertcat(BMat.belem(b.toByte)) 
+  override def * (b : Float) = iMult(BMat.belem(b.toByte), null)
+  override def + (b : Float) = iiMatOpScalarv(b.toByte, BMat.vecAddFun, null)
+  override def - (b : Float) = iiMatOpScalarv(b.toByte, BMat.vecSubFun, null)
+  override def *@ (b : Float) = iiMatOpScalarv(b.toByte, BMat.vecMulFun, null)
+  override def ∘  (b : Float) = iiMatOpScalarv(b.toByte, BMat.vecMulFun, null)
    
-  override def > (b : Float) = iiMatOpScalarv(b.toLong, LMat.vecGTFun, null)
-  override def < (b : Float) = iiMatOpScalarv(b.toLong, LMat.vecLTFun, null)
-  override def == (b : Float) = iiMatOpScalarv(b.toLong, LMat.vecEQFun, null)
-  override def >= (b : Float) = iiMatOpScalarv(b.toLong, LMat.vecGEFun, null)
-  override def <= (b : Float) = iiMatOpScalarv(b.toLong, LMat.vecLEFun, null)
-  override def != (b : Float) = iiMatOpScalarv(b.toLong, LMat.vecNEFun, null)
+  override def > (b : Float) = iiMatOpScalarv(b.toByte, BMat.vecGTFun, null)
+  override def < (b : Float) = iiMatOpScalarv(b.toByte, BMat.vecLTFun, null)
+  override def == (b : Float) = iiMatOpScalarv(b.toByte, BMat.vecEQFun, null)
+  override def >= (b : Float) = iiMatOpScalarv(b.toByte, BMat.vecGEFun, null)
+  override def <= (b : Float) = iiMatOpScalarv(b.toByte, BMat.vecLEFun, null)
+  override def != (b : Float) = iiMatOpScalarv(b.toByte, BMat.vecNEFun, null)
  
-  override def max (b : Float) = iiMatOpScalarv(b.toLong, LMat.vecMaxFun, null)
-  override def min (b : Float) = iiMatOpScalarv(b.toLong, LMat.vecMinFun, null) 
+  override def max (b : Float) = iiMatOpScalarv(b.toByte, BMat.vecMaxFun, null)
+  override def min (b : Float) = iiMatOpScalarv(b.toByte, BMat.vecMinFun, null) 
   
   
-  def \ (b: Double) = horzcat(LMat.lelem(b.toLong))
-  def on (b: Double) = vertcat(LMat.lelem(b.toLong)) 
-  override def * (b : Double) = iMult(LMat.lelem(b.toLong), null)
-  override def + (b : Double) = iiMatOpScalarv(b.toLong, LMat.vecAddFun, null)
-  override def - (b : Double) = iiMatOpScalarv(b.toLong, LMat.vecSubFun, null)
-  override def *@ (b : Double) = iiMatOpScalarv(b.toLong, LMat.vecMulFun, null)
-  override def ∘  (b : Double) = iiMatOpScalarv(b.toLong, LMat.vecMulFun, null)
+  def \ (b: Double) = horzcat(BMat.belem(b.toByte))
+  def on (b: Double) = vertcat(BMat.belem(b.toByte)) 
+  override def * (b : Double) = iMult(BMat.belem(b.toByte), null)
+  override def + (b : Double) = iiMatOpScalarv(b.toByte, BMat.vecAddFun, null)
+  override def - (b : Double) = iiMatOpScalarv(b.toByte, BMat.vecSubFun, null)
+  override def *@ (b : Double) = iiMatOpScalarv(b.toByte, BMat.vecMulFun, null)
+  override def ∘  (b : Double) = iiMatOpScalarv(b.toByte, BMat.vecMulFun, null)
  
-  override def > (b : Double) = iiMatOpScalarv(b.toLong, LMat.vecGTFun, null)
-  override def < (b : Double) = iiMatOpScalarv(b.toLong, LMat.vecLTFun, null)
-  override def == (b : Double) = iiMatOpScalarv(b.toLong, LMat.vecEQFun, null)
-  override def >= (b : Double) = iiMatOpScalarv(b.toLong, LMat.vecGEFun, null)
-  override def <= (b : Double) = iiMatOpScalarv(b.toLong, LMat.vecLEFun, null)
-  override def != (b : Double) = iiMatOpScalarv(b.toLong, LMat.vecNEFun, null)
+  override def > (b : Double) = iiMatOpScalarv(b.toByte, BMat.vecGTFun, null)
+  override def < (b : Double) = iiMatOpScalarv(b.toByte, BMat.vecLTFun, null)
+  override def == (b : Double) = iiMatOpScalarv(b.toByte, BMat.vecEQFun, null)
+  override def >= (b : Double) = iiMatOpScalarv(b.toByte, BMat.vecGEFun, null)
+  override def <= (b : Double) = iiMatOpScalarv(b.toByte, BMat.vecLEFun, null)
+  override def != (b : Double) = iiMatOpScalarv(b.toByte, BMat.vecNEFun, null)
   
-  override def max (b : Double) = iiMatOpScalarv(b.toLong, LMat.vecMaxFun, null)
-  override def min (b : Double) = iiMatOpScalarv(b.toLong, LMat.vecMinFun, null) 
+  override def max (b : Double) = iiMatOpScalarv(b.toByte, BMat.vecMaxFun, null)
+  override def min (b : Double) = iiMatOpScalarv(b.toByte, BMat.vecMinFun, null) 
   
 
  /*
@@ -1156,61 +1162,61 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
   override def === (b : Mat) = Mop_EQ.op(this, b, null) 
   override def !=  (b : Mat) = Mop_NE.op(this, b, null)
   
-  def ~ (b : LMat):LPair = new LPair(this, b)
+  def ~ (b : BMat):BPair = new BPair(this, b)
   
-  override def ~ (b: Mat):Pair = 
+  override def ~ (b: Mat):BIDMat.Pair = 
     b match {
-    case db:LMat => new LPair(this, db)
+    case db:BMat => new BPair(this, db)
     case _ => throw new RuntimeException("mismatched types for operator ~")
   }
   
   override def clear = {
-    Arrays.fill(this.data,0,length,0)
+    Arrays.fill(this.data,0,length,0.toByte)
     this
   }
   
-  override def recycle(nr:Int, nc:Int, nnz:Int):LMat = {
+  override def recycle(nr:Int, nc:Int, nnz:Int):BMat = {
     if (nrows == nr && nc == ncols) {
       this
     } else if (data.size >= nr*nc) {
-      new LMat(nr, nc, data)
+      new BMat(nr, nc, data)
     } else {
-      new LMat(nr, nc, new Array[Long]((nr*nc*Mat.recycleGrow).toInt))
+      new BMat(nr, nc, new Array[Byte]((nr*nc*Mat.recycleGrow).toInt))
     }  
   }
 }
 
-class LPair(val omat:Mat, val mat:LMat) extends BIDMat.Pair(omat, mat) {
+class BPair(val omat:Mat, val mat:BMat) extends BIDMat.Pair(omat, mat) {
   
   import GMat.BinOp._
-  override def t:LMat = mat.tt(omat)
+  override def t:BMat = mat.tt(omat)
   
-  def * (b : LMat) = mat.iMult(b, omat) 
+  def * (b : BMat) = mat.iMult(b, omat) 
   def * (b : SMat) = mat.iMult(b, omat) 
 //  def xT  (b : SMat) = mat.multT(b, omat)
-  def + (b : LMat) = mat.iiMatOpv(b, LMat.vecAddFun, op_add, omat)
-  def - (b : LMat) = mat.iiMatOpv(b, LMat.vecSubFun, op_sub, omat)
-  def *@ (b : LMat) = mat.iiMatOpv(b, LMat.vecMulFun, op_mul, omat)
-  def ∘  (b : LMat) = mat.iiMatOpv(b, LMat.vecMulFun, op_mul, omat)
-  def / (b : LMat) = mat.iiMatOpv(b, LMat.vecDivFun, op_div, omat)
-  def dot (b : LMat) = mat.dot(b);
-  def ∙ (b : LMat) = mat.dot(b);
-  def dotr (b : LMat) = mat.dotr(b);
-  def ∙→ (b : LMat) = mat.dotr(b);
-  def ** (b : LMat) = mat.kron(b, omat)
-  def ⊗ (b : LMat) = mat.kron(b, omat)
+  def + (b : BMat) = mat.iiMatOpv(b, BMat.vecAddFun, op_add, omat)
+  def - (b : BMat) = mat.iiMatOpv(b, BMat.vecSubFun, op_sub, omat)
+  def *@ (b : BMat) = mat.iiMatOpv(b, BMat.vecMulFun, op_mul, omat)
+  def ∘  (b : BMat) = mat.iiMatOpv(b, BMat.vecMulFun, op_mul, omat)
+  def / (b : BMat) = mat.iiMatOpv(b, BMat.vecDivFun, op_div, omat)
+  def dot (b : BMat) = mat.dot(b);
+  def ∙ (b : BMat) = mat.dot(b);
+  def dotr (b : BMat) = mat.dotr(b);
+  def ∙→ (b : BMat) = mat.dotr(b);
+  def ** (b : BMat) = mat.kron(b, omat)
+  def ⊗ (b : BMat) = mat.kron(b, omat)
 //  def /@ (b : IMat) = mat.iiMatOpv(b, IMat.fVecDiv _, omat)  
 //  def ^ (b : IMat) = mat.iiMatOp(b, (x:Float, y:Float) => math.pow(x,y).toFloat, omat)  
 
-  def > (b : LMat) = mat.iiMatOpv(b, LMat.vecGTFun, op_gt, omat)
-  def < (b : LMat) = mat.iiMatOpv(b, LMat.vecLTFun, op_lt, omat)
-  def == (b : LMat) = mat.iiMatOpv(b, LMat.vecEQFun, op_eq, omat)
-  def === (b : LMat) = mat.iiMatOpv(b, LMat.vecEQFun, op_eq, omat)
-  def >= (b : LMat) = mat.iiMatOpv(b, LMat.vecGEFun, op_ge, omat)
-  def <= (b : LMat) = mat.iiMatOpv(b, LMat.vecLEFun, op_le, omat)
-  def != (b : LMat) = mat.iiMatOpv(b, LMat.vecNEFun, op_ne, omat) 
-  def max (b : LMat) = mat.iiMatOpv(b, LMat.vecMaxFun, op_max, omat)
-  def min (b : LMat) = mat.iiMatOpv(b, LMat.vecMinFun, op_min, omat) 
+  def > (b : BMat) = mat.iiMatOpv(b, BMat.vecGTFun, op_gt, omat)
+  def < (b : BMat) = mat.iiMatOpv(b, BMat.vecLTFun, op_lt, omat)
+  def == (b : BMat) = mat.iiMatOpv(b, BMat.vecEQFun, op_eq, omat)
+  def === (b : BMat) = mat.iiMatOpv(b, BMat.vecEQFun, op_eq, omat)
+  def >= (b : BMat) = mat.iiMatOpv(b, BMat.vecGEFun, op_ge, omat)
+  def <= (b : BMat) = mat.iiMatOpv(b, BMat.vecLEFun, op_le, omat)
+  def != (b : BMat) = mat.iiMatOpv(b, BMat.vecNEFun, op_ne, omat) 
+  def max (b : BMat) = mat.iiMatOpv(b, BMat.vecMaxFun, op_max, omat)
+  def min (b : BMat) = mat.iiMatOpv(b, BMat.vecMinFun, op_min, omat) 
   
   def checkOne(b:Seq[Int], name:String):Int = {
     if (b.length > 1) throw new RuntimeException("IMat %s only takes one argument" format name);
@@ -1223,42 +1229,42 @@ class LPair(val omat:Mat, val mat:LMat) extends BIDMat.Pair(omat, mat) {
   }
   
    
-  override def * (b : Long) = mat.iMult(LMat.lelem(b), omat)
-  override def + (b : Long) = mat.iiMatOpScalarv(b, LMat.vecAddFun, omat)
-  override def - (b : Long) = mat.iiMatOpScalarv(b, LMat.vecSubFun, omat)
-  override def *@ (b : Long) = mat.iiMatOpScalarv(b, LMat.vecMulFun, omat)
-  override def ∘  (b : Long) = mat.iiMatOpScalarv(b, LMat.vecMulFun, omat)
-  override def / (b : Long) = mat.iiMatOpScalarv(b, LMat.vecDivFun, omat)
-//  override override def ^ (b : Long) = mat.iiMatOpScalar(b, (x:Float, y:Float) => math.pow(x,y).toFloat, omat)
+  def * (b : Byte) = mat.iMult(BMat.belem(b), omat)
+  def + (b : Byte) = mat.iiMatOpScalarv(b, BMat.vecAddFun, omat)
+  def - (b : Byte) = mat.iiMatOpScalarv(b, BMat.vecSubFun, omat)
+  def *@ (b : Byte) = mat.iiMatOpScalarv(b, BMat.vecMulFun, omat)
+  def ∘  (b : Byte) = mat.iiMatOpScalarv(b, BMat.vecMulFun, omat)
+  def / (b : Byte) = mat.iiMatOpScalarv(b, BMat.vecDivFun, omat)
+//  def ^ (b : Byte) = mat.iiMatOpScalar(b, (x:Float, y:Float) => math.pow(x,y).toFloat, omat)
 
-  override def > (b : Long) = mat.iiMatOpScalarv(b, LMat.vecGTFun, omat)
-  override def < (b : Long) = mat.iiMatOpScalarv(b, LMat.vecLTFun, omat)
-  override def == (b : Long) = mat.iiMatOpScalarv(b, LMat.vecEQFun, omat)
-  override def >= (b : Long) = mat.iiMatOpScalarv(b, LMat.vecGEFun, omat)
-  override def <= (b : Long) = mat.iiMatOpScalarv(b, LMat.vecLEFun, omat)
-  override def != (b : Long) = mat.iiMatOpScalarv(b, LMat.vecNEFun, omat)
-  override def max (b : Long) = mat.iiMatOpScalarv(b, LMat.vecMaxFun, omat)
-  override def min (b : Long) = mat.iiMatOpScalarv(b, LMat.vecMinFun, omat)
+  def > (b : Byte) = mat.iiMatOpScalarv(b, BMat.vecGTFun, omat)
+  def < (b : Byte) = mat.iiMatOpScalarv(b, BMat.vecLTFun, omat)
+  def == (b : Byte) = mat.iiMatOpScalarv(b, BMat.vecEQFun, omat)
+  def >= (b : Byte) = mat.iiMatOpScalarv(b, BMat.vecGEFun, omat)
+  def <= (b : Byte) = mat.iiMatOpScalarv(b, BMat.vecLEFun, omat)
+  def != (b : Byte) = mat.iiMatOpScalarv(b, BMat.vecNEFun, omat)
+  def max (b : Byte) = mat.iiMatOpScalarv(b, BMat.vecMaxFun, omat)
+  def min (b : Byte) = mat.iiMatOpScalarv(b, BMat.vecMinFun, omat)
   
-  override def * (b : Int) = mat.iMult(LMat.lelem(b), omat)
-  override def + (b : Int) = mat.iiMatOpScalarv(b, LMat.vecAddFun, omat)
-  override def - (b : Int) = mat.iiMatOpScalarv(b, LMat.vecSubFun, omat)
-  override def *@ (b : Int) = mat.iiMatOpScalarv(b, LMat.vecMulFun, omat)
-  override def ∘  (b : Int) = mat.iiMatOpScalarv(b, LMat.vecMulFun, omat)
-  override def / (b : Int) = mat.iiMatOpScalarv(b, LMat.vecDivFun, omat)
+  override def * (b : Int) = mat.iMult(BMat.belem(b.toByte), omat)
+  override def + (b : Int) = mat.iiMatOpScalarv(b.toByte, BMat.vecAddFun, omat)
+  override def - (b : Int) = mat.iiMatOpScalarv(b.toByte, BMat.vecSubFun, omat)
+  override def *@ (b : Int) = mat.iiMatOpScalarv(b.toByte, BMat.vecMulFun, omat)
+  override def ∘  (b : Int) = mat.iiMatOpScalarv(b.toByte, BMat.vecMulFun, omat)
+  override def / (b : Int) = mat.iiMatOpScalarv(b.toByte, BMat.vecDivFun, omat)
   
-//  override def /@ (b : Int) = mat.iiMatOpScalarv(b, IMat.fVecDiv _, omat)
-//  override def ^ (b : Int) = mat.iiMatOpScalar(b, (x:Float, y:Float) => math.pow(x,y).toFloat, omat)
+//  override def /@ (b : Int) = mat.iiMatOpScalarv(b.toByte, IMat.fVecDiv _, omat)
+//  override def ^ (b : Int) = mat.iiMatOpScalar(b.toByte, (x:Float, y:Float) => math.pow(x,y).toFloat, omat)
 
-  override def > (b : Int) = mat.iiMatOpScalarv(b, LMat.vecGTFun, omat)
-  override def < (b : Int) = mat.iiMatOpScalarv(b, LMat.vecLTFun, omat)
-  override def == (b : Int) = mat.iiMatOpScalarv(b, LMat.vecEQFun, omat)
-  override def >= (b : Int) = mat.iiMatOpScalarv(b, LMat.vecGEFun, omat)
-  override def <= (b : Int) = mat.iiMatOpScalarv(b, LMat.vecLEFun, omat)
-  override def != (b : Int) = mat.iiMatOpScalarv(b, LMat.vecNEFun, omat) 
+  override def > (b : Int) = mat.iiMatOpScalarv(b.toByte, BMat.vecGTFun, omat)
+  override def < (b : Int) = mat.iiMatOpScalarv(b.toByte, BMat.vecLTFun, omat)
+  override def == (b : Int) = mat.iiMatOpScalarv(b.toByte, BMat.vecEQFun, omat)
+  override def >= (b : Int) = mat.iiMatOpScalarv(b.toByte, BMat.vecGEFun, omat)
+  override def <= (b : Int) = mat.iiMatOpScalarv(b.toByte, BMat.vecLEFun, omat)
+  override def != (b : Int) = mat.iiMatOpScalarv(b.toByte, BMat.vecNEFun, omat) 
   
-  override def max (b : Int) = mat.iiMatOpScalarv(b, LMat.vecMaxFun, omat)
-  override def min (b : Int) = mat.iiMatOpScalarv(b, LMat.vecMinFun, omat)
+  override def max (b : Int) = mat.iiMatOpScalarv(b.toByte, BMat.vecMaxFun, omat)
+  override def min (b : Int) = mat.iiMatOpScalarv(b.toByte, BMat.vecMinFun, omat)
   
   /*
    * Specialize to FMat
@@ -1390,133 +1396,130 @@ class LPair(val omat:Mat, val mat:LMat) extends BIDMat.Pair(omat, mat) {
 }
 
 
-object LMat {
+object BMat {
   
-  def apply(nr:Int, nc:Int) = new LMat(nr, nc, new Array[Long](nr*nc));
+  def apply(nr:Int, nc:Int) = new BMat(nr, nc, new Array[Byte](nr*nc));
   
-   def make(dims:Array[Int]):LMat = {
+   def make(dims:Array[Int]):BMat = {
     val length = dims.reduce(_*_);
     if (Mat.debugCPUmem) {
-      print("LMat"); 
+      print("BMat"); 
       dims.foreach((x) => print(" %d" format x));
       println("");
       if (length > Mat.debugMemThreshold) throw new RuntimeException("FMat alloc too large");
     }
-    new LMat(dims, new Array[Long](length));   
+    new BMat(dims, new Array[Byte](length));   
   }
   
-   def make(dims:IMat):LMat = {
+   def make(dims:IMat):BMat = {
      make(dims.data)   
   }
   
-  def apply(a:DenseMat[Long]) = {
-    val out = new LMat(a._dims, a._data) 
+  def apply(a:DenseMat[Byte]) = {
+    val out = new BMat(a._dims, a._data) 
     out.setGUID(a.GUID)
     out
   }
   
-  def apply(a:Float) = lelem(a.toLong)
+  def apply(a:Float) = belem(a.toByte)
   
-  def apply(a:Int) = lelem(a)
+  def apply(a:Int) = belem(a.toByte)
   
-  def apply(a:Double) = lelem(a.toLong)
+  def apply(a:Double) = belem(a.toByte)
   
-  def apply(a:Long) = lelem(a)
-  
-  def apply(a:GLMat) = a.toLMat
+  def apply(a:Byte) = belem(a)
+
   
   def lzeros(m:Int, n:Int) = {
-    val out = LMat(m,n)
+    val out = BMat(m,n)
     out.clear
     out
   }
   
   def lones(m:Int, n:Int) = {
-    val out = LMat(m,n)
+    val out = BMat(m,n)
     out.set(1L)
     out
   }
   
   def lzeros(dims:IMat) = {
-    val out = LMat.make(dims)
+    val out = BMat.make(dims)
     out.clear
     out
   }
   
-  def lones(dims:IMat) = {
-    val out = LMat.make(dims)
-    out.set(1L)
+  def bones(dims:IMat) = {
+    val out = BMat.make(dims)
+    out.set(1)
     out
   }
   
-  def apply(x:Mat):LMat = {
-    val out:LMat = x match {
-      case _:GIMat | _:GLMat | _:DMat | _:FMat | _:IMat => LMat.newOrCheckLMat(x.dims, null, x.GUID, "LMat".##);
-      case ff:LMat => ff;
-      case dd:DenseMat[Long] @ unchecked => {val out = new LMat(dd.dims.data, dd._data); out.setGUID(dd.GUID); out}
+  def apply(x:Mat):BMat = {
+    val out:BMat = x match {
+      case _:GIMat | _:DMat | _:FMat | _:IMat => BMat.newOrCheckBMat(x.dims, null, x.GUID, "BMat".##);
+      case ff:BMat => ff;
+      case dd:DenseMat[Byte] @ unchecked => {val out = new BMat(dd.dims.data, dd._data); out.setGUID(dd.GUID); out}
       case _ => throw new RuntimeException("IMat apply unknown argument");
     }
     x match {
-      case gg:GIMat => gg.toLMat(out);
-      case gg:GLMat => gg.toLMat(out);
-      case dd:DMat => {Mat.copyToLongArray(dd.data, 0, out.data, 0, dd.length)};
-      case ff:FMat => {Mat.copyToLongArray(ff.data, 0, out.data, 0, ff.length)};
-      case ff:LMat => {};
+      case dd:DMat => {Mat.copyToByteArray(dd.data, 0, out.data, 0, dd.length)};
+      case ff:FMat => {Mat.copyToByteArray(ff.data, 0, out.data, 0, ff.length)};
+      case ff:BMat => {};
       case ii:IMat => {System.arraycopy(ii.data, 0, out.data, 0, ii.length)};
-      case dd:DenseMat[Long] @ unchecked => {}
+      case dd:DenseMat[Byte] @ unchecked => {}
     }
     out
   }
        
-  def vecAdd(a:Array[Long], a0:Int, ainc:Int, b:Array[Long], b0:Int, binc:Int, c:Array[Long], c0:Int, cinc:Int, n:Int):Long = {
+  def vecAdd(a:Array[Byte], a0:Int, ainc:Int, b:Array[Byte], b0:Int, binc:Int, c:Array[Byte], c0:Int, cinc:Int, n:Int):Byte = {
     var ai = a0; var bi = b0; var ci = c0; var i = 0
     while (i < n) {
-      c(ci) = a(ai) + b(bi);  ai += ainc; bi += binc;  ci += cinc; i += 1
+      c(ci) = (a(ai) + b(bi)).toByte;  ai += ainc; bi += binc;  ci += cinc; i += 1
     }
     0
   }
   
-  def vecSub(a:Array[Long], a0:Int, ainc:Int, b:Array[Long], b0:Int, binc:Int, c:Array[Long], c0:Int, cinc:Int, n:Int):Long = {
+  def vecSub(a:Array[Byte], a0:Int, ainc:Int, b:Array[Byte], b0:Int, binc:Int, c:Array[Byte], c0:Int, cinc:Int, n:Int):Byte = {
     var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
     while (ci < cend) {
-      c(ci) = a(ai) - b(bi);  ai += ainc; bi += binc;  ci += cinc
+      c(ci) = (a(ai) - b(bi)).toByte;  ai += ainc; bi += binc;  ci += cinc
     }
     0
   }
   
-  def vecMul(a:Array[Long], a0:Int, ainc:Int, b:Array[Long], b0:Int, binc:Int, c:Array[Long], c0:Int, cinc:Int, n:Int):Long = {
+  def vecMul(a:Array[Byte], a0:Int, ainc:Int, b:Array[Byte], b0:Int, binc:Int, c:Array[Byte], c0:Int, cinc:Int, n:Int):Byte = {
     var ai = a0; var bi = b0; var ci = c0; var i = 0
     while (i < n) {
-      c(ci) = a(ai) * b(bi);  ai += ainc; bi += binc;  ci += cinc; i += 1
+      c(ci) = (a(ai) * b(bi)).toByte;  ai += ainc; bi += binc;  ci += cinc; i += 1
     }
     0
   }
   
-  def vecDiv(a:Array[Long], a0:Int, ainc:Int, b:Array[Long], b0:Int, binc:Int, c:Array[Long], c0:Int, cinc:Int, n:Int):Long = {
+  def vecDiv(a:Array[Byte], a0:Int, ainc:Int, b:Array[Byte], b0:Int, binc:Int, c:Array[Byte], c0:Int, cinc:Int, n:Int):Byte = {
 			var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
 			while (ci < cend) {
-				c(ci) = a(ai) / b(bi);  ai += ainc; bi += binc;  ci += cinc
+				c(ci) = (a(ai) / b(bi)).toByte;  ai += ainc; bi += binc;  ci += cinc
 			}
 			0
 	}
   
-  def vecMax(a:Array[Long], a0:Int, ainc:Int, b:Array[Long], b0:Int, binc:Int, c:Array[Long], c0:Int, cinc:Int, n:Int):Long = {
+  def vecMax(a:Array[Byte], a0:Int, ainc:Int, b:Array[Byte], b0:Int, binc:Int, c:Array[Byte], c0:Int, cinc:Int, n:Int):Byte = {
     var ai = a0; var bi = b0; var ci = c0; var i = 0
     while (i < n) {
-      c(ci) = math.max(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc; i += 1
+      c(ci) = math.max(a(ai), b(bi)).toByte;  ai += ainc; bi += binc;  ci += cinc; i += 1
     }
     0
   }
   
-  def vecMin(a:Array[Long], a0:Int, ainc:Int, b:Array[Long], b0:Int, binc:Int, c:Array[Long], c0:Int, cinc:Int, n:Int):Long = {
+  def vecMin(a:Array[Byte], a0:Int, ainc:Int, b:Array[Byte], b0:Int, binc:Int, c:Array[Byte], c0:Int, cinc:Int, n:Int):Byte = {
     var ai = a0; var bi = b0; var ci = c0; var i = 0
     while (i < n) {
-      c(ci) = math.min(a(ai), b(bi));  ai += ainc; bi += binc;  ci += cinc; i += 1
+      c(ci) = math.min(a(ai), b(bi)).toByte;  ai += ainc; bi += binc;  ci += cinc; i += 1
     }
     0
   }
   
-   def vecEQ(a:Array[Long], a0:Int, ainc:Int, b:Array[Long], b0:Int, binc:Int, c:Array[Long], c0:Int, cinc:Int, n:Int):Long = {
+   def vecEQ(a:Array[Byte], a0:Int, ainc:Int, b:Array[Byte], b0:Int, binc:Int, c:Array[Byte], c0:Int, cinc:Int, n:Int):Byte = {
     var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
     while (ci < cend) {
       c(ci) = if (a(ai) == b(bi)) 1 else 0;  ai += ainc; bi += binc;  ci += cinc
@@ -1524,7 +1527,7 @@ object LMat {
     0
   }
  
-  def vecNE(a:Array[Long], a0:Int, ainc:Int, b:Array[Long], b0:Int, binc:Int, c:Array[Long], c0:Int, cinc:Int, n:Int):Long = {
+  def vecNE(a:Array[Byte], a0:Int, ainc:Int, b:Array[Byte], b0:Int, binc:Int, c:Array[Byte], c0:Int, cinc:Int, n:Int):Byte = {
     var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
     while (ci < cend) {
       c(ci) = if (a(ai) != b(bi)) 1 else 0;  ai += ainc; bi += binc;  ci += cinc
@@ -1532,7 +1535,7 @@ object LMat {
     0
   }
   
-   def vecGT(a:Array[Long], a0:Int, ainc:Int, b:Array[Long], b0:Int, binc:Int, c:Array[Long], c0:Int, cinc:Int, n:Int):Long = {
+   def vecGT(a:Array[Byte], a0:Int, ainc:Int, b:Array[Byte], b0:Int, binc:Int, c:Array[Byte], c0:Int, cinc:Int, n:Int):Byte = {
     var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
     while (ci < cend) {
       c(ci) = if (a(ai) > b(bi)) 1 else 0;  ai += ainc; bi += binc;  ci += cinc
@@ -1540,7 +1543,7 @@ object LMat {
     0
   }
  
-  def vecLT(a:Array[Long], a0:Int, ainc:Int, b:Array[Long], b0:Int, binc:Int, c:Array[Long], c0:Int, cinc:Int, n:Int):Long = {
+  def vecLT(a:Array[Byte], a0:Int, ainc:Int, b:Array[Byte], b0:Int, binc:Int, c:Array[Byte], c0:Int, cinc:Int, n:Int):Byte = {
     var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
     while (ci < cend) {
       c(ci) = if (a(ai) < b(bi)) 1 else 0;  ai += ainc; bi += binc;  ci += cinc
@@ -1548,7 +1551,7 @@ object LMat {
     0
   }
   
-  def vecGE(a:Array[Long], a0:Int, ainc:Int, b:Array[Long], b0:Int, binc:Int, c:Array[Long], c0:Int, cinc:Int, n:Int):Long = {
+  def vecGE(a:Array[Byte], a0:Int, ainc:Int, b:Array[Byte], b0:Int, binc:Int, c:Array[Byte], c0:Int, cinc:Int, n:Int):Byte = {
     var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
     while (ci < cend) {
       c(ci) = if (a(ai) >= b(bi)) 1 else 0;  ai += ainc; bi += binc;  ci += cinc
@@ -1556,7 +1559,7 @@ object LMat {
     0
   }
  
-  def vecLE(a:Array[Long], a0:Int, ainc:Int, b:Array[Long], b0:Int, binc:Int, c:Array[Long], c0:Int, cinc:Int, n:Int):Long = {
+  def vecLE(a:Array[Byte], a0:Int, ainc:Int, b:Array[Byte], b0:Int, binc:Int, c:Array[Byte], c0:Int, cinc:Int, n:Int):Byte = {
     var ai = a0; var bi = b0; var ci = c0; var cend = c0 + n
     while (ci < cend) {
       c(ci) = if (a(ai) <= b(bi)) 1 else 0;  ai += ainc; bi += binc;  ci += cinc
@@ -1564,7 +1567,7 @@ object LMat {
     0
   }
  
-  def lexcomp(a:LMat, inds:IMat):(Int, Int) => Int = {
+  def lexcomp(a:BMat, inds:IMat):(Int, Int) => Int = {
   	val aa = a.data
   	val nr = a.nrows
   	val ii = inds.data
@@ -1591,7 +1594,7 @@ object LMat {
   	}
   }
   
-  def isortlex(a:LMat, asc:Boolean):IMat = {
+  def isortlex(a:BMat, asc:Boolean):IMat = {
   	val out = IMat.newOrCheckIMat(a.nrows, 1, null, a.GUID, "sortlex".hashCode)
   	val compp = lexcomp(a, out)
   	DenseMat._isortlex(a, asc, out, compp)
@@ -1611,34 +1614,34 @@ object LMat {
   val vecGEFun = (vecGE _)
   val vecLEFun = (vecLE _)
   
-  val gtFun = (x:Long, y:Long) => if (x > y) 1 else 0
-  val geFun = (x:Long, y:Long) => if (x >= y) 1 else 0
-  val ltFun = (x:Long, y:Long) => if (x < y) 1 else 0
-  val leFun = (x:Long, y:Long) => if (x <= y) 1 else 0
-  val eqFun = (x:Long, y:Long) => if (x == y) 1 else 0
-  val neFun = (x:Long, y:Long) => if (x != y) 1 else 0
+  val gtFun = (x:Byte, y:Byte) => if (x > y) 1 else 0
+  val geFun = (x:Byte, y:Byte) => if (x >= y) 1 else 0
+  val ltFun = (x:Byte, y:Byte) => if (x < y) 1 else 0
+  val leFun = (x:Byte, y:Byte) => if (x <= y) 1 else 0
+  val eqFun = (x:Byte, y:Byte) => if (x == y) 1 else 0
+  val neFun = (x:Byte, y:Byte) => if (x != y) 1 else 0
   
-  val maxFun = (x:Long, y:Long) => math.max(x, y)
-  val minFun = (x:Long, y:Long) => math.min(x, y)
-  val sumFun = (x:Long, y:Long) => x + y
-  val idFun = (x:Long) => x
+  val maxFun = (x:Byte, y:Byte) => math.max(x, y)
+  val minFun = (x:Byte, y:Byte) => math.min(x, y)
+  val sumFun = (x:Byte, y:Byte) => x + y
+  val idFun = (x:Byte) => x
   
-  val gtPred = (x:Long, y:Long) => (x > y)
-  val ltPred = (x:Long, y:Long) => (x < y)
+  val gtPred = (x:Byte, y:Byte) => (x > y)
+  val ltPred = (x:Byte, y:Byte) => (x < y)
 
   
-  def lelem(x:Long):LMat = {
-    val out = LMat.newOrCheckLMat(1,1, null, x.##, "lelem".##)
+  def belem(x:Byte):BMat = {
+    val out = BMat.newOrCheckBMat(1,1, null, x.##, "lelem".##)
     out.data(0) = x
     out
   }
   
-  def newOrCheckLMat(nr:Int, nc:Int, omat:Mat):LMat = {
+  def newOrCheckBMat(nr:Int, nc:Int, omat:Mat):BMat = {
     if (omat.asInstanceOf[AnyRef] == null || (omat.nrows == 0 && omat.ncols == 0)) {
-      LMat(nr, nc)
+      BMat(nr, nc)
     } else {
       omat match {
-        case outmat:LMat => if (outmat.nrows != nr || outmat.ncols != nc) {
+        case outmat:BMat => if (outmat.nrows != nr || outmat.ncols != nc) {
         outmat.recycle(nr, nc, 0)
       } else {
       	outmat
@@ -1647,120 +1650,120 @@ object LMat {
     }
 	}
   
-  def newOrCheckLMat(dims:Array[Int], out:Mat):LMat = {
-    if (out.asInstanceOf[AnyRef] != null && ND.checkDims("LMat:NewOrCheckLMat", dims, out.dims.data)) {
-      out.asInstanceOf[LMat]
+  def newOrCheckBMat(dims:Array[Int], out:Mat):BMat = {
+    if (out.asInstanceOf[AnyRef] != null && ND.checkDims("BMat:NewOrCheckBMat", dims, out.dims.data)) {
+      out.asInstanceOf[BMat]
     } else {
-      LMat.make(dims)
+      BMat.make(dims)
     }
   }
   
-  def newOrCheckLMat(dims:IMat, out:Mat):LMat = newOrCheckLMat(dims.data, out);
+  def newOrCheckBMat(dims:IMat, out:Mat):BMat = newOrCheckBMat(dims.data, out);
 
   
-  def newOrCheckLMat(nr:Int, nc:Int, outmat:Mat, matGuid:Long, opHash:Int):LMat = {
+  def newOrCheckBMat(nr:Int, nc:Int, outmat:Mat, matGuid:Long, opHash:Int):BMat = {
     if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
-      newOrCheckLMat(nr, nc, outmat)
+      newOrCheckBMat(nr, nc, outmat)
     } else {
       val key = (matGuid, opHash)
       val res = Mat.cache2(key)
       if (res != null) {
-      	newOrCheckLMat(nr, nc, res)
+      	newOrCheckBMat(nr, nc, res)
       } else {
-        val omat = newOrCheckLMat(nr, nc, null)
+        val omat = newOrCheckBMat(nr, nc, null)
         Mat.cache2put(key, omat)
         omat
       }
     }
   }
   
-   def newOrCheckLMat(dims:Array[Int], out:Mat, matGuid:Long, opHash:Int):LMat = {
+   def newOrCheckBMat(dims:Array[Int], out:Mat, matGuid:Long, opHash:Int):BMat = {
     if (out.asInstanceOf[AnyRef] != null || !Mat.useCache) {
-      newOrCheckLMat(dims, out)
+      newOrCheckBMat(dims, out)
     } else {
       val key = (matGuid, opHash)
       val res = Mat.cache2(key)
       if (res != null) {
-        newOrCheckLMat(dims, res)
+        newOrCheckBMat(dims, res)
       } else {
-        val omat = newOrCheckLMat(dims, null)
+        val omat = newOrCheckBMat(dims, null)
         Mat.cache2put(key, omat)
         omat
       }
     }
   }
   
-  def newOrCheckLMat(dims:IMat, out:Mat, matGuid:Long, opHash:Int):LMat = newOrCheckLMat(dims.data, out, matGuid, opHash);
+  def newOrCheckBMat(dims:IMat, out:Mat, matGuid:Long, opHash:Int):BMat = newOrCheckBMat(dims.data, out, matGuid, opHash);
 
   
-  def newOrCheckLMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, opHash:Int):LMat = {
+  def newOrCheckBMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, opHash:Int):BMat = {
     if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
-      newOrCheckLMat(nr, nc, outmat)
+      newOrCheckBMat(nr, nc, outmat)
     } else {
       val key = (guid1, guid2, opHash)
       val res = Mat.cache3(key)
       if (res != null) {
-      	newOrCheckLMat(nr, nc, res)
+      	newOrCheckBMat(nr, nc, res)
       } else {
-        val omat = newOrCheckLMat(nr, nc, null)
+        val omat = newOrCheckBMat(nr, nc, null)
         Mat.cache3put(key, omat)
         omat
       }
     }
   }
   
-    def newOrCheckLMat(dims:Array[Int], out:Mat, guid1:Long, guid2:Long, opHash:Int):LMat = {
+    def newOrCheckBMat(dims:Array[Int], out:Mat, guid1:Long, guid2:Long, opHash:Int):BMat = {
     if (out.asInstanceOf[AnyRef] != null || !Mat.useCache) {
-      newOrCheckLMat(dims, out)
+      newOrCheckBMat(dims, out)
     } else {
       val key = (guid1, guid2, opHash)
       val res = Mat.cache3(key)
       if (res != null) {
-        newOrCheckLMat(dims, res)
+        newOrCheckBMat(dims, res)
       } else {
-        val omat = newOrCheckLMat(dims, null)
+        val omat = newOrCheckBMat(dims, null)
         Mat.cache3put(key, omat)
         omat
       }
     }
   }
   
-  def newOrCheckLMat(dims:IMat, out:Mat, guid1:Long, guid2:Long, opHash:Int):LMat = newOrCheckLMat(dims.data, out, guid1, guid2, opHash);
+  def newOrCheckBMat(dims:IMat, out:Mat, guid1:Long, guid2:Long, opHash:Int):BMat = newOrCheckBMat(dims.data, out, guid1, guid2, opHash);
 
     
-  def newOrCheckLMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):LMat = {
+  def newOrCheckBMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):BMat = {
     if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
-      newOrCheckLMat(nr, nc, outmat)
+      newOrCheckBMat(nr, nc, outmat)
     } else {
       val key = (guid1, guid2, guid3, opHash)
       val res = Mat.cache4(key)
       if (res != null) {
-      	newOrCheckLMat(nr, nc, res)
+      	newOrCheckBMat(nr, nc, res)
       } else {
-        val omat = newOrCheckLMat(nr, nc, null)
+        val omat = newOrCheckBMat(nr, nc, null)
         Mat.cache4put(key, omat)
         omat
       }
     }
   }
   
-   def newOrCheckLMat(dims:Array[Int], out:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):LMat = {
+   def newOrCheckBMat(dims:Array[Int], out:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):BMat = {
     if (out.asInstanceOf[AnyRef] != null || !Mat.useCache) {
-      newOrCheckLMat(dims, out)
+      newOrCheckBMat(dims, out)
     } else {
       val key = (guid1, guid2, guid3, opHash)
       val res = Mat.cache4(key)
       if (res != null) {
-        newOrCheckLMat(dims, res)
+        newOrCheckBMat(dims, res)
       } else {
-        val omat = newOrCheckLMat(dims, null)
+        val omat = newOrCheckBMat(dims, null)
         Mat.cache4put(key, omat)
         omat
       }
     }
   }
   
-  def newOrCheckLMat(dims:IMat, out:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):LMat = newOrCheckLMat(dims.data, out, guid1, guid2, guid3, opHash);
+  def newOrCheckBMat(dims:IMat, out:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):BMat = newOrCheckBMat(dims.data, out, guid1, guid2, guid3, opHash);
 
 }
 

@@ -1014,6 +1014,15 @@ object Mat {
     }
   }
   
+ def copyToByteArray[@specialized(Double, Float, Long, Byte, Short) T](data:Array[T], i0:Int, idata:Array[Byte], d0:Int, n:Int)
+  (implicit numeric : Numeric[T]) = {
+    var i = 0 
+    while (i < n) {
+      idata(i+d0) = numeric.toInt(data(i+i0)).toByte;
+      i += 1
+    }
+  }
+  
   def copyListToFloatArray[T](a:List[T], b:Array[Float])(implicit numeric : Numeric[T]) = {
     var i = 0; 
     var todo = a.iterator
