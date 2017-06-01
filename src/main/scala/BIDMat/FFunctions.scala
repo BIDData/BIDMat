@@ -500,7 +500,7 @@ object FFunctions {
 			vfn:(Int, Array[Float], Array[Float], Array[Float]) => Unit, 
 			efn:(Float, Float)=>Float, nflops:Long):FMat = {
 					val out = FMat.newOrCheckFMat(maxdims(a.dims, b.dims), omat, a.GUID, b.GUID, vfn.##, efn.##);
-					if (!Mat.useMKLRand) {
+					if (!Mat.useMKL || !ND.compareDims(a.dims.data, b.dims.data)) {
 						if (efn == null) {
 							throw new RuntimeException("no Scala builtin version of this math function, sorry")
 						} 
@@ -517,7 +517,7 @@ object FFunctions {
 			vfn:(Int, Array[Float], Float, Array[Float]) => Unit, 
 			efn:(Float, Float)=>Float, nflops:Long):FMat = {
 					val out = FMat.newOrCheckFMat(a.dims, omat, a.GUID, b.##, vfn.##, efn.##)
-							if (!Mat.useMKLRand) {
+							if (!Mat.useMKL) {
 								if (efn == null) {
 									throw new RuntimeException("no Scala builtin version of this math function, sorry")
 								} 

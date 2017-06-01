@@ -1719,7 +1719,7 @@ object DMat {
   
   def apply(x:Mat):DMat = {
     val out:DMat = x match {
-      case _:GMat | _:GDMat | _:FMat | _:IMat | _:LMat | _:SDMat => DMat.newOrCheckDMat(x.dims, null, x.GUID, "DMat".##);
+      case _:GMat | _:GDMat | _:FMat | _:IMat | _:LMat | _:BMat | _:SDMat => DMat.newOrCheckDMat(x.dims, null, x.GUID, "DMat".##);
       case ff:DMat => ff;
       case dd:DenseMat[Double] @ unchecked => {val out = new DMat(dd.dims.data, dd._data); out.setGUID(dd.GUID); out}
       case _ => throw new RuntimeException("DMat apply unknown argument");
@@ -1731,6 +1731,7 @@ object DMat {
       case ff:FMat => {Mat.copyToDoubleArray(ff.data, 0, out.data, 0, ff.length)}
       case ii:IMat => {Mat.copyToDoubleArray(ii.data, 0, out.data, 0, ii.length)}
       case ii:LMat => {Mat.copyToDoubleArray(ii.data, 0, out.data, 0, ii.length)}
+      case ii:BMat => {Mat.copyToDoubleArray(ii.data, 0, out.data, 0, ii.length)}
       case ss:SDMat => ss.full(out)
       case dd:DenseMat[Float] @ unchecked => {}
     }

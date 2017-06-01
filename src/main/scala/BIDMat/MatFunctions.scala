@@ -172,6 +172,32 @@ object MatFunctions {
 
     }
   }
+  
+  def unsignedFloat(a:BMat, omat:Mat):FMat = {
+    val out = FMat.newOrCheckFMat(a.dims, omat, a.GUID, "unsignedFloat".##);
+    val len = out.length;
+    var i = 0;
+    while (i < len) {
+      out.data(i) = (a.data(i) & 0xff).toFloat;
+      i += 1
+    }
+    out
+  }
+  
+  def unsignedFloat(a:BMat):FMat = unsignedFloat(a, null);
+  
+  def unsignedInt(a:BMat, omat:Mat):IMat = {
+    val out = IMat.newOrCheckIMat(a.dims, omat, a.GUID, "unsignedInt".##);
+    val len = out.length;
+    var i = 0;
+    while (i < len) {
+      out.data(i) = a.data(i) & 0xff;
+      i += 1
+    }
+    out
+  }
+  
+ def unsignedInt(a:BMat):IMat = unsignedInt(a, null);
 
     /** Convert to the corresponding long type */
   def long(a:FMat):LMat = {
@@ -2038,6 +2064,10 @@ object MatFunctions {
   def loadLMat(fname:String) = HMat.loadLMat(fname)  
   def loadLMat(fname:String, omat:Mat) = HMat.loadLMat(fname, omat)  
   def loadLMat(fname:String, omat:Mat, compressed:Int) = HMat.loadLMat(fname, omat, compressed)
+  
+  def loadBMat(fname:String) = HMat.loadBMat(fname)  
+  def loadBMat(fname:String, omat:Mat) = HMat.loadBMat(fname, omat)  
+  def loadBMat(fname:String, omat:Mat, compressed:Int) = HMat.loadBMat(fname, omat, compressed)
       
   def loadSBMat(fname:String) = HMat.loadSBMat(fname)   
   def loadSBMat(fname:String, compressed:Int) = HMat.loadSBMat(fname, compressed)
@@ -2062,6 +2092,9 @@ object MatFunctions {
   
   def saveIMat(fname:String, m:IMat) = HMat.saveIMat(fname, m)    
   def saveIMat(fname:String, m:IMat, compressed:Int) = HMat.saveIMat(fname, m, compressed)
+  
+  def saveBMat(fname:String, m:BMat) = HMat.saveBMat(fname, m)    
+  def saveBMat(fname:String, m:BMat, compressed:Int) = HMat.saveBMat(fname, m, compressed)
   
   def saveLMat(fname:String, m:LMat) = HMat.saveLMat(fname, m)    
   def saveLMat(fname:String, m:LMat, compressed:Int) = HMat.saveLMat(fname, m, compressed) 

@@ -2464,7 +2464,7 @@ object FMat {
 
   def apply(x:Mat):FMat = {
     val out:FMat = x match {
-      case _:GMat | _:GDMat | _:GIMat | _:CLMat | _:DMat | _:IMat | _:LMat | _:SMat => FMat.newOrCheckFMat(x.dims, null, x.GUID, "FMat".##);
+      case _:GMat | _:GDMat | _:GIMat | _:CLMat | _:DMat | _:IMat | _:LMat | _:BMat | _:SMat => FMat.newOrCheckFMat(x.dims, null, x.GUID, "FMat".##);
       case ff:FMat => ff;
       case dd:DenseMat[Float] @ unchecked => {val out = new FMat(dd.dims.data, dd._data); out.setGUID(dd.GUID); out}
       case _ => throw new RuntimeException("FMat apply unknown argument");
@@ -2478,6 +2478,7 @@ object FMat {
       case dd:DMat => {Mat.copyToFloatArray(dd.data, 0, out.data, 0, dd.length)}
       case ii:IMat => {Mat.copyToFloatArray(ii.data, 0, out.data, 0, ii.length)}
       case ii:LMat => {Mat.copyToFloatArray(ii.data, 0, out.data, 0, ii.length)}
+      case ii:BMat => {Mat.copyToFloatArray(ii.data, 0, out.data, 0, ii.length)}
       case ss:SMat => ss.full(out)
       case dd:DenseMat[Float] @ unchecked => {}
     }
