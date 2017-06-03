@@ -38,6 +38,7 @@ __device__ float op_max(float a, float b) {return max(a,b);}
 __device__ float op_min(float a, float b) {return min(a,b);}
 __device__ float op_atan2(float a, float b) {return atan2f(a, b);}
 __device__ float op_pow(float a, float b) {return powf(a, b);}
+__device__ float op_ifpos(float a, float b) {return (a > 0) ? b : 0;}
 
 __device__ int iop_add(int a, int b) {return a+b;}
 __device__ int iop_sub(int a, int b) {return a-b;}
@@ -79,6 +80,7 @@ __device__ double dop_max(double a, double b) {return max(a,b);}
 __device__ double dop_min(double a, double b) {return min(a,b);}
 __device__ double dop_atan2(double a, double b) {return atan2(a, b);}
 __device__ double dop_pow(double a, double b) {return pow(a, b);}
+__device__ double dop_ifpos(double a, double b) {return (a > 0) ? b : 0;}
 
 // Check reducevec if these ever get changed.
 __device__ const optype operators[] = {
@@ -95,7 +97,8 @@ __device__ const optype operators[] = {
     op_max,
     op_min,
     op_atan2,
-    op_pow};
+    op_pow,
+    op_ifpos};
 
 __device__ const ioptype ioperators[] = {
     iop_add, 
@@ -139,7 +142,8 @@ __device__ const doptype doperators[] = {
     dop_max,
     dop_min,
     dop_atan2,
-    dop_pow};
+    dop_pow,
+    dop_ifpos};
 
 __device__ float fn_abs(float a) {return abs(a);}
 __device__ float fn_exp(float a) {return expf(a);}

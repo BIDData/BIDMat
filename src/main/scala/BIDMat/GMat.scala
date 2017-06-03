@@ -1969,6 +1969,7 @@ object GMat {
 	  val op_min=11
 	  val op_atan2=12
 	  val op_pow=13
+	  val op_ifpos=14
   }  
   
   object TransF {
