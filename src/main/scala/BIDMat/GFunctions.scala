@@ -55,6 +55,7 @@ object GFunctions {
     initCUDArng(getGPU)
     GSMat.cusparseContextsInitialized = false
     GSMat.cusparseDescrsInitialized = false
+    GFilter.cudnnContextsInitialized = false;
     jcuda.jcublas.JCublas.cublasInit();
     Mat.clearCaches
   }
