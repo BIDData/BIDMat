@@ -2059,13 +2059,15 @@ object GMat {
   }   
   
   def make(dims:Array[Int]):GMat = {
+  	var err = cudaGetLastError();
+  	if (err != 0) throw new RuntimeException("Weird previous error in GMat.make " + cudaGetErrorString(err));
 	  val len = dims.reduce(_*_);
     val retv = new GMat(dims, new Pointer, len);
     if (Mat.debugMem) {
       println("GMat %d, %d %f" format (len, SciFunctions.getGPU, SciFunctions.GPUmem._1))
       if (len > Mat.debugMemThreshold) throw new RuntimeException("GMat alloc too large");
     }
-    var err = if (1L*len*Sizeof.FLOAT > Mat.hostAllocSize) {
+    err = if (1L*len*Sizeof.FLOAT > Mat.hostAllocSize) {
       cudaMallocHost(retv.pdata, 1L*len*Sizeof.FLOAT);
     } else {
       cudaMalloc(retv.pdata, 1L*len*Sizeof.FLOAT);
