@@ -364,7 +364,7 @@ object HMat {
 	  out;
   }
   
-    def loadFND(fname:String, omat:Mat, compressed:Int):FMat = {
+  def loadFND(fname:String, omat:Mat, compressed:Int):FMat = {
 	  if (fname.startsWith("hdfs:")) {
 		  HDFSreadMat(fname, omat).asInstanceOf[FMat];
     } else {
@@ -456,7 +456,7 @@ object HMat {
   }
   
   def loadBMat(gin:DataInput, omat:Mat):BMat = {
-	  val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder);
+	  val buff = ByteBuffer.allocate(16).order(byteOrder);
 	  val hints = new Array[Int](1);
 	  readSomeInts(gin, hints, buff, 1);
 	  val ftype = hints(0);
@@ -501,7 +501,7 @@ object HMat {
   def loadBND(fname:String, compressed:Int):BMat = loadBND(fname, null, compressed);
     
   def loadBND(gin:DataInput, omat:Mat):BMat  = {
-    val buff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder);
+    val buff = ByteBuffer.allocate(32).order(byteOrder);
     val hints = new Array[Int](1);
     readSomeInts(gin, hints, buff, 1);
     loadBNDX(gin, omat, buff, hints(0));
