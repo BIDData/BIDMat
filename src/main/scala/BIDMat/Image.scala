@@ -9,15 +9,21 @@ import java.awt.Graphics2D
 import java.awt.RenderingHints
 import javax.swing._
 import javax.swing.WindowConstants._
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 @SerialVersionUID(100L)
 class Image(val img:BufferedImage) extends Serializable {
   
-  var frame:JFrame = null;  
+  var frame:JFrame = null; 
+  var ints:Array[Int] = null;
+  var updating:Boolean = false;
+  var fut:Future[_] = null;
     
-  final val width = img.getWidth
+  final val width = img.getWidth;
   
-  final val height = img.getHeight
+  final val height = img.getHeight;
   
   def toIMat:IMat = {
     val mat = IMat(width,height)
@@ -29,7 +35,7 @@ class Image(val img:BufferedImage) extends Serializable {
     val height = img.getHeight;
     val width = img.getWidth;
     val mat = FMat.make(Array(4, width,  height));
-    val ints = new Array[Int](height*width);
+    if (ints.asInstanceOf[AnyRef] == null) ints = new Array[Int](height*width);
     img.getRGB(0, 0, width, height, ints, 0, width);      // Should be ARGB
     val mdata = mat.data;
     var i = 0;
@@ -51,12 +57,73 @@ class Image(val img:BufferedImage) extends Serializable {
   } 
   
   def redraw(mat:FMat):Image = {    
-    val width = mat.dims(1);
-    val height = mat.dims(2);
-    img.getRaster.setPixels(0, 0, mat.dims(1), mat.dims(2), mat.data);
-    repaint
+    val dd = mat.dims.length;
+    val width = if (dd > 2) mat.dims(1) else mat.dims(0);
+    val height = if (dd > 2) mat.dims(2) else mat.dims(1);
+    if (ints.asInstanceOf[AnyRef] == null) ints = new Array[Int](height*width);
+    val mdata = mat.data;
+    val mult = 1+256+65536;
+    var i = 0;
+    if (dd == 2 || mat.dims(0) == 1) {
+    	while (i < height*width) {
+    		ints(i) = math.min(255,mdata(i).asInstanceOf[Int]) * mult;
+    		i += 1;
+    	}
+    } else if (mat.dims(0) == 3) {
+    	while (i < height*width) {
+    		ints(i) = ((((
+    				(mdata(3*i).asInstanceOf[Int] & 0xff) << 8) +               // R
+    				(mdata(3*i+1).asInstanceOf[Int] & 0xff)) << 8) +             // G
+    				(mdata(3*i+2).asInstanceOf[Int] & 0xff));                      // B
+    		i += 1;
+    	}
+    } else if (mat.dims(0) == 4) {
+    	while (i < height*width) {
+    		ints(i) = ((((((
+    				(mdata(4*i+3).asInstanceOf[Int] & 0xff) << 8) +           // A
+    				(mdata(4*i+0).asInstanceOf[Int] & 0xff)) << 8) +           // R
+    				(mdata(4*i+1).asInstanceOf[Int] & 0xff)) << 8) +             // G
+    				(mdata(4*i+2).asInstanceOf[Int] & 0xff));                      // B
+    		i += 1;
+    	}
+    }
+    img.setRGB(0, 0, width, height, ints, 0, width);
+    repaint;
     this;
   }
+  
+  def animate(fmat:FMat, rate:Float):Image = {
+    updating = true;
+    val runme = new Runnable {
+      def run() = {
+        while (updating) {
+        	redraw(fmat);
+        	Thread.sleep((1000f/rate).toInt);
+        }        
+      }
+    }
+    fut = Image.getService.submit(runme);
+    this;
+  }
+  
+  def animate(fmat:FMat):Image = animate(fmat, 1f);
+  
+  def animate(fn:()=>FMat, rate:Float):Image = {
+    updating = true;
+    val runme = new Runnable {
+      def run() = {
+        while (updating) {
+        	redraw(fn());
+        	Thread.sleep((1000f/rate).toInt);
+        }        
+      }
+    }
+    fut = Image.getService.submit(runme);
+    this;
+  }
+  
+    
+  def animate(fn:()=>FMat):Image = animate(fn, 1f);
   
   def repaint = {
     if (frame != null) {
@@ -140,47 +207,75 @@ object Image {
   
   
   def apply(mat:FMat):Image = { 
-      val dd = mat.dims.length;
-		  val width = if (dd > 2) mat.dims(1) else mat.dims(0);
-		  val height = if (dd > 2) mat.dims(2) else mat.dims(1);
-		  val ints = new Array[Int](width*height);
-		  val mdata = mat.data;
-		  val mult = 1+256+65536;
-		  var i = 0;
-		  val img:BufferedImage = 
-		  		if (dd == 2 || mat.dims(0) == 1) {
-		  			val im = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
-		  			while (i < height*width) {
-		  				ints(i) = math.min(255,mdata(i).asInstanceOf[Int]) * mult;
-		  				i += 1;
-		  			}
-		  			im;
-		  		} else if (mat.dims(0) == 3) {
-		  			val im = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-		  			while (i < height*width) {
-		  				ints(i) = ((((
-		  				    (mdata(3*i).asInstanceOf[Int] & 0xff) << 8) +               // R
-		  						(mdata(3*i+1).asInstanceOf[Int] & 0xff)) << 8) +             // G
-		  						(mdata(3*i+2).asInstanceOf[Int] & 0xff));                      // B
-		  				i += 1;
-		  			}
-		  			im; 
-		  		} else if (mat.dims(0) == 4) {
-		  			val im = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-		  			while (i < height*width) {
-		  				ints(i) = ((((((
-		  				    (mdata(4*i+3).asInstanceOf[Int] & 0xff) << 8) +           // A
-		  						(mdata(4*i+0).asInstanceOf[Int] & 0xff)) << 8) +           // R
-		  						(mdata(4*i+1).asInstanceOf[Int] & 0xff)) << 8) +             // G
-		  						(mdata(4*i+2).asInstanceOf[Int] & 0xff));                      // B
-		  				i += 1;
-		  			}
-		  			im; 
-		  		} else {
-		  			throw new RuntimeException("Image from FMat dimension not recognized")
-		  		}
-		  img.setRGB(0, 0, width, height, ints, 0, width);
-		  new Image(img);
+    val dd = mat.dims.length;
+    val width = if (dd > 2) mat.dims(1) else mat.dims(0);
+    val height = if (dd > 2) mat.dims(2) else mat.dims(1);
+    val ints = new Array[Int](width*height);
+    val mdata = mat.data;
+    val mult = 1+256+65536;
+    var i = 0;
+    val img:BufferedImage = 
+    		if (dd == 2 || mat.dims(0) == 1) {
+    			val im = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+    			while (i < height*width) {
+    				ints(i) = math.min(255,mdata(i).asInstanceOf[Int]) * mult;
+    				i += 1;
+    			}
+    			im;
+    		} else if (mat.dims(0) == 3) {
+    			val im = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+    			while (i < height*width) {
+    				ints(i) = ((((
+    						(mdata(3*i).asInstanceOf[Int] & 0xff) << 8) +               // R
+    						(mdata(3*i+1).asInstanceOf[Int] & 0xff)) << 8) +             // G
+    						(mdata(3*i+2).asInstanceOf[Int] & 0xff));                      // B
+    				i += 1;
+    			}
+    			im; 
+    		} else if (mat.dims(0) == 4) {
+    			val im = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+    			while (i < height*width) {
+    				ints(i) = ((((((
+    						(mdata(4*i+3).asInstanceOf[Int] & 0xff) << 8) +           // A
+    						(mdata(4*i+0).asInstanceOf[Int] & 0xff)) << 8) +           // R
+    						(mdata(4*i+1).asInstanceOf[Int] & 0xff)) << 8) +             // G
+    						(mdata(4*i+2).asInstanceOf[Int] & 0xff));                      // B
+    				i += 1;
+    			}
+    			im; 
+    		} else {
+    			throw new RuntimeException("Image from FMat dimension not recognized")
+    		}
+    img.setRGB(0, 0, width, height, ints, 0, width);
+    val im = new Image(img);
+    im.ints =  ints;
+    im;
   }
+  
+  def animate(fmat:FMat, rate:Float):Image = {
+    val img = Image(fmat);
+    img.show;
+    img.animate(fmat, rate);
+    img;
+  }
+  
+  def animate(fmat:FMat):Image = animate(fmat, 1f);
+  
+  def animate(fn:()=>FMat, rate:Float):Image = {
+    val img = Image(fn());
+    img.show;
+    img.animate(fn, rate);
+    img;
+  }
+  
+  def animate(fn:()=>FMat):Image = animate(fn, 1f);
+  
+  var execService:ExecutorService = null;
 
+  def getService:ExecutorService = {
+    if (execService.asInstanceOf[ExecutorService] == null) {
+      execService = Executors.newFixedThreadPool(8);
+    }
+    execService;
+  }
 }

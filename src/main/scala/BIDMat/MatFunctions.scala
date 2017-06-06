@@ -2146,6 +2146,12 @@ object MatFunctions {
   
   def show (mat:FMat, title:String):BufferedImage = {show(Image(mat), title)}
   
+  def animate(mat:FMat) = Image.animate(mat);
+  def animate(mat:FMat, rate:Float) = Image.animate(mat, rate);
+  
+  def animate(fn:()=>FMat) = Image.animate(fn);
+  def animate(fn:()=>FMat, rate:Float) = Image.animate(fn, rate);
+  
   def FFilter1D(w:Int, nstride:Int, npad:Int, noutpad:Int):FFilter = FFilter.FFilter1D(w, nstride, npad, noutpad);  
   def FFilter1D(w:Int, nstride:Int, npad:Int):FFilter = FFilter.FFilter1D(w, nstride, npad, 0);
   def FFilter2D(w:Int, h:Int, nstride:Int, npad:Int, noutpad:Int):FFilter = FFilter.FFilter2D(w, h, nstride, npad, noutpad);

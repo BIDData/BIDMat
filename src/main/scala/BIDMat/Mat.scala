@@ -1,8 +1,13 @@
 package BIDMat
-import scala.collection.mutable.HashMap
-import java.lang.ref._
-import jcuda.NativePointerObject
-import edu.berkeley.bid.UTILS
+import scala.collection.mutable.HashMap;
+import java.lang.ref._;
+import jcuda.NativePointerObject;
+import edu.berkeley.bid.UTILS;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.Handler;
+import java.util.logging.FileHandler;
+import java.util.logging.SimpleFormatter;
 
 @SerialVersionUID(100L)
 class Mat(val _dims:Array[Int]) extends ND with Serializable {
@@ -597,6 +602,26 @@ abstract class Pair(omat:Mat, mat:Mat) extends Serializable {
 
 object Mat {
   import Ordered._
+  
+  System.setProperty("java.util.logging.SimpleFormatter.format", "%1$tH:%1$tM:%1$tS %4$s: %5$s%n");
+  
+  var logfile = "log.txt";
+  val consoleLogger = Logger.getLogger("BIDMat console logging"); 
+  val fileLogger = Logger.getLogger("BIDMat file logging"); 
+
+  var fileHandler:Handler = null;
+  
+  def getFileLogger:Logger = {
+    if (fileHandler.asInstanceOf[AnyRef] == null) {
+      fileHandler = new FileHandler(logfile);
+      val formatter = new SimpleFormatter();  
+      fileHandler.setFormatter(formatter); 
+    }
+    fileLogger.addHandler(fileHandler);
+    fileLogger.setUseParentHandlers(false);
+    fileLogger;
+  }
+
   
   var termWidth = 80;
   var youHaveBeenWarned = false;
