@@ -11,6 +11,12 @@ class MyPlot extends Plot {
   var running:Boolean = false;
 }
 
+class MyHistogram extends Histogram {
+  var fut:Future[_] = null;
+  var frame:PlotFrame = null;
+  var running:Boolean = false;
+}
+
 object Plotting { 
   var ifigure:Int = 0;
   val marksmat = Array("points","dots","various");
@@ -39,8 +45,8 @@ object Plotting {
     val dataset = 0;
     val mats = fn().map(MatFunctions.cpu);
     _replot(mats, p, dataset, isconnected);
-    var pframe = new PlotFrame("Figure "+ifigure, p);
-  	pframe.setVisible(true);
+    p.frame = new PlotFrame("Figure "+ifigure, p);
+  	p.frame.setVisible(true);
   	p.running = true;
     val runme = new Runnable {
       override def run() = {
@@ -54,7 +60,6 @@ object Plotting {
     }
     ifigure += 1;
     p.fut = Image.getService.submit(runme);
-    p.frame = pframe;
     p;
   }
   
@@ -68,8 +73,8 @@ object Plotting {
     val dataset = 0;
     val mat = MatFunctions.cpu(fn());
     _replot(Array(mat), p, dataset, isconnected);
-    var pframe = new PlotFrame("Figure "+ifigure, p);
-  	pframe.setVisible(true);
+    p.frame = new PlotFrame("Figure "+ifigure, p);
+  	p.frame.setVisible(true);
   	p.running = true;
     val runme = new Runnable {
       override def run() = {
@@ -83,7 +88,6 @@ object Plotting {
     }
     ifigure += 1;
     p.fut = Image.getService.submit(runme);
-    p.frame = pframe;
     p;
   }
   
@@ -280,9 +284,44 @@ object Plotting {
   def livepsemilogy(fn:()=>Array[Mat], rate:Float) = _liveplot(fn, rate)(ylog=true, isconnected=false)
    
   
-  def hist(m:Mat, nbars:Int=10):BufferedImage = { 
-    import SciFunctions._
+  def hist(m:Mat, nbars:Int):BufferedImage = { 
     var p:Histogram = new Histogram
+    _hist(m, nbars, p);
+    ifigure += 1;
+    showGraphics(p);
+  }
+  
+  def hist(m:Mat):BufferedImage = hist(m, 10);
+  
+  
+  def hist(fn:()=>Mat, nbars:Int, rate:Float):MyHistogram = { 
+  	var p:MyHistogram = new MyHistogram;
+    _hist(MatFunctions.cpu(fn()), nbars, p);
+    p.frame = new PlotFrame("Figure "+ifigure, p);
+  	p.frame.setVisible(true);
+    p.running = true;
+    val runme = new Runnable {
+    	override def run() = {
+    		while (p.running) {
+    			Thread.sleep((1000/rate).toLong);
+    			val mat = MatFunctions.cpu(fn());
+    			p.clear(false);
+    			_hist(mat, nbars, p);   			
+    			p.repaint();
+    		}
+    	}
+    }
+    ifigure += 1;
+    p.fut = Image.getService.submit(runme);
+    p
+  }
+  
+  def hist(fn:()=>Mat, nbars:Int):MyHistogram = hist(fn, nbars, 1f);
+  
+  def hist(fn:()=>Mat):MyHistogram = hist(fn, 20, 1f);
+  
+  def _hist(m:Mat, nbars:Int, p:Histogram) = {
+    import SciFunctions._
     val dataset = 0
     if (m.nrows == 1 || m.ncols == 1) { 
     	m match { 
@@ -305,8 +344,6 @@ object Plotting {
     	  for (i <- 0 until m.length) p.addPoint(dataset, mi(i))
     	}
       }
-    }
-    ifigure += 1;
-    showGraphics(p);
+    }   
   }
 }
