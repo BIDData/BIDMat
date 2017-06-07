@@ -8,13 +8,13 @@ import java.util.concurrent.Future;
 class MyPlot extends Plot {
   var fut:Future[_] = null;
   var frame:PlotFrame = null;
-  var running:Boolean = false;
+  var done:Boolean = false;
 }
 
 class MyHistogram extends Histogram {
   var fut:Future[_] = null;
   var frame:PlotFrame = null;
-  var running:Boolean = false;
+  var done:Boolean = false;
 }
 
 object Plotting { 
@@ -47,10 +47,10 @@ object Plotting {
     _replot(mats, p, dataset, isconnected);
     p.frame = new PlotFrame("Figure "+ifigure, p);
   	p.frame.setVisible(true);
-  	p.running = true;
+  	p.done = false;
     val runme = new Runnable {
       override def run() = {
-        while (p.running) {
+        while (!p.done) {
         	Thread.sleep((1000/rate).toLong);
         	val mats = fn().map(MatFunctions.cpu);
         	for (i <- 0 until mats.length) p.clear(i);
@@ -75,10 +75,10 @@ object Plotting {
     _replot(Array(mat), p, dataset, isconnected);
     p.frame = new PlotFrame("Figure "+ifigure, p);
   	p.frame.setVisible(true);
-  	p.running = true;
+  	p.done = false;
     val runme = new Runnable {
       override def run() = {
-      	while (p.running) {
+      	while (!p.done) {
       		Thread.sleep((1000/rate).toLong);
       		val mat = MatFunctions.cpu(fn());
       		p.clear(0);
@@ -299,10 +299,10 @@ object Plotting {
     _hist(MatFunctions.cpu(fn()), nbars, p);
     p.frame = new PlotFrame("Figure "+ifigure, p);
   	p.frame.setVisible(true);
-    p.running = true;
+    p.done = false;
     val runme = new Runnable {
     	override def run() = {
-    		while (p.running) {
+    		while (!p.done) {
     			Thread.sleep((1000/rate).toLong);
     			val mat = MatFunctions.cpu(fn());
     			p.clear(false);
@@ -318,7 +318,7 @@ object Plotting {
   
   def hist(fn:()=>Mat, nbars:Int):MyHistogram = hist(fn, nbars, 1f);
   
-  def hist(fn:()=>Mat):MyHistogram = hist(fn, 20, 1f);
+  def hist(fn:()=>Mat):MyHistogram = hist(fn, 10, 1f);
   
   def _hist(m:Mat, nbars:Int, p:Histogram) = {
     import SciFunctions._

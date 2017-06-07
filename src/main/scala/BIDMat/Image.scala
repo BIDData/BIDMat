@@ -18,7 +18,7 @@ class Image(val img:BufferedImage) extends Serializable {
   
   var frame:JFrame = null; 
   var ints:Array[Int] = null;
-  var updating:Boolean = false;
+  var done:Boolean = false;
   var fut:Future[_] = null;
     
   final val width = img.getWidth;
@@ -93,10 +93,10 @@ class Image(val img:BufferedImage) extends Serializable {
   }
   
   def animate(fmat:FMat, rate:Float):Image = {
-    updating = true;
+    done = false;
     val runme = new Runnable {
       def run() = {
-        while (updating) {
+        while (!done) {
         	redraw(fmat);
         	Thread.sleep((1000f/rate).toInt);
         }        
@@ -109,10 +109,10 @@ class Image(val img:BufferedImage) extends Serializable {
   def animate(fmat:FMat):Image = animate(fmat, 1f);
   
   def animate(fn:()=>FMat, rate:Float):Image = {
-    updating = true;
+    done = false;
     val runme = new Runnable {
       def run() = {
-        while (updating) {
+        while (!done) {
         	redraw(fn());
         	Thread.sleep((1000f/rate).toInt);
         }        
