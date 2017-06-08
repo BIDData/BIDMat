@@ -605,18 +605,13 @@ object Mat {
   
   System.setProperty("java.util.logging.SimpleFormatter.format", "%1$tH:%1$tM:%1$tS %4$s: %5$s%n");
   
-  var logfile = "log.txt";
-  val consoleLogger = Logger.getLogger("BIDMat console logging"); 
-  val fileLogger = Logger.getLogger("BIDMat file logging"); 
-
-  var fileHandler:Handler = null;
+  val consoleLogger = Logger.getLogger("BIDMat console logging");  
   
-  def getFileLogger:Logger = {
-    if (fileHandler.asInstanceOf[AnyRef] == null) {
-      fileHandler = new FileHandler(logfile);
-      val formatter = new SimpleFormatter();  
-      fileHandler.setFormatter(formatter); 
-    }
+  def getFileLogger(logfile:String):Logger = {
+  	val fileHandler = new FileHandler(logfile);
+  	val formatter = new SimpleFormatter();  
+  	fileHandler.setFormatter(formatter); 
+    val fileLogger = Logger.getLogger("BIDMat file logging");
     fileLogger.addHandler(fileHandler);
     fileLogger.setUseParentHandlers(false);
     fileLogger;
