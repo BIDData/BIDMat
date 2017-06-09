@@ -173,8 +173,8 @@ object MatFunctions {
     }
   }
   
-  def unsignedFloat(a:BMat, omat:Mat):FMat = {
-    val out = FMat.newOrCheckFMat(a.dims, omat, a.GUID, "unsignedFloat".##);
+  def unsignedFloat(a:BMat, omat:Mat, forceCache:Boolean):FMat = {
+    val out = FMat.newOrCheckFMat(a.dims.data, omat, a.GUID, "unsignedFloat".##, forceCache);
     val len = out.length;
     var i = 0;
     while (i < len) {
@@ -184,10 +184,14 @@ object MatFunctions {
     out
   }
   
-  def unsignedFloat(a:BMat):FMat = unsignedFloat(a, null);
+  def unsignedFloat(a:BMat, omat:Mat):FMat = unsignedFloat(a, omat, false);
   
-  def unsignedInt(a:BMat, omat:Mat):IMat = {
-    val out = IMat.newOrCheckIMat(a.dims, omat, a.GUID, "unsignedInt".##);
+  def unsignedFloat(a:BMat, forceCache:Boolean):FMat = unsignedFloat(a, null, forceCache);
+  
+  def unsignedFloat(a:BMat):FMat = unsignedFloat(a, null, false);
+  
+  def unsignedInt(a:BMat, omat:Mat, forceCache:Boolean):IMat = {
+    val out = IMat.newOrCheckIMat(a.dims, omat, a.GUID, "unsignedInt".##, forceCache);
     val len = out.length;
     var i = 0;
     while (i < len) {
@@ -197,7 +201,11 @@ object MatFunctions {
     out
   }
   
- def unsignedInt(a:BMat):IMat = unsignedInt(a, null);
+  def unsignedInt(a:BMat, omat:Mat):IMat = unsignedInt(a, omat, false);
+  
+  def unsignedInt(a:BMat, forceCache:Boolean):IMat = unsignedInt(a, null, forceCache);
+  
+  def unsignedInt(a:BMat):IMat = unsignedInt(a, null, false);
 
     /** Convert to the corresponding long type */
   def long(a:FMat):LMat = {
