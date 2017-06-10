@@ -1661,8 +1661,8 @@ object BMat {
   def newOrCheckBMat(dims:IMat, out:Mat):BMat = newOrCheckBMat(dims.data, out);
 
   
-  def newOrCheckBMat(nr:Int, nc:Int, outmat:Mat, matGuid:Long, opHash:Int):BMat = {
-    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+  def newOrCheckBMat(nr:Int, nc:Int, outmat:Mat, matGuid:Long, opHash:Int, forceCache:Boolean):BMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || (!Mat.useCache && !forceCache)) {
       newOrCheckBMat(nr, nc, outmat)
     } else {
       val key = (matGuid, opHash)
@@ -1677,8 +1677,11 @@ object BMat {
     }
   }
   
-   def newOrCheckBMat(dims:Array[Int], out:Mat, matGuid:Long, opHash:Int):BMat = {
-    if (out.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+  def newOrCheckBMat(nr:Int, nc:Int, outmat:Mat, matGuid:Long, opHash:Int):BMat =
+      newOrCheckBMat(nr, nc, outmat, matGuid, opHash, false);
+  
+   def newOrCheckBMat(dims:Array[Int], out:Mat, matGuid:Long, opHash:Int, forceCache:Boolean):BMat = {
+    if (out.asInstanceOf[AnyRef] != null || (!Mat.useCache && !forceCache)) {
       newOrCheckBMat(dims, out)
     } else {
       val key = (matGuid, opHash)
@@ -1693,11 +1696,17 @@ object BMat {
     }
   }
   
-  def newOrCheckBMat(dims:IMat, out:Mat, matGuid:Long, opHash:Int):BMat = newOrCheckBMat(dims.data, out, matGuid, opHash);
-
+  def newOrCheckBMat(dims:Array[Int], outmat:Mat, matGuid:Long, opHash:Int):BMat =
+      newOrCheckBMat(dims, outmat, matGuid, opHash, false);
   
-  def newOrCheckBMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, opHash:Int):BMat = {
-    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+  def newOrCheckBMat(dims:IMat, out:Mat, matGuid:Long, opHash:Int):BMat = 
+    newOrCheckBMat(dims.data, out, matGuid, opHash, false);
+  
+  def newOrCheckBMat(dims:IMat, out:Mat, matGuid:Long, opHash:Int, forceCache:Boolean):BMat = 
+    newOrCheckBMat(dims.data, out, matGuid, opHash, forceCache);
+  
+  def newOrCheckBMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, opHash:Int, forceCache:Boolean):BMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || (!Mat.useCache && !forceCache)) {
       newOrCheckBMat(nr, nc, outmat)
     } else {
       val key = (guid1, guid2, opHash)
@@ -1712,8 +1721,11 @@ object BMat {
     }
   }
   
-    def newOrCheckBMat(dims:Array[Int], out:Mat, guid1:Long, guid2:Long, opHash:Int):BMat = {
-    if (out.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+  def newOrCheckBMat(nr:Int, nc:Int, outmat:Mat,guid1:Long, guid2:Long, opHash:Int):BMat =
+      newOrCheckBMat(nr, nc, outmat, guid1, guid2, opHash, false);
+  
+  def newOrCheckBMat(dims:Array[Int], out:Mat, guid1:Long, guid2:Long, opHash:Int, forceCache:Boolean):BMat = {
+    if (out.asInstanceOf[AnyRef] != null || (!Mat.useCache && !forceCache)) {
       newOrCheckBMat(dims, out)
     } else {
       val key = (guid1, guid2, opHash)
@@ -1728,43 +1740,58 @@ object BMat {
     }
   }
   
-  def newOrCheckBMat(dims:IMat, out:Mat, guid1:Long, guid2:Long, opHash:Int):BMat = newOrCheckBMat(dims.data, out, guid1, guid2, opHash);
-
+  def newOrCheckBMat(dims:Array[Int], outmat:Mat,guid1:Long, guid2:Long, opHash:Int):BMat =
+      newOrCheckBMat(dims, outmat, guid1, guid2, opHash, false);
+  
+  def newOrCheckBMat(dims:IMat, out:Mat, guid1:Long, guid2:Long, opHash:Int):BMat = 
+    newOrCheckBMat(dims.data, out, guid1, guid2, opHash, false);
+  
+  def newOrCheckBMat(dims:IMat, out:Mat, guid1:Long, guid2:Long, opHash:Int, forceCache:Boolean):BMat = 
+    newOrCheckBMat(dims.data, out, guid1, guid2, opHash, forceCache);
+  
+  def newOrCheckBMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int, forceCache:Boolean):BMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || (!Mat.useCache && !forceCache)) {
+      newOrCheckBMat(nr, nc, outmat)
+    } else {
+      val key = (guid1, guid2, guid3, opHash)
+      val res = Mat.cache4(key)
+      if (res != null) {
+      	newOrCheckBMat(nr, nc, res)
+      } else {
+        val omat = newOrCheckBMat(nr, nc, null)
+        Mat.cache4put(key, omat)
+        omat
+      }
+    }
+  }
+  
+  def newOrCheckBMat(nr:Int, nc:Int, outmat:Mat,guid1:Long, guid2:Long, guid3:Long, opHash:Int):BMat =
+      newOrCheckBMat(nr, nc, outmat, guid1, guid2, guid3, opHash, false);
+  
+   def newOrCheckBMat(dims:Array[Int], out:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int, forceCache:Boolean):BMat = {
+    if (out.asInstanceOf[AnyRef] != null || (!Mat.useCache && !forceCache)) {
+      newOrCheckBMat(dims, out)
+    } else {
+      val key = (guid1, guid2, guid3, opHash)
+      val res = Mat.cache4(key)
+      if (res != null) {
+        newOrCheckBMat(dims, res)
+      } else {
+        val omat = newOrCheckBMat(dims, null)
+        Mat.cache4put(key, omat)
+        omat
+      }
+    }
+  }
     
-  def newOrCheckBMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):BMat = {
-    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
-      newOrCheckBMat(nr, nc, outmat)
-    } else {
-      val key = (guid1, guid2, guid3, opHash)
-      val res = Mat.cache4(key)
-      if (res != null) {
-      	newOrCheckBMat(nr, nc, res)
-      } else {
-        val omat = newOrCheckBMat(nr, nc, null)
-        Mat.cache4put(key, omat)
-        omat
-      }
-    }
-  }
+  def newOrCheckBMat(dims:Array[Int], outmat:Mat,guid1:Long, guid2:Long, guid3:Long, opHash:Int):BMat =
+      newOrCheckBMat(dims, outmat, guid1, guid2, guid3, opHash, false);
   
-   def newOrCheckBMat(dims:Array[Int], out:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):BMat = {
-    if (out.asInstanceOf[AnyRef] != null || !Mat.useCache) {
-      newOrCheckBMat(dims, out)
-    } else {
-      val key = (guid1, guid2, guid3, opHash)
-      val res = Mat.cache4(key)
-      if (res != null) {
-        newOrCheckBMat(dims, res)
-      } else {
-        val omat = newOrCheckBMat(dims, null)
-        Mat.cache4put(key, omat)
-        omat
-      }
-    }
-  }
+  def newOrCheckBMat(dims:IMat, out:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):BMat = 
+    newOrCheckBMat(dims.data, out, guid1, guid2, guid3, opHash, false);
   
-  def newOrCheckBMat(dims:IMat, out:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):BMat = newOrCheckBMat(dims.data, out, guid1, guid2, guid3, opHash);
-
+   def newOrCheckBMat(dims:IMat, out:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int, forceCache:Boolean):BMat = 
+    newOrCheckBMat(dims.data, out, guid1, guid2, guid3, opHash, forceCache);
 }
 
 
