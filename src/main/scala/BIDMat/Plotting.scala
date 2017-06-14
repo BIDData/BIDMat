@@ -4,6 +4,7 @@ import java.awt.image.BufferedImage
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import scala.collection.mutable.ListBuffer;
 
 class MyPlot extends Plot {
   var fut:Future[_] = null;
@@ -129,6 +130,42 @@ object Plotting {
   			i += 1;
   		}
   	} 
+  }
+  
+  def _replot(mats:ListBuffer[Mat], p:Plot, dataset:Int, isconnected:Boolean) = {
+  	if (mats.length == 1) {
+  		val m = mats(0);
+  		var i = 0;
+  		m match { 
+  		case mf:FMat => {
+  		  for (mat <- mats) {
+  		  	var j = 0;
+  		  	while (j < mat.length) {			  
+  		  		p.addPoint(j, i, mat.asInstanceOf[FMat].data(j), isconnected); 
+  		  		j += 1}
+  		  	i += 1;
+  		  }
+  		}
+  		case md:DMat => {
+  		  for (mat <- mats) {
+  		  	var j = 0;
+  		  	while (j < mat.length) {			  
+  		  		p.addPoint(j, i, mat.asInstanceOf[DMat].data(j), isconnected); 
+  		  		j += 1}
+  		  	i += 1;
+  		  }
+  		}
+  		case mi:IMat => {
+  		  for (mat <- mats) {
+  		  	var j = 0;
+  		  	while (j < mat.length) {			  
+  		  		p.addPoint(j, i, mat.asInstanceOf[IMat].data(j), isconnected); 
+  		  		j += 1}
+  		  	i += 1;
+  		  }
+  		}
+  		}
+  	}
   }
   
   def showGraphics(plot:PlotBox):BufferedImage = {

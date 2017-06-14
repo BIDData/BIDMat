@@ -881,8 +881,8 @@ object SMat {
   }
   
   
-  def newOrCheckSMat(nrows:Int, ncols:Int, nnz:Int, outmat:Mat, guid1:Long, opHash:Int):SMat = {
-    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+  def newOrCheckSMat(nrows:Int, ncols:Int, nnz:Int, outmat:Mat, guid1:Long, opHash:Int, forceCache:Boolean):SMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || (!Mat.useCache && !forceCache)) {
     	newOrCheckSMat(nrows, ncols, nnz, outmat)
     } else {
     	val key = (guid1, opHash)
@@ -892,10 +892,13 @@ object SMat {
     	omat
     }
   }
+  
+  def newOrCheckSMat(nrows:Int, ncols:Int, nnz:Int, outmat:Mat, guid1:Long, opHash:Int):SMat =
+    newOrCheckSMat(nrows, ncols, nnz, outmat, guid1, opHash, false);
 
   
-  def newOrCheckSMat(nrows:Int, ncols:Int, nnz:Int, outmat:Mat, guid1:Long, guid2:Long, opHash:Int):SMat = {
-    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+  def newOrCheckSMat(nrows:Int, ncols:Int, nnz:Int, outmat:Mat, guid1:Long, guid2:Long, opHash:Int, forceCache:Boolean):SMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || (!Mat.useCache && !forceCache)) {
       newOrCheckSMat(nrows, ncols, nnz, outmat)
     } else {
       val key = (guid1, guid2, opHash)
@@ -905,9 +908,12 @@ object SMat {
       omat
     }
   }
+  
+  def newOrCheckSMat(nrows:Int, ncols:Int, nnz:Int, outmat:Mat, guid1:Long, guid2:Long, opHash:Int):SMat =
+    newOrCheckSMat(nrows, ncols, nnz, outmat, guid1, guid2, opHash, false);
     
-  def newOrCheckSMat(nrows:Int, ncols:Int, nnz:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):SMat = {
-    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+  def newOrCheckSMat(nrows:Int, ncols:Int, nnz:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int, forceCache:Boolean):SMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || (!Mat.useCache && !forceCache)) {
       newOrCheckSMat(nrows, ncols, nnz, outmat)
     } else {
       val key = (guid1, guid2, guid3, opHash)
@@ -917,6 +923,9 @@ object SMat {
       omat
     }
   }
+  
+  def newOrCheckSMat(nrows:Int, ncols:Int, nnz:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):SMat =
+    newOrCheckSMat(nrows, ncols, nnz, outmat, guid1, guid2, guid3, opHash, false);
 }
 
 
