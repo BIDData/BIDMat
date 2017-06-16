@@ -673,7 +673,7 @@ void reducevec(int n, T *A, T *B, int opn) {
     thrust::fill(pb, pb + 1, v);
     break;
   case 10 :                        // max
-    v = thrust::reduce(pa, pa + n, std::numeric_limits<T>::min(), thrust::maximum<T>());
+    v = thrust::reduce(pa, pa + n, std::numeric_limits<T>::lowest(), thrust::maximum<T>());
     thrust::fill(pb, pb + 1, v);
     break;
   case 11:                         // min
