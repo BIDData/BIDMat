@@ -1,4 +1,10 @@
 #!/bin/bash
+#
+# This script needs access to Java, CUDA and MKL libs. Set
+# $JAVA_HOME to the jvm root directory,
+# $BLAS_ROOT to the blas directory. If unset, BLAS_ROOT will default to $MKLROOT
+# $CUDA_HOME to the cuda root directory
+#
 
 VERSION="2.0.3-cuda8.0beta"
 DEVVERSION="dev-cuda8.0"
@@ -181,8 +187,14 @@ elif [ "$OS" = "linux" ] ; then
 	LIBDIR="${BIDMAT_ROOT}/lib"
 	INSTALL_DIR="${BIDMAT_ROOT}/src/main/resources/lib"
 	CUDA_LIBS="-L${CUDA_HOME}/${CULIB} -L${LIBDIR} -lcudart -lcublas"
-else
-	BLAS_ROOT="/opt/intel/mkl"
+    else
+	if [ "$BLAS_ROOT" = "" ]; then
+	    if [ "$MKLROOT" != "" ]; then
+		BLAS_ROOT="$MKLROOT"
+	    else
+		BLAS_ROOT="/opt/intel/mkl"
+	    fi
+	fi
 	GCC_VERSION="4.8"  # needed for include path to bits/c++config.h on ubuntu
 	RANDSRC="VSL"
 	if [ "$JAVA_HOME" = "" ]; then
