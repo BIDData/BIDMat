@@ -1651,7 +1651,7 @@ object BMat {
 	}
   
   def newOrCheckBMat(dims:Array[Int], out:Mat):BMat = {
-    if (out.asInstanceOf[AnyRef] != null && ND.checkDims("BMat:NewOrCheckBMat", dims, out.dims.data)) {
+    if (out.asInstanceOf[AnyRef] != null && ND.compareDims(dims, out.dims.data)) {
       out.asInstanceOf[BMat]
     } else {
       BMat.make(dims)

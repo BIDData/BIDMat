@@ -1121,7 +1121,7 @@ object GIMat {
   }
   
    def newOrCheckGIMat(dims:Array[Int], out:Mat):GIMat = {
-    if (out.asInstanceOf[AnyRef] != null && ND.checkDims("GIMat newOrCheckGIMat: ", out.dims.data, dims)) {
+    if (out.asInstanceOf[AnyRef] != null && ND.compareDims( out.dims.data, dims)) {
       out.asInstanceOf[GIMat]
     } else {
       GIMat.make(dims)

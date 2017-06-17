@@ -1630,7 +1630,7 @@ object IMat {
 	}
   
    def newOrCheckIMat(dims:Array[Int], out:Mat):IMat = {
-    if (out.asInstanceOf[AnyRef] != null && ND.checkDims("IMat:NewOrCheckIMat", dims, out.dims.data)) {
+    if (out.asInstanceOf[AnyRef] != null && ND.compareDims(dims, out.dims.data)) {
       out.asInstanceOf[IMat]
     } else {
       IMat.make(dims)

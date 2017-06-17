@@ -1964,7 +1964,7 @@ object DMat {
   }
   
   def newOrCheckDMat(dims:Array[Int], out:Mat):DMat = {
-    if (out.asInstanceOf[AnyRef] != null && ND.checkDims("DMat:NewOrCheckDMat", dims, out.dims.data)) {
+    if (out.asInstanceOf[AnyRef] != null && ND.compareDims(dims, out.dims.data)) {
       out.asInstanceOf[DMat]
     } else {
       DMat.make(dims)

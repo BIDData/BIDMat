@@ -2196,7 +2196,7 @@ object GMat {
   }  
   
   def newOrCheckGMat(dims:Array[Int], out:Mat):GMat = {
-    if (out.asInstanceOf[AnyRef] != null && ND.checkDims("GMat newOrCheckGMat: ", out.dims.data, dims)) {
+    if (out.asInstanceOf[AnyRef] != null && ND.compareDims(out.dims.data, dims)) {
       out.asInstanceOf[GMat]
     } else {
       GMat.make(dims)

@@ -1266,7 +1266,7 @@ object GLMat {
   }
   
   def newOrCheckGLMat(dims:Array[Int], out:Mat):GLMat = {
-    if (out.asInstanceOf[AnyRef] != null && ND.checkDims("GLMat newOrCheckGLMat: ", out.dims.data, dims)) {
+    if (out.asInstanceOf[AnyRef] != null && ND.compareDims(out.dims.data, dims)) {
       out.asInstanceOf[GLMat]
     } else {
       GLMat.make(dims)

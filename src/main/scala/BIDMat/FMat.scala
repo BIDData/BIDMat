@@ -2707,7 +2707,7 @@ object FMat {
   }
   
   def newOrCheckFMat(dims:Array[Int], out:Mat):FMat = {
-    if (out.asInstanceOf[AnyRef] != null && ND.checkDims("FMat:NewOrCheckFMat", dims, out.dims.data)) {
+    if (out.asInstanceOf[AnyRef] != null && ND.compareDims(dims, out.dims.data)) {
       out.asInstanceOf[FMat]
     } else {
     	FMat.make(dims)

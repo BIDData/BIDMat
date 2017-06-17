@@ -1600,7 +1600,7 @@ object GDMat {
   }  
   
   def newOrCheckGDMat(dims:Array[Int], out:Mat):GDMat = {
-    if (out.asInstanceOf[AnyRef] != null && ND.checkDims("GDMat newOrCheckGDMat: ", out.dims.data, dims)) {
+    if (out.asInstanceOf[AnyRef] != null && ND.compareDims(out.dims.data, dims)) {
       out.asInstanceOf[GDMat]
     } else {
       GDMat.make(dims)
