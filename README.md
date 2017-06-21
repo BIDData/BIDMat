@@ -19,3 +19,6 @@ Documentation is <b><a href="https://github.com/BIDData/BIDMat/wiki">here in the
 BIDMat is a sister project of BIDMach, a machine learning library, which is 
 <b><a href="https://github.com/BIDData/BIDMach">also on github</a></b>
 
+
+Take a look at BIDMach_RL, a new project on reinforcement learning which has state-of-the-art implementations of several RL algorithsms: <b><a href="https://github.com/BIDData/BIDMach">also on github</a></b>
+
