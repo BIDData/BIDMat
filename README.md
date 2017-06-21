@@ -10,7 +10,7 @@ to build and install and then
 <pre>
 ./bidmat
 </pre>
-To start bidmat. 
+To start bidmat. More detailed installation and building instructions are available <a href="https://github.com/BIDData/BIDMat/wiki/Installation">here</a>. 
 
 The main project page is <b><a href="http://bid2.berkeley.edu/bid-data-project/">here</a></b>.
 
