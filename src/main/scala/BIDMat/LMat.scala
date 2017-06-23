@@ -866,7 +866,7 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
   }
 
   
-  def reduce(inds:Array[Int], fctn:(LMat)=>LMat, opname:String):LMat = {
+  def reduce(inds:Array[Int], fctn:(LMat, Int)=>LMat, opname:String):LMat = {
     val alldims = izeros(_dims.length,1);
     val xinds = new IMat(inds.length, 1, inds);
     val xdims = new IMat(_dims.length, 1, _dims);
@@ -874,14 +874,25 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
     if (alldims.data.reduce(_+_) != inds.length) {
       throw new RuntimeException(opname+ " indices arent a legal subset of dims");
     }
-    val restdims = MatFunctions.find(alldims == 0);
-    val tmp = transpose((xinds on restdims).data);
-    val tmpF = new LMat(xdims(xinds).data.reduce(_*_), xdims(restdims).data.reduce(_*_), tmp.data);
-    tmpF.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce"+opname).##));
-    val tmpSum:LMat = fctn(tmpF);
-    val out1 = new LMat((iones(inds.length,1) on xdims(restdims)).data, tmpSum.data);
-    out1.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce2"+opname).##));
-    out1.transpose(MatFunctions.invperm(xinds on restdims).data)
+    val restinds = MatFunctions.find(alldims == 0);
+    if (restinds(0) == 0) {
+    	val tmp = transpose((restinds on xinds).data);
+    	val tmpF = new LMat(xdims(restinds).data.reduce(_*_), xdims(xinds).data.reduce(_*_), tmp.data);
+    	tmpF.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce"+opname).##));
+    	val tmpSum:LMat = fctn(tmpF, 2);
+    	val pdims = xdims(restinds) on iones(inds.length,1);
+    	val out1 = new LMat(pdims.data, tmpSum.data);
+    	out1.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce2"+opname).##));
+    	out1.transpose(MatFunctions.invperm(restinds on xinds).data)
+    } else {
+    	val tmp = transpose((xinds on restinds).data);
+    	val tmpF = new LMat(xdims(xinds).data.reduce(_*_), xdims(restinds).data.reduce(_*_), tmp.data);
+    	tmpF.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce"+opname).##));
+    	val tmpSum:LMat = fctn(tmpF, 1);
+    	val out1 = new LMat((iones(inds.length,1) on xdims(restinds)).data, tmpSum.data);
+    	out1.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce2"+opname).##));
+    	out1.transpose(MatFunctions.invperm(xinds on restinds).data)
+    }
   }
   
   /** standard reducers on one dimension */
