@@ -900,7 +900,7 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     	val tmpF = new GDMat(xdims(restinds).data.reduce(_*_), xdims(xinds).data.reduce(_*_), tmp.pdata, length);
     	tmpF.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce"+opname).##));
     	val tmpSum:GDMat = fctn(tmpF, 2);
-    	val pdims = xdims(restinds) on iones(inds.length,1);
+    	val pdims = xdims(restinds) on MatFunctions.iones(inds.length,1);
     	val out1 = new GDMat(pdims.data, tmpSum.pdata, tmpSum.length);
     	out1.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce2"+opname).##));
     	out1.transpose(MatFunctions.invperm(restinds on xinds).data)

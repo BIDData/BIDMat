@@ -880,7 +880,7 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
     	val tmpF = new LMat(xdims(restinds).data.reduce(_*_), xdims(xinds).data.reduce(_*_), tmp.data);
     	tmpF.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce"+opname).##));
     	val tmpSum:LMat = fctn(tmpF, 2);
-    	val pdims = xdims(restinds) on iones(inds.length,1);
+    	val pdims = xdims(restinds) on MatFunctions.iones(inds.length,1);
     	val out1 = new LMat(pdims.data, tmpSum.data);
     	out1.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce2"+opname).##));
     	out1.transpose(MatFunctions.invperm(restinds on xinds).data)

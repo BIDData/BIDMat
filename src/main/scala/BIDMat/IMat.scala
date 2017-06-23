@@ -905,7 +905,7 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
     	val tmpF = new IMat(xdims(restinds).data.reduce(_*_), xdims(xinds).data.reduce(_*_), tmp.data);
     	tmpF.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce"+opname).##));
     	val tmpSum:IMat = fctn(tmpF, 2);
-    	val pdims = xdims(restinds) on iones(inds.length,1);
+    	val pdims = xdims(restinds) on MatFunctions.iones(inds.length,1);
     	val out1 = new IMat(pdims.data, tmpSum.data);
     	out1.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce2"+opname).##));
     	out1.transpose(MatFunctions.invperm(restinds on xinds).data)

@@ -1385,9 +1385,9 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     	val tmp = transpose((restinds on xinds).data);
     	val tmpF = new GMat(xdims(restinds).data.reduce(_*_), xdims(xinds).data.reduce(_*_), tmp.pdata, length);
     	tmpF.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce"+opname).##));
-    	val tmpSum:GMat = fctn(tmpF, 2);
-    	val pdims = xdims(restinds) on iones(inds.length,1);
-    	val out1 = new GMat(pdims.data, tmpSum.pdata, tmpSum.length);
+    	val reduced:GMat = fctn(tmpF, 2);
+    	val pdims = xdims(restinds) on MatFunctions.iones(inds.length,1);
+    	val out1 = new GMat(pdims.data, reduced.pdata, reduced.length);
     	out1.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce2"+opname).##));
     	out1.transpose(MatFunctions.invperm(restinds on xinds).data)
     } else {
