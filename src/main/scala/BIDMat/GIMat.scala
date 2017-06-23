@@ -1004,7 +1004,7 @@ object GIMat {
     case g:GIMat => g;
     case aa:MatrixWildcard => GIMat.wildcard
     case _ => {
-    	val retv = GIMat.newOrCheckGIMat(a.dims, null, a.GUID, SciFunctions.getGPU, "GIMat".##)
+    	val retv = GIMat.newOrCheckGIMat(a.dims, null, a.GUID, "GIMat".##)
     	val rsize = a.nrows*a.ncols
     	cudaMemcpy(retv.pdata, Pointer.to(a.data), 1L*rsize*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
     	cudaDeviceSynchronize()
@@ -1029,7 +1029,7 @@ object GIMat {
   
   def apply(a:GMat):GIMat = {
     val rsize = a.nrows*a.ncols
-    val retv = GIMat.newOrCheckGIMat(a.dims, null, a.GUID, SciFunctions.getGPU, "GIMat_GMat".##)
+    val retv = GIMat.newOrCheckGIMat(a.dims, null, a.GUID, "GIMat_GMat".##)
     var err = CUMAT.floatToInt(a.pdata, retv.pdata, a.length)
     cudaDeviceSynchronize()
     if (err == 0) err = cudaGetLastError()
@@ -1048,13 +1048,13 @@ object GIMat {
   }
   
   def apply(a:Int):GIMat = {
-    val out = GIMat.newOrCheckGIMat(1, 1, null, a.##, SciFunctions.getGPU, "GIMat_Int".##)
+    val out = GIMat.newOrCheckGIMat(1, 1, null, a.##, "GIMat_Int".##)
     out.set(a)
     out
   }
   
   def elem(a:Int):GIMat = {
-    val out = GIMat.newOrCheckGIMat(1, 1, null, a.##, SciFunctions.getGPU, "GIMat_elem".##)
+    val out = GIMat.newOrCheckGIMat(1, 1, null, a.##, "GIMat_elem".##)
     out.set(a)
     out
   }
@@ -1134,13 +1134,13 @@ object GIMat {
     if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
       newOrCheckGIMat(nr, nc, outmat)
     } else {
-      val key = (matGuid, opHash)
-      val res = Mat.cache2(key)
+      val key = (matGuid, opHash.toLong, SciFunctions.getGPU)
+      val res = Mat.cache3(key)
       if (res != null) {
       	newOrCheckGIMat(nr, nc, res)
       } else {
         val omat = newOrCheckGIMat(nr, nc, null)
-        Mat.cache2put(key, omat)
+        Mat.cache3put(key, omat)
         omat
       }
     }
@@ -1150,13 +1150,13 @@ object GIMat {
     if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
        newOrCheckGIMat(dims, out)
     } else {
-      val key = (matGuid, opHash)
-      val res = Mat.cache2(key)
+      val key = (matGuid, opHash.toLong, SciFunctions.getGPU)
+      val res = Mat.cache3(key)
       if (res != null) {
         newOrCheckGIMat(dims, res)
       } else {
         val omat = newOrCheckGIMat(dims, null)
-        Mat.cache2put(key, omat)
+        Mat.cache3put(key, omat)
         omat
       }
     }
@@ -1169,13 +1169,13 @@ object GIMat {
     if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
       newOrCheckGIMat(nr, nc, outmat)
     } else {
-      val key = (guid1, guid2, opHash)
-      val res = Mat.cache3(key)
+      val key = (guid1, guid2, opHash.toLong, SciFunctions.getGPU)
+      val res = Mat.cache4(key)
       if (res != null) {
       	newOrCheckGIMat(nr, nc, res)
       } else {
         val omat = newOrCheckGIMat(nr, nc, null)
-        Mat.cache3put(key, omat)
+        Mat.cache4put(key, omat)
         omat
       }
     }
@@ -1185,13 +1185,13 @@ object GIMat {
     if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
       newOrCheckGIMat(dims, out)
     } else {
-      val key = (guid1, guid2, opHash)
-      val res = Mat.cache3(key)
+      val key = (guid1, guid2, opHash.toLong, SciFunctions.getGPU)
+      val res = Mat.cache4(key)
       if (res != null) {
         newOrCheckGIMat(dims, res)
       } else {
         val omat = newOrCheckGIMat(dims, null)
-        Mat.cache3put(key, omat)
+        Mat.cache4put(key, omat)
         omat
       }
     }
@@ -1204,13 +1204,13 @@ object GIMat {
     if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
       newOrCheckGIMat(nr, nc, outmat)
     } else {
-      val key = (guid1, guid2, guid3, opHash)
-      val res = Mat.cache4(key)
+      val key = (guid1, guid2, guid3, opHash.toLong, SciFunctions.getGPU)
+      val res = Mat.cache5(key)
       if (res != null) {
       	newOrCheckGIMat(nr, nc, res)
       } else {
         val omat = newOrCheckGIMat(nr, nc, null)
-        Mat.cache4put(key, omat)
+        Mat.cache5put(key, omat)
         omat
       }
     }
@@ -1220,13 +1220,13 @@ object GIMat {
     if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
       newOrCheckGIMat(dims, out)
     } else {
-      val key = (g1, g2, g3, opHash)
-      val res = Mat.cache4(key)
+      val key = (g1, g2, g3, opHash.toLong, SciFunctions.getGPU)
+      val res = Mat.cache5(key)
       if (res != null) {
         newOrCheckGIMat(dims, res)
       } else {
         val omat = newOrCheckGIMat(dims, null)
-        Mat.cache4put(key, omat)
+        Mat.cache5put(key, omat)
         omat
       }
     }

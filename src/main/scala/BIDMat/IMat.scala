@@ -482,26 +482,30 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
     if (perm.length != nd) { 
       throw new RuntimeException("IMat transpose bad permutation ")
     }
-    val xdims = MatFunctions.irow(_dims)
-    val iperm = MatFunctions.invperm(perm)
-    val pdims = xdims(perm).data
-    var out = IMat.newOrCheckIMat(pdims, null, GUID, ND.hashInts(pdims), "transpose".##)
-    var out2 = IMat.newOrCheckIMat(pdims, null, GUID, ND.hashInts(pdims), "transpose1".##)
-    System.arraycopy(data, 0, out.data, 0, length)
-    for (i <- (nd - 1) until 0 by -1) { 
-      if (iperm(i) != i) { 
-        val (d1, d2, d3) = ND.getDims(i, iperm, xdims)
-        if (d1 > 1 && d2 > 1) { 
- //         println("spermute %d %d %d" format (d1,d2,d3))
-          ipermute(d1, d2, d3, out.data, out2.data)
-          val tmp = out2
-          out2 = out
-          out = tmp
-        }
-        ND.rotate(i, iperm, xdims)
-      } 
+    if (ND.isIdentity(perm)) {
+    	this
+    } else {   
+    	val xdims = MatFunctions.irow(_dims);
+    	val iperm = MatFunctions.invperm(perm);
+    	val pdims = xdims(perm).data;
+    	var out = IMat.newOrCheckIMat(pdims, null, GUID, ND.hashInts(pdims), "transpose".##);
+    	var out2 = IMat.newOrCheckIMat(pdims, null, GUID, ND.hashInts(pdims), "transpose1".##);
+    	System.arraycopy(data, 0, out.data, 0, length);
+    	for (i <- (nd - 1) until 0 by -1) { 
+    		if (iperm(i) != i) { 
+    			val (d1, d2, d3) = ND.getDims(i, iperm, xdims);
+    			if (d1 > 1 && d2 > 1) { 
+    				//         println("spermute %d %d %d" format (d1,d2,d3))
+    				ipermute(d1, d2, d3, out.data, out2.data);
+    				val tmp = out2;
+    				out2 = out;
+    				out = tmp;
+    			}
+    			ND.rotate(i, iperm, xdims);
+    		} 
+    	}
+    	out;
     }
-    out
   }
   
   override def transpose(i1:Int, i2:Int):IMat = transpose(Array(i1, i2))

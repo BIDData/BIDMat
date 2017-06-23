@@ -461,6 +461,20 @@ object ND {
     }
     out;
   }
+  
+  def isIdentity(perm:Array[Int]):Boolean = {
+    var isident = true;
+    var i = 0;
+    while (i < perm.length && isident) {
+      isident = (perm(i) == i);
+      i += 1;
+    }
+    isident;
+  }
+  
+    def isIdentity(perm:IMat):Boolean = {
+      isIdentity(perm.data);
+    }
 }
 
 

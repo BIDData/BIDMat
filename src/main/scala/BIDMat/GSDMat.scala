@@ -497,7 +497,7 @@ object GSDMat {
   def apply(a:SMat):GSDMat = fromSMat(a, null);
   
   def apply(a:GSMat):GSDMat = {
-    val out = GSDMat.newOrCheckGSDMat(a.nrows, a.ncols, a.nnz, a.nnz, null, a.GUID, SciFunctions.getGPU, "fromGSMat".##);
+    val out = GSDMat.newOrCheckGSDMat(a.nrows, a.ncols, a.nnz, a.nnz, null, a.GUID, "fromGSMat".##);
     var err = cudaMemcpy(out.pir, a.pir, 1L * a.nnz*Sizeof.INT, cudaMemcpyDeviceToDevice);
     cudaDeviceSynchronize();
     if (err == 0) err = cudaMemcpy(out.pic, a.pic, 1L * a.nnz*Sizeof.INT, cudaMemcpyDeviceToDevice);
@@ -534,7 +534,7 @@ object GSDMat {
   }
  
   def fromSDMat(a:SDMat, b:GSDMat):GSDMat = {
-    val out = GSDMat.newOrCheckGSDMat(a.nrows, a.ncols, a.nnz, a.nnz, b, a.GUID, SciFunctions.getGPU, "fromSDMat".##)
+    val out = GSDMat.newOrCheckGSDMat(a.nrows, a.ncols, a.nnz, a.nnz, b, a.GUID, "fromSDMat".##)
     out.nnz0 = a.nnz
     val handle = GSMat.getHandle
     cudaMemcpy(out.pdata, Pointer.to(a.data), 1L * a.nnz*Sizeof.DOUBLE, cudaMemcpyHostToDevice)
@@ -562,7 +562,7 @@ object GSDMat {
   }
   
    def fromSMat(a:SMat, b:GSDMat):GSDMat = {
-    val out = GSDMat.newOrCheckGSDMat(a.nrows, a.ncols, a.nnz, a.nnz, b, a.GUID, SciFunctions.getGPU, "fromSMat".##)
+    val out = GSDMat.newOrCheckGSDMat(a.nrows, a.ncols, a.nnz, a.nnz, b, a.GUID, "fromSMat".##)
     out.nnz0 = a.nnz
     var err = 0
     val handle = GSMat.getHandle
@@ -659,10 +659,10 @@ object GSDMat {
     val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
       newOrCheckGSDMat(nrows, ncols, nnz, realnnz, outmat)
     } else {
-      val key = (guid1, opHash)
-      val res = Mat.cache2(key)
+      val key = (guid1, opHash.toLong, SciFunctions.getGPU)
+      val res = Mat.cache3(key)
       val omat = newOrCheckGSDMat(nrows, ncols, nnz, realnnz, res)
-      if (res != omat) Mat.cache2put(key, omat)
+      if (res != omat) Mat.cache3put(key, omat)
       omat
     }
     if (m.myGPU != SciFunctions.getGPU) {
@@ -679,10 +679,10 @@ object GSDMat {
     val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
       newOrCheckGSDMat(nrows, ncols, nnz, realnnz, outmat)
     } else {
-      val key = (guid1, guid2, opHash)
-      val res = Mat.cache3(key)
+      val key = (guid1, guid2, opHash.toLong, SciFunctions.getGPU)
+      val res = Mat.cache4(key)
       val omat = newOrCheckGSDMat(nrows, ncols, nnz, realnnz, res)
-      if (res != omat) Mat.cache3put(key, omat)
+      if (res != omat) Mat.cache4put(key, omat)
       omat
     }
     if (m.myGPU != SciFunctions.getGPU) {
@@ -700,10 +700,10 @@ object GSDMat {
     val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
       newOrCheckGSDMat(nrows, ncols, nnz, realnnz, outmat)
     } else {
-      val key = (guid1, guid2, guid3, opHash)
-      val res = Mat.cache4(key)
+      val key = (guid1, guid2, guid3, opHash.toLong, SciFunctions.getGPU)
+      val res = Mat.cache5(key)
       val omat = newOrCheckGSDMat(nrows, ncols, nnz, realnnz, res)
-      if (res != omat) Mat.cache4put(key, omat)
+      if (res != omat) Mat.cache5put(key, omat)
       omat
     }
     if (m.myGPU != SciFunctions.getGPU) {

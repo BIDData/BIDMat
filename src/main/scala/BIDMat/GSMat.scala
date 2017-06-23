@@ -615,7 +615,7 @@ object GSMat {
   }
  
   def fromSMat(a:SMat, b:GSMat):GSMat = {
-    val out = GSMat.newOrCheckGSMat(a.nrows, a.ncols, a.nnz, a.nnz, b, a.GUID, SciFunctions.getGPU, "fromSMat".##);
+    val out = GSMat.newOrCheckGSMat(a.nrows, a.ncols, a.nnz, a.nnz, b, a.GUID, "fromSMat".##);
     out.nnz0 = a.nnz;
     var err = 0;
     val handle = GSMat.getHandle;
@@ -745,10 +745,10 @@ object GSMat {
     val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
       newOrCheckGSMat(nrows, ncols, nnz, realnnz, outmat)
     } else {
-      val key = (guid1, opHash)
-      val res = Mat.cache2(key)
+      val key = (guid1, opHash.toLong, SciFunctions.getGPU)
+      val res = Mat.cache3(key)
       val omat = newOrCheckGSMat(nrows, ncols, nnz, realnnz, res)
-      if (res != omat) Mat.cache2put(key, omat)
+      if (res != omat) Mat.cache3put(key, omat)
       omat
     }
     if (m.myGPU != SciFunctions.getGPU) {
@@ -765,10 +765,10 @@ object GSMat {
     val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
       newOrCheckGSMat(nrows, ncols, nnz, realnnz, outmat)
     } else {
-      val key = (guid1, guid2, opHash)
-      val res = Mat.cache3(key)
+      val key = (guid1, guid2, opHash.toLong, SciFunctions.getGPU)
+      val res = Mat.cache4(key)
       val omat =newOrCheckGSMat(nrows, ncols, nnz, realnnz, res)
-      if (res != omat) Mat.cache3put(key, omat)
+      if (res != omat) Mat.cache4put(key, omat)
       omat
     }
     if (m.myGPU != SciFunctions.getGPU) {
@@ -786,10 +786,10 @@ object GSMat {
     val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
       newOrCheckGSMat(nrows, ncols, nnz, realnnz, outmat)
     } else {
-      val key = (guid1, guid2, guid3, opHash)
-      val res = Mat.cache4(key)
+      val key = (guid1, guid2, guid3, opHash.toLong, SciFunctions.getGPU)
+      val res = Mat.cache5(key)
       val omat = newOrCheckGSMat(nrows, ncols, nnz, realnnz, res)
-      if (res != omat) Mat.cache4put(key, omat)
+      if (res != omat) Mat.cache5put(key, omat)
       omat
     }
     if (m.myGPU != SciFunctions.getGPU) {

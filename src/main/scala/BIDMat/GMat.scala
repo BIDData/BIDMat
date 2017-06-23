@@ -498,27 +498,31 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     if (perm.length != nd) { 
       throw new RuntimeException("GMat transpose bad permutation ")
     }
-    val xdims = MatFunctions.irow(_dims)
-    val iperm = MatFunctions.invperm(perm)
-    val pdims = xdims(perm).data
-    var out = GMat.newOrCheckGMat(pdims, null, GUID, ND.hashInts(pdims), "transpose".##)
-    var out2 = GMat.newOrCheckGMat(pdims, null, GUID, ND.hashInts(pdims), "transpose1".##)
-    cudaMemcpy(out.pdata, pdata, 1L*Sizeof.FLOAT*length, cudaMemcpyDeviceToDevice);
-    cudaDeviceSynchronize();
-    for (i <- (nd - 1) until 0 by -1) { 
-      if (iperm(i) != i) { 
-        val (d1, d2, d3) = ND.getDims(i, iperm, xdims)
-        if (d1 > 1 && d2 > 1) { 
- //         println("spermute %d %d %d" format (d1,d2,d3))
-          CUMAT.spermute(d1, d2, d3, out.pdata, out2.pdata)
-          val tmp = out2
-          out2 = out
-          out = tmp
-        }
-        ND.rotate(i, iperm, xdims)
-      } 
+    if (ND.isIdentity(perm)) {
+    	this
+    } else {
+    	val xdims = MatFunctions.irow(_dims);
+    	val iperm = MatFunctions.invperm(perm);
+    	val pdims = xdims(perm).data;
+    	var out = GMat.newOrCheckGMat(pdims, null, GUID, ND.hashInts(pdims), "transpose".##);
+    	var out2 = GMat.newOrCheckGMat(pdims, null, GUID, ND.hashInts(pdims), "transpose1".##);
+    	cudaMemcpy(out.pdata, pdata, 1L*Sizeof.FLOAT*length, cudaMemcpyDeviceToDevice);
+    	cudaDeviceSynchronize();
+    	for (i <- (nd - 1) until 0 by -1) { 
+    		if (iperm(i) != i) { 
+    			val (d1, d2, d3) = ND.getDims(i, iperm, xdims);
+    			if (d1 > 1 && d2 > 1) { 
+    				//         println("spermute %d %d %d" format (d1,d2,d3))
+    				CUMAT.spermute(d1, d2, d3, out.pdata, out2.pdata);
+    				val tmp = out2;
+    				out2 = out;
+    				out = tmp;
+    			}
+    			ND.rotate(i, iperm, xdims);
+    		} 
+    	}
+    	out;
     }
-    out
   }
   
   override def fromNHWCtoNCHW:GMat = {
@@ -1368,7 +1372,7 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   
   override def reverse(omat:Mat):GMat = _reverse(omat);
   
-  def reduce(inds:Array[Int], fctn:(GMat)=>GMat, opname:String):GMat = {
+  def reduce(inds:Array[Int], fctn:(GMat,Int)=>GMat, opname:String):GMat = {
     val alldims = MatFunctions.izeros(_dims.length,1);
     val xinds = new IMat(inds.length, 1, inds);
     val xdims = new IMat(_dims.length, 1, _dims);
@@ -1377,14 +1381,25 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
       throw new RuntimeException(opname+ " indices arent a legal subset of dims");
     }
     val restinds = MatFunctions.find(alldims == 0);
-    val tmp = transpose((xinds on restinds).data);
-    val tmpF = new GMat(xdims(xinds).data.reduce(_*_), xdims(restinds).data.reduce(_*_), tmp.pdata, length);
-    tmpF.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce"+opname).##));
-    val reduced:GMat = fctn(tmpF);
-    val newdims = MatFunctions.iones(inds.length,1) on xdims(restinds);
-    val out1 = new GMat(newdims.data, reduced.pdata, reduced.length);
-    out1.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce2"+opname).##));
-    out1.transpose(MatFunctions.invperm(xinds on restinds).data);
+    if (restinds(0) == 0) {
+    	val tmp = transpose((restinds on xinds).data);
+    	val tmpF = new GMat(xdims(restinds).data.reduce(_*_), xdims(xinds).data.reduce(_*_), tmp.pdata, length);
+    	tmpF.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce"+opname).##));
+    	val tmpSum:GMat = fctn(tmpF, 2);
+    	val pdims = xdims(restinds) on iones(inds.length,1);
+    	val out1 = new GMat(pdims.data, tmpSum.pdata, tmpSum.length);
+    	out1.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce2"+opname).##));
+    	out1.transpose(MatFunctions.invperm(restinds on xinds).data)
+    } else {
+    	val tmp = transpose((xinds on restinds).data);
+    	val tmpF = new GMat(xdims(xinds).data.reduce(_*_), xdims(restinds).data.reduce(_*_), tmp.pdata, length);
+    	tmpF.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce"+opname).##));
+    	val reduced:GMat = fctn(tmpF, 1);
+    	val newdims = MatFunctions.iones(inds.length,1) on xdims(restinds);
+    	val out1 = new GMat(newdims.data, reduced.pdata, reduced.length);
+    	out1.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce2"+opname).##));
+    	out1.transpose(MatFunctions.invperm(xinds on restinds).data);
+    }
   }
   
   /*
@@ -1436,23 +1451,23 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   override def mean(ind:Int):GMat = SciFunctions._mean(this, ind).asInstanceOf[GMat];
   override def variance(ind:Int):GMat = SciFunctions._variance(this, ind).asInstanceOf[GMat];
   
-  override def sum(inds:Array[Int]):FMat = reduce(inds, (a:GMat) => GFunctions.sum(a,1,null), "sum");
-  override def prod(inds:Array[Int]):FMat = reduce(inds, (a:GMat) => GFunctions.prod(a,1,null), "prod");
-  override def mean(inds:Array[Int]):FMat = reduce(inds, (a:GMat) => SciFunctions.mean(a, 1), "mean")
-  override def variance(inds:Array[Int]):FMat = reduce(inds, (a:GMat) => SciFunctions.variance(a,1), "variance")
-  override def maxi(inds:Array[Int]):FMat = reduce(inds, (a:GMat) => GFunctions.maxi(a,1,null), "maxi")
-  override def mini(inds:Array[Int]):FMat = reduce(inds, (a:GMat) => GFunctions.mini(a,1,null), "mini")
-  override def amax(inds:Array[Int]):FMat = reduce(inds, (a:GMat) => GFunctions.maxi(a,1,null), "amax")
-  override def amin(inds:Array[Int]):FMat = reduce(inds, (a:GMat) => GFunctions.mini(a,1,null), "amin")
+  override def sum(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => GFunctions.sum(a,dir,null), "sum");
+  override def prod(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => GFunctions.prod(a,dir,null), "prod");
+  override def mean(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => SciFunctions.mean(a,dir), "mean")
+  override def variance(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => SciFunctions.variance(a,dir), "variance")
+  override def maxi(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => GFunctions.maxi(a,dir,null), "maxi")
+  override def mini(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => GFunctions.mini(a,dir,null), "mini")
+  override def amax(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => GFunctions.maxi(a,dir,null), "amax")
+  override def amin(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => GFunctions.mini(a,dir,null), "amin")
 
-  override def sum(inds:IMat):FMat = reduce(inds.data, (a:GMat) => GFunctions.sum(a,1,null), "sum");
-  override def prod(inds:IMat):FMat = reduce(inds.data, (a:GMat) => GFunctions.prod(a,1,null), "prod");
-  override def mean(inds:IMat):FMat = reduce(inds.data, (a:GMat) => SciFunctions.mean(a, 1), "mean")
-  override def variance(inds:IMat):FMat = reduce(inds.data, (a:GMat) => SciFunctions.variance(a,1), "variance")
-  override def maxi(inds:IMat):FMat = reduce(inds.data, (a:GMat) => GFunctions.maxi(a,1,null), "maxi")
-  override def mini(inds:IMat):FMat = reduce(inds.data, (a:GMat) => GFunctions.mini(a,1,null), "mini")
-  override def amax(inds:IMat):FMat = reduce(inds.data, (a:GMat) => GFunctions.maxi(a,1,null), "amax")
-  override def amin(inds:IMat):FMat = reduce(inds.data, (a:GMat) => GFunctions.mini(a,1,null), "amin")
+  override def sum(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => GFunctions.sum(a,dir,null), "sum");
+  override def prod(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => GFunctions.prod(a,dir,null), "prod");
+  override def mean(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => SciFunctions.mean(a,dir), "mean")
+  override def variance(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => SciFunctions.variance(a,dir), "variance")
+  override def maxi(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => GFunctions.maxi(a,dir,null), "maxi")
+  override def mini(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => GFunctions.mini(a,dir,null), "mini")
+  override def amax(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => GFunctions.maxi(a,dir,null), "amax")
+  override def amin(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => GFunctions.mini(a,dir,null), "amin")
 
   override def * (a : FMat) = GMult(GMat(a), null)
   override def * (a : SMat) = GSMult(GSMat(a), null)
@@ -2085,7 +2100,7 @@ object GMat {
       case g:GMat => g;
       case _ => {
     	  val rsize = a.nrows*a.ncols
-    			  val retv = GMat.newOrCheckGMat(a.dims, null, a.GUID, SciFunctions.getGPU, "GMat_FMat".##)
+    			  val retv = GMat.newOrCheckGMat(a.dims, null, a.GUID, "GMat_FMat".##)
     			  cudaMemcpy(retv.pdata, Pointer.to(a.data), 1L*rsize*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
     			  cudaDeviceSynchronize()
     			  val err = cudaGetLastError()
@@ -2101,7 +2116,7 @@ object GMat {
   def apply(a:GIMat):GMat = {
  
     val rsize = a.nrows*a.ncols
-    val retv = GMat.newOrCheckGMat(a.dims, null, a.GUID, SciFunctions.getGPU, "GMat_GIMat".##)
+    val retv = GMat.newOrCheckGMat(a.dims, null, a.GUID, "GMat_GIMat".##)
     var err = CUMAT.intToFloat(a.pdata, retv.pdata, a.length)
     cudaDeviceSynchronize()
     if (err == 0) err = cudaGetLastError()
@@ -2121,13 +2136,13 @@ object GMat {
   }
   
   def apply(a:Float):GMat = {
-    val out = GMat.newOrCheckGMat(1, 1, null, SciFunctions.getGPU, a.##, "GMat_Float".##)
+    val out = GMat.newOrCheckGMat(1, 1, null, a.##, "GMat_Float".##)
     out.set(a)
     out
   }
   
   def apply(a:Double):GMat = {
-    val out = GMat.newOrCheckGMat(1, 1, null, SciFunctions.getGPU, a.##, "GMat_Float".##)
+    val out = GMat.newOrCheckGMat(1, 1, null, a.##, "GMat_Float".##)
     out.set(a.toFloat)
     out
   }
@@ -2147,7 +2162,7 @@ object GMat {
   def toFMat(a:GMat):FMat = a.toFMat(null)  
   
   def fromFMat(a:FMat, b:GMat):GMat = {
-    val bb = GMat.newOrCheckGMat(a.dims, b, a.GUID, SciFunctions.getGPU, "GMat_fromFMat".##)
+    val bb = GMat.newOrCheckGMat(a.dims, b, a.GUID, "GMat_fromFMat".##)
     cudaMemcpy(bb.pdata, Pointer.to(a.data), a.length*1L*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
     cudaDeviceSynchronize()
     var err = cudaGetLastError()
@@ -2209,13 +2224,13 @@ object GMat {
     val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
       newOrCheckGMat(nr, nc, outmat)
     } else {
-      val key = (matGuid, opHash)
-      val res = Mat.cache2(key)
+      val key = (matGuid, opHash.toLong, SciFunctions.getGPU)
+      val res = Mat.cache3(key)
       if (res != null) {
         newOrCheckGMat(nr, nc, res)
       } else {
         val omat = newOrCheckGMat(nr, nc, null)
-        Mat.cache2put(key, omat)
+        Mat.cache3put(key, omat)
         omat
       }
     }
@@ -2229,13 +2244,13 @@ object GMat {
     if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
        newOrCheckGMat(dims, out)
     } else {
-      val key = (matGuid, opHash)
-      val res = Mat.cache2(key)
+      val key = (matGuid, opHash.toLong, SciFunctions.getGPU)
+      val res = Mat.cache3(key)
       if (res != null) {
         newOrCheckGMat(dims, res)
       } else {
         val omat = newOrCheckGMat(dims, null)
-        Mat.cache2put(key, omat)
+        Mat.cache3put(key, omat)
         omat
       }
     }
@@ -2247,13 +2262,13 @@ object GMat {
     val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
       newOrCheckGMat(nr, nc, outmat)
     } else {
-      val key = (guid1, guid2, opHash)
-      val res = Mat.cache3(key)
+      val key = (guid1, guid2, opHash.toLong, SciFunctions.getGPU)
+      val res = Mat.cache4(key)
       if (res != null) {
       	newOrCheckGMat(nr, nc, res)
       } else {
         val omat = newOrCheckGMat(nr, nc, null)
-        Mat.cache3put(key, omat)
+        Mat.cache4put(key, omat)
         omat
       }
     }
@@ -2267,13 +2282,13 @@ object GMat {
     if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
       newOrCheckGMat(dims, out)
     } else {
-      val key = (guid1, guid2, opHash)
-      val res = Mat.cache3(key)
+      val key = (guid1, guid2, opHash.toLong, SciFunctions.getGPU)
+      val res = Mat.cache4(key)
       if (res != null) {
         newOrCheckGMat(dims, res)
       } else {
         val omat = newOrCheckGMat(dims, null)
-        Mat.cache3put(key, omat)
+        Mat.cache4put(key, omat)
         omat
       }
     }
@@ -2287,13 +2302,13 @@ object GMat {
     val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
     	newOrCheckGMat(nr, nc, outmat)
     } else {
-    	val key = (guid1, guid2, guid3, opHash)
-        val res = Mat.cache4(key)
+    	val key = (guid1, guid2, guid3, opHash.toLong, SciFunctions.getGPU)
+        val res = Mat.cache5(key)
     	if (res != null) {
     		newOrCheckGMat(nr, nc, res)
     	} else {
     		val omat = newOrCheckGMat(nr, nc, null)
-    		Mat.cache4put(key, omat)
+    		Mat.cache5put(key, omat)
     		omat
     	}
     }
@@ -2307,13 +2322,13 @@ object GMat {
     if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
       newOrCheckGMat(dims, out)
     } else {
-      val key = (g1, g2, g3, opHash)
-      val res = Mat.cache4(key)
+      val key = (g1, g2, g3, opHash.toLong, SciFunctions.getGPU)
+      val res = Mat.cache5(key)
       if (res != null) {
         newOrCheckGMat(dims, res)
       } else {
         val omat = newOrCheckGMat(dims, null)
-        Mat.cache4put(key, omat)
+        Mat.cache5put(key, omat)
         omat
       }
     }

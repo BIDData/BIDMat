@@ -6,6 +6,7 @@ import edu.berkeley.bid.SPBLAS
 import scala.util.hashing.MurmurHash3
 import edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64
 import java.util.Arrays
+import MatFunctions.invperm
 
 case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Double](dims0, data) {
   
@@ -473,26 +474,30 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
     if (perm.length != nd) { 
       throw new RuntimeException("DMat transpose bad permutation ")
     }
-    val xdims = MatFunctions.irow(_dims)
-    val iperm = MatFunctions.invperm(perm)
-    val pdims = xdims(perm).data
-    var out = DMat.newOrCheckDMat(pdims, null, GUID, ND.hashInts(pdims), "transpose".##)
-    var out2 = DMat.newOrCheckDMat(pdims, null, GUID, ND.hashInts(pdims), "transpose1".##)
-    System.arraycopy(data, 0, out.data, 0, length)
-    for (i <- (nd - 1) until 0 by -1) { 
-      if (iperm(i) != i) { 
-        val (d1, d2, d3) = ND.getDims(i, iperm, xdims)
-        if (d1 > 1 && d2 > 1) { 
- //         println("spermute %d %d %d" format (d1,d2,d3))
-          dpermute(d1, d2, d3, out.data, out2.data)
-          val tmp = out2
-          out2 = out
-          out = tmp
-        }
-        ND.rotate(i, iperm, xdims)
-      } 
+    if (ND.isIdentity(perm)) {
+    	this
+    } else {
+    	val xdims = MatFunctions.irow(_dims);
+    	val iperm = MatFunctions.invperm(perm);
+    	val pdims = xdims(perm).data;
+    	var out = DMat.newOrCheckDMat(pdims, null, GUID, ND.hashInts(pdims), "transpose".##);
+    	var out2 = DMat.newOrCheckDMat(pdims, null, GUID, ND.hashInts(pdims), "transpose1".##);
+    	System.arraycopy(data, 0, out.data, 0, length);
+    	for (i <- (nd - 1) until 0 by -1) { 
+    		if (iperm(i) != i) { 
+    			val (d1, d2, d3) = ND.getDims(i, iperm, xdims);
+    			if (d1 > 1 && d2 > 1) { 
+    				//         println("spermute %d %d %d" format (d1,d2,d3))
+    				dpermute(d1, d2, d3, out.data, out2.data);
+    				val tmp = out2;
+    				out2 = out;
+    				out = tmp;
+    			}
+    			ND.rotate(i, iperm, xdims);
+    		} 
+    	}
+    	out;
     }
-    out
   }
   
   override def transpose(i1:Int, i2:Int):DMat = transpose(Array(i1, i2))
@@ -1166,7 +1171,7 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
     b(0);
   }
   
- def reduce(inds:Array[Int], fctn:(DMat)=>DMat, opname:String):DMat = {
+ def reduce(inds:Array[Int], fctn:(DMat, Int)=>DMat, opname:String):DMat = {
     val alldims = izeros(_dims.length,1)
     val xinds = new IMat(inds.length, 1, inds)
     val xdims = new IMat(_dims.length, 1, _dims)
@@ -1175,13 +1180,24 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
       throw new RuntimeException(opname+ " indices arent a legal subset of dims")
     }
     val restinds = MatFunctions.find(alldims == 0);
-    val tmp = transpose((xinds on restinds).data);
-    val tmpF = new DMat(xdims(xinds).data.reduce(_*_), xdims(restinds).data.reduce(_*_), tmp.data);
-    tmpF.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce"+opname).##));
-    val tmpSum:DMat = fctn(tmpF);
-    val out1 = new DMat((iones(inds.length,1) on xdims(restinds)).data, tmpSum.data);
-    out1.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce2"+opname).##));
-    out1.transpose(MatFunctions.invperm(xinds on restinds).data);
+    if (restinds(0) == 0) {
+    	val tmp = transpose((restinds on xinds).data);
+    	val tmpF = new DMat(xdims(restinds).data.reduce(_*_), xdims(xinds).data.reduce(_*_), tmp.data);
+    	tmpF.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce"+opname).##));
+    	val tmpSum:DMat = fctn(tmpF, 2);
+    	val pdims = xdims(restinds) on iones(inds.length,1);
+    	val out1 = new DMat(pdims.data, tmpSum.data);
+    	out1.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce2"+opname).##));
+    	out1.transpose(invperm(restinds on xinds).data)
+    } else {
+    	val tmp = transpose((xinds on restinds).data);
+    	val tmpF = new DMat(xdims(xinds).data.reduce(_*_), xdims(restinds).data.reduce(_*_), tmp.data);
+    	tmpF.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce"+opname).##));
+    	val tmpSum:DMat = fctn(tmpF, 1);
+    	val out1 = new DMat((iones(inds.length,1) on xdims(restinds)).data, tmpSum.data);
+    	out1.setGUID(ND.hash3(ND.hashInts(inds), GUID, ("reduce2"+opname).##));
+    	out1.transpose(MatFunctions.invperm(xinds on restinds).data);
+    }
   }
   
   /** standard reducers on one dimension */
