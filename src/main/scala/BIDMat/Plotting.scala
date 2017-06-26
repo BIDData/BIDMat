@@ -36,7 +36,7 @@ object Plotting {
     showGraphics(p);
   }
   
-  def _liveplot(fn:()=>Array[Mat], rate:Float)(xlog:Boolean=false, ylog:Boolean=false, isconnected:Boolean=true, bars:Boolean=false, marks:Int = 0) = {
+  def _liveplot(fn:()=>Array[Mat], interval:Float)(xlog:Boolean=false, ylog:Boolean=false, isconnected:Boolean=true, bars:Boolean=false, marks:Int = 0) = {
     var p:MyPlot = new MyPlot;
     p.setXLog(xlog);
     p.setYLog(ylog);
@@ -52,7 +52,7 @@ object Plotting {
     val runme = new Runnable {
       override def run() = {
         while (!p.done) {
-        	Thread.sleep((1000/rate).toLong);
+        	Thread.sleep((1000*interval).toLong);
         	val mats = fn().map(MatFunctions.cpu);
         	for (i <- 0 until mats.length) p.clear(i);
         	_replot(mats, p, dataset, isconnected);
@@ -64,7 +64,16 @@ object Plotting {
     p;
   }
   
-  def _liveplot2(fn:()=>Mat, rate:Float)(xlog:Boolean=false, ylog:Boolean=false, isconnected:Boolean=true, bars:Boolean=false, marks:Int = 0) = {
+  def history(fn:()=>Mat):()=>ListBuffer[Mat] = {
+  	val listbuff = new ListBuffer[Mat]();
+  	def histfun() = {
+  		listbuff.append(fn());
+  		listbuff;
+  	}
+  	histfun _;
+  }
+  
+  def _liveplot2(fn:()=>Mat, interval:Float)(xlog:Boolean=false, ylog:Boolean=false, isconnected:Boolean=true, bars:Boolean=false, marks:Int = 0) = {
     var p:MyPlot = new MyPlot;
     p.setXLog(xlog);
     p.setYLog(ylog);
@@ -80,7 +89,7 @@ object Plotting {
     val runme = new Runnable {
       override def run() = {
       	while (!p.done) {
-      		Thread.sleep((1000/rate).toLong);
+      		Thread.sleep((1000*interval).toLong);
       		val mat = MatFunctions.cpu(fn());
       		p.clear(0);
       		_replot(Array(mat), p, dataset, isconnected);
@@ -92,6 +101,34 @@ object Plotting {
     p;
   }
   
+  def _liveplot3(fn:()=>ListBuffer[Mat], interval:Float)(xlog:Boolean=false, ylog:Boolean=false, isconnected:Boolean=true, bars:Boolean=false, marks:Int = 0) = {
+    var p:MyPlot = new MyPlot;
+    p.setXLog(xlog);
+    p.setYLog(ylog);
+    p.setBars(bars);
+    p.setConnected(isconnected);
+    p.setMarksStyle(marksmat(marks));
+    val dataset = 0;
+    val listbuff = fn();
+    _replot(listbuff, p, dataset, isconnected);
+    p.frame = new PlotFrame("Figure "+ifigure, p);
+  	p.frame.setVisible(true);
+  	p.done = false;
+    val runme = new Runnable {
+      override def run() = {
+      	while (!p.done) {
+      		Thread.sleep((1000*interval).toLong);
+      		val listbuff = fn();
+      		p.clear(0);
+      		_replot(listbuff, p, dataset, isconnected);
+      	}
+      }
+    }
+    ifigure += 1;
+    p.fut = Image.getService.submit(runme);
+    p;
+  }
+
   def _replot(mats:Array[Mat], p:Plot, dataset:Int, isconnected:Boolean) = {
   	if (mats.length == 1) {
   		val m = mats(0);
@@ -139,27 +176,30 @@ object Plotting {
   		m match { 
   		case mf:FMat => {
   		  for (mat <- mats) {
+  		  	val fdata = mat.asInstanceOf[FMat].data;
   		  	var j = 0;
   		  	while (j < mat.length) {			  
-  		  		p.addPoint(j, i, mat.asInstanceOf[FMat].data(j), isconnected); 
+  		  		p.addPoint(j, i, fdata(j), isconnected); 
   		  		j += 1}
   		  	i += 1;
   		  }
   		}
   		case md:DMat => {
   		  for (mat <- mats) {
+  		  	val ddata = mat.asInstanceOf[DMat].data;
   		  	var j = 0;
   		  	while (j < mat.length) {			  
-  		  		p.addPoint(j, i, mat.asInstanceOf[DMat].data(j), isconnected); 
+  		  		p.addPoint(j, i, ddata(j), isconnected); 
   		  		j += 1}
   		  	i += 1;
   		  }
   		}
   		case mi:IMat => {
   		  for (mat <- mats) {
+  		  	val idata = mat.asInstanceOf[IMat].data;
   		  	var j = 0;
   		  	while (j < mat.length) {			  
-  		  		p.addPoint(j, i, mat.asInstanceOf[IMat].data(j), isconnected); 
+  		  		p.addPoint(j, i, idata(j), isconnected); 
   		  		j += 1}
   		  	i += 1;
   		  }
@@ -238,32 +278,58 @@ object Plotting {
   
   
    
-  def plot(fn:()=>Mat, rate:Float) = _liveplot2(fn, rate)();
+  def plot(fn:()=>Mat, interval:Float) = _liveplot2(fn, interval)();
   
-  def scatter(fn:()=>Mat, rate:Float) = _liveplot2(fn, rate)(marks=1, isconnected=false);
+  def scatter(fn:()=>Mat, interval:Float) = _liveplot2(fn, interval)(marks=1, isconnected=false);
   
-  def loglog(fn:()=>Mat, rate:Float) = _liveplot2(fn, rate)(xlog=true, ylog=true)
+  def loglog(fn:()=>Mat, interval:Float) = _liveplot2(fn, interval)(xlog=true, ylog=true)
   
-  def semilogx(fn:()=>Mat, rate:Float) = _liveplot2(fn, rate)(xlog=true)
+  def semilogx(fn:()=>Mat, interval:Float) = _liveplot2(fn, interval)(xlog=true)
   
-  def semilogy(fn:()=>Mat, rate:Float) = _liveplot2(fn, rate)(ylog=true)
+  def semilogy(fn:()=>Mat, interval:Float) = _liveplot2(fn, interval)(ylog=true)
 
-  def barplot(fn:()=>Mat, rate:Float) = _liveplot2(fn, rate)(isconnected=false, bars=true)
+  def barplot(fn:()=>Mat, interval:Float) = _liveplot2(fn, interval)(isconnected=false, bars=true)
   
-  def barloglog(fn:()=>Mat, rate:Float) = _liveplot2(fn, rate)(xlog=true, ylog=true, isconnected=false, bars=true)
+  def barloglog(fn:()=>Mat, interval:Float) = _liveplot2(fn, interval)(xlog=true, ylog=true, isconnected=false, bars=true)
   
-  def barsemilogx(fn:()=>Mat, rate:Float) = _liveplot2(fn, rate)(xlog=true, isconnected=false, bars=true)
+  def barsemilogx(fn:()=>Mat, interval:Float) = _liveplot2(fn, interval)(xlog=true, isconnected=false, bars=true)
   
-  def barsemilogy(fn:()=>Mat, rate:Float) = _liveplot2(fn, rate)(ylog=true, isconnected=false, bars=true)
+  def barsemilogy(fn:()=>Mat, interval:Float) = _liveplot2(fn, interval)(ylog=true, isconnected=false, bars=true)
   
-  def p_plot(fn:()=>Mat, rate:Float) = _liveplot2(fn, rate)(isconnected=false)
+  def p_plot(fn:()=>Mat, interval:Float) = _liveplot2(fn, interval)(isconnected=false)
   
-  def ploglog(fn:()=>Mat, rate:Float) = _liveplot2(fn, rate)(xlog=true, ylog=true, isconnected=false)
+  def ploglog(fn:()=>Mat, interval:Float) = _liveplot2(fn, interval)(xlog=true, ylog=true, isconnected=false)
   
-  def psemilogx(fn:()=>Mat, rate:Float) = _liveplot2(fn, rate)(xlog=true, isconnected=false)
+  def psemilogx(fn:()=>Mat, interval:Float) = _liveplot2(fn, interval)(xlog=true, isconnected=false)
   
-  def psemilogy(fn:()=>Mat, rate:Float) = _liveplot2(fn, rate)(ylog=true, isconnected=false)
+  def psemilogy(fn:()=>Mat, interval:Float) = _liveplot2(fn, interval)(ylog=true, isconnected=false)
   
+  
+  def hplot(fn:()=>ListBuffer[Mat], interval:Float) = _liveplot3(fn, interval)();
+  
+  def hscatter(fn:()=>ListBuffer[Mat], interval:Float) = _liveplot3(fn, interval)(marks=1, isconnected=false);
+  
+  def hloglog(fn:()=>ListBuffer[Mat], interval:Float) = _liveplot3(fn, interval)(xlog=true, ylog=true)
+  
+  def hsemilogx(fn:()=>ListBuffer[Mat], interval:Float) = _liveplot3(fn, interval)(xlog=true)
+  
+  def hsemilogy(fn:()=>ListBuffer[Mat], interval:Float) = _liveplot3(fn, interval)(ylog=true)
+
+  def hbarplot(fn:()=>ListBuffer[Mat], interval:Float) = _liveplot3(fn, interval)(isconnected=false, bars=true)
+  
+  def hbarloglog(fn:()=>ListBuffer[Mat], interval:Float) = _liveplot3(fn, interval)(xlog=true, ylog=true, isconnected=false, bars=true)
+  
+  def hbarsemilogx(fn:()=>ListBuffer[Mat], interval:Float) = _liveplot3(fn, interval)(xlog=true, isconnected=false, bars=true)
+  
+  def hbarsemilogy(fn:()=>ListBuffer[Mat], interval:Float) = _liveplot3(fn, interval)(ylog=true, isconnected=false, bars=true)
+  
+  def hp_plot(fn:()=>ListBuffer[Mat], interval:Float) = _liveplot3(fn, interval)(isconnected=false)
+  
+  def hploglog(fn:()=>ListBuffer[Mat], interval:Float) = _liveplot3(fn, interval)(xlog=true, ylog=true, isconnected=false)
+  
+  def hpsemilogx(fn:()=>ListBuffer[Mat], interval:Float) = _liveplot3(fn, interval)(xlog=true, isconnected=false)
+  
+  def hpsemilogy(fn:()=>ListBuffer[Mat], interval:Float) = _liveplot3(fn, interval)(ylog=true, isconnected=false)
   
    
   def liveplot(fn:()=>Array[Mat]) = _liveplot(fn, 1f)();
@@ -294,31 +360,31 @@ object Plotting {
   
   
    
-  def liveplot(fn:()=>Array[Mat], rate:Float) = _liveplot(fn, rate)();
+  def liveplot(fn:()=>Array[Mat], interval:Float) = _liveplot(fn, interval)();
   
-  def livescatter(fn:()=>Array[Mat], rate:Float) = _liveplot(fn, rate)(marks=1, isconnected=false);
+  def livescatter(fn:()=>Array[Mat], interval:Float) = _liveplot(fn, interval)(marks=1, isconnected=false);
   
-  def liveloglog(fn:()=>Array[Mat], rate:Float) = _liveplot(fn, rate)(xlog=true, ylog=true)
+  def liveloglog(fn:()=>Array[Mat], interval:Float) = _liveplot(fn, interval)(xlog=true, ylog=true)
   
-  def livesemilogx(fn:()=>Array[Mat], rate:Float) = _liveplot(fn, rate)(xlog=true)
+  def livesemilogx(fn:()=>Array[Mat], interval:Float) = _liveplot(fn, interval)(xlog=true)
   
-  def livesemilogy(fn:()=>Array[Mat], rate:Float) = _liveplot(fn, rate)(ylog=true)
+  def livesemilogy(fn:()=>Array[Mat], interval:Float) = _liveplot(fn, interval)(ylog=true)
 
-  def livebarplot(fn:()=>Array[Mat], rate:Float) = _liveplot(fn, rate)(isconnected=false, bars=true)
+  def livebarplot(fn:()=>Array[Mat], interval:Float) = _liveplot(fn, interval)(isconnected=false, bars=true)
   
-  def livebarloglog(fn:()=>Array[Mat], rate:Float) = _liveplot(fn, rate)(xlog=true, ylog=true, isconnected=false, bars=true)
+  def livebarloglog(fn:()=>Array[Mat], interval:Float) = _liveplot(fn, interval)(xlog=true, ylog=true, isconnected=false, bars=true)
   
-  def livebarsemilogx(fn:()=>Array[Mat], rate:Float) = _liveplot(fn, rate)(xlog=true, isconnected=false, bars=true)
+  def livebarsemilogx(fn:()=>Array[Mat], interval:Float) = _liveplot(fn, interval)(xlog=true, isconnected=false, bars=true)
   
-  def livebarsemilogy(fn:()=>Array[Mat], rate:Float) = _liveplot(fn, rate)(ylog=true, isconnected=false, bars=true)
+  def livebarsemilogy(fn:()=>Array[Mat], interval:Float) = _liveplot(fn, interval)(ylog=true, isconnected=false, bars=true)
   
-  def livep_plot(fn:()=>Array[Mat], rate:Float) = _liveplot(fn, rate)(isconnected=false)
+  def livep_plot(fn:()=>Array[Mat], interval:Float) = _liveplot(fn, interval)(isconnected=false)
   
-  def liveploglog(fn:()=>Array[Mat], rate:Float) = _liveplot(fn, rate)(xlog=true, ylog=true, isconnected=false)
+  def liveploglog(fn:()=>Array[Mat], interval:Float) = _liveplot(fn, interval)(xlog=true, ylog=true, isconnected=false)
   
-  def livepsemilogx(fn:()=>Array[Mat], rate:Float) = _liveplot(fn, rate)(xlog=true, isconnected=false)
+  def livepsemilogx(fn:()=>Array[Mat], interval:Float) = _liveplot(fn, interval)(xlog=true, isconnected=false)
   
-  def livepsemilogy(fn:()=>Array[Mat], rate:Float) = _liveplot(fn, rate)(ylog=true, isconnected=false)
+  def livepsemilogy(fn:()=>Array[Mat], interval:Float) = _liveplot(fn, interval)(ylog=true, isconnected=false)
    
   
   def hist(m:Mat, nbars:Int):BufferedImage = { 
@@ -331,7 +397,7 @@ object Plotting {
   def hist(m:Mat):BufferedImage = hist(m, 10);
   
   
-  def hist(fn:()=>Mat, nbars:Int, rate:Float):MyHistogram = { 
+  def hist(fn:()=>Mat, nbars:Int, interval:Float):MyHistogram = { 
   	var p:MyHistogram = new MyHistogram;
     _hist(MatFunctions.cpu(fn()), nbars, p);
     p.frame = new PlotFrame("Figure "+ifigure, p);
@@ -340,7 +406,7 @@ object Plotting {
     val runme = new Runnable {
     	override def run() = {
     		while (!p.done) {
-    			Thread.sleep((1000/rate).toLong);
+    			Thread.sleep((1000*interval).toLong);
     			val mat = MatFunctions.cpu(fn());
     			p.clear(false);
     			_hist(mat, nbars, p);   			
