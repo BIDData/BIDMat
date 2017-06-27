@@ -3,7 +3,8 @@ include Makefile.incl
 CPU_OBJS=BIDMat_CBLAS.$(OBJ) BIDMat_UTILS.$(OBJ) BIDMat_$(RANDSRC).$(OBJ) BIDMat_SPBLAS.$(OBJ) BIDMat_VML.$(OBJ) BIDMat_LAPACK.$(OBJ)
 
 KERNEL_OBJS=Arith.$(OBJ) CopyFill.$(OBJ) Operators.$(OBJ) Random.$(OBJ) Reducers.$(OBJ) Sorting.$(OBJ)
-CUDA_OBJS=BIDMat_CUMAT.$(OBJ) BIDMat_CUMATD.$(OBJ) $(KERNEL_OBJS) MatKernelD.$(OBJ) Logger.$(OBJ) JNIUtils.$(OBJ) PointerUtils.$(OBJ)
+
+CUDA_OBJS=BIDMat_CUMAT.$(OBJ) BIDMat_CUMATD.$(OBJ) $(KERNEL_OBJS) MatKernelD.$(OBJ) Logger.$(OBJ) JNIUtils.$(OBJ) PointerUtils.$(OBJ) BIDMat_NCCL.$(OBJ)
 
 SLATEC_GOBJS=slatec.$(OBJ)
 SLATEC_DEPS=slatec/gutils.cu slatec/gyermsg.cu slatec/gr1mach.cu slatec/gi1mach.cu slatec/gcsevl.cu slatec/ginits.cu slatec/gcot.cu slatec/gpsi.cu slatec/gpsifn.cu

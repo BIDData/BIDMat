@@ -8,6 +8,9 @@
 
 VERSION="2.0.4-cuda8.0beta"
 DEVVERSION="dev-cuda8.0"
+# Set to one and update the path if you plan to use NVIDIA NCCL
+USE_NCCL=1
+NCCL_HOME=/code/nccl
 
 OS=`uname -a`
 PARLIB=$1
@@ -100,7 +103,7 @@ if [ "$OS" = "apple" ] ; then
           --machine ${MBITS} -Xcompiler -arch -Xcompiler ${ARCH} -Xcompiler -stdlib=libc++"
     OBJ="o"
     OUTFLG="-o "
-    CPPFLAGS="-fPIC -c -O2 -g -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/darwin -I$BIDMAT_ROOT/jni/include -I$CUDA_HOME/include -I$BLAS_ROOT/include -I$BLAS_ROOT/include/${ARCHD}${SUBDIR}"
+    CPPFLAGS="-fPIC -c -O2 -g -DNDEBUG -DUSE_NCCL=${USE_NCCL} -I$JAVA_HOME/include -I$JAVA_HOME/include/darwin -I$BIDMAT_ROOT/jni/include -I$CUDA_HOME/include -I${NCCL_HOME}/src -I$BLAS_ROOT/include -I$BLAS_ROOT/include/${ARCHD}${SUBDIR}"
     CFLAGS="-openmp -fPIC -c -O2 -g -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/darwin -I$BIDMAT_ROOT/jni/include -I$BLAS_ROOT/include -I$BLAS_ROOT/include/${ARCHD}${SUBDIR}"
     LB="ar rc"    
     LD="icc -dynamiclib"
@@ -133,6 +136,9 @@ if [ "$OS" = "apple" ] ; then
     LIBDIR="${BIDMAT_ROOT}/lib"
     INSTALL_DIR="${BIDMAT_ROOT}/src/main/resources/lib"
     CUDA_LIBS="-L${CUDA_HOME}/lib -L${LIBDIR} -lcudart -lcublas"
+    if [ "$USE_NCCL" = "1" ]; then 
+	CUDA_LIBS="${NCCL_HOME}/build/lib/libnccl_static.a ${CUDA_LIBS}"
+    fi
 elif [ "$OS" = "linux" ] ; then
     if [ "$ARCH" = "arm" ] || [[ "$ARCH" = "aarch64" ]] ; then
 	RANDSRC="RAND"
@@ -164,7 +170,7 @@ elif [ "$OS" = "linux" ] ; then
 	NVCCFLAGS="-c --std=c++11 -use_fast_math -I$BIDMAT_ROOT/jni/include --maxrregcount=31 ${NVARCH} --machine ${MBITS} -Xcompiler \"-fPIC -c -O2 -g ${ARMFLAGS} -DNDEBUG\""
 	OBJ="o"
 	OUTFLG="-o "
-	CPPFLAGS="-fPIC -std=c++11 ${ARMFLAGS} -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$CUDA_HOME/include ${BLAS_INCLUDE}"
+	CPPFLAGS="-fPIC -std=c++11 ${ARMFLAGS} -c -O2 -DNDEBUG -DUSE_NCCL=${USE_NCCL} -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$CUDA_HOME/include -I${NCCL_HOME}/src ${BLAS_INCLUDE}"
 	CFLAGS="-fPIC -fopenmp ${ARMFLAGS} -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include ${BLAS_INCLUDE}"
 	LB="ar rc"    
 	GLD="g++ -shared"
@@ -187,6 +193,9 @@ elif [ "$OS" = "linux" ] ; then
 	LIBDIR="${BIDMAT_ROOT}/lib"
 	INSTALL_DIR="${BIDMAT_ROOT}/src/main/resources/lib"
 	CUDA_LIBS="-L${CUDA_HOME}/${CULIB} -L${LIBDIR} -lcudart -lcublas"
+	if [ "$USE_NCCL" = "1" ]; then 
+	    CUDA_LIBS="${NCCL_HOME}/build/lib/libnccl_static.a ${CUDA_LIBS}"
+	fi
     else
 	if [ "$BLAS_ROOT" = "" ]; then
 	    if [ "$MKLROOT" != "" ]; then
@@ -220,7 +229,7 @@ elif [ "$OS" = "linux" ] ; then
           --machine ${MBITS}  -Xcompiler \"-fPIC -c -O2 -g -DNDEBUG\""
 	OBJ="o"
 	OUTFLG="-o "
-	CPPFLAGS="-fPIC -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$CUDA_HOME/include -I/usr/include/x86_64-linux-gnu/c++/$GCC_VERSION"
+	CPPFLAGS="-fPIC -c -O2 -DNDEBUG -DUSE_NCCL=${USE_NCCL} -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$CUDA_HOME/include -I${NCCL_HOME}/src -I/usr/include/x86_64-linux-gnu/c++/$GCC_VERSION"
 	CFLAGS="-openmp -fPIC -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$BLAS_ROOT/include -I$BLAS_ROOT/include/${ARCHD}${SUBDIR}"
 	LB="ar rc"    
 	GLD="nvcc -shared"
@@ -249,6 +258,9 @@ elif [ "$OS" = "linux" ] ; then
 	LIBDIR="${BIDMAT_ROOT}/lib"
 	INSTALL_DIR="${BIDMAT_ROOT}/src/main/resources/lib"
 	CUDA_LIBS="-L${CUDA_HOME}/${CULIB} -L${LIBDIR} -lcudart -lcublas"
+	if [ "$USE_NCCL" = "1" ]; then 
+	    CUDA_LIBS="${NCCL_HOME}/build/lib/libnccl_static.a ${CUDA_LIBS}"
+	fi
     fi
 elif [ "$OS" = "windows" ] ; then
     CUDA_HOME="$CUDA_PATH"
@@ -262,7 +274,7 @@ elif [ "$OS" = "windows" ] ; then
     NVCC="nvcc"
     OBJ="obj"
     OUTFLG="/OUT:"
-    CPPFLAGS="/openmp /c /MT /DNDEBUG /O2 /EHsc $CPPFLAGS"  
+    CPPFLAGS="/openmp /c /MT /DNDEBUG /DUSE_NCCL=${USE_NCCL} /O2 /EHsc $CPPFLAGS"  
     CFLAGS="/openmp /c /MT /DNDEBUG /O2 /EHsc $CFLAGS" 
     NVCCFLAGS="-c -use_fast_math -I$BIDMAT_ROOT/jni/include \
           -gencode arch=compute_30,code=sm_30 \
@@ -301,7 +313,7 @@ elif [ "$OS" = "windows" ] ; then
     INSTALL_DIR="${BIDMAT_ROOT}/src/main/resources/lib"
     CUDA_LIBS="cudart.lib cublas.lib"
     LIB="$BLAS_ROOT/lib/${ARCHD};$JAVA_HOME/lib;$CUDA_HOME/lib/${CULIB};${LIBDIR};$LIB"
-    INCLUDE="$JAVA_HOME/include;$JAVA_HOME/include/win32;$BLAS_ROOT/include;${BIDMAT_ROOT}/jni/include;$CUDA_HOME/include;$INCLUDE"
+    INCLUDE="$JAVA_HOME/include;$JAVA_HOME/include/win32;$BLAS_ROOT/include;${BIDMAT_ROOT}/jni/include;$CUDA_HOME/include;${NCCL_HOME}/src;$INCLUDE"
 else
     echo "OS not supported"
     exit 1
