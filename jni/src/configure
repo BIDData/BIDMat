@@ -9,7 +9,7 @@
 VERSION="2.0.4-cuda8.0beta"
 DEVVERSION="dev-cuda8.0"
 # Set to one and update the path if you plan to use NVIDIA NCCL
-USE_NCCL=1
+USE_NCCL=0
 NCCL_HOME=/code/nccl
 
 OS=`uname -a`
