@@ -215,7 +215,6 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       var err = cudnnConvolutionBackwardFilter(GFilter.get2ndHandle, GFilter.ONE, adesc, a.pdata, bdesc, b.pdata, convdesc, 
           bwdFilterAlgo(0), workspace.pdata, workspaceSizeInBytes, if (doclear) GFilter.ZERO else GFilter.ONE, fdesc, pdata);
       
-      cudaStreamSynchronize(GFilter.get2ndStream);
       if (err == 0) err = cudaGetLastError();
       if (err > 0) throw new RuntimeException("Error in CUDNN backward data convolution %s" format cudaGetErrorString(err));
       
@@ -227,6 +226,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
   def convolveMfork(a:GMat, b:GMat):GFilter = convolveMfork(a, b, true);
   
   override def convolveMjoin:GFilter = {
+  	cudaStreamSynchronize(GFilter.get2ndStream);
     cudnnDestroyConvolutionDescriptor(convdesc);
     cudnnDestroyFilterDescriptor(fdesc);
     cudnnDestroyTensorDescriptor(bdesc);
