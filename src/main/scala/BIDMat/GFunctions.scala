@@ -123,6 +123,47 @@ object GFunctions {
     (v0, ar(0))
   }
   
+    
+/* 
+ * NCCL Ops
+ * 
+ * ncclSum  = 0,
+ * ncclProd = 1,
+ * ncclMax  = 2,
+ * ncclMin  = 3,
+ * 
+ */
+  
+  def allReduce(from:Array[GMat], to:Array[GMat], op:Int):Int = {
+    import edu.berkeley.bid.NCCL;
+    val len = from.length;
+    if (len != to.length) throw new RuntimeException("allReduce from a to array lengths must match");
+    if (len > Mat.hasCUDA) throw new RuntimeException("allReduce array lengths must be <= number of GPUs");
+
+    val streams = new Array[cudaStream_t](len);
+    val comms = new Array[NCCL](len);
+    NCCL.ncclCommInitAll(comms);
+    val thisGPU = SciFunctions.getGPU;
+    for (i <- 0 until len) {
+      SciFunctions.setGPU(i);
+      streams(i) = new cudaStream_t;
+      cudaStreamCreate(streams(i));
+      NCCL.ncclAllReduce(from(i).pdata, to(i).pdata, from.length, 3, op, comms(i), streams(i));
+    }
+    for (i <- 0 until len) {
+    	SciFunctions.setGPU(i);
+      cudaStreamSynchronize(streams(i));
+    }
+    for (i <- 0 until len) {
+    	SciFunctions.setGPU(i);
+      cudaStreamDestroy(streams(i));
+      NCCL.ncclCommDestroy(comms(i));
+    }
+    SciFunctions.setGPU(thisGPU);
+  }
+  
+  def allReduce(from:Array[GMat], to:Array[GMat]):Int = allReduce(from, to, 0);
+  
   val freeMemArray = new Array[Long](1)
   val totalMemArray = new Array[Long](1);
   

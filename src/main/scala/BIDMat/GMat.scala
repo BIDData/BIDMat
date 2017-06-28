@@ -2193,8 +2193,7 @@ object GMat {
     cudaDeviceSynchronize;
     val err = cudaGetLastError;
     if (err != 0) throw new RuntimeException(msg +" error in memcpy "+ cudaGetErrorString(err));
-  }
-  
+  } 
   
   def newOrCheckGMat(nr:Int, nc:Int, outmat:Mat):GMat = {
     if (outmat.asInstanceOf[AnyRef] == null || (outmat.nrows == 0 && outmat.ncols == 0)) {
