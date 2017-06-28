@@ -54,6 +54,10 @@ object SciFunctions {
   
   def getNumThreads = edu.berkeley.bid.UTILS.getnumthreads();
   
+  def ncclAllReduce(from:Array[GMat], to:Array[GMat], op:Int) = GFunctions.ncclAllReduce(from, to, op);
+  
+  def ncclAllReduce(from:Array[GMat], to:Array[GMat]) = GFunctions.ncclAllReduce(from, to, 0);
+  
   def setseed(seed:Int):Unit = {
     myrand.setSeed(seed)
     if (stream != null) {
