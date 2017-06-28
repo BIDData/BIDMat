@@ -104,7 +104,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       var err = cudnnConvolutionForward(GFilter.getHandle, GFilter.ONE, adesc, a.pdata, fdesc, pdata, convdesc, 
           fwdAlgo(0), workspace.pdata, workspaceSizeInBytes, if (doclear) GFilter.ZERO else GFilter.ONE, bdesc, b.pdata);
       
-      cudaStreamSynchronize(null);
+      cudaStreamSynchronize(GFilter.getStream);
       if (err == 0) err = cudaGetLastError();
       if (err > 0) throw new RuntimeException("Error in CUDNN forward convolution %s" format cudaGetErrorString(err));
       
@@ -161,7 +161,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       if (err == 0) err = cudaGetLastError();
       if (err > 0) throw new RuntimeException("Error in CUDNN backward data convolution %s" format cudaGetErrorString(err));
       
-  		cudaStreamSynchronize(null);
+  		cudaStreamSynchronize(GFilter.getStream);
   		cudnnDestroyConvolutionDescriptor(convdesc);
   		cudnnDestroyFilterDescriptor(fdesc);
   		cudnnDestroyTensorDescriptor(bdesc);
@@ -330,6 +330,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
 object GFilter {
   var cudnnContexts:Array[cudnnHandle] = null;
   var cudnn2ndContexts:Array[cudnnHandle] = null;
+  var cudnnStreams:Array[cudaStream_t] = null;
   var cudnn2ndStreams:Array[cudaStream_t] = null;
   var cudnnContextsInitialized = false;
   val ONE = Pointer.to(Array(1f));
@@ -353,6 +354,7 @@ object GFilter {
 			  	val nGPUs = Mat.hasCUDA;
 			  	cudnnContexts = new Array[cudnnHandle](nGPUs);
 			  	cudnn2ndContexts = new Array[cudnnHandle](nGPUs);
+			  	cudnnStreams = new Array[cudaStream_t](nGPUs);
 			  	cudnn2ndStreams = new Array[cudaStream_t](nGPUs);
 			  	for (i <- 0 until nGPUs) {
 			  		SciFunctions.setGPU(i);
@@ -362,8 +364,12 @@ object GFilter {
 			  		if (err == 0) err = cudnnCreate(cudnn2ndContexts(i));
 			  		val stream = new cudaStream_t;
 			  		if (err == 0) err = cudaStreamCreate(stream);
-			  		if (err == 0) err = cudnnSetStream(cudnn2ndContexts(i), stream);
-			  		cudnn2ndStreams(i) = stream;
+			  		if (err == 0) err = cudnnSetStream(cudnnContexts(i), stream);
+			  		cudnnStreams(i) = stream;
+			  		val stream2 = new cudaStream_t;
+			  		if (err == 0) err = cudaStreamCreate(stream2);
+			  		if (err == 0) err = cudnnSetStream(cudnn2ndContexts(i), stream2);
+			  		cudnn2ndStreams(i) = stream2;
 			  		if (err != 0 && verbose) println("Cudnn initialization error %d on GPU %d" format (err, i));
 			  		if (err != 0) throw new RuntimeException("");
 			  	} 
@@ -394,6 +400,11 @@ object GFilter {
   def get2ndStream = {
 		if (!cudnnContextsInitialized) initHandles(false);
 		cudnn2ndStreams(SciFunctions.getGPU)
+  }
+  
+  def getStream = {
+		if (!cudnnContextsInitialized) initHandles(false);
+		cudnnStreams(SciFunctions.getGPU)
   }
   
   def apply(inDims:IMat,outDims:IMat, stride:IMat, pad:IMat, outPad:IMat, dataDims:IMat) = {
