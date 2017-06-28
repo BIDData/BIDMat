@@ -150,7 +150,7 @@ object GFunctions {
       SciFunctions.setGPU(i);
       streams(i) = new cudaStream_t;
       cudaStreamCreate(streams(i));
-      NCCL.ncclAllReduce(from(i).pdata, to(i).pdata, from.length, 3, op, comms(i), streams(i));
+      NCCL.ncclAllReduce(from(i).pdata, to(i).pdata, from(i).length, 3, op, comms(i), streams(i));
     }
     for (i <- 0 until len) {
     	SciFunctions.setGPU(i);
