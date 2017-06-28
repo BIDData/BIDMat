@@ -99,7 +99,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       var err = cudnnConvolutionForward(GFilter.getHandle, GFilter.ONE, adesc, a.pdata, fdesc, pdata, convdesc, 
           fwdAlgo(0), workspace.pdata, workspaceSizeInBytes, if (doclear) GFilter.ZERO else GFilter.ONE, bdesc, b.pdata);
       
-      cudaDeviceSynchronize;
+      cudaStreamSynchronize(null);
       if (err == 0) err = cudaGetLastError();
       if (err > 0) throw new RuntimeException("Error in CUDNN forward convolution %s" format cudaGetErrorString(err));
       
@@ -153,7 +153,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       var err = cudnnConvolutionBackwardData(GFilter.getHandle, GFilter.ONE, fdesc, pdata, bdesc, b.pdata, convdesc, 
           bwdDataAlgo(0), workspace.pdata, workspaceSizeInBytes, if (doclear) GFilter.ZERO else GFilter.ONE, adesc, a.pdata);
       
-      cudaDeviceSynchronize;
+      cudaStreamSynchronize(null);
       if (err == 0) err = cudaGetLastError();
       if (err > 0) throw new RuntimeException("Error in CUDNN backward data convolution %s" format cudaGetErrorString(err));
       
@@ -210,7 +210,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       var err = cudnnConvolutionBackwardFilter(GFilter.getHandle, GFilter.ONE, adesc, a.pdata, bdesc, b.pdata, convdesc, 
           bwdFilterAlgo(0), workspace.pdata, workspaceSizeInBytes, if (doclear) GFilter.ZERO else GFilter.ONE, fdesc, pdata);
       
-      cudaDeviceSynchronize;
+      cudaStreamSynchronize(null);
       if (err == 0) err = cudaGetLastError();
       if (err > 0) throw new RuntimeException("Error in CUDNN backward data convolution %s" format cudaGetErrorString(err));
       
