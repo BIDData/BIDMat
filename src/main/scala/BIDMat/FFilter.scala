@@ -139,7 +139,7 @@ FMat(dataDims0.data, data0) with Filter {
 
 	def convolveT(a:FMat):FMat = convolveT(a, null, true);
 
-	def convolveM(a:FMat, b:FMat, doclear:Boolean):FMat = {
+	def convolveM(a:FMat, b:FMat, doclear:Boolean):FFilter = {
 			val bdims = b.dims;
 			val outdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad, outPad);
 			if ((bdims - outdims).data.exists(_ != 0)) {
@@ -184,7 +184,7 @@ FMat(dataDims0.data, data0) with Filter {
 			this;
 	};
 
-	def convolveM(a:FMat, b:FMat):FMat = convolveM(a, b, true);
+	def convolveM(a:FMat, b:FMat):FFilter = convolveM(a, b, true);
 
 	override def copy:FFilter = {
 		val a = new FFilter(inDims.copy, outDims.copy, stride.copy, pad.copy, outPad.copy, dataDims.copy, new Array[Float](length));
@@ -204,7 +204,7 @@ FMat(dataDims0.data, data0) with Filter {
 			}
 	}
 
-	override def convolveM(a:Mat, b:Mat, doclear:Boolean):Mat = {
+	override def convolveM(a:Mat, b:Mat, doclear:Boolean):Filter = {
 			(a, b) match {
 			case (aa:FMat, bb:FMat) => convolveM(aa, bb, doclear);
 			}

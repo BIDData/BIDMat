@@ -42,6 +42,11 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
   var fwdTrained = false;
   var bwdDataTrained = false;
   var bwdFilterTrained = false;
+  var adesc:cudnnTensorDescriptor = null;
+  var bdesc:cudnnTensorDescriptor = null;
+  var fdesc:cudnnFilterDescriptor = null;
+  var convdesc:cudnnConvolutionDescriptor = null;
+  var a:GMat = null;
   
   def setNHWC = {
 		  tensorFormat = cudnnTensorFormat.CUDNN_TENSOR_NHWC;
@@ -117,7 +122,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
   def convolveT(b:GMat, omat:Mat, doclear:Boolean):GMat = {
     val adims = Filter.getInputDims(b.dims, inDims, outDims, stride, pad, outPad);
     val hmm = ND.hashIMat(stride, ND.hashIMat(pad));
-    val a = GMat.newOrCheckGMat(adims, omat, b.GUID, GUID, hmm, "convoutT".##);
+    a = GMat.newOrCheckGMat(adims, omat, b.GUID, GUID, hmm, "convoutT".##);
     if (dims.length == 4) {
       val adesc = new cudnnTensorDescriptor;
       cudnnCreateTensorDescriptor(adesc);
@@ -153,14 +158,14 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       var err = cudnnConvolutionBackwardData(GFilter.getHandle, GFilter.ONE, fdesc, pdata, bdesc, b.pdata, convdesc, 
           bwdDataAlgo(0), workspace.pdata, workspaceSizeInBytes, if (doclear) GFilter.ZERO else GFilter.ONE, adesc, a.pdata);
       
-      cudaStreamSynchronize(null);
       if (err == 0) err = cudaGetLastError();
       if (err > 0) throw new RuntimeException("Error in CUDNN backward data convolution %s" format cudaGetErrorString(err));
       
-      cudnnDestroyConvolutionDescriptor(convdesc);
-      cudnnDestroyFilterDescriptor(fdesc);
-      cudnnDestroyTensorDescriptor(bdesc);
-      cudnnDestroyTensorDescriptor(adesc);
+  		cudaStreamSynchronize(null);
+  		cudnnDestroyConvolutionDescriptor(convdesc);
+  		cudnnDestroyFilterDescriptor(fdesc);
+  		cudnnDestroyTensorDescriptor(bdesc);
+  		cudnnDestroyTensorDescriptor(adesc);
     }
     Mat.nflops += computeFlops(a, stride, pad);
     a
@@ -168,7 +173,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
   
   def convolveT(a:GMat):GMat = convolveT(a, null, true);
   
-  def convolveM(a:GMat, b:GMat, doclear:Boolean):GMat = {
+  def convolveMfork(a:GMat, b:GMat, doclear:Boolean):GFilter= {
 		val bdims = b.dims;
     val outdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad, outPad);
     if ((bdims - outdims).data.exists(_ != 0)) {
@@ -176,22 +181,22 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
     }
     val hmm = ND.hashIMat(stride, ND.hashIMat(pad));
     if (dims.length == 4) {
-      val adesc = new cudnnTensorDescriptor;
+      adesc = new cudnnTensorDescriptor;
       cudnnCreateTensorDescriptor(adesc);
       val astatus = cudnnSetTensor4dDescriptor(adesc, tensorFormat, dataType, a.dims(3), a.dims(0), a.dims(2), a.dims(1));
       if (astatus > 0) throw new RuntimeException("Error creating A tensor for backward filter convolution %d, bad stride?" format astatus)
       
-      val bdesc = new cudnnTensorDescriptor;
+      bdesc = new cudnnTensorDescriptor;
       cudnnCreateTensorDescriptor(bdesc);
       val bstatus = cudnnSetTensor4dDescriptor(bdesc, tensorFormat, dataType, b.dims(3), b.dims(0), b.dims(2), b.dims(1));
       if (bstatus > 0) throw new RuntimeException("Error creating B tensor for backward filter convolution %d, bad stride?" format bstatus)
       
-      val fdesc = new cudnnFilterDescriptor;
+      fdesc = new cudnnFilterDescriptor;
       cudnnCreateFilterDescriptor(fdesc);
       val fstatus = cudnnSetFilter4dDescriptor(fdesc, dataType, tensorFormat, outDims(0), inDims(0), inDims(2), inDims(1));
       if (fstatus > 0) throw new RuntimeException("Error creating filter tensor for backward filter convolution %d" format fstatus)
       
-      val convdesc = new cudnnConvolutionDescriptor;
+      convdesc = new cudnnConvolutionDescriptor;
       cudnnCreateConvolutionDescriptor(convdesc);
       val cstatus = cudnnSetConvolution2dDescriptor(convdesc, pad(2), pad(1), stride(2), stride(1), 1, 1, convType);
       if (cstatus > 0) throw new RuntimeException("Error setting convolution descriptor for backward filter convolution %d" format cstatus);
@@ -214,16 +219,30 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       if (err == 0) err = cudaGetLastError();
       if (err > 0) throw new RuntimeException("Error in CUDNN backward data convolution %s" format cudaGetErrorString(err));
       
-      cudnnDestroyConvolutionDescriptor(convdesc);
-      cudnnDestroyFilterDescriptor(fdesc);
-      cudnnDestroyTensorDescriptor(bdesc);
-      cudnnDestroyTensorDescriptor(adesc);
     }
     Mat.nflops += computeFlops(a, stride, pad);
     this
   }
   
-  def convolveM(a:GMat, b:GMat):GMat = convolveM(a, b, true);
+  def convolveMfork(a:GMat, b:GMat):GFilter = convolveMfork(a, b, true);
+  
+  override def convolveMjoin:GFilter = {
+    cudnnDestroyConvolutionDescriptor(convdesc);
+    cudnnDestroyFilterDescriptor(fdesc);
+    cudnnDestroyTensorDescriptor(bdesc);
+    cudnnDestroyTensorDescriptor(adesc);
+  	this;
+  }
+  
+  def convolveM(a:GMat, b:GMat, doclear:Boolean):GFilter = {
+    convolveMfork(a, b, doclear);
+    convolveMjoin;
+  }
+  
+  def convolveM(a:GMat, b:GMat):GFilter = {
+    convolveMfork(a, b, true);
+    convolveMjoin;
+  }
   
   override def convolve(b:Mat, omat:Mat, doclear:Boolean):Mat = {
 			b match {
@@ -237,9 +256,15 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
 			}
 	}
 
-	override def convolveM(a:Mat, b:Mat, doclear:Boolean):Mat = {
+	override def convolveM(a:Mat, b:Mat, doclear:Boolean):Filter = {
 			(a, b) match {
 			case (aa:GMat, bb:GMat) => convolveM(aa, bb, doclear);
+			}
+	}
+	
+  override def convolveMfork(a:Mat, b:Mat, doclear:Boolean):Filter = {
+			(a, b) match {
+			case (aa:GMat, bb:GMat) => convolveMfork(aa, bb, doclear);
 			}
 	}
   
