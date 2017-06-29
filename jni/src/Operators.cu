@@ -349,7 +349,7 @@ void setsizes(long long N, dim3 *gridp, int *nthreadsp) {
     } else if (nthreads < threads_per_block) {
       nthreads = 2*nthreads;
     } else {
-      nblocks = 2*nblocks;
+      nblocks = max(nblocks, 1 + (N-1)/nthreads);
     }
   }
   gridp->y = 1 + (nblocks-1)/65536;
