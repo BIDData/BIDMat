@@ -100,6 +100,8 @@ if [ "$OS" = "apple" ] ; then
           -gencode arch=compute_50,code=sm_50 \
           -gencode arch=compute_52,code=sm_52 \
           -gencode arch=compute_60,code=sm_60 \
+          -gencode arch=compute_61,code=sm_61 \
+          -gencode arch=compute_61,code=compute_61 \
           --machine ${MBITS} -Xcompiler -arch -Xcompiler ${ARCH} -Xcompiler -stdlib=libc++"
     OBJ="o"
     OUTFLG="-o "
@@ -226,6 +228,8 @@ elif [ "$OS" = "linux" ] ; then
           -gencode arch=compute_50,code=sm_50 \
           -gencode arch=compute_52,code=sm_52 \
           -gencode arch=compute_60,code=sm_60 \
+          -gencode arch=compute_61,code=sm_61 \
+          -gencode arch=compute_61,code=compute_61 \
           --machine ${MBITS}  -Xcompiler \"-fPIC -c -O2 -g -DNDEBUG\""
 	OBJ="o"
 	OUTFLG="-o "
@@ -282,6 +286,8 @@ elif [ "$OS" = "windows" ] ; then
           -gencode arch=compute_50,code=sm_50 \
           -gencode arch=compute_52,code=sm_52 \
           -gencode arch=compute_60,code=sm_60 \
+          -gencode arch=compute_61,code=sm_61 \
+          -gencode arch=compute_61,code=compute_61 \
           --machine ${MBITS}  -Xcompiler \"/EHsc /W3 /nologo /O2 /Zi /wd4244 /wd4267 /wd4503 /MT\""
     LB="lib"    
     LD="link"
