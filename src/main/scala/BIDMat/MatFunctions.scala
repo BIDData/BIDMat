@@ -1269,6 +1269,11 @@ object MatFunctions {
     icol(args.toList)
   }
   
+   /** Make an integer column vector from this calls vararg list. */
+  def icol(args:Array[Int]):IMat = {
+    new IMat(args.length, 1, args);
+  }
+  
   /** Make an integer matrix of zeros of the given dimensions. */
   def izeros(nr:Int, nc:Int):IMat = IMat.izeros(nr, nc);
   
@@ -1378,7 +1383,7 @@ object MatFunctions {
   
   /** Make a string row vector from a list of strings. */  
   def cscol(x:Array[String]):CSMat = {
-    val mat = CSMat(1, x.length)
+    val mat = CSMat(x.length, 1)
     x.copyToArray(mat.data)
     mat
   }
