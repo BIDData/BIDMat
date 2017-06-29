@@ -253,6 +253,22 @@ object CSMat {
     
     def apply(a:List[String]) = new CSMat(1, a.length, a.toArray)
     
+    def apply(a:FMat) = {
+      new CSMat(a.dims.data, a.data.map(_.toString));
+    }
+    
+    def apply(a:DMat) = {
+      new CSMat(a.dims.data, a.data.map(_.toString));
+    }
+    
+    def apply(a:IMat) = {
+      new CSMat(a.dims.data, a.data.map(_.toString));
+    }
+        
+    def apply(a:LMat) = {
+      new CSMat(a.dims.data, a.data.map(_.toString));
+    }
+    
     def newOrCheckCSMat(nr:Int, nc:Int, outmat:Mat):CSMat = {
     if (outmat.asInstanceOf[AnyRef] == null || (outmat.nrows == 0 && outmat.ncols == 0)) {
       CSMat(nr, nc)

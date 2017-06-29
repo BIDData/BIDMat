@@ -1087,6 +1087,11 @@ object MatFunctions {
   def dcol(args:Double*):DMat = {
     dcol(args.toList)
   }
+  
+  /** Make a double column vector from an Array of Doubles this function. */
+  def dcol(args:Array[Double]):DMat = {
+    new DMat(args.length, 1, args);
+  }
 
   /** Make a double matrix of zeros of the given dimensions. */
   def dzeros(nr:Int, nc:Int):DMat = DMat.zeros(nr, nc);
@@ -1351,6 +1356,13 @@ object MatFunctions {
     x.copyToArray(mat.data)
     mat
   }
+  
+  /** Make a string row vector from a list of strings. */  
+  def csrow(x:Array[String]):CSMat = {
+    val mat = CSMat(1, x.length)
+    x.copyToArray(mat.data)
+    mat
+  }
 
   /** Make a string row vector from this calls vararg list. */
   def csrow(args:String*):CSMat = {
@@ -1360,6 +1372,13 @@ object MatFunctions {
   /** Make a string column vector from a list of strings. */  
   def cscol(x:List[String]):CSMat = {
     val mat = CSMat(x.length,1)
+    x.copyToArray(mat.data)
+    mat
+  }
+  
+  /** Make a string row vector from a list of strings. */  
+  def cscol(x:Array[String]):CSMat = {
+    val mat = CSMat(1, x.length)
     x.copyToArray(mat.data)
     mat
   }
