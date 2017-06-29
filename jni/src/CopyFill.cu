@@ -36,7 +36,7 @@ __global__ void __copyToIndsX(float *A, float *B, long long len) {
 int copyToInds(float *A, float *B, int *I, long long len) {
   int nthreads;
   dim3 griddims;
-  setsizes(len, &griddims, &nthreads);
+  setsizesLean(len, &griddims, &nthreads);
   if (I == NULL) {
     __copyToIndsX<<<griddims,nthreads>>>(A, B, len);
   } else {
@@ -68,7 +68,7 @@ __global__ void __copyToIndsLongX(long long *A, long long *B, long long len) {
 int copyToIndsLong(long long *A, long long *B, int *I, long long len) {
   int nthreads;
   dim3 griddims;
-  setsizes(len, &griddims, &nthreads);
+  setsizesLean(len, &griddims, &nthreads);
   if (I == NULL) {
     __copyToIndsLongX<<<griddims,nthreads>>>(A, B, len);
   } else {
@@ -100,7 +100,7 @@ __global__ void __fillToIndsX(float A, float *B, long long len) {
 int fillToInds(float A, float *B, int *I, long long len) {
   int nthreads;
   dim3 griddims;
-  setsizes(len, &griddims, &nthreads);
+  setsizesLean(len, &griddims, &nthreads);
   if (I == NULL) {
     __fillToIndsX<<<griddims,nthreads>>>(A, B, len);
   } else {
@@ -132,7 +132,7 @@ __global__ void __fillToIndsLongX(long long A, long long *B, long long len) {
 int fillToIndsLong(long long A, long long *B, int *I, long long len) {
   int nthreads;
   dim3 griddims;
-  setsizes(len, &griddims, &nthreads);
+  setsizesLean(len, &griddims, &nthreads);
   if (I == NULL) {
     __fillToIndsLongX<<<griddims,nthreads>>>(A, B, len);
   } else {
@@ -156,7 +156,7 @@ __global__ void __copyFromInds(T *A, T *B, int *I, long long len) {
 int copyFromInds(float *A, float *B, int *I, long long len) {
   int nthreads;
   dim3 griddims;
-  setsizes(len, &griddims, &nthreads);
+  setsizesLean(len, &griddims, &nthreads);
   __copyFromInds<<<griddims,nthreads>>>(A, B, I, len);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -1319,7 +1319,7 @@ __global__ void __intToLong(int *A, long long *B, int N) {
 int intToFloat(int *A, float *B, int N) {
   int nthreads;
   dim3 griddims;
-  setsizes(N, &griddims, &nthreads);
+  setsizesLean(N, &griddims, &nthreads);
   __intToFloat<<<griddims,nthreads>>>(A, B, N);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -1329,7 +1329,7 @@ int intToFloat(int *A, float *B, int N) {
 int longToFloat(long long *A, float *B, int N) {
   int nthreads;
   dim3 griddims;
-  setsizes(N, &griddims, &nthreads);
+  setsizesLean(N, &griddims, &nthreads);
   __longToFloat<<<griddims,nthreads>>>(A, B, N);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -1339,7 +1339,7 @@ int longToFloat(long long *A, float *B, int N) {
 int floatToLong(float *A, long long *B, int N) {
   int nthreads;
   dim3 griddims;
-  setsizes(N, &griddims, &nthreads);
+  setsizesLean(N, &griddims, &nthreads);
   __floatToLong<<<griddims,nthreads>>>(A, B, N);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -1349,7 +1349,7 @@ int floatToLong(float *A, long long *B, int N) {
 int floatToInt(float *A, int *B, int N) {
   int nthreads;
   dim3 griddims;
-  setsizes(N, &griddims, &nthreads);
+  setsizesLean(N, &griddims, &nthreads);
   __floatToInt<<<griddims,nthreads>>>(A, B, N);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -1359,7 +1359,7 @@ int floatToInt(float *A, int *B, int N) {
 int longToInt(long long *A, int *B, int N) {
   int nthreads;
   dim3 griddims;
-  setsizes(N, &griddims, &nthreads);
+  setsizesLean(N, &griddims, &nthreads);
   __longToInt<<<griddims,nthreads>>>(A, B, N);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -1369,7 +1369,7 @@ int longToInt(long long *A, int *B, int N) {
 int intToLong(int *A, long long *B, int N) {
   int nthreads;
   dim3 griddims;
-  setsizes(N, &griddims, &nthreads);
+  setsizesLean(N, &griddims, &nthreads);
   __intToLong<<<griddims,nthreads>>>(A, B, N);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -1414,7 +1414,7 @@ __global__ void __initSeq2(int *A, int nrows, int ncols) {
 int initSeq(int *A, int nrows, int ncols, int dorows) {
   int nthreads;
   dim3 griddims;
-  setsizes(nrows*ncols, &griddims, &nthreads);
+  setsizesLean(nrows*ncols, &griddims, &nthreads);
   if (dorows) {
     __initSeq<<<griddims,nthreads>>>(A, nrows, ncols);
   } else {
@@ -1443,7 +1443,7 @@ __global__ void __set_lval(long long *A, long long val, int length) {
 int set_val(float *A, float val, int length) {
   int nthreads;
   dim3 griddims;
-  setsizes(length, &griddims, &nthreads);
+  setsizesLean(length, &griddims, &nthreads);
   __set_val<<<griddims,nthreads>>>(A, val, length);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -1453,7 +1453,7 @@ int set_val(float *A, float val, int length) {
 int set_ival(float *A, int val, int length) {
   int nthreads;
   dim3 griddims;
-  setsizes(length, &griddims, &nthreads);
+  setsizesLean(length, &griddims, &nthreads);
   __set_val<<<griddims,nthreads>>>(A, *((float *)&val), length);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -1463,7 +1463,7 @@ int set_ival(float *A, int val, int length) {
 int set_lval(long long *A, long long val, int length) {
   int nthreads;
   dim3 griddims;
-  setsizes(length, &griddims, &nthreads);
+  setsizesLean(length, &griddims, &nthreads);
   __set_lval<<<griddims,nthreads>>>(A, val, length);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -1494,7 +1494,7 @@ int kron(T *A, T *B, T *C, int nrA, int ncA, int nrB, int ncB) {
   long long len = ((long long)nr) * nc;
   int nthreads;
   dim3 griddims;
-  setsizes(len, &griddims, &nthreads);
+  setsizesLean(len, &griddims, &nthreads);
   __kron<<<griddims,nthreads>>>(A, B, C, nrA, ncA, nrB, ncB, nr, nc);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();

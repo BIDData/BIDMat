@@ -223,6 +223,25 @@ void setsizes(long long N, dim3 *gridp, int *nthreadsp) {
   *nthreadsp = nthreads;
 }
 
+
+void setsizesLean(long long N, dim3 *gridp, int *nthreadsp) {
+  int nblocks = 1;
+  int nthreads = 32;
+  while (1L * nblocks * nthreads < N) {
+    if (nblocks < 16) {
+      nblocks = 2*nblocks;
+    } else if (nthreads < 1024) {
+      nthreads = 2*nthreads;
+    } else {
+      nblocks = max(nblocks, 1 + (int)((N-1)/nthreads));
+    }
+  }
+  gridp->y = 1 + (nblocks-1)/65536;
+  gridp->x = 1 + (nblocks-1)/gridp->y;
+  gridp->z = 1;
+  *nthreadsp = nthreads;
+}
+
 int apply_gfun(float *A, float *B, int N, int opn) {
   int nthreads;
   dim3 griddims;

@@ -349,8 +349,29 @@ void setsizes(long long N, dim3 *gridp, int *nthreadsp) {
     } else if (nthreads < threads_per_block) {
       nthreads = 2*nthreads;
     } else {
-//      nblocks = max(nblocks, 1 + (int)((N-1)/nthreads));
         nblocks = 2*nblocks;
+    }
+  }
+  gridp->y = 1 + (nblocks-1)/65536;
+  gridp->x = 1 + (nblocks-1)/gridp->y;
+  gridp->z = 1;
+  *nthreadsp = nthreads;
+}
+
+void setsizesLean(long long N, dim3 *gridp, int *nthreadsp) {
+  int nblocks = 1;
+  int nthreads = 32;
+  int threads_per_block = 1024;
+//  int version;
+//  version = getDeviceVersion();
+//  if (version == 320) threads_per_block = 512;
+  while (1L * nblocks * nthreads < N) {
+    if (nblocks < 16) {
+      nblocks = 2*nblocks;
+    } else if (nthreads < threads_per_block) {
+      nthreads = 2*nthreads;
+    } else {
+      nblocks = max(nblocks, 1 + (int)((N-1)/nthreads));
     }
   }
   gridp->y = 1 + (nblocks-1)/65536;
@@ -371,7 +392,7 @@ __global__ void __apply_gfun_##ATYPE(ATYPE *A, ATYPE *B, int N, int opn) {			   
 int apply_gfun(ATYPE *A, ATYPE *B, int N, int opn) {						    \
   int nthreads;											    \
   dim3 griddims;										    \
-  setsizes(N, &griddims, &nthreads);								    \
+  setsizesLean(N, &griddims, &nthreads);								    \
   __apply_gfun_##ATYPE<<<griddims,nthreads>>>(A, B, N, opn);					    \
   cudaDeviceSynchronize();									    \
   cudaError_t err = cudaGetLastError();								    \
@@ -394,7 +415,7 @@ __global__ void __apply_gfun2_##ATYPE(ATYPE *A, ATYPE *B, ATYPE *C, int N, int o
 int apply_gfun2(ATYPE *A, ATYPE *B, ATYPE *C, int N, int opn) {					    \
   int nthreads;											    \
   dim3 griddims;										    \
-  setsizes(N, &griddims, &nthreads);								    \
+  setsizesLean(N, &griddims, &nthreads);								    \
   __apply_gfun2_##ATYPE<<<griddims,nthreads>>>(A, B, C, N, opn);				    \
   cudaDeviceSynchronize();									    \
   cudaError_t err = cudaGetLastError();								    \
@@ -484,7 +505,7 @@ int apply_binop(ATYPE *A, int Anrows, int Ancols,						    \
   int N = max(Anrows, Bnrows)*max(Ancols, Bncols);						    \
   int nthreads;                                                                                     \
   dim3 griddims;										    \
-  setsizes(N, &griddims, &nthreads);								    \
+  setsizesLean(N, &griddims, &nthreads);								    \
   if (Anrows == Bnrows && Ancols == Bncols) {							    \
     __apply_full<<<griddims,nthreads>>>(A, B, C, N, opn);					    \
   } else if (Anrows == Bnrows && Bncols == 1) {							    \
@@ -510,7 +531,7 @@ int apply_binop_left_const(ATYPE A,						    \
   int N = Bnrows* Bncols;						    \
   int nthreads;											    \
   dim3 griddims;										    \
-  setsizes(N, &griddims, &nthreads);								    \
+  setsizesLean(N, &griddims, &nthreads);								    \
     __apply_left_const<<<griddims,nthreads>>>(A, B, C, Bnrows, Bncols, opn);			    \
   cudaDeviceSynchronize();									    \
   cudaError_t err = cudaGetLastError();								    \
@@ -522,7 +543,7 @@ int apply_binop_right_const(ATYPE *A, int Anrows, int Ancols,						    \
   int N = Anrows*Ancols;						    \
   int nthreads;											    \
   dim3 griddims;										    \
-  setsizes(N, &griddims, &nthreads);								    \
+  setsizesLean(N, &griddims, &nthreads);								    \
     __apply_right_const<<<griddims,nthreads>>>(A, B, C, Anrows, Ancols, opn);			    \
   cudaDeviceSynchronize();									    \
   cudaError_t err = cudaGetLastError();								    \
@@ -570,7 +591,7 @@ int sdoprow(int nrows, int ncols, int nnz, ATYPE *A, int *Aic,					    \
             ATYPE *B, int len, int opn) {							    \
   int nthreads;											    \
   dim3 griddims;										    \
-  setsizes(nnz, &griddims, &nthreads);								    \
+  setsizesLean(nnz, &griddims, &nthreads);								    \
   if (len > 1) {										    \
     __sdoprow<<<griddims,nthreads>>>(nrows, ncols, nnz, A, Aic, B, opn);			    \
   } else {											    \
@@ -585,7 +606,7 @@ int sdopcol(int nrows, int ncols, int nnz, ATYPE *A, int *Air,					    \
             ATYPE *B, int len, int opn) {							    \
   int nthreads;											    \
   dim3 griddims;										    \
-  setsizes(nnz, &griddims, &nthreads);								    \
+  setsizesLean(nnz, &griddims, &nthreads);								    \
   if (len > 1) {										    \
     __sdopcol<<<griddims,nthreads>>>(nrows, ncols, nnz, A, Air, B, opn);			    \
   } else {											    \

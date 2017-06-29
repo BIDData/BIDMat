@@ -49,8 +49,29 @@ void setsizesD(long long N, dim3 *gridp, int *nthreadsp) {
     } else if (nthreads < threads_per_block) {
       nthreads = 2*nthreads;
     } else {
-      //      nblocks = max(nblocks, 1 + (int)((N-1)/nthreads));
       nblocks = 2*nblocks; 
+    }
+  }
+  gridp->y = 1 + (nblocks-1)/65536;
+  gridp->x = 1 + (nblocks-1)/gridp->y;
+  gridp->z = 1;
+  *nthreadsp = nthreads;
+}
+
+void setsizesLeanD(long long N, dim3 *gridp, int *nthreadsp) {
+  int nblocks = 1;
+  int nthreads = 32;
+  int threads_per_block = 1024;
+//  int version;
+//  version = getDeviceVersionD();
+//  if (version == 320) threads_per_block = 512;
+  while (1L * nblocks * nthreads < N) {
+    if (nblocks < 16) {
+      nblocks = 2*nblocks;
+    } else if (nthreads < threads_per_block) {
+      nthreads = 2*nthreads;
+    } else {
+      nblocks = max(nblocks, 1 + (int)((N-1)/nthreads));
     }
   }
   gridp->y = 1 + (nblocks-1)/65536;
@@ -77,7 +98,7 @@ __global__ void __toInt(double *A, int *B, int N) {
 int IntToDouble(int *A, double *B, int N) {
   int nthreads;
   dim3 griddims;
-  setsizesD(N, &griddims, &nthreads);
+  setsizesLeanD(N, &griddims, &nthreads);
   __toDouble<int><<<griddims,nthreads>>>(A, B, N);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -87,7 +108,7 @@ int IntToDouble(int *A, double *B, int N) {
 int FloatToDouble(float *A, double *B, int N) {
   int nthreads;
   dim3 griddims;
-  setsizesD(N, &griddims, &nthreads);
+  setsizesLeanD(N, &griddims, &nthreads);
   __toDouble<float><<<griddims,nthreads>>>(A, B, N);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -97,7 +118,7 @@ int FloatToDouble(float *A, double *B, int N) {
 int toInt(double *A, int *B, int N) {
   int nthreads;
   dim3 griddims;
-  setsizesD(N, &griddims, &nthreads);
+  setsizesLeanD(N, &griddims, &nthreads);
   __toInt<<<griddims,nthreads>>>(A, B, N);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -137,7 +158,7 @@ __global__ void __set_val(double *A, double val, int length) {
 int set_val(double *A, double val, int length) {
   int nthreads;
   dim3 griddims;
-  setsizesD(length, &griddims, &nthreads);
+  setsizesLeanD(length, &griddims, &nthreads);
   __set_val<<<griddims,nthreads>>>(A, val, length);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -147,7 +168,7 @@ int set_val(double *A, double val, int length) {
 int set_ival(double *A, int val, int length) {
   int nthreads;
   dim3 griddims;
-  setsizesD(length, &griddims, &nthreads);
+  setsizesLeanD(length, &griddims, &nthreads);
   __set_val<<<griddims,nthreads>>>(A, *((double *)&val), length);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -166,7 +187,7 @@ __global__ void __copyToInds(double *A, double *B, int *I, long long len) {
 int copyToInds(double *A, double *B, int *I, long long len) {
   int nthreads;
   dim3 griddims;
-  setsizesD(len, &griddims, &nthreads);
+  setsizesLeanD(len, &griddims, &nthreads);
   __copyToInds<<<griddims,nthreads>>>(A, B, I, len);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -186,7 +207,7 @@ __global__ void __copyFromInds(T *A, T *B, int *I, long long len) {
 int copyFromInds(double *A, double *B, int *I, long long len) {
   int nthreads;
   dim3 griddims;
-  setsizesD(len, &griddims, &nthreads);
+  setsizesLeanD(len, &griddims, &nthreads);
   __copyFromInds<<<griddims,nthreads>>>(A, B, I, len);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -387,7 +408,7 @@ __global__ void __fillToInds(double A, double *B, int *I, long long len) {
 int fillToInds(double A, double *B, int *I, long long len) {
   int nthreads;
   dim3 griddims;
-  setsizesD(len, &griddims, &nthreads);
+  setsizesLeanD(len, &griddims, &nthreads);
   __fillToInds<<<griddims,nthreads>>>(A, B, I, len);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -1089,7 +1110,7 @@ __global__ void __embedmat(double *a, int *b, long long *c, int n) {
 int embedmat2d(double *a, long long *b, int nrows, int ncols, int sortdown) {
   int nthreads;
   dim3 griddims;
-  setsizesD(nrows*ncols, &griddims, &nthreads);
+  setsizesLeanD(nrows*ncols, &griddims, &nthreads);
   __embedmat2d<<<griddims,nthreads>>>(a, b, nrows, ncols, sortdown);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -1099,7 +1120,7 @@ int embedmat2d(double *a, long long *b, int nrows, int ncols, int sortdown) {
 int embedmat(double *a, int *b, long long *c, int n) {
   int nthreads;
   dim3 griddims;
-  setsizesD(n, &griddims, &nthreads);
+  setsizesLeanD(n, &griddims, &nthreads);
   __embedmat<<<griddims,nthreads>>>(a, b, c, n);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -1136,7 +1157,7 @@ __global__ void __extractmat(double *a, int *b, long long *c, int n) {
 int extractmat2d(double *a, long long *b, int nrows, int ncols) {
   int nthreads;
   dim3 griddims;
-  setsizesD(nrows*ncols, &griddims, &nthreads);
+  setsizesLeanD(nrows*ncols, &griddims, &nthreads);
   __extractmat2d<<<griddims,nthreads>>>(a, b, nrows, ncols);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -1146,7 +1167,7 @@ int extractmat2d(double *a, long long *b, int nrows, int ncols) {
 int extractmat(double *a, int *b, long long *c, int n) {
   int nthreads;
   dim3 griddims;
-  setsizesD(n, &griddims, &nthreads);
+  setsizesLeanD(n, &griddims, &nthreads);
   __extractmat<<<griddims,nthreads>>>(a, b, c, n);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();

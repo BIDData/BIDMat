@@ -1,5 +1,7 @@
 void setsizesD(long long N, dim3 *gridp, int *nthreadsp);
 
+void setsizesLeanD(long long N, dim3 *gridp, int *nthreadsp);
+
 int copyFromInds(double *A, double *B, int *I, long long len);
 
 int copyToInds(double *A, double *B, int *I, long long len);

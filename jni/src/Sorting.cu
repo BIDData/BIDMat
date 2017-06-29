@@ -53,7 +53,7 @@ __global__ void __embedmat(float *a, int *b, long long *c, int n) {
 int embedmat2d(float *a, long long *b, int nrows, int ncols, int sortdown) {
   int nthreads;
   dim3 griddims;
-  setsizes(nrows*ncols, &griddims, &nthreads);
+  setsizesLean(nrows*ncols, &griddims, &nthreads);
   __embedmat2d<<<griddims,nthreads>>>(a, b, nrows, ncols, sortdown);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -63,7 +63,7 @@ int embedmat2d(float *a, long long *b, int nrows, int ncols, int sortdown) {
 int embedmat(float *a, int *b, long long *c, int n) {
   int nthreads;
   dim3 griddims;
-  setsizes(n, &griddims, &nthreads);
+  setsizesLean(n, &griddims, &nthreads);
   __embedmat<<<griddims,nthreads>>>(a, b, c, n);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -100,7 +100,7 @@ __global__ void __extractmat(float *a, int *b, long long *c, int n) {
 int extractmat2d(float *a, long long *b, int nrows, int ncols) {
   int nthreads;
   dim3 griddims;
-  setsizes(nrows*ncols, &griddims, &nthreads);
+  setsizesLean(nrows*ncols, &griddims, &nthreads);
   __extractmat2d<<<griddims,nthreads>>>(a, b, nrows, ncols);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
@@ -110,7 +110,7 @@ int extractmat2d(float *a, long long *b, int nrows, int ncols) {
 int extractmat(float *a, int *b, long long *c, int n) {
   int nthreads;
   dim3 griddims;
-  setsizes(n, &griddims, &nthreads);
+  setsizesLean(n, &griddims, &nthreads);
   __extractmat<<<griddims,nthreads>>>(a, b, c, n);
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
