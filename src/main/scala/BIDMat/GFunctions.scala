@@ -18,20 +18,36 @@ import jcuda.runtime._
 import jcuda.runtime.JCuda._
 import jcuda.runtime.cudaMemcpyKind._
 import jcuda.jcublas._
-import jcuda.jcublas.JCublas._
+import jcuda.jcublas.JCublas2._
 import jcuda.jcusparse._
 
 
 object GFunctions {
 
-   var cudarng:Array[AnyRef] = null; 
+  var cudarng:Array[AnyRef] = null;       // Use AnyRef to avoid errors from loading CUDA classes on non-CUDA machines.
+  var cudarngStream:Array[AnyRef] = null; // An array of per-GPU streams for random number generation.
+  var cublasHandles:Array[AnyRef] = null
   
-   def initCUDArngs = {
+  def initCUDArngs = {
     val thisGPU = getGPU
     cudarng = new Array[AnyRef](Mat.hasCUDA)
+    cudarngStream = new Array[AnyRef](Mat.hasCUDA)
     for (i <- 0 until Mat.hasCUDA) {
       setGPU(i)
       initCUDArng(i)
+    }
+    setGPU(thisGPU)
+  }
+  
+  def initCublas = {
+    val thisGPU = getGPU
+    cublasHandles = new Array[AnyRef](Mat.hasCUDA)
+    for (i <- 0 until Mat.hasCUDA) {
+      setGPU(i);
+      val handle = new cublasHandle;
+      cublasCreate(handle);
+      cublasSetStream(handle, Mat.SyncMethod);
+      cublasHandles(i) = handle;
     }
     setGPU(thisGPU)
   }
@@ -40,24 +56,41 @@ object GFunctions {
     import jcuda.jcurand.curandGenerator;
     import jcuda.jcurand.JCurand._;
     import jcuda.jcurand.curandRngType._;
-    val thisGPU = getGPU
-    setGPU(igpu)
-    cudarng(igpu) = new curandGenerator
-    curandCreateGenerator(cudarng(igpu).asInstanceOf[curandGenerator], CURAND_RNG_PSEUDO_DEFAULT) 
-    curandSetPseudoRandomGeneratorSeed(cudarng(igpu).asInstanceOf[curandGenerator], GPUSEED)
-    setGPU(thisGPU)
+    val thisGPU = getGPU;
+    setGPU(igpu); 
+    val generator = new curandGenerator;
+    curandCreateGenerator(generator, CURAND_RNG_PSEUDO_DEFAULT);
+    curandSetPseudoRandomGeneratorSeed(generator, GPUSEED+igpu);
+    cudarng(igpu) = generator;
+    val cstream = new cudaStream_t;
+    cudaStreamCreate(cstream);
+    curandSetStream(generator, cstream);
+    cudarngStream(igpu) = cstream;
+    setGPU(thisGPU);
   }
   
-	 def resetGPU = {
+  def resetGPU = {
     import jcuda.runtime._;
     JCuda.cudaDeviceReset
-    JCuda.cudaDeviceSynchronize
+    JCuda.cudaStreamSynchronize(Mat.SyncMethod)
     initCUDArng(getGPU)
     GSMat.cusparseContextsInitialized = false
     GSMat.cusparseDescrsInitialized = false
-    GFilter.cudnnContextsInitialized = false;
-    jcuda.jcublas.JCublas.cublasInit();
     Mat.clearCaches
+  }
+
+  def initCUDNN(verbose:Boolean = false) = { 
+    try { 
+      Mat.hasCUDNN = true;
+      GFilter.GFilter1D(1,1,0);
+    } catch { 
+      case e:Throwable => { 
+        Mat.hasCUDNN = false;
+        if (verbose) { 
+          e.printStackTrace();
+        }
+      }
+    }
   }
   
   def moveGPUseed = {
@@ -72,9 +105,10 @@ object GFunctions {
     import jcuda.runtime._;
     val oldi = getGPU
     for (i <- 0 until Mat.hasCUDA) {
-      JCuda.cudaSetDevice(i)
-      resetGPU
+      JCuda.cudaSetDevice(i);
+      resetGPU;
     }
+    initCublas;
     JCuda.cudaSetDevice(oldi)
   }
   
@@ -193,7 +227,7 @@ object GFunctions {
     import jcuda.jcurand._
     Mat.nflops += 10L*out.length
     JCurand.curandGenerateUniform(cudarng(getGPU).asInstanceOf[curandGenerator], out.pdata, out.length)
-    jcuda.runtime.JCuda.cudaDeviceSynchronize()
+    jcuda.runtime.JCuda.cudaStreamSynchronize(cudarngStream(getGPU).asInstanceOf[cudaStream_t]);
     out
   }
   
@@ -208,7 +242,7 @@ object GFunctions {
     import jcuda.jcurand._
     Mat.nflops += 10L*out.length
     JCurand.curandGenerateNormal(cudarng(getGPU).asInstanceOf[curandGenerator], out.pdata, out.length, mu, sig)
-    jcuda.runtime.JCuda.cudaDeviceSynchronize()
+    jcuda.runtime.JCuda.cudaStreamSynchronize(cudarngStream(getGPU).asInstanceOf[cudaStream_t]);
     out
   }
   
@@ -216,7 +250,7 @@ object GFunctions {
     import jcuda.jcurand._;
     Mat.nflops += 10L*out.length;
     JCurand.curandGeneratePoisson(cudarng(getGPU).asInstanceOf[curandGenerator], out.pdata, out.length, mu);
-    jcuda.runtime.JCuda.cudaDeviceSynchronize();
+    jcuda.runtime.JCuda.cudaStreamSynchronize(cudarngStream(getGPU).asInstanceOf[cudaStream_t]);
     out
   }
   
@@ -225,7 +259,6 @@ object GFunctions {
     val nthreads = math.max(1, mu.length / 1024);
     moveGPUseed;
     CUMAT.poissonrnd(out.length, mu.pdata, out.pdata, nthreads, GPUSEED, OFFSET);
-    jcuda.runtime.JCuda.cudaDeviceSynchronize()
     out
   }
   
@@ -259,7 +292,6 @@ object GFunctions {
   def applyGfun(in:GMat, omat:Mat, opn:Int, kflops:Long):GMat = {
     val out = GMat.newOrCheckGMat(in.dims, omat, in.GUID, opn)
     CUMAT.applygfun(in.pdata, out.pdata, in.nrows*in.ncols, opn)
-    jcuda.runtime.JCuda.cudaDeviceSynchronize()
     Mat.nflops += kflops*in.length
     out
   }
@@ -267,7 +299,6 @@ object GFunctions {
   def applyGfun(in:GMat, opn:Int, kflops:Long):GMat = {
     val out = GMat.newOrCheckGMat(in.dims, null, in.GUID, opn)
     CUMAT.applygfun(in.pdata, out.pdata, in.nrows*in.ncols, opn)
-    jcuda.runtime.JCuda.cudaDeviceSynchronize()
     Mat.nflops += kflops*in.length
     out
   }
@@ -276,7 +307,6 @@ object GFunctions {
     if (samedims(a.dims, b.dims)) {
       val out = GMat.newOrCheckGMat(a.dims, omat, a.GUID, b.GUID, opn)
       CUMAT.applygfun2(a.pdata, b.pdata, out.pdata, a.nrows*a.ncols, opn)
-      jcuda.runtime.JCuda.cudaDeviceSynchronize()
       Mat.nflops += kflops*a.length
       out
     } else {
@@ -288,7 +318,6 @@ object GFunctions {
     if (samedims(a.dims, b.dims))  {
       val out = GMat.newOrCheckGMat(a.dims, null, a.GUID, b.GUID, opn)
       CUMAT.applygfun2(a.pdata, b.pdata, out.pdata, a.nrows*a.ncols, opn)
-      jcuda.runtime.JCuda.cudaDeviceSynchronize()
       Mat.nflops += kflops*a.length
       out
     } else {
@@ -654,7 +683,7 @@ object GFunctions {
           val colstodo = todo / keys.nrows
           cudaMemcpy(aa, Pointer.to(keys.data).withByteOffset(1L*ioff*Sizeof.FLOAT), 1L*todo*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
           cudaMemcpy(vv, Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), 1L*todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
-          cudaDeviceSynchronize;
+          cudaStreamSynchronize(Mat.SyncMethod);
           var err = cudaGetLastError;
           if (err != 0) throw new RuntimeException("GMat GPUsort_old() error " + cudaGetErrorString(err));
           if (tall) {
@@ -827,7 +856,7 @@ object GFunctions {
           if (err != 0) throw new RuntimeException("sortGPU copy a in failed thread %d error %d" format (ithread,err))
           cudaMemcpy(vv.pdata, Pointer.to(vals.data).withByteOffset(1L*ioff*Sizeof.INT), 1L*todo*Sizeof.INT, cudaMemcpyKind.cudaMemcpyHostToDevice)
           if (err != 0) throw new RuntimeException("sortGPU copy v in failed thread %d error %d" format (ithread,err))
-          cudaDeviceSynchronize
+          cudaStreamSynchronize(Mat.SyncMethod)
           if (tall) {
             err = CUMAT.fsort2dx(aa.pdata, vv.pdata, tkeys.pdata, tvals.pdata, keys.nrows, colstodo, iasc)
             if (err != 0) throw new RuntimeException("sortGPU tall sort failed thread %d error %d" format (ithread,err))
@@ -855,6 +884,13 @@ object GFunctions {
     }
     while (SciFunctions.mini(done).v == 0) Thread.`yield`
     Mat.nflops += keys.length
+  }
+  
+    
+  def getHandle = {
+    val igpu = Array(0);
+    jcuda.runtime.JCuda.cudaGetDevice(igpu)
+    GFunctions.cublasHandles(igpu(0)).asInstanceOf[cublasHandle];
   }
   
   
@@ -902,7 +938,7 @@ object GFunctions {
                   val nk = math.min(gacols, a.ncols - k)
                   err = cudaMemcpy2D(aa, garows*Sizeof.FLOAT, Pointer.to(a.data).withByteOffset(1L*(i+k*a.nrows)*Sizeof.FLOAT), 
                       a.nrows*Sizeof.FLOAT, ni*Sizeof.FLOAT, nk, cudaMemcpyHostToDevice)
-                  cudaDeviceSynchronize     
+                  cudaStreamSynchronize(Mat.SyncMethod)     
                   if (err != 0) throw new RuntimeException("CUDA copy a failed "+err)
                   if (btrans) {
                     err = cudaMemcpy2D(bb, gbrows*Sizeof.FLOAT, Pointer.to(b.data).withByteOffset(1L*(j+k*b.nrows)*Sizeof.FLOAT), 
@@ -911,18 +947,19 @@ object GFunctions {
                     err = cudaMemcpy2D(bb, gbrows*Sizeof.FLOAT, Pointer.to(b.data).withByteOffset(1L*(k+j*b.nrows)*Sizeof.FLOAT), 
                         b.nrows*Sizeof.FLOAT, nk*Sizeof.FLOAT, nj, cudaMemcpyHostToDevice) 
                   }
-                  cudaDeviceSynchronize
+                  cudaStreamSynchronize(Mat.SyncMethod)
                   if (err != 0) throw new RuntimeException("CUDA copy b failed "+err)
 
-                  cublasSgemm('n', if (btrans) 't' else 'n', ni, nj, nk, 1.0f, aa, garows, bb, gbrows, if (k==0) 0f else 1f, cc, gcrows)
+                  cublasSgemm(getHandle, cublasOperation.CUBLAS_OP_N, if (btrans) cublasOperation.CUBLAS_OP_T else cublasOperation.CUBLAS_OP_N, ni, nj, nk, 
+                      GMat.pONE, aa, garows, bb, gbrows, if (k==0) GMat.pZERO else GMat.pONE, cc, gcrows)
                   
-                  cudaDeviceSynchronize
+                  cudaStreamSynchronize(Mat.SyncMethod)
                   err = cudaGetLastError
                   if (err != 0) throw new RuntimeException("Cublas error in xG, sgemm "+err)
                   k += gacols
                 }
                 err = cudaMemcpy2D(Pointer.to(c.data).withByteOffset(1L*(i+j*c.nrows)*Sizeof.FLOAT), c.nrows*Sizeof.FLOAT, cc, gcrows*Sizeof.FLOAT, ni*Sizeof.FLOAT, nj, cudaMemcpyDeviceToHost) 
-                cudaDeviceSynchronize
+                cudaStreamSynchronize(Mat.SyncMethod)
                 if (err != 0) throw new RuntimeException("CUDA copy c failed "+err)
                 j += cblkk*gccols
               }
@@ -1008,16 +1045,16 @@ object GFunctions {
     						  val nj = math.min(gccols, c.ncols - j);
     						  var k = 0;
     						  cudaMemset(cc, 0, 1L*gcrows*gccols*Sizeof.FLOAT);
-    						  cudaDeviceSynchronize;
+    						  cudaStreamSynchronize(Mat.SyncMethod);
     						  while (k < a.ncols) {
     							  val nk = math.min(gacols, a.ncols - k);
     							  err = cudaMemcpy2D(aa, garows*Sizeof.FLOAT, Pointer.to(a.data).withByteOffset(1L*(i+k*a.nrows)*Sizeof.FLOAT), 
     									  a.nrows*Sizeof.FLOAT, ni*Sizeof.FLOAT, nk, cudaMemcpyHostToDevice);
-    							  cudaDeviceSynchronize;
+    							  cudaStreamSynchronize(Mat.SyncMethod);
     							  if (err != 0) throw new RuntimeException("LXdist copy a failed "+err);
     							  err = cudaMemcpy2D(bb, gbrows*Sizeof.FLOAT, Pointer.to(b.data).withByteOffset(1L*(j+k*b.nrows)*Sizeof.FLOAT), 
     									  b.nrows*Sizeof.FLOAT, nj*Sizeof.FLOAT, nk, cudaMemcpyHostToDevice);
-    							  cudaDeviceSynchronize;
+    							  cudaStreamSynchronize(Mat.SyncMethod);
     							  if (err != 0) throw new RuntimeException("LXdist copy b failed "+err);
 
     							  err=CUMAT.distances(aa, garows, bb, gbrows, cc, gcrows, nk, ni, nj, p);
@@ -1030,7 +1067,7 @@ object GFunctions {
     						  if (err != 0) throw new RuntimeException("LXdist scale c failed "+err);
     						  err = cudaMemcpy2D(Pointer.to(c.data).withByteOffset(1L*(i+j*c.nrows)*Sizeof.FLOAT), c.nrows*Sizeof.FLOAT, 
     								  cc, gcrows*Sizeof.FLOAT, ni*Sizeof.FLOAT, nj, cudaMemcpyDeviceToHost);
-    						  cudaDeviceSynchronize;
+    						  cudaStreamSynchronize(Mat.SyncMethod);
     						  if (err != 0) throw new RuntimeException("LXdist copy c failed "+err);
     						  j += cblkk*gccols;
     					  }
@@ -1066,7 +1103,7 @@ object GFunctions {
         val gi = GIMat(outi)
         var err = cudaMemcpy(gv.pdata, Pointer.to(a.data), 1L*a.nrows*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyHostToDevice)
         if (err != 0) throw new RuntimeException("sortGPU copy v error %d" format err)    
-        cudaDeviceSynchronize
+        cudaStreamSynchronize(Mat.SyncMethod)
         CUMAT.dsortk(gv.pdata, gi.pdata, a.nrows, if (asc) 1 else 0)
         err = cudaMemcpy(Pointer.to(outv.data), gv.pdata, 1L*a.nrows*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyDeviceToHost)
         if (err != 0) throw new RuntimeException("sortGPU copy v error %d" format err)

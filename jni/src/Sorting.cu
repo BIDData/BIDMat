@@ -55,7 +55,7 @@ int embedmat2d(float *a, long long *b, int nrows, int ncols, int sortdown) {
   dim3 griddims;
   setsizesLean(nrows*ncols, &griddims, &nthreads);
   __embedmat2d<<<griddims,nthreads>>>(a, b, nrows, ncols, sortdown);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -65,7 +65,7 @@ int embedmat(float *a, int *b, long long *c, int n) {
   dim3 griddims;
   setsizesLean(n, &griddims, &nthreads);
   __embedmat<<<griddims,nthreads>>>(a, b, c, n);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -102,7 +102,7 @@ int extractmat2d(float *a, long long *b, int nrows, int ncols) {
   dim3 griddims;
   setsizesLean(nrows*ncols, &griddims, &nthreads);
   __extractmat2d<<<griddims,nthreads>>>(a, b, nrows, ncols);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -112,7 +112,7 @@ int extractmat(float *a, int *b, long long *c, int n) {
   dim3 griddims;
   setsizesLean(n, &griddims, &nthreads);
   __extractmat<<<griddims,nthreads>>>(a, b, c, n);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -128,7 +128,7 @@ int fsort2dk(float *pkeys, unsigned int *pvals, int nrows, int ncols, int asc) {
       thrust::sort_by_key(keys, keys + nrows, vals, thrust::greater<float>());
     }
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -145,7 +145,7 @@ long long fisortcubsize(float *inkeys, float *outkeys, unsigned int *invals, uns
   } else {
     thrust::system::cuda::detail::cub_::DeviceRadixSort::SortPairsDescending(temp, size, d_keys, d_vals, nelems);
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   return size;
 }
 
@@ -157,7 +157,7 @@ int fisortcub(float *inkeys, float *outkeys, unsigned int *invals, unsigned int 
   } else {
     thrust::system::cuda::detail::cub_::DeviceRadixSort::SortPairsDescending((void *)temp, (size_t &)size, d_keys, d_vals, nelems);
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -170,7 +170,7 @@ int fsort2dx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tval
   int * temp;
   ntemp = fisortcubsize(pkeys, tkeys, pvals, tvals, nrows, asc);
   cudaMalloc(&temp, ntemp * sizeof(int));
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   for (i = 0; i < ncols; i++) {
     thrust::system::cuda::detail::cub_::DoubleBuffer<float> d_keys(pkeys + (nrows * i), tkeys + (nrows * i));
     thrust::system::cuda::detail::cub_::DoubleBuffer<unsigned int> d_vals(pvals + (nrows * i), tvals + (nrows * i));
@@ -180,7 +180,7 @@ int fsort2dx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tval
       thrust::system::cuda::detail::cub_::DeviceRadixSort::SortPairsDescending((void *)temp, (size_t &)ntemp, d_keys, d_vals, nrows);
     }
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaFree(temp);
   err = cudaGetLastError();
   return err;
@@ -197,7 +197,7 @@ int fsort2d(float *pkeys, int nrows, int ncols, int asc) {
       thrust::sort(keys, keys + nrows, thrust::greater<float>());
     }
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -209,7 +209,7 @@ int isort(int *pkeys, int N, int asc) {
   } else {
     thrust::sort(keys, keys + N,  thrust::greater<int>());
   }    
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -221,7 +221,7 @@ int fsort(float *pkeys, int N, int asc) {
   } else {
     thrust::sort(keys, keys + N, thrust::greater<int>());
   }    
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -234,7 +234,7 @@ int isortk(int *pkeys, unsigned int *pvals, int N, int asc) {
   } else {
     thrust::sort_by_key(keys, keys + N, vals,  thrust::greater<int>());
   }    
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -250,7 +250,7 @@ int fsorts(float *pkeys, unsigned int *pvals, int *jc, int m, int asc) {
       thrust::sort_by_key(keys, keys + b, vals, thrust::greater<float>());
     }    
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -263,7 +263,7 @@ int dsortk(double *pkeys, unsigned int *pvals, int N, int asc) {
   } else {
     thrust::sort_by_key(keys, keys + N, vals,  thrust::greater<double>());
   }    
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -276,7 +276,7 @@ int lsortk(long long *pkeys, unsigned int *pvals, int N, int asc) {
   } else {
     thrust::sort_by_key(keys, keys + N, vals,  thrust::greater<long long>());
   }    
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -289,7 +289,7 @@ int lsort(long long *pkeys, int N, int asc) {
   } else {
     thrust::sort(keys, keys + N, thrust::greater<long long>());
   }    
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -338,7 +338,7 @@ int i4sort(int *pkeys0, int N, int asc) {
   } else {
     thrust::sort(keys, keys + N, cmp_lllint_key_desc());
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -382,7 +382,7 @@ int i3sortk(int *pkeys0, unsigned int *pvals, int N, int asc) {
   } else {
     thrust::sort_by_key(keys, keys + N, vals, cmp_i3struct_key_desc());
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -442,7 +442,7 @@ __global__ void __stratify(float *strata, int n, float *a, float *b, unsigned in
 
 int stratify(float *strata, int n, float *a, float *b, unsigned int *bi, int stride) {
   __stratify<<<40,32>>>(strata, n, a, b, bi, stride);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -496,7 +496,7 @@ int stratifycounts(float *strata, int n, float *a, unsigned int *bi) {
   const dim3 blockdims(SNDVALS, SNTHREADS/SNDVALS, 1);
   const dim3 griddims(8,1,1);
   __stratifycounts<<<griddims,blockdims>>>(strata, n, a, bi);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -534,7 +534,7 @@ int radixcounts(float *a, int n, int digit, unsigned int *bi) {
   const dim3 blockdims(RNTHREADS,1,1);
   const dim3 griddims(32,1,1);
   __radixcounts<<<griddims,blockdims>>>(a, n, digit, bi);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }

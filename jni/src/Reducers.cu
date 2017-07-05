@@ -268,7 +268,7 @@ int cumsumg(T *in, T *out, int *jc, int nrows, int ncols, int m) {
   int ny = min(32, 1+nrows/m/32);
   dim3 tblock(32, ny, 1);
   __cumsumg<T><<<grid,tblock>>>(in, out, jc, nrows, ncols, m);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -289,7 +289,7 @@ int maxming(T *in, T *out, int *outi, int *jc, int nrows, int ncols, int m, T mi
   int ny = min(32, 1+nrows/m/32);
   dim3 tblock(32, ny, 1);
   __maxming<T><<<grid,tblock>>>(in, out, outi, jc, nrows, ncols, m, minv, dir);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -304,7 +304,7 @@ int maxmini_cols(T *in, T *out, int *outi, int nrows, int ncols, T minv, int dir
   int ny = min(32, 1+nrows/32);
   dim3 tblock(32, ny, 1);
   __maxmini_cols<T><<<grid,tblock>>>(in, out, outi, nrows, ncols, minv, dir);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -316,7 +316,7 @@ int maxmini_rows(T *in, T *out, int *outi, int nrows, int ncols, int dir) {
   int ny = min(32, 1+nrows/nb/32);
   dim3 tblock(32, ny, 1);
   __maxmini_rows<T><<<grid,tblock>>>(in, out, outi, nrows, ncols, dir);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -414,7 +414,7 @@ int accum(TI, TJ, TV, TS, int m, int nrows) {                          \
   int nthreads = max(32, min(512, m));                                 \
   int nblocks = max(1, min(65535, m/nthreads/8));                      \
   __accum<<<nblocks,nthreads>>>(I,J,V,S,m,nrows);                      \
-  cudaDeviceSynchronize();                                             \
+  cudaStreamSynchronize(SYNC_STREAM);                                             \
   cudaError_t err = cudaGetLastError();                                \
   return err;                                                          \
 }
@@ -503,7 +503,7 @@ int cum##OPER##ByKey(TVAL *vals, TKEY * keys, TVAL *ovals, int nrows, int ncols)
   int nthreads = 32;                                                                           \
   int nblocks = max(1, min(4096, ncols));                                                      \
   __cum##OPER##ByKey<<<nblocks,nthreads>>>(vals, keys, ovals, nrows, ncols);                   \
-  cudaDeviceSynchronize();                                                                     \
+  cudaStreamSynchronize(SYNC_STREAM);                                                                     \
   cudaError_t err = cudaGetLastError();                                                        \
   return err;                                                                                  \
 }
@@ -569,7 +569,7 @@ int cum##OPER##2ByKey(TVAL *vals, TKEY *keys, TVAL *ovals, int nrows, int ncols)
   int nthreads = min(1024, ((nrows-1)/32+1) * 32);						    \
   int nblocks = min(32768, 1 + (nrows-1)/nthreads);						    \
   __cum##OPER##2ByKey<<<nblocks,nthreads>>>(vals, keys, ovals, nrows, ncols);			    \
-  cudaDeviceSynchronize();									    \
+  cudaStreamSynchronize(SYNC_STREAM);									    \
   cudaError_t err = cudaGetLastError();								    \
   return err;											    \
 }
@@ -600,7 +600,7 @@ int mergeLVecs(long long *pakeys, unsigned int *pavals, long long *pbkeys, unsig
   thrust::device_ptr<unsigned int> ovals(povals);
 
   thrust::merge_by_key(akeys, akeys+n1, bkeys, bkeys+n2, avals, bvals, okeys, ovals);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -685,7 +685,7 @@ int cumsumc(int nrows, int ncols, float *A, float *B) {
     int nblocks = min(64, 1 + (ncols-1)/threads.y);
     __cumsumc<<<nblocks,threads>>>(nrows, ncols, A, B);
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -696,7 +696,7 @@ int inclusive_scan_by_key_ff(float *fvals, float *fkeys, float *fout, long long 
   thrust::device_ptr<float> out(fout);
 
   thrust::inclusive_scan_by_key(keys, keys+len, vals, out);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -707,7 +707,7 @@ int inclusive_scan_by_key_fi(float *fvals, int *fkeys, float *fout, long long le
   thrust::device_ptr<float> out(fout);
 
   thrust::inclusive_scan_by_key(keys, keys+len, vals, out);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -718,7 +718,7 @@ int inclusive_scan_by_key_ii(int *fvals, int *fkeys, int *fout, long long len) {
   thrust::device_ptr<int> out(fout);
 
   thrust::inclusive_scan_by_key(keys, keys+len, vals, out);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -729,7 +729,7 @@ int inclusive_scan_by_key_fl(float *fvals, long long *fkeys, float *fout, long l
   thrust::device_ptr<float> out(fout);
 
   thrust::inclusive_scan_by_key(keys, keys+len, vals, out);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -742,7 +742,7 @@ int inclusive_scan_by_key_ff_max(float *fvals, float *fkeys, float *fout, long l
   thrust::maximum<float> binary_op;
 
   thrust::inclusive_scan_by_key(keys, keys+len, vals, out, binary_pred, binary_op);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -755,7 +755,7 @@ int inclusive_scan_by_key_fi_max(float *fvals, int *fkeys, float *fout, long lon
   thrust::maximum<float> binary_op;
 
   thrust::inclusive_scan_by_key(keys, keys+len, vals, out, binary_pred, binary_op);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -768,7 +768,7 @@ int inclusive_scan_by_key_ii_max(int *fvals, int *fkeys, int *fout, long long le
   thrust::maximum<int> binary_op;
 
   thrust::inclusive_scan_by_key(keys, keys+len, vals, out, binary_pred, binary_op);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -781,7 +781,7 @@ int inclusive_scan_by_key_fl_max(float *fvals, long long *fkeys, float *fout, lo
   thrust::maximum<float> binary_op;
 
   thrust::inclusive_scan_by_key(keys, keys+len, vals, out, binary_pred, binary_op);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -794,7 +794,7 @@ int inclusive_scan_by_key_ff_min(float *fvals, float *fkeys, float *fout, long l
   thrust::minimum<float> binary_op;
 
   thrust::inclusive_scan_by_key(keys, keys+len, vals, out, binary_pred, binary_op);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -807,7 +807,7 @@ int inclusive_scan_by_key_fi_min(float *fvals, int *fkeys, float *fout, long lon
   thrust::minimum<float> binary_op;
 
   thrust::inclusive_scan_by_key(keys, keys+len, vals, out, binary_pred, binary_op);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -820,7 +820,7 @@ int inclusive_scan_by_key_ii_min(int *fvals, int *fkeys, int *fout, long long le
   thrust::minimum<int> binary_op;
 
   thrust::inclusive_scan_by_key(keys, keys+len, vals, out, binary_pred, binary_op);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -833,7 +833,7 @@ int inclusive_scan_by_key_fl_min(float *fvals, long long *fkeys, float *fout, lo
   thrust::minimum<float> binary_op;
 
   thrust::inclusive_scan_by_key(keys, keys+len, vals, out, binary_pred, binary_op);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -843,7 +843,7 @@ int reverse(float *fvals, float *fout, long long len) {
   thrust::device_ptr<float> out(fout);
 
   thrust::reverse_copy(vals, vals+len, out);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }

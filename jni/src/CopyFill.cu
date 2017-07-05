@@ -42,7 +42,7 @@ int copyToInds(float *A, float *B, int *I, long long len) {
   } else {
     __copyToInds<<<griddims,nthreads>>>(A, B, I, len);
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -74,7 +74,7 @@ int copyToIndsLong(long long *A, long long *B, int *I, long long len) {
   } else {
     __copyToIndsLong<<<griddims,nthreads>>>(A, B, I, len);
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -106,7 +106,7 @@ int fillToInds(float A, float *B, int *I, long long len) {
   } else {
     __fillToInds<<<griddims,nthreads>>>(A, B, I, len);
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -138,7 +138,7 @@ int fillToIndsLong(long long A, long long *B, int *I, long long len) {
   } else {
     __fillToIndsLong<<<griddims,nthreads>>>(A, B, I, len);
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -158,7 +158,7 @@ int copyFromInds(float *A, float *B, int *I, long long len) {
   dim3 griddims;
   setsizesLean(len, &griddims, &nthreads);
   __copyFromInds<<<griddims,nthreads>>>(A, B, I, len);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -253,7 +253,7 @@ int copyToInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J
       }
     }
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -295,7 +295,7 @@ int copyToInds3D(float *A, int lda, int rda, float *B, int ldb, int rdb, int *I,
   dim3 blockdims(ntx, nty, ntz);
   dim3 griddims(nbx, nby, nbz);
   __copyToInds3D<<<griddims,blockdims>>>(A, lda, rda, B, ldb, rdb, I, nrows, J, ncols, K, nk);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -337,7 +337,7 @@ int copyToInds3DLong(long long *A, int lda, int rda, long long *B, int ldb, int 
   dim3 blockdims(ntx, nty, ntz);
   dim3 griddims(nbx, nby, nbz);
   __copyToInds3DLong<<<griddims,blockdims>>>(A, lda, rda, B, ldb, rdb, I, nrows, J, ncols, K, nk);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -379,7 +379,7 @@ int fillToInds3D(float A, float *B, int ldb, int rdb, int *I, int nrows, int *J,
   dim3 blockdims(ntx, nty, ntz);
   dim3 griddims(nbx, nby, nbz);
   __fillToInds3D<<<griddims,blockdims>>>(A, B, ldb, rdb, I, nrows, J, ncols, K, nk);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -421,7 +421,7 @@ int fillToInds3DLong(long long A, long long *B, int ldb, int rdb, int *I, int nr
   dim3 blockdims(ntx, nty, ntz);
   dim3 griddims(nbx, nby, nbz);
   __fillToInds3DLong<<<griddims,blockdims>>>(A, B, ldb, rdb, I, nrows, J, ncols, K, nk);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -473,7 +473,7 @@ int copyToInds4D(float *A, int lda, int rda, int tda, float *B, int ldb, int rdb
   dim3 blockdims(ntx, nty, ntk * ntl);
   dim3 griddims(nbx, nby, nbk * nbl);
   __copyToInds4D<<<griddims,blockdims>>>(A, lda, rda, tda, B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl, ntk, nbk, ntl, nbl);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -525,7 +525,7 @@ int copyToInds4DLong(long long *A, int lda, int rda, int tda, long long *B, int 
   dim3 blockdims(ntx, nty, ntk * ntl);
   dim3 griddims(nbx, nby, nbk * nbl);
   __copyToInds4DLong<<<griddims,blockdims>>>(A, lda, rda, tda, B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl, ntk, nbk, ntl, nbl);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -577,7 +577,7 @@ int fillToInds4D(float A, float *B, int ldb, int rdb, int tdb, int *I, int nrows
   dim3 blockdims(ntx, nty, ntk * ntl);
   dim3 griddims(nbx, nby, nbk * nbl);
   __fillToInds4D<<<griddims,blockdims>>>(A, B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl, ntk, nbk, ntl, nbl);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -629,7 +629,7 @@ int fillToInds4DLong(long long A, long long *B, int ldb, int rdb, int tdb, int *
   dim3 blockdims(ntx, nty, ntk * ntl);
   dim3 griddims(nbx, nby, nbk * nbl);
   __fillToInds4DLong<<<griddims,blockdims>>>(A, B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl, ntk, nbk, ntl, nbl);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -678,7 +678,7 @@ int copyToInds2DLong(long long *A, int lda, long long *B, int ldb, int *I, int n
       }
     }
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -773,7 +773,7 @@ int copyFromInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int 
       }
     }
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -816,7 +816,7 @@ int copyFromInds3D(float *A, int lda, int rda, float *B, int ldb, int rdb, int *
   dim3 blockdims(ntx, nty, ntz);
   dim3 griddims(nbx, nby, nbz);
   __copyFromInds3D<<<griddims,blockdims>>>(A, lda, rda, B, ldb, rdb, I, nrows, J, ncols, K, nk);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -870,7 +870,7 @@ int copyFromInds4D(float *A, int lda, int rda, int tda, float *B, int ldb, int r
   dim3 griddims(nbx, nby, nbk * nbl);
 
   __copyFromInds4D<<<griddims,blockdims>>>(A, lda, rda, tda, B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl, ntk, nbk, ntl, nbl);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -920,7 +920,7 @@ int copyFromInds2DLong(long long *A, int lda, long long *B, int ldb, int *I, int
       }
     }
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -1014,7 +1014,7 @@ int fillToInds2D(float A, float *B, int ldb, int *I, int nrows, int *J, int ncol
       }
     }
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -1063,7 +1063,7 @@ int fillToInds2DLong(long long A, long long *B, int ldb, int *I, int nrows, int 
       }
     }
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -1107,7 +1107,7 @@ int icopy_transpose(int *iptrs, float *in, float *out, int stride, int nrows, in
   const dim3 blockdims(BLOCKDIM,INBLOCK,1);
   cudaError_t err;
   __icopy_transpose<<<griddims,blockdims>>>(iptrs, in, out, stride, nrows, ncols); 
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   err = cudaGetLastError();
   if (err != cudaSuccess) {fprintf(stderr, "cuda error in icopy_transpose"); return err;}
   return 0;
@@ -1201,7 +1201,7 @@ int ocopy_transpose_add(int *optrs, float *in, float *out, int stride, int nrows
   const dim3 blockdims(BLOCKDIM,INBLOCK,1);
   cudaError_t err;
   __ocopy_transpose_add<<<griddims,blockdims>>>(optrs, in, out, stride, nrows, ncols); 
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   err = cudaGetLastError();
   if (err != cudaSuccess) {fprintf(stderr, "cuda error in ocopy_transpose"); return err;}
   return 0;
@@ -1212,7 +1212,7 @@ int ocopy_transpose(int *optrs, float *in, float *out, int stride, int nrows, in
   const dim3 blockdims(BLOCKDIM,INBLOCK,1);
   cudaError_t err;
   __ocopy_transpose<<<griddims,blockdims>>>(optrs, in, out, stride, nrows, ncols); 
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   err = cudaGetLastError();
   if (err != cudaSuccess) {fprintf(stderr, "cuda error in ocopy_transpose"); return err;}
   return 0;
@@ -1223,7 +1223,7 @@ int ocopy_transpose_min(int *optrs, float *in, float *out, int stride, int nrows
   const dim3 blockdims(BLOCKDIM,INBLOCK,1);
   cudaError_t err;
   __ocopy_transpose_min<<<griddims,blockdims>>>(optrs, in, out, stride, nrows, ncols); 
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   err = cudaGetLastError();
   if (err != cudaSuccess) {fprintf(stderr, "cuda error in ocopy_transpose"); return err;}
   return 0;
@@ -1265,7 +1265,7 @@ int transpose(float *in, int instride, float *out, int outstride, int nrows, int
   int dev = -1;
   cudaGetDevice(&dev);
   __transpose<<<griddims,blockdims>>>(in, instride, out, outstride, nrows, ncols); 
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   err = cudaGetLastError();
   if (err != cudaSuccess) {
     fprintf(stderr, "cuda error device %d in transpose of %dx%d matrix", dev, nrows, ncols); 
@@ -1321,7 +1321,7 @@ int intToFloat(int *A, float *B, int N) {
   dim3 griddims;
   setsizesLean(N, &griddims, &nthreads);
   __intToFloat<<<griddims,nthreads>>>(A, B, N);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -1331,7 +1331,7 @@ int longToFloat(long long *A, float *B, int N) {
   dim3 griddims;
   setsizesLean(N, &griddims, &nthreads);
   __longToFloat<<<griddims,nthreads>>>(A, B, N);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -1341,7 +1341,7 @@ int floatToLong(float *A, long long *B, int N) {
   dim3 griddims;
   setsizesLean(N, &griddims, &nthreads);
   __floatToLong<<<griddims,nthreads>>>(A, B, N);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -1351,7 +1351,7 @@ int floatToInt(float *A, int *B, int N) {
   dim3 griddims;
   setsizesLean(N, &griddims, &nthreads);
   __floatToInt<<<griddims,nthreads>>>(A, B, N);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -1361,7 +1361,7 @@ int longToInt(long long *A, int *B, int N) {
   dim3 griddims;
   setsizesLean(N, &griddims, &nthreads);
   __longToInt<<<griddims,nthreads>>>(A, B, N);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -1371,7 +1371,7 @@ int intToLong(int *A, long long *B, int N) {
   dim3 griddims;
   setsizesLean(N, &griddims, &nthreads);
   __intToLong<<<griddims,nthreads>>>(A, B, N);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -1392,7 +1392,7 @@ int full(int *ir, int *ic, float *data, float *od, int nrows, int ncols, int nnz
   int nblocks = min(32, 1+(nnz-1)/32);
   int nthreads = min(1+(nnz-1)/nblocks, 1024);
   __full<<<nblocks,nthreads>>>(ir, ic, data, od, nrows, ncols, nnz);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -1420,7 +1420,7 @@ int initSeq(int *A, int nrows, int ncols, int dorows) {
   } else {
     __initSeq2<<<griddims,nthreads>>>(A, nrows, ncols);
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -1445,7 +1445,7 @@ int set_val(float *A, float val, int length) {
   dim3 griddims;
   setsizesLean(length, &griddims, &nthreads);
   __set_val<<<griddims,nthreads>>>(A, val, length);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -1455,7 +1455,7 @@ int set_ival(float *A, int val, int length) {
   dim3 griddims;
   setsizesLean(length, &griddims, &nthreads);
   __set_val<<<griddims,nthreads>>>(A, *((float *)&val), length);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -1465,7 +1465,7 @@ int set_lval(long long *A, long long val, int length) {
   dim3 griddims;
   setsizesLean(length, &griddims, &nthreads);
   __set_lval<<<griddims,nthreads>>>(A, val, length);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -1496,7 +1496,7 @@ int kron(T *A, T *B, T *C, int nrA, int ncA, int nrB, int ncB) {
   dim3 griddims;
   setsizesLean(len, &griddims, &nthreads);
   __kron<<<griddims,nthreads>>>(A, B, C, nrA, ncA, nrB, ncB, nr, nc);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }

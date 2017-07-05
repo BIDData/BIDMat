@@ -568,14 +568,15 @@ object Solvers {
     val out = GMat.newOrCheckGMat(a.ncols, a.ncols, omat);
     out(0,0) = 1f;
     var err = cudaMemcpy2D(out.pdata, (a.nrows+1)*Sizeof.FLOAT, out.pdata, 0, Sizeof.FLOAT, a.nrows, cudaMemcpyDeviceToDevice);
-    cudaDeviceSynchronize
+    cudaStreamSynchronize(Mat.SyncMethod);
     Mat.nflops += 1L*a.nrows*a.nrows*a.ncols
     val side = 'L';
     val uplo = mode.charAt(0);
     val diag = mode.charAt(1);
     val trans = 'N';
     val alpha = 1.0f;
-    cublasStrsm(side, uplo, trans, diag, a.nrows, a.ncols, alpha, a.pdata, a.nrows, out.pdata, out.nrows) 
+    cublasStrsm(side, uplo, trans, diag, a.nrows, a.ncols, alpha, a.pdata, a.nrows, out.pdata, out.nrows);
+    cudaStreamSynchronize(Mat.SyncMethod);
     out
   }
   
@@ -586,7 +587,7 @@ object Solvers {
     val out = GDMat.newOrCheckGDMat(a.ncols, a.ncols, omat);
     out(0,0) = 1.0;
     var err = cudaMemcpy2D(out.pdata, (a.nrows+1)*Sizeof.DOUBLE, out.pdata, 0, Sizeof.DOUBLE, a.nrows, cudaMemcpyDeviceToDevice);
-    cudaDeviceSynchronize
+    cudaStreamSynchronize(Mat.SyncMethod);
     Mat.nflops += 1L*a.nrows*a.nrows*a.ncols
     val side = 'L';
     val uplo = mode.charAt(0);
@@ -594,6 +595,7 @@ object Solvers {
     val diag = mode.charAt(1);
     val alpha = 1.0f;
     cublasDtrsm(side, uplo, trans, diag, a.nrows, a.ncols, alpha, a.pdata, a.nrows, out.pdata, out.nrows) 
+    cudaStreamSynchronize(Mat.SyncMethod);
     out
   }
   

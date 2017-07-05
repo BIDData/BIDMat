@@ -230,7 +230,7 @@ object GIFunctions {
     if (status != 0) throw new RuntimeException("p4sortlexGPU error3 %d" format (status))
     status = cudaMemcpy(ggrams.pdata.withByteOffset(1L*nrows*3*Sizeof.INT), p4, 1L*nrows*Sizeof.INT, cudaMemcpyHostToDevice)
     if (status != 0) throw new RuntimeException("p4sortlexGPU error4 %d" format (status))
-    cudaDeviceSynchronize
+    cudaStreamSynchronize(Mat.SyncMethod)
     val ggramst = ggrams.t
     ggrams.free
     CUMAT.i4sort(ggramst.pdata, nrows, if (asc) 1 else 0)
@@ -286,7 +286,7 @@ object GIFunctions {
     if (status != 0) throw new RuntimeException("p3sortlexGPU error2 %d" format (status))  
     status = cudaMemcpy(gvals.pdata, p3, 1L*nrows*Sizeof.INT, cudaMemcpyHostToDevice)
     if (status != 0) throw new RuntimeException("p3sortlexGPU error3 %d" format (status)) 
-    cudaDeviceSynchronize
+    cudaStreamSynchronize(Mat.SyncMethod)
     val ggramst = ggrams.t
     ggrams.free
     CUMAT.lsortk(ggramst.pdata, gvals.pdata, nrows, if (asc) 1 else 0)
@@ -298,6 +298,7 @@ object GIFunctions {
     if (status != 0) throw new RuntimeException("p3sortlexGPU error5 %d" format (status)) 
     status = cudaMemcpy(p3, gvals.pdata, 1L*nrows*Sizeof.INT, cudaMemcpyDeviceToHost)
     if (status != 0) throw new RuntimeException("p3sortlexGPU error6 %d" format (status)) 
+    cudaStreamSynchronize(Mat.SyncMethod)
     ograms.free
     gvals.free
   }
@@ -330,7 +331,7 @@ object GIFunctions {
     if (status != 0) throw new RuntimeException("p3sortlexGPU error1 %d" format (status)) 
     status = cudaMemcpy(ggrams.pdata.withByteOffset(1L*nrows*Sizeof.INT), p1, 1L*nrows*Sizeof.INT, cudaMemcpyHostToDevice)
     if (status != 0) throw new RuntimeException("p3sortlexGPU error2 %d" format (status))  
-    cudaDeviceSynchronize
+    cudaStreamSynchronize(Mat.SyncMethod)
     val ggramst = ggrams.t
     ggrams.free
     CUMAT.lsort(ggramst.pdata, nrows, if (asc) 1 else 0)
@@ -340,6 +341,7 @@ object GIFunctions {
     if (status != 0) throw new RuntimeException("p3sortlexGPU error4 %d" format (status)) 
     status = cudaMemcpy(p2, ograms.pdata, 1L*nrows*Sizeof.INT, cudaMemcpyDeviceToHost)
     if (status != 0) throw new RuntimeException("p3sortlexGPU error5 %d" format (status)) 
+    cudaStreamSynchronize(Mat.SyncMethod)
     ograms.free
   }
  

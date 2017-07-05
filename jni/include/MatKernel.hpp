@@ -12,6 +12,8 @@ typedef double (*doptype)(double,double);
 typedef float (*fntype)(float);
 typedef double (*dfntype)(double);
 
+#define SYNC_STREAM cudaStreamDefault
+
 void setsizes(long long N, dim3 *gridp, int *nthreadsp);
 
 void setsizesLean(long long N, dim3 *gridp, int *nthreadsp);

@@ -24,6 +24,19 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
   GMat(dataDims0.data, data0, dataDims0.data.reduce(_*_)) with Filter {
   
 	override def mytype = "GFilter";
+	var cudnnMainHandle:cudnnHandle = new cudnnHandle;
+  var cudnn2ndHandle:cudnnHandle = new cudnnHandle;
+  var cudnnMainStream:cudaStream_t = new cudaStream_t;
+  var cudnn2ndStream:cudaStream_t = new cudaStream_t;
+  
+  var err = cudnnCreate(cudnnMainHandle);
+  if (err == 0) err = cudnnCreate(cudnn2ndHandle);
+  if (err == 0) err = cudaStreamCreate(cudnnMainStream);
+  if (err == 0) err = cudaStreamCreate(cudnn2ndStream);
+  if (err == 0) err = cudnnSetStream(cudnnMainHandle, cudnnMainStream);
+  if (err == 0) err = cudnnSetStream(cudnn2ndHandle, cudnn2ndStream);
+
+  if (err != 0) throw new RuntimeException("Error in CUDNN filter creation %s" format cudaGetErrorString(err))
 
 	val inDims = inDims0;
 	val outDims = outDims0;
@@ -89,22 +102,22 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       if (cstatus > 0) throw new RuntimeException("Error setting convolution descriptor for forward convolution %d" format cstatus);
       
       if (!fwdTrained) {
-      	val gstatus = cudnnGetConvolutionForwardAlgorithm(GFilter.getHandle, adesc, fdesc, convdesc, bdesc, cudnnConvolutionFwdPreference.CUDNN_CONVOLUTION_FWD_PREFER_FASTEST, 0, fwdAlgo);
+      	val gstatus = cudnnGetConvolutionForwardAlgorithm(cudnnMainHandle, adesc, fdesc, convdesc, bdesc, cudnnConvolutionFwdPreference.CUDNN_CONVOLUTION_FWD_PREFER_FASTEST, 0, fwdAlgo);
       	if (gstatus > 0) throw new RuntimeException("Error getting best algorithm for forward convolution %d" format gstatus);
       	fwdTrained = true;
       }
        
       val _workspaceSizeInBytes = new Array[Long](1);
-      var wserr = cudnnGetConvolutionForwardWorkspaceSize(GFilter.getHandle, adesc, fdesc, convdesc, bdesc, fwdAlgo(0), _workspaceSizeInBytes);
+      var wserr = cudnnGetConvolutionForwardWorkspaceSize(cudnnMainHandle, adesc, fdesc, convdesc, bdesc, fwdAlgo(0), _workspaceSizeInBytes);
       val workspaceSizeInBytes = _workspaceSizeInBytes(0);
       val workspace = GMat.newOrCheckGMat((workspaceSizeInBytes/4).toInt, 1, null, GUID, a.GUID, hmm, "ConvFwdWS".##);
       
 //      println("workspace size = %d" format workspaceSizeInBytes)
 
-      var err = cudnnConvolutionForward(GFilter.getHandle, GFilter.ONE, adesc, a.pdata, fdesc, pdata, convdesc, 
+      var err = cudnnConvolutionForward(cudnnMainHandle, GFilter.ONE, adesc, a.pdata, fdesc, pdata, convdesc, 
           fwdAlgo(0), workspace.pdata, workspaceSizeInBytes, if (doclear) GFilter.ZERO else GFilter.ONE, bdesc, b.pdata);
       
-      cudaStreamSynchronize(GFilter.getStream);
+      cudaStreamSynchronize(cudnnMainStream);
       if (err == 0) err = cudaGetLastError();
       if (err > 0) throw new RuntimeException("Error in CUDNN forward convolution %s" format cudaGetErrorString(err));
       
@@ -119,10 +132,19 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
   
   def convolve(a:GMat):GMat = convolve(a, null, true);
     
-  def convolveT(b:GMat, omat:Mat, doclear:Boolean):GMat = {
-    val adims = Filter.getInputDims(b.dims, inDims, outDims, stride, pad, outPad);
+  def convolveT(deriv:GMat, inderiv:Mat, doclear:Boolean):GMat = {
+  	val ddims = if (inderiv.asInstanceOf[AnyRef] != null) {                       // The in-out map with stride/pad is many to one, so not invertible always
+  	  Filter.getOutputDims(inderiv.dims, inDims, outDims, stride, pad, outPad);   // Here check if the deriv/inputDeriv pair are compatible
+  	} else {
+  	  null;
+  	}                                                                            // Otherwise compute an input size from the params
+    val adims = if (ddims.asInstanceOf[AnyRef] != null && ND.compareDims(ddims.data, deriv.dims.data)){
+      inderiv.dims;
+    } else {
+      Filter.getInputDims(deriv.dims, inDims, outDims, stride, pad, outPad);
+    }
     val hmm = ND.hashIMat(stride, ND.hashIMat(pad));
-    a = GMat.newOrCheckGMat(adims, omat, b.GUID, GUID, hmm, "convoutT".##);
+    a = GMat.newOrCheckGMat(adims, inderiv, deriv.GUID, GUID, hmm, "convoutT".##);
     if (dims.length == 4) {
       val adesc = new cudnnTensorDescriptor;
       cudnnCreateTensorDescriptor(adesc);
@@ -131,7 +153,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       
       val bdesc = new cudnnTensorDescriptor;
       cudnnCreateTensorDescriptor(bdesc);
-      val bstatus = cudnnSetTensor4dDescriptor(bdesc, tensorFormat, dataType, b.dims(3), b.dims(0), b.dims(2), b.dims(1));
+      val bstatus = cudnnSetTensor4dDescriptor(bdesc, tensorFormat, dataType, deriv.dims(3), deriv.dims(0), deriv.dims(2), deriv.dims(1));
       if (bstatus > 0) throw new RuntimeException("Error creating B tensor for backward data convolution %d, bad stride?" format bstatus);
       
       val fdesc = new cudnnFilterDescriptor;
@@ -145,20 +167,20 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       if (cstatus > 0) throw new RuntimeException("Error setting convolution descriptor for backward data convolution %d" format cstatus);
       
       if (!bwdDataTrained) {
-      	val gstatus = cudnnGetConvolutionBackwardDataAlgorithm(GFilter.getHandle, fdesc, bdesc, convdesc, adesc, cudnnConvolutionBwdDataPreference.CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST, 0, bwdDataAlgo);
+      	val gstatus = cudnnGetConvolutionBackwardDataAlgorithm(cudnnMainHandle, fdesc, bdesc, convdesc, adesc, cudnnConvolutionBwdDataPreference.CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST, 0, bwdDataAlgo);
       	if (gstatus > 0) throw new RuntimeException("Error getting best algorithm for backward data convolution %d" format gstatus);
       	bwdDataTrained = true;
       }
  
       val _workspaceSizeInBytes = new Array[Long](1);
-      var wserr = cudnnGetConvolutionBackwardDataWorkspaceSize(GFilter.getHandle, fdesc, bdesc, convdesc, adesc, bwdDataAlgo(0), _workspaceSizeInBytes);
+      var wserr = cudnnGetConvolutionBackwardDataWorkspaceSize(cudnnMainHandle, fdesc, bdesc, convdesc, adesc, bwdDataAlgo(0), _workspaceSizeInBytes);
       val workspaceSizeInBytes = _workspaceSizeInBytes(0);
       val workspace = GMat.newOrCheckGMat((workspaceSizeInBytes/4).toInt, 1, null, GUID, a.GUID, hmm, "ConvBwdWS".##);
 
-      var err = cudnnConvolutionBackwardData(GFilter.getHandle, GFilter.ONE, fdesc, pdata, bdesc, b.pdata, convdesc, 
+      var err = cudnnConvolutionBackwardData(cudnnMainHandle, GFilter.ONE, fdesc, pdata, bdesc, deriv.pdata, convdesc, 
           bwdDataAlgo(0), workspace.pdata, workspaceSizeInBytes, if (doclear) GFilter.ZERO else GFilter.ONE, adesc, a.pdata);
       
-      cudaStreamSynchronize(GFilter.getStream);
+      cudaStreamSynchronize(cudnnMainStream);
       if (err == 0) err = cudaGetLastError();
       if (err > 0) throw new RuntimeException("Error in CUDNN backward data convolution %s" format cudaGetErrorString(err));     
       
@@ -202,17 +224,17 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       if (cstatus > 0) throw new RuntimeException("Error setting convolution descriptor for backward filter convolution %d" format cstatus);
       
       if (!bwdFilterTrained) {
-      	val gstatus = cudnnGetConvolutionBackwardFilterAlgorithm(GFilter.get2ndHandle, adesc, bdesc, convdesc, fdesc, cudnnConvolutionBwdFilterPreference.CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST, 0, bwdFilterAlgo);
+      	val gstatus = cudnnGetConvolutionBackwardFilterAlgorithm(cudnn2ndHandle, adesc, bdesc, convdesc, fdesc, cudnnConvolutionBwdFilterPreference.CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST, 0, bwdFilterAlgo);
       	if (gstatus > 0) throw new RuntimeException("Error getting best algorithm for backward filter convolution %d" format gstatus);
       	bwdFilterTrained = true;
       }
       
       val _workspaceSizeInBytes = new Array[Long](1);
-      var wserr = cudnnGetConvolutionBackwardFilterWorkspaceSize(GFilter.get2ndHandle, adesc, bdesc, convdesc, fdesc, bwdFilterAlgo(0), _workspaceSizeInBytes);
+      var wserr = cudnnGetConvolutionBackwardFilterWorkspaceSize(cudnn2ndHandle, adesc, bdesc, convdesc, fdesc, bwdFilterAlgo(0), _workspaceSizeInBytes);
       val workspaceSizeInBytes = _workspaceSizeInBytes(0);
       val workspace = GMat.newOrCheckGMat((workspaceSizeInBytes/4).toInt, 1, null, GUID, a.GUID, hmm, "ConvBwdFilterWS".##);
 
-      var err = cudnnConvolutionBackwardFilter(GFilter.get2ndHandle, GFilter.ONE, adesc, a.pdata, bdesc, b.pdata, convdesc, 
+      var err = cudnnConvolutionBackwardFilter(cudnn2ndHandle, GFilter.ONE, adesc, a.pdata, bdesc, b.pdata, convdesc, 
           bwdFilterAlgo(0), workspace.pdata, workspaceSizeInBytes, if (doclear) GFilter.ZERO else GFilter.ONE, fdesc, pdata);
 
       if (err > 0) throw new RuntimeException("Error in CUDNN backward data convolution %s" format cudaGetErrorString(err));
@@ -225,7 +247,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
   def convolveMfork(a:GMat, b:GMat):GFilter = convolveMfork(a, b, true);
   
   override def convolveMjoin:GFilter = {
-  	cudaStreamSynchronize(GFilter.get2ndStream);
+  	cudaStreamSynchronize(cudnn2ndStream);
   	val  err = cudaGetLastError();
     if (err > 0) throw new RuntimeException("Error in CUDNN backward data convolution %s" format cudaGetErrorString(err));
     cudnnDestroyConvolutionDescriptor(convdesc);
@@ -279,9 +301,9 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
 		out.convType = convType;
 		out.tensorFormat = tensorFormat;
 		cudaMalloc(out.pdata, len);
-		cudaDeviceSynchronize;
+		cudaStreamSynchronize(Mat.SyncMethod);
 		cudaMemcpy(out.pdata, pdata, len, cudaMemcpyDeviceToDevice);
-		cudaDeviceSynchronize;
+		cudaStreamSynchronize(Mat.SyncMethod);
 		out;
 	}
   
@@ -329,10 +351,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
 }
 
 object GFilter {
-  var cudnnContexts:Array[cudnnHandle] = null;
-  var cudnn2ndContexts:Array[cudnnHandle] = null;
-  var cudnnStreams:Array[cudaStream_t] = null;
-  var cudnn2ndStreams:Array[cudaStream_t] = null;
+
   var cudnnContextsInitialized = false;
   val ONE = Pointer.to(Array(1f));
   val ZERO = Pointer.to(Array(0f));
@@ -347,68 +366,6 @@ object GFilter {
     out;
   }
   
-  def initHandles(verbose:Boolean = false) = {
-		GFilter.synchronized { 
-			if (!cudnnContextsInitialized) {
-				val thisGPU = SciFunctions.getGPU;
-			  try {
-			  	val nGPUs = Mat.hasCUDA;
-			  	cudnnContexts = new Array[cudnnHandle](nGPUs);
-			  	cudnn2ndContexts = new Array[cudnnHandle](nGPUs);
-			  	cudnnStreams = new Array[cudaStream_t](nGPUs);
-			  	cudnn2ndStreams = new Array[cudaStream_t](nGPUs);
-			  	for (i <- 0 until nGPUs) {
-			  		SciFunctions.setGPU(i);
-			  		cudnnContexts(i) = new cudnnHandle();
-			  		var err = cudnnCreate(cudnnContexts(i));
-			  		val stream = new cudaStream_t;
-			  		if (err == 0) err = cudaStreamCreate(stream);
-			  		if (err == 0) err = cudnnSetStream(cudnnContexts(i), stream);
-			  		cudnnStreams(i) = stream;
-
-			  		cudnn2ndContexts(i) = new cudnnHandle();
-			  		if (err == 0) err = cudnnCreate(cudnn2ndContexts(i));
-			  		val stream2 = new cudaStream_t;
-			  		if (err == 0) err = cudaStreamCreate(stream2);
-			  		if (err == 0) err = cudnnSetStream(cudnn2ndContexts(i), stream2);
-			  		cudnn2ndStreams(i) = stream2;
-			  		if (err != 0 && verbose) println("Cudnn initialization error %d on GPU %d" format (err, i));
-			  		if (err != 0) throw new RuntimeException("");
-			  	} 
-			  	cudnnContextsInitialized = true;
-			  	Mat.hasCUDNN = true;
-			  } catch {
-			    case e:Exception => {
-			      println("No CUDNN available ");
-			      if (verbose) e.printStackTrace();
-			    }
-			  }
-			  SciFunctions.setGPU(thisGPU);
-			}
-		}
-  }
-
-
-  def getHandle = {
-		if (!cudnnContextsInitialized) initHandles(false);
-		cudnnContexts(SciFunctions.getGPU)
-  }
- 
-  def get2ndHandle = {
-		if (!cudnnContextsInitialized) initHandles(false);
-		cudnn2ndContexts(SciFunctions.getGPU)
-  }
-  
-  def getStream = {
-		if (!cudnnContextsInitialized) initHandles(false);
-		cudnnStreams(SciFunctions.getGPU)
-  }
- 
-  def get2ndStream = {
-		if (!cudnnContextsInitialized) initHandles(false);
-		cudnn2ndStreams(SciFunctions.getGPU)
-  }
-  
   def apply(inDims:IMat,outDims:IMat, stride:IMat, pad:IMat, outPad:IMat, dataDims:IMat) = {
 		  val len = dataDims.data.reduce(_*_);
 		  if (Mat.debugMem) {
@@ -417,7 +374,7 @@ object GFilter {
 		  }
 		  val out = new GFilter(inDims, outDims, stride, pad, outPad, dataDims,new Pointer);
 		  cudaMalloc(out.pdata, 1L*len*Sizeof.FLOAT);
-		  cudaDeviceSynchronize;
+		  cudaStreamSynchronize(Mat.SyncMethod);
 		  out;
   }
   

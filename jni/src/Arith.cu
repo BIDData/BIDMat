@@ -54,7 +54,7 @@ int dsmult(int nrows, int ncols, int nnz, float *A, float *Bdata, int *Bir, int 
     int nblocks = min(MAXXGRID, ncols);
     __dsmult<<<nblocks,nthreads>>>(nrows, nnz, A, Bdata, Bir, Bic, C);
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -167,7 +167,7 @@ int dsmultTile(int nr, int nc, int kk, int nnz, float *A, int lda, float *Bdata,
     int nblocks = min(MAXXGRID, nc);
     __dsmultTile<<<nblocks,nthreads>>>(nr, nc, kk, nnz, A, lda,  Bdata, Bir, Bic, broff, bcoff, C, ldc);
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -183,14 +183,14 @@ int dsmultTileT(int nr, int nc, int kk, int nnz, float *A, int lda, float *Bdata
     int nblocks = min(MAXXGRID, nc);
     __dsmultTileT<<<nblocks,nthreads>>>(nr, nc, kk, nnz, A, lda,  Bdata, Bir, Bic, broff, bcoff, C, ldc);
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
 
 int dsmult_tune(int nrows, int ncols, int nnz, float *A, float *Bdata, int *Bir, int *Bic, float *C, int nblocks, int nthreads) {
   __dsmult<<<nblocks,nthreads>>>(nrows, nnz, A, Bdata, Bir, Bic, C);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -198,7 +198,7 @@ int dsmult_tune(int nrows, int ncols, int nnz, float *A, float *Bdata, int *Bir,
 int dsmultx_tune(int nrows, int ncols, int nnz, float *A, float *Bdata, int *Bir, int *Bic, float *C, int nblocks, int nthreadsx, int nthreadsy) {
   dim3 threadDim(nthreadsx, nthreadsy, 1);      
   __dsmultx<<<nblocks,threadDim>>>(nrows, nnz, A, Bdata, Bir, Bic, C);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -242,7 +242,7 @@ int dsmultT(int nrows, int ncols, int nnz, float *A, float *Bdata, int *Bir, int
     int nblocks = min(MAXXGRID, ncols);
     __dsmultT<<<nblocks,nthreads>>>(nrows, nnz, A, Bdata, Bir, Bic, C);
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -271,7 +271,7 @@ int spsum(int nrows, int ncols, int nnz, int *Air, int *Aic, float *P, float *B,
   } else {
     __spsum2<<<nblks,nthreads>>>(nrows, ncols, nnz, Air, Aic, P, B);
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -383,7 +383,7 @@ int dds(int nrows, int nnz, float *A, float *B, int *Cir, int *Cic, float *P) {
 //  int nblocks = min(65536, max(1,nnz/8));
   int nblocks = min(16384, max(1,nnz/128));
   __dds<<<nblocks,blockDims>>>(nrows, nnz, A, B, Cir, Cic, P);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -393,7 +393,7 @@ int dds0(int nrows, int ncols, float *A, float *B, int *Cir, int *Cic, float *P)
 //  int nblocks = min(65536, max(1,nnz/8));
   int nblocks = min(16384, max(1,ncols/64));
   __dds0<<<nblocks,blockDims>>>(nrows, ncols, A, B, Cir, Cic, P);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -541,7 +541,7 @@ int dists(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int nr
   } else {
     __minkowskidist<<<griddim,blockdim>>>(A, lda, B, ldb, C, ldc, d, nrows, ncols, p);
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -551,7 +551,7 @@ int maxsumx(float *A, int lda, float *B, int ldb, float *C, int ldc, int d, int 
   dim3 blockdim(32,4,4);
   dim3 griddim(1,1+(nrows-1)/128,1+(ncols-1)/128);
   __msum<<<griddim,blockdim>>>(A, lda, B, ldb, C, ldc, d, nrows, ncols, 0);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -626,7 +626,6 @@ int dmv(float *a, int nrows, int ncols, float *b, float *c, int trans) {
     int tstep = (ntx*nbx/nrows)*nrows;   
     __dmv0<<<nbx,ntx>>>(a, nrows, ncols, tstep, b, c);
   }
-  cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   return err;
 }

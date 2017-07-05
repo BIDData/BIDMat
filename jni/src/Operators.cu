@@ -394,7 +394,7 @@ int apply_gfun(ATYPE *A, ATYPE *B, int N, int opn) {						    \
   dim3 griddims;										    \
   setsizesLean(N, &griddims, &nthreads);								    \
   __apply_gfun_##ATYPE<<<griddims,nthreads>>>(A, B, N, opn);					    \
-  cudaDeviceSynchronize();									    \
+  cudaStreamSynchronize(SYNC_STREAM);									    \
   cudaError_t err = cudaGetLastError();								    \
   return err;											    \
 }
@@ -417,7 +417,7 @@ int apply_gfun2(ATYPE *A, ATYPE *B, ATYPE *C, int N, int opn) {					    \
   dim3 griddims;										    \
   setsizesLean(N, &griddims, &nthreads);								    \
   __apply_gfun2_##ATYPE<<<griddims,nthreads>>>(A, B, C, N, opn);				    \
-  cudaDeviceSynchronize();									    \
+  cudaStreamSynchronize(SYNC_STREAM);									    \
   cudaError_t err = cudaGetLastError();								    \
   return err;											    \
 }
@@ -521,7 +521,7 @@ int apply_binop(ATYPE *A, int Anrows, int Ancols,						    \
   } else if (Anrows == 1 && Ancols == 1) {							    \
     __apply_left_val<<<griddims,nthreads>>>(A, B, C, Bnrows, Bncols, opn);			    \
   }												    \
-  cudaDeviceSynchronize();									    \
+  cudaStreamSynchronize(SYNC_STREAM);									    \
   cudaError_t err = cudaGetLastError();								    \
   return err;                                                                                       \
 } \
@@ -533,7 +533,7 @@ int apply_binop_left_const(ATYPE A,						    \
   dim3 griddims;										    \
   setsizesLean(N, &griddims, &nthreads);								    \
     __apply_left_const<<<griddims,nthreads>>>(A, B, C, Bnrows, Bncols, opn);			    \
-  cudaDeviceSynchronize();									    \
+  cudaStreamSynchronize(SYNC_STREAM);									    \
   cudaError_t err = cudaGetLastError();								    \
   return err;                                                                                       \
 } \
@@ -545,7 +545,7 @@ int apply_binop_right_const(ATYPE *A, int Anrows, int Ancols,						    \
   dim3 griddims;										    \
   setsizesLean(N, &griddims, &nthreads);								    \
     __apply_right_const<<<griddims,nthreads>>>(A, B, C, Anrows, Ancols, opn);			    \
-  cudaDeviceSynchronize();									    \
+  cudaStreamSynchronize(SYNC_STREAM);									    \
   cudaError_t err = cudaGetLastError();								    \
   return err;                                                                                       \
 }
@@ -597,7 +597,7 @@ int sdoprow(int nrows, int ncols, int nnz, ATYPE *A, int *Aic,					    \
   } else {											    \
     __sdopval<<<griddims,nthreads>>>(nnz, A, B, opn);						    \
   }												    \
-  cudaDeviceSynchronize();									    \
+  cudaStreamSynchronize(SYNC_STREAM);									    \
   cudaError_t err = cudaGetLastError();								    \
   return err;											    \
 }												    \
@@ -612,7 +612,7 @@ int sdopcol(int nrows, int ncols, int nnz, ATYPE *A, int *Air,					    \
   } else {											    \
     __sdopval<<<griddims,nthreads>>>(nnz, A, B, opn);						    \
   }												    \
-  cudaDeviceSynchronize();									    \
+  cudaStreamSynchronize(SYNC_STREAM);									    \
   cudaError_t err = cudaGetLastError();								    \
   return err;											    \
 }
@@ -716,7 +716,7 @@ int reduce1op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE initval, int opn) 
     const dim3 blkdims(blkx,blky,1);								    \
     __reduce1op<<<nblks,blkdims>>>(nrows, ncols, A, B, initval, opn);				    \
   }												    \
-  cudaDeviceSynchronize();									    \
+  cudaStreamSynchronize(SYNC_STREAM);									    \
   cudaError_t err = cudaGetLastError();								    \
   return err;											    \
 }
@@ -790,7 +790,7 @@ int reducebin1op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE *C, int opb, in
   int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));	    \
   const dim3 blkdims(blkx,blky,1);								    \
   __reducebin1op<<<nblks,blkdims>>>(nrows, ncols, A, B, C, opb, opr);				    \
-  cudaDeviceSynchronize();									    \
+  cudaStreamSynchronize(SYNC_STREAM);									    \
   cudaError_t err = cudaGetLastError();								    \
   return err;											    \
 }
@@ -834,7 +834,7 @@ int reduce2op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE initval, int opn) 
     const dim3 blkdims(blkx,blky,1);								    \
     __reduce2op<<<nblks,blkdims>>>(nrows, ncols, A, B, initval, opn);				    \
   }												    \
-  cudaDeviceSynchronize();									    \
+  cudaStreamSynchronize(SYNC_STREAM);									    \
   cudaError_t err = cudaGetLastError();								    \
   return err;											    \
 }
@@ -877,7 +877,7 @@ int reducebin2op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE *C, int opb, in
   int nblks = min(65536, max(1, ((int)(((long long)nrows) * ncols / blkx / blky / 16))));	    \
   const dim3 blkdims(blkx,blky,1);								    \
   __reducebin2op<<<nblks,blkdims>>>(nrows, ncols, A, B, C, opb, opr);				    \
-  cudaDeviceSynchronize();									    \
+  cudaStreamSynchronize(SYNC_STREAM);									    \
   cudaError_t err = cudaGetLastError();								    \
   return err;											    \
 }

@@ -60,11 +60,11 @@ int poissonrnd(int n, float *A, int *B, int nthreads, unsigned long long seed, u
     fprintf(stderr, "Error in cudaMalloc %d", err);
     return err;
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   __randinit<<<nblocks,nth>>>(seed, offset, rstates); 
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   __poissonrnd<<<nblocks,nth>>>(n, A, B, rstates);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaFree(rstates);
   err = cudaGetLastError();
   return err;
@@ -181,11 +181,11 @@ int binornd(int nrows, int ncols, float *A, int atype, int *C, int ctype, int *O
     fprintf(stderr, "Error in cudaMalloc %d", err);
     return err;
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   __randinit<<<nblocks,nthreads>>>(seed, offset, rstates); 
-  cudaDeviceSynchronize(); 
+  cudaStreamSynchronize(SYNC_STREAM); 
   __binornd<<<nblocks,nthreads>>>(nrows, ncols, A, atype,  C, ctype, Out, rstates);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaFree(rstates);
   err = cudaGetLastError();
   return err;
@@ -267,11 +267,11 @@ int gamrnd(int nrows, int ncols, float *A, int atype, float *B, int btype, float
     fprintf(stderr, "Error in cudaMalloc %d", err);
     return err;
   }
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   __randinit<<<nblocks,nthreads>>>(seed, offset, rstates); 
-  cudaDeviceSynchronize(); 
+  cudaStreamSynchronize(SYNC_STREAM); 
   __gamrnd<<<nblocks,nthreads>>>(nrows, ncols, A, atype,  B, btype, Out, rstates);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaFree(rstates);
   err = cudaGetLastError();
   return err;

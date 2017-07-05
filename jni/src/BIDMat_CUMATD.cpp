@@ -582,7 +582,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_cumsumByKeyDD
   double * out = (double *)getPointer(env, jout);
 
   inclusive_scan_by_key_dd(vals, keys, out, len);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
   }
@@ -595,7 +595,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_cumsumByKeyLL
   long long * out = (long long *)getPointer(env, jout);
 
   inclusive_scan_by_key_ll(vals, keys, out, len);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
   }
@@ -607,7 +607,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_reverse
   double * out = (double *)getPointer(env, jout);
 
   reverse(vals, out, len);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
   }

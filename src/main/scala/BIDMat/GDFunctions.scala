@@ -42,7 +42,7 @@ object GDFunctions {
     import jcuda.jcurand._
     Mat.nflops += 10L*out.length
     JCurand.curandGenerateUniformDouble(GFunctions.cudarng(GFunctions.getGPU).asInstanceOf[curandGenerator], out.pdata, out.length)
-    jcuda.runtime.JCuda.cudaDeviceSynchronize()
+    jcuda.runtime.JCuda.cudaStreamSynchronize(Mat.SyncMethod)
     out
   }
   
@@ -62,33 +62,33 @@ object GDFunctions {
     import jcuda.jcurand._
     Mat.nflops += 10L*out.length
     JCurand.curandGenerateNormalDouble(GFunctions.cudarng(GFunctions.getGPU).asInstanceOf[curandGenerator], out.pdata, out.length, mu, sig)
-    jcuda.runtime.JCuda.cudaDeviceSynchronize()
+    jcuda.runtime.JCuda.cudaStreamSynchronize(Mat.SyncMethod)
     out
   }
   
     
   def applyGDfun(in:GDMat, omat:Mat, opn:Int, kflops:Long):GDMat = {
-    val out = GDMat.newOrCheckGDMat(in.nrows, in.ncols, omat, in.GUID, opn)
-    CUMAT.applygdfun(in.pdata, out.pdata, in.nrows*in.ncols, opn)
-    jcuda.runtime.JCuda.cudaDeviceSynchronize()
-    Mat.nflops += kflops*in.length
+    val out = GDMat.newOrCheckGDMat(in.nrows, in.ncols, omat, in.GUID, opn);
+    CUMAT.applygdfun(in.pdata, out.pdata, in.nrows*in.ncols, opn);
+    jcuda.runtime.JCuda.cudaStreamSynchronize(Mat.SyncMethod);
+    Mat.nflops += kflops*in.length;
     out
   }
 
   def applyGDfun(in:GDMat, opn:Int, kflops:Long):GDMat = {
-    val out = GDMat.newOrCheckGDMat(in.nrows, in.ncols, null, in.GUID, opn)
-    CUMAT.applygdfun(in.pdata, out.pdata, in.nrows*in.ncols, opn)
-    jcuda.runtime.JCuda.cudaDeviceSynchronize()
-    Mat.nflops += kflops*in.length
+    val out = GDMat.newOrCheckGDMat(in.nrows, in.ncols, null, in.GUID, opn);
+    CUMAT.applygdfun(in.pdata, out.pdata, in.nrows*in.ncols, opn);
+    jcuda.runtime.JCuda.cudaStreamSynchronize(Mat.SyncMethod);
+    Mat.nflops += kflops*in.length;
     out
   }
   
   def applyGDfun2(a:GDMat, b:GDMat, omat:Mat, opn:Int, kflops:Long):GDMat = {   
     if (a.nrows == b.nrows && a.ncols == b.ncols) {
-      val out = GDMat.newOrCheckGDMat(a.nrows, a.ncols, omat, a.GUID, b.GUID, opn)
-      CUMAT.applygdfun2(a.pdata, b.pdata, out.pdata, a.nrows*a.ncols, opn)
-      jcuda.runtime.JCuda.cudaDeviceSynchronize()
-      Mat.nflops += kflops*a.length
+      val out = GDMat.newOrCheckGDMat(a.nrows, a.ncols, omat, a.GUID, b.GUID, opn);
+      CUMAT.applygdfun2(a.pdata, b.pdata, out.pdata, a.nrows*a.ncols, opn);
+      jcuda.runtime.JCuda.cudaStreamSynchronize(Mat.SyncMethod);
+      Mat.nflops += kflops*a.length;
       out
     } else {
       throw new RuntimeException("Dimensions mismatch")
@@ -97,10 +97,10 @@ object GDFunctions {
 
   def applyGDfun2(a:GDMat, b:GDMat, opn:Int, kflops:Long):GDMat = {
     if  (a.nrows == b.nrows && a.ncols == b.ncols)  {
-      val out = GDMat.newOrCheckGDMat(a.nrows, a.ncols, null, a.GUID, b.GUID, opn)
-      CUMAT.applygdfun2(a.pdata, b.pdata, out.pdata, a.nrows*a.ncols, opn)
-      jcuda.runtime.JCuda.cudaDeviceSynchronize()
-      Mat.nflops += kflops*a.length
+      val out = GDMat.newOrCheckGDMat(a.nrows, a.ncols, null, a.GUID, b.GUID, opn);
+      CUMAT.applygdfun2(a.pdata, b.pdata, out.pdata, a.nrows*a.ncols, opn);
+      jcuda.runtime.JCuda.cudaStreamSynchronize(Mat.SyncMethod);
+      Mat.nflops += kflops*a.length;
       out
     } else {
       throw new RuntimeException("Dimensions mismatch")
@@ -419,7 +419,7 @@ object GDFunctions {
   	    					val nk = math.min(gacols, a.ncols - k)
   	    					err = cudaMemcpy2D(aa, 1L*garows*Sizeof.DOUBLE, Pointer.to(a.data).withByteOffset(1L*(i+k*a.nrows)*Sizeof.DOUBLE), 
   	    							1L*a.nrows*Sizeof.DOUBLE, 1L*ni*Sizeof.DOUBLE, nk, cudaMemcpyHostToDevice)
-  	    					cudaDeviceSynchronize  	  
+  	    					cudaStreamSynchronize(Mat.SyncMethod)  	  
   	    					if (err != 0) throw new RuntimeException("CUDA copy a failed "+err)
   	    					if (btrans) {
   	    						err = cudaMemcpy2D(bb, 1L*gbrows*Sizeof.DOUBLE, Pointer.to(b.data).withByteOffset(1L*(j+k*b.nrows)*Sizeof.DOUBLE), 
@@ -428,18 +428,18 @@ object GDFunctions {
   	    						err = cudaMemcpy2D(bb, 1L*gbrows*Sizeof.DOUBLE, Pointer.to(b.data).withByteOffset(1L*(k+j*b.nrows)*Sizeof.DOUBLE), 
   	    								1L*b.nrows*Sizeof.DOUBLE, 1L*nk*Sizeof.DOUBLE, nj, cudaMemcpyHostToDevice) 
   	    					}
-  	    					cudaDeviceSynchronize
+  	    					cudaStreamSynchronize(Mat.SyncMethod)
   	    					if (err != 0) throw new RuntimeException("CUDA copy b failed "+err)
 
   	    					cublasSgemm('n', if (btrans) 't' else 'n', ni, nj, nk, 1.0f, aa, garows, bb, gbrows, if (k==0) 0f else 1f, cc, gcrows)
   	    					
-  	    					cudaDeviceSynchronize
+  	    					cudaStreamSynchronize(Mat.SyncMethod)
   	    					err = cudaGetLastError
   	    					if (err != 0) throw new RuntimeException("Cublas error in xG, sgemm "+err)
   	    					k += gacols
   	    				}
   	    				err = cudaMemcpy2D(Pointer.to(c.data).withByteOffset(1L*(i+j*c.nrows)*Sizeof.DOUBLE), 1L*c.nrows*Sizeof.DOUBLE, cc, 1L*gcrows*Sizeof.DOUBLE, 1L*ni*Sizeof.DOUBLE, nj, cudaMemcpyDeviceToHost) 
-  	    				cudaDeviceSynchronize
+  	    				cudaStreamSynchronize(Mat.SyncMethod)
   	    				if (err != 0) throw new RuntimeException("CUDA copy c failed "+err)
   	    				j += cblkk*gccols
   	    			}
@@ -546,16 +546,16 @@ object GDFunctions {
   						val nj = math.min(gccols, c.ncols - j)
   						var k = 0;
   						cudaMemset(cc, 0, 1L*gcrows*gccols*Sizeof.DOUBLE)
-  						cudaDeviceSynchronize  	  
+  						cudaStreamSynchronize(Mat.SyncMethod)  	  
   						while (k < a.ncols) {
   							val nk = math.min(gacols, a.ncols - k)
   							err = cudaMemcpy2D(aa, garows*Sizeof.DOUBLE, Pointer.to(a.data).withByteOffset(1L*(i+k*a.nrows)*Sizeof.DOUBLE), 
   									a.nrows*Sizeof.DOUBLE, ni*Sizeof.DOUBLE, nk, cudaMemcpyHostToDevice)
-  							cudaDeviceSynchronize  	  
+  							cudaStreamSynchronize(Mat.SyncMethod)  	  
   							if (err != 0) throw new RuntimeException("LXdist copy a failed "+err)
   							err = cudaMemcpy2D(bb, gbrows*Sizeof.DOUBLE, Pointer.to(b.data).withByteOffset(1L*(j+k*b.nrows)*Sizeof.DOUBLE), 
   									b.nrows*Sizeof.DOUBLE, nj*Sizeof.DOUBLE, nk, cudaMemcpyHostToDevice)
-  							cudaDeviceSynchronize
+  							cudaStreamSynchronize(Mat.SyncMethod)
   							if (err != 0) throw new RuntimeException("LXdist copy b failed "+err)
 
   							err=CUMATD.distances(aa, garows, bb, gbrows, cc, gcrows, nk, ni, nj, p)  
@@ -568,7 +568,7 @@ object GDFunctions {
   						if (err != 0) throw new RuntimeException("LXdist scale c failed "+err)
   						err = cudaMemcpy2D(Pointer.to(c.data).withByteOffset(1L*(i+j*c.nrows)*Sizeof.DOUBLE), 1L*c.nrows*Sizeof.DOUBLE, 
   								cc, 1L*gcrows*Sizeof.DOUBLE, 1L*ni*Sizeof.DOUBLE, nj, cudaMemcpyDeviceToHost) 
-  						cudaDeviceSynchronize
+  						cudaStreamSynchronize(Mat.SyncMethod)
   						if (err != 0) throw new RuntimeException("LXdist copy c failed "+err)
   						j += cblkk*gccols
   					}
@@ -603,7 +603,7 @@ object GDFunctions {
     		gi <-- outi;
     		var err = cudaMemcpy(gv.pdata, Pointer.to(a.data), 1L*a.nrows*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyHostToDevice)
     		if (err != 0) throw new RuntimeException("sortGPU copy v error %d" format err)    
-    		cudaDeviceSynchronize
+    		cudaStreamSynchronize(Mat.SyncMethod)
     		CUMATD.dsortk(gv.pdata, gi.pdata, a.nrows, if (asc) 1 else 0)
     		err = cudaMemcpy(Pointer.to(outv.data), gv.pdata, 1L*a.nrows*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyDeviceToHost)
     		if (err != 0) throw new RuntimeException("sortGPU copy v error %d" format err)

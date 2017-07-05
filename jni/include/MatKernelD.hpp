@@ -1,3 +1,5 @@
+#define SYNC_STREAM cudaStreamDefault
+
 void setsizesD(long long N, dim3 *gridp, int *nthreadsp);
 
 void setsizesLeanD(long long N, dim3 *gridp, int *nthreadsp);

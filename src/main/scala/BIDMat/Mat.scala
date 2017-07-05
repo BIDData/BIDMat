@@ -617,6 +617,8 @@ object Mat {
     fileLogger;
   }
 
+  final val SyncMethod = jcuda.runtime.JCuda.cudaStreamPerThread;
+//  final val SyncMethod = jcuda.runtime.JCuda.cudaStreamLegacy;
   
   var termWidth = 80;
   var youHaveBeenWarned = false;
@@ -1007,9 +1009,10 @@ object Mat {
   				case z:Throwable => println("Something went wrong while loading BIDMat CUDA library" + z.getMessage);
   				}
   			}
-  			SciFunctions.initCUDArngs
+  			SciFunctions.initCUDArngs;
+  			GFunctions.initCublas;
+            GFunctions.initCUDNN();
   		}
-  		GFilter.initHandles(verbose);
   }
 
   def checkOpenCL():Unit = checkOpenCL(false)
@@ -1245,5 +1248,11 @@ object Mat {
   def lexsort[T : Ordering](args:Array[T]*):Array[Int] = {
     lexsort(args.toList)
   }
+
+	def stackTraceString(e:Throwable):String = {
+	  val sw = new java.io.StringWriter;
+	  e.printStackTrace(new java.io.PrintWriter(sw));
+	  sw.toString;
+	}
   
 }

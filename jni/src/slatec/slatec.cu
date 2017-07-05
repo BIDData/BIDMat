@@ -77,7 +77,7 @@ int slatec_gfun(float *A, float *B, int N, int opn) {
   dim3 griddims;
   ssetsizes(N, &griddims, &nthreads);
   __slatec_gfun<<<griddims,nthreads>>>(A, B, N, opn);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
@@ -98,7 +98,7 @@ int slatec_gfun2(int nrows, int ncols, float *A, int ar, int ac, float *B, int b
   dim3 griddims;
   ssetsizes(nrows*ncols, &griddims, &nthreads);
   __slatec_gfun2<<<griddims,nthreads>>>(nrows, ncols, A, ar, ac, B, br, bc, C, cc, opn);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }

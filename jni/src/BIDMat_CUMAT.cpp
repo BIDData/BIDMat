@@ -1418,7 +1418,7 @@ extern "C" {
       B += bstep;
       C += cstep;
     }      
-    cudaDeviceSynchronize();
+    cudaStreamSynchronize(SYNC_STREAM);
     cudaError_t err = cudaGetLastError();
     return err;
   }
@@ -1431,7 +1431,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumsumByKeyFF
   float * out = (float *)getPointer(env, jout);
 
   inclusive_scan_by_key_ff(vals, keys, out, len);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
   }
@@ -1444,7 +1444,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumsumByKeyFFx
   float * out = (float *)getPointer(env, jout);
 
   cumsumByKey(vals, keys, out, nrows, ncols);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
   }
@@ -1457,7 +1457,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumsum2ByKeyFF
   float * out = (float *)getPointer(env, jout);
 
   cumsum2ByKey(vals, keys, out, nrows, ncols);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
   }
@@ -1470,7 +1470,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumsumByKeyFI
   float * out = (float *)getPointer(env, jout);
 
   inclusive_scan_by_key_fi(vals, keys, out, len);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
   }
@@ -1483,7 +1483,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumsumByKeyII
   int * out = (int *)getPointer(env, jout);
 
   inclusive_scan_by_key_ii(vals, keys, out, len);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
   }
@@ -1496,7 +1496,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumsumByKeyFL
   float * out = (float *)getPointer(env, jout);
 
   inclusive_scan_by_key_fl(vals, keys, out, len);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
   }
@@ -1510,7 +1510,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cummaxByKeyFF
   float * out = (float *)getPointer(env, jout);
 
   inclusive_scan_by_key_ff_max(vals, keys, out, len);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
   }
@@ -1523,7 +1523,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cummaxByKeyFI
   float * out = (float *)getPointer(env, jout);
 
   inclusive_scan_by_key_fi_max(vals, keys, out, len);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
   }
@@ -1536,7 +1536,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cummaxByKeyII
   int * out = (int *)getPointer(env, jout);
 
   inclusive_scan_by_key_ii_max(vals, keys, out, len);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
   }
@@ -1549,7 +1549,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cummaxByKeyFL
   float * out = (float *)getPointer(env, jout);
 
   inclusive_scan_by_key_fl_max(vals, keys, out, len);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
   }
@@ -1563,7 +1563,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumminByKeyFF
   float * out = (float *)getPointer(env, jout);
 
   inclusive_scan_by_key_ff_min(vals, keys, out, len);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
   }
@@ -1576,7 +1576,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumminByKeyFI
   float * out = (float *)getPointer(env, jout);
 
   inclusive_scan_by_key_fi_min(vals, keys, out, len);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
   }
@@ -1589,7 +1589,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumminByKeyII
   int * out = (int *)getPointer(env, jout);
 
   inclusive_scan_by_key_ii_min(vals, keys, out, len);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
   }
@@ -1602,7 +1602,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumminByKeyFL
   float * out = (float *)getPointer(env, jout);
 
   inclusive_scan_by_key_fl_min(vals, keys, out, len);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
   }
@@ -1614,7 +1614,7 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_reverse
   float * out = (float *)getPointer(env, jout);
 
   reverse(vals, out, len);
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
   }

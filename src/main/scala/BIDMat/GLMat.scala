@@ -24,6 +24,7 @@ class GLMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     if (nr * nc > 0) {
     	val tmpMat = LMat(nr, nc);
     	cudaMemcpy2D(Pointer.to(tmpMat.data), 1L*nr*Sizeof.LONG, pdata, 1L*nrows*Sizeof.LONG, 1L*nr*Sizeof.LONG, nc, cudaMemcpyDeviceToHost);
+    	cudaStreamSynchronize(Mat.SyncMethod)
     	tmpMat.toString;
     } else {
     	""
@@ -399,7 +400,7 @@ class GLMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   
   override def clear = {
   	cudaMemset(pdata, 0, Sizeof.LONG*length)
-  	cudaDeviceSynchronize
+  	cudaStreamSynchronize(Mat.SyncMethod)
   	this    
   }
   
@@ -414,13 +415,13 @@ class GLMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   override def t = {
     val out = GLMat.newOrCheckGLMat(ncols, nrows, null, GUID, "t".##)
     CUMATD.transpose(this.pdata, nrows, out.pdata, ncols, nrows, ncols)
-    cudaDeviceSynchronize
+    cudaStreamSynchronize(Mat.SyncMethod)
     out
   }
   
   def set(v:Long):GLMat = {
     CUMAT.setlval(pdata, v, length)
-    cudaDeviceSynchronize
+    cudaStreamSynchronize(Mat.SyncMethod)
     this
   }
   
@@ -449,9 +450,9 @@ class GLMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
       throw new RuntimeException("GMat \\ row dims not equal")
     val out = GLMat.newOrCheckGLMat(nrows, ncols+a.ncols, omat, GUID, a.GUID, "horzcat".##)
     cudaMemcpy(out.pdata, pdata, 1L*length*Sizeof.LONG, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
-    cudaDeviceSynchronize()
+    cudaStreamSynchronize(Mat.SyncMethod)
     cudaMemcpy(out.pdata.withByteOffset(1L*length*Sizeof.LONG), a.pdata, 1L*a.length*Sizeof.LONG, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
-    cudaDeviceSynchronize()
+    cudaStreamSynchronize(Mat.SyncMethod)
     out
   }
   
@@ -460,9 +461,9 @@ class GLMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
       throw new RuntimeException("GMat on row dims not equal")
     val out = GLMat.newOrCheckGLMat(nrows+a.nrows, ncols, omat, GUID, a.GUID, "vertcat".##)
     cudaMemcpy2D(out.pdata, 1L*out.nrows*Sizeof.LONG, pdata, 1L*nrows*Sizeof.LONG, 1L*nrows*Sizeof.LONG, 1L*ncols, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
-    cudaDeviceSynchronize()
+    cudaStreamSynchronize(Mat.SyncMethod)
     cudaMemcpy2D(out.pdata.withByteOffset(1L*nrows*Sizeof.LONG), 1L*out.nrows*Sizeof.LONG, a.pdata, 1L*a.nrows*Sizeof.LONG, 1L*a.nrows*Sizeof.LONG,  1L*a.ncols, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
-    cudaDeviceSynchronize()
+    cudaStreamSynchronize(Mat.SyncMethod)
     out
   }
   
@@ -492,7 +493,7 @@ class GLMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   def toLMat(omat:Mat):LMat = {
     val out = LMat.newOrCheckLMat(nrows, ncols, omat, GUID, "toLMat".##)
     cudaMemcpy(Pointer.to(out.data), pdata, 1L*nrows*ncols * Sizeof.LONG, cudaMemcpyKind.cudaMemcpyDeviceToHost);
-    cudaDeviceSynchronize()
+    cudaStreamSynchronize(Mat.SyncMethod)
     out
   }
   
@@ -501,13 +502,13 @@ class GLMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   def copyTo(out:LMat):LMat = {
     val a = out.recycle(nrows, ncols, 0)
     cudaMemcpy(Pointer.to(a.data), pdata, 1L*nrows*ncols * Sizeof.LONG, cudaMemcpyKind.cudaMemcpyDeviceToHost);
-    cudaDeviceSynchronize()
+    cudaStreamSynchronize(Mat.SyncMethod)
     a
   }
 
   def copyFrom(in:LMat):GLMat = {
     cudaMemcpy(pdata, Pointer.to(in.data), 1L*nrows*ncols*Sizeof.LONG, cudaMemcpyKind.cudaMemcpyHostToDevice);
-    cudaDeviceSynchronize()
+    cudaStreamSynchronize(Mat.SyncMethod)
     this
   }
   
@@ -525,7 +526,7 @@ class GLMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   def copyTo(out:GLMat):GLMat = {
     val a = out.recycle(nrows, ncols, 0)
     cudaMemcpy(a.pdata, pdata, 1L*length*Sizeof.LONG, cudaMemcpyDeviceToDevice)
-    cudaDeviceSynchronize()
+    cudaStreamSynchronize(Mat.SyncMethod)
     a
   }
   
@@ -602,7 +603,7 @@ class GLMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     if (nrows != ncols) throw new RuntimeException("getdiag requires a square matrix, but dims= %d %d" format (nrows, ncols))
     val out = GLMat.newOrCheckGLMat(nrows, 1, null, GUID, "getdiag".##)
     cudaMemcpy2D(out.pdata, Sizeof.LONG, pdata, (nrows+1)*Sizeof.LONG, Sizeof.LONG, nrows, cudaMemcpyDeviceToDevice)
-    cudaDeviceSynchronize
+    cudaStreamSynchronize(Mat.SyncMethod)
     val err = cudaGetLastError()
     if (err != 0) {
     	println("device is %d" format SciFunctions.getGPU)
@@ -617,7 +618,7 @@ class GLMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     val out = GLMat.newOrCheckGLMat(size, size, null, GUID, "mkdiag".##)
     out.clear
     var err = cudaMemcpy2D(out.pdata, (nrows+1)*Sizeof.LONG, pdata, Sizeof.LONG, Sizeof.LONG, nrows, cudaMemcpyDeviceToDevice)
-    cudaDeviceSynchronize
+    cudaStreamSynchronize(Mat.SyncMethod)
     if (err == 0) err = cudaGetLastError()
     if (err != 0) {
     	println("device is %d" format SciFunctions.getGPU)
@@ -825,7 +826,7 @@ object GLMat {
     	  val retv = GLMat.newOrCheckGLMat(a.nrows, a.ncols, null, a.GUID, "GLMat".##);
     	  val rsize = a.nrows*a.ncols;
     	  cudaMemcpy(retv.pdata, Pointer.to(a.data), 1L*rsize*Sizeof.LONG, cudaMemcpyKind.cudaMemcpyHostToDevice);
-    	  cudaDeviceSynchronize();
+    	  cudaStreamSynchronize(Mat.SyncMethod);
     	  retv;
       }
     }
@@ -843,7 +844,7 @@ object GLMat {
     } else {
       cudaMalloc(retv.pdata, 1L*len*Sizeof.LONG);
     }
-    cudaDeviceSynchronize;
+    cudaStreamSynchronize(Mat.SyncMethod);
     if (err == 0) err = cudaGetLastError();
     if (err != 0) throw new RuntimeException("CUDA alloc failed " + cudaGetErrorString(err));
     retv       
@@ -855,7 +856,7 @@ object GLMat {
     val rsize = a.nrows*a.ncols;
     val retv = GLMat.newOrCheckGLMat(a.nrows, a.ncols, null, a.GUID, "GIMat_GMat".##);
     var err = CUMAT.floatToLong(a.pdata, retv.pdata, a.length);
-    cudaDeviceSynchronize();
+    cudaStreamSynchronize(Mat.SyncMethod);
     if (err == 0) err = cudaGetLastError();
     if (err != 0) {
         println("device is %d" format SciFunctions.getGPU)
@@ -913,21 +914,21 @@ object GLMat {
   
   def GPUtoGPUarraycopy(a:Pointer, aoffset:Int,  b:Pointer, boffset:Int, len:Int, msg:String ) = {
     cudaMemcpy(b.withByteOffset(1L*boffset*Sizeof.LONG), a.withByteOffset(1L*aoffset*Sizeof.LONG), 1L*len*Sizeof.LONG, cudaMemcpyKind.cudaMemcpyDeviceToDevice);
-    cudaDeviceSynchronize;
+    cudaStreamSynchronize(Mat.SyncMethod);
     val err = cudaGetLastError;
     if (err != 0) throw new RuntimeException(msg +" error in memcpy "+ cudaGetErrorString(err));
   }
   
   def GPUtoCPUarraycopy(a:Pointer, aoffset:Int,  b:Array[Long], boffset:Int, len:Int, msg:String ) = {
     cudaMemcpy(Pointer.to(b).withByteOffset(1L*boffset*Sizeof.LONG), a.withByteOffset(1L*aoffset*Sizeof.LONG), 1L*len*Sizeof.LONG, cudaMemcpyKind.cudaMemcpyDeviceToHost);
-    cudaDeviceSynchronize;
+    cudaStreamSynchronize(Mat.SyncMethod);
     val err = cudaGetLastError;
     if (err != 0) throw new RuntimeException(msg +" error in memcpy "+ cudaGetErrorString(err));
   }
   
   def CPUtoGPUarraycopy(a:Array[Long], aoffset:Int,  b:Pointer, boffset:Int, len:Int, msg:String ) = {
     cudaMemcpy(b.withByteOffset(1L*boffset*Sizeof.LONG), Pointer.to(a).withByteOffset(1L*aoffset*Sizeof.LONG), 1L*len*Sizeof.LONG, cudaMemcpyKind.cudaMemcpyHostToDevice);
-    cudaDeviceSynchronize;
+    cudaStreamSynchronize(Mat.SyncMethod);
     val err = cudaGetLastError;
     if (err != 0) throw new RuntimeException(msg +" error in memcpy "+ cudaGetErrorString(err));
   }
@@ -1093,7 +1094,7 @@ object GLMat {
     if (status != 0) throw new RuntimeException("p3sortlexGPU error1 %d" format (status)) 
     status = cudaMemcpy(ggrams.pdata.withByteOffset(1L*nrows*Sizeof.LONG), p1, 1L*nrows*Sizeof.LONG, cudaMemcpyHostToDevice)
     if (status != 0) throw new RuntimeException("p3sortlexGPU error2 %d" format (status))  
-    cudaDeviceSynchronize
+    cudaStreamSynchronize(Mat.SyncMethod)
     val ggramst = ggrams.t
     ggrams.free
     CUMAT.l2sort(ggramst.pdata, nrows, if (asc) 1 else 0)
@@ -1152,7 +1153,7 @@ object GLMat {
     if (status != 0) throw new RuntimeException("p3sortlexGPU error2 %d" format (status))  
     status = cudaMemcpy(gvals.pdata, p3, 1L*nrows*Sizeof.LONG, cudaMemcpyHostToDevice)
     if (status != 0) throw new RuntimeException("p3sortlexGPU error3 %d" format (status)) 
-    cudaDeviceSynchronize
+    cudaStreamSynchronize(Mat.SyncMethod)
     val ggramst = ggrams.t
     ggrams.free
     CUMAT.l2sortk(ggramst.pdata, gvals.pdata, nrows, if (asc) 1 else 0)
@@ -1201,7 +1202,7 @@ object GLMat {
     if (status != 0) throw new RuntimeException("p4sortlexGPU error3 %d" format (status))
     status = cudaMemcpy(ggrams.pdata.withByteOffset(1L*nrows*3*Sizeof.LONG), p4, 1L*nrows*Sizeof.LONG, cudaMemcpyHostToDevice)
     if (status != 0) throw new RuntimeException("p4sortlexGPU error4 %d" format (status))
-    cudaDeviceSynchronize
+    cudaStreamSynchronize(Mat.SyncMethod)
     val ggramst = ggrams.t
     ggrams.free
     CUMAT.l4sort(ggramst.pdata, nrows, if (asc) 1 else 0)
@@ -1230,7 +1231,7 @@ object GLMat {
   def collectLVec(keys:GLMat, vals:GIMat, okeys:GLMat, ovals:GIMat):(GLMat, GIMat) = {
     val len = CUMAT.collectLVec(keys.pdata, vals.pdata, okeys.pdata, ovals.pdata, keys.length);
 //    println("collect %d %d" format (keys.length, len))
-    cudaDeviceSynchronize();
+    cudaStreamSynchronize(Mat.SyncMethod);
     val err = cudaGetLastError;
     if (err != 0) throw new RuntimeException("GLMat.collect error %d: " + cudaGetErrorString(err) format err);
     (new GLMat(1, len, okeys.pdata, okeys.realsize), new GIMat(1, len, ovals.pdata, ovals.realsize)); 
