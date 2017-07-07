@@ -21,7 +21,11 @@ trait Filter {
     flops;
   }
     
+  def convolve(a:Mat, omat:Mat, doclear:Boolean, workspace:Mat):Mat = {a};
+  
   def convolve(a:Mat, omat:Mat, doclear:Boolean):Mat = {a};
+  
+  def convolveT(b:Mat, omat:Mat, doclear:Boolean, workspace:Mat = null):Mat = {b};
   
   def convolveT(b:Mat, omat:Mat, doclear:Boolean):Mat = {b};
   
