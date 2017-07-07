@@ -251,7 +251,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       var err = cudnnConvolutionBackwardFilter(cudnn2ndHandle, GFilter.ONE, adesc, a.pdata, bdesc, b.pdata, convdesc, 
           bwdFilterAlgo(0), workspaceBWDfilter.pdata, workspaceSizeInBytes, if (doclear) GFilter.ZERO else GFilter.ONE, fdesc, pdata);
 
-      if (err > 0) throw new RuntimeException("Error in CUDNN backward data convolution %s" format cudaGetErrorString(err));
+      if (err > 0) throw new RuntimeException("Error in CUDNN backward filter convolution %s" format cudaGetErrorString(err));
       
     }
     Mat.nflops += computeFlops(a, stride, pad);
