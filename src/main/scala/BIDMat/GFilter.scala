@@ -306,10 +306,22 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
 			case (bb:GMat) => convolve(bb, omat, doclear);
 			}
 	}
+  
+  override def convolve(b:Mat, omat:Mat, doclear:Boolean, workspace:Mat):Mat = {
+			b match {
+			case (bb:GMat) => convolve(bb, omat, doclear, workspace);
+			}
+	}
 
 	override def convolveT(b:Mat, omat:Mat, doclear:Boolean):Mat = {
 			b match {
 			case (bb:GMat) => convolveT(bb, omat, doclear);
+			}
+	}
+	
+  override def convolveT(b:Mat, omat:Mat, doclear:Boolean, workspace:Mat):Mat = {
+			b match {
+			case (bb:GMat) => convolveT(bb, omat, doclear, workspace);
 			}
 	}
 
