@@ -660,7 +660,7 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     	} else {
     		cublasSgemm(getHandle, cublasOperation.CUBLAS_OP_N, cublasOperation.CUBLAS_OP_N, nrows, a.ncols, ncols, 
     				GMat.pONE, pdata, nrows, a.pdata, a.nrows, GMat.pZERO, out.pdata, nrows);
-    		if (length * a.ncols > 1e6) Thread.sleep(0);
+    		if (length * a.ncols > GMat.multYieldSize) Thread.`yield`;
     		cudaStreamSynchronize(Mat.SyncMethod);
     		val err = cudaGetLastError;
     		if (err != 0) {
@@ -683,7 +683,7 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
 	  }
 	  Mat.nflops += 2L * arows * bcols * acols;
 	  cublasSgemm(getHandle, atrans, btrans,	arows, bcols, acols, GMat.pONE, pdata, nrows, b.pdata, b.nrows, GMat.pONE, c.pdata, c.nrows);
-	  if (1L * arows * bcols * acols > 1e7) Thread.sleep(0);
+	  if (1L * arows * bcols * acols > GMat.multYieldSize) Thread.`yield`;
 	  cudaStreamSynchronize(Mat.SyncMethod); 
 	  c
   }
@@ -743,7 +743,7 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
       Mat.nflops += 2L * length * a.nrows
       cublasSgemm(getHandle, cublasOperation.CUBLAS_OP_N, cublasOperation.CUBLAS_OP_T, nrows, a.nrows, ncols, 
           GMat.pONE, pdata, nrows, a.pdata, a.nrows, GMat.pZERO, out.pdata, nrows);
-      if (1L * length * a.nrows > 1e7) Thread.sleep(0);
+      if (1L * length * a.nrows > GMat.multYieldSize) Thread.`yield`;
       cudaStreamSynchronize(Mat.SyncMethod);
       val err = cudaGetLastError
       if (err != 0) {
@@ -880,7 +880,7 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
       Mat.nflops += 2L * length * a.ncols
       cublasSgemm(getHandle, cublasOperation.CUBLAS_OP_T, cublasOperation.CUBLAS_OP_N, ncols, a.ncols, nrows, 
           GMat.pONE, pdata, nrows, a.pdata, a.nrows, GMat.pZERO, out.pdata, out.nrows);
-      if (1L * length * a.ncols > 1e7) Thread.sleep(0);
+      if (1L * length * a.ncols > GMat.multYieldSize) Thread.`yield`;
       cudaStreamSynchronize(Mat.SyncMethod);
       val err = cudaGetLastError
       if (err != 0) {
@@ -2049,6 +2049,8 @@ object GMat {
     val normcdfinv=36
     
   }
+  
+  var multYieldSize = 1e6f;
   
   object TransF2 {
     val atan2=0
