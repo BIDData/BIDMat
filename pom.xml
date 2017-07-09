@@ -6,7 +6,7 @@
   <groupId>BIDMat</groupId>
   <artifactId>BIDMat</artifactId>
   <packaging>jar</packaging>
-  <version>2.0.6-cuda8.0beta</version>
+  <version>2.0.7-cuda8.0beta</version>
   <name>BIDMat</name>
   <description>BIDMat performs matrix operations</description>
   <properties>
@@ -257,6 +257,11 @@
       <groupId>com.typesafe.akka</groupId>
       <artifactId>akka-actor_2.11</artifactId>
       <version>2.5.3</version>
+    </dependency>
+    <dependency>
+      <groupId>com.esotericsoftware.kryo</groupId>
+      <artifactId>kryo</artifactId>
+      <version>2.24.0</version>
     </dependency>
     <dependency>
       <groupId>${jcudaGroupId}</groupId>
