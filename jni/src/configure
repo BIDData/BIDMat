@@ -10,6 +10,7 @@ VERSION="2.0.7-cuda8.0beta"
 DEVVERSION="dev-cuda8.0"
 # Set to one and update the path if you plan to use NVIDIA NCCL
 USE_NCCL=0
+USE_MKL2017=1
 NCCL_HOME=/code/nccl
 
 OS=`uname -a`
@@ -106,7 +107,7 @@ if [ "$OS" = "apple" ] ; then
     OBJ="o"
     OUTFLG="-o "
     CPPFLAGS="-fPIC -c -O2 -g -DNDEBUG -DUSE_NCCL=${USE_NCCL} -I$JAVA_HOME/include -I$JAVA_HOME/include/darwin -I$BIDMAT_ROOT/jni/include -I$CUDA_HOME/include -I${NCCL_HOME}/src -I$BLAS_ROOT/include -I$BLAS_ROOT/include/${ARCHD}${SUBDIR}"
-    CFLAGS="-openmp -fPIC -c -O2 -g -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/darwin -I$BIDMAT_ROOT/jni/include -I$BLAS_ROOT/include -I$BLAS_ROOT/include/${ARCHD}${SUBDIR}"
+    CFLAGS="-openmp -fPIC -c -O2 -g -DNDEBUG -DUSE_MKL2017=${USE_MKL2017} -I$JAVA_HOME/include -I$JAVA_HOME/include/darwin -I$BIDMAT_ROOT/jni/include -I$BLAS_ROOT/include -I$BLAS_ROOT/include/${ARCHD}${SUBDIR}"
     LB="ar rc"    
     LD="icc -dynamiclib"
     GLD="nvcc -shared -Xlinker -rpath -Xlinker ${CUDA_HOME}/lib -lc++"
@@ -234,7 +235,7 @@ elif [ "$OS" = "linux" ] ; then
 	OBJ="o"
 	OUTFLG="-o "
 	CPPFLAGS="-fPIC -c -O2 -DNDEBUG -DUSE_NCCL=${USE_NCCL} -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$CUDA_HOME/include -I${NCCL_HOME}/src -I/usr/include/x86_64-linux-gnu/c++/$GCC_VERSION"
-	CFLAGS="-openmp -fPIC -c -O2 -DNDEBUG -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$BLAS_ROOT/include -I$BLAS_ROOT/include/${ARCHD}${SUBDIR}"
+	CFLAGS="-qopenmp -fPIC -c -O2 -DNDEBUG  -DUSE_MKL2017=${USE_MKL2017} -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$BIDMAT_ROOT/jni/include -I$BLAS_ROOT/include -I$BLAS_ROOT/include/${ARCHD}${SUBDIR}"
 	LB="ar rc"    
 	GLD="nvcc -shared"
 	GLD="g++ -shared"
@@ -279,7 +280,7 @@ elif [ "$OS" = "windows" ] ; then
     OBJ="obj"
     OUTFLG="/OUT:"
     CPPFLAGS="/openmp /c /MT /DNDEBUG /DUSE_NCCL=${USE_NCCL} /O2 /EHsc $CPPFLAGS"  
-    CFLAGS="/openmp /c /MT /DNDEBUG /O2 /EHsc $CFLAGS" 
+    CFLAGS="/openmp /c /MT /DNDEBUG /DUSE_MKL2017=${USE_MKL2017} /O2 /EHsc $CFLAGS" 
     NVCCFLAGS="-c -use_fast_math --default-stream per-thread -I$BIDMAT_ROOT/jni/include \
           -gencode arch=compute_30,code=sm_30 \
           -gencode arch=compute_35,code=sm_35 \
