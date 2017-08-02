@@ -13,9 +13,9 @@ class IMatWildcard extends IMat(0,0,null) with MatrixWildcard
 
 object MatFunctions {
 
-  var currentTimeWasThen:Long = 0L
+  @volatile var currentTimeWasThen:Long = 0L
   
-  var lastFlops:Long = 0
+  @volatile var lastFlops:Long = 0
 
   /** Establishes the start of a (seconds) timer, to be timed later at the next call to 'toc'. */
   def tic = { currentTimeWasThen = currentTime }
