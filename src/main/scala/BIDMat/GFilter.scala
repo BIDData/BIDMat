@@ -287,8 +287,10 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
     this
   }
   
-  def convolveMfork(a:GMat, b:GMat):GFilter = convolveMfork(a, b, true, null);
+  def convolveMfork(a:GMat, b:GMat, doclear:Boolean):GFilter = convolveMfork(a, b, doclear, null);
   
+  def convolveMfork(a:GMat, b:GMat):GFilter = convolveMfork(a, b, true, null);
+
   override def convolveMjoin:GFilter = {
   	cudaStreamSynchronize(cudnn2ndStream);
   	val  err = cudaGetLastError();
@@ -300,13 +302,18 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
   	this;
   }
   
+  def convolveM(a:GMat, b:GMat, doclear:Boolean, ws:Mat):GFilter = {
+    convolveMfork(a, b, doclear, ws);
+    convolveMjoin;
+  }
+
   def convolveM(a:GMat, b:GMat, doclear:Boolean):GFilter = {
-    convolveMfork(a, b, doclear);
+    convolveMfork(a, b, doclear, null);
     convolveMjoin;
   }
   
   def convolveM(a:GMat, b:GMat):GFilter = {
-    convolveMfork(a, b, true);
+    convolveMfork(a, b, true, null);
     convolveMjoin;
   }
   
@@ -336,13 +343,25 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
 
 	override def convolveM(a:Mat, b:Mat, doclear:Boolean):Filter = {
 			(a, b) match {
-			case (aa:GMat, bb:GMat) => convolveM(aa, bb, doclear);
+			case (aa:GMat, bb:GMat) => convolveM(aa, bb, doclear, null);
+			}
+	}
+
+	override def convolveM(a:Mat, b:Mat, doclear:Boolean, ws:Mat):Filter = {
+			(a, b) match {
+			case (aa:GMat, bb:GMat) => convolveM(aa, bb, doclear, ws);
 			}
 	}
 	
-  override def convolveMfork(a:Mat, b:Mat, doclear:Boolean):Filter = {
+    override def convolveMfork(a:Mat, b:Mat, doclear:Boolean):Filter = {
 			(a, b) match {
-			case (aa:GMat, bb:GMat) => convolveMfork(aa, bb, doclear);
+			case (aa:GMat, bb:GMat) => convolveMfork(aa, bb, doclear, null);
+			}
+	}
+
+    override def convolveMfork(a:Mat, b:Mat, doclear:Boolean, ws:Mat):Filter = {
+			(a, b) match {
+			case (aa:GMat, bb:GMat) => convolveMfork(aa, bb, doclear, ws);
 			}
 	}
   

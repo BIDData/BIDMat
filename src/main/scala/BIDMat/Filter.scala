@@ -25,13 +25,17 @@ trait Filter {
   
   def convolve(a:Mat, omat:Mat, doclear:Boolean):Mat = {a};
   
-  def convolveT(b:Mat, omat:Mat, doclear:Boolean, workspace:Mat = null):Mat = {b};
+  def convolveT(b:Mat, omat:Mat, doclear:Boolean, workspace:Mat):Mat = {b};
   
   def convolveT(b:Mat, omat:Mat, doclear:Boolean):Mat = {b};
   
   def convolveM(a:Mat, b:Mat, doclear:Boolean):Filter = {this};
 
+  def convolveM(a:Mat, b:Mat, doclear:Boolean, ws:Mat):Filter = {this};
+
   def convolveMfork(a:Mat, b:Mat, doclear:Boolean):Filter = {this};
+
+  def convolveMfork(a:Mat, b:Mat, doclear:Boolean, workspace:Mat):Filter = {this};
 
   def convolveMjoin:Filter = {this}
   
