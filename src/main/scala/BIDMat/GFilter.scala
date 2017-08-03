@@ -229,7 +229,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
   
   def convolveT(a:GMat):GMat = convolveT(a, null, true, null);
   
-  def convolveMfork(a:GMat, b:GMat, doclear:Boolean):GFilter= {
+  def convolveMfork(a:GMat, b:GMat, doclear:Boolean, workspace:Mat):GFilter= {
 		val bdims = b.dims;
     val outdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad, outPad);
     if ((bdims - outdims).data.exists(_ != 0)) {
@@ -258,7 +258,12 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       if (cstatus > 0) throw new RuntimeException("Error setting convolution descriptor for backward filter convolution %d" format cstatus);
       
       if (!bwdFilterTrained) {
-      	val gstatus = cudnnGetConvolutionBackwardFilterAlgorithm(cudnn2ndHandle, adesc, bdesc, convdesc, fdesc, cudnnConvolutionBwdFilterPreference.CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST, 0, bwdFilterAlgo);
+      	val (preference, limit) = if (workspace.asInstanceOf[AnyRef] != null) {
+          (cudnnConvolutionBwdFilterPreference.CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT, workspace.length*4L);
+        } else {
+          (cudnnConvolutionBwdFilterPreference.CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST, 0L);
+        }
+      	val gstatus = cudnnGetConvolutionBackwardFilterAlgorithm(cudnn2ndHandle, adesc, bdesc, convdesc, fdesc, preference, limit, bwdFilterAlgo);
       	if (gstatus > 0) throw new RuntimeException("Error getting best algorithm for backward filter convolution %d" format gstatus);
       	bwdFilterTrained = true;
       }
@@ -278,7 +283,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
     this
   }
   
-  def convolveMfork(a:GMat, b:GMat):GFilter = convolveMfork(a, b, true);
+  def convolveMfork(a:GMat, b:GMat):GFilter = convolveMfork(a, b, true, null);
   
   override def convolveMjoin:GFilter = {
   	cudaStreamSynchronize(cudnn2ndStream);
