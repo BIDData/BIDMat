@@ -271,8 +271,12 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       val _workspaceSizeInBytes = new Array[Long](1);
       var wserr = cudnnGetConvolutionBackwardFilterWorkspaceSize(cudnn2ndHandle, adesc, bdesc, convdesc, fdesc, bwdFilterAlgo(0), _workspaceSizeInBytes);
       val workspaceSizeInBytes = _workspaceSizeInBytes(0);
-      workspaceBWDfilter = GMat.newOrCheckGMat((workspaceSizeInBytes/4).toInt, 1, null, GUID, a.GUID, hmm, "ConvBwdFilterWS".##);
 
+      workspaceBWDfilter =  if (workspace.asInstanceOf[AnyRef] != null) {
+        workspace.asInstanceOf[GMat];
+      } else {
+        GMat.newOrCheckGMat((workspaceSizeInBytes/4).toInt, 1, null, GUID, a.GUID, hmm, "ConvBwdFilterWS"##);
+      }
       var err = cudnnConvolutionBackwardFilter(cudnn2ndHandle, GFilter.ONE, adesc, a.pdata, bdesc, b.pdata, convdesc, 
           bwdFilterAlgo(0), workspaceBWDfilter.pdata, workspaceSizeInBytes, if (doclear) GFilter.ZERO else GFilter.ONE, fdesc, pdata);
 
