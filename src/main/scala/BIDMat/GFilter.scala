@@ -426,7 +426,6 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
 
 object GFilter {
 
-  var cudnnContextsInitialized = false;
   val ONE = Pointer.to(Array(1f));
   val ZERO = Pointer.to(Array(0f));
   
