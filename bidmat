@@ -4,7 +4,6 @@
 # note CUDA_PATH="" # Should be set to the latest toolkit in Windows
 # Change these if needed
 MEMSIZE="-Xmx14G"
-BLAS_ROOT="/code/QSML"
 export JAVA_OPTS="${MEMSIZE} -Xms128M -Dfile.encoding=UTF-8" # Set as much memory as possible
 BIDMAT_ROOT="${BASH_SOURCE[0]}"
 if [ ! `uname` = "Darwin" ]; then
