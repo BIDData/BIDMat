@@ -5,8 +5,6 @@
 # Change these if needed
 MEMSIZE="-Xmx14G"
 BLAS_ROOT="/code/QSML"
-JOCL_VERSION="2.0.1-SNAPSHOT"
-AKKA_VERSION="2.5.4"
 export JAVA_OPTS="${MEMSIZE} -Xms128M -Dfile.encoding=UTF-8" # Set as much memory as possible
 BIDMAT_ROOT="${BASH_SOURCE[0]}"
 if [ ! `uname` = "Darwin" ]; then
@@ -20,14 +18,10 @@ BIDMAT_ROOT=`dirname "$BIDMAT_ROOT"`
 pushd "${BIDMAT_ROOT}" > /dev/null
 BIDMAT_ROOT=`pwd -P`
 BIDMAT_ROOT="$( echo ${BIDMAT_ROOT} | sed 's+/cygdrive/\(.\)+\1:+' )"
-JCUDA_LIBDIR=${BIDMAT_ROOT}/lib
-JOCL_LIBDIR=${BIDMAT_ROOT}/lib
 LIBDIR=${BIDMAT_ROOT}/lib
 
-JCUDA_VERSION=`echo lib/jcuda-natives-*.jar | sed 's/.*jcuda-natives-//' | sed 's/-.*\.jar//'`
 BIDMAT_VERSION=`echo lib/BIDMat-*-cpu-*.jar | sed 's/.*BIDMat-//' | sed 's/-cpu.*\.jar//'`
 
-popd  > /dev/null
 OSS=`uname -a`
 if [ "$ARCH" = "" ]; then
     ARCH=`arch`
@@ -56,27 +50,17 @@ if [ "$OSS" = "windows" ]; then
     fi
 fi
 
-BIDMAT_LIBS="${BIDMAT_ROOT}/target/BIDMat-${BIDMAT_VERSION}.jar;\
-${LIBDIR}/BIDMat-${BIDMAT_VERSION}-cpu-${OSS}-${ARCH}.jar;\
-${LIBDIR}/BIDMat-${BIDMAT_VERSION}-gpu-${OSS}-${ARCH}.jar;\
-${LIBDIR}/IScala-1.0.0.jar;\
-${LIBDIR}/akka-actor_2.11-${AKKA_VERSION}.jar;${LIBDIR}/akka-cluster_2.11-${AKKA_VERSION}.jar;\
-${LIBDIR}/akka-remote_2.11-${AKKA_VERSION}.jar;${LIBDIR}/akka-http_2.11-${AKKA_VERSION}.jar;\
-${LIBDIR}/akka-stream_2.11-${AKKA_VERSION}.jar;${LIBDIR}/akka-http-core_2.11-${AKKA_VERSION}.jar;\
-${LIBDIR}/akka-protobuf_2.11-${AKKA_VERSION}.jar;${LIBDIR}/akka-parsing_2.11-${AKKA_VERSION}.jar;\
-${LIBDIR}/ptplot-1.0.jar;${LIBDIR}/ptplotapplication-1.0.jar;\
-${LIBDIR}/jhdf5-3.2.1.jar;${LIBDIR}/jhdf5-3.2.1-${OSS}-${ARCH}.jar;\
-${LIBDIR}/commons-math3-3.2.jar;${LIBDIR}/lz4-1.3.jar;${LIBDIR}/json-io-4.5.0.jar;\
-${LIBDIR}/jfreechart-1.0.19.jar;${LIBDIR}/jcommon-1.0.23.jar"
-
-JCUDA_LIBS=""
-for lib in jcuda jcublas jcufft jcurand jcusolver jcusparse jcudnn; do
-    JCUDA_LIBS="${JCUDA_LIBS};${LIBDIR}/${lib}-${JCUDA_VERSION}.jar;${LIBDIR}/${lib}-natives-${JCUDA_VERSION}-${OSS}-${ARCH}.jar"
+cd lib
+BIDMAT_JARS=`echo *.jar`
+BIDMAT_LIBS="${BIDMAT_ROOT}/target/BIDMat-${BIDMAT_VERSION}.jar"
+for lib in ${BIDMAT_JARS}; do
+    if [[ "$lib" != IScala* && "$lib" != scala* ]]; then
+	BIDMAT_LIBS="${BIDMAT_LIBS};${LIBDIR}/${lib}"
+    fi
 done
+popd  > /dev/null
 
-JOCL_LIBS="${JOCL_LIBDIR}/jocl-${JOCL_VERSION}.jar"
-
-ALL_LIBS=";${BIDMAT_LIBS};${JCUDA_LIBS};${JOCL_LIBS};${JAVA_HOME}/lib/tools.jar"
+ALL_LIBS=";${BIDMAT_LIBS};${JAVA_HOME}/lib/tools.jar;${LIBDIR}/IScala-1.0.0.jar"
 
 if [ "$OSS" = "windows" ]; then
     if [ ! "${CUDA_PATH}" = "" ]; then
