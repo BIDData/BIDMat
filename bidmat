@@ -4,7 +4,6 @@
 # note CUDA_PATH="" # Should be set to the latest toolkit in Windows
 # Change these if needed
 MEMSIZE="-Xmx14G"
-export JAVA_OPTS="${MEMSIZE} -Xms128M -Dfile.encoding=UTF-8" # Set as much memory as possible
 BIDMAT_ROOT="${BASH_SOURCE[0]}"
 if [ ! `uname` = "Darwin" ]; then
   BIDMAT_ROOT=`readlink -f "${BIDMAT_ROOT}"`
@@ -18,6 +17,14 @@ pushd "${BIDMAT_ROOT}" > /dev/null
 BIDMAT_ROOT=`pwd -P`
 BIDMAT_ROOT="$( echo ${BIDMAT_ROOT} | sed 's+/cygdrive/\(.\)+\1:+' )"
 LIBDIR=${BIDMAT_ROOT}/lib
+
+LOGGING_CONF="${BIDMAT_ROOT}/logs/logging.conf"
+if [ -e "${LOGGING_CONF}" ]; then
+    LOG_OPTS="-Djava.util.logging.config.file=${LOGGING_CONF}"
+else
+    LOG_OPTS=""
+fi
+export JAVA_OPTS="${MEMSIZE} -Xms128M -Dfile.encoding=UTF-8 ${LOG_OPTS} ${JAVA_OPTS}" # Set as much memory as possible
 
 BIDMAT_VERSION=`echo lib/BIDMat-*-cpu-*.jar | sed 's/.*BIDMat-//' | sed 's/-cpu.*\.jar//'`
 
