@@ -890,7 +890,7 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
     var j = 0;
     while (j < nc) {
     	var i = 0;
-    	while (i < nrows) {
+    	while (i < nr) {
     		out._data(i+j*nr) = op2(_data(i*istep+j*jstep), aa._data(i*istepa+j*jstepa));
     		i += 1;
     	}
