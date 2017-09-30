@@ -1,5 +1,6 @@
 package BIDMat
 import Mat._
+import scala.util.hashing.MurmurHash3
 
 case class CSMat(dims0:Array[Int], val data:Array[String]) extends DenseMat[String](dims0, data) {	
   
@@ -8,6 +9,12 @@ case class CSMat(dims0:Array[Int], val data:Array[String]) extends DenseMat[Stri
 	override def t:CSMat = CSMat(gt(null))
 	
 	override def mytype = "CSMat"
+	  
+	override def contents():CSMat = {
+    val out = new CSMat(length, 1, data);
+    out.setGUID(MurmurHash3.mix(MurmurHash3.mix(length, 1), (GUID*7897889).toInt));
+    out
+  }
 	
 	def horzcat(b: CSMat) = CSMat(ghorzcat(b))
 	
