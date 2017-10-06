@@ -42,6 +42,13 @@ class GIMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     } else {
       toIMat().data(0)
     }
+    
+  override def v:Int =
+    if (nrows > 1 || ncols > 1) {
+      throw new RuntimeException("Matrix should be 1x1 to extract value")
+    } else {
+      toIMat().data(0)
+    }
   
   override def view(nr:Int, nc:Int):GIMat = {
     if (1L * nr * nc > realsize) {
