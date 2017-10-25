@@ -100,10 +100,7 @@ object GFunctions {
       i += 1;
     }
   }
-  
-  def setGPUseed(s:Long) = {
-	  GPUSEED = s;
-  }
+ 
   
   def resetGPUs = {
     import jcuda.runtime._;
@@ -123,7 +120,6 @@ object GFunctions {
     setGPU(igpu)
     jcuda.jcurand.JCurand.curandSetPseudoRandomGeneratorSeed(cudarng(igpu).asInstanceOf[jcuda.jcurand.curandGenerator], seed)
     setGPU(thisGPU)
-    setGPUseed(seed)
   }
   
   def setGPU(i:Int) = jcuda.runtime.JCuda.cudaSetDevice(i)
