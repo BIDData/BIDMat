@@ -875,6 +875,19 @@ object DFunctions {
     }
   }
 
+  val logisticFun = (x:Double) => 0.5*(math.tanh(x*0.5)+1.0);
+  val vdLogisticFun = (n:Int, x:Array[Double], y:Array[Double]) => {
+    var i = 0; while (i < n) {y(i) = 0.5 * x(i); i += 1}
+    vdTanh(n,y,y);
+    i = 0; while (i < n) {y(i) = 0.5 * (y(i) + 1.0); i += 1}
+  }
+  def logistic(a:DMat):DMat = logistic(a, null);
+  def logistic(a:DMat, out:Mat) = {
+    a match {
+      case aa:GDMat => GDFunctions.logistic(aa, out);
+      case _ => applyDFun(a, out, vdLogisticFun, logisticFun, 10L);
+    }
+  }
   
   val atan2Fun = (x:Double, y:Double) => math.atan2(x, y).toDouble
   val vdAtan2Fun = (n:Int, x:Array[Double], y:Array[Double], z:Array[Double]) => vdAtan2(n,x,y,z);

@@ -879,6 +879,20 @@ object FFunctions {
     }
   }
   
+  val logisticFun = (x:Float) => 0.5f*(math.tanh(x*0.5f)+1f).toFloat;
+  val vsLogisticFun = (n:Int, x:Array[Float], y:Array[Float]) => {
+    var i = 0; while (i < n) {y(i) = 0.5f * x(i); i += 1}
+    vsTanh(n,y,y);
+    i = 0; while (i < n) {y(i) = 0.5f * (y(i) + 1f); i += 1}
+  }
+  def logistic(a:FMat):FMat = logistic(a, null);
+  def logistic(a:FMat, out:Mat) = {
+    a match {
+      case aa:GMat => GFunctions.logistic(aa, out);
+      case _ => applySFun(a, out, vsLogisticFun, logisticFun, 10L);
+    }
+  }
+  
   def psi(a:FMat):FMat = psi(a, null);
   def psi(a:FMat, out:Mat) = {
     a match {

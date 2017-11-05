@@ -379,9 +379,10 @@ object GFunctions {
   def round(in:GMat, out:Mat):GMat =   applyGfun(in, out, TransF.round, 10L)
   def trunc(in:GMat, out:Mat):GMat =   applyGfun(in, out, TransF.trunc, 10L)
   def sign(in:GMat, out:Mat):GMat =    applyGfun(in, out, TransF.sign, 1L)
-  def exppsi(in:GMat, out:Mat):GMat =  applyGfun(in, out, TransF.exppsi, 1L)
-  def normcdf(in:GMat, out:Mat):GMat =  applyGfun(in, out, TransF.normcdf, 1L)
-  def normcdfinv(in:GMat, out:Mat):GMat =  applyGfun(in, out, TransF.normcdfinv, 1L)
+  def exppsi(in:GMat, out:Mat):GMat =  applyGfun(in, out, TransF.exppsi, 10L)
+  def normcdf(in:GMat, out:Mat):GMat =  applyGfun(in, out, TransF.normcdf, 10L)
+  def normcdfinv(in:GMat, out:Mat):GMat =  applyGfun(in, out, TransF.normcdfinv, 10L)
+  def logistic(in:GMat, out:Mat):GMat =    applyGfun(in, out, TransF.logistic, 10L)
   
   def psi(a:GMat, out:Mat):GMat = applySlatecGFun(a, out, 0, 100);
   def psi(a:GMat):GMat = psi(a, null);
@@ -426,9 +427,10 @@ object GFunctions {
   def round(in:GMat):GMat =   applyGfun(in, TransF.round, 10L)
   def trunc(in:GMat):GMat =   applyGfun(in, TransF.trunc, 10L)
   def sign(in:GMat):GMat =    applyGfun(in, TransF.sign, 1L)
-  def exppsi(in:GMat):GMat =    applyGfun(in, TransF.exppsi, 1L)
-  def normcdf(in:GMat):GMat =    applyGfun(in, TransF.normcdf, 1L)
-  def normcdfinv(in:GMat):GMat =    applyGfun(in, TransF.normcdfinv, 1L)
+  def exppsi(in:GMat):GMat =    applyGfun(in, TransF.exppsi, 10L)
+  def normcdf(in:GMat):GMat =    applyGfun(in, TransF.normcdf, 10L)
+  def normcdfinv(in:GMat):GMat = applyGfun(in, TransF.normcdfinv, 10L)
+  def logistic(in:GMat):GMat =   applyGfun(in, TransF.logistic, 10L)
   
   def atan2(a:GMat, b:GMat):GMat =   applyGfun2(a, b, TransF2.atan2, 10L)
   def pow(a:GMat, b:GMat):GMat =     applyGfun2(a, b, TransF2.pow, 10L)

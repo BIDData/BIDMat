@@ -141,6 +141,7 @@ object GDFunctions {
   def exppsi(in:GDMat, out:Mat):GDMat =  applyGDfun(in, out, TransF.exppsi, 10L)
   def normcdf(in:GDMat, out:Mat):GDMat =  applyGDfun(in, out, TransF.normcdf, 10L)
   def normcdfinv(in:GDMat, out:Mat):GDMat =  applyGDfun(in, out, TransF.normcdfinv, 10L)
+  def logistic(in:GDMat, out:Mat):GDMat =    applyGDfun(in, out, TransF.logistic, 10L)
   
   def atan2(a:GDMat, b:GDMat, out:Mat):GDMat =   applyGDfun2(a, b, out, TransF2.atan2, 10L)
   def pow(a:GDMat, b:GDMat, out:Mat):GDMat =     applyGDfun2(a, b, out, TransF2.pow, 10L)
@@ -179,6 +180,7 @@ object GDFunctions {
   def exppsi(in:GDMat):GDMat =    applyGDfun(in, TransF.exppsi, 1L)
   def normcdf(in:GDMat):GDMat =  applyGDfun(in, TransF.normcdf, 10L)
   def normcdfinv(in:GDMat):GDMat =  applyGDfun(in, TransF.normcdfinv, 10L)
+  def logistic(in:GDMat):GDMat =    applyGDfun(in, TransF.logistic, 10L)
   
   def atan2(a:GDMat, b:GDMat):GDMat =   applyGDfun2(a, b, TransF2.atan2, 10L)
   def pow(a:GDMat, b:GDMat):GDMat =     applyGDfun2(a, b, TransF2.pow, 10L)

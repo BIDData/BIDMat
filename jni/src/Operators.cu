@@ -187,6 +187,8 @@ __device__ float fn_exppsi(float a) {return (a<1.0f) ? 0.5f*a*a : a-0.5f;}
 __device__ float fn_normcdf(float a) {return normcdff(a);}
 __device__ float fn_normcdfinv(float a) {return normcdfinvf(a);}
 
+__device__ float fn_logistic(float a) {return 0.5f * (tanhf(a * 0.5f) + 1.0f);}
+
 __device__ float fn_atan2(float a, float b) {return atan2f(a, b);}
 __device__ float fn_pow(float a, float b) {return powf(a, b);}
 
@@ -227,7 +229,8 @@ __device__ const fntype fctns[] = {
     fn_y1,
     fn_exppsi,
     fn_normcdf,
-    fn_normcdfinv};
+    fn_normcdfinv,
+    fn_logistic};
     // Some SLATEC functions
 //    fn_psi,
 //    fn_psiinv};
@@ -281,8 +284,9 @@ __device__ double dfn_atan2(double a, double b) {return atan2(a, b);}
 __device__ double dfn_pow(double a, double b) {return pow(a, b);}
 __device__ double dfn_normcdf(double a) {return normcdf(a);}
 __device__ double dfn_normcdfinv(double a) {return normcdfinv(a);}
+__device__ double dfn_logistic(double a) {return 0.5 * (tanh(a * 0.5) + 1.0);}
 
-__device__ const dfntype dfctns[37] = {
+__device__ const dfntype dfctns[] = {
     dfn_abs,
     dfn_exp,
     dfn_expm1,
@@ -319,7 +323,8 @@ __device__ const dfntype dfctns[37] = {
     dfn_y1,
     dfn_exppsi,
     dfn_normcdf,
-    dfn_normcdfinv};
+    dfn_normcdfinv,
+    dfn_logistic};
 
 __device__ const doptype dfctns2[2] = {
     dfn_atan2,

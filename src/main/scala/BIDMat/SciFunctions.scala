@@ -1244,6 +1244,9 @@ object SciFunctions {
 
   def normcdfinv(a:FMat, out:Mat) = FFunctions.normcdfinv(a, out);
   def normcdfinv(a:FMat):FMat = FFunctions.normcdfinv(a, null);
+  
+  def logistic(a:FMat, out:Mat) = FFunctions.logistic(a, out);
+  def logistic(a:FMat):FMat = FFunctions.logistic(a, null);
 
   def gamma(a:FMat, out:Mat) = FFunctions.gamma(a, out);
   def gamma(a:FMat):FMat = FFunctions.gamma(a, null);
@@ -1370,6 +1373,9 @@ object SciFunctions {
 
   def normcdfinv(a:DMat, out:Mat) = DFunctions.normcdfinv(a, out);
   def normcdfinv(a:DMat):DMat = DFunctions.normcdfinv(a, null);
+  
+  def logistic(a:DMat, out:Mat) = DFunctions.logistic(a, out);
+  def logistic(a:DMat):DMat = DFunctions.logistic(a, null);
 
   def gamma(a:DMat, out:Mat) = DFunctions.gamma(a, out);
   def gamma(a:DMat):DMat = DFunctions.gamma(a, null);

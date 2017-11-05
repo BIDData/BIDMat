@@ -2047,7 +2047,7 @@ object GMat {
     val exppsi=34
     val normcdf=35
     val normcdfinv=36
-    
+    val logistic=37    
   }
   
   var multYieldSize = 1e6f;
