@@ -135,6 +135,62 @@ int fsort2dk(float *pkeys, unsigned int *pvals, int nrows, int ncols, int asc) {
 
 #if CUDA_VERSION >= 7000
 
+#if CUDA_VERSION >= 9000
+
+#include <thrust/system/cuda/detail/cub/cub.cuh>
+
+long long fisortcubsize(float *inkeys, float *outkeys, unsigned int *invals, unsigned int *outvals, int nelems, int asc) {
+  size_t size = 0;
+  void *temp = NULL;
+  thrust::cuda_cub::cub::DoubleBuffer<float> d_keys(inkeys, outkeys);
+  thrust::cuda_cub::cub::DoubleBuffer<unsigned int> d_vals(invals, outvals);
+  if (asc > 0) {
+    thrust::cuda_cub::cub::DeviceRadixSort::SortPairs(temp, size, d_keys, d_vals, nelems);
+  } else {
+    thrust::cuda_cub::cub::DeviceRadixSort::SortPairsDescending(temp, size, d_keys, d_vals, nelems);
+  }
+  cudaStreamSynchronize(SYNC_STREAM);
+  return size;
+}
+
+int fisortcub(float *inkeys, float *outkeys, unsigned int *invals, unsigned int *outvals, int *temp, long long size, int nelems, int asc) {
+  thrust::cuda_cub::cub::DoubleBuffer<float> d_keys(inkeys, outkeys);
+  thrust::cuda_cub::cub::DoubleBuffer<unsigned int> d_vals(invals, outvals);
+  if (asc > 0) {
+    thrust::cuda_cub::cub::DeviceRadixSort::SortPairs((void *)temp, (size_t &)size, d_keys, d_vals, nelems);
+  } else {
+    thrust::cuda_cub::cub::DeviceRadixSort::SortPairsDescending((void *)temp, (size_t &)size, d_keys, d_vals, nelems);
+  }
+  cudaStreamSynchronize(SYNC_STREAM);
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int fsort2dx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tvals, 
+             int nrows, int ncols, int asc) {
+  int i;
+  cudaError_t err;
+  long long ntemp;
+  int * temp;
+  ntemp = fisortcubsize(pkeys, tkeys, pvals, tvals, nrows, asc);
+  cudaMalloc(&temp, ntemp * sizeof(int));
+  cudaStreamSynchronize(SYNC_STREAM);
+  for (i = 0; i < ncols; i++) {
+    thrust::cuda_cub::cub::DoubleBuffer<float> d_keys(pkeys + (nrows * i), tkeys + (nrows * i));
+    thrust::cuda_cub::cub::DoubleBuffer<unsigned int> d_vals(pvals + (nrows * i), tvals + (nrows * i));
+    if (asc > 0) {
+      thrust::cuda_cub::cub::DeviceRadixSort::SortPairs((void *)temp, (size_t &)ntemp, d_keys, d_vals, nrows);
+    } else {
+      thrust::cuda_cub::cub::DeviceRadixSort::SortPairsDescending((void *)temp, (size_t &)ntemp, d_keys, d_vals, nrows);
+    }
+  }
+  cudaStreamSynchronize(SYNC_STREAM);
+  cudaFree(temp);
+  err = cudaGetLastError();
+  return err;
+}
+#else
+
 long long fisortcubsize(float *inkeys, float *outkeys, unsigned int *invals, unsigned int *outvals, int nelems, int asc) {
   size_t size = 0;
   void *temp = NULL;
@@ -186,6 +242,7 @@ int fsort2dx(float *pkeys, unsigned int *pvals, float *tkeys, unsigned int *tval
   return err;
 }
 
+#endif
 #endif
 
 int fsort2d(float *pkeys, int nrows, int ncols, int asc) {
