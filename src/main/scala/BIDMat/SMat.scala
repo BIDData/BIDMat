@@ -826,7 +826,7 @@ object SMat {
     case aa:FMat => MatFunctions.sparse(aa)
     case aa:SDMat => aa.toSMat
     case aa:SparseMat[Float] @unchecked => {
-    	val m = new SMat(a.nrows, a.ncols, a.nnz, aa.ir, aa.jc, aa._data); 
+    	val m = new SMat(aa.nrows, aa.ncols, aa.nnz, aa.ir, aa.jc, aa._data); 
     	m.setGUID(a.GUID); 
     	m     
     }
