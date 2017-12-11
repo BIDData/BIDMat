@@ -147,7 +147,7 @@ public final class CUMAT {
     public static native int dsmultT(int nr, int nc, int nnz, Pointer A, Pointer Bdata, Pointer Bir, Pointer Bic, Pointer C);
     
     public static native  void blockSgemm( int transA, int transB, int nr, int nc, int kk, int reps, Pointer A, int lda, int astep, 
-    		Pointer B, int ldb, int bstep, Pointer C, int ldc, int cstep);
+    		Pointer B, int ldb, int bstep, Pointer C, int ldc, int cstep, float beta);
     
     public static native int accum(Pointer I, Pointer J, Pointer V, Pointer S, int m, int nrows);
     

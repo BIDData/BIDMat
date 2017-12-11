@@ -673,6 +673,69 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     } else throw new RuntimeException("dimensions mismatch (%d %d), (%d %d)" format (nrows, ncols, a.nrows, a.ncols));
   }
   
+  override def mult(bb:SMat, c:FMat, at:Boolean, bt:Boolean):FMat = {
+    val b = GSMat(bb);
+    (at, bt) match {
+      case (false, false) => GSMult(b, c);
+      case (false, true) => GSMultT(b, c);
+      case _ => throw new RuntimeException("mult unsupported options SMat, FMat %b %b" format (at, bt));
+    }
+  }
+  
+  override def mult(bb:FMat, c:FMat, at:Boolean, bt:Boolean):FMat = {
+  	val b = GMat(bb);
+    (at, bt) match {
+      case (false, false) => GMult(b, c);
+      case (false, true) => GMultT(b, c);
+      case (true, false) => GTMult(b, c);
+      case _ => throw new RuntimeException("mult unsupported options FMat, FMat %b %b" format (at, bt));
+    }
+  }
+  
+  override def mult(b:Mat, c:Mat, at:Boolean, bt:Boolean):Mat = {
+    (b, c) match {
+      case (bb:FMat, cc:FMat) => mult(bb, cc, at, bt);
+      case (bb:SMat, cc:FMat) => mult(bb, cc, at, bt);
+      case _ => throw new RuntimeException("mult unsupported types %s %s" format (b.mytype, c.mytype));
+    }
+    c
+  }
+  
+  override def mult(b:Mat, c:Mat):Mat = mult(b, c, false, false);
+  
+  override def blockmult(bb:FMat, cc:FMat, nblocks:Int, at:Boolean, bt:Boolean):FMat = {
+    val b = GMat(bb);
+    val c = GMat(cc);
+    val (anrows, ancols) = if (dims.length == 3) {
+      (dims(0), dims(1))
+    } else {
+      (nrows, ncols/nblocks)
+    }
+    val (bnrows, bncols) = if (b.dims.length == 3) {
+      (b.dims(0), b.dims(1))
+    } else {
+      (b.nrows, b.ncols/nblocks)
+    }
+    val (cnrows,cncols) = if (c.dims.length == 3) {
+      (c.dims(0), c.dims(1))
+    } else {
+      (c.nrows, c.ncols/nblocks)
+    }
+    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, nblocks, 0, nrows, anrows*ancols,
+    		b, 0, bnrows, bnrows*bncols, c, 0, cnrows, cnrows*cncols, false);
+    c
+  }
+ 
+  override def blockmult(b:Mat, c:Mat, nblocks:Int):Mat = blockmult(b, c, nblocks, false, false);
+  
+  override def blockmult(b:Mat, c:Mat, nblocks:Int, at:Boolean, bt:Boolean):Mat = {
+    (b, c) match {
+      case (bb:FMat, cc:FMat) => blockmult(bb, cc, nblocks, at, bt);
+      case _ => throw new RuntimeException("mult unsupported types %s %s" format (b.mytype, c.mytype));
+    }
+    c
+  }
+  
   override def madd(bb:FMat, cc:FMat, at:Boolean, bt:Boolean):GMat = {
 	  val b = GMat(bb);
 	  val c = GMat(cc);
@@ -735,6 +798,39 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   }
   
   override def madd(b:Mat, c:Mat):Mat = madd(b, c, false, false);
+  
+  override def blockmadd(bb:FMat, cc:FMat, nblocks:Int, at:Boolean, bt:Boolean):FMat = {
+    val b = GMat(bb);
+    val c = GMat(cc);
+    val (anrows, ancols) = if (dims.length == 3) {
+      (dims(0), dims(1))
+    } else {
+      (nrows, ncols/nblocks)
+    }
+    val (bnrows, bncols) = if (b.dims.length == 3) {
+      (b.dims(0), b.dims(1))
+    } else {
+      (b.nrows, b.ncols/nblocks)
+    }
+    val (cnrows,cncols) = if (c.dims.length == 3) {
+      (c.dims(0), c.dims(1))
+    } else {
+      (c.nrows, c.ncols/nblocks)
+    }
+    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, nblocks, 0, nrows, anrows*ancols,
+    		b, 0, bnrows, bnrows*bncols, c, 0, cnrows, cnrows*cncols, true);
+    c
+  }
+ 
+  override def blockmadd(b:Mat, c:Mat, nblocks:Int):Mat = blockmadd(b, c, nblocks, false, false);
+  
+  override def blockmadd(b:Mat, c:Mat, nblocks:Int, at:Boolean, bt:Boolean):Mat = {
+    (b, c) match {
+      case (bb:FMat, cc:FMat) => blockmadd(bb, cc, nblocks, at, bt);
+      case _ => throw new RuntimeException("mult unsupported types %s %s" format (b.mytype, c.mytype));
+    }
+    c
+  }
   
   def GMultT(aa:FMat, oldmat:Mat):GMat = {
     val a = GMat(aa);
@@ -1205,7 +1301,7 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   }
   
   def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, reps:Int, aoff:Int, lda:Int, astep:Int, 
-      b:GMat, boff:Int, ldb:Int, bstep:Int, c:GMat, coff:Int, ldc:Int, cstep:Int):GMat = {
+      b:GMat, boff:Int, ldb:Int, bstep:Int, c:GMat, coff:Int, ldc:Int, cstep:Int, addC:Boolean):GMat = {
     
     val ka = if (transa == 0) ncols/reps else nrows;
     val kb = if (transb == 0) b.nrows else b.ncols/reps;
@@ -1224,15 +1320,28 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     
     c.clear;
     Mat.nflops += 2L * nr * nc * ka * reps;
-    CUMAT.blockSgemm(transa, transb, nr, nc, ka, reps, pdata.withByteOffset(1L * Sizeof.FLOAT * aoff), lda, astep,
-    		b.pdata.withByteOffset(1L * Sizeof.FLOAT * boff), ldb, bstep, c.pdata.withByteOffset(1L * Sizeof.FLOAT * coff), ldc, cstep);
+    val betap = if (addC) GMat.pONE else GMat.pZERO;
+	  cublasSgemmStridedBatched(getHandle, transa, transb,	
+	      nr, nc, ka, 
+	      GMat.pONE, 
+	      pdata.withByteOffset(1L * Sizeof.FLOAT * aoff), lda, astep, 
+	      b.pdata.withByteOffset(1L * Sizeof.FLOAT * boff), ldb, bstep, 
+	      betap, 
+	      c.pdata.withByteOffset(1L * Sizeof.FLOAT * coff), ldc, cstep,
+	      reps);
+	  cudaStreamSynchronize(Mat.SyncMethod)
+    val err = cudaGetLastError()
+    if (err != 0) {
+    	println("device is %d" format SciFunctions.getGPU)
+    	throw new RuntimeException("Cuda error in cublasSgemmStridedBatched " + cudaGetErrorString(err))
+    }
     c;
   }
   
   override def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, reps:Int, aoff:Int, lda:Int, astep:Int, 
-      b:Mat, boff:Int, ldb:Int, bstep:Int, c:Mat, coff:Int, ldc:Int, cstep:Int):GMat = {
+      b:Mat, boff:Int, ldb:Int, bstep:Int, c:Mat, coff:Int, ldc:Int, cstep:Int, addC:Boolean):GMat = {
   		blockGemm(transa, transb, nr, nc, reps, aoff, lda, astep, b.asInstanceOf[GMat], boff, ldb, bstep, 
-  		    c.asInstanceOf[GMat], coff, ldc, cstep);
+  		    c.asInstanceOf[GMat], coff, ldc, cstep, addC:Boolean);
   }
   
   override def cumsumByKey(fkeys:FMat, omat:Mat):GMat = {

@@ -227,10 +227,19 @@ class Mat(val _dims:Array[Int]) extends ND with Serializable {
   }
 
   def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, reps:Int, aoff:Int, lda:Int, astep:Int, 
-      b:Mat, boff:Int, ldb:Int, bstep:Int, c:Mat, coff:Int, ldc:Int, cstep:Int):Mat = notImplemented0("blockGemm");
+      b:Mat, boff:Int, ldb:Int, bstep:Int, c:Mat, coff:Int, ldc:Int, cstep:Int, addC:Boolean):Mat = notImplemented0("blockGemm");
+  
+  def mult(a:Mat, b:Mat, at:Boolean, bt:Boolean):Mat= notImplemented1("mult", a);
+  def mult(a:Mat, b:Mat):Mat= notImplemented1("mult", a);
 
-  def madd(a:Mat, b:Mat, at:Boolean, bt:Boolean):Mat = notImplemented1("update", a);
-  def madd(a:Mat, b:Mat):Mat = notImplemented1("update", a);
+  def madd(a:Mat, b:Mat, at:Boolean, bt:Boolean):Mat = notImplemented1("madd", a);
+  def madd(a:Mat, b:Mat):Mat = notImplemented1("madd", a);
+  
+  def blockmult(a:Mat, b:Mat, ngroups:Int, at:Boolean, bt:Boolean):Mat= notImplemented1("groupmult", a);
+  def blockmult(a:Mat, b:Mat, ngroups:Int):Mat= notImplemented1("groupmult", a);
+
+  def blockmadd(a:Mat, b:Mat, ngroups:Int, at:Boolean, bt:Boolean):Mat = notImplemented1("groupmadd", a);
+  def blockmadd(a:Mat, b:Mat, ngroups:Int):Mat = notImplemented1("groupmadd", a);
   
   def unary_-():Mat = notImplemented1("-", this)
   

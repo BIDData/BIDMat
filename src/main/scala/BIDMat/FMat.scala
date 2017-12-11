@@ -814,6 +814,65 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
       out
     } else throw new RuntimeException("dimensions mismatch: (%d %d) (%d %d)" format (nrows, ncols, a.nrows, a.ncols))
   }
+  
+  def mult(b:SMat, c:FMat, at:Boolean, bt:Boolean):FMat = {
+    (at, bt) match {
+      case (false, false) => fSMult(b, c);
+      case (false, true) => multT(b, c);
+      case _ => throw new RuntimeException("mult unsupported options SMat, FMat %b %b" format (at, bt));
+    }
+  }
+  
+  def mult(b:FMat, c:FMat, at:Boolean, bt:Boolean):FMat = {
+    (at, bt) match {
+      case (false, false) => fDMult(b, c);
+      case (false, true) => multT(b, c);
+      case (true, false) => Tmult(b, c);
+      case _ => throw new RuntimeException("mult unsupported options FMat, FMat %b %b" format (at, bt));
+    }
+  }
+  
+  override def mult(b:Mat, c:Mat, at:Boolean, bt:Boolean):Mat = {
+    (b, c) match {
+      case (bb:FMat, cc:FMat) => mult(bb, cc, at, bt);
+      case (bb:SMat, cc:FMat) => mult(bb, cc, at, bt);
+      case _ => throw new RuntimeException("mult unsupported types %s %s" format (b.mytype, c.mytype));
+    }
+    c
+  }
+    
+  override def mult(b:Mat, c:Mat):Mat = mult(b, c, false, false);
+  
+  def blockmult(b:FMat, c:FMat, nblocks:Int, at:Boolean, bt:Boolean):FMat = {
+    val (anrows, ancols) = if (dims.length == 3) {
+      (dims(0), dims(1))
+    } else {
+      (nrows, ncols/nblocks)
+    }
+    val (bnrows, bncols) = if (b.dims.length == 3) {
+      (b.dims(0), b.dims(1))
+    } else {
+      (b.nrows, b.ncols/nblocks)
+    }
+    val (cnrows,cncols) = if (c.dims.length == 3) {
+      (c.dims(0), c.dims(1))
+    } else {
+      (c.nrows, c.ncols/nblocks)
+    }
+    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, nblocks, 0, nrows, anrows*ancols,
+    		b, 0, bnrows, bnrows*bncols, c, 0, cnrows, cnrows*cncols, false);
+    c
+  }
+  
+  override def blockmult(b:Mat, c:Mat, ngroups:Int, at:Boolean, bt:Boolean):Mat = {
+    (b, c) match {
+      case (bb:FMat, cc:FMat) => blockmult(bb, cc, ngroups, at, bt);
+      case _ => throw new RuntimeException("blockmult unsupported types %s %s" format (b.mytype, c.mytype));
+    }
+    c
+  }
+    
+  override def blockmult(b:Mat, c:Mat, ngroups:Int):Mat = blockmult(b, c, ngroups, false, false);
 
   def madd(b:FMat, c:FMat, at:Boolean, bt:Boolean):FMat = {
   	val (arows, acols, atrans) = if (at) (ncols, nrows, TRANSPOSE.Trans) else (nrows, ncols, TRANSPOSE.NoTrans);
@@ -850,15 +909,16 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   		}
   		c;
   }
+  
 
-  def madd(b:SMat, c:FMat, bt:Boolean, ct:Boolean):FMat = {
-    (bt, ct) match {
+  def madd(b:SMat, c:FMat, at:Boolean, bt:Boolean):FMat = {
+    (at, bt) match {
       case (false, false) => madd(b, c);
       case (false, true) => maddT(b, c);
-      case _ => throw new RuntimeException("madd unsupported options SMat, FMat %b %b" format (bt, ct));
+      case _ => throw new RuntimeException("madd unsupported options SMat, FMat %b %b" format (at, bt));
     }
   }
-
+  
   override def madd(b:Mat, c:Mat, at:Boolean, bt:Boolean):Mat = {
     (b, c) match {
       case (bb:FMat, cc:FMat) => madd(bb, cc, at, bt);
@@ -868,8 +928,39 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
     }
     c
   }
-
+  
   override def madd(b:Mat, c:Mat):Mat = madd(b, c, false, false);
+  
+  def blockmadd(b:FMat, c:FMat, nblocks:Int, at:Boolean, bt:Boolean):FMat = {
+    val (anrows, ancols) = if (dims.length == 3) {
+      (dims(0), dims(1))
+    } else {
+      (nrows, ncols/nblocks)
+    }
+    val (bnrows, bncols) = if (b.dims.length == 3) {
+      (b.dims(0), b.dims(1))
+    } else {
+      (b.nrows, b.ncols/nblocks)
+    }
+    val (cnrows,cncols) = if (c.dims.length == 3) {
+      (c.dims(0), c.dims(1))
+    } else {
+      (c.nrows, c.ncols/nblocks)
+    }
+    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, nblocks, 0, nrows, anrows*ancols,
+    		b, 0, bnrows, bnrows*bncols, c, 0, cnrows, cnrows*cncols, true);
+    c
+  }
+  
+  override def blockmadd(b:Mat, c:Mat, nblocks:Int, at:Boolean, bt:Boolean):Mat = {
+    (b, c) match {
+      case (bb:FMat, cc:FMat) => blockmadd(bb, cc, nblocks, at, bt);
+      case _ => throw new RuntimeException("blockmult unsupported types %s %s" format (b.mytype, c.mytype));
+    }
+    c
+  }
+    
+  override def blockmadd(b:Mat, c:Mat, nblocks:Int):Mat = blockmadd(b, c, nblocks, false, false);
 
   def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:FMat, broff:Int, bcoff:Int, c:FMat, croff:Int, ccoff:Int) = {
     if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
@@ -1418,7 +1509,7 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   def kron(a:FMat):FMat = kron(a, null);
 
   def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, reps:Int, aoff:Int, lda:Int, astep:Int,
-      b:FMat, boff:Int, ldb:Int, bstep:Int, c:FMat, coff:Int, ldc:Int, cstep:Int):FMat = {
+      b:FMat, boff:Int, ldb:Int, bstep:Int, c:FMat, coff:Int, ldc:Int, cstep:Int, addC:Boolean):FMat = {
 
     val ka = if (transa == 0) ncols/reps else nrows;
     val kb = if (transb == 0) b.nrows else b.ncols/reps;
@@ -1437,14 +1528,15 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
 
     c.clear;
     Mat.nflops += 2L * nr * nc * ka * reps;
-    blockSgemm(transa, transb, nr, nc, ka, reps, data, aoff, lda, astep, b.data, boff, ldb, bstep, c.data, coff, ldc, cstep);
+    val beta = if (addC) 1f else 0f;
+    blockSgemm(transa, transb, nr, nc, ka, reps, data, aoff, lda, astep, b.data, boff, ldb, bstep, c.data, coff, ldc, cstep, beta);
     c;
   }
 
   override def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, reps:Int, aoff:Int, lda:Int, astep:Int,
-      b:Mat, boff:Int, ldb:Int, bstep:Int, c:Mat, coff:Int, ldc:Int, cstep:Int):FMat = {
+      b:Mat, boff:Int, ldb:Int, bstep:Int, c:Mat, coff:Int, ldc:Int, cstep:Int, addC:Boolean):FMat = {
   		blockGemm(transa, transb, nr, nc, reps, aoff, lda, astep, b.asInstanceOf[FMat], boff, ldb, bstep,
-  		    c.asInstanceOf[FMat], coff, ldc, cstep);
+  		    c.asInstanceOf[FMat], coff, ldc, cstep, addC);
   }
 
   def solvel(a0:Mat):FMat =
