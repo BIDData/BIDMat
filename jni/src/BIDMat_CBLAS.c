@@ -771,7 +771,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_word2vecBwd
 }
 
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_reduceTensorFloat
-(JNIEnv *env, jobject obj, jfloatArray jWA, jfloatArray jWB, jint m, jint n, jint p, jint op)
+(JNIEnv *env, jobject obj, jfloatArray jA, jfloatArray jB, jint m, jint n, jint p, jint op)
 {
   jfloat * A = (jfloat *)((*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE));
   jfloat * B = (jfloat *)((*env)->GetPrimitiveArrayCritical(env, jB, JNI_FALSE));
@@ -823,7 +823,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_reduceTensorFloat
 }
 
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_reduceTensorDouble
-  (JNIEnv *env, jobject obj, jdoubleArray jWA, jdoubleArray jWB, jint m, jint n, jint p, jint op)
+  (JNIEnv *env, jobject obj, jdoubleArray jA, jdoubleArray jB, jint m, jint n, jint p, jint op)
 {
   jdouble * A = (jdouble *)((*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE));
   jdouble * B = (jdouble *)((*env)->GetPrimitiveArrayCritical(env, jB, JNI_FALSE));
@@ -875,7 +875,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_reduceTensorDouble
 }
 
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_reduceTensorInt
-(JNIEnv *env, jobject obj, jintArray jWA, jintArray jWB, jint m, jint n, jint p, jint op)
+(JNIEnv *env, jobject obj, jintArray jA, jintArray jB, jint m, jint n, jint p, jint op)
 {
   jint * A = (jint *)((*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE));
   jint * B = (jint *)((*env)->GetPrimitiveArrayCritical(env, jB, JNI_FALSE));
@@ -928,7 +928,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_reduceTensorInt
 
 
   JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_reduceTensorLong
-(JNIEnv *env, jobject obj, jlongArray jWA, jlongArray jWB, jint m, jint n, jint p, jint op)
+(JNIEnv *env, jobject obj, jlongArray jA, jlongArray jB, jint m, jint n, jint p, jint op)
 {
   jlong * A = (jlong *)((*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE));
   jlong * B = (jlong *)((*env)->GetPrimitiveArrayCritical(env, jB, JNI_FALSE));
