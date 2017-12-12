@@ -1537,6 +1537,50 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     }
   }
   
+  def getNextInds(inds:IMat):IMat = {
+    if (inds.asInstanceOf[AnyRef] == null) {
+      null
+    } else {
+      var len1 = 1;
+      var i = inds.length-1;
+      while (i > 0 && inds(i-1) == inds(i) - 1) {
+        len1 += 1;
+        i -= 1;
+      }
+      inds.colslice(inds.length-len1, inds.length);
+    }
+  }
+  
+  def reduce(inds0:Array[Int], fctn:(GMat,Int)=>GMat, fred:(GMat, GMat, Int, Int, Int)=>Int, opname:String):GMat = {
+    var inmat = this;
+    var outmat = this;
+    var inds = MatFunctions.irow(inds0);
+    var nextinds = getNextInds(inds);
+    var restinds = if (inds.length > nextinds.length) inds.colslice(0, inds.length-nextinds.length) else null;
+    while (nextinds.asInstanceOf[AnyRef] != null) {
+    	val outdims = inmat.dims.copy;
+    	outdims(nextinds) = 1;
+    	var n = 1;
+      for (i <- nextinds(0) to nextinds(nextinds.length-1)) n *= inmat.dims(i);
+      var k = 1;
+      for (i <- nextinds(nextinds.length-1) until inds.length) k *= inmat.dims(i);
+    	if (nextinds(0) == 0) {
+    	  val tmpin = inmat.reshapeView(n, k);
+    	  val tmpout = fctn(inmat,1);
+    	  outmat = tmpout.reshapeView(outdims);
+    	} else {
+    		outmat = GMat.newOrCheckGMat(outdims, null, inmat.GUID, ND.hashInts(outdims.data), "GMat_reduce".##);
+    		var m = 1;
+    		for (i <- 0 until nextinds(0)) m *= inmat.dims(i);
+    		fred(inmat, outmat, m, n, k);
+    	}
+    	nextinds = getNextInds(restinds);
+    	restinds = if (restinds.length > nextinds.length) restinds.colslice(0, restinds.length-nextinds.length) else null;
+    	inmat = outmat;
+    }
+    outmat;
+  }
+  
   /*
    * Basic compute routines on pairs of GMats
    */
