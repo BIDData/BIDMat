@@ -817,6 +817,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_reduceTensorFloat
       }
     }
     default: {}
+    }
   }
   (*env)->ReleasePrimitiveArrayCritical(env, jB, B, 0);
   (*env)->ReleasePrimitiveArrayCritical(env, jA, A, 0);
@@ -869,6 +870,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_reduceTensorDouble
       }
     }
     default: {}
+    }
   }
   (*env)->ReleasePrimitiveArrayCritical(env, jB, B, 0);
   (*env)->ReleasePrimitiveArrayCritical(env, jA, A, 0);
@@ -921,6 +923,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_reduceTensorInt
       }
     }
     default: {}
+    }
   }
   (*env)->ReleasePrimitiveArrayCritical(env, jB, B, 0);
   (*env)->ReleasePrimitiveArrayCritical(env, jA, A, 0);
@@ -974,6 +977,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_reduceTensorInt
       }
     }
     default: {}
+    }
   }
   (*env)->ReleasePrimitiveArrayCritical(env, jB, B, 0);
   (*env)->ReleasePrimitiveArrayCritical(env, jA, A, 0);
