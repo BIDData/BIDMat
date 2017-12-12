@@ -1551,13 +1551,14 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     }
   }
   
-  def reduce(inds0:Array[Int], fctn:(GMat,Int)=>GMat, fred:(GMat, GMat, Int, Int, Int)=>Int, opname:String):GMat = {
+  def reduce(inds0:Array[Int], fctn:(GMat,Int)=>GMat, fred:(Pointer, Pointer, Int, Int, Int)=>Int, opname:String):GMat = {
     var inmat = this;
     var outmat = this;
     var inds = MatFunctions.irow(inds0);
     var nextinds = getNextInds(inds);
-    var restinds = if (inds.length > nextinds.length) inds.colslice(0, inds.length-nextinds.length) else null;
+    var restinds = inds;
     while (nextinds.asInstanceOf[AnyRef] != null) {
+    	restinds = if (restinds.length > nextinds.length) restinds.colslice(0, restinds.length-nextinds.length) else null;
     	val outdims = inmat.dims.copy;
     	outdims(nextinds) = 1;
     	var n = 1;
@@ -1572,10 +1573,10 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     		outmat = GMat.newOrCheckGMat(outdims, null, inmat.GUID, ND.hashInts(outdims.data), "GMat_reduce".##);
     		var m = 1;
     		for (i <- 0 until nextinds(0)) m *= inmat.dims(i);
-    		fred(inmat, outmat, m, n, k);
+    		fred(inmat.pdata, outmat.pdata, m, n, k);
+    		Mat.nflops += inmat.length;
     	}
     	nextinds = getNextInds(restinds);
-    	restinds = if (restinds.length > nextinds.length) restinds.colslice(0, restinds.length-nextinds.length) else null;
     	inmat = outmat;
     }
     outmat;
@@ -1631,6 +1632,7 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   override def variance(ind:Int):GMat = SciFunctions._variance(this, ind).asInstanceOf[GMat];
   
   override def sum(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => GFunctions.sum(a,dir,null), "sum");
+  override def sumx(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => GFunctions.sum(a,dir,null), CUMAT.sumTensor, "sum");
   override def prod(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => GFunctions.prod(a,dir,null), "prod");
   override def mean(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => SciFunctions.mean(a,dir), "mean")
   override def variance(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => SciFunctions.variance(a,dir), "variance")
