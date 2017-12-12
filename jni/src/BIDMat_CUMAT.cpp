@@ -1404,7 +1404,7 @@ extern "C" {
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_blockSgemm
   (JNIEnv *env, jobject obj, jint transA, jint transB, jint nr, jint nc, jint kk, jint reps, jobject jA, jint lda, jint astep, 
-   jobject jB, jint ldb, jint bstep, jobject jC, jint ldc, jint cstep)
+   jobject jB, jint ldb, jint bstep, jobject jC, jint ldc, jint cstep, jfloat beta)
   {
     char at, bt;
     at = (transA) ? 't' : 'n';
@@ -1413,7 +1413,7 @@ extern "C" {
     float *B = (float*)getPointer(env, jB);
     float *C = (float*)getPointer(env, jC);
     for (int i = 0; i < reps; i++) {
-      cublasSgemm(at, bt, nr, nc, kk, 1.0f, A, lda, B, ldb, 0.0f, C, ldc);
+      cublasSgemm(at, bt, nr, nc, kk, 1.0f, A, lda, B, ldb, beta, C, ldc);
       A += astep;
       B += bstep;
       C += cstep;
