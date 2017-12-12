@@ -276,7 +276,7 @@ jfloatArray jA, jint lda, jfloatArray jX, jint incX, jfloat beta, jfloatArray jY
 
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_sgemm 
 (JNIEnv * env, jobject calling_obj, jint order, jint transA, jint transB, jint M, jint N, jint K, 
-jfloat alpha, jfloatArray jA, jint lda, jfloatArray jB, jint ldb, jfloat beta, jfloatArray jC, jint ldc){
+ jfloat alpha, jfloatArray jA, jint lda, jfloatArray jB, jint ldb, jfloat beta, jfloatArray jC, jint ldc){
 	jfloat * A = (*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE);
 	jfloat * B = (*env)->GetPrimitiveArrayCritical(env, jB, JNI_FALSE);
 	jfloat * C = (*env)->GetPrimitiveArrayCritical(env, jC, JNI_FALSE);
@@ -664,7 +664,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_caxpyxx
 
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_blockSgemm
 (JNIEnv *env, jobject obj, jint transA, jint transB, jint nr, jint nc, jint kk, jint reps, jfloatArray jA, jint aoff, jint lda, jint astep, 
- jfloatArray jB, jint boff, jint ldb, jint bstep, jfloatArray jC, jint coff, jint ldc, jint cstep)
+ jfloatArray jB, jint boff, jint ldb, jint bstep, jfloatArray jC, jint coff, jint ldc, jint cstep, jfloat beta)
 {
   int i, at, bt;
   jfloat *A = (*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE);
@@ -677,7 +677,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_blockSgemm
   B += boff;
   C += coff;
   for (i = 0; i < reps; i++) {
-    cblas_sgemm(CblasColMajor, at, bt, nr, nc, kk, 1.0f, A, lda, B, ldb, 0.0f, C, ldc);
+    cblas_sgemm(CblasColMajor, at, bt, nr, nc, kk, 1.0f, A, lda, B, ldb, beta, C, ldc);
     A += astep;
     B += bstep;
     C += cstep;
