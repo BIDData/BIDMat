@@ -407,7 +407,6 @@ int apply_gfun(ATYPE *A, ATYPE *B, int N, int opn) {						    \
 GENGFUN(float,fntype,fctns)
 GENGFUN(double,dfntype,dfctns)
 
-
 #define GENGFUN2(ATYPE,FNTYPE,FUNCARRAY)							    \
 __global__ void __apply_gfun2_##ATYPE(ATYPE *A, ATYPE *B, ATYPE *C, int N, int opn) {		    \
   FNTYPE fn = FUNCARRAY[opn];									    \

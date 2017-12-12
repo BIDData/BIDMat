@@ -2539,6 +2539,12 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair(omat, mat) {
 }
 
 object FMat {
+   object CBLASop {
+  	val op_add=0
+  	val op_mul=1
+	  val op_max=2
+	  val op_min=3
+   }
 
   def apply(nr:Int, nc:Int) = {
     if (Mat.debugCPUmem) {
