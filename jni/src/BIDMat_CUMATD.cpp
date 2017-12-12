@@ -623,4 +623,68 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_reverse
   }
 }
 
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_sumTensor
+(JNIEnv * env, jobject obj, jobject j_A, jobject j_B, jint M, jint N, jint K) {
+  double * A = (double *)getPointer(env, j_A);
+  double * B = (double *)getPointer(env, j_B);
+  
+  return sumTensor(A, B, M, N, K);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_prodTensor
+(JNIEnv * env, jobject obj, jobject j_A, jobject j_B, jint M, jint N, jint K) {
+  double * A = (double *)getPointer(env, j_A);
+  double * B = (double *)getPointer(env, j_B);
+  
+  return prodTensor(A, B, M, N, K);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_minTensor
+(JNIEnv * env, jobject obj, jobject j_A, jobject j_B, jint M, jint N, jint K) {
+  double * A = (double *)getPointer(env, j_A);
+  double * B = (double *)getPointer(env, j_B);
+  
+  return minTensor(A, B, M, N, K);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_maxTensor
+(JNIEnv * env, jobject obj, jobject j_A, jobject j_B, jint M, jint N, jint K) {
+  double * A = (double *)getPointer(env, j_A);
+  double * B = (double *)getPointer(env, j_B);
+  
+  return maxTensor(A, B, M, N, K);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_sumTensorL
+(JNIEnv * env, jobject obj, jobject j_A, jobject j_B, jint M, jint N, jint K) {
+  long long int * A = (long long int *)getPointer(env, j_A);
+  long long int * B = (long long int *)getPointer(env, j_B);
+  
+  return sumTensor(A, B, M, N, K);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_prodTensorL
+(JNIEnv * env, jobject obj, jobject j_A, jobject j_B, jint M, jint N, jint K) {
+  long long int * A = (long long int *)getPointer(env, j_A);
+  long long int * B = (long long int *)getPointer(env, j_B);
+  
+  return prodTensor(A, B, M, N, K);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_minTensorL
+(JNIEnv * env, jobject obj, jobject j_A, jobject j_B, jint M, jint N, jint K) {
+  long long int * A = (long long int *)getPointer(env, j_A);
+  long long int * B = (long long int *)getPointer(env, j_B);
+  
+  return minTensor(A, B, M, N, K);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_maxTensorL
+(JNIEnv * env, jobject obj, jobject j_A, jobject j_B, jint M, jint N, jint K) {
+  long long int * A = (long long int *)getPointer(env, j_A);
+  long long int * B = (long long int *)getPointer(env, j_B);
+  
+  return maxTensor(A, B, M, N, K);
+}
+
 }

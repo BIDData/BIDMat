@@ -69,6 +69,22 @@ public final class CUMATD {
     
     public static native int spsum(int nr, int nc, int nnz, Pointer Air, Pointer Aic, Pointer P, Pointer B, int n);
     
+    public static native int sumTensor(Pointer A, Pointer B, int m, int n, int k);
+    
+    public static native int minTensor(Pointer A, Pointer B, int m, int n, int k);
+    
+    public static native int maxTensor(Pointer A, Pointer B, int m, int n, int k);
+    
+    public static native int prodTensor(Pointer A, Pointer B, int m, int n, int k);
+
+    public static native int sumTensorL(Pointer A, Pointer B, int m, int n, int k);
+    
+    public static native int minTensorL(Pointer A, Pointer B, int m, int n, int k);
+    
+    public static native int maxTensorL(Pointer A, Pointer B, int m, int n, int k);
+    
+    public static native int prodTensorL(Pointer A, Pointer B, int m, int n, int k);
+    
     public static native int dds(int nr, int nnz, Pointer A, Pointer B, Pointer Cir, Pointer Cic, Pointer P);
     
     public static native int dds0(int nr, int nc, Pointer A, Pointer B, Pointer Cir, Pointer Cjc, Pointer P);

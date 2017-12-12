@@ -185,6 +185,22 @@ public final class CUMAT {
     
     public static native int laccumJV(Pointer I, int J, long V, Pointer S, int m, int nrows);
     
+    public static native int sumTensor(Pointer A, Pointer B, int m, int n, int k);
+    
+    public static native int minTensor(Pointer A, Pointer B, int m, int n, int k);
+    
+    public static native int maxTensor(Pointer A, Pointer B, int m, int n, int k);
+    
+    public static native int prodTensor(Pointer A, Pointer B, int m, int n, int k);
+
+    public static native int sumTensorI(Pointer A, Pointer B, int m, int n, int k);
+    
+    public static native int minTensorI(Pointer A, Pointer B, int m, int n, int k);
+    
+    public static native int maxTensorI(Pointer A, Pointer B, int m, int n, int k);
+    
+    public static native int prodTensorI(Pointer A, Pointer B, int m, int n, int k);
+    
     public static native int spsum(int nr, int nc, int nnz, Pointer Air, Pointer Aic, Pointer P, Pointer B, int n);
     
     public static native int dds(int nr, int nnz, Pointer A, Pointer B, Pointer Cir, Pointer Cic, Pointer P);

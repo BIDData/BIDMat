@@ -19,6 +19,120 @@
 #define MAXXGRID 65535
 #endif
 
+class SumFloats {
+ public:
+  __device__ static inline float op(float x, float y) {
+    return x + y;
+  };
+};
+
+class ProdFloats {
+ public:
+  __device__ static inline float op(float x, float y) {
+    return x * y;
+  };
+};
+
+class MinFloats {
+ public:
+  __device__ static inline float op(float x, float y) {
+    return min(x, y);
+  };
+};
+
+class MaxFloats {
+ public:
+  __device__ static inline float op(float x, float y) {
+    return max(x, y);
+  };
+};
+
+class SumDoubles {
+ public:
+  __device__ static inline double op(double x, double y) {
+    return x + y;
+  };
+};
+
+class ProdDoubles {
+ public:
+  __device__ static inline double op(double x, double y) {
+    return x * y;
+  };
+};
+
+class MinDoubles {
+ public:
+  __device__ static inline double op(double x, double y) {
+    return min(x, y);
+  };
+};
+
+class MaxDoubles {
+ public:
+  __device__ static inline double op(double x, double y) {
+    return max(x, y);
+  };
+};
+
+class SumInts {
+ public:
+  __device__ static inline int op(int x, int y) {
+    return x + y;
+  };
+};
+
+class ProdInts {
+ public:
+  __device__ static inline int op(int x, int y) {
+    return x * y;
+  };
+};
+
+class MinInts {
+ public:
+  __device__ static inline int op(int x, int y) {
+    return min(x, y);
+  };
+};
+
+class MaxInts {
+ public:
+  __device__ static inline int op(int x, int y) {
+    return max(x, y);
+  };
+};
+
+class SumLongs {
+ public:
+  __device__ static inline long long int op(long long int x, long long int y) {
+    return x + y;
+  };
+};
+
+class ProdLongs {
+ public:
+  __device__ static inline long long int op(long long int x, long long int y) {
+    return x * y;
+  };
+};
+
+class MinLongs {
+ public:
+  __device__ static inline long long int op(long long int x, long long int y) {
+    return min(x, y);
+  };
+};
+
+class MaxLongs {
+ public:
+  __device__ static inline long long int op(long long int x, long long int y) {
+    return max(x, y);
+  };
+};
+
+
+
 #if __CUDA_ARCH__ > 200
 template<class T>
 __global__ void __cumsumg(T *in, T *out, int *jc, int nrows, int ncols, int m) {
@@ -396,6 +510,101 @@ int minil(long long *in, long long *out, int *outi, int nrows, int ncols, int di
     return -1;
   }
 }
+
+
+template<typename TT, class CC>
+__global__ void reduceTensor_(TT *A, TT *B, int nrows, int nreduce, int ncols) {
+  int ii, jj, ibase;
+  TT v;
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = ip; i < nrows*ncols; i += blockDim.x * gridDim.x * gridDim.y) {
+    jj = i / nrows;
+    ii = i - jj * nrows;
+    ibase = ii + jj * nrows * nreduce;
+    v = A[ibase];
+    for (int j = 0; j < nreduce; j++) {
+      v = CC::op(v, A[ibase + j * nrows]);
+    }
+    B[ii + jj * nrows] = v;
+  }				
+}	
+
+template<typename TT, class CC>
+int reduceTensor(TT *A, TT *B, int nrows, int nreduce, int ncols) {
+  int nthreads;
+  dim3 griddims;
+  setsizesLean(nrows*ncols, &griddims, &nthreads);
+  reduceTensor_<TT,CC><<<griddims,nthreads>>>(A, B, nrows, nreduce, ncols);
+  cudaStreamSynchronize(SYNC_STREAM);
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int sumTensor(float *in, float *out, int nrows, int nreduce, int ncols) {
+    return reduceTensor<float,SumFloats>(in, out, nrows, nreduce, ncols);
+}
+
+int prodTensor(float *in, float *out, int nrows, int nreduce, int ncols) {
+    return reduceTensor<float,ProdFloats>(in, out, nrows, nreduce, ncols);
+}
+
+int minTensor(float *in, float *out, int nrows, int nreduce, int ncols) {
+    return reduceTensor<float,MinFloats>(in, out, nrows, nreduce, ncols);
+}
+
+int maxTensor(float *in, float *out, int nrows, int nreduce, int ncols) {
+    return reduceTensor<float,MaxFloats>(in, out, nrows, nreduce, ncols);
+}
+
+int sumTensor(double *in, double *out, int nrows, int nreduce, int ncols) {
+    return reduceTensor<double,SumDoubles>(in, out, nrows, nreduce, ncols);
+}
+
+int prodTensor(double *in, double *out, int nrows, int nreduce, int ncols) {
+    return reduceTensor<double,ProdDoubles>(in, out, nrows, nreduce, ncols);
+}
+
+int minTensor(double *in, double *out, int nrows, int nreduce, int ncols) {
+    return reduceTensor<double,MinDoubles>(in, out, nrows, nreduce, ncols);
+}
+
+int maxTensor(double *in, double *out, int nrows, int nreduce, int ncols) {
+    return reduceTensor<double,MaxDoubles>(in, out, nrows, nreduce, ncols);
+}
+
+int sumTensor(int *in, int *out, int nrows, int nreduce, int ncols) {
+    return reduceTensor<int,SumInts>(in, out, nrows, nreduce, ncols);
+}
+
+int prodTensor(int *in, int *out, int nrows, int nreduce, int ncols) {
+    return reduceTensor<int,ProdInts>(in, out, nrows, nreduce, ncols);
+}
+
+int minTensor(int *in, int *out, int nrows, int nreduce, int ncols) {
+    return reduceTensor<int,MinInts>(in, out, nrows, nreduce, ncols);
+}
+
+int maxTensor(int *in, int *out, int nrows, int nreduce, int ncols) {
+    return reduceTensor<int,MaxInts>(in, out, nrows, nreduce, ncols);
+}
+
+int sumTensor(long long int *in, long long int *out, int nrows, int nreduce, int ncols) {
+    return reduceTensor<long long int,SumLongs>(in, out, nrows, nreduce, ncols);
+}
+
+int prodTensor(long long int *in, long long int *out, int nrows, int nreduce, int ncols) {
+    return reduceTensor<long long int,ProdLongs>(in, out, nrows, nreduce, ncols);
+}
+
+int minTensor(long long int *in, long long int *out, int nrows, int nreduce, int ncols) {
+    return reduceTensor<long long int,MinLongs>(in, out, nrows, nreduce, ncols);
+}
+
+int maxTensor(long long int *in, long long int *out, int nrows, int nreduce, int ncols) {
+    return reduceTensor<long long int,MaxLongs>(in, out, nrows, nreduce, ncols);
+}
+
+
 
 
 #define ACCUM_KERNEL(TI,TJ,TV,TS,II,IJ,IV)                             \

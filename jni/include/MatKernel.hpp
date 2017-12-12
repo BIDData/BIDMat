@@ -243,6 +243,22 @@ int extractmat2d(float *a, long long *b, int nrows, int ncols);
 
 int extractmat(float *a, int *b, long long *c, int n);
 
+int sumTensor(float *in, float *out, int nrows, int nreduce, int ncols);
+
+int prodTensor(float *in, float *out, int nrows, int nreduce, int ncols);
+
+int minTensor(float *in, float *out, int nrows, int nreduce, int ncols);
+
+int maxTensor(float *in, float *out, int nrows, int nreduce, int ncols);
+
+int sumTensor(int *in, int *out, int nrows, int nreduce, int ncols);
+
+int prodTensor(int *in, int *out, int nrows, int nreduce, int ncols);
+
+int minTensor(int *in, int *out, int nrows, int nreduce, int ncols);
+
+int maxTensor(int *in, int *out, int nrows, int nreduce, int ncols);
+
 int icopy_transpose(int *iptrs, float *in, float *out, int stride, int nrows, int ncols);
 
 int ocopy_transpose(int *iptrs, float *in, float *out, int stride, int nrows, int ncols);

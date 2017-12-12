@@ -1630,4 +1630,68 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CUMAT_spermute
   }
 }
 
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_sumTensor
+(JNIEnv * env, jobject obj, jobject j_A, jobject j_B, jint M, jint N, jint K) {
+  float * A = (float *)getPointer(env, j_A);
+  float * B = (float *)getPointer(env, j_B);
+  
+  return sumTensor(A, B, M, N, K);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_prodTensor
+(JNIEnv * env, jobject obj, jobject j_A, jobject j_B, jint M, jint N, jint K) {
+  float * A = (float *)getPointer(env, j_A);
+  float * B = (float *)getPointer(env, j_B);
+  
+  return prodTensor(A, B, M, N, K);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_minTensor
+(JNIEnv * env, jobject obj, jobject j_A, jobject j_B, jint M, jint N, jint K) {
+  float * A = (float *)getPointer(env, j_A);
+  float * B = (float *)getPointer(env, j_B);
+  
+  return minTensor(A, B, M, N, K);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_maxTensor
+(JNIEnv * env, jobject obj, jobject j_A, jobject j_B, jint M, jint N, jint K) {
+  float * A = (float *)getPointer(env, j_A);
+  float * B = (float *)getPointer(env, j_B);
+  
+  return maxTensor(A, B, M, N, K);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_sumTensorI
+(JNIEnv * env, jobject obj, jobject j_A, jobject j_B, jint M, jint N, jint K) {
+  int * A = (int *)getPointer(env, j_A);
+  int * B = (int *)getPointer(env, j_B);
+  
+  return sumTensor(A, B, M, N, K);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_prodTensorI
+(JNIEnv * env, jobject obj, jobject j_A, jobject j_B, jint M, jint N, jint K) {
+  int * A = (int *)getPointer(env, j_A);
+  int * B = (int *)getPointer(env, j_B);
+  
+  return prodTensor(A, B, M, N, K);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_minTensorI
+(JNIEnv * env, jobject obj, jobject j_A, jobject j_B, jint M, jint N, jint K) {
+  int * A = (int *)getPointer(env, j_A);
+  int * B = (int *)getPointer(env, j_B);
+  
+  return minTensor(A, B, M, N, K);
+}
+
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_maxTensorI
+(JNIEnv * env, jobject obj, jobject j_A, jobject j_B, jint M, jint N, jint K) {
+  int * A = (int *)getPointer(env, j_A);
+  int * B = (int *)getPointer(env, j_B);
+  
+  return maxTensor(A, B, M, N, K);
+}
+
 }
