@@ -1552,6 +1552,13 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   }
   
   def reduce(inds0:Array[Int], fctn:(GMat,Int)=>GMat, fred:(Pointer, Pointer, Int, Int, Int)=>Int, opname:String):GMat = {
+    var i = 1;
+    while (i < inds0.length) {
+      if (inds0(i-1) >= inds0(i)) {
+        throw new RuntimeException("GMat reduce bad index vector");
+      }
+      i += 1;
+    }
     var inmat = this;
     var outmat = this;
     var inds = MatFunctions.irow(inds0);
@@ -1564,10 +1571,11 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     	var n = 1;
       for (i <- nextinds(0) to nextinds(nextinds.length-1)) n *= inmat.dims(i);
       var k = 1;
-      for (i <- nextinds(nextinds.length-1) until inds.length) k *= inmat.dims(i);
+      for (i <- (nextinds(nextinds.length-1)+1) until inmat.dims.length) k *= inmat.dims(i);
     	if (nextinds(0) == 0) {
     	  val tmpin = inmat.reshapeView(n, k);
-    	  val tmpout = fctn(inmat,1);
+    	  val tmpout = fctn(tmpin,1);
+    	  println("%s and %s" format (tmpout.dims.toString, outdims.toString));
     	  outmat = tmpout.reshapeView(outdims);
     	} else {
     		outmat = GMat.newOrCheckGMat(outdims, null, inmat.GUID, ND.hashInts(outdims.data), "GMat_reduce".##);
@@ -1631,22 +1639,39 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   override def mean(ind:Int):GMat = SciFunctions._mean(this, ind).asInstanceOf[GMat];
   override def variance(ind:Int):GMat = SciFunctions._variance(this, ind).asInstanceOf[GMat];
   
-  override def sum(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => GFunctions.sum(a,dir,null), "sum");
-  def sumx(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => GFunctions.sum(a,dir,null), CUMAT.sumTensor, "sum");
+/*  override def sum(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => GFunctions.sum(a,dir,null), "sum");
   override def prod(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => GFunctions.prod(a,dir,null), "prod");
   override def maxi(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => GFunctions.maxi(a,dir,null), "maxi")
   override def mini(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => GFunctions.mini(a,dir,null), "mini")
   override def amax(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => GFunctions.maxi(a,dir,null), "amax")
   override def amin(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => GFunctions.mini(a,dir,null), "amin")
   override def mean(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => SciFunctions.mean(a,dir), "mean")
+  override def variance(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => SciFunctions.variance(a,dir), "variance") */
+  
+  override def sum(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => GFunctions.sum(a,dir,null), CUMAT.sumTensor, "sum");
+  override def prod(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => GFunctions.prod(a,dir,null), CUMAT.prodTensor, "prod");
+  override def maxi(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => GFunctions.maxi(a,dir,null), CUMAT.maxTensor, "maxi")
+  override def mini(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => GFunctions.mini(a,dir,null), CUMAT.minTensor, "mini")
+  override def amax(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => GFunctions.maxi(a,dir,null), CUMAT.maxTensor, "amax")
+  override def amin(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => GFunctions.mini(a,dir,null), CUMAT.minTensor,"amin")
+  override def mean(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => SciFunctions.mean(a,dir), "mean")
   override def variance(inds:Array[Int]):FMat = reduce(inds, (a:GMat, dir:Int) => SciFunctions.variance(a,dir), "variance")
 
-  override def sum(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => GFunctions.sum(a,dir,null), "sum");
+/*  override def sum(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => GFunctions.sum(a,dir,null), "sum");
   override def prod(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => GFunctions.prod(a,dir,null), "prod");
   override def maxi(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => GFunctions.maxi(a,dir,null), "maxi")
   override def mini(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => GFunctions.mini(a,dir,null), "mini")
   override def amax(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => GFunctions.maxi(a,dir,null), "amax")
   override def amin(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => GFunctions.mini(a,dir,null), "amin")
+  override def mean(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => SciFunctions.mean(a,dir), "mean")
+  override def variance(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => SciFunctions.variance(a,dir), "variance") */
+  
+  override def sum(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => GFunctions.sum(a,dir,null), CUMAT.sumTensor, "sum");
+  override def prod(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => GFunctions.prod(a,dir,null), CUMAT.prodTensor, "prod");
+  override def maxi(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => GFunctions.maxi(a,dir,null), CUMAT.maxTensor, "maxi")
+  override def mini(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => GFunctions.mini(a,dir,null), CUMAT.minTensor, "mini")
+  override def amax(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => GFunctions.maxi(a,dir,null), CUMAT.maxTensor, "amax")
+  override def amin(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => GFunctions.mini(a,dir,null), CUMAT.minTensor,"amin")
   override def mean(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => SciFunctions.mean(a,dir), "mean")
   override def variance(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => SciFunctions.variance(a,dir), "variance")
 

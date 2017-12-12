@@ -507,7 +507,7 @@ class IMatTest extends BIDMatSpec {
 	def testScalar2NDinPlace(nr:Int, nc:Int, mop:(IMat,IMat,Int)=>IMat, op:(Int,Int)=>Int, msg:String) = {
 			it should msg in {
 				val a = irand(nr \ nc \ nk);
-				val b = irand(1, 1).v;
+				val b = irand(1, 1).v + 1;
 				val c = izeros(a.dims);
 				val d = izeros(nr \ nc \ nk);
 				for (i <- 0 until nr) {

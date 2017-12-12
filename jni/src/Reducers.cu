@@ -522,7 +522,7 @@ __global__ void reduceTensor_(TT *A, TT *B, int nrows, int nreduce, int ncols) {
     ii = i - jj * nrows;
     ibase = ii + jj * nrows * nreduce;
     v = A[ibase];
-    for (int j = 0; j < nreduce; j++) {
+    for (int j = 1; j < nreduce; j++) {
       v = CC::op(v, A[ibase + j * nrows]);
     }
     B[ii + jj * nrows] = v;
