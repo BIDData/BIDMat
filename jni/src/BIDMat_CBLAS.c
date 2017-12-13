@@ -770,9 +770,9 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_word2vecBwd
   (*env)->ReleasePrimitiveArrayCritical(env, jWA, WA, 0);
 }
 
-#define mymax(A, B) ((a>b) ? a : b)
+#define mymax(A, B) ((A>B) ? A : B)
 
-#define mymin(A, B) ((a<b) ? a : b)
+#DEFINE mymin(A, B) ((A<B) ? A : B)
 
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_reduceTensorFloat
 (JNIEnv *env, jobject obj, jfloatArray jA, jfloatArray jB, jint m, jint n, jint p, jint op)
