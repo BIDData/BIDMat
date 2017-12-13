@@ -1575,7 +1575,6 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     	if (nextinds(0) == 0) {
     	  val tmpin = inmat.reshapeView(n, k);
     	  val tmpout = fctn(tmpin,1);
-    	  println("%s and %s" format (tmpout.dims.toString, outdims.toString));
     	  outmat = tmpout.reshapeView(outdims);
     	} else {
     		outmat = GMat.newOrCheckGMat(outdims, null, inmat.GUID, ND.hashInts(outdims.data), "GMat_reduce".##);

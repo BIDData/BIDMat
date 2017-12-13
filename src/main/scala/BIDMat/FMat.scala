@@ -707,6 +707,58 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
     }
   }
   
+  def getNextInds(inds:IMat):IMat = {
+    if (inds.asInstanceOf[AnyRef] == null) {
+      null
+    } else {
+      var len1 = 1;
+      var i = inds.length-1;
+      while (i > 0 && inds(i-1) == inds(i) - 1) {
+        len1 += 1;
+        i -= 1;
+      }
+      inds.colslice(inds.length-len1, inds.length);
+    }
+  }
+  
+  def reduce(inds0:Array[Int], fctn:(FMat,Int)=>FMat, fred:(Array[Float], Array[Float], Int, Int, Int)=>Int, opname:String):FMat = {
+    var i = 1;
+    while (i < inds0.length) {
+      if (inds0(i-1) >= inds0(i)) {
+        throw new RuntimeException("FMat reduce bad index vector");
+      }
+      i += 1;
+    }
+    var inmat = this;
+    var outmat = this;
+    var inds = MatFunctions.irow(inds0);
+    var nextinds = getNextInds(inds);
+    var restinds = inds;
+    while (nextinds.asInstanceOf[AnyRef] != null) {
+    	restinds = if (restinds.length > nextinds.length) restinds.colslice(0, restinds.length-nextinds.length) else null;
+    	val outdims = inmat.dims.copy;
+    	outdims(nextinds) = 1;
+    	var n = 1;
+      for (i <- nextinds(0) to nextinds(nextinds.length-1)) n *= inmat.dims(i);
+      var k = 1;
+      for (i <- (nextinds(nextinds.length-1)+1) until inmat.dims.length) k *= inmat.dims(i);
+    	if (nextinds(0) == 0) {
+    	  val tmpin = inmat.reshapeView(n, k);
+    	  val tmpout = fctn(tmpin,1);
+    	  outmat = tmpout.reshapeView(outdims);
+    	} else {
+    		outmat = FMat.newOrCheckFMat(outdims, null, inmat.GUID, ND.hashInts(outdims.data), "GMat_reduce".##);
+    		var m = 1;
+    		for (i <- 0 until nextinds(0)) m *= inmat.dims(i);
+    		fred(inmat.data, outmat.data, m, n, k);
+    		Mat.nflops += inmat.length;
+    	}
+    	nextinds = getNextInds(restinds);
+    	inmat = outmat;
+    }
+    outmat;
+  }
+  
   /** standard reducers on one dimension */
   
   override def sum(ind:Int):FMat = ffReduceOpv(ind, FMat.idFun, FMat.vecAddFun, null);
@@ -718,7 +770,7 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   override def mean(ind:Int):FMat = SciFunctions._mean(this, ind).asInstanceOf[FMat];
   override def variance(ind:Int):FMat = SciFunctions._variance(this, ind).asInstanceOf[FMat];
   
-  /** reduce on several dimensions, potentially very expensive */
+  /** reduce on several dimensions */
   
   def sum(inds:Array[Int]):FMat = reduce(inds, SciFunctions.sum, "sum")
   def prod(inds:Array[Int]):FMat = reduce(inds, SciFunctions.prod, "prod")

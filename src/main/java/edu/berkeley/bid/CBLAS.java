@@ -95,4 +95,10 @@ public final class CBLAS {
   
   public static native  void word2vecBwd(int nrows, int ncols, int nwa, int nwb, int [] WA, int [] WB, float [] A, float [] B, float [] DA, float [] DB, float [] C, float lrate);
   
+  public static native  void reduceTensorFloat(float [] A, float [] B, int m, int n, int p, int op);
+  public static native  void reduceTensorInt(int [] A, int [] B, int m, int n, int p, int op);
+  public static native  void reduceTensorDouble(double [] A, double [] B, int m, int n, int p, int op);
+  public static native  void reduceTensorLong(long [] A, long [] B, int m, int n, int p, int op);
+  
+  
 }
