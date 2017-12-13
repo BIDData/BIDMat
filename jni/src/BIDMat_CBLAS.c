@@ -772,7 +772,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_word2vecBwd
 
 #define mymax(A, B) ((A>B) ? A : B)
 
-#DEFINE mymin(A, B) ((A<B) ? A : B)
+#define mymin(A, B) ((A<B) ? A : B)
 
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_reduceTensorFloat
 (JNIEnv *env, jobject obj, jfloatArray jA, jfloatArray jB, jint m, jint n, jint p, jint op)
