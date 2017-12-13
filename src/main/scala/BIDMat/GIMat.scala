@@ -11,6 +11,7 @@ import jcuda.jcublas.JCublas._
 import jcuda.jcusparse._
 import edu.berkeley.bid.CUMAT;
 import scala.util.hashing.MurmurHash3
+import edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64
 import java.io._
 
 class GIMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) extends IMat(dims0, null) {
@@ -62,6 +63,20 @@ class GIMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     	out
     }
   }
+
+  override def reshapeView(newdims:Int*):GIMat = reshapeView(newdims.toArray)
+  
+  override def reshapeView(newdims:Array[Int]):GIMat = {
+    if (newdims.reduce(_*_) == length) {
+      val out = new GIMat(newdims, pdata, llength);
+      out.setGUID(MurmurHash3_x64_64(newdims.map(_.toLong) :+ GUID, "reshapeView".##));
+      out
+    } else {
+      throw new RuntimeException("GIMat reshapeView total length doesnt match")
+    }
+  }
+  
+  override def reshapeView(adims:IMat):GIMat = reshapeView(adims.data);
 
   override def mytype = "GIMat"
     
@@ -745,6 +760,59 @@ class GIMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   override def reverse:GIMat = _reverse(null);
   
   override def reverse(omat:Mat):GIMat = _reverse(omat);
+
+  def reduce(inds0:Array[Int], fctn:(GIMat,Int)=>GIMat, fred:(Pointer, Pointer, Int, Int, Int)=>Int, opname:String):GIMat = {
+    var i = 1;
+    while (i < inds0.length) {
+      if (inds0(i-1) >= inds0(i)) {
+        throw new RuntimeException("GIMat reduce bad index vector");
+      }
+      i += 1;
+    }
+    var inmat = this;
+    var outmat = this;
+    var inds = MatFunctions.irow(inds0);
+    var nextinds = getNextInds(inds);
+    var restinds = inds;
+    while (nextinds.asInstanceOf[AnyRef] != null) {
+    	restinds = if (restinds.length > nextinds.length) restinds.colslice(0, restinds.length-nextinds.length) else null;
+    	val outdims = inmat.dims.copy;
+    	outdims(nextinds) = 1;
+    	var n = 1;
+      for (i <- nextinds(0) to nextinds(nextinds.length-1)) n *= inmat.dims(i);
+      var k = 1;
+      for (i <- (nextinds(nextinds.length-1)+1) until inmat.dims.length) k *= inmat.dims(i);
+    	if (nextinds(0) == 0) {
+    	  val tmpin = inmat.reshapeView(n, k);
+    	  val tmpout = fctn(tmpin,1);
+    	  outmat = tmpout.reshapeView(outdims);
+    	} else {
+    		outmat = GIMat.newOrCheckGIMat(outdims, null, inmat.GUID, ND.hashInts(outdims.data), "GMat_reduce".##);
+    		var m = 1;
+    		for (i <- 0 until nextinds(0)) m *= inmat.dims(i);
+    		fred(inmat.pdata, outmat.pdata, m, n, k);
+    		Mat.nflops += inmat.length;
+    	}
+    	nextinds = getNextInds(restinds);
+    	inmat = outmat;
+    }
+    outmat;
+  }
+
+  override def sum(inds:Array[Int]):IMat = reduce(inds, (a:GIMat, dir:Int) => GIFunctions.sum(a,dir,null), CUMAT.sumTensorI, "sum");
+  override def prod(inds:Array[Int]):IMat = reduce(inds, (a:GIMat, dir:Int) => GIFunctions.prod(a,dir,null), CUMAT.prodTensorI, "prod");
+  override def maxi(inds:Array[Int]):IMat = reduce(inds, (a:GIMat, dir:Int) => GIFunctions.maxi(a,dir,null), CUMAT.maxTensorI, "maxi")
+  override def mini(inds:Array[Int]):IMat = reduce(inds, (a:GIMat, dir:Int) => GIFunctions.mini(a,dir,null), CUMAT.minTensorI, "mini")
+  override def amax(inds:Array[Int]):IMat = reduce(inds, (a:GIMat, dir:Int) => GIFunctions.maxi(a,dir,null), CUMAT.maxTensorI, "amax")
+  override def amin(inds:Array[Int]):IMat = reduce(inds, (a:GIMat, dir:Int) => GIFunctions.mini(a,dir,null), CUMAT.minTensorI,"amin")
+
+  override def sum(inds:IMat):IMat = reduce(inds.data, (a:GIMat, dir:Int) => GIFunctions.sum(a,dir,null), CUMAT.sumTensorI, "sum");
+  override def prod(inds:IMat):IMat = reduce(inds.data, (a:GIMat, dir:Int) => GIFunctions.prod(a,dir,null), CUMAT.prodTensorI, "prod");
+  override def maxi(inds:IMat):IMat = reduce(inds.data, (a:GIMat, dir:Int) => GIFunctions.maxi(a,dir,null), CUMAT.maxTensorI, "maxi")
+  override def mini(inds:IMat):IMat = reduce(inds.data, (a:GIMat, dir:Int) => GIFunctions.mini(a,dir,null), CUMAT.minTensorI, "mini")
+  override def amax(inds:IMat):IMat = reduce(inds.data, (a:GIMat, dir:Int) => GIFunctions.maxi(a,dir,null), CUMAT.maxTensorI, "amax")
+  override def amin(inds:IMat):IMat = reduce(inds.data, (a:GIMat, dir:Int) => GIFunctions.mini(a,dir,null), CUMAT.minTensorI,"amin")
+
   
   override def unary_- () = GIop(GIMat(-1), null, 2)
   def + (a : GIMat) = GIop(a, null, op_add)
@@ -766,12 +834,6 @@ class GIMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   
   def on(a : GIMat) = vertcat(a, null)
   def \ (a : GIMat) = horzcat(a, null)
-  
-  override def sum(ind:IMat):GIMat = reduceOp(null, checkOne(ind,"sum"), 0, op_add);
-  override def prod(ind:IMat):GIMat = reduceOp(null, checkOne(ind,"prod"), 1, op_mul);
-  override def maxi(ind:IMat):GIMat = reduceOp(null, checkOne(ind,"maxi"), Int.MinValue, op_max);
-  override def mini(ind:IMat):GIMat = reduceOp(null, checkOne(ind,"mini"), Int.MaxValue, op_min);
-
   
   override def + (a : Float) = GIop(GIMat(a.toInt), null, op_add)
   override def - (a : Float) = GIop(GIMat(a.toInt), null, op_sub)

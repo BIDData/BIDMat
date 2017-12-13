@@ -474,6 +474,8 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
     }
   }
 
+  override def reshapeView(adims:IMat):IMat = reshapeView(adims.data);
+
   /** transpose */
   override def transpose(dims:Array[Int]):IMat = transpose(MatFunctions.irow(dims))
 
@@ -919,6 +921,59 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
     	out1.transpose(MatFunctions.invperm(xinds on restinds).data);
     }
   }
+
+  def getNextInds(inds:IMat):IMat = {
+    if (inds.asInstanceOf[AnyRef] == null) {
+      null
+    } else {
+      var len1 = 1;
+      var i = inds.length-1;
+      while (i > 0 && inds(i-1) == inds(i) - 1) {
+        len1 += 1;
+        i -= 1;
+      }
+      inds.colslice(inds.length-len1, inds.length);
+    }
+  }
+  
+  def reduce(inds0:Array[Int], fctn:(IMat,Int)=>IMat, fred:(Array[Int], Array[Int], Int, Int, Int, Int)=>Unit, op:Int, opname:String):IMat = {
+    var i = 1;
+    while (i < inds0.length) {
+      if (inds0(i-1) >= inds0(i)) {
+        throw new RuntimeException("IMat reduce bad index vector");
+      }
+      i += 1;
+    }
+    var inmat = this;
+    var outmat = this;
+    var inds = MatFunctions.irow(inds0);
+    var nextinds = getNextInds(inds);
+    var restinds = inds;
+    while (nextinds.asInstanceOf[AnyRef] != null) {
+    	restinds = if (restinds.length > nextinds.length) restinds.colslice(0, restinds.length-nextinds.length) else null;
+    	val outdims = inmat.dims.copy;
+    	outdims(nextinds) = 1;
+    	var n = 1;
+      for (i <- nextinds(0) to nextinds(nextinds.length-1)) n *= inmat.dims(i);
+      var k = 1;
+      for (i <- (nextinds(nextinds.length-1)+1) until inmat.dims.length) k *= inmat.dims(i);
+    	if (nextinds(0) == 0) {
+    	  val tmpin = inmat.reshapeView(n, k);
+    	  val tmpout = fctn(tmpin,1);
+    	  outmat = tmpout.reshapeView(outdims);
+    	} else {
+    		outmat = IMat.newOrCheckIMat(outdims, null, inmat.GUID, ND.hashInts(outdims.data), "GMat_reduce".##);
+    		var m = 1;
+    		for (i <- 0 until nextinds(0)) m *= inmat.dims(i);
+    		fred(inmat.data, outmat.data, m, n, k, op);
+    		Mat.nflops += inmat.length;
+    	}
+    	nextinds = getNextInds(restinds);
+    	inmat = outmat;
+    }
+    outmat;
+  }
+
   
   /** standard reducers on one dimension */
   
@@ -931,22 +986,35 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
   
   /** reduce on several dimensions, potentially very expensive */
   
-  def sum(inds:Array[Int]):IMat = reduce(inds, SciFunctions.sum, "sum")
+/*  def sum(inds:Array[Int]):IMat = reduce(inds, SciFunctions.sum, "sum")
   def prod(inds:Array[Int]):IMat = reduce(inds, SciFunctions.prod, "prod")
   def maxi(inds:Array[Int]):IMat = reduce(inds, SciFunctions.maxi, "maxi")
   def mini(inds:Array[Int]):IMat = reduce(inds, SciFunctions.mini, "mini")
   def amax(inds:Array[Int]):IMat = reduce(inds, SciFunctions.maxi, "amax")
-  def amin(inds:Array[Int]):IMat = reduce(inds, SciFunctions.mini, "amin") 
+  def amin(inds:Array[Int]):IMat = reduce(inds, SciFunctions.mini, "amin") */
+
+  def sum(inds:Array[Int]):IMat = reduce(inds, SciFunctions.sum, reduceTensorInt, FMat.CBLASop.op_add, "sum")
+  def prod(inds:Array[Int]):IMat = reduce(inds, SciFunctions.prod, reduceTensorInt, FMat.CBLASop.op_mul, "prod")
+  def maxi(inds:Array[Int]):IMat = reduce(inds, SciFunctions.maxi, reduceTensorInt, FMat.CBLASop.op_max, "maxi")
+  def mini(inds:Array[Int]):IMat = reduce(inds, SciFunctions.mini, reduceTensorInt, FMat.CBLASop.op_min, "mini")
+  def amax(inds:Array[Int]):IMat = reduce(inds, SciFunctions.maxi, reduceTensorInt, FMat.CBLASop.op_max, "amax")
+  def amin(inds:Array[Int]):IMat = reduce(inds, SciFunctions.mini, reduceTensorInt, FMat.CBLASop.op_min, "amin") 
   
   /** reduce on several dimensions, potentially very expensive */
   
-  override def sum(inds:IMat):IMat = reduce(inds.data, SciFunctions.sum, "sum")
+/*  override def sum(inds:IMat):IMat = reduce(inds.data, SciFunctions.sum, "sum")
   override def prod(inds:IMat):IMat = reduce(inds.data, SciFunctions.prod, "prod")
   override def maxi(inds:IMat):IMat = reduce(inds.data, SciFunctions.maxi, "maxi")
   override def mini(inds:IMat):IMat = reduce(inds.data, SciFunctions.mini, "mini")
   override def amax(inds:IMat):IMat = reduce(inds.data, SciFunctions.maxi, "amax")
-  override def amin(inds:IMat):IMat = reduce(inds.data, SciFunctions.mini, "amin")
+  override def amin(inds:IMat):IMat = reduce(inds.data, SciFunctions.mini, "amin") */
 
+  override def sum(inds:IMat):IMat = reduce(inds.data, SciFunctions.sum, reduceTensorInt, FMat.CBLASop.op_add, "sum")
+  override def prod(inds:IMat):IMat = reduce(inds.data, SciFunctions.prod, reduceTensorInt, FMat.CBLASop.op_mul, "prod")
+  override def maxi(inds:IMat):IMat = reduce(inds.data, SciFunctions.maxi, reduceTensorInt, FMat.CBLASop.op_max, "maxi")
+  override def mini(inds:IMat):IMat = reduce(inds.data, SciFunctions.mini, reduceTensorInt, FMat.CBLASop.op_min, "mini")
+  override def amax(inds:IMat):IMat = reduce(inds.data, SciFunctions.maxi, reduceTensorInt, FMat.CBLASop.op_max, "amax")
+  override def amin(inds:IMat):IMat = reduce(inds.data, SciFunctions.mini, reduceTensorInt, FMat.CBLASop.op_min, "amin") 
   
   override def * (b : Int) = iMult(IMat.ielem(b), null)
   override def + (b : Int) = iiMatOpScalarv(b, IMat.vecAddFun, null)
