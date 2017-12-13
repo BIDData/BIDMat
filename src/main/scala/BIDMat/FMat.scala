@@ -721,7 +721,7 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
     }
   }
   
-  def reduce(inds0:Array[Int], fctn:(FMat,Int)=>FMat, fred:(Array[Float], Array[Float], Int, Int, Int)=>Int, opname:String):FMat = {
+  def reduce(inds0:Array[Int], fctn:(FMat,Int)=>FMat, fred:(Array[Float], Array[Float], Int, Int, Int, Int)=>Unit, op:Int, opname:String):FMat = {
     var i = 1;
     while (i < inds0.length) {
       if (inds0(i-1) >= inds0(i)) {
@@ -750,7 +750,7 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
     		outmat = FMat.newOrCheckFMat(outdims, null, inmat.GUID, ND.hashInts(outdims.data), "GMat_reduce".##);
     		var m = 1;
     		for (i <- 0 until nextinds(0)) m *= inmat.dims(i);
-    		fred(inmat.data, outmat.data, m, n, k);
+    		fred(inmat.data, outmat.data, m, n, k, op);
     		Mat.nflops += inmat.length;
     	}
     	nextinds = getNextInds(restinds);
@@ -772,23 +772,42 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   
   /** reduce on several dimensions */
   
-  def sum(inds:Array[Int]):FMat = reduce(inds, SciFunctions.sum, "sum")
+/*  def sum(inds:Array[Int]):FMat = reduce(inds, SciFunctions.sum, "sum")
   def prod(inds:Array[Int]):FMat = reduce(inds, SciFunctions.prod, "prod")
-  def mean(inds:Array[Int]):FMat = reduce(inds, SciFunctions.mean, "mean")
-  def variance(inds:Array[Int]):FMat = reduce(inds, SciFunctions.variance, "variance")
   def maxi(inds:Array[Int]):FMat = reduce(inds, SciFunctions.maxi, "maxi")
   def mini(inds:Array[Int]):FMat = reduce(inds, SciFunctions.mini, "mini")
   def amax(inds:Array[Int]):FMat = reduce(inds, SciFunctions.maxi, "amax")
   def amin(inds:Array[Int]):FMat = reduce(inds, SciFunctions.mini, "amin")
+  def mean(inds:Array[Int]):FMat = reduce(inds, SciFunctions.mean, "mean")
+  def variance(inds:Array[Int]):FMat = reduce(inds, SciFunctions.variance, "variance") */
+  
+  override def sum(inds:Array[Int]):FMat = reduce(inds, SciFunctions.sum, reduceTensorFloat, FMat.CBLASop.op_add, "sum")
+  override def prod(inds:Array[Int]):FMat = reduce(inds, SciFunctions.prod, reduceTensorFloat, FMat.CBLASop.op_mul, "prod")
+  override def maxi(inds:Array[Int]):FMat = reduce(inds, SciFunctions.maxi, reduceTensorFloat, FMat.CBLASop.op_max, "maxi")
+  override def mini(inds:Array[Int]):FMat = reduce(inds, SciFunctions.mini, reduceTensorFloat, FMat.CBLASop.op_min, "mini")
+  override def amax(inds:Array[Int]):FMat = reduce(inds, SciFunctions.maxi, reduceTensorFloat, FMat.CBLASop.op_max, "amax")
+  override def amin(inds:Array[Int]):FMat = reduce(inds, SciFunctions.mini, reduceTensorFloat, FMat.CBLASop.op_min, "amin") 
+  override def mean(inds:Array[Int]):FMat = reduce(inds, SciFunctions.mean, "mean")
+  override def variance(inds:Array[Int]):FMat = reduce(inds, SciFunctions.variance, "variance")
 
-  override def sum(inds:IMat):FMat = reduce(inds.data, SciFunctions.sum, "sum")
+/*  override def sum(inds:IMat):FMat = reduce(inds.data, SciFunctions.sum, "sum") 
   override def prod(inds:IMat):FMat = reduce(inds.data, SciFunctions.prod, "prod")
-  override def mean(inds:IMat):FMat = reduce(inds.data, SciFunctions.mean, "mean")
-  override def variance(inds:IMat):FMat = reduce(inds.data, SciFunctions.variance, "variance")
   override def maxi(inds:IMat):FMat = reduce(inds.data, SciFunctions.maxi, "maxi")
   override def mini(inds:IMat):FMat = reduce(inds.data, SciFunctions.mini, "mini")
   override def amax(inds:IMat):FMat = reduce(inds.data, SciFunctions.maxi, "amax")
   override def amin(inds:IMat):FMat = reduce(inds.data, SciFunctions.mini, "amin") 
+  override def mean(inds:IMat):FMat = reduce(inds.data, SciFunctions.mean, "mean")
+  override def variance(inds:IMat):FMat = reduce(inds.data, SciFunctions.variance, "variance") */
+  
+  
+  override def sum(inds:IMat):FMat = reduce(inds.data, SciFunctions.sum, reduceTensorFloat, FMat.CBLASop.op_add, "sum")
+  override def prod(inds:IMat):FMat = reduce(inds.data, SciFunctions.prod, reduceTensorFloat, FMat.CBLASop.op_mul, "prod")
+  override def maxi(inds:IMat):FMat = reduce(inds.data, SciFunctions.maxi, reduceTensorFloat, FMat.CBLASop.op_max, "maxi")
+  override def mini(inds:IMat):FMat = reduce(inds.data, SciFunctions.mini, reduceTensorFloat, FMat.CBLASop.op_min, "mini")
+  override def amax(inds:IMat):FMat = reduce(inds.data, SciFunctions.maxi, reduceTensorFloat, FMat.CBLASop.op_max, "amax")
+  override def amin(inds:IMat):FMat = reduce(inds.data, SciFunctions.mini, reduceTensorFloat, FMat.CBLASop.op_min, "amin") 
+  override def mean(inds:IMat):FMat = reduce(inds.data, SciFunctions.mean, "mean")
+  override def variance(inds:IMat):FMat = reduce(inds.data, SciFunctions.variance, "variance")
 
   def fDMultHelper(a:FMat, out:FMat, istart:Int, iend:Int) = {
   	var i = istart

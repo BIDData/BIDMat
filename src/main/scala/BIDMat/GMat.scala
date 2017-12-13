@@ -1537,20 +1537,6 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     }
   }
   
-  def getNextInds(inds:IMat):IMat = {
-    if (inds.asInstanceOf[AnyRef] == null) {
-      null
-    } else {
-      var len1 = 1;
-      var i = inds.length-1;
-      while (i > 0 && inds(i-1) == inds(i) - 1) {
-        len1 += 1;
-        i -= 1;
-      }
-      inds.colslice(inds.length-len1, inds.length);
-    }
-  }
-  
   def reduce(inds0:Array[Int], fctn:(GMat,Int)=>GMat, fred:(Pointer, Pointer, Int, Int, Int)=>Int, opname:String):GMat = {
     var i = 1;
     while (i < inds0.length) {
