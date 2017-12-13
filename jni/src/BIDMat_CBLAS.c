@@ -770,6 +770,10 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_word2vecBwd
   (*env)->ReleasePrimitiveArrayCritical(env, jWA, WA, 0);
 }
 
+#define mymax(A, B) ((a>b) ? a : b)
+
+#define mymin(A, B) ((a<b) ? a : b)
+
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_reduceTensorFloat
 (JNIEnv *env, jobject obj, jfloatArray jA, jfloatArray jB, jint m, jint n, jint p, jint op)
 {
@@ -804,7 +808,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_reduceTensorFloat
 #pragma omp parallel for
       for (i = 0; i < p; i++) {
 	for (k = 0; k < m; k++) {
-	  B[k + m * i] = max(B[k + m * i], A[k + m * (j + n * i)]);
+	  B[k + m * i] = mymax(B[k + m * i], A[k + m * (j + n * i)]);
 	}
       }
     }
@@ -812,7 +816,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_reduceTensorFloat
 #pragma omp parallel for
       for (i = 0; i < p; i++) {
 	for (k = 0; k < m; k++) {
-	  B[k + m * i] = min(B[k + m * i], A[k + m * (j + n * i)]);
+	  B[k + m * i] = mymin(B[k + m * i], A[k + m * (j + n * i)]);
 	}
       }
     }
@@ -857,7 +861,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_reduceTensorDouble
 #pragma omp parallel for
       for (i = 0; i < p; i++) {
 	for (k = 0; k < m; k++) {
-	  B[k + m * i] = max(B[k + m * i], A[k + m * (j + n * i)]);
+	  B[k + m * i] = mymax(B[k + m * i], A[k + m * (j + n * i)]);
 	}
       }
     }
@@ -865,7 +869,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_reduceTensorDouble
 #pragma omp parallel for
       for (i = 0; i < p; i++) {
 	for (k = 0; k < m; k++) {
-	  B[k + m * i] = min(B[k + m * i], A[k + m * (j + n * i)]);
+	  B[k + m * i] = mymin(B[k + m * i], A[k + m * (j + n * i)]);
 	}
       }
     }
@@ -910,7 +914,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_reduceTensorInt
 #pragma omp parallel for
       for (i = 0; i < p; i++) {
 	for (k = 0; k < m; k++) {
-	  B[k + m * i] = max(B[k + m * i], A[k + m * (j + n * i)]);
+	  B[k + m * i] = mymax(B[k + m * i], A[k + m * (j + n * i)]);
 	}
       }
     }
@@ -918,7 +922,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_reduceTensorInt
 #pragma omp parallel for
       for (i = 0; i < p; i++) {
 	for (k = 0; k < m; k++) {
-	  B[k + m * i] = min(B[k + m * i], A[k + m * (j + n * i)]);
+	  B[k + m * i] = mymin(B[k + m * i], A[k + m * (j + n * i)]);
 	}
       }
     }
@@ -964,7 +968,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_reduceTensorInt
 #pragma omp parallel for
       for (i = 0; i < p; i++) {
 	for (k = 0; k < m; k++) {
-	  B[k + m * i] = max(B[k + m * i], A[k + m * (j + n * i)]);
+	  B[k + m * i] = mymax(B[k + m * i], A[k + m * (j + n * i)]);
 	}
       }
     }
@@ -972,7 +976,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_reduceTensorInt
 #pragma omp parallel for
       for (i = 0; i < p; i++) {
 	for (k = 0; k < m; k++) {
-	  B[k + m * i] = min(B[k + m * i], A[k + m * (j + n * i)]);
+	  B[k + m * i] = mymin(B[k + m * i], A[k + m * (j + n * i)]);
 	}
       }
     }
