@@ -781,14 +781,14 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   def mean(inds:Array[Int]):FMat = reduce(inds, SciFunctions.mean, "mean")
   def variance(inds:Array[Int]):FMat = reduce(inds, SciFunctions.variance, "variance") */
   
-  override def sum(inds:Array[Int]):FMat = reduce(inds, SciFunctions.sum, reduceTensorFloat, FMat.CBLASop.op_add, "sum")
-  override def prod(inds:Array[Int]):FMat = reduce(inds, SciFunctions.prod, reduceTensorFloat, FMat.CBLASop.op_mul, "prod")
-  override def maxi(inds:Array[Int]):FMat = reduce(inds, SciFunctions.maxi, reduceTensorFloat, FMat.CBLASop.op_max, "maxi")
-  override def mini(inds:Array[Int]):FMat = reduce(inds, SciFunctions.mini, reduceTensorFloat, FMat.CBLASop.op_min, "mini")
-  override def amax(inds:Array[Int]):FMat = reduce(inds, SciFunctions.maxi, reduceTensorFloat, FMat.CBLASop.op_max, "amax")
-  override def amin(inds:Array[Int]):FMat = reduce(inds, SciFunctions.mini, reduceTensorFloat, FMat.CBLASop.op_min, "amin") 
-  override def mean(inds:Array[Int]):FMat = reduce(inds, SciFunctions.mean, "mean")
-  override def variance(inds:Array[Int]):FMat = reduce(inds, SciFunctions.variance, "variance")
+  def sum(inds:Array[Int]):FMat = reduce(inds, SciFunctions.sum, reduceTensorFloat, FMat.CBLASop.op_add, "sum")
+  def prod(inds:Array[Int]):FMat = reduce(inds, SciFunctions.prod, reduceTensorFloat, FMat.CBLASop.op_mul, "prod")
+  def maxi(inds:Array[Int]):FMat = reduce(inds, SciFunctions.maxi, reduceTensorFloat, FMat.CBLASop.op_max, "maxi")
+  def mini(inds:Array[Int]):FMat = reduce(inds, SciFunctions.mini, reduceTensorFloat, FMat.CBLASop.op_min, "mini")
+  def amax(inds:Array[Int]):FMat = reduce(inds, SciFunctions.maxi, reduceTensorFloat, FMat.CBLASop.op_max, "amax")
+  def amin(inds:Array[Int]):FMat = reduce(inds, SciFunctions.mini, reduceTensorFloat, FMat.CBLASop.op_min, "amin") 
+  def mean(inds:Array[Int]):FMat = reduce(inds, SciFunctions.mean, "mean")
+  def variance(inds:Array[Int]):FMat = reduce(inds, SciFunctions.variance, "variance")
 
 /*  override def sum(inds:IMat):FMat = reduce(inds.data, SciFunctions.sum, "sum") 
   override def prod(inds:IMat):FMat = reduce(inds.data, SciFunctions.prod, "prod")
