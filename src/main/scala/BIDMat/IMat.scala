@@ -984,15 +984,8 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
   override def mean(ind:Int):IMat = SciFunctions._mean(this, ind).asInstanceOf[IMat];
   override def variance(ind:Int):IMat = SciFunctions._variance(this, ind).asInstanceOf[IMat];
   
-  /** reduce on several dimensions, potentially very expensive */
+  /** reduce on several dimensions */
   
-/*  def sum(inds:Array[Int]):IMat = reduce(inds, SciFunctions.sum, "sum")
-  def prod(inds:Array[Int]):IMat = reduce(inds, SciFunctions.prod, "prod")
-  def maxi(inds:Array[Int]):IMat = reduce(inds, SciFunctions.maxi, "maxi")
-  def mini(inds:Array[Int]):IMat = reduce(inds, SciFunctions.mini, "mini")
-  def amax(inds:Array[Int]):IMat = reduce(inds, SciFunctions.maxi, "amax")
-  def amin(inds:Array[Int]):IMat = reduce(inds, SciFunctions.mini, "amin") */
-
   def sum(inds:Array[Int]):IMat = reduce(inds, SciFunctions.sum, reduceTensorInt, FMat.CBLASop.op_add, "sum")
   def prod(inds:Array[Int]):IMat = reduce(inds, SciFunctions.prod, reduceTensorInt, FMat.CBLASop.op_mul, "prod")
   def maxi(inds:Array[Int]):IMat = reduce(inds, SciFunctions.maxi, reduceTensorInt, FMat.CBLASop.op_max, "maxi")
@@ -1000,14 +993,7 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
   def amax(inds:Array[Int]):IMat = reduce(inds, SciFunctions.maxi, reduceTensorInt, FMat.CBLASop.op_max, "amax")
   def amin(inds:Array[Int]):IMat = reduce(inds, SciFunctions.mini, reduceTensorInt, FMat.CBLASop.op_min, "amin") 
   
-  /** reduce on several dimensions, potentially very expensive */
-  
-/*  override def sum(inds:IMat):IMat = reduce(inds.data, SciFunctions.sum, "sum")
-  override def prod(inds:IMat):IMat = reduce(inds.data, SciFunctions.prod, "prod")
-  override def maxi(inds:IMat):IMat = reduce(inds.data, SciFunctions.maxi, "maxi")
-  override def mini(inds:IMat):IMat = reduce(inds.data, SciFunctions.mini, "mini")
-  override def amax(inds:IMat):IMat = reduce(inds.data, SciFunctions.maxi, "amax")
-  override def amin(inds:IMat):IMat = reduce(inds.data, SciFunctions.mini, "amin") */
+  /** reduce on several dimensions*/
 
   override def sum(inds:IMat):IMat = reduce(inds.data, SciFunctions.sum, reduceTensorInt, FMat.CBLASop.op_add, "sum")
   override def prod(inds:IMat):IMat = reduce(inds.data, SciFunctions.prod, reduceTensorInt, FMat.CBLASop.op_mul, "prod")
