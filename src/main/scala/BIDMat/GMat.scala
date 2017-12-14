@@ -704,25 +704,26 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   override def mult(b:Mat, c:Mat):Mat = mult(b, c, false, false);
   
   override def blockmult(bb:FMat, cc:FMat, nblocks:Int, at:Boolean, bt:Boolean):FMat = {
-    val b = GMat(bb);
+		val b = GMat(bb);
     val c = GMat(cc);
+ 
     val (anrows, ancols) = if (dims.length == 3) {
-      (dims(0), dims(1))
+      (dims(0), dims(3))
     } else {
-      (nrows, ncols/nblocks)
+      (nrows/nblocks, ncols)
     }
     val (bnrows, bncols) = if (b.dims.length == 3) {
       (b.dims(0), b.dims(1))
     } else {
-      (b.nrows, b.ncols/nblocks)
+      (b.nrows/nblocks, b.ncols)
     }
     val (cnrows,cncols) = if (c.dims.length == 3) {
       (c.dims(0), c.dims(1))
     } else {
-      (c.nrows, c.ncols/nblocks)
+      (c.nrows/nblocks, c.ncols)
     }
-    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, nblocks, 0, nrows, anrows*ancols,
-    		b, 0, bnrows, bnrows*bncols, c, 0, cnrows, cnrows*cncols, false);
+    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, nblocks, 0, anrows*nblocks, anrows,
+    		b, 0, bnrows*nblocks, bnrows, c, 0, cnrows*nblocks, cnrows, false);
     c
   }
  
@@ -800,25 +801,26 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   override def madd(b:Mat, c:Mat):Mat = madd(b, c, false, false);
   
   override def blockmadd(bb:FMat, cc:FMat, nblocks:Int, at:Boolean, bt:Boolean):FMat = {
-    val b = GMat(bb);
+		val b = GMat(bb);
     val c = GMat(cc);
+ 
     val (anrows, ancols) = if (dims.length == 3) {
-      (dims(0), dims(1))
+      (dims(0), dims(3))
     } else {
-      (nrows, ncols/nblocks)
+      (nrows/nblocks, ncols)
     }
     val (bnrows, bncols) = if (b.dims.length == 3) {
       (b.dims(0), b.dims(1))
     } else {
-      (b.nrows, b.ncols/nblocks)
+      (b.nrows/nblocks, b.ncols)
     }
     val (cnrows,cncols) = if (c.dims.length == 3) {
       (c.dims(0), c.dims(1))
     } else {
-      (c.nrows, c.ncols/nblocks)
+      (c.nrows/nblocks, c.ncols)
     }
-    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, nblocks, 0, nrows, anrows*ancols,
-    		b, 0, bnrows, bnrows*bncols, c, 0, cnrows, cnrows*cncols, true);
+    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, nblocks, 0, anrows*nblocks, anrows,
+    		b, 0, bnrows*nblocks, bnrows, c, 0, cnrows*nblocks, cnrows, true);
     c
   }
  
@@ -1300,29 +1302,25 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     out
   }
   
-  def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, reps:Int, aoff:Int, lda:Int, astep:Int, 
+  def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, k:Int, reps:Int, aoff:Int, lda:Int, astep:Int, 
       b:GMat, boff:Int, ldb:Int, bstep:Int, c:GMat, coff:Int, ldc:Int, cstep:Int, addC:Boolean):GMat = {
     
-    val ka = if (transa == 0) ncols/reps else nrows;
-    val kb = if (transb == 0) b.nrows else b.ncols/reps;
-    if (ka != kb) throw new RuntimeException("blockGemm dims mismatch %d %d" format (ka, kb));
-
     val ax = if (transa == 0) nc else nr;
-    if (aoff + ka + lda.toLong * (ax-1) + astep.toLong * (reps-1) > length) 
+    if (aoff + k + lda.toLong * (ax-1) + astep.toLong * (reps-1) > length) 
     	throw new RuntimeException("blockGemm adims too large %d %d %d %d %d" format (aoff, lda, ax, astep, reps));
     
     val bx = if (transb == 0) nc else nr;
-    if (boff + kb + ldb.toLong * (bx-1) + bstep.toLong * (reps-1) > b.length) 
+    if (boff + k + ldb.toLong * (bx-1) + bstep.toLong * (reps-1) > b.length) 
     	throw new RuntimeException("blockGemm bdims too large %d %d %d %d %d" format (boff, ldb, bx, bstep, reps));
         
     if (coff + nc + ldc.toLong * (nc-1) + cstep.toLong * (reps-1) > c.length) 
     	throw new RuntimeException("blockGemm cdims too large %d %d %d %d %d" format (coff, ldc, nc, cstep, reps));
     
     c.clear;
-    Mat.nflops += 2L * nr * nc * ka * reps;
+    Mat.nflops += 2L * nr * nc * k * reps;
     val betap = if (addC) GMat.pONE else GMat.pZERO;
 	  cublasSgemmStridedBatched(getHandle, transa, transb,	
-	      nr, nc, ka, 
+	      nr, nc, k, 
 	      GMat.pONE, 
 	      pdata.withByteOffset(1L * Sizeof.FLOAT * aoff), lda, astep, 
 	      b.pdata.withByteOffset(1L * Sizeof.FLOAT * boff), ldb, bstep, 
@@ -1338,9 +1336,9 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     c;
   }
   
-  override def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, reps:Int, aoff:Int, lda:Int, astep:Int, 
+  override def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, k:Int, reps:Int, aoff:Int, lda:Int, astep:Int, 
       b:Mat, boff:Int, ldb:Int, bstep:Int, c:Mat, coff:Int, ldc:Int, cstep:Int, addC:Boolean):GMat = {
-  		blockGemm(transa, transb, nr, nc, reps, aoff, lda, astep, b.asInstanceOf[GMat], boff, ldb, bstep, 
+  		blockGemm(transa, transb, nr, nc, k, reps, aoff, lda, astep, b.asInstanceOf[GMat], boff, ldb, bstep, 
   		    c.asInstanceOf[GMat], coff, ldc, cstep, addC:Boolean);
   }
   
