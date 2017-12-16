@@ -622,6 +622,8 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   	  case aa:GMat => aa.copyFrom(this);
   	  case aa:GDMat => aa.copyFrom(DMat(this));
   	  case out:FMat => copyTo(out):FMat;
+  	  case ii:IMat => {Mat.copyToIntArray(data, 0, ii.data, 0, length)}
+      case ii:LMat => {Mat.copyToLongArray(data, 0, ii.data, 0, length)}
   	  case aa:TMat =>TMat(nrows,ncols,Array(0),Array(0),Array(this))
   	}
   	a

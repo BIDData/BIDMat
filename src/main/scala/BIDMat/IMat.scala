@@ -555,6 +555,8 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
   	a match {
   	  case aa:GIMat => aa.copyFrom(this);
   	  case out:IMat => System.arraycopy(data, 0, out.data, 0, length);
+  	  case ff:FMat => {Mat.copyToFloatArray(data, 0, ff.data, 0, length)}
+      case ii:LMat => {Mat.copyToLongArray(data, 0, ii.data, 0, ii.length)}
   	}
   	a
   }
