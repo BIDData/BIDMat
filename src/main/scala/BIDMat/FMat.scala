@@ -1561,7 +1561,7 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   def kron(a:FMat):FMat = kron(a, null);
 
   def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, k:Int, alpha:Float, aoff:Int, lda:Int, astep:Int,
-      b:FMat, boff:Int, ldb:Int, bstep:Int, c:FMat, coff:Int, ldc:Int, cstep:Int, beta:Float, nreps:Int):FMat = {
+      b:FMat, boff:Int, ldb:Int, bstep:Int, beta:Float, c:FMat, coff:Int, ldc:Int, cstep:Int, nreps:Int):FMat = {
     c.clear;
     Mat.nflops += 2L * nr * nc * k * nreps;
     blockSgemm(transa, transb, nr, nc, k, alpha, data, aoff, lda, astep, b.data, boff, ldb, bstep, beta, c.data, coff, ldc, cstep, nreps);

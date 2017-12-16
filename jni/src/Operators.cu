@@ -889,6 +889,7 @@ int reducebin2op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE *C, int opb, in
 GENREDUCEBIN2OP(float,optype,operators)
 GENREDUCEBIN2OP(double,doptype,doperators)
 
+/*
 class FloatOps {
  public:
   __device__ static optype ops(int n) {return operators[n];}
@@ -920,3 +921,4 @@ int opTensor3D(int m, int n, int p, TT *A, int ia, int ja, int ka, TT *B, int ib
   cudaError_t err = cudaGetLastError();
   return err;
 }
+*/
