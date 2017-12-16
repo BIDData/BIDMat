@@ -663,8 +663,8 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_caxpyxx
 }
 
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_blockSgemm
-(JNIEnv *env, jobject obj, jint transA, jint transB, jint nr, jint nc, jint kk, jint reps, jfloatArray jA, jint aoff, jint lda, jint astep, 
- jfloatArray jB, jint boff, jint ldb, jint bstep, jfloatArray jC, jint coff, jint ldc, jint cstep, jfloat beta)
+(JNIEnv *env, jobject obj, jint transA, jint transB, jint nr, jint nc, jint kk, jfloat alpha, jfloatArray jA, jint aoff, jint lda, jint astep, 
+ jfloatArray jB, jint boff, jint ldb, jint bstep, jfloat beta, jfloatArray jC, jint coff, jint ldc, jint cstep, int reps)
 {
   int i, at, bt;
   jfloat *A = (*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE);
@@ -677,7 +677,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_blockSgemm
   B += boff;
   C += coff;
   for (i = 0; i < reps; i++) {
-    cblas_sgemm(CblasColMajor, at, bt, nr, nc, kk, 1.0f, A, lda, B, ldb, beta, C, ldc);
+    cblas_sgemm(CblasColMajor, at, bt, nr, nc, kk, alpha, A, lda, B, ldb, beta, C, ldc);
     A += astep;
     B += bstep;
     C += cstep;
