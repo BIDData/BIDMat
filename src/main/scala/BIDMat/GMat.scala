@@ -1306,16 +1306,7 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
       b:GMat, boff:Int, ldb:Int, bstep:Int, c:GMat, coff:Int, ldc:Int, cstep:Int, addC:Boolean):GMat = {
     
     val ax = if (transa == 0) nc else nr;
-    if (aoff + k + lda.toLong * (ax-1) + astep.toLong * (reps-1) > length) 
-    	throw new RuntimeException("blockGemm adims too large %d %d %d %d %d" format (aoff, lda, ax, astep, reps));
-    
-    val bx = if (transb == 0) nc else nr;
-    if (boff + k + ldb.toLong * (bx-1) + bstep.toLong * (reps-1) > b.length) 
-    	throw new RuntimeException("blockGemm bdims too large %d %d %d %d %d" format (boff, ldb, bx, bstep, reps));
-        
-    if (coff + nc + ldc.toLong * (nc-1) + cstep.toLong * (reps-1) > c.length) 
-    	throw new RuntimeException("blockGemm cdims too large %d %d %d %d %d" format (coff, ldc, nc, cstep, reps));
-    
+ 
     c.clear;
     Mat.nflops += 2L * nr * nc * k * reps;
     val betap = if (addC) GMat.pONE else GMat.pZERO;
