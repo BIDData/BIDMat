@@ -1,7 +1,7 @@
 /*
  * JCuda - Java bindings for NVIDIA CUDA driver and runtime API
  *
- * Copyright (c) 2009-2012 Marco Hutter - http://www.jcuda.org
+ * Copyright (c) 2009-2015 Marco Hutter - http://www.jcuda.org
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -156,8 +156,8 @@ PointerData* initPointerData(JNIEnv *env, jobject nativePointerObject)
         return validatePointerData(env, nativePointerObject, pointerData);
     }
 
-    // If the object is no Pointer (but only a NativePointerObject), 
-	// then return a NativePointerObjectPointerData
+    // If the object is no Pointer (but only a NativePointerObject),
+    // then return a NativePointerObjectPointerData
     jboolean isPointer = env->IsInstanceOf(nativePointerObject, Pointer_class);
     if (!isPointer)
     {
@@ -215,7 +215,7 @@ PointerData* initPointerData(JNIEnv *env, jobject nativePointerObject)
     }
 
     // At this point, the given object must be a Pointer, containing
-	// a (possibly NULL) nativePointer and a (possibly 0) byteOffset
+    // a (possibly NULL) nativePointer and a (possibly 0) byteOffset
     Logger::log(LOG_DEBUGTRACE, "Initializing NativePointerData\n");
     NativePointerData *pointerData = new NativePointerData();
     return validatePointerData(env, nativePointerObject, pointerData);
@@ -223,10 +223,10 @@ PointerData* initPointerData(JNIEnv *env, jobject nativePointerObject)
 
 
 /**
- * Releases the given PointerData by calling PointerData::release, 
+ * Releases the given PointerData by calling PointerData::release,
  * and deletes the PointerData object.
  *
- * The effect of the PointerData::release method is depending on 
+ * The effect of the PointerData::release method is depending on
  * the type of the pointerData:
  *
  * - For a NativePointerData, nothing has to be done
@@ -241,7 +241,7 @@ PointerData* initPointerData(JNIEnv *env, jobject nativePointerObject)
  */
 bool releasePointerData(JNIEnv *env, PointerData* &pointerData, jint mode)
 {
-	if (pointerData == NULL) return true;
+    if (pointerData == NULL) return true;
     if (!pointerData->release(env, mode)) return false;
     delete pointerData;
     pointerData = NULL;
@@ -285,7 +285,7 @@ bool isPointerBackedByNativeMemory(JNIEnv *env, jobject object)
         return false;
     }
     jlong nativePointer = env->GetLongField(object, NativePointerObject_nativePointer);
-    if (nativePointer != NULL)
+    if (nativePointer != 0)
     {
         return true;
     }

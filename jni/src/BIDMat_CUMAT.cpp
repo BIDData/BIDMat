@@ -1,6 +1,6 @@
 #include <jni.h>
 #include <cuda_runtime.h>
-#include <cublas.h>
+#include <cublas_v2.h>
 #include "Logger.hpp"
 #include "JNIUtils.hpp"
 #include "PointerUtils.hpp"
@@ -1402,7 +1402,7 @@ extern "C" {
     }
   }
 
-  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_blockSgemm
+  /*  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_blockSgemm
   (JNIEnv *env, jobject obj, jint transA, jint transB, jint nr, jint nc, jint kk, jint reps, jobject jA, jint lda, jint astep, 
    jobject jB, jint ldb, jint bstep, jobject jC, jint ldc, jint cstep, jfloat beta)
   {
@@ -1422,7 +1422,8 @@ extern "C" {
     cudaError_t err = cudaGetLastError();
     return err;
   }
-
+  */
+  
 JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_cumsumByKeyFF
 (JNIEnv *env, jobject obj, jobject jvals, jobject jkeys, jobject jout, jlong len) 
 {
@@ -1694,4 +1695,46 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_maxTensorI
   return maxTensor(A, B, M, N, K);
 }
 
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_myCublasSgemmStridedBatched
+(JNIEnv * env, jobject obj, jobject j_cuHandle, jint transa, jint transb, jint M, jint N, jint K, jfloat alpha, 
+ jobject j_A, jint lda, jint astep, jobject j_B, jint ldb, jint bstep, jfloat beta, jobject j_C, jint ldc, jint cstep, jint reps) {
+
+  int i, retval = 0;
+  cublasHandle_t handle = (cublasHandle_t)getNativePointerValue(env, j_cuHandle);
+  const float * A = (float *)getPointer(env, j_A);
+  const float * B = (float *)getPointer(env, j_B);
+  float * C = (float *)getPointer(env, j_C);
+  float *alphaptr = new float[2];
+  float *betaptr = &alphaptr[1];
+  *alphaptr = alpha;
+  *betaptr = beta;
+
+  float ** host_ptrs = (float **)(new float*[reps*3]);
+  float ** device_ptrs = NULL;
+  cudaMalloc((void **)&device_ptrs, sizeof(float *)*reps*3);
+  cudaStreamSynchronize(SYNC_STREAM);
+  for (i = 0; i < reps; i++) {
+    host_ptrs[i] = (float *)(&A[astep * i]);
+    host_ptrs[i+reps] = (float *)(&B[bstep * i]);
+    host_ptrs[i+2*reps] = &C[cstep * i];
+  }
+  cudaMemcpy(device_ptrs, host_ptrs, sizeof(float *)*reps*3, cudaMemcpyHostToDevice);
+  cudaStreamSynchronize(SYNC_STREAM);
+  const float ** Aptrs = (const float **)device_ptrs;
+  const float ** Bptrs = (const float **)(&device_ptrs[reps]);
+  float ** Cptrs = &device_ptrs[2*reps];
+  
+  cublasOperation_t at, bt;
+  at = (transa) ? CUBLAS_OP_T : CUBLAS_OP_N;
+  bt = (transb) ? CUBLAS_OP_T : CUBLAS_OP_N;
+
+  retval = cublasSgemmBatched(handle, at, bt, M, N, K, alphaptr, Aptrs, lda, Bptrs, ldb, betaptr, Cptrs, ldc, reps); 
+
+  cudaStreamSynchronize(SYNC_STREAM);
+  cudaFree(device_ptrs);
+  delete [] host_ptrs;
+  delete [] alphaptr;
+  return retval;
+}
+  
 }

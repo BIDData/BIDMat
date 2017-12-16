@@ -1,7 +1,7 @@
 /*
  * JCuda - Java bindings for NVIDIA CUDA driver and runtime API
  *
- * Copyright (c) 2009-2012 Marco Hutter - http://www.jcuda.org
+ * Copyright (c) 2009-2015 Marco Hutter - http://www.jcuda.org
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -72,6 +72,8 @@ extern jmethodID Class_newInstance; // ()Ljava/lang/Object;
 class PointerData
 {
     public:
+
+        virtual ~PointerData() {}
 
         /**
          * Initialize this PointerData with the given object
@@ -313,13 +315,13 @@ class PointersArrayPointerData : public PointerData
         /** The byteOffset from the Java Pointer */
         jlong byteOffset;
 
-		/** 
-		 * Whether the pointers that the startPointer points
-		 * to have already been initialized - that is, 
-		 * assigned the values from the respective
-		 * arrayPointerDatas[i]->getPointer(env) call
-		 */
-		bool localPointersInitialized;
+        /**
+         * Whether the pointers that the startPointer points
+         * to have already been initialized - that is,
+         * assigned the values from the respective
+         * arrayPointerDatas[i]->getPointer(env) call
+         */
+        bool localPointersInitialized;
 
 
     public:
@@ -329,35 +331,35 @@ class PointersArrayPointerData : public PointerData
             arrayPointerDatas = NULL;
             startPointer = NULL;
             byteOffset = 0;
-			localPointersInitialized = false;
+            localPointersInitialized = false;
         }
         ~PointersArrayPointerData()
         {
         }
 
-		void initLocalPointers(JNIEnv *env)
-		{
+        void initLocalPointers(JNIEnv *env)
+        {
             Logger::log(LOG_DEBUGTRACE, "Initializing PointersArrayPointerData local pointers\n");
 
-			jobjectArray pointersArray = (jobjectArray)env->GetObjectField(
+            jobjectArray pointersArray = (jobjectArray)env->GetObjectField(
                 nativePointerObject, Pointer_pointers);
             long size = (long)env->GetArrayLength(pointersArray);
-			void **localPointer = (void**)startPointer;
+            void **localPointer = (void**)startPointer;
             for (int i=0; i<size; i++)
             {
-				if (arrayPointerDatas[i] != NULL)
-				{
+                if (arrayPointerDatas[i] != NULL)
+                {
                     localPointer[i] = arrayPointerDatas[i]->getPointer(env);
-				}
-				else
-				{
-					localPointer[i] = NULL;
-				}
-			}
-			localPointersInitialized = true;
+                }
+                else
+                {
+                    localPointer[i] = NULL;
+                }
+            }
+            localPointersInitialized = true;
 
             Logger::log(LOG_DEBUGTRACE, "Initialized  PointersArrayPointerData local pointers\n");
-		}
+        }
 
         bool init(JNIEnv *env, jobject object)
         {
@@ -435,10 +437,10 @@ class PointersArrayPointerData : public PointerData
         {
             Logger::log(LOG_DEBUGTRACE, "Releasing    PointersArrayPointerData       %p\n", startPointer);
 
-			if (!localPointersInitialized)
-			{
-				initLocalPointers(env);
-			}
+            if (!localPointersInitialized)
+            {
+                initLocalPointers(env);
+            }
 
             jobjectArray pointersArray = (jobjectArray)env->GetObjectField(
                 nativePointerObject, Pointer_pointers);
@@ -510,10 +512,10 @@ class PointersArrayPointerData : public PointerData
 
         void* getPointer(JNIEnv *env)
         {
-			if (!localPointersInitialized)
-			{
-				initLocalPointers(env);
-			}
+            if (!localPointersInitialized)
+            {
+                initLocalPointers(env);
+            }
             return (void*)(((char*)startPointer)+byteOffset);
         }
 

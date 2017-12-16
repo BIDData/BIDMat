@@ -1,5 +1,6 @@
 package edu.berkeley.bid;
 import jcuda.Pointer;
+import jcuda.jcublas.cublasHandle;
 
 public final class CUMAT {
 
@@ -361,5 +362,9 @@ public final class CUMAT {
     
     public static native int reverse(Pointer A, Pointer out, long len);
     
-    public static native  void spermute(int d1, int d2, int d3, Pointer in, Pointer out);
+    public static native void spermute(int d1, int d2, int d3, Pointer in, Pointer out);
+
+    public static native int myCublasSgemmStridedBatched(cublasHandle handle, int transa, int transb, int m, int n, int k, float alpha,
+							 Pointer A, int lda, int astep, Pointer B, int ldb, int bstep,
+							 float beta, Pointer C, int ldc, int cstep, int reps);
 }
