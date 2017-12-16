@@ -1564,16 +1564,7 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
       b:FMat, boff:Int, ldb:Int, bstep:Int, c:FMat, coff:Int, ldc:Int, cstep:Int, addC:Boolean):FMat = {
 
     val ax = if (transa == 0) nc else nr;
-    if (aoff + k + lda.toLong * (ax-1) + astep.toLong * (reps-1) > length)
-    	throw new RuntimeException("blockGemm adims too large %d %d %d %d %d" format (aoff, lda, ax, astep, reps));
-
-    val bx = if (transb == 0) nc else nr;
-    if (boff + k + ldb.toLong * (bx-1) + bstep.toLong * (reps-1) > b.length)
-    	throw new RuntimeException("blockGemm bdims too large %d %d %d %d %d" format (boff, ldb, bx, bstep, reps));
-
-    if (coff + nc + ldc.toLong * (nc-1) + cstep.toLong * (reps-1) > c.length)
-    	throw new RuntimeException("blockGemm cdims too large %d %d %d %d %d" format (coff, ldc, nc, cstep, reps));
-
+ 
     c.clear;
     Mat.nflops += 2L * nr * nc * k * reps;
     val beta = if (addC) 1f else 0f;

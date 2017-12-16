@@ -888,3 +888,35 @@ int reducebin2op(int nrows, int ncols, ATYPE *A, ATYPE *B, ATYPE *C, int opb, in
 
 GENREDUCEBIN2OP(float,optype,operators)
 GENREDUCEBIN2OP(double,doptype,doperators)
+
+class FloatOps {
+ public:
+  __device__ static optype ops(int n) {return operators[n];}
+};
+
+
+template<typename TT, typename OPTYPE, class CC>
+__global__ void opTensor3D_(int m, int n, int p, TT *A, int ia, int ja, int ka, TT *B, int ib, int jb, int kb, TT *C, int opn) {
+  int ii, jj, kk;
+  OPTYPE op = CC::ops(opn);
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = ip; i < m*n*p; i += blockDim.x * gridDim.x * gridDim.y) {
+    jj = i / m;
+    ii = i - jj * m;
+    kk = jj / n;
+    jj = jj - kk * n;
+    C[ii + m * (jj + n * kk)] = op(A[ii*ia + (1+ia*(m-1)) * (jj*ja + (1+ja*(n-1)) * kk*ka)],
+                                   A[ii*ib + (1+ib*(m-1)) * (jj*jb + (1+jb*(n-1)) * kk*kb)]);
+  }				
+}	
+
+template<typename TT, typename OPTYPE, class CC>
+int opTensor3D(int m, int n, int p, TT *A, int ia, int ja, int ka, TT *B, int ib, int jb, int kb, TT *C, int opn) {
+  int nthreads;
+  dim3 griddims;
+  setsizesLean(m*n*p, &griddims, &nthreads);
+  opTensor3D_<TT,OPTYPE,CC><<<griddims,nthreads>>>(A, B, nrows, nreduce, ncols);
+  cudaStreamSynchronize(SYNC_STREAM);
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
