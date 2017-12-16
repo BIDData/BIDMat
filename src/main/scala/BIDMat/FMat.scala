@@ -911,8 +911,8 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
     } else {
       (c.nrows/nblocks, c.ncols)
     }
-    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, nblocks, 0, anrows*nblocks, anrows,
-    		b, 0, bnrows*nblocks, bnrows, c, 0, cnrows*nblocks, cnrows, false);
+    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, 1f, 0, anrows*nblocks, anrows,
+    		b, 0, bnrows*nblocks, bnrows, 0f, c, 0, cnrows*nblocks, cnrows, nblocks);
     c
   }
   
@@ -999,8 +999,8 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
     } else {
       (c.nrows/nblocks, c.ncols)
     }
-    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, nblocks, 0, anrows*nblocks, anrows,
-    		b, 0, bnrows*nblocks, bnrows, c, 0, cnrows*nblocks, cnrows, true);
+    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, 1f, 0, anrows*nblocks, anrows,
+    		b, 0, bnrows*nblocks, bnrows, 1f, c, 0, cnrows*nblocks, cnrows, nblocks);
     c
   }
 
@@ -1560,22 +1560,18 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
 
   def kron(a:FMat):FMat = kron(a, null);
 
-  def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, k:Int, reps:Int, aoff:Int, lda:Int, astep:Int,
-      b:FMat, boff:Int, ldb:Int, bstep:Int, c:FMat, coff:Int, ldc:Int, cstep:Int, addC:Boolean):FMat = {
-
-    val ax = if (transa == 0) nc else nr;
- 
+  def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, k:Int, alpha:Float, aoff:Int, lda:Int, astep:Int,
+      b:FMat, boff:Int, ldb:Int, bstep:Int, c:FMat, coff:Int, ldc:Int, cstep:Int, beta:Float, nreps:Int):FMat = {
     c.clear;
-    Mat.nflops += 2L * nr * nc * k * reps;
-    val beta = if (addC) 1f else 0f;
-    blockSgemm(transa, transb, nr, nc, k, reps, data, aoff, lda, astep, b.data, boff, ldb, bstep, c.data, coff, ldc, cstep, beta);
+    Mat.nflops += 2L * nr * nc * k * nreps;
+    blockSgemm(transa, transb, nr, nc, k, alpha, data, aoff, lda, astep, b.data, boff, ldb, bstep, beta, c.data, coff, ldc, cstep, nreps);
     c;
   }
 
-  override def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, k:Int, reps:Int, aoff:Int, lda:Int, astep:Int,
-      b:Mat, boff:Int, ldb:Int, bstep:Int, c:Mat, coff:Int, ldc:Int, cstep:Int, addC:Boolean):FMat = {
-  		blockGemm(transa, transb, nr, nc, k, reps, aoff, lda, astep, b.asInstanceOf[FMat], boff, ldb, bstep,
-  		    c.asInstanceOf[FMat], coff, ldc, cstep, addC);
+  override def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, k:Int, alpha:Float, aoff:Int, lda:Int, astep:Int,
+      b:Mat, boff:Int, ldb:Int, bstep:Int, beta:Float, c:Mat, coff:Int, ldc:Int, cstep:Int, nreps:Int):FMat = {
+  		blockGemm(transa, transb, nr, nc, k, alpha, aoff, lda, astep, b.asInstanceOf[FMat], boff, ldb, bstep,
+  		    beta, c.asInstanceOf[FMat], coff, ldc, cstep, nreps);
   }
 
   def solvel(a0:Mat):FMat =

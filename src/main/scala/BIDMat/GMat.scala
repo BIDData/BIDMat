@@ -722,8 +722,8 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     } else {
       (c.nrows/nblocks, c.ncols)
     }
-    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, nblocks, 0, anrows*nblocks, anrows,
-    		b, 0, bnrows*nblocks, bnrows, c, 0, cnrows*nblocks, cnrows, false);
+    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, 1f, 0, anrows*nblocks, anrows,
+    		b, 0, bnrows*nblocks, bnrows, 0f, c, 0, cnrows*nblocks, cnrows, nblocks);
     c
   }
  
@@ -819,8 +819,8 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     } else {
       (c.nrows/nblocks, c.ncols)
     }
-    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, nblocks, 0, anrows*nblocks, anrows,
-    		b, 0, bnrows*nblocks, bnrows, c, 0, cnrows*nblocks, cnrows, true);
+    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, 1f, 0, anrows*nblocks, anrows,
+    		b, 0, bnrows*nblocks, bnrows, 1f, c, 0, cnrows*nblocks, cnrows, nblocks);
     c
   }
  
@@ -1302,22 +1302,21 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     out
   }
   
-  def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, k:Int, reps:Int, aoff:Int, lda:Int, astep:Int, 
-      b:GMat, boff:Int, ldb:Int, bstep:Int, c:GMat, coff:Int, ldc:Int, cstep:Int, addC:Boolean):GMat = {
+  def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, k:Int, alpha:Float, aoff:Int, lda:Int, astep:Int, 
+      b:GMat, boff:Int, ldb:Int, bstep:Int, beta:Float, c:GMat, coff:Int, ldc:Int, cstep:Int, nreps:Int):GMat = {
     
     val ax = if (transa == 0) nc else nr;
  
     c.clear;
-    Mat.nflops += 2L * nr * nc * k * reps;
-    val beta = if (addC) 1f else 0f;
+    Mat.nflops += 2L * nr * nc * k * nreps;
 	  CUMAT.myCublasSgemmStridedBatched(getHandle, transa, transb,	
 	      nr, nc, k, 
-	      1f, 
+	      alpha, 
 	      pdata.withByteOffset(1L * Sizeof.FLOAT * aoff), lda, astep, 
 	      b.pdata.withByteOffset(1L * Sizeof.FLOAT * boff), ldb, bstep, 
 	      beta, 
 	      c.pdata.withByteOffset(1L * Sizeof.FLOAT * coff), ldc, cstep,
-	      reps);
+	      nreps);
 	  cudaStreamSynchronize(Mat.SyncMethod)
     val err = cudaGetLastError()
     if (err != 0) {
@@ -1327,10 +1326,10 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     c;
   }
   
-  override def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, k:Int, reps:Int, aoff:Int, lda:Int, astep:Int, 
-      b:Mat, boff:Int, ldb:Int, bstep:Int, c:Mat, coff:Int, ldc:Int, cstep:Int, addC:Boolean):GMat = {
-  		blockGemm(transa, transb, nr, nc, k, reps, aoff, lda, astep, b.asInstanceOf[GMat], boff, ldb, bstep, 
-  		    c.asInstanceOf[GMat], coff, ldc, cstep, addC:Boolean);
+  override def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, k:Int, alpha:Float, aoff:Int, lda:Int, astep:Int, 
+      b:Mat, boff:Int, ldb:Int, bstep:Int, beta:Float, c:Mat, coff:Int, ldc:Int, cstep:Int, nreps:Int):GMat = {
+  		blockGemm(transa, transb, nr, nc, k, alpha, aoff, lda, astep, b.asInstanceOf[GMat], boff, ldb, bstep, 
+  		    beta, c.asInstanceOf[GMat], coff, ldc, cstep, nreps);
   }
   
   override def cumsumByKey(fkeys:FMat, omat:Mat):GMat = {
