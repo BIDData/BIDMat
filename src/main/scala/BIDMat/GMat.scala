@@ -1309,13 +1309,13 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
  
     c.clear;
     Mat.nflops += 2L * nr * nc * k * reps;
-    val betap = if (addC) GMat.pONE else GMat.pZERO;
-	  cublasSgemmStridedBatched(getHandle, transa, transb,	
+    val beta = if (addC) 1f else 0f;
+	  CUMAT.myCublasSgemmStridedBatched(getHandle, transa, transb,	
 	      nr, nc, k, 
-	      GMat.pONE, 
+	      1f, 
 	      pdata.withByteOffset(1L * Sizeof.FLOAT * aoff), lda, astep, 
 	      b.pdata.withByteOffset(1L * Sizeof.FLOAT * boff), ldb, bstep, 
-	      betap, 
+	      beta, 
 	      c.pdata.withByteOffset(1L * Sizeof.FLOAT * coff), ldc, cstep,
 	      reps);
 	  cudaStreamSynchronize(Mat.SyncMethod)
