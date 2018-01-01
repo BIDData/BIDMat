@@ -1355,6 +1355,18 @@ object MatFunctions {
   /** Make a long matrix of ones of the given dimensions. */
   def lones(dims:IMat):LMat = LMat.lones(dims)
 
+  /** Make a byte matrix of zeros of the given dimensions. */
+  def bzeros(nr:Int, nc:Int):BMat = BMat.bzeros(nr,nc);
+  
+  /** Make a byte matrix of ones of the given dimensions. */
+  def bones(nr:Int, nc:Int):BMat = BMat.bones(nr, nc)
+  
+  /** Make a byte matrix of zeros of the given dimensions. */
+  def bzeros(dims:IMat):BMat = BMat.bzeros(dims)
+  
+  /** Make a byte matrix of ones of the given dimensions. */
+  def bones(dims:IMat):BMat = BMat.bones(dims)
+
   /** Make a string row vector from a list of strings. */  
   def csrow(x:List[String]):CSMat = {
     val mat = CSMat(1, x.length)
@@ -2169,7 +2181,7 @@ object MatFunctions {
   def show (image:Image):BufferedImage = image.show
   
   def show (mat:IMat):BufferedImage = {show(Image(mat))}
-  
+
   def show (mat:FMat):BufferedImage = {show(Image(mat))}
   
   def show (image:Image, title:String):BufferedImage = image.show(title)

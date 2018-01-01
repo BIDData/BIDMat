@@ -783,7 +783,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_reduceTensorFloat
 
   for (i = 0; i < p; i++) {
     int k;
-    for (int k = 0; k < m; k++) {
+    for (k = 0; k < m; k++) {
       B[k + m * i] = A[k + m * n * i];
     }
   }

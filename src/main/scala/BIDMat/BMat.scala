@@ -1430,19 +1430,19 @@ object BMat {
   def apply(a:Byte) = belem(a)
 
   
-  def lzeros(m:Int, n:Int) = {
+  def bzeros(m:Int, n:Int) = {
     val out = BMat(m,n)
     out.clear
     out
   }
   
-  def lones(m:Int, n:Int) = {
+  def bones(m:Int, n:Int) = {
     val out = BMat(m,n)
     out.set(1L)
     out
   }
   
-  def lzeros(dims:IMat) = {
+  def bzeros(dims:IMat) = {
     val out = BMat.make(dims)
     out.clear
     out

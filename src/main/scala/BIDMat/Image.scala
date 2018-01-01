@@ -204,8 +204,7 @@ object Image {
     img.setRGB(0, 0, width, height, mat.data, 0, width)
     new Image(img)
   }
-  
-  
+
   def apply(mat:FMat):Image = { 
     val dd = mat.dims.length;
     val width = if (dd > 2) mat.dims(1) else mat.dims(0);
