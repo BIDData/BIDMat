@@ -309,18 +309,18 @@ object Quaternion {
     def identity():Quaternion = {
 	val out = new Quaternion(new Array[Float](4));
 	out.data(0) = 1;
-	out.data(0) = 0;
-	out.data(0) = 0;
-	out.data(0) = 0;
+	out.data(1) = 0;
+	out.data(2) = 0;
+	out.data(3) = 0;
 	out;
     }
 
     def zero():Quaternion = {
 	val out = new Quaternion(new Array[Float](4));
 	out.data(0) = 0;
-	out.data(0) = 0;
-	out.data(0) = 0;
-	out.data(0) = 0;
+	out.data(1) = 0;
+	out.data(2) = 0;
+	out.data(3) = 0;
 	out;
     }
 
