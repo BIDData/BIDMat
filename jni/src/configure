@@ -6,7 +6,7 @@
 # $CUDA_HOME to the cuda root directory
 #
 
-VERSION="2.0.14-cuda8.0beta"
+VERSION="2.0.15-cuda8.0beta"
 DEVVERSION="dev-cuda8.0"
 # Set to one and update the path if you plan to use NVIDIA NCCL
 USE_NCCL=0
