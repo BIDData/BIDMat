@@ -46,6 +46,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
   var bdesc:cudnnTensorDescriptor = null;
   var fdesc:cudnnFilterDescriptor = null;
   var convdesc:cudnnConvolutionDescriptor = null;
+  var setBwdDataAlgo = -1;
   
   var a:GMat = null;
   @volatile var workspaceFWD:GMat = null;
@@ -199,7 +200,9 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       	if (gstatus > 0) throw new RuntimeException("Error getting best algorithm for backward data convolution %d" format gstatus);
       	bwdDataTrained = true;
       }
- 
+      if (setBwdDataAlgo >= 0)
+        bwdDataAlgo(0) = setBwdDataAlgo; //Patch 
+        
       val _workspaceSizeInBytes = new Array[Long](1);
       var wserr = cudnnGetConvolutionBackwardDataWorkspaceSize(cudnnMainHandle, fdesc, bdesc, convdesc, adesc, bwdDataAlgo(0), _workspaceSizeInBytes);
       val workspaceSizeInBytes = _workspaceSizeInBytes(0);
