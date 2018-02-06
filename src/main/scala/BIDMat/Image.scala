@@ -215,7 +215,7 @@ object Image {
     var i = 0;
     val img:BufferedImage = 
     		if (dd == 2 || mat.dims(0) == 1) {
-    			val im = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+    			val im = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
     			while (i < height*width) {
     				ints(i) = math.min(255,mdata(i).asInstanceOf[Int]) * mult;
     				i += 1;
