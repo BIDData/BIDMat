@@ -7,6 +7,8 @@ import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.RAND;
 import edu.berkeley.bid.RAND._;
 import edu.berkeley.bid.SLATEC;
+import edu.berkeley.bid.FFT;
+import edu.berkeley.bid.FFTD;
 import java.util.Random._;
 import SciState._
 import org.apache.commons.math3.special._
@@ -1027,6 +1029,50 @@ object FFunctions {
       Mat.nflops += 3L*a.nrows*a.ncols*b.nrows
       c
     }
+  };
+
+  def fft(a:FMat, omat:Mat):FMat = {
+      val b = FMat.newOrCheckFMat(a.dims, omat, a.GUID, "fft".##);
+      FFT.fwd(0, 1.0f, a.length, a.data, b.data);
+      Mat.nflops += (a.length * (math.log(a.length)/math.log(2)) * 4).toLong
+      b;
   }
-	
+
+  def fft(a:FMat):FMat = {
+      fft(a, null);
+  }
+
+  def ifft(a:FMat, omat:Mat):FMat = {
+      val b = FMat.newOrCheckFMat(a.dims, omat, a.GUID, "ifft".##);
+      FFT.bwd(0, 1.0f/a.length, a.length, a.data, b.data);
+      Mat.nflops += (a.length * (math.log(a.length)/math.log(2)) * 4).toLong
+      b;
+  }
+
+  def ifft(a:FMat):FMat = {
+      ifft(a, null);
+  }
+
+  def fft2d(a:FMat, omat:Mat):FMat = {
+      val b = FMat.newOrCheckFMat(a.dims, omat, a.GUID, "fft2d".##);
+      FFT.fwd2D(0, 1.0f, a.nrows, a.ncols, a.data, b.data);
+      Mat.nflops += (a.length * (math.log(a.length)/math.log(2)) * 4).toLong
+      b;
+  }
+
+  def fft2d(a:FMat):FMat = {
+      fft2d(a, null);
+  }
+
+  def ifft2d(a:FMat, omat:Mat):FMat = {
+      val b = FMat.newOrCheckFMat(a.dims, omat, a.GUID, "ifft2d".##);
+      FFT.bwd2D(0, 1.0f/a.length, a.nrows, a.ncols, a.data, b.data);
+      Mat.nflops += (a.length * (math.log(a.length)/math.log(2)) * 4).toLong
+      b;
+  }
+
+  def ifft2d(a:FMat):FMat = {
+      ifft2d(a, null);
+  }
+
 }

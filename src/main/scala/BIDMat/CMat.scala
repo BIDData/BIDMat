@@ -1256,7 +1256,42 @@ object CMat {
    def make(dims:IMat):CMat = {
      make(dims.data)   
   }
-   
+
+  def zeros(nr:Int, nc:Int) = {
+      val out = CMat(nr, nc);
+      out.clear;
+      out;
+  }
+
+
+  def zeros(dims:IMat) = {
+    val out = CMat.make(dims);
+    out.clear;			
+    out;
+  }
+
+  def ones(nr:Int, nc:Int) = {
+      val out = CMat(nr, nc);
+      setones(out);
+      out;
+  }
+
+  def ones(dims:IMat) = {
+    val out = CMat.make(dims);
+    setones(out);
+    out;
+  }
+
+  def setones(c:CMat) = {
+      var i = 0
+      while (i < c.length) {
+	  c.data(2*i) = 1;
+	  c.data(2*i+1) = 0;
+	  i += 1;
+      }
+      c
+  }
+
   def real(a:FMat):CMat = {
     val out = CMat.newOrCheckCMat(a.nrows, a.ncols, null, a.GUID, "real".##)
     var i = 0

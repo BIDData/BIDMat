@@ -1105,6 +1105,18 @@ object MatFunctions {
   /** Make a double matrix of ones with the given dimensions. */
   def dones(dims:IMat):DMat = DMat.ones(dims);
 
+  /** Make a complex matrix of zeros of the given dimensions. */
+  def czeros(nr:Int, nc:Int):CMat = CMat.zeros(nr, nc);
+  
+  /** Make a complex matrix of ones with the given dimensions. */
+  def cones(nr:Int, nc:Int):CMat = CMat.ones(nr, nc);
+  
+  /** Make a complex matrix of zeros of the given dimensions. */
+  def czeros(dims:IMat):CMat = CMat.zeros(dims);
+  
+  /** Make a complex matrix of ones with the given dimensions. */
+  def cones(dims:IMat):CMat = CMat.ones(dims);
+
   /** Make a float row matrix from an array of Floats. */
   def row(x:Array[Float]):FMat = {
     val ahash = if (Mat.useCache) x.## else 0

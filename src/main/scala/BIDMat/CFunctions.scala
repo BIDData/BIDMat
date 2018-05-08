@@ -7,6 +7,8 @@ import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.RAND;
 import edu.berkeley.bid.RAND._;
 import edu.berkeley.bid.SLATEC;
+import edu.berkeley.bid.FFT;
+import edu.berkeley.bid.FFTD;
 import java.util.Random._;
 import SciState._
 import org.apache.commons.math3.special._
@@ -126,4 +128,49 @@ object CFunctions {
   val vcAtanhCFun = (n:Int, x:Array[Float], y:Array[Float]) => vcAtanh(n,x,y)
   def atanh(a:CMat, out:Mat) = applyCFun(a, out, vcAtanhCFun, null, 10L)
   def atanh(a:CMat):CMat = atanh(a, null);
+
+  def fft(a:CMat, omat:Mat):CMat = {
+      val b = CMat.newOrCheckCMat(a.nrows, a.ncols, omat, a.GUID, "fft".##);
+      FFT.fwd(1, 1.0f, a.length, a.data, b.data);
+      Mat.nflops += (a.length * (math.log(a.length)/math.log(2)) * 8).toLong;
+      b;
+  }
+
+  def fft(a:CMat):CMat = {
+      fft(a, null);
+  }
+
+  def ifft(a:CMat, omat:Mat):CMat = {
+      val b = CMat.newOrCheckCMat(a.nrows, a.ncols, omat, a.GUID, "ifft".##);
+      FFT.bwd(1, 1.0f/a.length, a.length, a.data, b.data);
+      Mat.nflops += (a.length * (math.log(a.length)/math.log(2)) * 8).toLong;
+      b;
+  }
+
+  def ifft(a:CMat):CMat = {
+      ifft(a, null);
+  }
+
+  def fft2d(a:CMat, omat:Mat):CMat = {
+      val b = CMat.newOrCheckCMat(a.nrows, a.ncols, omat, a.GUID, "fft2d".##);
+      FFT.fwd2D(1, 1.0f, a.nrows, a.ncols, a.data, b.data);
+      Mat.nflops += (a.length * (math.log(a.length)/math.log(2)) * 8).toLong;
+      b;
+  }
+
+  def fft2d(a:CMat):CMat = {
+      fft2d(a, null);
+  }
+
+  def ifft2d(a:CMat, omat:Mat):CMat = {
+      val b = CMat.newOrCheckCMat(a.nrows, a.ncols, omat, a.GUID, "ifft2d".##);
+      FFT.bwd2D(1, 1.0f/a.length, a.nrows, a.ncols, a.data, b.data);
+      Mat.nflops += (a.length * (math.log(a.length)/math.log(2)) * 8).toLong;
+      b;
+  }
+
+  def ifft2d(a:CMat):CMat = {
+      ifft2d(a, null);
+  }
+
 }

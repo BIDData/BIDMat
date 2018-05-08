@@ -7,6 +7,8 @@ import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.RAND;
 import edu.berkeley.bid.RAND._;
 import edu.berkeley.bid.SLATEC;
+import edu.berkeley.bid.FFT;
+import edu.berkeley.bid.FFTD;
 import java.util.Random._;
 import SciState._;
 import org.apache.commons.math3.special._
@@ -939,5 +941,96 @@ object DFunctions {
     }
   }
 
+  def fft(a:DMat, omat:Mat):DMat = {
+      val b = DMat.newOrCheckDMat(a.dims, omat, a.GUID, "fft".##);
+      FFTD.fwd(0, 1.0f, a.length, a.data, b.data);
+      Mat.nflops += (a.length * (math.log(a.length)/math.log(2)) * 4).toLong;
+      b;
+  }
+
+  def fft(a:DMat):DMat = {
+      fft(a, null);
+  }
+
+  def ifft(a:DMat, omat:Mat):DMat = {
+      val b = DMat.newOrCheckDMat(a.dims, omat, a.GUID, "ifft".##);
+      FFTD.bwd(0, 1.0f/a.length, a.length, a.data, b.data);
+      Mat.nflops += (a.length * (math.log(a.length)/math.log(2)) * 4).toLong;
+      b;
+  }
+
+  def ifft(a:DMat):DMat = {
+      ifft(a, null);
+  }
+
+  def fft2d(a:DMat, omat:Mat):DMat = {
+      val b = DMat.newOrCheckDMat(a.dims, omat, a.GUID, "fft".##);
+      FFTD.fwd2D(0, 1.0f, a.nrows, a.ncols, a.data, b.data);
+      Mat.nflops += (a.length * (math.log(a.length)/math.log(2)) * 4).toLong;
+      b;
+  }
+
+  def fft2d(a:DMat):DMat = {
+      fft2d(a, null);
+  }
+
+  def ifft2d(a:DMat, omat:Mat):DMat = {
+      val b = DMat.newOrCheckDMat(a.dims, omat, a.GUID, "ifft".##);
+      FFTD.bwd2D(0, 1.0f/a.length, a.nrows, a.ncols, a.data, b.data);
+      Mat.nflops += (a.length * (math.log(a.length)/math.log(2)) * 4).toLong;
+      b;
+  }
+
+  def ifft2d(a:DMat):DMat = {
+      ifft2d(a, null);
+  }
+
+// Simulate double complex matrices.
+// These functions assume the matrix dimensions are 2xlen or 2*w*h
+
+  def zfft(a:DMat, omat:Mat):DMat = {
+      val b = DMat.newOrCheckDMat(a.dims, omat, a.GUID, "zfft".##);
+      Mat.nflops += (a.length * (math.log(a.length)/math.log(2)) * 8).toLong;
+      FFTD.fwd(1, 1.0f, a.length/2, a.data, b.data);
+      b;
+  }
+
+  def zfft(a:DMat):DMat = {
+      zfft(a, null);
+  }
+
+  def zifft(a:DMat, omat:Mat):DMat = {
+      val b = DMat.newOrCheckDMat(a.dims, omat, a.GUID, "zifft".##);
+      FFTD.bwd(1, 2.0f/a.length, a.length/2, a.data, b.data);
+      Mat.nflops += (a.length * (math.log(a.length)/math.log(2)) * 8).toLong;
+      b;
+  }
+
+  def zifft(a:DMat):DMat = {
+      zifft(a, null);
+  }
+
+  def zfft2d(a:DMat, omat:Mat):DMat = {
+      val b = DMat.newOrCheckDMat(a.dims, omat, a.GUID, "zfft2d".##);
+      FFTD.fwd2D(1, 1.0f, a.dims(1), a.dims(2), a.data, b.data);
+      Mat.nflops += (a.length * (math.log(a.length)/math.log(2)) * 8).toLong;
+      b;
+  }
+
+  def zfft2d(a:DMat):DMat = {
+      zfft2d(a, null);
+  }
+
+  def zifft2d(a:DMat, omat:Mat):DMat = {
+      val b = DMat.newOrCheckDMat(a.dims, omat, a.GUID, "zifft2d".##);
+      FFTD.bwd2D(1, 1.0f/a.dims(1), a.dims(1), a.dims(2), a.data, b.data);
+      Mat.nflops += (a.length * (math.log(a.length)/math.log(2)) * 8).toLong;
+      b;
+  }
+
+  def zifft2d(a:DMat):DMat = {
+      zifft2d(a, null);
+  }
 
 }
+

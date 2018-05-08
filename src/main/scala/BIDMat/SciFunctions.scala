@@ -2361,6 +2361,200 @@ object SciFunctions {
       case (aa:DMat, bb:DMat) => pow(aa, bb)
     }
   }
+
+  def fft(a:FMat, omat:Mat):FMat = {
+      FFunctions.fft(a, omat);
+  }
+
+  def fft(a:FMat):FMat = {
+      FFunctions.fft(a);
+  }
+
+  def ifft(a:FMat, omat:Mat):FMat = {
+      FFunctions.ifft(a, omat);
+  }
+
+  def ifft(a:FMat):FMat = {
+      FFunctions.ifft(a);
+  }
+
+  def fft2d(a:FMat, omat:Mat):FMat = {
+      FFunctions.fft2d(a, omat);
+  }
+
+  def fft2d(a:FMat):FMat = {
+      FFunctions.fft2d(a);
+  }
+
+  def ifft2d(a:FMat, omat:Mat):FMat = {
+      FFunctions.ifft2d(a, omat);
+  }
+
+  def ifft2d(a:FMat):FMat = {
+      FFunctions.ifft2d(a);
+  }
+  
+  def fft(a:CMat, omat:Mat):CMat = {
+      CFunctions.fft(a, omat);
+  }
+
+  def fft(a:CMat):CMat = {
+      CFunctions.fft(a);
+  }
+
+  def ifft(a:CMat, omat:Mat):CMat = {
+      CFunctions.ifft(a, omat);
+  }
+
+  def ifft(a:CMat):CMat = {
+      CFunctions.ifft(a);
+  }
+
+  def fft2d(a:CMat, omat:Mat):CMat = {
+      CFunctions.fft2d(a, omat);
+  }
+
+  def fft2d(a:CMat):CMat = {
+      CFunctions.fft2d(a);
+  }
+
+  def ifft2d(a:CMat, omat:Mat):CMat = {
+      CFunctions.ifft2d(a, omat);
+  }
+
+  def ifft2d(a:CMat):CMat = {
+      CFunctions.ifft2d(a);
+  }
+
+  def fft(a:DMat, omat:Mat):DMat = {
+      DFunctions.fft(a, omat);
+  }
+
+  def fft(a:DMat):DMat = {
+      DFunctions.fft(a);
+  }
+
+  def ifft(a:DMat, omat:Mat):DMat = {
+      DFunctions.ifft(a, omat);
+  }
+
+  def ifft(a:DMat):DMat = {
+      DFunctions.ifft(a);
+  }
+
+  def fft2d(a:DMat, omat:Mat):DMat = {
+      DFunctions.fft2d(a, omat);
+  }
+
+  def fft2d(a:DMat):DMat = {
+      DFunctions.fft2d(a);
+  }
+
+  def ifft2d(a:DMat, omat:Mat):DMat = {
+      DFunctions.ifft2d(a, omat);
+  }
+
+  def ifft2d(a:DMat):DMat = {
+      DFunctions.ifft2d(a);
+  }
+  
+  def zfft(a:DMat, omat:Mat):DMat = {
+      DFunctions.zfft(a, omat);
+  }
+
+  def zfft(a:DMat):DMat = {
+      DFunctions.zfft(a);
+  }
+
+  def zifft(a:DMat, omat:Mat):DMat = {
+      DFunctions.zifft(a, omat);
+  }
+
+  def zifft(a:DMat):DMat = {
+      DFunctions.zifft(a);
+  }
+
+  def zfft2d(a:DMat, omat:Mat):DMat = {
+      DFunctions.zfft2d(a, omat);
+  }
+
+  def zfft2d(a:DMat):DMat = {
+      DFunctions.zfft2d(a);
+  }
+
+  def zifft2d(a:DMat, omat:Mat):DMat = {
+      DFunctions.zifft2d(a, omat);
+  }
+
+  def zifft2d(a:DMat):DMat = {
+      DFunctions.zifft2d(a);
+  }
+
+  def fft(a:Mat):Mat = {
+      a match {
+      case aa:CMat => CFunctions.fft(aa);
+      case aa:FMat => FFunctions.fft(aa);
+      case aa:DMat => DFunctions.fft(aa);
+      }
+  }
+
+  def fft(a:Mat, omat:Mat):Mat = {
+      a match {
+      case aa:CMat => CFunctions.fft(aa, omat);
+      case aa:FMat => FFunctions.fft(aa, omat);
+      case aa:DMat => DFunctions.fft(aa, omat);
+      }
+  }
+
+  def ifft(a:Mat):Mat = {
+      a match {
+      case aa:CMat => CFunctions.ifft(aa);
+      case aa:FMat => FFunctions.ifft(aa);
+      case aa:DMat => DFunctions.ifft(aa);
+      }
+  }
+
+  def ifft(a:Mat, omat:Mat):Mat = {
+      a match {
+      case aa:CMat => CFunctions.ifft(aa, omat);
+      case aa:FMat => FFunctions.ifft(aa, omat);
+      case aa:DMat => DFunctions.ifft(aa, omat);
+      }
+  }
+
+    def fft2d(a:Mat):Mat = {
+      a match {
+      case aa:CMat => CFunctions.fft2d(aa);
+      case aa:FMat => FFunctions.fft2d(aa);
+      case aa:DMat => DFunctions.fft2d(aa);
+      }
+  }
+
+  def fft2d(a:Mat, omat:Mat):Mat = {
+      a match {
+      case aa:CMat => CFunctions.fft2d(aa, omat);
+      case aa:FMat => FFunctions.fft2d(aa, omat);
+      case aa:DMat => DFunctions.fft2d(aa, omat);
+      }
+  }
+
+  def ifft2d(a:Mat):Mat = {
+      a match {
+      case aa:CMat => CFunctions.ifft2d(aa);
+      case aa:FMat => FFunctions.ifft2d(aa);
+      case aa:DMat => DFunctions.ifft2d(aa);
+      }
+  }
+
+  def ifft2d(a:Mat, omat:Mat):Mat = {
+      a match {
+      case aa:CMat => CFunctions.ifft2d(aa, omat);
+      case aa:FMat => FFunctions.ifft2d(aa, omat);
+      case aa:DMat => DFunctions.ifft2d(aa, omat);
+      }
+  }
+
+
 }
 
 
