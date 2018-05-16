@@ -6,7 +6,7 @@
   <groupId>BIDMat</groupId>
   <artifactId>BIDMat</artifactId>
   <packaging>jar</packaging>
-  <version>2.0.16-cuda8.0beta</version>
+  <version>2.0.17-cuda8.0beta</version>
   <name>BIDMat</name>
   <description>BIDMat performs matrix operations</description>
   <properties>

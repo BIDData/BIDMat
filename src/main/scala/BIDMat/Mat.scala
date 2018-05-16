@@ -626,6 +626,8 @@ object Mat {
     fileLogger;
   }
 
+  var logger:Logger = consoleLogger;
+  
   final val SyncMethod = jcuda.runtime.JCuda.cudaStreamPerThread;
 //  final val SyncMethod = jcuda.runtime.JCuda.cudaStreamLegacy;
   
