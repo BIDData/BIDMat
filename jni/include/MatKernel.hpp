@@ -349,7 +349,9 @@ int inclusive_scan_by_key_fl_min(float *fvals, long long *fkeys, float *fout, lo
 
 int reverse(float *fvals, float *fout, long long len);
 
-int float_inner_product(float *A, float *B, float *C, int len);
+int inner_product(float *A, float *B, float *C, int len);
+
+int inner_product(double *A, double *B, double *C, int len);
 
 /* Functions from SLATEC */
 

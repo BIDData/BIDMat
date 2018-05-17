@@ -845,7 +845,7 @@ extern "C" {
 
     if (ncols == 1) {
       if (opb == 2 && opr == 0) {
-        return float_inner_product(A, B, C, nrows);
+        return inner_product(A, B, C, nrows);
       }
     }      
 
@@ -859,6 +859,12 @@ extern "C" {
     double *B = (double*)getPointer(env, jB);
     double *C = (double*)getPointer(env, jC);
 
+    if (ncols == 1) {
+      if (opb == 2 && opr == 0) {
+        return inner_product(A, B, C, nrows);
+      }
+    }      
+
     return reducebin1op(nrows, ncols, A, B, C, opb, opr);
   }
 
@@ -869,6 +875,12 @@ extern "C" {
     float *B = (float*)getPointer(env, jB);
     float *C = (float*)getPointer(env, jC);
 
+    if (nrows == 1) {
+      if (opb == 2 && opr == 0) {
+        return inner_product(A, B, C, ncols);
+      }
+    }      
+
     return reducebin2op(nrows, ncols, A, B, C, opb, opr);
   }
 
@@ -878,6 +890,12 @@ extern "C" {
     double *A = (double*)getPointer(env, jA);
     double *B = (double*)getPointer(env, jB);
     double *C = (double*)getPointer(env, jC);
+
+    if (nrows == 1) {
+      if (opb == 2 && opr == 0) {
+        return inner_product(A, B, C, ncols);
+      }
+    }      
 
     return reducebin2op(nrows, ncols, A, B, C, opb, opr);
   }

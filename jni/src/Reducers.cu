@@ -1058,7 +1058,7 @@ int reverse(float *fvals, float *fout, long long len) {
   return err;
 }
 
-int float_inner_product(float *A, float *B, float *C, int len) {
+int inner_product(float *A, float *B, float *C, int len) {
   thrust::device_ptr<float> pa(A);
   thrust::device_ptr<float> pb(B);
   float x = thrust::inner_product(pa, pa+len, pb, 0.0f);
@@ -1067,7 +1067,7 @@ int float_inner_product(float *A, float *B, float *C, int len) {
 
 int set_val(double *A, double val, int length);
 
-int double_inner_product(double *A, double *B, double *C, int len) {
+int inner_product(double *A, double *B, double *C, int len) {
   thrust::device_ptr<double> pa(A);
   thrust::device_ptr<double> pb(B);
   double x = thrust::inner_product(pa, pa+len, pb, 0.0f);
