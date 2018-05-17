@@ -349,8 +349,11 @@ int inclusive_scan_by_key_fl_min(float *fvals, long long *fkeys, float *fout, lo
 
 int reverse(float *fvals, float *fout, long long len);
 
+int float_inner_product(float *A, float *B, float *C, int len);
+
 /* Functions from SLATEC */
 
 int slatec_gfun(float *A, float *B, int N, int opn);
 
 int slatec_gfun2(int nrows, int ncols, float *A, int ar, int ac, float *B, int br, int bc, float *C, int cc, int opn);
+

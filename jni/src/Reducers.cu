@@ -12,6 +12,7 @@
 #include <thrust/iterator/reverse_iterator.h>
 #include <thrust/device_vector.h>
 #include <thrust/sort.h>
+#include <thrust/inner_product.h>
 
 #if __CUDA_ARCH__ > 200
 #define MAXXGRID 2147483647
@@ -1057,3 +1058,18 @@ int reverse(float *fvals, float *fout, long long len) {
   return err;
 }
 
+int float_inner_product(float *A, float *B, float *C, int len) {
+  thrust::device_ptr<float> pa(A);
+  thrust::device_ptr<float> pb(B);
+  float x = thrust::inner_product(pa, pa+len, pb, 0.0f);
+  return set_val(C, x, 1);
+}
+
+int set_val(double *A, double val, int length);
+
+int double_inner_product(double *A, double *B, double *C, int len) {
+  thrust::device_ptr<double> pa(A);
+  thrust::device_ptr<double> pb(B);
+  double x = thrust::inner_product(pa, pa+len, pb, 0.0f);
+  return set_val(C, x, 1);
+}

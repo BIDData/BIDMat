@@ -6,7 +6,6 @@
 #include "PointerUtils.hpp"
 #include "MatKernel.hpp"
 
-
 extern "C" {
 
   JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
@@ -843,6 +842,12 @@ extern "C" {
     float *A = (float*)getPointer(env, jA);
     float *B = (float*)getPointer(env, jB);
     float *C = (float*)getPointer(env, jC);
+
+    if (ncols == 1) {
+      if (opb == 2 && opr == 0) {
+        return float_inner_product(A, B, C, nrows);
+      }
+    }      
 
     return reducebin1op(nrows, ncols, A, B, C, opb, opr);
   }

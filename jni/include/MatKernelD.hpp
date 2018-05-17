@@ -154,3 +154,5 @@ int inclusive_scan_by_key_dd(double *fvals, double *fkeys, double *fout, long lo
 int inclusive_scan_by_key_ll(long long *fvals, long long *fkeys, long long *fout, long long len);
 
 int reverse(double *fvals, double *fout, long long len);
+
+int double_inner_product(double *A, double *B, double *C, int len);
