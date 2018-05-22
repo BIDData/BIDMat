@@ -1,0 +1,195 @@
+:silent
+    
+val niter = 100000;
+
+val n = 10000;
+
+val xmax = 40.0f;
+
+val lrate = 200f;
+
+val sigmamin = 0.3;
+val sigmamax = 3;
+
+val nsigma = 200;
+
+val sigmas = sigmamin * exp(row(0->nsigma) * ln(sigmamax/sigmamin) / (nsigma-1));
+
+val sigmaTable = dzeros(nsigma, 2*n+4);
+val ebest = dzeros(nsigma, 1);
+
+val sigSchedule = (
+   0.06 \ 0.8 on
+   0.1 \ 0.79 on 
+   0.2 \ 0.77 on
+   0.3 \ 0.76 on 
+   0.4 \ 0.75 on
+   0.5 \ 0.74 on 
+   0.6 \ 0.71 on
+   0.7 \ 0.67 on 
+   0.8 \ 0.62 on
+   0.9 \ 0.55 on 
+   0.95 \ 0.5 );
+
+def sigCorrection(accept:Double) = { 
+  var i = 0;
+  while (i + 2 < sigSchedule.nrows && sigSchedule(i+1,0) < accept) { 
+    i += 1;
+  }
+  val alpha = (accept - sigSchedule(i, 0)) / (sigSchedule(i+1,0) - sigSchedule(i, 0));
+  alpha * sigSchedule(i+1, 1) + (1-alpha) * sigSchedule(i, 1);
+}
+
+def sigma0(accept:Double) = { 
+  val xn = normcdfinv(drow(accept));
+  (exp(-xn*xn/2) * math.sqrt(2 / scala.math.Pi) / accept).v;
+}
+
+def acceptfn(sigma:Double) = { 
+  val epsilon = 1e-8;
+  var upper = 0.95;
+  var lower = 0.05;
+  var guess = 0.0;
+  while (upper - lower > epsilon) { 
+    guess = (upper+lower)/2;
+    if (sigma0(guess) * sigCorrection(guess) < sigma) { 
+      upper = guess;
+    } else { 
+      lower = guess;
+    }
+  }
+  guess
+}
+
+for (isigma <- 0 until nsigma) { 
+
+val sigma = sigmas(isigma);
+
+val accept = acceptfn(sigma);
+
+val sigma0 = sigma / sigCorrection(accept);
+
+val alpha = if (accept <= 0.5f) 50.0 else 100.0;
+
+val q = -math.log(2)/math.log(accept);
+
+val lambda = 1e-7;
+
+var bestcumerr = 1.0;
+
+val epsilon = 1f;
+
+val pstep = 10000;
+
+val x = xmax / n * drow(-n to n);
+
+val xf = xmax / n * (drow(0 to n) \ drow(-n until 0));
+
+def distVariance(f:DMat, x:DMat) = {
+    val meanv = (f dotr x) / sum(f);
+    val meansq = ((x *@ x) dotr f) /sum(f);
+    (meansq - meanv*meanv).v
+    //    meansq - meanv *@ meanv;
+};
+
+def func1(q:Double, x:DMat) = exp(x/2) / ((2 * cosh(x * q / 2)) ^ (1f/q));
+
+def deriv1(q:Double, x:DMat) = 0.5f*func1(q, x)*@(1f-tanh(q/2*x));
+
+def normfn(x:DMat, sigma:Double) = xmax*2/n/sqrt(2*scala.math.Pi * sigma) * exp(-x *@ x / (2 * sigma * sigma));
+
+def cmult(a:DMat, b:DMat) = {
+    (a(0,?) *@ b(0,?) - a(1,?) *@ b(1,?)) on
+    (a(0,?) *@ b(1,?) + a(1,?) *@ b(0,?))
+}
+
+def dofft(a:DMat, filter:DMat) = {
+    val za = zfft(a on dzeros(1, a.length));
+    val res = zifft(cmult(za, filter));
+    res(0,?);
+}
+
+val target = deriv1(q, x);
+
+target ~ target / sum(target);
+
+// val target = func1(q, x);
+
+// target ~ target / target(0, target.length-1);
+
+val tvar = distVariance(target, x);
+
+print("sigma=%4.3f, sigma0=%4.3f, accept = %6.5f" format (sigma, sigma0, accept))
+
+val filter = normfn(xf, sigma);
+
+val filterm = normfn(x, sigma);
+
+val fwdfilter = zfft(filter on dzeros(1, filter.length));
+
+val bwdfilter = dones(1, 2*n+1)/(fwdfilter + epsilon);
+
+val vx = dzeros(1, 2*n+1);
+
+vx.set(-8f);
+
+val density = exp(vx);
+
+val preds = dzeros(1, 2*n+1);
+
+val bestmodel = dzeros(1, 2*n+1);
+    
+def fwd() = {
+    density <-- exp(vx);
+    preds <-- dofft(density, fwdfilter);
+    val diff = preds - target;
+    diff + alpha / n * cumsum(diff);
+}
+
+def bwd() = {
+    val c = fwd();
+    (c + lambda);
+};
+
+var dvsq = dones(1, 2*n+1);
+var iter = 0;
+while (iter <= niter) {
+  val dvx = bwd();
+  //  dvsq = 0.99f * dvsq + 0.01f * dvx *@ dvx;
+  //  preds ~ preds * (sum(target)/sum(preds));
+  val diff = preds - target;
+  val cumerr = maxi(abs(cumsum(diff))).v;
+  if (cumerr < bestcumerr) { 
+    bestcumerr = cumerr;
+    bestmodel <-- vx;
+  }
+  vx ~ vx - (lrate * dvx);
+  if (iter % pstep == 0) {
+//      println("iter %d err = %9.8f, cumerr = %7.6f" format (iter, maxi(abs(diff)).v, cumerr));
+    print(".");
+  }
+  iter += 1;
+}
+
+vx <-- bestmodel;
+ebest(isigma) = bestcumerr;
+fwd();
+val diff = preds - target;
+val cumerr = maxi(abs(cumsum(diff))).v;
+println(", err = %9.8f, cumerr = %7.6f" format (maxi(abs(diff)).v, cumerr));
+
+sigmaTable(isigma, ?) = drow(sigma,-xmax,xmax) \ (cumsum(density) / sum(density));
+
+}
+
+//vx ~ vx + ln(sum(target)/sum(preds));
+
+//fwd();
+
+:silent
+    
+val ksdiv = maxi(abs(cumsum(preds - target)))/sum(target)
+
+val sharpness = mean(density *@ density) / (mean(density) ^ 2);
+
+saveDMat("sigmaN%d_M%d.dmat.lz4" format (nsigma, n), sigmaTable);
