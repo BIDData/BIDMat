@@ -1,22 +1,55 @@
 :silent
     
+// Compute a table of acceptance probabilities for smooth metropolis hastings testing. 
+// Outputs a matrix "sigmaTable" in the current directory, which contains the probabilities. 
+//
+// The rows of sigmaTable are comprised:
+//    sigma, xmin, xmax, accept(xmin, sigma), accept(xmin + deltaX, sigma) .... accept(xmax, sigma)
+//
+// where deltaX = (xmax - xmin)/(sigmaTable.nrows - 2)
+//
+// And where 
+//   sigma is the standard deviation of the log probability ratio for a minibatch
+//   x is the log probability ratio
+//   xmin and xmax are the min and max values of x. 
+//
+
+// Number of iterations to run for deconvolution.
 val niter = 100000;
 
+// Resolution of the table (half the number of columns). 
 val n = 10000;
 
+// Maximum x value, also negative of the minimum value.
 val xmax = 40.0f;
 
+// Learning rate for deconvolution.
 val lrate = 200f;
 
+// Range of sigma values for the table.
 val sigmamin = 0.3;
 val sigmamax = 3;
 
+// Resolution in sigma for the table. 
 val nsigma = 200;
 
+// Regularization constant (for L2 regularization) for backward gradient. 
+val lambda = 1e-7;
+
+// Another regularizer for backward filter (not currently used). 
+val epsilon = 1f;
+
+// Space the sigma values out geometrically
 val sigmas = sigmamin * exp(row(0->nsigma) * ln(sigmamax/sigmamin) / (nsigma-1));
 
+// The table to save, and the accuracy for each row. 
 val sigmaTable = dzeros(nsigma, 2*n+4);
 val ebest = dzeros(nsigma, 1);
+
+// Need to reduce the actual deconvolution gaussian sigma from the theoretical value. 
+// This matrix contains correction factors. 
+// The left column lists acceptance values. The right is a correction value c, such that
+// actual sigma = c * predicted sigma. 
 
 val sigSchedule = (
    0.06 \ 0.8 on
@@ -31,6 +64,7 @@ val sigSchedule = (
    0.9 \ 0.55 on 
    0.95 \ 0.5 );
 
+// Look up the correction for a given acceptance value (interpolate the table above)
 def sigCorrection(accept:Double) = { 
   var i = 0;
   while (i + 2 < sigSchedule.nrows && sigSchedule(i+1,0) < accept) { 
@@ -40,11 +74,15 @@ def sigCorrection(accept:Double) = {
   alpha * sigSchedule(i+1, 1) + (1-alpha) * sigSchedule(i, 1);
 }
 
+// Compute the theoretical sigma at a given acceptance rate. Assumes the positive part of the graph is 
+// a normal CDF. The actual sigma will be less than this by the correction above. 
 def sigma0(accept:Double) = { 
   val xn = normcdfinv(drow(accept));
   (exp(-xn*xn/2) * math.sqrt(2 / scala.math.Pi) / accept).v;
 }
 
+// Invert the map from acceptance to sigma. Given a sigma value, use binary search to find
+// the acceptance ratio. Includes the correction factor above. 
 def acceptfn(sigma:Double) = { 
   val epsilon = 1e-8;
   var upper = 0.95;
@@ -61,6 +99,7 @@ def acceptfn(sigma:Double) = {
   guess
 }
 
+// Loop over sigma values (rows of the table)
 for (isigma <- 0 until nsigma) { 
 
 val sigma = sigmas(isigma);
@@ -69,20 +108,25 @@ val accept = acceptfn(sigma);
 
 val sigma0 = sigma / sigCorrection(accept);
 
+// alpha weights the CDF loss relative to the PDF loss.
 val alpha = if (accept <= 0.5f) 50.0 else 100.0;
 
+// Give acceptance rate, compute the p-norm in the base (pre-deconvolution) acceptance function.
+// The acceptance function is 
+//
+//        exp(-x/2)/||exp(-x/2),exp(x/2)||^q
+//
 val q = -math.log(2)/math.log(accept);
-
-val lambda = 1e-7;
 
 var bestcumerr = 1.0;
 
-val epsilon = 1f;
-
+// When to print
 val pstep = 10000;
 
+// Normal range of x
 val x = xmax / n * drow(-n to n);
 
+// Wrapped range of x, used for FFT filters so they dont displace the input. 
 val xf = xmax / n * (drow(0 to n) \ drow(-n until 0));
 
 def distVariance(f:DMat, x:DMat) = {
@@ -92,104 +136,102 @@ def distVariance(f:DMat, x:DMat) = {
     //    meansq - meanv *@ meanv;
 };
 
+// The original acceptance function.
 def func1(q:Double, x:DMat) = exp(x/2) / ((2 * cosh(x * q / 2)) ^ (1f/q));
 
+// Its derivative.
 def deriv1(q:Double, x:DMat) = 0.5f*func1(q, x)*@(1f-tanh(q/2*x));
 
+// The normal distribution used for deconvolution
 def normfn(x:DMat, sigma:Double) = xmax*2/n/sqrt(2*scala.math.Pi * sigma) * exp(-x *@ x / (2 * sigma * sigma));
 
+// Explicit complex multiply with "ZMats". ZMat doesnt exist, so use two rows of DMat. 
 def cmult(a:DMat, b:DMat) = {
     (a(0,?) *@ b(0,?) - a(1,?) *@ b(1,?)) on
     (a(0,?) *@ b(1,?) + a(1,?) *@ b(0,?))
 }
 
+// Double complex FFT
 def dofft(a:DMat, filter:DMat) = {
     val za = zfft(a on dzeros(1, a.length));
     val res = zifft(cmult(za, filter));
     res(0,?);
 }
 
+// Target function, the PDF of the acceptance distribution.
 val target = deriv1(q, x);
 
 target ~ target / sum(target);
 
-// val target = func1(q, x);
-
-// target ~ target / target(0, target.length-1);
-
-val tvar = distVariance(target, x);
+val tvar = distVariance(target, x);  // Actual variance of the distribution.
 
 print("sigma=%4.3f, sigma0=%4.3f, accept = %6.5f" format (sigma, sigma0, accept))
 
-val filter = normfn(xf, sigma);
+val filter = normfn(xf, sigma);      // The filter centered at the ends of the vector.
 
-val filterm = normfn(x, sigma);
+val filterm = normfn(x, sigma);      // The filter centered in the vector.
 
-val fwdfilter = zfft(filter on dzeros(1, filter.length));
+val fwdfilter = zfft(filter on dzeros(1, filter.length)); // The FFT of the filter.
 
+// Not currently used
 val bwdfilter = dones(1, 2*n+1)/(fwdfilter + epsilon);
 
-val vx = dzeros(1, 2*n+1);
+val vx = dzeros(1, 2*n+1);           // The log of the deconvolved density.
 
 vx.set(-8f);
 
 val density = exp(vx);
 
-val preds = dzeros(1, 2*n+1);
+val preds = dzeros(1, 2*n+1);       // Placeholder for the convolution output.
 
-val bestmodel = dzeros(1, 2*n+1);
+val bestmodel = dzeros(1, 2*n+1);   // Holds the best model.
     
-def fwd() = {
+// Fwd function, exp(vx), then convolve with filter, take difference with target, mix with CDF loss.
+def fwd() = {                       
     density <-- exp(vx);
     preds <-- dofft(density, fwdfilter);
     val diff = preds - target;
     diff + alpha / n * cumsum(diff);
 }
 
+// Well, The forward function has a strong identity term, and is otherwise very smooth. 
+// Most true inverses or deconv functions for the backward step are extremely ill-conditioned and perform poorly. 
+// So use this trivial approximation. 
 def bwd() = {
     val c = fwd();
     (c + lambda);
 };
 
-var dvsq = dones(1, 2*n+1);
+// The main deconvolution iteration
 var iter = 0;
 while (iter <= niter) {
-  val dvx = bwd();
-  //  dvsq = 0.99f * dvsq + 0.01f * dvx *@ dvx;
-  //  preds ~ preds * (sum(target)/sum(preds));
-  val diff = preds - target;
-  val cumerr = maxi(abs(cumsum(diff))).v;
-  if (cumerr < bestcumerr) { 
+  val dvx = bwd();                               // Get a backward gradient.
+  val diff = preds - target;                     // Get the prediction residual.
+  val cumerr = maxi(abs(cumsum(diff))).v;        // Compute CDF error.
+  if (cumerr < bestcumerr) {                     // If the error is lowest, update the best model and error. 
     bestcumerr = cumerr;
     bestmodel <-- vx;
   }
-  vx ~ vx - (lrate * dvx);
+  vx ~ vx - (lrate * dvx);                       // Apply the derivative.
   if (iter % pstep == 0) {
-//      println("iter %d err = %9.8f, cumerr = %7.6f" format (iter, maxi(abs(diff)).v, cumerr));
     print(".");
   }
   iter += 1;
 }
 
+// Restore the best model
 vx <-- bestmodel;
 ebest(isigma) = bestcumerr;
 fwd();
 val diff = preds - target;
 val cumerr = maxi(abs(cumsum(diff))).v;
-println(", err = %9.8f, cumerr = %7.6f" format (maxi(abs(diff)).v, cumerr));
+val sharpness = (mean(density *@ density) / (mean(density) ^ 2)).v;
+println(", err = %9.8f, cumerr = %7.6f, sharpness=%3.2f" format (maxi(abs(diff)).v, cumerr, sharpness));
 
 sigmaTable(isigma, ?) = drow(sigma,-xmax,xmax) \ (cumsum(density) / sum(density));
 
 }
 
-//vx ~ vx + ln(sum(target)/sum(preds));
-
-//fwd();
-
 :silent
-    
-val ksdiv = maxi(abs(cumsum(preds - target)))/sum(target)
-
-val sharpness = mean(density *@ density) / (mean(density) ^ 2);
 
 saveDMat("sigmaN%d_M%d.dmat.lz4" format (nsigma, n), sigmaTable);
