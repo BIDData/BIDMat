@@ -1540,7 +1540,7 @@ object SciFunctions {
   	var isched = 0;
   	while (i < npoints) {
   		val vv = i*1.0f/npoints;
-  		while (isched+1 < schedule.nrows && vv > schedule(isched+1, 0)) {
+  		while (isched+2 < schedule.nrows && vv > schedule(isched+1, 0)) {
   			isched += 1;
   		}
   		val frac = (vv - schedule(isched, 0))/(schedule(isched+1, 0)-schedule(isched, 0));
@@ -1556,7 +1556,7 @@ object SciFunctions {
   	var isched = 0;
   	while (i < npoints) {
   		val vv = i*1.0f/npoints;
-  		while (isched+1 < schedule.nrows && vv > schedule(isched+1, 0)) {
+  		while (isched+2 < schedule.nrows && vv > schedule(isched+1, 0)) {
   			isched += 1;
   		}
   		val frac = (vv - schedule(isched, 0))/(schedule(isched+1, 0)-schedule(isched, 0));
