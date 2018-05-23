@@ -15,8 +15,8 @@
 //
 
 // Resolution in sigma for the table. 
- //val nsigma = 200;
-val nsigma = 10;
+val nsigma = 280;
+//val nsigma = 10;
 
 // Resolution of the table (half the number of columns). 
 val n = 10000;
@@ -31,7 +31,7 @@ val xmax = 40.0f;
 val lrate = 200f;
 
 // Range of sigma values for the table.
-val sigmamin = 0.3;
+val sigmamin = 0.2;
 val sigmamax = 3;
 
 // Regularization constant (for L2 regularization) for backward gradient. 
@@ -154,7 +154,7 @@ val sigma0 = sigma / sigCorrection(accept);
 
 val alpha0 = isigma * 1.0 / nsigma;
 
-val alpha = alpha0 * 30f + (1-alpha0) * 90f;
+val alpha = alpha0 * 30f + (1-alpha0) * 100f;
 
 // Give acceptance rate, compute the p-norm in the base (pre-deconvolution) acceptance function.
 // The acceptance function is 
@@ -172,7 +172,7 @@ target ~ target / sum(target);
 
 val tvar = distVariance(target, x);  // Actual variance of the distribution.
 
-print("sigma=%4.3f, sigma0=%4.3f, accept = %6.5f" format (sigma, sigma0, accept))
+print("sigma=%5.4f, sigma0=%5.4f, accept = %6.5f" format (sigma, sigma0, accept))
 
 val filter = normfn(xf, sigma);      // The filter centered at the ends of the vector.
 
