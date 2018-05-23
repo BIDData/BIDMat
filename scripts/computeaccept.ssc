@@ -14,11 +14,15 @@
 //   xmin and xmax are the min and max values of x. 
 //
 
-// Number of iterations to run for deconvolution.
-val niter = 100000;
+// Resolution in sigma for the table. 
+ //val nsigma = 200;
+val nsigma = 10;
 
 // Resolution of the table (half the number of columns). 
 val n = 10000;
+
+// Number of iterations to run for deconvolution.
+val niter = 100000;
 
 // Maximum x value, also negative of the minimum value.
 val xmax = 40.0f;
@@ -30,14 +34,14 @@ val lrate = 200f;
 val sigmamin = 0.3;
 val sigmamax = 3;
 
-// Resolution in sigma for the table. 
-val nsigma = 200;
-
 // Regularization constant (for L2 regularization) for backward gradient. 
 val lambda = 1e-7;
 
 // Another regularizer for backward filter (not currently used). 
 val epsilon = 1f;
+
+// When to print
+val pstep = 10000;
 
 // Space the sigma values out geometrically
 val sigmas = sigmamin * exp(row(0->nsigma) * ln(sigmamax/sigmamin) / (nsigma-1));
@@ -54,7 +58,7 @@ val ebest = dzeros(nsigma, 1);
 val sigSchedule = (
    0.06 \ 0.8 on
    0.1 \ 0.79 on 
-   0.2 \ 0.77 on
+   0.2 \ 0.774 on
    0.3 \ 0.76 on 
    0.4 \ 0.75 on
    0.5 \ 0.74 on 
@@ -99,30 +103,6 @@ def acceptfn(sigma:Double) = {
   guess
 }
 
-// Loop over sigma values (rows of the table)
-for (isigma <- 0 until nsigma) { 
-
-val sigma = sigmas(isigma);
-
-val accept = acceptfn(sigma);
-
-val sigma0 = sigma / sigCorrection(accept);
-
-// alpha weights the CDF loss relative to the PDF loss.
-val alpha = if (accept <= 0.5f) 50.0 else 100.0;
-
-// Give acceptance rate, compute the p-norm in the base (pre-deconvolution) acceptance function.
-// The acceptance function is 
-//
-//        exp(-x/2)/||exp(-x/2),exp(x/2)||^q
-//
-val q = -math.log(2)/math.log(accept);
-
-var bestcumerr = 1.0;
-
-// When to print
-val pstep = 10000;
-
 // Normal range of x
 val x = xmax / n * drow(-n to n);
 
@@ -157,6 +137,33 @@ def dofft(a:DMat, filter:DMat) = {
     val res = zifft(cmult(za, filter));
     res(0,?);
 }
+
+    
+
+// Loop over sigma values (rows of the table)
+for (isigma <- 0 until nsigma) { 
+
+val sigma = sigmas(isigma);
+
+val accept = acceptfn(sigma);
+
+val sigma0 = sigma / sigCorrection(accept);
+
+// alpha weights the CDF loss relative to the PDF loss.
+//val alpha = if (accept <= 0.65f) 50.0 else 100.0;
+
+val alpha0 = isigma * 1.0 / nsigma;
+
+val alpha = alpha0 * 30f + (1-alpha0) * 90f;
+
+// Give acceptance rate, compute the p-norm in the base (pre-deconvolution) acceptance function.
+// The acceptance function is 
+//
+//        exp(-x/2)/||exp(-x/2),exp(x/2)||^q
+//
+val q = -math.log(2)/math.log(accept);
+
+var bestcumerr = 1.0;
 
 // Target function, the PDF of the acceptance distribution.
 val target = deriv1(q, x);
@@ -234,4 +241,4 @@ sigmaTable(isigma, ?) = drow(sigma,-xmax,xmax) \ (cumsum(density) / sum(density)
 
 :silent
 
-saveDMat("sigmaN%d_M%d.dmat.lz4" format (nsigma, n), sigmaTable);
+saveDMat("sigmaN%d_M%d_v2.dmat.lz4" format (nsigma, n), sigmaTable);
