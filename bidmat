@@ -15,7 +15,8 @@ fi
 BIDMAT_ROOT=`dirname "$BIDMAT_ROOT"`
 pushd "${BIDMAT_ROOT}" > /dev/null
 BIDMAT_ROOT=`pwd -P`
-BIDMAT_ROOT="$( echo ${BIDMAT_ROOT} | sed 's+/cygdrive/\(.\)+\1:+' )"
+BIDMAT_ROOT0="$( echo ${BIDMAT_ROOT} | sed 's+^/cygdrive/\(.\)+\1:+' )"
+BIDMAT_ROOT="$( echo ${BIDMAT_ROOT0} | sed 's+^/mnt/\(.\)+\1:+' )"
 LIBDIR=${BIDMAT_ROOT}/lib
 
 LOGGING_CONF="${BIDMAT_ROOT}/conf/logging.conf"
@@ -98,5 +99,5 @@ if [ "$1" = "notebook" ]; then
     fi
     ipython notebook --profile=scala --KernelManager.kernel_cmd="$KERNEL_CMD"
 else
-    ${BIDMAT_ROOT}/scripts/scala/scala -Dscala.repl.maxprintstring=8000 ${userargs} -nobootcp -toolcp "${ALL_LIBS}" -cp "${ALL_LIBS}" -Yrepl-sync -i ${LIBDIR}/bidmat_init.scala ${1}
+    ${BIDMAT_ROOT0}/scripts/scala/scala -Dscala.repl.maxprintstring=8000 ${userargs} -nobootcp -toolcp "${ALL_LIBS}" -cp "${ALL_LIBS}" -Yrepl-sync -i ${LIBDIR}/bidmat_init.scala ${1}
 fi
