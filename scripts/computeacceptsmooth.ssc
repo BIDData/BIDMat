@@ -15,8 +15,7 @@
 //
 
 // Resolution in sigma for the table. 
-val nsigma = 28;
-//val nsigma = 10;
+val nsigma = 280;
 
 // Resolution of the table (half the number of columns). 
 val n = 10000;
@@ -32,7 +31,7 @@ val lrate = 200f;
 
 // Range of sigma values for the table.
 val sigmamin = 0.2;
-val sigmamax = 3;
+val sigmamax = 3.0;
 
 // Regularization constant (for L2 regularization) for backward gradient. 
 val lambda = 1e-7;
@@ -56,18 +55,17 @@ val ebest = dzeros(nsigma, 1);
 // actual sigma = c * predicted sigma. 
 
 val sigSchedule = (
-   0.06 \ 0.8 on
-   0.1 \ 0.79 on
-   0.2 \ 0.774 on
-   0.3 \ 0.76 on
-   0.4 \ 0.75 on
-   0.5 \ 0.74 on
-   0.6 \ 0.71 on
-   0.7 \ 0.67 on
-   0.8 \ 0.62 on
-   0.9 \ 0.55 on
-   0.95 \ 0.5 );
-				 
+   0.05 \ 0.8 on
+   0.1 \ 0.70 on 
+   0.2 \ 0.68 on
+   0.3 \ 0.66 on 
+   0.4 \ 0.65 on
+   0.5 \ 0.63 on 
+   0.6 \ 0.61 on
+   0.7 \ 0.58 on 
+   0.8 \ 0.54 on
+   0.9 \ 0.49 on 
+   0.95 \ 0.4 );
 
 // Look up the correction for a given acceptance value (interpolate the table above)
 def sigCorrection(accept:Double) = { 
@@ -149,9 +147,8 @@ val accept = acceptfn(sigma);
 val sigma0 = sigma / sigCorrection(accept);
 
 // alpha weights the CDF loss relative to the PDF loss.
-//val alpha = if (accept <= 0.65f) 50.0 else 100.0;
 
-val alpha0 = isigma * 1.0 / nsigma;
+val alpha0 = isigma * 1.0 / (nsigma-1);
 
 val alpha = alpha0 * 30f + (1-alpha0) * 100f;
 
