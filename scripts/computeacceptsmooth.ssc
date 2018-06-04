@@ -231,7 +231,7 @@ val cumerr = maxi(abs(cumsum(diff))).v;
 val sharpness = (mean(density *@ density) / (mean(density) ^ 2)).v;
 println(", err = %9.8f, cumerr = %7.6f, sharpness=%3.2f" format (maxi(abs(diff)).v, cumerr, sharpness));
 
-sigmaTable(isigma, ?) = drow(sigma,-xmax,xmax) \ (cumsum(density) / sum(density));
+sigmaTable(isigma, ?) = drow(sigma,sigma0,-xmax,xmax) \ (cumsum(density) / sum(density));
 
 }
 
