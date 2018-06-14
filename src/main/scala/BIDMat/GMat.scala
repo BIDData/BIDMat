@@ -704,11 +704,11 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   override def mult(b:Mat, c:Mat):Mat = mult(b, c, false, false);
   
   override def blockmult(bb:FMat, cc:FMat, nblocks:Int, at:Boolean, bt:Boolean):FMat = {
-		val b = GMat(bb);
+    val b = GMat(bb);
     val c = GMat(cc);
  
     val (anrows, ancols) = if (dims.length == 3) {
-      (dims(0), dims(3))
+      (dims(0), dims(1))
     } else {
       (nrows/nblocks, ncols)
     }
