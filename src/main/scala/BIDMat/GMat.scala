@@ -707,23 +707,23 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     val b = GMat(bb);
     val c = GMat(cc);
  
-    val (anrows, ancols) = if (dims.length == 3) {
+    val (anrows, ancols) = if (dims.length >= 3) {
       (dims(0), dims(1))
     } else {
       (nrows/nblocks, ncols)
     }
-    val (bnrows, bncols) = if (b.dims.length == 3) {
+    val (bnrows, bncols) = if (b.dims.length >= 3) {
       (b.dims(0), b.dims(1))
     } else {
       (b.nrows/nblocks, b.ncols)
     }
-    val (cnrows,cncols) = if (c.dims.length == 3) {
+    val (cnrows,cncols) = if (c.dims.length >= 3) {
       (c.dims(0), c.dims(1))
     } else {
       (c.nrows/nblocks, c.ncols)
     }
-    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, 1f, 0, anrows*nblocks, anrows,
-    		b, 0, bnrows*nblocks, bnrows, 0f, c, 0, cnrows*nblocks, cnrows, nblocks);
+    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, 1f, 0, anrows, anrows*ancols,
+    		b, 0, bnrows, bnrows*bncols, 0f, c, 0, cnrows, cnrows*cncols, nblocks);
     c
   }
  
@@ -801,26 +801,26 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   override def madd(b:Mat, c:Mat):Mat = madd(b, c, false, false);
   
   override def blockmadd(bb:FMat, cc:FMat, nblocks:Int, at:Boolean, bt:Boolean):FMat = {
-		val b = GMat(bb);
+    val b = GMat(bb);
     val c = GMat(cc);
  
-    val (anrows, ancols) = if (dims.length == 3) {
-      (dims(0), dims(3))
+    val (anrows, ancols) = if (dims.length >= 3) {
+      (dims(0), dims(1))
     } else {
       (nrows/nblocks, ncols)
     }
-    val (bnrows, bncols) = if (b.dims.length == 3) {
+    val (bnrows, bncols) = if (b.dims.length >= 3) {
       (b.dims(0), b.dims(1))
     } else {
       (b.nrows/nblocks, b.ncols)
     }
-    val (cnrows,cncols) = if (c.dims.length == 3) {
+    val (cnrows,cncols) = if (c.dims.length >= 3) {
       (c.dims(0), c.dims(1))
     } else {
       (c.nrows/nblocks, c.ncols)
     }
-    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, 1f, 0, anrows*nblocks, anrows,
-    		b, 0, bnrows*nblocks, bnrows, 1f, c, 0, cnrows*nblocks, cnrows, nblocks);
+    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, 1f, 0, anrows, anrows*ancols,
+    		b, 0, bnrows, bnrows*bncols, 1f, c, 0, cnrows, cnrows*cncols, nblocks);
     c
   }
  
@@ -1309,15 +1309,29 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
  
     c.clear;
     Mat.nflops += 2L * nr * nc * k * nreps;
-	  CUMAT.myCublasSgemmStridedBatched(getHandle, transa, transb,	
-	      nr, nc, k, 
-	      alpha, 
-	      pdata.withByteOffset(1L * Sizeof.FLOAT * aoff), lda, astep, 
-	      b.pdata.withByteOffset(1L * Sizeof.FLOAT * boff), ldb, bstep, 
-	      beta, 
-	      c.pdata.withByteOffset(1L * Sizeof.FLOAT * coff), ldc, cstep,
-	      nreps);
-	  cudaStreamSynchronize(Mat.SyncMethod)
+    if (lda > astep || ldb > bstep || ldc > cstep) { 
+      CUMAT.myCublasSgemmStridedBatched(
+	getHandle, transa, transb,	
+	nr, nc, k, 
+	alpha, 
+	pdata.withByteOffset(1L * Sizeof.FLOAT * aoff), lda, astep, 
+	b.pdata.withByteOffset(1L * Sizeof.FLOAT * boff), ldb, bstep, 
+	beta, 
+	c.pdata.withByteOffset(1L * Sizeof.FLOAT * coff), ldc, cstep,
+	nreps);
+    } else { 
+      cublasSgemmStridedBatched(
+	getHandle, transa, transb,	
+	nr, nc, k, 
+	Pointer.to(Array(alpha)),
+	pdata.withByteOffset(1L * Sizeof.FLOAT * aoff), lda, astep, 
+	b.pdata.withByteOffset(1L * Sizeof.FLOAT * boff), ldb, bstep, 
+	Pointer.to(Array(beta)),
+	c.pdata.withByteOffset(1L * Sizeof.FLOAT * coff), ldc, cstep,
+	nreps);
+    }
+    cudaStreamSynchronize(Mat.SyncMethod)
+
     val err = cudaGetLastError()
     if (err != 0) {
     	println("device is %d" format SciFunctions.getGPU)

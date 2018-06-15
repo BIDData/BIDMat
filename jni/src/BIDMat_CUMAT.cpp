@@ -1759,5 +1759,5 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_myCublasSgemmStridedBatched
   delete [] alphaptr;
   return retval;
 }
-  
+
 }

@@ -898,23 +898,23 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   override def mult(b:Mat, c:Mat):Mat = mult(b, c, false, false);
   
   def blockmult(b:FMat, c:FMat, nblocks:Int, at:Boolean, bt:Boolean):FMat = {
-    val (anrows, ancols) = if (dims.length == 3) {
-      (dims(0), dims(3))
+    val (anrows, ancols) = if (dims.length >= 3) {
+      (dims(0), dims(1))
     } else {
       (nrows/nblocks, ncols)
     }
-    val (bnrows, bncols) = if (b.dims.length == 3) {
+    val (bnrows, bncols) = if (b.dims.length >= 3) {
       (b.dims(0), b.dims(1))
     } else {
       (b.nrows/nblocks, b.ncols)
     }
-    val (cnrows,cncols) = if (c.dims.length == 3) {
+    val (cnrows,cncols) = if (c.dims.length >= 3) {
       (c.dims(0), c.dims(1))
     } else {
       (c.nrows/nblocks, c.ncols)
     }
-    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, 1f, 0, anrows*nblocks, anrows,
-    		b, 0, bnrows*nblocks, bnrows, 0f, c, 0, cnrows*nblocks, cnrows, nblocks);
+    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, 1f, 0, anrows, anrows*ancols,
+    		b, 0, bnrows, bnrows*bncols, 0f, c, 0, cnrows, cnrows*cncols, nblocks);
     c
   }
   
@@ -986,23 +986,23 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   override def madd(b:Mat, c:Mat):Mat = madd(b, c, false, false);
   
   def blockmadd(b:FMat, c:FMat, nblocks:Int, at:Boolean, bt:Boolean):FMat = {
-    val (anrows, ancols) = if (dims.length == 3) {
-      (dims(0), dims(3))
+    val (anrows, ancols) = if (dims.length >= 3) {
+      (dims(0), dims(1))
     } else {
       (nrows/nblocks, ncols)
     }
-    val (bnrows, bncols) = if (b.dims.length == 3) {
+    val (bnrows, bncols) = if (b.dims.length >= 3) {
       (b.dims(0), b.dims(1))
     } else {
       (b.nrows/nblocks, b.ncols)
     }
-    val (cnrows,cncols) = if (c.dims.length == 3) {
+    val (cnrows,cncols) = if (c.dims.length >= 3) {
       (c.dims(0), c.dims(1))
     } else {
       (c.nrows/nblocks, c.ncols)
     }
-    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, 1f, 0, anrows*nblocks, anrows,
-    		b, 0, bnrows*nblocks, bnrows, 1f, c, 0, cnrows*nblocks, cnrows, nblocks);
+    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, 1f, 0, anrows, anrows*ancols,
+    		b, 0, bnrows, bnrows*bncols, 1f, c, 0, cnrows, cnrows*cncols, nblocks);
     c
   }
 
