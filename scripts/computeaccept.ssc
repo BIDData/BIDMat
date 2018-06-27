@@ -15,7 +15,7 @@
 //
 
 // Resolution in sigma for the table. 
-val nsigma = 28;
+val nsigma = 280;
 //val nsigma = 10;
 
 // Resolution of the table (half the number of columns). 
@@ -45,6 +45,7 @@ val pstep = 10000;
 
 // Space the sigma values out geometrically
 val sigmas = sigmamin * exp(row(0->nsigma) * ln(sigmamax/sigmamin) / (nsigma-1));
+val sigma0s = dzeros(1, nsigma);
 
 // The table to save, and the accuracy for each row. 
 val sigmaTable = dzeros(nsigma, 2*n+4);
@@ -147,6 +148,8 @@ val sigma = sigmas(isigma);
 val accept = acceptfn(sigma);
 
 val sigma0 = sigma / sigCorrection(accept);
+
+sigma0s(isigma) = sigma0;
 
 // alpha weights the CDF loss relative to the PDF loss.
 //val alpha = if (accept <= 0.65f) 50.0 else 100.0;

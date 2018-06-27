@@ -20,27 +20,6 @@ val accepts = dzeros(nsigma,1)
 val atable = dzeros(nsigma, n*2+1);
 val adx = dzeros(nsigma, n*2+1);
 
-def sigma0(accept:Double) = { 
-  val xn = normcdfinv(drow(accept));
-  (exp(-xn*xn/2) * math.sqrt(2 / scala.math.Pi) / accept).v;
-}
-
-def acceptfn(sigma:Double) = { 
-  val epsilon = 1e-8;
-  var upper = 0.95;
-  var lower = 0.05;
-  var guess = 0.0;
-  while (upper - lower > epsilon) { 
-    guess = (upper+lower)/2;
-    if (sigma0(guess) * sigCorrection(guess) < sigma) { 
-      upper = guess;
-    } else { 
-      lower = guess;
-    }
-  }
-  guess
-}
-
 val sigSchedule = (
    0.05 \ 0.8 on
    0.1 \ 0.70 on 
@@ -64,6 +43,27 @@ def sigCorrection(accept:Double) = {
   alpha * sigSchedule(i+1, 1) + (1-alpha) * sigSchedule(i, 1);
 }
 
+def sigma0(accept:Double) = { 
+  val xn = normcdfinv(drow(accept));
+  (exp(-xn*xn/2) * math.sqrt(2 / scala.math.Pi) / accept).v;
+}
+
+def acceptfn(sigma:Double) = { 
+  val epsilon = 1e-8;
+  var upper = 0.95;
+  var lower = 0.05;
+  var guess = 0.0;
+  while (upper - lower > epsilon) { 
+    guess = (upper+lower)/2;
+    if (sigma0(guess) * sigCorrection(guess) < sigma) { 
+      upper = guess;
+    } else { 
+      lower = guess;
+    }
+  }
+  guess
+}
+
 def func1(q:Double, x:DMat) = exp(x/2) / ((2 * cosh(x * q / 2)) ^ (1f/q));
 
 def derivx(q:Double, x:DMat) = 0.5f*func1(q, x)*@(1f-tanh(q/2*x));
@@ -83,7 +83,7 @@ for (isigma <- 0 until nsigma) {
 
 //val d = d0(?,3->d0.ncols)
 val d = atable
-val dx = ((d(?,1->d.ncols)\dones(nsigma,1)) - (dzeros(nsigma,1)\d(?,0->(d.ncols-1))))*n/2/(xmax-xmin);
+val dx = ((d(?,1->d.ncols)\dones(nsigma,1)) - (dzeros(nsigma,1)\d(?,0->(d.ncols-1))))*n/(xmax-xmin);
 
 val dvar0 = (d(1,?)-d(0,?)) / (sigmas(1)-sigmas(0));
 val dvar1 = (d(2->d.nrows,?)-d(0->(d.nrows-2),?)) / (sigmas(2->nsigma,0)-sigmas(0->(nsigma-2),0));
@@ -98,6 +98,13 @@ def slice(alpha:Double) = {
   val xinds = int((xv - xmin)/(xmax - xmin)*(2*n));
   val minds = icol(0->nsigma) + xinds * nsigma;
   d(minds);
+}
+
+def slice2(alpha:Double) = { 
+  val xv = sigmas * alpha;
+  val xinds = int((xv - xmin)/(xmax - xmin)*(2*n));
+  val minds = icol(0->nsigma) + xinds * nsigma;
+  dx(minds) \ dvar(minds);
 }
 
 :silent
