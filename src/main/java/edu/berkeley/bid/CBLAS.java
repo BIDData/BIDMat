@@ -52,6 +52,8 @@ public final class CBLAS {
   public static native  void domatcopy( String Order, String TransA, int M, int N, double alpha, double [] A, int lda, double [] B, int ldb);
   public static native  void dmcscm( int m, int n, double [] a, int lda, double [] b, int [] ir, int [] jc, double [] c, int ldc);
   public static native  void dmcsrm( int m, int n, double [] a, int lda, double [] b, int [] ir, int [] jc, double [] c, int ldc);
+  public static native  void blockDgemm( int transA, int transB, int nr, int nc, int kk, double alpha, double [] A, int aoff, int lda, int astep, 
+	  		double[] B, int boff, int ldb, int bstep, double beta, double [] C, int coff, int ldc, int cstep, int nreps);
   
   public static native  void iomatcopy( String Order, String TransA, int M, int N, int [] A, int lda, int [] B, int ldb);
   public static native  void lomatcopy( String Order, String TransA, int M, int N, long [] A, int lda, long [] B, int ldb);

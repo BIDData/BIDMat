@@ -897,38 +897,7 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
     
   override def mult(b:Mat, c:Mat):Mat = mult(b, c, false, false);
   
-  def blockmult(b:FMat, c:FMat, nblocks:Int, at:Boolean, bt:Boolean):FMat = {
-    val (anrows, ancols) = if (dims.length >= 3) {
-      (dims(0), dims(1))
-    } else {
-      (nrows/nblocks, ncols)
-    }
-    val (bnrows, bncols) = if (b.dims.length >= 3) {
-      (b.dims(0), b.dims(1))
-    } else {
-      (b.nrows/nblocks, b.ncols)
-    }
-    val (cnrows,cncols) = if (c.dims.length >= 3) {
-      (c.dims(0), c.dims(1))
-    } else {
-      (c.nrows/nblocks, c.ncols)
-    }
-    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, 1f, 0, anrows, anrows*ancols,
-    		b, 0, bnrows, bnrows*bncols, 0f, c, 0, cnrows, cnrows*cncols, nblocks);
-    c
-  }
-  
-  override def blockmult(b:Mat, c:Mat, ngroups:Int, at:Boolean, bt:Boolean):Mat = {
-    (b, c) match {
-      case (bb:FMat, cc:FMat) => blockmult(bb, cc, ngroups, at, bt);
-      case _ => throw new RuntimeException("blockmult unsupported types %s %s" format (b.mytype, c.mytype));
-    }
-    c
-  }
-    
-  override def blockmult(b:Mat, c:Mat, ngroups:Int):Mat = blockmult(b, c, ngroups, false, false);
-
-  def madd(b:FMat, c:FMat, at:Boolean, bt:Boolean):FMat = {
+    def madd(b:FMat, c:FMat, at:Boolean, bt:Boolean):FMat = {
   	val (arows, acols, atrans) = if (at) (ncols, nrows, TRANSPOSE.Trans) else (nrows, ncols, TRANSPOSE.NoTrans);
     val (brows, bcols, btrans) = if (bt) (b.ncols, b.nrows, TRANSPOSE.Trans) else (b.nrows, b.ncols, TRANSPOSE.NoTrans);
     if (acols != brows || arows != c.nrows || bcols != c.ncols) {
@@ -963,7 +932,6 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   		}
   		c;
   }
-  
 
   def madd(b:SMat, c:FMat, at:Boolean, bt:Boolean):FMat = {
     (at, bt) match {
@@ -985,7 +953,7 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   
   override def madd(b:Mat, c:Mat):Mat = madd(b, c, false, false);
   
-  def blockmadd(b:FMat, c:FMat, nblocks:Int, at:Boolean, bt:Boolean):FMat = {
+  def blockmult(b:FMat, c:FMat, nblocks:Int, at:Boolean, bt:Boolean, cc:Float):FMat = {
     val (anrows, ancols) = if (dims.length >= 3) {
       (dims(0), dims(1))
     } else {
@@ -1002,9 +970,50 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
       (c.nrows/nblocks, c.ncols)
     }
     blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, 1f, 0, anrows, anrows*ancols,
-    		b, 0, bnrows, bnrows*bncols, 1f, c, 0, cnrows, cnrows*cncols, nblocks);
+    		b, 0, bnrows, bnrows*bncols, cc, c, 0, cnrows, cnrows*cncols, nblocks);
     c
   }
+  
+  def blockmult(b:FMat, c:FMat, nblocks:Int, at:Boolean, bt:Boolean):FMat = blockmult(b, c, nblocks, at, bt, 0f);
+  
+  override def blockmult(b:Mat, c:Mat, ngroups:Int, at:Boolean, bt:Boolean):Mat = {
+    (b, c) match {
+      case (bb:FMat, cc:FMat) => blockmult(bb, cc, ngroups, at, bt);
+      case _ => throw new RuntimeException("blockmult unsupported types %s %s" format (b.mytype, c.mytype));
+    }
+    c
+  }
+    
+  override def blockmult(b:Mat, c:Mat, ngroups:Int):Mat = blockmult(b, c, ngroups, false, false);
+  
+  def blockmult2(b:FMat, c:FMat, nblocks:Int, at:Boolean, bt:Boolean, cc:Float):FMat = {
+    val anrows = dims(0)
+    val astep = dims(1)
+    val ancols = dims(2)
+    val bnrows = b.dims(0)
+    val bstep = b.dims(1)
+    val bncols = b.dims(2)
+    val cnrows = c.dims(0)
+    val cstep = c.dims(1)
+    val cncols = c.dims(2)
+    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, 1f, 0, anrows*astep, anrows,
+    		b, 0, bnrows*bstep, bnrows, cc, c, 0, cnrows*cstep, cnrows, nblocks);
+    c
+  }
+  
+  def blockmult2(b:FMat, c:FMat, nblocks:Int, at:Boolean, bt:Boolean):FMat = blockmult2(b, c, nblocks, at, bt, 0f)
+  
+  override def blockmult2(b:Mat, c:Mat, ngroups:Int, at:Boolean, bt:Boolean):Mat = {
+    (b, c) match {
+      case (bb:FMat, cc:FMat) => blockmult2(bb, cc, ngroups, at, bt);
+      case _ => throw new RuntimeException("blockmult2 unsupported types %s %s" format (b.mytype, c.mytype));
+    }
+    c
+  }
+    
+  override def blockmult2(b:Mat, c:Mat, ngroups:Int):Mat = blockmult2(b, c, ngroups, false, false);
+  
+  def blockmadd(b:FMat, c:FMat, nblocks:Int, at:Boolean, bt:Boolean):FMat = blockmult(b, c, nblocks, at, bt, 1f);
 
   override def blockmadd(b:Mat, c:Mat, nblocks:Int, at:Boolean, bt:Boolean):Mat = {
     (b, c) match {
@@ -1015,6 +1024,18 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   }
     
   override def blockmadd(b:Mat, c:Mat, nblocks:Int):Mat = blockmadd(b, c, nblocks, false, false);
+  
+  def blockmadd2(b:FMat, c:FMat, nblocks:Int, at:Boolean, bt:Boolean):FMat = blockmult2(b, c, nblocks, at, bt, 1f)
+  
+  override def blockmadd2(b:Mat, c:Mat, ngroups:Int, at:Boolean, bt:Boolean):Mat = {
+    (b, c) match {
+      case (bb:FMat, cc:FMat) => blockmadd2(bb, cc, ngroups, at, bt);
+      case _ => throw new RuntimeException("blockmadd2 unsupported types %s %s" format (b.mytype, c.mytype));
+    }
+    c
+  }
+    
+  override def blockmadd2(b:Mat, c:Mat, ngroups:Int):Mat = blockmadd2(b, c, ngroups, false, false);
 
   def tileMult(nr:Int, nc:Int, kk:Int, aroff:Int, acoff:Int, b:FMat, broff:Int, bcoff:Int, c:FMat, croff:Int, ccoff:Int) = {
     if (aroff < 0 || acoff < 0 || broff < 0 || bcoff < 0 || croff < 0 || ccoff < 0 || nr < 0 || nc < 0 || kk < 0) {
@@ -1564,7 +1585,6 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
 
   def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, k:Int, alpha:Float, aoff:Int, lda:Int, astep:Int,
       b:FMat, boff:Int, ldb:Int, bstep:Int, beta:Float, c:FMat, coff:Int, ldc:Int, cstep:Int, nreps:Int):FMat = {
-    c.clear;
     Mat.nflops += 2L * nr * nc * k * nreps;
     blockSgemm(transa, transb, nr, nc, k, alpha, data, aoff, lda, astep, b.data, boff, ldb, bstep, beta, c.data, coff, ldc, cstep, nreps);
     c;

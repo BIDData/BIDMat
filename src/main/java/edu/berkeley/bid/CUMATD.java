@@ -1,5 +1,6 @@
 package edu.berkeley.bid;
 import jcuda.Pointer;
+import jcuda.jcublas.cublasHandle;
 
 public final class CUMATD {
 
@@ -170,5 +171,9 @@ public final class CUMATD {
     public static native int reverse(Pointer A, Pointer out, long len);
     
     public static native void dpermute(int d1, int d2, int d3, Pointer in, Pointer out);
+    
+    public static native int myCublasDgemmStridedBatched(cublasHandle handle, int transa, int transb, int m, int n, int k, double alpha,
+							 Pointer A, int lda, int astep, Pointer B, int ldb, int bstep,
+							 double beta, Pointer C, int ldc, int cstep, int reps);
 
 }

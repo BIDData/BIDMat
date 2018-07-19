@@ -703,39 +703,7 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   
   override def mult(b:Mat, c:Mat):Mat = mult(b, c, false, false);
   
-  override def blockmult(bb:FMat, cc:FMat, nblocks:Int, at:Boolean, bt:Boolean):FMat = {
-    val b = GMat(bb);
-    val c = GMat(cc);
- 
-    val (anrows, ancols) = if (dims.length >= 3) {
-      (dims(0), dims(1))
-    } else {
-      (nrows/nblocks, ncols)
-    }
-    val (bnrows, bncols) = if (b.dims.length >= 3) {
-      (b.dims(0), b.dims(1))
-    } else {
-      (b.nrows/nblocks, b.ncols)
-    }
-    val (cnrows,cncols) = if (c.dims.length >= 3) {
-      (c.dims(0), c.dims(1))
-    } else {
-      (c.nrows/nblocks, c.ncols)
-    }
-    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, 1f, 0, anrows, anrows*ancols,
-    		b, 0, bnrows, bnrows*bncols, 0f, c, 0, cnrows, cnrows*cncols, nblocks);
-    c
-  }
- 
-  override def blockmult(b:Mat, c:Mat, nblocks:Int):Mat = blockmult(b, c, nblocks, false, false);
-  
-  override def blockmult(b:Mat, c:Mat, nblocks:Int, at:Boolean, bt:Boolean):Mat = {
-    (b, c) match {
-      case (bb:FMat, cc:FMat) => blockmult(bb, cc, nblocks, at, bt);
-      case _ => throw new RuntimeException("mult unsupported types %s %s" format (b.mytype, c.mytype));
-    }
-    c
-  }
+   
   
   override def madd(bb:FMat, cc:FMat, at:Boolean, bt:Boolean):GMat = {
 	  val b = GMat(bb);
@@ -800,7 +768,7 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   
   override def madd(b:Mat, c:Mat):Mat = madd(b, c, false, false);
   
-  override def blockmadd(bb:FMat, cc:FMat, nblocks:Int, at:Boolean, bt:Boolean):FMat = {
+  override def blockmult(bb:FMat, cc:FMat, nblocks:Int, at:Boolean, bt:Boolean, cfact:Float):FMat = {
     val b = GMat(bb);
     val c = GMat(cc);
  
@@ -820,19 +788,76 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
       (c.nrows/nblocks, c.ncols)
     }
     blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, 1f, 0, anrows, anrows*ancols,
-    		b, 0, bnrows, bnrows*bncols, 1f, c, 0, cnrows, cnrows*cncols, nblocks);
+    		b, 0, bnrows, bnrows*bncols, cfact, c, 0, cnrows, cnrows*cncols, nblocks);
     c
   }
+  
+  override def blockmult(b:FMat, c:FMat, nblocks:Int, at:Boolean, bt:Boolean):FMat = blockmult(b, c, nblocks, at, bt, 0f);
+ 
+  override def blockmult(b:Mat, c:Mat, nblocks:Int):Mat = blockmult(b, c, nblocks, false, false);
+  
+  override def blockmult(b:Mat, c:Mat, nblocks:Int, at:Boolean, bt:Boolean):Mat = {
+    (b, c) match {
+      case (bb:FMat, cc:FMat) => blockmult(bb, cc, nblocks, at, bt);
+      case _ => throw new RuntimeException("blockmult unsupported types %s %s" format (b.mytype, c.mytype));
+    }
+    c
+  }
+  
+  override def blockmult2(bb:FMat, cc:FMat, nblocks:Int, at:Boolean, bt:Boolean, cfact:Float):FMat = {
+    val b = GMat(bb);
+    val c = GMat(cc);
+ 
+    val anrows = dims(0)
+    val astep = dims(1)
+    val ancols = dims(2)
+    val bnrows = b.dims(0)
+    val bstep = b.dims(1)
+    val bncols = b.dims(2)
+    val cnrows = c.dims(0)
+    val cstep = c.dims(1)
+    val cncols = c.dims(2)
+    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, 1f, 0, anrows*astep, anrows,
+    		b, 0, bnrows*bstep, bnrows, cfact, c, 0, cnrows*cstep, cnrows, nblocks);
+    c
+  }
+  
+  override def blockmult2(b:FMat, c:FMat, nblocks:Int, at:Boolean, bt:Boolean):FMat = blockmult2(b, c, nblocks, at, bt, 0f);
+ 
+  override def blockmult2(b:Mat, c:Mat, nblocks:Int):Mat = blockmult2(b, c, nblocks, false, false);
+  
+  override def blockmult2(b:Mat, c:Mat, nblocks:Int, at:Boolean, bt:Boolean):Mat = {
+    (b, c) match {
+      case (bb:FMat, cc:FMat) => blockmult2(bb, cc, nblocks, at, bt);
+      case _ => throw new RuntimeException("blockmult2 unsupported types %s %s" format (b.mytype, c.mytype));
+    }
+    c
+  }
+  
+  override def blockmadd(b:FMat, c:FMat, nblocks:Int, at:Boolean, bt:Boolean):FMat = blockmult(b, c, nblocks, at, bt, 1f);
  
   override def blockmadd(b:Mat, c:Mat, nblocks:Int):Mat = blockmadd(b, c, nblocks, false, false);
   
   override def blockmadd(b:Mat, c:Mat, nblocks:Int, at:Boolean, bt:Boolean):Mat = {
     (b, c) match {
       case (bb:FMat, cc:FMat) => blockmadd(bb, cc, nblocks, at, bt);
-      case _ => throw new RuntimeException("mult unsupported types %s %s" format (b.mytype, c.mytype));
+      case _ => throw new RuntimeException("blockmadd unsupported types %s %s" format (b.mytype, c.mytype));
     }
     c
   }
+  
+  override def blockmadd2(b:FMat, c:FMat, nblocks:Int, at:Boolean, bt:Boolean):FMat = blockmult2(b, c, nblocks, at, bt, 1f);
+ 
+  override def blockmadd2(b:Mat, c:Mat, nblocks:Int):Mat = blockmadd2(b, c, nblocks, false, false);
+  
+  override def blockmadd2(b:Mat, c:Mat, nblocks:Int, at:Boolean, bt:Boolean):Mat = {
+    (b, c) match {
+      case (bb:FMat, cc:FMat) => blockmadd2(bb, cc, nblocks, at, bt);
+      case _ => throw new RuntimeException("blockmadd2 unsupported types %s %s" format (b.mytype, c.mytype));
+    }
+    c
+  }
+
   
   def GMultT(aa:FMat, oldmat:Mat):GMat = {
     val a = GMat(aa);
@@ -1305,38 +1330,38 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, k:Int, alpha:Float, aoff:Int, lda:Int, astep:Int, 
       b:GMat, boff:Int, ldb:Int, bstep:Int, beta:Float, c:GMat, coff:Int, ldc:Int, cstep:Int, nreps:Int):GMat = {
     
-    val ax = if (transa == 0) nc else nr;
- 
-    c.clear;
-    Mat.nflops += 2L * nr * nc * k * nreps;
-    if (lda > astep || ldb > bstep || ldc > cstep) { 
-      CUMAT.myCublasSgemmStridedBatched(
-	getHandle, transa, transb,	
-	nr, nc, k, 
-	alpha, 
-	pdata.withByteOffset(1L * Sizeof.FLOAT * aoff), lda, astep, 
-	b.pdata.withByteOffset(1L * Sizeof.FLOAT * boff), ldb, bstep, 
-	beta, 
-	c.pdata.withByteOffset(1L * Sizeof.FLOAT * coff), ldc, cstep,
-	nreps);
-    } else { 
-      cublasSgemmStridedBatched(
-	getHandle, transa, transb,	
-	nr, nc, k, 
-	Pointer.to(Array(alpha)),
-	pdata.withByteOffset(1L * Sizeof.FLOAT * aoff), lda, astep, 
-	b.pdata.withByteOffset(1L * Sizeof.FLOAT * boff), ldb, bstep, 
-	Pointer.to(Array(beta)),
-	c.pdata.withByteOffset(1L * Sizeof.FLOAT * coff), ldc, cstep,
-	nreps);
-    }
-    cudaStreamSynchronize(Mat.SyncMethod)
+      val ax = if (transa == 0) nc else nr;
 
-    val err = cudaGetLastError()
-    if (err != 0) {
-    	println("device is %d" format SciFunctions.getGPU)
-    	throw new RuntimeException("Cuda error in cublasSgemmStridedBatched " + cudaGetErrorString(err))
-    }
+//      if (beta == 0f) c.clear;
+      Mat.nflops += 2L * nr * nc * k * nreps;
+      if (lda > astep || ldb > bstep || ldc > cstep) { 
+    	  CUMAT.myCublasSgemmStridedBatched(
+    			  getHandle, transa, transb,	
+    			  nr, nc, k, 
+    			  alpha, 
+    			  pdata.withByteOffset(1L * Sizeof.FLOAT * aoff), lda, astep, 
+    			  b.pdata.withByteOffset(1L * Sizeof.FLOAT * boff), ldb, bstep, 
+    			  beta, 
+    			  c.pdata.withByteOffset(1L * Sizeof.FLOAT * coff), ldc, cstep,
+    			  nreps);
+      } else { 
+    	  cublasSgemmStridedBatched(
+    			  getHandle, transa, transb,	
+    			  nr, nc, k, 
+    			  Pointer.to(Array(alpha)),
+    			  pdata.withByteOffset(1L * Sizeof.FLOAT * aoff), lda, astep, 
+    			  b.pdata.withByteOffset(1L * Sizeof.FLOAT * boff), ldb, bstep, 
+    			  Pointer.to(Array(beta)),
+    			  c.pdata.withByteOffset(1L * Sizeof.FLOAT * coff), ldc, cstep,
+    			  nreps);
+      }
+      cudaStreamSynchronize(Mat.SyncMethod)
+
+      val err = cudaGetLastError()
+      if (err != 0) {
+    	  println("device is %d" format SciFunctions.getGPU)
+    	  throw new RuntimeException("Cuda error in GMat blockGemm " + cudaGetErrorString(err))
+      }
     c;
   }
   

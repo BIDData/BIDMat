@@ -798,6 +798,103 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
   
   override def madd(b:Mat, c:Mat):Mat = madd(b, c, false, false);
   
+  def blockmult(b:DMat, c:DMat, nblocks:Int, at:Boolean, bt:Boolean, cc:Float):DMat = {
+    val (anrows, ancols) = if (dims.length >= 3) {
+      (dims(0), dims(1))
+    } else {
+      (nrows/nblocks, ncols)
+    }
+    val (bnrows, bncols) = if (b.dims.length >= 3) {
+      (b.dims(0), b.dims(1))
+    } else {
+      (b.nrows/nblocks, b.ncols)
+    }
+    val (cnrows,cncols) = if (c.dims.length >= 3) {
+      (c.dims(0), c.dims(1))
+    } else {
+      (c.nrows/nblocks, c.ncols)
+    }
+    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, 1f, 0, anrows, anrows*ancols,
+    		b, 0, bnrows, bnrows*bncols, cc, c, 0, cnrows, cnrows*cncols, nblocks);
+    c
+  }
+  
+  def blockmult(b:DMat, c:DMat, nblocks:Int, at:Boolean, bt:Boolean):DMat = blockmult(b, c, nblocks, at, bt, 0f);
+  
+  override def blockmult(b:Mat, c:Mat, ngroups:Int, at:Boolean, bt:Boolean):Mat = {
+    (b, c) match {
+      case (bb:DMat, cc:DMat) => blockmult(bb, cc, ngroups, at, bt);
+      case _ => throw new RuntimeException("blockmult unsupported types %s %s" format (b.mytype, c.mytype));
+    }
+    c
+  }
+    
+  override def blockmult(b:Mat, c:Mat, ngroups:Int):Mat = blockmult(b, c, ngroups, false, false);
+  
+  def blockmult2(b:DMat, c:DMat, nblocks:Int, at:Boolean, bt:Boolean, cc:Float):DMat = {
+    val anrows = dims(0)
+    val astep = dims(1)
+    val ancols = dims(2)
+    val bnrows = b.dims(0)
+    val bstep = b.dims(1)
+    val bncols = b.dims(2)
+    val cnrows = c.dims(0)
+    val cstep = c.dims(1)
+    val cncols = c.dims(2)
+    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, 1f, 0, anrows*astep, anrows,
+    		b, 0, bnrows*bstep, bnrows, cc, c, 0, cnrows*cstep, cnrows, nblocks);
+    c
+  }
+  
+  def blockmult2(b:DMat, c:DMat, nblocks:Int, at:Boolean, bt:Boolean):DMat = blockmult2(b, c, nblocks, at, bt, 0f)
+  
+  override def blockmult2(b:Mat, c:Mat, ngroups:Int, at:Boolean, bt:Boolean):Mat = {
+    (b, c) match {
+      case (bb:DMat, cc:DMat) => blockmult2(bb, cc, ngroups, at, bt);
+      case _ => throw new RuntimeException("blockmult2 unsupported types %s %s" format (b.mytype, c.mytype));
+    }
+    c
+  }
+    
+  override def blockmult2(b:Mat, c:Mat, ngroups:Int):Mat = blockmult2(b, c, ngroups, false, false);
+  
+  def blockmadd(b:DMat, c:DMat, nblocks:Int, at:Boolean, bt:Boolean):DMat = blockmult(b, c, nblocks, at, bt, 1f);
+
+  override def blockmadd(b:Mat, c:Mat, nblocks:Int, at:Boolean, bt:Boolean):Mat = {
+    (b, c) match {
+      case (bb:DMat, cc:DMat) => blockmadd(bb, cc, nblocks, at, bt);
+      case _ => throw new RuntimeException("blockmult unsupported types %s %s" format (b.mytype, c.mytype));
+    }
+    c
+  }
+    
+  override def blockmadd(b:Mat, c:Mat, nblocks:Int):Mat = blockmadd(b, c, nblocks, false, false);
+  
+  def blockmadd2(b:DMat, c:DMat, nblocks:Int, at:Boolean, bt:Boolean):DMat = blockmult2(b, c, nblocks, at, bt, 1f)
+  
+  override def blockmadd2(b:Mat, c:Mat, ngroups:Int, at:Boolean, bt:Boolean):Mat = {
+    (b, c) match {
+      case (bb:DMat, cc:DMat) => blockmadd2(bb, cc, ngroups, at, bt);
+      case _ => throw new RuntimeException("blockmadd2 unsupported types %s %s" format (b.mytype, c.mytype));
+    }
+    c
+  }
+    
+  override def blockmadd2(b:Mat, c:Mat, ngroups:Int):Mat = blockmadd2(b, c, ngroups, false, false);
+  
+  def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, k:Int, alpha:Float, aoff:Int, lda:Int, astep:Int,
+      b:DMat, boff:Int, ldb:Int, bstep:Int, beta:Float, c:DMat, coff:Int, ldc:Int, cstep:Int, nreps:Int):DMat = {
+    Mat.nflops += 2L * nr * nc * k * nreps;
+    blockDgemm(transa, transb, nr, nc, k, alpha, data, aoff, lda, astep, b.data, boff, ldb, bstep, beta, c.data, coff, ldc, cstep, nreps);
+    c;
+  }
+
+  override def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, k:Int, alpha:Float, aoff:Int, lda:Int, astep:Int,
+      b:Mat, boff:Int, ldb:Int, bstep:Int, beta:Float, c:Mat, coff:Int, ldc:Int, cstep:Int, nreps:Int):DMat = {
+  		blockGemm(transa, transb, nr, nc, k, alpha, aoff, lda, astep, b.asInstanceOf[DMat], boff, ldb, bstep,
+  		    beta, c.asInstanceOf[DMat], coff, ldc, cstep, nreps);
+  }
+  
   /*
    * Very slow, row-and-column multiply
    */

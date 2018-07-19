@@ -687,4 +687,46 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMATD_maxTensorL
   return maxTensor(A, B, M, N, K);
 }
 
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_myCublasDgemmStridedBatched
+(JNIEnv * env, jobject obj, jobject j_cuHandle, jint transa, jint transb, jint M, jint N, jint K, jdouble alpha, 
+ jobject j_A, jint lda, jint astep, jobject j_B, jint ldb, jint bstep, jdouble beta, jobject j_C, jint ldc, jint cstep, jint reps) {
+
+  int i, retval = 0;
+  cublasHandle_t handle = (cublasHandle_t)getNativePointerValue(env, j_cuHandle);
+  const double * A = (double *)getPointer(env, j_A);
+  const double * B = (double *)getPointer(env, j_B);
+  double * C = (double *)getPointer(env, j_C);
+  double *alphaptr = new double[2];
+  double *betaptr = &alphaptr[1];
+  *alphaptr = alpha;
+  *betaptr = beta;
+
+  double ** host_ptrs = (double **)(new double*[reps*3]);
+  double ** device_ptrs = NULL;
+  cudaMalloc((void **)&device_ptrs, sizeof(double *)*reps*3);
+  cudaStreamSynchronize(SYNC_STREAM);
+  for (i = 0; i < reps; i++) {
+    host_ptrs[i] = (double *)(&A[astep * i]);
+    host_ptrs[i+reps] = (double *)(&B[bstep * i]);
+    host_ptrs[i+2*reps] = &C[cstep * i];
+  }
+  cudaMemcpy(device_ptrs, host_ptrs, sizeof(double *)*reps*3, cudaMemcpyHostToDevice);
+  cudaStreamSynchronize(SYNC_STREAM);
+  const double ** Aptrs = (const double **)device_ptrs;
+  const double ** Bptrs = (const double **)(&device_ptrs[reps]);
+  double ** Cptrs = &device_ptrs[2*reps];
+  
+  cublasOperation_t at, bt;
+  at = (transa) ? CUBLAS_OP_T : CUBLAS_OP_N;
+  bt = (transb) ? CUBLAS_OP_T : CUBLAS_OP_N;
+
+  retval = cublasDgemmBatched(handle, at, bt, M, N, K, alphaptr, Aptrs, lda, Bptrs, ldb, betaptr, Cptrs, ldc, reps); 
+
+  cudaStreamSynchronize(SYNC_STREAM);
+  cudaFree(device_ptrs);
+  delete [] host_ptrs;
+  delete [] alphaptr;
+  return retval;
+}
+
 }

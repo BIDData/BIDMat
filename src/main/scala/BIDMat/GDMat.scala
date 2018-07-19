@@ -6,7 +6,7 @@ import jcuda.runtime.JCuda._
 import jcuda.runtime.cudaError._
 import jcuda.runtime.cudaMemcpyKind._
 import jcuda.jcublas._
-import jcuda.jcublas.JCublas._
+import jcuda.jcublas.JCublas2._
 import jcuda.jcusparse._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -479,6 +479,12 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     cudaStreamSynchronize(Mat.SyncMethod)
     out
   }
+  
+  def getHandle = {
+    val igpu = Array(0);
+    jcuda.runtime.JCuda.cudaGetDevice(igpu)
+    GFunctions.cublasHandles(igpu(0)).asInstanceOf[cublasHandle];
+  }
 
   def GMult(a:GDMat, oldmat:Mat):GDMat = {
     if (ncols == 1 && nrows == 1) {
@@ -507,7 +513,7 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     		val err = CUMATD.dmv(pdata, nrows, ncols, a.pdata, out.pdata, 0)
     		if (err != 0) {throw new RuntimeException("GMult: CUDA kernel error in CUMAT.dmv " + cudaGetErrorString(err))}
     	} else {
-    		cublasDgemm('n', 'n', nrows, a.ncols, ncols, 1.0f, pdata, nrows, a.pdata, a.nrows, 0f, out.pdata, nrows)
+    		cublasDgemm(getHandle, cublasOperation.CUBLAS_OP_N, cublasOperation.CUBLAS_OP_N, nrows, a.ncols, ncols, GDMat.pONE, pdata, nrows, a.pdata, a.nrows, GDMat.pZERO, out.pdata, nrows)
     		cudaStreamSynchronize(Mat.SyncMethod)
     		val err = cudaGetLastError
     		if (err != 0) {
@@ -524,7 +530,7 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     if (ncols == a.ncols) {
       val out = GDMat.newOrCheckGDMat(nrows, a.nrows, oldmat, GUID, a.GUID, "GMultT".##)
       Mat.nflops += 2L * length * a.nrows
-      cublasDgemm('n', 't', nrows, a.nrows, ncols, 1.0f, pdata, nrows, a.pdata, a.nrows, 0f, out.pdata, nrows)
+      cublasDgemm(getHandle, cublasOperation.CUBLAS_OP_N, cublasOperation.CUBLAS_OP_T, nrows, a.nrows, ncols, GDMat.pONE, pdata, nrows, a.pdata, a.nrows, GDMat.pZERO, out.pdata, nrows)
       cudaStreamSynchronize(Mat.SyncMethod)
       val err = cudaGetLastError
       if (err != 0) {
@@ -539,7 +545,7 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     if (nrows == a.nrows) {
       val out = GDMat.newOrCheckGDMat(ncols, a.ncols, oldmat, GUID, a.GUID, "GMultT".##)
       Mat.nflops += 2L * length * a.ncols
-      cublasDgemm('t', 'n', ncols, a.ncols, nrows, 1.0f, pdata, nrows, a.pdata, a.nrows, 0f, out.pdata, out.nrows)
+      cublasDgemm(getHandle, cublasOperation.CUBLAS_OP_T, cublasOperation.CUBLAS_OP_N, ncols, a.ncols, nrows, GDMat.pONE, pdata, nrows, a.pdata, a.nrows, GDMat.pZERO, out.pdata, out.nrows)
       cudaStreamSynchronize(Mat.SyncMethod)
       val err = cudaGetLastError
       if (err != 0) {
@@ -551,13 +557,13 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   }
   
   def madd(b:GDMat, c:GDMat, at:Boolean, bt:Boolean):GDMat = {
-  	val (arows, acols, atrans) = if (at) (ncols, nrows, 't') else (nrows, ncols, 'n');
-    val (brows, bcols, btrans) = if (bt) (b.ncols, b.nrows, 't') else (b.nrows, b.ncols, 'n');
+  	val (arows, acols, atrans) = if (at) (ncols, nrows, cublasOperation.CUBLAS_OP_T) else (nrows, ncols, cublasOperation.CUBLAS_OP_N);
+    val (brows, bcols, btrans) = if (bt) (b.ncols, b.nrows, cublasOperation.CUBLAS_OP_T) else (b.nrows, b.ncols, cublasOperation.CUBLAS_OP_N);
     if (acols != brows || arows != c.nrows || bcols != c.ncols) {
       throw new RuntimeException("madd bad dimensions (%d %d) (%d %d) (%d %d)" format (arows, acols, brows, bcols, c.nrows, c.ncols));
     }
     Mat.nflops += 2L * arows * bcols * acols;
-    cublasDgemm(atrans, btrans,	arows, bcols, acols, 1.0, pdata, nrows, b.pdata, b.nrows, 1.0, c.pdata, c.nrows);
+    cublasDgemm(getHandle, atrans, btrans,	arows, bcols, acols, GDMat.pONE, pdata, nrows, b.pdata, b.nrows, GDMat.pONE, c.pdata, c.nrows);
     c
   }
   
@@ -571,6 +577,143 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   }
   
   override def madd(b:Mat, c:Mat):Mat = madd(b, c, false, false);
+    
+  override def blockmult(bb:DMat, cc:DMat, nblocks:Int, at:Boolean, bt:Boolean, cfact:Float):DMat = {
+    val b = GDMat(bb);
+    val c = GDMat(cc);
+ 
+    val (anrows, ancols) = if (dims.length >= 3) {
+      (dims(0), dims(1))
+    } else {
+      (nrows/nblocks, ncols)
+    }
+    val (bnrows, bncols) = if (b.dims.length >= 3) {
+      (b.dims(0), b.dims(1))
+    } else {
+      (b.nrows/nblocks, b.ncols)
+    }
+    val (cnrows,cncols) = if (c.dims.length >= 3) {
+      (c.dims(0), c.dims(1))
+    } else {
+      (c.nrows/nblocks, c.ncols)
+    }
+    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, 1f, 0, anrows, anrows*ancols,
+    		b, 0, bnrows, bnrows*bncols, cfact, c, 0, cnrows, cnrows*cncols, nblocks);
+    c
+  }
+  
+  override def blockmult(b:DMat, c:DMat, nblocks:Int, at:Boolean, bt:Boolean):DMat = blockmult(b, c, nblocks, at, bt, 0f);
+ 
+  override def blockmult(b:Mat, c:Mat, nblocks:Int):Mat = blockmult(b, c, nblocks, false, false);
+  
+  override def blockmult(b:Mat, c:Mat, nblocks:Int, at:Boolean, bt:Boolean):Mat = {
+    (b, c) match {
+      case (bb:DMat, cc:DMat) => blockmult(bb, cc, nblocks, at, bt);
+      case _ => throw new RuntimeException("blockmult unsupported types %s %s" format (b.mytype, c.mytype));
+    }
+    c
+  }
+  
+  override def blockmult2(bb:DMat, cc:DMat, nblocks:Int, at:Boolean, bt:Boolean, cfact:Float):DMat = {
+    val b = GDMat(bb);
+    val c = GDMat(cc);
+ 
+    val anrows = dims(0)
+    val astep = dims(1)
+    val ancols = dims(2)
+    val bnrows = b.dims(0)
+    val bstep = b.dims(1)
+    val bncols = b.dims(2)
+    val cnrows = c.dims(0)
+    val cstep = c.dims(1)
+    val cncols = c.dims(2)
+    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, 1f, 0, anrows*astep, anrows,
+    		b, 0, bnrows*bstep, bnrows, cfact, c, 0, cnrows*cstep, cnrows, nblocks);
+    c
+  }
+  
+  override def blockmult2(b:DMat, c:DMat, nblocks:Int, at:Boolean, bt:Boolean):DMat = blockmult2(b, c, nblocks, at, bt, 0f);
+ 
+  override def blockmult2(b:Mat, c:Mat, nblocks:Int):Mat = blockmult2(b, c, nblocks, false, false);
+  
+  override def blockmult2(b:Mat, c:Mat, nblocks:Int, at:Boolean, bt:Boolean):Mat = {
+    (b, c) match {
+      case (bb:DMat, cc:DMat) => blockmult2(bb, cc, nblocks, at, bt);
+      case _ => throw new RuntimeException("blockmult2 unsupported types %s %s" format (b.mytype, c.mytype));
+    }
+    c
+  }
+  
+  override def blockmadd(b:DMat, c:DMat, nblocks:Int, at:Boolean, bt:Boolean):DMat = blockmult(b, c, nblocks, at, bt, 1f);
+ 
+  override def blockmadd(b:Mat, c:Mat, nblocks:Int):Mat = blockmadd(b, c, nblocks, false, false);
+  
+  override def blockmadd(b:Mat, c:Mat, nblocks:Int, at:Boolean, bt:Boolean):Mat = {
+    (b, c) match {
+      case (bb:DMat, cc:DMat) => blockmadd(bb, cc, nblocks, at, bt);
+      case _ => throw new RuntimeException("blockmadd unsupported types %s %s" format (b.mytype, c.mytype));
+    }
+    c
+  }
+  
+  override def blockmadd2(b:DMat, c:DMat, nblocks:Int, at:Boolean, bt:Boolean):DMat = blockmult2(b, c, nblocks, at, bt, 1f);
+ 
+  override def blockmadd2(b:Mat, c:Mat, nblocks:Int):Mat = blockmadd2(b, c, nblocks, false, false);
+  
+  override def blockmadd2(b:Mat, c:Mat, nblocks:Int, at:Boolean, bt:Boolean):Mat = {
+    (b, c) match {
+      case (bb:DMat, cc:DMat) => blockmadd2(bb, cc, nblocks, at, bt);
+      case _ => throw new RuntimeException("blockmadd2 unsupported types %s %s" format (b.mytype, c.mytype));
+    }
+    c
+  }
+
+  
+  def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, k:Int, alpha:Float, aoff:Int, lda:Int, astep:Int, 
+      b:GDMat, boff:Int, ldb:Int, bstep:Int, beta:Float, c:GDMat, coff:Int, ldc:Int, cstep:Int, nreps:Int):GDMat = {
+    
+      val ax = if (transa == 0) nc else nr;
+      val alphad = alpha.toDouble
+      val betad = beta.toDouble
+
+//      if (beta == 0f) c.clear;
+      Mat.nflops += 2L * nr * nc * k * nreps;
+      if (lda > astep || ldb > bstep || ldc > cstep) { 
+    	  CUMATD.myCublasDgemmStridedBatched(
+    			  getHandle, transa, transb,	
+    			  nr, nc, k, 
+    			  alphad, 
+    			  pdata.withByteOffset(1L * Sizeof.DOUBLE * aoff), lda, astep, 
+    			  b.pdata.withByteOffset(1L * Sizeof.DOUBLE * boff), ldb, bstep, 
+    			  betad, 
+    			  c.pdata.withByteOffset(1L * Sizeof.DOUBLE * coff), ldc, cstep,
+    			  nreps);
+      } else { 
+    	  cublasDgemmStridedBatched(
+    			  getHandle, transa, transb,	
+    			  nr, nc, k, 
+    			  Pointer.to(Array(alphad)),
+    			  pdata.withByteOffset(1L * Sizeof.DOUBLE * aoff), lda, astep, 
+    			  b.pdata.withByteOffset(1L * Sizeof.DOUBLE * boff), ldb, bstep, 
+    			  Pointer.to(Array(betad)),
+    			  c.pdata.withByteOffset(1L * Sizeof.DOUBLE * coff), ldc, cstep,
+    			  nreps);
+      }
+      cudaStreamSynchronize(Mat.SyncMethod)
+
+      val err = cudaGetLastError()
+      if (err != 0) {
+    	  println("device is %d" format SciFunctions.getGPU)
+    	  throw new RuntimeException("Cuda error in GDMat blockGemm " + cudaGetErrorString(err))
+      }
+    c;
+  }
+  
+  override def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, k:Int, alpha:Float, aoff:Int, lda:Int, astep:Int, 
+      b:Mat, boff:Int, ldb:Int, bstep:Int, beta:Float, c:Mat, coff:Int, ldc:Int, cstep:Int, nreps:Int):GDMat = {
+  		blockGemm(transa, transb, nr, nc, k, alpha, aoff, lda, astep, b.asInstanceOf[GDMat], boff, ldb, bstep, 
+  		    beta, c.asInstanceOf[GDMat], coff, ldc, cstep, nreps);
+  }
   
   def GSMult(a:GSDMat, oldmat:Mat):GDMat = {
     if (ncols == a.nrows) {
@@ -661,14 +804,15 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   	} else {
   	  a match {
   	  case aa:GDMat => {
-  	    val v = cublasDdot(length, pdata, 1, aa.pdata, 1)
+  		  val result = Array(0.0)
+  	    cublasDdot(getHandle, length, pdata, 1, aa.pdata, 1, Pointer.to(result))
   	  	cudaStreamSynchronize(Mat.SyncMethod)
   	  	val err = cudaGetLastError
   	  	if (err != 0) {
   	  		println("device is %d" format SciFunctions.getGPU)
   	  		throw new RuntimeException("Cublas error in ddot " + cudaGetErrorString(err))
   	  	}
-  	  v
+  	  result(0)
   	  }
   	  }
   	}
@@ -1418,7 +1562,12 @@ object GDMat {
       println("GDMat %d %d, %d %f" format (nr, nc, SciFunctions.getGPU, SciFunctions.GPUmem._1))
       if (nr*nc > Mat.debugMemThreshold) throw new RuntimeException("GDMat alloc too large");
     }
-    var err = cublasAlloc(nr*nc, Sizeof.DOUBLE, retv.pdata)
+    val len = nr * nc;
+    var err = if (1L*len*Sizeof.DOUBLE > Mat.hostAllocSize) {
+      cudaMallocHost(retv.pdata, 1L*len*Sizeof.DOUBLE);
+    } else {
+      cudaMalloc(retv.pdata, 1L*len*Sizeof.DOUBLE);
+    }
     cudaStreamSynchronize(Mat.SyncMethod)
     if (err == 0) err = cudaGetLastError()
     if (err != 0) throw new RuntimeException("CUDA alloc failed " + cudaGetErrorString(err))
@@ -1492,6 +1641,10 @@ object GDMat {
     }
     out
   }  
+  
+  val pONE = Pointer.to(Array(1.0));
+  
+  val pZERO = Pointer.to(Array(0.0));
   
   def apply(a:DMat):GDMat = {
     a match {
