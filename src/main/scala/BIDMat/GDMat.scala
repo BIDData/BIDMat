@@ -28,6 +28,12 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   
    /** hold indices in GPU mem */
   val ginds = new Array[GIMat](ndims);
+  
+  override def t = {
+    val out = GDMat.newOrCheckGDMat(ncols, nrows, null, GUID, "t".##)
+    CUMATD.transpose(pdata, nrows, out.pdata, ncols, nrows, ncols)
+    out
+  }
 
   override def dv:Double =
     if (nrows > 1 || ncols > 1) {

@@ -27,6 +27,12 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   
   override def nnz = length;
   
+  override def t = {
+    val out = GMat.newOrCheckGMat(ncols, nrows, null, GUID, "t".##)
+    CUMAT.transpose(pdata, nrows, out.pdata, ncols, nrows, ncols)
+    out
+  }
+  
   /** hold indices in GPU mem */
   val ginds = new Array[GIMat](ndims);
 
