@@ -1,6 +1,7 @@
 
 #include <jni.h>
 #include <cuda_runtime.h>
+#include <cublas_v2.h>
 #include "Logger.hpp"
 #include "JNIUtils.hpp"
 #include "PointerUtils.hpp"
