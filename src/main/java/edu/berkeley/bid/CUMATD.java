@@ -175,5 +175,9 @@ public final class CUMATD {
     public static native int myCublasDgemmStridedBatched(cublasHandle handle, int transa, int transb, int m, int n, int k, double alpha,
 							 Pointer A, int lda, int astep, Pointer B, int ldb, int bstep,
 							 double beta, Pointer C, int ldc, int cstep, int reps);
+    
+    public static native int myCublasDgemmStridedBatched4D(cublasHandle handle, int transa, int transb, int m, int n, int k, double alpha,
+			 Pointer A, int lda, int astep1, int astep2, Pointer B, int ldb, int bstep1, int bstep2,
+			 double beta, Pointer C, int ldc, int cstep1, int cstep2, int reps1, int reps2);
 
 }

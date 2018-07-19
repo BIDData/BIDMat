@@ -1760,4 +1760,50 @@ JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_myCublasSgemmStridedBatched
   return retval;
 }
 
+JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_myCublasSgemmStridedBatched4D
+(JNIEnv * env, jobject obj, jobject j_cuHandle, jint transa, jint transb, jint M, jint N, jint K, jfloat alpha, 
+ jobject j_A, jint lda, jint astep1, jint astep2, jobject j_B, jint ldb, jint bstep1, jint bstep2,
+ jfloat beta, jobject j_C, jint ldc, jint cstep1, jint cstep2, jint reps1, jint reps2) {
+
+  int i, j, retval = 0;
+  cublasHandle_t handle = (cublasHandle_t)getNativePointerValue(env, j_cuHandle);
+  const float * A = (float *)getPointer(env, j_A);
+  const float * B = (float *)getPointer(env, j_B);
+  float * C = (float *)getPointer(env, j_C);
+  float *alphaptr = new float[2];
+  float *betaptr = &alphaptr[1];
+  int reps = reps1 * reps2;
+  *alphaptr = alpha;
+  *betaptr = beta;
+
+  float ** host_ptrs = (float **)(new float*[reps*3]);
+  float ** device_ptrs = NULL;
+  cudaMalloc((void **)&device_ptrs, sizeof(float *)*reps*3);
+  cudaStreamSynchronize(SYNC_STREAM);
+  for (i = 0; i < reps2; i++) {
+    for (j = 0; j < reps1; j++) {
+      host_ptrs[j + reps1 * i] = (float *)(&A[astep1 * j + astep2 * i]);
+      host_ptrs[j + reps1 * i + reps] = (float *)(&B[bstep1 * j + bstep2 * i]);
+      host_ptrs[j + reps1 * i + 2*reps] = (float *)(&C[cstep1 * j + cstep2 * i]);
+    }
+  }
+  cudaMemcpy(device_ptrs, host_ptrs, sizeof(float *)*reps*3, cudaMemcpyHostToDevice);
+  cudaStreamSynchronize(SYNC_STREAM);
+  const float ** Aptrs = (const float **)device_ptrs;
+  const float ** Bptrs = (const float **)(&device_ptrs[reps]);
+  float ** Cptrs = &device_ptrs[2*reps];
+  
+  cublasOperation_t at, bt;
+  at = (transa) ? CUBLAS_OP_T : CUBLAS_OP_N;
+  bt = (transb) ? CUBLAS_OP_T : CUBLAS_OP_N;
+
+  retval = cublasSgemmBatched(handle, at, bt, M, N, K, alphaptr, Aptrs, lda, Bptrs, ldb, betaptr, Cptrs, ldc, reps); 
+
+  cudaStreamSynchronize(SYNC_STREAM);
+  cudaFree(device_ptrs);
+  delete [] host_ptrs;
+  delete [] alphaptr;
+  return retval;
+}
+
 }

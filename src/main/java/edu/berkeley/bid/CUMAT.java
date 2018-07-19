@@ -367,4 +367,8 @@ public final class CUMAT {
     public static native int myCublasSgemmStridedBatched(cublasHandle handle, int transa, int transb, int m, int n, int k, float alpha,
 							 Pointer A, int lda, int astep, Pointer B, int ldb, int bstep,
 							 float beta, Pointer C, int ldc, int cstep, int reps);
+    
+    public static native int myCublasSgemmStridedBatched4D(cublasHandle handle, int transa, int transb, int m, int n, int k, float alpha,
+			 Pointer A, int lda, int astep1, int astep2, Pointer B, int ldb, int bstep1, int bstep2,
+			 float beta, Pointer C, int ldc, int cstep1, int cstep2, int reps1, int reps2);
 }

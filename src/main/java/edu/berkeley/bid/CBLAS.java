@@ -40,48 +40,88 @@ public final class CBLAS {
     }
 
   public static native  double ddot( int N,  double []  X,  int incX,  double []  Y,  int incY);
+  
   public static native  double ddotxx( int N,  double []  X,  int startX,  double []  Y,  int startY);
+  
   public static native  void ddotm( int nrows, int ncols, double []  X,  int ldx,  double []  Y,  int ldy, double [] Z);
+  
   public static native  void ddotr( int nrows, int ncols, double []  X,  int ldx,  double []  Y,  int ldy, double [] Z);
+  
   public static native  void daxpy( int N, double a, double []  X,  int incX,  double []  Y,  int incY);
+  
   public static native  void daxpyxx( int N, double a, double []  X,  int startX,  double []  Y,  int startY);
+  
   public static native  void dgemv(  int order,   int TransA,  int M,  int N,  double alpha,  double []  A,  int lda,  
   		                               double []  X,  int incX,  double beta, double []  Y,  int incY);
+  
   public static native  void dgemm(  int Order,   int TransA,   int TransB,  int M,  int N,  int K,  double alpha,  
   		                               double []  A,  int lda,  double []  B,  int ldb,  double beta, double []  C,  int ldc);
+  
   public static native  void domatcopy( String Order, String TransA, int M, int N, double alpha, double [] A, int lda, double [] B, int ldb);
+  
   public static native  void dmcscm( int m, int n, double [] a, int lda, double [] b, int [] ir, int [] jc, double [] c, int ldc);
+  
   public static native  void dmcsrm( int m, int n, double [] a, int lda, double [] b, int [] ir, int [] jc, double [] c, int ldc);
+  
   public static native  void blockDgemm( int transA, int transB, int nr, int nc, int kk, double alpha, double [] A, int aoff, int lda, int astep, 
 	  		double[] B, int boff, int ldb, int bstep, double beta, double [] C, int coff, int ldc, int cstep, int nreps);
   
+  public static native  void blockDgemm4D( int transA, int transB, int nr, int nc, int kk, double alpha, 
+		                                   double [] A, int aoff, int lda, int astep1, int astep2,  
+	  		                               double [] B, int boff, int ldb, int bstep1, int bstep2, double beta, 
+	  		                               double [] C, int coff, int ldc, int cstep1, int cstep2, int reps1, int reps2);
+  
+  
   public static native  void iomatcopy( String Order, String TransA, int M, int N, int [] A, int lda, int [] B, int ldb);
+  
   public static native  void lomatcopy( String Order, String TransA, int M, int N, long [] A, int lda, long [] B, int ldb);
   
   public static native  float sdot( int N,  float []  X,  int incX,  float []  Y,  int incY);
+  
   public static native  float sdotxx( int N,  float []  X,  int startX,  float []  Y,  int startY);
+  
   public static native  void sdotm( int nrows, int ncols, float []  X,  int ldx,  float []  Y,  int ldy, float [] Z);
+  
   public static native  void sdotr( int nrows, int ncols, float []  X,  int ldx,  float []  Y,  int ldy, float [] Z);
+  
   public static native  void saxpy( int N, float a, float []  X,  int incX,  float []  Y,  int incY);
+  
   public static native  void saxpyxx( int N, float a, float []  X,  int startX,  float []  Y,  int startY);
+  
   public static native  void sgemv(  int order,   int TransA,  int M,  int N,  float alpha,  float []  A,  int lda,  
   		                               float []  X,  int incX,  float beta, float []  Y,  int incY);
+  
   public static native  void sgemm(  int Order,   int TransA,   int TransB,  int M,  int N,  int K,  float alpha,  
   		                               float []  A,  int lda,  float []  B,  int ldb,  float beta, float []  C,  int ldc);
+  
   public static native  void sgemmx(  int Order,   int TransA,   int TransB,  int M,  int N,  int K,  float alpha,  
                                       float []  A,  int Aoff, int lda,  float []  B,  int Boff, int ldb,  float beta, 
                                       float []  C,  int Coff, int ldc);
+  
   public static native  void somatcopy( String Order, String TransA, int M, int N, float alpha, float [] A, int lda, float [] B, int ldb);
+  
   public static native  void blockSgemm( int transA, int transB, int nr, int nc, int kk, float alpha, float [] A, int aoff, int lda, int astep, 
-  		float[] B, int boff, int ldb, int bstep, float beta, float [] C, int coff, int ldc, int cstep, int nreps);
+  		float [] B, int boff, int ldb, int bstep, float beta, float [] C, int coff, int ldc, int cstep, int nreps);
+  
+  public static native  void blockSgemm4D( int transA, int transB, int nr, int nc, int kk, float alpha, 
+                                           float [] A, int aoff, int lda, int astep1, int astep2,  
+                                           float [] B, int boff, int ldb, int bstep1, int bstep2, float beta, 
+                                           float [] C, int coff, int ldc, int cstep1, int cstep2, int nreps1, int reps2);
+  
   
   public static native  void cdot( int N,  float []  X,  int incX,  float []  Y,  int incY, float [] Z);
+  
   public static native  void cdotxx( int N,  float []  X,  int startX,  float []  Y,  int startY, float [] Z);
+  
   public static native  void cdotm( int nrows, int ncols, float []  X,  int ldx,  float []  Y,  int ldy, float [] Z);
+  
   public static native  void caxpy( int N, float [] a, float [] X,  int incX,  float []  Y,  int incY);
+  
   public static native  void caxpyxx( int N, float [] a, float [] X,  int startX,  float []  Y,  int startY);
+  
   public static native  void cgemv(  int order,   int TransA,  int M,  int N,  float [] alpha,  float [] A,  int lda,  
   		                               float []  X,  int incX,  float [] beta, float []  Y,  int incY);
+  
   public static native  void cgemm(  int Order,   int TransA,   int TransB,  int M,  int N,  int K,  float [] alpha,  
   		                               float []  A,  int lda,  float []  B,  int ldb,  float [] beta, float []  C,  int ldc);
   
@@ -89,17 +129,24 @@ public final class CBLAS {
 //  public static native  void smcsrm( int m, int n, float [] a, int lda, float [] b, int [] ir, int [] jc, float [] c, int ldc);
 
   public static native  void spermute(int d1, int d2, int d3, float [] in, float [] out);
+  
   public static native  void dpermute(int d1, int d2, int d3, double [] in, double [] out);
+  
   public static native  void ipermute(int d1, int d2, int d3, int [] in, int [] out);
+  
   public static native  void lpermute(int d1, int d2, int d3, long [] in, long [] out);
   
   public static native  void word2vecFwd(int nrows, int ncols, int nwa, int nwb, int [] WA, int [] WB, float [] A, float [] B, float [] C);
   
   public static native  void word2vecBwd(int nrows, int ncols, int nwa, int nwb, int [] WA, int [] WB, float [] A, float [] B, float [] DA, float [] DB, float [] C, float lrate);
+ 
   
   public static native  void reduceTensorFloat(float [] A, float [] B, int m, int n, int p, int op);
+  
   public static native  void reduceTensorInt(int [] A, int [] B, int m, int n, int p, int op);
+  
   public static native  void reduceTensorDouble(double [] A, double [] B, int m, int n, int p, int op);
+  
   public static native  void reduceTensorLong(long [] A, long [] B, int m, int n, int p, int op);
   
   

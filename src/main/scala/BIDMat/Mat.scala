@@ -229,6 +229,9 @@ class Mat(val _dims:Array[Int]) extends ND with Serializable {
   def blockGemm(transa:Int, transb:Int, nr:Int, nc:Int, k:Int, alpha:Float, aoff:Int, lda:Int, astep:Int, 
       b:Mat, boff:Int, ldb:Int, bstep:Int, beta:Float, c:Mat, coff:Int, ldc:Int, cstep:Int, reps:Int):Mat = notImplemented0("blockGemm");
   
+  def blockGemm4D(transa:Int, transb:Int, nr:Int, nc:Int, k:Int, alpha:Float, aoff:Int, lda:Int, astep1:Int, astep2:Int, b:Mat, 
+      boff:Int, ldb:Int, bstep1:Int, bstep2:Int, beta:Float, c:Mat, coff:Int, ldc:Int, cstep1:Int, cstep2:Int, reps1:Int, reps2:Int):Mat = notImplemented0("blockGemm");
+  
   def mult(a:Mat, b:Mat, at:Boolean, bt:Boolean):Mat= notImplemented1("mult", a);
   def mult(a:Mat, b:Mat):Mat= notImplemented1("mult", a);
 

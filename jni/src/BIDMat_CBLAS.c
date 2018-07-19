@@ -664,7 +664,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_caxpyxx
 
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_blockSgemm
 (JNIEnv *env, jobject obj, jint transA, jint transB, jint nr, jint nc, jint kk, jfloat alpha, jfloatArray jA, jint aoff, jint lda, jint astep, 
- jfloatArray jB, jint boff, jint ldb, jint bstep, jfloat beta, jfloatArray jC, jint coff, jint ldc, jint cstep, int reps)
+ jfloatArray jB, jint boff, jint ldb, jint bstep, jfloat beta, jfloatArray jC, jint coff, jint ldc, jint cstep, jint reps)
 {
   int i, at, bt;
   jfloat *A = (*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE);
@@ -689,7 +689,7 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_blockSgemm
 
 JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_blockDgemm
 (JNIEnv *env, jobject obj, jint transA, jint transB, jint nr, jint nc, jint kk, jdouble alpha, jdoubleArray jA, jint aoff, jint lda, jint astep, 
- jdoubleArray jB, jint boff, jint ldb, jint bstep, jdouble beta, jdoubleArray jC, jint coff, jint ldc, jint cstep, int reps)
+ jdoubleArray jB, jint boff, jint ldb, jint bstep, jdouble beta, jdoubleArray jC, jint coff, jint ldc, jint cstep, jint reps)
 {
   int i, at, bt;
   jdouble *A = (*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE);
@@ -706,6 +706,69 @@ JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_blockDgemm
     A += astep;
     B += bstep;
     C += cstep;
+  }      
+  (*env)->ReleasePrimitiveArrayCritical(env, jC, C, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, jB, B, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, jA, A, 0);
+}
+
+JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_blockSgemm4D
+(JNIEnv *env, jobject obj, jint transA, jint transB, jint nr, jint nc, jint kk, jfloat alpha,
+ jfloatArray jA, jint aoff, jint lda, jint astep1, jint astep2,
+ jfloatArray jB, jint boff, jint ldb, jint bstep1, jint bstep2, jfloat beta,
+ jfloatArray jC, jint coff, jint ldc, jint cstep1, jint cstep2, jint reps1, jint reps2)
+{
+  int i, j, at, bt;
+  float *A = (float *)((*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE));
+  float *B = (float *)((*env)->GetPrimitiveArrayCritical(env, jB, JNI_FALSE));
+  float *C = (float *)((*env)->GetPrimitiveArrayCritical(env, jC, JNI_FALSE));
+  float *pA, *pB, *pC;
+  
+    
+  at = (transA) ? CblasTrans : CblasNoTrans;
+  bt = (transB) ? CblasTrans : CblasNoTrans;
+  A += aoff;
+  B += boff;
+  C += coff;
+  for (i = 0; i < reps2; i++) {
+    for (j = 0; j < reps1; j++) {
+      pA = A + (j * astep1 + i * astep2);
+      pB = B + (j * bstep1 + i * bstep2);
+      pC = C + (j * cstep1 + i * cstep2);
+      cblas_sgemm(CblasColMajor, at, bt, nr, nc, kk, alpha, pA, lda, pB, ldb, beta, pC, ldc);
+    }
+  }      
+  (*env)->ReleasePrimitiveArrayCritical(env, jC, C, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, jB, B, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, jA, A, 0);
+}
+
+
+JNIEXPORT void JNICALL Java_edu_berkeley_bid_CBLAS_blockDgemm4D
+(JNIEnv *env, jobject obj, jint transA, jint transB, jint nr, jint nc, jint kk, jdouble alpha,
+ jdoubleArray jA, jint aoff, jint lda, jint astep1, jint astep2,
+ jdoubleArray jB, jint boff, jint ldb, jint bstep1, jint bstep2, jdouble beta,
+ jdoubleArray jC, jint coff, jint ldc, jint cstep1, jint cstep2, jint reps1, jint reps2)
+{
+  int i, j, at, bt;
+  double *A = (double *)((*env)->GetPrimitiveArrayCritical(env, jA, JNI_FALSE));
+  double *B = (double *)((*env)->GetPrimitiveArrayCritical(env, jB, JNI_FALSE));
+  double *C = (double *)((*env)->GetPrimitiveArrayCritical(env, jC, JNI_FALSE));
+  double *pA, *pB, *pC;
+  
+    
+  at = (transA) ? CblasTrans : CblasNoTrans;
+  bt = (transB) ? CblasTrans : CblasNoTrans;
+  A += aoff;
+  B += boff;
+  C += coff;
+  for (i = 0; i < reps2; i++) {
+    for (j = 0; j < reps1; j++) {
+      pA = A + (j * astep1 + i * astep2);
+      pB = B + (j * bstep1 + i * bstep2);
+      pC = C + (j * cstep1 + i * cstep2);
+      cblas_dgemm(CblasColMajor, at, bt, nr, nc, kk, alpha, pA, lda, pB, ldb, beta, pC, ldc);
+    }
   }      
   (*env)->ReleasePrimitiveArrayCritical(env, jC, C, 0);
   (*env)->ReleasePrimitiveArrayCritical(env, jB, B, 0);

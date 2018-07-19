@@ -996,8 +996,14 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
     val cnrows = c.dims(0)
     val cstep = c.dims(1)
     val cncols = c.dims(2)
-    blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, 1f, 0, anrows*astep, anrows,
-    		b, 0, bnrows*bstep, bnrows, cc, c, 0, cnrows*cstep, cnrows, nblocks);
+    if (dims.length == 3) {
+    	blockGemm(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, 1f, 0, anrows*astep, anrows,
+    			b, 0, bnrows*bstep, bnrows, cc, c, 0, cnrows*cstep, cnrows, nblocks);
+    } else {
+      val reps2 = dims.data.slice(3, dims.length).reduce(_*_);
+      blockGemm4D(if (at) 1 else 0, if (bt) 1 else 0, cnrows, cncols, if (at) anrows else ancols, 1f, 0, anrows*astep, anrows, anrows*ancols*astep,
+    			b, 0, bnrows*bstep, bnrows, bnrows*bncols*bstep, cc, c, 0, cnrows*cstep, cnrows, cnrows*cncols*cstep, nblocks, reps2);
+    }
     c
   }
   
@@ -1594,6 +1600,24 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
       b:Mat, boff:Int, ldb:Int, bstep:Int, beta:Float, c:Mat, coff:Int, ldc:Int, cstep:Int, nreps:Int):FMat = {
   		blockGemm(transa, transb, nr, nc, k, alpha, aoff, lda, astep, b.asInstanceOf[FMat], boff, ldb, bstep,
   		    beta, c.asInstanceOf[FMat], coff, ldc, cstep, nreps);
+  }
+  
+  def blockGemm4D(transa:Int, transb:Int, nr:Int, nc:Int, k:Int, alpha:Float, 
+      aoff:Int, lda:Int, astep1:Int, astep2:Int,
+      b:FMat, boff:Int, ldb:Int, bstep1:Int, bstep2:Int, beta:Float, 
+      c:FMat, coff:Int, ldc:Int, cstep1:Int, cstep2:Int, nreps1:Int, nreps2:Int):FMat = {
+    Mat.nflops += 2L * nr * nc * k * nreps1 * nreps2;
+    blockSgemm4D(transa, transb, nr, nc, k, alpha, data, aoff, lda, astep1, astep2, 
+        b.data, boff, ldb, bstep1, bstep2, beta, c.data, coff, ldc, cstep1, cstep2, nreps1, nreps2);
+    c;
+  }
+
+  override def blockGemm4D(transa:Int, transb:Int, nr:Int, nc:Int, k:Int, alpha:Float, 
+      aoff:Int, lda:Int, astep1:Int, astep2:Int,
+      b:Mat, boff:Int, ldb:Int, bstep1:Int, bstep2:Int, beta:Float, 
+      c:Mat, coff:Int, ldc:Int, cstep1:Int, cstep2:Int, nreps1:Int, nreps2:Int):FMat = {
+  		blockGemm4D(transa, transb, nr, nc, k, alpha, aoff, lda, astep1, astep2, b.asInstanceOf[FMat], boff, ldb, bstep1, bstep2,
+  		    beta, c.asInstanceOf[FMat], coff, ldc, cstep1, cstep2, nreps1, nreps2);
   }
 
   def solvel(a0:Mat):FMat =
