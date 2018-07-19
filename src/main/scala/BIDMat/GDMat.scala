@@ -31,7 +31,7 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   
   override def t = {
     val out = GDMat.newOrCheckGDMat(ncols, nrows, null, GUID, "t".##)
-    CUMATD.transpose(pdata, nrows, out.pdata, ncols, nrows, ncols)
+    CUMATD.transpose(this.pdata, nrows, out.pdata, ncols, nrows, ncols)
     out
   }
 
@@ -418,13 +418,6 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   	cudaMemset(pdata, 0, Sizeof.DOUBLE*length)
   	cudaStreamSynchronize(Mat.SyncMethod)
   	this    
-  }
-  
-  override def t = {
-    val out = GDMat.newOrCheckGDMat(ncols, nrows, null, GUID, "t".##)
-    CUMATD.transpose(this.pdata, nrows, out.pdata, ncols, nrows, ncols)
-    cudaStreamSynchronize(Mat.SyncMethod)
-    out
   }
   
   override def set(v:Double):GDMat = {

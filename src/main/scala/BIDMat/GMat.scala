@@ -29,7 +29,7 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   
   override def t = {
     val out = GMat.newOrCheckGMat(ncols, nrows, null, GUID, "t".##)
-    CUMAT.transpose(pdata, nrows, out.pdata, ncols, nrows, ncols)
+    CUMAT.transpose(this.pdata, nrows, out.pdata, ncols, nrows, ncols)
     out
   }
   
@@ -545,12 +545,6 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   	cudaMemset(pdata, 0, Sizeof.FLOAT*length)
   	cudaStreamSynchronize(Mat.SyncMethod)
   	this    
-  }
-  
-  override def t = {
-    val out = GMat.newOrCheckGMat(ncols, nrows, null, GUID, "t".##)
-    CUMAT.transpose(this.pdata, nrows, out.pdata, ncols, nrows, ncols);
-    out
   }
   
   override def set(v:Float):GMat = {
