@@ -466,6 +466,22 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
     }
   }
 
+  override def reshapeView(adims:IMat):DMat = reshapeView(adims.data);
+
+  override def reshapeTrim(newdims:Int*):DMat = reshapeTrim(newdims.toArray)
+  
+  override def reshapeTrim(newdims:Array[Int]):DMat = {
+    if (newdims.reduce(_*_) <= data.length) {
+      val out = DMat(newdims, data);
+      out.setGUID(MurmurHash3_x64_64(Array(GUID), "reshapeTrim".##));
+      out
+    } else {
+      throw new RuntimeException("DMat reshapeTrim total length too large")
+    }
+  }
+
+  override def reshapeTrim(adims:IMat):DMat = reshapeTrim(adims.data);
+
   /** transpose */
   override def transpose(dims:Array[Int]):DMat = transpose(MatFunctions.irow(dims))
 

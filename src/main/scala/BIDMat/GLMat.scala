@@ -8,6 +8,7 @@ import jcuda.runtime.cudaError._
 import edu.berkeley.bid.CUMAT
 import edu.berkeley.bid.CUMATD
 import scala.util.hashing.MurmurHash3
+import edu.berkeley.bid.MurmurHash3.MurmurHash3_x64_64
 import java.io._
 
 class GLMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) extends LMat(dims0, null) {
@@ -43,6 +44,35 @@ class GLMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     } else {
       toLMat().data(0)
     }
+
+  override def reshapeView(newdims:Int*):GLMat = reshapeView(newdims.toArray)
+  
+  override def reshapeView(newdims:Array[Int]):GLMat = {
+    if (newdims.reduce(_*_) == length) {
+      val out = new GLMat(newdims, pdata, llength);
+      out.setGUID(MurmurHash3_x64_64(newdims.map(_.toLong) :+ GUID, "reshapeView".##));
+      out
+    } else {
+      throw new RuntimeException("GLMat reshapeView total length doesnt match")
+    }
+  }
+  
+  override def reshapeView(adims:IMat):GLMat = reshapeView(adims.data);
+
+  override def reshapeTrim(newdims:Int*):GLMat = reshapeTrim(newdims.toArray)
+  
+  override def reshapeTrim(newdims:Array[Int]):GLMat = {
+    if (newdims.reduce(_*_) <= realsize) {
+      val out = new GLMat(newdims, pdata, realsize);
+      out.setGUID(MurmurHash3_x64_64(newdims.map(_.toLong) :+ GUID, "reshapeTrim".##));
+      out
+    } else {
+      throw new RuntimeException("GLMat reshapeTrim total length too large")
+    }
+  }
+  
+  override def reshapeTrim(adims:IMat):GLMat = reshapeTrim(adims.data);
+
 
   override def mytype = "GLMat"
     

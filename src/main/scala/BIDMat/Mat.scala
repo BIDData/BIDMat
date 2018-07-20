@@ -197,6 +197,10 @@ class Mat(val _dims:Array[Int]) extends ND with Serializable {
   def reshapeView(newdims:Int*):Mat  = notImplemented0("reshapeView");
   def reshapeView(newdims:Array[Int]):Mat = notImplemented0("reshapeView");
   def reshapeView(newdims:IMat):Mat = notImplemented0("reshapeView");
+
+  def reshapeTrim(newdims:Int*):Mat  = notImplemented0("reshapeTrim");
+  def reshapeTrim(newdims:Array[Int]):Mat = notImplemented0("reshapeTrim");
+  def reshapeTrim(newdims:IMat):Mat = notImplemented0("reshapeTrim");
   
   def transpose(dims:Array[Int]):Mat = notImplemented0("transpose");
   def transpose(dims:IMat):Mat = notImplemented0("transpose");

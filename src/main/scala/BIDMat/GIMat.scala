@@ -78,6 +78,20 @@ class GIMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   
   override def reshapeView(adims:IMat):GIMat = reshapeView(adims.data);
 
+  override def reshapeTrim(newdims:Int*):GIMat = reshapeTrim(newdims.toArray)
+  
+  override def reshapeTrim(newdims:Array[Int]):GIMat = {
+    if (newdims.reduce(_*_) <= realsize) {
+      val out = new GIMat(newdims, pdata, realsize);
+      out.setGUID(MurmurHash3_x64_64(newdims.map(_.toLong) :+ GUID, "reshapeTrim".##));
+      out
+    } else {
+      throw new RuntimeException("GIMat reshapeTrim total length too large")
+    }
+  }
+  
+  override def reshapeTrim(adims:IMat):GIMat = reshapeTrim(adims.data);
+
   override def mytype = "GIMat"
     
   override def nnz = length

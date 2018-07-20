@@ -379,6 +379,22 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     }
   }
 
+  override def reshapeView(adims:IMat):DMat = reshapeView(adims.data);
+
+  override def reshapeTrim(newdims:Int*):DMat = reshapeTrim(newdims.toArray)
+  
+  override def reshapeTrim(newdims:Array[Int]):DMat = {
+    if (newdims.reduce(_*_) <= realsize) {
+      val out = new GDMat(newdims, pdata, realsize);
+      out.setGUID(MurmurHash3_x64_64(Array(GUID), "reshapeTrim".##));
+      out
+    } else {
+      throw new RuntimeException("FMat reshapeTrim total length too large")
+    }
+  }
+
+  override def reshapeTrim(adims:IMat):DMat = reshapeTrim(adims.data);
+
   /** transpose */
   override def transpose(dims:Array[Int]):GDMat = transpose(MatFunctions.irow(dims))
 

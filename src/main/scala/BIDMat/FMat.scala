@@ -486,6 +486,20 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   
   override def reshapeView(adims:IMat):FMat = reshapeView(adims.data);
 
+  override def reshapeTrim(newdims:Int*):FMat = reshapeTrim(newdims.toArray)
+  
+  override def reshapeTrim(newdims:Array[Int]):FMat = {
+    if (newdims.reduce(_*_) <= data.length) {
+      val out = FMat(newdims, data);
+      out.setGUID(MurmurHash3_x64_64(newdims.map(_.toLong) :+ GUID, "reshapeTrim".##));
+      out
+    } else {
+      throw new RuntimeException("FMat reshapeTrim total length too large")
+    }
+  }
+  
+  override def reshapeTrim(adims:IMat):FMat = reshapeTrim(adims.data);
+
   /** transpose */
   override def transpose(dims:Array[Int]):FMat = _transpose(irow(dims))
   
