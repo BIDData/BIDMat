@@ -6,11 +6,11 @@
   <groupId>BIDMat</groupId>
   <artifactId>BIDMat</artifactId>
   <packaging>jar</packaging>
-  <version>2.0.20-cuda8.0beta</version>
+  <version>2.0.23-cuda8.0</version>
   <name>BIDMat</name>
   <description>BIDMat performs matrix operations</description>
   <properties>
-    <scalaVersion>2.11</scalaVersion>
+    <scalaVersion>2.11.11</scalaVersion>
     <jcudaGroupId>org.jcuda</jcudaGroupId> <!-- set to "jcuda" for versions earlier than 0.8.0 -->
     <jcudaVersion>0.8.0</jcudaVersion>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -200,7 +200,7 @@
     <dependency>
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-compiler</artifactId>
-      <version>2.11.2</version> 
+      <version>2.11.11</version> 
     </dependency>
     <dependency>
       <groupId>jline</groupId>
@@ -214,18 +214,13 @@
     </dependency>
     <dependency>
       <groupId>org.scala-lang.modules</groupId>
-      <artifactId>scala-parser-combinators_${scalaVersion}</artifactId>
-      <version>1.0.5</version>
+      <artifactId>scala-parser-combinators_2.11</artifactId>
+      <version>1.0.6</version>
     </dependency>
     <dependency>
       <groupId>org.scalatest</groupId>
       <artifactId>scalatest_2.11</artifactId>
-      <version>2.2.1</version>
-    </dependency>
-    <dependency>
-      <groupId>org.scalacheck</groupId>
-      <artifactId>scalacheck_2.11</artifactId>
-      <version>1.11.6</version>
+      <version>3.0.4</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -340,11 +335,6 @@
       <artifactId>scala-arm_2.11</artifactId>
       <version>1.4</version>
     </dependency>
-    <dependency>
-      <groupId>IScala</groupId>
-      <artifactId>IScala</artifactId>
-      <version>1.0.0</version>
-    </dependency>
   </dependencies> 
   <build>
     <plugins>
@@ -361,7 +351,7 @@
           </execution>
         </executions>
         <configuration>
-          <scalaVersion>2.11.2</scalaVersion>
+          <scalaVersion>2.11.11</scalaVersion>
           <recompileMode>incremental</recompileMode>
           <jvmArgs>
             <jvmArg>-Xmx12g</jvmArg>

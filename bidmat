@@ -64,13 +64,13 @@ cd lib
 BIDMAT_JARS=`echo *.jar`
 BIDMAT_LIBS="${BIDMAT_ROOT}/target/BIDMat-${BIDMAT_VERSION}.jar"
 for lib in ${BIDMAT_JARS}; do
-    if [[ "$lib" != IScala* && "$lib" != scala* ]]; then
+#    if [[ "$lib" != IScala* && "$lib" != scala* ]]; then
 	BIDMAT_LIBS="${BIDMAT_LIBS};${LIBDIR}/${lib}"
-    fi
+#    fi
 done
 popd  > /dev/null
 
-ALL_LIBS=";${BIDMAT_LIBS};${JAVA_HOME}/lib/tools.jar;${LIBDIR}/IScala-1.0.0.jar"
+ALL_LIBS="${BIDMAT_LIBS};${JAVA_HOME}/lib/tools.jar"
 
 if [ "$OSS" = "windows" ]; then
     if [ ! "${CUDA_PATH}" = "" ]; then
@@ -94,12 +94,19 @@ fi
 if [ "$1" = "notebook" ]; then
     shift 1
     if [ ! -z "$@" ]; then
-        KERNEL_CMD="[\"java\", \"-cp\", \"${ALL_LIBS}\", \"${MEMSIZE}\", \"-Xms128M\", \
-       \"-Dfile.encoding=UTF-8\", \"org.refptr.iscala.IScala\", \"--profile\", \"{connection_file}\", \"--parent\", \"$@\"]"
+	ARGSTR=", \"$@\""
     else
-        KERNEL_CMD="[\"java\", \"-cp\", \"${ALL_LIBS}\", \"${MEMSIZE}\", \"-Xms128M\", \
-       \"-Dfile.encoding=UTF-8\", \"org.refptr.iscala.IScala\", \"--profile\", \"{connection_file}\", \"--parent\"]"
+	ARGSTR=""
     fi
+    KERNEL_CMD="[\"java\", \"-noverify\", \"-Xms128M\", \"${MEMSIZE}\", \"-Dfile.encoding=UTF-8\", 
+                 \"-jar\", \"${BIDMAT_ROOT0}/launcher.jar\", \"launch\", 
+                 \"-r\", \"sonatype:releases\", \"-r\", \"sonatype:snapshots\", 
+                 \"-r\", \"http://dl.bintray.com/biddata/BIDData\", \"-i\", \"ammonite\",
+                 \"-I\", \"ammonite:org.jupyter-scala:ammonite-runtime_2.11.11:0.8.3-1\",
+                 \"-I\", \"ammonite:org.jupyter-scala:scala-api_2.11.11:0.4.2\",
+                 \"-I\", \"ammonite:BIDMat:BIDMat:${BIDMAT_VERSION}\",
+                 \"org.jupyter-scala:scala-cli_2.11.11:0.4.2\", \"-M\", \"jupyter.scala.JupyterScala\",  \"--\", 
+                 \"--id\", \"scala\", \"--name\", \"Scala\", \"--connection-file\", \"{connection_file}\"${ARGSR}]"
     ipython notebook --profile=scala --KernelManager.kernel_cmd="$KERNEL_CMD"
 else
     ${BIDMAT_ROOT0}/scripts/scala/scala -Dscala.repl.maxprintstring=8000 ${userargs} -nobootcp -toolcp "${ALL_LIBS}" -cp "${ALL_LIBS}" -Yrepl-sync -i ${LIBDIR}/bidmat_init.scala ${1}

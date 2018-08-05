@@ -5,7 +5,7 @@ import java.util.Arrays
 import java.util.Comparator
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.tools.nsc.interpreter
+//import scala.tools.nsc.interpreter
 
 class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
 (_dims:Array[Int], val _data:Array[T])(implicit manifest:ClassTag[T]) extends Mat(_dims)  {
