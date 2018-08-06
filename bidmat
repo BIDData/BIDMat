@@ -38,16 +38,20 @@ if [ ! "$WSL" = "" ]; then
     OSS="WSL"
 elif [[ "$OSS" == Darwin* ]] ; then
     if [[ "$OSS" == *x86_64 ]] ; then
-	    ARCH="x86_64"
+	ARCH="x86_64"
     fi
     OSS="apple"
+    JUPYTER_DIR="~/Library/Jupyter/kernels/scala"
 elif [[ "$OSS" == Linux* ]] ; then
     OSS="linux"
+    JUPYTER_DIR="${HOME}/.local/share/jupyter/kernels/scala"
 elif [[ "$OSS" == CYGWIN* ]] ; then
     if [[ "$OSS" == *WOW* ]] ; then
         ARCH="x86_64"
     fi
-	OSS="windows"
+    OSS="windows"
+    JUPYTER_DIR=`echo $APPDATA | sed 's_\\\\_/_g' | sed 's_^\([A-Z]\):_/cygdrive/\1_'`
+    JUPYTER_DIR="${JUPYTER_DIR}/jupyter/kernels/scala"
 else
     echo "OS not supported" $OSS
     exit 1
@@ -56,7 +60,7 @@ fi
 if [ "$OSS" = "windows" ]; then
     if [ ! "${JAVA_HOME}" = "" ]; then
         JAVA_HOME=`${BIDMAT_ROOT}/shortpath.bat "${JAVA_HOME}"`
-	    export JAVA_HOME=`echo ${JAVA_HOME} | sed 's_\\\\_/_g'`/bin
+	export JAVA_HOME=`echo ${JAVA_HOME} | sed 's_\\\\_/_g'`/bin
     fi
 fi
 
@@ -64,9 +68,7 @@ cd lib
 BIDMAT_JARS=`echo *.jar`
 BIDMAT_LIBS="${BIDMAT_ROOT}/target/BIDMat-${BIDMAT_VERSION}.jar"
 for lib in ${BIDMAT_JARS}; do
-#    if [[ "$lib" != IScala* && "$lib" != scala* ]]; then
-	BIDMAT_LIBS="${BIDMAT_LIBS};${LIBDIR}/${lib}"
-#    fi
+    BIDMAT_LIBS="${BIDMAT_LIBS};${LIBDIR}/${lib}"
 done
 popd  > /dev/null
 
@@ -81,33 +83,32 @@ elif [ ! "$OSS" = "WSL" ]; then
     ALL_LIBS=`echo "${ALL_LIBS}" | sed 's/;/:/g'`
 fi
 
-userargs=""
-if [ "$2" != "" ]; then
-    userargs="-Duser.arg0=$2"
-    j=1;
-    for i in ${*:3}; do
-	userargs="$userargs -Duser.arg$j=$i"
-	j=$((j+1))
-    done
-fi
-
 if [ "$1" = "notebook" ]; then
     shift 1
-    if [ ! -z "$@" ]; then
-	ARGSTR=", \"$@\""
-    else
-	ARGSTR=""
-    fi
-    KERNEL_CMD="[\"java\", \"-noverify\", \"-Xms128M\", \"${MEMSIZE}\", \"-Dfile.encoding=UTF-8\", 
-                 \"-jar\", \"${BIDMAT_ROOT0}/launcher.jar\", \"launch\", 
-                 \"-r\", \"sonatype:releases\", \"-r\", \"sonatype:snapshots\", 
-                 \"-r\", \"http://dl.bintray.com/biddata/BIDData\", \"-i\", \"ammonite\",
-                 \"-I\", \"ammonite:org.jupyter-scala:ammonite-runtime_2.11.11:0.8.3-1\",
-                 \"-I\", \"ammonite:org.jupyter-scala:scala-api_2.11.11:0.4.2\",
-                 \"-I\", \"ammonite:BIDMat:BIDMat:${BIDMAT_VERSION}\",
-                 \"org.jupyter-scala:scala-cli_2.11.11:0.4.2\", \"-M\", \"jupyter.scala.JupyterScala\",  \"--\", 
-                 \"--id\", \"scala\", \"--name\", \"Scala\", \"--connection-file\", \"{connection_file}\"${ARGSR}]"
-    ipython notebook --profile=scala --KernelManager.kernel_cmd="$KERNEL_CMD"
+    kernelargs=""
+    j=0;
+    for i in $@; do
+	kernelargs="$kernelargs, \"$i\""
+	j=$((j+1))
+    done
+    KERNEL_CMD="[\"java\", \"-Xms128M\", \"${MEMSIZE}\", \"-Dfile.encoding=UTF-8\", \"-cp\", \"${ALL_LIBS}\",
+                 \"-Dcoursier.mainJar=jupyter.scala.JupyterScala\", \"jupyter.scala.JupyterScala\", 
+                 \"--id\", \"scala\", \"--name\", \"Scala\", \"--connection-file\", \"{connection_file}\"${kernelargs}]"
+    KERNEL_JSON="{\"language\" : \"scala\", \"display_name\" : \"Scala\", \"argv\" : ${KERNEL_CMD} }"
+    mkdir -p "${JUPYTER_DIR}"
+    echo "${KERNEL_JSON}" > ${JUPYTER_DIR}/kernel.json
+    cp ${BIDMAT_ROOT}/logo-64x64.png ${JUPYTER_DIR}
+    echo "$KERNEL_CMD"
+    jupyter notebook --KernelManager.kernel_cmd="$KERNEL_CMD"
 else
+    userargs=""
+    if [ "$2" != "" ]; then
+	userargs="-Duser.arg0=$2"
+	j=1;
+	for i in ${*:3}; do
+	    userargs="$userargs -Duser.arg$j=$i"
+	    j=$((j+1))
+	done
+    fi
     ${BIDMAT_ROOT0}/scripts/scala/scala -Dscala.repl.maxprintstring=8000 ${userargs} -nobootcp -toolcp "${ALL_LIBS}" -cp "${ALL_LIBS}" -Yrepl-sync -i ${LIBDIR}/bidmat_init.scala ${1}
 fi
