@@ -92,7 +92,7 @@ if [ "$1" = "notebook" ]; then
     mkdir -p "${JUPYTER_DIR}/kernels/bidmat"
     echo "${KERNEL_JSON}" > ${JUPYTER_DIR}/kernels/bidmat/kernel.json
     cp ${BIDMAT_ROOT}/logo-64x64.png ${JUPYTER_DIR}/kernels/bidmat
-    jupyter notebook --KernelManager.kernel_name=bidmat $@
+    jupyter notebook --KernelManager.kernel_cmd=${KERNEL_CMD} $@
 else
     userargs=""
     if [ "$2" != "" ]; then
