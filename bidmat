@@ -85,20 +85,14 @@ fi
 
 if [ "$1" = "notebook" ]; then
     shift 1
-    kernelargs=""
-    j=0;
-    for i in $@; do
-	kernelargs="$kernelargs, \"$i\""
-	j=$((j+1))
-    done
     KERNEL_CMD="[\"java\", \"-Xms128M\", \"${MEMSIZE}\", \"-Dfile.encoding=UTF-8\", \"-cp\", \"${ALL_LIBS}\",
                  \"-Dcoursier.mainJar=jupyter.scala.JupyterScala\", \"jupyter.scala.JupyterScala\", 
-                 \"--id\", \"bidmat\", \"--name\", \"BIDMat\", \"--connection-file\", \"{connection_file}\"${kernelargs}]"
+                 \"--id\", \"bidmat\", \"--name\", \"BIDMat\", \"--connection-file\", \"{connection_file}\"]"
     KERNEL_JSON="{\"language\" : \"bidmat\", \"display_name\" : \"BIDMat\", \"argv\" : ${KERNEL_CMD} }"
     mkdir -p "${JUPYTER_DIR}/kernels/bidmat"
     echo "${KERNEL_JSON}" > ${JUPYTER_DIR}/kernels/bidmat/kernel.json
     cp ${BIDMAT_ROOT}/logo-64x64.png ${JUPYTER_DIR}/kernels/bidmat
-    jupyter notebook --KernelManager.kernel_cmd="$KERNEL_CMD"
+    jupyter notebook --KernelManager.kernel_name=bidmat $@
 else
     userargs=""
     if [ "$2" != "" ]; then
