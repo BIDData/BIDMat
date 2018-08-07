@@ -12,6 +12,8 @@ import javax.swing.WindowConstants._
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import jupyter.api.Publish
+
 
 @SerialVersionUID(100L)
 class Image(val img:BufferedImage) extends Serializable {
@@ -149,9 +151,10 @@ class Image(val img:BufferedImage) extends Serializable {
     resize(math.round(width*factor).toInt, math.round(height*factor).toInt)
   }
      
-  def show(title0:String):BufferedImage = {
+  def show(title0:String)(implicit publish:Publish):BufferedImage = {
     if (Mat.inline) {
-      img 
+      publish.png(img)
+      img
     } else {
     	val panel = new ImagePanel(img);
     	val title = if (title0 != null) title0 else "Image " + Image.imageCount;
@@ -165,7 +168,7 @@ class Image(val img:BufferedImage) extends Serializable {
     }
   }
   
-  def show():BufferedImage = show(null)
+  def show()(implicit publish:Publish):BufferedImage = show(null)(publish)
 }
 
 class ImagePanel(img:BufferedImage) extends JPanel                                                
@@ -251,23 +254,23 @@ object Image {
     im;
   }
   
-  def animate(fmat:FMat, rate:Float):Image = {
+  def animate(fmat:FMat, rate:Float)(implicit publish:Publish):Image = {
     val img = Image(fmat);
     img.show;
     img.animate(fmat, rate);
     img;
   }
   
-  def animate(fmat:FMat):Image = animate(fmat, 1f);
+  def animate(fmat:FMat)(implicit publish:Publish):Image = animate(fmat, 1f);
   
-  def animate(fn:()=>FMat, rate:Float):Image = {
+  def animate(fn:()=>FMat, rate:Float)(implicit publish:Publish):Image = {
     val img = Image(fn());
     img.show;
     img.animate(fn, rate);
     img;
   }
   
-  def animate(fn:()=>FMat):Image = animate(fn, 1f);
+  def animate(fn:()=>FMat)(implicit publish:Publish):Image = animate(fn, 1f);
   
   var execService:ExecutorService = null;
 

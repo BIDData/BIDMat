@@ -7,4 +7,5 @@ import BIDMat.Plotting._
 
 Mat.checkMKL(false)
 Mat.checkCUDA(true)
+implicit val publish = new NonNotebook
 

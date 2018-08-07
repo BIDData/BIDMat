@@ -8,6 +8,7 @@ import scala.concurrent.Future
 import java.awt.image.BufferedImage
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.implicitConversions
+import jupyter.api.Publish
 
 class IMatWildcard extends IMat(0,0,null) with MatrixWildcard
 
@@ -2190,23 +2191,23 @@ object MatFunctions {
   def saveVW(fname:String, sdata:SMat, cats:SMat, compressed:Int, oneBased:Int):Unit = HMat.saveVW(fname, sdata, cats, compressed, oneBased);
   def saveVW(fname:String, sdata:SMat, cats:SMat):Unit = HMat.saveVW(fname, sdata, cats, 0, 0);
   
-  def show (image:Image):BufferedImage = image.show
+  def show (image:Image)(implicit publish:Publish):BufferedImage = image.show
   
-  def show (mat:IMat):BufferedImage = {show(Image(mat))}
+  def show (mat:IMat)(implicit publish:Publish):BufferedImage = {show(Image(mat))}
 
-  def show (mat:FMat):BufferedImage = {show(Image(mat))}
+  def show (mat:FMat)(implicit publish:Publish):BufferedImage = {show(Image(mat))}
   
-  def show (image:Image, title:String):BufferedImage = image.show(title)
+  def show (image:Image, title:String)(implicit publish:Publish):BufferedImage = image.show(title)
   
-  def show (mat:IMat, title:String):BufferedImage = {show(Image(mat), title)}
+  def show (mat:IMat, title:String)(implicit publish:Publish):BufferedImage = {show(Image(mat), title)}
   
-  def show (mat:FMat, title:String):BufferedImage = {show(Image(mat), title)}
+  def show (mat:FMat, title:String)(implicit publish:Publish):BufferedImage = {show(Image(mat), title)}
   
-  def animate(mat:FMat) = Image.animate(mat);
-  def animate(mat:FMat, rate:Float) = Image.animate(mat, rate);
+  def animate(mat:FMat)(implicit publish:Publish) = Image.animate(mat);
+  def animate(mat:FMat, rate:Float)(implicit publish:Publish) = Image.animate(mat, rate);
   
-  def animate(fn:()=>FMat) = Image.animate(fn);
-  def animate(fn:()=>FMat, rate:Float) = Image.animate(fn, rate);
+  def animate(fn:()=>FMat)(implicit publish:Publish) = Image.animate(fn);
+  def animate(fn:()=>FMat, rate:Float)(implicit publish:Publish) = Image.animate(fn, rate);
   
   def FFilter1D(w:Int, nstride:Int, npad:Int, noutpad:Int):FFilter = FFilter.FFilter1D(w, nstride, npad, noutpad);  
   def FFilter1D(w:Int, nstride:Int, npad:Int):FFilter = FFilter.FFilter1D(w, nstride, npad, 0);
@@ -2223,6 +2224,15 @@ object MatFunctions {
   def stringPerm(a:String, b:String):IMat = ND.stringPerm(a, b);
   
   final val ? = new IMatWildcard
+
+  class NonNotebook extends Publish {
+    import jupyter.api._
+    def display(items: (String, String)*): Unit = {}
+    def stdout(text: String): Unit = {}
+    def stderr(text: String): Unit = {}
+    def comm(id: String = java.util.UUID.randomUUID().toString): Comm = {null}
+    def commHandler(target: String)(handler: CommChannelMessage => Unit): Unit = {}
+  }
 }
 
 
