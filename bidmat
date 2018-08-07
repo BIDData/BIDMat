@@ -41,7 +41,7 @@ elif [[ "$OSS" == Darwin* ]] ; then
 	ARCH="x86_64"
     fi
     OSS="apple"
-    JUPYTER_DIR="~/Library/Jupyter"
+    JUPYTER_DIR="${HOME}/Library/Jupyter"
 elif [[ "$OSS" == Linux* ]] ; then
     OSS="linux"
     JUPYTER_DIR="${HOME}/.local/share/jupyter"
