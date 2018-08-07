@@ -1,5 +1,5 @@
 package BIDMat
-
+import jupyter.api.Publish
 
 object JPlotting {
 	import org.jfree.chart._
@@ -60,7 +60,8 @@ object JPlotting {
     }
   }
   
-  def _plot(mats:Mat*)(xlog:Boolean=false, ylog:Boolean=false, isconnected:Boolean=true, bars:Boolean=false, marks:Int = 0):BufferedImage = {
+  def _plot(mats:Mat*)(xlog:Boolean=false, ylog:Boolean=false, isconnected:Boolean=true, bars:Boolean=false, marks:Int = 0)
+      (implicit publish:Publish) = {
    	import java.awt.Color;
    	if (Mat.inline) {
    		System.setProperty("java.awt.headless", "true");
@@ -99,40 +100,41 @@ object JPlotting {
     	frame.pack();
     	frame.setVisible(true);
     }
-    chart.createBufferedImage(plotXscale, plotYscale);
+    val img = chart.createBufferedImage(plotXscale, plotYscale);
+    publish.png(img);
   }
   
-  def plot(mats:Mat*) = _plot(mats: _*)();
+  def plot(mats:Mat*)(implicit publish:Publish) = _plot(mats: _*)();
   
-  def scatter(mats:Mat*) = _plot(mats: _*)(marks=1, isconnected=false);
+  def scatter(mats:Mat*)(implicit publish:Publish) = _plot(mats: _*)(marks=1, isconnected=false);
   
-  def loglog(mats:Mat*) = _plot(mats: _*)(xlog=true, ylog=true)
+  def loglog(mats:Mat*)(implicit publish:Publish) = _plot(mats: _*)(xlog=true, ylog=true)
   
-  def semilogx(mats:Mat*) = _plot(mats: _*)(xlog=true)
+  def semilogx(mats:Mat*)(implicit publish:Publish) = _plot(mats: _*)(xlog=true)
   
-  def semilogy(mats:Mat*) = _plot(mats: _*)(ylog=true)
+  def semilogy(mats:Mat*)(implicit publish:Publish) = _plot(mats: _*)(ylog=true)
 
-  def barplot(mats:Mat*) = _plot(mats: _*)(isconnected=false, bars=true)
+  def barplot(mats:Mat*)(implicit publish:Publish) = _plot(mats: _*)(isconnected=false, bars=true)
   
-  def barloglog(mats:Mat*) = _plot(mats: _*)(xlog=true, ylog=true, isconnected=false, bars=true)
+  def barloglog(mats:Mat*)(implicit publish:Publish) = _plot(mats: _*)(xlog=true, ylog=true, isconnected=false, bars=true)
   
-  def barsemilogx(mats:Mat*) = _plot(mats: _*)(xlog=true, isconnected=false, bars=true)
+  def barsemilogx(mats:Mat*)(implicit publish:Publish) = _plot(mats: _*)(xlog=true, isconnected=false, bars=true)
   
-  def barsemilogy(mats:Mat*) = _plot(mats: _*)(ylog=true, isconnected=false, bars=true)
+  def barsemilogy(mats:Mat*)(implicit publish:Publish) = _plot(mats: _*)(ylog=true, isconnected=false, bars=true)
   
-  def p_plot(mats:Mat*) = _plot(mats: _*)(isconnected=false)
+  def p_plot(mats:Mat*)(implicit publish:Publish) = _plot(mats: _*)(isconnected=false)
   
-  def ploglog(mats:Mat*) = _plot(mats: _*)(xlog=true, ylog=true, isconnected=false)
+  def ploglog(mats:Mat*)(implicit publish:Publish) = _plot(mats: _*)(xlog=true, ylog=true, isconnected=false)
   
-  def psemilogx(mats:Mat*) = _plot(mats: _*)(xlog=true, isconnected=false)
+  def psemilogx(mats:Mat*)(implicit publish:Publish) = _plot(mats: _*)(xlog=true, isconnected=false)
   
-  def psemilogy(mats:Mat*) = _plot(mats: _*)(ylog=true, isconnected=false)
+  def psemilogy(mats:Mat*)(implicit publish:Publish) = _plot(mats: _*)(ylog=true, isconnected=false)
    
   
-  def hist(m:Mat, nbars:Int=10):BufferedImage = { 
-  	import java.awt.Color;
+  def hist(m:Mat, nbars:Int=10)(implicit publish:Publish) = { 
+    import java.awt.Color;
   	if (Mat.inline) {
-  		System.setProperty("java.awt.headless", "true");
+	    System.setProperty("java.awt.headless", "true");
   	}
     var dd = new HistogramDataset();
     if (m.nrows == 1 || m.ncols == 1) { 
@@ -162,6 +164,7 @@ object JPlotting {
     	frame.pack();
     	frame.setVisible(true);
     }
-    chart.createBufferedImage(plotXscale, plotYscale);
+    val img = chart.createBufferedImage(plotXscale, plotYscale);
+    publish.png(img);
   }
 }
