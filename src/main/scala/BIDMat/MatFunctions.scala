@@ -2225,6 +2225,15 @@ object MatFunctions {
   
   final val ? = new IMatWildcard
 
+  // This is a dummy class for non-Notebook image rendering.
+  // JPlotting and Image classes look for a jupyter.api.Publish implicit variable,
+  // provided by the notebook kernel.
+  //
+  // When not running in a notebook, an implicit instance of this class is created for the interpreter.
+  //
+  // Since Mat.inline (false in non-notebook contexts) determines whether the notebook publish functions
+  // are actually called or not, this isnt ever used.
+  //
   class NonNotebook extends Publish {
     import jupyter.api._
     def display(items: (String, String)*): Unit = {}

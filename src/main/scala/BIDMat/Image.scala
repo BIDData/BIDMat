@@ -195,7 +195,16 @@ object Image {
   def loadImage(fname:String):Image = new Image(ImageIO.read(new File(fname)));
   
   private var imageCount = 0;
-  
+
+  def incImageCount:Int = {
+      imageCount += 1;
+      imageCount - 1;
+  }
+
+  def getImageCount:Int = {
+      imageCount;
+  }
+
   var format = "jpg";
   
   val dummyImage = apply(MatFunctions.ones(1,1)*255f)
