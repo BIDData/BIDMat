@@ -154,7 +154,7 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
         out;
       }
       }
-    }
+  }
   
     /** apply to set of Index matrices */
   
@@ -651,8 +651,15 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
   override def clearLower(off:Int) = setLower(0, off)
   override def clearLower = setLower(0, 0)
 
+  def fDMult(b:DMat, outmat:Mat):DMat = {
+    (this, b) match {
+      case (aa:GDMat, bb:DMat) => aa.GMult(b, outmat);
+      case (aa:DMat, bb:GDMat) => GDMat(aa).GMult(bb, outmat);
+      case _ => fDMultDD(b, outmat);
+    }
+  }
 
-  def fDMult(aa:DMat, outmat:Mat):DMat = {
+  def fDMultDD(aa:DMat, outmat:Mat):DMat = {
   	if (ncols == 1 && nrows == 1) {
   		val out = DMat.newOrCheckDMat(aa.dims, outmat, GUID, aa.GUID, "dMult".##)
   		Mat.nflops += aa.length
@@ -705,8 +712,17 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
   		out  
   	} else throw new RuntimeException("dimensions mismatch")
   }
-  
-  def fSMult(ss:SDMat, outmat:Mat):DMat = {
+
+
+  def fSMult(b:SDMat, outmat:Mat):DMat = {
+    (this, b) match {
+      case (aa:GDMat, bb:SDMat) => aa.GSMult(b, outmat);
+      case (aa:DMat, bb:GSDMat) => GDMat(aa).GSMult(bb, outmat);
+      case _ => fSMultF(b, outmat);
+    }
+  }
+
+  def fSMultF(ss:SDMat, outmat:Mat):DMat = {
   	if (ncols != ss.nrows) {
   		throw new RuntimeException("dimensions mismatch")
   	}	else {

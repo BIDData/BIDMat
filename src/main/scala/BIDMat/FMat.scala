@@ -911,8 +911,8 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
     
   override def mult(b:Mat, c:Mat):Mat = mult(b, c, false, false);
   
-    def madd(b:FMat, c:FMat, at:Boolean, bt:Boolean):FMat = {
-  	val (arows, acols, atrans) = if (at) (ncols, nrows, TRANSPOSE.Trans) else (nrows, ncols, TRANSPOSE.NoTrans);
+  def madd(b:FMat, c:FMat, at:Boolean, bt:Boolean):FMat = {
+    val (arows, acols, atrans) = if (at) (ncols, nrows, TRANSPOSE.Trans) else (nrows, ncols, TRANSPOSE.NoTrans);
     val (brows, bcols, btrans) = if (bt) (b.ncols, b.nrows, TRANSPOSE.Trans) else (b.nrows, b.ncols, TRANSPOSE.NoTrans);
     if (acols != brows || arows != c.nrows || bcols != c.ncols) {
       throw new RuntimeException("madd bad dimensions (%d %d) (%d %d) (%d %d)" format (arows, acols, brows, bcols, c.nrows, c.ncols));
@@ -1136,13 +1136,19 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   	}
   }
 
-  def fSMult(a:SMat, outmat:Mat):FMat = {
-    if (ncols != a.nrows) {
-    	throw new RuntimeException("fSMult dimensions mismatch")
+  def fSMult(b:SMat, outmat:Mat):FMat = {
+    (this, b) match {
+      case (aa:GMat, bb:SMat) => aa.GSMult(b, outmat);
+      case (aa:FMat, bb:GSMat) => GMat(aa).GSMult(bb, outmat);
+      case _ => {
+	  if (ncols != b.nrows) {
+	      throw new RuntimeException("fSMult dimensions mismatch")
+	  }
+	  val out = FMat.newOrCheckFMat(nrows, b.ncols, outmat, GUID, b.GUID, "fSMult".##);
+	  out.clear
+	  madd(b, out);
+      }
     }
-    val out = FMat.newOrCheckFMat(nrows, a.ncols, outmat, GUID, a.GUID, "fSMult".##);
-    out.clear
-    madd(a, out);
   }
 
   def madd(a:SMat, out:FMat):FMat = {

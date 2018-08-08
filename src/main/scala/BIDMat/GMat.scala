@@ -771,10 +771,10 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   
   override def madd(b:Mat, c:Mat, at:Boolean, bt:Boolean):Mat = {
   	(b, c) match {
-  	case (bb:GMat, cc:GMat) => madd(bb, cc, at, bt);
-  	case (bb:GSMat, cc:GMat) => madd(bb, cc, at, bt);
-  	case (bb:GMat,cc:TMat) => madd(bb,cc,at,bt);
-  	case (bb:GSMat,cc:TMat) => madd(bb,cc,at,bt);
+  	case (bb:FMat, cc:FMat) => madd(bb, cc, at, bt);
+  	case (bb:SMat, cc:FMat) => madd(bb, cc, at, bt);
+  	case (bb:FMat,cc:TMat) => madd(bb,cc,at,bt);
+  	case (bb:SMat,cc:TMat) => madd(bb,cc,at,bt);
   	case _ => throw new RuntimeException("madd unsupported types %s %s" format (b.mytype, c.mytype));
   	}
   	c

@@ -53,7 +53,7 @@ trait Mop {
   def op(a:DMat, b:FMat, c:Mat):DMat = op(a, DMat(b), c)
   def op(a:DMat, b:IMat, c:Mat):DMat = op(a, DMat(b), c)
   def op(a:DMat, b:LMat, c:Mat):DMat = op(a, DMat(b), c)
-  def op(a:DMat, b:SDMat, c:Mat):DMat = op(a, DMat(b), c)
+  def op(a:DMat, b:SDMat, c:Mat):DMat = op(a, full(b), c)
   def op(a:DMat, b:CMat, c:Mat):CMat = op(CMat(a), b, c)
  
   def op(a:DMat, b:Mat, c:Mat):Mat = {
@@ -208,6 +208,7 @@ trait Mop {
   def getCPair(c:Mat, a:CMat):CPair = new CPair(c, a)  
   def getSPair(c:Mat, a:SMat):SPair = new SPair(c, a) 
   def getSDPair(c:Mat, a:SDMat):SDPair = new SDPair(c, a)
+
   def getGPair(c:Mat, a:GMat):GPair = new GPair(c, a) 
   def getGDPair(c:Mat, a:GDMat):GDPair = new GDPair(c, a)
   def getGIPair(c:Mat, a:GIMat):GIPair = new GIPair(c, a)

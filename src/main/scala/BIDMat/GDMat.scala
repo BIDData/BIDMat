@@ -1,4 +1,3 @@
-
 package BIDMat
 import jcuda._
 import jcuda.runtime._
@@ -501,7 +500,8 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     GFunctions.cublasHandles(igpu(0)).asInstanceOf[cublasHandle];
   }
 
-  def GMult(a:GDMat, oldmat:Mat):GDMat = {
+  def GMult(aa:DMat, oldmat:Mat):GDMat = {
+    val a = GDMat(aa);
     if (ncols == 1 && nrows == 1) {
       val out = GDMat.newOrCheckGDMat(a.nrows, a.ncols, oldmat, GUID, a.GUID, "GMult1".##)
       Mat.nflops += 1L * a.length
@@ -541,7 +541,8 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     } else throw new RuntimeException("dimensions mismatch")
   }
   
-  def GMultT(a:GDMat, oldmat:Mat):GDMat = {
+  def GMultT(aa:DMat, oldmat:Mat):GDMat = {
+    val a = GDMat(aa);
     if (ncols == a.ncols) {
       val out = GDMat.newOrCheckGDMat(nrows, a.nrows, oldmat, GUID, a.GUID, "GMultT".##)
       Mat.nflops += 2L * length * a.nrows
@@ -556,7 +557,8 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     } else throw new RuntimeException("dimensions mismatch")
   }
   
-  def GTMult(a:GDMat, oldmat:Mat):GDMat = {
+  def GTMult(aa:DMat, oldmat:Mat):GDMat = {
+    val a = GDMat(aa);
     if (nrows == a.nrows) {
       val out = GDMat.newOrCheckGDMat(ncols, a.ncols, oldmat, GUID, a.GUID, "GMultT".##)
       Mat.nflops += 2L * length * a.ncols
@@ -571,7 +573,9 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     } else throw new RuntimeException("dimensions mismatch")
   }
   
-  def madd(b:GDMat, c:GDMat, at:Boolean, bt:Boolean):GDMat = {
+  override def madd(bb:DMat, cc:DMat, at:Boolean, bt:Boolean):GDMat = {
+     val b = GDMat(bb);
+     val c = GDMat(cc);
   	val (arows, acols, atrans) = if (at) (ncols, nrows, cublasOperation.CUBLAS_OP_T) else (nrows, ncols, cublasOperation.CUBLAS_OP_N);
     val (brows, bcols, btrans) = if (bt) (b.ncols, b.nrows, cublasOperation.CUBLAS_OP_T) else (b.nrows, b.ncols, cublasOperation.CUBLAS_OP_N);
     if (acols != brows || arows != c.nrows || bcols != c.ncols) {
@@ -582,11 +586,11 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     c
   }
   
-  def madd(b:GDMat, c:GDMat):GDMat = madd(b, c, false, false);
+  override def madd(b:DMat, c:DMat):GDMat = madd(b, c, false, false);
   
   override def madd(b:Mat, c:Mat, at:Boolean, bt:Boolean):Mat = {
     (b, c) match {
-      case (bb:GDMat, cc:GDMat) => madd(bb, cc, at, bt)
+      case (bb:DMat, cc:DMat) => madd(bb, cc, at, bt)
     }
     c
   }
@@ -764,7 +768,8 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   		    beta, c.asInstanceOf[GDMat], coff, ldc, cstep1, cstep2, nreps1, nreps2);
   }
   
-  def GSMult(a:GSDMat, oldmat:Mat):GDMat = {
+  def GSMult(aa:SDMat, oldmat:Mat):GDMat = {
+    val a = GSDMat(aa);
     if (ncols == a.nrows) {
       val out = GDMat.newOrCheckGDMat(nrows, a.ncols, oldmat, GUID, a.GUID, "GSMult".##)
       Mat.nflops += 2L * nrows * a.nnz    
@@ -788,7 +793,8 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     }	else throw new RuntimeException("dimensions mismatch")
   }
   
-  def GSMultT(a:GSDMat, oldmat:Mat):GDMat = {
+  def GSMultT(aa:SDMat, oldmat:Mat):GDMat = {
+    val a = GSDMat(aa)
     if (ncols == a.ncols) {
       val out = GDMat.newOrCheckGDMat(nrows, a.nrows, oldmat, GUID, a.GUID, "GSMultT".##)
       Mat.nflops += 2L * nrows * a.nnz
@@ -799,7 +805,8 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     }	else throw new RuntimeException("dimensions mismatch")
   }
   
-  def GMST(a:GDMat, oldmat:Mat):GDMat = {
+  def GMST(aa:DMat, oldmat:Mat):GDMat = {
+    val a = GDMat(aa)
     if (ncols == a.ncols) {
       val out = GDMat.newOrCheckGDMat(nrows, a.nrows, oldmat, GUID, a.GUID, "GMST".##)
       Mat.nflops += 2L * nrows * a.nrows * ncols
@@ -821,7 +828,8 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     out
   }
   
-  def dot (a:GDMat, oldmat:Mat):GDMat = {
+  override def dot (aa:DMat, oldmat:Mat):GDMat = {
+      val a = GDMat(aa);
   		ND.checkDims("dot", dims, a.dims);
   		val odims = IMat.iones(1, dims.length); 
   		odims(dims.length-1) = a.ncols;
@@ -832,9 +840,10 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   		out;
   	}
   
-  def dot (a:GDMat):GDMat = dot(a, null)
+  override def dot (a:DMat):DMat = dot(a, null)
   
-  def dotr (a:GDMat, oldmat:Mat):GDMat = {
+  override def dotr (aa:DMat, oldmat:Mat):GDMat = {
+      val a = GDMat(aa);
   	ND.checkDims("dotr", dims, a.dims);
   	val odims = a.dims.copy;
   	odims(odims.length-1) = 1;
@@ -845,7 +854,7 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   	out;
   }
   
-  def dotr (a:GDMat):GDMat = dotr(a, null)
+  override def dotr (a:DMat):GDMat = dotr(a, null)
   
   override def ddot (a:Mat):Double = 
   	if (nrows != a.nrows || ncols != a.ncols) {
@@ -974,7 +983,8 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     copyTo(out)
   }
   
-  def cumsumByKey(keys:GDMat, omat:Mat):GDMat = {
+  override def cumsumByKey(dkeys:DMat, omat:Mat):GDMat = {
+    val keys = GDMat(dkeys);
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cumsumKey dimensions mismatch");
     val out = GDMat.newOrCheckGDMat(nrows, ncols, omat, GUID, keys.GUID, "cumsumKey".##);
@@ -987,9 +997,10 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     out  
   }
   
-  def cumsumByKey(keys:GDMat):GDMat = cumsumByKey(keys, null);
+  override def cumsumByKey(keys:DMat):GDMat = cumsumByKey(keys, null);
   
-  def cummaxByKey(keys:GDMat, omat:Mat):GDMat = {
+  override def cummaxByKey(dkeys:DMat, omat:Mat):GDMat = {
+    val keys = GDMat(dkeys);		      
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cummaxKey dimensions mismatch");
     val out = GDMat.newOrCheckGDMat(nrows, ncols, omat, GUID, keys.GUID, "cummaxKey".##);
@@ -1002,9 +1013,10 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     out  
   }
   
-  def cummaxByKey(keys:GDMat):GDMat = cummaxByKey(keys, null);
+  override def cummaxByKey(keys:DMat):GDMat = cummaxByKey(keys, null);
   
-  def cumminByKey(keys:GDMat, omat:Mat):GDMat = {
+  override def cumminByKey(dkeys:DMat, omat:Mat):GDMat = {
+    val keys = GDMat(dkeys);
     if (nrows != keys.nrows || ncols != keys.ncols) 
       throw new RuntimeException("cumminKey dimensions mismatch");
     val out = GDMat.newOrCheckGDMat(nrows, ncols, omat, GUID, keys.GUID, "cumminKey".##);
@@ -1017,7 +1029,7 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     out  
   }
   
-  def cumminByKey(keys:GDMat):GDMat = cumminByKey(keys, null);
+  override def cumminByKey(keys:DMat):GDMat = cumminByKey(keys, null);
 
   override def _reverse(omat:Mat):GDMat = {
     val out = GDMat.newOrCheckGDMat(nrows, ncols, omat, GUID,  "reverse".##);
@@ -1165,7 +1177,39 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   override def mini(inds:IMat):DMat = reduce(inds.data, (a:GDMat, dir:Int) => GDFunctions.mini(a,dir,null), "mini")
   override def amax(inds:IMat):DMat = reduce(inds.data, (a:GDMat, dir:Int) => GDFunctions.maxi(a,dir,null), "amax")
   override def amin(inds:IMat):DMat = reduce(inds.data, (a:GDMat, dir:Int) => GDFunctions.mini(a,dir,null), "amin")
+
+  override def * (a : DMat) = GMult(GDMat(a), null)
+  override def * (a : SDMat) = GSMult(GSDMat(a), null)
+  override def *^ (a : DMat) = GMultT(GDMat(a), null)
+  override def *^ (a : SDMat) = GSMultT(GSDMat(a), null)
+  override def xT (a : DMat) = GMultT(GDMat(a), null)
+  override def xT (a : SDMat) = GSMultT(GSDMat(a), null)
+  override def ^* (a : DMat) = GTMult(GDMat(a), null)
+  def *+^ (a : DMat) = GMST(GDMat(a), null)
+  override def Tx (a : DMat) = GTMult(GDMat(a), null)
+  override def kron(a: DMat) = kron(GDMat(a), null)
+  override def ⊗  (a : DMat) = kron(GDMat(a), null)
+  override def + (a : DMat) = gOp(GDMat(a), null, op_add)
+  override def - (a : DMat) = gOp(GDMat(a), null, op_sub)
+  override def *@ (a : DMat) = gOp(GDMat(a), null, op_mul)
+  override def ∘  (a : DMat) = gOp(GDMat(a), null, op_mul)
+  override def /  (a : DMat) = gOp(GDMat(a), null, op_div)
+  override def ^  (a : DMat) = gOp(GDMat(a), null, op_pow)
+  override def ∙  (a : DMat) = dot(a)
+  override def ∙→ (a : DMat) = dotr(a)
   
+  override def > (a : DMat) = gOp(GDMat(a), null, op_gt)
+  override def < (a : DMat) = gOp(GDMat(a), null, op_lt)
+  override def == (a : DMat) = gOp(GDMat(a), null, op_eq)
+  override def === (a : DMat) = gOp(GDMat(a), null, op_eq)
+  override def >= (a : DMat) = gOp(GDMat(a), null, op_ge)
+  override def <= (a : DMat) = gOp(GDMat(a), null, op_le)
+  override def != (a : DMat) = gOp(GDMat(a), null, op_ne)
+  
+  override def max (a : DMat) = gOp(GDMat(a), null, op_max)
+  override def min (a : DMat) = gOp(GDMat(a), null, op_min)
+
+
   override def + (a : Float) = gOp(GDMat(a), null, op_add)
   override def - (a : Float) = gOp(GDMat(a), null, op_sub)
   override def *@ (a : Float) = gOp(GDMat(a), null, op_mul)
@@ -1432,6 +1476,42 @@ class GDPair(omat:Mat, override val mat:GDMat) extends DPair(omat, mat) {
 	def on(a : GDMat) = mat.vertcat(a, omat)
 	def \ (a : GDMat) = mat.horzcat(a, omat)
 
+  override def *  (a : DMat) = mat.GMult(GDMat(a), omat);
+  override def *  (a : SDMat) = mat.GSMult(GSDMat(a), omat);
+  override def *^ (a : DMat) = mat.GMultT(GDMat(a), omat)
+  override def *^ (a : SDMat) = mat.GSMultT(GSDMat(a), omat)
+  override def xT (a : DMat) = mat.GMultT(GDMat(a), omat)
+  override def xT (a : SDMat) = mat.GSMultT(GSDMat(a), omat)
+  override def ^* (a : DMat) = mat.GTMult(GDMat(a), omat)
+  def *+^ (a : DMat) = mat.GMST(GDMat(a), omat)
+  override def Tx (a : DMat) = mat.GTMult(GDMat(a), omat)
+  def kron(a: DMat):DMat = mat.kron(GDMat(a), omat)
+  override def ⊗  (b : DMat) = mat.kron(b, omat)
+	override def +  (a : DMat) = mat.gOp(GDMat(a), omat, op_add)
+	override def -  (a : DMat) = mat.gOp(GDMat(a), omat, op_sub)
+	override def *@ (a : DMat) = mat.gOp(GDMat(a), omat, op_mul)
+	override def ∘  (a : DMat) = mat.gOp(GDMat(a), omat, op_mul)
+	override def /  (a : DMat) = mat.gOp(GDMat(a), omat, op_div)
+	override def ^  (a : DMat) = mat.gOp(GDMat(a), omat, op_pow)
+	override def >  (a : DMat) = mat.gOp(GDMat(a), omat, op_gt)
+	override def <  (a : DMat) = mat.gOp(GDMat(a), omat, op_lt)
+	override def == (a : DMat) = mat.gOp(GDMat(a), omat, op_eq)
+	override def === (a : DMat) = mat.gOp(GDMat(a), omat, op_eq)
+	override def >= (a : DMat) = mat.gOp(GDMat(a), omat, op_ge)
+	override def <= (a : DMat) = mat.gOp(GDMat(a), omat, op_le)
+	override def != (a : DMat) = mat.gOp(GDMat(a), omat, op_ne)
+	
+  override def max (a : DMat) = mat.gOp(GDMat(a), omat, op_max)
+	override def min (a : DMat) = mat.gOp(GDMat(a), omat, op_min)
+	
+	override def dot (a :DMat) = mat.dot(GDMat(a), omat) 
+	override def dotr (a :DMat) = mat.dotr(GDMat(a), omat) 
+	override def ∙ (a :DMat) = mat.dot(GDMat(a), omat)
+	override def ∙→ (a :DMat) = mat.dotr(GDMat(a), omat)
+	def on(a : DMat) = mat.vertcat(GDMat(a), omat)
+	def \ (a : DMat) = mat.horzcat(GDMat(a), omat)
+
+
   override def * (b : Float) = mat.gOp(GDMat(b), omat, op_mul)
   override def ∘ (b : Float) = mat.gOp(GDMat(b), omat, op_mul)
   override def + (b : Float) = mat.gOp(GDMat(b), omat, op_add)
@@ -1508,34 +1588,6 @@ class GDPair(omat:Mat, override val mat:GDMat) extends DPair(omat, mat) {
   override def <=  (b : IMat) = Mop_LE.op(mat, b, omat)
   override def !=  (b : IMat) = Mop_NE.op(mat, b, omat)
   
-  /*
-   * Specialize to DMat
-   */
-  override def *   (b : DMat) = Mop_Times.op(mat, b, omat) 
-  override def *^  (b : DMat) = Mop_TimesT.op(mat, b, omat)
-  override def xT  (b : DMat) = Mop_TimesT.op(mat, b, omat)
-  override def Tx  (b : DMat) = Mop_TTimes.op(mat, b, omat)
-  override def ^*  (b : DMat) = Mop_TTimes.op(mat, b, omat)
-  override def +   (b : DMat) = Mop_Plus.op(mat, b, omat)
-  override def -   (b : DMat) = Mop_Minus.op(mat, b, omat)
-  override def *@  (b : DMat) = Mop_ETimes.op(mat, b, omat)
-  override def ∘   (b : DMat) = Mop_ETimes.op(mat, b, omat)
-  override def /   (b : DMat) = Mop_EDiv.op(mat, b, omat)  
-  override def ^   (b : DMat) = Mop_Pow.op(mat, b, omat) 
-  override def ∙   (b : DMat) = Mop_Dot.op(mat, b, omat)
-  override def ∙→  (b : DMat) = Mop_Dotr.op(mat, b, omat)
-  override def dot (b : DMat) = Mop_Dot.op(mat, b, omat)
-  override def dotr(b : DMat) = Mop_Dotr.op(mat, b, omat)
-  def \   (b : DMat) = Mop_HCat.op(mat, b, omat)
-  def on  (b : DMat) = Mop_VCat.op(mat, b, omat)
-
-  override def >   (b : DMat) = Mop_GT.op(mat, b, omat)
-  override def <   (b : DMat) = Mop_LT.op(mat, b, omat)
-  override def ==  (b : DMat) = Mop_EQ.op(mat, b, omat)
-  override def === (b : DMat) = Mop_EQ.op(mat, b, omat)
-  override def >=  (b : DMat) = Mop_GE.op(mat, b, omat)
-  override def <=  (b : DMat) = Mop_LE.op(mat, b, omat)
-  override def !=  (b : DMat) = Mop_NE.op(mat, b, omat)
   
   /*
    * Specialize to FMat
