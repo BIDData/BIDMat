@@ -6,7 +6,7 @@
   <groupId>BIDMat</groupId>
   <artifactId>BIDMat</artifactId>
   <packaging>jar</packaging>
-  <version>2.0.25-cuda8.0</version>
+  <version>2.0.24-cuda8.0</version>
   <name>BIDMat</name>
   <description>BIDMat performs matrix operations</description>
   <properties>
@@ -203,9 +203,9 @@
       <version>2.11.11</version> 
     </dependency>
     <dependency>
-      <groupId>org.jline</groupId>
+      <groupId>jline</groupId>
       <artifactId>jline</artifactId>
-      <version>3.0.0</version>
+      <version>2.10</version>
     </dependency> 
     <dependency>
       <groupId>org.apache.commons</groupId>
