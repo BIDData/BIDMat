@@ -1375,7 +1375,16 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
     }
   }
 
-  def multT(a:SMat, outmat:Mat):FMat = {
+  def multT(b:SMat, outmat:Mat):FMat = {
+    (this, b) match {
+      case (aa:GMat, bb:SMat) => aa.GSMultT(b, outmat);
+      case (aa:FMat, bb:GSMat) => GMat(aa).GSMultT(bb, outmat);
+      case _ => multTS(b, outmat);
+    }
+  }
+
+
+  def multTS(a:SMat, outmat:Mat):FMat = {
     if (ncols != a.ncols) {
       throw new RuntimeException("xT dimensions mismatch (%d %d) (%d %d)" format (nrows, ncols, a.ncols, a.nrows))
     }
@@ -1435,7 +1444,7 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
     }
   }
   
-   def multT(b:FMat, outmat:Mat):FMat = {
+  def multT(b:FMat, outmat:Mat):FMat = {
     (this, b) match {
       case (aa:GMat, bb:FMat) => aa.GMultT(b, outmat);
       case (aa:FMat, bb:GMat) => GMat(aa).GMultT(bb, outmat);

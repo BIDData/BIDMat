@@ -262,7 +262,8 @@ class GSMat(nr0:Int, nc0:Int, nnz1:Int, @transient var pir:Pointer, @transient v
   
   // This works, but unfortunately is very slow. 
   
-  def SDMult(a:GMat, omat:Mat):GMat = {
+  def SDMult(aa:FMat, omat:Mat):GMat = {
+    val a = GMat(aa);
     if (ncols != a.nrows) {
       throw new RuntimeException("SDMult dimensions mismatch")
     }
@@ -287,7 +288,8 @@ class GSMat(nr0:Int, nc0:Int, nnz1:Int, @transient var pir:Pointer, @transient v
   
   // This one is OK, but may throw CUDA resource errors with large nrows
   
-  def SDTMult(a:GMat, omat:Mat):GMat = {
+  def SDTMult(aa:FMat, omat:Mat):GMat = {
+    val a = GMat(aa);
     if (nrows != a.nrows) {
       throw new RuntimeException("SDTMult dimensions mismatch")
     }
@@ -419,8 +421,8 @@ class GSMat(nr0:Int, nc0:Int, nnz1:Int, @transient var pir:Pointer, @transient v
 
 class GSPair (val omat:Mat, val mat:GSMat) extends Pair(omat, mat) {
   def * (a:FMat) = mat.SDMult(GMat(a), omat)
-	def Tx (a:FMat) = mat.SDTMult(GMat(a), omat)
-	def ^* (a:FMat) = mat.SDTMult(GMat(a), omat)
+  def Tx (a:FMat) = mat.SDTMult(GMat(a), omat)
+  def ^* (a:FMat) = mat.SDTMult(GMat(a), omat)
 	
 	def +  (a:FMat) = mat.GSDop(GMat(a), omat, BinOp.op_add);
   def -  (a:FMat) = mat.GSDop(GMat(a), omat, BinOp.op_sub);

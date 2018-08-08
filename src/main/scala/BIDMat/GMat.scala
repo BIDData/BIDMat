@@ -697,7 +697,7 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   }
   
   override def mult(bb:FMat, c:FMat, at:Boolean, bt:Boolean):FMat = {
-  	val b = GMat(bb);
+    val b = GMat(bb);
     (at, bt) match {
       case (false, false) => GMult(b, c);
       case (false, true) => GMultT(b, c);

@@ -187,7 +187,15 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], val da
   
   def vertcat(a:FMat):FMat = FMat(MatFunctions.full(this).gvertcat(a))
 
-  def SMult(a:Mat, omat:Mat):FMat = {
+  def SMult(b:Mat, outmat:Mat):FMat = {
+    (this, b) match {
+      case (aa:GSMat, bb:FMat) => aa.SDMult(bb, outmat);
+      case (aa:SMat, bb:GMat) => GSMat(aa).SDMult(bb, outmat);
+      case _ => SMultF(b, outmat);
+    }
+  }
+
+  def SMultF(a:Mat, omat:Mat):FMat = {
   		val ioff = Mat.ioneBased
   		if (ncols != a.nrows) {
   			throw new RuntimeException("dimensions mismatch")
@@ -258,8 +266,17 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], val da
   			}
   		}	
   }
+
+  def Tmult(b:FMat, outmat:Mat):FMat = {
+    (this, b) match {
+      case (aa:GSMat, bb:FMat) => aa.SDTMult(b, outmat);
+      case (aa:SMat, bb:GMat) => GSMat(aa).SDTMult(bb, outmat);
+      case _ => TmultF(b, outmat);
+    }
+  }
+      
+  def TmultF(a:FMat, omat:Mat):FMat = {
   
-  def Tmult(a:FMat, omat:Mat):FMat = {
 	  val out = FMat.newOrCheckFMat(ncols, a.ncols, omat, GUID, a.GUID, "TMult".##)
 	  if (omat.asInstanceOf[AnyRef] != null) out.clear
 	  var jc0 = jc

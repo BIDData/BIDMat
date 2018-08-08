@@ -131,15 +131,15 @@ trait Mop {
   
   def op(a:SMat, b:Mat, c:Mat):Mat = {
     b match {
-      case bb:FMat => sop(a, bb, c)
-      case bb:SMat => op(a, bb, c)
+      case bb:FMat => op(a, bb, c)
+      case bb:SMat => sop(a, bb, c)
     }
   }
   
   def sop(a:SMat, b:Mat, c:Mat):Mat = {
     b match {
-      case bb:FMat => sop(a, bb, c)
-      case bb:SMat => op(a, bb, c)
+      case bb:FMat => op(a, bb, c)
+      case bb:SMat => sop(a, bb, c)
     }
   }
   
@@ -158,8 +158,8 @@ trait Mop {
   
   def sop(a:SDMat, b:Mat, c:Mat):Mat = {
     b match {
-      case bb:DMat => sop(a, bb, c)
-      case bb:SDMat => op(a, bb, c)
+      case bb:DMat => op(a, bb, c)
+      case bb:SDMat => sop(a, bb, c)
     }
   }
 

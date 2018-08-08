@@ -770,11 +770,20 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
   		out
   	}
   }
+
+  def multT(b:SDMat, outmat:Mat):DMat = {
+    (this, b) match {
+      case (aa:GDMat, bb:SDMat) => aa.GSMultT(b, outmat);
+      case (aa:DMat, bb:GSDMat) => GDMat(aa).GSMultT(bb, outmat);
+      case _ => multTS(b, outmat);
+    }
+  }
+
   
-  def multT(a:SDMat, outmat:Mat):DMat = {
+  def multTS(a:SDMat, outmat:Mat):DMat = {
     import edu.berkeley.bid.CBLAS._
-    if (ncols == a.nrows) {
-    	val out = DMat.newOrCheckDMat(nrows, a.ncols, outmat, GUID, a.GUID, "multT".##)
+    if (ncols == a.ncols) {
+    	val out = DMat.newOrCheckDMat(nrows, a.nrows, outmat, GUID, a.GUID, "multT".##)
     	if (outmat.asInstanceOf[AnyRef] != null) out.clear
     	dmcsrm(nrows, a.ncols, data, nrows, a.data, a.ir, a.jc, out.data, nrows)
     	Mat.nflops += 2L * a.nnz * nrows
@@ -783,8 +792,18 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
       throw new RuntimeException("xT dimensions mismatch")
     }
   }
+
+  def multT(b:DMat, outmat:Mat):DMat = {
+    (this, b) match {
+      case (aa:GDMat, bb:DMat) => aa.GMultT(b, outmat);
+      case (aa:DMat, bb:GDMat) => GDMat(aa).GMultT(bb, outmat);
+      case _ => multTD(b, outmat);
+    }
+  }
+
+
   
-  def multT(a:DMat, outmat:Mat):DMat = {
+  def multTD(a:DMat, outmat:Mat):DMat = {
     if (ncols == a.ncols) {
     	val out = DMat.newOrCheckDMat(nrows, a.nrows, outmat, GUID, a.GUID, "multT".##)
     	dgemm(ORDER.ColMajor, TRANSPOSE.NoTrans, TRANSPOSE.Trans,
@@ -795,8 +814,17 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
       throw new RuntimeException("xT dimensions mismatch")
     }
   }
+
+  def Tmult(b:DMat, outmat:Mat):DMat = {
+    (this, b) match {
+      case (aa:GDMat, bb:DMat) => aa.GTMult(b, outmat);
+      case (aa:DMat, bb:GDMat) => GDMat(aa).GTMult(bb, outmat);
+      case _ => TmultD(b, outmat);
+    }
+  }
+
   
-  def Tmult(a:DMat, outmat:Mat):DMat = {
+  def TmultD(a:DMat, outmat:Mat):DMat = {
     if (nrows == a.nrows) {
     	val out = DMat.newOrCheckDMat(ncols, a.ncols, outmat, GUID, a.GUID, "Tmult".##)
     	dgemm(ORDER.ColMajor, TRANSPOSE.Trans, TRANSPOSE.NoTrans,
