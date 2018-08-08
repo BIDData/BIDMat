@@ -650,7 +650,7 @@ object Mat {
   def terminalWidth:Int = {
   		if (!youHaveBeenWarned) {
   			try {
-  				math.max(jline.TerminalFactory.create.getWidth, termWidth);
+              org.jline.terminal.TerminalBuilder.terminal().getWidth()
   			}
   			catch {
   			case _:Throwable => {
