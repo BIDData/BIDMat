@@ -1279,5 +1279,24 @@ object Mat {
 	  e.printStackTrace(new java.io.PrintWriter(sw));
 	  sw.toString;
 	}
-  
+
+  // This is a dummy class for non-Notebook image rendering.
+  // JPlotting and Image classes look for a jupyter.api.Publish implicit variable,
+  // provided by the notebook kernel.
+  //
+  // When not running in a notebook, an implicit instance of this class is created for the interpreter.
+  //
+  // Since Mat.inline (false in non-notebook contexts) determines whether the notebook publish functions
+  // are actually called or not, this isnt ever used.
+  //
+  class NonNotebook extends jupyter.api.Publish {
+    import jupyter.api._
+    def display(items: (String, String)*): Unit = {}
+    def stdout(text: String): Unit = {}
+    def stderr(text: String): Unit = {}
+    def comm(id: String = java.util.UUID.randomUUID().toString): Comm = {null}
+    def commHandler(target: String)(handler: CommChannelMessage => Unit): Unit = {}
+  }
+
+  implicit val console_publish = new NonNotebook
 }
