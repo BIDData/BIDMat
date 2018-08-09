@@ -54,7 +54,6 @@ elif [[ "$OSS" == CYGWIN* ]] ; then
     OSS="windows"
     JUPYTER_DIR=`echo $APPDATA | sed 's_\\\\_/_g' | sed 's_^\([A-Z]\):_/cygdrive/\1_'`
     JUPYTER_DIR="${JUPYTER_DIR}/jupyter"
-    export TERM="cygwin"     # this should work for most cygwin setups. Try removing if it doesnt.
 else
     echo "OS not supported" $OSS
     exit 1
@@ -76,7 +75,8 @@ for lib in ${BIDMAT_JARS}; do
 done
 popd  > /dev/null
 
-ALL_LIBS="${BIDMAT_LIBS};${JAVA_HOME}/lib/tools.jar"
+TOOL_LIBS="${JAVA_HOME}/lib/tools.jar"
+ALL_LIBS="${TOOL_LIBS};${BIDMAT_LIBS}"
 
 if [ "$OSS" = "windows" ]; then
     if [ ! "${CUDA_PATH}" = "" ]; then
@@ -111,5 +111,6 @@ else
     if [ "$1" != "" ]; then
 	runscript="-i ${1}"
     fi
-    ${BIDMAT_ROOT0}/scripts/scala/scala -Dscala.repl.maxprintstring=8000 ${userargs} -nobootcp -toolcp "${ALL_LIBS}" -cp "${ALL_LIBS}" -Yrepl-sync -i ${LIBDIR}/bidmat_init.sc $runscript
+    ${BIDMAT_ROOT0}/command/scala -Dscala.repl.maxprintstring=8000 ${userargs} -nobootcp -toolcp "${TOOL_LIBS}" \
+		   -cp "${ALL_LIBS}" -Yrepl-sync -i ${LIBDIR}/bidmat_init.sc $runscript
 fi

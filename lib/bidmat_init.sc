@@ -4,8 +4,8 @@ import BIDMat.MatFunctions._
 import BIDMat.SciFunctions._
 import BIDMat.Solvers._
 import BIDMat.Plotting._
+import Mat.console_publish
 
 Mat.checkMKL(false)
 Mat.checkCUDA(true)
-implicit val publish = new NonNotebook
 
