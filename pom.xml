@@ -6,7 +6,7 @@
   <groupId>BIDMat</groupId>
   <artifactId>BIDMat</artifactId>
   <packaging>jar</packaging>
-  <version>2.0.26-cuda8.0</version>
+  <version>2.0.27-cuda8.0</version>
   <name>BIDMat</name>
   <description>BIDMat performs matrix operations</description>
   <properties>
@@ -96,107 +96,20 @@
         <osarch>linux-aarch64</osarch>
       </properties>
     </profile>
-    <profile>
-      <id>gpu</id>
-      <activation>
-        <property>
-          <name>gpu</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-jar-plugin</artifactId>
-            <version>3.0.2</version>
-            <executions>
-              <execution>
-                <id>build_cuda_native_jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>jar</goal>
-                </goals>
-                <configuration>
-                  <classesDirectory>src/main/resources</classesDirectory>
-                  <classifier>gpu-${osarch}</classifier>
-                  <includes>
-                    <include>lib/*bidmatcuda*</include>
-                  </includes>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>cpu</id>
-      <activation>
-        <property>
-          <name>cpu</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-jar-plugin</artifactId>
-            <version>3.0.2</version>
-            <executions>
-              <execution>
-                <id>build_cpu_native_jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>jar</goal>
-                </goals>
-                <configuration>
-                  <classesDirectory>src/main/resources</classesDirectory>
-                  <classifier>cpu-${osarch}</classifier>
-                  <includes>
-                    <include>lib/*bidmatcpu*</include>
-                    <include>lib/*iomp5*</include>
-                  </includes>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>dependcpu</id>
-      <activation>
-        <property>
-          <name>!cpu</name>
-        </property>
-      </activation>
-      <dependencies>
-        <dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>${project.artifactId}</artifactId>
-          <version>${project.version}</version>
-          <classifier>cpu-${osarch}</classifier>
-        </dependency>
-      </dependencies>
-    </profile>
-    <profile>
-      <id>dependgpu</id>
-      <activation>
-        <property>
-          <name>!gpu</name>
-        </property>
-      </activation>
-      <dependencies>
-        <dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>${project.artifactId}</artifactId>
-          <version>${project.version}</version>
-          <classifier>gpu-${osarch}</classifier>
-        </dependency> 
-      </dependencies>
-    </profile>
   </profiles>
   <dependencies>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>BIDMat-natives</artifactId>
+      <version>${project.version}</version>
+      <classifier>cpu-${osarch}</classifier> 
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>BIDMat-natives</artifactId>
+      <version>${project.version}</version>
+      <classifier>gpu-${osarch}</classifier> 
+    </dependency> 
     <dependency>
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-compiler</artifactId>
