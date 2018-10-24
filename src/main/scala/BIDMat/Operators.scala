@@ -5,6 +5,12 @@ import MatFunctions._
  * Type coercions for operators
  */ 
 
+/* op is the default binary operator and for two same-typed matrices returns a matrix of matching type.
+ * sop is a sparse operation that is only relevant between matrices of different types to resolve the ambuiguity of the result.
+ * A sparse operation between sparse A and dense B could return a sparse or dense result depending on the operation.
+ * We use the "op" operator to return a dense result, while "sop" returns a sparse result. 
+ */
+
 trait Mop {
   def myname:String;
   /*
@@ -18,6 +24,9 @@ trait Mop {
 
   def op(a:SMat, b:SMat, c:Mat):SMat = {notImplemented(myname, a, b); a}
   def op(a:SDMat, b:SDMat, c:Mat):SDMat = {notImplemented(myname, a, b); a}
+  
+  def sop(a:SMat, b:SMat, c:Mat):SMat = {notImplemented(myname, a, b); a}
+  def sop(a:SDMat, b:SDMat, c:Mat):SDMat = {notImplemented(myname, a, b); a}
 
   def sop(a:SMat, b:FMat, c:Mat):SMat = {notImplemented(myname, a, b); a}
   def sop(a:SDMat, b:DMat, c:Mat):SDMat = {notImplemented(myname, a, b); a}
@@ -131,15 +140,15 @@ trait Mop {
   
   def op(a:SMat, b:Mat, c:Mat):Mat = {
     b match {
-      case bb:FMat => op(a, bb, c)
-      case bb:SMat => sop(a, bb, c)
+      case bb:FMat => sop(a, bb, c)
+      case bb:SMat => op(a, bb, c)
     }
   }
   
   def sop(a:SMat, b:Mat, c:Mat):Mat = {
     b match {
-      case bb:FMat => op(a, bb, c)
-      case bb:SMat => sop(a, bb, c)
+      case bb:FMat => sop(a, bb, c)
+      case bb:SMat => op(a, bb, c)
     }
   }
   
@@ -152,14 +161,14 @@ trait Mop {
   def op(a:SDMat, b:Mat, c:Mat):Mat = {
     b match {
       case bb:DMat => op(a, bb, c)
-      case bb:SDMat => sop(a, bb, c)
+      case bb:SDMat => op(a, bb, c)
     }
   }
   
   def sop(a:SDMat, b:Mat, c:Mat):Mat = {
     b match {
       case bb:DMat => op(a, bb, c)
-      case bb:SDMat => sop(a, bb, c)
+      case bb:SDMat => op(a, bb, c)
     }
   }
 
