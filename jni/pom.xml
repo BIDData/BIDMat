@@ -99,8 +99,8 @@
     <profile>
       <id>gpu</id>
       <activation>
-        <property>
-          <name>gpu</name>
+	<property>
+          <name>!cpu</name>
         </property>
       </activation>
       <build>
@@ -133,7 +133,7 @@
       <id>cpu</id>
       <activation>
         <property>
-          <name>cpu</name>
+          <name>!gpu</name>
         </property>
       </activation>
       <build>
