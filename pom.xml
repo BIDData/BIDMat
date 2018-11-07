@@ -6,7 +6,8 @@
   <groupId>BIDMat</groupId>
   <artifactId>BIDMat</artifactId>
   <packaging>jar</packaging>
-  <version>2.0.28-cuda8.0</version>
+  <version>2.1.0-cuda8.0</version>
+  <nativeVersion>2.1.0-cuda8.0</nativeVersion>
   <name>BIDMat</name>
   <description>BIDMat performs matrix operations</description>
   <properties>
@@ -101,13 +102,13 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>BIDMat-natives</artifactId>
-      <version>${project.version}</version>
+      <version>${nativeVersion}</version>
       <classifier>cpu-${osarch}</classifier> 
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>BIDMat-natives</artifactId>
-      <version>${project.version}</version>
+      <version>${nativeVersion}</version>
       <classifier>gpu-${osarch}</classifier> 
     </dependency> 
     <dependency>
@@ -144,7 +145,7 @@
     <dependency>
       <groupId>com.cedarsoftware</groupId>
       <artifactId>json-io</artifactId>
-      <version>4.5.0</version>
+      <version>4.10.1</version>
     </dependency>
     <dependency>
       <groupId>net.jpountz.lz4</groupId>
