@@ -7,10 +7,10 @@
   <artifactId>BIDMat</artifactId>
   <packaging>jar</packaging>
   <version>2.1.0-cuda8.0</version>
-  <nativeVersion>2.1.0-cuda8.0</nativeVersion>
   <name>BIDMat</name>
   <description>BIDMat performs matrix operations</description>
   <properties>
+    <nativeVersion>2.1.0-cuda8.0</nativeVersion>
     <scalaVersion>2.11.11</scalaVersion>
     <jcudaGroupId>org.jcuda</jcudaGroupId> <!-- set to "jcuda" for versions earlier than 0.8.0 -->
     <jcudaVersion>0.8.0</jcudaVersion>
