@@ -453,6 +453,25 @@ object GFilter {
 		  cudaStreamSynchronize(Mat.SyncMethod);
 		  out;
   }
+
+  def alias(inDims:IMat,outDims:IMat, stride:IMat, pad:IMat, outPad:IMat, dataDims:IMat, a:GMat) = {
+    if (a.asInstanceOf[AnyRef] != null) { 
+      ND.checkDims("GFilter alias", dataDims, a.dims);
+      val out = new GFilter(inDims, outDims, stride, pad, outPad, dataDims, a.pdata);
+      out.setGUID(MurmurHash3_x64_64(Array(a.GUID), "GFilter apply".##));
+      out;
+    } else { 
+      val out = new GFilter(inDims, outDims, stride, pad, outPad, dataDims, new Pointer);
+	  val len = dataDims.data.reduce(_*_);
+	  cudaMalloc(out.pdata, 1L*len*Sizeof.FLOAT);
+	  cudaStreamSynchronize(Mat.SyncMethod);
+	  if (Mat.debugMem) {
+		println("GFilter %d %d %f" format (len, SciFunctions.getGPU, SciFunctions.GPUmem._1))
+			  if (len > Mat.debugMemThreshold) throw new RuntimeException("GFilter alloc too large");
+	  }
+      out;
+    }
+  }
   
   def GFilter1D(w:Int, nstride:Int, npad:Int, noutpad:Int):GFilter = {
     val inDims = irow(w);
@@ -463,8 +482,20 @@ object GFilter {
     val out = GFilter(inDims, outDims, stride, pad, outPad, irow(w, 1));
     out
   }
+
+  def GFilter1D(w:Int, nstride:Int, npad:Int, noutpad:Int, a:GMat):GFilter = {
+    val inDims = irow(w);
+    val outDims = irow(1);
+    val stride = irow(nstride);
+    val pad = irow(npad);
+    val outPad = irow(noutpad);
+    val out = GFilter.alias(inDims, outDims, stride, pad, outPad, irow(w, 1), a);
+    out
+  }
   
   def GFilter1D(w:Int, nstride:Int, npad:Int):GFilter = GFilter1D(w, nstride, npad, 0);
+
+  def GFilter1D(w:Int, nstride:Int, npad:Int, a:GMat):GFilter = GFilter1D(w, nstride, npad, 0, a);
 
   def GFilter1Dd(w:Int, din:Int, dout:Int, nstride:Int, npad:Int, noutpad:Int):GFilter = {
     val inDims = irow(din, w);
@@ -475,8 +506,20 @@ object GFilter {
     val out = GFilter(inDims, outDims, stride, pad, outPad, irow(din, w, dout));
     out    
   }
+
+  def GFilter1Dd(w:Int, din:Int, dout:Int, nstride:Int, npad:Int, noutpad:Int, a:GMat):GFilter = {
+    val inDims = irow(din, w);
+    val outDims = irow(dout, 1);
+    val stride = irow(1, nstride);
+    val pad = irow(0, npad);
+    val outPad = irow(0, noutpad);
+    val out = GFilter.alias(inDims, outDims, stride, pad, outPad, irow(din, w, dout), a);
+    out    
+  }
   
   def GFilter1Dd(w:Int, din:Int, dout:Int, nstride:Int, npad:Int):GFilter = GFilter1Dd(w, din, dout, nstride, npad, 0);
+  
+  def GFilter1Dd(w:Int, din:Int, dout:Int, nstride:Int, npad:Int, a:GMat):GFilter = GFilter1Dd(w, din, dout, nstride, npad, 0, a);
 
   def GFilter2D(w:Int, h:Int, nstride:Int, npad:Int, noutpad:Int):GFilter = {
     val inDims = irow(w, h);
@@ -487,8 +530,20 @@ object GFilter {
     val out = GFilter(inDims, outDims, stride, pad, outPad, irow(w, h));
     out
   }
+
+  def GFilter2D(w:Int, h:Int, nstride:Int, npad:Int, noutpad:Int, a:GMat):GFilter = {
+    val inDims = irow(w, h);
+    val outDims = irow(1, 1);
+    val stride = irow(nstride, nstride);
+    val pad = irow(npad, npad);
+    val outPad = irow(noutpad, noutpad);
+    val out = GFilter.alias(inDims, outDims, stride, pad, outPad, irow(w, h), a);
+    out
+  }
   
   def GFilter2D(w:Int, h:Int, nstride:Int, npad:Int):GFilter = GFilter2D(w, h, nstride, npad, 0);
+
+  def GFilter2D(w:Int, h:Int, nstride:Int, npad:Int, a:GMat):GFilter = GFilter2D(w, h, nstride, npad, 0, a);
 
   def GFilter2Dd(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int, noutpad:Int):GFilter = {
     val inDims = irow(din, w, h);
@@ -499,8 +554,20 @@ object GFilter {
     val out = GFilter(inDims, outDims, stride, pad, outPad, irow(din, w, h, dout));
     out
   }
+
+  def GFilter2Dd(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int, noutpad:Int, a:GMat):GFilter = {
+    val inDims = irow(din, w, h);
+    val outDims = irow(dout, 1, 1);
+    val stride = irow(1, nstride, nstride);
+    val pad = irow(0, npad, npad);
+    val outPad = irow(0, noutpad, noutpad);
+    val out = GFilter.alias(inDims, outDims, stride, pad, outPad, irow(din, w, h, dout), a);
+    out
+  }
   
   def GFilter2Dd(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int):GFilter = GFilter2Dd(w, h, dout, nstride, npad, 0);
+
+  def GFilter2Dd(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int, a:GMat):GFilter = GFilter2Dd(w, h, dout, nstride, npad, 0, a);
   
   def GFilter2Ddn(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int, noutpad:Int):GFilter = {
     val inDims = irow(din, w, h, 1);
@@ -511,8 +578,20 @@ object GFilter {
     val out = GFilter(inDims, outDims, stride, pad, outPad, irow(din, w, h, dout));
     out
   }
+
+  def GFilter2Ddn(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int, noutpad:Int, a:GMat):GFilter = {
+    val inDims = irow(din, w, h, 1);
+    val outDims = irow(dout, 1, 1, 1);
+    val stride = irow(1, nstride, nstride, 1);
+    val pad = irow(0, npad, npad, 0);
+    val outPad = irow(0, noutpad, noutpad, 0);
+    val out = GFilter.alias(inDims, outDims, stride, pad, outPad, irow(din, w, h, dout), a);
+    out
+  }
   
   def GFilter2Ddn(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int):GFilter = GFilter2Ddn(w, h, din, dout, nstride, npad, 0);
+
+  def GFilter2Ddn(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int, a:GMat):GFilter = GFilter2Ddn(w, h, din, dout, nstride, npad, 0, a);
   
   def xavier(f:GFilter, fscale:Float):GFilter = {
 	  val scale = f.inDims.data.reduce(_*_);

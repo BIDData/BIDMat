@@ -973,6 +973,16 @@ object FFilter {
 	def apply(indims:IMat, outdims:IMat, stride:IMat, pad:IMat, dataDims:IMat):FFilter = {
 			new FFilter(indims, outdims, stride, pad, null, indims(0,0->(indims.length-1)) \ outdims(0), new Array[Float]((indims dotr outdims).v))
 	}
+
+  def alias(indims:IMat, outdims:IMat, stride:IMat, pad:IMat, outpad:IMat, dataDims:IMat, a:FMat):FFilter = {
+    if (a.asInstanceOf[AnyRef] != null) { 
+      ND.checkDims("FFilter alias", dataDims, a.dims);
+	  val out = new FFilter(indims, outdims, stride, pad, outpad, indims(0,0->(indims.length-1)) \ outdims(0), a.data);
+      out.setGUID(MurmurHash3_x64_64(Array(a.GUID), "FFilter alias".##));
+      out;
+	} else { 
+      new FFilter(indims, outdims, stride, pad, outpad, indims(0,0->(indims.length-1)) \ outdims(0), new Array[Float]((indims dotr outdims).v))}
+  }
 	
   def apply(g:GFilter):FFilter = {
           val outnd = FMat.newOrCheckFMat(g.dims, null, g.GUID, "FFilter".##);
@@ -992,8 +1002,19 @@ object FFilter {
 		val outPad = irow(noutpad);		
 		new FFilter(inDims, outDims, stride, pad, outPad, irow(w,1), new Array[Float](w));
 	}
+
+	def FFilter1D(w:Int, nstride:Int, npad:Int, noutpad:Int, a:FMat):FFilter = {
+		val inDims = irow(w);
+		val outDims = irow(1);
+		val stride = irow(nstride);
+		val pad = irow(npad);
+		val outPad = irow(noutpad);		
+	    FFilter.alias(inDims, outDims, stride, pad, outPad, irow(w,1), a);
+	}
 	
 	def FFilter1D(w:Int, nstride:Int, npad:Int):FFilter = FFilter1D(w, nstride, npad, 0);
+
+	def FFilter1D(w:Int, nstride:Int, npad:Int, a:FMat):FFilter = FFilter1D(w, nstride, npad, 0, a);
 
 	def FFilter1Dd(w:Int, din:Int, dout:Int, nstride:Int, npad:Int, noutpad:Int):FFilter = {
 		val inDims = irow(din, w);
@@ -1003,8 +1024,19 @@ object FFilter {
 		val outPad = irow(0, noutpad);
 		new FFilter(inDims, outDims, stride, pad, outPad, irow(din, w, dout), new Array[Float](din*dout*w));
 	}
+
+	def FFilter1Dd(w:Int, din:Int, dout:Int, nstride:Int, npad:Int, noutpad:Int, a:FMat):FFilter = {
+		val inDims = irow(din, w);
+		val outDims = irow(dout, 1);
+		val stride = irow(1, nstride);
+		val pad = irow(0, npad);
+		val outPad = irow(0, noutpad);
+		FFilter.alias(inDims, outDims, stride, pad, outPad, irow(din, w, dout), a);
+	}
 	
 	def FFilter1Dd(w:Int, din:Int, dout:Int, nstride:Int, npad:Int):FFilter = FFilter1Dd(w, din, dout, nstride, npad, 0);
+
+	def FFilter1Dd(w:Int, din:Int, dout:Int, nstride:Int, npad:Int, a:FMat):FFilter = FFilter1Dd(w, din, dout, nstride, npad, 0, a);
 
 	def FFilter2D(w:Int, h:Int, nstride:Int, npad:Int, noutpad:Int):FFilter = {
 		val inDims = irow(w, h);
@@ -1014,8 +1046,19 @@ object FFilter {
 		val outPad = irow(noutpad, noutpad);
 		new FFilter(inDims, outDims, stride, pad, outPad, irow(w,h), new Array[Float](w*h));
 	}
+
+	def FFilter2D(w:Int, h:Int, nstride:Int, npad:Int, noutpad:Int, a:FMat):FFilter = {
+		val inDims = irow(w, h);
+		val outDims = irow(1, 1);
+		val stride = irow(nstride, nstride);
+		val pad = irow(npad, npad);
+		val outPad = irow(noutpad, noutpad);
+		FFilter.alias(inDims, outDims, stride, pad, outPad, irow(w,h), a);
+	}
 	
 	def FFilter2D(w:Int, h:Int, nstride:Int, npad:Int):FFilter = FFilter2D(w, h, nstride, npad, 0);
+
+	def FFilter2D(w:Int, h:Int, nstride:Int, npad:Int, a:FMat):FFilter = FFilter2D(w, h, nstride, npad, 0, a);
 
 	def FFilter2Dd(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int, noutpad:Int):FFilter = {
 		val inDims = irow(din, w, h);
@@ -1026,7 +1069,18 @@ object FFilter {
 		new FFilter(inDims, outDims, stride, pad, outPad, irow(din, w, h, dout), new Array[Float](din*dout*w*h));
 	}
 	
+	def FFilter2Dd(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int, noutpad:Int, a:FMat):FFilter = {
+		val inDims = irow(din, w, h);
+		val outDims = irow(dout, 1, 1);
+		val stride = irow(1, nstride, nstride);
+		val pad = irow(0, npad, npad);
+		val outPad = irow(0, noutpad, noutpad);		
+	    FFilter.alias(inDims, outDims, stride, pad, outPad, irow(din, w, h, dout), a);
+	}
+	
 	def FFilter2Dd(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int):FFilter = FFilter2Dd(w, h, din, dout, nstride, npad, 0);
+
+	def FFilter2Dd(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int, a:FMat):FFilter = FFilter2Dd(w, h, din, dout, nstride, npad, 0, a);
 
 	def FFilter2Ddn(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int, noutpad:Int):FFilter = {
 		val inDims = irow(din, w, h, 1);
@@ -1036,9 +1090,20 @@ object FFilter {
 		val outPad = irow(0, noutpad, noutpad, 0);
 		new FFilter(inDims, outDims, stride, pad, outPad, irow(din, w, h, dout), new Array[Float](din*dout*w*h));
 	}
-	
+
+	def FFilter2Ddn(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int, noutpad:Int, a:FMat):FFilter = {
+		val inDims = irow(din, w, h, 1);
+		val outDims = irow(dout, 1, 1, 1);
+		val stride = irow(1, nstride, nstride, 1);
+		val pad = irow(0, npad, npad, 0);
+		val outPad = irow(0, noutpad, noutpad, 0);
+	    FFilter.alias(inDims, outDims, stride, pad, outPad, irow(din, w, h, dout), a);
+	}
+
 	def FFilter2Ddn(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int):FFilter = FFilter2Ddn(w, h, din, dout, nstride, npad, 0);
-	
+
+	def FFilter2Ddn(w:Int, h:Int, din:Int, dout:Int, nstride:Int, npad:Int, a:FMat):FFilter = FFilter2Ddn(w, h, din, dout, nstride, npad, 0, a);
+
 	def xavier(f:FFilter, fscale:Float):FFilter = {
 	  val scale = f.inDims.data.reduce(_*_);
 	  FFunctions.normrnd(0, fscale/math.sqrt(scale).toFloat, f);
