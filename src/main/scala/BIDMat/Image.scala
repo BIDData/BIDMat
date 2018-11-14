@@ -68,7 +68,7 @@ class Image(val img:BufferedImage) extends Serializable {
     var i = 0;
     if (dd == 2 || mat.dims(0) == 1) {
     	while (i < height*width) {
-    		ints(i) = math.min(255,mdata(i).asInstanceOf[Int]) * mult;
+    		ints(i) = math.max(0,math.min(255,mdata(i).asInstanceOf[Int])) * mult;
     		i += 1;
     	}
     } else if (mat.dims(0) == 3) {
@@ -229,7 +229,7 @@ object Image {
     		if (dd == 2 || mat.dims(0) == 1) {
     			val im = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
     			while (i < height*width) {
-    				ints(i) = math.min(255,mdata(i).asInstanceOf[Int]) * mult;
+    				ints(i) = math.max(0,math.min(255,mdata(i).asInstanceOf[Int])) * mult;
     				i += 1;
     			}
     			im;
