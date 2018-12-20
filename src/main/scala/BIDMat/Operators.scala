@@ -16,6 +16,7 @@ trait Mop {
   /*
    * Operations on matching types. These need to be overridden by the actual operator.
    */
+  def op(a:BMat, b:BMat, c:Mat):BMat = {notImplemented(myname, a, b); a}
   def op(a:FMat, b:FMat, c:Mat):FMat = {notImplemented(myname, a, b); a}
   def op(a:DMat, b:DMat, c:Mat):DMat = {notImplemented(myname, a, b); a}
   def op(a:IMat, b:IMat, c:Mat):IMat = {notImplemented(myname, a, b); a}
@@ -191,6 +192,7 @@ trait Mop {
    */
   def op(a:Mat, b:Mat, c:Mat):Mat = {
     a match {
+      case aa:BMat => op(aa, b, c)
       case aa:FMat => op(aa, b, c)
       case aa:DMat => op(aa, b, c)
       case aa:IMat => op(aa, b, c)
@@ -352,6 +354,7 @@ object Mop_Pow extends Mop {
 
 object Mop_HCat extends Mop { 
 	override def myname = "\\"
+  override def op(a:BMat, b:BMat, c:Mat):BMat = a \ b
   override def op(a:FMat, b:FMat, c:Mat):FMat = a \ b
   override def op(a:DMat, b:DMat, c:Mat):DMat = a \ b
   override def op(a:IMat, b:IMat, c:Mat):IMat = a \ b
@@ -362,7 +365,8 @@ object Mop_HCat extends Mop {
 }
 
 object Mop_VCat extends Mop {
-	override def myname = "on"
+  override def myname = "on"
+  override def op(a:BMat, b:BMat, c:Mat):BMat = a on b
   override def op(a:FMat, b:FMat, c:Mat):FMat = a on b
   override def op(a:DMat, b:DMat, c:Mat):DMat = a on b
   override def op(a:IMat, b:IMat, c:Mat):IMat = a on b
