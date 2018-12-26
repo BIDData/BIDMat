@@ -595,6 +595,33 @@ extern "C" {
     return copyFromInds2DLong(A, lda, B, ldb, I, nrows, J, ncols);
   }
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_copyFromInds3DLong
+  (JNIEnv *env, jobject obj, jobject jA, jint lda, jint rda, jobject jB, jint ldb, jint rdb, 
+   jobject jI, jint nrows, jobject jJ, jint ncols, jobject jK, jint nk) 
+  {
+    long long *A = (long long*)getPointer(env, jA);
+    long long *B = (long long*)getPointer(env, jB);
+    int *I = (int*)getPointer(env, jI);
+    int *J = (int*)getPointer(env, jJ);
+    int *K = (int*)getPointer(env, jK);
+
+    return copyFromInds3DLong(A, lda, rda, B, ldb, rdb, I, nrows, J, ncols, K, nk);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_copyFromInds4DLong
+  (JNIEnv *env, jobject obj, jobject jA, jint lda, jint rda, jint tda, jobject jB, jint ldb, jint rdb, jint tdb,
+   jobject jI, jint nrows, jobject jJ, jint ncols, jobject jK, jint nk, jobject jL, jint nl) 
+  {
+    long long *A = (long long*)getPointer(env, jA);
+    long long *B = (long long*)getPointer(env, jB);
+    int *I = (int*)getPointer(env, jI);
+    int *J = (int*)getPointer(env, jJ);
+    int *K = (int*)getPointer(env, jK);
+    int *L = (int*)getPointer(env, jL);
+
+    return copyFromInds4DLong(A, lda, rda, tda, B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl);
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_kron
   (JNIEnv *env, jobject obj, jobject jA, jobject jB, jobject jC,
    int nrA, int ncA, int nrB, int ncB)

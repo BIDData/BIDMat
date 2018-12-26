@@ -18,6 +18,8 @@ void setsizes(long long N, dim3 *gridp, int *nthreadsp);
 
 void setsizesLean(long long N, dim3 *gridp, int *nthreadsp);
 
+void setsizesTrim(long long N, dim3 *gridp, int *nthreadsp);
+
 int apply_binop(float *nativeA, int Anrows, int Ancols, float *nativeB, int Bnrows, int Bncols, float *nativeC, int opn);
 
 int apply_binop(int *nativeA, int Anrows, int Ancols, int *nativeB, int Bnrows, int Bncols, int *nativeC, int opn);
@@ -91,6 +93,10 @@ int copyFromInds3D(float *A, int lda, int rda, float *B, int ldb, int rdb, int *
 int copyFromInds4D(float *A, int lda, int rda, int tda, float *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl);
 
 int copyFromInds2DLong(long long *A, int lda, long long *B, int ldb, int *I, int nrows, int *J, int ncols);
+
+int copyFromInds3DLong(long long *A, int lda, int rda, long long *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk);
+
+int copyFromInds4DLong(long long *A, int lda, int rda, int tda, long long *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl);
 
 int set_val(float *A, float val, int length);
 

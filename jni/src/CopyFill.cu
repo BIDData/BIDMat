@@ -36,7 +36,7 @@ __global__ void __copyToIndsX(float *A, float *B, long long len) {
 int copyToInds(float *A, float *B, int *I, long long len) {
   int nthreads;
   dim3 griddims;
-  setsizesLean(len, &griddims, &nthreads);
+  setsizesTrim(len, &griddims, &nthreads);
   if (I == NULL) {
     __copyToIndsX<<<griddims,nthreads>>>(A, B, len);
   } else {
@@ -68,7 +68,7 @@ __global__ void __copyToIndsLongX(long long *A, long long *B, long long len) {
 int copyToIndsLong(long long *A, long long *B, int *I, long long len) {
   int nthreads;
   dim3 griddims;
-  setsizesLean(len, &griddims, &nthreads);
+  setsizesTrim(len, &griddims, &nthreads);
   if (I == NULL) {
     __copyToIndsLongX<<<griddims,nthreads>>>(A, B, len);
   } else {
@@ -100,7 +100,7 @@ __global__ void __fillToIndsX(float A, float *B, long long len) {
 int fillToInds(float A, float *B, int *I, long long len) {
   int nthreads;
   dim3 griddims;
-  setsizesLean(len, &griddims, &nthreads);
+  setsizesTrim(len, &griddims, &nthreads);
   if (I == NULL) {
     __fillToIndsX<<<griddims,nthreads>>>(A, B, len);
   } else {
@@ -132,7 +132,7 @@ __global__ void __fillToIndsLongX(long long A, long long *B, long long len) {
 int fillToIndsLong(long long A, long long *B, int *I, long long len) {
   int nthreads;
   dim3 griddims;
-  setsizesLean(len, &griddims, &nthreads);
+  setsizesTrim(len, &griddims, &nthreads);
   if (I == NULL) {
     __fillToIndsLongX<<<griddims,nthreads>>>(A, B, len);
   } else {
@@ -156,7 +156,7 @@ __global__ void __copyFromInds(T *A, T *B, int *I, long long len) {
 int copyFromInds(float *A, float *B, int *I, long long len) {
   int nthreads;
   dim3 griddims;
-  setsizesLean(len, &griddims, &nthreads);
+  setsizesTrim(len, &griddims, &nthreads);
   __copyFromInds<<<griddims,nthreads>>>(A, B, I, len);
   cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
@@ -259,376 +259,345 @@ int copyToInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J
 }
 
 __global__ void __copyToInds3D(float *A, int lda, int rda, float *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk) {
-  int ii = threadIdx.x + blockDim.x * blockIdx.x;
-  int jj = threadIdx.y + blockDim.y * blockIdx.y;
-  int kk = threadIdx.z + blockDim.z * blockIdx.z;
-  int i, j, k, mapi, mapj, mapk;
-  for (k = kk; k < nk; k += blockDim.z * gridDim.z) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  int step = blockDim.x * gridDim.x * gridDim.y;
+  int k = tid / (nrows * ncols);
+  int tidrem = tid - k * (nrows * ncols);
+  int kstep = step / (nrows * ncols);
+  int steprem = step - kstep * (nrows * ncols);
+  int j = tidrem / nrows;
+  int i = tidrem - j * nrows;
+  int jstep = steprem / nrows;
+  int istep = steprem - jstep * nrows;
+  int id, mapi, mapj, mapk;
+  for (id = tid; id < nrows * ncols * nk; id += step) {
     mapk = k;
     if (K != NULL) mapk = K[k];
-    for (j = jj; j < ncols; j += blockDim.y * gridDim.y) {
-      mapj = j;
-      if (J != NULL) mapj = J[j];
-      if (I != NULL) {
-        for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
-          mapi = I[i];
-          B[mapi + ldb * (mapj + rdb * mapk)] = A[i + lda * (j + rda * k)];
-        }
-      } else {
-        for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
-          mapi = i;
-          B[mapi + ldb * (mapj + rdb * mapk)] = A[i + lda * (j + rda * k)];
-        }
-      }
-    }
+    mapj = j;
+    if (J != NULL) mapj = J[j];
+    mapi = i;
+    if (I != NULL) mapi = I[i];
+    B[mapi + ldb * (mapj + rdb * mapk)] = A[i + lda * (j + rda * k)];
+    i += istep;
+    if (i >= nrows) {i -= nrows; j++;}
+    j += jstep;
+    if (j >= ncols) {j -= ncols; k++;}
+    k += kstep;
   }
 }
 
 int copyToInds3D(float *A, int lda, int rda, float *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk) {
-  int ntx, nty, ntz, nbx, nby, nbz;
-  ntx = min(nrows, 1024);
-  nbx = min((nrows - 1) / ntx + 1, 1024);
-  nty = min(ncols, 1024/ntx);
-  nby = min((ncols - 1) / nty + 1, 1024);
-  ntz = min(nk, 1024/ntx/nty);
-  nbz = min((nk - 1) / ntz + 1, 1024);
-  dim3 blockdims(ntx, nty, ntz);
-  dim3 griddims(nbx, nby, nbz);
-  __copyToInds3D<<<griddims,blockdims>>>(A, lda, rda, B, ldb, rdb, I, nrows, J, ncols, K, nk);
+  int len = nrows * ncols * nk;
+  int nthreads;
+  dim3 griddims;
+  setsizesTrim(len, &griddims, &nthreads);
+  __copyToInds3D<<<griddims,nthreads>>>(A, lda, rda, B, ldb, rdb, I, nrows, J, ncols, K, nk);
   cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
 
+
 __global__ void __copyToInds3DLong(long long *A, int lda, int rda, long long *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk) {
-  int ii = threadIdx.x + blockDim.x * blockIdx.x;
-  int jj = threadIdx.y + blockDim.y * blockIdx.y;
-  int kk = threadIdx.z + blockDim.z * blockIdx.z;
-  int i, j, k, mapi, mapj, mapk;
-  for (k = kk; k < nk; k += blockDim.z * gridDim.z) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  int step = blockDim.x * gridDim.x * gridDim.y;
+  int k = tid / (nrows * ncols);
+  int tidrem = tid - k * (nrows * ncols);
+  int kstep = step / (nrows * ncols);
+  int steprem = step - kstep * (nrows * ncols);
+  int j = tidrem / nrows;
+  int i = tidrem - j * nrows;
+  int jstep = steprem / nrows;
+  int istep = steprem - jstep * nrows;
+  int id, mapi, mapj, mapk;
+  for (id = tid; id < nrows * ncols * nk; id += step) {
     mapk = k;
     if (K != NULL) mapk = K[k];
-    for (j = jj; j < ncols; j += blockDim.y * gridDim.y) {
-      mapj = j;
-      if (J != NULL) mapj = J[j];
-      if (I != NULL) {
-        for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
-          mapi = I[i];
-          B[mapi + ldb * (mapj + rdb * mapk)] = A[i + lda * (j + rda * k)];
-        }
-      } else {
-        for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
-          mapi = i;
-          B[mapi + ldb * (mapj + rdb * mapk)] = A[i + lda * (j + rda * k)];
-        }
-      }
-    }
+    mapj = j;
+    if (J != NULL) mapj = J[j];
+    mapi = i;
+    if (I != NULL) mapi = I[i];
+    B[mapi + ldb * (mapj + rdb * mapk)] = A[i + lda * (j + rda * k)];
+    i += istep;
+    if (i >= nrows) {i -= nrows; j++;}
+    j += jstep;
+    if (j >= ncols) {j -= ncols; k++;}
+    k += kstep;
   }
 }
 
 int copyToInds3DLong(long long *A, int lda, int rda, long long *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk) {
-  int ntx, nty, ntz, nbx, nby, nbz;
-  ntx = min(nrows, 1024);
-  nbx = min((nrows - 1) / ntx + 1, 1024);
-  nty = min(ncols, 1024/ntx);
-  nby = min((ncols - 1) / nty + 1, 1024);
-  ntz = min(nk, 1024/ntx/nty);
-  nbz = min((nk - 1) / ntz + 1, 1024);
-  dim3 blockdims(ntx, nty, ntz);
-  dim3 griddims(nbx, nby, nbz);
-  __copyToInds3DLong<<<griddims,blockdims>>>(A, lda, rda, B, ldb, rdb, I, nrows, J, ncols, K, nk);
+  int len = nrows * ncols * nk;
+  int nthreads;
+  dim3 griddims;
+  setsizesTrim(len, &griddims, &nthreads);
+  __copyToInds3DLong<<<griddims,nthreads>>>(A, lda, rda, B, ldb, rdb, I, nrows, J, ncols, K, nk);
   cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
 
 __global__ void __fillToInds3D(float A, float *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk) {
-  int ii = threadIdx.x + blockDim.x * blockIdx.x;
-  int jj = threadIdx.y + blockDim.y * blockIdx.y;
-  int kk = threadIdx.z + blockDim.z * blockIdx.z;
-  int i, j, k, mapi, mapj, mapk;
-  for (k = kk; k < nk; k += blockDim.z * gridDim.z) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  int step = blockDim.x * gridDim.x * gridDim.y;
+  int k = tid / (nrows * ncols);
+  int tidrem = tid - k * (nrows * ncols);
+  int kstep = step / (nrows * ncols);
+  int steprem = step - kstep * (nrows * ncols);
+  int j = tidrem / nrows;
+  int i = tidrem - j * nrows;
+  int jstep = steprem / nrows;
+  int istep = steprem - jstep * nrows;
+  int id, mapi, mapj, mapk;
+  for (id = tid; id < nrows * ncols * nk; id += step) {
     mapk = k;
     if (K != NULL) mapk = K[k];
-    for (j = jj; j < ncols; j += blockDim.y * gridDim.y) {
-      mapj = j;
-      if (J != NULL) mapj = J[j];
-      if (I != NULL) {
-        for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
-          mapi = I[i];
-          B[mapi + ldb * (mapj + rdb * mapk)] = A;
-        }
-      } else {
-        for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
-          mapi = i;
-          B[mapi + ldb * (mapj + rdb * mapk)] = A;
-        }
-      }
-    }
+    mapj = j;
+    if (J != NULL) mapj = J[j];
+    mapi = i;
+    if (I != NULL) mapi = I[i];
+    B[mapi + ldb * (mapj + rdb * mapk)] = A;
+    i += istep;
+    if (i >= nrows) {i -= nrows; j++;}
+    j += jstep;
+    if (j >= ncols) {j -= ncols; k++;}
+    k += kstep;
   }
 }
 
 int fillToInds3D(float A, float *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk) {
-  int ntx, nty, ntz, nbx, nby, nbz;
-  ntx = min(nrows, 1024);
-  nbx = min((nrows - 1) / ntx + 1, 1024);
-  nty = min(ncols, 1024/ntx);
-  nby = min((ncols - 1) / nty + 1, 1024);
-  ntz = min(nk, 1024/ntx/nty);
-  nbz = min((nk - 1) / ntz + 1, 1024);
-  dim3 blockdims(ntx, nty, ntz);
-  dim3 griddims(nbx, nby, nbz);
-  __fillToInds3D<<<griddims,blockdims>>>(A, B, ldb, rdb, I, nrows, J, ncols, K, nk);
+  int len = nrows * ncols * nk;
+  int nthreads;
+  dim3 griddims;
+  setsizesTrim(len, &griddims, &nthreads);
+  __fillToInds3D<<<griddims,nthreads>>>(A, B, ldb, rdb, I, nrows, J, ncols, K, nk);
   cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
 
 __global__ void __fillToInds3DLong(long long A, long long *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk) {
-  int ii = threadIdx.x + blockDim.x * blockIdx.x;
-  int jj = threadIdx.y + blockDim.y * blockIdx.y;
-  int kk = threadIdx.z + blockDim.z * blockIdx.z;
-  int i, j, k, mapi, mapj, mapk;
-  for (k = kk; k < nk; k += blockDim.z * gridDim.z) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  int step = blockDim.x * gridDim.x * gridDim.y;
+  int k = tid / (nrows * ncols);
+  int tidrem = tid - k * (nrows * ncols);
+  int kstep = step / (nrows * ncols);
+  int steprem = step - kstep * (nrows * ncols);
+  int j = tidrem / nrows;
+  int i = tidrem - j * nrows;
+  int jstep = steprem / nrows;
+  int istep = steprem - jstep * nrows;
+  int id, mapi, mapj, mapk;
+  for (id = tid; id < nrows * ncols * nk; id += step) {
     mapk = k;
     if (K != NULL) mapk = K[k];
-    for (j = jj; j < ncols; j += blockDim.y * gridDim.y) {
-      mapj = j;
-      if (J != NULL) mapj = J[j];
-      if (I != NULL) {
-        for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
-          mapi = I[i];
-          B[mapi + ldb * (mapj + rdb * mapk)] = A;
-        }
-      } else {
-        for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
-          mapi = i;
-          B[mapi + ldb * (mapj + rdb * mapk)] = A;
-        }
-      }
-    }
+    mapj = j;
+    if (J != NULL) mapj = J[j];
+    mapi = i;
+    if (I != NULL) mapi = I[i];
+    B[mapi + ldb * (mapj + rdb * mapk)] = A;
+    i += istep;
+    if (i >= nrows) {i -= nrows; j++;}
+    j += jstep;
+    if (j >= ncols) {j -= ncols; k++;}
+    k += kstep;
   }
 }
 
 int fillToInds3DLong(long long A, long long *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk) {
-  int ntx, nty, ntz, nbx, nby, nbz;
-  ntx = min(nrows, 1024);
-  nbx = min((nrows - 1) / ntx + 1, 1024);
-  nty = min(ncols, 1024/ntx);
-  nby = min((ncols - 1) / nty + 1, 1024);
-  ntz = min(nk, 1024/ntx/nty);
-  nbz = min((nk - 1) / ntz + 1, 1024);
-  dim3 blockdims(ntx, nty, ntz);
-  dim3 griddims(nbx, nby, nbz);
-  __fillToInds3DLong<<<griddims,blockdims>>>(A, B, ldb, rdb, I, nrows, J, ncols, K, nk);
+  int len = nrows * ncols * nk;
+  int nthreads;
+  dim3 griddims;
+  setsizesTrim(len, &griddims, &nthreads);
+  __fillToInds3DLong<<<griddims,nthreads>>>(A, B, ldb, rdb, I, nrows, J, ncols, K, nk);
   cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
 
-__global__ void __copyToInds4D(float *A, int lda, int rda, int tda, float *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl, int ntk, int nbk, int ntl, int nbl) {
-  int ii = threadIdx.x + blockDim.x * blockIdx.x;
-  int jj = threadIdx.y + blockDim.y * blockIdx.y;
-  int tk = threadIdx.z / ntl;
-  int tl = threadIdx.z - tk * ntl;
-  int bk = blockIdx.z / nbl;
-  int bl = blockIdx.z - bk * nbl;
-  int kk = tk + ntk * bk;
-  int ll = tl + ntl * bl;
-  int i, j, k, l, mapi, mapj, mapk, mapl;
-  for (l = ll; l < nl; l += ntl * nbl) {
+__global__ void __copyToInds4D(float *A, int lda, int rda, int tda, float *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  int step = blockDim.x * gridDim.x * gridDim.y;
+  int l = tid / (nrows * ncols * nk);
+  int tidrem = tid - l * (nrows * ncols * nk);
+  int lstep = step / (nrows * ncols * nk);
+  int steprem = step - lstep * (nrows * ncols * nk);
+  int k = tidrem / (nrows * ncols);
+  tidrem = tidrem - k * (nrows * ncols);
+  int kstep = steprem / (nrows * ncols);
+  steprem = steprem - kstep * (nrows * ncols);
+  int j = tidrem / nrows;
+  int i = tidrem - j * nrows;
+  int jstep = steprem / nrows;
+  int istep = steprem - jstep * nrows;
+  int id, mapi, mapj, mapk, mapl;
+  for (id = tid; id < nrows * ncols * nk * nl; id += step) {
     mapl = l;
     if (L != NULL) mapl = L[l];
-    for (k = kk; k < nk; k += ntk * nbk) {
-      mapk = k;
-      if (K != NULL) mapk = K[k];
-      for (j = jj; j < ncols; j += blockDim.y * gridDim.y) {
-        mapj = j;
-        if (J != NULL) mapj = J[j];
-        if (I != NULL) {
-          for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
-            mapi = I[i];
-            B[mapi + ldb * (mapj + rdb * (mapk + tdb * mapl))] = A[i + lda * (j + rda * (k + tda * l))];
-          }
-        } else {
-          for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
-            B[i + ldb * (mapj + rdb * (mapk + tdb * mapl))] = A[i + lda * (j + rda * (k + tda * l))];
-          }
-        }
-      }
-    }
+    mapk = k;
+    if (K != NULL) mapk = K[k];
+    mapj = j;
+    if (J != NULL) mapj = J[j];
+    mapi = i;
+    if (I != NULL) mapi = I[i];
+    B[mapi + ldb * (mapj + rdb * (mapk + tdb * mapl))] = A[i + lda * (j + rda * (k + tda * l))];
+    i += istep;
+    if (i >= nrows) {i -= nrows; j++;}
+    j += jstep;
+    if (j >= ncols) {j -= ncols; k++;}
+    k += kstep;
+    if (k >= nk) {k -= nk; l++;}
+    l += lstep;
   }
 }
 
 int copyToInds4D(float *A, int lda, int rda, int tda, float *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl) {
-  int ntx, nty, ntk, ntl, nbx, nby, nbk, nbl;
-  ntx = min(nrows, 1024);
-  nbx = min((nrows - 1) / ntx + 1, 1024);
-  nty = min(ncols, 1024/ntx);
-  nby = min((ncols - 1) / nty + 1, 1024);
-  ntk = min(nk, 1024/ntx/nty);
-  nbk = min((nk - 1) / ntk + 1, 255);
-  ntl = min(nl, 1024/ntx/nty/ntk);
-  nbl = min((nl - 1) / ntl + 1, 255);
-  dim3 blockdims(ntx, nty, ntk * ntl);
-  dim3 griddims(nbx, nby, nbk * nbl);
-  __copyToInds4D<<<griddims,blockdims>>>(A, lda, rda, tda, B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl, ntk, nbk, ntl, nbl);
+  int len = nrows * ncols * nk * nl;
+  int nthreads;
+  dim3 griddims;
+  setsizesTrim(len, &griddims, &nthreads);
+  __copyToInds4D<<<griddims,nthreads>>>(A, lda, rda, tda, B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl);
   cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
 
-__global__ void __copyToInds4DLong(long long *A, int lda, int rda, int tda, long long *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl, int ntk, int nbk, int ntl, int nbl) {
-  int ii = threadIdx.x + blockDim.x * blockIdx.x;
-  int jj = threadIdx.y + blockDim.y * blockIdx.y;
-  int tk = threadIdx.z / ntl;
-  int tl = threadIdx.z - tk * ntl;
-  int bk = blockIdx.z / nbl;
-  int bl = blockIdx.z - bk * nbl;
-  int kk = tk + ntk * bk;
-  int ll = tl + ntl * bl;
-  int i, j, k, l, mapi, mapj, mapk, mapl;
-  for (l = ll; l < nl; l += ntl * nbl) {
+__global__ void __copyToInds4DLong(long long *A, int lda, int rda, int tda, long long *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  int step = blockDim.x * gridDim.x * gridDim.y;
+  int l = tid / (nrows * ncols * nk);
+  int tidrem = tid - l * (nrows * ncols * nk);
+  int lstep = step / (nrows * ncols * nk);
+  int steprem = step - lstep * (nrows * ncols * nk);
+  int k = tidrem / (nrows * ncols);
+  tidrem = tidrem - k * (nrows * ncols);
+  int kstep = steprem / (nrows * ncols);
+  steprem = steprem - kstep * (nrows * ncols);
+  int j = tidrem / nrows;
+  int i = tidrem - j * nrows;
+  int jstep = steprem / nrows;
+  int istep = steprem - jstep * nrows;
+  int id, mapi, mapj, mapk, mapl;
+  for (id = tid; id < nrows * ncols * nk * nl; id += step) {
     mapl = l;
     if (L != NULL) mapl = L[l];
-    for (k = kk; k < nk; k += ntk * nbk) {
-      mapk = k;
-      if (K != NULL) mapk = K[k];
-      for (j = jj; j < ncols; j += blockDim.y * gridDim.y) {
-        mapj = j;
-        if (J != NULL) mapj = J[j];
-        if (I != NULL) {
-          for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
-            mapi = I[i];
-            B[mapi + ldb * (mapj + rdb * (mapk + tdb * mapl))] = A[i + lda * (j + rda * (k + tda * l))];
-          }
-        } else {
-          for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
-            B[i + ldb * (mapj + rdb * (mapk + tdb * mapl))] = A[i + lda * (j + rda * (k + tda * l))];
-          }
-        }
-      }
-    }
+    mapk = k;
+    if (K != NULL) mapk = K[k];
+    mapj = j;
+    if (J != NULL) mapj = J[j];
+    mapi = i;
+    if (I != NULL) mapi = I[i];
+    B[mapi + ldb * (mapj + rdb * (mapk + tdb * mapl))] = A[i + lda * (j + rda * (k + tda * l))];
+    i += istep;
+    if (i >= nrows) {i -= nrows; j++;}
+    j += jstep;
+    if (j >= ncols) {j -= ncols; k++;}
+    k += kstep;
+    if (k >= nk) {k -= nk; l++;}
+    l += lstep;
   }
 }
 
 int copyToInds4DLong(long long *A, int lda, int rda, int tda, long long *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl) {
-  int ntx, nty, ntk, ntl, nbx, nby, nbk, nbl;
-  ntx = min(nrows, 1024);
-  nbx = min((nrows - 1) / ntx + 1, 1024);
-  nty = min(ncols, 1024/ntx);
-  nby = min((ncols - 1) / nty + 1, 1024);
-  ntk = min(nk, 1024/ntx/nty);
-  nbk = min((nk - 1) / ntk + 1, 255);
-  ntl = min(nl, 1024/ntx/nty/ntk);
-  nbl = min((nl - 1) / ntl + 1, 255);
-  dim3 blockdims(ntx, nty, ntk * ntl);
-  dim3 griddims(nbx, nby, nbk * nbl);
-  __copyToInds4DLong<<<griddims,blockdims>>>(A, lda, rda, tda, B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl, ntk, nbk, ntl, nbl);
+  int len = nrows * ncols * nk * nl;
+  int nthreads;
+  dim3 griddims;
+  setsizesTrim(len, &griddims, &nthreads);
+  __copyToInds4DLong<<<griddims,nthreads>>>(A, lda, rda, tda, B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl);
   cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
 
-__global__ void __fillToInds4D(float A, float *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl, int ntk, int nbk, int ntl, int nbl) {
-  int ii = threadIdx.x + blockDim.x * blockIdx.x;
-  int jj = threadIdx.y + blockDim.y * blockIdx.y;
-  int tk = threadIdx.z / ntl;
-  int tl = threadIdx.z - tk * ntl;
-  int bk = blockIdx.z / nbl;
-  int bl = blockIdx.z - bk * nbl;
-  int kk = tk + ntk * bk;
-  int ll = tl + ntl * bl;
-  int i, j, k, l, mapi, mapj, mapk, mapl;
-  for (l = ll; l < nl; l += ntl * nbl) {
+__global__ void __fillToInds4D(float A, float *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  int step = blockDim.x * gridDim.x * gridDim.y;
+  int l = tid / (nrows * ncols * nk);
+  int tidrem = tid - l * (nrows * ncols * nk);
+  int lstep = step / (nrows * ncols * nk);
+  int steprem = step - lstep * (nrows * ncols * nk);
+  int k = tidrem / (nrows * ncols);
+  tidrem = tidrem - k * (nrows * ncols);
+  int kstep = steprem / (nrows * ncols);
+  steprem = steprem - kstep * (nrows * ncols);
+  int j = tidrem / nrows;
+  int i = tidrem - j * nrows;
+  int jstep = steprem / nrows;
+  int istep = steprem - jstep * nrows;
+  int id, mapi, mapj, mapk, mapl;
+  for (id = tid; id < nrows * ncols * nk * nl; id += step) {
     mapl = l;
     if (L != NULL) mapl = L[l];
-    for (k = kk; k < nk; k += ntk * nbk) {
-      mapk = k;
-      if (K != NULL) mapk = K[k];
-      for (j = jj; j < ncols; j += blockDim.y * gridDim.y) {
-        mapj = j;
-        if (J != NULL) mapj = J[j];
-        if (I != NULL) {
-          for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
-            mapi = I[i];
-            B[mapi + ldb * (mapj + rdb * (mapk + tdb * mapl))] = A;
-          }
-        } else {
-          for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
-            B[i + ldb * (mapj + rdb * (mapk + tdb * mapl))] = A;
-          }
-        }
-      }
-    }
+    mapk = k;
+    if (K != NULL) mapk = K[k];
+    mapj = j;
+    if (J != NULL) mapj = J[j];
+    mapi = i;
+    if (I != NULL) mapi = I[i];
+    B[mapi + ldb * (mapj + rdb * (mapk + tdb * mapl))] = A;
+    i += istep;
+    if (i >= nrows) {i -= nrows; j++;}
+    j += jstep;
+    if (j >= ncols) {j -= ncols; k++;}
+    k += kstep;
+    if (k >= nk) {k -= nk; l++;}
+    l += lstep;
   }
 }
 
 int fillToInds4D(float A, float *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl) {
-  int ntx, nty, ntk, ntl, nbx, nby, nbk, nbl;
-  ntx = min(nrows, 1024);
-  nbx = min((nrows - 1) / ntx + 1, 1024);
-  nty = min(ncols, 1024/ntx);
-  nby = min((ncols - 1) / nty + 1, 1024);
-  ntk = min(nk, 1024/ntx/nty);
-  nbk = min((nk - 1) / ntk + 1, 255);
-  ntl = min(nl, 1024/ntx/nty/ntk);
-  nbl = min((nl - 1) / ntl + 1, 255);
-  dim3 blockdims(ntx, nty, ntk * ntl);
-  dim3 griddims(nbx, nby, nbk * nbl);
-  __fillToInds4D<<<griddims,blockdims>>>(A, B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl, ntk, nbk, ntl, nbl);
+  int len = nrows * ncols * nk * nl;
+  int nthreads;
+  dim3 griddims;
+  setsizesTrim(len, &griddims, &nthreads);
+  __fillToInds4D<<<griddims,nthreads>>>(A, B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl);
   cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
 
-__global__ void __fillToInds4DLong(long long A, long long *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl, int ntk, int nbk, int ntl, int nbl) {
-  int ii = threadIdx.x + blockDim.x * blockIdx.x;
-  int jj = threadIdx.y + blockDim.y * blockIdx.y;
-  int tk = threadIdx.z / ntl;
-  int tl = threadIdx.z - tk * ntl;
-  int bk = blockIdx.z / nbl;
-  int bl = blockIdx.z - bk * nbl;
-  int kk = tk + ntk * bk;
-  int ll = tl + ntl * bl;
-  int i, j, k, l, mapi, mapj, mapk, mapl;
-  for (l = ll; l < nl; l += ntl * nbl) {
+__global__ void __fillToInds4DLong(long long A, long long *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  int step = blockDim.x * gridDim.x * gridDim.y;
+  int l = tid / (nrows * ncols * nk);
+  int tidrem = tid - l * (nrows * ncols * nk);
+  int lstep = step / (nrows * ncols * nk);
+  int steprem = step - lstep * (nrows * ncols * nk);
+  int k = tidrem / (nrows * ncols);
+  tidrem = tidrem - k * (nrows * ncols);
+  int kstep = steprem / (nrows * ncols);
+  steprem = steprem - kstep * (nrows * ncols);
+  int j = tidrem / nrows;
+  int i = tidrem - j * nrows;
+  int jstep = steprem / nrows;
+  int istep = steprem - jstep * nrows;
+  int id, mapi, mapj, mapk, mapl;
+  for (id = tid; id < nrows * ncols * nk * nl; id += step) {
     mapl = l;
     if (L != NULL) mapl = L[l];
-    for (k = kk; k < nk; k += ntk * nbk) {
-      mapk = k;
-      if (K != NULL) mapk = K[k];
-      for (j = jj; j < ncols; j += blockDim.y * gridDim.y) {
-        mapj = j;
-        if (J != NULL) mapj = J[j];
-        if (I != NULL) {
-          for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
-            mapi = I[i];
-            B[mapi + ldb * (mapj + rdb * (mapk + tdb * mapl))] = A;
-          }
-        } else {
-          for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
-            B[i + ldb * (mapj + rdb * (mapk + tdb * mapl))] = A;
-          }
-        }
-      }
-    }
+    mapk = k;
+    if (K != NULL) mapk = K[k];
+    mapj = j;
+    if (J != NULL) mapj = J[j];
+    mapi = i;
+    if (I != NULL) mapi = I[i];
+    B[mapi + ldb * (mapj + rdb * (mapk + tdb * mapl))] = A;
+    i += istep;
+    if (i >= nrows) {i -= nrows; j++;}
+    j += jstep;
+    if (j >= ncols) {j -= ncols; k++;}
+    k += kstep;
+    if (k >= nk) {k -= nk; l++;}
+    l += lstep;
   }
 }
 
 int fillToInds4DLong(long long A, long long *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl) {
-  int ntx, nty, ntk, ntl, nbx, nby, nbk, nbl;
-  ntx = min(nrows, 1024);
-  nbx = min((nrows - 1) / ntx + 1, 1024);
-  nty = min(ncols, 1024/ntx);
-  nby = min((ncols - 1) / nty + 1, 1024);
-  ntk = min(nk, 1024/ntx/nty);
-  nbk = min((nk - 1) / ntk + 1, 255);
-  ntl = min(nl, 1024/ntx/nty/ntk);
-  nbl = min((nl - 1) / ntl + 1, 255);
-  dim3 blockdims(ntx, nty, ntk * ntl);
-  dim3 griddims(nbx, nby, nbk * nbl);
-  __fillToInds4DLong<<<griddims,blockdims>>>(A, B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl, ntk, nbk, ntl, nbl);
+  int len = nrows * ncols * nk * nl;
+  int nthreads;
+  dim3 griddims;
+  setsizesTrim(len, &griddims, &nthreads);
+  __fillToInds4DLong<<<griddims,nthreads>>>(A, B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl);
   cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
@@ -778,103 +747,177 @@ int copyFromInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int 
   return err;
 }
 
-
 __global__ void __copyFromInds3D(float *A, int lda, int rda, float *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk) {
-  int ii = threadIdx.x + blockDim.x * blockIdx.x;
-  int jj = threadIdx.y + blockDim.y * blockIdx.y;
-  int kk = threadIdx.z + blockDim.z * blockIdx.z;
-  int i, j, k, mapi, mapj, mapk;
-  for (k = kk; k < nk; k += blockDim.z * gridDim.z) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  int step = blockDim.x * gridDim.x * gridDim.y;
+  int k = tid / (nrows * ncols);
+  int tidrem = tid - k * (nrows * ncols);
+  int kstep = step / (nrows * ncols);
+  int steprem = step - kstep * (nrows * ncols);
+  int j = tidrem / nrows;
+  int i = tidrem - j * nrows;
+  int jstep = steprem / nrows;
+  int istep = steprem - jstep * nrows;
+  int id, mapi, mapj, mapk;
+  for (id = tid; id < nrows * ncols * nk; id += step) {
     mapk = k;
     if (K != NULL) mapk = K[k];
-    for (j = jj; j < ncols; j += blockDim.y * gridDim.y) {
-      mapj = j;
-      if (J != NULL) mapj = J[j];
-      if (I != NULL) {
-        for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
-          mapi = I[i];
-          B[i + ldb * (j + rdb * k)] = A[mapi + lda * (mapj + rda * mapk)];
-        }
-      } else {
-        for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
-          mapi = i;
-          B[i + ldb * (j + rdb * k)] = A[mapi + lda * (mapj + rda * mapk)];
-        }
-      }
-    }
+    mapj = j;
+    if (J != NULL) mapj = J[j];
+    mapi = i;
+    if (I != NULL) mapi = I[i];
+    B[i + ldb * (j + rdb * k)] = A[mapi + lda * (mapj + rda * mapk)];
+    i += istep;
+    if (i >= nrows) {i -= nrows; j++;}
+    j += jstep;
+    if (j >= ncols) {j -= ncols; k++;}
+    k += kstep;
   }
 }
 
 int copyFromInds3D(float *A, int lda, int rda, float *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk) {
-  int ntx, nty, ntz, nbx, nby, nbz;
-  ntx = min(nrows, 1024);
-  nbx = (nrows - 1) / ntx + 1;
-  nty = min(ncols, 1024/ntx);
-  nby = (ncols - 1) / nty + 1;
-  ntz = min(nk, 1024/(ntx*nty));
-  nbz = (nk - 1) / ntz + 1;
-  dim3 blockdims(ntx, nty, ntz);
-  dim3 griddims(nbx, nby, nbz);
-  __copyFromInds3D<<<griddims,blockdims>>>(A, lda, rda, B, ldb, rdb, I, nrows, J, ncols, K, nk);
+  int len = nrows * ncols * nk;
+  int nthreads;
+  dim3 griddims;
+  setsizesTrim(len, &griddims, &nthreads);
+  __copyFromInds3D<<<griddims,nthreads>>>(A, lda, rda, B, ldb, rdb, I, nrows, J, ncols, K, nk);
   cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
 
+__global__ void __copyFromInds3DLong(long long *A, int lda, int rda, long long *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  int step = blockDim.x * gridDim.x * gridDim.y;
+  int k = tid / (nrows * ncols);
+  int tidrem = tid - k * (nrows * ncols);
+  int kstep = step / (nrows * ncols);
+  int steprem = step - kstep * (nrows * ncols);
+  int j = tidrem / nrows;
+  int i = tidrem - j * nrows;
+  int jstep = steprem / nrows;
+  int istep = steprem - jstep * nrows;
+  int id, mapi, mapj, mapk;
+  for (id = tid; id < nrows * ncols * nk; id += step) {
+    mapk = k;
+    if (K != NULL) mapk = K[k];
+    mapj = j;
+    if (J != NULL) mapj = J[j];
+    mapi = i;
+    if (I != NULL) mapi = I[i];
+    B[i + ldb * (j + rdb * k)] = A[mapi + lda * (mapj + rda * mapk)];
+    i += istep;
+    if (i >= nrows) {i -= nrows; j++;}
+    j += jstep;
+    if (j >= ncols) {j -= ncols; k++;}
+    k += kstep;
+  }
+}
 
-__global__ void __copyFromInds4D(float *A, int lda, int rda, int tda, float *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl, int ntk, int nbk, int ntl, int nbl) {
-  int ii = threadIdx.x + blockDim.x * blockIdx.x;
-  int jj = threadIdx.y + blockDim.y * blockIdx.y;
-  int tk = threadIdx.z / ntl;
-  int tl = threadIdx.z - tk * ntl;
-  int bk = blockIdx.z / nbl;
-  int bl = blockIdx.z - bk * nbl;
-  int kk = tk + ntk * bk;
-  int ll = tl + ntl * bl;
-  int i, j, k, l, mapi, mapj, mapk, mapl;
-  for (l = ll; l < nl; l += ntl * nbl) {
+int copyFromInds3DLong(long long *A, int lda, int rda, long long *B, int ldb, int rdb, int *I, int nrows, int *J, int ncols, int *K, int nk) {
+  int len = nrows * ncols * nk;
+  int nthreads;
+  dim3 griddims;
+  setsizesTrim(len, &griddims, &nthreads);
+  __copyFromInds3DLong<<<griddims,nthreads>>>(A, lda, rda, B, ldb, rdb, I, nrows, J, ncols, K, nk);
+  cudaStreamSynchronize(SYNC_STREAM);
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+__global__ void __copyFromInds4D(float *A, int lda, int rda, int tda, float *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  int step = blockDim.x * gridDim.x * gridDim.y;
+  int l = tid / (nrows * ncols * nk);
+  int tidrem = tid - l * (nrows * ncols * nk);
+  int lstep = step / (nrows * ncols * nk);
+  int steprem = step - lstep * (nrows * ncols * nk);
+  int k = tidrem / (nrows * ncols);
+  tidrem = tidrem - k * (nrows * ncols);
+  int kstep = steprem / (nrows * ncols);
+  steprem = steprem - kstep * (nrows * ncols);
+  int j = tidrem / nrows;
+  int i = tidrem - j * nrows;
+  int jstep = steprem / nrows;
+  int istep = steprem - jstep * nrows;
+  int id, mapi, mapj, mapk, mapl;
+  for (id = tid; id < nrows * ncols * nk * nl; id += step) {
     mapl = l;
     if (L != NULL) mapl = L[l];
-    for (k = kk; k < nk; k += ntk * nbk) {
-      mapk = k;
-      if (K != NULL) mapk = K[k];
-      for (j = jj; j < ncols; j += blockDim.y * gridDim.y) {
-        mapj = j;
-        if (J != NULL) mapj = J[j];
-        if (I != NULL) {
-          for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
-            mapi = I[i];
-            B[i + ldb * (j + rdb * (k + tdb * l))] = A[mapi + lda * (mapj + rda * (mapk + tda * mapl))];
-          }
-        } else {
-          for (i = ii; i < nrows; i += blockDim.x * gridDim.x) {
-            B[i + ldb * (j + rdb * (k + tdb * l))] = A[i + lda * (mapj + rda * (mapk + tda * mapl))];
-          }
-        }
-      }
-    }
+    mapk = k;
+    if (K != NULL) mapk = K[k];
+    mapj = j;
+    if (J != NULL) mapj = J[j];
+    mapi = i;
+    if (I != NULL) mapi = I[i];
+    B[i + ldb * (j + rdb * (k + tdb * l))] = A[mapi + lda * (mapj + rda * (mapk + tda * mapl))];
+    i += istep;
+    if (i >= nrows) {i -= nrows; j++;}
+    j += jstep;
+    if (j >= ncols) {j -= ncols; k++;}
+    k += kstep;
+    if (k >= nk) {k -= nk; l++;}
+    l += lstep;
   }
 }
 
 int copyFromInds4D(float *A, int lda, int rda, int tda, float *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl) {
-  int ntx, nty, ntk, ntl, nbx, nby, nbk, nbl;
-  ntx = min(nrows, 1024);
-  nbx = min((nrows - 1) / ntx + 1, 1024);
-  nty = min(ncols, 1024/ntx);
-  nby = min((ncols - 1) / nty + 1, 1024);
-  ntk = min(nk, 1024/ntx/nty);
-  nbk = min((nk - 1) / ntk + 1, 255);
-  ntl = min(nl, 1024/ntx/nty/ntk);
-  nbl = min((nl - 1) / ntl + 1, 255);
-  dim3 blockdims(ntx, nty, ntk * ntl);
-  dim3 griddims(nbx, nby, nbk * nbl);
-
-  __copyFromInds4D<<<griddims,blockdims>>>(A, lda, rda, tda, B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl, ntk, nbk, ntl, nbl);
+  int len = nrows * ncols * nk * nl;
+  int nthreads;
+  dim3 griddims;
+  setsizesTrim(len, &griddims, &nthreads);
+  __copyFromInds4D<<<griddims,nthreads>>>(A, lda, rda, tda, B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl);
   cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
 }
 
+__global__ void __copyFromInds4DLong(long long *A, int lda, int rda, int tda, long long *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl) {
+  int tid = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  int step = blockDim.x * gridDim.x * gridDim.y;
+  int l = tid / (nrows * ncols * nk);
+  int tidrem = tid - l * (nrows * ncols * nk);
+  int lstep = step / (nrows * ncols * nk);
+  int steprem = step - lstep * (nrows * ncols * nk);
+  int k = tidrem / (nrows * ncols);
+  tidrem = tidrem - k * (nrows * ncols);
+  int kstep = steprem / (nrows * ncols);
+  steprem = steprem - kstep * (nrows * ncols);
+  int j = tidrem / nrows;
+  int i = tidrem - j * nrows;
+  int jstep = steprem / nrows;
+  int istep = steprem - jstep * nrows;
+  int id, mapi, mapj, mapk, mapl;
+  for (id = tid; id < nrows * ncols * nk * nl; id += step) {
+    mapl = l;
+    if (L != NULL) mapl = L[l];
+    mapk = k;
+    if (K != NULL) mapk = K[k];
+    mapj = j;
+    if (J != NULL) mapj = J[j];
+    mapi = i;
+    if (I != NULL) mapi = I[i];
+    B[i + ldb * (j + rdb * (k + tdb * l))] = A[mapi + lda * (mapj + rda * (mapk + tda * mapl))];
+    i += istep;
+    if (i >= nrows) {i -= nrows; j++;}
+    j += jstep;
+    if (j >= ncols) {j -= ncols; k++;}
+    k += kstep;
+    if (k >= nk) {k -= nk; l++;}
+    l += lstep;
+  }
+}
+
+int copyFromInds4DLong(long long *A, int lda, int rda, int tda, long long *B, int ldb, int rdb, int tdb, int *I, int nrows, int *J, int ncols, int *K, int nk, int *L, int nl) {
+  int len = nrows * ncols * nk * nl;
+  int nthreads;
+  dim3 griddims;
+  setsizesTrim(len, &griddims, &nthreads);
+  __copyFromInds4DLong<<<griddims,nthreads>>>(A, lda, rda, tda, B, ldb, rdb, tdb, I, nrows, J, ncols, K, nk, L, nl);
+  cudaStreamSynchronize(SYNC_STREAM);
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
 
 int copyFromInds2DLong(long long *A, int lda, long long *B, int ldb, int *I, int nrows, int *J, int ncols) {
   int len = nrows * ncols;

@@ -363,6 +363,7 @@ void setsizes(long long N, dim3 *gridp, int *nthreadsp) {
   *nthreadsp = nthreads;
 }
 
+// nblocks is not necessarily a power of two
 void setsizesLean(long long N, dim3 *gridp, int *nthreadsp) {
   int nblocks = 1;
   int nthreads = 32;
@@ -381,6 +382,27 @@ void setsizesLean(long long N, dim3 *gridp, int *nthreadsp) {
   }
   gridp->y = 1 + (nblocks-1)/65536;
   gridp->x = 1 + (nblocks-1)/gridp->y;
+  gridp->z = 1;
+  *nthreadsp = nthreads;
+}
+
+// keep nblocks less than 512
+void setsizesTrim(long long N, dim3 *gridp, int *nthreadsp) {
+  int nblocks = 1;
+  int nthreads = 32;
+  int threads_per_block = 1024;
+  while (1L * nblocks * nthreads < N) {
+    if (nblocks < 16) {
+      nblocks = 2*nblocks;
+    } else if (nthreads < threads_per_block) {
+      nthreads = 2*nthreads;
+    } else {
+      nblocks = max(nblocks, 1 + (int)((N-1)/nthreads));
+    }
+  }
+  nblocks = min(512, nblocks);
+  gridp->x = nblocks;
+  gridp->y = 1;
   gridp->z = 1;
   *nthreadsp = nthreads;
 }
