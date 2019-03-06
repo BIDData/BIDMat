@@ -192,7 +192,6 @@ trait Mop {
    */
   def op(a:Mat, b:Mat, c:Mat):Mat = {
     a match {
-      case aa:BMat => op(aa, b, c)
       case aa:FMat => op(aa, b, c)
       case aa:DMat => op(aa, b, c)
       case aa:IMat => op(aa, b, c)
