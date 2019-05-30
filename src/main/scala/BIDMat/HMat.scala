@@ -812,6 +812,45 @@ object HMat {
     gin.close;
     result;
   } 
+
+  def loadBinary(fname:String, datatype:String="FMat", byteOrder:ByteOrder=ByteOrder.BIG_ENDIAN, compressed:Int=0):Mat = {
+    val gin = getInputStream(fname, compressed);
+    val bytebuff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder);
+	val result = datatype match { 
+	  case "FMat" => { 
+		val len = (new File(fname)).length.toInt;
+		val out = zeros(1, len/4);
+		readSomeFloats(gin, out.data, bytebuff, len/4);
+		out;
+	  }
+	  case "IMat" => { 
+		val len = (new File(fname)).length.toInt;
+		val out = izeros(1, len/4);
+		readSomeInts(gin, out.data, bytebuff, len/4);
+		out;
+	  }
+	  case "DMat" => { 
+		val len = (new File(fname)).length.toInt;
+		val out = dzeros(1, len/8);
+		readSomeDoubles(gin, out.data, bytebuff, len/8);
+		out;
+	  }
+	  case "LMat" => { 
+		val len = (new File(fname)).length.toInt;
+		val out = lzeros(1, len/8);
+		readSomeLongs(gin, out.data, bytebuff, len/8);
+		out;
+	  }
+	  case "BMat" => { 
+		val len = (new File(fname)).length.toInt;
+		val out = bzeros(1, len);
+		readSomeBytes(gin, out.data, len);
+		out;
+	  }
+	}
+	gin.close;
+	result
+  } 
     
   def loadDMat(fname:String):DMat = loadDMat(fname, null, 0)
   
