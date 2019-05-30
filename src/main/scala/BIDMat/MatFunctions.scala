@@ -2183,6 +2183,8 @@ object MatFunctions {
   
   def loadImage(fname:String) = Image.loadImage(fname);
 
+  def loadBinary(fname:String, datatype:String="FMat", byteOrder:ByteOrder=ByteOrder.BIG_ENDIAN, compressed:Int=0):Mat = HMat.loadBinary(fname, datatype, byteOrder, compressed);
+
   def saveLibSVM(fname:String, data:SMat, cats:SMat, weights:FMat, compressed:Int, oneBased:Int):Unit = HMat.saveLibSVM(fname, data, cats, weights, compressed, oneBased)
   def saveLibSVM(fname:String, data:SMat, cats:SMat, weights:FMat, compressed:Int):Unit = HMat.saveLibSVM(fname, data, cats, weights, compressed)
   def saveLibSVM(fname:String, data:SMat, cats:SMat, weights:FMat):Unit = HMat.saveLibSVM(fname, data, cats, weights, 0)
