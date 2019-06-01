@@ -113,7 +113,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       
       val convdesc = new cudnnConvolutionDescriptor;
       cudnnCreateConvolutionDescriptor(convdesc);
-      val cstatus = cudnnSetConvolution2dDescriptor(convdesc, pad(2), pad(1), stride(2), stride(1), 1, 1, convType);
+      val cstatus = cudnnSetConvolution2dDescriptor(convdesc, pad(2), pad(1), stride(2), stride(1), 1, 1, convType, dataType);
       if (cstatus > 0) throw new RuntimeException("Error setting convolution descriptor for forward convolution %d" format cstatus);
       
       if (!fwdTrained) {
@@ -187,7 +187,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       
       val convdesc = new cudnnConvolutionDescriptor;
       cudnnCreateConvolutionDescriptor(convdesc);
-      val cstatus = cudnnSetConvolution2dDescriptor(convdesc, pad(2), pad(1), stride(2), stride(1), 1, 1, convType);
+      val cstatus = cudnnSetConvolution2dDescriptor(convdesc, pad(2), pad(1), stride(2), stride(1), 1, 1, convType, dataType);
       if (cstatus > 0) throw new RuntimeException("Error setting convolution descriptor for backward data convolution %d" format cstatus);
       
       if (!bwdDataTrained) {
@@ -257,7 +257,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
       
       convdesc = new cudnnConvolutionDescriptor;
       cudnnCreateConvolutionDescriptor(convdesc);
-      val cstatus = cudnnSetConvolution2dDescriptor(convdesc, pad(2), pad(1), stride(2), stride(1), 1, 1, convType);
+      val cstatus = cudnnSetConvolution2dDescriptor(convdesc, pad(2), pad(1), stride(2), stride(1), 1, 1, convType, dataType);
       if (cstatus > 0) throw new RuntimeException("Error setting convolution descriptor for backward filter convolution %d" format cstatus);
       
       if (!bwdFilterTrained) {

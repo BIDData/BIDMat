@@ -6,13 +6,13 @@
   <groupId>BIDMat</groupId>
   <artifactId>BIDMat-natives</artifactId>
   <packaging>jar</packaging>
-  <version>2.1.1-cuda8.0</version>
+  <version>2.1.2-cuda9.2</version>
   <name>BIDMat</name>
   <description>BIDMat performs matrix operations</description>
   <properties>
     <scalaVersion>2.11.11</scalaVersion>
     <jcudaGroupId>org.jcuda</jcudaGroupId> <!-- set to "jcuda" for versions earlier than 0.8.0 -->
-    <jcudaVersion>0.8.0</jcudaVersion>
+    <jcudaVersion>0.9.2</jcudaVersion>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <skipTests>true</skipTests>
   </properties>

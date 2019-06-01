@@ -277,6 +277,25 @@ object SciFunctions {
     val (dmy, rp) = sort2(rand(1,n))
     rp
   }
+
+  def fastperm(n:Int):IMat = {
+    val rp = izeros(1,n);
+    val rr = rand(1,n);
+    var i = 0;
+    while (i < n) { 
+      rp.data(i) = i;
+      i += 1;
+    }
+    i = 0;
+    while (i < (n - 1)) { 
+      val itarg = math.min(n-1, i + (rr.data(i) * (n - i)).toInt);
+      val tmp = rp.data(itarg);
+      rp.data(itarg) = rp.data(i);
+      rp.data(i) = tmp; 
+      i += 1;
+    }
+    rp
+  }
   
   /** min, max for FMats with no output */
   
