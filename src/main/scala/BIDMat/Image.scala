@@ -169,6 +169,9 @@ class Image(val img:BufferedImage) extends Serializable {
   }
   
   def show()(implicit publish:Publish):BufferedImage = show(null)(publish)
+
+  def save(fname:String, format:String="png") = ImageIO.write(img, format, new File(fname+"."+format));
+
 }
 
 class ImagePanel(img:BufferedImage) extends JPanel                                                
@@ -187,7 +190,8 @@ class ImagePanel(img:BufferedImage) extends JPanel
       g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
       g.drawImage(img, 0, 0, w, h, null)         
     }
-  }                                                                           
+  }       
+
 } 
 
 

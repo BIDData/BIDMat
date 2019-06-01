@@ -106,7 +106,7 @@ if [ "$OS" = "apple" ] ; then
           --machine ${MBITS} -Xcompiler -arch -Xcompiler ${ARCH} -Xcompiler -stdlib=libc++"
     OBJ="o"
     OUTFLG="-o "
-    CPPFLAGS="-fPIC -c -O2 -g -DNDEBUG -DUSE_NCCL=${USE_NCCL} -I$JAVA_HOME/include -I$JAVA_HOME/include/darwin -I$BIDMAT_ROOT/jni/include -I$CUDA_HOME/include -I${NCCL_HOME}/src -I$BLAS_ROOT/include -I$BLAS_ROOT/include/${ARCHD}${SUBDIR}"
+    CPPFLAGS="-fPIC -c -O2 -std=c++11 -g -DNDEBUG -DUSE_NCCL=${USE_NCCL} -I$JAVA_HOME/include -I$JAVA_HOME/include/darwin -I$BIDMAT_ROOT/jni/include -I$CUDA_HOME/include -I${NCCL_HOME}/src -I$BLAS_ROOT/include -I$BLAS_ROOT/include/${ARCHD}${SUBDIR}"
     CFLAGS="-qopenmp -fPIC -c -O2 -g -DNDEBUG -DUSE_MKL2017=${USE_MKL2017} -I$JAVA_HOME/include -I$JAVA_HOME/include/darwin -I$BIDMAT_ROOT/jni/include -I$BLAS_ROOT/include -I$BLAS_ROOT/include/${ARCHD}${SUBDIR}"
     LB="ar rc"    
     LD="icc -dynamiclib"
