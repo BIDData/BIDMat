@@ -458,7 +458,7 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
       System.arraycopy(data, 0, out.data, 0, length)
       out
     } else {
-      throw new RuntimeException("FMat reshape total length doesnt match")
+      throw new RuntimeException("IMat reshape total length doesnt match")
     }
   }
   
@@ -470,7 +470,7 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
       out.setGUID(MurmurHash3_x64_64(Array(GUID), "reshapeView".##));
       out
     } else {
-      throw new RuntimeException("FMat reshapeView total length doesnt match")
+      throw new RuntimeException("IMat reshapeView total length doesnt match")
     }
   }
 

@@ -201,21 +201,21 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     inds.length match {
     case 1 => {
         val err = CUMAT.copyFromInds(pdata, out.pdata, safePointer(newinds(0)), newdims(0));
-        if (err != 0) throw new RuntimeException("GMat apply(I) error" + cudaGetErrorString(err));
+        if (err != 0) throw new RuntimeException("GMat apply(I) error: " + cudaGetErrorString(err));
       }
       case 2 => {
         val err = CUMAT.copyFromInds2D(pdata, dims(0), out.pdata, newdims(0), safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1));
-        if (err != 0) throw new RuntimeException("GMat apply(I, J) error" + cudaGetErrorString(err));
+        if (err != 0) throw new RuntimeException("GMat apply(I, J) error: " + cudaGetErrorString(err));
       }
       case 3 => {
         val err = CUMAT.copyFromInds3D(pdata, dims(0), dims(1), out.pdata, newdims(0), newdims(1), 
             safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1), safePointer(newinds(2)), newdims(2));
-        if (err != 0) throw new RuntimeException("GMat apply(I, J, K) error" + cudaGetErrorString(err));
+        if (err != 0) throw new RuntimeException("GMat apply(I, J, K) error: " + cudaGetErrorString(err));
       }
       case 4 => {
         val err = CUMAT.copyFromInds4D(pdata, dims(0), dims(1), dims(2), out.pdata, newdims(0), newdims(1), newdims(2),
             safePointer(newinds(0)), newdims(0), safePointer(newinds(1)), newdims(1), safePointer(newinds(2)), newdims(2), safePointer(newinds(3)), newdims(3));
-        if (err != 0) throw new RuntimeException("GMat apply(I, J, K, L) error" + cudaGetErrorString(err));
+        if (err != 0) throw new RuntimeException("GMat apply(I, J, K, L) error: " + cudaGetErrorString(err));
       }   
       case _ => throw new RuntimeException("GMat slice access with more than 4 indices not supported");
     }
@@ -449,9 +449,13 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   override def colslice(a:Int, b:Int, omat:Mat):GMat = colslice(a, b, omat, 0);
   
   override def colslice(a:Int, b:Int, omat:Mat, c:Int):GMat = {
-		val newdims = _dims.clone;
-    newdims(dims.length-1) = b-a;
-    val out = GMat.newOrCheckGMat(newdims, omat, GUID, a, b, "colslice".##);
+	val newdims = _dims.clone;
+    newdims(dims.length-1) = b-a+c;
+    val out = if (omat.asInstanceOf[AnyRef] != null && omat.isInstanceOf[GMat] && omat.ncols > b-a+c && omat.nrows == nrows) { 
+      omat.asInstanceOf[GMat]
+    } else { 
+      GMat.newOrCheckGMat(newdims, omat, GUID, a, b, "colslice".##);
+    }
     cudaMemcpy(out.pdata.withByteOffset(1L*c*nrows*Sizeof.FLOAT), pdata.withByteOffset(1L*a*nrows*Sizeof.FLOAT), 1L*(b-a)*nrows*Sizeof.FLOAT, cudaMemcpyDeviceToDevice);
     cudaStreamSynchronize(Mat.SyncMethod);
     val err = cudaGetLastError;

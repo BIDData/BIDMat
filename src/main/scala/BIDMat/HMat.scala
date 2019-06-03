@@ -813,7 +813,12 @@ object HMat {
     result;
   } 
 
-  def loadBinary(fname:String, datatype:String="FMat", byteOrder:ByteOrder=ByteOrder.BIG_ENDIAN, compressed:Int=0):Mat = {
+  def loadBinary(fname:String, datatype:String="FMat", bigEndian:Boolean=true, compressed:Int=0):Mat = {
+    val byteOrder = if (bigEndian) { 
+      ByteOrder.BIG_ENDIAN
+    } else { 
+      ByteOrder.LITTLE_ENDIAN
+    }
     val gin = getInputStream(fname, compressed);
     val bytebuff = ByteBuffer.allocate(DEFAULT_BUFSIZE).order(byteOrder);
 	val result = datatype match { 
