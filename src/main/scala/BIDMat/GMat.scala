@@ -2627,6 +2627,7 @@ object GMat {
   }
   
   def newOrCheckGMat(dims:IMat, out:Mat, g1:Long, g2:Long, g3:Long, g4:Long, opHash:Int):GMat = newOrCheckGMat(dims.data, out, g1, g2, g3, g4, opHash);
+
 }
 
 
