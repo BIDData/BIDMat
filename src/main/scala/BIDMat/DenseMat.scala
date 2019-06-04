@@ -491,8 +491,12 @@ class DenseMat[@specialized(Double,Float,Int,Byte,Long) T]
   def gcolslice(a:Int, b:Int, omat:Mat, c:Int):DenseMat[T] = {
     val off = Mat.oneBased;
     val newdims = _dims.clone;
-    newdims(dims.length-1) = b-a;
-    val out = DenseMat.newOrCheck[T](newdims, omat, GUID, a, b-a+c-off, "gcolslice".##)
+    newdims(dims.length-1) = b-a+c-off
+    val out = if (omat.asInstanceOf[AnyRef] != null && b-a+c-off <= omat.ncols && omat.nrows == nrows) { 
+      omat.asInstanceOf[DenseMat[T]]
+    } else { 
+      DenseMat.newOrCheck[T](newdims, omat, GUID, a, b, c, "gcolslice".##)
+    }
     if (a-off < 0) throw new RuntimeException("colslice index out of range %d" format (a))
     if (b-off > ncols) throw new RuntimeException("colslice index out of range %d %d" format (b, ncols))
     
@@ -1889,7 +1893,7 @@ object DenseMat {
     }
   }
     
-  // TODO
+
   def newOrCheck[T](nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int)
   (implicit classTag:ClassTag[T]):DenseMat[T] = {
     if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
@@ -1919,6 +1923,72 @@ object DenseMat {
       } else {
         val omat = newOrCheck(dims, null)
         Mat.cache4put(key, omat)
+        omat
+      }
+    }
+  }
+
+  def newOrCheck[T](nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, guid4:Long, opHash:Int)
+  (implicit classTag:ClassTag[T]):DenseMat[T] = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheck(nr, nc, outmat)
+    } else {
+      val key = (guid1, guid2, guid3, guid4, opHash)
+      val res = Mat.cache5(key)
+      if (res != null) {
+      	newOrCheck(nr, nc, res)
+      } else {
+        val omat = newOrCheck(nr, nc, null)
+        Mat.cache5put(key, omat)
+        omat
+      }
+    }
+  }
+  def newOrCheck[T](dims:Array[Int], outmat:Mat, guid1:Long, guid2:Long, guid3:Long, guid4:Long, opHash:Int)
+  (implicit classTag:ClassTag[T]):DenseMat[T] = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheck(dims, outmat)
+    } else {
+      val key = (guid1, guid2, guid3, guid4, opHash)
+      val res = Mat.cache5(key)
+      if (res != null) {
+      	newOrCheck(dims, res)
+      } else {
+        val omat = newOrCheck(dims, null)
+        Mat.cache5put(key, omat)
+        omat
+      }
+    }
+  }
+
+  def newOrCheck[T](nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, guid4:Long, guid5:Long, opHash:Int)
+  (implicit classTag:ClassTag[T]):DenseMat[T] = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheck(nr, nc, outmat)
+    } else {
+      val key = (guid1, guid2, guid3, guid4, guid5, opHash)
+      val res = Mat.cache6(key)
+      if (res != null) {
+      	newOrCheck(nr, nc, res)
+      } else {
+        val omat = newOrCheck(nr, nc, null)
+        Mat.cache6put(key, omat)
+        omat
+      }
+    }
+  }
+  def newOrCheck[T](dims:Array[Int], outmat:Mat, guid1:Long, guid2:Long, guid3:Long, guid4:Long, guid5:Long, opHash:Int)
+  (implicit classTag:ClassTag[T]):DenseMat[T] = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useCache) {
+      newOrCheck(dims, outmat)
+    } else {
+      val key = (guid1, guid2, guid3, guid4, guid5, opHash)
+      val res = Mat.cache6(key)
+      if (res != null) {
+      	newOrCheck(dims, res)
+      } else {
+        val omat = newOrCheck(dims, null)
+        Mat.cache6put(key, omat)
         omat
       }
     }

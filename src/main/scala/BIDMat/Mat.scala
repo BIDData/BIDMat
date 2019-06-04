@@ -768,6 +768,8 @@ object Mat {
   private val _cache4 = HashMap.empty[Tuple4[Long,Long,Long,Int], Mat];
   
   private val _cache5 = HashMap.empty[Tuple5[Long,Long,Long,Long,Int], Mat];
+
+  private val _cache6 = HashMap.empty[Tuple6[Long,Long,Long,Long,Long,Int], Mat];
   
   def cache2(key:Tuple2[Long,Int]):Mat = {
     _cache2.synchronized {
@@ -809,6 +811,16 @@ object Mat {
     	}
     }
   }
+
+  def cache6(key:Tuple6[Long,Long,Long,Long,Long,Int]):Mat = {
+    _cache6.synchronized {
+    	if (_cache6.contains(key)) {
+    		_cache6(key)
+    	} else {
+    		null
+    	}
+    }
+  }
   
   def cache2put(key:Tuple2[Long,Int], m:Mat):Unit = {
     _cache2.synchronized {
@@ -833,12 +845,19 @@ object Mat {
   		_cache5(key) = m
   	}
   }
+
+  def cache6put(key:Tuple6[Long,Long,Long,Long,Long,Int], m:Mat):Unit = {
+  	_cache6.synchronized {
+  		_cache6(key) = m
+  	}
+  }
   
   def clearCaches = {
     _cache2.clear
     _cache3.clear
     _cache4.clear
     _cache5.clear
+    _cache6.clear
   }
   
   def trimCache2(ithread:Int) = {
@@ -912,12 +931,31 @@ object Mat {
       })  
     }
   }
+
+  def trimCache6(ithread:Int) = {
+    _cache6.synchronized {
+      val keys = _cache6.keySet
+      keys.foreach((key:Tuple6[Long,Long,Long,Long,Long,Int]) => {
+      	val toremove:Boolean = _cache6.get(key).get match {
+      	case aa:GMat => (aa.myGPU == ithread)
+      	case aa:GDMat => (aa.myGPU == ithread)
+      	case aa:GIMat => (aa.myGPU == ithread)
+      	case aa:GLMat => (aa.myGPU == ithread)
+      	case aa:GSMat => (aa.myGPU == ithread)
+      	case aa:GSDMat => (aa.myGPU == ithread)
+      	case _ => false
+      }
+      if (toremove) _cache6.remove(key)
+      })  
+    }
+  }
   
   def trimCaches(ithread:Int) = {
     trimCache2(ithread);
     trimCache3(ithread);
     trimCache4(ithread);
     trimCache5(ithread);
+    trimCache6(ithread);
   }
   
   def getJARdir:String = {

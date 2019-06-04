@@ -335,9 +335,13 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   override def colslice(a:Int, b:Int, omat:Mat):GDMat = colslice(a, b, omat, 0);
   
   override def colslice(a:Int, b:Int, omat:Mat, c:Int):GDMat = {
-		val newdims = _dims.clone;
-    newdims(dims.length-1) = b-a;
-    val out = GDMat.newOrCheckGDMat(newdims, omat, GUID, a, b, "colslice".##);
+	val newdims = _dims.clone;
+    newdims(dims.length-1) = b-a+c;
+    val out = if (omat.asInstanceOf[AnyRef] != null && omat.isInstanceOf[GDMat] && omat.ncols >= b-a+c && omat.nrows == nrows) { 
+      omat.asInstanceOf[GDMat]
+    } else { 
+      GDMat.newOrCheckGDMat(newdims, omat, GUID, a, b, c, "colslice".##);
+    }
     cudaMemcpy(out.pdata.withByteOffset(1L*c*nrows*Sizeof.DOUBLE), pdata.withByteOffset(1L*a*nrows*Sizeof.DOUBLE), 1L*(b-a)*nrows*Sizeof.DOUBLE, cudaMemcpyDeviceToDevice);
     cudaStreamSynchronize(Mat.SyncMethod);
     val err = cudaGetLastError;
@@ -1992,6 +1996,44 @@ object GDMat {
   }
   
   def newOrCheckGDMat(dims0:IMat, out:Mat, g1:Long, g2:Long, g3:Long, opHash:Int):GDMat = newOrCheckGDMat(dims0.data, out, g1, g2, g3, opHash);
+
+  def newOrCheckGDMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, guid4:Long, opHash:Int):GDMat = {
+    val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache ) {
+    	newOrCheckGDMat(nr, nc, outmat)
+    } else {
+    	val key = (guid1, guid2, guid3, guid4, opHash.toLong, SciFunctions.getGPU)
+        val res = Mat.cache6(key)
+    	if (res != null) {
+    		newOrCheckGDMat(nr, nc, res)
+    	} else {
+    		val omat = newOrCheckGDMat(nr, nc, null)
+    		Mat.cache6put(key, omat)
+    		omat
+    	}
+    }
+    if (m.myGPU != SciFunctions.getGPU) {
+    	throw new RuntimeException("newOrCheckGDMat3 problem with mat %d" format m.GUID)
+    }
+    m
+  }
+  
+   def newOrCheckGDMat(dims:Array[Int], out:Mat, g1:Long, g2:Long, g3:Long, g4:Long, opHash:Int):GDMat = {
+    if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
+      newOrCheckGDMat(dims, out)
+    } else {
+      val key = (g1, g2, g3, g4, opHash.toLong, SciFunctions.getGPU)
+      val res = Mat.cache6(key)
+      if (res != null) {
+        newOrCheckGDMat(dims, res)
+      } else {
+        val omat = newOrCheckGDMat(dims, null)
+        Mat.cache6put(key, omat)
+        omat
+      }
+    }
+  }
+  
+  def newOrCheckGDMat(dims0:IMat, out:Mat, g1:Long, g2:Long, g3:Long, g4:Long, opHash:Int):GDMat = newOrCheckGDMat(dims0.data, out, g1, g2, g3, g4, opHash);
   
 }
 

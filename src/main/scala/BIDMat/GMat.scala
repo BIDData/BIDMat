@@ -451,10 +451,10 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   override def colslice(a:Int, b:Int, omat:Mat, c:Int):GMat = {
 	val newdims = _dims.clone;
     newdims(dims.length-1) = b-a+c;
-    val out = if (omat.asInstanceOf[AnyRef] != null && omat.isInstanceOf[GMat] && omat.ncols > b-a+c && omat.nrows == nrows) { 
+    val out = if (omat.asInstanceOf[AnyRef] != null && omat.isInstanceOf[GMat] && omat.ncols >= b-a+c && omat.nrows == nrows) { 
       omat.asInstanceOf[GMat]
     } else { 
-      GMat.newOrCheckGMat(newdims, omat, GUID, a, b, "colslice".##);
+      GMat.newOrCheckGMat(newdims, omat, GUID, a, b, c, "colslice".##);
     }
     cudaMemcpy(out.pdata.withByteOffset(1L*c*nrows*Sizeof.FLOAT), pdata.withByteOffset(1L*a*nrows*Sizeof.FLOAT), 1L*(b-a)*nrows*Sizeof.FLOAT, cudaMemcpyDeviceToDevice);
     cudaStreamSynchronize(Mat.SyncMethod);
@@ -2587,8 +2587,46 @@ object GMat {
       }
     }
   }
-  
+
   def newOrCheckGMat(dims:IMat, out:Mat, g1:Long, g2:Long, g3:Long, opHash:Int):GMat = newOrCheckGMat(dims.data, out, g1, g2, g3, opHash);
+
+  def newOrCheckGMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, guid4:Long, opHash:Int):GMat = {
+    val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
+    	newOrCheckGMat(nr, nc, outmat)
+    } else {
+    	val key = (guid1, guid2, guid3, guid4, opHash.toLong, SciFunctions.getGPU)
+        val res = Mat.cache6(key)
+    	if (res != null) {
+    		newOrCheckGMat(nr, nc, res)
+    	} else {
+    		val omat = newOrCheckGMat(nr, nc, null)
+    		Mat.cache6put(key, omat)
+    		omat
+    	}
+    }
+    if (m.myGPU != SciFunctions.getGPU) {
+    	throw new RuntimeException("newOrCheckGMat3 problem with mat %d" format m.GUID)
+    }
+    m
+  }
+
+  def newOrCheckGMat(dims:Array[Int], out:Mat, g1:Long, g2:Long, g3:Long, g4:Long, opHash:Int):GMat = {
+    if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
+      newOrCheckGMat(dims, out)
+    } else {
+      val key = (g1, g2, g3, g4, opHash.toLong, SciFunctions.getGPU)
+      val res = Mat.cache6(key)
+      if (res != null) {
+        newOrCheckGMat(dims, res)
+      } else {
+        val omat = newOrCheckGMat(dims, null)
+        Mat.cache6put(key, omat)
+        omat
+      }
+    }
+  }
+  
+  def newOrCheckGMat(dims:IMat, out:Mat, g1:Long, g2:Long, g3:Long, g4:Long, opHash:Int):GMat = newOrCheckGMat(dims.data, out, g1, g2, g3, g4, opHash);
 }
 
 

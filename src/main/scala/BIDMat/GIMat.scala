@@ -386,16 +386,26 @@ class GIMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     this
   }
  
-
-  override def colslice(a:Int, b:Int, omat:Mat):GIMat = {
-    val out = GIMat.newOrCheckGIMat(nrows, b-a, omat, GUID, a, "colslice".##);
-    cudaMemcpy(out.pdata, pdata.withByteOffset(1L*a*nrows*Sizeof.FLOAT), 1L*(b-a)*nrows*Sizeof.FLOAT, cudaMemcpyDeviceToDevice);
+  override def colslice(a:Int, b:Int):GIMat =  colslice(a, b, null, 0);
+    
+  override def colslice(a:Int, b:Int, omat:Mat):GIMat = colslice(a, b, omat, 0);
+  
+  override def colslice(a:Int, b:Int, omat:Mat, c:Int):GIMat = {
+	val newdims = _dims.clone;
+    newdims(dims.length-1) = b-a+c;
+    val out = if (omat.asInstanceOf[AnyRef] != null && omat.isInstanceOf[GIMat] && omat.ncols >= b-a+c && omat.nrows == nrows) { 
+      omat.asInstanceOf[GIMat]
+    } else { 
+      GIMat.newOrCheckGIMat(newdims, omat, GUID, a, b, "colslice".##);
+    }
+    cudaMemcpy(out.pdata.withByteOffset(1L*c*nrows*Sizeof.INT), pdata.withByteOffset(1L*a*nrows*Sizeof.INT), 1L*(b-a)*nrows*Sizeof.INT, cudaMemcpyDeviceToDevice);
+    cudaStreamSynchronize(Mat.SyncMethod);
+    val err = cudaGetLastError;
+    if (err != 0) throw new RuntimeException("GIMat colslice() error " + cudaGetErrorString(err));
     out
   }
   
-  override def colslice(a:Int, b:Int):GIMat = {   
-    colslice(a, b, null)
-  }
+  override def colslice(a:Int, b:Int, omat:Mat, c:Int, pb:Boolean):GIMat = colslice(a, b, omat, c);
   
   override def clear = {
   	cudaMemset(pdata, 0, Sizeof.INT*length)
@@ -1316,6 +1326,41 @@ object GIMat {
   }
   
   def newOrCheckGIMat(dims:IMat, out:Mat, g1:Long, g2:Long, g3:Long, opHash:Int):GIMat = newOrCheckGIMat(dims.data, out, g1, g2, g3, opHash);
+
+
+  def newOrCheckGIMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, guid4:Long, opHash:Int):GIMat = {
+    if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
+      newOrCheckGIMat(nr, nc, outmat)
+    } else {
+      val key = (guid1, guid2, guid3, guid4, opHash.toLong, SciFunctions.getGPU)
+      val res = Mat.cache6(key)
+      if (res != null) {
+      	newOrCheckGIMat(nr, nc, res)
+      } else {
+        val omat = newOrCheckGIMat(nr, nc, null)
+        Mat.cache6put(key, omat)
+        omat
+      }
+    }
+  }
+  
+    def newOrCheckGIMat(dims:Array[Int], out:Mat, g1:Long, g2:Long, g3:Long, g4:Long, opHash:Int):GIMat = {
+    if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
+      newOrCheckGIMat(dims, out)
+    } else {
+      val key = (g1, g2, g3, g4, opHash.toLong, SciFunctions.getGPU)
+      val res = Mat.cache6(key)
+      if (res != null) {
+        newOrCheckGIMat(dims, res)
+      } else {
+        val omat = newOrCheckGIMat(dims, null)
+        Mat.cache6put(key, omat)
+        omat
+      }
+    }
+  }
+  
+  def newOrCheckGIMat(dims:IMat, out:Mat, g1:Long, g2:Long, g3:Long, g4:Long, opHash:Int):GIMat = newOrCheckGIMat(dims.data, out, g1, g2, g3, g4, opHash);
 
 }
 

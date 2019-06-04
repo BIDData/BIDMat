@@ -427,6 +427,26 @@ class GLMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   override def update(i1:IMat, i2:IMat, i3:IMat, i4:IMat, i5:IMat, i6:IMat, vv:Mat):GMat = update(Array(i1, i2, i3, i4, i5, i6), GMat(vv));
   */
 
+  override def colslice(a:Int, b:Int):GLMat =  colslice(a, b, null, 0);
+    
+  override def colslice(a:Int, b:Int, omat:Mat):GLMat = colslice(a, b, omat, 0);
+  
+  override def colslice(a:Int, b:Int, omat:Mat, c:Int):GLMat = {
+	val newdims = _dims.clone;
+    newdims(dims.length-1) = b-a+c;
+    val out = if (omat.asInstanceOf[AnyRef] != null && omat.isInstanceOf[GLMat] && omat.ncols >= b-a+c && omat.nrows == nrows) { 
+      omat.asInstanceOf[GLMat]
+    } else { 
+      GLMat.newOrCheckGLMat(newdims, omat, GUID, a, b, c, "colslice".##);
+    }
+    cudaMemcpy(out.pdata.withByteOffset(1L*c*nrows*Sizeof.LONG), pdata.withByteOffset(1L*a*nrows*Sizeof.LONG), 1L*(b-a)*nrows*Sizeof.LONG, cudaMemcpyDeviceToDevice);
+    cudaStreamSynchronize(Mat.SyncMethod);
+    val err = cudaGetLastError;
+    if (err != 0) throw new RuntimeException("GLMat colslice() error " + cudaGetErrorString(err));
+    out
+  }
+  
+  override def colslice(a:Int, b:Int, omat:Mat, c:Int, pb:Boolean):GLMat = colslice(a, b, omat, c);
   
   override def clear = {
   	cudaMemset(pdata, 0, Sizeof.LONG*length)
@@ -477,7 +497,7 @@ class GLMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   
   def horzcat(a:GLMat, omat:Mat) = {
     if (nrows != a.nrows)
-      throw new RuntimeException("GMat \\ row dims not equal")
+      throw new RuntimeException("GLMat \\ row dims not equal")
     val out = GLMat.newOrCheckGLMat(nrows, ncols+a.ncols, omat, GUID, a.GUID, "horzcat".##)
     cudaMemcpy(out.pdata, pdata, 1L*length*Sizeof.LONG, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
     cudaStreamSynchronize(Mat.SyncMethod)
@@ -488,7 +508,7 @@ class GLMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   
   def vertcat(a:GLMat, omat:Mat) = {
     if (ncols != a.ncols)
-      throw new RuntimeException("GMat on row dims not equal")
+      throw new RuntimeException("GLMat on row dims not equal")
     val out = GLMat.newOrCheckGLMat(nrows+a.nrows, ncols, omat, GUID, a.GUID, "vertcat".##)
     cudaMemcpy2D(out.pdata, 1L*out.nrows*Sizeof.LONG, pdata, 1L*nrows*Sizeof.LONG, 1L*nrows*Sizeof.LONG, 1L*ncols, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
     cudaStreamSynchronize(Mat.SyncMethod)
@@ -1407,6 +1427,45 @@ object GLMat {
   }
   
   def newOrCheckGLMat(dims:IMat, out:Mat, g1:Long, g2:Long, g3:Long, opHash:Int):GLMat = newOrCheckGLMat(dims.data, out, g1, g2, g3, opHash);
+
+
+  def newOrCheckGLMat(nr:Int, nc:Int, outmat:Mat, guid1:Long, guid2:Long, guid3:Long, guid4:Long, opHash:Int):GLMat = {
+    val m = if (outmat.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
+    	newOrCheckGLMat(nr, nc, outmat)
+    } else {
+    	val key = (guid1, guid2, guid3, guid4, opHash.toLong, SciFunctions.getGPU)
+        val res = Mat.cache6(key)
+    	if (res != null) {
+    		newOrCheckGLMat(nr, nc, res)
+    	} else {
+    		val omat = newOrCheckGLMat(nr, nc, null)
+    		Mat.cache6put(key, omat)
+    		omat
+    	}
+    }
+    if (m.myGPU != SciFunctions.getGPU) {
+    	throw new RuntimeException("newOrCheckGLMat3 problem with mat %d" format m.GUID)
+    }
+    m
+  }
+
+  def newOrCheckGLMat(dims:Array[Int], out:Mat, g1:Long, g2:Long, g3:Long, g4:Long, opHash:Int):GLMat = {
+    if (out.asInstanceOf[AnyRef] != null || !Mat.useGPUcache) {
+      newOrCheckGLMat(dims, out)
+    } else {
+      val key = (g1, g2, g3, g4, opHash.toLong, SciFunctions.getGPU)
+      val res = Mat.cache6(key)
+      if (res != null) {
+        newOrCheckGLMat(dims, res)
+      } else {
+        val omat = newOrCheckGLMat(dims, null)
+        Mat.cache6put(key, omat)
+        omat
+      }
+    }
+  }
+  
+  def newOrCheckGLMat(dims:IMat, out:Mat, g1:Long, g2:Long, g3:Long, g4:Long, opHash:Int):GLMat = newOrCheckGLMat(dims.data, out, g1, g2, g3, g4, opHash);
   
 }
 
