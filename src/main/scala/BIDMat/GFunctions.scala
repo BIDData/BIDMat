@@ -116,9 +116,13 @@ object GFunctions {
   def initJCUDA = jcuda.runtime.JCuda.initialize;
   
   def setseed(seed:Int, igpu:Int) = {
+    import jcuda.jcurand.JCurand._
     val thisGPU = getGPU
     setGPU(igpu)
-    jcuda.jcurand.JCurand.curandSetPseudoRandomGeneratorSeed(cudarng(igpu).asInstanceOf[jcuda.jcurand.curandGenerator], seed)
+    GPUSEED = seed;
+    val gen = cudarng(igpu).asInstanceOf[jcuda.jcurand.curandGenerator];
+    curandSetPseudoRandomGeneratorSeed(gen, GPUSEED+igpu)
+    curandSetGeneratorOffset(gen, 100)
     setGPU(thisGPU)
   }
   
