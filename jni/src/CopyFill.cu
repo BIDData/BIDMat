@@ -1387,7 +1387,7 @@ int doubleToFloat(double *A, float *B, int N) {
   int nthreads;
   dim3 griddims;
   setsizesLean(N, &griddims, &nthreads);
-  __boudleToFloat<<<griddims,nthreads>>>(A, B, N);
+  __doubleToFloat<<<griddims,nthreads>>>(A, B, N);
   cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
