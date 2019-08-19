@@ -108,11 +108,15 @@ int full(int *ir, int *ic, float *data, float *od, int nrows, int ncols, int nnz
 
 int intToFloat(int *A, float *B, int N);
 
+int doubleToFloat(double *A, float *B, int N);
+
 int longToFloat(long long *A, float *B, int N);
 
 int floatToLong(float *A, long long *B, int N);
 
 int floatToInt(float *A, int *B, int N);
+
+int floatToDouble(float *A, double *B, int N);
 
 int longToInt(long long *A, int *B, int N);
 

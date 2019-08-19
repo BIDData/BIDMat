@@ -1211,29 +1211,6 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     out
   }
   
-  override def copyTo(a:FMat):FMat = {
-    ND.checkDims("copyTo", dims, a.dims);
-//  		val a = out.recycle(nrows, ncols, 0)
-    cublasGetVector(length, Sizeof.FLOAT, pdata, 1, Pointer.to(a.data), 1)
-    cudaStreamSynchronize(Mat.SyncMethod);
-    val err = cudaGetLastError;
-    if (err != 0) {
-    	println("device is %d" format SciFunctions.getGPU);
-    	throw new RuntimeException("Cublas error in copyTo " + cudaGetErrorString(err));
-    }
-    a;
-  }
-  
-  def copyTo(a:GIMat):GIMat = {
-    ND.checkDims("copyTo", dims, a.dims)
-    val err = CUMAT.floatToInt(pdata, a.pdata, length);
-    if (err != 0) {
-    	println("device is %d" format SciFunctions.getGPU);
-    	throw new RuntimeException("error in copyTo " + cudaGetErrorString(err));
-    }
-    a
-  }
-  
   def vecAdd(fromi:Int, b:GMat, toi:Int, n:Int):GMat = {
     val bb = b.pdata.withByteOffset(toi*Sizeof.FLOAT);
     CUMAT.applyop(pdata.withByteOffset(fromi*Sizeof.FLOAT), n, 1, bb, n, 1, bb, GMat.BinOp.op_add);
@@ -1273,8 +1250,31 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     this
   }
   
+  override def copyTo(a:FMat):FMat = {
+    ND.checkDims("copyTo", dims, a.dims);
+//  		val a = out.recycle(nrows, ncols, 0)
+    cublasGetVector(length, Sizeof.FLOAT, pdata, 1, Pointer.to(a.data), 1)
+    cudaStreamSynchronize(Mat.SyncMethod);
+    val err = cudaGetLastError;
+    if (err != 0) {
+    	println("device is %d" format SciFunctions.getGPU);
+    	throw new RuntimeException("Cublas error in copyTo " + cudaGetErrorString(err));
+    }
+    a;
+  }
+  
+  def copyTo(a:GIMat):GIMat = {
+    ND.checkDims("copyTo", dims, a.dims)
+    val err = CUMAT.floatToInt(pdata, a.pdata, length);
+    if (err != 0) {
+    	println("device is %d" format SciFunctions.getGPU);
+    	throw new RuntimeException("error in copyTo " + cudaGetErrorString(err));
+    }
+    a
+  }
+  
   def copyTo(a:GMat):GMat = {
-	  ND.checkDims("GMat copyTo GMat", dims, a.dims); 
+    ND.checkDims("GMat copyTo GMat", dims, a.dims); 
     cudaMemcpy(a.pdata, pdata, 1L*length*Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice);
     cudaStreamSynchronize(Mat.SyncMethod);
     val err = cudaGetLastError;
@@ -1284,11 +1284,23 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     }
     a
   }
+
+  def copyTo(a:GDMat):GDMat = {
+    ND.checkDims("GMat copyTo GMat", dims, a.dims); 
+    CUMAT.floatToDouble(pdata, a.pdata, a.length);
+    val err = cudaGetLastError;
+    if (err != 0) {
+    	println("device is %d" format SciFunctions.getGPU);
+    	throw new RuntimeException("GMat error in copyTo " + cudaGetErrorString(err));
+    }
+    a
+  }
   
   override def copyTo(out:Mat):Mat = {
     out match {
       case a:GMat => copyTo(a)
       case a:GIMat => copyTo(a)
+      case a:GDMat => copyTo(a)
       case a:FMat => copyTo(a)
       case a:TMat => copyTo(a)
     }

@@ -1324,6 +1324,13 @@ __global__ void __intToFloat(int *A, float *B, int N) {
   }
 }
 
+__global__ void __doubleToFloat(double *A, float *B, int N) {
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {
+    B[i] = (float)(A[i]);
+  }
+}
+
 __global__ void __longToFloat(long long *A, float *B, int N) {
   int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
   for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {
@@ -1342,6 +1349,13 @@ __global__ void __floatToInt(float *A, int *B, int N) {
   int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
   for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {
     B[i] = (int)(A[i]);
+  }
+}
+
+__global__ void __floatToDouble(float *A, double *B, int N) {
+  int ip = threadIdx.x + blockDim.x * (blockIdx.x + gridDim.x * blockIdx.y);
+  for (int i = ip; i < N; i += blockDim.x * gridDim.x * gridDim.y) {
+    B[i] = (double)(A[i]);
   }
 }
 
@@ -1364,6 +1378,16 @@ int intToFloat(int *A, float *B, int N) {
   dim3 griddims;
   setsizesLean(N, &griddims, &nthreads);
   __intToFloat<<<griddims,nthreads>>>(A, B, N);
+  cudaStreamSynchronize(SYNC_STREAM);
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int doubleToFloat(double *A, float *B, int N) {
+  int nthreads;
+  dim3 griddims;
+  setsizesLean(N, &griddims, &nthreads);
+  __boudleToFloat<<<griddims,nthreads>>>(A, B, N);
   cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;
@@ -1394,6 +1418,16 @@ int floatToInt(float *A, int *B, int N) {
   dim3 griddims;
   setsizesLean(N, &griddims, &nthreads);
   __floatToInt<<<griddims,nthreads>>>(A, B, N);
+  cudaStreamSynchronize(SYNC_STREAM);
+  cudaError_t err = cudaGetLastError();
+  return err;
+}
+
+int floatToDouble(float *A, double *B, int N) {
+  int nthreads;
+  dim3 griddims;
+  setsizesLean(N, &griddims, &nthreads);
+  __floatToDouble<<<griddims,nthreads>>>(A, B, N);
   cudaStreamSynchronize(SYNC_STREAM);
   cudaError_t err = cudaGetLastError();
   return err;

@@ -11,12 +11,16 @@ public final class CUMAT {
     }
 
     public static native int intToFloat(Pointer A, Pointer B, int N);
+
+    public static native int doubleToFloat(Pointer A, Pointer B, int N);
     
     public static native int longToFloat(Pointer A, Pointer B, int N);
     
     public static native int floatToLong(Pointer A, Pointer B, int N);
 
     public static native int floatToInt(Pointer A, Pointer B, int N);
+
+    public static native int floatToDouble(Pointer A, Pointer B, int N);
     
     public static native int longToInt(Pointer A, Pointer B, int N);
     

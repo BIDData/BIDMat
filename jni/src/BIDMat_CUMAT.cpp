@@ -53,6 +53,15 @@ extern "C" {
   }
 
 
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_doubleToFloat 
+  (JNIEnv *env, jobject obj, jobject jA, jobject jB, jint N)
+  {
+    double *A = (double*)getPointer(env, jA);
+    float *B = (float*)getPointer(env, jB);
+
+    return doubleToFloat(A, B, N);
+  }
+
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_intToFloat 
   (JNIEnv *env, jobject obj, jobject jA, jobject jB, jint N)
   {
@@ -87,6 +96,15 @@ extern "C" {
     int *B = (int*)getPointer(env, jB);
 
     return floatToInt(A, B, N);
+  }
+
+  JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_floatToDouble
+  (JNIEnv *env, jobject obj, jobject jA, jobject jB, jint N)
+  {
+    float *A = (float*)getPointer(env, jA);
+    double *B = (double*)getPointer(env, jB);
+
+    return floatToDouble(A, B, N);
   }
 
   JNIEXPORT jint JNICALL Java_edu_berkeley_bid_CUMAT_longToInt

@@ -258,6 +258,10 @@ object MatFunctions {
       case _ => FMat(a);
     }
   }
+
+  def float(a:GDMat):GMat = {
+    GMat(a);
+  }
   
   def float(a:FMat):FMat = {
     a

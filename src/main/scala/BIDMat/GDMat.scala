@@ -918,7 +918,7 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     val err = cudaGetLastError;
     if (err != 0) {
     	println("device is %d" format SciFunctions.getGPU);
-    	throw new RuntimeException("CUDA error in copyTo " + cudaGetErrorString(err));
+    	throw new RuntimeException("GDMat error in copyTo " + cudaGetErrorString(err));
     }
     a;
   }
@@ -931,7 +931,7 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   	val err = cudaGetLastError;
   	if (err != 0) {
   		println("device is %d" format SciFunctions.getGPU);
-  		throw new RuntimeException("CUDA error in copyTo " + cudaGetErrorString(err));
+  		throw new RuntimeException("GDMat error in copyTo " + cudaGetErrorString(err));
   	}
     tmp.copyTo(a);
   	a
@@ -942,7 +942,19 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     val err = CUMATD.toInt(pdata, a.pdata, length)
     if (err != 0) {
     	println("device is %d" format SciFunctions.getGPU)
-    	throw new RuntimeException("error in copyTo " + cudaGetErrorString(err))
+    	throw new RuntimeException("GDMat error in copyTo " + cudaGetErrorString(err))
+    }
+    a
+  }
+
+  def copyTo(a:GMat):GDMat = {
+  	ND.checkDims("GDMat copyTo GMat", dims, a.dims);
+//    val a = out.recycle(nrows, ncols, 0)
+    CUMAT.doubleToFloat(pdata, a.pdata, length)
+    val err = cudaGetLastError
+    if (err != 0) {
+    	println("device is %d" format SciFunctions.getGPU)
+    	throw new RuntimeException("GDMat error in copyTo " + cudaGetErrorString(err))
     }
     a
   }
@@ -960,7 +972,7 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   }
   
   def copyTo(a:GDMat):GDMat = {
-  	ND.checkDims("GDMat copyFrom DMat", dims, a.dims);
+  	ND.checkDims("GDMat copyFrom GDMat", dims, a.dims);
 //    val a = out.recycle(nrows, ncols, 0)
     cudaMemcpy(a.pdata, pdata, 1L*length*Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
     cudaStreamSynchronize(Mat.SyncMethod)
