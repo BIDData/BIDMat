@@ -266,7 +266,7 @@ object MatFunctions {
   def float(a:GMat):GMat = {
     a
   }
-  
+
   def float(a:GIMat):GMat = {
     GMat(a);
   }

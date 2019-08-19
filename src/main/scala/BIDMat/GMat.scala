@@ -2368,6 +2368,24 @@ object GMat {
     }
   }
 
+  def apply(a:DMat):GMat = {
+    a match {
+      case g:GDMat_ => {
+    	val rsize = a.length
+    	val retv = GMat.newOrCheckGMat(a.dims, null, a.GUID, "GMat_FMat".##)
+        var err = CUMAT.doubleToFloat(g.pdata, retv.pdata, rsize)
+    	cudaStreamSynchronize(Mat.SyncMethod);
+    	if (err == 0) err = cudaGetLastError()
+    	if (err != 0) {
+    	  println("device is %d" format SciFunctions.getGPU)
+    	  throw new RuntimeException("CUDA error in GMat() " + cudaGetErrorString(err))
+    	}
+    	retv
+      }
+      case _ => GMat(FMat(a))
+    }
+  }
+
   def apply(a:GIMat):GMat = {
  
     val rsize = a.nrows*a.ncols
@@ -2386,7 +2404,7 @@ object GMat {
     case aa:GMat => aa
     case aa:GIMat => GMat(aa)
     case aa:FMat => GMat(aa)
-    case aa:DMat => GMat(FMat(aa))
+    case aa:DMat => GMat(aa)
     case aa:IMat => GMat(FMat(aa))
   }
   
