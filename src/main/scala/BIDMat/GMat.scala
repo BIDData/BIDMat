@@ -2382,11 +2382,10 @@ object GMat {
 
   def apply(a:DMat):GMat = {
     a match {
-      case g:GDMat_ => {
+      case g:GDMat => {
     	val rsize = a.length
     	val retv = GMat.newOrCheckGMat(a.dims, null, a.GUID, "GMat_FMat".##)
         var err = CUMAT.doubleToFloat(g.pdata, retv.pdata, rsize)
-    	cudaStreamSynchronize(Mat.SyncMethod);
     	if (err == 0) err = cudaGetLastError()
     	if (err != 0) {
     	  println("device is %d" format SciFunctions.getGPU)

@@ -947,8 +947,8 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     a
   }
 
-  def copyTo(a:GMat):GDMat = {
-  	ND.checkDims("GDMat copyTo GMat", dims, a.dims);
+  def copyTo(a:GMat):GMat = {
+    ND.checkDims("GDMat copyTo GMat", dims, a.dims);
 //    val a = out.recycle(nrows, ncols, 0)
     CUMAT.doubleToFloat(pdata, a.pdata, length)
     val err = cudaGetLastError
