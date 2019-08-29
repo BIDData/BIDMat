@@ -59,11 +59,11 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
   }
     
   override def set(v:Float):IMat = {
-    Arrays.fill(data,0,length,v.asInstanceOf[Int])
+    Arrays.fill(data,0,length,v.toInt)
     this
   }
   
-  def set(v:Int):IMat = {
+  override def set(v:Int):IMat = {
     Arrays.fill(data,0,length,v)
     this
   }

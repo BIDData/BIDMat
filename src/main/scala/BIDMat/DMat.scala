@@ -35,6 +35,11 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
     Arrays.fill(data,0,length,v)
     this
   }
+
+  override def set(v:Double):DMat = {
+    Arrays.fill(data,0,length,v)
+    this
+  }
   
   override def t:DMat = tt(null)
   

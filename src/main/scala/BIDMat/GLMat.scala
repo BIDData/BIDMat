@@ -469,7 +469,13 @@ class GLMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     out
   }
   
-  def set(v:Long):GLMat = {
+  override def set(v:Int):GLMat = {
+    CUMAT.setlval(pdata, v.toLong, length)
+    cudaStreamSynchronize(Mat.SyncMethod)
+    this
+  }
+
+  override def set(v:Long):GLMat = {
     CUMAT.setlval(pdata, v, length)
     cudaStreamSynchronize(Mat.SyncMethod)
     this

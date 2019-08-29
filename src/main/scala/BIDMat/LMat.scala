@@ -62,6 +62,11 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
     Arrays.fill(data,0,length,v.toLong)
     this
   }
+
+  override def set(v:Long):LMat = {
+    Arrays.fill(data,0,length,v)
+    this
+  }
   
   def horzcat(b: LMat) = LMat(ghorzcat(b))
   

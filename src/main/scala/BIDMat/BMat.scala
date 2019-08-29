@@ -58,6 +58,11 @@ case class BMat(dims0:Array[Int], val data:Array[Byte]) extends DenseMat[Byte](d
     Arrays.fill(data,0,length,v.toByte)
     this
   }
+
+  override def set(v:Int):BMat = {
+    Arrays.fill(data,0,length,v.toByte)
+    this
+  }
   
   def horzcat(b: BMat) = BMat(ghorzcat(b))
   
@@ -1438,7 +1443,7 @@ object BMat {
   
   def bones(m:Int, n:Int) = {
     val out = BMat(m,n)
-    out.set(1L)
+    out.set(1)
     out
   }
   

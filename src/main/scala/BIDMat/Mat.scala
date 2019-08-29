@@ -151,6 +151,8 @@ class Mat(val _dims:Array[Int]) extends ND with Serializable {
   def newcopy = notImplemented0("newcopy");
   def set(v:Float) = notImplemented0("set");
   def set(v:Double) = notImplemented0("set");
+  def set(v:Int) = notImplemented0("set");
+  def set(v:Long) = notImplemented0("set");
 
   def zeros(nr:Int, nc:Int) = notImplemented0("zeros");
   def zeros(dims:IMat) = notImplemented0("zeros");
