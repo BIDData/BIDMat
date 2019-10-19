@@ -804,8 +804,18 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   override def mini(inds:IMat):FMat = reduce(inds.data, SciFunctions.mini, reduceTensorFloat, FMat.CBLASop.op_min, "mini")
   override def amax(inds:IMat):FMat = reduce(inds.data, SciFunctions.maxi, reduceTensorFloat, FMat.CBLASop.op_max, "amax")
   override def amin(inds:IMat):FMat = reduce(inds.data, SciFunctions.mini, reduceTensorFloat, FMat.CBLASop.op_min, "amin") 
-  override def mean(inds:IMat):FMat = reduce(inds.data, SciFunctions.mean, "mean")
-  override def variance(inds:IMat):FMat = reduce(inds.data, SciFunctions.variance, "variance")
+
+  override def mean(inds:IMat):FMat = {val m = this.sum(inds);
+				       m ~ m *@ (1f/SciFunctions.prod(this.dims(inds)).v);
+				       m}
+  override def variance(inds:IMat):FMat = {val m = this.sum(inds);
+					   val n = SciFunctions.prod(this.dims(inds)).v;
+					   m ~ m *@ (1f/n)
+					   val a = this - m;
+					   a ~ a *@ a
+					   val v = a.sum(inds);
+					   v ~ v *@ (1f/n);
+					   v}
 
   def fDMultHelper(a:FMat, out:FMat, istart:Int, iend:Int) = {
   	var i = istart

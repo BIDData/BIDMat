@@ -1727,8 +1727,18 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   override def mini(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => GFunctions.mini(a,dir,null), CUMAT.minTensor, "mini")
   override def amax(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => GFunctions.maxi(a,dir,null), CUMAT.maxTensor, "amax")
   override def amin(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => GFunctions.mini(a,dir,null), CUMAT.minTensor,"amin")
-  override def mean(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => SciFunctions.mean(a,dir), "mean")
-  override def variance(inds:IMat):FMat = reduce(inds.data, (a:GMat, dir:Int) => SciFunctions.variance(a,dir), "variance")
+
+  override def mean(inds:IMat):FMat = {val m = this.sum(inds);
+				       m ~ m *@ (1f/SciFunctions.prod(this.dims(inds)).v);
+				       m}
+  override def variance(inds:IMat):FMat = {val m = this.sum(inds);
+					   val n = SciFunctions.prod(this.dims(inds)).v;
+					   m ~ m *@ (1f/n)
+					   val a = this - m;
+					   a ~ a *@ a
+					   val v = a.sum(inds);
+					   v ~ v *@ (1f/n);
+					   v}
 
   override def * (a : FMat) = GMult(GMat(a), null)
   override def * (a : SMat) = GSMult(GSMat(a), null)

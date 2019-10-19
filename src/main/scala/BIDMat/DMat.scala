@@ -1411,13 +1411,22 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
   
   override def sum(inds:IMat):DMat = reduce(inds.data, SciFunctions.sum, "sum")
   override def prod(inds:IMat):DMat = reduce(inds.data, SciFunctions.prod, "prod")
-  override def mean(inds:IMat):DMat = reduce(inds.data, SciFunctions.mean, "mean")
-  override def variance(inds:IMat):DMat = reduce(inds.data, SciFunctions.variance, "variance")
   override def maxi(inds:IMat):DMat = reduce(inds.data, SciFunctions.maxi, "maxi")
   override def mini(inds:IMat):DMat = reduce(inds.data, SciFunctions.mini, "mini")
   override def amax(inds:IMat):DMat = reduce(inds.data, SciFunctions.maxi, "amax")
   override def amin(inds:IMat):DMat = reduce(inds.data, SciFunctions.mini, "amin")
 
+  override def mean(inds:IMat):DMat = {val m = this.sum(inds);
+				       m ~ m *@ (1.0/SciFunctions.prod(this.dims(inds)).v);
+				       m}
+  override def variance(inds:IMat):DMat = {val m = this.sum(inds);
+					   val n = SciFunctions.prod(this.dims(inds)).v;
+					   m ~ m *@ (1.0/n)
+					   val a = this - m;
+					   a ~ a *@ a
+					   val v = a.sum(inds);
+					   v ~ v *@ (1.0/n);
+					   v}
 
   override def *  (b : Double) = fDMult(DMat.delem(b), null)
   override def +  (b : Double) = ddMatOpScalarv(b, DMat.vecAddFun, null)

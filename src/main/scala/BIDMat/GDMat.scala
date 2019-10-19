@@ -1187,12 +1187,22 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
 
   override def sum(inds:IMat):DMat = reduce(inds.data, (a:GDMat, dir:Int) => GDFunctions.sum(a,dir,null), "sum");
   override def prod(inds:IMat):DMat = reduce(inds.data, (a:GDMat, dir:Int) => GDFunctions.prod(a,dir,null), "prod");
-  override def mean(inds:IMat):DMat = reduce(inds.data, (a:GDMat, dir:Int) => SciFunctions.mean(a,dir), "mean")
-  override def variance(inds:IMat):DMat = reduce(inds.data, (a:GDMat, dir:Int) => SciFunctions.variance(a,dir), "variance")
   override def maxi(inds:IMat):DMat = reduce(inds.data, (a:GDMat, dir:Int) => GDFunctions.maxi(a,dir,null), "maxi")
   override def mini(inds:IMat):DMat = reduce(inds.data, (a:GDMat, dir:Int) => GDFunctions.mini(a,dir,null), "mini")
   override def amax(inds:IMat):DMat = reduce(inds.data, (a:GDMat, dir:Int) => GDFunctions.maxi(a,dir,null), "amax")
   override def amin(inds:IMat):DMat = reduce(inds.data, (a:GDMat, dir:Int) => GDFunctions.mini(a,dir,null), "amin")
+
+  override def mean(inds:IMat):DMat = {val m = this.sum(inds);
+				       m ~ m *@ (1.0/SciFunctions.prod(this.dims(inds)).v);
+				       m}
+  override def variance(inds:IMat):DMat = {val m = this.sum(inds);
+					   val n = SciFunctions.prod(this.dims(inds)).v;
+					   m ~ m *@ (1.0/n)
+					   val a = this - m;
+					   a ~ a *@ a
+					   val v = a.sum(inds);
+					   v ~ v *@ (1.0/n);
+					   v}
 
   override def * (a : DMat) = GMult(GDMat(a), null)
   override def * (a : SDMat) = GSMult(GSDMat(a), null)
