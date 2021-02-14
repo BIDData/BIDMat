@@ -12,7 +12,7 @@ SLATEC_OBJS=csevl.$(OBJ) inits.$(OBJ) r1mach.$(OBJ) i1mach.$(OBJ) utils.$(OBJ) y
 
 .SUFFIXES: .$(OBJ) .c .cpp .cu
 
-all:   $(LIBPREPEND)bidmatcuda$(LIBAPPEND)  $(LIBPREPEND)bidmatcpu$(LIBAPPEND)
+all:   $(LIBPREPEND)bidmatcpu$(LIBAPPEND) $(LIBPREPEND)bidmatcuda$(LIBAPPEND)  
 
 cudalib: $(LIBPREPEND)bidmatcuda$(LIBAPPEND)
 
