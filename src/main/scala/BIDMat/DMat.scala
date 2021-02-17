@@ -1358,7 +1358,8 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
     b(0);
   }
   
- def reduce(inds:Array[Int], fctn:(DMat, Int)=>DMat, opname:String):DMat = {
+  // Reduce using a set of 0-based indices  
+  def reduce(inds:Array[Int], fctn:(DMat, Int)=>DMat, opname:String):DMat = {
     val alldims = izeros(_dims.length,1)
     val xinds = new IMat(inds.length, 1, inds)
     val xdims = new IMat(_dims.length, 1, _dims)

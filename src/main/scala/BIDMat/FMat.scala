@@ -694,6 +694,7 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   override def clearLower(off:Int) = setLower(0, off)
   override def clearLower = setLower(0, 0)
   
+  // Reduce using a set of 0-based indices  
   def reduce(inds:Array[Int], fctn:(FMat, Int)=>FMat, opname:String):FMat = {
     val alldims = izeros(_dims.length,1);
     val xinds = new IMat(inds.length, 1, inds);
@@ -737,7 +738,8 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
       inds.colslice(inds.length-len1, inds.length);
     }
   }
-  
+
+  // Reduce using a set of 0-based indices    
   def reduce(inds0:Array[Int], fctn:(FMat,Int)=>FMat, fred:(Array[Float], Array[Float], Int, Int, Int, Int)=>Unit, op:Int, opname:String):FMat = {
     var i = 1;
     while (i < inds0.length) {

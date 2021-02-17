@@ -879,6 +879,7 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
   	  }
   	}
   
+
   def reduceOp(oldmat:Mat, dir:Int, initval:Double, op:Int):GDMat = {
     if (dir == 1 || (dir == 0 && nrows > 1)) {
       val out = GDMat.newOrCheckGDMat(1, ncols, oldmat, GUID, 1, op) 
@@ -1107,6 +1108,7 @@ class GDMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) e
     out
   }
   
+  // Reduce using a set of 0-based indices  
   def reduce(inds:Array[Int], fctn:(GDMat,Int)=>GDMat, opname:String):GDMat = {
     val alldims = MatFunctions.izeros(_dims.length,1);
     val xinds = new IMat(inds.length, 1, inds);

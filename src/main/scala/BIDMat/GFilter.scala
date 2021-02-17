@@ -35,12 +35,10 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
 	var tensorFormat = cudnnTensorFormat.CUDNN_TENSOR_NHWC;
   var convType = cudnnConvolutionMode.CUDNN_CROSS_CORRELATION;
 //  var convType = cudnnConvolutionMode.CUDNN_CONVOLUTION;
+
   val fwdAlgo = Array(0);
-  val fwdPerf = Array(new cudnnConvolutionFwdAlgoPerf());
   val bwdDataAlgo = Array(0);
-  val bwdDataPerf = Array(new cudnnConvolutionBwdDataAlgoPerf());
   val bwdFilterAlgo = Array(0);
-  val bwdFilterPerf = Array(new cudnnConvolutionBwdFilterAlgoPerf());
   var fwdTrained = false;
   var bwdDataTrained = false;
   var bwdFilterTrained = false;
@@ -93,7 +91,7 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
     }
   }
   
-  def convolve(a:GMat, omat:Mat, doclear:Boolean, workspace:Mat):GMat = {
+	def convolve(a:GMat, omat:Mat, doclear:Boolean, workspace:Mat):GMat = {
     val bdims = Filter.getOutputDims(a.dims, inDims, outDims, stride, pad, outPad);
     val hmm = ND.hashIMat(stride, ND.hashIMat(pad));
     val b = GMat.newOrCheckGMat(bdims, omat, a.GUID, GUID, hmm, "convout".##);
@@ -124,10 +122,8 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
         } else {
           (cudnnConvolutionFwdPreference.CUDNN_CONVOLUTION_FWD_PREFER_FASTEST, 0L);
         }
-	//      	val gstatus = cudnnGetConvolutionForwardAlgorithm_v7(cudnnMainHandle, adesc, fdesc, convdesc, bdesc, preference, limit, fwdAlgo);
-	val gstatus = cudnnGetConvolutionForwardAlgorithm_v7(cudnnMainHandle, adesc, fdesc, convdesc, bdesc, 1, fwdAlgo, fwdPerf);
+      	val gstatus = cudnnGetConvolutionForwardAlgorithm(cudnnMainHandle, adesc, fdesc, convdesc, bdesc, preference, limit, fwdAlgo);
       	if (gstatus > 0) throw new RuntimeException("Error getting best algorithm for forward convolution %d" format gstatus);
-	fwdAlgo(0) = fwdPerf(0).algo
       	fwdTrained = true;
       }
        
@@ -200,14 +196,12 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
         } else {
           (cudnnConvolutionBwdDataPreference.CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST, 0L);
         }
-	//      	val gstatus = cudnnGetConvolutionBackwardDataAlgorithm(cudnnMainHandle, fdesc, bdesc, convdesc, adesc, preference, limit, bwdDataAlgo);
-	val gstatus = cudnnGetConvolutionBackwardDataAlgorithm_v7(cudnnMainHandle, fdesc, bdesc, convdesc, adesc, 1, bwdDataAlgo, bwdDataPerf);
+      	val gstatus = cudnnGetConvolutionBackwardDataAlgorithm(cudnnMainHandle, fdesc, bdesc, convdesc, adesc, preference, limit, bwdDataAlgo);
       	if (gstatus > 0) throw new RuntimeException("Error getting best algorithm for backward data convolution %d" format gstatus);
-	bwdDataAlgo(0) = bwdDataPerf(0).algo
       	bwdDataTrained = true;
       }
       if (setBwdDataAlgo >= 0)
-	  bwdDataAlgo(0) = setBwdDataAlgo; //Patch 
+        bwdDataAlgo(0) = setBwdDataAlgo; //Patch 
         
       val _workspaceSizeInBytes = new Array[Long](1);
       var wserr = cudnnGetConvolutionBackwardDataWorkspaceSize(cudnnMainHandle, fdesc, bdesc, convdesc, adesc, bwdDataAlgo(0), _workspaceSizeInBytes);
@@ -272,10 +266,8 @@ class GFilter(inDims0:IMat, outDims0:IMat, stride0:IMat, pad0:IMat, outPad0:IMat
         } else {
           (cudnnConvolutionBwdFilterPreference.CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST, 0L);
         }
-	//      	val gstatus = cudnnGetConvolutionBackwardFilterAlgorithm(cudnn2ndHandle, adesc, bdesc, convdesc, fdesc, preference, limit, bwdFilterAlgo);
-	val gstatus = cudnnGetConvolutionBackwardFilterAlgorithm_v7(cudnn2ndHandle, adesc, bdesc, convdesc, fdesc, 1, bwdFilterAlgo, bwdFilterPerf);
+      	val gstatus = cudnnGetConvolutionBackwardFilterAlgorithm(cudnn2ndHandle, adesc, bdesc, convdesc, fdesc, preference, limit, bwdFilterAlgo);
       	if (gstatus > 0) throw new RuntimeException("Error getting best algorithm for backward filter convolution %d" format gstatus);
-	bwdFilterAlgo(0) = bwdFilterPerf(0).algo
       	bwdFilterTrained = true;
       }
       

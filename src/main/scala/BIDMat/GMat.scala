@@ -1594,7 +1594,8 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
   override def reverse:GMat = _reverse(null);
   
   override def reverse(omat:Mat):GMat = _reverse(omat);
-  
+
+  // Reduce using a set of 0-based indices  
   def reduce(inds:Array[Int], fctn:(GMat,Int)=>GMat, opname:String):GMat = {
     val alldims = MatFunctions.izeros(_dims.length,1);
     val xinds = new IMat(inds.length, 1, inds);
@@ -1625,6 +1626,7 @@ class GMat(dims0:Array[Int], @transient var pdata:Pointer, val realsize:Long) ex
     }
   }
   
+  // Reduce using a set of 0-based indices  
   def reduce(inds0:Array[Int], fctn:(GMat,Int)=>GMat, fred:(Pointer, Pointer, Int, Int, Int)=>Int, opname:String):GMat = {
     var i = 1;
     while (i < inds0.length) {
