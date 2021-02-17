@@ -498,22 +498,22 @@ object FFunctions {
   	out
   }
 
-	def applyS2Fun(a:FMat, b:FMat, omat:Mat, 
-			vfn:(Int, Array[Float], Array[Float], Array[Float]) => Unit, 
-			efn:(Float, Float)=>Float, nflops:Long):FMat = {
-					val out = FMat.newOrCheckFMat(maxdims(a.dims, b.dims), omat, a.GUID, b.GUID, vfn.##, efn.##);
-					if (!Mat.useMKL || !ND.compareDims(a.dims.data, b.dims.data)) {
-						if (efn == null) {
-							throw new RuntimeException("no Scala builtin version of this math function, sorry")
-						} 
-						var	i = 0; val len = a.length; val odata = out.data; val adata = a.data; val bdata = b.data;
-						while	(i < len) {odata(i) = efn(adata(i), bdata(i)); i += 1}
-					} else {
-						vfn(a.length, a.data, b.data, out.data)
-					}
-					Mat.nflops += nflops*a.length;
-					out;
-			}
+  def applyS2Fun(a:FMat, b:FMat, omat:Mat, 
+		 vfn:(Int, Array[Float], Array[Float], Array[Float]) => Unit, 
+		 efn:(Float, Float)=>Float, nflops:Long):FMat = {
+      val out = FMat.newOrCheckFMat(maxdims(a.dims, b.dims), omat, a.GUID, b.GUID, vfn.##, efn.##);
+      if (!Mat.useMKL || !ND.compareDims(a.dims.data, b.dims.data) || vfn == null) {
+	  if (efn == null) {
+	      throw new RuntimeException("no Scala builtin version of this math function, sorry");
+	  } 
+	  var i = 0; val len = a.length; val odata = out.data; val adata = a.data; val bdata = b.data;
+	  while	(i < len) {odata(i) = efn(adata(i), bdata(i)); i += 1}
+      } else {
+	  vfn(a.length, a.data, b.data, out.data)
+      }
+      Mat.nflops += nflops*a.length;
+      out;
+  }
 	
 	def applyS2xFun(a:FMat, b:Float, omat:Mat, 
 			vfn:(Int, Array[Float], Float, Array[Float]) => Unit, 
@@ -692,7 +692,7 @@ object FFunctions {
   def tanh(a:FMat, out:Mat) = {
     a match {
       case aa:GMat => GFunctions.tanh(aa, out);
-      case _ => applySFun(a, out, vsTanhFun, tanFun, 10L);
+      case _ => applySFun(a, out, vsTanhFun, tanhFun, 10L);
     }
   }
  
@@ -712,7 +712,7 @@ object FFunctions {
   def asin(a:FMat, out:Mat) = {
     a match {
       case aa:GMat => GFunctions.asin(aa, out);
-      case _ => applySFun(a, out, vsAsinFun, sinFun, 10L);
+      case _ => applySFun(a, out, vsAsinFun, asinFun, 10L);
     }
   }
  

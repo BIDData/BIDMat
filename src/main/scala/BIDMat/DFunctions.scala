@@ -335,21 +335,21 @@ object DFunctions {
 	  }
   
    def applyD2Fun(a:DMat, b:DMat, omat:Mat, 
-  		vfn:(Int, Array[Double], Array[Double], Array[Double]) => Unit, 
-  		efn:(Double, Double)=>Double, nflops:Long):DMat = {
-  				val out = DMat.newOrCheckDMat(math.max(a.nrows, b.nrows), math.max(a.ncols, b.ncols), omat, a.GUID, b.GUID, vfn.##, efn.##)
-  				if (!Mat.useMKLRand) {
-  					if (efn == null) {
-  						throw new RuntimeException("no Scala builtin version of this math function, sorry")
-  					} 
-  					var	i = 0; val len = a.length; val odata = out.data; val adata = a.data; val bdata = b.data
-  					while	(i < len) {odata(i) = efn(adata(i), bdata(i)); i += 1}
-  				} else {
-  					vfn(a.length, a.data, b.data, out.data)
+		  vfn:(Int, Array[Double], Array[Double], Array[Double]) => Unit, 
+		  efn:(Double, Double)=>Double, nflops:Long):DMat = {
+      val out = DMat.newOrCheckDMat(math.max(a.nrows, b.nrows), math.max(a.ncols, b.ncols), omat, a.GUID, b.GUID, vfn.##, efn.##)
+      if (!Mat.useMKLRand || vfn == null) {
+	  if (efn == null) {
+	      throw new RuntimeException("no Scala builtin version of this math function, sorry")
+	  } 
+	  var	i = 0; val len = a.length; val odata = out.data; val adata = a.data; val bdata = b.data
+	  while	(i < len) {odata(i) = efn(adata(i), bdata(i)); i += 1}
+      } else {
+	  vfn(a.length, a.data, b.data, out.data)
   				}
-  				Mat.nflops += nflops*a.length
-  				out
-  		}
+      Mat.nflops += nflops*a.length
+      out
+  }
   
     def applyD2xFun(a:DMat, b:Double, omat:Mat, 
   		vfn:(Int, Array[Double], Double, Array[Double]) => Unit, 
@@ -688,7 +688,7 @@ object DFunctions {
   def tanh(a:DMat, out:Mat) = {
     a match {
       case aa:GDMat => GDFunctions.tanh(aa, out);
-      case _ => applyDFun(a, out, vdTanhFun, tanFun, 10L);
+      case _ => applyDFun(a, out, vdTanhFun, tanhFun, 10L);
     }
   }
  
@@ -708,7 +708,7 @@ object DFunctions {
   def asin(a:DMat, out:Mat) = {
     a match {
       case aa:GDMat => GDFunctions.asin(aa, out);
-      case _ => applyDFun(a, out, vdAsinFun, sinFun, 10L);
+      case _ => applyDFun(a, out, vdAsinFun, asinFun, 10L);
     }
   }
  
