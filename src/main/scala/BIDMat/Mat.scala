@@ -983,14 +983,14 @@ object Mat {
     useBLAS = useMKL;
     if (useMKL) useMKLRand = (UTILS.hasMKL() == 1);
     useSTLRand = useMKL & !useMKLRand;
-    try {
-      edu.berkeley.bid.LibUtils.loadLibrary("jhdf5")
+//    try {
+//      edu.berkeley.bid.LibUtils.loadLibrary("jhdf5")
 //      System.loadLibrary("jhdf5")
-    } catch {
-    case _:Throwable => {
-      println("Cant find native HDF5 library")
-    }
-    }
+//    } catch {
+//    case _:Throwable => {
+//      println("Cant find native HDF5 library")
+//    }
+//    }
   }
   
 //  def checkCUDA:Unit = checkCUDA(false);
