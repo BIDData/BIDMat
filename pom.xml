@@ -77,6 +77,7 @@
       <activation>
       	<os>
           <family>unix</family>
+	  <arch>amd64</arch>
           <name>!mac os x</name> <!--https://issues.apache.org/jira/browse/MNG-4983-->
       	</os>
       </activation>
@@ -192,7 +193,7 @@
         <artifactId>akka-kryo-serialization_2.11</artifactId>
         <version>0.5.0</version>
     </dependency>
-    <dependency>
+<!--    <dependency>
       <groupId>${jcudaGroupId}</groupId>
       <artifactId>jcuda</artifactId>
       <version>${jcudaVersion}</version>
@@ -228,12 +229,12 @@
       <artifactId>jcudnn</artifactId>
       <version>${jcudaVersion}</version>
       <type>jar</type>
-    </dependency>
-    <dependency>
+    </dependency> -->
+<!--    <dependency>
       <groupId>jhdf5</groupId>
       <artifactId>jhdf5</artifactId>
       <version>3.2.1</version>
-    </dependency>
+    </dependency> -->
     <dependency>
       <groupId>ptplot</groupId>
       <artifactId>ptplot</artifactId>

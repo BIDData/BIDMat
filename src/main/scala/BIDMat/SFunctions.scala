@@ -9,7 +9,7 @@ object SFunctions {
   
   def sum(a:SMat, n:Int, omat:Mat):FMat = {
     a match {
-      case aa:GSMat => aa.sum(n, omat);
+//      case aa:GSMat => aa.sum(n, omat);
       case _ => a.ssReduceOp(n, FMat.idFun, FMat.sumFun, omat);
     }
   }
@@ -29,7 +29,7 @@ object SFunctions {
   
   def min(a:SMat, b:Float, omat:Mat):SMat = {
     a match {
-      case aa:GSMat => aa.GSDop(GMat(b), omat, op_min);
+//      case aa:GSMat => aa.GSDop(GMat(b), omat, op_min);
       case _ => a.ssMatOpScalar(b, FMat.minFun, omat)
     }
   }
@@ -40,7 +40,7 @@ object SFunctions {
   
   def max(a:SMat, b:Float, omat:Mat):SMat = {
     a match {
-      case aa:GSMat => aa.GSDop(GMat(b), omat, op_max);
+//      case aa:GSMat => aa.GSDop(GMat(b), omat, op_max);
       case _ => a.ssMatOpScalar(b, FMat.maxFun, omat)
     }
   }

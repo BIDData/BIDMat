@@ -21,8 +21,8 @@ object LFunctions {
   /** Accumulate (row, col, value) tuples from inds \\ vals. nr and nc are row and column bounds */
   def accum(inds:IMat, vals:LMat, nr:Int, nc:Int):LMat = {
     (inds, vals) match {
-      case (ginds:GIMat, fvals:LMat) => GLFunctions.accum(ginds, GLMat(fvals), null, nr, nc);
-      case (finds:IMat, gvals:GLMat) => GLFunctions.accum(GIMat(finds), gvals, null, nr, nc);
+//      case (ginds:GIMat, fvals:LMat) => GLFunctions.accum(ginds, GLMat(fvals), null, nr, nc);
+//      case (finds:IMat, gvals:GLMat) => GLFunctions.accum(GIMat(finds), gvals, null, nr, nc);
       case _ => LMat(DenseMat.accum(inds, vals, nr, nc))
     }
   }
@@ -37,7 +37,7 @@ object LFunctions {
   /** Accumulate (row, col, value) tuples from inds \\ vals. nr and nc are row and column bounds */
   def accum(inds:IMat, v:Long, nr:Int, nc:Int) = {
     inds match {
-      case ginds:GIMat => GLFunctions.accum(ginds, v, null, nr, nc);
+//      case ginds:GIMat => GLFunctions.accum(ginds, v, null, nr, nc);
       case _ => LMat(DenseMat.accum(inds, LMat.lelem(v), nr, nc));
     }
   }   
@@ -50,58 +50,58 @@ object LFunctions {
   
 	def min(a:LMat, b:LMat, out:Mat) = {
 	  (a, b) match {
-	    case (aa:GLMat, bb:LMat) => GLFunctions.min(aa, GLMat(b), out);
-	    case (aa:LMat, bb:GLMat) => GLFunctions.min(GLMat(a), bb, out);
+//	    case (aa:GLMat, bb:LMat) => GLFunctions.min(aa, GLMat(b), out);
+//	    case (aa:LMat, bb:GLMat) => GLFunctions.min(GLMat(a), bb, out);
 	    case _ => a.iiMatOpv(b, LMat.vecMinFun, op_min, out);
 	  }
 	}
 	
 	def max(a:LMat, b:LMat, out:Mat) = {
 	  (a, b) match {
-	    case (aa:GLMat, bb:LMat) => GLFunctions.max(aa, GLMat(b), out);
-	    case (aa:LMat, bb:GLMat) => GLFunctions.max(GLMat(a), bb, out);
+//	    case (aa:GLMat, bb:LMat) => GLFunctions.max(aa, GLMat(b), out);
+//	    case (aa:LMat, bb:GLMat) => GLFunctions.max(GLMat(a), bb, out);
 	    case _ => a.iiMatOpv(b, LMat.vecMaxFun, op_max, out);
 	  }
 	}
 	
   def min(a:LMat, b:Int, out:Mat) = {
 	  a match {
-	    case aa:GLMat=> GLFunctions.min(aa, GLMat.elem(b), out);
+//	    case aa:GLMat=> GLFunctions.min(aa, GLMat.elem(b), out);
 	    case _ => a.iiMatOpScalarv(b, LMat.vecMinFun, out);
 	  }
 	}
 	
 	def max(a:LMat, b:Int, out:Mat) = {
 	  a match {
-	    case aa:GLMat=> GLFunctions.max(aa, GLMat.elem(b), out);
+//	    case aa:GLMat=> GLFunctions.max(aa, GLMat.elem(b), out);
 	    case _ => a.iiMatOpScalarv(b, LMat.vecMaxFun, out);
 	  }
 	}
 
 	def maxi(a:LMat, n:Int, out:Mat) = {
 	  a match {
-	    case aa:GLMat => GLFunctions.maxi(aa, n, out);
+//	    case aa:GLMat => GLFunctions.maxi(aa, n, out);
 	    case _ => a.iiReduceOpv(n, LMat.idFun, LMat.vecMaxFun, out);
 	  }
 	}	
 	
   def mini(a:LMat, n:Int, out:Mat) = {
 	  a match {
-	    case aa:GLMat => GLFunctions.mini(aa, n, out);
+//	    case aa:GLMat => GLFunctions.mini(aa, n, out);
 	    case _ => a.iiReduceOpv(n, LMat.idFun, LMat.vecMinFun, out);
 	  }
 	}	
   
   def sum(a:LMat, n:Int, out:Mat) = {
 	  a match {
-	    case aa:GLMat => GLFunctions.sum(aa, n, out);
+//	    case aa:GLMat => GLFunctions.sum(aa, n, out);
 	    case _ => a.iiReduceOpv(n, LMat.idFun, LMat.vecAddFun, out);
 	  }
 	}	
 	
   def prod(a:LMat, n:Int, out:Mat) = {
 	  a match {
-	    case aa:GLMat => GLFunctions.prod(aa, n, out);
+//	    case aa:GLMat => GLFunctions.prod(aa, n, out);
 	    case _ => a.iiReduceOpv(n, LMat.idFun, LMat.vecMulFun, out);
 	  }
 	}	
@@ -116,7 +116,7 @@ object LFunctions {
   
   def maxi2(a:LMat,d:Int):(LMat,IMat) = {
     a match {
-      case aa:GLMat => GLFunctions.maxi2(aa, null, null, d);
+//      case aa:GLMat => GLFunctions.maxi2(aa, null, null, d);
       case _ => {
     	  val (m,ii)=a.ggOpt2(d,LMat.gtPred); 
     	  (LMat(m), ii)
@@ -126,7 +126,7 @@ object LFunctions {
   
   def mini2(a:LMat,d:Int):(LMat,IMat) = {
     a match {
-      case aa:GLMat => GLFunctions.mini2(aa, null, null, d);
+//      case aa:GLMat => GLFunctions.mini2(aa, null, null, d);
       case _ => {
     	  val (m,ii)=a.ggOpt2(d,LMat.ltPred); 
     	  (LMat(m), ii)

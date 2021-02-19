@@ -1,7 +1,7 @@
 package BIDMat
 import scala.collection.mutable.{Map,SynchronizedMap,HashMap}
 import MatFunctions._
-import edu.berkeley.bid.CUMAT
+//import edu.berkeley.bid.CUMAT
 
 @SerialVersionUID(100L)
 class Dict(val cstr:CSMat) extends Serializable { 

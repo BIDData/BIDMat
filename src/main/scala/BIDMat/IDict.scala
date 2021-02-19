@@ -1,8 +1,6 @@
 package BIDMat
 import scala.collection.mutable.{Map,SynchronizedMap,HashMap}
 import MatFunctions._
-import edu.berkeley.bid.CUMAT
-
 
 
 class IDict(val grams:IMat) extends Serializable {
@@ -24,7 +22,7 @@ class IDict(val grams:IMat) extends Serializable {
     	}
     	sortedMat
     }
-  }
+  } 
   
   @inline def cmp(a:IMat, b:IMat, ia:Int, ib:Int):Int = {
     var i = 0
@@ -100,7 +98,7 @@ object IDict {
     val (outy, ia, ib) = uniquerows(grams)
     val countsy = accum(ib, if (counts == null) drow(1.0) else counts, outy.nrows, 1)
     if (countsort) {    	
-    	val (countsz, ip) = GFunctions.sortdown2(countsy)
+    	val (countsz, ip) = DFunctions.sortdown2(countsy)
     	IDict(outy(ip, ?), countsz)
     } else {
       IDict(outy, countsy)

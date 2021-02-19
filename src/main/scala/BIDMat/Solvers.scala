@@ -1,11 +1,6 @@
 package BIDMat
 import edu.berkeley.bid.CBLAS._
 import edu.berkeley.bid.LAPACK._
-import jcuda._
-import jcuda.runtime._
-import jcuda.runtime.JCuda._
-import jcuda.runtime.cudaMemcpyKind._
-import jcuda.jcublas.JCublas._
 import MatFunctions._
 import SciFunctions._
 
@@ -13,7 +8,7 @@ object Solvers {
  
   def inv(a:FMat, omat:Mat):FMat = {
     a match {
-    case aa:GMat => inv(aa, omat);
+//    case aa:GMat => inv(aa, omat);
     case _ => {
 	Mat.nflops += 4L*a.nrows*a.nrows*a.nrows/3
 	if (a.nrows != a.ncols) {
@@ -32,7 +27,7 @@ object Solvers {
   
   def inv(a:DMat, omat:Mat):DMat = {
     a match {
-    case aa:GDMat => inv(aa, omat);
+//    case aa:GDMat => inv(aa, omat);
     case _ => {
 	Mat.nflops += 4L*a.nrows*a.nrows*a.nrows/3
 	if (a.nrows != a.ncols) {
@@ -277,7 +272,7 @@ object Solvers {
   
   def QRdecomp(a:FMat, qin:Mat, rin:Mat):(FMat, FMat) = {
     a match {
-    case aa:GMat => QRdecomp(aa, qin, rin);
+//    case aa:GMat => QRdecomp(aa, qin, rin);
     case _ => {
 	Mat.nflops += 4L*a.nrows*a.ncols*math.min(a.nrows, a.ncols)
 	val m = a.nrows
@@ -298,7 +293,7 @@ object Solvers {
   
   def QRdecomp(a:DMat, qin:Mat, rin:Mat):(DMat, DMat) = {
     a match {
-    case aa:GDMat => QRdecomp(aa, qin, rin);
+//    case aa:GDMat => QRdecomp(aa, qin, rin);
     case _ => {
 	Mat.nflops += 4L*a.nrows*a.ncols*math.min(a.nrows, a.ncols)
 	val m = a.nrows
@@ -351,7 +346,7 @@ object Solvers {
    
   def QRdecompt(a:FMat, qin:Mat, rin:Mat):(FMat, FMat) = {
     a match {
-    case aa:GMat => QRdecompt(aa, qin, rin);
+//    case aa:GMat => QRdecompt(aa, qin, rin);
     case _ => {
 	val m = a.nrows
 	val n = a.ncols
@@ -369,7 +364,7 @@ object Solvers {
   
   def QRdecompt(a:DMat, qin:Mat, rin:Mat):(DMat, DMat) = {
     a match {
-    case aa:GDMat => QRdecompt(aa, qin, rin);
+//    case aa:GDMat => QRdecompt(aa, qin, rin);
     case _ => {
 	val m = a.nrows
 	val n = a.ncols
@@ -400,7 +395,7 @@ object Solvers {
     (q, r)    
   }
   
-  def QRdecompt(a:GMat, qin:Mat, rin:Mat):(GMat, GMat) = {
+/*  def QRdecompt(a:GMat, qin:Mat, rin:Mat):(GMat, GMat) = {
     val m = a.nrows
     val n = a.ncols
     val q = GMat.newOrCheckGMat(a.nrows, a.ncols, qin, a.GUID, "QRdecompt_q".##);
@@ -428,13 +423,13 @@ object Solvers {
     q <-- a
     cublasDtrsm('R', 'U', 'N', 'N', a.nrows, a.ncols, 1.0, r.pdata, r.nrows, q.pdata, q.nrows)
     (q, r)    
-  }
+  }*/
   
   def QRdecompt(a:FMat):(FMat, FMat) = QRdecompt(a, null, null);
   def QRdecompt(a:DMat):(DMat, DMat) = QRdecompt(a, null, null);
   def QRdecompt(a:CMat):(CMat, CMat) = QRdecompt(a, null, null);
-  def QRdecompt(a:GMat):(GMat, GMat) = QRdecompt(a, null, null);
-  def QRdecompt(a:GDMat):(GDMat, GDMat) = QRdecompt(a, null, null);
+//  def QRdecompt(a:GMat):(GMat, GMat) = QRdecompt(a, null, null);
+//  def QRdecompt(a:GDMat):(GDMat, GDMat) = QRdecompt(a, null, null);
       
   def QRdecompt(a:Mat, q:Mat, r:Mat):(Mat, Mat) = a match {
     case af:FMat => QRdecompt(af, q, r):(FMat, FMat)
@@ -453,7 +448,7 @@ object Solvers {
   
   def trisolve(a:FMat, r:FMat, omat:Mat, mode:String):FMat = {
     (a, r) match {
-    case (aa:GMat, bb:GMat) => trisolve(aa, bb, omat, mode);
+//    case (aa:GMat, bb:GMat) => trisolve(aa, bb, omat, mode);
     case _ => {
 	if (a.nrows != a.ncols) {
 	    throw new RuntimeException("trisolve A must be square")
@@ -472,7 +467,7 @@ object Solvers {
   
   def trisolve(a:DMat, r:DMat, omat:Mat, mode:String):DMat = {
     (a, r) match {
-    case (aa:GDMat, bb:GDMat) => trisolve(aa, bb, omat, mode);
+//    case (aa:GDMat, bb:GDMat) => trisolve(aa, bb, omat, mode);
     case _ => {
 	if (a.nrows != a.ncols) {
 	    throw new RuntimeException("trisolve A must be square")
@@ -503,7 +498,7 @@ object Solvers {
     out
   }
   
-  def trisolve(a:GMat, r:GMat, omat:Mat, mode:String):GMat = {
+/*  def trisolve(a:GMat, r:GMat, omat:Mat, mode:String):GMat = {
     import jcuda.jcublas.JCublas._
     if (a.nrows != a.ncols) {
       throw new RuntimeException("trisolve A must be square")
@@ -521,9 +516,9 @@ object Solvers {
     val alpha = 1.0f;
     cublasStrsm(side, uplo, trans, diag, a.nrows, r.ncols, alpha, a.pdata, a.nrows, out.pdata, out.nrows) 
     out
-  }
+  }*/
   
-  def trisolve(a:GDMat, r:GDMat, omat:Mat, mode:String):GDMat = {
+/*  def trisolve(a:GDMat, r:GDMat, omat:Mat, mode:String):GDMat = {
     import jcuda.jcublas.JCublas._
     if (a.nrows != a.ncols) {
       throw new RuntimeException("trisolve A must be square")
@@ -541,18 +536,18 @@ object Solvers {
     val alpha = 1.0f;
     cublasDtrsm(side, uplo, trans, diag, a.nrows, r.ncols, alpha, a.pdata, a.nrows, out.pdata, out.nrows) 
     out
-  }
+  }*/
 
   def trisolve(a:DMat, r:DMat):DMat = trisolve(a, r, null, "UNN")
   def trisolve(a:FMat, r:FMat):FMat = trisolve(a, r, null, "UNN")
   def trisolve(a:CMat, r:CMat):CMat = trisolve(a, r, null, "UNN")
-  def trisolve(a:GMat, r:GMat):GMat = trisolve(a, r, null, "UNN")
-  def trisolve(a:GDMat, r:GDMat):GDMat = trisolve(a, r, null, "UNN")
+//  def trisolve(a:GMat, r:GMat):GMat = trisolve(a, r, null, "UNN")
+//  def trisolve(a:GDMat, r:GDMat):GDMat = trisolve(a, r, null, "UNN")
   def trisolve(a:DMat, r:DMat, omat:Mat):DMat = trisolve(a, r, omat, "UNN")
   def trisolve(a:FMat, r:FMat, omat:Mat):FMat = trisolve(a, r, omat, "UNN")
   def trisolve(a:CMat, r:CMat, omat:Mat):CMat = trisolve(a, r, omat, "UNN")
-  def trisolve(a:GMat, r:GMat, omat:Mat):GMat = trisolve(a, r, omat, "UNN")
-  def trisolve(a:GDMat, r:GDMat, omat:Mat):GDMat = trisolve(a, r, omat, "UNN")
+//  def trisolve(a:GMat, r:GMat, omat:Mat):GMat = trisolve(a, r, omat, "UNN")
+//  def trisolve(a:GDMat, r:GDMat, omat:Mat):GDMat = trisolve(a, r, omat, "UNN")
   
   def trisolve(a:Mat, r:Mat, omat:Mat, mode:String):Mat = (a, r) match {
     case (af:FMat, rf:FMat) => trisolve(af, rf, omat, mode)
@@ -570,7 +565,7 @@ object Solvers {
   
   def triinv(a:FMat, omat:Mat, mode:String):FMat = {
     a match {
-    case aa:GMat => triinv(aa, omat, mode);
+//    case aa:GMat => triinv(aa, omat, mode);
     case _ => {	    
 	if (a.nrows != a.ncols) {
 	    throw new RuntimeException("triinv: a must be square")
@@ -586,7 +581,7 @@ object Solvers {
   
   def triinv(a:DMat, omat:Mat, mode:String):DMat = {
     a match {
-    case aa:GDMat => triinv(aa, omat, mode);
+//    case aa:GDMat => triinv(aa, omat, mode);
     case _ => {	    
 	if (a.nrows != a.ncols) {
 	    throw new RuntimeException("triinv: a must be square")
@@ -611,7 +606,7 @@ object Solvers {
     out
   }
   
-  def triinv(a:GMat, omat:Mat, mode:String):GMat = {
+/*  def triinv(a:GMat, omat:Mat, mode:String):GMat = {
     if (a.nrows != a.ncols) {
       throw new RuntimeException("triinv a must be square")
     }
@@ -647,18 +642,18 @@ object Solvers {
     cublasDtrsm(side, uplo, trans, diag, a.nrows, a.ncols, alpha, a.pdata, a.nrows, out.pdata, out.nrows) 
     cudaStreamSynchronize(Mat.SyncMethod);
     out
-  }
+  }*/
   
   def triinv(a:DMat):DMat = triinv(a, null, "UN")
   def triinv(a:FMat):FMat = triinv(a, null, "UN")
   def triinv(a:CMat):CMat = triinv(a, null, "UN")
-  def triinv(a:GMat):GMat = triinv(a, null, "UN")
-  def triinv(a:GDMat):GDMat = triinv(a, null, "UN")
+//  def triinv(a:GMat):GMat = triinv(a, null, "UN")
+//  def triinv(a:GDMat):GDMat = triinv(a, null, "UN")
   def triinv(a:DMat, omat:Mat):DMat = triinv(a, omat, "UN")
   def triinv(a:FMat, omat:Mat):FMat = triinv(a, omat, "UN")
   def triinv(a:CMat, omat:Mat):CMat = triinv(a, omat, "UN")
-  def triinv(a:GMat, omat:Mat):GMat = triinv(a, omat, "UN")
-  def triinv(a:GDMat, omat:Mat):GDMat = triinv(a, omat, "UN")
+//  def triinv(a:GMat, omat:Mat):GMat = triinv(a, omat, "UN")
+//  def triinv(a:GDMat, omat:Mat):GDMat = triinv(a, omat, "UN")
   def triinv(a:Mat, omat:Mat, mode:String):Mat = a match {
     case af:FMat => triinv(af, omat, mode)
     case ad:DMat => triinv(ad, omat, mode)

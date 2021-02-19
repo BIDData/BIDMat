@@ -34,8 +34,8 @@ trait Mop {
 
   def top(a:TMat, b:FMat, c:Mat):Mat = {notImplemented(myname, a, b); a}
   def top(a:TMat, b:SMat, c:Mat):Mat = {notImplemented(myname, a, b); a}
-  def top(a:TMat, b:GMat, c:Mat):Mat = {notImplemented(myname, a, b); a}
-  def top(a:TMat, b:GSMat, c:Mat):Mat = {notImplemented(myname, a, b); a}
+//  def top(a:TMat, b:GMat, c:Mat):Mat = {notImplemented(myname, a, b); a}
+//  def top(a:TMat, b:GSMat, c:Mat):Mat = {notImplemented(myname, a, b); a}
   
   /*
    * Default coercions when first mat is an FMat. These can be overridden. 
@@ -179,8 +179,8 @@ trait Mop {
 
   def op(a:TMat, b:Mat, c:Mat):Mat = {
     b match {
-      case bb:GMat => top(a, bb, c);
-      case bb:GSMat => top(a, bb, c);
+//      case bb:GMat => top(a, bb, c);
+//      case bb:GSMat => top(a, bb, c);
       case bb:FMat => top(a, bb, c);
       case bb:SMat => top(a, bb, c);
     }
@@ -219,12 +219,12 @@ trait Mop {
   def getSPair(c:Mat, a:SMat):SPair = new SPair(c, a) 
   def getSDPair(c:Mat, a:SDMat):SDPair = new SDPair(c, a)
 
-  def getGPair(c:Mat, a:GMat):GPair = new GPair(c, a) 
-  def getGDPair(c:Mat, a:GDMat):GDPair = new GDPair(c, a)
-  def getGIPair(c:Mat, a:GIMat):GIPair = new GIPair(c, a)
-  def getGLPair(c:Mat, a:GLMat):GLPair = new GLPair(c, a)
-  def getGSPair(c:Mat, a:GSMat):GSPair = new GSPair(c, a)
-  def getGSDPair(c:Mat, a:GSDMat):GSDPair = new GSDPair(c, a)
+//  def getGPair(c:Mat, a:GMat):GPair = new GPair(c, a) 
+//  def getGDPair(c:Mat, a:GDMat):GDPair = new GDPair(c, a)
+//  def getGIPair(c:Mat, a:GIMat):GIPair = new GIPair(c, a)
+//  def getGLPair(c:Mat, a:GLMat):GLPair = new GLPair(c, a)
+//  def getGSPair(c:Mat, a:GSMat):GSPair = new GSPair(c, a)
+//  def getGSDPair(c:Mat, a:GSDMat):GSDPair = new GSDPair(c, a)
   def getTPair(c:Mat, a:TMat):TPair = new TPair(c, a)
 }
 

@@ -562,8 +562,8 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
 
   def ddMatOpv(b: Mat, f:(Array[Double],Int,Int,Array[Double],Int,Int,Array[Double],Int,Int,Int) => Double, optype:Int, out:Mat) = 
     (this, b) match {
-      case (aa:GDMat, bb:DMat) => aa.gOp(bb, out, optype);
-      case (aa:DMat, bb:GDMat) => GDMat(this).gOp(bb, out, optype);
+//      case (aa:GDMat, bb:DMat) => aa.gOp(bb, out, optype);
+//      case (aa:DMat, bb:GDMat) => GDMat(this).gOp(bb, out, optype);
       case (aa:DMat, bb:DMat) => DMat(ggMatOpv(bb, f, out));
       case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)	
     }
@@ -598,7 +598,7 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
       throw new RuntimeException("DMat copyTo dimensions mismatch")
     }
   	a match {
-  	case out:GDMat => out.copyFrom(this);
+//  	case out:GDMat => out.copyFrom(this);
   	case out:DMat => System.arraycopy(data, 0, out.data, 0, length);
   	case out:FMat => {Mat.copyToFloatArray(data, 0, out.data, 0, length)};
   	case out:IMat => {Mat.copyToIntArray(data, 0, out.data, 0, length)};
@@ -658,8 +658,8 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
 
   def fDMult(b:DMat, outmat:Mat):DMat = {
     (this, b) match {
-      case (aa:GDMat, bb:DMat) => aa.GMult(b, outmat);
-      case (aa:DMat, bb:GDMat) => GDMat(aa).GMult(bb, outmat);
+//      case (aa:GDMat, bb:DMat) => aa.GMult(b, outmat);
+//      case (aa:DMat, bb:GDMat) => GDMat(aa).GMult(bb, outmat);
       case _ => fDMultDD(b, outmat);
     }
   }
@@ -721,8 +721,8 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
 
   def fSMult(b:SDMat, outmat:Mat):DMat = {
     (this, b) match {
-      case (aa:GDMat, bb:SDMat) => aa.GSMult(b, outmat);
-      case (aa:DMat, bb:GSDMat) => GDMat(aa).GSMult(bb, outmat);
+//      case (aa:GDMat, bb:SDMat) => aa.GSMult(b, outmat);
+//      case (aa:DMat, bb:GSDMat) => GDMat(aa).GSMult(bb, outmat);
       case _ => fSMultF(b, outmat);
     }
   }
@@ -778,8 +778,8 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
 
   def multT(b:SDMat, outmat:Mat):DMat = {
     (this, b) match {
-      case (aa:GDMat, bb:SDMat) => aa.GSMultT(b, outmat);
-      case (aa:DMat, bb:GSDMat) => GDMat(aa).GSMultT(bb, outmat);
+//      case (aa:GDMat, bb:SDMat) => aa.GSMultT(b, outmat);
+//      case (aa:DMat, bb:GSDMat) => GDMat(aa).GSMultT(bb, outmat);
       case _ => multTS(b, outmat);
     }
   }
@@ -800,8 +800,8 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
 
   def multT(b:DMat, outmat:Mat):DMat = {
     (this, b) match {
-      case (aa:GDMat, bb:DMat) => aa.GMultT(b, outmat);
-      case (aa:DMat, bb:GDMat) => GDMat(aa).GMultT(bb, outmat);
+//      case (aa:GDMat, bb:DMat) => aa.GMultT(b, outmat);
+//      case (aa:DMat, bb:GDMat) => GDMat(aa).GMultT(bb, outmat);
       case _ => multTD(b, outmat);
     }
   }
@@ -822,8 +822,8 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
 
   def Tmult(b:DMat, outmat:Mat):DMat = {
     (this, b) match {
-      case (aa:GDMat, bb:DMat) => aa.GTMult(b, outmat);
-      case (aa:DMat, bb:GDMat) => GDMat(aa).GTMult(bb, outmat);
+//      case (aa:GDMat, bb:DMat) => aa.GTMult(b, outmat);
+//      case (aa:DMat, bb:GDMat) => GDMat(aa).GTMult(bb, outmat);
       case _ => TmultD(b, outmat);
     }
   }
@@ -1609,7 +1609,8 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
    
  /*
   * Specialize to GMats to help the type system. 
-  */ 
+  */
+  /*
   def *   (b : GMat) = Mop_Times.op(this, b, null) 
   def *^  (b : GMat) = Mop_TimesT.op(this, b, null)
   def xT  (b : GMat) = Mop_TimesT.op(this, b, null)
@@ -1643,6 +1644,7 @@ case class DMat(dims0:Array[Int], val data:Array[Double]) extends DenseMat[Doubl
   def !=  (b : GMat) = Mop_NE.op(this, b, null)
   def max  (b : GMat) = Mop_Max.op(this, b, null)
   def min  (b : GMat) = Mop_Min.op(this, b, null)
+  */
  /*
   * Operators whose second arg is generic. 
   */ 
@@ -1839,6 +1841,7 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair(omat, mat) {
   /*
    * Specialize to GMat
    */
+   /*
   def *   (b : GMat) = Mop_Times.op(mat, b, omat) 
   def *^  (b : GMat) = Mop_TimesT.op(mat, b, omat)
   def xT  (b : GMat) = Mop_TimesT.op(mat, b, omat)
@@ -1867,7 +1870,8 @@ class DPair (val omat:Mat, val mat:DMat) extends Pair(omat, mat) {
   def <=  (b : GMat) = Mop_LE.op(mat, b, omat)
   def !=  (b : GMat) = Mop_NE.op(mat, b, omat)
   def max  (b : GMat) = Mop_Max.op(mat, b, omat)
-  def min  (b : GMat) = Mop_Min.op(mat, b, omat) 
+  def min  (b : GMat) = Mop_Min.op(mat, b, omat)
+  */
   /*
    * Generics
    */
@@ -1932,14 +1936,14 @@ object DMat {
   
   def apply(x:Mat):DMat = {
     val out:DMat = x match {
-      case _:GMat | _:GDMat | _:FMat | _:IMat | _:LMat | _:BMat | _:SDMat => DMat.newOrCheckDMat(x.dims, null, x.GUID, "DMat".##);
+      case _:FMat | _:IMat | _:LMat | _:BMat | _:SDMat => DMat.newOrCheckDMat(x.dims, null, x.GUID, "DMat".##);
       case ff:DMat => ff;
       case dd:DenseMat[Double] @ unchecked => {val out = new DMat(dd.dims.data, dd._data); out.setGUID(dd.GUID); out}
       case _ => throw new RuntimeException("DMat apply unknown argument");
     }
     x match {
-      case gg:GMat => {val ff = gg.toFMat(null); Mat.copyToDoubleArray(ff.data, 0, out.data, 0, ff.length)}
-      case gg:GDMat => gg.copyTo(out);
+//      case gg:GMat => {val ff = gg.toFMat(null); Mat.copyToDoubleArray(ff.data, 0, out.data, 0, ff.length)}
+//      case gg:GDMat => gg.copyTo(out);
       case _:DMat => {}
       case ff:FMat => {Mat.copyToDoubleArray(ff.data, 0, out.data, 0, ff.length)}
       case ii:IMat => {Mat.copyToDoubleArray(ii.data, 0, out.data, 0, ii.length)}
