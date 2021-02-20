@@ -12,7 +12,7 @@ SLATEC_OBJS=csevl.$(OBJ) inits.$(OBJ) r1mach.$(OBJ) i1mach.$(OBJ) utils.$(OBJ) y
 
 .SUFFIXES: .$(OBJ) .c .cpp .cu
 
-all:   $(LIBPREPEND)bidmatcpu$(LIBAPPEND) $(LIBPREPEND)bidmatcuda$(LIBAPPEND)  
+all:   $(LIBPREPEND)bidmatcpu$(LIBAPPEND)
 
 cudalib: $(LIBPREPEND)bidmatcuda$(LIBAPPEND)
 
@@ -42,7 +42,7 @@ slatec.$(OBJ) : slatec/slatec.cu  $(SLATEC_DEPS)
 %.$(OBJ) : slatec/%.c
 	$(CC) $(CFLAGS) slatec/$*.c
 
-install: installcudalib installcpulib
+install: installcpulib
 
 installcudalib: $(INSTALL_DIR)/$(LIBPREPEND)bidmatcuda$(LIBAPPEND)
 

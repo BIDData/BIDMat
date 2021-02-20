@@ -1,7 +1,6 @@
 package BIDMat
 import scala.collection.mutable.HashMap;
 import java.lang.ref._;
-import jcuda.NativePointerObject;
 import edu.berkeley.bid.UTILS;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -413,15 +412,15 @@ class Mat(val _dims:Array[Int]) extends ND with Serializable {
   def ^* (b : DSPair):Mat = notImplemented0("^*")
   def Tx (b : DSPair):Mat = notImplemented0("Tx")
   def @@ (b : Mat):DSPair = (this, b) match {
-    case (aa:GMat, bb:GSMat) => new GDSPair(aa, bb)
+      //    case (aa:GMat, bb:GSMat) => new GDSPair(aa, bb)
     case (aa:FMat, bb:SMat) => new FDSPair(aa, bb) 
   }
   
   def ~ (b : Mat):Pair = b match {
-  case bb:GMat => new GPair(this, bb)
-  case bb:GIMat => new GIPair(this, bb)
-  case bb:GDMat => new GDPair(this, bb)
-  case bb:GLMat => new GLPair(this, bb)
+      //  case bb:GMat => new GPair(this, bb)
+      //  case bb:GIMat => new GIPair(this, bb)
+      //  case bb:GDMat => new GDPair(this, bb)
+      //  case bb:GLMat => new GLPair(this, bb)
   case bb:FMat => new FPair(this, bb)
   case bb:DMat => new DPair(this, bb)
   case bb:IMat => new IPair(this, bb)
@@ -643,7 +642,7 @@ object Mat {
 
   var logger:Logger = consoleLogger;
   
-  final val SyncMethod = jcuda.runtime.JCuda.cudaStreamPerThread;
+//  final val SyncMethod = jcuda.runtime.JCuda.cudaStreamPerThread;
 //  final val SyncMethod = jcuda.runtime.JCuda.cudaStreamLegacy;
   
   var termWidth = 80;
@@ -673,11 +672,11 @@ object Mat {
   
   var recycleGrow = 1.2            // For caching, amount to grow re-allocated matrices
   
-  var hasCUDA = 0                  // Number of available CUDA GPUs
+//  var hasCUDA = 0                  // Number of available CUDA GPUs
   
-  var hasCUDNN = false;            // Is CUDNN available? 
+//  var hasCUDNN = false;            // Is CUDNN available? 
 
-  var cudartVersion = 0;
+//  var cudartVersion = 0;
   
   var useBLAS = true;
     
@@ -867,12 +866,12 @@ object Mat {
       val keys = _cache2.keySet
       keys.foreach((key:Tuple2[Long,Int]) => {
       	val toremove:Boolean = _cache2.get(key).get match {
-      	case aa:GMat => (aa.myGPU == ithread)
-      	case aa:GDMat => (aa.myGPU == ithread)
-      	case aa:GIMat => (aa.myGPU == ithread)
-      	case aa:GLMat => (aa.myGPU == ithread)
-      	case aa:GSMat => (aa.myGPU == ithread)
-      	case aa:GSDMat => (aa.myGPU == ithread)
+		  //      	case aa:GMat => (aa.myGPU == ithread)
+		  //      	case aa:GDMat => (aa.myGPU == ithread)
+//      	case aa:GIMat => (aa.myGPU == ithread)
+//      	case aa:GLMat => (aa.myGPU == ithread)
+//      	case aa:GSMat => (aa.myGPU == ithread)
+//      	case aa:GSDMat => (aa.myGPU == ithread)
       	case _ => false
       }
       if (toremove) _cache2.remove(key)
@@ -885,12 +884,12 @@ object Mat {
       val keys = _cache3.keySet
       keys.foreach((key:Tuple3[Long,Long,Int]) => {
       	val toremove:Boolean = _cache3.get(key).get match {
-      	case aa:GMat => (aa.myGPU == ithread)
-      	case aa:GDMat => (aa.myGPU == ithread)
-      	case aa:GIMat => (aa.myGPU == ithread)
-      	case aa:GLMat => (aa.myGPU == ithread)
-      	case aa:GSMat => (aa.myGPU == ithread)
-      	case aa:GSDMat => (aa.myGPU == ithread)
+		  //      	case aa:GMat => (aa.myGPU == ithread)
+		  //      	case aa:GDMat => (aa.myGPU == ithread)
+		  //      	case aa:GIMat => (aa.myGPU == ithread)
+		  //      	case aa:GLMat => (aa.myGPU == ithread)
+		  //      	case aa:GSMat => (aa.myGPU == ithread)
+		  //      	case aa:GSDMat => (aa.myGPU == ithread)
       	case _ => false
       }
       if (toremove) _cache3.remove(key)
@@ -903,12 +902,12 @@ object Mat {
       val keys = _cache4.keySet
       keys.foreach((key:Tuple4[Long,Long,Long,Int]) => {
       	val toremove:Boolean = _cache4.get(key).get match {
-      	case aa:GMat => (aa.myGPU == ithread)
-      	case aa:GDMat => (aa.myGPU == ithread)
-      	case aa:GIMat => (aa.myGPU == ithread)
-      	case aa:GLMat => (aa.myGPU == ithread)
-      	case aa:GSMat => (aa.myGPU == ithread)
-      	case aa:GSDMat => (aa.myGPU == ithread)
+		  //      	case aa:GMat => (aa.myGPU == ithread)
+		  //      	case aa:GDMat => (aa.myGPU == ithread)
+		  //      	case aa:GIMat => (aa.myGPU == ithread)
+		  //      	case aa:GLMat => (aa.myGPU == ithread)
+		  //      	case aa:GSMat => (aa.myGPU == ithread)
+		  //      	case aa:GSDMat => (aa.myGPU == ithread)
       	case _ => false
       }
       if (toremove) _cache4.remove(key)
@@ -921,12 +920,12 @@ object Mat {
       val keys = _cache5.keySet
       keys.foreach((key:Tuple5[Long,Long,Long,Long,Int]) => {
       	val toremove:Boolean = _cache5.get(key).get match {
-      	case aa:GMat => (aa.myGPU == ithread)
-      	case aa:GDMat => (aa.myGPU == ithread)
-      	case aa:GIMat => (aa.myGPU == ithread)
-      	case aa:GLMat => (aa.myGPU == ithread)
-      	case aa:GSMat => (aa.myGPU == ithread)
-      	case aa:GSDMat => (aa.myGPU == ithread)
+		  //      	case aa:GMat => (aa.myGPU == ithread)
+		  //      	case aa:GDMat => (aa.myGPU == ithread)
+		  //      	case aa:GIMat => (aa.myGPU == ithread)
+		  //      	case aa:GLMat => (aa.myGPU == ithread)
+		  //      	case aa:GSMat => (aa.myGPU == ithread)
+		  //      	case aa:GSDMat => (aa.myGPU == ithread)
       	case _ => false
       }
       if (toremove) _cache5.remove(key)
@@ -939,12 +938,12 @@ object Mat {
       val keys = _cache6.keySet
       keys.foreach((key:Tuple6[Long,Long,Long,Long,Long,Int]) => {
       	val toremove:Boolean = _cache6.get(key).get match {
-      	case aa:GMat => (aa.myGPU == ithread)
-      	case aa:GDMat => (aa.myGPU == ithread)
-      	case aa:GIMat => (aa.myGPU == ithread)
-      	case aa:GLMat => (aa.myGPU == ithread)
-      	case aa:GSMat => (aa.myGPU == ithread)
-      	case aa:GSDMat => (aa.myGPU == ithread)
+		  //      	case aa:GMat => (aa.myGPU == ithread)
+		  //      	case aa:GDMat => (aa.myGPU == ithread)
+		  //      	case aa:GIMat => (aa.myGPU == ithread)
+		  //      	case aa:GLMat => (aa.myGPU == ithread)
+		  //      	case aa:GSMat => (aa.myGPU == ithread)
+		  //      	case aa:GSDMat => (aa.myGPU == ithread)
       	case _ => false
       }
       if (toremove) _cache6.remove(key)
@@ -984,19 +983,19 @@ object Mat {
     useBLAS = useMKL;
     if (useMKL) useMKLRand = (UTILS.hasMKL() == 1);
     useSTLRand = useMKL & !useMKLRand;
-    try {
-      edu.berkeley.bid.LibUtils.loadLibrary("jhdf5")
+//    try {
+//      edu.berkeley.bid.LibUtils.loadLibrary("jhdf5")
 //      System.loadLibrary("jhdf5")
-    } catch {
-    case _:Throwable => {
-      println("Cant find native HDF5 library")
-    }
-    }
+//    } catch {
+//    case _:Throwable => {
+//      println("Cant find native HDF5 library")
+//    }
+//    }
   }
   
-  def checkCUDA:Unit = checkCUDA(false);
+//  def checkCUDA:Unit = checkCUDA(false);
 
-  def checkCUDA(verbose:Boolean):Unit = {
+/*  def checkCUDA(verbose:Boolean):Unit = {
   		if (hasCUDA == 0) {
   			val os = System.getProperty("os.name");
   			try {
@@ -1079,7 +1078,7 @@ object Mat {
             GFunctions.initCUDNN();
   		}
   }
-
+*/
   def checkOpenCL():Unit = checkOpenCL(false)
 
   def checkOpenCL(verbose: Boolean):Unit = {

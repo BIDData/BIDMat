@@ -558,30 +558,30 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   
   def ffMatOp(b: Mat, f:(Float, Float) => Float, optype:Int, out:Mat):FMat =
   (this, b) match {
-      case (aa:GMat, bb:FMat) => aa.gOp(bb, out, optype);
-      case (aa:FMat, bb:GMat) => GMat(this).gOp(bb, out, optype);
+//      case (aa:GMat, bb:FMat) => aa.gOp(bb, out, optype);
+//      case (aa:FMat, bb:GMat) => GMat(this).gOp(bb, out, optype);
       case (aa:FMat, bb:FMat) => FMat(ggMatOp(bb, f, out));
       case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)
     }
 
   def ffMatOpv(b: Mat, f:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, optype:Int, out:Mat):FMat =
     (this, b) match {
-      case (aa:GMat, bb:FMat) => aa.gOp(bb, out, optype);
-      case (aa:FMat, bb:GMat) => GMat(this).gOp(bb, out, optype);
+//      case (aa:GMat, bb:FMat) => aa.gOp(bb, out, optype);
+//      case (aa:FMat, bb:GMat) => GMat(this).gOp(bb, out, optype);
       case (aa:FMat, bb:FMat) => FMat(ggMatOpv(bb, f, out));
       case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)
     }
 
   def ffMatOpScalar(b: Float, f:(Float, Float) => Float, opn:Int, out:Mat):FMat = {
     this match {
-    case aa:GMat => aa.gOp(GMat(b), out, opn);
+//    case aa:GMat => aa.gOp(GMat(b), out, opn);
     case _ => FMat(ggMatOpScalar(b, f, out));
     }
   }
 
   def ffMatOpScalarv(b: Float, f:(Array[Float],Int,Int,Array[Float],Int,Int,Array[Float],Int,Int,Int) => Float, opn:Int, out:Mat) = {
     this match {
-      case aa:GMat => aa.gOp(GMat(b), out, opn);
+//      case aa:GMat => aa.gOp(GMat(b), out, opn);
       case _ => FMat(ggMatOpScalarv(b, f, out));
     }
   }
@@ -633,8 +633,8 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
 
   override def copyTo(a:Mat) = {
   	a match {
-  	  case aa:GMat => aa.copyFrom(this);
-  	  case aa:GDMat => aa.copyFrom(DMat(this));
+//  	  case aa:GMat => aa.copyFrom(this);
+//  	  case aa:GDMat => aa.copyFrom(DMat(this));
   	  case out:FMat => copyTo(out):FMat;
   	  case out:DMat => {Mat.copyToDoubleArray(data, 0, out.data, 0, length)}
   	  case ii:IMat => {Mat.copyToIntArray(data, 0, ii.data, 0, length)}
@@ -838,8 +838,8 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   
   def fDMult(b:FMat, outmat:Mat):FMat = {
     (this, b) match {
-      case (aa:GMat, bb:FMat) => aa.GMult(b, outmat);
-      case (aa:FMat, bb:GMat) => GMat(aa).GMult(bb, outmat);
+//      case (aa:GMat, bb:FMat) => aa.GMult(b, outmat);
+//      case (aa:FMat, bb:GMat) => GMat(aa).GMult(bb, outmat);
       case _ => fDMultFF(b, outmat);
     }
   }
@@ -1151,8 +1151,8 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
 
   def fSMult(b:SMat, outmat:Mat):FMat = {
     (this, b) match {
-      case (aa:GMat, bb:SMat) => aa.GSMult(b, outmat);
-      case (aa:FMat, bb:GSMat) => GMat(aa).GSMult(bb, outmat);
+//      case (aa:GMat, bb:SMat) => aa.GSMult(b, outmat);
+//      case (aa:FMat, bb:GSMat) => GMat(aa).GSMult(bb, outmat);
       case _ => {
 	  if (ncols != b.nrows) {
 	      throw new RuntimeException("fSMult dimensions mismatch")
@@ -1390,8 +1390,8 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
 
   def multT(b:SMat, outmat:Mat):FMat = {
     (this, b) match {
-      case (aa:GMat, bb:SMat) => aa.GSMultT(b, outmat);
-      case (aa:FMat, bb:GSMat) => GMat(aa).GSMultT(bb, outmat);
+//      case (aa:GMat, bb:SMat) => aa.GSMultT(b, outmat);
+//      case (aa:FMat, bb:GSMat) => GMat(aa).GSMultT(bb, outmat);
       case _ => multTS(b, outmat);
     }
   }
@@ -1459,8 +1459,8 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   
   def multT(b:FMat, outmat:Mat):FMat = {
     (this, b) match {
-      case (aa:GMat, bb:FMat) => aa.GMultT(b, outmat);
-      case (aa:FMat, bb:GMat) => GMat(aa).GMultT(bb, outmat);
+//      case (aa:GMat, bb:FMat) => aa.GMultT(b, outmat);
+//      case (aa:FMat, bb:GMat) => GMat(aa).GMultT(bb, outmat);
       case _ => multTFF(b, outmat);
     }
   }
@@ -1497,8 +1497,8 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   
   def Tmult(b:FMat, outmat:Mat):FMat = {
     (this, b) match {
-      case (aa:GMat, bb:FMat) => aa.GTMult(b, outmat);
-      case (aa:FMat, bb:GMat) => GMat(aa).GTMult(bb, outmat);
+//      case (aa:GMat, bb:FMat) => aa.GTMult(b, outmat);
+//      case (aa:FMat, bb:GMat) => GMat(aa).GTMult(bb, outmat);
       case _ => TmultFF(b, outmat);
     }
   }
@@ -1556,7 +1556,7 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   		out
   	} else throw new RuntimeException("dimensions mismatch");
 
-  def GPUmult(b:FMat, out:Mat, btrans:Boolean) = GFunctions.GPUmult(this, b, out, btrans)
+//  def GPUmult(b:FMat, out:Mat, btrans:Boolean) = GFunctions.GPUmult(this, b, out, btrans)
 
   def ddot(a : FMat):Double =
   	if (nrows != a.nrows || ncols != a.ncols) {
@@ -1748,7 +1748,7 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
 
   def cumsumByKey(keys:FMat, omat:Mat):FMat = {
     (this, keys) match {
-      case (gme:GMat, gkeys:GMat) => gme.cumsumByKey(gkeys, omat);
+//      case (gme:GMat, gkeys:GMat) => gme.cumsumByKey(gkeys, omat);
       case _ => {
     	  if (nrows != keys.nrows || ncols != keys.ncols)
     		  throw new RuntimeException("cumsumKey dimensions mismatch");
@@ -1783,7 +1783,7 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
 
   def cumsumByKey(keys:IMat, omat:Mat):FMat = {
 		(this, keys) match {
-		  case (gme:GMat, gkeys:GIMat) => gme.cumsumByKey(gkeys, omat);
+//		  case (gme:GMat, gkeys:GIMat) => gme.cumsumByKey(gkeys, omat);
 		  case _ => {
 			  if (nrows != keys.nrows || ncols != keys.ncols)
 				  throw new RuntimeException("cumsumKey dimensions mismatch");
@@ -1818,7 +1818,7 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
 
   def cummaxByKey(keys:FMat, omat:Mat):FMat = {
 		(this, keys) match {
-		  case (gme:GMat, gkeys:GMat) => gme.cummaxByKey(gkeys, omat);
+//		  case (gme:GMat, gkeys:GMat) => gme.cummaxByKey(gkeys, omat);
 		  case _ => {
 			  if (nrows != keys.nrows || ncols != keys.ncols)
 				  throw new RuntimeException("cummaxKey dimensions mismatch");
@@ -1853,7 +1853,7 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
 
   def cummaxByKey(keys:IMat, omat:Mat):FMat = {
 		  (this, keys) match {
-		  case (gme:GMat, gkeys:GIMat) => gme.cummaxByKey(gkeys, omat);
+//		  case (gme:GMat, gkeys:GIMat) => gme.cummaxByKey(gkeys, omat);
 		  case _ => {
 			  if (nrows != keys.nrows || ncols != keys.ncols)
 				  throw new RuntimeException("cummaxKey dimensions mismatch");
@@ -1888,7 +1888,7 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
 
   def cumminByKey(keys:FMat, omat:Mat):FMat = {
 		  (this, keys) match {
-		  case (gme:GMat, gkeys:GMat) => gme.cumminByKey(gkeys, omat);
+//		  case (gme:GMat, gkeys:GMat) => gme.cumminByKey(gkeys, omat);
 		  case _ => {
 			  if (nrows != keys.nrows || ncols != keys.ncols)
 				  throw new RuntimeException("cumminKey dimensions mismatch");
@@ -1923,7 +1923,7 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
 
   def cumminByKey(keys:IMat, omat:Mat):FMat = {
 		  (this, keys) match {
-		  case (gme:GMat, gkeys:GIMat) => gme.cumminByKey(gkeys, omat);
+//		  case (gme:GMat, gkeys:GIMat) => gme.cumminByKey(gkeys, omat);
 		  case _ => {
 			  if (nrows != keys.nrows || ncols != keys.ncols)
 				  throw new RuntimeException("cumminKey dimensions mismatch");
@@ -2123,10 +2123,10 @@ case class FMat(dims0:Array[Int], val data:Array[Float]) extends DenseMat[Float]
   def *^  (b : FMat) = multT(b, null)
   def Tx  (b : FMat) = Tmult(b, null)
   def ^*  (b : FMat) = Tmult(b, null)
-  def xG  (b :FMat) = GPUmult(b, null, false)
-  def xTG (b :FMat) = GPUmult(b, null, true)
-  def *!  (b :FMat) = GPUmult(b, null, false)
-  def *^! (b :FMat) = GPUmult(b, null, true)
+//  def xG  (b :FMat) = GPUmult(b, null, false)
+//  def xTG (b :FMat) = GPUmult(b, null, true)
+//  def *!  (b :FMat) = GPUmult(b, null, false)
+//  def *^! (b :FMat) = GPUmult(b, null, true)
   def /<  (b : FMat) = solvel(b)
   def \\ (b : FMat) = solver(b)
   def ◁  (b : FMat) = solvel(b)
@@ -2452,10 +2452,10 @@ class FPair(val omat:Mat, val mat:FMat) extends Pair(omat, mat) {
   def xT  (b : FMat) = mat.multT(b, omat)
   def Tx  (b : FMat) = mat.Tmult(b, omat)
   def ^*  (b : FMat) = mat.Tmult(b, omat)
-  def *!  (b :FMat) = mat.GPUmult(b, omat, false)
-  def *^! (b :FMat) = mat.GPUmult(b, omat, true)
-  def xG  (b :FMat) = mat.GPUmult(b, omat, false)
-  def xTG (b :FMat) = mat.GPUmult(b, omat, true)
+//  def *!  (b :FMat) = mat.GPUmult(b, omat, false)
+//  def *^! (b :FMat) = mat.GPUmult(b, omat, true)
+//  def xG  (b :FMat) = mat.GPUmult(b, omat, false)
+//  def xTG (b :FMat) = mat.GPUmult(b, omat, true)
   def +   (b : FMat) = mat.ffMatOpv(b, FMat.vecAddFun, op_add, omat)
   def -   (b : FMat) = mat.ffMatOpv(b, FMat.vecSubFun, op_sub, omat)
   def *@  (b : FMat) = mat.ffMatOpv(b, FMat.vecMulFun, op_mul, omat)
@@ -2700,15 +2700,15 @@ object FMat {
 
   def apply(x:Mat):FMat = {
     val out:FMat = x match {
-      case _:GMat | _:GDMat | _:GIMat | _:CLMat | _:DMat | _:IMat | _:LMat | _:BMat | _:SMat => FMat.newOrCheckFMat(x.dims, null, x.GUID, "FMat".##);
+      case _:CLMat | _:DMat | _:IMat | _:LMat | _:BMat | _:SMat => FMat.newOrCheckFMat(x.dims, null, x.GUID, "FMat".##);
       case ff:FMat => ff;
       case dd:DenseMat[Float] @ unchecked => {val out = new FMat(dd.dims.data, dd._data); out.setGUID(dd.GUID); out}
       case _ => throw new RuntimeException("FMat apply unknown argument");
     }
     x match {
-      case gg:GMat => gg.toFMat(out);
-      case gg:GDMat => gg.copyTo(out);
-      case gg:GIMat => gg.toFMat(out);
+//      case gg:GMat => gg.toFMat(out);
+//      case gg:GDMat => gg.copyTo(out);
+//      case gg:GIMat => gg.toFMat(out);
       case gg:CLMat => gg.toFMat(out);
       case _:FMat => {};
       case dd:DMat => {Mat.copyToFloatArray(dd.data, 0, out.data, 0, dd.length)}

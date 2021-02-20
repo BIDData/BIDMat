@@ -76,6 +76,7 @@
       <activation>
       	<os>
           <family>unix</family>
+	  <arch>amd64</arch>
           <name>!mac os x</name> <!--https://issues.apache.org/jira/browse/MNG-4983-->
       	</os>
       </activation>

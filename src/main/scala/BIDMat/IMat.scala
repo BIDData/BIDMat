@@ -70,16 +70,16 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
   
   def horzcat(b: IMat):IMat = {
     (this, b) match {
-      case (aa:IMat, bb:GIMat) => GIMat(aa).horzcat(bb, null);
-      case (aa:GIMat, bb:IMat) => aa.horzcat(GIMat(bb), null);
+//      case (aa:IMat, bb:GIMat) => GIMat(aa).horzcat(bb, null);
+//      case (aa:GIMat, bb:IMat) => aa.horzcat(GIMat(bb), null);
       case _ => IMat(ghorzcat(b));
     }
   }
   
   def vertcat(b: IMat):IMat = {
   	(this, b) match {
-      case (aa:IMat, bb:GIMat) => GIMat(aa).vertcat(bb, null);
-      case (aa:GIMat, bb:IMat) => aa.vertcat(GIMat(bb), null);
+//      case (aa:IMat, bb:GIMat) => GIMat(aa).vertcat(bb, null);
+//      case (aa:GIMat, bb:IMat) => aa.vertcat(GIMat(bb), null);
       case _ => IMat(gvertcat(b));
   	}
   }
@@ -541,8 +541,8 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
   
   def iiMatOpv(b: Mat, f:(Array[Int],Int,Int,Array[Int],Int,Int,Array[Int],Int,Int,Int) => Int, optype:Int, out:Mat):IMat = 
     (this, b) match {
-    case (aa:GIMat, bb:IMat) => aa.GIop(bb, out, optype);
-    case (aa:IMat, bb:GIMat) => GIMat(this).GIop(bb, out, optype);
+//    case (aa:GIMat, bb:IMat) => aa.GIop(bb, out, optype);
+//    case (aa:IMat, bb:GIMat) => GIMat(this).GIop(bb, out, optype);
     case (aa:IMat, bb:IMat) => IMat(ggMatOpv(bb, f, out));
     case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)	
     }
@@ -567,7 +567,7 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
   
   override def copyTo(a:Mat) = {
   	a match {
-  	  case aa:GIMat => aa.copyFrom(this);
+//  	  case aa:GIMat => aa.copyFrom(this);
   	  case out:IMat => System.arraycopy(data, 0, out.data, 0, length);
   	  case ff:FMat => {Mat.copyToFloatArray(data, 0, ff.data, 0, length)}
       case ii:LMat => {Mat.copyToLongArray(data, 0, ii.data, 0, ii.length)}
@@ -746,7 +746,7 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
   
   def cumsumByKey(keys:IMat, omat:Mat):IMat = {
     (this, keys) match {
-      case (gme:GIMat, gkeys:GIMat) => gme.cumsumByKey(gkeys, omat);
+//      case (gme:GIMat, gkeys:GIMat) => gme.cumsumByKey(gkeys, omat);
       case _ => {
     	  if (nrows != keys.nrows || ncols != keys.ncols) 
     		  throw new RuntimeException("cumsumKey dimensions mismatch");
@@ -782,7 +782,7 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
   
   def cummaxByKey(keys:IMat, omat:Mat):IMat = {
 		  (this, keys) match {
-		  case (gme:GIMat, gkeys:GIMat) => gme.cummaxByKey(gkeys, omat);
+//		  case (gme:GIMat, gkeys:GIMat) => gme.cummaxByKey(gkeys, omat);
 		  case _ => {
 			  if (nrows != keys.nrows || ncols != keys.ncols) 
 				  throw new RuntimeException("cummaxKey dimensions mismatch");
@@ -817,7 +817,7 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
   
   def cumminByKey(keys:IMat, omat:Mat):IMat = {
 		  (this, keys) match {
-		  case (gme:GIMat, gkeys:GIMat) => gme.cumminByKey(gkeys, omat);
+//		  case (gme:GIMat, gkeys:GIMat) => gme.cumminByKey(gkeys, omat);
 		  case _ => {
 			  if (nrows != keys.nrows || ncols != keys.ncols) 
 				  throw new RuntimeException("cumminKey dimensions mismatch");
@@ -1171,7 +1171,8 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
    
  /*
   * Specialize to GMats to help the type system. 
-  */ 
+ */
+ /*
   def *   (b : GMat) = Mop_Times.op(this, b, null) 
   def *^  (b : GMat) = Mop_TimesT.op(this, b, null)
   def xT  (b : GMat) = Mop_TimesT.op(this, b, null)
@@ -1203,7 +1204,7 @@ case class IMat(dims0:Array[Int], val data:Array[Int]) extends DenseMat[Int](dim
   def >=  (b : GMat) = Mop_GE.op(this, b, null)
   def <=  (b : GMat) = Mop_LE.op(this, b, null)
   def !=  (b : GMat) = Mop_NE.op(this, b, null)
-  
+  */
  /*
   * Operators whose second arg is generic. 
   */ 
@@ -1518,13 +1519,13 @@ object IMat {
   
   def apply(x:Mat):IMat = {
     val out:IMat = x match {
-      case _:GIMat | _:DMat | _:FMat | _:LMat | _:BMat => IMat.newOrCheckIMat(x.dims, null, x.GUID, "IMat".##);
+      case _:DMat | _:FMat | _:LMat | _:BMat => IMat.newOrCheckIMat(x.dims, null, x.GUID, "IMat".##);
       case ff:IMat => ff;
       case dd:DenseMat[Int] @ unchecked => {val out = new IMat(dd.dims.data, dd._data); out.setGUID(dd.GUID); out}
       case _ => throw new RuntimeException("IMat apply unknown argument");
     }
     x match {
-      case gg:GIMat => GIMat.GPUtoCPUarraycopy(gg.pdata, 0, out.data, 0, gg.length, "IMat apply");
+//      case gg:GIMat => GIMat.GPUtoCPUarraycopy(gg.pdata, 0, out.data, 0, gg.length, "IMat apply");
       case dd:DMat => {Mat.copyToIntArray(dd.data, 0, out.data, 0, dd.length)};
       case ff:FMat => {Mat.copyToIntArray(ff.data, 0, out.data, 0, ff.length)};
       case ff:LMat => {Mat.copyToIntArray(ff.data, 0, out.data, 0, ff.length)};
