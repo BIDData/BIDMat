@@ -193,6 +193,11 @@
         <artifactId>akka-kryo-serialization_2.11</artifactId>
         <version>0.5.0</version>
     </dependency>
+    <dependency>
+      <groupId>com.pi4j</groupId>
+      <artifactId>pi4j-core</artifactId>
+      <version>1.3</version>
+    </dependency>
 <!--    <dependency>
       <groupId>${jcudaGroupId}</groupId>
       <artifactId>jcuda</artifactId>
