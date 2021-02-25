@@ -9,6 +9,7 @@ import scala.collection.mutable._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import MatFunctions._
+import MatHDF5._
 import edu.berkeley.bid.UTILS._
 import net.jpountz.lz4._
 
@@ -55,7 +56,7 @@ object HMat {
   }
   
   def checkHDFSloaded = {
-  if (HDFSIOinstance == null) {
+    if (HDFSIOinstance == null) {
     	val classLoader = HMat.getClass.getClassLoader();
     	val HDFSIOclass = classLoader.loadClass("BIDMat.HDFSIO");
       HDFSIOinstance = HDFSIOclass.newInstance().asInstanceOf[HDFSIOtrait];

@@ -538,8 +538,8 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
   
   def iiMatOpv(b: Mat, f:(Array[Long],Int,Int,Array[Long],Int,Int,Array[Long],Int,Int,Int) => Long, optype:Int, out:Mat):LMat = 
     (this, b) match {
-//    case (aa:GLMat, bb:LMat) => aa.GIop(bb, out, optype);
-//    case (aa:LMat, bb:GLMat) => GLMat(this).GIop(bb, out, optype);
+    case (aa:GLMat, bb:LMat) => aa.GIop(bb, out, optype);
+    case (aa:LMat, bb:GLMat) => GLMat(this).GIop(bb, out, optype);
     case (aa:LMat, bb:LMat) => LMat(ggMatOpv(bb, f, out));
     case _ => throw new RuntimeException("unsupported operation "+f+" on "+this+" and "+b)	
     }
@@ -1124,8 +1124,7 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
    
  /*
   * Specialize to GMats to help the type system. 
-  */
-  /*
+  */ 
   def *   (b : GMat) = Mop_Times.op(this, b, null) 
   def *^  (b : GMat) = Mop_TimesT.op(this, b, null)
   def xT  (b : GMat) = Mop_TimesT.op(this, b, null)
@@ -1157,7 +1156,7 @@ case class LMat(dims0:Array[Int], val data:Array[Long]) extends DenseMat[Long](d
   def >=  (b : GMat) = Mop_GE.op(this, b, null)
   def <=  (b : GMat) = Mop_LE.op(this, b, null)
   def !=  (b : GMat) = Mop_NE.op(this, b, null)
-  */
+  
  /*
   * Operators whose second arg is generic. 
   */ 
@@ -1362,7 +1361,6 @@ class LPair(val omat:Mat, val mat:LMat) extends BIDMat.Pair(omat, mat) {
   /*
    * Specialize to GMat
    */
-   /*
   def *   (b : GMat) = Mop_Times.op(mat, b, omat) 
   def *^  (b : GMat) = Mop_TimesT.op(mat, b, omat)
   def xT  (b : GMat) = Mop_TimesT.op(mat, b, omat)
@@ -1390,7 +1388,7 @@ class LPair(val omat:Mat, val mat:LMat) extends BIDMat.Pair(omat, mat) {
   def >=  (b : GMat) = Mop_GE.op(mat, b, omat)
   def <=  (b : GMat) = Mop_LE.op(mat, b, omat)
   def !=  (b : GMat) = Mop_NE.op(mat, b, omat)
-  */
+  
   /*
    * Generics
    */
@@ -1461,7 +1459,7 @@ object LMat {
   
   def apply(a:Long) = lelem(a)
   
-//  def apply(a:GLMat) = a.toLMat
+  def apply(a:GLMat) = a.toLMat
   
   def lzeros(m:Int, n:Int) = {
     val out = LMat(m,n)
@@ -1489,14 +1487,14 @@ object LMat {
   
   def apply(x:Mat):LMat = {
     val out:LMat = x match {
-      case  _:DMat | _:FMat | _:IMat | _:BMat => LMat.newOrCheckLMat(x.dims, null, x.GUID, "LMat".##);
+      case _:GIMat | _:GLMat | _:DMat | _:FMat | _:IMat | _:BMat => LMat.newOrCheckLMat(x.dims, null, x.GUID, "LMat".##);
       case ff:LMat => ff;
       case dd:DenseMat[Long] @ unchecked => {val out = new LMat(dd.dims.data, dd._data); out.setGUID(dd.GUID); out}
       case _ => throw new RuntimeException("IMat apply unknown argument");
     }
     x match {
-//      case gg:GIMat => gg.toLMat(out);
-//      case gg:GLMat => gg.toLMat(out);
+      case gg:GIMat => gg.toLMat(out);
+      case gg:GLMat => gg.toLMat(out);
       case dd:DMat => {Mat.copyToLongArray(dd.data, 0, out.data, 0, dd.length)};
       case ff:FMat => {Mat.copyToLongArray(ff.data, 0, out.data, 0, ff.length)};
       case ff:BMat => {Mat.copyToLongArray(ff.data, 0, out.data, 0, ff.length)};

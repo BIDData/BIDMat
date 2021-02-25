@@ -154,24 +154,24 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], val da
        
   def ssMatOpS(b: SMat, f:(Float, Float) => Float, op:Int, omat:Mat):SMat = {
     b match {
-//      case bb:GSMat =>  SMat(SMat(this).sgMatOp(SMat(b), f, omat)); 
+      case bb:GSMat =>  SMat(SMat(this).sgMatOp(SMat(b), f, omat)); 
       case _ => SMat(SMat(this).sgMatOp(b, f, omat));    
     }
   }
   
   def ssMatOpD(b: FMat, f:(Float, Float) => Float, op:Int, omat:Mat):SMat = {
 		(this, b) match {
-//		  case (aa:SMat, bb:GMat) => GSMat(this).GSDop(bb, null, op);
-//		  case (aa:GSMat, bb:FMat) => aa.GSDop(GMat(bb), null, op);
+		  case (aa:SMat, bb:GMat) => GSMat(this).GSDop(bb, null, op);
+		  case (aa:GSMat, bb:FMat) => aa.GSDop(GMat(bb), null, op);
 		  case _ => SMat(sgMatOpD(b, f, omat));
 		}
   }
   
    def ssMatOp(b: Mat, f:(Float, Float) => Float, op:Int, omat:Mat):Mat = {
 		(this, b) match {
-//		  case (aa:GSMat, bb:FMat) => aa.GSDop(GMat(bb), null, op)
-//		  case (aa:GSMat, bb:SMat) => SMat(sgMatOp(SMat(bb), f, omat));
-//		  case (aa:SMat, bb:GMat) => GSMat(this).GSDop(bb, null, op);
+		  case (aa:GSMat, bb:FMat) => aa.GSDop(GMat(bb), null, op)
+		  case (aa:GSMat, bb:SMat) => SMat(sgMatOp(SMat(bb), f, omat));
+		  case (aa:SMat, bb:GMat) => GSMat(this).GSDop(bb, null, op);
 		  case (aa:SMat, bb:SMat) => SMat(sgMatOp(SMat(bb), f, omat));
 		  case (aa:SMat, bb:FMat) => SMat(sgMatOpD(bb, f, omat));
 		}
@@ -189,8 +189,8 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], val da
 
   def SMult(b:Mat, outmat:Mat):FMat = {
     (this, b) match {
-//      case (aa:GSMat, bb:FMat) => aa.SDMult(bb, outmat);
-//      case (aa:SMat, bb:GMat) => GSMat(aa).SDMult(bb, outmat);
+      case (aa:GSMat, bb:FMat) => aa.SDMult(bb, outmat);
+      case (aa:SMat, bb:GMat) => GSMat(aa).SDMult(bb, outmat);
       case _ => SMultF(b, outmat);
     }
   }
@@ -269,8 +269,8 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], val da
 
   def Tmult(b:FMat, outmat:Mat):FMat = {
     (this, b) match {
-//      case (aa:GSMat, bb:FMat) => aa.SDTMult(b, outmat);
-//      case (aa:SMat, bb:GMat) => GSMat(aa).SDTMult(bb, outmat);
+      case (aa:GSMat, bb:FMat) => aa.SDTMult(b, outmat);
+      case (aa:SMat, bb:GMat) => GSMat(aa).SDTMult(bb, outmat);
       case _ => TmultF(b, outmat);
     }
   }
@@ -680,12 +680,12 @@ case class SMat(nr:Int, nc:Int, nnz1:Int, ir0:Array[Int], jc0:Array[Int], val da
     out
   }
   
-//  def copyTo(g:GSMat) = GSMat.fromSMat(this, g)
+  def copyTo(g:GSMat) = GSMat.fromSMat(this, g)
   
   override def copyTo(m:Mat):Mat = {
     if (m == null) copyTo(null):SMat
     else m match {
-//    case ss:GSMat => GSMat.fromSMat(this, ss)
+    case ss:GSMat => GSMat.fromSMat(this, ss)
     case ss:SMat => copyTo(ss):SMat
     }
   }
@@ -838,7 +838,7 @@ object SMat {
   }
   
   def apply(a:Mat) = a match {
-//    case aa:GSMat => aa.toSMat
+    case aa:GSMat => aa.toSMat
     case aa:SMat => aa
     case aa:FMat => MatFunctions.sparse(aa)
     case aa:SDMat => aa.toSMat

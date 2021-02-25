@@ -1100,7 +1100,7 @@ case class BMat(dims0:Array[Int], val data:Array[Byte]) extends DenseMat[Byte](d
  /*
   * Specialize to GMats to help the type system. 
   */ 
-/*  def *   (b : GMat) = Mop_Times.op(this, b, null) 
+  def *   (b : GMat) = Mop_Times.op(this, b, null) 
   def *^  (b : GMat) = Mop_TimesT.op(this, b, null)
   def xT  (b : GMat) = Mop_TimesT.op(this, b, null)
   def Tx  (b : GMat) = Mop_TTimes.op(this, b, null)
@@ -1131,7 +1131,6 @@ case class BMat(dims0:Array[Int], val data:Array[Byte]) extends DenseMat[Byte](d
   def >=  (b : GMat) = Mop_GE.op(this, b, null)
   def <=  (b : GMat) = Mop_LE.op(this, b, null)
   def !=  (b : GMat) = Mop_NE.op(this, b, null)
-  */
   
  /*
   * Operators whose second arg is generic. 
@@ -1337,7 +1336,6 @@ class BPair(val omat:Mat, val mat:BMat) extends BIDMat.Pair(omat, mat) {
   /*
    * Specialize to GMat
    */
-   /*
   def *   (b : GMat) = Mop_Times.op(mat, b, omat) 
   def *^  (b : GMat) = Mop_TimesT.op(mat, b, omat)
   def xT  (b : GMat) = Mop_TimesT.op(mat, b, omat)
@@ -1365,7 +1363,7 @@ class BPair(val omat:Mat, val mat:BMat) extends BIDMat.Pair(omat, mat) {
   def >=  (b : GMat) = Mop_GE.op(mat, b, omat)
   def <=  (b : GMat) = Mop_LE.op(mat, b, omat)
   def !=  (b : GMat) = Mop_NE.op(mat, b, omat)
-*/  
+  
   /*
    * Generics
    */
@@ -1463,7 +1461,7 @@ object BMat {
   
   def apply(x:Mat):BMat = {
     val out:BMat = x match {
-      case _:DMat | _:FMat | _:IMat => BMat.newOrCheckBMat(x.dims, null, x.GUID, "BMat".##);
+      case _:GIMat | _:DMat | _:FMat | _:IMat => BMat.newOrCheckBMat(x.dims, null, x.GUID, "BMat".##);
       case ff:BMat => ff;
       case dd:DenseMat[Byte] @ unchecked => {val out = new BMat(dd.dims.data, dd._data); out.setGUID(dd.GUID); out}
       case _ => throw new RuntimeException("IMat apply unknown argument");

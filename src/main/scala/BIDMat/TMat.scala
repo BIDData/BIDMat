@@ -13,6 +13,13 @@ import scala.reflect._
 import scala.math.Numeric._
 import scala.collection.mutable.ArrayBuffer
 
+import jcuda._
+import jcuda.runtime._
+import jcuda.runtime.JCuda._
+import jcuda.runtime.cudaMemcpyKind._
+import jcuda.jcublas._
+import jcuda.jcublas.JCublas._
+import jcuda.jcusparse._
 
 
 /*
@@ -119,8 +126,8 @@ class TMat
   def tOp(a : Mat, omat : Mat, op : (Mat,Mat,Mat) => Mat) : TMat = {
     a match {
       case aa : TMat => tOp(aa,omat,op);
-//      case aa : GMat => tOpM(aa,omat,op);
-//      case aa : GDMat => tOpM(aa,omat,op);
+      case aa : GMat => tOpM(aa,omat,op);
+      case aa : GDMat => tOpM(aa,omat,op);
       case aa : FMat => tOpM(aa,omat,op);
       case aa : DMat => tOpM(aa,omat,op);
      
@@ -137,7 +144,7 @@ class TMat
   	out;
   }
   
-/*  def toGPU:TMat = {
+  def toGPU:TMat = {
     val t0 = MatFunctions.gpu(tiles(0));
   	val out = TMat.newOrCheckTMat(nrows,ncols,y,x,tiles.map(_.nrows),tiles.map(_.ncols),t0,null,GUID,"toGPU".##);
   	out.tiles(0) = t0;
@@ -145,7 +152,7 @@ class TMat
   	  out.tiles(i) <-- tiles(i);
   	}
   	out;
-  }	*/
+  }	
   		
   override def set(f:Float) = {
     for (i <- 0 until tiles.length) {
@@ -344,26 +351,26 @@ class TMat
   
   
   def * (a : FMat) = this.tMult(a,null);
-//  def * (a : GMat) = this.tMult(a,null);
+  def * (a : GMat) = this.tMult(a,null);
   def * (a : SMat) = this.tMult(a,null);
-//  def * (a : GSMat) = this.tMult(a,null);
+  def * (a : GSMat) = this.tMult(a,null);
 
   def *^ (a : FMat) = this.tMultNT(a,null);
-//  def *^ (a : GMat) = this.tMultNT(a,null);
+  def *^ (a : GMat) = this.tMultNT(a,null);
   def *^ (a : SMat) = this.tMultNT(a,null);
-//  def *^ (a : GSMat) = this.tMultNT(a,null);
+  def *^ (a : GSMat) = this.tMultNT(a,null);
 
   override def * (a : Mat) = a match {
-//    case aa:GSMat => this.tMult(a,null);
-//    case aa:GMat => this.tMult(a,null);
+    case aa:GSMat => this.tMult(a,null);
+    case aa:GMat => this.tMult(a,null);
     case aa:FMat => this.tMult(a,null);
     case aa:SMat => this.tMult(a,null); 
     case _ => throw new RuntimeException("no match in tMult");
   } 
 
   override def *^ (a : Mat) = a match {
-//    case aa:GMat => this.tMultNT(a,null);
-//    case aa:GSMat => this.tMultNT(a,null);
+    case aa:GMat => this.tMultNT(a,null);
+    case aa:GSMat => this.tMultNT(a,null);
     case aa:FMat => this.tMultNT(a,null);
     case aa:SMat => this.tMultNT(a,null); 
     case _ => throw new RuntimeException("no match in tMultT");
@@ -626,10 +633,10 @@ object TMat {
   
   def newOrCheckMat(nr:Int, nc:Int,	mat:Mat, omat:Mat):Mat = {
     mat match {
-//      case m:GMat => GMat.newOrCheckGMat(nr, nc, omat);
-//      case m:GSMat => GMat.newOrCheckGMat(nr, nc, omat);
-//      case m:GDMat => GDMat.newOrCheckGDMat(nr, nc, omat);
-//      case m:GSDMat => GDMat.newOrCheckGDMat(nr, nc, omat);
+      case m:GMat => GMat.newOrCheckGMat(nr, nc, omat);
+      case m:GSMat => GMat.newOrCheckGMat(nr, nc, omat);
+      case m:GDMat => GDMat.newOrCheckGDMat(nr, nc, omat);
+      case m:GSDMat => GDMat.newOrCheckGDMat(nr, nc, omat);
       case m:FMat => FMat.newOrCheckFMat(nr, nc, omat);
       case m:SMat => FMat.newOrCheckFMat(nr, nc, omat);
       case m:DMat => DMat.newOrCheckDMat(nr, nc, omat);
@@ -644,10 +651,10 @@ object TMat {
   
   def newOrCheckMat(nr:Int, nc:Int,	mat:Mat, omat:Mat, matGUID:Long, opHash:Int):Mat = {
     mat match {
-//      case m:GMat => GMat.newOrCheckGMat(nr, nc, omat, matGUID, opHash);
-//      case m:GSMat => GMat.newOrCheckGMat(nr, nc, omat, matGUID, opHash);
-//      case m:GDMat => GDMat.newOrCheckGDMat(nr, nc, omat, matGUID, opHash);
-//      case m:GSDMat => GDMat.newOrCheckGDMat(nr, nc, omat, matGUID, opHash);
+      case m:GMat => GMat.newOrCheckGMat(nr, nc, omat, matGUID, opHash);
+      case m:GSMat => GMat.newOrCheckGMat(nr, nc, omat, matGUID, opHash);
+      case m:GDMat => GDMat.newOrCheckGDMat(nr, nc, omat, matGUID, opHash);
+      case m:GSDMat => GDMat.newOrCheckGDMat(nr, nc, omat, matGUID, opHash);
       case m:FMat => FMat.newOrCheckFMat(nr, nc, omat, matGUID, opHash);
       case m:SMat => FMat.newOrCheckFMat(nr, nc, omat, matGUID, opHash);
       case m:DMat => DMat.newOrCheckDMat(nr, nc, omat, matGUID, opHash);
@@ -661,10 +668,10 @@ object TMat {
   
   def newOrCheckMat(nr:Int, nc:Int,	mat:Mat, omat:Mat, guid1:Long, guid2:Long, opHash:Int):Mat = {
     mat match {
-//      case m:GMat => GMat.newOrCheckGMat(nr, nc, omat, guid1, guid2, opHash);
-//      case m:GSMat => GMat.newOrCheckGMat(nr, nc, omat, guid1, guid2, opHash);
-//      case m:GDMat => GDMat.newOrCheckGDMat(nr, nc, omat, guid1, guid2, opHash);
-//      case m:GSDMat => GDMat.newOrCheckGDMat(nr, nc, omat, guid1, guid2, opHash);
+      case m:GMat => GMat.newOrCheckGMat(nr, nc, omat, guid1, guid2, opHash);
+      case m:GSMat => GMat.newOrCheckGMat(nr, nc, omat, guid1, guid2, opHash);
+      case m:GDMat => GDMat.newOrCheckGDMat(nr, nc, omat, guid1, guid2, opHash);
+      case m:GSDMat => GDMat.newOrCheckGDMat(nr, nc, omat, guid1, guid2, opHash);
       case m:FMat => FMat.newOrCheckFMat(nr, nc, omat, guid1, guid2, opHash);
       case m:SMat => FMat.newOrCheckFMat(nr, nc, omat, guid1, guid2, opHash);
       case m:DMat => DMat.newOrCheckDMat(nr, nc, omat, guid1, guid2, opHash);
@@ -675,10 +682,10 @@ object TMat {
   
   def newOrCheckMat(nr:Int, nc:Int,	mat:Mat, omat:Mat, guid1:Long, guid2:Long, guid3:Long, opHash:Int):Mat = {
     mat match {
-//      case m:GMat => GMat.newOrCheckGMat(nr, nc, omat, guid1, guid2, guid3, opHash);
-//      case m:GSMat => GMat.newOrCheckGMat(nr, nc, omat, guid1, guid2, guid3, opHash);
-//      case m:GDMat => GDMat.newOrCheckGDMat(nr, nc, omat, guid1, guid2, guid3, opHash);
-//      case m:GSDMat => GDMat.newOrCheckGDMat(nr, nc, omat, guid1, guid2, guid3, opHash);
+      case m:GMat => GMat.newOrCheckGMat(nr, nc, omat, guid1, guid2, guid3, opHash);
+      case m:GSMat => GMat.newOrCheckGMat(nr, nc, omat, guid1, guid2, guid3, opHash);
+      case m:GDMat => GDMat.newOrCheckGDMat(nr, nc, omat, guid1, guid2, guid3, opHash);
+      case m:GSDMat => GDMat.newOrCheckGDMat(nr, nc, omat, guid1, guid2, guid3, opHash);
       case m:FMat => FMat.newOrCheckFMat(nr, nc, omat, guid1, guid2, guid3, opHash);
       case m:SMat => FMat.newOrCheckFMat(nr, nc, omat, guid1, guid2, guid3, opHash);
       case m:DMat => DMat.newOrCheckDMat(nr, nc, omat, guid1, guid2, guid3, opHash);

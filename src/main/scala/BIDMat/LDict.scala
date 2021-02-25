@@ -1,6 +1,7 @@
 package BIDMat
 import scala.collection.mutable.{Map,SynchronizedMap,HashMap}
 import MatFunctions._
+import edu.berkeley.bid.CUMAT
 
 /**
  * Note: this is still alpha code. Needs native code infill for long sort routines. 
@@ -17,8 +18,8 @@ class LDict(val grams:LMat) extends Serializable {
   var perm:IMat = null
 
   def makeSorted:LMat = { 
-	this.synchronized {
-	    if (sortedMat.asInstanceOf[AnyRef] == null) {
+    this.synchronized {
+    	if (sortedMat.asInstanceOf[AnyRef] == null) {
     		sortedMat = grams.copy
     		perm = icol(0->grams.nrows)
     		sortlexInds(sortedMat, perm) 
@@ -101,7 +102,7 @@ object LDict {
     val (outy, ia, ib) = uniquerows(grams)
     val countsy = accum(ib, if (counts == null) drow(1.0) else counts, outy.nrows, 1)
     if (countsort) {    	
-    	val (countsz, ip) = DFunctions.sortdown2(countsy)
+    	val (countsz, ip) = GFunctions.sortdown2(countsy)
     	LDict(outy(ip, ?), countsz)
     } else {
       LDict(outy, countsy)

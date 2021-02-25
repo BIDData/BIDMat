@@ -7,7 +7,7 @@
 #ifdef __INTEL_COMPILER
 #include <mkl.h>
 #endif
-//#include <cuda_runtime.h>
+#include <cuda_runtime.h>
 
 extern "C" {
   

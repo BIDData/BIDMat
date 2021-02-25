@@ -24,7 +24,7 @@ object DFunctions {
   /** Sort a set of keys ascending along a given direction '''dir''': 1=columns, 2=rows, 0=smart. */
   def sort(keys:DMat, dir:Int):DMat = {
     keys match {
-//      case gkeys:GDMat => throw new RuntimeException("GPU sort on Doubles not supported");
+      case gkeys:GDMat => throw new RuntimeException("GPU sort on Doubles not supported");
       case _ => DMat(DenseMat.sort(keys, dir, true));
     }
   }
@@ -32,7 +32,7 @@ object DFunctions {
   /** Sort a set of keys ascending. */
   def sort(keys:DMat):DMat = {
 	  keys match {
-//	  case gkeys:GDMat => throw new RuntimeException("GPU sort on Doubles not supported");
+	  case gkeys:GDMat => throw new RuntimeException("GPU sort on Doubles not supported");
 	  case _ => DMat(DenseMat.sort(keys, 0, true))
 	  }
   }
@@ -40,7 +40,7 @@ object DFunctions {
   /** Sort a set of keys ascending, and return sorted keys and indices. */
   def sort2(keys:DMat):(DMat, IMat) = {
     keys match {
-//      case gkeys:GDMat => throw new RuntimeException("GPU sort on Doubles not supported");
+      case gkeys:GDMat => throw new RuntimeException("GPU sort on Doubles not supported");
       case _ => {val (d,i) = DenseMat.sort2(keys, true); (DMat(d), i)}
     }
   }
@@ -48,7 +48,7 @@ object DFunctions {
   /** Sort a set of keys and return sorted keys and indices along a given direction: 1=columns, 2=rows, 0=smart */
   def sort2(keys:DMat, dir:Int):(DMat, IMat) = {
 		  keys match {
-//		  case gkeys:GDMat => throw new RuntimeException("GPU sort on Doubles not supported");
+		  case gkeys:GDMat => throw new RuntimeException("GPU sort on Doubles not supported");
       case _ => {val (d,i) = DenseMat.sort2(keys, dir, true); (DMat(d), i)}
 		  }
   }
@@ -56,7 +56,7 @@ object DFunctions {
   /** Sort a set of keys descending along a given direction: 1=columns, 2=rows, 0=smart. */
   def sortdown(keys:DMat, dir:Int):DMat = {
 		  keys match {
-//		  case gkeys:GDMat => throw new RuntimeException("GPU sort on Doubles not supported");
+		  case gkeys:GDMat => throw new RuntimeException("GPU sort on Doubles not supported");
 		  case _ =>  DMat(DenseMat.sort(keys, dir, false));
 		  }
   }
@@ -64,7 +64,7 @@ object DFunctions {
   /** Sort a set of keys descending. */
   def sortdown(keys:DMat):DMat = {
     keys match {
-//      case gkeys:GDMat => throw new RuntimeException("GPU sort on Doubles not supported");
+      case gkeys:GDMat => throw new RuntimeException("GPU sort on Doubles not supported");
       case _ => DMat(DenseMat.sort(keys, 0, false))
     }
   }
@@ -72,7 +72,7 @@ object DFunctions {
   /** Sort a set of keys descending and return sorted keys and indices. */
   def sortdown2(keys:DMat):(DMat, IMat) = {
      keys match {
-//       case gkeys:GDMat => throw new RuntimeException("GPU sort on Doubles not supported");
+       case gkeys:GDMat => throw new RuntimeException("GPU sort on Doubles not supported");
        case _ => {val (d,i) = DenseMat.sort2(keys, false); (DMat(d), i)}
      }
   }
@@ -80,7 +80,7 @@ object DFunctions {
     /** Sort a set of keys and return sorted keys and indices along a given direction: 1=columns, 2=rows, 0=smart */
   def sortdown2(keys:DMat, dir:Int):(DMat, IMat) = {
 		  keys match {
-//		  case gkeys:GDMat => throw new RuntimeException("GPU sort on Doubles not supported");
+		  case gkeys:GDMat => throw new RuntimeException("GPU sort on Doubles not supported");
       case _ => {val (d,i) = DenseMat.sort2(keys, dir, false); (DMat(d), i)}
 		  }
   }
@@ -101,8 +101,8 @@ object DFunctions {
    /** Accumulate (row, col, value) tuples from inds \\ vals. nr and nc are row and column bounds */
   def accum(inds:IMat, vals:DMat, nr:Int, nc:Int):DMat = {
     (inds, vals) match {
-//      case (ginds:GIMat, fvals:DMat) => GDFunctions.accum(ginds, GDMat(fvals), null, nr, nc);
-//      case (finds:IMat, gvals:GDMat) => GDFunctions.accum(GIMat(finds), gvals, null, nr, nc);
+      case (ginds:GIMat, fvals:DMat) => GDFunctions.accum(ginds, GDMat(fvals), null, nr, nc);
+      case (finds:IMat, gvals:GDMat) => GDFunctions.accum(GIMat(finds), gvals, null, nr, nc);
       case _ => DMat(DenseMat.accum(inds, vals, nr, nc))
     }
   }
@@ -117,7 +117,7 @@ object DFunctions {
   /** Accumulate (row, col, value) tuples from inds \\ vals. nr and nc are row and column bounds */
   def accum(inds:IMat, v:Double, nr:Int, nc:Int) = {
     inds match {
-//      case ginds:GIMat => GDFunctions.accum(ginds, v, null, nr, nc);
+      case ginds:GIMat => GDFunctions.accum(ginds, v, null, nr, nc);
       case _ => DMat(DenseMat.accum(inds, DMat.delem(v), nr, nc));
     }
   }   
@@ -134,72 +134,72 @@ object DFunctions {
   	
 	def min(a:DMat, b:DMat, out:Mat) = {
 	  (a, b) match {
-//	    case (aa:GDMat, bb:DMat) => GDFunctions.min(aa, GDMat(b), out);
-//	    case (aa:DMat, bb:GDMat) => GDFunctions.min(GDMat(a), bb, out);
+	    case (aa:GDMat, bb:DMat) => GDFunctions.min(aa, GDMat(b), out);
+	    case (aa:DMat, bb:GDMat) => GDFunctions.min(GDMat(a), bb, out);
 	    case _ => a.ddMatOpv(b, DMat.vecMinFun, op_min, out);
 	  }
 	}
 	
 	def max(a:DMat, b:DMat, out:Mat) = {
 	  (a, b) match {
-//	    case (aa:GDMat, bb:DMat) => GDFunctions.max(aa, GDMat(b), out);
-//	    case (aa:DMat, bb:GDMat) => GDFunctions.max(GDMat(a), bb, out);
+	    case (aa:GDMat, bb:DMat) => GDFunctions.max(aa, GDMat(b), out);
+	    case (aa:DMat, bb:GDMat) => GDFunctions.max(GDMat(a), bb, out);
 	    case _ => a.ddMatOpv(b, DMat.vecMaxFun, op_max, out);
 	  }
 	}
 	
   def min(a:DMat, b:Double, out:Mat) = {
 	  a match {
-//	    case aa:GDMat=> GDFunctions.min(aa, GDMat.elem(b), out);
+	    case aa:GDMat=> GDFunctions.min(aa, GDMat.elem(b), out);
 	    case _ => a.ddMatOpScalarv(b, DMat.vecMinFun, out);
 	  }
 	}
 	
 	def max(a:DMat, b:Double, out:Mat) = {
 	  a match {
-//	    case aa:GDMat=> GDFunctions.max(aa, GDMat.elem(b), out);
+	    case aa:GDMat=> GDFunctions.max(aa, GDMat.elem(b), out);
 	    case _ => a.ddMatOpScalarv(b, DMat.vecMaxFun, out);
 	  }
 	}
 
 	def maxi(a:DMat, n:Int, out:Mat) = {
 	  a match {
-//	    case aa:GDMat => GDFunctions.maxi(aa, n, out);
+	    case aa:GDMat => GDFunctions.maxi(aa, n, out);
 	    case _ => a.ddReduceOpv(n, DMat.idFun, DMat.vecMaxFun, out);
 	  }
 	}	
 	
   def mini(a:DMat, n:Int, out:Mat) = {
 	  a match {
-//	    case aa:GDMat => GDFunctions.mini(aa, n, out);
+	    case aa:GDMat => GDFunctions.mini(aa, n, out);
 	    case _ => a.ddReduceOpv(n, DMat.idFun, DMat.vecMinFun, out);
 	  }
 	}	
   
   def sum(a:DMat, n:Int, out:Mat) = {
 	  a match {
-//	    case aa:GDMat => GDFunctions.sum(aa, n, out);
+	    case aa:GDMat => GDFunctions.sum(aa, n, out);
 	    case _ => a.ddReduceOpv(n, DMat.idFun, DMat.vecAddFun, out);
 	  }
 	}	
 	
   def prod(a:DMat, n:Int, out:Mat) = {
 	  a match {
-//	    case aa:GDMat => GDFunctions.prod(aa, n, out);
+	    case aa:GDMat => GDFunctions.prod(aa, n, out);
 	    case _ => a.ddReduceOpv(n, DMat.idFun, DMat.vecMulFun, out);
 	  }
 	}	
 
   def cumsum(a:DMat, n:Int, out:Mat) = {
 		  a match {
-//	    case aa:GDMat => GDFunctions.cumsum(aa, n, out);
+	    case aa:GDMat => GDFunctions.cumsum(aa, n, out);
 	    case _ => a.ddReduceAll(n, DMat.idFun, DMat.sumFun, out);
 		  }
   }
   
   def maxi2(a:DMat,d:Int):(DMat,IMat) = {
     a match {
-//      case aa:GDMat => GDFunctions.maxi2(aa, null, null, d);
+      case aa:GDMat => GDFunctions.maxi2(aa, null, null, d);
       case _ => {
     	  val (m,ii)=a.ggOpt2(d,DMat.gtPred); 
     	  (DMat(m), ii)
@@ -209,7 +209,7 @@ object DFunctions {
   
   def mini2(a:DMat,d:Int):(DMat,IMat) = {
     a match {
-//      case aa:GDMat => GDFunctions.mini2(aa, null, null, d);
+      case aa:GDMat => GDFunctions.mini2(aa, null, null, d);
       case _ => {
     	  val (m,ii)=a.ggOpt2(d,DMat.ltPred); 
     	  (DMat(m), ii)
@@ -557,7 +557,7 @@ object DFunctions {
   def sign(a:DMat):DMat = sign(a, null);
   def sign(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.sign(aa, out);
+      case aa:GDMat => GDFunctions.sign(aa, out);
       case _ => applyDFun(a, out, null, signumFun, 1L);
     }
   }
@@ -567,7 +567,7 @@ object DFunctions {
   def abs(a:DMat):DMat = abs(a, null);
   def abs(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.abs(aa, out);
+      case aa:GDMat => GDFunctions.abs(aa, out);
       case _ => applyDFun(a, out, vdAbsFun, absFun, 1L);
     }
   }
@@ -577,7 +577,7 @@ object DFunctions {
   def exp(a:DMat):DMat = exp(a, null);
   def exp(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.exp(aa, out);
+      case aa:GDMat => GDFunctions.exp(aa, out);
       case _ => applyDFunV(a, out, vdExpFunMKL, vdExpFun, 1L);
     }
   }
@@ -587,7 +587,7 @@ object DFunctions {
   def expm1(a:DMat):DMat = expm1(a, null);
   def expm1(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.expm1(aa, out);
+      case aa:GDMat => GDFunctions.expm1(aa, out);
       case _ => applyDFun(a, out, vdExpm1Fun, expm1Fun, 10L);
     }
   }
@@ -597,7 +597,7 @@ object DFunctions {
   def sqrt(a:DMat):DMat = sqrt(a, null);
   def sqrt(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.sqrt(aa, out);
+      case aa:GDMat => GDFunctions.sqrt(aa, out);
       case _ => applyDFun(a, out, vdSqrtFun, sqrtFun, 10L);
     }
   }
@@ -607,7 +607,7 @@ object DFunctions {
   def ln(a:DMat):DMat = ln(a, null);
   def ln(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.ln(aa, out);
+      case aa:GDMat => GDFunctions.ln(aa, out);
       case _ => applyDFun(a, out, vdLnFun, lnFun, 10L);
     }
   }
@@ -617,7 +617,7 @@ object DFunctions {
   def log10(a:DMat):DMat = log10(a, null);
   def log10(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.log10(aa, out);
+      case aa:GDMat => GDFunctions.log10(aa, out);
       case _ => applyDFun(a, out, vdLog10Fun, log10Fun, 10L);
     }
   }
@@ -627,7 +627,7 @@ object DFunctions {
   def log1p(a:DMat):DMat = log1p(a, null);
   def log1p(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.log1p(aa, out);
+      case aa:GDMat => GDFunctions.log1p(aa, out);
       case _ => applyDFun(a, out, vdLog1pFun, log1pFun, 10L);
     }
   }
@@ -637,7 +637,7 @@ object DFunctions {
   def cos(a:DMat):DMat = cos(a, null);
   def cos(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.cos(aa, out);
+      case aa:GDMat => GDFunctions.cos(aa, out);
       case _ => applyDFun(a, out, vdCosFun, cosFun, 10L);
     }
   }
@@ -647,7 +647,7 @@ object DFunctions {
   def sin(a:DMat):DMat = sin(a, null);
   def sin(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.sin(aa, out);
+      case aa:GDMat => GDFunctions.sin(aa, out);
       case _ => applyDFun(a, out, vdSinFun, sinFun, 10L);
     }
   }
@@ -657,7 +657,7 @@ object DFunctions {
   def tan(a:DMat):DMat = tan(a, null);
   def tan(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.tan(aa, out);
+      case aa:GDMat => GDFunctions.tan(aa, out);
       case _ => applyDFun(a, out, vdTanFun, tanFun, 10L);
     }
   }
@@ -667,7 +667,7 @@ object DFunctions {
   def cosh(a:DMat):DMat = cosh(a, null);
   def cosh(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.cosh(aa, out);
+      case aa:GDMat => GDFunctions.cosh(aa, out);
       case _ => applyDFun(a, out, vdCoshFun, coshFun, 10L);
     }
   }
@@ -677,7 +677,7 @@ object DFunctions {
   def sinh(a:DMat):DMat = sinh(a, null);
   def sinh(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.sinh(aa, out);
+      case aa:GDMat => GDFunctions.sinh(aa, out);
       case _ => applyDFun(a, out, vdSinhFun, sinhFun, 10L);
     }
   }
@@ -687,7 +687,7 @@ object DFunctions {
   def tanh(a:DMat):DMat = tanh(a, null);
   def tanh(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.tanh(aa, out);
+      case aa:GDMat => GDFunctions.tanh(aa, out);
       case _ => applyDFun(a, out, vdTanhFun, tanhFun, 10L);
     }
   }
@@ -697,7 +697,7 @@ object DFunctions {
   def acos(a:DMat):DMat = acos(a, null);
   def acos(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.acos(aa, out);
+      case aa:GDMat => GDFunctions.acos(aa, out);
       case _ => applyDFun(a, out, vdAcosFun, acosFun, 10L);
     }
   }
@@ -707,7 +707,7 @@ object DFunctions {
   def asin(a:DMat):DMat = asin(a, null);
   def asin(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.asin(aa, out);
+      case aa:GDMat => GDFunctions.asin(aa, out);
       case _ => applyDFun(a, out, vdAsinFun, asinFun, 10L);
     }
   }
@@ -717,7 +717,7 @@ object DFunctions {
   def atan(a:DMat):DMat = atan(a, null);
   def atan(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.atan(aa, out);
+      case aa:GDMat => GDFunctions.atan(aa, out);
       case _ => applyDFun(a, out, vdAtanFun, atanFun, 10L);
     }
   }
@@ -727,7 +727,7 @@ object DFunctions {
   def acosh(a:DMat):DMat = acosh(a, null);
   def acosh(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.acosh(aa, out);
+      case aa:GDMat => GDFunctions.acosh(aa, out);
       case _ => applyDFun(a, out, vdAcoshFun, acoshFun, 10L);
     }
   }
@@ -737,7 +737,7 @@ object DFunctions {
   def asinh(a:DMat):DMat = asinh(a, null);
   def asinh(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.asinh(aa, out);
+      case aa:GDMat => GDFunctions.asinh(aa, out);
       case _ => applyDFun(a, out, vdAsinhFun, asinhFun, 10L);
     }
   }
@@ -747,7 +747,7 @@ object DFunctions {
   def atanh(a:DMat):DMat = atanh(a, null);
   def atanh(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.atanh(aa, out);
+      case aa:GDMat => GDFunctions.atanh(aa, out);
       case _ => applyDFun(a, out, vdAtanhFun, atanhFun, 10L);
     }
   }
@@ -757,7 +757,7 @@ object DFunctions {
   def erf(a:DMat):DMat = erf(a, null);
   def erf(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.erf(aa, out);
+      case aa:GDMat => GDFunctions.erf(aa, out);
       case _ => applyDFun(a, out, vdErfFun, erfFun, 10L);
     }
   }
@@ -767,7 +767,7 @@ object DFunctions {
   def erfinv(a:DMat):DMat = erfinv(a, null);
   def erfinv(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.erfinv(aa, out);
+      case aa:GDMat => GDFunctions.erfinv(aa, out);
       case _ => applyDFun(a, out, vdErfInvFun, erfinvFun, 10L);
     }
   }
@@ -777,7 +777,7 @@ object DFunctions {
   def erfc(a:DMat):DMat = erfc(a, null);
   def erfc(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.erfc(aa, out);
+      case aa:GDMat => GDFunctions.erfc(aa, out);
       case _ => applyDFun(a, out, vdErfcFun, erfcFun, 10L);
     }
   }
@@ -787,7 +787,7 @@ object DFunctions {
   def erfcinv(a:DMat):DMat = erfcinv(a, null);
   def erfcinv(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.erfcinv(aa, out);
+      case aa:GDMat => GDFunctions.erfcinv(aa, out);
       case _ => applyDFun(a, out, vdErfcInvFun, erfcInvFun, 10L);
     }
   }
@@ -798,7 +798,7 @@ object DFunctions {
   def normcdf(a:DMat):DMat = normcdf(a, null);
   def normcdf(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.normcdf(aa, out);
+      case aa:GDMat => GDFunctions.normcdf(aa, out);
       case _ => applyDFun(a, out, vdCdfNormFun, normcdfFun, 10L);
     }
   }
@@ -808,7 +808,7 @@ object DFunctions {
   def normcdfinv(a:DMat):DMat = normcdfinv(a, null);
   def normcdfinv(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.normcdfinv(aa, out);
+      case aa:GDMat => GDFunctions.normcdfinv(aa, out);
       case _ => applyDFun(a, out, vdCdfNormInvFun, normcdfinvFun, 10L);
     }
   }
@@ -818,7 +818,7 @@ object DFunctions {
   def gamma(a:DMat):DMat = gamma(a, null);
   def gamma(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.gamma(aa, out);
+      case aa:GDMat => GDFunctions.gamma(aa, out);
       case _ => applyDFun(a, out, vdTGammaFun, gammaFun, 10L);
     }
   }
@@ -832,7 +832,7 @@ object DFunctions {
   def gammaln(a:DMat):DMat = gammaln(a, null);
    def gammaln(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.gammaln(aa, out);
+      case aa:GDMat => GDFunctions.gammaln(aa, out);
       case _ => applyDFun(a, out, vdLGammaFun, gammalnFun, 10L);
     }
   }
@@ -842,7 +842,7 @@ object DFunctions {
   def ceil(a:DMat):DMat = ceil(a, null);
    def ceil(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.ceil(aa, out);
+      case aa:GDMat => GDFunctions.ceil(aa, out);
       case _ => applyDFun(a, out, vdCeilFun, ceilFun, 1L);
     }
   }
@@ -852,7 +852,7 @@ object DFunctions {
   def floor(a:DMat):DMat = floor(a, null);
   def floor(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.floor(aa, out);
+      case aa:GDMat => GDFunctions.floor(aa, out);
       case _ => applyDFun(a, out, vdFloorFun, floorFun, 1L);
     }
   }
@@ -862,7 +862,7 @@ object DFunctions {
   def round(a:DMat):DMat = round(a, null);
   def round(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.round(aa, out);
+      case aa:GDMat => GDFunctions.round(aa, out);
       case _ => applyDFun(a, out, vdRoundFun, roundFun, 1L);
     }
   }
@@ -872,7 +872,7 @@ object DFunctions {
   def trunc(a:DMat):DMat = trunc(a, null);
   def trunc(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.trunc(aa, out);
+      case aa:GDMat => GDFunctions.trunc(aa, out);
       case _ => applyDFun(a, out, vdTruncFun, truncFun, 1L);
     }
   }
@@ -886,7 +886,7 @@ object DFunctions {
   def logistic(a:DMat):DMat = logistic(a, null);
   def logistic(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.logistic(aa, out);
+      case aa:GDMat => GDFunctions.logistic(aa, out);
       case _ => applyDFun(a, out, vdLogisticFun, logisticFun, 10L);
     }
   }
@@ -896,7 +896,7 @@ object DFunctions {
   def atan2(a:DMat, b:DMat):DMat = atan2(a, b, null);
   def atan2(a:DMat, b:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.atan2(aa, GDMat(b), out);
+      case aa:GDMat => GDFunctions.atan2(aa, GDMat(b), out);
       case _ => applyD2Fun(a, b, out, vdAtan2Fun, atan2Fun, 10L);
     }
   }
@@ -906,7 +906,7 @@ object DFunctions {
   def pow(a:DMat, b:DMat):DMat = pow(a, b, null);
   def pow(a:DMat, b:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.pow(aa, GDMat(b), out);
+      case aa:GDMat => GDFunctions.pow(aa, GDMat(b), out);
       case _ => applyD2Fun(a, b, out, vdPowFun, powFun, 10L);
     }
   }
@@ -915,7 +915,7 @@ object DFunctions {
   def powx(a:DMat, b:Double):DMat = powx(a, b, null);
   def powx(a:DMat, b:Double, out:Mat) = {
     a match {
-//      case aa:GDMat => throw new RuntimeException("powx not implemented on GPU")
+      case aa:GDMat => throw new RuntimeException("powx not implemented on GPU")
       case _ => applyD2xFun(a, b, out, vdPowxFun, powFun, 10L);
     }
   }
@@ -924,7 +924,7 @@ object DFunctions {
   def exppsi(a:DMat):DMat = exppsi(a, null);
   def exppsi(a:DMat, out:Mat) = {
     a match {
-//      case aa:GDMat => GDFunctions.exppsi(aa, out);
+      case aa:GDMat => GDFunctions.exppsi(aa, out);
       case _ => applyDFun(a, out, null, exppsiFun, 3L);
     }
   }

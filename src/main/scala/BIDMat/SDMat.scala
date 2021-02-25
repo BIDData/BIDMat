@@ -419,7 +419,7 @@ object SDMat {
   }
   
   def apply(a:Mat) = a match {
-//    case aa:GSMat => aa.toSMat.toSDMat
+    case aa:GSMat => aa.toSMat.toSDMat
     case aa:SMat => aa.toSDMat
     case aa:SDMat => aa
   }

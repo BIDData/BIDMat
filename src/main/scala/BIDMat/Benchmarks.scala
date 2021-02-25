@@ -133,7 +133,7 @@ object AltaVista {
 	  		if (j % 3 == 0) printf(".")
 	  	}
 	    Mat.ilexsort2(ii.data, jj.data)
-//	    saveAs("/big/Yahoo/G2/test.mat",ii,"ii",jj,"jj")
+	    saveAs("/big/Yahoo/G2/test.mat",ii,"ii",jj,"jj")
 	    val avals = ones(ii.length.toInt, 1).data
 	    sofar = SparseMat.remdups(ii.data, jj.data, avals)
 	  	val ss = new SMat(maxv, maxv, sofar, SparseMat.incInds(jj.data), new Array[Int](maxv+1), avals)

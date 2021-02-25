@@ -139,14 +139,14 @@ object MatFunctions {
   /** Convert to the corresponding integral type */
   def int(a:FMat):IMat = {
     a match {
-//      case aa:GMat => GIMat(aa);
+      case aa:GMat => GIMat(aa);
       case _ => IMat(a);
     }
   }
   
   def int(a:DMat):IMat = {
     a match {
-//      case aa:GDMat => GIMat(aa);
+      case aa:GDMat => GIMat(aa);
       case _ => IMat(a);
     }
   }
@@ -155,18 +155,18 @@ object MatFunctions {
     a
   }
   
-//  def int(a:GMat):GIMat = {
-//    GIMat(a);
-//  }
+  def int(a:GMat):GIMat = {
+    GIMat(a);
+  }
   
-//  def int(a:GIMat):GIMat = {
-//    a;
-//  }
+  def int(a:GIMat):GIMat = {
+    a;
+  }
   
   def int(a:Mat):IMat = {
     a match {
-//      case ga:GMat => GIMat(ga);
-//      case gi:GIMat => gi;
+      case ga:GMat => GIMat(ga);
+      case gi:GIMat => gi;
       case fa:FMat => IMat(fa);
       case da:DMat => IMat(da);
       case ia:IMat => ia;
@@ -211,35 +211,35 @@ object MatFunctions {
     /** Convert to the corresponding long type */
   def long(a:FMat):LMat = {
     a match {
-//      case aa:GMat => GLMat(aa);
+      case aa:GMat => GLMat(aa);
       case _ => LMat(a);
     }
   }
   
   def long(a:DMat):LMat = {
     a match {
-//      case aa:GDMat => GLMat(aa);
+      case aa:GDMat => GLMat(aa);
       case _ => LMat(a);
     }
   }
   
   def long(a:IMat):LMat = {
     a match {
-//      case aa:GIMat => GLMat(aa);
+      case aa:GIMat => GLMat(aa);
       case _ => LMat(a);
     }
   }
   
-//  def long(a:GMat):LMat = GLMat(a);
+  def long(a:GMat):LMat = GLMat(a);
   
-//  def long(a:GIMat):LMat = GLMat(a);
+  def long(a:GIMat):LMat = GLMat(a);
   
   def long(a:Mat):LMat = {
     a match {
-//      case aa:GMat => GLMat(aa);
-//      case aa:GIMat => GLMat(aa);
-//      case aa:GDMat => GLMat(aa);
-//      case aa:GLMat => aa;
+      case aa:GMat => GLMat(aa);
+      case aa:GIMat => GLMat(aa);
+      case aa:GDMat => GLMat(aa);
+      case aa:GLMat => aa;
       case _ => LMat(a);
     }
   }
@@ -247,40 +247,40 @@ object MatFunctions {
    /** Convert to the corresponding float type */
   def float(a:IMat):FMat = {
     a match {
-//      case aa:GIMat => GMat(aa);
+      case aa:GIMat => GMat(aa);
       case _ => FMat(a);
     }
   }
   
   def float(a:DMat):FMat = {
     a match {
-//      case aa:GDMat => GMat(aa);
+      case aa:GDMat => GMat(aa);
       case _ => FMat(a);
     }
   }
 
-//  def float(a:GDMat):GMat = {
-//    GMat(a);
-//  }
+  def float(a:GDMat):GMat = {
+    GMat(a);
+  }
   
   def float(a:FMat):FMat = {
     a
   }
   
-//  def float(a:GMat):GMat = {
-//    a
-//  }
+  def float(a:GMat):GMat = {
+    a
+  }
 
-//  def float(a:GIMat):GMat = {
-//    GMat(a);
-//  }
+  def float(a:GIMat):GMat = {
+    GMat(a);
+  }
   
   def float(a:Mat):FMat = {
     a match {
-//    case ga:GMat => ga;
-//    case gi:GIMat => GMat(gi);
-//    case gg:GDMat => GMat(gg);
-//    case gg:GLMat => GMat(gg);
+    case ga:GMat => ga;
+    case gi:GIMat => GMat(gi);
+    case gg:GDMat => GMat(gg);
+    case gg:GLMat => GMat(gg);
     case fa:FMat => fa;
     case _ => FMat(a);
     }
@@ -289,12 +289,12 @@ object MatFunctions {
   /** Convert to a CPU matrix */
   def cpu(a:Mat):Mat = {
     a match {
-//    case b:GMat => FMat(b);
-//    case b:GDMat => DMat(b);
-//    case b:GIMat => IMat(b);
-//    case b:GLMat => LMat(b);
-//    case b:GSMat => SMat(b);
-//    case b:GSDMat => SDMat(b);
+    case b:GMat => FMat(b);
+    case b:GDMat => DMat(b);
+    case b:GIMat => IMat(b);
+    case b:GLMat => LMat(b);
+    case b:GSMat => SMat(b);
+    case b:GSDMat => SDMat(b);
     case b:FMat => b;
     case b:DMat => b;
     case b:IMat => b;
@@ -309,24 +309,24 @@ object MatFunctions {
   }
     
   /** Convert to a GPU matrix */
-//  def gpu(a:Mat):Mat = {
-//    a match {
-//    case b:GMat => b;
-//    case b:GDMat => b;
-//    case b:GIMat => b;
-//    case b:GLMat => b;
-//    case b:GSMat => b;
-//    case b:GSDMat => b;
-//    case b:FMat => GMat(b);
-//    case b:DMat => GDMat(b);
-//    case b:IMat => GIMat(b);
-//    case b:LMat => GLMat(b);
-//    case b:SMat => GSMat(b);
-//    case b:SDMat => GSDMat(b);
+  def gpu(a:Mat):Mat = {
+    a match {
+    case b:GMat => b;
+    case b:GDMat => b;
+    case b:GIMat => b;
+    case b:GLMat => b;
+    case b:GSMat => b;
+    case b:GSDMat => b;
+    case b:FMat => GMat(b);
+    case b:DMat => GDMat(b);
+    case b:IMat => GIMat(b);
+    case b:LMat => GLMat(b);
+    case b:SMat => GSMat(b);
+    case b:SDMat => GSDMat(b);
 
-//    case b:TMat => b.toGPU;
-//    }
-//  }
+    case b:TMat => b.toGPU;
+    }
+  }
   
   // TODO Document
   def threadPool(n:Int = Mat.numThreads):scala.concurrent.ExecutionContextExecutor = {
@@ -345,11 +345,11 @@ object MatFunctions {
   
   def recycleTry(a:Mat, nr:Int, nc:Int, b:SDMat, nnz:Int):SDMat = recycleTry(a, nr, nc, b:Mat, nnz).asInstanceOf[SDMat]
   
-//  def recycleTry(a:Mat, nr:Int, nc:Int, b:GMat, nnz:Int):GMat = recycleTry(a, nr, nc, b:Mat, nnz).asInstanceOf[GMat]
+  def recycleTry(a:Mat, nr:Int, nc:Int, b:GMat, nnz:Int):GMat = recycleTry(a, nr, nc, b:Mat, nnz).asInstanceOf[GMat]
   
-//  def recycleTry(a:Mat, nr:Int, nc:Int, b:GIMat, nnz:Int):GIMat = recycleTry(a, nr, nc, b:Mat, nnz).asInstanceOf[GIMat]
+  def recycleTry(a:Mat, nr:Int, nc:Int, b:GIMat, nnz:Int):GIMat = recycleTry(a, nr, nc, b:Mat, nnz).asInstanceOf[GIMat]
   
-//  def recycleTry(a:Mat, nr:Int, nc:Int, b:GSMat, nnz:Int):GSMat = recycleTry(a, nr, nc, b:Mat, nnz).asInstanceOf[GSMat]
+  def recycleTry(a:Mat, nr:Int, nc:Int, b:GSMat, nnz:Int):GSMat = recycleTry(a, nr, nc, b:Mat, nnz).asInstanceOf[GSMat]
   
   // TODO Document all of these recycleTry methods.
   def recycleTry(a:Mat, nr:Int, nc:Int, b:Mat, nnz:Int):Mat = {
@@ -372,11 +372,11 @@ object MatFunctions {
   
   def recycleTry(a:Mat, b:SDMat):SDMat = recycleTry(a, b.nrows, b.ncols, b:Mat, b.nnz).asInstanceOf[SDMat]
   
-//  def recycleTry(a:Mat, b:GMat):GMat = recycleTry(a, b.nrows, b.ncols, b:Mat, b.nnz).asInstanceOf[GMat]
+  def recycleTry(a:Mat, b:GMat):GMat = recycleTry(a, b.nrows, b.ncols, b:Mat, b.nnz).asInstanceOf[GMat]
   
-//  def recycleTry(a:Mat, b:GIMat):GIMat = recycleTry(a, b.nrows, b.ncols, b:Mat, b.nnz).asInstanceOf[GIMat]
+  def recycleTry(a:Mat, b:GIMat):GIMat = recycleTry(a, b.nrows, b.ncols, b:Mat, b.nnz).asInstanceOf[GIMat]
   
-//  def recycleTry(a:Mat, b:GSMat):GSMat = recycleTry(a, b.nrows, b.ncols, b:Mat, b.nnz).asInstanceOf[GSMat]
+  def recycleTry(a:Mat, b:GSMat):GSMat = recycleTry(a, b.nrows, b.ncols, b:Mat, b.nnz).asInstanceOf[GSMat]
   
   def recycleTry(a:Mat, b:Mat):Mat = recycleTry(a, b.nrows, b.ncols, b, b.nnz)
   
@@ -395,14 +395,14 @@ object MatFunctions {
   def recycleTry(a:Mat, b:SDMat, c:SDMat):SDMat = 
     recycleTry(a, math.max(b.nrows, c.nrows), math.max(b.ncols, c.ncols), b:Mat, b.nnz).asInstanceOf[SDMat];
           
-//  def recycleTry(a:Mat, b:GMat, c:GMat):GMat = 
-//    recycleTry(a, math.max(b.nrows, c.nrows), math.max(b.ncols, c.ncols), b:Mat, b.nnz).asInstanceOf[GMat];
+  def recycleTry(a:Mat, b:GMat, c:GMat):GMat = 
+    recycleTry(a, math.max(b.nrows, c.nrows), math.max(b.ncols, c.ncols), b:Mat, b.nnz).asInstanceOf[GMat];
             
-//  def recycleTry(a:Mat, b:GIMat, c:GIMat):GIMat = 
-//    recycleTry(a, math.max(b.nrows, c.nrows), math.max(b.ncols, c.ncols), b:Mat, b.nnz).asInstanceOf[GIMat];
+  def recycleTry(a:Mat, b:GIMat, c:GIMat):GIMat = 
+    recycleTry(a, math.max(b.nrows, c.nrows), math.max(b.ncols, c.ncols), b:Mat, b.nnz).asInstanceOf[GIMat];
   
-//  def recycleTry(a:Mat, b:GSMat, c:GSMat):GSMat = 
-//    recycleTry(a, math.max(b.nrows, c.nrows), math.max(b.ncols, c.ncols), b:Mat, b.nnz).asInstanceOf[GSMat];
+  def recycleTry(a:Mat, b:GSMat, c:GSMat):GSMat = 
+    recycleTry(a, math.max(b.nrows, c.nrows), math.max(b.ncols, c.ncols), b:Mat, b.nnz).asInstanceOf[GSMat];
   
   def recycleTry(a:Mat, b:Mat, c:Mat):Mat = recycleTry(a, math.max(b.nrows, c.nrows), math.max(b.ncols, c.ncols), b, b.nnz)
 
@@ -737,17 +737,17 @@ object MatFunctions {
   /** Find non-zero (row, col, value) tuples */
   def find3(a:SMat) = a.find3
     
-//  def sort(keys:GMat):GMat = GFunctions.sort(keys)
+  def sort(keys:GMat):GMat = GFunctions.sort(keys)
   
-//  def sort2(keys:GMat):(GMat, GIMat) = GFunctions.sort2(keys)
+  def sort2(keys:GMat):(GMat, GIMat) = GFunctions.sort2(keys)
   
-//  def sortdown(keys:GMat):GMat = GFunctions.sortdown(keys)
+  def sortdown(keys:GMat):GMat = GFunctions.sortdown(keys)
   
-//  def sortdown2(keys:GMat):(GMat, GIMat) = GFunctions.sortdown2(keys) 
+  def sortdown2(keys:GMat):(GMat, GIMat) = GFunctions.sortdown2(keys) 
   
   def sort(keys:Mat):Mat = {
     keys match {
-//    case a:GMat => sort(a);
+    case a:GMat => sort(a);
     case a:FMat => sort(a);
     case a:IMat => sort(a);
     case a:DMat => sort(a);
@@ -757,7 +757,7 @@ object MatFunctions {
   
   def sortdown(keys:Mat):Mat = {
     keys match {
-//    case a:GMat => sortdown(a);
+    case a:GMat => sortdown(a);
     case a:FMat => sortdown(a);
     case a:IMat => sortdown(a);
     case a:DMat => sortdown(a);
@@ -767,7 +767,7 @@ object MatFunctions {
   
   def sort2(keys:Mat):(Mat, IMat) = {
     keys match {
-//    case a:GMat => sort2(a);
+    case a:GMat => sort2(a);
     case a:FMat => sort2(a);
     case a:IMat => sort2(a);
     case a:DMat => sort2(a);
@@ -777,7 +777,7 @@ object MatFunctions {
   
   def sortdown2(keys:Mat):(Mat, IMat) = {
     keys match {
-//    case a:GMat => sortdown2(a);
+    case a:GMat => sortdown2(a);
     case a:FMat => sortdown2(a);
     case a:IMat => sortdown2(a);
     case a:DMat => sortdown2(a);
@@ -789,10 +789,10 @@ object MatFunctions {
   /** Accumulate (row, col, value) tuples from inds \\ vals (generic version) into omat. nr and nc are row and column bounds */
   def accum(inds:Mat, vals:Mat, omat:Mat, nrows:Int, ncols:Int):Mat = {
     (inds, vals) match {
-//    case (ginds:GIMat, gvals:GMat) => GFunctions.accum(ginds, gvals, omat, nrows, ncols):GMat
-//    case (ginds:GIMat, gvals:GDMat) => GDFunctions.accum(ginds, gvals, omat, nrows, ncols):GDMat
-//    case (ginds:GIMat, gvals:GIMat) => GIFunctions.accum(ginds, gvals, omat, nrows, ncols):GIMat
-//    case (ginds:GIMat, gvals:GLMat) => GLFunctions.accum(ginds, gvals, omat, nrows, ncols):GLMat
+    case (ginds:GIMat, gvals:GMat) => GFunctions.accum(ginds, gvals, omat, nrows, ncols):GMat
+    case (ginds:GIMat, gvals:GDMat) => GDFunctions.accum(ginds, gvals, omat, nrows, ncols):GDMat
+    case (ginds:GIMat, gvals:GIMat) => GIFunctions.accum(ginds, gvals, omat, nrows, ncols):GIMat
+    case (ginds:GIMat, gvals:GLMat) => GLFunctions.accum(ginds, gvals, omat, nrows, ncols):GLMat
     case (iinds:IMat, fvals:FMat) => accum(iinds, fvals, nrows, ncols):FMat
     case (iinds:IMat, ivals:IMat) => accum(iinds, ivals, nrows, ncols):IMat
     case (iinds:IMat, ivals:LMat) => accum(iinds, ivals, nrows, ncols):LMat
@@ -806,7 +806,7 @@ object MatFunctions {
   /** Accumulate (row, col, fval) tuples from inds (generic version) into omat. nr and nc are row and column bounds */
   def accum(inds:Mat, fval:Float, omat:Mat, nrows:Int, ncols:Int):Mat = {
     inds match {
-//    case ginds:GIMat => GFunctions.accum(ginds, fval, omat, nrows, ncols):GMat;
+    case ginds:GIMat => GFunctions.accum(ginds, fval, omat, nrows, ncols):GMat;
     case iinds:IMat => accum(iinds, fval, nrows, ncols):FMat;
     }
   }
@@ -817,7 +817,7 @@ object MatFunctions {
   /** Accumulate (row, col, ival) tuples from inds (generic version) into omat. nr and nc are row and column bounds */
   def accum(inds:Mat, ival:Int, omat:Mat, nrows:Int, ncols:Int):Mat = {
     inds match {
-//    case ginds:GIMat => GIFunctions.accum(ginds, ival, omat, nrows, ncols):GIMat;
+    case ginds:GIMat => GIFunctions.accum(ginds, ival, omat, nrows, ncols):GIMat;
     case iinds:IMat => accum(iinds, ival, nrows, ncols):IMat;
     }
   }
@@ -865,42 +865,104 @@ object MatFunctions {
     }
     out
   }
-
-  /**                                                                                                           
-   * Lexicographic sort of a matrix '''mat''' and a set of indices '''inds'''.                                  
-   * Side-effects both matrices, i.e. both '''mat''' and '''inds''' are modified.                               
+  
+  /**
+   * Lexicographic sort of a matrix '''mat''' and a set of indices '''inds'''. 
+   * Side-effects both matrices, i.e. both '''mat''' and '''inds''' are modified.
    */
-
-  def sortlexInds(mat:IMat, inds:IMat) = _sortlexInds(mat, inds, true)
-
+  def sortlexInds(mat:IMat, inds:IMat) = _sortlexInds(mat, inds, true) 
+  
   def _sortlexInds(mat:IMat, inds:IMat, asc:Boolean) {
-      val perm = IMat.isortlex(mat, asc)
-      val indsp = inds(perm)
-      inds <-- indsp
-      val matp = mat(perm, ?)
-      mat <-- matp
+  	if (if (Mat.useGPUsort && Mat.hasCUDA > 0) {
+  		val (dmy, freebytes, allbytes) = SciFunctions.GPUmem
+  		if ((mat.length+inds.length)*12L < freebytes) {
+  		  if (mat.ncols == 1) {
+  				GIFunctions.isortlexIndsGPU(mat, inds, asc)
+  				false
+  			} else if (mat.ncols == 2) {
+  				GIFunctions.i2sortlexIndsGPU(mat, inds, asc)
+  				false
+  			} else if (mat.ncols == 3) {
+  				GIFunctions.i3sortlexIndsGPU(mat, inds, asc)
+  				false
+  			} else true
+  		} else true
+  	} else true) {
+  		val perm = IMat.isortlex(mat, asc) 
+  		val indsp = inds(perm)
+  		inds <-- indsp
+  		val matp = mat(perm, ?)
+  		mat <-- matp
+  	}
   }
-      
-  def sortlexInds(mat:LMat, inds:IMat) = _sortlexInds(mat, inds, true)
-
+  
+  def sortlexInds(mat:LMat, inds:IMat) = _sortlexInds(mat, inds, true) 
+  
   def _sortlexInds(mat:LMat, inds:IMat, asc:Boolean) {
-      val perm = LMat.isortlex(mat, asc)
-      val indsp = inds(perm)
-      inds <-- indsp
-      val matp = mat(perm, ?)
-      mat <-- matp
+  	if (if (Mat.useGPUsort && Mat.hasCUDA > 0) {
+  		val (dmy, freebytes, allbytes) = SciFunctions.GPUmem
+  		if ((mat.length+inds.length)*12L < freebytes) {
+  		  if (mat.ncols == 1) {
+  				GLMat.isortlexIndsGPU(mat, inds, asc)
+  				false
+  			} else if (mat.ncols == 2) {
+  				GLMat.i2sortlexIndsGPU(mat, inds, asc)
+  				false
+  			} else if (mat.ncols == 3) {
+  				GLMat.i3sortlexIndsGPU(mat, inds, asc)
+  				false
+  			} else true
+  		} else true
+  	} else true) {
+  		val perm = LMat.isortlex(mat, asc) 
+  		val indsp = inds(perm)
+  		inds <-- indsp
+  		val matp = mat(perm, ?)
+  		mat <-- matp
+  	}
   }
-
+  
+  /**
+   * Lexicographic sort of a matrix '''mat'''. Side-effects '''mat'''.
+   */
   def sortlex(mat:IMat) = _sortlex(mat, true)
-
+  
   def _sortlex(mat:IMat, asc:Boolean):Unit = {
-      val perm = IMat.isortlex(mat, asc)
-      val matp = mat(perm, ?)
-      mat <-- matp
+  	if (if (Mat.useGPUsort && Mat.hasCUDA > 0) {
+  		val (dmy, freebytes, allbytes) = SciFunctions.GPUmem
+  		if ((mat.length)*12L < freebytes) {
+  			if (mat.ncols == 2) {
+  				GIFunctions.i2sortlexGPU(mat, asc)
+  				false
+  			} else true
+  		} else true
+  	} else true) {
+  		val perm = IMat.isortlex(mat, asc) 
+  		val matp = mat(perm, ?)
+  		mat <-- matp
+  	}
+  }  
+  
+  /**
+   * Lexicographic sort of a matrix '''mat''' with order '''asc''' (boolean true for ascending order). Side-effects '''mat'''.
+   */
+  def isortlexfast(mat:IMat, asc:Boolean):IMat = {
+  	if (Mat.useGPUsort && Mat.hasCUDA > 0 && {
+  	  val (dmy, freebytes, allbytes) = SciFunctions.GPUmem; 
+  	  (mat.nrows*(mat.ncols+1)*12L < freebytes)
+  	  }) 
+  	{
+  		val inds = icol(0->mat.nrows)
+  		val tmat = mat.copy
+  		if (mat.ncols == 2) {
+  			GIFunctions.i2sortlexIndsGPU(tmat, inds, asc)
+  			inds
+  		} else if (mat.ncols == 3) {
+  			GIFunctions.i3sortlexIndsGPU(tmat, inds, asc)
+  			inds
+  		} else IMat.isortlex(mat, asc) 
+  	} else IMat.isortlex(mat, asc)
   }
-
-
-      
   
   /**
    * Count distinct elements in a sorted array of rows. Returns (bptrs, iptrs), where bptrs points to a
@@ -1367,39 +1429,39 @@ object MatFunctions {
   def sdzeros(nr:Int, nc:Int):SDMat = SDMat(nr, nc, 0)
   
   /** Make a single-precision matrix of zeros in GPU memory. */
-//  def gzeros(nr:Int, nc:Int):GMat = GMat.zeros(nr, nc)
+  def gzeros(nr:Int, nc:Int):GMat = GMat.zeros(nr, nc)
   
-//  def gzeros(dims:IMat):GMat = GMat.zeros(dims);
+  def gzeros(dims:IMat):GMat = GMat.zeros(dims);
   
   /** Make a double-precision matrix of zeros in GPU memory. */
-//  def gdzeros(nr:Int, nc:Int):GDMat = GDMat.zeros(nr, nc);
+  def gdzeros(nr:Int, nc:Int):GDMat = GDMat.zeros(nr, nc);
   
-//  def gdzeros(dims:IMat):GDMat = GDMat.zeros(dims);
+  def gdzeros(dims:IMat):GDMat = GDMat.zeros(dims);
   
   /** Make an integer matrix of zeros in GPU memory. */
-//  def gizeros(nr:Int, nc:Int):GIMat = GIMat.izeros(nr, nc);
+  def gizeros(nr:Int, nc:Int):GIMat = GIMat.izeros(nr, nc);
   
-//  def gizeros(dims:IMat):GIMat = GIMat.izeros(dims);
+  def gizeros(dims:IMat):GIMat = GIMat.izeros(dims);
   
   /** Make a long matrix of zeros in GPU memory. */
-//  def glzeros(nr:Int, nc:Int):GLMat = GLMat.lzeros(nr, nc);
+  def glzeros(nr:Int, nc:Int):GLMat = GLMat.lzeros(nr, nc);
   
-//  def glzeros(dims:IMat):GLMat = GLMat.lzeros(dims);
+  def glzeros(dims:IMat):GLMat = GLMat.lzeros(dims);
    
   /** Make a float matrix of ones in GPU memory. */
-//  def gones(nr:Int, nc:Int):GMat = GMat.ones(nr,nc);
+  def gones(nr:Int, nc:Int):GMat = GMat.ones(nr,nc);
   
-//  def gones(dims:IMat):GMat = GMat.ones(dims);
+  def gones(dims:IMat):GMat = GMat.ones(dims);
 
   /** Make an integer matrix of ones in GPU memory. */
-//  def giones(nr:Int, nc:Int):GIMat = GIMat.iones(nr,nc);
+  def giones(nr:Int, nc:Int):GIMat = GIMat.iones(nr,nc);
   
-//  def giones(dims:IMat):GIMat = GIMat.iones(dims);
+  def giones(dims:IMat):GIMat = GIMat.iones(dims);
   
   /** Make a long matrix of ones in GPU memory. */
-//  def glones(nr:Int, nc:Int):GLMat = GLMat.lones(nr,nc);
+  def glones(nr:Int, nc:Int):GLMat = GLMat.lones(nr,nc);
   
-//  def glones(dims:IMat):GLMat = GLMat.lones(dims);
+  def glones(dims:IMat):GLMat = GLMat.lones(dims);
 
   /** Legacy function to make a placeholder matrix with no storage. */
   def blank = new Mat(0,0)
@@ -1423,13 +1485,13 @@ object MatFunctions {
   def sdblank = new SDMat(0,0,0,null,null,null)
   
   /** Legacy function to make a placeholder matrix with no storage. */
-//  def gblank = new GMat(0,0,null,0)
+  def gblank = new GMat(0,0,null,0)
   
   /** Legacy function to make a placeholder matrix with no storage. */
-//  def giblank = new GIMat(0,0,null,0)
+  def giblank = new GIMat(0,0,null,0)
   
   /** Legacy function to make a placeholder matrix with no storage. */
-//  def gsblank = new GSMat(0,0,0,null,null,null,null,0)
+  def gsblank = new GSMat(0,0,0,null,null,null,null,0)
   
   /** Convert a dense double-precision sparse matrix to sparse. */
   def sparse(a:DMat):SDMat = {
@@ -1511,16 +1573,16 @@ object MatFunctions {
   def full(ss:SMat):FMat = FMat(ss.full)
   
   /** Convert from GPU float sparse to GPU float dense. */
-//  def full(ss:GSMat):GMat = ss.full
+  def full(ss:GSMat):GMat = ss.full
   
   /** Convert from GPU double sparse to GPU double dense. */
-//  def full(ss:GSDMat):GDMat = ss.full
+  def full(ss:GSDMat):GDMat = ss.full
   
   def full(a:Mat):Mat = a match {
-//  case aa:GSMat => aa.full:GMat
-//  case aa:GSDMat => aa.full:GDMat
-//  case aa:GMat => a
-//  case aa:GDMat => a
+  case aa:GSMat => aa.full:GMat
+  case aa:GSDMat => aa.full:GDMat
+  case aa:GMat => a
+  case aa:GDMat => a
   case aa:DMat => a
   case aa:FMat => a
   case aa:IMat => a
@@ -1557,7 +1619,7 @@ object MatFunctions {
 
   def DDS(a:FMat,b:FMat,c:SMat,omat:Mat):SMat = {
     (a,b,c) match {
-//      case (aa:GMat, bb:GMat, cc:GSMat) => GSMat.DDS(aa,bb,cc,omat);
+      case (aa:GMat, bb:GMat, cc:GSMat) => GSMat.DDS(aa,bb,cc,omat);
       case _ => {
     	  if (a.nrows != b.nrows) {
     		  throw new RuntimeException("nrows of dense A and B must match")
@@ -1591,21 +1653,21 @@ object MatFunctions {
   
   def DDS(a:FMat,b:FMat,c:SMat):SMat = DDS(a, b, c, null)
   
-//  def DDS(a:GMat,b:GMat,c:GSMat,omat:Mat):GSMat = GSMat.DDS(a,b,c,omat)
+  def DDS(a:GMat,b:GMat,c:GSMat,omat:Mat):GSMat = GSMat.DDS(a,b,c,omat)
   
-//  def DDS(a:GMat,b:GMat,c:GSMat):GSMat = GSMat.DDS(a, b, c, null)
+  def DDS(a:GMat,b:GMat,c:GSMat):GSMat = GSMat.DDS(a, b, c, null)
   
   def DDS(a:FMat, b:FMat, c:FMat):FMat = a.t * b
   
-//  def DDS(a:GMat, b:GMat, c:GMat):GMat = a.t * b
+  def DDS(a:GMat, b:GMat, c:GMat):GMat = a.t * b
   
-//  def DDS(a:GDMat, b:GDMat, c:GDMat):GDMat = a.t * b
+  def DDS(a:GDMat, b:GDMat, c:GDMat):GDMat = a.t * b
   
   def DDS(a:Mat, b:Mat, c:Mat, omat:Mat=null):Mat = {
     (a, b, c) match {
-//    case (a:GMat, b:GMat, c:GSMat) => GSMat.DDS(a, b, c, omat):GSMat
-//    case (a:GDMat, b:GDMat, c:GSDMat) => GSDMat.DDS(a, b, c, omat):GSDMat
-//    case (a:GMat, b:GMat, c:GMat) => a.t * b
+    case (a:GMat, b:GMat, c:GSMat) => GSMat.DDS(a, b, c, omat):GSMat
+    case (a:GDMat, b:GDMat, c:GSDMat) => GSDMat.DDS(a, b, c, omat):GSDMat
+    case (a:GMat, b:GMat, c:GMat) => a.t * b
     case (a:FMat, b:FMat, c:SMat) => DDS(a, b, c, omat):SMat
     case (a:FMat, b:FMat, c:FMat) => a.t * b
     }
@@ -1665,7 +1727,7 @@ object MatFunctions {
   
   def oneHot(c:IMat, ncats:Int):SMat = {
     c match {
-//      case cc:GIMat => GSMat.oneHot(cc, ncats);
+      case cc:GIMat => GSMat.oneHot(cc, ncats);
       case _ => cat2sparse(c, ncats);
     }
   }
@@ -1674,7 +1736,7 @@ object MatFunctions {
   
   def oneHot(c:Mat, ncats:Int):Mat = {
     c match {
-//    case cc:GIMat => oneHot(cc, ncats);
+    case cc:GIMat => oneHot(cc, ncats);
     case cc:IMat => oneHot(cc, ncats);
     }
   }
@@ -1703,12 +1765,12 @@ object MatFunctions {
   
   def nHot(c:IMat):SMat = nHot(c, 0);
   
-//  def nHot(c:GIMat, ncats:Int):GSMat = GSMat.nHot(c, ncats);
-//  def nHot(c:GIMat):GSMat = GSMat.nHot(c, 0);
+  def nHot(c:GIMat, ncats:Int):GSMat = GSMat.nHot(c, ncats);
+  def nHot(c:GIMat):GSMat = GSMat.nHot(c, 0);
   
   def nHot(c:Mat, ncats:Int):Mat = {
     c match {
-//    case cc:GIMat => nHot(cc, ncats);
+    case cc:GIMat => nHot(cc, ncats);
     case cc:IMat => nHot(cc, ncats);
     }
   }
@@ -1754,13 +1816,13 @@ object MatFunctions {
   /** Creates a diagonal, square CMat matrix with elements of '''a''' in the diagonal. */
   def mkdiag(a:CMat) = CMat(a.mkdiag)
   /** Creates a diagonal, square GMat matrix with elements of '''a''' in the diagonal. */
-//  def mkdiag(a:GMat) = GMat(a.mkdiag)
+  def mkdiag(a:GMat) = GMat(a.mkdiag)
   /** Creates a diagonal, square GDMat matrix with elements of '''a''' in the diagonal. */
-//  def mkdiag(a:GDMat) = GDMat(a.mkdiag)
+  def mkdiag(a:GDMat) = GDMat(a.mkdiag)
   /** Creates a diagonal, square GIMat matrix with elements of '''a''' in the diagonal. */
-//  def mkdiag(a:GIMat) = GIMat(a.mkdiag)
+  def mkdiag(a:GIMat) = GIMat(a.mkdiag)
   /** Creates a diagonal, square GLMat matrix with elements of '''a''' in the diagonal. */
-//  def mkdiag(a:GLMat) = GLMat(a.mkdiag)
+  def mkdiag(a:GLMat) = GLMat(a.mkdiag)
   
   /**
    * Creates a diagonal, square matrix with elements of '''a''' in the diagonal. Works on most matrix types.
@@ -1784,10 +1846,10 @@ object MatFunctions {
    */
   def mkdiag(a:Mat):Mat = {
     a match {
-//    case aa:GMat => mkdiag(aa):GMat;
-//    case aa:GDMat => mkdiag(aa):GDMat;
-//    case aa:GIMat => mkdiag(aa):GIMat;
-//    case aa:GLMat => mkdiag(aa):GLMat;
+    case aa:GMat => mkdiag(aa):GMat;
+    case aa:GDMat => mkdiag(aa):GDMat;
+    case aa:GIMat => mkdiag(aa):GIMat;
+    case aa:GLMat => mkdiag(aa):GLMat;
     case aa:DMat => mkdiag(aa):DMat;
     case aa:FMat => mkdiag(aa):FMat;
     case aa:IMat => mkdiag(aa):IMat;
@@ -1807,13 +1869,13 @@ object MatFunctions {
   /** Gets the leading diagonal of CMat '''a''' as a CMat vector. */
   def getdiag(a:CMat) = CMat(a.getdiag)
   /** Gets the leading diagonal of GMat '''a''' as a GMat vector. */
-//  def getdiag(a:GMat) = GMat(a.getdiag)
+  def getdiag(a:GMat) = GMat(a.getdiag)
   /** Gets the leading diagonal of GDMat '''a''' as a GDMat vector. */
-//  def getdiag(a:GDMat) = GDMat(a.getdiag)
+  def getdiag(a:GDMat) = GDMat(a.getdiag)
   /** Gets the leading diagonal of GIMat '''a''' as a GIMat vector. */
-//  def getdiag(a:GIMat) = GIMat(a.getdiag)
+  def getdiag(a:GIMat) = GIMat(a.getdiag)
   /** Gets the leading diagonal of GLMat '''a''' as a GLMat vector. */
-//  def getdiag(a:GLMat) = GLMat(a.getdiag)
+  def getdiag(a:GLMat) = GLMat(a.getdiag)
 
   /** 
    * Gets the leading diagonal of '''a''' matrix as a vector. Works on most matrix types.
@@ -1835,10 +1897,10 @@ object MatFunctions {
    */
   def getdiag(a:Mat):Mat = {
     a match {
-//    case aa:GMat => getdiag(aa):GMat;
-//    case aa:GDMat => getdiag(aa):GDMat;
-//    case aa:GIMat => getdiag(aa):GIMat;
-//    case aa:GLMat => getdiag(aa):GLMat;
+    case aa:GMat => getdiag(aa):GMat;
+    case aa:GDMat => getdiag(aa):GDMat;
+    case aa:GIMat => getdiag(aa):GIMat;
+    case aa:GLMat => getdiag(aa):GLMat;
     case aa:DMat => getdiag(aa):DMat;
     case aa:FMat => getdiag(aa):FMat;
     case aa:IMat => getdiag(aa):IMat;
@@ -1880,17 +1942,17 @@ object MatFunctions {
    */
   def kron(a:Mat, b:Mat, omat:Mat) : Mat = {
     (a, b) match {
-//    case (a:GMat,b:GMat) => a.kron(b, omat)
-//    case (a:GMat,b:GIMat) => a.kron(GMat(b), omat)
-//    case (a:GIMat,b:GMat) => GMat(a).kron(b, omat)
-//    case (a:GIMat,b:GIMat) => a.kron(b, omat)
-//    case (a:GIMat,b:GSMat) => GMat(a).kron(full(b), omat)
-//    case (a:GMat,b:GSMat) => a.kron(full(b), omat)
+    case (a:GMat,b:GMat) => a.kron(b, omat)
+    case (a:GMat,b:GIMat) => a.kron(GMat(b), omat)
+    case (a:GIMat,b:GMat) => GMat(a).kron(b, omat)
+    case (a:GIMat,b:GIMat) => a.kron(b, omat)
+    case (a:GIMat,b:GSMat) => GMat(a).kron(full(b), omat)
+    case (a:GMat,b:GSMat) => a.kron(full(b), omat)
     
-//    case (a:FMat,b:GMat) => GMat(a).kron(b, omat)
-//    case (a:FMat,b:GIMat) => GMat(a).kron(GMat(b), omat)
-//    case (a:GMat,b:IMat) => a.kron(GMat(b), omat)
-//    case (a:GIMat,b:IMat) => a.kron(GIMat(b), omat)
+    case (a:FMat,b:GMat) => GMat(a).kron(b, omat)
+    case (a:FMat,b:GIMat) => GMat(a).kron(GMat(b), omat)
+    case (a:GMat,b:IMat) => a.kron(GMat(b), omat)
+    case (a:GIMat,b:IMat) => a.kron(GIMat(b), omat)
 
     case (a:FMat,b:FMat) => a.kron(b, omat)
     case (a:FMat,b:SMat) => a.kron(full(b), omat)
@@ -2013,7 +2075,7 @@ object MatFunctions {
     }
   }
   
-/*  def checkCUDAerrors() = {
+  def checkCUDAerrors() = {
     var err = 0
     jcuda.runtime.JCuda.cudaDeviceSynchronize
     if (err == 0) err = jcuda.runtime.JCuda.cudaGetLastError
@@ -2021,7 +2083,7 @@ object MatFunctions {
         val g =  SciFunctions.getGPU
         throw new RuntimeException("GPU "+g+": Cuda error: " + jcuda.runtime.JCuda.cudaGetErrorString(err))
     }
-  }*/
+  }
   
   def cols2sparse(rows:IMat, cols:IMat, values:FMat, issorted:Boolean):SMat = cols2sparse(rows, cols, values, issorted, 0)
   
@@ -2029,20 +2091,20 @@ object MatFunctions {
   
   def union(dd:Dict*) = Dict.union(dd:_*);
   
-//  def h5list(fname:String) = MatHDF5.h5list(fname)
+  def h5list(fname:String) = MatHDF5.h5list(fname)
   
-//  def load[T](fname:String, vname:String):T = MatHDF5.hload(fname, vname).asInstanceOf[T]
+  def load[T](fname:String, vname:String):T = MatHDF5.hload(fname, vname).asInstanceOf[T]
   
-//  def load[A,B](fname:String, v1:String, v2:String):(A,B) = {
-//    val a = MatHDF5.hload(fname, List(v1, v2));
-//    (a(0).asInstanceOf[A], a(1).asInstanceOf[B])
-//  }
+  def load[A,B](fname:String, v1:String, v2:String):(A,B) = {
+    val a = MatHDF5.hload(fname, List(v1, v2));
+    (a(0).asInstanceOf[A], a(1).asInstanceOf[B])
+  }
 
-//  def loadx(fname:String, vnames:String*):List[AnyRef] = MatHDF5.hload(fname, vnames.toList)
+  def loadx(fname:String, vnames:String*):List[AnyRef] = MatHDF5.hload(fname, vnames.toList)
 
-//  def saveAsHDF5(fname:String, args:AnyRef*) = MatHDF5.hsaveAsHDF5(fname, args.toList)
+  def saveAsHDF5(fname:String, args:AnyRef*) = MatHDF5.hsaveAsHDF5(fname, args.toList)
 
-//  def saveAs(fname:String, args:AnyRef*) = MatHDF5.hsaveAs(fname, args.toList)
+  def saveAs(fname:String, args:AnyRef*) = MatHDF5.hsaveAs(fname, args.toList)
   
   def loadMat(fname:String) = HMat.loadMat(fname, null, 0);  
   def loadMat(fname:String, omat:Mat) = HMat.loadMat(fname, omat, 0); 
